@@ -42,6 +42,10 @@ export interface TestServerAndClientResourceOpts<TRouter extends AnyTRPCRouter>
   client?:
     | Partial<CreateTRPCClientOptions<TRouter>>
     | CreateClientCallback<TRouter>;
+  /**
+   * Use a specific link for the client
+   */
+  clientLink?: 'httpLink' | 'httpBatchLink' | 'httpSubscriptionLink' | 'wsLink';
 }
 
 export function testServerAndClientResource<TRouter extends AnyTRPCRouter>(
@@ -63,58 +67,65 @@ export function testServerAndClientResource<TRouter extends AnyTRPCRouter>(
   });
 
   const transformer = router._def._config.transformer as any;
+
+  const links = {
+    httpLink: httpLink({
+      url: serverResource.httpUrl,
+      transformer,
+    }),
+    httpBatchLink: httpBatchLink({
+      url: serverResource.httpUrl,
+      transformer,
+    }),
+    httpSubscriptionLink: httpSubscriptionLink({
+      url: serverResource.httpUrl,
+      transformer,
+    }),
+    wsLink: wsLink({
+      client: wsClient,
+      transformer,
+    }),
+    httpBatchStreamLink: httpBatchStreamLink({
+      url: serverResource.httpUrl,
+      transformer,
+    }),
+  };
   const trpcClientOptions = {
     links: [
       () => {
         // here we just got initialized in the app - this happens once per app
         // useful for storing cache for instance
-        return ({ next, op }) => {
+        return (opts) => {
           // this is when passing the result to the next link
 
-          spyLink(op);
-          return next(op);
+          spyLink(opts.op);
+          return opts.next(opts.op);
         };
       },
-      splitLink({
-        condition: (op) => op.context?.['ws'] === true,
-        true: wsLink({
-          client: wsClient,
-          transformer,
-        }),
-        false: splitLink({
-          condition: (op) => op.type === 'subscription',
-          true: httpSubscriptionLink({
-            client: wsClient,
-            transformer,
-            url: serverResource.httpUrl,
-          }),
-
-          false: splitLink({
-            condition: (op) => op.context['batch'] === false,
-            true: httpLink({
-              client: wsClient,
-              transformer,
-              url: serverResource.httpUrl,
-            }),
-
-            // This is the fallback / default link
+      opts?.clientLink
+        ? links[opts.clientLink]
+        : splitLink({
+            condition: (op) => op.context?.['ws'] === true,
+            true: links.wsLink,
             false: splitLink({
-              condition: (op) => op.context['stream'] === false,
-              true: httpBatchLink({
-                client: wsClient,
-                transformer,
-                url: serverResource.httpUrl,
-              }),
+              condition: (op) => op.type === 'subscription',
+              true: links.httpSubscriptionLink,
 
-              // This is the fallback / default link
-              false: httpBatchStreamLink({
-                url: serverResource.httpUrl,
-                transformer,
+              false: splitLink({
+                condition: (op) => op.context['batch'] === false,
+                true: links.httpLink,
+
+                // This is the fallback / default link
+                false: splitLink({
+                  condition: (op) => op.context['stream'] === false,
+                  true: links.httpBatchLink,
+
+                  // This is the fallback / default link
+                  false: links.httpBatchStreamLink,
+                }),
               }),
             }),
           }),
-        }),
-      }),
     ],
     ...(opts?.client
       ? typeof opts.client === 'function'
