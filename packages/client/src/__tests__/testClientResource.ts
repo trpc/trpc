@@ -5,12 +5,15 @@ import {
 } from '@trpc/server/__tests__/trpcServerResource';
 import { httpBatchLink, httpLink, httpSubscriptionLink } from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
+import { tap } from '@trpc/server/observable';
 import type { inferClientTypes } from '@trpc/server/unstable-core-do-not-import';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import { WebSocket } from 'ws';
 import type {
   CreateTRPCClientOptions,
   Operation,
+  OperationResultEnvelope,
+  TRPCClientError,
   TRPCWebSocketClient,
   WebSocketClientOptions,
 } from '..';
@@ -54,7 +57,16 @@ export function testServerAndClientResource<TRouter extends AnyTRPCRouter>(
 ) {
   const serverResource = trpcServerResource(router, opts);
 
-  const spyLink = __getSpy<(op: Operation<unknown>) => void>();
+  const linkSpy = {
+    up: __getSpy<(op: Operation<unknown>) => void>(),
+    next: __getSpy<
+      (
+        result: OperationResultEnvelope<unknown, TRPCClientError<TRouter>>,
+      ) => void
+    >(),
+    error: __getSpy<(result: TRPCClientError<TRouter>) => void>(),
+    complete: __getSpy<() => void>(),
+  };
 
   // client
   const wsClient = createWSClient({
@@ -98,8 +110,20 @@ export function testServerAndClientResource<TRouter extends AnyTRPCRouter>(
         return (opts) => {
           // this is when passing the result to the next link
 
-          spyLink(opts.op);
-          return opts.next(opts.op);
+          linkSpy.up(opts.op);
+          return opts.next(opts.op).pipe(
+            tap({
+              next(result) {
+                linkSpy.next(result);
+              },
+              error(error) {
+                linkSpy.error(error);
+              },
+              complete() {
+                linkSpy.complete();
+              },
+            }),
+          );
         };
       },
       opts?.clientLink
@@ -146,7 +170,7 @@ export function testServerAndClientResource<TRouter extends AnyTRPCRouter>(
     wsClient,
     client,
     trpcClientOptions,
-    spyLink,
+    linkSpy,
   };
   return ctx;
 }

@@ -200,7 +200,7 @@ describe('queryOptions', () => {
       expect(utils.container).toHaveTextContent(`__result`);
     });
 
-    expect(ctx.spyLink.mock.calls[0]![0].context).toMatchObject(context);
+    expect(ctx.linkSpy.up.mock.calls[0]![0].context).toMatchObject(context);
   });
 
   test('iterable', async () => {
