@@ -450,6 +450,7 @@ function createStreamsManager(abortController: AbortController) {
         const reader = stream.getReader();
 
         return makeResource(reader, () => {
+          streamController.close();
           reader.releaseLock();
         });
       },
