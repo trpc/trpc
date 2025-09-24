@@ -1,5 +1,5 @@
 import type { IncomingHttpHeaders } from 'http';
-import { routerToServerAndClientNew } from './___testHelpers';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { createTRPCClient, httpBatchLink, httpLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 
@@ -20,35 +20,33 @@ describe('pass headers', () => {
 
   type AppRouter = typeof appRouter;
 
-  const { close, httpUrl } = routerToServerAndClientNew(appRouter, {
-    server: {
-      createContext(opts) {
-        return {
-          headers: opts.req.headers,
-        };
+  // Local helper function to create test context
+  const createTestCtx = () => {
+    return testServerAndClientResource(appRouter, {
+      server: {
+        createContext(opts: any) {
+          return {
+            headers: opts.req.headers,
+          };
+        },
       },
-      // createContext({ req }) {
-      //   return { headers: req.headers };
-      // },
-    },
-  });
-
-  afterAll(async () => {
-    await close();
-  });
+    });
+  };
 
   test('no headers', async () => {
+    await using ctx = createTestCtx();
     const client = createTRPCClient<AppRouter>({
-      links: [httpBatchLink({ url: httpUrl })],
+      links: [httpBatchLink({ url: ctx.httpUrl })],
     });
     expect(await client.hello.query()).toMatchInlineSnapshot(`Object {}`);
   });
 
   test('custom headers', async () => {
+    await using ctx = createTestCtx();
     const client = createTRPCClient<AppRouter>({
       links: [
         httpBatchLink({
-          url: httpUrl,
+          url: ctx.httpUrl,
           headers() {
             return {
               'x-special': 'special header',
@@ -65,10 +63,11 @@ Object {
   });
 
   test('async headers', async () => {
+    await using ctx = createTestCtx();
     const client = createTRPCClient<AppRouter>({
       links: [
         httpBatchLink({
-          url: httpUrl,
+          url: ctx.httpUrl,
           async headers() {
             return {
               'x-special': 'async special header',
@@ -85,13 +84,14 @@ Object {
   });
 
   test('custom headers with context using httpBatchLink', async () => {
+    await using ctx = createTestCtx();
     type LinkContext = {
       headers: Record<string, string[] | string>;
     };
     const client = createTRPCClient<AppRouter>({
       links: [
         httpBatchLink({
-          url: httpUrl,
+          url: ctx.httpUrl,
           headers(opts) {
             return new Promise((resolve) => {
               resolve({
@@ -121,13 +121,14 @@ Object {
   });
 
   test('custom headers with context using httpLink', async () => {
+    await using ctx = createTestCtx();
     type LinkContext = {
       headers: Record<string, string[] | string>;
     };
     const client = createTRPCClient<AppRouter>({
       links: [
         httpLink({
-          url: httpUrl,
+          url: ctx.httpUrl,
           headers(opts) {
             return {
               'x-special': (opts.op.context as LinkContext).headers[
@@ -155,10 +156,11 @@ Object {
   });
 
   test('custom headers with Headers class - httpBatchLink', async () => {
+    await using ctx = createTestCtx();
     const client = createTRPCClient<AppRouter>({
       links: [
         httpBatchLink({
-          url: httpUrl,
+          url: ctx.httpUrl,
           headers() {
             const heads = new Headers();
             heads.append('x-special', 'special header');
@@ -175,10 +177,11 @@ Object {
   });
 
   test('custom headers with Headers class - httpLink', async () => {
+    await using ctx = createTestCtx();
     const client = createTRPCClient<AppRouter>({
       links: [
         httpLink({
-          url: httpUrl,
+          url: ctx.httpUrl,
           headers() {
             // return { foo: 'bar' };
             return new Headers([['x-special', 'special header']]);

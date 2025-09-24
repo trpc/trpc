@@ -5,12 +5,15 @@ import {
 } from '@trpc/server/__tests__/trpcServerResource';
 import { httpBatchLink, httpLink, httpSubscriptionLink } from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
+import { tap } from '@trpc/server/observable';
 import type { inferClientTypes } from '@trpc/server/unstable-core-do-not-import';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import { WebSocket } from 'ws';
 import type {
   CreateTRPCClientOptions,
   Operation,
+  OperationResultEnvelope,
+  TRPCClientError,
   TRPCWebSocketClient,
   WebSocketClientOptions,
 } from '..';
@@ -42,6 +45,10 @@ export interface TestServerAndClientResourceOpts<TRouter extends AnyTRPCRouter>
   client?:
     | Partial<CreateTRPCClientOptions<TRouter>>
     | CreateClientCallback<TRouter>;
+  /**
+   * Use a specific link for the client
+   */
+  clientLink?: 'httpLink' | 'httpBatchLink' | 'httpSubscriptionLink' | 'wsLink';
 }
 
 export function testServerAndClientResource<TRouter extends AnyTRPCRouter>(
@@ -50,7 +57,16 @@ export function testServerAndClientResource<TRouter extends AnyTRPCRouter>(
 ) {
   const serverResource = trpcServerResource(router, opts);
 
-  const spyLink = __getSpy<(op: Operation<unknown>) => void>();
+  const linkSpy = {
+    up: __getSpy<(op: Operation<unknown>) => void>(),
+    next: __getSpy<
+      (
+        result: OperationResultEnvelope<unknown, TRPCClientError<TRouter>>,
+      ) => void
+    >(),
+    error: __getSpy<(result: TRPCClientError<TRouter>) => void>(),
+    complete: __getSpy<() => void>(),
+  };
 
   // client
   const wsClient = createWSClient({
@@ -63,58 +79,77 @@ export function testServerAndClientResource<TRouter extends AnyTRPCRouter>(
   });
 
   const transformer = router._def._config.transformer as any;
+
+  const links = {
+    httpLink: httpLink({
+      url: serverResource.httpUrl,
+      transformer,
+    }),
+    httpBatchLink: httpBatchLink({
+      url: serverResource.httpUrl,
+      transformer,
+    }),
+    httpSubscriptionLink: httpSubscriptionLink({
+      url: serverResource.httpUrl,
+      transformer,
+    }),
+    wsLink: wsLink({
+      client: wsClient,
+      transformer,
+    }),
+    httpBatchStreamLink: httpBatchStreamLink({
+      url: serverResource.httpUrl,
+      transformer,
+    }),
+  };
   const trpcClientOptions = {
     links: [
       () => {
         // here we just got initialized in the app - this happens once per app
         // useful for storing cache for instance
-        return ({ next, op }) => {
+        return (opts) => {
           // this is when passing the result to the next link
 
-          spyLink(op);
-          return next(op);
+          linkSpy.up(opts.op);
+          return opts.next(opts.op).pipe(
+            tap({
+              next(result) {
+                linkSpy.next(result);
+              },
+              error(error) {
+                linkSpy.error(error);
+              },
+              complete() {
+                linkSpy.complete();
+              },
+            }),
+          );
         };
       },
-      splitLink({
-        condition: (op) => op.context?.['ws'] === true,
-        true: wsLink({
-          client: wsClient,
-          transformer,
-        }),
-        false: splitLink({
-          condition: (op) => op.type === 'subscription',
-          true: httpSubscriptionLink({
-            client: wsClient,
-            transformer,
-            url: serverResource.httpUrl,
-          }),
-
-          false: splitLink({
-            condition: (op) => op.context['batch'] === false,
-            true: httpLink({
-              client: wsClient,
-              transformer,
-              url: serverResource.httpUrl,
-            }),
-
-            // This is the fallback / default link
+      opts?.clientLink
+        ? links[opts.clientLink]
+        : splitLink({
+            condition: (op) => op.context?.['ws'] === true,
+            true: links.wsLink,
             false: splitLink({
-              condition: (op) => op.context['stream'] === false,
-              true: httpBatchLink({
-                client: wsClient,
-                transformer,
-                url: serverResource.httpUrl,
-              }),
+              condition: (op) => op.type === 'subscription',
+              true: links.httpSubscriptionLink,
 
-              // This is the fallback / default link
-              false: httpBatchStreamLink({
-                url: serverResource.httpUrl,
-                transformer,
+              false: splitLink({
+                condition: (op) => op.context['batch'] === false,
+                true: links.httpLink,
+
+                // This is the fallback / default link
+                false: splitLink({
+                  condition: (op) => op.context['stream'] === false,
+                  true: links.httpBatchLink,
+
+                  // This is the fallback / default link
+                  false: links.httpBatchStreamLink,
+                }),
               }),
             }),
           }),
-        }),
-      }),
     ],
     ...(opts?.client
       ? typeof opts.client === 'function'
@@ -135,7 +170,7 @@ export function testServerAndClientResource<TRouter extends AnyTRPCRouter>(
     wsClient,
     client,
     trpcClientOptions,
-    spyLink,
+    linkSpy,
   };
   return ctx;
 }

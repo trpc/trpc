@@ -1,3 +1,4 @@
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import {
   trpcServerResource,
   type TRPCServerResourceOpts,

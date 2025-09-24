@@ -1,4 +1,4 @@
-import { routerToServerAndClientNew } from './___testHelpers';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
 import { httpBatchLink, httpLink } from '@trpc/client';
 import type { HTTPLinkBaseOptions } from '@trpc/client/links/internals/httpUtils';
@@ -33,7 +33,7 @@ async function startServer(opts: {
   batch?: boolean;
   allowMethodOverride: boolean;
 }) {
-  const ctx = routerToServerAndClientNew(router, {
+  return testServerAndClientResource(router, {
     server: {
       allowMethodOverride: opts.allowMethodOverride,
     },
@@ -55,23 +55,9 @@ async function startServer(opts: {
       };
     },
   });
-
-  return ctx;
 }
-let app: Awaited<ReturnType<typeof startServer>>;
-async function setup(...args: Parameters<typeof startServer>) {
-  app = await startServer(...args);
-  return app;
-}
-
-afterEach(async () => {
-  if (app) {
-    app.close();
-  }
-});
-
 test('client: sends query as POST when methodOverride=POST', async () => {
-  const t = await setup({
+  await using t = await startServer({
     linkOptions: {
       methodOverride: 'POST',
     },
@@ -86,7 +72,7 @@ test('client: sends query as POST when methodOverride=POST', async () => {
 });
 
 test('client/server: e2e batched query as POST', async () => {
-  const t = await setup({
+  await using t = await startServer({
     linkOptions: {
       methodOverride: 'POST',
     },
@@ -116,7 +102,7 @@ test('client/server: e2e batched query as POST', async () => {
 });
 
 test('server: rejects method override from client when not enabled on the server', async () => {
-  const t = await setup({
+  await using t = await startServer({
     allowMethodOverride: false,
     linkOptions: {
       methodOverride: 'POST',
@@ -135,7 +121,7 @@ test('server: rejects method override from client when not enabled on the server
 });
 
 test('cannot use method overriding with mutations', async () => {
-  const t = await setup({
+  await using t = await startServer({
     allowMethodOverride: true,
     linkOptions: {},
   });
