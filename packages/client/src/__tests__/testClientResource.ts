@@ -48,7 +48,12 @@ export interface TestServerAndClientResourceOpts<TRouter extends AnyTRPCRouter>
   /**
    * Use a specific link for the client
    */
-  clientLink?: 'httpLink' | 'httpBatchLink' | 'httpSubscriptionLink' | 'wsLink';
+  clientLink?:
+    | 'httpBatchLink'
+    | 'httpBatchStreamLink'
+    | 'httpLink'
+    | 'httpSubscriptionLink'
+    | 'wsLink';
 }
 
 export function testServerAndClientResource<TRouter extends AnyTRPCRouter>(
