@@ -489,7 +489,6 @@ function createStreamsManager(abortController: AbortController) {
 
   return {
     getOrCreate,
-    isEmpty,
     cancelAll,
   };
 }
@@ -622,5 +621,5 @@ export async function jsonlStreamConsumer<THead>(opts: {
       closeOrAbort(error);
     });
 
-  return [await headDeferred.promise, streamManager] as const;
+  return [await headDeferred.promise] as const;
 }
