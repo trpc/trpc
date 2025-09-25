@@ -601,7 +601,10 @@ test('wait for slow queries/mutations before disconnecting', async () => {
   const { client, close, wsClient, onSlowMutationCalled } = factory();
 
   await vi.waitFor(() => {
-    expect(wsClient.connection?.state === 'open' || wsClient.connection?.state === 'pending').toBe(true);
+    expect(
+      wsClient.connection?.state === 'open' ||
+        wsClient.connection?.state === 'pending',
+    ).toBe(true);
   });
   const promise = client.mut.mutate();
   await vi.waitFor(() => {
@@ -621,7 +624,10 @@ test('requests get aborted if called before connection is established and reques
   const { client, close, wsClient } = factory();
 
   await vi.waitFor(() => {
-    expect(wsClient.connection?.state === 'open' || wsClient.connection?.state === 'pending').toBe(true);
+    expect(
+      wsClient.connection?.state === 'open' ||
+        wsClient.connection?.state === 'pending',
+    ).toBe(true);
   });
   const promise = client.mut.mutate();
   const conn = wsClient.connection;

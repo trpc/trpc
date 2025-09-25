@@ -16,9 +16,7 @@ describe('undefined on server response is inferred on the client', () => {
     obj: t.procedure.query(() => {
       const objs = [{ id: 1 } as { id: number | undefined }];
       const obj = objs.find((n) => n.id === Math.floor(Math.random() * 5));
-      expectTypeOf(obj).toEqualTypeOf<
-        { id: number | undefined } | undefined
-      >();
+      expectTypeOf(obj).toEqualTypeOf<{ id: number | undefined } | undefined>();
       return obj;
     }),
     und: t.procedure.query(() => {

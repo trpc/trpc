@@ -1,7 +1,7 @@
 import { EventEmitter, on } from 'node:events';
+import { IterableEventEmitter } from './../../server/src/__tests__/iterableEventEmitter';
 /// <reference types="vitest" />
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
-import { IterableEventEmitter } from './../../server/src/__tests__/iterableEventEmitter';
 import { fakeTimersResource } from '@trpc/server/__tests__/fakeTimersResource';
 import {
   suppressLogs,
