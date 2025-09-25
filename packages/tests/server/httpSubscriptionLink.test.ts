@@ -1,7 +1,7 @@
 import { EventEmitter, on } from 'node:events';
-import { routerToServerAndClientNew } from './___testHelpers';
-import { IterableEventEmitter } from './../../server/src/__tests__/iterableEventEmitter';
+/// <reference types="vitest" />
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
+import { IterableEventEmitter } from './../../server/src/__tests__/iterableEventEmitter';
 import { fakeTimersResource } from '@trpc/server/__tests__/fakeTimersResource';
 import {
   suppressLogs,
@@ -125,7 +125,7 @@ const ctx = konn()
         });
       };
     };
-    const opts = routerToServerAndClientNew(router, {
+    const opts = testServerAndClientResource(router, {
       server: {},
       client(opts) {
         return {
@@ -460,7 +460,7 @@ describe('auth / connectionParams', async () => {
         }),
       });
 
-      const opts = routerToServerAndClientNew(appRouter, {
+      const opts = testServerAndClientResource(appRouter, {
         server: {
           async createContext(opts) {
             let user: User | null = null;
@@ -598,7 +598,7 @@ describe('headers / eventSourceOptions', async () => {
         }),
       });
 
-      const opts = routerToServerAndClientNew(appRouter, {
+      const opts = testServerAndClientResource(appRouter, {
         server: {
           async createContext(opts) {
             let user: User | null = null;
@@ -743,7 +743,7 @@ describe('transformers / different serialize-deserialize', async () => {
         }),
       });
 
-      const opts = routerToServerAndClientNew(appRouter, {});
+      const opts = testServerAndClientResource(appRouter, {});
 
       return { ...opts, eeEmit };
     })
@@ -861,7 +861,7 @@ describe('timeouts', async () => {
         });
       };
     };
-    const opts = routerToServerAndClientNew(router, {
+    const opts = testServerAndClientResource(router, {
       server: {},
       client(opts) {
         return {
@@ -1117,7 +1117,7 @@ test('tracked() without transformer', async () => {
         }),
     });
 
-    const opts = routerToServerAndClientNew(router, {
+    const opts = testServerAndClientResource(router, {
       server: {},
       client(opts) {
         return {
