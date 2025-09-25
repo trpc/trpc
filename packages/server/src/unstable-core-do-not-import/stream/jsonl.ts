@@ -424,13 +424,6 @@ function createStreamsManager(abortController: AbortController) {
     const streamController = {
       enqueue: (v: ChunkData) => originalController.enqueue(v),
       close: () => {
-        if (streamController.closed) {
-          // https://github.com/trpc/trpc/issues/6955
-          // Already closed, prevent multiple close attempts
-
-          return;
-        }
-
         originalController.close();
 
         clear();
@@ -444,17 +437,11 @@ function createStreamsManager(abortController: AbortController) {
         const reader = stream.getReader();
 
         return makeResource(reader, () => {
-          reader.releaseLock();
           streamController.close();
+          reader.releaseLock();
         });
       },
       error: (reason: unknown) => {
-        if (streamController.closed) {
-          // https://github.com/trpc/trpc/issues/6955
-          // Already closed, prevent multiple close attempts
-          return;
-        }
-
         originalController.error(reason);
 
         clear();
@@ -502,7 +489,6 @@ function createStreamsManager(abortController: AbortController) {
 
   return {
     getOrCreate,
-    isEmpty,
     cancelAll,
   };
 }
@@ -599,10 +585,11 @@ export async function jsonlStreamConsumer<THead>(opts: {
     return data;
   }
 
-  const closeOrAbort = (reason: unknown) => {
+  const closeOrAbort = (reason?: unknown) => {
     headDeferred?.reject(reason);
     streamManager.cancelAll(reason);
   };
+
   source
     .pipeTo(
       new WritableStream({
@@ -625,17 +612,14 @@ export async function jsonlStreamConsumer<THead>(opts: {
           const controller = streamManager.getOrCreate(idx);
           controller.enqueue(chunk);
         },
-        close: () => closeOrAbort(new Error('Stream closed')),
+        close: closeOrAbort,
         abort: closeOrAbort,
       }),
-      {
-        signal: opts.abortController.signal,
-      },
     )
     .catch((error) => {
       opts.onError?.({ error });
       closeOrAbort(error);
     });
 
-  return [await headDeferred.promise, streamManager] as const;
+  return [await headDeferred.promise] as const;
 }

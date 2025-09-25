@@ -386,20 +386,11 @@ describe('batching', () => {
       server: {
         allowBatching: false,
       },
-    });
-    const { httpUrl, trpcClientOptions } = ctx;
-    const client = createTRPCClient<typeof appRouter>({
-      ...trpcClientOptions,
-      links: [
-        httpBatchLink({
-          url: ctx.httpUrl,
-          headers: {},
-        }),
-      ],
+      clientLink: 'httpBatchLink',
     });
 
     await expect(ctx.client.hello.query()).rejects.toMatchInlineSnapshot(
-      `[TRPCClientError: Stream closed]`,
+      `[TRPCClientError: Batching is not enabled on the server]`,
     );
   });
 });
