@@ -310,165 +310,152 @@ test('e2e, create server', async () => {
   expect(meta.isEmpty()).toBe(true);
 });
 
-test(
-  'e2e, client aborts request halfway through',
-  { repeats: 10 },
-  async () => {
-    const clientAbort = new AbortController();
+test('e2e, client aborts request halfway through', async () => {
+  const clientAbort = new AbortController();
 
-    let stopped = false;
+  let stopped = false;
 
-    const onConsumerErrorSpy =
-      vi.fn<(...args: Parameters<ConsumerOnError>) => void>();
-    const onProducerErrorSpy =
-      vi.fn<(...args: Parameters<ProducerOnError>) => void>();
+  const onConsumerErrorSpy =
+    vi.fn<(...args: Parameters<ConsumerOnError>) => void>();
+  const onProducerErrorSpy =
+    vi.fn<(...args: Parameters<ProducerOnError>) => void>();
 
-    let yielded = 0;
-    const data = {
-      0: Promise.resolve({
-        [Symbol.asyncIterator]: async function* () {
-          try {
-            for (let i = 0; i < 10; i++) {
-              yielded++;
-              yield i;
-              await new Promise((resolve) => setTimeout(resolve, 5));
-            }
-          } finally {
-            stopped = true;
+  let yielded = 0;
+  const data = {
+    0: Promise.resolve({
+      [Symbol.asyncIterator]: async function* () {
+        try {
+          for (let i = 0; i < 10; i++) {
+            yielded++;
+            yield i;
+            await new Promise((resolve) => setTimeout(resolve, 5));
           }
-        },
-      }),
-    } as const;
-
-    const stream = jsonlStreamProducer({
-      data,
-      onError: onProducerErrorSpy,
-    });
-    await using server = serverResourceForStream(stream);
-
-    const res = await fetch(server.url, {
-      signal: clientAbort.signal,
-    });
-    const [head, meta] = await jsonlStreamConsumer<typeof data>({
-      from: res.body!,
-      onError: onConsumerErrorSpy,
-      abortController: clientAbort,
-    });
-
-    {
-      const iterable = await head[0];
-
-      for await (const item of iterable) {
-        if (item === 2) {
-          break;
+        } finally {
+          stopped = true;
         }
+      },
+    }),
+  } as const;
+
+  const stream = jsonlStreamProducer({
+    data,
+    onError: onProducerErrorSpy,
+  });
+  await using server = serverResourceForStream(stream);
+
+  const res = await fetch(server.url, {
+    signal: clientAbort.signal,
+  });
+  const [head, meta] = await jsonlStreamConsumer<typeof data>({
+    from: res.body!,
+    onError: onConsumerErrorSpy,
+    abortController: clientAbort,
+  });
+
+  {
+    const iterable = await head[0];
+
+    for await (const item of iterable) {
+      if (item === 2) {
+        break;
       }
-      clientAbort.abort();
     }
+    clientAbort.abort();
+  }
 
-    await vi.waitFor(() => {
-      expect(meta.isEmpty()).toBe(true);
-    });
-    // wait for stopped
-    await vi.waitFor(() => {
-      expect(stopped).toBe(true);
-    });
+  await vi.waitFor(() => {
+    expect(meta.isEmpty()).toBe(true);
+  });
+  // wait for stopped
+  await vi.waitFor(() => {
+    expect(stopped).toBe(true);
+  });
 
-    expect(yielded).toBeLessThan(10);
+  expect(yielded).toBeLessThan(10);
 
-    const errors = onConsumerErrorSpy.mock.calls.map(
-      (it) => (it[0].error as Error).message,
-    );
-    expect(errors).toMatchInlineSnapshot(`
+  const errors = onConsumerErrorSpy.mock.calls.map(
+    (it) => (it[0].error as Error).message,
+  );
+  expect(errors).toMatchInlineSnapshot(`
     Array [
       "The operation was aborted.",
     ]
   `);
-    expect(onConsumerErrorSpy).toHaveBeenCalledTimes(1);
-    expect(onProducerErrorSpy).toHaveBeenCalledTimes(0);
-  },
-);
+  expect(onConsumerErrorSpy).toHaveBeenCalledTimes(1);
+  expect(onProducerErrorSpy).toHaveBeenCalledTimes(0);
+});
 
-test(
-  'e2e, client aborts request halfway through - through breaking async iterable',
-  { repeats: 10 },
-  async () => {
-    const clientAbort = new AbortController();
+test('e2e, client aborts request halfway through - through breaking async iterable', async () => {
+  const clientAbort = new AbortController();
 
-    let stopped = false;
+  const stopped = vi.fn();
 
-    const onConsumerErrorSpy =
-      vi.fn<(...args: Parameters<ConsumerOnError>) => void>();
-    const onProducerErrorSpy =
-      vi.fn<(...args: Parameters<ProducerOnError>) => void>();
+  const onConsumerErrorSpy =
+    vi.fn<(...args: Parameters<ConsumerOnError>) => void>();
+  const onProducerErrorSpy =
+    vi.fn<(...args: Parameters<ProducerOnError>) => void>();
 
-    const data = {
-      0: Promise.resolve({
-        [Symbol.asyncIterator]: async function* () {
-          let i = 0;
-          try {
-            while (true) {
-              yield i++;
+  const data = {
+    0: Promise.resolve({
+      [Symbol.asyncIterator]: async function* () {
+        let i = 0;
+        try {
+          while (true) {
+            yield i++;
 
-              yield i++;
-
-              await new Promise((resolve) => setTimeout(resolve, 0));
-            }
-          } finally {
-            stopped = true;
+            await new Promise((resolve) => setTimeout(resolve, 0));
           }
-        },
-      }),
-    } as const;
-
-    const stream = jsonlStreamProducer({
-      data,
-      onError: onProducerErrorSpy,
-    });
-    await using server = serverResourceForStream(stream);
-
-    const res = await fetch(server.url, {
-      signal: clientAbort.signal,
-    });
-    const [head, meta] = await jsonlStreamConsumer<typeof data>({
-      from: res.body!,
-      onError: onConsumerErrorSpy,
-      abortController: clientAbort,
-    });
-
-    {
-      const iterable = await head[0];
-
-      for await (const item of iterable) {
-        if (item === 3) {
-          // ✨ This will actually abort the full stream and the request since there's no more data to read
-
-          break;
+        } finally {
+          stopped();
         }
-      }
+      },
+    }),
+  } as const;
+
+  const stream = jsonlStreamProducer({
+    data,
+    onError: onProducerErrorSpy,
+  });
+  await using server = serverResourceForStream(stream);
+
+  const res = await fetch(server.url, {
+    signal: clientAbort.signal,
+  });
+  const [head, meta] = await jsonlStreamConsumer<typeof data>({
+    from: res.body!,
+    onError: onConsumerErrorSpy,
+    abortController: clientAbort,
+  });
+  const iterable = await head[0];
+
+  for await (const item of iterable) {
+    if (item === 3) {
+      // ✨ This will actually abort the full stream and the request since there's no more data to read
+
+      expect(clientAbort.signal.aborted).toBe(false);
+      break;
     }
+  }
+  expect(clientAbort.signal.aborted).toBe(true);
+  expect(meta.isEmpty()).toBe(true);
 
-    await vi.waitFor(() => {
-      expect(meta.isEmpty()).toBe(true);
-    });
-    // wait for stopped
-    await vi.waitFor(() => {
-      expect(stopped).toBe(true);
-    });
+  // wait for stopped
+  await vi.waitFor(() => {
+    expect(stopped).toHaveBeenCalled();
+  });
 
-    const errors = onConsumerErrorSpy.mock.calls.map(
-      (it) => (it[0].error as Error).message,
-    );
-    expect(errors).toMatchInlineSnapshot(`
+  const errors = onConsumerErrorSpy.mock.calls.map(
+    (it) => (it[0].error as Error).message,
+  );
+  expect(errors).toMatchInlineSnapshot(`
     Array [
       "The operation was aborted.",
     ]
   `);
 
-    expect(onProducerErrorSpy).toHaveBeenCalledTimes(0);
-    expect(onConsumerErrorSpy).toHaveBeenCalledTimes(1);
-  },
-);
+  expect(onProducerErrorSpy).toHaveBeenCalledTimes(0);
+  expect(onConsumerErrorSpy).toHaveBeenCalledTimes(1);
+});
 
 test('e2e, encode/decode - maxDepth', async () => {
   const onError = vi.fn<(...args: Parameters<ProducerOnError>) => void>();

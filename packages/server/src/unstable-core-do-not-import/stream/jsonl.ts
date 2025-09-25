@@ -599,10 +599,11 @@ export async function jsonlStreamConsumer<THead>(opts: {
     return data;
   }
 
-  const closeOrAbort = (reason: unknown) => {
+  const closeOrAbort = (reason?: unknown) => {
     headDeferred?.reject(reason);
     streamManager.cancelAll(reason);
   };
+
   source
     .pipeTo(
       new WritableStream({
@@ -625,12 +626,9 @@ export async function jsonlStreamConsumer<THead>(opts: {
           const controller = streamManager.getOrCreate(idx);
           controller.enqueue(chunk);
         },
-        close: () => closeOrAbort(new Error('Stream closed')),
+        close: closeOrAbort,
         abort: closeOrAbort,
       }),
-      {
-        signal: opts.abortController.signal,
-      },
     )
     .catch((error) => {
       opts.onError?.({ error });
