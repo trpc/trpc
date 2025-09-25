@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { getServerAndReactClient } from './__reactHelpers';
+import { getServerAndReactClient } from './__testHelpers';
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';

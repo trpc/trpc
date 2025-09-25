@@ -1,4 +1,4 @@
-import { getServerAndReactClient } from './__reactHelpers';
+import { getServerAndReactClient } from './__testHelpers';
 import { useIsFetching } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import { getQueryKey } from '@trpc/react-query';

@@ -1,4 +1,4 @@
-import { getServerAndReactClient } from './__reactHelpers';
+import { getServerAndReactClient } from './__testHelpers';
 import { ignoreErrors } from '@trpc/server/__tests__/suppressLogs';
 import { useIsFetching } from '@tanstack/react-query';
 import { render } from '@testing-library/react';

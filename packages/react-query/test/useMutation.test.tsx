@@ -1,4 +1,4 @@
-import { getServerAndReactClient } from './__reactHelpers';
+import { getServerAndReactClient } from './__testHelpers';
 import { render } from '@testing-library/react';
 import type { inferReactQueryProcedureOptions } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';

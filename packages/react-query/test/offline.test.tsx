@@ -1,4 +1,4 @@
-import { getServerAndReactClient } from './__reactHelpers';
+import { getServerAndReactClient } from './__testHelpers';
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 import { onlineManager } from '@tanstack/react-query';
 import { render } from '@testing-library/react';

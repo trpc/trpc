@@ -1,4 +1,4 @@
-import { getServerAndReactClient } from './__reactHelpers';
+import { getServerAndReactClient } from './__testHelpers';
 import { render } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';

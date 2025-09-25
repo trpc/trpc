@@ -1,4 +1,4 @@
-import { getServerAndReactClient } from './__reactHelpers';
+import { getServerAndReactClient } from './__testHelpers';
 import type { InfiniteData } from '@tanstack/react-query';
 import { createServerSideHelpers } from '@trpc/react-query/server';
 import { initTRPC } from '@trpc/server';

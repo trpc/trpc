@@ -353,3 +353,5 @@ export function createAppRouter() {
     linkSpy,
   };
 }
+
+export { getServerAndReactClient } from './__reactHelpers';

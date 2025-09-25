@@ -1,4 +1,4 @@
-import { getServerAndReactClient } from './__reactHelpers';
+import { getServerAndReactClient } from './__testHelpers';
 import { render } from '@testing-library/react';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import { TRPCClientError } from '@trpc/client';
