@@ -39,5 +39,5 @@
     "start-server-and-test": "^1.12.0",
     "wait-port": "^1.0.1"
   },
-  "version": "11.5.1"
+  "version": "11.6.0"
 }
