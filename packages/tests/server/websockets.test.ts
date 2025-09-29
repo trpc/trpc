@@ -1,7 +1,7 @@
 import { EventEmitter, on } from 'node:events';
 /// <reference types="vitest" />
-import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import '@testing-library/react';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import type { TRPCServerResourceOpts } from '@trpc/server/__tests__/trpcServerResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
 import type { TRPCClientError, WebSocketClientOptions } from '@trpc/client';
@@ -20,14 +20,13 @@ import type {
 import type { DefaultErrorShape } from '@trpc/server/unstable-core-do-not-import';
 import {
   createDeferred,
+  run,
   sleep,
 } from '@trpc/server/unstable-core-do-not-import';
 import type {
   LegacyObservableSubscriptionProcedure,
   SubscriptionProcedure,
 } from '@trpc/server/unstable-core-do-not-import/procedure';
-import { run } from '@trpc/server/unstable-core-do-not-import/utils';
-import { konn } from 'konn';
 import WebSocket from 'ws';
 import { z } from 'zod';
 
