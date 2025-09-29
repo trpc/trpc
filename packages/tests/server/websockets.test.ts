@@ -2,6 +2,7 @@ import { EventEmitter, on } from 'node:events';
 /// <reference types="vitest" />
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import '@testing-library/react';
+import type { TRPCServerResourceOpts } from '@trpc/server/__tests__/trpcServerResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
 import type { TRPCClientError, WebSocketClientOptions } from '@trpc/client';
 import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
@@ -1675,32 +1676,23 @@ describe('auth / connectionParams', async () => {
 
   type AppRouter = typeof appRouter;
 
-  const ctx = konn()
-    .beforeEach(() => {
-      const opts = testServerAndClientResource(appRouter, {
-        wssServer: {
-          async createContext(opts) {
-            let user: User | null = null;
-            if (opts.info.connectionParams?.['token'] === USER_TOKEN) {
-              user = USER_MOCK;
-            }
+  const authOptions = {
+    wssServer: {
+      async createContext(opts) {
+        let user: User | null = null;
+        if (opts.info.connectionParams?.['token'] === USER_TOKEN) {
+          user = USER_MOCK;
+        }
 
-            return {
-              user,
-            };
-          },
-        },
-      });
-      opts.wsClient.close();
-
-      return opts;
-    })
-    .afterEach((ctx) => {
-      return ctx.close?.();
-    })
-    .done();
+        return {
+          user,
+        };
+      },
+    },
+  } satisfies TRPCServerResourceOpts<AppRouter>;
 
   test('do a call without auth', async () => {
+    await using ctx = testServerAndClientResource(appRouter, authOptions);
     const wsClient = createWSClient({
       url: ctx.wssUrl,
     });
@@ -1717,6 +1709,7 @@ describe('auth / connectionParams', async () => {
   });
 
   test('with auth', async () => {
+    await using ctx = testServerAndClientResource(appRouter, authOptions);
     const wsClient = createWSClient({
       url: ctx.wssUrl,
       connectionParams: async () => {
@@ -1742,6 +1735,7 @@ describe('auth / connectionParams', async () => {
   });
 
   test('with async auth', async () => {
+    await using ctx = testServerAndClientResource(appRouter, authOptions);
     const wsClient = createWSClient({
       url: ctx.wssUrl,
       connectionParams: async () => {
@@ -1764,6 +1758,7 @@ describe('auth / connectionParams', async () => {
   });
 
   test('reconnect with async auth and pending subscriptions', async () => {
+    await using ctx = testServerAndClientResource(appRouter, authOptions);
     const onConnectionOpen = vi.fn();
     const onSubscriptionStarted = vi.fn();
 
@@ -1802,6 +1797,7 @@ describe('auth / connectionParams', async () => {
   });
 
   test('regression: bad connection params', async () => {
+    await using ctx = testServerAndClientResource(appRouter, authOptions);
     async function connect() {
       const ws = new WebSocket(ctx.wssUrl + '?connectionParams=1');
       await new Promise((resolve) => {
