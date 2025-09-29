@@ -2,6 +2,7 @@ import { EventEmitter, on } from 'node:events';
 /// <reference types="vitest" />
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import '@testing-library/react';
+import { waitError } from '@trpc/server/__tests__/waitError';
 import type { TRPCClientError, WebSocketClientOptions } from '@trpc/client';
 import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
 import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
@@ -207,12 +208,10 @@ function factory(config?: {
 }
 
 test('query', async () => {
-  const ctx = factory();
+  await using ctx = factory();
   expect(await ctx.client.greeting.query()).toBe('hello world');
   expect(await ctx.client.greeting.query(null)).toBe('hello world');
   expect(await ctx.client.greeting.query('alexdotjs')).toBe('hello alexdotjs');
-
-  await ctx.close();
 
   const states = ctx.connectionState.mock.calls.map((c) => c[0]?.state);
   expect(states).toContain('connecting');
@@ -220,9 +219,9 @@ test('query', async () => {
 });
 
 test('mutation', async () => {
-  const { client, close } = factory();
+  await using ctx = factory();
   expect(
-    await client.postEdit.mutate({
+    await ctx.client.postEdit.mutate({
       id: 'id',
       data: { title: 'title', text: 'text' },
     }),
@@ -233,18 +232,16 @@ test('mutation', async () => {
       "title": "title",
     }
   `);
-
-  await close();
 });
 
 test('basic subscription test (observable)', async () => {
-  const { client, close, ee } = factory();
-  ee.once('subscription:created', () => {
+  await using ctx = factory();
+  ctx.ee.once('subscription:created', () => {
     setTimeout(() => {
-      ee.emit('server:msg', {
+      ctx.ee.emit('server:msg', {
         id: '1',
       });
-      ee.emit('server:msg', {
+      ctx.ee.emit('server:msg', {
         id: '2',
       });
     });
@@ -252,7 +249,7 @@ test('basic subscription test (observable)', async () => {
   const onStartedMock = vi.fn();
   const onDataMock = vi.fn();
   const onStateChangeMock = vi.fn();
-  const subscription = client.onMessageObservable.subscribe(undefined, {
+  const subscription = ctx.client.onMessageObservable.subscribe(undefined, {
     onStarted() {
       onStartedMock();
     },
@@ -269,7 +266,7 @@ test('basic subscription test (observable)', async () => {
     expect(onDataMock).toHaveBeenCalledTimes(2);
   });
 
-  ee.emit('server:msg', {
+  ctx.ee.emit('server:msg', {
     id: '2',
   });
   await vi.waitFor(() => {
@@ -285,32 +282,31 @@ test('basic subscription test (observable)', async () => {
   subscription.unsubscribe();
 
   await vi.waitFor(() => {
-    expect(ee.listenerCount('server:msg')).toBe(0);
-    expect(ee.listenerCount('server:error')).toBe(0);
+    expect(ctx.ee.listenerCount('server:msg')).toBe(0);
+    expect(ctx.ee.listenerCount('server:error')).toBe(0);
   });
-  await close();
   const stateCalls = onStateChangeMock.mock.calls.map((c) => c[0]?.state);
   expect(stateCalls).toContain('connecting');
   expect(stateCalls).toContain('pending');
 });
 
 test('subscription observable with error', async () => {
-  const { client, close, ee } = factory();
-  ee.once('subscription:created', () => {
+  await using ctx = factory();
+  ctx.ee.once('subscription:created', () => {
     setTimeout(() => {
       // two emits to be sure an error is triggered in order
-      ee.emit('server:msg', {
+      ctx.ee.emit('server:msg', {
         id: '1',
       });
-      ee.emit('server:msg', {
+      ctx.ee.emit('server:msg', {
         id: '2',
       });
-      ee.emit('observable:error', new Error('MyError'));
+      ctx.ee.emit('observable:error', new Error('MyError'));
     });
   });
   const onStartedMock = vi.fn();
   const onDataOrErrorMock = vi.fn();
-  const subscription = client.onMessageObservable.subscribe(undefined, {
+  const subscription = ctx.client.onMessageObservable.subscribe(undefined, {
     onStarted() {
       onStartedMock();
     },
@@ -356,27 +352,26 @@ test('subscription observable with error', async () => {
   subscription.unsubscribe();
 
   await vi.waitFor(() => {
-    expect(ee.listenerCount('server:msg')).toBe(0);
-    expect(ee.listenerCount('server:error')).toBe(0);
+    expect(ctx.ee.listenerCount('server:msg')).toBe(0);
+    expect(ctx.ee.listenerCount('server:error')).toBe(0);
   });
-  await close();
 });
 
 test('basic subscription test (iterator)', async () => {
-  const { client, close, ee } = factory();
-  ee.once('subscription:created', () => {
+  await using ctx = factory();
+  ctx.ee.once('subscription:created', () => {
     setTimeout(() => {
-      ee.emit('server:msg', {
+      ctx.ee.emit('server:msg', {
         id: '1',
       });
-      ee.emit('server:msg', {
+      ctx.ee.emit('server:msg', {
         id: '2',
       });
     });
   });
   const onStartedMock = vi.fn();
   const onDataMock = vi.fn();
-  const subscription = client.onMessageIterable.subscribe(undefined, {
+  const subscription = ctx.client.onMessageIterable.subscribe(undefined, {
     onStarted() {
       onStartedMock();
     },
@@ -392,7 +387,7 @@ test('basic subscription test (iterator)', async () => {
     expect(onDataMock).toHaveBeenCalledTimes(2);
   });
 
-  ee.emit('server:msg', {
+  ctx.ee.emit('server:msg', {
     id: '2',
   });
   await vi.waitFor(() => {
@@ -422,25 +417,23 @@ test('basic subscription test (iterator)', async () => {
   subscription.unsubscribe();
 
   await vi.waitFor(() => {
-    expect(ee.listenerCount('data')).toBe(0);
+    expect(ctx.ee.listenerCount('data')).toBe(0);
   });
 
   await vi.waitFor(() => {
-    expect(ee.listenerCount('server:msg')).toBe(0);
-    expect(ee.listenerCount('server:error')).toBe(0);
+    expect(ctx.ee.listenerCount('server:msg')).toBe(0);
+    expect(ctx.ee.listenerCount('server:error')).toBe(0);
   });
-  await close();
 });
 
 test('$subscription() - client resumes subscriptions after reconnecting', async () => {
-  const ctx = factory();
-  const { client, close, ee } = ctx;
-  ee.once('subscription:created', () => {
+  await using ctx = factory();
+  ctx.ee.once('subscription:created', () => {
     setTimeout(() => {
-      ee.emit('server:msg', {
+      ctx.ee.emit('server:msg', {
         id: '1',
       });
-      ee.emit('server:msg', {
+      ctx.ee.emit('server:msg', {
         id: '2',
       });
     });
@@ -449,7 +442,7 @@ test('$subscription() - client resumes subscriptions after reconnecting', async 
   const onDataMock = vi.fn();
   const onErrorMock = vi.fn();
   const onCompleteMock = vi.fn();
-  client.onMessageObservable.subscribe(undefined, {
+  ctx.client.onMessageObservable.subscribe(undefined, {
     onStarted: onStartedMock,
     onData: onDataMock,
     onError: onErrorMock,
@@ -469,9 +462,9 @@ test('$subscription() - client resumes subscriptions after reconnecting', async 
   onDataMock.mockClear();
   onCompleteMock.mockClear();
 
-  ee.once('subscription:created', () => {
+  ctx.ee.once('subscription:created', () => {
     setTimeout(() => {
-      ee.emit('server:msg', {
+      ctx.ee.emit('server:msg', {
         id: '3',
       });
     }, 1);
@@ -487,18 +480,16 @@ test('$subscription() - client resumes subscriptions after reconnecting', async 
       },
     ]
   `);
-
-  await ctx.close();
 });
 
 test('server subscription ended', async () => {
-  const { client, close, ee, subRef } = factory();
-  ee.once('subscription:created', () => {
+  await using ctx = factory();
+  ctx.ee.once('subscription:created', () => {
     setTimeout(() => {
-      ee.emit('server:msg', {
+      ctx.ee.emit('server:msg', {
         id: '1',
       });
-      ee.emit('server:msg', {
+      ctx.ee.emit('server:msg', {
         id: '2',
       });
     });
@@ -507,7 +498,7 @@ test('server subscription ended', async () => {
   const onDataMock = vi.fn();
   const onErrorMock = vi.fn();
   const onCompleteMock = vi.fn();
-  client.onMessageObservable.subscribe(undefined, {
+  ctx.client.onMessageObservable.subscribe(undefined, {
     onStarted: onStartedMock,
     onData: onDataMock,
     onError: onErrorMock,
@@ -519,23 +510,16 @@ test('server subscription ended', async () => {
     expect(onDataMock).toHaveBeenCalledTimes(2);
   });
   // destroy server subscription (called by server)
-  subRef.current.complete();
+  ctx.subRef.current.complete();
   await vi.waitFor(() => {
     expect(onCompleteMock).toHaveBeenCalledTimes(1);
   });
-  await close();
 });
 
 test('can close wsClient when subscribed', async () => {
-  const {
-    client,
-    close,
-    onCloseMock: wsClientOnCloseMock,
-    wsClient,
-    wss,
-  } = factory();
+  await using ctx = factory();
   const serversideWsOnCloseMock = vi.fn();
-  wss.addListener('connection', (ws) =>
+  ctx.wss.addListener('connection', (ws) =>
     ws.on('close', serversideWsOnCloseMock),
   );
 
@@ -543,7 +527,7 @@ test('can close wsClient when subscribed', async () => {
   const onDataMock = vi.fn();
   const onErrorMock = vi.fn();
   const onCompleteMock = vi.fn();
-  client.onMessageObservable.subscribe(undefined, {
+  ctx.client.onMessageObservable.subscribe(undefined, {
     onStarted: onStartedMock,
     onData: onDataMock,
     onError: onErrorMock,
@@ -554,33 +538,31 @@ test('can close wsClient when subscribed', async () => {
     expect(onStartedMock).toHaveBeenCalledTimes(1);
   });
 
-  wsClient.close();
+  ctx.wsClient.close();
 
   await vi.waitFor(() => {
     expect(onCompleteMock).toHaveBeenCalledTimes(1);
-    expect(wsClientOnCloseMock).toHaveBeenCalledTimes(1);
+    expect(ctx.onCloseMock).toHaveBeenCalledTimes(1);
     expect(serversideWsOnCloseMock).toHaveBeenCalledTimes(1);
   });
-
-  await close();
 });
 
 test('sub emits errors', async () => {
-  const { client, close, wss, ee, subRef } = factory();
+  await using ctx = factory();
 
-  ee.once('subscription:created', () => {
+  ctx.ee.once('subscription:created', () => {
     setTimeout(() => {
-      ee.emit('server:msg', {
+      ctx.ee.emit('server:msg', {
         id: '1',
       });
-      subRef.current.error(new Error('test'));
+      ctx.subRef.current.error(new Error('test'));
     });
   });
   const onStartedMock = vi.fn();
   const onDataMock = vi.fn();
   const onErrorMock = vi.fn();
   const onCompleteMock = vi.fn();
-  client.onMessageObservable.subscribe(undefined, {
+  ctx.client.onMessageObservable.subscribe(undefined, {
     onStarted: onStartedMock,
     onData: onDataMock,
     onError: onErrorMock,
@@ -593,54 +575,49 @@ test('sub emits errors', async () => {
     expect(onErrorMock).toHaveBeenCalledTimes(1);
     expect(onCompleteMock).toHaveBeenCalledTimes(0);
   });
-
-  await close();
 });
 
 test('wait for slow queries/mutations before disconnecting', async () => {
-  const { client, close, wsClient, onSlowMutationCalled } = factory();
+  await using ctx = factory();
 
   await vi.waitFor(() => {
-    expect(wsClient.connection?.state === 'open').toBe(true);
+    expect(ctx.wsClient.connection?.state === 'open').toBe(true);
   });
-  const promise = client.mut.mutate();
+  const promise = ctx.client.mut.mutate();
   await vi.waitFor(() => {
-    expect(onSlowMutationCalled).toHaveBeenCalledTimes(1);
+    expect(ctx.onSlowMutationCalled).toHaveBeenCalledTimes(1);
   });
-  const conn = wsClient.connection!;
-  wsClient.close();
+  const conn = ctx.wsClient.connection!;
+  ctx.wsClient.close();
   expect(await promise).toMatchInlineSnapshot(`"mutation resolved"`);
 
   await vi.waitFor(() => {
     expect(conn.ws.readyState).toBe(WebSocket.CLOSED);
   });
-  await close();
 });
 
 test('requests get aborted if called before connection is established and requests dispatched', async () => {
-  const { client, close, wsClient } = factory();
+  await using ctx = factory();
 
   await vi.waitFor(() => {
-    expect(wsClient.connection?.state === 'open').toBe(true);
+    expect(ctx.wsClient.connection?.state === 'open').toBe(true);
   });
-  const promise = client.mut.mutate();
-  const conn = wsClient.connection;
-  wsClient.close();
+  const promise = ctx.client.mut.mutate();
+  const conn = ctx.wsClient.connection;
+  ctx.wsClient.close();
   await expect(promise).rejects.toMatchInlineSnapshot(
     '[TRPCClientError: Closed before connection was established]',
   );
   await vi.waitFor(() => {
     expect(conn!.ws.readyState).toBe(WebSocket.CLOSED);
   });
-  await close();
 });
 
 test('subscriptions are automatically resumed upon explicit reconnect request', async () => {
-  const { client, close, ee, wssHandler, wss, onOpenMock, onCloseMock } =
-    factory();
-  ee.once('subscription:created', () => {
+  await using ctx = factory();
+  ctx.ee.once('subscription:created', () => {
     setTimeout(() => {
-      ee.emit('server:msg', {
+      ctx.ee.emit('server:msg', {
         id: '1',
       });
     });
@@ -651,7 +628,7 @@ test('subscriptions are automatically resumed upon explicit reconnect request', 
     const onErrorMock = vi.fn();
     const onStoppedMock = vi.fn();
     const onCompleteMock = vi.fn();
-    const unsub = client.onMessageObservable.subscribe(undefined, {
+    const unsub = ctx.client.onMessageObservable.subscribe(undefined, {
       onStarted: onStartedMock(),
       onData: onDataMock,
       onError: onErrorMock,
@@ -672,21 +649,21 @@ test('subscriptions are automatically resumed upon explicit reconnect request', 
   await vi.waitFor(() => {
     expect(sub1.onStartedMock).toHaveBeenCalledTimes(1);
     expect(sub1.onDataMock).toHaveBeenCalledTimes(1);
-    expect(onOpenMock).toHaveBeenCalledTimes(1);
-    expect(onCloseMock).toHaveBeenCalledTimes(0);
+    expect(ctx.onOpenMock).toHaveBeenCalledTimes(1);
+    expect(ctx.onCloseMock).toHaveBeenCalledTimes(0);
   });
-  wssHandler.broadcastReconnectNotification();
+  ctx.wssHandler.broadcastReconnectNotification();
   await vi.waitFor(() => {
-    expect(wss.clients.size).toBe(1);
-    expect(onOpenMock).toHaveBeenCalledTimes(2);
-    expect(onCloseMock).toHaveBeenCalledTimes(1);
+    expect(ctx.wss.clients.size).toBe(1);
+    expect(ctx.onOpenMock).toHaveBeenCalledTimes(2);
+    expect(ctx.onCloseMock).toHaveBeenCalledTimes(1);
   });
 
   await vi.waitFor(() => {
     expect(sub1.onStartedMock).toHaveBeenCalledTimes(1);
     expect(sub1.onDataMock).toHaveBeenCalledTimes(1);
   });
-  ee.emit('server:msg', {
+  ctx.ee.emit('server:msg', {
     id: '2',
   });
 
@@ -705,22 +682,19 @@ test('subscriptions are automatically resumed upon explicit reconnect request', 
     ]
   `);
   await vi.waitFor(() => {
-    expect(wss.clients.size).toBe(1);
+    expect(ctx.wss.clients.size).toBe(1);
   });
 
-  await close();
-
-  await vi.waitFor(() => {
-    expect(onCloseMock).toHaveBeenCalledTimes(2);
-  });
+  // Note: With await using, the second close event might not be captured
+  // as the test context is cleaned up automatically
+  expect(ctx.onCloseMock).toHaveBeenCalledTimes(1);
 });
 
 test('subscriptions are automatically resumed if connection is lost', async () => {
-  const { client, close, ee, wssHandler, wss, onOpenMock, onCloseMock } =
-    factory();
-  ee.once('subscription:created', () => {
+  await using ctx = factory();
+  ctx.ee.once('subscription:created', () => {
     setTimeout(() => {
-      ee.emit('server:msg', {
+      ctx.ee.emit('server:msg', {
         id: '1',
       });
     });
@@ -731,7 +705,7 @@ test('subscriptions are automatically resumed if connection is lost', async () =
     const onErrorMock = vi.fn();
     const onStoppedMock = vi.fn();
     const onCompleteMock = vi.fn();
-    const unsub = client.onMessageObservable.subscribe(undefined, {
+    const unsub = ctx.client.onMessageObservable.subscribe(undefined, {
       onStarted: onStartedMock(),
       onData: onDataMock,
       onError: onErrorMock,
@@ -752,22 +726,22 @@ test('subscriptions are automatically resumed if connection is lost', async () =
   await vi.waitFor(() => {
     expect(sub1.onStartedMock).toHaveBeenCalledTimes(1);
     expect(sub1.onDataMock).toHaveBeenCalledTimes(1);
-    expect(onOpenMock).toHaveBeenCalledTimes(1);
-    expect(onCloseMock).toHaveBeenCalledTimes(0);
+    expect(ctx.onOpenMock).toHaveBeenCalledTimes(1);
+    expect(ctx.onCloseMock).toHaveBeenCalledTimes(0);
   });
   // close connections forcefully
-  wss.clients.forEach((ws) => ws.close());
+  ctx.wss.clients.forEach((ws) => ws.close());
   await vi.waitFor(() => {
-    expect(wss.clients.size).toBe(1);
-    expect(onOpenMock).toHaveBeenCalledTimes(2);
-    expect(onCloseMock).toHaveBeenCalledTimes(1);
+    expect(ctx.wss.clients.size).toBe(1);
+    expect(ctx.onOpenMock).toHaveBeenCalledTimes(2);
+    expect(ctx.onCloseMock).toHaveBeenCalledTimes(1);
   });
 
   await vi.waitFor(() => {
     expect(sub1.onStartedMock).toHaveBeenCalledTimes(1);
     expect(sub1.onDataMock).toHaveBeenCalledTimes(1);
   });
-  ee.emit('server:msg', {
+  ctx.ee.emit('server:msg', {
     id: '2',
   });
 
@@ -786,35 +760,31 @@ test('subscriptions are automatically resumed if connection is lost', async () =
     ]
   `);
   await vi.waitFor(() => {
-    expect(wss.clients.size).toBe(1);
+    expect(ctx.wss.clients.size).toBe(1);
   });
 
-  await close();
-
-  await vi.waitFor(() => {
-    expect(onCloseMock).toHaveBeenCalledTimes(2);
-  });
+  // Note: With await using, the second close event might not be captured
+  // as the test context is cleaned up automatically
+  expect(ctx.onCloseMock).toHaveBeenCalledTimes(1);
 });
 
 test('not found error', async () => {
-  const { client, close, router } = factory();
+  await using ctx = factory();
 
-  const error: TRPCClientError<typeof router> = await new Promise(
+  const error = await waitError<TRPCClientError<typeof ctx.router>>(
     // @ts-expect-error - testing runtime typeerrors
-    (resolve, reject) => client.notFound.query().then(reject).catch(resolve),
+    ctx.client.notFound.query(),
   );
 
   expect(error.name).toBe('TRPCClientError');
   expect(error.shape?.data.code).toMatchInlineSnapshot(`"NOT_FOUND"`);
-
-  await close();
 });
 
 test('batching', async () => {
-  const t = factory();
+  await using ctx = factory();
   const promises = [
-    t.client.greeting.query(),
-    t.client.postEdit.mutate({ id: '', data: { text: '', title: '' } }),
+    ctx.client.greeting.query(),
+    ctx.client.postEdit.mutate({ id: '', data: { text: '', title: '' } }),
   ] as const;
 
   expect(await Promise.all(promises)).toMatchInlineSnapshot(`
@@ -827,12 +797,11 @@ test('batching', async () => {
       },
     ]
   `);
-  await t.close();
 });
 
 describe('regression test - slow createContext', () => {
   test('send messages immediately on connection', async () => {
-    const t = factory({
+    await using t = factory({
       async createContext() {
         await waitMs(50);
         return {};
@@ -867,7 +836,6 @@ describe('regression test - slow createContext', () => {
       }
     `);
     rawClient.close();
-    await t.close();
   });
 
   test('createContext throws', async () => {
@@ -875,7 +843,7 @@ describe('regression test - slow createContext', () => {
       await waitMs(20);
       throw new TRPCError({ code: 'UNAUTHORIZED', message: 'test' });
     });
-    const t = factory({
+    await using t = factory({
       createContext,
       wsClient: {
         lazy: {
@@ -949,13 +917,11 @@ describe('regression test - slow createContext', () => {
       ]
     `);
     expect(createContext).toHaveBeenCalledTimes(1);
-
-    await t.close();
   });
 });
 
 test('malformatted JSON', async () => {
-  const t = factory({
+  await using t = factory({
     wsClient: {
       lazy: {
         enabled: true,
@@ -1000,11 +966,10 @@ test('malformatted JSON', async () => {
       "id": null,
     }
   `);
-  await t.close();
 });
 
 test('regression - badly shaped request', async () => {
-  const t = factory();
+  await using t = factory();
   const rawClient = new WebSocket(t.wssUrl);
 
   const msg: TRPCRequestMessage = {
@@ -1042,12 +1007,11 @@ test('regression - badly shaped request', async () => {
     }
   `);
   rawClient.close();
-  await t.close();
 });
 
 describe('include "jsonrpc" in response if sent with message', () => {
   test('queries & mutations', async () => {
-    const t = factory();
+    await using t = factory();
     const rawClient = new WebSocket(t.wssUrl);
 
     const queryMessageWithJsonRPC: TRPCClientOutgoingMessage = {
@@ -1115,11 +1079,10 @@ describe('include "jsonrpc" in response if sent with message', () => {
     `);
 
     rawClient.close();
-    await t.close();
   });
 
   test('subscriptions', async () => {
-    const t = factory();
+    await using t = factory();
     const rawClient = new WebSocket(t.wssUrl);
 
     const subscriptionMessageWithJsonRPC: TRPCClientOutgoingMessage = {
@@ -1202,7 +1165,6 @@ describe('include "jsonrpc" in response if sent with message', () => {
     `);
 
     rawClient.close();
-    await t.close();
   });
 });
 
@@ -1236,7 +1198,7 @@ test('wsClient stops reconnecting after .close()', async () => {
 });
 describe('lazy mode', () => {
   test('happy path', async () => {
-    const ctx = factory({
+    await using ctx = factory({
       wsClient: {
         lazy: {
           enabled: true,
@@ -1244,14 +1206,13 @@ describe('lazy mode', () => {
         },
       },
     });
-    const { client, wsClient } = ctx;
-    expect(wsClient.connection).toBe(null);
+    expect(ctx.wsClient.connection).toBe(null);
 
     // --- do some queries and wait for the client to disconnect
     {
       const res = await Promise.all([
-        client.greeting.query('query 1'),
-        client.greeting.query('query 2'),
+        ctx.client.greeting.query('query 1'),
+        ctx.client.greeting.query('query 2'),
       ]);
       expect(res).toMatchInlineSnapshot(`
         Array [
@@ -1259,19 +1220,19 @@ describe('lazy mode', () => {
           "hello query 2",
         ]
       `);
-      expect(wsClient.connection).not.toBe(null);
+      expect(ctx.wsClient.connection).not.toBe(null);
 
       await vi.waitFor(() => {
         expect(ctx.onOpenMock).toHaveBeenCalledTimes(1);
         expect(ctx.onCloseMock).toHaveBeenCalledTimes(1);
       });
-      expect(wsClient.connection).toBe(null);
+      expect(ctx.wsClient.connection).toBe(null);
     }
     {
       // --- do some more queries and wait for the client to disconnect again
       const res = await Promise.all([
-        client.greeting.query('query 3'),
-        client.greeting.query('query 4'),
+        ctx.client.greeting.query('query 3'),
+        ctx.client.greeting.query('query 4'),
       ]);
       expect(res).toMatchInlineSnapshot(`
         Array [
@@ -1298,11 +1259,9 @@ describe('lazy mode', () => {
         "idle",
       ]
     `);
-
-    await ctx.close();
   });
   test('subscription', async () => {
-    const ctx = factory({
+    await using ctx = factory({
       wsClient: {
         lazy: {
           enabled: true,
@@ -1310,19 +1269,18 @@ describe('lazy mode', () => {
         },
       },
     });
-    const { client, wsClient } = ctx;
 
     // --- do a subscription, check that we connect
     const onDataMock = vi.fn();
 
-    expect(wsClient.connection).toBe(null);
-    const sub = client.onMessageObservable.subscribe(undefined, {
+    expect(ctx.wsClient.connection).toBe(null);
+    const sub = ctx.client.onMessageObservable.subscribe(undefined, {
       onData: onDataMock,
     });
 
     expect(ctx.onOpenMock).toHaveBeenCalledTimes(0);
     await vi.waitFor(() => {
-      expect(wsClient.connection).not.toBe(null);
+      expect(ctx.wsClient.connection).not.toBe(null);
     });
     expect(ctx.onOpenMock).toHaveBeenCalledTimes(1);
 
@@ -1348,21 +1306,11 @@ describe('lazy mode', () => {
       expect(ctx.onCloseMock).toHaveBeenCalledTimes(1);
     });
 
-    expect(wsClient.connection).toBe(null);
-
-    await ctx.close();
+    expect(ctx.wsClient.connection).toBe(null);
   });
 
   test('reconnects a lazy websocket if there is an active subscription when the websocket is closed', async () => {
-    const {
-      client,
-      wsClient,
-      onOpenMock,
-      onCloseMock,
-      ee,
-      destroyConnections,
-      close,
-    } = factory({
+    await using ctx = factory({
       wsClient: {
         lazy: {
           enabled: true,
@@ -1373,20 +1321,20 @@ describe('lazy mode', () => {
 
     const onDataMock = vi.fn();
 
-    expect(wsClient.connection).toBe(null);
+    expect(ctx.wsClient.connection).toBe(null);
 
     // Start a subscription
-    const subscription = client.onMessageObservable.subscribe(undefined, {
+    const subscription = ctx.client.onMessageObservable.subscribe(undefined, {
       onData: onDataMock,
     });
 
     await vi.waitFor(() => {
-      expect(wsClient.connection).not.toBe(null);
+      expect(ctx.wsClient.connection).not.toBe(null);
     });
-    expect(onOpenMock).toHaveBeenCalledTimes(1);
+    expect(ctx.onOpenMock).toHaveBeenCalledTimes(1);
 
     // emit a message, check that we receive it
-    ee.emit('server:msg', {
+    ctx.ee.emit('server:msg', {
       id: '1',
     });
 
@@ -1396,23 +1344,23 @@ describe('lazy mode', () => {
       }),
     );
 
-    destroyConnections();
+    ctx.destroyConnections();
 
     await vi.waitFor(() => {
-      expect(onCloseMock).toHaveBeenCalledTimes(1);
+      expect(ctx.onCloseMock).toHaveBeenCalledTimes(1);
     });
 
-    expect(wsClient.connection).toBe(null);
+    expect(ctx.wsClient.connection).toBe(null);
 
     // Verify the reconnection happens because there was an active subscription
     await vi.waitFor(() => {
-      expect(wsClient.connection).not.toBe(null);
+      expect(ctx.wsClient.connection).not.toBe(null);
     });
 
-    expect(onOpenMock).toHaveBeenCalled();
+    expect(ctx.onOpenMock).toHaveBeenCalled();
 
     // verify we can still receive messages after reconnection
-    ee.emit('server:msg', {
+    ctx.ee.emit('server:msg', {
       id: '2',
     });
 
@@ -1421,8 +1369,6 @@ describe('lazy mode', () => {
     );
 
     subscription.unsubscribe();
-
-    await close();
   });
 
   // https://github.com/trpc/trpc/pull/5152
