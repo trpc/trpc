@@ -1,5 +1,6 @@
 import { EventEmitter } from 'node:events';
-import { routerToServerAndClientNew } from './___testHelpers';
+/// <reference types="vitest" />
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { suppressLogsUntil } from '@trpc/server/__tests__/suppressLogs';
 import '@testing-library/react';
 import type { TRPCLink } from '@trpc/client';
@@ -85,7 +86,7 @@ const ctx = konn()
 
     const recreateOnErrorTypes: string[] = [];
 
-    const opts = routerToServerAndClientNew(router, {
+    const opts = testServerAndClientResource(router, {
       server: {
         onError(_err) {
           // console.error('caught server error:', _err.error.message);
