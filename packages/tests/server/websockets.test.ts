@@ -601,10 +601,7 @@ test('wait for slow queries/mutations before disconnecting', async () => {
   const { client, close, wsClient, onSlowMutationCalled } = factory();
 
   await vi.waitFor(() => {
-    expect(
-      wsClient.connection?.state === 'open' ||
-        wsClient.connection?.state === 'pending',
-    ).toBe(true);
+    expect(wsClient.connection?.state === 'open').toBe(true);
   });
   const promise = client.mut.mutate();
   await vi.waitFor(() => {
@@ -624,10 +621,7 @@ test('requests get aborted if called before connection is established and reques
   const { client, close, wsClient } = factory();
 
   await vi.waitFor(() => {
-    expect(
-      wsClient.connection?.state === 'open' ||
-        wsClient.connection?.state === 'pending',
-    ).toBe(true);
+    expect(wsClient.connection?.state === 'open').toBe(true);
   });
   const promise = client.mut.mutate();
   const conn = wsClient.connection;
@@ -1582,7 +1576,9 @@ describe('keep alive on the server', () => {
     });
 
     {
-      await vi.advanceTimersByTimeAsync(pingMs + pongWaitMs + 200);
+      await vi.advanceTimersByTimeAsync(pingMs);
+      await vi.advanceTimersByTimeAsync(pongWaitMs);
+      await vi.advanceTimersByTimeAsync(100);
 
       expect(ctx.wsClient.connection).not.toBe(null);
       expect(onPong).toHaveBeenCalled();
