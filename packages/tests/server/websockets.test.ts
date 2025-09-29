@@ -1373,7 +1373,7 @@ describe('lazy mode', () => {
 
   // https://github.com/trpc/trpc/pull/5152
   test('race condition on dispatching / instant close', async () => {
-    const ctx = factory({
+    await using ctx = factory({
       wsClient: {
         lazy: {
           enabled: true,
@@ -1381,26 +1381,25 @@ describe('lazy mode', () => {
         },
       },
     });
-    const { client, wsClient } = ctx;
-    expect(wsClient.connection).toBe(null);
+    expect(ctx.wsClient.connection).toBe(null);
 
     // --- do some queries and wait for the client to disconnect
     {
-      const res = await client.greeting.query('query 1');
+      const res = await ctx.client.greeting.query('query 1');
       expect(res).toMatchInlineSnapshot('"hello query 1"');
 
       await vi.waitFor(() => {
         expect(ctx.onOpenMock).toHaveBeenCalledTimes(1);
         expect(ctx.onCloseMock).toHaveBeenCalledTimes(1);
       });
-      expect(wsClient.connection).toBe(null);
+      expect(ctx.wsClient.connection).toBe(null);
     }
 
     {
       // --- do some more queries and wait for the client to disconnect again
       const res = await Promise.all([
-        client.greeting.query('query 3'),
-        client.greeting.query('query 4'),
+        ctx.client.greeting.query('query 3'),
+        ctx.client.greeting.query('query 4'),
       ]);
       expect(res).toMatchInlineSnapshot(`
         Array [
@@ -1414,13 +1413,12 @@ describe('lazy mode', () => {
         expect(ctx.onOpenMock).toHaveBeenCalledTimes(2);
       });
     }
-    await ctx.close();
   });
 });
 
 describe('lastEventId', () => {
   test('lastEventId', async () => {
-    const ctx = factory({
+    await using ctx = factory({
       wsClient: {},
     });
 
@@ -1477,7 +1475,6 @@ describe('lastEventId', () => {
     }
 
     sub.unsubscribe();
-    await ctx.close();
   });
 });
 
@@ -1505,7 +1502,7 @@ describe('keep alive on the server', () => {
   test('pong message should be received', async () => {
     const pingMs = 2_000;
     const pongWaitMs = 5_000;
-    const ctx = factory({
+    await using ctx = factory({
       wssServer: {
         keepAlive: {
           enabled: true,
@@ -1529,10 +1526,9 @@ describe('keep alive on the server', () => {
       expect(ctx.wsClient.connection).not.toBe(null);
       expect(onPong).toHaveBeenCalled();
     }
-    await ctx.close();
   });
   test('no pong message should be received', async () => {
-    const ctx = factory({});
+    await using ctx = factory({});
 
     await new Promise((resolve) => {
       ctx.wss.on('connection', resolve);
@@ -1544,7 +1540,6 @@ describe('keep alive on the server', () => {
       expect(ctx.wsClient.connection).not.toBe(null);
       expect(onPong).not.toHaveBeenCalled();
     }
-    await ctx.close();
   });
 });
 
@@ -1560,7 +1555,7 @@ describe('keep alive from the client', () => {
     const intervalMs = 2_000;
     const pongTimeoutMs = 5_000;
     const onClose = vi.fn();
-    const ctx = factory({
+    await using ctx = factory({
       wssServer: {
         dangerouslyDisablePong: false,
         keepAlive: {
@@ -1598,15 +1593,13 @@ describe('keep alive from the client', () => {
     await vi.advanceTimersByTimeAsync(pongTimeoutMs);
 
     expect(pong).toBe(true);
-
-    await ctx.close();
   });
 
   test('should close if no pong is received', async () => {
     const intervalMs = 2_000;
     const pongTimeoutMs = 5_000;
     const onClose = vi.fn();
-    const ctx = factory({
+    await using ctx = factory({
       wssServer: {
         dangerouslyDisablePong: true,
         keepAlive: {
@@ -1649,8 +1642,6 @@ describe('keep alive from the client', () => {
     await vi.waitFor(() => {
       expect(onClose).toHaveBeenCalledTimes(1);
     });
-
-    await ctx.close();
   });
 });
 
@@ -1860,7 +1851,7 @@ describe('auth / connectionParams', async () => {
 
 describe('subscriptions with createCaller', () => {
   test('iterable', async () => {
-    const ctx = factory();
+    await using ctx = factory();
 
     expectTypeOf(ctx.router.onMessageIterable).toEqualTypeOf<
       SubscriptionProcedure<{
@@ -1918,7 +1909,7 @@ describe('subscriptions with createCaller', () => {
   });
 
   test('observable', async () => {
-    const ctx = factory();
+    await using ctx = factory();
 
     expectTypeOf(ctx.router.onMessageObservable).toEqualTypeOf<
       LegacyObservableSubscriptionProcedure<{
@@ -1973,7 +1964,7 @@ describe('subscriptions with createCaller', () => {
 });
 
 test('url callback and connection params is invoked for every reconnect', async () => {
-  const ctx = factory({
+  await using ctx = factory({
     wsClient: {
       lazy: {
         enabled: true,
@@ -2030,11 +2021,11 @@ test('url callback and connection params is invoked for every reconnect', async 
 });
 
 test('active subscription while querying', async () => {
-  const { client, close, ee } = factory();
+  await using ctx = factory();
   const onStartedMock = vi.fn();
   const onDataMock = vi.fn();
 
-  const subscription = client.onMessageIterable.subscribe(undefined, {
+  const subscription = ctx.client.onMessageIterable.subscribe(undefined, {
     onStarted() {
       onStartedMock();
     },
@@ -2049,7 +2040,7 @@ test('active subscription while querying', async () => {
     expect(onStartedMock).toHaveBeenCalledTimes(1);
   });
 
-  ee.emit('server:msg', {
+  ctx.ee.emit('server:msg', {
     id: '1',
   });
 
@@ -2058,10 +2049,10 @@ test('active subscription while querying', async () => {
   });
 
   // ensure we can do a query while having an active subscription
-  const result = await client.greeting.query('hello');
+  const result = await ctx.client.greeting.query('hello');
   expect(result).toMatchInlineSnapshot(`"hello hello"`);
 
-  ee.emit('server:msg', {
+  ctx.ee.emit('server:msg', {
     id: '2',
   });
 
@@ -2075,15 +2066,13 @@ test('active subscription while querying', async () => {
   subscription.unsubscribe();
 
   await vi.waitFor(() => {
-    expect(ee.listenerCount('server:msg')).toBe(0);
-    expect(ee.listenerCount('server:error')).toBe(0);
+    expect(ctx.ee.listenerCount('server:msg')).toBe(0);
+    expect(ctx.ee.listenerCount('server:error')).toBe(0);
   });
-
-  await close();
 });
 
 test('lazy connection where the first connection fails', async () => {
-  const ctx = factory({
+  await using ctx = factory({
     wsClient: {
       lazy: {
         enabled: true,
@@ -2134,12 +2123,10 @@ test('lazy connection where the first connection fails', async () => {
   });
 
   subscription.unsubscribe();
-
-  await ctx.close();
 });
 
 test('connection where the first connection fails', async () => {
-  const ctx = factory();
+  await using ctx = factory();
   const onStartedMock = vi.fn();
   const onDataMock = vi.fn();
 
@@ -2184,6 +2171,4 @@ test('connection where the first connection fails', async () => {
   });
 
   subscription.unsubscribe();
-
-  await ctx.close();
 });
