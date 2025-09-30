@@ -2167,3 +2167,60 @@ test('connection where the first connection fails', async () => {
 
   subscription.unsubscribe();
 });
+
+// https://github.com/trpc/trpc/issues/6962
+test('connection state should not be updated for subscriptions', async () => {
+  await using ctx = factory();
+
+  // Wait for the websocket connection to be established
+  await new Promise<void>((resolve) => {
+    const sub = ctx.wsClient.connectionState.subscribe({
+      next(state) {
+        if (state.state === 'pending') {
+          sub.unsubscribe();
+          resolve();
+        }
+      },
+    });
+  });
+
+  // Create a subscription that will be closed by the server after some time
+  const onStarted = vi.fn();
+  const onData = vi.fn();
+  const onComplete = vi.fn();
+  const onConnectionStateChange = vi.fn();
+
+  expect(ctx.wsClient.connectionState.get().state).toBe('pending');
+
+  const subscription = ctx.client.onMessageObservable.subscribe(undefined, {
+    onStarted,
+    onData,
+    onComplete,
+    onConnectionStateChange,
+  });
+
+  expect(ctx.wsClient.connectionState.get().state).toBe('pending');
+
+  // Wait for subscription to start
+  await vi.waitFor(() => {
+    expect(onStarted).toHaveBeenCalledTimes(1);
+  });
+
+  // Emit some data to the subscription
+  ctx.ee.emit('server:msg', {
+    id: '1',
+  });
+
+  await vi.waitFor(() => {
+    expect(onData).toHaveBeenCalledTimes(1);
+  });
+
+  // The onConnectionStateChange should only be called with 'pending' state
+  // since the connection is already established when the subscription starts
+  expect(onConnectionStateChange.mock.calls.map((c) => c[0]?.state)).toEqual([
+    'pending',
+  ]);
+
+  // Clean up
+  subscription.unsubscribe();
+});

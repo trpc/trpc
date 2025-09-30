@@ -121,6 +121,18 @@ export class WsClient {
 
     try {
       await this.activeConnection.open();
+
+      if (this.lazyMode) {
+        this.inactivityTimeout.start();
+      }
+
+      this.callbacks.onOpen?.();
+
+      this.connectionState.next({
+        type: 'state',
+        state: 'pending',
+        error: null,
+      });
     } catch (error) {
       this.reconnect(
         new TRPCWebSocketClosedError({
@@ -255,7 +267,7 @@ export class WsClient {
         await sleep(this.reconnectRetryDelay(attemptIndex));
         if (this.allowReconnect) {
           await this.activeConnection.close();
-          await this.activeConnection.open();
+          await this.open();
 
           if (this.requestManager.hasPendingRequests()) {
             this.send(
@@ -292,25 +304,6 @@ export class WsClient {
         this.requestManager.delete(message.id);
       }
     };
-
-    ws.addEventListener('open', () => {
-      run(async () => {
-        if (this.lazyMode) {
-          this.inactivityTimeout.start();
-        }
-
-        this.callbacks.onOpen?.();
-
-        this.connectionState.next({
-          type: 'state',
-          state: 'pending',
-          error: null,
-        });
-      }).catch((error) => {
-        ws.close(3000);
-        handleCloseOrError(error);
-      });
-    });
 
     ws.addEventListener('message', ({ data }) => {
       this.inactivityTimeout.reset();

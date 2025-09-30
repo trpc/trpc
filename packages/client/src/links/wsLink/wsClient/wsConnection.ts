@@ -1,23 +1,7 @@
 import { behaviorSubject } from '@trpc/server/observable';
+import { run } from '@trpc/server/unstable-core-do-not-import';
 import type { UrlOptionsWithConnectionParams } from '../../internals/urlWithConnectionParams';
-import { buildConnectionMessage, prepareUrl, withResolvers } from './utils';
-
-/**
- * Opens a WebSocket connection asynchronously and returns a promise
- * that resolves when the connection is successfully established.
- * The promise rejects if an error occurs during the connection attempt.
- */
-function asyncWsOpen(ws: WebSocket) {
-  const { promise, resolve, reject } = withResolvers<void>();
-
-  ws.addEventListener('open', () => {
-    ws.removeEventListener('error', reject);
-    resolve();
-  });
-  ws.addEventListener('error', reject);
-
-  return promise;
-}
+import { buildConnectionMessage, prepareUrl } from './utils';
 
 interface PingPongOptions {
   /**
@@ -97,8 +81,8 @@ export interface WebSocketConnectionOptions {
  * and observable state tracking.
  */
 export class WsConnection {
-  static connectCount = 0;
-  public id = ++WsConnection.connectCount;
+  private static connectCount = 0;
+  public id = WsConnection.connectCount;
 
   private readonly WebSocketPonyfill: typeof WebSocket;
   private readonly urlOptions: UrlOptionsWithConnectionParams;
@@ -160,17 +144,18 @@ export class WsConnection {
   public async open() {
     if (this.openPromise) return this.openPromise;
 
-    this.id = ++WsConnection.connectCount;
-    const wsPromise = prepareUrl(this.urlOptions).then(
-      (url) => new this.WebSocketPonyfill(url),
-    );
-    this.openPromise = wsPromise.then(async (ws) => {
+    const id = ++WsConnection.connectCount;
+    this.id = id;
+
+    this.openPromise = run(async () => {
+      const url = await prepareUrl(this.urlOptions);
+      const ws = new this.WebSocketPonyfill(url);
       this.ws = ws;
 
       // Setup ping listener
-      ws.addEventListener('message', function ({ data }) {
-        if (data === 'PING') {
-          this.send('PONG');
+      ws.addEventListener('message', (e) => {
+        if (e.data === 'PING') {
+          ws.send('PONG');
         }
       });
 
@@ -184,13 +169,27 @@ export class WsConnection {
         }
       });
 
-      await asyncWsOpen(ws);
+      await new Promise<void>((resolve, reject) => {
+        function cleanup() {
+          ws.removeEventListener('open', onOpen);
+          ws.removeEventListener('error', onError);
+        }
+        function onOpen() {
+          cleanup();
+          resolve();
+        }
+        function onError() {
+          cleanup();
+          reject();
+        }
+        ws.addEventListener('open', onOpen);
+        ws.addEventListener('error', onError);
+      });
 
       if (this.urlOptions.connectionParams) {
         ws.send(await buildConnectionMessage(this.urlOptions.connectionParams));
       }
     });
-
     try {
       await this.openPromise;
     } finally {
