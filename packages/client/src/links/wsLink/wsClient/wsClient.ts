@@ -111,7 +111,7 @@ export class WsClient {
    */
   private async open() {
     this.allowReconnect = true;
-    if (this.connectionState.get().state !== 'connecting') {
+    if (this.connectionState.get().state === 'idle') {
       this.connectionState.next({
         type: 'state',
         state: 'connecting',
