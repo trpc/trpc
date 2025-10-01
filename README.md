@@ -108,7 +108,7 @@ deno init --npm next-app --example https://github.com/trpc/trpc --example-path e
 <table>
   <tbody>
     <tr>
-      <td align="center"><a href="https://github.com/hmatthieu"><img src="https://github.com/hmatthieu.png?v=4&s=100" width="100px;" alt=""/><br />Hubert Mathieu</a></td>
+      <td align="center"><a href="https://github.com/hmatthieu"><img src="https://github.com/hmatthieu.png?v=4&s=100" width="100px;" alt=""/><br />Matthieu Hocquart</a></td>
     </tr>
   </tbody>
 </table>
