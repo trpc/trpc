@@ -140,7 +140,13 @@ export function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
+      <TRPCProvider
+        trpcClient={trpcClient}
+        queryClient={queryClient}
+
+        // Optional: provide a prefix for all query/mutation keys
+        queryKeyPrefix={userId}
+      >
         {/* Your app here */}
       </TRPCProvider>
     </QueryClientProvider>
