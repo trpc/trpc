@@ -8,7 +8,7 @@ import * as React from 'react';
 import { describe, expect, test } from 'vitest';
 import { z } from 'zod';
 
-const testContext = () => {
+const testContext = (opts?: { queryKeyPrefix?: string | string[] }) => {
   const t = initTRPC.create({
     errorFormatter(opts) {
       return { foo: 1, ...opts.shape };
@@ -30,7 +30,7 @@ const testContext = () => {
     },
   });
 
-  return testReactResource(appRouter);
+  return testReactResource(appRouter, opts);
 };
 
 const testContextWithErrorShape = () => {
@@ -311,6 +311,73 @@ describe('get queryKey', () => {
         '__result',
       );
       assertType<'__result' | undefined>(b);
+
+      return 'some text';
+    }
+
+    ctx.renderApp(<Component />);
+  });
+});
+
+describe('get queryKey with a prefix', () => {
+  test('gets various query keys', async () => {
+    await using ctx = testContext({
+      queryKeyPrefix: 'user-123',
+    });
+
+    const { useTRPC } = ctx;
+
+    function Component() {
+      const trpc = useTRPC();
+      const query = useQueryClient();
+
+      query.setQueryData(
+        trpc.bluesky.post.byId.queryKey({ id: '1' }),
+        '__result',
+      );
+
+      expect(trpc.pathKey()).toMatchInlineSnapshot(`Array []`);
+
+      expect(trpc.bluesky.pathKey()).toMatchInlineSnapshot(`
+        Array [
+          Array [
+            "bluesky",
+          ],
+        ]
+      `);
+      expect(trpc.bluesky.post.pathKey()).toMatchInlineSnapshot(`
+        Array [
+          Array [
+            "bluesky",
+            "post",
+          ],
+        ]
+      `);
+      expect(trpc.bluesky.post.byId.pathKey()).toMatchInlineSnapshot(`
+        Array [
+          Array [
+            "bluesky",
+            "post",
+            "byId",
+          ],
+        ]
+      `);
+      expect(trpc.bluesky.post.byId.queryKey({ id: '1' }))
+        .toMatchInlineSnapshot(`
+          Array [
+            Array [
+              "bluesky",
+              "post",
+              "byId",
+            ],
+            Object {
+              "input": Object {
+                "id": "1",
+              },
+              "type": "query",
+            },
+          ]
+        `);
 
       return 'some text';
     }

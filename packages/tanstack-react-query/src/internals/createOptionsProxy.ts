@@ -282,6 +282,7 @@ export interface TRPCOptionsProxyOptionsBase {
   overrides?: {
     mutations?: MutationOptionsOverride;
   };
+  queryKeyPrefix?: string | string[];
 }
 
 export interface TRPCOptionsProxyOptionsInternal<
@@ -348,6 +349,15 @@ export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
 
   return createTRPCRecursiveProxy(({ args, path: _path }) => {
     const path = [..._path];
+
+    const queryKeyPath = [...path];
+    if (opts.queryKeyPrefix) {
+      const prefix = Array.isArray(opts.queryKeyPrefix)
+        ? opts.queryKeyPrefix
+        : [opts.queryKeyPrefix];
+      queryKeyPath.unshift(...prefix);
+    }
+
     const utilName = path.pop() as UtilsMethods;
     const [arg1, arg2] = args as any[];
 
@@ -370,17 +380,17 @@ export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
           opts: arg2,
           path,
           queryClient: opts.queryClient,
-          queryKey: getQueryKeyInternal(path, arg1, 'query'),
+          queryKey: getQueryKeyInternal(queryKeyPath, arg1, 'query'),
           query: callIt('query'),
         });
       },
       queryKey: () => {
-        return getQueryKeyInternal(path, arg1, 'query');
+        return getQueryKeyInternal(queryKeyPath, arg1, 'query');
       },
       queryFilter: (): QueryFilters => {
         return {
           ...arg2,
-          queryKey: getQueryKeyInternal(path, arg1, 'query'),
+          queryKey: getQueryKeyInternal(queryKeyPath, arg1, 'query'),
         };
       },
 
@@ -390,17 +400,17 @@ export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
           opts: arg2,
           path,
           queryClient: opts.queryClient,
-          queryKey: getQueryKeyInternal(path, arg1, 'infinite'),
+          queryKey: getQueryKeyInternal(queryKeyPath, arg1, 'infinite'),
           query: callIt('query'),
         });
       },
       infiniteQueryKey: () => {
-        return getQueryKeyInternal(path, arg1, 'infinite');
+        return getQueryKeyInternal(queryKeyPath, arg1, 'infinite');
       },
       infiniteQueryFilter: (): QueryFilters => {
         return {
           ...arg2,
-          queryKey: getQueryKeyInternal(path, arg1, 'infinite'),
+          queryKey: getQueryKeyInternal(queryKeyPath, arg1, 'infinite'),
         };
       },
 
@@ -414,14 +424,14 @@ export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
         });
       },
       mutationKey: () => {
-        return getMutationKeyInternal(path);
+        return getMutationKeyInternal(queryKeyPath);
       },
 
       subscriptionOptions: () => {
         return trpcSubscriptionOptions({
           opts: arg2,
           path,
-          queryKey: getQueryKeyInternal(path, arg1, 'any'),
+          queryKey: getQueryKeyInternal(queryKeyPath, arg1, 'any'),
           subscribe: callIt('subscription'),
         });
       },

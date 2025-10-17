@@ -3,15 +3,18 @@ import '@testing-library/jest-dom/vitest';
 import type { TestServerAndClientResourceOpts } from '@trpc/client/__tests__/testClientResource';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, RenderResult } from '@testing-library/react';
+import type { RenderResult } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { getUntypedClient } from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
 import * as React from 'react';
 import { createTRPCContext, createTRPCOptionsProxy } from '../src';
 
+type TestReactResourceExtraOpts = { queryKeyPrefix?: string | string[] }
+
 export function testReactResource<TRouter extends AnyTRPCRouter>(
   appRouter: TRouter,
-  opts?: TestServerAndClientResourceOpts<TRouter>,
+  opts?: TestServerAndClientResourceOpts<TRouter> & TestReactResourceExtraOpts,
 ) {
   const ctx = testServerAndClientResource(appRouter, opts);
 

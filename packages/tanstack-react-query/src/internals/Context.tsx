@@ -10,6 +10,7 @@ export interface CreateTRPCContextResult<TRouter extends AnyTRPCRouter> {
     children: React.ReactNode;
     queryClient: QueryClient;
     trpcClient: TRPCClient<TRouter>;
+    queryKeyPrefix?: string | string[]
   }>;
   useTRPC: () => TRPCOptionsProxy<TRouter>;
   useTRPCClient: () => TRPCClient<TRouter>;
@@ -34,6 +35,7 @@ export function createTRPCContext<
       children: React.ReactNode;
       queryClient: QueryClient;
       trpcClient: TRPCClient<TRouter>;
+      queryKeyPrefix?: string | string[];
     }>,
   ) {
     const value = React.useMemo(
@@ -41,8 +43,9 @@ export function createTRPCContext<
         createTRPCOptionsProxy({
           client: props.trpcClient,
           queryClient: props.queryClient,
+          queryKeyPrefix: props.queryKeyPrefix,
         }),
-      [props.trpcClient, props.queryClient],
+      [props.trpcClient, props.queryClient, props.queryKeyPrefix],
     );
     return (
       <TRPCClientContext.Provider value={props.trpcClient}>
