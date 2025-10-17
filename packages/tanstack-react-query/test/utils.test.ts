@@ -10,6 +10,7 @@ describe(getQueryKeyInternal, () => {
       }),
     ).toMatchInlineSnapshot(`
       Array [
+        Array [],
         Array [
           "a",
           "b",
@@ -25,6 +26,7 @@ describe(getQueryKeyInternal, () => {
   it('creates a router key', () => {
     expect(getQueryKeyInternal(['a', 'b'])).toMatchInlineSnapshot(`
       Array [
+        Array [],
         Array [
           "a",
           "b",
@@ -40,16 +42,17 @@ describe(getQueryKeyInternal, () => {
         type: 'infinite',
       }),
     ).toMatchInlineSnapshot(`
+      Array [
+        Array [],
         Array [
-          Array [
-            "a",
-            "b",
-          ],
-          Object {
-            "input": 1,
-            "type": "infinite",
-          },
-        ]
-      `);
+          "a",
+          "b",
+        ],
+        Object {
+          "input": 1,
+          "type": "infinite",
+        },
+      ]
+    `);
   });
 });
