@@ -31,8 +31,8 @@ export function getClientArgs<TOptions>(
     direction: 'forward' | 'backward';
   },
 ) {
-  const path = queryKey[0];
-  let input = queryKey[1]?.input;
+  const path = queryKey[1];
+  let input = queryKey[2]?.input;
   if (infiniteParams) {
     input = {
       ...(input ?? {}),
@@ -84,35 +84,42 @@ export async function buildQueryFromAsyncIterable(
  */
 export function getQueryKeyInternal(
   path: readonly string[],
-  input?: unknown,
-  type?: QueryType,
+  opts: {
+    input?: unknown;
+    type?: QueryType;
+    prefix?: readonly string[];
+  } = {},
 ): TRPCQueryKey {
   // Construct a query key that is easy to destructure and flexible for
   // partial selecting etc.
   // https://github.com/trpc/trpc/issues/3128
 
   // some parts of the path may be dot-separated, split them up
+  const prefix = opts.prefix ?? [];
   const splitPath = path.flatMap((part) => part.split('.'));
 
-  if (!input && (!type || type === 'any')) {
+  if (!opts.input && (!opts.type || opts.type === 'any')) {
     // this matches also all mutations (see `getMutationKeyInternal`)
 
     // for `utils.invalidate()` to match all queries (including vanilla react-query)
     // we don't want nested array if path is empty, i.e. `[]` instead of `[[]]`
-    return splitPath.length ? [splitPath] : ([] as unknown as TRPCQueryKey);
+    return splitPath.length
+      ? [prefix, splitPath]
+      : ([prefix] as unknown as TRPCQueryKey);
   }
 
   if (
-    type === 'infinite' &&
-    isObject(input) &&
-    ('direction' in input || 'cursor' in input)
+    opts.type === 'infinite' &&
+    isObject(opts.input) &&
+    ('direction' in opts.input || 'cursor' in opts.input)
   ) {
     const {
       cursor: _,
       direction: __,
       ...inputWithoutCursorAndDirection
-    } = input;
+    } = opts.input;
     return [
+      prefix,
       splitPath,
       {
         input: inputWithoutCursorAndDirection,
@@ -122,11 +129,12 @@ export function getQueryKeyInternal(
   }
 
   return [
+    prefix,
     splitPath,
     {
-      ...(typeof input !== 'undefined' &&
-        input !== skipToken && { input: input }),
-      ...(type && type !== 'any' && { type: type }),
+      ...(typeof opts.input !== 'undefined' &&
+        opts.input !== skipToken && { input: opts.input }),
+      ...(opts.type && opts.type !== 'any' && { type: opts.type }),
     },
   ];
 }
@@ -136,11 +144,18 @@ export function getQueryKeyInternal(
  */
 export function getMutationKeyInternal(
   path: readonly string[],
+  opts: {
+    prefix?: readonly string[];
+  } = {},
 ): TRPCMutationKey {
+  const prefix = opts.prefix ?? [];
+
   // some parts of the path may be dot-separated, split them up
   const splitPath = path.flatMap((part) => part.split('.'));
 
-  return splitPath.length ? [splitPath] : ([] as unknown as TRPCMutationKey);
+  return splitPath.length
+    ? [prefix, splitPath]
+    : ([prefix] as unknown as TRPCMutationKey);
 }
 
 /**

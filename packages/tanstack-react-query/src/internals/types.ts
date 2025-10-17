@@ -84,11 +84,15 @@ export type QueryType = 'any' | 'infinite' | 'query';
  * @public
  */
 export type TRPCQueryKey = [
-  readonly string[],
-  { input?: unknown; type?: Exclude<QueryType, 'any'> }?,
+  prefix: readonly string[],
+  path: readonly string[],
+  opts?: { input?: unknown; type?: Exclude<QueryType, 'any'> },
 ];
 
 /**
  * @public
  */
-export type TRPCMutationKey = [readonly string[]]; // = [TRPCQueryKey[0]]
+export type TRPCMutationKey = [
+  prefix: readonly string[],
+  path: readonly string[],
+];

@@ -323,6 +323,15 @@ type UtilsMethods =
 export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
   opts: TRPCOptionsProxyOptions<TRouter>,
 ): TRPCOptionsProxy<TRouter> {
+  const queryKeyPrefix: string[] = [];
+  if (opts.queryKeyPrefix) {
+    if (Array.isArray(opts.queryKeyPrefix)) {
+      queryKeyPrefix.push(...opts.queryKeyPrefix);
+    } else {
+      queryKeyPrefix.push(opts.queryKeyPrefix);
+    }
+  }
+
   const callIt = (type: TRPCProcedureType): any => {
     return (path: string, input: unknown, trpcOpts: TRPCRequestOptions) => {
       if ('router' in opts) {
@@ -349,15 +358,6 @@ export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
 
   return createTRPCRecursiveProxy(({ args, path: _path }) => {
     const path = [..._path];
-
-    const queryKeyPath = [...path];
-    if (opts.queryKeyPrefix) {
-      const prefix = Array.isArray(opts.queryKeyPrefix)
-        ? opts.queryKeyPrefix
-        : [opts.queryKeyPrefix];
-      queryKeyPath.unshift(...prefix);
-    }
-
     const utilName = path.pop() as UtilsMethods;
     const [arg1, arg2] = args as any[];
 
@@ -365,12 +365,12 @@ export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
       '~types': undefined as any,
 
       pathKey: () => {
-        return getQueryKeyInternal(path);
+        return getQueryKeyInternal(path, { prefix: queryKeyPrefix });
       },
       pathFilter: (): QueryFilters => {
         return {
           ...arg1,
-          queryKey: getQueryKeyInternal(path),
+          queryKey: getQueryKeyInternal(path, { prefix: queryKeyPrefix }),
         };
       },
 
@@ -380,17 +380,29 @@ export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
           opts: arg2,
           path,
           queryClient: opts.queryClient,
-          queryKey: getQueryKeyInternal(queryKeyPath, arg1, 'query'),
+          queryKey: getQueryKeyInternal(path, {
+            input: arg1,
+            type: 'query',
+            prefix: queryKeyPrefix,
+          }),
           query: callIt('query'),
         });
       },
       queryKey: () => {
-        return getQueryKeyInternal(queryKeyPath, arg1, 'query');
+        return getQueryKeyInternal(path, {
+          input: arg1,
+          type: 'query',
+          prefix: queryKeyPrefix,
+        });
       },
       queryFilter: (): QueryFilters => {
         return {
           ...arg2,
-          queryKey: getQueryKeyInternal(queryKeyPath, arg1, 'query'),
+          queryKey: getQueryKeyInternal(path, {
+            input: arg1,
+            type: 'query',
+            prefix: queryKeyPrefix,
+          }),
         };
       },
 
@@ -400,17 +412,29 @@ export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
           opts: arg2,
           path,
           queryClient: opts.queryClient,
-          queryKey: getQueryKeyInternal(queryKeyPath, arg1, 'infinite'),
+          queryKey: getQueryKeyInternal(path, {
+            input: arg1,
+            type: 'infinite',
+            prefix: queryKeyPrefix,
+          }),
           query: callIt('query'),
         });
       },
       infiniteQueryKey: () => {
-        return getQueryKeyInternal(queryKeyPath, arg1, 'infinite');
+        return getQueryKeyInternal(path, {
+          input: arg1,
+          type: 'infinite',
+          prefix: queryKeyPrefix,
+        });
       },
       infiniteQueryFilter: (): QueryFilters => {
         return {
           ...arg2,
-          queryKey: getQueryKeyInternal(queryKeyPath, arg1, 'infinite'),
+          queryKey: getQueryKeyInternal(path, {
+            input: arg1,
+            type: 'infinite',
+            prefix: queryKeyPrefix,
+          }),
         };
       },
 
@@ -424,14 +448,18 @@ export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
         });
       },
       mutationKey: () => {
-        return getMutationKeyInternal(queryKeyPath);
+        return getMutationKeyInternal(path);
       },
 
       subscriptionOptions: () => {
         return trpcSubscriptionOptions({
           opts: arg2,
           path,
-          queryKey: getQueryKeyInternal(queryKeyPath, arg1, 'any'),
+          queryKey: getQueryKeyInternal(path, {
+            input: arg1,
+            type: 'any',
+            prefix: queryKeyPrefix,
+          }),
           subscribe: callIt('subscription'),
         });
       },

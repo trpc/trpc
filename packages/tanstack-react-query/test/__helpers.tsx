@@ -10,7 +10,7 @@ import type { AnyTRPCRouter } from '@trpc/server';
 import * as React from 'react';
 import { createTRPCContext, createTRPCOptionsProxy } from '../src';
 
-type TestReactResourceExtraOpts = { queryKeyPrefix?: string | string[] }
+type TestReactResourceExtraOpts = { queryKeyPrefix?: string | string[] };
 
 export function testReactResource<TRouter extends AnyTRPCRouter>(
   appRouter: TRouter,
@@ -23,12 +23,14 @@ export function testReactResource<TRouter extends AnyTRPCRouter>(
   const optionsProxyClient = createTRPCOptionsProxy({
     client: getUntypedClient(ctx.client),
     queryClient,
+    queryKeyPrefix: opts?.queryKeyPrefix,
   });
 
   const optionsProxyServer = createTRPCOptionsProxy({
     router: appRouter,
     ctx: {},
     queryClient,
+    queryKeyPrefix: opts?.queryKeyPrefix,
   });
 
   const { TRPCProvider, useTRPC, useTRPCClient } = createTRPCContext<TRouter>();
@@ -36,7 +38,11 @@ export function testReactResource<TRouter extends AnyTRPCRouter>(
   function renderApp(ui: React.ReactNode) {
     return render(
       <QueryClientProvider client={queryClient}>
-        <TRPCProvider trpcClient={ctx.client} queryClient={queryClient}>
+        <TRPCProvider
+          trpcClient={ctx.client}
+          queryClient={queryClient}
+          queryKeyPrefix={opts?.queryKeyPrefix}
+        >
           {ui}
         </TRPCProvider>
       </QueryClientProvider>,
@@ -46,7 +52,11 @@ export function testReactResource<TRouter extends AnyTRPCRouter>(
   function rerenderApp(render: RenderResult, ui: React.ReactNode) {
     return render.rerender(
       <QueryClientProvider client={queryClient}>
-        <TRPCProvider trpcClient={ctx.client} queryClient={queryClient}>
+        <TRPCProvider
+          trpcClient={ctx.client}
+          queryClient={queryClient}
+          queryKeyPrefix={opts?.queryKeyPrefix}
+        >
           {ui}
         </TRPCProvider>
       </QueryClientProvider>,

@@ -106,7 +106,9 @@ export function trpcMutationOptions(args: {
     overrides?.onSuccess ?? ((options) => options.originalFn());
 
   const mutationFn: MutationFunction = async (input) => {
-    const result = await mutate(...getClientArgs([path, { input }], opts));
+    const result = await mutate(
+      ...getClientArgs([mutationKey[0], path, { input }], opts),
+    );
 
     return result;
   };

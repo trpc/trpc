@@ -128,7 +128,7 @@ export const trpcSubscriptionOptions = (args: {
   opts?: AnyTRPCSubscriptionOptionsIn;
 }): AnyTRPCSubscriptionOptionsOut => {
   const { subscribe, path, queryKey, opts = {} } = args;
-  const input = queryKey[1]?.input;
+  const input = queryKey[2]?.input;
   const enabled = 'enabled' in opts ? !!opts.enabled : input !== skipToken;
 
   const _subscribe: ReturnType<TRPCSubscriptionOptions<any>>['subscribe'] = (

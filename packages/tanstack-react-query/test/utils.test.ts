@@ -3,8 +3,12 @@ import { getQueryKeyInternal } from '../src/internals/utils';
 
 describe(getQueryKeyInternal, () => {
   it('creates a query key', () => {
-    expect(getQueryKeyInternal(['a', 'b'], 'input value', 'query'))
-      .toMatchInlineSnapshot(`
+    expect(
+      getQueryKeyInternal(['a', 'b'], {
+        input: 'input value',
+        type: 'query',
+      }),
+    ).toMatchInlineSnapshot(`
       Array [
         Array [
           "a",
@@ -30,8 +34,12 @@ describe(getQueryKeyInternal, () => {
   });
 
   it('creates a infinite query key', () => {
-    expect(getQueryKeyInternal(['a', 'b'], 1, 'infinite'))
-      .toMatchInlineSnapshot(`
+    expect(
+      getQueryKeyInternal(['a', 'b'], {
+        input: 1,
+        type: 'infinite',
+      }),
+    ).toMatchInlineSnapshot(`
         Array [
           Array [
             "a",

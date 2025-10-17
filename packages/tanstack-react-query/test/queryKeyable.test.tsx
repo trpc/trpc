@@ -69,12 +69,15 @@ describe('get queryFilter', () => {
 
       expect(trpc.pathFilter()).toMatchInlineSnapshot(`
         Object {
-          "queryKey": Array [],
+          "queryKey": Array [
+            Array [],
+          ],
         }
       `);
       expect(trpc.bluesky.pathFilter()).toMatchInlineSnapshot(`
         Object {
           "queryKey": Array [
+            Array [],
             Array [
               "bluesky",
             ],
@@ -84,6 +87,7 @@ describe('get queryFilter', () => {
       expect(trpc.bluesky.post.pathFilter()).toMatchInlineSnapshot(`
         Object {
           "queryKey": Array [
+            Array [],
             Array [
               "bluesky",
               "post",
@@ -94,6 +98,7 @@ describe('get queryFilter', () => {
       expect(trpc.bluesky.post.byId.pathFilter()).toMatchInlineSnapshot(`
         Object {
           "queryKey": Array [
+            Array [],
             Array [
               "bluesky",
               "post",
@@ -106,6 +111,7 @@ describe('get queryFilter', () => {
         .toMatchInlineSnapshot(`
           Object {
             "queryKey": Array [
+              Array [],
               Array [
                 "bluesky",
                 "post",
@@ -175,10 +181,15 @@ describe('get queryKey', () => {
         '__result',
       );
 
-      expect(trpc.pathKey()).toMatchInlineSnapshot(`Array []`);
+      expect(trpc.pathKey()).toMatchInlineSnapshot(`
+        Array [
+          Array [],
+        ]
+      `);
 
       expect(trpc.bluesky.pathKey()).toMatchInlineSnapshot(`
         Array [
+          Array [],
           Array [
             "bluesky",
           ],
@@ -186,6 +197,7 @@ describe('get queryKey', () => {
       `);
       expect(trpc.bluesky.post.pathKey()).toMatchInlineSnapshot(`
         Array [
+          Array [],
           Array [
             "bluesky",
             "post",
@@ -194,6 +206,7 @@ describe('get queryKey', () => {
       `);
       expect(trpc.bluesky.post.byId.pathKey()).toMatchInlineSnapshot(`
         Array [
+          Array [],
           Array [
             "bluesky",
             "post",
@@ -204,6 +217,7 @@ describe('get queryKey', () => {
       expect(trpc.bluesky.post.byId.queryKey({ id: '1' }))
         .toMatchInlineSnapshot(`
           Array [
+            Array [],
             Array [
               "bluesky",
               "post",
@@ -336,10 +350,19 @@ describe('get queryKey with a prefix', () => {
         '__result',
       );
 
-      expect(trpc.pathKey()).toMatchInlineSnapshot(`Array []`);
+      expect(trpc.pathKey()).toMatchInlineSnapshot(`
+        Array [
+          Array [
+            "user-123",
+          ],
+        ]
+      `);
 
       expect(trpc.bluesky.pathKey()).toMatchInlineSnapshot(`
         Array [
+          Array [
+            "user-123",
+          ],
           Array [
             "bluesky",
           ],
@@ -348,6 +371,9 @@ describe('get queryKey with a prefix', () => {
       expect(trpc.bluesky.post.pathKey()).toMatchInlineSnapshot(`
         Array [
           Array [
+            "user-123",
+          ],
+          Array [
             "bluesky",
             "post",
           ],
@@ -355,6 +381,9 @@ describe('get queryKey with a prefix', () => {
       `);
       expect(trpc.bluesky.post.byId.pathKey()).toMatchInlineSnapshot(`
         Array [
+          Array [
+            "user-123",
+          ],
           Array [
             "bluesky",
             "post",
@@ -365,6 +394,9 @@ describe('get queryKey with a prefix', () => {
       expect(trpc.bluesky.post.byId.queryKey({ id: '1' }))
         .toMatchInlineSnapshot(`
           Array [
+            Array [
+              "user-123",
+            ],
             Array [
               "bluesky",
               "post",
@@ -402,6 +434,7 @@ describe('get mutationKey', () => {
 
       expect(trpc.bluesky.post.create.mutationKey()).toMatchInlineSnapshot(`
         Array [
+          Array [],
           Array [
             "bluesky",
             "post",
