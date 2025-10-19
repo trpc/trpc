@@ -1,9 +1,14 @@
 import { skipToken, type QueryClient } from '@tanstack/react-query';
 import { isFunction, isObject } from '@trpc/server/unstable-core-do-not-import';
+import type { FeatureFlags } from './createOptionsProxy';
 import type {
   QueryType,
   TRPCMutationKey,
+  TRPCMutationKeyWithoutPrefix,
+  TRPCMutationKeyWithPrefix,
   TRPCQueryKey,
+  TRPCQueryKeyWithoutPrefix,
+  TRPCQueryKeyWithPrefix,
   TRPCQueryOptionsResult,
 } from './types';
 
@@ -20,19 +25,28 @@ export function createTRPCOptionsResult(value: {
   };
 }
 
+export function isPrefixedQueryKey(
+  queryKey: TRPCQueryKey<any>,
+): queryKey is TRPCQueryKeyWithPrefix {
+  return queryKey.length >= 2;
+}
+
 /**
  * @internal
  */
-export function getClientArgs<TOptions>(
-  queryKey: TRPCQueryKey,
+export function getClientArgs<TOptions, TFeatureFlags extends FeatureFlags>(
+  queryKey: TRPCQueryKey<TFeatureFlags['enablePrefix']>,
   opts: TOptions,
   infiniteParams?: {
     pageParam: any;
     direction: 'forward' | 'backward';
   },
 ) {
-  const path = queryKey[1];
-  let input = queryKey[2]?.input;
+  const path = isPrefixedQueryKey(queryKey) ? queryKey[1] : queryKey[0];
+  let input = isPrefixedQueryKey(queryKey)
+    ? queryKey[2]?.input
+    : queryKey[1]?.input;
+
   if (infiniteParams) {
     input = {
       ...(input ?? {}),
@@ -48,10 +62,12 @@ export function getClientArgs<TOptions>(
 /**
  * @internal
  */
-export async function buildQueryFromAsyncIterable(
+export async function buildQueryFromAsyncIterable<
+  TQueryKey extends TRPCQueryKey<any>,
+>(
   asyncIterable: AsyncIterable<unknown>,
   queryClient: QueryClient,
-  queryKey: TRPCQueryKey,
+  queryKey: TQueryKey,
 ) {
   const queryCache = queryClient.getQueryCache();
 
@@ -82,6 +98,22 @@ export async function buildQueryFromAsyncIterable(
  *
  * @internal
  */
+export function getQueryKeyInternal<TEnablePrefix extends true>(
+  path: readonly string[],
+  opts?: {
+    input?: unknown;
+    type?: QueryType;
+    prefix?: readonly string[];
+  },
+): TRPCQueryKey<TEnablePrefix>;
+
+export function getQueryKeyInternal<TEnablePrefix extends false>(
+  path: readonly string[],
+  opts?: {
+    input?: unknown;
+    type?: QueryType;
+  },
+): TRPCQueryKey<TEnablePrefix>;
 export function getQueryKeyInternal(
   path: readonly string[],
   opts: {
@@ -89,7 +121,7 @@ export function getQueryKeyInternal(
     type?: QueryType;
     prefix?: readonly string[];
   } = {},
-): TRPCQueryKey {
+): TRPCQueryKey<any> {
   // Construct a query key that is easy to destructure and flexible for
   // partial selecting etc.
   // https://github.com/trpc/trpc/issues/3128
@@ -103,9 +135,16 @@ export function getQueryKeyInternal(
 
     // for `utils.invalidate()` to match all queries (including vanilla react-query)
     // we don't want nested array if path is empty, i.e. `[]` instead of `[[]]`
-    return splitPath.length
-      ? [prefix, splitPath]
-      : ([prefix] as unknown as TRPCQueryKey);
+
+    if (prefix.length === 0) {
+      return splitPath.length
+        ? [splitPath]
+        : ([] as unknown as TRPCQueryKeyWithoutPrefix);
+    } else {
+      return splitPath.length
+        ? [prefix, splitPath]
+        : ([prefix] as unknown as TRPCQueryKeyWithPrefix);
+    }
   }
 
   if (
@@ -118,44 +157,82 @@ export function getQueryKeyInternal(
       direction: __,
       ...inputWithoutCursorAndDirection
     } = opts.input;
+
+    if (prefix.length === 0) {
+      return [
+        splitPath,
+        {
+          input: inputWithoutCursorAndDirection,
+          type: 'infinite',
+        },
+      ];
+    } else {
+      return [
+        prefix,
+        splitPath,
+        {
+          input: inputWithoutCursorAndDirection,
+          type: 'infinite',
+        },
+      ];
+    }
+  }
+
+  if (prefix.length === 0) {
+    return [
+      splitPath,
+      {
+        ...(typeof opts.input !== 'undefined' &&
+          opts.input !== skipToken && { input: opts.input }),
+        ...(opts.type && opts.type !== 'any' && { type: opts.type }),
+      },
+    ];
+  } else {
     return [
       prefix,
       splitPath,
       {
-        input: inputWithoutCursorAndDirection,
-        type: 'infinite',
+        ...(typeof opts.input !== 'undefined' &&
+          opts.input !== skipToken && { input: opts.input }),
+        ...(opts.type && opts.type !== 'any' && { type: opts.type }),
       },
     ];
   }
-
-  return [
-    prefix,
-    splitPath,
-    {
-      ...(typeof opts.input !== 'undefined' &&
-        opts.input !== skipToken && { input: opts.input }),
-      ...(opts.type && opts.type !== 'any' && { type: opts.type }),
-    },
-  ];
 }
 
 /**
  * @internal
  */
+export function getMutationKeyInternal<TPrefixEnabled extends true>(
+  path: readonly string[],
+  opts?: {
+    prefix?: readonly string[];
+  },
+): TRPCMutationKey<TPrefixEnabled>;
+export function getMutationKeyInternal<TPrefixEnabled extends false>(
+  path: readonly string[],
+  opts?: {},
+): TRPCMutationKey<TPrefixEnabled>;
 export function getMutationKeyInternal(
   path: readonly string[],
   opts: {
     prefix?: readonly string[];
   } = {},
-): TRPCMutationKey {
+): TRPCMutationKey<any> {
   const prefix = opts.prefix ?? [];
 
   // some parts of the path may be dot-separated, split them up
   const splitPath = path.flatMap((part) => part.split('.'));
 
-  return splitPath.length
-    ? [prefix, splitPath]
-    : ([prefix] as unknown as TRPCMutationKey);
+  if (prefix.length === 0) {
+    return splitPath.length
+      ? [prefix, splitPath]
+      : ([prefix] as unknown as TRPCMutationKeyWithPrefix);
+  } else {
+    return splitPath.length
+      ? [prefix, splitPath]
+      : ([prefix] as unknown as TRPCMutationKeyWithoutPrefix);
+  }
 }
 
 /**

@@ -32,5 +32,6 @@
   // "explorer.excludeGitIgnore": true,
   "typescript.preferences.autoImportFileExcludePatterns": [
     "packages/server/src/unstable-core-do-not-import.ts"
-  ]
+  ],
+  "vitest.nodeExecutable": "/Users/nicholaslucas/.nvm/versions/node/v22.18.0/bin/node"
 }

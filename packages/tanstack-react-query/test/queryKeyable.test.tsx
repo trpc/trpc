@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import type { inferRouterError } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
-import type { TRPCQueryKey } from '@trpc/tanstack-react-query';
+import type { AnyTRPCQueryKey, TRPCQueryKey } from '@trpc/tanstack-react-query';
 import * as React from 'react';
 import { describe, expect, test } from 'vitest';
 import { z } from 'zod';
@@ -154,7 +154,7 @@ describe('get queryFilter', () => {
           },
         },
       );
-      assertType<TRPCQueryKey>(a.queryKey);
+      assertType<AnyTRPCQueryKey>(a.queryKey);
 
       const b = query.getQueryData(a.queryKey);
       assertType<'__result' | undefined>(b);

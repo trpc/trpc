@@ -2,17 +2,24 @@ import type { QueryClient } from '@tanstack/react-query';
 import type { TRPCClient } from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
 import * as React from 'react';
-import type { TRPCOptionsProxy } from './createOptionsProxy';
+import type { FeatureFlags, TRPCOptionsProxy } from './createOptionsProxy';
 import { createTRPCOptionsProxy } from './createOptionsProxy';
 
-export interface CreateTRPCContextResult<TRouter extends AnyTRPCRouter> {
+export interface CreateTRPCContextOpts<TFeatureFlags extends FeatureFlags> {
+  enableQueryKeyPrefix?: TFeatureFlags['enablePrefix'];
+}
+
+export interface CreateTRPCContextResult<
+  TRouter extends AnyTRPCRouter,
+  TFeatureFlags extends FeatureFlags = { enablePrefix: false },
+> {
   TRPCProvider: React.FC<{
     children: React.ReactNode;
     queryClient: QueryClient;
     trpcClient: TRPCClient<TRouter>;
     queryKeyPrefix?: string | string[];
   }>;
-  useTRPC: () => TRPCOptionsProxy<TRouter>;
+  useTRPC: () => TRPCOptionsProxy<TRouter, TFeatureFlags>;
   useTRPCClient: () => TRPCClient<TRouter>;
 }
 /**
@@ -22,13 +29,17 @@ export interface CreateTRPCContextResult<TRouter extends AnyTRPCRouter> {
  */
 export function createTRPCContext<
   TRouter extends AnyTRPCRouter,
->(): CreateTRPCContextResult<TRouter> {
+  TFeatureFlags extends FeatureFlags = { enablePrefix: false },
+>(
+  opts?: CreateTRPCContextOpts<TFeatureFlags>,
+): CreateTRPCContextResult<TRouter, TFeatureFlags> {
   const TRPCClientContext = React.createContext<TRPCClient<TRouter> | null>(
     null,
   );
-  const TRPCContext = React.createContext<TRPCOptionsProxy<TRouter> | null>(
-    null,
-  );
+  const TRPCContext = React.createContext<TRPCOptionsProxy<
+    TRouter,
+    TFeatureFlags
+  > | null>(null);
 
   function TRPCProvider(
     props: Readonly<{
@@ -40,10 +51,11 @@ export function createTRPCContext<
   ) {
     const value = React.useMemo(
       () =>
-        createTRPCOptionsProxy({
+        createTRPCOptionsProxy<TRouter, TFeatureFlags>({
           client: props.trpcClient,
           queryClient: props.queryClient,
           queryKeyPrefix: props.queryKeyPrefix,
+          enableQueryKeyPrefix: opts?.enableQueryKeyPrefix ?? false,
         }),
       [props.trpcClient, props.queryClient, props.queryKeyPrefix],
     );

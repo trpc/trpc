@@ -14,6 +14,7 @@ import type {
   DistributiveOmit,
 } from '@trpc/server/unstable-core-do-not-import';
 import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
+import type { FeatureFlags } from './createOptionsProxy';
 import type {
   ResolverDef,
   TRPCQueryBaseOptions,
@@ -29,76 +30,115 @@ import {
 
 type ReservedOptions = 'queryKey' | 'queryFn' | 'queryHashFn' | 'queryHash';
 
-interface UndefinedTRPCQueryOptionsIn<TQueryFnData, TData, TError>
-  extends DistributiveOmit<
+interface UndefinedTRPCQueryOptionsIn<
+  TQueryFnData,
+  TData,
+  TError,
+  TFeatureFlags extends FeatureFlags,
+> extends DistributiveOmit<
       UndefinedInitialDataOptions<
         coerceAsyncIterableToArray<TQueryFnData>,
         TError,
         coerceAsyncIterableToArray<TData>,
-        TRPCQueryKey
+        TRPCQueryKey<TFeatureFlags['enablePrefix']>
       >,
       ReservedOptions
     >,
     TRPCQueryBaseOptions {}
 
-interface UndefinedTRPCQueryOptionsOut<TQueryFnData, TOutput, TError>
-  extends UndefinedInitialDataOptions<
+interface UndefinedTRPCQueryOptionsOut<
+  TQueryFnData,
+  TOutput,
+  TError,
+  TFeatureFlags extends FeatureFlags,
+> extends UndefinedInitialDataOptions<
       coerceAsyncIterableToArray<TQueryFnData>,
       TError,
       coerceAsyncIterableToArray<TOutput>,
-      TRPCQueryKey
+      TRPCQueryKey<TFeatureFlags['enablePrefix']>
     >,
     TRPCQueryOptionsResult {
-  queryKey: DataTag<TRPCQueryKey, coerceAsyncIterableToArray<TOutput>, TError>;
+  queryKey: DataTag<
+    TRPCQueryKey<TFeatureFlags['enablePrefix']>,
+    coerceAsyncIterableToArray<TOutput>,
+    TError
+  >;
 }
 
-interface DefinedTRPCQueryOptionsIn<TQueryFnData, TData, TError>
-  extends DistributiveOmit<
+interface DefinedTRPCQueryOptionsIn<
+  TQueryFnData,
+  TData,
+  TError,
+  TFeatureFlags extends FeatureFlags,
+> extends DistributiveOmit<
       DefinedInitialDataOptions<
         coerceAsyncIterableToArray<NoInfer<TQueryFnData>>,
         TError,
         coerceAsyncIterableToArray<TData>,
-        TRPCQueryKey
+        TRPCQueryKey<TFeatureFlags['enablePrefix']>
       >,
       ReservedOptions
     >,
     TRPCQueryBaseOptions {}
 
-interface DefinedTRPCQueryOptionsOut<TQueryFnData, TData, TError>
-  extends DefinedInitialDataOptions<
+interface DefinedTRPCQueryOptionsOut<
+  TQueryFnData,
+  TData,
+  TError,
+  TFeatureFlags extends FeatureFlags,
+> extends DefinedInitialDataOptions<
       coerceAsyncIterableToArray<TQueryFnData>,
       TError,
       coerceAsyncIterableToArray<TData>,
-      TRPCQueryKey
+      TRPCQueryKey<TFeatureFlags['enablePrefix']>
     >,
     TRPCQueryOptionsResult {
-  queryKey: DataTag<TRPCQueryKey, coerceAsyncIterableToArray<TData>, TError>;
+  queryKey: DataTag<
+    TRPCQueryKey<TFeatureFlags['enablePrefix']>,
+    coerceAsyncIterableToArray<TData>,
+    TError
+  >;
 }
 
-interface UnusedSkipTokenTRPCQueryOptionsIn<TQueryFnData, TData, TError>
-  extends DistributiveOmit<
+interface UnusedSkipTokenTRPCQueryOptionsIn<
+  TQueryFnData,
+  TData,
+  TError,
+  TFeatureFlags extends FeatureFlags,
+> extends DistributiveOmit<
       UnusedSkipTokenOptions<
         coerceAsyncIterableToArray<TQueryFnData>,
         TError,
         coerceAsyncIterableToArray<TData>,
-        TRPCQueryKey
+        TRPCQueryKey<TFeatureFlags['enablePrefix']>
       >,
       ReservedOptions
     >,
     TRPCQueryBaseOptions {}
 
-interface UnusedSkipTokenTRPCQueryOptionsOut<TQueryFnData, TOutput, TError>
-  extends UnusedSkipTokenOptions<
+interface UnusedSkipTokenTRPCQueryOptionsOut<
+  TQueryFnData,
+  TOutput,
+  TError,
+  TFeatureFlags extends FeatureFlags,
+> extends UnusedSkipTokenOptions<
       coerceAsyncIterableToArray<TQueryFnData>,
       TError,
       coerceAsyncIterableToArray<TOutput>,
-      TRPCQueryKey
+      TRPCQueryKey<TFeatureFlags['enablePrefix']>
     >,
     TRPCQueryOptionsResult {
-  queryKey: DataTag<TRPCQueryKey, coerceAsyncIterableToArray<TOutput>, TError>;
+  queryKey: DataTag<
+    TRPCQueryKey<TFeatureFlags['enablePrefix']>,
+    coerceAsyncIterableToArray<TOutput>,
+    TError
+  >;
 }
 
-export interface TRPCQueryOptions<TDef extends ResolverDef> {
+export interface TRPCQueryOptions<
+  TDef extends ResolverDef,
+  TFeatureFlags extends FeatureFlags,
+> {
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
     input: TDef['input'] | SkipToken,
     opts: DefinedTRPCQueryOptionsIn<
@@ -107,7 +147,8 @@ export interface TRPCQueryOptions<TDef extends ResolverDef> {
       TRPCClientErrorLike<{
         transformer: TDef['transformer'];
         errorShape: TDef['errorShape'];
-      }>
+      }>,
+      TFeatureFlags
     >,
   ): DefinedTRPCQueryOptionsOut<
     TQueryFnData,
@@ -115,7 +156,8 @@ export interface TRPCQueryOptions<TDef extends ResolverDef> {
     TRPCClientErrorLike<{
       transformer: TDef['transformer'];
       errorShape: TDef['errorShape'];
-    }>
+    }>,
+    TFeatureFlags
   >;
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
     input: TDef['input'],
@@ -125,7 +167,8 @@ export interface TRPCQueryOptions<TDef extends ResolverDef> {
       TRPCClientErrorLike<{
         transformer: TDef['transformer'];
         errorShape: TDef['errorShape'];
-      }>
+      }>,
+      TFeatureFlags
     >,
   ): UnusedSkipTokenTRPCQueryOptionsOut<
     TQueryFnData,
@@ -133,7 +176,8 @@ export interface TRPCQueryOptions<TDef extends ResolverDef> {
     TRPCClientErrorLike<{
       transformer: TDef['transformer'];
       errorShape: TDef['errorShape'];
-    }>
+    }>,
+    TFeatureFlags
   >;
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
     input: TDef['input'] | SkipToken,
@@ -143,7 +187,8 @@ export interface TRPCQueryOptions<TDef extends ResolverDef> {
       TRPCClientErrorLike<{
         transformer: TDef['transformer'];
         errorShape: TDef['errorShape'];
-      }>
+      }>,
+      TFeatureFlags
     >,
   ): UndefinedTRPCQueryOptionsOut<
     TQueryFnData,
@@ -151,39 +196,43 @@ export interface TRPCQueryOptions<TDef extends ResolverDef> {
     TRPCClientErrorLike<{
       transformer: TDef['transformer'];
       errorShape: TDef['errorShape'];
-    }>
+    }>,
+    TFeatureFlags
   >;
 }
 
-type AnyTRPCQueryOptionsIn =
-  | DefinedTRPCQueryOptionsIn<unknown, unknown, unknown>
-  | UnusedSkipTokenTRPCQueryOptionsIn<unknown, unknown, unknown>
-  | UndefinedTRPCQueryOptionsIn<unknown, unknown, unknown>;
+type AnyTRPCQueryOptionsIn<TFeatureFlags extends FeatureFlags> =
+  | DefinedTRPCQueryOptionsIn<unknown, unknown, unknown, TFeatureFlags>
+  | UnusedSkipTokenTRPCQueryOptionsIn<unknown, unknown, unknown, TFeatureFlags>
+  | UndefinedTRPCQueryOptionsIn<unknown, unknown, unknown, TFeatureFlags>;
 
-type AnyTRPCQueryOptionsOut =
-  | DefinedTRPCQueryOptionsOut<unknown, unknown, unknown>
-  | UnusedSkipTokenTRPCQueryOptionsOut<unknown, unknown, unknown>
-  | UndefinedTRPCQueryOptionsOut<unknown, unknown, unknown>;
+type AnyTRPCQueryOptionsOut<
+  TFeatureFlags extends FeatureFlags = { enablePrefix: false },
+> =
+  | DefinedTRPCQueryOptionsOut<unknown, unknown, unknown, TFeatureFlags>
+  | UnusedSkipTokenTRPCQueryOptionsOut<unknown, unknown, unknown, TFeatureFlags>
+  | UndefinedTRPCQueryOptionsOut<unknown, unknown, unknown, TFeatureFlags>;
 
 /**
  * @internal
  */
-export function trpcQueryOptions(args: {
+export function trpcQueryOptions<TFeatureFlags extends FeatureFlags>(args: {
   input: unknown;
   query: typeof TRPCUntypedClient.prototype.query;
   queryClient: QueryClient | (() => QueryClient);
   path: readonly string[];
-  queryKey: TRPCQueryKey;
-  opts: AnyTRPCQueryOptionsIn;
-}): AnyTRPCQueryOptionsOut {
+  queryKey: TRPCQueryKey<TFeatureFlags['enablePrefix']>;
+  opts: AnyTRPCQueryOptionsIn<TFeatureFlags>;
+}): AnyTRPCQueryOptionsOut<TFeatureFlags> {
   const { input, query, path, queryKey, opts } = args;
   const queryClient = unwrapLazyArg(args.queryClient);
 
   const inputIsSkipToken = input === skipToken;
 
-  const queryFn: QueryFunction<unknown, TRPCQueryKey> = async (
-    queryFnContext,
-  ) => {
+  const queryFn: QueryFunction<
+    unknown,
+    TRPCQueryKey<TFeatureFlags['enablePrefix']>
+  > = async (queryFnContext) => {
     const actualOpts = {
       ...opts,
       trpc: {
@@ -207,7 +256,7 @@ export function trpcQueryOptions(args: {
   return Object.assign(
     queryOptions({
       ...opts,
-      queryKey,
+      queryKey: queryKey,
       queryFn: inputIsSkipToken ? skipToken : queryFn,
     }),
     { trpc: createTRPCOptionsResult({ path }) },

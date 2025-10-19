@@ -83,8 +83,7 @@ export type QueryType = 'any' | 'infinite' | 'query';
 /**
  * @public
  */
-export type TRPCQueryKey = [
-  prefix: readonly string[],
+export type TRPCQueryKeyWithoutPrefix = [
   path: readonly string[],
   opts?: { input?: unknown; type?: Exclude<QueryType, 'any'> },
 ];
@@ -92,7 +91,42 @@ export type TRPCQueryKey = [
 /**
  * @public
  */
-export type TRPCMutationKey = [
+export type TRPCQueryKeyWithPrefix = [
+  prefix: readonly string[],
+  ...TRPCQueryKeyWithoutPrefix,
+];
+
+// TODO: default prefix to false
+export type TRPCQueryKey<TPrefixEnabled extends boolean> =
+  TPrefixEnabled extends true
+    ? // Enabling the feature flag does not necessarily change the query key shape,
+      // that depends on whether a prefix is provided,
+      // but enables the new shape as an option
+      TRPCQueryKeyWithPrefix | TRPCQueryKeyWithoutPrefix
+    : TRPCQueryKeyWithoutPrefix;
+
+export type AnyTRPCQueryKey =
+  | TRPCQueryKeyWithoutPrefix
+  | TRPCQueryKeyWithPrefix;
+
+/**
+ * @public
+ */
+export type TRPCMutationKeyWithPrefix = [
   prefix: readonly string[],
   path: readonly string[],
 ];
+
+/**
+ * @public
+ */
+export type TRPCMutationKeyWithoutPrefix = [path: readonly string[]];
+
+/**
+ * @public
+ */
+export type TRPCMutationKey<TPrefixEnabled extends boolean> =
+  TPrefixEnabled extends true
+    ? // TODO: default prefix to false
+      TRPCMutationKeyWithPrefix | TRPCMutationKeyWithoutPrefix
+    : TRPCMutationKeyWithoutPrefix;
