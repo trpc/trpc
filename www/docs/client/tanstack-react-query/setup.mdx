@@ -77,7 +77,7 @@ import ImportAppRouter from '../../partials/_import-approuter.mdx';
 
 <ImportAppRouter />
 
-### 3a. Setup the tRPC context provider
+### 3a. Set up the tRPC context provider
 
 In cases where you rely on React context, such as when using server-side rendering in full-stack frameworks like Next.js, it's important to create a new QueryClient for each request so that your users don't end up sharing the same cache, you can use the `createTRPCContext` to create a set of type-safe context providers and consumers from your `AppRouter` type signature.
 
@@ -143,7 +143,48 @@ export function App() {
       <TRPCProvider
         trpcClient={trpcClient}
         queryClient={queryClient}
-        // Optional: provide a prefix for all query/mutation keys
+      >
+        {/* Your app here */}
+      </TRPCProvider>
+    </QueryClientProvider>
+  );
+}
+```
+
+### 3b. Set up with Query/Mutation Key Prefixing enabled
+
+If you want to prefix all queries and mutations with a specific key (for example, to namespace them by user ID), you can enable the `enablePrefix` feature flag when creating the tRPC context.
+
+```tsx title='components/App.tsx'
+import { createTRPCContextWithFeatureFlags } from '@trpc/tanstack-react-query';
+import type { AppRouter } from '../server/router';
+
+// First enable the feature
+export const { TRPCProvider, useTRPC, useTRPCClient } =
+  createTRPCContextWithFeatureFlags({
+    enableKeyPrefix: true,
+  })<AppRouter>();
+
+// Then use it in your app
+export function App() {
+  const queryClient = getQueryClient();
+  const [trpcClient] = useState(() =>
+    createTRPCClient<AppRouter>({
+      links: [
+        httpBatchLink({
+          url: 'http://localhost:2022',
+        }),
+      ],
+    }),
+  );
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TRPCProvider
+        trpcClient={trpcClient}
+        queryClient={queryClient}
+
+        // Still optional but your types will now support it
         queryKeyPrefix={userId}
       >
         {/* Your app here */}
@@ -153,7 +194,7 @@ export function App() {
 }
 ```
 
-### 3b. Setup without React context
+### 3c. Set up without React context
 
 When building an SPA using only client-side rendering with something like Vite, you can create the `QueryClient` and tRPC client outside of React context as singletons.
 

@@ -304,8 +304,9 @@ export interface TRPCOptionsProxyOptionsBase<
   overrides?: {
     mutations?: MutationOptionsOverride;
   };
-  queryKeyPrefix?: string | string[];
-  enableQueryKeyPrefix?: TFeatureFlags['enablePrefix'];
+  queryKeyPrefix?: TFeatureFlags['enablePrefix'] extends true
+    ? string | string[]
+    : never;
 }
 
 export interface TRPCOptionsProxyOptionsInternal<

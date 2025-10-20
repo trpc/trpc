@@ -8,7 +8,10 @@ import { render } from '@testing-library/react';
 import { getUntypedClient } from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
 import * as React from 'react';
-import { createTRPCContext, createTRPCOptionsProxy } from '../src';
+import {
+  createTRPCContextWithFeatureFlags,
+  createTRPCOptionsProxy,
+} from '../src';
 
 type TestReactResourceExtraOpts = { queryKeyPrefix?: string | string[] };
 
@@ -20,20 +23,29 @@ export function testReactResource<TRouter extends AnyTRPCRouter>(
 
   const queryClient = new QueryClient();
 
-  const optionsProxyClient = createTRPCOptionsProxy({
+  const optionsProxyClient = createTRPCOptionsProxy<
+    TRouter,
+    { enablePrefix: true }
+  >({
     client: getUntypedClient(ctx.client),
     queryClient,
     queryKeyPrefix: opts?.queryKeyPrefix,
   });
 
-  const optionsProxyServer = createTRPCOptionsProxy({
+  const optionsProxyServer = createTRPCOptionsProxy<
+    TRouter,
+    { enablePrefix: true }
+  >({
     router: appRouter,
     ctx: {},
     queryClient,
     queryKeyPrefix: opts?.queryKeyPrefix,
   });
 
-  const { TRPCProvider, useTRPC, useTRPCClient } = createTRPCContext<TRouter>();
+  const { TRPCProvider, useTRPC, useTRPCClient } =
+    createTRPCContextWithFeatureFlags<TRouter>()({
+      enableKeyPrefix: true,
+    });
 
   function renderApp(ui: React.ReactNode) {
     return render(
