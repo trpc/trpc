@@ -140,10 +140,7 @@ export function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TRPCProvider
-        trpcClient={trpcClient}
-        queryClient={queryClient}
-      >
+      <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
         {/* Your app here */}
       </TRPCProvider>
     </QueryClientProvider>
@@ -183,7 +180,6 @@ export function App() {
       <TRPCProvider
         trpcClient={trpcClient}
         queryClient={queryClient}
-
         // Still optional but your types will now support it
         queryKeyPrefix={userId}
       >
