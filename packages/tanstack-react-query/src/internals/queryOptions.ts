@@ -14,8 +14,9 @@ import type {
   DistributiveOmit,
 } from '@trpc/server/unstable-core-do-not-import';
 import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
-import type { FeatureFlags } from './createOptionsProxy';
 import type {
+  DefaultFeatureFlags,
+  FeatureFlags,
   ResolverDef,
   TRPCQueryBaseOptions,
   TRPCQueryKey,
@@ -137,7 +138,7 @@ interface UnusedSkipTokenTRPCQueryOptionsOut<
 
 export interface TRPCQueryOptions<
   TDef extends ResolverDef,
-  TFeatureFlags extends FeatureFlags = { enablePrefix: false },
+  TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
 > {
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
     input: TDef['input'] | SkipToken,
@@ -207,7 +208,7 @@ type AnyTRPCQueryOptionsIn<TFeatureFlags extends FeatureFlags> =
   | UndefinedTRPCQueryOptionsIn<unknown, unknown, unknown, TFeatureFlags>;
 
 type AnyTRPCQueryOptionsOut<
-  TFeatureFlags extends FeatureFlags = { enablePrefix: false },
+  TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
 > =
   | DefinedTRPCQueryOptionsOut<unknown, unknown, unknown, TFeatureFlags>
   | UnusedSkipTokenTRPCQueryOptionsOut<unknown, unknown, unknown, TFeatureFlags>

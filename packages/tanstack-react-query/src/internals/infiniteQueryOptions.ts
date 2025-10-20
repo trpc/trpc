@@ -10,9 +10,10 @@ import type {
 import { infiniteQueryOptions, skipToken } from '@tanstack/react-query';
 import type { TRPCClientErrorLike, TRPCUntypedClient } from '@trpc/client';
 import type { DistributiveOmit } from '@trpc/server/unstable-core-do-not-import';
-import type { FeatureFlags } from './createOptionsProxy';
 import type {
+  DefaultFeatureFlags,
   ExtractCursorType,
+  FeatureFlags,
   ResolverDef,
   TRPCInfiniteData,
   TRPCQueryBaseOptions,
@@ -165,7 +166,7 @@ interface UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
 
 export interface TRPCInfiniteQueryOptions<
   TDef extends ResolverDef,
-  TFeatureFlags extends FeatureFlags = { enablePrefix: false },
+  TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
 > {
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
     input: TDef['input'] | SkipToken,

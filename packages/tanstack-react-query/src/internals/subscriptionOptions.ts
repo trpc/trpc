@@ -5,8 +5,9 @@ import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
 import type { Unsubscribable } from '@trpc/server/observable';
 import type { inferAsyncIterableYield } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
-import type { FeatureFlags } from './createOptionsProxy';
 import type {
+  DefaultFeatureFlags,
+  FeatureFlags,
   ResolverDef,
   TRPCQueryKey,
   TRPCQueryOptionsResult,
@@ -43,7 +44,7 @@ interface TRPCSubscriptionOptionsOut<
 
 export interface TRPCSubscriptionOptions<
   TDef extends ResolverDef,
-  TFeatureFlags extends FeatureFlags = { enablePrefix: false },
+  TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
 > {
   (
     input: TDef['input'],

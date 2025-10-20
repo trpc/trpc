@@ -2,8 +2,9 @@ import type { QueryClient } from '@tanstack/react-query';
 import type { TRPCClient } from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
 import * as React from 'react';
-import type { FeatureFlags, TRPCOptionsProxy } from './createOptionsProxy';
+import type { TRPCOptionsProxy } from './createOptionsProxy';
 import { createTRPCOptionsProxy } from './createOptionsProxy';
+import type { DefaultFeatureFlags, FeatureFlags } from './types';
 
 export interface CreateTRPCContextOpts<TFeatureFlags extends FeatureFlags> {
   enableQueryKeyPrefix?: TFeatureFlags['enablePrefix'];
@@ -11,7 +12,7 @@ export interface CreateTRPCContextOpts<TFeatureFlags extends FeatureFlags> {
 
 export interface CreateTRPCContextResult<
   TRouter extends AnyTRPCRouter,
-  TFeatureFlags extends FeatureFlags = { enablePrefix: false },
+  TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
 > {
   TRPCProvider: React.FC<{
     children: React.ReactNode;
@@ -29,7 +30,7 @@ export interface CreateTRPCContextResult<
  */
 export function createTRPCContext<
   TRouter extends AnyTRPCRouter,
-  TFeatureFlags extends FeatureFlags = { enablePrefix: false },
+  TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
 >(
   opts?: CreateTRPCContextOpts<TFeatureFlags>,
 ): CreateTRPCContextResult<TRouter, TFeatureFlags> {

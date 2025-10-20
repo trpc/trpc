@@ -128,3 +128,15 @@ export type TRPCMutationKey<TPrefixEnabled extends boolean = false> =
   TPrefixEnabled extends true
     ? TRPCMutationKeyWithPrefix | TRPCMutationKeyWithoutPrefix
     : TRPCMutationKeyWithoutPrefix;
+
+/**
+ * Feature flags for configuring tRPC behavior
+ * @public
+ */
+export type FeatureFlags = { enablePrefix: boolean };
+
+/**
+ * Default feature flags with query key prefix disabled
+ * @public
+ */
+export type DefaultFeatureFlags = { enablePrefix: false };

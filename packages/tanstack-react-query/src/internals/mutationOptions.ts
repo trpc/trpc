@@ -8,8 +8,9 @@ import type {
   DistributiveOmit,
   MaybePromise,
 } from '@trpc/server/unstable-core-do-not-import';
-import type { FeatureFlags } from './createOptionsProxy';
 import type {
+  DefaultFeatureFlags,
+  FeatureFlags,
   ResolverDef,
   TRPCMutationKey,
   TRPCQueryBaseOptions,
@@ -53,7 +54,7 @@ interface TRPCMutationOptionsOut<
 
 export interface TRPCMutationOptions<
   TDef extends ResolverDef,
-  TFeatureFlags extends FeatureFlags = { enablePrefix: false },
+  TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
 > {
   <TContext = unknown>(
     opts?: TRPCMutationOptionsIn<

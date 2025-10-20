@@ -1,8 +1,8 @@
 import { skipToken, type QueryClient } from '@tanstack/react-query';
 import { isFunction, isObject } from '@trpc/server/unstable-core-do-not-import';
-import type { FeatureFlags } from './createOptionsProxy';
 import type {
   AnyTRPCQueryKey,
+  FeatureFlags,
   QueryType,
   TRPCMutationKey,
   TRPCMutationKeyWithoutPrefix,

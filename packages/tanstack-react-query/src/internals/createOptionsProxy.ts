@@ -32,6 +32,8 @@ import {
   type TRPCSubscriptionOptions,
 } from './subscriptionOptions';
 import type {
+  DefaultFeatureFlags,
+  FeatureFlags,
   OptionalCursorInput,
   ResolverDef,
   TRPCInfiniteData,
@@ -247,7 +249,7 @@ export interface DecorateSubscriptionProcedure<
 export type DecorateProcedure<
   TType extends TRPCProcedureType,
   TDef extends ResolverDef,
-  TFeatureFlags extends FeatureFlags = { enablePrefix: false },
+  TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
 > = TType extends 'query'
   ? DecorateQueryProcedure<TDef, TFeatureFlags> &
       (TDef['input'] extends OptionalCursorInput
@@ -287,7 +289,7 @@ export type DecoratedRouterRecord<
 
 export type TRPCOptionsProxy<
   TRouter extends AnyTRPCRouter,
-  TFeatureFlags extends FeatureFlags = { enablePrefix: false },
+  TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
 > = DecoratedRouterRecord<
   TRouter['_def']['_config']['$types'],
   TRouter['_def']['record'],
@@ -295,10 +297,8 @@ export type TRPCOptionsProxy<
 > &
   DecorateRouterKeyable<TFeatureFlags>;
 
-export type FeatureFlags = { enablePrefix: boolean };
-
 export interface TRPCOptionsProxyOptionsBase<
-  TFeatureFlags extends FeatureFlags = { enablePrefix: false },
+  TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
 > {
   queryClient: QueryClient | (() => QueryClient);
   overrides?: {
@@ -325,7 +325,7 @@ export interface TRPCOptionsProxyOptionsExternal<
 
 export type TRPCOptionsProxyOptions<
   TRouter extends AnyTRPCRouter,
-  TFeatureFlags extends { enablePrefix: boolean } = { enablePrefix: false },
+  TFeatureFlags extends { enablePrefix: boolean } = DefaultFeatureFlags,
 > = TRPCOptionsProxyOptionsBase<TFeatureFlags> &
   (
     | TRPCOptionsProxyOptionsInternal<TRouter>
@@ -346,7 +346,7 @@ type UtilsMethods =
  */
 export function createTRPCOptionsProxy<
   TRouter extends AnyTRPCRouter,
-  TFeatureFlags extends FeatureFlags = { enablePrefix: false },
+  TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
 >(
   opts: TRPCOptionsProxyOptions<TRouter, TFeatureFlags>,
 ): TRPCOptionsProxy<TRouter, TFeatureFlags> {
