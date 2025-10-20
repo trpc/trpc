@@ -115,22 +115,22 @@ export async function buildQueryFromAsyncIterable<
  *
  * @internal
  */
-export function getQueryKeyInternal<TEnablePrefix extends true>(
+export function getQueryKeyInternal(
   path: readonly string[],
   opts?: {
     input?: unknown;
     type?: QueryType;
-    prefix?: readonly string[];
+    prefix: readonly string[];
   },
-): TRPCQueryKey<TEnablePrefix>;
+): TRPCQueryKey<true>;
 
-export function getQueryKeyInternal<TEnablePrefix extends false>(
+export function getQueryKeyInternal(
   path: readonly string[],
   opts?: {
     input?: unknown;
     type?: QueryType;
   },
-): TRPCQueryKey<TEnablePrefix>;
+): TRPCQueryKey<false>;
 export function getQueryKeyInternal(
   path: readonly string[],
   opts: {
@@ -220,16 +220,16 @@ export function getQueryKeyInternal(
 /**
  * @internal
  */
-export function getMutationKeyInternal<TPrefixEnabled extends true>(
+export function getMutationKeyInternal(
   path: readonly string[],
-  opts?: {
-    prefix?: readonly string[];
+  opts: {
+    prefix: readonly string[];
   },
-): TRPCMutationKey<TPrefixEnabled>;
-export function getMutationKeyInternal<TPrefixEnabled extends false>(
+): TRPCMutationKey<true>;
+export function getMutationKeyInternal(
   path: readonly string[],
   opts?: {},
-): TRPCMutationKey<TPrefixEnabled>;
+): TRPCMutationKey<false>;
 export function getMutationKeyInternal(
   path: readonly string[],
   opts: {

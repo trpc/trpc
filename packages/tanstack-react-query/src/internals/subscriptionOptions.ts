@@ -11,7 +11,7 @@ import type {
   TRPCQueryKey,
   TRPCQueryOptionsResult,
 } from './types';
-import { createTRPCOptionsResult } from './utils';
+import { createTRPCOptionsResult, readQueryKey } from './utils';
 
 interface BaseTRPCSubscriptionOptionsIn<TOutput, TError> {
   enabled?: boolean;
@@ -43,7 +43,7 @@ interface TRPCSubscriptionOptionsOut<
 
 export interface TRPCSubscriptionOptions<
   TDef extends ResolverDef,
-  TFeatureFlags extends FeatureFlags,
+  TFeatureFlags extends FeatureFlags = { enablePrefix: false },
 > {
   (
     input: TDef['input'],
@@ -137,7 +137,7 @@ export const trpcSubscriptionOptions = <
   opts?: AnyTRPCSubscriptionOptionsIn;
 }): AnyTRPCSubscriptionOptionsOut<TFeatureFlags> => {
   const { subscribe, path, queryKey, opts = {} } = args;
-  const input = queryKey[2]?.input;
+  const input = readQueryKey(queryKey)?.args?.input;
   const enabled = 'enabled' in opts ? !!opts.enabled : input !== skipToken;
 
   const _subscribe: ReturnType<

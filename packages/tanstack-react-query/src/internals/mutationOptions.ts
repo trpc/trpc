@@ -36,7 +36,7 @@ interface TRPCMutationOptionsIn<
     >,
     TRPCQueryBaseOptions {
   mutationKeyPrefix?: TFeatureFlags['enablePrefix'] extends true
-    ? string | string[]
+    ? string[]
     : never;
 }
 
@@ -53,7 +53,7 @@ interface TRPCMutationOptionsOut<
 
 export interface TRPCMutationOptions<
   TDef extends ResolverDef,
-  TFeatureFlags extends FeatureFlags,
+  TFeatureFlags extends FeatureFlags = { enablePrefix: false },
 > {
   <TContext = unknown>(
     opts?: TRPCMutationOptionsIn<
@@ -121,7 +121,7 @@ export function trpcMutationOptions<TFeatureFlags extends FeatureFlags>(args: {
 
   const mutationFn: MutationFunction = async (input) => {
     const result = await mutate(
-      ...getClientArgs([mutationKey[0], path, { input }], opts),
+      ...getClientArgs([...mutationKey, { input }], opts),
     );
 
     return result;

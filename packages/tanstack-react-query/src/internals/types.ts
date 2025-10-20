@@ -113,7 +113,7 @@ export type AnyTRPCQueryKey =
  */
 export type TRPCMutationKeyWithPrefix = [
   prefix: readonly string[],
-  path: readonly string[],
+  ...TRPCMutationKeyWithoutPrefix,
 ];
 
 /**

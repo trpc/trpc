@@ -137,7 +137,7 @@ interface UnusedSkipTokenTRPCQueryOptionsOut<
 
 export interface TRPCQueryOptions<
   TDef extends ResolverDef,
-  TFeatureFlags extends FeatureFlags,
+  TFeatureFlags extends FeatureFlags = { enablePrefix: false },
 > {
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
     input: TDef['input'] | SkipToken,
