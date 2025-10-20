@@ -2,6 +2,7 @@ import { skipToken, type QueryClient } from '@tanstack/react-query';
 import { isFunction, isObject } from '@trpc/server/unstable-core-do-not-import';
 import type { FeatureFlags } from './createOptionsProxy';
 import type {
+  AnyTRPCQueryKey,
   QueryType,
   TRPCMutationKey,
   TRPCMutationKeyWithoutPrefix,
@@ -31,6 +32,24 @@ export function isPrefixedQueryKey(
   return queryKey.length >= 2;
 }
 
+export function readQueryKey(queryKey: AnyTRPCQueryKey) {
+  if (isPrefixedQueryKey(queryKey)) {
+    return {
+      type: 'prefixed' as const,
+      prefix: queryKey[0],
+      path: queryKey[1],
+      args: queryKey[2],
+    };
+  } else {
+    return {
+      type: 'unprefixed' as const,
+      prefix: undefined,
+      path: queryKey[0],
+      args: queryKey[1],
+    };
+  }
+}
+
 /**
  * @internal
  */
@@ -42,21 +61,19 @@ export function getClientArgs<TOptions, TFeatureFlags extends FeatureFlags>(
     direction: 'forward' | 'backward';
   },
 ) {
-  const path = isPrefixedQueryKey(queryKey) ? queryKey[1] : queryKey[0];
-  let input = isPrefixedQueryKey(queryKey)
-    ? queryKey[2]?.input
-    : queryKey[1]?.input;
+  const queryKeyData = readQueryKey(queryKey);
 
+  let input = queryKeyData.args?.input;
   if (infiniteParams) {
     input = {
-      ...(input ?? {}),
+      ...(queryKeyData.args?.input ?? {}),
       ...(infiniteParams.pageParam !== undefined
         ? { cursor: infiniteParams.pageParam }
         : {}),
       direction: infiniteParams.direction,
     };
   }
-  return [path.join('.'), input, (opts as any)?.trpc] as const;
+  return [queryKeyData.path.join('.'), input, (opts as any)?.trpc] as const;
 }
 
 /**

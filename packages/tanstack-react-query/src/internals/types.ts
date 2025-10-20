@@ -96,8 +96,7 @@ export type TRPCQueryKeyWithPrefix = [
   ...TRPCQueryKeyWithoutPrefix,
 ];
 
-// TODO: default prefix to false
-export type TRPCQueryKey<TPrefixEnabled extends boolean> =
+export type TRPCQueryKey<TPrefixEnabled extends boolean = false> =
   TPrefixEnabled extends true
     ? // Enabling the feature flag does not necessarily change the query key shape,
       // that depends on whether a prefix is provided,
@@ -125,8 +124,7 @@ export type TRPCMutationKeyWithoutPrefix = [path: readonly string[]];
 /**
  * @public
  */
-export type TRPCMutationKey<TPrefixEnabled extends boolean> =
+export type TRPCMutationKey<TPrefixEnabled extends boolean = false> =
   TPrefixEnabled extends true
-    ? // TODO: default prefix to false
-      TRPCMutationKeyWithPrefix | TRPCMutationKeyWithoutPrefix
+    ? TRPCMutationKeyWithPrefix | TRPCMutationKeyWithoutPrefix
     : TRPCMutationKeyWithoutPrefix;
