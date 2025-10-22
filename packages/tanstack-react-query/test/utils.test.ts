@@ -1,5 +1,5 @@
 import { describe, expect } from 'vitest';
-import { getQueryKeyInternal } from '../src/internals/utils';
+import { getQueryKeyInternal, readQueryKey } from '../src/internals/utils';
 
 describe(getQueryKeyInternal, () => {
   it('creates a query key', () => {
@@ -114,5 +114,35 @@ describe(getQueryKeyInternal, () => {
         },
       ]
     `);
+  });
+});
+
+describe(readQueryKey, () => {
+  type QueryKeyData = ReturnType<typeof readQueryKey>;
+
+  it('reads a simple query key', () => {
+    expect(
+      readQueryKey([['a', 'b'], { input: 'input value', type: 'query' }]),
+    ).toEqual<QueryKeyData>({
+      type: 'unprefixed',
+      prefix: undefined,
+      path: ['a', 'b'],
+      args: { input: 'input value', type: 'query' },
+    });
+  });
+
+  it('reads a simple prefixed query key', () => {
+    expect(
+      readQueryKey([
+        ['prefix'],
+        ['a', 'b'],
+        { input: 'input value', type: 'query' },
+      ]),
+    ).toEqual<QueryKeyData>({
+      type: 'prefixed',
+      prefix: ['prefix'],
+      path: ['a', 'b'],
+      args: { input: 'input value', type: 'query' },
+    });
   });
 });

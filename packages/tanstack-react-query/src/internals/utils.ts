@@ -29,7 +29,7 @@ export function createTRPCOptionsResult(value: {
 export function isPrefixedQueryKey(
   queryKey: TRPCQueryKey<any>,
 ): queryKey is TRPCQueryKeyWithPrefix {
-  return queryKey.length >= 2;
+  return queryKey.length >= 3;
 }
 
 export function readQueryKey(queryKey: AnyTRPCQueryKey) {
