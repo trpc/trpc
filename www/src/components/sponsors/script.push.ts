@@ -20,8 +20,6 @@ const sections: Def = {
   gold: [
     //
     'withgraphite',
-    'tryretool',
-    'mobb-dev',
   ],
   silver: [
     //
@@ -33,7 +31,6 @@ const sections: Def = {
     //
     'hidrb',
     'ryanmagoon',
-    'jonluca',
   ],
 };
 
