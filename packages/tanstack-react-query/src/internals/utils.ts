@@ -6,7 +6,6 @@ import type {
   QueryType,
   TRPCMutationKey,
   TRPCMutationKeyWithoutPrefix,
-  TRPCMutationKeyWithPrefix,
   TRPCQueryKey,
   TRPCQueryKeyWithoutPrefix,
   TRPCQueryKeyWithPrefix,
@@ -115,36 +114,20 @@ export async function buildQueryFromAsyncIterable<
  *
  * @internal
  */
-export function getQueryKeyInternal(
-  path: readonly string[],
-  opts?: {
-    input?: unknown;
-    type?: QueryType;
-    prefix: readonly string[] | undefined;
-  },
-): TRPCQueryKey<true>;
-
-export function getQueryKeyInternal(
-  path: readonly string[],
-  opts?: {
-    input?: unknown;
-    type?: QueryType;
-  },
-): TRPCQueryKey<false>;
-export function getQueryKeyInternal(
+export function getQueryKeyInternal<TPrefix extends readonly string[]>(
   path: readonly string[],
   opts: {
     input?: unknown;
     type?: QueryType;
-    prefix?: readonly string[];
+    prefix?: TPrefix;
   } = {},
-): TRPCQueryKey<any> {
+): TRPCQueryKey<TPrefix extends undefined ? false : true> {
   // Construct a query key that is easy to destructure and flexible for
   // partial selecting etc.
   // https://github.com/trpc/trpc/issues/3128
 
   // some parts of the path may be dot-separated, split them up
-  const prefix = opts.prefix ?? [];
+  const prefix = opts.prefix?.length === 0 ? undefined : opts.prefix;
   const splitPath = path.flatMap((part) => part.split('.'));
 
   if (!opts.input && (!opts.type || opts.type === 'any')) {
@@ -153,14 +136,16 @@ export function getQueryKeyInternal(
     // for `utils.invalidate()` to match all queries (including vanilla react-query)
     // we don't want nested array if path is empty, i.e. `[]` instead of `[[]]`
 
-    if (prefix.length === 0) {
+    if (prefix) {
+      return splitPath.length
+        ? ([prefix, splitPath] as TRPCQueryKey<
+            TPrefix extends undefined ? false : true
+          >)
+        : ([prefix] as TRPCQueryKey<TPrefix extends undefined ? false : true>);
+    } else {
       return splitPath.length
         ? [splitPath]
         : ([] as unknown as TRPCQueryKeyWithoutPrefix);
-    } else {
-      return splitPath.length
-        ? [prefix, splitPath]
-        : ([prefix] as unknown as TRPCQueryKeyWithPrefix);
     }
   }
 
@@ -175,17 +160,17 @@ export function getQueryKeyInternal(
       ...inputWithoutCursorAndDirection
     } = opts.input;
 
-    if (prefix.length === 0) {
+    if (!prefix) {
       return [
+        prefix,
         splitPath,
         {
           input: inputWithoutCursorAndDirection,
           type: 'infinite',
         },
-      ];
+      ] as unknown as TRPCQueryKey<TPrefix extends undefined ? false : true>;
     } else {
       return [
-        prefix,
         splitPath,
         {
           input: inputWithoutCursorAndDirection,
@@ -195,18 +180,18 @@ export function getQueryKeyInternal(
     }
   }
 
-  if (prefix.length === 0) {
+  if (prefix) {
     return [
+      prefix,
       splitPath,
       {
         ...(typeof opts.input !== 'undefined' &&
           opts.input !== skipToken && { input: opts.input }),
         ...(opts.type && opts.type !== 'any' && { type: opts.type }),
       },
-    ];
+    ] as unknown as TRPCQueryKey<TPrefix extends undefined ? false : true>;
   } else {
     return [
-      prefix,
       splitPath,
       {
         ...(typeof opts.input !== 'undefined' &&
@@ -220,35 +205,29 @@ export function getQueryKeyInternal(
 /**
  * @internal
  */
-export function getMutationKeyInternal(
+export function getMutationKeyInternal<
+  TPrefix extends readonly string[] | undefined,
+>(
   path: readonly string[],
   opts: {
-    prefix: readonly string[] | undefined;
-  },
-): TRPCMutationKey<true>;
-export function getMutationKeyInternal(
-  path: readonly string[],
-  opts?: {},
-): TRPCMutationKey<false>;
-export function getMutationKeyInternal(
-  path: readonly string[],
-  opts: {
-    prefix?: readonly string[];
+    prefix?: TPrefix;
   } = {},
-): TRPCMutationKey<any> {
-  const prefix = opts.prefix ?? [];
+): TRPCMutationKey<TPrefix extends undefined ? false : true> {
+  const prefix = opts.prefix?.length === 0 ? [] : opts.prefix;
 
   // some parts of the path may be dot-separated, split them up
   const splitPath = path.flatMap((part) => part.split('.'));
 
-  if (prefix.length === 0) {
+  if (prefix) {
     return splitPath.length
-      ? [splitPath]
-      : ([] as unknown as TRPCMutationKeyWithPrefix);
+      ? ([prefix, splitPath] as unknown as TRPCMutationKey<
+          TPrefix extends undefined ? false : true
+        >)
+      : [prefix];
   } else {
     return splitPath.length
-      ? [prefix, splitPath]
-      : ([prefix] as unknown as TRPCMutationKeyWithoutPrefix);
+      ? [splitPath]
+      : ([] as unknown as TRPCMutationKeyWithoutPrefix);
   }
 }
 
