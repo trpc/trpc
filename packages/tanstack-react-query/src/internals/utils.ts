@@ -120,7 +120,7 @@ export function getQueryKeyInternal(
   opts?: {
     input?: unknown;
     type?: QueryType;
-    prefix: readonly string[];
+    prefix: readonly string[] | undefined;
   },
 ): TRPCQueryKey<true>;
 

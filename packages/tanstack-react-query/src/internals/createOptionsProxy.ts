@@ -351,12 +351,12 @@ export function createTRPCOptionsProxy<
 >(
   opts: TRPCOptionsProxyOptions<TRouter, TFeatureFlags>,
 ): TRPCOptionsProxy<TRouter, TFeatureFlags> {
-  const queryKeyPrefix: string[] = [];
+  let queryKeyPrefix: string[] | undefined;
   if (opts.queryKeyPrefix) {
     if (Array.isArray(opts.queryKeyPrefix)) {
-      queryKeyPrefix.push(...opts.queryKeyPrefix);
+      queryKeyPrefix = [...opts.queryKeyPrefix];
     } else {
-      queryKeyPrefix.push(opts.queryKeyPrefix);
+      queryKeyPrefix = [opts.queryKeyPrefix];
     }
   }
 
