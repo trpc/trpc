@@ -223,7 +223,7 @@ export function getQueryKeyInternal(
 export function getMutationKeyInternal(
   path: readonly string[],
   opts: {
-    prefix: readonly string[];
+    prefix: readonly string[] | undefined;
   },
 ): TRPCMutationKey<true>;
 export function getMutationKeyInternal(
@@ -243,8 +243,8 @@ export function getMutationKeyInternal(
 
   if (prefix.length === 0) {
     return splitPath.length
-      ? [prefix, splitPath]
-      : ([prefix] as unknown as TRPCMutationKeyWithPrefix);
+      ? [splitPath]
+      : ([] as unknown as TRPCMutationKeyWithPrefix);
   } else {
     return splitPath.length
       ? [prefix, splitPath]

@@ -420,7 +420,42 @@ describe('get mutationKey', () => {
 
       expect(trpc.bluesky.post.create.mutationKey()).toMatchInlineSnapshot(`
         Array [
-          Array [],
+          Array [
+            "bluesky",
+            "post",
+            "create",
+          ],
+        ]
+      `);
+
+      return 'some text';
+    }
+
+    ctx.renderApp(<Component />);
+  });
+});
+
+describe('get mutationKey with prefix', () => {
+  test('gets various mutation keys', async () => {
+    await using ctx = testContext({
+      queryKeyPrefix: 'user-123',
+    });
+
+    const { useTRPC } = ctx;
+
+    function Component() {
+      const trpc = useTRPC();
+
+      // @ts-expect-error - not a mutation
+      trpc.bluesky.post.byId.mutationKey;
+      // @ts-expect-error - not a mutation
+      trpc.bluesky.mutationKey;
+
+      expect(trpc.bluesky.post.create.mutationKey()).toMatchInlineSnapshot(`
+        Array [
+          Array [
+            "user-123",
+          ],
           Array [
             "bluesky",
             "post",
