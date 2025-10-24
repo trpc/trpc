@@ -11,7 +11,6 @@ import { infiniteQueryOptions, skipToken } from '@tanstack/react-query';
 import type { TRPCClientErrorLike, TRPCUntypedClient } from '@trpc/client';
 import type { DistributiveOmit } from '@trpc/server/unstable-core-do-not-import';
 import type {
-  DefaultFeatureFlags,
   ExtractCursorType,
   FeatureFlags,
   ResolverDef,
@@ -164,10 +163,7 @@ interface UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
   initialPageParam: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
-export interface TRPCInfiniteQueryOptions<
-  TDef extends ResolverDef,
-  TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
-> {
+export interface TRPCInfiniteQueryOptions<TDef extends ResolverDef> {
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
     input: TDef['input'] | SkipToken,
     opts: DefinedTRPCInfiniteQueryOptionsIn<
@@ -178,7 +174,7 @@ export interface TRPCInfiniteQueryOptions<
         transformer: TDef['transformer'];
         errorShape: TDef['errorShape'];
       }>,
-      TFeatureFlags
+      TDef['featureFlags']
     >,
   ): DefinedTRPCInfiniteQueryOptionsOut<
     TDef['input'],
@@ -188,7 +184,7 @@ export interface TRPCInfiniteQueryOptions<
       transformer: TDef['transformer'];
       errorShape: TDef['errorShape'];
     }>,
-    TFeatureFlags
+    TDef['featureFlags']
   >;
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
     input: TDef['input'],
@@ -200,7 +196,7 @@ export interface TRPCInfiniteQueryOptions<
         transformer: TDef['transformer'];
         errorShape: TDef['errorShape'];
       }>,
-      TFeatureFlags
+      TDef['featureFlags']
     >,
   ): UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
     TDef['input'],
@@ -210,7 +206,7 @@ export interface TRPCInfiniteQueryOptions<
       transformer: TDef['transformer'];
       errorShape: TDef['errorShape'];
     }>,
-    TFeatureFlags
+    TDef['featureFlags']
   >;
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
     input: TDef['input'] | SkipToken,
@@ -222,7 +218,7 @@ export interface TRPCInfiniteQueryOptions<
         transformer: TDef['transformer'];
         errorShape: TDef['errorShape'];
       }>,
-      TFeatureFlags
+      TDef['featureFlags']
     >,
   ): UndefinedTRPCInfiniteQueryOptionsOut<
     TDef['input'],
@@ -232,7 +228,7 @@ export interface TRPCInfiniteQueryOptions<
       transformer: TDef['transformer'];
       errorShape: TDef['errorShape'];
     }>,
-    TFeatureFlags
+    TDef['featureFlags']
   >;
 }
 
