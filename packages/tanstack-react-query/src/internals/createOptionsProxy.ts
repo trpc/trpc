@@ -385,12 +385,20 @@ export function createTRPCOptionsProxy<
       '~types': undefined as any,
 
       pathKey: () => {
-        return getQueryKeyInternal(path, { prefix: queryKeyPrefix });
+        return getQueryKeyInternal({
+          path,
+          type: 'any',
+          prefix: queryKeyPrefix,
+        });
       },
       pathFilter: (): QueryFilters => {
         return {
           ...arg1,
-          queryKey: getQueryKeyInternal(path, { prefix: queryKeyPrefix }),
+          queryKey: getQueryKeyInternal({
+            path,
+            type: 'any',
+            prefix: queryKeyPrefix,
+          }),
         };
       },
 
@@ -400,7 +408,8 @@ export function createTRPCOptionsProxy<
           opts: arg2,
           path,
           queryClient: opts.queryClient,
-          queryKey: getQueryKeyInternal(path, {
+          queryKey: getQueryKeyInternal({
+            path,
             input: arg1,
             type: 'query',
             prefix: queryKeyPrefix,
@@ -409,7 +418,8 @@ export function createTRPCOptionsProxy<
         });
       },
       queryKey: () => {
-        return getQueryKeyInternal(path, {
+        return getQueryKeyInternal({
+          path,
           input: arg1,
           type: 'query',
           prefix: queryKeyPrefix,
@@ -418,7 +428,8 @@ export function createTRPCOptionsProxy<
       queryFilter: (): QueryFilters => {
         return {
           ...arg2,
-          queryKey: getQueryKeyInternal(path, {
+          queryKey: getQueryKeyInternal({
+            path,
             input: arg1,
             type: 'query',
             prefix: queryKeyPrefix,
@@ -432,7 +443,8 @@ export function createTRPCOptionsProxy<
           opts: arg2,
           path,
           queryClient: opts.queryClient,
-          queryKey: getQueryKeyInternal(path, {
+          queryKey: getQueryKeyInternal({
+            path,
             input: arg1,
             type: 'infinite',
             prefix: queryKeyPrefix,
@@ -441,7 +453,8 @@ export function createTRPCOptionsProxy<
         });
       },
       infiniteQueryKey: () => {
-        return getQueryKeyInternal(path, {
+        return getQueryKeyInternal({
+          path,
           input: arg1,
           type: 'infinite',
           prefix: queryKeyPrefix,
@@ -450,7 +463,8 @@ export function createTRPCOptionsProxy<
       infiniteQueryFilter: (): QueryFilters => {
         return {
           ...arg2,
-          queryKey: getQueryKeyInternal(path, {
+          queryKey: getQueryKeyInternal({
+            path,
             input: arg1,
             type: 'infinite',
             prefix: queryKeyPrefix,
@@ -477,7 +491,8 @@ export function createTRPCOptionsProxy<
         return trpcSubscriptionOptions({
           opts: arg2,
           path,
-          queryKey: getQueryKeyInternal(path, {
+          queryKey: getQueryKeyInternal({
+            path,
             input: arg1,
             type: 'any',
             prefix: queryKeyPrefix,

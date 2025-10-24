@@ -114,23 +114,21 @@ export async function buildQueryFromAsyncIterable<
  *
  * @internal
  */
-export function getQueryKeyInternal<TPrefix extends readonly string[]>(
-  path: readonly string[],
-  opts: {
-    input?: unknown;
-    type?: QueryType;
-    prefix?: TPrefix;
-  } = {},
-): TRPCQueryKey<TPrefix extends undefined ? false : true> {
+export function getQueryKeyInternal<TPrefix extends readonly string[]>(opts: {
+  path: readonly string[];
+  input?: unknown;
+  type: QueryType;
+  prefix?: TPrefix;
+}): TRPCQueryKey<TPrefix extends undefined ? false : true> {
   // Construct a query key that is easy to destructure and flexible for
   // partial selecting etc.
   // https://github.com/trpc/trpc/issues/3128
 
   // some parts of the path may be dot-separated, split them up
   const prefix = opts.prefix?.length === 0 ? undefined : opts.prefix;
-  const splitPath = path.flatMap((part) => part.split('.'));
+  const splitPath = opts.path.flatMap((part) => part.split('.'));
 
-  if (!opts.input && (!opts.type || opts.type === 'any')) {
+  if (!opts.input || opts.type === 'any') {
     // this matches also all mutations (see `getMutationKeyInternal`)
 
     // for `utils.invalidate()` to match all queries (including vanilla react-query)
@@ -187,7 +185,7 @@ export function getQueryKeyInternal<TPrefix extends readonly string[]>(
       {
         ...(typeof opts.input !== 'undefined' &&
           opts.input !== skipToken && { input: opts.input }),
-        ...(opts.type && opts.type !== 'any' && { type: opts.type }),
+        ...{ type: opts.type },
       },
     ] as unknown as TRPCQueryKey<TPrefix extends undefined ? false : true>;
   } else {
@@ -196,7 +194,7 @@ export function getQueryKeyInternal<TPrefix extends readonly string[]>(
       {
         ...(typeof opts.input !== 'undefined' &&
           opts.input !== skipToken && { input: opts.input }),
-        ...(opts.type && opts.type !== 'any' && { type: opts.type }),
+        ...{ type: opts.type },
       },
     ];
   }
