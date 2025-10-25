@@ -275,16 +275,22 @@ Enable the feature flag when creating your context:
 const billing = createTRPCContext<BillingRouter, { keyPrefix: true }>();
 export const BillingProvider = billing.TRPCProvider;
 export const useBilling = billing.useTRPC;
-export const createBillingClient = () => createTRPCClient<BillingRouter>({
-  links: [/* ... */],
-});
+export const createBillingClient = () =>
+  createTRPCClient<BillingRouter>({
+    links: [
+      /* ... */
+    ],
+  });
 
 const account = createTRPCContext<AccountRouter, { keyPrefix: true }>();
 export const AccountProvider = account.TRPCProvider;
 export const useAccount = account.useTRPC;
-export const createAccountClient = () => createTRPCClient<AccountRouter>({
-  links: [/* ... */],
-});
+export const createAccountClient = () =>
+  createTRPCClient<AccountRouter>({
+    links: [
+      /* ... */
+    ],
+  });
 ```
 
 ```tsx title='App.tsx'
