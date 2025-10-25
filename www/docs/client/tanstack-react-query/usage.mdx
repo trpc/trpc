@@ -292,21 +292,13 @@ export const createAccountClient = () => createTRPCClient<AccountRouter>({
 
 export function App() {
   const [queryClient] = useState(() => new QueryClient());
-  const [billingClient] = useState(() =>
-    createTRPCClient<typeof billingCtx.router>({
-      links: [httpBatchLink({ url: billingCtx.httpUrl })],
-    }),
-  );
-  const [accountClient] = useState(() =>
-    createTRPCClient<typeof accountCtx.router>({
-      links: [httpBatchLink({ url: accountCtx.httpUrl })],
-    }),
-  );
+  const [billingClient] = useState(() => createBillingClient());
+  const [accountClient] = useState(() => createAccountClient());
 
   return (
     <QueryClientProvider client={queryClient}>
       <BillingProvider
-        client={billingClient}
+        trpcClient={billingClient}
         queryClient={queryClient}
         keyPrefix="billing"
       >
@@ -317,7 +309,7 @@ export function App() {
         >
           {/* ... */}
         </AccountProvider>
-      </BillingTRPCProvider>
+      </BillingProvider>
     </QueryClientProvider>
   );
 }
