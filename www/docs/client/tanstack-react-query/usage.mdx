@@ -331,10 +331,12 @@ export function MyComponent() {
   const billingList = useQuery(billing.list.queryOptions());
   const accountList = useQuery(account.list.queryOptions());
 
-  return <div>
-    <div>Billing: {JSON.stringify(billingList.data ?? null)}</div>
-    <div>Account: {JSON.stringify(accountList.data ?? null)}</div>
-  </div>;
+  return (
+    <div>
+      <div>Billing: {JSON.stringify(billingList.data ?? null)}</div>
+      <div>Account: {JSON.stringify(accountList.data ?? null)}</div>
+    </div>
+  );
 }
 ```
 
