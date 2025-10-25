@@ -316,7 +316,7 @@ export interface TRPCOptionsProxyOptionsExternal<
 
 export type TRPCOptionsProxyOptions<
   TRouter extends AnyTRPCRouter,
-  TFeatureFlags extends { keyPrefix: boolean } = DefaultFeatureFlags,
+  TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
 > = TRPCOptionsProxyOptionsBase<TFeatureFlags> &
   (
     | TRPCOptionsProxyOptionsInternal<TRouter>
