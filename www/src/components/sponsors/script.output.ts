@@ -11,20 +11,20 @@ export const topSponsors = [
     "createdAt": 1656581731000
   },
   {
+    "name": "Greptile",
+    "imgSrc": "https://avatars.githubusercontent.com/u/140149887?v=4",
+    "weight": 29,
+    "login": "greptileai",
+    "link": "https://greptile.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "createdAt": 1743099912000
+  },
+  {
     "name": "Ahoy Labs",
     "imgSrc": "https://avatars.githubusercontent.com/u/95662801?v=4",
     "weight": 28,
     "login": "ahoylabs",
     "link": "https://backyard.ai/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1671157456000
-  },
-  {
-    "name": "Greptile",
-    "imgSrc": "https://avatars.githubusercontent.com/u/140149887?v=4",
-    "weight": 26,
-    "login": "greptileai",
-    "link": "https://greptile.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
-    "createdAt": 1743099912000
   },
   {
     "name": "CodeRabbit",
@@ -185,7 +185,7 @@ export const allSponsors = [
   {
     "name": "Liminity AB",
     "imgSrc": "https://avatars.githubusercontent.com/u/179804668?v=4",
-    "weight": 4,
+    "weight": 5,
     "login": "liminityab",
     "link": "https://liminity.se/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1724917223000
@@ -193,7 +193,7 @@ export const allSponsors = [
   {
     "name": "Val Town",
     "imgSrc": "https://avatars.githubusercontent.com/u/114268765?v=4",
-    "weight": 4,
+    "weight": 5,
     "login": "val-town",
     "link": "https://github.com/val-town",
     "createdAt": 1725043677000
@@ -225,7 +225,7 @@ export const allSponsors = [
   {
     "name": "Greptile",
     "imgSrc": "https://avatars.githubusercontent.com/u/140149887?v=4",
-    "weight": 26,
+    "weight": 29,
     "login": "greptileai",
     "link": "https://greptile.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1743099912000
