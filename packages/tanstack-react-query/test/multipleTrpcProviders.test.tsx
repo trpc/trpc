@@ -31,11 +31,11 @@ test('multiple query keys', async () => {
   type AccountRouter = typeof accountCtx.router;
 
   const billing = createTRPCContext<BillingRouter, { keyPrefix: true }>();
-  const BillingTRPCProvider = billing.TRPCProvider;
+  const BillingProvider = billing.TRPCProvider;
   const useBilling = billing.useTRPC;
 
   const account = createTRPCContext<AccountRouter, { keyPrefix: true }>();
-  const AccountTRPCProvider = account.TRPCProvider;
+  const AccountProvider = account.TRPCProvider;
   const useAccount = account.useTRPC;
 
   const queryClient = new QueryClient();
@@ -53,19 +53,19 @@ test('multiple query keys', async () => {
 
     return (
       <QueryClientProvider client={queryClient}>
-        <BillingTRPCProvider
+        <BillingProvider
           trpcClient={billingClient}
           queryClient={queryClient}
           keyPrefix="billing"
         >
-          <AccountTRPCProvider
+          <AccountProvider
             trpcClient={accountClient}
             queryClient={queryClient}
             keyPrefix="account"
           >
             <MyComponent />
-          </AccountTRPCProvider>
-        </BillingTRPCProvider>
+          </AccountProvider>
+        </BillingProvider>
       </QueryClientProvider>
     );
   }
