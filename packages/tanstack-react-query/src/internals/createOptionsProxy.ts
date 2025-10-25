@@ -35,6 +35,7 @@ import type {
   DefaultFeatureFlags,
   FeatureFlags,
   OptionalCursorInput,
+  QueryKeyPrefixOptions,
   ResolverDef,
   TRPCInfiniteData,
   TRPCMutationKey,
@@ -296,9 +297,7 @@ export type TRPCOptionsProxyOptionsBase<
   overrides?: {
     mutations?: MutationOptionsOverride;
   };
-} & (TFeatureFlags['enablePrefix'] extends true
-  ? { queryKeyPrefix: string }
-  : { queryKeyPrefix?: never });
+} & QueryKeyPrefixOptions<TFeatureFlags>;
 
 export interface TRPCOptionsProxyOptionsInternal<
   TRouter extends AnyTRPCRouter,
