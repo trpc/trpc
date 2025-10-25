@@ -128,7 +128,7 @@ export type AnyTRPCMutationKey =
  */
 export type TRPCMutationKey<TPrefixEnabled extends boolean = false> =
   TPrefixEnabled extends true
-    ? TRPCMutationKeyWithPrefix | TRPCMutationKeyWithoutPrefix
+    ? TRPCMutationKeyWithPrefix
     : TRPCMutationKeyWithoutPrefix;
 
 /**

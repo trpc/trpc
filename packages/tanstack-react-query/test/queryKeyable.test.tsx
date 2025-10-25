@@ -5,6 +5,8 @@ import type { inferRouterError } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import type {
   AnyTRPCQueryKey,
+  TRPCMutationKeyWithoutPrefix,
+  TRPCMutationKeyWithPrefix,
   TRPCQueryKey,
   TRPCQueryKeyWithoutPrefix,
   TRPCQueryKeyWithPrefix,
@@ -478,7 +480,10 @@ describe('get mutationKey with prefix', () => {
 
 test('types', async () => {
   const t = initTRPC.create();
-  const appRouter = t.router({});
+  const appRouter = t.router({
+    q: t.procedure.query(() => 'query'),
+    m: t.procedure.mutation(() => 'mutation'),
+  });
 
   {
     await using ctx = testReactResource(appRouter, {
@@ -489,9 +494,16 @@ test('types', async () => {
 
     function Component() {
       const trpc = useTRPC();
-      const key = trpc.pathKey();
+      {
+        const key = trpc.q.pathKey();
 
-      expectTypeOf<typeof key>().toEqualTypeOf<TRPCQueryKeyWithPrefix>();
+        expectTypeOf<typeof key>().toEqualTypeOf<TRPCQueryKeyWithPrefix>();
+      }
+
+      {
+        const key = trpc.m.mutationKey();
+        expectTypeOf<typeof key>().toEqualTypeOf<TRPCMutationKeyWithPrefix>();
+      }
     }
   }
   {
@@ -501,9 +513,17 @@ test('types', async () => {
 
     function Component() {
       const trpc = useTRPC();
-      const key = trpc.pathKey();
+      {
+        const key = trpc.pathKey();
 
-      expectTypeOf<typeof key>().toEqualTypeOf<TRPCQueryKeyWithoutPrefix>();
+        expectTypeOf<typeof key>().toEqualTypeOf<TRPCQueryKeyWithoutPrefix>();
+      }
+      {
+        const key = trpc.m.mutationKey();
+        expectTypeOf<
+          typeof key
+        >().toEqualTypeOf<TRPCMutationKeyWithoutPrefix>();
+      }
     }
   }
 });
