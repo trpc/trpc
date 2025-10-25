@@ -8,7 +8,7 @@ import * as React from 'react';
 import { describe, expect, test } from 'vitest';
 import { z } from 'zod';
 
-const testContext = (opts?: { queryKeyPrefix?: string | string[] }) => {
+const testContext = (opts?: { queryKeyPrefix?: string }) => {
   const t = initTRPC.create({
     errorFormatter(opts) {
       return { foo: 1, ...opts.shape };

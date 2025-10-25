@@ -30,7 +30,7 @@ describe(getQueryKeyInternal, () => {
         path: ['a', 'b'],
         input: 'input value',
         type: 'query',
-        prefix: ['prefix'],
+        prefix: 'prefix',
       }),
     ).toMatchInlineSnapshot(`
       Array [
@@ -67,7 +67,7 @@ describe(getQueryKeyInternal, () => {
       getQueryKeyInternal({
         path: ['a', 'b'],
         type: 'any',
-        prefix: ['prefix'],
+        prefix: 'prefix',
       }),
     ).toMatchInlineSnapshot(`
       Array [
@@ -110,7 +110,7 @@ describe(getQueryKeyInternal, () => {
         path: ['a', 'b'],
         input: 1,
         type: 'infinite',
-        prefix: ['prefix'],
+        prefix: 'prefix',
       }),
     ).toMatchInlineSnapshot(`
       Array [

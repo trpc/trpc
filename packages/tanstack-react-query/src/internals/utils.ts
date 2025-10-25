@@ -122,7 +122,7 @@ export function getQueryKeyInternal(opts: {
   path: string[];
   input?: unknown;
   type: QueryType;
-  prefix: string[] | undefined;
+  prefix: string | undefined;
 }): AnyTRPCQueryKey {
   const base = run((): TRPCQueryKeyWithoutPrefix => {
     const { input, type } = opts;
@@ -172,7 +172,7 @@ export function getQueryKeyInternal(opts: {
   });
 
   if (opts.prefix) {
-    base.unshift(opts.prefix);
+    base.unshift([opts.prefix]);
   }
   return base;
 }
@@ -180,25 +180,23 @@ export function getQueryKeyInternal(opts: {
 /**
  * @internal
  */
-export function getMutationKeyInternal<
-  TPrefix extends readonly string[] | undefined,
->(
+export function getMutationKeyInternal<TPrefix extends string | undefined>(
   path: readonly string[],
   opts: {
     prefix?: TPrefix;
   } = {},
 ): TRPCMutationKey<TPrefix extends undefined ? false : true> {
-  const prefix = opts.prefix?.length === 0 ? [] : opts.prefix;
+  const prefix = opts.prefix;
 
   // some parts of the path may be dot-separated, split them up
   const splitPath = path.flatMap((part) => part.split('.'));
 
   if (prefix) {
     return splitPath.length
-      ? ([prefix, splitPath] as unknown as TRPCMutationKey<
+      ? ([[prefix], splitPath] as unknown as TRPCMutationKey<
           TPrefix extends undefined ? false : true
         >)
-      : [prefix];
+      : [[prefix]];
   } else {
     return splitPath.length
       ? [splitPath]

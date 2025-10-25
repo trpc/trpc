@@ -37,7 +37,7 @@ interface TRPCMutationOptionsIn<
     >,
     TRPCQueryBaseOptions {
   mutationKeyPrefix?: TFeatureFlags['enablePrefix'] extends true
-    ? string[]
+    ? string
     : never;
 }
 

@@ -10,7 +10,7 @@ import type { AnyTRPCRouter } from '@trpc/server';
 import * as React from 'react';
 import { createTRPCContext, createTRPCOptionsProxy } from '../src';
 
-type TestReactResourceExtraOpts = { queryKeyPrefix?: string | string[] };
+type TestReactResourceExtraOpts = { queryKeyPrefix?: string };
 
 export function testReactResource<TRouter extends AnyTRPCRouter>(
   appRouter: TRouter,
@@ -41,7 +41,9 @@ export function testReactResource<TRouter extends AnyTRPCRouter>(
 
   const { TRPCProvider, useTRPC, useTRPCClient } = createTRPCContext<
     TRouter,
-    { enablePrefix: true }
+    {
+      enablePrefix: true;
+    }
   >();
 
   function renderApp(ui: React.ReactNode) {
@@ -50,7 +52,7 @@ export function testReactResource<TRouter extends AnyTRPCRouter>(
         <TRPCProvider
           trpcClient={ctx.client}
           queryClient={queryClient}
-          queryKeyPrefix={opts?.queryKeyPrefix}
+          queryKeyPrefix={opts?.queryKeyPrefix ?? 'trpc'}
         >
           {ui}
         </TRPCProvider>

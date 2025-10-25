@@ -296,9 +296,7 @@ export interface TRPCOptionsProxyOptionsBase<
   overrides?: {
     mutations?: MutationOptionsOverride;
   };
-  queryKeyPrefix?: TFeatureFlags['enablePrefix'] extends true
-    ? string | string[]
-    : never;
+  queryKeyPrefix?: TFeatureFlags['enablePrefix'] extends true ? string : never;
 }
 
 export interface TRPCOptionsProxyOptionsInternal<
@@ -343,14 +341,7 @@ export function createTRPCOptionsProxy<
 >(
   opts: TRPCOptionsProxyOptions<TRouter, TFeatureFlags>,
 ): TRPCOptionsProxy<TRouter, TFeatureFlags> {
-  let queryKeyPrefix: string[] | undefined;
-  if (opts.queryKeyPrefix) {
-    if (Array.isArray(opts.queryKeyPrefix)) {
-      queryKeyPrefix = [...opts.queryKeyPrefix];
-    } else {
-      queryKeyPrefix = [opts.queryKeyPrefix];
-    }
-  }
+  const prefix = opts.queryKeyPrefix;
 
   const callIt = (type: TRPCProcedureType): any => {
     return (path: string, input: unknown, trpcOpts: TRPCRequestOptions) => {
@@ -388,7 +379,7 @@ export function createTRPCOptionsProxy<
         return getQueryKeyInternal({
           path,
           type: 'any',
-          prefix: queryKeyPrefix,
+          prefix,
         });
       },
       pathFilter: (): QueryFilters => {
@@ -397,7 +388,7 @@ export function createTRPCOptionsProxy<
           queryKey: getQueryKeyInternal({
             path,
             type: 'any',
-            prefix: queryKeyPrefix,
+            prefix,
           }),
         };
       },
@@ -412,7 +403,7 @@ export function createTRPCOptionsProxy<
             path,
             input: arg1,
             type: 'query',
-            prefix: queryKeyPrefix,
+            prefix,
           }),
           query: callIt('query'),
         });
@@ -422,7 +413,7 @@ export function createTRPCOptionsProxy<
           path,
           input: arg1,
           type: 'query',
-          prefix: queryKeyPrefix,
+          prefix,
         });
       },
       queryFilter: (): QueryFilters => {
@@ -432,7 +423,7 @@ export function createTRPCOptionsProxy<
             path,
             input: arg1,
             type: 'query',
-            prefix: queryKeyPrefix,
+            prefix,
           }),
         };
       },
@@ -447,7 +438,7 @@ export function createTRPCOptionsProxy<
             path,
             input: arg1,
             type: 'infinite',
-            prefix: queryKeyPrefix,
+            prefix,
           }),
           query: callIt('query'),
         });
@@ -457,7 +448,7 @@ export function createTRPCOptionsProxy<
           path,
           input: arg1,
           type: 'infinite',
-          prefix: queryKeyPrefix,
+          prefix,
         });
       },
       infiniteQueryFilter: (): QueryFilters => {
@@ -467,7 +458,7 @@ export function createTRPCOptionsProxy<
             path,
             input: arg1,
             type: 'infinite',
-            prefix: queryKeyPrefix,
+            prefix,
           }),
         };
       },
@@ -483,7 +474,7 @@ export function createTRPCOptionsProxy<
       },
       mutationKey: () => {
         return getMutationKeyInternal(path, {
-          prefix: queryKeyPrefix,
+          prefix,
         });
       },
 
@@ -495,7 +486,7 @@ export function createTRPCOptionsProxy<
             path,
             input: arg1,
             type: 'any',
-            prefix: queryKeyPrefix,
+            prefix,
           }),
           subscribe: callIt('subscription'),
         });
