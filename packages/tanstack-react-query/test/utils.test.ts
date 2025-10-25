@@ -5,6 +5,7 @@ describe(getQueryKeyInternal, () => {
   it('creates a query key', () => {
     expect(
       getQueryKeyInternal({
+        prefix: undefined,
         path: ['a', 'b'],
         input: 'input value',
         type: 'query',
@@ -49,8 +50,9 @@ describe(getQueryKeyInternal, () => {
   });
 
   it('creates a router key', () => {
-    expect(getQueryKeyInternal({ path: ['a', 'b'], type: 'any' }))
-      .toMatchInlineSnapshot(`
+    expect(
+      getQueryKeyInternal({ prefix: undefined, path: ['a', 'b'], type: 'any' }),
+    ).toMatchInlineSnapshot(`
       Array [
         Array [
           "a",
@@ -83,6 +85,7 @@ describe(getQueryKeyInternal, () => {
   it('creates a infinite query key', () => {
     expect(
       getQueryKeyInternal({
+        prefix: undefined,
         path: ['a', 'b'],
         input: 1,
         type: 'infinite',
