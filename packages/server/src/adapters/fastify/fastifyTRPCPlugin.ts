@@ -46,6 +46,14 @@ export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
       _done(null, body);
     },
   );
+  fastify.removeContentTypeParser('multipart/form-data');
+  fastify.addContentTypeParser(
+    'multipart/form-data',
+    {},
+    function (_, body, _done) {
+      _done(null, body);
+    },
+  );
 
   let prefix = opts.prefix ?? '';
 
