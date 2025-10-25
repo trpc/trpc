@@ -136,12 +136,16 @@ export type TRPCMutationKey<TPrefixEnabled extends boolean = false> =
  * @public
  */
 export type FeatureFlags = { keyPrefix: boolean };
+
 /**
  * @internal
  */
 export type ofFeatureFlags<T extends FeatureFlags> = T;
 
-export type QueryKeyPrefixOptions<TFeatureFlags extends FeatureFlags> =
+/**
+ * @internal
+ */
+export type KeyPrefixOptions<TFeatureFlags extends FeatureFlags> =
   TFeatureFlags['keyPrefix'] extends true
     ? {
         keyPrefix: string;

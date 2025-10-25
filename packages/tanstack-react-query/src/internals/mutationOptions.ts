@@ -11,6 +11,7 @@ import type {
 import type {
   DefaultFeatureFlags,
   FeatureFlags,
+  KeyPrefixOptions,
   ResolverDef,
   TRPCMutationKey,
   TRPCQueryBaseOptions,
@@ -25,19 +26,18 @@ import {
 
 type ReservedOptions = 'mutationKey' | 'mutationFn';
 
-interface TRPCMutationOptionsIn<
+type TRPCMutationOptionsIn<
   TInput,
   TError,
   TOutput,
   TContext,
   TFeatureFlags extends FeatureFlags,
-> extends DistributiveOmit<
-      UseMutationOptions<TOutput, TError, TInput, TContext>,
-      ReservedOptions
-    >,
-    TRPCQueryBaseOptions {
-  mutationKeyPrefix?: TFeatureFlags['keyPrefix'] extends true ? string : never;
-}
+> = DistributiveOmit<
+  UseMutationOptions<TOutput, TError, TInput, TContext>,
+  ReservedOptions
+> &
+  TRPCQueryBaseOptions &
+  KeyPrefixOptions<TFeatureFlags>;
 
 interface TRPCMutationOptionsOut<
   TInput,
@@ -109,7 +109,7 @@ export function trpcMutationOptions<TFeatureFlags extends FeatureFlags>(args: {
 
   const mutationKey = getMutationKeyInternal({
     path,
-    prefix: opts.mutationKeyPrefix,
+    prefix: opts.keyPrefix,
   }) as TRPCMutationKey<TFeatureFlags['keyPrefix']>;
 
   const defaultOpts = queryClient.defaultMutationOptions(

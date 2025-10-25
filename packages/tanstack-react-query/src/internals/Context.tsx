@@ -7,7 +7,7 @@ import { createTRPCOptionsProxy } from './createOptionsProxy';
 import type {
   DefaultFeatureFlags,
   FeatureFlags,
-  QueryKeyPrefixOptions,
+  KeyPrefixOptions,
 } from './types';
 
 type TRPCProviderType<
@@ -18,7 +18,7 @@ type TRPCProviderType<
     children: React.ReactNode;
     queryClient: QueryClient;
     trpcClient: TRPCClient<TRouter>;
-  } & QueryKeyPrefixOptions<TFeatureFlags>
+  } & KeyPrefixOptions<TFeatureFlags>
 >;
 
 export interface CreateTRPCContextResult<
