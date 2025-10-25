@@ -5,10 +5,10 @@ import {
   run,
 } from '@trpc/server/unstable-core-do-not-import';
 import type {
+  AnyTRPCMutationKey,
   AnyTRPCQueryKey,
   FeatureFlags,
   QueryType,
-  TRPCMutationKey,
   TRPCMutationKeyWithoutPrefix,
   TRPCQueryKey,
   TRPCQueryKeyWithoutPrefix,
@@ -20,7 +20,7 @@ import type {
  * @internal
  */
 export function createTRPCOptionsResult(value: {
-  path: readonly string[];
+  path: string[];
 }): TRPCQueryOptionsResult['trpc'] {
   const path = value.path.join('.');
 
@@ -57,7 +57,7 @@ export function readQueryKey(queryKey: AnyTRPCQueryKey) {
  * @internal
  */
 export function getClientArgs<TOptions, TFeatureFlags extends FeatureFlags>(
-  queryKey: TRPCQueryKey<TFeatureFlags['enablePrefix']>,
+  queryKey: TRPCQueryKey<TFeatureFlags['keyPrefix']>,
   opts: TOptions,
   infiniteParams?: {
     pageParam: any;
@@ -122,9 +122,9 @@ export function getQueryKeyInternal(opts: {
   path: string[];
   input?: unknown;
   type: QueryType;
-  prefix: string[] | undefined;
+  prefix: string | undefined;
 }): AnyTRPCQueryKey {
-  const base = run((): TRPCQueryKeyWithoutPrefix => {
+  const key = run((): TRPCQueryKeyWithoutPrefix => {
     const { input, type } = opts;
 
     // Construct a query key that is easy to destructure and flexible for
@@ -172,38 +172,27 @@ export function getQueryKeyInternal(opts: {
   });
 
   if (opts.prefix) {
-    base.unshift(opts.prefix);
+    key.unshift([opts.prefix]);
   }
-  return base;
+  return key;
 }
 
 /**
  * @internal
  */
-export function getMutationKeyInternal<
-  TPrefix extends readonly string[] | undefined,
->(
-  path: readonly string[],
-  opts: {
-    prefix?: TPrefix;
-  } = {},
-): TRPCMutationKey<TPrefix extends undefined ? false : true> {
-  const prefix = opts.prefix?.length === 0 ? [] : opts.prefix;
-
+export function getMutationKeyInternal(opts: {
+  prefix: string | undefined;
+  path: string[];
+}): AnyTRPCMutationKey {
   // some parts of the path may be dot-separated, split them up
-  const splitPath = path.flatMap((part) => part.split('.'));
+  const key: TRPCMutationKeyWithoutPrefix = [
+    opts.path.flatMap((part) => part.split('.')),
+  ];
 
-  if (prefix) {
-    return splitPath.length
-      ? ([prefix, splitPath] as unknown as TRPCMutationKey<
-          TPrefix extends undefined ? false : true
-        >)
-      : [prefix];
-  } else {
-    return splitPath.length
-      ? [splitPath]
-      : ([] as unknown as TRPCMutationKeyWithoutPrefix);
+  if (opts.prefix) {
+    key.unshift([opts.prefix]);
   }
+  return key;
 }
 
 /**

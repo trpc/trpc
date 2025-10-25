@@ -85,7 +85,7 @@ export type QueryType = 'any' | 'infinite' | 'query';
  * @public
  */
 export type TRPCQueryKeyWithoutPrefix = [
-  path: readonly string[],
+  path: string[],
   opts?: { input?: unknown; type?: Exclude<QueryType, 'any'> },
 ];
 
@@ -93,16 +93,13 @@ export type TRPCQueryKeyWithoutPrefix = [
  * @public
  */
 export type TRPCQueryKeyWithPrefix = [
-  prefix: readonly string[],
+  prefix: string[],
   ...TRPCQueryKeyWithoutPrefix,
 ];
 
 export type TRPCQueryKey<TPrefixEnabled extends boolean = false> =
   TPrefixEnabled extends true
-    ? // Enabling the feature flag does not necessarily change the query key shape,
-      // that depends on whether a prefix is provided,
-      // but enables the new shape as an option
-      TRPCQueryKeyWithPrefix | TRPCQueryKeyWithoutPrefix
+    ? TRPCQueryKeyWithPrefix
     : TRPCQueryKeyWithoutPrefix;
 
 export type AnyTRPCQueryKey =
@@ -113,33 +110,56 @@ export type AnyTRPCQueryKey =
  * @public
  */
 export type TRPCMutationKeyWithPrefix = [
-  prefix: readonly string[],
+  prefix: string[],
   ...TRPCMutationKeyWithoutPrefix,
 ];
 
 /**
  * @public
  */
-export type TRPCMutationKeyWithoutPrefix = [path: readonly string[]];
+export type TRPCMutationKeyWithoutPrefix = [path: string[]];
+
+export type AnyTRPCMutationKey =
+  | TRPCMutationKeyWithoutPrefix
+  | TRPCMutationKeyWithPrefix;
 
 /**
  * @public
  */
 export type TRPCMutationKey<TPrefixEnabled extends boolean = false> =
   TPrefixEnabled extends true
-    ? TRPCMutationKeyWithPrefix | TRPCMutationKeyWithoutPrefix
+    ? TRPCMutationKeyWithPrefix
     : TRPCMutationKeyWithoutPrefix;
 
 /**
  * Feature flags for configuring tRPC behavior
  * @public
  */
-export type FeatureFlags = { enablePrefix: boolean };
+export type FeatureFlags = { keyPrefix: boolean };
 
+/**
+ * @internal
+ */
+export type ofFeatureFlags<T extends FeatureFlags> = T;
+
+/**
+ * @internal
+ */
+export type KeyPrefixOptions<TFeatureFlags extends FeatureFlags> =
+  TFeatureFlags['keyPrefix'] extends true
+    ? {
+        keyPrefix: string;
+      }
+    : {
+        /**
+         * In order to use a query key prefix, you have to initialize the context with the `keyPrefix`
+         */
+        keyPrefix?: never;
+      };
 /**
  * Default feature flags with query key prefix disabled
  * @public
  */
-export type DefaultFeatureFlags = {
-  enablePrefix: false;
-};
+export type DefaultFeatureFlags = ofFeatureFlags<{
+  keyPrefix: false;
+}>;

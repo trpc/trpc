@@ -101,7 +101,4 @@ export function createExportRoute<
 
 type ExportRouteType = ReturnType<typeof createExportRoute>;
 
-export type ExportRouteLike = TRPCOptionsProxy<
-  ExportRouteType,
-  { enablePrefix: true }
->;
+export type ExportRouteLike = TRPCOptionsProxy<ExportRouteType>;

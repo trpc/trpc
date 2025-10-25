@@ -1,47 +1,51 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '@testing-library/dom';
 import '@testing-library/jest-dom/vitest';
 import type { TestServerAndClientResourceOpts } from '@trpc/client/__tests__/testClientResource';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { RenderResult } from '@testing-library/react';
 import { render } from '@testing-library/react';
 import { getUntypedClient } from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
 import * as React from 'react';
+import type { ofFeatureFlags } from '../src';
 import { createTRPCContext, createTRPCOptionsProxy } from '../src';
 
-type TestReactResourceExtraOpts = { queryKeyPrefix?: string | string[] };
-
-export function testReactResource<TRouter extends AnyTRPCRouter>(
+export function testReactResource<
+  TRouter extends AnyTRPCRouter,
+  TExtras extends {
+    keyPrefix?: string;
+  },
+>(
   appRouter: TRouter,
-  opts?: TestServerAndClientResourceOpts<TRouter> & TestReactResourceExtraOpts,
+  opts?: TestServerAndClientResourceOpts<TRouter> & TExtras,
 ) {
   const ctx = testServerAndClientResource(appRouter, opts);
 
   const queryClient = new QueryClient();
 
-  const optionsProxyClient = createTRPCOptionsProxy<
-    TRouter,
-    { enablePrefix: true }
-  >({
+  type $Flags = undefined extends TExtras['keyPrefix']
+    ? ofFeatureFlags<{ keyPrefix: false }>
+    : ofFeatureFlags<{ keyPrefix: true }>;
+
+  const keyPrefix = opts?.keyPrefix as any;
+
+  const optionsProxyClient = createTRPCOptionsProxy<TRouter, $Flags>({
     client: getUntypedClient(ctx.client),
     queryClient,
-    queryKeyPrefix: opts?.queryKeyPrefix,
+    keyPrefix,
   });
 
-  const optionsProxyServer = createTRPCOptionsProxy<
-    TRouter,
-    { enablePrefix: true }
-  >({
+  const optionsProxyServer = createTRPCOptionsProxy<TRouter, $Flags>({
     router: appRouter,
     ctx: {},
     queryClient,
-    queryKeyPrefix: opts?.queryKeyPrefix,
+    keyPrefix,
   });
 
   const { TRPCProvider, useTRPC, useTRPCClient } = createTRPCContext<
     TRouter,
-    { enablePrefix: true }
+    $Flags
   >();
 
   function renderApp(ui: React.ReactNode) {
@@ -50,7 +54,7 @@ export function testReactResource<TRouter extends AnyTRPCRouter>(
         <TRPCProvider
           trpcClient={ctx.client}
           queryClient={queryClient}
-          queryKeyPrefix={opts?.queryKeyPrefix}
+          keyPrefix={keyPrefix}
         >
           {ui}
         </TRPCProvider>
@@ -64,7 +68,7 @@ export function testReactResource<TRouter extends AnyTRPCRouter>(
         <TRPCProvider
           trpcClient={ctx.client}
           queryClient={queryClient}
-          queryKeyPrefix={opts?.queryKeyPrefix}
+          keyPrefix={opts?.keyPrefix as any}
         >
           {ui}
         </TRPCProvider>

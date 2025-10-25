@@ -4,20 +4,28 @@ import type { AnyTRPCRouter } from '@trpc/server';
 import * as React from 'react';
 import type { TRPCOptionsProxy } from './createOptionsProxy';
 import { createTRPCOptionsProxy } from './createOptionsProxy';
-import type { DefaultFeatureFlags, FeatureFlags } from './types';
+import type {
+  DefaultFeatureFlags,
+  FeatureFlags,
+  KeyPrefixOptions,
+} from './types';
+
+type TRPCProviderType<
+  TRouter extends AnyTRPCRouter,
+  TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
+> = React.FC<
+  {
+    children: React.ReactNode;
+    queryClient: QueryClient;
+    trpcClient: TRPCClient<TRouter>;
+  } & KeyPrefixOptions<TFeatureFlags>
+>;
 
 export interface CreateTRPCContextResult<
   TRouter extends AnyTRPCRouter,
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
 > {
-  TRPCProvider: React.FC<{
-    children: React.ReactNode;
-    queryClient: QueryClient;
-    trpcClient: TRPCClient<TRouter>;
-    queryKeyPrefix?: TFeatureFlags['enablePrefix'] extends true
-      ? string | string[]
-      : never;
-  }>;
+  TRPCProvider: TRPCProviderType<TRouter, TFeatureFlags>;
   useTRPC: () => TRPCOptionsProxy<TRouter, TFeatureFlags>;
   useTRPCClient: () => TRPCClient<TRouter>;
 }
@@ -39,29 +47,15 @@ export function createTRPCContext<
     TFeatureFlags
   > | null>(null);
 
-  function TRPCProvider(
-    props: Readonly<
-      {
-        children: React.ReactNode;
-        queryClient: QueryClient;
-        trpcClient: TRPCClient<TRouter>;
-      } & (TFeatureFlags['enablePrefix'] extends true
-        ? {
-            queryKeyPrefix?: string | string[];
-          }
-        : {
-            queryKeyPrefix?: never;
-          })
-    >,
-  ) {
+  const TRPCProvider: TRPCProviderType<TRouter, TFeatureFlags> = (props) => {
     const value = React.useMemo(
       () =>
         createTRPCOptionsProxy<TRouter, TFeatureFlags>({
           client: props.trpcClient,
           queryClient: props.queryClient,
-          queryKeyPrefix: props.queryKeyPrefix as any,
+          keyPrefix: props.keyPrefix as any,
         }),
-      [props.trpcClient, props.queryClient, props.queryKeyPrefix],
+      [props.trpcClient, props.queryClient, props.keyPrefix],
     );
     return (
       <TRPCClientContext.Provider value={props.trpcClient}>
@@ -70,7 +64,8 @@ export function createTRPCContext<
         </TRPCContext.Provider>
       </TRPCClientContext.Provider>
     );
-  }
+  };
+  TRPCProvider.displayName = 'TRPCProvider';
 
   function useTRPC() {
     const utils = React.useContext(TRPCContext);

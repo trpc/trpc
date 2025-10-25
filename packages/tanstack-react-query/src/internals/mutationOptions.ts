@@ -11,6 +11,7 @@ import type {
 import type {
   DefaultFeatureFlags,
   FeatureFlags,
+  KeyPrefixOptions,
   ResolverDef,
   TRPCMutationKey,
   TRPCQueryBaseOptions,
@@ -25,21 +26,18 @@ import {
 
 type ReservedOptions = 'mutationKey' | 'mutationFn';
 
-interface TRPCMutationOptionsIn<
+type TRPCMutationOptionsIn<
   TInput,
   TError,
   TOutput,
   TContext,
   TFeatureFlags extends FeatureFlags,
-> extends DistributiveOmit<
-      UseMutationOptions<TOutput, TError, TInput, TContext>,
-      ReservedOptions
-    >,
-    TRPCQueryBaseOptions {
-  mutationKeyPrefix?: TFeatureFlags['enablePrefix'] extends true
-    ? string[]
-    : never;
-}
+> = DistributiveOmit<
+  UseMutationOptions<TOutput, TError, TInput, TContext>,
+  ReservedOptions
+> &
+  TRPCQueryBaseOptions &
+  KeyPrefixOptions<TFeatureFlags>;
 
 interface TRPCMutationOptionsOut<
   TInput,
@@ -49,7 +47,7 @@ interface TRPCMutationOptionsOut<
   TFeatureFlags extends FeatureFlags,
 > extends UseMutationOptions<TOutput, TError, TInput, TContext>,
     TRPCQueryOptionsResult {
-  mutationKey: TRPCMutationKey<TFeatureFlags['enablePrefix']>;
+  mutationKey: TRPCMutationKey<TFeatureFlags['keyPrefix']>;
 }
 
 export interface TRPCMutationOptions<
@@ -102,16 +100,17 @@ type AnyTRPCMutationOptionsOut<TFeatureFlags extends FeatureFlags> =
 export function trpcMutationOptions<TFeatureFlags extends FeatureFlags>(args: {
   mutate: typeof TRPCUntypedClient.prototype.mutation;
   queryClient: QueryClient | (() => QueryClient);
-  path: readonly string[];
+  path: string[];
   opts: AnyTRPCMutationOptionsIn<TFeatureFlags>;
   overrides: MutationOptionsOverride | undefined;
 }): AnyTRPCMutationOptionsOut<TFeatureFlags> {
   const { mutate, path, opts, overrides } = args;
   const queryClient = unwrapLazyArg(args.queryClient);
 
-  const mutationKey = getMutationKeyInternal(path, {
-    prefix: opts.mutationKeyPrefix,
-  });
+  const mutationKey = getMutationKeyInternal({
+    path,
+    prefix: opts.keyPrefix,
+  }) as TRPCMutationKey<TFeatureFlags['keyPrefix']>;
 
   const defaultOpts = queryClient.defaultMutationOptions(
     queryClient.getMutationDefaults(mutationKey),
@@ -130,7 +129,7 @@ export function trpcMutationOptions<TFeatureFlags extends FeatureFlags>(args: {
 
   return {
     ...opts,
-    mutationKey: mutationKey,
+    mutationKey,
     mutationFn,
     onSuccess(...args) {
       const originalFn = () =>

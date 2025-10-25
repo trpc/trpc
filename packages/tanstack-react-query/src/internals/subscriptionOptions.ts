@@ -36,7 +36,7 @@ interface TRPCSubscriptionOptionsOut<
 > extends UnusedSkipTokenTRPCSubscriptionOptionsIn<TOutput, TError>,
     TRPCQueryOptionsResult {
   enabled: boolean;
-  queryKey: TRPCQueryKey<TFeatureFlags['enablePrefix']>;
+  queryKey: TRPCQueryKey<TFeatureFlags['keyPrefix']>;
   subscribe: (
     innerOpts: UnusedSkipTokenTRPCSubscriptionOptionsIn<TOutput, TError>,
   ) => Unsubscribable;
@@ -133,8 +133,8 @@ export const trpcSubscriptionOptions = <
   TFeatureFlags extends FeatureFlags,
 >(args: {
   subscribe: typeof TRPCUntypedClient.prototype.subscription;
-  path: readonly string[];
-  queryKey: TRPCQueryKey<TFeatureFlags['enablePrefix']>;
+  path: string[];
+  queryKey: TRPCQueryKey<TFeatureFlags['keyPrefix']>;
   opts?: AnyTRPCSubscriptionOptionsIn;
 }): AnyTRPCSubscriptionOptionsOut<TFeatureFlags> => {
   const { subscribe, path, queryKey, opts = {} } = args;
