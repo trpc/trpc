@@ -1,17 +1,23 @@
 import { testReactResource } from './__helpers';
-import { useQueryClient } from '@tanstack/react-query';
-import type { TRPCClientErrorLike } from '@trpc/client';
+import { QueryClient, useQueryClient } from '@tanstack/react-query';
+import {
+  createTRPCClient,
+  httpBatchLink,
+  type TRPCClientErrorLike,
+} from '@trpc/client';
 import type { inferRouterError } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
-import type {
-  AnyTRPCQueryKey,
-  TRPCMutationKeyWithoutPrefix,
-  TRPCMutationKeyWithPrefix,
-  TRPCQueryKey,
-  TRPCQueryKeyWithoutPrefix,
-  TRPCQueryKeyWithPrefix,
+import {
+  createTRPCContext,
+  type AnyTRPCQueryKey,
+  type TRPCMutationKeyWithoutPrefix,
+  type TRPCMutationKeyWithPrefix,
+  type TRPCQueryKey,
+  type TRPCQueryKeyWithoutPrefix,
+  type TRPCQueryKeyWithPrefix,
 } from '@trpc/tanstack-react-query';
 import * as React from 'react';
+import { useState } from 'react';
 import { describe, expect, test } from 'vitest';
 import { z } from 'zod';
 
@@ -478,7 +484,7 @@ describe('get mutationKey with prefix', () => {
   });
 });
 
-test('types', async () => {
+test('types of testReactResource', async () => {
   const t = initTRPC.create();
   const appRouter = t.router({
     q: t.procedure.query(() => 'query'),
@@ -486,8 +492,9 @@ test('types', async () => {
   });
 
   {
+    const prefix = 'user-123';
     await using ctx = testReactResource(appRouter, {
-      queryKeyPrefix: 'user-123',
+      queryKeyPrefix: prefix,
     });
 
     const { useTRPC } = ctx;
@@ -498,13 +505,17 @@ test('types', async () => {
         const key = trpc.q.pathKey();
 
         expectTypeOf<typeof key>().toEqualTypeOf<TRPCQueryKeyWithPrefix>();
+        expect(key).toEqual([[prefix], ['q']]);
       }
 
       {
         const key = trpc.m.mutationKey();
         expectTypeOf<typeof key>().toEqualTypeOf<TRPCMutationKeyWithPrefix>();
+        expect(key).toEqual([[prefix], ['m']]);
       }
+      return null;
     }
+    ctx.renderApp(<Component />);
   }
   {
     await using ctx = testReactResource(appRouter);
@@ -514,16 +525,107 @@ test('types', async () => {
     function Component() {
       const trpc = useTRPC();
       {
-        const key = trpc.pathKey();
+        const key = trpc.q.pathKey();
 
         expectTypeOf<typeof key>().toEqualTypeOf<TRPCQueryKeyWithoutPrefix>();
+        expect(key).toEqual([['q']]);
       }
       {
         const key = trpc.m.mutationKey();
         expectTypeOf<
           typeof key
         >().toEqualTypeOf<TRPCMutationKeyWithoutPrefix>();
+        expect(key).toEqual([['m']]);
       }
+      return null;
+    }
+    ctx.renderApp(<Component />);
+  }
+});
+
+test('types of normal usage', async () => {
+  const t = initTRPC.create();
+  const appRouter = t.router({
+    q: t.procedure.query(() => 'query'),
+    m: t.procedure.mutation(() => 'mutation'),
+  });
+
+  {
+    const { TRPCProvider } = createTRPCContext<typeof appRouter>();
+    function Component() {
+      const [queryClient] = useState(() => new QueryClient());
+      const [trpcClient] = useState(() =>
+        createTRPCClient<typeof appRouter>({
+          links: [
+            httpBatchLink({
+              url: 'http://localhost:3000',
+            }),
+          ],
+        }),
+      );
+
+      return (
+        <>
+          <TRPCProvider
+            //
+            queryClient={queryClient}
+            trpcClient={trpcClient}
+          >
+            {null}
+          </TRPCProvider>
+
+          <TRPCProvider
+            //
+            queryClient={queryClient}
+            trpcClient={trpcClient}
+            // @ts-expect-error - test
+            queryKeyPrefix="test"
+          >
+            {null}
+          </TRPCProvider>
+        </>
+      );
+    }
+  }
+
+  {
+    const { TRPCProvider } = createTRPCContext<
+      typeof appRouter,
+      { enablePrefix: true }
+    >();
+    function Component() {
+      const [queryClient] = useState(() => new QueryClient());
+      const [trpcClient] = useState(() =>
+        createTRPCClient<typeof appRouter>({
+          links: [
+            httpBatchLink({
+              url: 'http://localhost:3000',
+            }),
+          ],
+        }),
+      );
+
+      return (
+        <>
+          {/* @ts-expect-error - test enablePrefix */}
+          <TRPCProvider
+            //
+            queryClient={queryClient}
+            trpcClient={trpcClient}
+          >
+            {null}
+          </TRPCProvider>
+
+          <TRPCProvider
+            //
+            queryClient={queryClient}
+            trpcClient={trpcClient}
+            queryKeyPrefix="test"
+          >
+            {null}
+          </TRPCProvider>
+        </>
+      );
     }
   }
 });
