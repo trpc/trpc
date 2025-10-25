@@ -274,9 +274,7 @@ Enable the feature flag when creating your context:
 export const { TRPCProvider as BillingTRPCProvider, useTRPC as useBilling } = createTRPCContext<BillingRouter, { keyPrefix: true }>();
 export const { TRPCProvider as AuthTRPCProvider, useTRPC as useAuth } = createTRPCContext<AuthRouter, { keyPrefix: true }>();
 
-```
-
-```tsx
+// App.tsx
 export function App() {
   const [billingClient] = useState(() =>
     createTRPCClient<BillingRouter>({
@@ -293,11 +291,24 @@ export function App() {
     <QueryClientProvider client={queryClient}>
       <BillingTRPCProvider trpcClient={billingClient} queryClient={queryClient} keyPrefix="billing">
         <AuthTRPCProvider trpcClient={authClient} queryClient={queryClient} keyPrefix="auth">
-          <App />
+          <MyComponent />
         </AuthTRPCProvider>
       </BillingTRPCProvider>
     </QueryClientProvider>
   );
+}
+
+function MyComponent() {
+  const billing = useBilling();
+  const auth = useAuth();
+
+  const billList = useQuery(billing.list.queryOptions());
+  const authList = useQuery(auth.list.queryOptions());
+
+  return (
+    <></>
+  );
+}
 ```
 
 ### Inferring Input and Output types
