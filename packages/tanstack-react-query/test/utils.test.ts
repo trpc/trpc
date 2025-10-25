@@ -4,7 +4,9 @@ import { getQueryKeyInternal, readQueryKey } from '../src/internals/utils';
 describe(getQueryKeyInternal, () => {
   it('creates a query key', () => {
     expect(
-      getQueryKeyInternal(['a', 'b'], {
+      getQueryKeyInternal({
+        prefix: undefined,
+        path: ['a', 'b'],
         input: 'input value',
         type: 'query',
       }),
@@ -24,7 +26,8 @@ describe(getQueryKeyInternal, () => {
 
   it('creates a query key with prefix', () => {
     expect(
-      getQueryKeyInternal(['a', 'b'], {
+      getQueryKeyInternal({
+        path: ['a', 'b'],
         input: 'input value',
         type: 'query',
         prefix: ['prefix'],
@@ -47,7 +50,9 @@ describe(getQueryKeyInternal, () => {
   });
 
   it('creates a router key', () => {
-    expect(getQueryKeyInternal(['a', 'b'])).toMatchInlineSnapshot(`
+    expect(
+      getQueryKeyInternal({ prefix: undefined, path: ['a', 'b'], type: 'any' }),
+    ).toMatchInlineSnapshot(`
       Array [
         Array [
           "a",
@@ -58,8 +63,13 @@ describe(getQueryKeyInternal, () => {
   });
 
   it('creates a router key with prefix', () => {
-    expect(getQueryKeyInternal(['a', 'b'], { prefix: ['prefix'] }))
-      .toMatchInlineSnapshot(`
+    expect(
+      getQueryKeyInternal({
+        path: ['a', 'b'],
+        type: 'any',
+        prefix: ['prefix'],
+      }),
+    ).toMatchInlineSnapshot(`
       Array [
         Array [
           "prefix",
@@ -74,7 +84,9 @@ describe(getQueryKeyInternal, () => {
 
   it('creates a infinite query key', () => {
     expect(
-      getQueryKeyInternal(['a', 'b'], {
+      getQueryKeyInternal({
+        prefix: undefined,
+        path: ['a', 'b'],
         input: 1,
         type: 'infinite',
       }),
@@ -94,7 +106,8 @@ describe(getQueryKeyInternal, () => {
 
   it('creates a infinite query key with prefix', () => {
     expect(
-      getQueryKeyInternal(['a', 'b'], {
+      getQueryKeyInternal({
+        path: ['a', 'b'],
         input: 1,
         type: 'infinite',
         prefix: ['prefix'],

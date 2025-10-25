@@ -1,7 +1,4 @@
-export {
-  createTRPCContext,
-  createTRPCContextWithFeatureFlags,
-} from './internals/Context';
+export { createTRPCContext } from './internals/Context';
 export type {
   TRPCOptionsProxy,
   inferInput,

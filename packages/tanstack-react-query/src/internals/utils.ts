@@ -1,5 +1,9 @@
 import { skipToken, type QueryClient } from '@tanstack/react-query';
-import { isFunction, isObject } from '@trpc/server/unstable-core-do-not-import';
+import {
+  isFunction,
+  isObject,
+  run,
+} from '@trpc/server/unstable-core-do-not-import';
 import type {
   AnyTRPCQueryKey,
   FeatureFlags,
@@ -114,62 +118,40 @@ export async function buildQueryFromAsyncIterable<
  *
  * @internal
  */
-export function getQueryKeyInternal<TPrefix extends readonly string[]>(
-  path: readonly string[],
-  opts: {
-    input?: unknown;
-    type?: QueryType;
-    prefix?: TPrefix;
-  } = {},
-): TRPCQueryKey<TPrefix extends undefined ? false : true> {
-  // Construct a query key that is easy to destructure and flexible for
-  // partial selecting etc.
-  // https://github.com/trpc/trpc/issues/3128
+export function getQueryKeyInternal(opts: {
+  path: string[];
+  input?: unknown;
+  type: QueryType;
+  prefix: string[] | undefined;
+}): AnyTRPCQueryKey {
+  const base = run((): TRPCQueryKeyWithoutPrefix => {
+    const { input, type } = opts;
 
-  // some parts of the path may be dot-separated, split them up
-  const prefix = opts.prefix?.length === 0 ? undefined : opts.prefix;
-  const splitPath = path.flatMap((part) => part.split('.'));
+    // Construct a query key that is easy to destructure and flexible for
+    // partial selecting etc.
+    // https://github.com/trpc/trpc/issues/3128
 
-  if (!opts.input && (!opts.type || opts.type === 'any')) {
-    // this matches also all mutations (see `getMutationKeyInternal`)
+    // some parts of the path may be dot-separated, split them up
+    const splitPath = opts.path.flatMap((part) => part.split('.'));
 
-    // for `utils.invalidate()` to match all queries (including vanilla react-query)
-    // we don't want nested array if path is empty, i.e. `[]` instead of `[[]]`
+    if (!input && type === 'any') {
+      // this matches also all mutations (see `getMutationKeyInternal`)
 
-    if (prefix) {
-      return splitPath.length
-        ? ([prefix, splitPath] as TRPCQueryKey<
-            TPrefix extends undefined ? false : true
-          >)
-        : ([prefix] as TRPCQueryKey<TPrefix extends undefined ? false : true>);
-    } else {
-      return splitPath.length
-        ? [splitPath]
-        : ([] as unknown as TRPCQueryKeyWithoutPrefix);
+      // for `utils.invalidate()` to match all queries (including vanilla react-query)
+      // we don't want nested array if path is empty, i.e. `[]` instead of `[[]]`
+      return splitPath.length ? [splitPath] : ([] as unknown as TRPCQueryKey);
     }
-  }
 
-  if (
-    opts.type === 'infinite' &&
-    isObject(opts.input) &&
-    ('direction' in opts.input || 'cursor' in opts.input)
-  ) {
-    const {
-      cursor: _,
-      direction: __,
-      ...inputWithoutCursorAndDirection
-    } = opts.input;
-
-    if (!prefix) {
-      return [
-        prefix,
-        splitPath,
-        {
-          input: inputWithoutCursorAndDirection,
-          type: 'infinite',
-        },
-      ] as unknown as TRPCQueryKey<TPrefix extends undefined ? false : true>;
-    } else {
+    if (
+      type === 'infinite' &&
+      isObject(input) &&
+      ('direction' in input || 'cursor' in input)
+    ) {
+      const {
+        cursor: _,
+        direction: __,
+        ...inputWithoutCursorAndDirection
+      } = input;
       return [
         splitPath,
         {
@@ -178,28 +160,21 @@ export function getQueryKeyInternal<TPrefix extends readonly string[]>(
         },
       ];
     }
-  }
 
-  if (prefix) {
-    return [
-      prefix,
-      splitPath,
-      {
-        ...(typeof opts.input !== 'undefined' &&
-          opts.input !== skipToken && { input: opts.input }),
-        ...(opts.type && opts.type !== 'any' && { type: opts.type }),
-      },
-    ] as unknown as TRPCQueryKey<TPrefix extends undefined ? false : true>;
-  } else {
     return [
       splitPath,
       {
-        ...(typeof opts.input !== 'undefined' &&
-          opts.input !== skipToken && { input: opts.input }),
-        ...(opts.type && opts.type !== 'any' && { type: opts.type }),
+        ...(typeof input !== 'undefined' &&
+          input !== skipToken && { input: input }),
+        ...(type && type !== 'any' && { type: type }),
       },
     ];
+  });
+
+  if (opts.prefix) {
+    base.unshift(opts.prefix);
   }
+  return base;
 }
 
 /**

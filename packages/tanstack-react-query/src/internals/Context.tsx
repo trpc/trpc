@@ -6,25 +6,6 @@ import type { TRPCOptionsProxy } from './createOptionsProxy';
 import { createTRPCOptionsProxy } from './createOptionsProxy';
 import type { DefaultFeatureFlags, FeatureFlags } from './types';
 
-export interface CreateTRPCContextOpts<TEnablePrefix extends boolean> {
-  /**
-   * Enable support for prefixing all query keys with a given string or array of strings
-   *
-   * ```tsx
-   *  <TRPCProvider
-   *    trpcClient={ctx.client}
-   *    queryClient={queryClient}
-   *    queryKeyPrefix={['user-123']}
-   *  >
-   *    {ui}
-   *  </TRPCProvider>
-   * ```
-   *
-   * Will be the default in v12
-   */
-  enableKeyPrefix?: TEnablePrefix;
-}
-
 export interface CreateTRPCContextResult<
   TRouter extends AnyTRPCRouter,
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
@@ -46,28 +27,7 @@ export interface CreateTRPCContextResult<
  *
  * @see https://trpc.io/docs/client/tanstack-react-query/setup#3a-setup-the-trpc-context-provider
  */
-export function createTRPCContextWithFeatureFlags<
-  TRouter extends AnyTRPCRouter,
->() {
-  return function <TEnablePrefix extends boolean>(
-    _opts?: CreateTRPCContextOpts<TEnablePrefix>,
-  ) {
-    return __createTRPCContext<TRouter, { enablePrefix: TEnablePrefix }>();
-  };
-}
-
-/**
- * Create a set of type-safe provider-consumers
- *
- * @see https://trpc.io/docs/client/tanstack-react-query/setup#3a-setup-the-trpc-context-provider
- */
 export function createTRPCContext<
-  TRouter extends AnyTRPCRouter,
->(): CreateTRPCContextResult<TRouter, { enablePrefix: false }> {
-  return __createTRPCContext<TRouter, { enablePrefix: false }>();
-}
-
-export function __createTRPCContext<
   TRouter extends AnyTRPCRouter,
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
 >(): CreateTRPCContextResult<TRouter, TFeatureFlags> {
@@ -80,21 +40,26 @@ export function __createTRPCContext<
   > | null>(null);
 
   function TRPCProvider(
-    props: Readonly<{
-      children: React.ReactNode;
-      queryClient: QueryClient;
-      trpcClient: TRPCClient<TRouter>;
-      queryKeyPrefix?: TFeatureFlags['enablePrefix'] extends true
-        ? string | string[]
-        : never;
-    }>,
+    props: Readonly<
+      {
+        children: React.ReactNode;
+        queryClient: QueryClient;
+        trpcClient: TRPCClient<TRouter>;
+      } & (TFeatureFlags['enablePrefix'] extends true
+        ? {
+            queryKeyPrefix?: string | string[];
+          }
+        : {
+            queryKeyPrefix?: never;
+          })
+    >,
   ) {
     const value = React.useMemo(
       () =>
         createTRPCOptionsProxy<TRouter, TFeatureFlags>({
           client: props.trpcClient,
           queryClient: props.queryClient,
-          queryKeyPrefix: props.queryKeyPrefix,
+          queryKeyPrefix: props.queryKeyPrefix as any,
         }),
       [props.trpcClient, props.queryClient, props.queryKeyPrefix],
     );
@@ -125,5 +90,8 @@ export function __createTRPCContext<
     return client;
   }
 
-  return { TRPCProvider, useTRPC, useTRPCClient };
+  return { TRPCProvider, useTRPC, useTRPCClient } as CreateTRPCContextResult<
+    TRouter,
+    TFeatureFlags
+  >;
 }
