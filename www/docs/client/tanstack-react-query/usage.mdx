@@ -269,46 +269,85 @@ const billingQuery = useQuery(trpcBilling.list.queryOptions()); // billing servi
 
 Enable the feature flag when creating your context:
 
-```tsx
-// utils/trpc.ts
-export const { TRPCProvider as BillingTRPCProvider, useTRPC as useBilling } = createTRPCContext<BillingRouter, { keyPrefix: true }>();
-export const { TRPCProvider as AuthTRPCProvider, useTRPC as useAuth } = createTRPCContext<AuthRouter, { keyPrefix: true }>();
+```tsx title='utils/trpc.ts'
+// [...]
 
-// App.tsx
+const billing = createTRPCContext<BillingRouter, { keyPrefix: true }>();
+export const BillingProvider = billing.TRPCProvider;
+export const useBilling = billing.useTRPC;
+export const createBillingClient = () => createTRPCClient<BillingRouter>({
+  links: [/* ... */],
+});
+
+const account = createTRPCContext<AccountRouter, { keyPrefix: true }>();
+export const AccountProvider = account.TRPCProvider;
+export const useAccount = account.useTRPC;
+export const createAccountClient = () => createTRPCClient<AccountRouter>({
+  links: [/* ... */],
+});
+```
+
+```tsx title='App.tsx'
+// [...]
+
 export function App() {
-  const [billingClient] = useState(() =>
-    createTRPCClient<BillingRouter>({
-      links: [ /* ... */],
-    }),
-  );
-  const [authClient] = useState(() =>
-    createTRPCClient<AuthRouter>({
-      links: [ /* ... */],
-    }),
-  );
   const [queryClient] = useState(() => new QueryClient());
+  const [billingClient] = useState(() =>
+    createTRPCClient<typeof billingCtx.router>({
+      links: [httpBatchLink({ url: billingCtx.httpUrl })],
+    }),
+  );
+  const [accountClient] = useState(() =>
+    createTRPCClient<typeof accountCtx.router>({
+      links: [httpBatchLink({ url: accountCtx.httpUrl })],
+    }),
+  );
+
   return (
     <QueryClientProvider client={queryClient}>
-      <BillingTRPCProvider trpcClient={billingClient} queryClient={queryClient} keyPrefix="billing">
-        <AuthTRPCProvider trpcClient={authClient} queryClient={queryClient} keyPrefix="auth">
-          <MyComponent />
-        </AuthTRPCProvider>
+      <BillingProvider
+        client={billingClient}
+        queryClient={queryClient}
+        keyPrefix="billing"
+      >
+        <AccountProvider
+          trpcClient={accountClient}
+          queryClient={queryClient}
+          keyPrefix="account"
+        >
+          {/* ... */}
+        </AccountProvider>
       </BillingTRPCProvider>
     </QueryClientProvider>
   );
 }
+```
 
-function MyComponent() {
+```tsx title='components/MyComponent.tsx'
+// [...]
+
+export function MyComponent() {
   const billing = useBilling();
-  const auth = useAuth();
+  const account = useAccount();
 
-  const billList = useQuery(billing.list.queryOptions());
-  const authList = useQuery(auth.list.queryOptions());
+  const billingList = useQuery(billing.list.queryOptions());
+  const accountList = useQuery(account.list.queryOptions());
 
-  return (
-    <></>
-  );
+  return <div>
+    <div>Billing: {JSON.stringify(billingList.data ?? null}</div>
+    <div>Account: {JSON.stringify(accountList.data ?? null}</div>
+  </div>;
 }
+```
+
+The query keys will be properly prefixed to avoid collisions:
+
+```tsx twoslash
+// Example of how the query keys look with prefixes
+const queryKeys = [
+  [['billing'], ['list'], { type: 'query' }],
+  [['account'], ['list'], { type: 'query' }],
+];
 ```
 
 ### Inferring Input and Output types

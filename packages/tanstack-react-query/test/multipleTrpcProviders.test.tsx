@@ -15,31 +15,26 @@ import { useState } from 'react';
 import { expect, test, vi } from 'vitest';
 
 test('multiple query keys', async () => {
-  const billingT = initTRPC.create();
-  const accountT = initTRPC.create();
+  const t = initTRPC.create();
 
   await using billingCtx = testServerAndClientResource(
-    billingT.router({
-      list: billingT.procedure.query(() => ['invoice 1']),
+    t.router({
+      list: t.procedure.query(() => ['invoice 1']),
     }),
   );
+  type BillingRouter = typeof billingCtx.router;
   await using accountCtx = testServerAndClientResource(
-    accountT.router({
-      list: accountT.procedure.query(() => ['account 1']),
+    t.router({
+      list: t.procedure.query(() => ['account 1']),
     }),
   );
+  type AccountRouter = typeof accountCtx.router;
 
-  const billing = createTRPCContext<
-    typeof billingCtx.router,
-    { keyPrefix: true }
-  >();
+  const billing = createTRPCContext<BillingRouter, { keyPrefix: true }>();
   const BillingTRPCProvider = billing.TRPCProvider;
   const useBilling = billing.useTRPC;
 
-  const account = createTRPCContext<
-    typeof accountCtx.router,
-    { keyPrefix: true }
-  >();
+  const account = createTRPCContext<AccountRouter, { keyPrefix: true }>();
   const AccountTRPCProvider = account.TRPCProvider;
   const useAccount = account.useTRPC;
 
