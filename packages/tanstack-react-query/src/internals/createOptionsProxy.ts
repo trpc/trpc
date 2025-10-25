@@ -289,15 +289,16 @@ export type TRPCOptionsProxy<
 > &
   DecorateRouterKeyable<TFeatureFlags>;
 
-export interface TRPCOptionsProxyOptionsBase<
+export type TRPCOptionsProxyOptionsBase<
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
-> {
+> = {
   queryClient: QueryClient | (() => QueryClient);
   overrides?: {
     mutations?: MutationOptionsOverride;
   };
-  queryKeyPrefix?: TFeatureFlags['enablePrefix'] extends true ? string : never;
-}
+} & (TFeatureFlags['enablePrefix'] extends true
+  ? { queryKeyPrefix: string }
+  : { queryKeyPrefix?: never });
 
 export interface TRPCOptionsProxyOptionsInternal<
   TRouter extends AnyTRPCRouter,

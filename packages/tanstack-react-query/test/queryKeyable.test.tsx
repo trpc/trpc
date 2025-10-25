@@ -3,7 +3,12 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import type { inferRouterError } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
-import type { AnyTRPCQueryKey, TRPCQueryKey } from '@trpc/tanstack-react-query';
+import type {
+  AnyTRPCQueryKey,
+  TRPCQueryKey,
+  TRPCQueryKeyWithoutPrefix,
+  TRPCQueryKeyWithPrefix,
+} from '@trpc/tanstack-react-query';
 import * as React from 'react';
 import { describe, expect, test } from 'vitest';
 import { z } from 'zod';
@@ -469,4 +474,36 @@ describe('get mutationKey with prefix', () => {
 
     ctx.renderApp(<Component />);
   });
+});
+
+test('types', async () => {
+  const t = initTRPC.create();
+  const appRouter = t.router({});
+
+  {
+    await using ctx = testReactResource(appRouter, {
+      queryKeyPrefix: 'user-123',
+    });
+
+    const { useTRPC } = ctx;
+
+    function Component() {
+      const trpc = useTRPC();
+      const key = trpc.pathKey();
+
+      expectTypeOf<typeof key>().toEqualTypeOf<TRPCQueryKeyWithPrefix>();
+    }
+  }
+  {
+    await using ctx = testReactResource(appRouter);
+
+    const { useTRPC } = ctx;
+
+    function Component() {
+      const trpc = useTRPC();
+      const key = trpc.pathKey();
+
+      expectTypeOf<typeof key>().toEqualTypeOf<TRPCQueryKeyWithoutPrefix>();
+    }
+  }
 });

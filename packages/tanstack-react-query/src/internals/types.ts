@@ -99,10 +99,7 @@ export type TRPCQueryKeyWithPrefix = [
 
 export type TRPCQueryKey<TPrefixEnabled extends boolean = false> =
   TPrefixEnabled extends true
-    ? // Enabling the feature flag does not necessarily change the query key shape,
-      // that depends on whether a prefix is provided,
-      // but enables the new shape as an option
-      TRPCQueryKeyWithPrefix | TRPCQueryKeyWithoutPrefix
+    ? TRPCQueryKeyWithPrefix
     : TRPCQueryKeyWithoutPrefix;
 
 export type AnyTRPCQueryKey =
@@ -140,6 +137,17 @@ export type TRPCMutationKey<TPrefixEnabled extends boolean = false> =
  */
 export type FeatureFlags = { enablePrefix: boolean };
 
+export type QueryKeyPrefixOptions<TFeatureFlags extends FeatureFlags> =
+  TFeatureFlags['enablePrefix'] extends true
+    ? {
+        queryKeyPrefix: string;
+      }
+    : {
+        /**
+         * In order to use a query key prefix, you have to initialize the context with the `enablePrefix`
+         */
+        queryKeyPrefix?: never;
+      };
 /**
  * Default feature flags with query key prefix disabled
  * @public
