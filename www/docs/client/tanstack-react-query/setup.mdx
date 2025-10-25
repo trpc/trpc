@@ -77,7 +77,7 @@ import ImportAppRouter from '../../partials/_import-approuter.mdx';
 
 <ImportAppRouter />
 
-### 3a. Setup the tRPC context provider
+### 3a. Set up the tRPC context provider
 
 In cases where you rely on React context, such as when using server-side rendering in full-stack frameworks like Next.js, it's important to create a new QueryClient for each request so that your users don't end up sharing the same cache, you can use the `createTRPCContext` to create a set of type-safe context providers and consumers from your `AppRouter` type signature.
 
@@ -148,7 +148,11 @@ export function App() {
 }
 ```
 
-### 3b. Setup without React context
+### 3b. Set up with Query/Mutation Key Prefixing enabled
+
+If you want to prefix all queries and mutations with a specific key, see [Query Key Prefixing](./usage.mdx#keyPrefix) for setup and usage examples.
+
+### 3c. Set up without React context
 
 When building an SPA using only client-side rendering with something like Vite, you can create the `QueryClient` and tRPC client outside of React context as singletons.
 

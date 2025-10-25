@@ -1,9 +1,18 @@
 import { skipToken, type QueryClient } from '@tanstack/react-query';
-import { isFunction, isObject } from '@trpc/server/unstable-core-do-not-import';
+import {
+  isFunction,
+  isObject,
+  run,
+} from '@trpc/server/unstable-core-do-not-import';
 import type {
+  AnyTRPCMutationKey,
+  AnyTRPCQueryKey,
+  FeatureFlags,
   QueryType,
-  TRPCMutationKey,
+  TRPCMutationKeyWithoutPrefix,
   TRPCQueryKey,
+  TRPCQueryKeyWithoutPrefix,
+  TRPCQueryKeyWithPrefix,
   TRPCQueryOptionsResult,
 } from './types';
 
@@ -11,7 +20,7 @@ import type {
  * @internal
  */
 export function createTRPCOptionsResult(value: {
-  path: readonly string[];
+  path: string[];
 }): TRPCQueryOptionsResult['trpc'] {
   const path = value.path.join('.');
 
@@ -20,38 +29,65 @@ export function createTRPCOptionsResult(value: {
   };
 }
 
+export function isPrefixedQueryKey(
+  queryKey: TRPCQueryKey<any>,
+): queryKey is TRPCQueryKeyWithPrefix {
+  return queryKey.length >= 3;
+}
+
+export function readQueryKey(queryKey: AnyTRPCQueryKey) {
+  if (isPrefixedQueryKey(queryKey)) {
+    return {
+      type: 'prefixed' as const,
+      prefix: queryKey[0],
+      path: queryKey[1],
+      args: queryKey[2],
+    };
+  } else {
+    return {
+      type: 'unprefixed' as const,
+      prefix: undefined,
+      path: queryKey[0],
+      args: queryKey[1],
+    };
+  }
+}
+
 /**
  * @internal
  */
-export function getClientArgs<TOptions>(
-  queryKey: TRPCQueryKey,
+export function getClientArgs<TOptions, TFeatureFlags extends FeatureFlags>(
+  queryKey: TRPCQueryKey<TFeatureFlags['keyPrefix']>,
   opts: TOptions,
   infiniteParams?: {
     pageParam: any;
     direction: 'forward' | 'backward';
   },
 ) {
-  const path = queryKey[0];
-  let input = queryKey[1]?.input;
+  const queryKeyData = readQueryKey(queryKey);
+
+  let input = queryKeyData.args?.input;
   if (infiniteParams) {
     input = {
-      ...(input ?? {}),
+      ...(queryKeyData.args?.input ?? {}),
       ...(infiniteParams.pageParam !== undefined
         ? { cursor: infiniteParams.pageParam }
         : {}),
       direction: infiniteParams.direction,
     };
   }
-  return [path.join('.'), input, (opts as any)?.trpc] as const;
+  return [queryKeyData.path.join('.'), input, (opts as any)?.trpc] as const;
 }
 
 /**
  * @internal
  */
-export async function buildQueryFromAsyncIterable(
+export async function buildQueryFromAsyncIterable<
+  TQueryKey extends TRPCQueryKey<any>,
+>(
   asyncIterable: AsyncIterable<unknown>,
   queryClient: QueryClient,
-  queryKey: TRPCQueryKey,
+  queryKey: TQueryKey,
 ) {
   const queryCache = queryClient.getQueryCache();
 
@@ -82,65 +118,81 @@ export async function buildQueryFromAsyncIterable(
  *
  * @internal
  */
-export function getQueryKeyInternal(
-  path: readonly string[],
-  input?: unknown,
-  type?: QueryType,
-): TRPCQueryKey {
-  // Construct a query key that is easy to destructure and flexible for
-  // partial selecting etc.
-  // https://github.com/trpc/trpc/issues/3128
+export function getQueryKeyInternal(opts: {
+  path: string[];
+  input?: unknown;
+  type: QueryType;
+  prefix: string | undefined;
+}): AnyTRPCQueryKey {
+  const key = run((): TRPCQueryKeyWithoutPrefix => {
+    const { input, type } = opts;
 
-  // some parts of the path may be dot-separated, split them up
-  const splitPath = path.flatMap((part) => part.split('.'));
+    // Construct a query key that is easy to destructure and flexible for
+    // partial selecting etc.
+    // https://github.com/trpc/trpc/issues/3128
 
-  if (!input && (!type || type === 'any')) {
-    // this matches also all mutations (see `getMutationKeyInternal`)
+    // some parts of the path may be dot-separated, split them up
+    const splitPath = opts.path.flatMap((part) => part.split('.'));
 
-    // for `utils.invalidate()` to match all queries (including vanilla react-query)
-    // we don't want nested array if path is empty, i.e. `[]` instead of `[[]]`
-    return splitPath.length ? [splitPath] : ([] as unknown as TRPCQueryKey);
-  }
+    if (!input && type === 'any') {
+      // this matches also all mutations (see `getMutationKeyInternal`)
 
-  if (
-    type === 'infinite' &&
-    isObject(input) &&
-    ('direction' in input || 'cursor' in input)
-  ) {
-    const {
-      cursor: _,
-      direction: __,
-      ...inputWithoutCursorAndDirection
-    } = input;
+      // for `utils.invalidate()` to match all queries (including vanilla react-query)
+      // we don't want nested array if path is empty, i.e. `[]` instead of `[[]]`
+      return splitPath.length ? [splitPath] : ([] as unknown as TRPCQueryKey);
+    }
+
+    if (
+      type === 'infinite' &&
+      isObject(input) &&
+      ('direction' in input || 'cursor' in input)
+    ) {
+      const {
+        cursor: _,
+        direction: __,
+        ...inputWithoutCursorAndDirection
+      } = input;
+      return [
+        splitPath,
+        {
+          input: inputWithoutCursorAndDirection,
+          type: 'infinite',
+        },
+      ];
+    }
+
     return [
       splitPath,
       {
-        input: inputWithoutCursorAndDirection,
-        type: 'infinite',
+        ...(typeof input !== 'undefined' &&
+          input !== skipToken && { input: input }),
+        ...(type && type !== 'any' && { type: type }),
       },
     ];
-  }
+  });
 
-  return [
-    splitPath,
-    {
-      ...(typeof input !== 'undefined' &&
-        input !== skipToken && { input: input }),
-      ...(type && type !== 'any' && { type: type }),
-    },
-  ];
+  if (opts.prefix) {
+    key.unshift([opts.prefix]);
+  }
+  return key;
 }
 
 /**
  * @internal
  */
-export function getMutationKeyInternal(
-  path: readonly string[],
-): TRPCMutationKey {
+export function getMutationKeyInternal(opts: {
+  prefix: string | undefined;
+  path: string[];
+}): AnyTRPCMutationKey {
   // some parts of the path may be dot-separated, split them up
-  const splitPath = path.flatMap((part) => part.split('.'));
+  const key: TRPCMutationKeyWithoutPrefix = [
+    opts.path.flatMap((part) => part.split('.')),
+  ];
 
-  return splitPath.length ? [splitPath] : ([] as unknown as TRPCMutationKey);
+  if (opts.prefix) {
+    key.unshift([opts.prefix]);
+  }
+  return key;
 }
 
 /**
