@@ -10,14 +10,19 @@ export interface CreateTRPCContextResult<
   TRouter extends AnyTRPCRouter,
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
 > {
-  TRPCProvider: React.FC<{
-    children: React.ReactNode;
-    queryClient: QueryClient;
-    trpcClient: TRPCClient<TRouter>;
-    queryKeyPrefix?: TFeatureFlags['enablePrefix'] extends true
-      ? string | string[]
-      : never;
-  }>;
+  TRPCProvider: React.FC<
+    {
+      children: React.ReactNode;
+      queryClient: QueryClient;
+      trpcClient: TRPCClient<TRouter>;
+    } & (TFeatureFlags['enablePrefix'] extends true
+      ? {
+          queryKeyPrefix: string;
+        }
+      : {
+          queryKeyPrefix?: never;
+        })
+  >;
   useTRPC: () => TRPCOptionsProxy<TRouter, TFeatureFlags>;
   useTRPCClient: () => TRPCClient<TRouter>;
 }

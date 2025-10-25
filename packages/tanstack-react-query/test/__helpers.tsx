@@ -66,7 +66,7 @@ export function testReactResource<TRouter extends AnyTRPCRouter>(
         <TRPCProvider
           trpcClient={ctx.client}
           queryClient={queryClient}
-          queryKeyPrefix={opts?.queryKeyPrefix}
+          queryKeyPrefix={opts?.queryKeyPrefix ?? 'trpc'}
         >
           {ui}
         </TRPCProvider>
