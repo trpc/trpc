@@ -133,7 +133,7 @@ export const trpcSubscriptionOptions = <
   TFeatureFlags extends FeatureFlags,
 >(args: {
   subscribe: typeof TRPCUntypedClient.prototype.subscription;
-  path: readonly string[];
+  path: string[];
   queryKey: TRPCQueryKey<TFeatureFlags['enablePrefix']>;
   opts?: AnyTRPCSubscriptionOptionsIn;
 }): AnyTRPCSubscriptionOptionsOut<TFeatureFlags> => {

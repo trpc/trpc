@@ -221,7 +221,7 @@ export function trpcQueryOptions<TFeatureFlags extends FeatureFlags>(args: {
   input: unknown;
   query: typeof TRPCUntypedClient.prototype.query;
   queryClient: QueryClient | (() => QueryClient);
-  path: readonly string[];
+  path: string[];
   queryKey: TRPCQueryKey<TFeatureFlags['enablePrefix']>;
   opts: AnyTRPCQueryOptionsIn<TFeatureFlags>;
 }): AnyTRPCQueryOptionsOut<TFeatureFlags> {

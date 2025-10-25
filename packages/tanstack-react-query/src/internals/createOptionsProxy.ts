@@ -473,7 +473,8 @@ export function createTRPCOptionsProxy<
         });
       },
       mutationKey: () => {
-        return getMutationKeyInternal(path, {
+        return getMutationKeyInternal({
+          path,
           prefix,
         });
       },

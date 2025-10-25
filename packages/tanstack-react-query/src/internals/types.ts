@@ -85,7 +85,7 @@ export type QueryType = 'any' | 'infinite' | 'query';
  * @public
  */
 export type TRPCQueryKeyWithoutPrefix = [
-  path: readonly string[],
+  path: string[],
   opts?: { input?: unknown; type?: Exclude<QueryType, 'any'> },
 ];
 
@@ -93,7 +93,7 @@ export type TRPCQueryKeyWithoutPrefix = [
  * @public
  */
 export type TRPCQueryKeyWithPrefix = [
-  prefix: readonly string[],
+  prefix: string[],
   ...TRPCQueryKeyWithoutPrefix,
 ];
 
@@ -113,14 +113,18 @@ export type AnyTRPCQueryKey =
  * @public
  */
 export type TRPCMutationKeyWithPrefix = [
-  prefix: readonly string[],
+  prefix: string[],
   ...TRPCMutationKeyWithoutPrefix,
 ];
 
 /**
  * @public
  */
-export type TRPCMutationKeyWithoutPrefix = [path: readonly string[]];
+export type TRPCMutationKeyWithoutPrefix = [path: string[]];
+
+export type AnyTRPCMutationKey =
+  | TRPCMutationKeyWithoutPrefix
+  | TRPCMutationKeyWithPrefix;
 
 /**
  * @public
