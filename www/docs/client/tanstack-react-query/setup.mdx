@@ -153,14 +153,14 @@ export function App() {
 If you want to prefix all queries and mutations with a specific key (for example, to namespace them by user ID), you can enable the `enablePrefix` feature flag when creating the tRPC context.
 
 ```tsx title='components/App.tsx'
-import { createTRPCContextWithFeatureFlags } from '@trpc/tanstack-react-query';
+import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from '../server/router';
 
-// First enable the feature
-export const { TRPCProvider, useTRPC, useTRPCClient } =
-  createTRPCContextWithFeatureFlags({
-    enableKeyPrefix: true,
-  })<AppRouter>();
+// Enable the prefix feature flag
+export const { TRPCProvider, useTRPC, useTRPCClient } = createTRPCContext<
+  AppRouter,
+  { enablePrefix: true }
+>();
 
 // Then use it in your app
 export function App() {
