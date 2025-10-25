@@ -33,23 +33,23 @@ test('recipe: multiple trpc providers with query key prefixing', async () => {
   const billing = createTRPCContext<BillingRouter, { keyPrefix: true }>();
   const BillingProvider = billing.TRPCProvider;
   const useBilling = billing.useTRPC;
+  const createBillingClient = () =>
+    createTRPCClient<BillingRouter>({
+      links: [httpBatchLink({ url: billingCtx.httpUrl })],
+    });
 
   const account = createTRPCContext<AccountRouter, { keyPrefix: true }>();
   const AccountProvider = account.TRPCProvider;
   const useAccount = account.useTRPC;
+  const createAccountClient = () =>
+    createTRPCClient<AccountRouter>({
+      links: [httpBatchLink({ url: accountCtx.httpUrl })],
+    });
 
   const queryClient = new QueryClient();
   function App() {
-    const [billingClient] = useState(() =>
-      createTRPCClient<typeof billingCtx.router>({
-        links: [httpBatchLink({ url: billingCtx.httpUrl })],
-      }),
-    );
-    const [accountClient] = useState(() =>
-      createTRPCClient<typeof accountCtx.router>({
-        links: [httpBatchLink({ url: accountCtx.httpUrl })],
-      }),
-    );
+    const [billingClient] = useState(() => createBillingClient());
+    const [accountClient] = useState(() => createAccountClient());
 
     return (
       <QueryClientProvider client={queryClient}>
