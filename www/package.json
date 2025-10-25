@@ -14,6 +14,7 @@
     "clear": "docusaurus clear",
     "sponsors-sync:pull": "tsx ./src/components/sponsors/script.pull.ts",
     "sponsors-sync:push": "tsx ./src/components/sponsors/script.push.ts",
+    "sponsors-sync:validate": "cd .. && pnpm typecheck-www",
     "sponsors-sync": "run-s sponsors-sync:*",
     "postinstall:companies-using": "tsx ./src/components/CompaniesUsing.script.ts",
     "postinstall": "run-p postinstall:* --print-label",
