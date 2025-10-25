@@ -14,7 +14,7 @@ import * as React from 'react';
 import { useState } from 'react';
 import { expect, test, vi } from 'vitest';
 
-test('recipe: multiple query keys', async () => {
+test('recipe: multiple trpc providers with query key prefixing', async () => {
   const t = initTRPC.create();
 
   await using billingCtx = testServerAndClientResource(
