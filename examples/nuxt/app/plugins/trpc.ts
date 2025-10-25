@@ -1,4 +1,4 @@
-import type { AppRouter } from '~/server/api/trpc/[trpc]';
+import type { AppRouter } from '~~/server/api/trpc/[trpc]';
 import { createTRPCNuxtClient, httpBatchLink } from 'trpc-nuxt/client';
 
 export default defineNuxtPlugin(() => {
