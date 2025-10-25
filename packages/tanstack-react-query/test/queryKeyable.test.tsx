@@ -21,7 +21,7 @@ import { useState } from 'react';
 import { describe, expect, test } from 'vitest';
 import { z } from 'zod';
 
-const testContext = (opts?: { queryKeyPrefix?: string }) => {
+const testContext = (opts?: { keyPrefix?: string }) => {
   const t = initTRPC.create({
     errorFormatter(opts) {
       return { foo: 1, ...opts.shape };
@@ -335,7 +335,7 @@ describe('get queryKey', () => {
 describe('get queryKey with a prefix', () => {
   test('gets various query keys', async () => {
     await using ctx = testContext({
-      queryKeyPrefix: 'user-123',
+      keyPrefix: 'user-123',
     });
 
     const { useTRPC } = ctx;
@@ -451,7 +451,7 @@ describe('get mutationKey', () => {
 describe('get mutationKey with prefix', () => {
   test('gets various mutation keys', async () => {
     await using ctx = testContext({
-      queryKeyPrefix: 'user-123',
+      keyPrefix: 'user-123',
     });
 
     const { useTRPC } = ctx;
@@ -494,7 +494,7 @@ test('types of testReactResource', async () => {
   {
     const prefix = 'user-123';
     await using ctx = testReactResource(appRouter, {
-      queryKeyPrefix: prefix,
+      keyPrefix: prefix,
     });
 
     const { useTRPC } = ctx;
@@ -579,7 +579,7 @@ test('types of normal usage', async () => {
             queryClient={queryClient}
             trpcClient={trpcClient}
             // @ts-expect-error - test
-            queryKeyPrefix="test"
+            keyPrefix="test"
           >
             {null}
           </TRPCProvider>
@@ -591,7 +591,7 @@ test('types of normal usage', async () => {
   {
     const { TRPCProvider } = createTRPCContext<
       typeof appRouter,
-      { enablePrefix: true }
+      { keyPrefix: true }
     >();
     function Component() {
       const [queryClient] = useState(() => new QueryClient());
@@ -607,7 +607,7 @@ test('types of normal usage', async () => {
 
       return (
         <>
-          {/* @ts-expect-error - test enablePrefix */}
+          {/* @ts-expect-error - test keyPrefix */}
           <TRPCProvider
             //
             queryClient={queryClient}
@@ -620,7 +620,7 @@ test('types of normal usage', async () => {
             //
             queryClient={queryClient}
             trpcClient={trpcClient}
-            queryKeyPrefix="test"
+            keyPrefix="test"
           >
             {null}
           </TRPCProvider>

@@ -53,9 +53,9 @@ export function createTRPCContext<
         createTRPCOptionsProxy<TRouter, TFeatureFlags>({
           client: props.trpcClient,
           queryClient: props.queryClient,
-          queryKeyPrefix: props.queryKeyPrefix as any,
+          keyPrefix: props.keyPrefix as any,
         }),
-      [props.trpcClient, props.queryClient, props.queryKeyPrefix],
+      [props.trpcClient, props.queryClient, props.keyPrefix],
     );
     return (
       <TRPCClientContext.Provider value={props.trpcClient}>

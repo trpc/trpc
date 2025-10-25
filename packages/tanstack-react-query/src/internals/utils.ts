@@ -57,7 +57,7 @@ export function readQueryKey(queryKey: AnyTRPCQueryKey) {
  * @internal
  */
 export function getClientArgs<TOptions, TFeatureFlags extends FeatureFlags>(
-  queryKey: TRPCQueryKey<TFeatureFlags['enablePrefix']>,
+  queryKey: TRPCQueryKey<TFeatureFlags['keyPrefix']>,
   opts: TOptions,
   infiniteParams?: {
     pageParam: any;

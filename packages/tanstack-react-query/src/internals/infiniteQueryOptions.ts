@@ -39,7 +39,7 @@ interface UndefinedTRPCInfiniteQueryOptionsIn<
         TQueryFnData,
         TError,
         TRPCInfiniteData<TInput, TData>,
-        TRPCQueryKey<TFeatureFlags['enablePrefix']>,
+        TRPCQueryKey<TFeatureFlags['keyPrefix']>,
         NonNullable<ExtractCursorType<TInput>> | null
       >,
       ReservedOptions
@@ -59,14 +59,14 @@ interface UndefinedTRPCInfiniteQueryOptionsOut<
         TQueryFnData,
         TError,
         TRPCInfiniteData<TInput, TData>,
-        TRPCQueryKey<TFeatureFlags['enablePrefix']>,
+        TRPCQueryKey<TFeatureFlags['keyPrefix']>,
         NonNullable<ExtractCursorType<TInput>> | null
       >,
       'initialPageParam'
     >,
     TRPCQueryOptionsResult {
   queryKey: DataTag<
-    TRPCQueryKey<TFeatureFlags['enablePrefix']>,
+    TRPCQueryKey<TFeatureFlags['keyPrefix']>,
     TRPCInfiniteData<TInput, TData>,
     TError
   >;
@@ -84,7 +84,7 @@ interface DefinedTRPCInfiniteQueryOptionsIn<
         TQueryFnData,
         TError,
         TRPCInfiniteData<TInput, TData>,
-        TRPCQueryKey<TFeatureFlags['enablePrefix']>,
+        TRPCQueryKey<TFeatureFlags['keyPrefix']>,
         NonNullable<ExtractCursorType<TInput>> | null
       >,
       ReservedOptions
@@ -104,14 +104,14 @@ interface DefinedTRPCInfiniteQueryOptionsOut<
         TQueryFnData,
         TError,
         TRPCInfiniteData<TInput, TData>,
-        TRPCQueryKey<TFeatureFlags['enablePrefix']>,
+        TRPCQueryKey<TFeatureFlags['keyPrefix']>,
         NonNullable<ExtractCursorType<TInput>> | null
       >,
       'initialPageParam'
     >,
     TRPCQueryOptionsResult {
   queryKey: DataTag<
-    TRPCQueryKey<TFeatureFlags['enablePrefix']>,
+    TRPCQueryKey<TFeatureFlags['keyPrefix']>,
     TRPCInfiniteData<TInput, TData>,
     TError
   >;
@@ -129,7 +129,7 @@ interface UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
         TQueryFnData,
         TError,
         TRPCInfiniteData<TInput, TData>,
-        TRPCQueryKey<TFeatureFlags['enablePrefix']>,
+        TRPCQueryKey<TFeatureFlags['keyPrefix']>,
         NonNullable<ExtractCursorType<TInput>> | null
       >,
       ReservedOptions
@@ -149,14 +149,14 @@ interface UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
         TQueryFnData,
         TError,
         TRPCInfiniteData<TInput, TData>,
-        TRPCQueryKey<TFeatureFlags['enablePrefix']>,
+        TRPCQueryKey<TFeatureFlags['keyPrefix']>,
         NonNullable<ExtractCursorType<TInput>> | null
       >,
       'initialPageParam'
     >,
     TRPCQueryOptionsResult {
   queryKey: DataTag<
-    TRPCQueryKey<TFeatureFlags['enablePrefix']>,
+    TRPCQueryKey<TFeatureFlags['keyPrefix']>,
     TRPCInfiniteData<TInput, TData>,
     TError
   >;
@@ -255,7 +255,7 @@ export function trpcInfiniteQueryOptions<
   query: typeof TRPCUntypedClient.prototype.query;
   queryClient: QueryClient | (() => QueryClient);
   path: string[];
-  queryKey: TRPCQueryKey<TFeatureFlags['enablePrefix']>;
+  queryKey: TRPCQueryKey<TFeatureFlags['keyPrefix']>;
   opts: AnyTRPCInfiniteQueryOptionsIn<TFeatureFlags>;
 }): AnyTRPCInfiniteQueryOptionsOut<TFeatureFlags> {
   const { input, query, path, queryKey, opts } = args;
@@ -263,7 +263,7 @@ export function trpcInfiniteQueryOptions<
 
   const queryFn: QueryFunction<
     unknown,
-    TRPCQueryKey<TFeatureFlags['enablePrefix']>,
+    TRPCQueryKey<TFeatureFlags['keyPrefix']>,
     unknown
   > = async (queryFnContext) => {
     const actualOpts = {

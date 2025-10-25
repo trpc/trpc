@@ -1,20 +1,20 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '@testing-library/dom';
 import '@testing-library/jest-dom/vitest';
 import type { TestServerAndClientResourceOpts } from '@trpc/client/__tests__/testClientResource';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { RenderResult } from '@testing-library/react';
 import { render } from '@testing-library/react';
 import { getUntypedClient } from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
 import * as React from 'react';
-import type { FeatureFlags } from '../src';
+import type { ofFeatureFlags } from '../src';
 import { createTRPCContext, createTRPCOptionsProxy } from '../src';
 
 export function testReactResource<
   TRouter extends AnyTRPCRouter,
   TExtras extends {
-    queryKeyPrefix?: string;
+    keyPrefix?: string;
   },
 >(
   appRouter: TRouter,
@@ -24,24 +24,23 @@ export function testReactResource<
 
   const queryClient = new QueryClient();
 
-  type ofFeatureFlags<T extends FeatureFlags> = T;
-  type $Flags = undefined extends TExtras['queryKeyPrefix']
-    ? ofFeatureFlags<{ enablePrefix: false }>
-    : ofFeatureFlags<{ enablePrefix: true }>;
+  type $Flags = undefined extends TExtras['keyPrefix']
+    ? ofFeatureFlags<{ keyPrefix: false }>
+    : ofFeatureFlags<{ keyPrefix: true }>;
 
-  const queryKeyPrefix = opts?.queryKeyPrefix as any;
+  const keyPrefix = opts?.keyPrefix as any;
 
   const optionsProxyClient = createTRPCOptionsProxy<TRouter, $Flags>({
     client: getUntypedClient(ctx.client),
     queryClient,
-    queryKeyPrefix,
+    keyPrefix,
   });
 
   const optionsProxyServer = createTRPCOptionsProxy<TRouter, $Flags>({
     router: appRouter,
     ctx: {},
     queryClient,
-    queryKeyPrefix,
+    keyPrefix,
   });
 
   const { TRPCProvider, useTRPC, useTRPCClient } = createTRPCContext<
@@ -55,7 +54,7 @@ export function testReactResource<
         <TRPCProvider
           trpcClient={ctx.client}
           queryClient={queryClient}
-          queryKeyPrefix={queryKeyPrefix}
+          keyPrefix={keyPrefix}
         >
           {ui}
         </TRPCProvider>
@@ -69,7 +68,7 @@ export function testReactResource<
         <TRPCProvider
           trpcClient={ctx.client}
           queryClient={queryClient}
-          queryKeyPrefix={opts?.queryKeyPrefix as any}
+          keyPrefix={opts?.keyPrefix as any}
         >
           {ui}
         </TRPCProvider>

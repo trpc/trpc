@@ -135,23 +135,27 @@ export type TRPCMutationKey<TPrefixEnabled extends boolean = false> =
  * Feature flags for configuring tRPC behavior
  * @public
  */
-export type FeatureFlags = { enablePrefix: boolean };
+export type FeatureFlags = { keyPrefix: boolean };
+/**
+ * @internal
+ */
+export type ofFeatureFlags<T extends FeatureFlags> = T;
 
 export type QueryKeyPrefixOptions<TFeatureFlags extends FeatureFlags> =
-  TFeatureFlags['enablePrefix'] extends true
+  TFeatureFlags['keyPrefix'] extends true
     ? {
-        queryKeyPrefix: string;
+        keyPrefix: string;
       }
     : {
         /**
-         * In order to use a query key prefix, you have to initialize the context with the `enablePrefix`
+         * In order to use a query key prefix, you have to initialize the context with the `keyPrefix`
          */
-        queryKeyPrefix?: never;
+        keyPrefix?: never;
       };
 /**
  * Default feature flags with query key prefix disabled
  * @public
  */
-export type DefaultFeatureFlags = {
-  enablePrefix: false;
-};
+export type DefaultFeatureFlags = ofFeatureFlags<{
+  keyPrefix: false;
+}>;

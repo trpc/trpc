@@ -41,7 +41,7 @@ interface UndefinedTRPCQueryOptionsIn<
         coerceAsyncIterableToArray<TQueryFnData>,
         TError,
         coerceAsyncIterableToArray<TData>,
-        TRPCQueryKey<TFeatureFlags['enablePrefix']>
+        TRPCQueryKey<TFeatureFlags['keyPrefix']>
       >,
       ReservedOptions
     >,
@@ -56,11 +56,11 @@ interface UndefinedTRPCQueryOptionsOut<
       coerceAsyncIterableToArray<TQueryFnData>,
       TError,
       coerceAsyncIterableToArray<TOutput>,
-      TRPCQueryKey<TFeatureFlags['enablePrefix']>
+      TRPCQueryKey<TFeatureFlags['keyPrefix']>
     >,
     TRPCQueryOptionsResult {
   queryKey: DataTag<
-    TRPCQueryKey<TFeatureFlags['enablePrefix']>,
+    TRPCQueryKey<TFeatureFlags['keyPrefix']>,
     coerceAsyncIterableToArray<TOutput>,
     TError
   >;
@@ -76,7 +76,7 @@ interface DefinedTRPCQueryOptionsIn<
         coerceAsyncIterableToArray<NoInfer<TQueryFnData>>,
         TError,
         coerceAsyncIterableToArray<TData>,
-        TRPCQueryKey<TFeatureFlags['enablePrefix']>
+        TRPCQueryKey<TFeatureFlags['keyPrefix']>
       >,
       ReservedOptions
     >,
@@ -91,11 +91,11 @@ interface DefinedTRPCQueryOptionsOut<
       coerceAsyncIterableToArray<TQueryFnData>,
       TError,
       coerceAsyncIterableToArray<TData>,
-      TRPCQueryKey<TFeatureFlags['enablePrefix']>
+      TRPCQueryKey<TFeatureFlags['keyPrefix']>
     >,
     TRPCQueryOptionsResult {
   queryKey: DataTag<
-    TRPCQueryKey<TFeatureFlags['enablePrefix']>,
+    TRPCQueryKey<TFeatureFlags['keyPrefix']>,
     coerceAsyncIterableToArray<TData>,
     TError
   >;
@@ -111,7 +111,7 @@ interface UnusedSkipTokenTRPCQueryOptionsIn<
         coerceAsyncIterableToArray<TQueryFnData>,
         TError,
         coerceAsyncIterableToArray<TData>,
-        TRPCQueryKey<TFeatureFlags['enablePrefix']>
+        TRPCQueryKey<TFeatureFlags['keyPrefix']>
       >,
       ReservedOptions
     >,
@@ -126,11 +126,11 @@ interface UnusedSkipTokenTRPCQueryOptionsOut<
       coerceAsyncIterableToArray<TQueryFnData>,
       TError,
       coerceAsyncIterableToArray<TOutput>,
-      TRPCQueryKey<TFeatureFlags['enablePrefix']>
+      TRPCQueryKey<TFeatureFlags['keyPrefix']>
     >,
     TRPCQueryOptionsResult {
   queryKey: DataTag<
-    TRPCQueryKey<TFeatureFlags['enablePrefix']>,
+    TRPCQueryKey<TFeatureFlags['keyPrefix']>,
     coerceAsyncIterableToArray<TOutput>,
     TError
   >;
@@ -222,7 +222,7 @@ export function trpcQueryOptions<TFeatureFlags extends FeatureFlags>(args: {
   query: typeof TRPCUntypedClient.prototype.query;
   queryClient: QueryClient | (() => QueryClient);
   path: string[];
-  queryKey: TRPCQueryKey<TFeatureFlags['enablePrefix']>;
+  queryKey: TRPCQueryKey<TFeatureFlags['keyPrefix']>;
   opts: AnyTRPCQueryOptionsIn<TFeatureFlags>;
 }): AnyTRPCQueryOptionsOut<TFeatureFlags> {
   const { input, query, path, queryKey, opts } = args;
@@ -232,7 +232,7 @@ export function trpcQueryOptions<TFeatureFlags extends FeatureFlags>(args: {
 
   const queryFn: QueryFunction<
     unknown,
-    TRPCQueryKey<TFeatureFlags['enablePrefix']>
+    TRPCQueryKey<TFeatureFlags['keyPrefix']>
   > = async (queryFnContext) => {
     const actualOpts = {
       ...opts,

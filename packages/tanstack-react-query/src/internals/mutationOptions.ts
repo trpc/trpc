@@ -36,9 +36,7 @@ interface TRPCMutationOptionsIn<
       ReservedOptions
     >,
     TRPCQueryBaseOptions {
-  mutationKeyPrefix?: TFeatureFlags['enablePrefix'] extends true
-    ? string
-    : never;
+  mutationKeyPrefix?: TFeatureFlags['keyPrefix'] extends true ? string : never;
 }
 
 interface TRPCMutationOptionsOut<
@@ -49,7 +47,7 @@ interface TRPCMutationOptionsOut<
   TFeatureFlags extends FeatureFlags,
 > extends UseMutationOptions<TOutput, TError, TInput, TContext>,
     TRPCQueryOptionsResult {
-  mutationKey: TRPCMutationKey<TFeatureFlags['enablePrefix']>;
+  mutationKey: TRPCMutationKey<TFeatureFlags['keyPrefix']>;
 }
 
 export interface TRPCMutationOptions<
@@ -112,7 +110,7 @@ export function trpcMutationOptions<TFeatureFlags extends FeatureFlags>(args: {
   const mutationKey = getMutationKeyInternal({
     path,
     prefix: opts.mutationKeyPrefix,
-  }) as TRPCMutationKey<TFeatureFlags['enablePrefix']>;
+  }) as TRPCMutationKey<TFeatureFlags['keyPrefix']>;
 
   const defaultOpts = queryClient.defaultMutationOptions(
     queryClient.getMutationDefaults(mutationKey),
