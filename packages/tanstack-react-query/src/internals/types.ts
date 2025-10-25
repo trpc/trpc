@@ -17,6 +17,7 @@ export type ResolverDef = {
   output: any;
   transformer: boolean;
   errorShape: any;
+  featureFlags: FeatureFlags;
 };
 
 /**
@@ -83,12 +84,82 @@ export type QueryType = 'any' | 'infinite' | 'query';
 /**
  * @public
  */
-export type TRPCQueryKey = [
-  readonly string[],
-  { input?: unknown; type?: Exclude<QueryType, 'any'> }?,
+export type TRPCQueryKeyWithoutPrefix = [
+  path: string[],
+  opts?: { input?: unknown; type?: Exclude<QueryType, 'any'> },
 ];
 
 /**
  * @public
  */
-export type TRPCMutationKey = [readonly string[]]; // = [TRPCQueryKey[0]]
+export type TRPCQueryKeyWithPrefix = [
+  prefix: string[],
+  ...TRPCQueryKeyWithoutPrefix,
+];
+
+export type TRPCQueryKey<TPrefixEnabled extends boolean = false> =
+  TPrefixEnabled extends true
+    ? TRPCQueryKeyWithPrefix
+    : TRPCQueryKeyWithoutPrefix;
+
+export type AnyTRPCQueryKey =
+  | TRPCQueryKeyWithoutPrefix
+  | TRPCQueryKeyWithPrefix;
+
+/**
+ * @public
+ */
+export type TRPCMutationKeyWithPrefix = [
+  prefix: string[],
+  ...TRPCMutationKeyWithoutPrefix,
+];
+
+/**
+ * @public
+ */
+export type TRPCMutationKeyWithoutPrefix = [path: string[]];
+
+export type AnyTRPCMutationKey =
+  | TRPCMutationKeyWithoutPrefix
+  | TRPCMutationKeyWithPrefix;
+
+/**
+ * @public
+ */
+export type TRPCMutationKey<TPrefixEnabled extends boolean = false> =
+  TPrefixEnabled extends true
+    ? TRPCMutationKeyWithPrefix
+    : TRPCMutationKeyWithoutPrefix;
+
+/**
+ * Feature flags for configuring tRPC behavior
+ * @public
+ */
+export type FeatureFlags = { keyPrefix: boolean };
+
+/**
+ * @internal
+ */
+export type ofFeatureFlags<T extends FeatureFlags> = T;
+
+/**
+ * @internal
+ */
+export type KeyPrefixOptions<TFeatureFlags extends FeatureFlags> =
+  TFeatureFlags['keyPrefix'] extends true
+    ? {
+        keyPrefix: string;
+      }
+    : {
+        /**
+         * In order to use a query key prefix, you have to initialize the context with the `keyPrefix`
+         */
+        keyPrefix?: never;
+      };
+/**
+ * Default feature flags with query key prefix disabled
+ * @public
+ */
+export type DefaultFeatureFlags = ofFeatureFlags<{
+  keyPrefix: false;
+}>;

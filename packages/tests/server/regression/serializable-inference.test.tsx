@@ -1,8 +1,8 @@
-import { routerToServerAndClientNew } from '../___testHelpers';
+/// <reference types="vitest" />
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { httpLink } from '@trpc/client';
 import type { inferRouterOutputs } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
-import { konn } from 'konn';
 import superjson from 'superjson';
 
 describe('without transformer', () => {
@@ -15,29 +15,15 @@ describe('without transformer', () => {
       };
     }),
   });
-  const ctx = konn()
-    .beforeEach(() => {
-      const opts = routerToServerAndClientNew(appRouter, {
-        client({ httpUrl }) {
-          return {
-            links: [
-              httpLink({
-                url: httpUrl,
-              }),
-            ],
-          };
-        },
-      });
-
-      return opts;
-    })
-    .afterEach(async (ctx) => {
-      await ctx?.close?.();
-    })
-    .done();
 
   test('output', async () => {
-    const { client } = ctx;
+    await using ctx = testServerAndClientResource(appRouter, {
+      client({ httpUrl }) {
+        return {
+          links: [httpLink({ url: httpUrl })],
+        };
+      },
+    });
 
     type Output = inferRouterOutputs<typeof appRouter>['greeting'];
     expectTypeOf<Output>().toEqualTypeOf<{
@@ -45,7 +31,7 @@ describe('without transformer', () => {
       date: string;
     }>();
 
-    const res = await client.greeting.query();
+    const res = await ctx.client.greeting.query();
     expectTypeOf(res).toEqualTypeOf<{
       message: string;
       date: string;
@@ -65,30 +51,15 @@ describe('with transformer', () => {
       };
     }),
   });
-  const ctx = konn()
-    .beforeEach(() => {
-      const opts = routerToServerAndClientNew(appRouter, {
-        client({ httpUrl }) {
-          return {
-            links: [
-              httpLink({
-                url: httpUrl,
-                transformer: superjson,
-              }),
-            ],
-          };
-        },
-      });
-
-      return opts;
-    })
-    .afterEach(async (ctx) => {
-      await ctx?.close?.();
-    })
-    .done();
 
   test('output', async () => {
-    const { client } = ctx;
+    await using ctx = testServerAndClientResource(appRouter, {
+      client({ httpUrl }) {
+        return {
+          links: [httpLink({ url: httpUrl, transformer: superjson })],
+        };
+      },
+    });
 
     type Output = inferRouterOutputs<typeof appRouter>['greeting'];
     expectTypeOf<Output>().toEqualTypeOf<{
@@ -96,7 +67,7 @@ describe('with transformer', () => {
       date: Date;
     }>();
 
-    const res = await client.greeting.query();
+    const res = await ctx.client.greeting.query();
     expectTypeOf(res).toEqualTypeOf<{
       message: string;
       date: Date;

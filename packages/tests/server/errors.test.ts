@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import http from 'http';
 import { routerToServerAndClientNew } from './___testHelpers';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
 import type { TRPCLink } from '@trpc/client';
 import {
@@ -44,12 +45,12 @@ test('basic', async () => {
   });
 
   const onError = vi.fn();
-  const { close, client } = routerToServerAndClientNew(router, {
+  await using ctx = testServerAndClientResource(router, {
     server: {
       onError,
     },
   });
-  const clientError = await waitError(client.err.query(), TRPCClientError);
+  const clientError = await waitError(ctx.client.err.query(), TRPCClientError);
   expect(clientError.shape.message).toMatchInlineSnapshot(`"woop"`);
   expect(clientError.shape.code).toMatchInlineSnapshot(`-32603`);
 
@@ -62,8 +63,6 @@ test('basic', async () => {
   }
 
   expect(serverError.cause).toBeInstanceOf(MyError);
-
-  await close();
 });
 
 test('input error', async () => {
@@ -75,13 +74,13 @@ test('input error', async () => {
       return null;
     }),
   });
-  const { close, client } = routerToServerAndClientNew(router, {
+  await using ctx = testServerAndClientResource(router, {
     server: {
       onError,
     },
   });
   const clientError = await waitError(
-    client.err.mutate(1 as any),
+    ctx.client.err.mutate(1 as any),
     TRPCClientError,
   );
   expect(clientError.shape.message).toMatchInlineSnapshot(`
@@ -106,8 +105,6 @@ test('input error', async () => {
   // }
 
   expect(serverError.cause).toBeInstanceOf(ZodError);
-
-  await close();
 });
 
 test('unauthorized()', async () => {
@@ -119,19 +116,17 @@ test('unauthorized()', async () => {
       throw new TRPCError({ code: 'UNAUTHORIZED' });
     }),
   });
-  const { close, client } = routerToServerAndClientNew(router, {
+  await using ctx = testServerAndClientResource(router, {
     server: {
       onError,
     },
   });
-  const clientError = await waitError(client.err.query(), TRPCClientError);
+  const clientError = await waitError(ctx.client.err.query(), TRPCClientError);
   expect(clientError).toMatchInlineSnapshot(`[TRPCClientError: UNAUTHORIZED]`);
   expect(onError).toHaveBeenCalledTimes(1);
   const serverError = onError.mock.calls[0]![0]!.error;
 
   expect(serverError).toBeInstanceOf(TRPCError);
-
-  await close();
 });
 
 test('getMessageFromUnknownError()', () => {
@@ -164,13 +159,13 @@ describe('formatError()', () => {
       }),
     });
 
-    const { close, client } = routerToServerAndClientNew(router, {
+    await using ctx = testServerAndClientResource(router, {
       server: {
         onError,
       },
     });
     const clientError = await waitError(
-      client.err.mutate(1 as any),
+      ctx.client.err.mutate(1 as any),
       TRPCClientError,
     );
     delete clientError.data.stack;
@@ -224,8 +219,6 @@ Object {
     const serverError = onError.mock.calls[0]![0]!.error;
 
     expect(serverError.cause).toBeInstanceOf(ZodError);
-
-    await close();
   });
 
   test('setting custom http response code', async () => {
@@ -250,17 +243,15 @@ Object {
       q: t.procedure.input(z.string()).query(() => null),
     });
 
-    const { close, httpUrl } = routerToServerAndClientNew(router, {
+    await using ctx = testServerAndClientResource(router, {
       server: {
         onError,
       },
     });
-    const res = await fetch(`${httpUrl}/q`);
+    const res = await fetch(`${ctx.httpUrl}/q`);
 
     expect(res.ok).toBeFalsy();
     expect(res.status).toBe(TEAPOT_ERROR_CODE);
-
-    await close();
   });
 
   test('do not override response status set by middleware or resolver', async () => {
@@ -276,17 +267,15 @@ Object {
       q: t.procedure.use(middleware).query(() => null),
     });
 
-    const { close, httpUrl } = routerToServerAndClientNew(router, {
+    await using ctx = testServerAndClientResource(router, {
       server: {
         onError,
       },
     });
-    const res = await fetch(`${httpUrl}/q`);
+    const res = await fetch(`${ctx.httpUrl}/q`);
 
     expect(res.ok).toBeFalsy();
     expect(res.status).toBe(TEAPOT_ERROR_CODE);
-
-    await close();
   });
 });
 
@@ -298,13 +287,13 @@ test('make sure object is ignoring prototype', async () => {
     hello: t.procedure.query(() => 'there'),
   });
 
-  const { close, client } = routerToServerAndClientNew(router, {
+  await using ctx = testServerAndClientResource(router, {
     server: {
       onError,
     },
   });
   const clientError = await waitError(
-    (client as any).toString.query(),
+    (ctx.client as any).toString.query(),
     TRPCClientError,
   );
   expect(clientError.shape.message).toMatchInlineSnapshot(
@@ -314,8 +303,6 @@ test('make sure object is ignoring prototype', async () => {
   expect(onError).toHaveBeenCalledTimes(1);
   const serverError = onError.mock.calls[0]![0]!.error;
   expect(serverError.code).toMatchInlineSnapshot(`"NOT_FOUND"`);
-
-  await close();
 });
 
 test('allow using built-in Object-properties', async () => {
@@ -325,11 +312,10 @@ test('allow using built-in Object-properties', async () => {
     hasOwnProperty: t.procedure.query(() => 'hasOwnPropertyValue'),
   });
 
-  const { close, client } = routerToServerAndClientNew(router);
+  await using ctx = testServerAndClientResource(router);
 
-  expect(await client.toString.query()).toBe('toStringValue');
-  expect(await client.hasOwnProperty.query()).toBe('hasOwnPropertyValue');
-  await close();
+  expect(await ctx.client.toString.query()).toBe('toStringValue');
+  expect(await ctx.client.hasOwnProperty.query()).toBe('hasOwnPropertyValue');
 });
 
 test('retain stack trace', async () => {
@@ -357,13 +343,13 @@ test('retain stack trace', async () => {
     }),
   });
 
-  const { close, client } = routerToServerAndClientNew(router, {
+  await using ctx = testServerAndClientResource(router, {
     server: {
       onError,
     },
   });
 
-  const clientError = await waitError(() => client.hello.query());
+  const clientError = await waitError(() => ctx.client.hello.query());
   expect(clientError.name).toBe('TRPCClientError');
 
   expect(onError).toHaveBeenCalledTimes(1);
@@ -378,8 +364,6 @@ test('retain stack trace', async () => {
 
   // first line of stack trace
   expect(stackParts[1]).toContain(__filename);
-
-  await close();
 });
 
 describe('links have meta data about http failures', async () => {
