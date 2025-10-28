@@ -101,7 +101,7 @@ export function trpcMutationOptions<TFeatureFlags extends FeatureFlags>(args: {
   mutate: typeof TRPCUntypedClient.prototype.mutation;
   queryClient: QueryClient | (() => QueryClient);
   path: string[];
-  opts: AnyTRPCMutationOptionsIn<TFeatureFlags>;
+  opts: AnyTRPCMutationOptionsIn<TFeatureFlags> | undefined;
   overrides: MutationOptionsOverride | undefined;
 }): AnyTRPCMutationOptionsOut<TFeatureFlags> {
   const { mutate, path, opts, overrides } = args;
@@ -109,7 +109,7 @@ export function trpcMutationOptions<TFeatureFlags extends FeatureFlags>(args: {
 
   const mutationKey = getMutationKeyInternal({
     path,
-    prefix: opts.keyPrefix,
+    prefix: opts?.keyPrefix,
   }) as TRPCMutationKey<TFeatureFlags['keyPrefix']>;
 
   const defaultOpts = queryClient.defaultMutationOptions(

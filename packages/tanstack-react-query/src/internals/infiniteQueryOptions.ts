@@ -256,7 +256,7 @@ export function trpcInfiniteQueryOptions<
   queryClient: QueryClient | (() => QueryClient);
   path: string[];
   queryKey: TRPCQueryKey<TFeatureFlags['keyPrefix']>;
-  opts: AnyTRPCInfiniteQueryOptionsIn<TFeatureFlags>;
+  opts: AnyTRPCInfiniteQueryOptionsIn<TFeatureFlags> | undefined;
 }): AnyTRPCInfiniteQueryOptionsOut<TFeatureFlags> {
   const { input, query, path, queryKey, opts } = args;
   const inputIsSkipToken = input === skipToken;
@@ -288,7 +288,7 @@ export function trpcInfiniteQueryOptions<
 
   return Object.assign(
     infiniteQueryOptions({
-      ...opts,
+      ...(opts ?? ({} as AnyTRPCInfiniteQueryOptionsIn<TFeatureFlags>)),
       queryKey,
       queryFn: inputIsSkipToken ? skipToken : queryFn,
       initialPageParam: opts?.initialCursor ?? (input as any)?.cursor,
