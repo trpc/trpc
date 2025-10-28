@@ -223,7 +223,7 @@ export function trpcQueryOptions<TFeatureFlags extends FeatureFlags>(args: {
   queryClient: QueryClient | (() => QueryClient);
   path: string[];
   queryKey: TRPCQueryKey<TFeatureFlags['keyPrefix']>;
-  opts: AnyTRPCQueryOptionsIn<TFeatureFlags>;
+  opts: AnyTRPCQueryOptionsIn<TFeatureFlags> | undefined;
 }): AnyTRPCQueryOptionsOut<TFeatureFlags> {
   const { input, query, path, queryKey, opts } = args;
   const queryClient = unwrapLazyArg(args.queryClient);
