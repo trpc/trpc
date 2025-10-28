@@ -102,6 +102,60 @@ describe.each(['userid-123', undefined])(
       expect(calls).toEqual(['onMutate', 'onSuccess', 'onSettled']);
     });
 
+    test('useMutation with no opts', async () => {
+      await using ctx = testContext(keyPrefix);
+      const { useTRPC } = ctx;
+
+      const calls: string[] = [];
+
+      function MyComponent() {
+        const trpc = useTRPC();
+
+        const options = trpc.post.create.mutationOptions();
+        expect(options.trpc.path).toBe('post.create');
+
+        const mutation = useMutation(options);
+
+        React.useEffect(() => {
+          calls.push('onMutate');
+          mutation.mutate(
+            {
+              text: 'hello',
+            },
+            {
+              onSettled(data) {
+                expectTypeOf<'__mutationResult' | undefined>(data);
+                calls.push('onSettled');
+              },
+              onError(_error) {
+                calls.push('onError');
+              },
+              onSuccess(data) {
+                expectTypeOf<'__mutationResult'>(data);
+                calls.push('onSuccess');
+              },
+            },
+          );
+          // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, []);
+        if (!mutation.data) {
+          return <>...</>;
+        }
+
+        type TData = (typeof mutation)['data'];
+        expectTypeOf<TData>().toMatchTypeOf<'__mutationResult'>();
+
+        return <pre>{JSON.stringify(mutation.data ?? 'n/a', null, 4)}</pre>;
+      }
+
+      const utils = ctx.renderApp(<MyComponent />);
+      await vi.waitFor(() => {
+        expect(utils.container).toHaveTextContent(`__mutationResult`);
+      });
+
+      expect(calls).toEqual(['onMutate', 'onSuccess', 'onSettled']);
+    });
+
     test('optimistic update', async () => {
       await using ctx = testContext(keyPrefix);
       const { useTRPC } = ctx;
