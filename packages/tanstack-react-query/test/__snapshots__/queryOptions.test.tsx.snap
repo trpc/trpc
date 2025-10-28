@@ -151,3 +151,155 @@ Array [
   },
 ]
 `;
+
+exports[`queryOptions with keyPrefix: undefined > iterable > 
+        Array [
+          Object {
+            "data": undefined,
+            "fetchStatus": "fetching",
+            "status": "pending",
+          },
+          Object {
+            "data": Array [],
+            "fetchStatus": "fetching",
+            "status": "success",
+          },
+          Object {
+            "data": Array [
+              1,
+            ],
+            "fetchStatus": "fetching",
+            "status": "success",
+          },
+          Object {
+            "data": Array [
+              1,
+              2,
+            ],
+            "fetchStatus": "fetching",
+            "status": "success",
+          },
+          Object {
+            "data": Array [
+              1,
+              2,
+              3,
+            ],
+            "fetchStatus": "idle",
+            "status": "success",
+          },
+        ]
+       1`] = `
+Array [
+  Object {
+    "data": undefined,
+    "fetchStatus": "fetching",
+    "status": "pending",
+  },
+  Object {
+    "data": Array [],
+    "fetchStatus": "fetching",
+    "status": "success",
+  },
+  Object {
+    "data": Array [
+      1,
+    ],
+    "fetchStatus": "fetching",
+    "status": "success",
+  },
+  Object {
+    "data": Array [
+      1,
+      2,
+    ],
+    "fetchStatus": "fetching",
+    "status": "success",
+  },
+  Object {
+    "data": Array [
+      1,
+      2,
+      3,
+    ],
+    "fetchStatus": "idle",
+    "status": "success",
+  },
+]
+`;
+
+exports[`queryOptions with keyPrefix: user-123 > iterable > 
+        Array [
+          Object {
+            "data": undefined,
+            "fetchStatus": "fetching",
+            "status": "pending",
+          },
+          Object {
+            "data": Array [],
+            "fetchStatus": "fetching",
+            "status": "success",
+          },
+          Object {
+            "data": Array [
+              1,
+            ],
+            "fetchStatus": "fetching",
+            "status": "success",
+          },
+          Object {
+            "data": Array [
+              1,
+              2,
+            ],
+            "fetchStatus": "fetching",
+            "status": "success",
+          },
+          Object {
+            "data": Array [
+              1,
+              2,
+              3,
+            ],
+            "fetchStatus": "idle",
+            "status": "success",
+          },
+        ]
+       1`] = `
+Array [
+  Object {
+    "data": undefined,
+    "fetchStatus": "fetching",
+    "status": "pending",
+  },
+  Object {
+    "data": Array [],
+    "fetchStatus": "fetching",
+    "status": "success",
+  },
+  Object {
+    "data": Array [
+      1,
+    ],
+    "fetchStatus": "fetching",
+    "status": "success",
+  },
+  Object {
+    "data": Array [
+      1,
+      2,
+    ],
+    "fetchStatus": "fetching",
+    "status": "success",
+  },
+  Object {
+    "data": Array [
+      1,
+      2,
+      3,
+    ],
+    "fetchStatus": "idle",
+    "status": "success",
+  },
+]
+`;
