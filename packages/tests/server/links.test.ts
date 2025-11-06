@@ -6,10 +6,8 @@ import {
   httpBatchLink,
   httpBatchStreamLink,
   httpLink,
-  httpSubscriptionLink,
   loggerLink,
   retryLink,
-  splitLink,
   TRPCClientError,
 } from '@trpc/client';
 import { createChain } from '@trpc/client/links/internals/createChain';
