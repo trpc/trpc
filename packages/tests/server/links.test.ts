@@ -6,8 +6,10 @@ import {
   httpBatchLink,
   httpBatchStreamLink,
   httpLink,
+  httpSubscriptionLink,
   loggerLink,
   retryLink,
+  splitLink,
   TRPCClientError,
 } from '@trpc/client';
 import { createChain } from '@trpc/client/links/internals/createChain';
@@ -394,6 +396,7 @@ describe('batching', () => {
     );
   });
 });
+
 test('create client with links', async () => {
   let attempt = 0;
   const serverCall = vi.fn();
@@ -832,6 +835,38 @@ test('init with URL object', async () => {
   `);
 
   expect(serverCall).toHaveBeenCalledTimes(1);
+});
+
+test('httpBatchLink > relative URL', () => {
+  httpBatchLink({ url: '/api/trpc' });
+});
+
+test('httpBatchLink > absolute URL', () => {
+  httpBatchLink({ url: 'http://localhost:3000/api/trpc' });
+});
+
+test('httpBatchLink > malformed relative URL', () => {
+  expect(() =>
+    httpBatchLink({ url: 'api/trpc' }),
+  ).toThrowErrorMatchingInlineSnapshot(
+    `[Error: A valid relative or absolute url is required for \`httpLink\` options, provided: api/trpc]`,
+  );
+});
+
+test('httpBatchLink > malformed absolute URL', () => {
+  expect(() =>
+    httpBatchLink({ url: 'http://localhost:3000:3000/api/trpc' }),
+  ).toThrowErrorMatchingInlineSnapshot(
+    `[Error: A valid relative or absolute url is required for \`httpLink\` options, provided: http://localhost:3000:3000/api/trpc]`,
+  );
+});
+
+test('httpBatchLink > malformed string URL', () => {
+  expect(() =>
+    httpBatchLink({ url: 'malformed url' }),
+  ).toThrowErrorMatchingInlineSnapshot(
+    `[Error: A valid relative or absolute url is required for \`httpLink\` options, provided: malformed url]`,
+  );
 });
 
 function createEndingLink<T extends InferrableClientTypes>(config: {
