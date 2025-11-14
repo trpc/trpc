@@ -41,7 +41,7 @@
     "@actions/github": "^6.0.0",
     "@eslint/compat": "^1.2.9",
     "@ianvs/prettier-plugin-sort-imports": "^4.4.0",
-    "@manypkg/cli": "^0.22.0",
+    "@manypkg/cli": "^0.25.0",
     "@testing-library/dom": "^10.0.0",
     "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^16.1.0",
