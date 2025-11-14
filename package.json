@@ -36,12 +36,12 @@
     "publish-prerelease": "pnpm install && lerna publish prerelease --force-publish --dist-tag next --no-push && sleep 60 && git push --follow-tags",
     "merge-main": "git checkout main && git pull && git checkout next && git pull && git checkout -b next-merge-$(date '+%Y-%m-%d--%H-%M') next && git merge --ff main"
   },
-  "dependencies": {
+  "devDependencies": {
     "@actions/core": "^1.10.1",
     "@actions/github": "^6.0.0",
     "@eslint/compat": "^1.2.9",
     "@ianvs/prettier-plugin-sort-imports": "^4.4.0",
-    "@manypkg/cli": "^0.22.0",
+    "@manypkg/cli": "^0.25.0",
     "@testing-library/dom": "^10.0.0",
     "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^16.1.0",
