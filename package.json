@@ -63,7 +63,7 @@
     "lerna": "^8.1.2",
     "npm-run-all2": "^7.0.0",
     "prettier": "^3.3.3",
-    "prettier-plugin-tailwindcss": "^0.6.8",
+    "prettier-plugin-tailwindcss": "^0.7.0",
     "superjson": "^1.12.4",
     "ts-prune": "^0.10.3",
     "tsx": "^4.19.3",
