@@ -11,7 +11,7 @@
     "@js-temporal/polyfill": "^0.4.4",
     "@trpc/client": "11.7.1",
     "@trpc/server": "11.7.1",
-    "@types/node": "^24.0.0",
+    "@types/node": "^22.13.5",
     "abort-controller": "^3.0.0",
     "arktype": "^2.0.1",
     "dataloader": "^2.2.2",
