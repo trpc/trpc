@@ -2042,8 +2042,8 @@ importers:
         specifier: ^0.13.0
         version: 0.13.0
       srvx:
-        specifier: 0.8.7
-        version: 0.8.7
+        specifier: 0.9.6
+        version: 0.9.6
       superstruct:
         specifier: ^2.0.0
         version: 2.0.0
@@ -16943,8 +16943,8 @@ packages:
     resolution: {integrity: sha512-wvLeHgcVHKO8Sc/H/5lkGreJQVeYMm9rlmt8PuR1xE31rIuXhuzznUUqAt8MqLhB3MqJdFzlNAfpcWnxiFUcPw==}
     engines: {node: '>=12'}
 
-  srvx@0.8.7:
-    resolution: {integrity: sha512-g3+15LlwVOGL2QpoTPZlvRjg+9a5Tx/69CatXjFP6txvhIaW2FmGyzJfb8yft5wyfGddvJmP/Yx+e/uNDMRSLQ==}
+  srvx@0.9.6:
+    resolution: {integrity: sha512-5L4rT6qQqqb+xcoDoklUgCNdmzqJ6vbcDRwPVGRXewF55IJH0pqh0lQlrJ266ZWTKJ4mfeioqHQJeAYesS+RrQ==}
     engines: {node: '>=20.16.0'}
     hasBin: true
 
@@ -37672,9 +37672,7 @@ snapshots:
 
   srcset@4.0.0: {}
 
-  srvx@0.8.7:
-    dependencies:
-      cookie-es: 2.0.0
+  srvx@0.9.6: {}
 
   ssri@10.0.4:
     dependencies:
