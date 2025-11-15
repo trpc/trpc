@@ -57,8 +57,8 @@ importers:
         specifier: ^7.37.5
         version: 7.37.5(eslint@9.26.0(jiti@2.4.2))
       eslint-plugin-react-hooks:
-        specifier: 6.0.0-rc.1
-        version: 6.0.0-rc.1(eslint@9.26.0(jiti@2.4.2))
+        specifier: 7.0.1
+        version: 7.0.1(eslint@9.26.0(jiti@2.4.2))
       eslint-plugin-unicorn:
         specifier: 59.0.1
         version: 59.0.1(eslint@9.26.0(jiti@2.4.2))
@@ -154,10 +154,10 @@ importers:
         version: 19.1.1(@types/react@19.1.0)
       next:
         specifier: ^15.3.1
-        version: 15.4.7(@babel/core@7.26.9)(@playwright/test@1.50.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 15.4.7(@babel/core@7.27.4)(@playwright/test@1.50.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       next-auth:
         specifier: 5.0.0-beta.25
-        version: 5.0.0-beta.25(next@15.4.7(@babel/core@7.26.9)(@playwright/test@1.50.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)
+        version: 5.0.0-beta.25(next@15.4.7(@babel/core@7.27.4)(@playwright/test@1.50.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)
       react:
         specifier: ^19.1.0
         version: 19.1.0
@@ -215,7 +215,7 @@ importers:
         version: link:../../../packages/server
       next:
         specifier: ^15.3.1
-        version: 15.4.7(@babel/core@7.26.9)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 15.4.7(@babel/core@7.27.4)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react:
         specifier: ^19.1.0
         version: 19.1.0
@@ -261,7 +261,7 @@ importers:
         version: link:../../../packages/server
       next:
         specifier: ^15.3.1
-        version: 15.4.7(@babel/core@7.26.9)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 15.4.7(@babel/core@7.27.4)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
     devDependencies:
       '@tsconfig/esm':
         specifier: ^1.0.3
@@ -382,7 +382,7 @@ importers:
         version: link:../../../packages/server
       next:
         specifier: ^15.3.1
-        version: 15.4.7(@babel/core@7.26.9)(@playwright/test@1.50.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 15.4.7(@babel/core@7.27.4)(@playwright/test@1.50.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react:
         specifier: ^19.1.0
         version: 19.1.0
@@ -437,7 +437,7 @@ importers:
         version: link:../../../packages/server
       next:
         specifier: ^15.3.1
-        version: 15.4.7(@babel/core@7.26.9)(@playwright/test@1.50.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 15.4.7(@babel/core@7.27.4)(@playwright/test@1.50.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react:
         specifier: ^19.1.0
         version: 19.1.0
@@ -1006,7 +1006,7 @@ importers:
         version: link:../../packages/server
       next:
         specifier: ^15.3.1
-        version: 15.4.7(@babel/core@7.26.9)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 15.4.7(@babel/core@7.27.4)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react:
         specifier: ^19.1.0
         version: 19.1.0
@@ -1055,7 +1055,7 @@ importers:
         version: link:../../packages/server
       next:
         specifier: ^15.3.1
-        version: 15.4.7(@babel/core@7.26.9)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 15.4.7(@babel/core@7.27.4)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react:
         specifier: ^19.1.0
         version: 19.1.0
@@ -1107,7 +1107,7 @@ importers:
         version: link:../../packages/server
       next:
         specifier: ^15.3.1
-        version: 15.4.7(@babel/core@7.26.9)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 15.4.7(@babel/core@7.27.4)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react:
         specifier: ^19.1.0
         version: 19.1.0
@@ -1159,7 +1159,7 @@ importers:
         version: link:../../packages/server
       next:
         specifier: ^15.3.1
-        version: 15.4.7(@babel/core@7.26.9)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 15.4.7(@babel/core@7.27.4)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react:
         specifier: ^19.1.0
         version: 19.1.0
@@ -1214,7 +1214,7 @@ importers:
         version: 2.0.0
       next:
         specifier: ^15.3.1
-        version: 15.4.7(@babel/core@7.27.4)(@playwright/test@1.50.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 15.4.7(@babel/core@7.26.9)(@playwright/test@1.50.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react:
         specifier: ^19.1.0
         version: 19.1.0
@@ -1314,7 +1314,7 @@ importers:
         version: 2.0.0
       next:
         specifier: ^15.3.1
-        version: 15.4.7(@babel/core@7.26.9)(@playwright/test@1.50.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 15.4.7(@babel/core@7.27.4)(@playwright/test@1.50.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react:
         specifier: ^19.1.0
         version: 19.1.0
@@ -1505,10 +1505,10 @@ importers:
         version: 0.31.2(@cloudflare/workers-types@4.20250505.0)(@types/better-sqlite3@7.6.2)(@types/react@19.1.0)(bun-types@1.1.32)(postgres@3.4.4)(react@19.1.0)
       next:
         specifier: ^15.3.1
-        version: 15.4.7(@babel/core@7.26.9)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 15.4.7(@babel/core@7.27.4)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       next-auth:
         specifier: 5.0.0-beta.25
-        version: 5.0.0-beta.25(next@15.4.7(@babel/core@7.26.9)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)
+        version: 5.0.0-beta.25(next@15.4.7(@babel/core@7.27.4)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)
       postgres:
         specifier: ^3.4.4
         version: 3.4.4
@@ -1761,7 +1761,7 @@ importers:
         version: 5.0.1
       next:
         specifier: ^15.3.1
-        version: 15.4.7(@babel/core@7.26.9)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 15.4.7(@babel/core@7.27.4)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react:
         specifier: ^19.1.0
         version: 19.1.0
@@ -1824,7 +1824,7 @@ importers:
         version: 5.0.1
       next:
         specifier: ^15.3.1
-        version: 15.4.7(@babel/core@7.26.9)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 15.4.7(@babel/core@7.27.4)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react:
         specifier: ^19.1.0
         version: 19.1.0
@@ -1902,7 +1902,7 @@ importers:
         version: 1.8.8
       next:
         specifier: ^15.3.1
-        version: 15.4.7(@babel/core@7.26.9)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 15.4.7(@babel/core@7.27.4)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react:
         specifier: ^19.1.0
         version: 19.1.0
@@ -2351,7 +2351,7 @@ importers:
         version: 1.0.0
       next:
         specifier: ^15.3.1
-        version: 15.4.7(@babel/core@7.26.9)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 15.4.7(@babel/core@7.27.4)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react:
         specifier: ^19.1.0
         version: 19.1.0
@@ -11217,6 +11217,12 @@ packages:
     peerDependencies:
       eslint: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0 || ^9.0.0
 
+  eslint-plugin-react-hooks@7.0.1:
+    resolution: {integrity: sha512-O0d0m04evaNzEPoSW+59Mezf8Qt0InfgGIBJnpC0h3NH/WjUAR7BIKUfysC6todmtiZ/A0oUVS8Gce0WhBrHsA==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      eslint: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0 || ^9.0.0
+
   eslint-plugin-react@7.37.5:
     resolution: {integrity: sha512-Qteup0SqU15kdocexFNAJMvCJEfa2xUKNV4CC1xsVMrIIqEy3SQ/rqyxCWNzfrd3/ldy6HMlD2e0JDVpDg2qIA==}
     engines: {node: '>=4'}
@@ -18785,6 +18791,12 @@ packages:
     peerDependencies:
       zod: ^3.24.4
 
+  zod-validation-error@4.0.2:
+    resolution: {integrity: sha512-Q6/nZLe6jxuU80qb/4uJ4t5v2VEZ44lzQjPDhYJNztRQ4wyWc6VF3D3Kb/fAuPetZQnhS3hnajCf9CsWesghLQ==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      zod: ^3.25.0 || ^4.0.0
+
   zod@3.22.3:
     resolution: {integrity: sha512-EjIevzuJRiRPbVH4mGc8nApb/lVLKVpmUhAaR5R5doKGfAnGJ6Gr3CViAVjP+4FWSxCsybeWQdcgCtbX+7oZug==}
 
@@ -20365,7 +20377,7 @@ snapshots:
       '@babel/helper-compilation-targets': 7.26.5
       '@babel/helper-module-transforms': 7.26.0(@babel/core@7.26.9)
       '@babel/helpers': 7.26.9
-      '@babel/parser': 7.27.2
+      '@babel/parser': 7.28.4
       '@babel/template': 7.26.9
       '@babel/traverse': 7.26.9
       '@babel/types': 7.27.1
@@ -30352,6 +30364,17 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  eslint-plugin-react-hooks@7.0.1(eslint@9.26.0(jiti@2.4.2)):
+    dependencies:
+      '@babel/core': 7.27.4
+      '@babel/parser': 7.28.4
+      eslint: 9.26.0(jiti@2.4.2)
+      hermes-parser: 0.25.1
+      zod: 3.25.51
+      zod-validation-error: 4.0.2(zod@3.25.51)
+    transitivePeerDependencies:
+      - supports-color
+
   eslint-plugin-react@7.37.5(eslint@9.26.0(jiti@2.4.2)):
     dependencies:
       array-includes: 3.1.8
@@ -34065,16 +34088,16 @@ snapshots:
       react-dom: 19.1.0(react@19.1.0)
       uuid: 8.3.2
 
-  next-auth@5.0.0-beta.25(next@15.4.7(@babel/core@7.26.9)(@playwright/test@1.50.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0):
+  next-auth@5.0.0-beta.25(next@15.4.7(@babel/core@7.27.4)(@playwright/test@1.50.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0):
     dependencies:
       '@auth/core': 0.37.2
-      next: 15.4.7(@babel/core@7.26.9)(@playwright/test@1.50.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      next: 15.4.7(@babel/core@7.27.4)(@playwright/test@1.50.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react: 19.1.0
 
-  next-auth@5.0.0-beta.25(next@15.4.7(@babel/core@7.26.9)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0):
+  next-auth@5.0.0-beta.25(next@15.4.7(@babel/core@7.27.4)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0):
     dependencies:
       '@auth/core': 0.37.2
-      next: 15.4.7(@babel/core@7.26.9)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      next: 15.4.7(@babel/core@7.27.4)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react: 19.1.0
 
   next-tick@1.1.0: {}
@@ -34127,30 +34150,6 @@ snapshots:
       - '@babel/core'
       - babel-plugin-macros
 
-  next@15.4.7(@babel/core@7.26.9)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
-    dependencies:
-      '@next/env': 15.4.7
-      '@swc/helpers': 0.5.15
-      caniuse-lite: 1.0.30001739
-      postcss: 8.4.31
-      react: 19.1.0
-      react-dom: 19.1.0(react@19.1.0)
-      styled-jsx: 5.1.6(@babel/core@7.26.9)(react@19.1.0)
-    optionalDependencies:
-      '@next/swc-darwin-arm64': 15.4.7
-      '@next/swc-darwin-x64': 15.4.7
-      '@next/swc-linux-arm64-gnu': 15.4.7
-      '@next/swc-linux-arm64-musl': 15.4.7
-      '@next/swc-linux-x64-gnu': 15.4.7
-      '@next/swc-linux-x64-musl': 15.4.7
-      '@next/swc-win32-arm64-msvc': 15.4.7
-      '@next/swc-win32-x64-msvc': 15.4.7
-      '@playwright/test': 1.51.1
-      sharp: 0.34.3
-    transitivePeerDependencies:
-      - '@babel/core'
-      - babel-plugin-macros
-
   next@15.4.7(@babel/core@7.27.4)(@playwright/test@1.50.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
     dependencies:
       '@next/env': 15.4.7
@@ -34170,6 +34169,30 @@ snapshots:
       '@next/swc-win32-arm64-msvc': 15.4.7
       '@next/swc-win32-x64-msvc': 15.4.7
       '@playwright/test': 1.50.1
+      sharp: 0.34.3
+    transitivePeerDependencies:
+      - '@babel/core'
+      - babel-plugin-macros
+
+  next@15.4.7(@babel/core@7.27.4)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
+    dependencies:
+      '@next/env': 15.4.7
+      '@swc/helpers': 0.5.15
+      caniuse-lite: 1.0.30001739
+      postcss: 8.4.31
+      react: 19.1.0
+      react-dom: 19.1.0(react@19.1.0)
+      styled-jsx: 5.1.6(@babel/core@7.27.4)(react@19.1.0)
+    optionalDependencies:
+      '@next/swc-darwin-arm64': 15.4.7
+      '@next/swc-darwin-x64': 15.4.7
+      '@next/swc-linux-arm64-gnu': 15.4.7
+      '@next/swc-linux-arm64-musl': 15.4.7
+      '@next/swc-linux-x64-gnu': 15.4.7
+      '@next/swc-linux-x64-musl': 15.4.7
+      '@next/swc-win32-arm64-msvc': 15.4.7
+      '@next/swc-win32-x64-msvc': 15.4.7
+      '@playwright/test': 1.51.1
       sharp: 0.34.3
     transitivePeerDependencies:
       - '@babel/core'
@@ -39884,6 +39907,10 @@ snapshots:
       zod: 3.25.51
 
   zod-validation-error@3.4.1(zod@3.25.51):
+    dependencies:
+      zod: 3.25.51
+
+  zod-validation-error@4.0.2(zod@3.25.51):
     dependencies:
       zod: 3.25.51
 
