@@ -63,7 +63,7 @@
     "@tanstack/react-query": "^5.80.3",
     "@trpc/client": "11.7.1",
     "@trpc/server": "11.7.1",
-    "@types/node": "^22.13.5",
+    "@types/node": "^24.0.0",
     "@types/react": "^19.1.0",
     "eslint": "^9.26.0",
     "event-source-polyfill": "^1.0.31",

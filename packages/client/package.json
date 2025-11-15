@@ -118,7 +118,7 @@
   "devDependencies": {
     "@trpc/server": "11.7.1",
     "@types/isomorphic-fetch": "^0.0.39",
-    "@types/node": "^22.13.5",
+    "@types/node": "^24.0.0",
     "dataloader": "^2.2.2",
     "eslint": "^9.26.0",
     "isomorphic-fetch": "^3.0.0",

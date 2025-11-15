@@ -44,7 +44,7 @@
     "@trpc/server": "11.7.1",
     "@trpc/tanstack-react-query": "11.7.1",
     "@types/jscodeshift": "17.3.0",
-    "@types/node": "^22.13.5",
+    "@types/node": "^24.0.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "tsdown": "0.12.7",

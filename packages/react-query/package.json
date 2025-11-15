@@ -102,7 +102,7 @@
     "@trpc/client": "11.7.1",
     "@trpc/server": "11.7.1",
     "@types/express": "^5.0.0",
-    "@types/node": "^22.13.5",
+    "@types/node": "^24.0.0",
     "@types/react": "^19.1.0",
     "eslint": "^9.26.0",
     "express": "^5.0.0",
