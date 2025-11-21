@@ -94,6 +94,7 @@ export type HTTPBaseRequestOptions = GetInputOptions &
     type: ProcedureType;
     path: string;
     signal: Maybe<AbortSignal>;
+    trpcAcceptHeader?: TRPCAcceptHeader;
   };
 
 type GetUrl = (opts: HTTPBaseRequestOptions) => string;
@@ -124,6 +125,9 @@ export const getUrl: GetUrl = (opts) => {
     if (input !== undefined && opts.methodOverride !== 'POST') {
       queryParts.push(`input=${encodeURIComponent(JSON.stringify(input))}`);
     }
+  }
+  if (opts.trpcAcceptHeader) {
+    queryParts.push(`accept=${encodeURIComponent(opts.trpcAcceptHeader)}`);
   }
   if (queryParts.length) {
     url += '?' + queryParts.join('&');
