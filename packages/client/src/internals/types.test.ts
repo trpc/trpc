@@ -11,7 +11,7 @@ describe('fetch', () => {
     createTRPCClient({
       links: [
         httpBatchLink({
-          url: 'YOUR_SERVER_URL',
+          url: 'http://localhost:3000/trpc',
           fetch(url, options) {
             return fetch(url, options);
           },
