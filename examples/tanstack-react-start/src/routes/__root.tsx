@@ -53,7 +53,7 @@ function RootComponent() {
   );
 }
 
-function RootDocument({ children }: { children: React.ReactNode }) {
+function RootDocument(props: { children: React.ReactNode }) {
   return (
     <html>
       <head>
@@ -72,7 +72,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           </Link>{' '}
         </div>
         <hr />
-        {children}
+        {props.children}
         <TanStackRouterDevtools position="bottom-right" />
         <ReactQueryDevtools buttonPosition="bottom-left" />
         <Scripts />

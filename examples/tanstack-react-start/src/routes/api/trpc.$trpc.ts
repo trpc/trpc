@@ -14,8 +14,8 @@ const handler = async (request: Request) =>
 export const Route = createFileRoute('/api/trpc/$trpc')({
   server: {
     handlers: {
-      GET: ({ request }) => handler(request),
-      POST: ({ request }) => handler(request),
+      GET: (event) => handler(event.request),
+      POST: (event) => handler(event.request),
     },
   },
 });
