@@ -5,7 +5,9 @@ dist/
 .turbo/
 .vercel/
 .vinxi/
+.nitro/
 .output/
+.tanstack/
 .eslintcache
 *.tsbuildinfo
 app.config.timestamp_*
@@ -33,3 +35,4 @@ packages/*/*/
 packages/tests/node_modules
 
 examples/next-big-router/src/server/routers
+**/routeTree.gen.ts

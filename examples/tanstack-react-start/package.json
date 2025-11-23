@@ -1,0 +1,40 @@
+{
+  "name": "examples-tanstack-react-start",
+  "private": true,
+  "sideEffects": false,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build && tsc --noEmit",
+    "preview": "vite preview",
+    "start": "pnpx srvx --prod -s ../client dist/server/server.js"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.80.3",
+    "@tanstack/react-query-devtools": "^5.80.3",
+    "@tanstack/react-router": "^1.139.1",
+    "@tanstack/react-router-devtools": "^1.139.1",
+    "@tanstack/react-router-ssr-query": "^1.139.1",
+    "@tanstack/react-start": "^1.139.2",
+    "@trpc/client": "npm:@trpc/client",
+    "@trpc/server": "npm:@trpc/server",
+    "@trpc/tanstack-react-query": "npm:@trpc/tanstack-react-query",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "superjson": "^1.12.4",
+    "tailwind-merge": "^2.0.0",
+    "zod": "^3.25.51"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "npm:@tailwindcss/vite@^4.1.17",
+    "@types/node": "^22.13.5",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "nitro": "3.0.1-alpha.1",
+    "tailwindcss": "npm:tailwindcss@^4.1.17",
+    "typescript": "^5.9.2",
+    "vite": "npm:rolldown-vite@7.2.5",
+    "vite-tsconfig-paths": "^5.1.4"
+  }
+}
