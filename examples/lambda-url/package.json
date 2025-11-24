@@ -3,6 +3,9 @@
   "private": true,
   "type": "module",
   "main": "index.js",
+  "engines": {
+    "node": "^22.20.0"
+  },
   "license": "MIT",
   "scripts": {
     "lint": "eslint --cache src",

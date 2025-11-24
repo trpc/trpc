@@ -2,6 +2,9 @@
   "name": "examples-lazy-load",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": "^22.20.0"
+  },
   "scripts": {
     "build": "tsc",
     "dev:server": "node --watch src/server/index.ts",

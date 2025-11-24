@@ -2,6 +2,9 @@
   "name": "examples-minimal-react-server",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": "^22.20.0"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "node --watch index.ts",

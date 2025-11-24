@@ -2,6 +2,9 @@
   "name": "examples-vercel-edge-runtime",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": "^22.20.0"
+  },
   "scripts": {
     "build": "esbuild src/index.ts --bundle --outdir=dist --sourcemap",
     "dev": "pnpm build && edge-runtime --listen ./dist/index.js --port 3000",

@@ -2,6 +2,9 @@
   "name": "examples-cloudflare-workers",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": "^22.20.0"
+  },
   "scripts": {
     "dev": "wrangler dev",
     "lint": "eslint --cache src",

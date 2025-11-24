@@ -2,6 +2,9 @@
   "name": "examples-express-server",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": "^22.20.0"
+  },
   "scripts": {
     "dev:server": "node --watch src/server.ts",
     "dev:client": "wait-port 2021 && node --watch src/client.ts",
