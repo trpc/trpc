@@ -129,7 +129,7 @@ async function main() {
     ``,
   ].join('\n');
 
-  fs.writeFileSync(__dirname + '/script.output.ts', text);
+  fs.writeFileSync(import.meta.dirname + '/script.output.ts', text);
 }
 main().catch((err) => {
   throw err;

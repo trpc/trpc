@@ -21,7 +21,7 @@ undici.setGlobalDispatcher(
 
 const cert = run(() => {
   const nonce = () => Math.random().toString(36).substring(2, 15);
-  const name = `${__dirname}/localhost-${nonce()}`;
+  const name = `${import.meta.dirname}/localhost-${nonce()}`;
 
   // cross platform
   const args = [

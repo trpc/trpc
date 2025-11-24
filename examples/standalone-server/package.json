@@ -3,15 +3,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev:server": "tsx watch src/server",
-    "dev:client": "wait-port 2022 && tsx watch src/client",
+    "dev:server": "node --watch src/server.ts",
+    "dev:client": "wait-port 2022 && node --watch src/client.ts",
     "dev": "run-p dev:* --print-label",
     "start": "pnpm dev",
     "build": "esbuild src/server.ts src/client.ts --bundle --packages=external --platform=node --format=esm --outdir=dist --sourcemap",
     "lint": "eslint --cache src",
     "typecheck": "tsc",
-    "test-dev": "start-server-and-test 'tsx src/server' 2022 'tsx src/client'",
-    "test-start": "start-server-and-test 'node dist/server' 2022 'node dist/client'"
+    "test-dev": "start-server-and-test 'node src/server.ts' 2022 'node src/client.ts'",
+    "test-start": "start-server-and-test 'node dist/server.js' 2022 'node dist/client.js'"
   },
   "dependencies": {
     "@trpc/client": "npm:@trpc/client",
@@ -30,7 +30,6 @@
     "eslint": "^9.26.0",
     "npm-run-all": "^4.1.5",
     "start-server-and-test": "^1.12.0",
-    "tsx": "^4.19.3",
     "typescript": "^5.9.2",
     "wait-port": "^1.0.1"
   },

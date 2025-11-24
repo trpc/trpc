@@ -7,13 +7,12 @@
   "scripts": {
     "lint": "eslint --cache src",
     "typecheck": "tsc",
-    "start": "tsx watch src/client.ts",
+    "start": "node --watch src/client.ts",
     "deploy": "serverless deploy"
   },
   "dependencies": {
     "@trpc/client": "workspace:*",
     "@trpc/server": "workspace:*",
-    "tsx": "^4.19.3",
     "zod": "^3.25.51"
   },
   "devDependencies": {

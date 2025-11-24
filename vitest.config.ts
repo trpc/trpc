@@ -3,13 +3,11 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path, { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
 const aliases: Record<string, string> = {};
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const packagesDir = path.resolve(__dirname, 'packages');
+const packagesDir = path.resolve(import.meta.dirname, 'packages');
 
 const dirs = readdirSync(packagesDir)
   .filter((it) => it !== 'tests' && !it.startsWith('.'))
@@ -41,7 +39,9 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    setupFiles: [__dirname + '/packages/tests/suppressActWarnings.ts'],
+    setupFiles: [
+      import.meta.dirname + '/packages/tests/suppressActWarnings.ts',
+    ],
     snapshotFormat: {
       printBasicPrototype: true,
     },

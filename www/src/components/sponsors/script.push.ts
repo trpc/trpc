@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 // Don't judge me on this code
 import fs from 'fs';
-import { allSponsors } from './script.output';
+import { allSponsors } from './script.output.ts';
 
 const sponsors = [...allSponsors].sort((a, b) => b.weight - a.weight);
 
@@ -143,7 +143,7 @@ for (const [k, config] of Object.entries(bucketConfig)) {
 }
 
 const markdownStr = markdown.join('\n\n');
-const rootPath = __dirname + '/../../../..';
+const rootPath = import.meta.dirname + '/../../../..';
 
 const files = [
   `${rootPath}/README.md`,

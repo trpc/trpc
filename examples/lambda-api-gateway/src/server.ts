@@ -6,7 +6,6 @@ import { z } from 'zod';
 
 function createContext({
   event,
-  context,
 }: CreateAWSLambdaContextOptions<APIGatewayProxyEvent>) {
   return {
     event: event,

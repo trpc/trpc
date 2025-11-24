@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "lint": "eslint --cache src",
-    "test-dev": "start-server-and-test 'wrangler dev --local' http://127.0.0.1:8787 'tsx src/client.ts'"
+    "test-dev": "start-server-and-test 'wrangler dev --local' http://127.0.0.1:8787 'node src/client.ts'"
   },
   "dependencies": {
     "@trpc/client": "npm:@trpc/client",
@@ -17,7 +17,6 @@
     "@types/node": "^22.13.5",
     "eslint": "^9.26.0",
     "start-server-and-test": "^1.12.0",
-    "tsx": "^4.19.3",
     "typescript": "^5.9.2",
     "wrangler": "^4.14.1"
   },

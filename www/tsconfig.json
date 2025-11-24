@@ -4,6 +4,7 @@
     "strict": true,
     "strictNullChecks": true,
     "noUncheckedIndexedAccess": true,
+    "allowImportingTsExtensions": true,
     "noEmit": true,
     "types": [
       "node",

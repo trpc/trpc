@@ -2,8 +2,8 @@
  * This a minimal tRPC server
  */
 import { z } from 'zod';
-import { db } from '../db.js';
-import { publicProcedure, router } from '../trpc.js';
+import { db } from '../db.ts';
+import { publicProcedure, router } from '../trpc.ts';
 
 console.log('💤 Lazy loading user router...');
 

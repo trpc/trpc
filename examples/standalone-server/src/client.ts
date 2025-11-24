@@ -6,7 +6,7 @@ import {
   wsLink,
 } from '@trpc/client';
 import { WebSocket } from 'ws';
-import type { AppRouter } from './server';
+import type { AppRouter } from './server.ts';
 
 globalThis.WebSocket = WebSocket as any;
 

@@ -1,6 +1,6 @@
-import { serverA_appRouter } from '../server-a/router.js';
-import { serverB_appRouter } from '../server-b/router.js';
-import { router } from '../server-lib/index.js';
+import { serverA_appRouter } from '../server-a/router.ts';
+import { serverB_appRouter } from '../server-b/router.ts';
+import { router } from '../server-lib/index.ts';
 
 const appRouter = router({
   serverA: serverA_appRouter,

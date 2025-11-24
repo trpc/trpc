@@ -8,13 +8,12 @@
     "lint": "eslint --cache src",
     "typecheck": "tsc",
     "start-server": "serverless offline --httpPort 4050",
-    "start-client": "tsx src/client.ts",
-    "http-rest-client": "tsx src/payloadFormatVersionClient.ts"
+    "start-client": "node src/client.ts",
+    "http-rest-client": "node src/payloadFormatVersionClient.ts"
   },
   "dependencies": {
     "@trpc/client": "npm:@trpc/client",
     "@trpc/server": "npm:@trpc/server",
-    "tsx": "^4.19.3",
     "zod": "^3.25.51"
   },
   "devDependencies": {

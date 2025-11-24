@@ -1,6 +1,6 @@
 import { createTRPCClient, httpBatchLink, loggerLink } from '@trpc/client';
 import { tap } from '@trpc/server/observable';
-import type { AppRouter } from './server';
+import type { AppRouter } from './server.ts';
 
 const sleep = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms));
 

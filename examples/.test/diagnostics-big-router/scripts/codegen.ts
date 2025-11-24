@@ -4,7 +4,7 @@ import fs from 'fs';
 // Each router will have 5 procedures + a small sub-router with 2 procedures
 const NUM_ROUTERS = 100;
 
-const ROUTERS_DIR = __dirname + '/../src/server/routers';
+const ROUTERS_DIR = import.meta.dirname + '/../src/server/routers';
 if (fs.existsSync(ROUTERS_DIR)) {
   fs.rmSync(ROUTERS_DIR, { recursive: true });
 }
@@ -12,7 +12,10 @@ if (fs.existsSync(ROUTERS_DIR)) {
 fs.mkdirSync(ROUTERS_DIR, { recursive: true });
 
 // read file codege-base.ts in the same dir as this script
-const codegenBase = fs.readFileSync(__dirname + '/codegen-base.ts', 'utf-8');
+const codegenBase = fs.readFileSync(
+  import.meta.dirname + '/codegen-base.ts',
+  'utf-8',
+);
 
 function createRouter(routerName: string) {
   return codegenBase.replace('__ROUTER__NAME__', routerName);

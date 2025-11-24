@@ -1,5 +1,5 @@
 import { createTRPCClient, httpBatchLink, loggerLink } from '@trpc/client';
-import type { AppRouter } from './router';
+import type { AppRouter } from './router.ts';
 
 const sleep = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms));
 

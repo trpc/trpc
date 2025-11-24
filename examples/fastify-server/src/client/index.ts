@@ -6,9 +6,9 @@ import {
   wsLink,
 } from '@trpc/client';
 import superjson from 'superjson';
-import { serverConfig } from '../config';
-import type { AppRouter } from '../server/router';
-import './polyfill';
+import { serverConfig } from '../config.ts';
+import type { AppRouter } from '../server/router/index.ts';
+import './polyfill.ts';
 
 async function start() {
   const { port, prefix } = serverConfig;

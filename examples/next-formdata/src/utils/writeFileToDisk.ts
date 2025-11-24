@@ -3,7 +3,7 @@ import path from 'node:path';
 import { Readable } from 'node:stream';
 
 export async function writeFileToDisk(file: File) {
-  const rootDir = __dirname + '/../../../../..';
+  const rootDir = import.meta.dirname + '/../../../../..';
 
   const nonce = Date.now();
   const fileDir = path.resolve(`${rootDir}/public/uploads/${nonce}`);

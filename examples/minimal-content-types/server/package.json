@@ -1,9 +1,10 @@
 {
   "name": "examples-minimal-content-types-react-server",
   "private": true,
+  "type": "module",
   "scripts": {
     "build": "tsc",
-    "dev": "tsx watch index.ts",
+    "dev": "node --watch index.ts",
     "lint": "eslint --cache index.ts",
     "start": "node dist/index.js"
   },
@@ -16,7 +17,6 @@
     "@types/cors": "^2.8.13",
     "@types/node": "^22.13.5",
     "eslint": "^9.26.0",
-    "tsx": "^4.19.3",
     "typescript": "^5.9.2"
   },
   "version": "11.7.2"
