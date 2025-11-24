@@ -8,79 +8,79 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as ApiTrpcTrpcRouteImport } from './routes/api/trpc.$trpc'
+import { Route as rootRouteImport } from './routes/__root';
+import type { createStart } from '@tanstack/react-start';
+import type { getRouter } from './router.tsx';
+import { Route as ApiTrpcTrpcRouteImport } from './routes/api/trpc.$trpc';
+import { Route as IndexRouteImport } from './routes/index';
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const ApiTrpcTrpcRoute = ApiTrpcTrpcRouteImport.update({
   id: '/api/trpc/$trpc',
   path: '/api/trpc/$trpc',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/api/trpc/$trpc': typeof ApiTrpcTrpcRoute
+  '/': typeof IndexRoute;
+  '/api/trpc/$trpc': typeof ApiTrpcTrpcRoute;
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/api/trpc/$trpc': typeof ApiTrpcTrpcRoute
+  '/': typeof IndexRoute;
+  '/api/trpc/$trpc': typeof ApiTrpcTrpcRoute;
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/api/trpc/$trpc': typeof ApiTrpcTrpcRoute
+  __root__: typeof rootRouteImport;
+  '/': typeof IndexRoute;
+  '/api/trpc/$trpc': typeof ApiTrpcTrpcRoute;
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/trpc/$trpc'
-  fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/trpc/$trpc'
-  id: '__root__' | '/' | '/api/trpc/$trpc'
-  fileRoutesById: FileRoutesById
+  fileRoutesByFullPath: FileRoutesByFullPath;
+  fullPaths: '/' | '/api/trpc/$trpc';
+  fileRoutesByTo: FileRoutesByTo;
+  to: '/' | '/api/trpc/$trpc';
+  id: '__root__' | '/' | '/api/trpc/$trpc';
+  fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  ApiTrpcTrpcRoute: typeof ApiTrpcTrpcRoute
+  IndexRoute: typeof IndexRoute;
+  ApiTrpcTrpcRoute: typeof ApiTrpcTrpcRoute;
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
     '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/';
+      path: '/';
+      fullPath: '/';
+      preLoaderRoute: typeof IndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/api/trpc/$trpc': {
-      id: '/api/trpc/$trpc'
-      path: '/api/trpc/$trpc'
-      fullPath: '/api/trpc/$trpc'
-      preLoaderRoute: typeof ApiTrpcTrpcRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/api/trpc/$trpc';
+      path: '/api/trpc/$trpc';
+      fullPath: '/api/trpc/$trpc';
+      preLoaderRoute: typeof ApiTrpcTrpcRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApiTrpcTrpcRoute: ApiTrpcTrpcRoute,
-}
+};
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
+  ._addFileTypes<FileRouteTypes>();
 
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
 declare module '@tanstack/react-start' {
   interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
+    ssr: true;
+    router: Awaited<ReturnType<typeof getRouter>>;
   }
 }
