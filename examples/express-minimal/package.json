@@ -4,14 +4,14 @@
   "type": "module",
   "scripts": {
     "dev:server": "node --watch src/server.ts",
-    "dev:client": "wait-port 3000 && tsx watch src/client",
+    "dev:client": "wait-port 3000 && node --watch src/client.ts",
     "dev": "run-p dev:* --print-label",
     "lint": "eslint --cache src",
     "typecheck": "tsc",
     "build": "esbuild src/server.ts src/client.ts --bundle --packages=external --platform=node --format=esm --outdir=dist --sourcemap",
     "start": "pnpm dev",
-    "test-dev": "start-server-and-test 'tsx src/server' 3000 'tsx src/client'",
-    "test-start": "start-server-and-test 'node dist/server' 3000 'node dist/client'"
+    "test-dev": "start-server-and-test 'node src/server.ts' 3000 'node src/client.ts'",
+    "test-start": "start-server-and-test 'node dist/server.js' 3000 'node dist/client.js'"
   },
   "dependencies": {
     "@trpc/client": "npm:@trpc/client",
