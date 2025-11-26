@@ -1922,8 +1922,8 @@ importers:
         specifier: ^5.9.2
         version: 5.9.2
       valibot:
-        specifier: 1.1.0
-        version: 1.1.0(typescript@5.9.2)
+        specifier: 1.2.0
+        version: 1.2.0(typescript@5.9.2)
       ws:
         specifier: ^8.0.0
         version: 8.17.1
@@ -2338,8 +2338,8 @@ importers:
         specifier: ^5.9.2
         version: 5.9.2
       valibot:
-        specifier: 1.1.0
-        version: 1.1.0(typescript@5.9.2)
+        specifier: 1.2.0
+        version: 1.2.0(typescript@5.9.2)
       yup:
         specifier: ^1.0.0
         version: 1.0.0
@@ -17352,7 +17352,7 @@ packages:
   superagent@7.1.6:
     resolution: {integrity: sha512-gZkVCQR1gy/oUXr+kxJMLDjla434KmSOKbx5iGD30Ql+AkJQ/YlPKECJy2nhqOsHLjGHzoDTXNSjhnvWhzKk7g==}
     engines: {node: '>=6.4.0 <13 || >=14'}
-    deprecated: Please upgrade to v9.0.0+ as we have fixed a public vulnerability with formidable dependency. Note that v9.0.0+ requires Node.js v14.18.0+. See https://github.com/ladjs/superagent/pull/1800 for insight. This project is supported and maintained by the team at Forward Email @ https://forwardemail.net
+    deprecated: Please upgrade to superagent v10.2.2+, see release notes at https://github.com/forwardemail/superagent/releases/tag/v10.2.2 - maintenance is supported by Forward Email @ https://forwardemail.net
 
   superagent@9.0.2:
     resolution: {integrity: sha512-xuW7dzkUpcJq7QnhOsnNUgtYp3xRwpt2F7abdRYIpCsAt0hhUqia0EdxyXZQQpNmGtsCzYHryaKSV3q3GJnq7w==}
@@ -18311,8 +18311,8 @@ packages:
       typescript:
         optional: true
 
-  valibot@1.1.0:
-    resolution: {integrity: sha512-Nk8lX30Qhu+9txPYTwM0cFlWLdPFsFr6LblzqIySfbZph9+BFsAHsNvHOymEviUepeIW6KFHzpX8TKhbptBXXw==}
+  valibot@1.2.0:
+    resolution: {integrity: sha512-mm1rxUsmOxzrwnX5arGS+U4T25RdvpPjPN4yR0u9pUBov9+zGVtO84tif1eY4r6zWxVxu3KzIyknJy3rxfRZZg==}
     peerDependencies:
       typescript: '>=5'
     peerDependenciesMeta:
@@ -39325,7 +39325,7 @@ snapshots:
     optionalDependencies:
       typescript: 5.9.2
 
-  valibot@1.1.0(typescript@5.9.2):
+  valibot@1.2.0(typescript@5.9.2):
     optionalDependencies:
       typescript: 5.9.2
 
