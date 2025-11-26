@@ -1,0 +1,18 @@
+{
+  "include": ["**/*.ts", "**/*.tsx"],
+  "compilerOptions": {
+    "lib": ["es2023", "dom"],
+    "module": "preserve",
+    "target": "es2022",
+    "jsx": "preserve",
+    "strict": true,
+    "skipLibCheck": true,
+    "libReplacement": false,
+    "erasableSyntaxOnly": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "paths": {
+      "~/*": ["./src/*"]
+    }
+  }
+}
