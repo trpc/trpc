@@ -1,5 +1,5 @@
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
-import type { AppRouter } from '../faux-gateway/index.js';
+import type { AppRouter } from '../faux-gateway/index.ts';
 
 export const client = createTRPCClient<AppRouter>({
   links: [

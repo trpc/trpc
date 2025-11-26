@@ -1,5 +1,5 @@
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
-import { serverA_appRouter } from './router.js';
+import { serverA_appRouter } from './router.ts';
 
 const port = 2021;
 

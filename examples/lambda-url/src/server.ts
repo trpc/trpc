@@ -1,4 +1,3 @@
-import { Writable } from 'node:stream';
 import { initTRPC } from '@trpc/server';
 import type { CreateAWSLambdaContextOptions } from '@trpc/server/adapters/aws-lambda';
 import { awsLambdaStreamingRequestHandler } from '@trpc/server/adapters/aws-lambda';
@@ -7,7 +6,6 @@ import { z } from 'zod';
 
 function createContext({
   event,
-  context,
 }: CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>) {
   return {
     event: event,

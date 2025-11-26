@@ -28,7 +28,6 @@
     "srvx": "0.9.6",
     "superstruct": "^2.0.0",
     "supertest": "^7.0.0",
-    "tsx": "^4.19.3",
     "tupleson": "0.23.1",
     "typescript": "^5.9.2",
     "undici": "^7.0.0",

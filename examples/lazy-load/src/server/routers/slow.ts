@@ -1,4 +1,4 @@
-import { publicProcedure, router } from '../trpc.js';
+import { publicProcedure, router } from '../trpc.ts';
 
 console.log('💤 Lazy loading slow router...');
 

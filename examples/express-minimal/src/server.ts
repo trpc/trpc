@@ -1,6 +1,6 @@
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import express from 'express';
-import { appRouter } from './router';
+import { appRouter } from './router.ts';
 
 async function main() {
   // express implementation

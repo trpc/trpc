@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": "^22.18.0",
+    "node": "^22.20.0",
     "pnpm": "^9.12.2"
   },
   "packageManager": "pnpm@9.12.2",
@@ -26,8 +26,8 @@
     "lint-prune": "! ts-prune | grep -v \"used in module\" | grep -v rpc | grep -v observable | grep -v http | grep -v __fixtures__ | grep -v __generated__",
     "clean": "find . -name node_modules -o -name .turbo -o -name .next -o -name dist -o -name __generated__ -type d -prune | xargs rm -rf",
     "prepublish": "pnpm build",
-    "prepack": "tsx scripts/version.ts",
-    "version": "tsx scripts/version.ts",
+    "prepack": "node scripts/version.ts",
+    "version": "node scripts/version.ts",
     "link-all": "cd packages/server && cd ../server && pnpm link --global && cd ../client && pnpm link --global && cd ../react-query && pnpm link --global && cd ../next && pnpm link --global",
     "commit-date": "git log -n 1 --date=format:'%Y-%m-%d-%H-%M-%S' --pretty=format:'%ad'",
     "canary-preid": "echo \"$(pnpm --silent current-branch)-$(pnpm --silent commit-date)\"",
@@ -66,7 +66,6 @@
     "prettier-plugin-tailwindcss": "^0.7.0",
     "superjson": "^1.12.4",
     "ts-prune": "^0.10.3",
-    "tsx": "^4.19.3",
     "turbo": "^2.5.4",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.31.1",

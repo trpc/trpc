@@ -1,4 +1,4 @@
-import { client } from './client.js';
+import { client } from './client.ts';
 
 {
   const result = await client.serverA.greet.query('tRPC');

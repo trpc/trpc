@@ -1,13 +1,14 @@
 {
   "compilerOptions": {
     "lib": ["es2023"],
-    "module": "node16",
-    "target": "es2022",
-
+    "target": "esnext",
+    "module": "NodeNext",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "moduleResolution": "node16",
+    "rewriteRelativeImportExtensions": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
     "outDir": "dist"
   }
 }

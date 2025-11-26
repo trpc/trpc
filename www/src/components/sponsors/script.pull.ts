@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 // This is an awful script, don't judge
 import fs from 'fs';
-import type { Node, SponsorEsque } from './script.types';
+import type { Node, SponsorEsque } from './script.types.ts';
 
 const { TRPC_GITHUB_TOKEN } = process.env;
 if (!TRPC_GITHUB_TOKEN) {
@@ -190,7 +190,7 @@ async function main() {
       .sort((a, b) => a.createdAt - b.createdAt);
 
     fs.writeFileSync(
-      __dirname + '/script.output.raw.json',
+      import.meta.dirname + '/script.output.raw.json',
       JSON.stringify(rawList, null, 2),
     );
 
@@ -300,7 +300,7 @@ async function main() {
     '',
   ].join('\n');
 
-  fs.writeFileSync(__dirname + '/script.output.ts', text);
+  fs.writeFileSync(import.meta.dirname + '/script.output.ts', text);
 }
 
 void main();

@@ -5,7 +5,7 @@ import { createTRPCClient, httpBatchLink } from '@trpc/client';
 /**
  * We only import the `AppRouter` type from the server - this is not available at runtime
  */
-import type { AppRouter } from '../server/routers/_app.js';
+import type { AppRouter } from '../server/routers/_app.ts';
 
 // Initialize the tRPC client
 const trpc = createTRPCClient<AppRouter>({

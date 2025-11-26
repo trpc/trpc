@@ -3,7 +3,7 @@ import {
   httpBatchStreamLink,
   loggerLink,
 } from '@trpc/client';
-import type { AppRouter } from './server';
+import type { AppRouter } from './server.ts';
 
 const client = createTRPCClient<AppRouter>({
   links: [

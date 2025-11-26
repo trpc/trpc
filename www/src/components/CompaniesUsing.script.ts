@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-const WWW_ROOT = path.join(__dirname, '../../');
+const WWW_ROOT = path.join(import.meta.dirname, '../../');
 
 const files = fs.readdirSync(path.join(WWW_ROOT, 'static/logos')).sort();
 
@@ -17,7 +17,7 @@ const companies = files.map((src) => {
 });
 
 fs.writeFileSync(
-  __dirname + '/CompaniesUsing.script.output.ts',
+  import.meta.dirname + '/CompaniesUsing.script.output.ts',
   `
 // prettier-ignore
 // eslint-disable

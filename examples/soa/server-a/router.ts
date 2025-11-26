@@ -1,4 +1,4 @@
-import { publicProcedure, router } from '../server-lib/index.js';
+import { publicProcedure, router } from '../server-lib/index.ts';
 
 export const serverA_appRouter = router({
   greet: publicProcedure

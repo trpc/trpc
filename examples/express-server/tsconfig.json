@@ -2,11 +2,14 @@
   "compilerOptions": {
     "lib": ["esnext", "dom"],
     "target": "esnext",
+    "module": "NodeNext",
     "esModuleInterop": true,
     "strict": true,
-    "moduleResolution": "node",
     "noEmit": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "rewriteRelativeImportExtensions": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true
   },
   "include": ["src"],
   "exclude": ["node_modules"]
