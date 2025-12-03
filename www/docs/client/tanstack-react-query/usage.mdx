@@ -151,6 +151,36 @@ Or even the root path to match all tRPC queries:
 const queryKey = trpc.pathKey();
 ```
 
+### `infiniteQueryKey` - getting the infinite query key {#infiniteQueryKey}
+
+Available for all query procedures that takes a cursor input. Allows you to access the query key for an infinite query in a type-safe manner.
+
+```ts
+const infiniteQueryKey = trpc.path.to.query.infiniteQueryKey({
+  /** input */
+});
+```
+
+The result can be used with query client methods like `getQueryData`, `setQueryData`, `invalidateQueries`, etc.
+
+```ts
+const queryClient = useQueryClient();
+
+// Get cached data for an infinite query
+const cachedData = queryClient.getQueryData(
+  trpc.path.to.query.infiniteQueryKey({ cursor: 0 }),
+);
+
+// Set cached data for an infinite query
+queryClient.setQueryData(
+  trpc.path.to.query.infiniteQueryKey({ cursor: 0 }),
+  (data) => {
+    // Modify the data
+    return data;
+  },
+);
+```
+
 ### `queryFilter` - creating query filters {#queryFilter}
 
 Available for all query procedures. Allows creating [query filters](https://tanstack.com/query/latest/docs/framework/react/guides/filters#query-filters) in a type-safe manner.
@@ -181,6 +211,40 @@ const queryFilter = trpc.path.pathFilter({
 ```
 
 Useful for creating filters that can be passed to client methods like `queryClient.invalidateQueries` etc.
+
+### `infiniteQueryFilter` - creating infinite query filters {#infiniteQueryFilter}
+
+Available for all query procedures that takes a cursor input. Allows creating [query filters](https://tanstack.com/query/latest/docs/framework/react/guides/filters#query-filters) for infinite queries in a type-safe manner.
+
+```ts
+const infiniteQueryFilter = trpc.path.to.query.infiniteQueryFilter(
+  {
+    /** input */
+  },
+  {
+    // Any Tanstack React Query filter
+    predicate: (query) => {
+      query.state.data;
+    },
+  },
+);
+```
+
+Useful for creating filters that can be passed to client methods like `queryClient.invalidateQueries` etc.
+
+```ts
+await queryClient.invalidateQueries(
+  trpc.path.to.query.infiniteQueryFilter(
+    {},
+    {
+      predicate: (query) => {
+        // Filter logic based on query state
+        return query.state.data?.pages.length > 0;
+      },
+    },
+  ),
+);
+```
 
 ### `mutationOptions` - creating mutation options {#mutationOptions}
 
