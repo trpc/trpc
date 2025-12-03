@@ -484,7 +484,7 @@ describe('required transformers', () => {
     const router = t.router({});
 
     createTRPCClient<typeof router>({
-      links: [httpBatchLink({ url: '' })],
+      links: [httpBatchLink({ url: 'http://localhost:3000/trpc' })],
     });
   });
 
@@ -496,7 +496,9 @@ describe('required transformers', () => {
     const router = t.router({});
 
     createTRPCClient<typeof router>({
-      links: [httpBatchLink({ url: '', transformer })],
+      links: [
+        httpBatchLink({ url: 'http://localhost:3000/trpc', transformer }),
+      ],
     });
   });
 
@@ -512,7 +514,7 @@ describe('required transformers', () => {
       links: [
         httpBatchLink(
           // @ts-expect-error missing transformer on frontend
-          { url: '' },
+          { url: 'http://localhost:3000/trpc' },
         ),
       ],
     });
@@ -525,7 +527,7 @@ describe('required transformers', () => {
 
     const transformer = superjson;
     createTRPCClient<typeof router>({
-      links: [httpBatchLink({ url: '' })],
+      links: [httpBatchLink({ url: 'http://localhost:3000/trpc' })],
       // @ts-expect-error missing transformer on backend
       transformer,
     });

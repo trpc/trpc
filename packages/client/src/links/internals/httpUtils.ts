@@ -16,6 +16,20 @@ import type { TransformerOptions } from '../../unstable-internals';
 import { getTransformer } from '../../unstable-internals';
 import type { HTTPHeaders } from '../types';
 
+function parseUrlOption(url: string | URL) {
+  if (!url) return null;
+  if (url instanceof URL) return url;
+
+  // single forward slash for relative urls
+  if (url.startsWith('/')) return url;
+
+  try {
+    return new URL(url);
+  } catch {
+    return null;
+  }
+}
+
 /**
  * @internal
  */
@@ -45,8 +59,16 @@ export interface ResolvedHTTPLinkOptions {
 export function resolveHTTPLinkOptions(
   opts: HTTPLinkBaseOptions<AnyClientTypes>,
 ): ResolvedHTTPLinkOptions {
+  const url = parseUrlOption(opts.url);
+
+  if (!url) {
+    throw new Error(
+      `A valid relative or absolute url is required for \`httpLink\` options, provided: ${typeof opts.url === 'string' && !opts.url.length ? '<empty string>' : opts.url}`,
+    );
+  }
+
   return {
-    url: opts.url.toString(),
+    url: url.toString(),
     fetch: opts.fetch,
     transformer: getTransformer(opts.transformer),
     methodOverride: opts.methodOverride,
