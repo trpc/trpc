@@ -362,19 +362,20 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             const combinedAc = new AbortController();
             signal = combinedAc.signal;
 
-            // Propagate abort from the original request signal
-            if (opts.req.signal) {
-              opts.req.signal.addEventListener('abort', () => {
-                combinedAc.abort(opts.req.signal.reason);
-              });
-            }
-
             // Set up the timeout to abort after maxDurationMs
             // We use AbortController.abort() with AbortError because
             // AbortSignal.timeout() throws TimeoutError, but tRPC expects AbortError
-            setTimeout(() => {
+            const timeoutId = setTimeout(() => {
               combinedAc.abort(new DOMException('AbortError', 'AbortError'));
             }, maxDurationMs);
+
+            // Propagate abort from the original request signal and clean up the timeout
+            if (opts.req.signal) {
+              opts.req.signal.addEventListener('abort', () => {
+                clearTimeout(timeoutId);
+                combinedAc.abort(opts.req.signal.reason);
+              });
+            }
           }
         }
 
@@ -385,10 +386,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           type: proc._def.type,
           signal,
         });
-        // Note: For subscriptions, we intentionally don't clear the timeout here.
-        // The timeout needs to remain active while the SSE stream is being consumed.
-        // It will fire when maxDurationMs is reached to abort the subscription.
-        // For non-subscription procedures (queries/mutations), timeoutId is undefined.
         return [undefined, { data }];
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
