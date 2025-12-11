@@ -1359,3 +1359,66 @@ test('recipe: pull data in a loop', async () => {
     ]
   `);
 });
+
+// regression test for https://github.com/trpc/trpc/issues/6991
+test('maxDurationMs should abort subscription even when not yielding', async () => {
+  const MAX_DURATION_MS = 100;
+
+  await using ctx = run(() => {
+    const t = initTRPC.create({
+      sse: {
+        maxDurationMs: MAX_DURATION_MS,
+      },
+    });
+
+    const onSignalAborted = vi.fn();
+    const onFinally = vi.fn();
+
+    const router = t.router({
+      sub: t.procedure.subscription(async function* (opts) {
+        assert(opts.signal, 'no signal received');
+        try {
+          // Listen for abort signal
+          opts.signal.addEventListener('abort', () => {
+            onSignalAborted();
+          });
+
+          // Simulate a subscription that never yields - just waits forever
+          // This should be interrupted by maxDurationMs via the abort signal
+          while (!opts.signal.aborted) {
+            await sleep(10);
+          }
+        } finally {
+          onFinally();
+        }
+      }),
+    });
+
+    const opts = testServerAndClientResource(router);
+    return {
+      ...opts,
+      onSignalAborted,
+      onFinally,
+    };
+  });
+
+  const onError = vi.fn();
+  const sub = ctx.client.sub.subscribe(undefined, {
+    onError,
+  });
+
+  // Wait for maxDurationMs to trigger abort
+  await vi.waitFor(
+    () => {
+      expect(ctx.onSignalAborted).toHaveBeenCalledTimes(1);
+    },
+    { timeout: MAX_DURATION_MS + 500 },
+  );
+
+  // Verify the subscription handler completed
+  await vi.waitFor(() => {
+    expect(ctx.onFinally).toHaveBeenCalledTimes(1);
+  });
+
+  sub.unsubscribe();
+});

@@ -344,13 +344,51 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             });
           }
         }
+
+        // Create a combined signal for subscriptions that includes maxDurationMs timeout
+        // This ensures subscription handlers can respond to the timeout via opts.signal
+        // See: https://github.com/trpc/trpc/issues/6991
+        let signal: AbortSignal | undefined = opts.req.signal;
+        if (proc._def.type === 'subscription') {
+          const maxDurationMs = config.sse?.maxDurationMs;
+          if (
+            maxDurationMs &&
+            maxDurationMs > 0 &&
+            maxDurationMs !== Infinity
+          ) {
+            // Create a combined AbortController that aborts when either:
+            // 1. The original request signal aborts
+            // 2. The maxDurationMs timeout fires
+            const combinedAc = new AbortController();
+            signal = combinedAc.signal;
+
+            // Propagate abort from the original request signal
+            if (opts.req.signal) {
+              opts.req.signal.addEventListener('abort', () => {
+                combinedAc.abort(opts.req.signal.reason);
+              });
+            }
+
+            // Set up the timeout to abort after maxDurationMs
+            // We use AbortController.abort() with AbortError because
+            // AbortSignal.timeout() throws TimeoutError, but tRPC expects AbortError
+            setTimeout(() => {
+              combinedAc.abort(new DOMException('AbortError', 'AbortError'));
+            }, maxDurationMs);
+          }
+        }
+
         const data: unknown = await proc({
           path: call.path,
           getRawInput: call.getRawInput,
           ctx: ctxManager.value(),
           type: proc._def.type,
-          signal: opts.req.signal,
+          signal,
         });
+        // Note: For subscriptions, we intentionally don't clear the timeout here.
+        // The timeout needs to remain active while the SSE stream is being consumed.
+        // It will fire when maxDurationMs is reached to abort the subscription.
+        // For non-subscription procedures (queries/mutations), timeoutId is undefined.
         return [undefined, { data }];
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
