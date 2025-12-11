@@ -98,7 +98,7 @@ const v1Processor: Processor<APIGatewayProxyEvent> = {
   },
   getHeaders: (event) => {
     const headers = new Headers();
-    
+
     // Process multiValueHeaders first (takes precedence per AWS docs)
     // This handles headers that can have multiple values
     for (const [k, values] of Object.entries(event.multiValueHeaders ?? {})) {
