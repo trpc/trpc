@@ -8,7 +8,7 @@
     "lint": "eslint --cache src",
     "typecheck": "tsc",
     "start": "tsx watch src/client.ts",
-    "deploy": "serverless deploy"
+    "deploy": "pnpx serverless@4.28.0 deploy"
   },
   "dependencies": {
     "@trpc/client": "workspace:*",
@@ -19,10 +19,7 @@
   "devDependencies": {
     "@types/aws-lambda": "^8.10.149",
     "@types/node": "^22.13.5",
-    "esbuild": "^0.17.10",
     "eslint": "^9.26.0",
-    "serverless": "^4.28.0",
-    "serverless-esbuild": "^1.55.0",
     "typescript": "^5.9.2"
   },
   "version": "11.7.2"
