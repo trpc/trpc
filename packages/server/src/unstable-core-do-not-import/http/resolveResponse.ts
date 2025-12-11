@@ -370,11 +370,20 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             }, maxDurationMs);
 
             // Propagate abort from the original request signal and clean up the timeout
-            if (opts.req.signal) {
-              opts.req.signal.addEventListener('abort', () => {
+            const reqSignal = opts.req.signal;
+            if (reqSignal) {
+              const onAbort = () => {
                 clearTimeout(timeoutId);
-                combinedAc.abort(opts.req.signal.reason);
-              });
+                combinedAc.abort(reqSignal.reason);
+              };
+
+              if (reqSignal.aborted) {
+                // If the request was already aborted, propagate immediately
+                onAbort();
+              } else {
+                // Otherwise, listen once for future aborts
+                reqSignal.addEventListener('abort', onAbort, { once: true });
+              }
             }
           }
         }
