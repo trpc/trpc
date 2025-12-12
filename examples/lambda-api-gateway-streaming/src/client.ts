@@ -11,7 +11,8 @@ const client = createTRPCClient<AppRouter>({
       enabled: (opts) => opts.direction === 'down',
     }),
     httpBatchStreamLink({
-      url: 'YOUR_API_GATEWAY_URL', // Insert your API Gateway URL after deploying the serverless app
+      // Insert your API Gateway URL after deploying the serverless app
+      url: 'https://???????.execute-api.us-east-1.amazonaws.com/dev',
     }),
   ],
 });

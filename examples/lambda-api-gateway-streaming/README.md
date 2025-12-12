@@ -20,7 +20,7 @@ See the [AWS blog post on API Gateway response streaming](https://aws.amazon.com
 
 ## Client
 
-Replace `YOUR_API_GATEWAY_URL` in `src/client.ts` with the API Gateway endpoint URL from the deployment output.
+Replace `https://???????.execute-api.us-east-1.amazonaws.com/dev` in `src/client.ts` with the API Gateway endpoint URL from the deployment output.
 
 ```sh
 pnpm start
