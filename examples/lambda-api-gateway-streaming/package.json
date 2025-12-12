@@ -1,0 +1,26 @@
+{
+  "name": "examples-lambda-api-gateway-streaming",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint --cache src",
+    "typecheck": "tsc",
+    "start": "tsx watch src/client.ts",
+    "deploy": "pnpx serverless@4.28.0 deploy"
+  },
+  "dependencies": {
+    "@trpc/client": "workspace:*",
+    "@trpc/server": "workspace:*",
+    "tsx": "^4.19.3",
+    "zod": "^3.25.51"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.149",
+    "@types/node": "^22.13.5",
+    "eslint": "^9.26.0",
+    "typescript": "^5.9.2"
+  },
+  "version": "11.7.2"
+}
