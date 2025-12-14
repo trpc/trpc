@@ -74,3 +74,53 @@ test('array-like index in an object', () => {
     },
   });
 });
+
+describe('prototype pollution', () => {
+  const protoKey = (() => {
+    let id = 0;
+
+    return () => `polluted${id++}` as const;
+  })();
+
+  test('__proto__ key creates regular property', () => {
+    const formData = new FormData();
+    const key = protoKey();
+
+    formData.append(`__proto__.${key}`, 'yes');
+    const result: any = formDataToObject(formData);
+
+    expect(result.__proto__[key]).toBe('yes');
+  });
+
+  test('global prototype chain is not polluted', () => {
+    const formData = new FormData();
+
+    formData.append(`__proto__.${protoKey()}`, 'yes');
+
+    formDataToObject(formData);
+    expect((Object.prototype as any)[protoKey()]).toBeUndefined();
+  });
+
+  test('deep prototype pollution', () => {
+    const formData = new FormData();
+    const key = protoKey();
+
+    formData.append(`one.__proto__.${key}`, 'yes');
+    const result: any = formDataToObject(formData);
+
+    expect(result.one.__proto__[key]).toBe('yes');
+    expect((Object.prototype as any)[key]).toBeUndefined();
+  });
+
+  test('deep array pollution', () => {
+    const formData = new FormData();
+    const key = protoKey();
+
+    formData.append(`0.__proto__.${key}`, 'yes');
+    const result: any = formDataToObject(formData);
+
+    expect(result[0].__proto__[key]).toBe('yes');
+    expect((Object.prototype as any)[key]).toBeUndefined();
+    expect((Array.prototype as any)[key]).toBeUndefined();
+  });
+});
