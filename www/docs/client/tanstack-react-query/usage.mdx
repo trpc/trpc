@@ -257,6 +257,99 @@ function SubscriptionExample() {
 }
 ```
 
+### Query Key Prefixing {#keyPrefix}
+
+When using multiple tRPC providers in a single application (e.g., connecting to different backend services), queries with the same path will collide in the cache. You can prevent this by enabling query key prefixing.
+
+```tsx
+// Without prefixes - these would collide!
+const authQuery = useQuery(trpcAuth.list.queryOptions()); // auth service
+const billingQuery = useQuery(trpcBilling.list.queryOptions()); // billing service
+```
+
+Enable the feature flag when creating your context:
+
+```tsx title='utils/trpc.ts'
+// [...]
+
+const billing = createTRPCContext<BillingRouter, { keyPrefix: true }>();
+export const BillingProvider = billing.TRPCProvider;
+export const useBilling = billing.useTRPC;
+export const createBillingClient = () =>
+  createTRPCClient<BillingRouter>({
+    links: [
+      /* ... */
+    ],
+  });
+
+const account = createTRPCContext<AccountRouter, { keyPrefix: true }>();
+export const AccountProvider = account.TRPCProvider;
+export const useAccount = account.useTRPC;
+export const createAccountClient = () =>
+  createTRPCClient<AccountRouter>({
+    links: [
+      /* ... */
+    ],
+  });
+```
+
+```tsx title='App.tsx'
+// [...]
+
+export function App() {
+  const [queryClient] = useState(() => new QueryClient());
+  const [billingClient] = useState(() => createBillingClient());
+  const [accountClient] = useState(() => createAccountClient());
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <BillingProvider
+        trpcClient={billingClient}
+        queryClient={queryClient}
+        keyPrefix="billing"
+      >
+        <AccountProvider
+          trpcClient={accountClient}
+          queryClient={queryClient}
+          keyPrefix="account"
+        >
+          {/* ... */}
+        </AccountProvider>
+      </BillingProvider>
+    </QueryClientProvider>
+  );
+}
+```
+
+```tsx title='components/MyComponent.tsx'
+// [...]
+
+export function MyComponent() {
+  const billing = useBilling();
+  const account = useAccount();
+
+  const billingList = useQuery(billing.list.queryOptions());
+  const accountList = useQuery(account.list.queryOptions());
+
+  return (
+    <div>
+      <div>Billing: {JSON.stringify(billingList.data ?? null)}</div>
+      <div>Account: {JSON.stringify(accountList.data ?? null)}</div>
+    </div>
+  );
+}
+```
+
+The query keys will be properly prefixed to avoid collisions:
+
+```tsx twoslash
+// Example of how the query keys look with prefixes
+const queryKeys = [
+  [['billing'], ['list'], { type: 'query' }],
+  [['account'], ['list'], { type: 'query' }],
+];
+```
+
 ### Inferring Input and Output types
 
 When you need to infer the input and output types for a procedure or router, there are 2 options available depending on the situation.

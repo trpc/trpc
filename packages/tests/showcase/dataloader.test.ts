@@ -1,8 +1,7 @@
-import { routerToServerAndClientNew } from '../server/___testHelpers';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { initTRPC } from '@trpc/server';
 import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 import DataLoader from 'dataloader';
-import { konn } from 'konn';
 import { z } from 'zod';
 
 const posts = [
@@ -25,33 +24,27 @@ function createContext(_opts: CreateHTTPContextOptions) {
 }
 type Context = Awaited<ReturnType<typeof createContext>>;
 
-const ctx = konn()
-  .beforeEach(() => {
-    const t = initTRPC.context<Context>().create();
-
-    const appRouter = t.router({
-      post: t.router({
-        byId: t.procedure
-          .input(
-            z.object({
-              id: z.number(),
-            }),
-          )
-          .query((opts) => opts.ctx.postLoader.load(opts.input.id)),
-      }),
-    });
-    return routerToServerAndClientNew(appRouter, {
-      server: {
-        createContext,
-      },
-    });
-  })
-  .afterEach(async (ctx) => {
-    await ctx?.close?.();
-  })
-  .done();
-
 test('dataloader', async () => {
+  const t = initTRPC.context<Context>().create();
+
+  const appRouter = t.router({
+    post: t.router({
+      byId: t.procedure
+        .input(
+          z.object({
+            id: z.number(),
+          }),
+        )
+        .query((opts) => opts.ctx.postLoader.load(opts.input.id)),
+    }),
+  });
+
+  await using ctx = testServerAndClientResource(appRouter, {
+    server: {
+      createContext,
+    },
+  });
+
   const result = await Promise.all([
     ctx.client.post.byId.query({ id: 1 }),
     ctx.client.post.byId.query({ id: 2 }),

@@ -1,5 +1,5 @@
 import { EventEmitter, on } from 'node:events';
-import { routerToServerAndClientNew } from './___testHelpers';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { wsLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import { sleep } from '@trpc/server/unstable-core-do-not-import';
@@ -14,7 +14,7 @@ function factory() {
     ),
   });
 
-  const opts = routerToServerAndClientNew(appRouter, {
+  const opts = testServerAndClientResource(appRouter, {
     wsClient: { retryDelayMs: () => 10 },
     client({ wsClient }) {
       return { links: [wsLink({ client: wsClient })] };
@@ -28,7 +28,7 @@ function factory() {
 
 describe('ws subscription memory', () => {
   it('should free data after each iteration (#6156)', async () => {
-    const ctx = factory();
+    await using ctx = factory();
 
     const onStartedMock = vi.fn();
     const onDataLengthMock = vi.fn();
@@ -59,8 +59,6 @@ describe('ws subscription memory', () => {
     expect(refs[1]!.deref()).toBeUndefined();
 
     subscription.unsubscribe();
-
-    await ctx.close();
 
     function emitData(): WeakRef<never[]> {
       const data: never[] = [];
