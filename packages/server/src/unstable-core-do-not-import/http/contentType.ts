@@ -1,7 +1,7 @@
 import { TRPCError } from '../error/TRPCError';
 import type { ProcedureType } from '../procedure';
 import { getProcedureAtPath, type AnyRouter } from '../router';
-import { isObject } from '../utils';
+import { emptyObject, isObject } from '../utils';
 import { parseConnectionParamsFromString } from './parseConnectionParams';
 import type { TRPCAcceptHeader, TRPCRequestInfo } from './types';
 
@@ -83,13 +83,14 @@ const jsonContentTypeHandler: ContentTypeHandler = {
         inputs = await req.json();
       }
       if (inputs === undefined) {
-        return {};
+        return emptyObject();
       }
 
       if (!isBatchCall) {
-        return {
-          0: opts.router._def._config.transformer.input.deserialize(inputs),
-        };
+        const result: InputRecord = emptyObject();
+        result[0] =
+          opts.router._def._config.transformer.input.deserialize(inputs);
+        return result;
       }
 
       if (!isObject(inputs)) {
@@ -98,7 +99,7 @@ const jsonContentTypeHandler: ContentTypeHandler = {
           message: '"input" needs to be an object when doing a batch call',
         });
       }
-      const acc: InputRecord = {};
+      const acc: InputRecord = emptyObject();
       for (const index of paths.keys()) {
         const input = inputs[index];
         if (input !== undefined) {
