@@ -11,7 +11,7 @@ function set(
   if (path.length > 1) {
     const p = path.shift()!;
     const isArrayIndex = /^\d+$/.test(path[0]!);
-    obj[p] = obj[p] || (isArrayIndex ? [] : {});
+    obj[p] = obj[p] || (isArrayIndex ? [] : Object.create(null));
     set(obj[p], path, value);
     return;
   }
@@ -26,7 +26,7 @@ function set(
 }
 
 export function formDataToObject(formData: FormData) {
-  const obj: Record<string, unknown> = {};
+  const obj: Record<string, unknown> = Object.create(null);
 
   for (const [key, value] of formData.entries()) {
     set(obj, key, value);
