@@ -4,10 +4,6 @@ import { emptyObject } from '../utils';
 
 const isNumberString = (str: string) => /^\d+$/.test(str);
 
-// Prototype pollution guard
-const isUnsafeKey = (key: string) =>
-  key === '__proto__' || key === 'constructor' || key === 'prototype';
-
 function set(
   obj: Record<string, any>,
   path: readonly string[],
@@ -17,11 +13,6 @@ function set(
     const newPath = [...path];
     const key = newPath.shift()!;
     const nextKey = newPath[0]!;
-
-    // Skip unsafe keys to prevent prototype pollution
-    if (isUnsafeKey(key)) {
-      return;
-    }
 
     if (!Object.hasOwn(obj, key)) {
       obj[key] = isNumberString(nextKey) ? [] : emptyObject();
@@ -34,11 +25,6 @@ function set(
     return;
   }
   const p = path[0]!;
-
-  // Skip unsafe keys to prevent prototype pollution
-  if (isUnsafeKey(p)) {
-    return;
-  }
 
   if (obj[p] === undefined) {
     obj[p] = value;
