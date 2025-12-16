@@ -1,10 +1,8 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 
-const isNumberString = (str: string) => /^\d+$/.test(str);
+import { emptyObject } from '../utils';
 
-// Prototype pollution guard
-const isUnsafeKey = (key: string) =>
-  key === '__proto__' || key === 'constructor' || key === 'prototype';
+const isNumberString = (str: string) => /^\d+$/.test(str);
 
 function set(
   obj: Record<string, any>,
@@ -16,13 +14,8 @@ function set(
     const key = newPath.shift()!;
     const nextKey = newPath[0]!;
 
-    // Skip unsafe keys to prevent prototype pollution
-    if (isUnsafeKey(key)) {
-      return;
-    }
-
     if (!Object.hasOwn(obj, key)) {
-      obj[key] = isNumberString(nextKey) ? [] : Object.create(null);
+      obj[key] = isNumberString(nextKey) ? [] : emptyObject();
     } else if (Array.isArray(obj[key]) && !isNumberString(nextKey)) {
       obj[key] = Object.fromEntries(Object.entries(obj[key]));
     }
@@ -32,11 +25,6 @@ function set(
     return;
   }
   const p = path[0]!;
-
-  // Skip unsafe keys to prevent prototype pollution
-  if (isUnsafeKey(p)) {
-    return;
-  }
 
   if (obj[p] === undefined) {
     obj[p] = value;
@@ -48,7 +36,7 @@ function set(
 }
 
 export function formDataToObject(formData: FormData) {
-  const obj: Record<string, unknown> = Object.create(null);
+  const obj: Record<string, unknown> = emptyObject();
 
   for (const [key, value] of formData.entries()) {
     const parts = key.split(/[\.\[\]]/).filter(Boolean);
