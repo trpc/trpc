@@ -195,16 +195,16 @@ async function main() {
     );
 
     // add manual sponsors
-    rawList.push({
-      __typename: 'Organization',
-      name: 'Graphite',
-      imgSrc: 'https://github.com/withgraphite.png',
-      monthlyPriceInDollars: 1000,
-      link: 'https://graphite.dev/?utm_source=github&utm_medium=repo&utm_campaign=trpc',
-      privacyLevel: 'PUBLIC',
-      login: 'withgraphite',
-      createdAt: new Date(2025, 5, 12).getTime(),
-    });
+    // rawList.push({
+    //   __typename: 'Organization',
+    //   name: 'Graphite',
+    //   imgSrc: 'https://github.com/withgraphite.png',
+    //   monthlyPriceInDollars: 1000,
+    //   link: 'https://graphite.dev/?utm_source=github&utm_medium=repo&utm_campaign=trpc',
+    //   privacyLevel: 'PUBLIC',
+    //   login: 'withgraphite',
+    //   createdAt: new Date(2025, 5, 12).getTime(),
+    // });
     const list = rawList
       .map((sponsor) => {
         // calculate total value
