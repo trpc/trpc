@@ -15,7 +15,12 @@ import type { TRPCResponse } from '../rpc';
 import { isPromise, jsonlStreamProducer } from '../stream/jsonl';
 import { sseHeaders, sseStreamProducer } from '../stream/sse';
 import { transformTRPCResponse } from '../transformer';
-import { isAsyncIterable, isObject, run } from '../utils';
+import {
+  abortSignalsAnyPonyfill,
+  isAsyncIterable,
+  isObject,
+  run,
+} from '../utils';
 import { getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
@@ -344,48 +349,9 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             });
           }
         }
-
-        // Create a combined signal for subscriptions that includes maxDurationMs timeout
-        // This ensures subscription handlers can respond to the timeout via opts.signal
-        // See: https://github.com/trpc/trpc/issues/6991
-        let signal: AbortSignal | undefined = opts.req.signal;
-        if (proc._def.type === 'subscription') {
-          const maxDurationMs = config.sse?.maxDurationMs;
-          if (
-            maxDurationMs &&
-            maxDurationMs > 0 &&
-            maxDurationMs !== Infinity
-          ) {
-            // Create a combined AbortController that aborts when either:
-            // 1. The original request signal aborts
-            // 2. The maxDurationMs timeout fires
-            const combinedAc = new AbortController();
-            signal = combinedAc.signal;
-
-            // Set up the timeout to abort after maxDurationMs
-            // We use AbortController.abort() with AbortError because
-            // AbortSignal.timeout() throws TimeoutError, but tRPC expects AbortError
-            const timeoutId = setTimeout(() => {
-              combinedAc.abort(new DOMException('AbortError', 'AbortError'));
-            }, maxDurationMs);
-
-            // Propagate abort from the original request signal and clean up the timeout
-            const reqSignal = opts.req.signal;
-            if (reqSignal) {
-              const onAbort = () => {
-                clearTimeout(timeoutId);
-                combinedAc.abort(reqSignal.reason);
-              };
-
-              if (reqSignal.aborted) {
-                // If the request was already aborted, propagate immediately
-                onAbort();
-              } else {
-                // Otherwise, listen once for future aborts
-                reqSignal.addEventListener('abort', onAbort, { once: true });
-              }
-            }
-          }
+        const signals = [opts.req.signal];
+        if (config.sse?.maxDurationMs) {
+          signals.push(AbortSignal.timeout(config.sse.maxDurationMs));
         }
 
         const data: unknown = await proc({
@@ -393,7 +359,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           getRawInput: call.getRawInput,
           ctx: ctxManager.value(),
           type: proc._def.type,
-          signal,
+          signal: abortSignalsAnyPonyfill(signals),
         });
         return [undefined, { data }];
       } catch (cause) {
