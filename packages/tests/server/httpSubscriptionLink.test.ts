@@ -1361,7 +1361,7 @@ test('recipe: pull data in a loop', async () => {
 });
 
 // regression test for https://github.com/trpc/trpc/issues/6991
-test.only('maxDurationMs should abort subscription even when not yielding', async () => {
+test('maxDurationMs should abort subscription even when not yielding', async () => {
   const MAX_DURATION_MS = 100;
 
   using fakeTimers = fakeTimersResource();

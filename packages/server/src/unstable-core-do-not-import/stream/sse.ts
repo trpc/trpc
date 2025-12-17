@@ -6,7 +6,7 @@ import { identity, run } from '../utils';
 import type { EventSourceLike } from './sse.types';
 import type { inferTrackedOutput } from './tracked';
 import { isTrackedEnvelope } from './tracked';
-import { takeWithGrace, withMaxDuration } from './utils/asyncIterable';
+import { takeWithGrace } from './utils/asyncIterable';
 import { makeAsyncResource } from './utils/disposable';
 import { readableStreamFrom } from './utils/readableStreamFrom';
 import {
@@ -117,16 +117,6 @@ export function sseStreamProducer<TValue = unknown>(
       iterable = takeWithGrace(iterable, {
         count: 1,
         gracePeriodMs: 1,
-      });
-    }
-
-    if (
-      opts.maxDurationMs &&
-      opts.maxDurationMs > 0 &&
-      opts.maxDurationMs !== Infinity
-    ) {
-      iterable = withMaxDuration(iterable, {
-        maxDurationMs: opts.maxDurationMs,
       });
     }
 
