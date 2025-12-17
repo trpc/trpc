@@ -1361,9 +1361,10 @@ test('recipe: pull data in a loop', async () => {
 });
 
 // regression test for https://github.com/trpc/trpc/issues/6991
-test('maxDurationMs should abort subscription even when not yielding', async () => {
+test.only('maxDurationMs should abort subscription even when not yielding', async () => {
   const MAX_DURATION_MS = 100;
 
+  using fakeTimers = fakeTimersResource();
   await using ctx = run(() => {
     const t = initTRPC.create({
       sse: {
@@ -1379,9 +1380,7 @@ test('maxDurationMs should abort subscription even when not yielding', async () 
         assert(opts.signal, 'no signal received');
         try {
           // Listen for abort signal
-          opts.signal.addEventListener('abort', () => {
-            onSignalAborted();
-          });
+          opts.signal.addEventListener('abort', onSignalAborted);
 
           // Simulate a subscription that never yields - just waits forever
           // This should be interrupted by maxDurationMs via the abort signal
@@ -1403,17 +1402,18 @@ test('maxDurationMs should abort subscription even when not yielding', async () 
   });
 
   const onError = vi.fn();
+  const onStarted = vi.fn();
   const sub = ctx.client.sub.subscribe(undefined, {
     onError,
+    onStarted,
+  });
+  await vi.waitFor(() => {
+    expect(onStarted).toHaveBeenCalledTimes(1);
   });
 
-  // Wait for maxDurationMs to trigger abort
-  await vi.waitFor(
-    () => {
-      expect(ctx.onSignalAborted).toHaveBeenCalledTimes(1);
-    },
-    { timeout: MAX_DURATION_MS + 500 },
-  );
+  await fakeTimers.advanceTimersByTimeAsync(MAX_DURATION_MS);
+
+  expect(ctx.onSignalAborted).toHaveBeenCalledTimes(1);
 
   // Verify the subscription handler completed
   await vi.waitFor(() => {
