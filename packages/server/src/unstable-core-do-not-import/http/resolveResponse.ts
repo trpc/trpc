@@ -438,14 +438,14 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               data = run(async function* () {
                 // Keep the current value outside the loop and explicitly clear it after each yield
                 // to avoid retaining references while the consumer is back-pressured.
-                let value: unknown | null = null;
+                let value: unknown;
                 try {
                   for await (value of original) {
                     yield value;
-                    value = null;
+                    value = undefined;
                   }
                 } finally {
-                  value = null;
+                  value = undefined;
                   cleanupOnce();
                 }
               });
