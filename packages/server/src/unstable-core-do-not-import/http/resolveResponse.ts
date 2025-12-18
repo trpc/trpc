@@ -362,7 +362,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
             const reqSignal = opts.req.signal;
 
-            let onAbort: () => void = () => {};
+            let onAbort: (() => void) | undefined;
             let cleanedUp = false;
             let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -375,7 +375,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                 clearTimeout(timeoutId);
                 timeoutId = null;
               }
-              reqSignal.removeEventListener('abort', onAbort);
+              if (onAbort) {
+                reqSignal.removeEventListener('abort', onAbort);
+                onAbort = undefined;
+              }
             };
             const cleanupOnce = () => cleanup();
 
@@ -383,12 +386,8 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               cleanupOnce();
               combinedAc.abort(reqSignal.reason);
             };
-
-            combinedAc.signal.addEventListener('abort', cleanupOnce, {
-              once: true,
-            });
-
             timeoutId = setTimeout(() => {
+              cleanupOnce();
               combinedAc.abort(new DOMException('AbortError', 'AbortError'));
             }, maxDurationMs);
 
@@ -437,11 +436,16 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             } else if (isAsyncIterable(data)) {
               const original = data;
               data = run(async function* () {
+                // Keep the current value outside the loop and explicitly clear it after each yield
+                // to avoid retaining references while the consumer is back-pressured.
+                let value: unknown | null = null;
                 try {
-                  for await (const value of original) {
+                  for await (value of original) {
                     yield value;
+                    value = null;
                   }
                 } finally {
+                  value = null;
                   cleanupOnce();
                 }
               });
