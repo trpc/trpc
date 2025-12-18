@@ -2,7 +2,7 @@ import { Unpromise } from '../../vendor/unpromise';
 import { getTRPCErrorFromUnknown } from '../error/TRPCError';
 import { isAbortError } from '../http/abortError';
 import type { MaybePromise } from '../types';
-import { identity, run } from '../utils';
+import { emptyObject, identity, run } from '../utils';
 import type { EventSourceLike } from './sse.types';
 import type { inferTrackedOutput } from './tracked';
 import { isTrackedEnvelope } from './tracked';
@@ -291,7 +291,7 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
 ): AsyncIterable<ConsumerStreamResult<TConfig>> {
   const { deserialize = (v) => v } = opts;
 
-  let clientOptions: SSEClientOptions = {};
+  let clientOptions: SSEClientOptions = emptyObject();
 
   const signal = opts.signal;
 

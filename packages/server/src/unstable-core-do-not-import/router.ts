@@ -14,10 +14,10 @@ import type { AnyRootTypes, RootConfig } from './rootConfig';
 import { defaultTransformer } from './transformer';
 import type { MaybePromise, ValueOf } from './types';
 import {
+  emptyObject,
   isFunction,
   isObject,
   mergeWithoutOverrides,
-  omitPrototype,
 } from './utils';
 
 export interface RouterRecord {
@@ -265,8 +265,8 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
       );
     }
 
-    const procedures: Record<string, AnyProcedure> = omitPrototype({});
-    const lazy: Record<string, LazyLoader<AnyRouter>> = omitPrototype({});
+    const procedures: Record<string, AnyProcedure> = emptyObject();
+    const lazy: Record<string, LazyLoader<AnyRouter>> = emptyObject();
 
     function createLazyLoader(opts: {
       ref: Lazy<AnyRouter>;
@@ -304,7 +304,7 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
     }
 
     function step(from: CreateRouterOptions, path: readonly string[] = []) {
-      const aggregate: RouterRecord = omitPrototype({});
+      const aggregate: RouterRecord = emptyObject();
       for (const [key, item] of Object.entries(from ?? {})) {
         if (isLazy(item)) {
           lazy[[...path, key].join('.')] = createLazyLoader({
@@ -557,6 +557,7 @@ export function mergeRouters<TRouters extends AnyRouter[]>(
     ),
     isServer: routerList.every((r) => r._def._config.isServer),
     $types: routerList[0]?._def._config.$types,
+    sse: routerList[0]?._def._config.sse,
   })(record);
 
   return router as MergeRouters<TRouters>;
