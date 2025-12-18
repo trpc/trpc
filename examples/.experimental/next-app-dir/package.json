@@ -22,7 +22,7 @@
     "@types/node": "^22.13.5",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.1",
-    "next": "^15.3.1",
+    "next": "^15.3.8",
     "next-auth": "5.0.0-beta.25",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
