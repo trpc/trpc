@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
   isObservable,
+  observable,
   observableToAsyncIterable,
 } from '../../observable/observable';
 import { getErrorShape } from '../error/getErrorShape';
@@ -16,7 +17,6 @@ import { isPromise, jsonlStreamProducer } from '../stream/jsonl';
 import { sseHeaders, sseStreamProducer } from '../stream/sse';
 import { transformTRPCResponse } from '../transformer';
 import {
-  abortSignalsAnyPonyfill,
   isAsyncIterable,
   isObject,
   run,
@@ -349,9 +349,110 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             });
           }
         }
-        const signals = [opts.req.signal];
-        if (config.sse?.maxDurationMs) {
-          signals.push(AbortSignal.timeout(config.sse.maxDurationMs));
+
+        // Create a combined signal for subscriptions that includes maxDurationMs timeout.
+        // This ensures subscription handlers can respond to the timeout via opts.signal.
+        // See: https://github.com/trpc/trpc/issues/6991
+        let signal: AbortSignal = opts.req.signal;
+        if (proc._def.type === 'subscription') {
+          const maxDurationMs = config.sse?.maxDurationMs;
+          if (
+            maxDurationMs &&
+            maxDurationMs > 0 &&
+            maxDurationMs !== Infinity
+          ) {
+            const combinedAc = new AbortController();
+            signal = combinedAc.signal;
+
+            const reqSignal = opts.req.signal;
+
+            let onAbort: () => void = () => {};
+            let cleanedUp = false;
+            let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+            const cleanup = () => {
+              if (cleanedUp) {
+                return;
+              }
+              cleanedUp = true;
+              if (timeoutId !== null) {
+                clearTimeout(timeoutId);
+                timeoutId = null;
+              }
+              reqSignal.removeEventListener('abort', onAbort);
+            };
+            const cleanupOnce = () => cleanup();
+
+            onAbort = () => {
+              cleanupOnce();
+              combinedAc.abort(reqSignal.reason);
+            };
+
+            combinedAc.signal.addEventListener('abort', cleanupOnce, { once: true });
+
+            timeoutId = setTimeout(() => {
+              combinedAc.abort(new DOMException('AbortError', 'AbortError'));
+            }, maxDurationMs);
+
+            if (reqSignal.aborted) {
+              onAbort();
+            } else {
+              reqSignal.addEventListener('abort', onAbort, { once: true });
+            }
+
+            let maybeData: unknown;
+            try {
+              maybeData = await proc({
+                path: call.path,
+                getRawInput: call.getRawInput,
+                ctx: ctxManager.value(),
+                type: proc._def.type,
+                signal,
+              });
+            } catch (cause) {
+              cleanupOnce();
+              throw cause;
+            }
+
+            let data: unknown = maybeData;
+            if (isObservable(data)) {
+              const original = data;
+              data = observable((observer) => {
+                const subscription = original.subscribe({
+                  next(value) {
+                    observer.next?.(value);
+                  },
+                  error(error) {
+                    cleanupOnce();
+                    observer.error?.(error);
+                  },
+                  complete() {
+                    cleanupOnce();
+                    observer.complete?.();
+                  },
+                });
+                return () => {
+                  cleanupOnce();
+                  subscription.unsubscribe();
+                };
+              });
+            } else if (isAsyncIterable(data)) {
+              const original = data;
+              data = run(async function* () {
+                try {
+                  for await (const value of original) {
+                    yield value;
+                  }
+                } finally {
+                  cleanupOnce();
+                }
+              });
+            } else {
+              cleanupOnce();
+            }
+
+            return [undefined, { data }];
+          }
         }
 
         const data: unknown = await proc({
@@ -359,7 +460,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           getRawInput: call.getRawInput,
           ctx: ctxManager.value(),
           type: proc._def.type,
-          signal: abortSignalsAnyPonyfill(signals),
+          signal,
         });
         return [undefined, { data }];
       } catch (cause) {

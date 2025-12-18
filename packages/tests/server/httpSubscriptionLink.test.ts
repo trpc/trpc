@@ -1376,6 +1376,7 @@ test('maxDurationMs should abort subscription even when not yielding', async () 
     const onFinally = vi.fn();
 
     const router = t.router({
+      // biome-ignore lint/correctness/useYield: intentionally non-yielding to test maxDurationMs abort behavior
       sub: t.procedure.subscription(async function* (opts) {
         assert(opts.signal, 'no signal received');
         try {
@@ -1419,6 +1420,7 @@ test('maxDurationMs should abort subscription even when not yielding', async () 
   await vi.waitFor(() => {
     expect(ctx.onFinally).toHaveBeenCalledTimes(1);
   });
+  expect(onError).not.toHaveBeenCalled();
 
   sub.unsubscribe();
 });
