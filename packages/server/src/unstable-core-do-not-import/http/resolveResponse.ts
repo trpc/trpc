@@ -16,11 +16,7 @@ import type { TRPCResponse } from '../rpc';
 import { isPromise, jsonlStreamProducer } from '../stream/jsonl';
 import { sseHeaders, sseStreamProducer } from '../stream/sse';
 import { transformTRPCResponse } from '../transformer';
-import {
-  isAsyncIterable,
-  isObject,
-  run,
-} from '../utils';
+import { isAsyncIterable, isObject, run } from '../utils';
 import { getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
@@ -388,7 +384,9 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               combinedAc.abort(reqSignal.reason);
             };
 
-            combinedAc.signal.addEventListener('abort', cleanupOnce, { once: true });
+            combinedAc.signal.addEventListener('abort', cleanupOnce, {
+              once: true,
+            });
 
             timeoutId = setTimeout(() => {
               combinedAc.abort(new DOMException('AbortError', 'AbortError'));
