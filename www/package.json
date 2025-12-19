@@ -93,7 +93,7 @@
     "eslint": "^9.26.0",
     "next": "^15.3.8",
     "next-auth": "npm:next-auth@^4.24.11",
-    "npm-run-all2": "^7.0.0",
+    "npm-run-all2": "^8.0.0",
     "oauth": "^0.10.0",
     "postcss": "^8.4.39",
     "prettier": "^3.3.3",
