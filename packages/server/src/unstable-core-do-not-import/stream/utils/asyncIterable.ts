@@ -18,36 +18,6 @@ export function iteratorResource<TYield, TReturn, TNext>(
     await iterator.return?.();
   });
 }
-/**
- * Derives a new {@link AsyncGenerator} based on {@link iterable}, that automatically aborts after the specified duration.
- */
-export async function* withMaxDuration<T>(
-  iterable: AsyncIterable<T>,
-  opts: { maxDurationMs: number },
-): AsyncGenerator<T> {
-  await using iterator = iteratorResource(iterable);
-
-  using timer = timerResource(opts.maxDurationMs);
-
-  const timerPromise = timer.start();
-
-  // declaration outside the loop for garbage collection reasons
-  let result: null | IteratorResult<T> | typeof disposablePromiseTimerResult;
-
-  while (true) {
-    result = await Unpromise.race([iterator.next(), timerPromise]);
-    if (result === disposablePromiseTimerResult) {
-      // cancelled due to timeout
-      throwAbortError();
-    }
-    if (result.done) {
-      return result;
-    }
-    yield result.value;
-    // free up reference for garbage collection
-    result = null;
-  }
-}
 
 /**
  * Derives a new {@link AsyncGenerator} based of {@link iterable}, that yields its first
