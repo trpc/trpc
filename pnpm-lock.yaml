@@ -81,8 +81,8 @@ importers:
         specifier: ^9.0.0
         version: 9.0.1(@swc/core@1.11.21(@swc/helpers@0.5.17))(@types/node@22.17.0)
       npm-run-all2:
-        specifier: ^7.0.0
-        version: 7.0.0
+        specifier: ^8.0.0
+        version: 8.0.4
       prettier:
         specifier: ^3.3.3
         version: 3.3.3
@@ -2324,8 +2324,8 @@ importers:
         specifier: npm:next-auth@^4.24.11
         version: 4.24.11(next@15.4.10(@babel/core@7.23.2)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       npm-run-all2:
-        specifier: ^7.0.0
-        version: 7.0.0
+        specifier: ^8.0.0
+        version: 8.0.4
       oauth:
         specifier: ^0.10.0
         version: 0.10.0
@@ -13957,10 +13957,6 @@ packages:
   minimalistic-assert@1.0.1:
     resolution: {integrity: sha512-UtJcAD4yEaGtjPezWuO9wC4nwUnVH/8/Im3yEHQP4b67cXlD/Qr9hdITCU1xDbSEXg2XKNaP8jsReV7vQd00/A==}
 
-  minimatch@10.0.1:
-    resolution: {integrity: sha512-ethXTt3SGGR+95gudmqJ1eNhRO7eGEGIgYA9vnPatK4/etz2MEVDno5GMCibdMTuBMyElzIlgxMna3K94XDIDQ==}
-    engines: {node: 20 || >=22}
-
   minimatch@10.1.1:
     resolution: {integrity: sha512-enIvLvRAFZYXJzkCYG5RKmPfrFArdLv+R+lbQ53BmIMLIry74bjKzX6iHAm8WYamJkhSSEabrWN5D97XnKObjQ==}
     engines: {node: 20 || >=22}
@@ -14391,9 +14387,9 @@ packages:
     resolution: {integrity: sha512-9xYfSJy2IFQw1i6462EJzjChL9e65EfSo2Cw6kl0EFeDp05VvU+anrQk3Fc0d1MbVCq7rWIxeer89O9SUQ/uOg==}
     engines: {node: '>=12.0'}
 
-  npm-run-all2@7.0.0:
-    resolution: {integrity: sha512-hXQT0BFU0G37H516ZJgISho4FslbdqMj7U8A7xoj81mhYSyxnwfF6dsraWAA1xL7ak/8yUVvAN4Lx4PpTc5Ohg==}
-    engines: {node: ^20.5.0 || >=22.0.0, npm: '>= 9'}
+  npm-run-all2@8.0.4:
+    resolution: {integrity: sha512-wdbB5My48XKp2ZfJUlhnLVihzeuA1hgBnqB2J9ahV77wLS+/YAJAlN8I+X3DIFIPZ3m5L7nplmlbhNiFDmXRDA==}
+    engines: {node: ^20.5.0 || >=22.0.0, npm: '>= 10'}
     hasBin: true
 
   npm-run-all@4.1.5:
@@ -33942,10 +33938,6 @@ snapshots:
 
   minimalistic-assert@1.0.1: {}
 
-  minimatch@10.0.1:
-    dependencies:
-      brace-expansion: 2.0.1
-
   minimatch@10.1.1:
     dependencies:
       '@isaacs/brace-expansion': 5.0.0
@@ -34569,12 +34561,12 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  npm-run-all2@7.0.0:
+  npm-run-all2@8.0.4:
     dependencies:
       ansi-styles: 6.2.1
-      cross-spawn: 7.0.3
+      cross-spawn: 7.0.6
       memorystream: 0.3.1
-      minimatch: 10.0.1
+      picomatch: 4.0.3
       pidtree: 0.6.0
       read-package-json-fast: 4.0.0
       shell-quote: 1.8.1
