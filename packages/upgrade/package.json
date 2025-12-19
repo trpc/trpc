@@ -48,7 +48,7 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "tsdown": "0.12.7",
-    "zod": "^4.0.0"
+    "zod": "^3.25.51"
   },
   "publishConfig": {
     "access": "public"
