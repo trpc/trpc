@@ -151,6 +151,36 @@ Or even the root path to match all tRPC queries:
 const queryKey = trpc.pathKey();
 ```
 
+### `infiniteQueryKey` - getting the infinite query key {#infiniteQueryKey}
+
+Available for all query procedures that takes a cursor input. Allows you to access the query key for an infinite query in a type-safe manner.
+
+```ts
+const infiniteQueryKey = trpc.path.to.query.infiniteQueryKey({
+  /** input */
+});
+```
+
+The result can be used with query client methods like `getQueryData`, `setQueryData`, `invalidateQueries`, etc.
+
+```ts
+const queryClient = useQueryClient();
+
+// Get cached data for an infinite query
+const cachedData = queryClient.getQueryData(
+  trpc.path.to.query.infiniteQueryKey({ cursor: 0 }),
+);
+
+// Set cached data for an infinite query
+queryClient.setQueryData(
+  trpc.path.to.query.infiniteQueryKey({ cursor: 0 }),
+  (data) => {
+    // Modify the data
+    return data;
+  },
+);
+```
+
 ### `queryFilter` - creating query filters {#queryFilter}
 
 Available for all query procedures. Allows creating [query filters](https://tanstack.com/query/latest/docs/framework/react/guides/filters#query-filters) in a type-safe manner.
@@ -181,6 +211,40 @@ const queryFilter = trpc.path.pathFilter({
 ```
 
 Useful for creating filters that can be passed to client methods like `queryClient.invalidateQueries` etc.
+
+### `infiniteQueryFilter` - creating infinite query filters {#infiniteQueryFilter}
+
+Available for all query procedures that takes a cursor input. Allows creating [query filters](https://tanstack.com/query/latest/docs/framework/react/guides/filters#query-filters) for infinite queries in a type-safe manner.
+
+```ts
+const infiniteQueryFilter = trpc.path.to.query.infiniteQueryFilter(
+  {
+    /** input */
+  },
+  {
+    // Any Tanstack React Query filter
+    predicate: (query) => {
+      query.state.data;
+    },
+  },
+);
+```
+
+Useful for creating filters that can be passed to client methods like `queryClient.invalidateQueries` etc.
+
+```ts
+await queryClient.invalidateQueries(
+  trpc.path.to.query.infiniteQueryFilter(
+    {},
+    {
+      predicate: (query) => {
+        // Filter logic based on query state
+        return query.state.data?.pages.length > 0;
+      },
+    },
+  ),
+);
+```
 
 ### `mutationOptions` - creating mutation options {#mutationOptions}
 
@@ -255,6 +319,99 @@ function SubscriptionExample() {
 
   return <>{/* ... */}</>;
 }
+```
+
+### Query Key Prefixing {#keyPrefix}
+
+When using multiple tRPC providers in a single application (e.g., connecting to different backend services), queries with the same path will collide in the cache. You can prevent this by enabling query key prefixing.
+
+```tsx
+// Without prefixes - these would collide!
+const authQuery = useQuery(trpcAuth.list.queryOptions()); // auth service
+const billingQuery = useQuery(trpcBilling.list.queryOptions()); // billing service
+```
+
+Enable the feature flag when creating your context:
+
+```tsx title='utils/trpc.ts'
+// [...]
+
+const billing = createTRPCContext<BillingRouter, { keyPrefix: true }>();
+export const BillingProvider = billing.TRPCProvider;
+export const useBilling = billing.useTRPC;
+export const createBillingClient = () =>
+  createTRPCClient<BillingRouter>({
+    links: [
+      /* ... */
+    ],
+  });
+
+const account = createTRPCContext<AccountRouter, { keyPrefix: true }>();
+export const AccountProvider = account.TRPCProvider;
+export const useAccount = account.useTRPC;
+export const createAccountClient = () =>
+  createTRPCClient<AccountRouter>({
+    links: [
+      /* ... */
+    ],
+  });
+```
+
+```tsx title='App.tsx'
+// [...]
+
+export function App() {
+  const [queryClient] = useState(() => new QueryClient());
+  const [billingClient] = useState(() => createBillingClient());
+  const [accountClient] = useState(() => createAccountClient());
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <BillingProvider
+        trpcClient={billingClient}
+        queryClient={queryClient}
+        keyPrefix="billing"
+      >
+        <AccountProvider
+          trpcClient={accountClient}
+          queryClient={queryClient}
+          keyPrefix="account"
+        >
+          {/* ... */}
+        </AccountProvider>
+      </BillingProvider>
+    </QueryClientProvider>
+  );
+}
+```
+
+```tsx title='components/MyComponent.tsx'
+// [...]
+
+export function MyComponent() {
+  const billing = useBilling();
+  const account = useAccount();
+
+  const billingList = useQuery(billing.list.queryOptions());
+  const accountList = useQuery(account.list.queryOptions());
+
+  return (
+    <div>
+      <div>Billing: {JSON.stringify(billingList.data ?? null)}</div>
+      <div>Account: {JSON.stringify(accountList.data ?? null)}</div>
+    </div>
+  );
+}
+```
+
+The query keys will be properly prefixed to avoid collisions:
+
+```tsx twoslash
+// Example of how the query keys look with prefixes
+const queryKeys = [
+  [['billing'], ['list'], { type: 'query' }],
+  [['account'], ['list'], { type: 'query' }],
+];
 ```
 
 ### Inferring Input and Output types

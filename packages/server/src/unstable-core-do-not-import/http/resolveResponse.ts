@@ -15,7 +15,12 @@ import type { TRPCResponse } from '../rpc';
 import { isPromise, jsonlStreamProducer } from '../stream/jsonl';
 import { sseHeaders, sseStreamProducer } from '../stream/sse';
 import { transformTRPCResponse } from '../transformer';
-import { isAsyncIterable, isObject, run } from '../utils';
+import {
+  abortSignalsAnyPonyfill,
+  isAsyncIterable,
+  isObject,
+  run,
+} from '../utils';
 import { getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
@@ -37,6 +42,15 @@ type HTTPMethods =
   | 'PUT'
   | 'DELETE'
   | 'PATCH';
+
+function combinedAbortController(signal: AbortSignal) {
+  const controller = new AbortController();
+  const combinedSignal = abortSignalsAnyPonyfill([signal, controller.signal]);
+  return {
+    signal: combinedSignal,
+    controller,
+  };
+}
 
 const TYPE_ACCEPTED_METHOD_MAP: Record<ProcedureType, HTTPMethods[]> = {
   mutation: ['POST'],
@@ -316,6 +330,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     type RPCResult = ResultTuple<RPCResultOk>;
     const rpcCalls = info.calls.map(async (call): Promise<RPCResult> => {
       const proc = call.procedure;
+      const combinedAbort = combinedAbortController(opts.req.signal);
       try {
         if (opts.error) {
           throw opts.error;
@@ -343,13 +358,24 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               message: `Cannot batch subscription calls`,
             });
           }
+
+          if (config.sse?.maxDurationMs) {
+            function cleanup() {
+              clearTimeout(timer);
+              combinedAbort.signal.removeEventListener('abort', cleanup);
+
+              combinedAbort.controller.abort();
+            }
+            const timer = setTimeout(cleanup, config.sse.maxDurationMs);
+            combinedAbort.signal.addEventListener('abort', cleanup);
+          }
         }
         const data: unknown = await proc({
           path: call.path,
           getRawInput: call.getRawInput,
           ctx: ctxManager.value(),
           type: proc._def.type,
-          signal: opts.req.signal,
+          signal: combinedAbort.signal,
         });
         return [undefined, { data }];
       } catch (cause) {

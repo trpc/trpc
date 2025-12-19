@@ -12,7 +12,7 @@ The AWS Lambda adapter is supported for API Gateway [REST API(v1)](https://docs.
 > `httpBatchLink` requires the router to work on a single API Gateway Resource (as shown in the [example](https://github.com/trpc/trpc/tree/main/examples/lambda-api-gateway)).
 > If you'd like to have a Resource per procedure, you can use the `httpLink` instead ([more info](https://github.com/trpc/trpc/issues/5738#issuecomment-2130001522)).
 
-## Example app
+## Example apps
 
 <table>
   <thead>
@@ -27,6 +27,14 @@ The AWS Lambda adapter is supported for API Gateway [REST API(v1)](https://docs.
       <td>
         <ul>
           <li><a href="https://github.com/trpc/trpc/tree/main/examples/lambda-api-gateway">Source</a></li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>API Gateway REST API with response streaming.</td>
+      <td>
+        <ul>
+          <li><a href="https://github.com/trpc/trpc/tree/main/examples/lambda-api-gateway-streaming">Source</a></li>
         </ul>
       </td>
     </tr>
@@ -114,11 +122,11 @@ function createContext({
 
 ## AWS Lambda Response Streaming Adapter
 
-AWS Lambda supports streaming responses to clients.
+AWS Lambda supports streaming responses to clients with both Lambda Function URLs and API Gateway REST APIs.
 
-> Response streaming is only supported for Lambda Function URLs. You can not use API Gateway to stream responses. [Read more here about response streaming](https://aws.amazon.com/blogs/compute/introducing-aws-lambda-response-streaming/).
+> Response streaming is supported for Lambda Function URLs and API Gateway REST APIs. For API Gateway REST APIs, you need to configure the integration with `responseTransferMode: STREAM`. [Read more about Lambda response streaming](https://aws.amazon.com/blogs/compute/introducing-aws-lambda-response-streaming/) and [API Gateway response streaming](https://aws.amazon.com/blogs/compute/building-responsive-apis-with-amazon-api-gateway-response-streaming/).
 
-## Example app
+## Example apps
 
 <table>
   <thead>
@@ -136,12 +144,20 @@ AWS Lambda supports streaming responses to clients.
         </ul>
       </td>
     </tr>
+    <tr>
+      <td>API Gateway REST API with response streaming.</td>
+      <td>
+        <ul>
+          <li><a href="https://github.com/trpc/trpc/tree/main/examples/lambda-api-gateway-streaming">Source</a></li>
+        </ul>
+      </td>
+    </tr>
   </tbody>
 </table>
 
 ### Response Streaming
 
-The signature of a streaming handler is different from the default handler. The streaming handler additonally receives a writable stream parameter, `responseStream`, besides the default node handler parameters, `event` and `context`. To indicate that Lambda should stream your responses, you must wrap your function handler with the `awslambda.streamifyResponse()` decorator.
+The signature of a streaming handler is different from the default handler. The streaming handler additionally receives a writable stream parameter, `responseStream`, besides the default node handler parameters, `event` and `context`. To indicate that Lambda should stream your responses, you must wrap your function handler with the `awslambda.streamifyResponse()` decorator.
 
 > Note that the `awslambda` namespace is automatically provided by the Lambda execution environment. You can import the types from `@types/aws-lambda` to augment the global namespace with the `awslambda` namespace.
 

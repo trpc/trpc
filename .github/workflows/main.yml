@@ -178,7 +178,7 @@ jobs:
 
       - uses: denoland/setup-deno@v1
         with:
-          deno-version: v1.x
+          deno-version: 2.x
 
       - run: deno --version
 
@@ -258,7 +258,7 @@ jobs:
 
       - run: pnpm build
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-start }}
           cache: 'pnpm'
