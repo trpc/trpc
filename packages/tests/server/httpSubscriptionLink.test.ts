@@ -1426,7 +1426,7 @@ test('maxDurationMs should abort subscription even when not yielding', async () 
   sub.unsubscribe();
 });
 
-test('timer leaks after subscription ends', async () => {
+test('timer does not leak after subscription ends', async () => {
   const nonce = Math.floor(Math.random() * 1000);
   const MAX_DURATION_MS = 60_0000 * 60 * 24 + nonce; // 1 day + nonce
 

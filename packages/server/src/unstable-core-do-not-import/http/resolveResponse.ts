@@ -43,6 +43,15 @@ type HTTPMethods =
   | 'DELETE'
   | 'PATCH';
 
+function combinedAbortController(signal: AbortSignal) {
+  const controller = new AbortController();
+  const combinedSignal = abortSignalsAnyPonyfill([signal, controller.signal]);
+  return {
+    signal: combinedSignal,
+    controller,
+  };
+}
+
 const TYPE_ACCEPTED_METHOD_MAP: Record<ProcedureType, HTTPMethods[]> = {
   mutation: ['POST'],
   query: ['GET'],
@@ -317,12 +326,11 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
     interface RPCResultOk {
       data: unknown;
-      abortController: AbortController;
-      signal: AbortSignal;
     }
     type RPCResult = ResultTuple<RPCResultOk>;
     const rpcCalls = info.calls.map(async (call): Promise<RPCResult> => {
       const proc = call.procedure;
+      const combinedAbort = combinedAbortController(opts.req.signal);
       try {
         if (opts.error) {
           throw opts.error;
@@ -342,12 +350,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           });
         }
 
-        const abortController = new AbortController();
-        const signal = abortSignalsAnyPonyfill([
-          opts.req.signal,
-          abortController.signal,
-        ]);
-
         if (proc._def.type === 'subscription') {
           /* istanbul ignore if -- @preserve */
           if (info.isBatchCall) {
@@ -356,15 +358,26 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               message: `Cannot batch subscription calls`,
             });
           }
+
+          if (config.sse?.maxDurationMs) {
+            function cleanup() {
+              clearTimeout(timer);
+              combinedAbort.signal.removeEventListener('abort', cleanup);
+
+              combinedAbort.controller.abort();
+            }
+            const timer = setTimeout(cleanup, config.sse.maxDurationMs);
+            combinedAbort.signal.addEventListener('abort', cleanup);
+          }
         }
         const data: unknown = await proc({
           path: call.path,
           getRawInput: call.getRawInput,
           ctx: ctxManager.value(),
           type: proc._def.type,
-          signal,
+          signal: combinedAbort.signal,
         });
-        return [undefined, { data, abortController, signal }];
+        return [undefined, { data }];
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
         const input = call.result();
@@ -461,17 +474,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               : result.data;
             return dataAsIterable;
           });
-
-          if (result && config.sse?.maxDurationMs) {
-            const { signal, abortController } = result;
-            function cleanup() {
-              clearTimeout(timer);
-              abortController.abort();
-              signal.removeEventListener('abort', cleanup);
-            }
-            const timer = setTimeout(cleanup, config.sse.maxDurationMs);
-            signal.addEventListener('abort', cleanup);
-          }
 
           const stream = sseStreamProducer({
             ...config.sse,
