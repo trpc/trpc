@@ -1,4 +1,5 @@
 import type * as http from 'http';
+import { IncomingMessage } from 'node:http';
 import { TRPCError } from '../../@trpc/server';
 import type { NodeHTTPRequest, NodeHTTPResponse } from './types';
 
@@ -20,6 +21,10 @@ function createBody(
     // If the body is already a string, return it directly
     if (typeof req.body === 'string') {
       return req.body;
+    }
+    // formData use
+    if (req.body instanceof IncomingMessage) {
+      return req.body as any;
     }
     // If body exists but isn't a string, stringify it as JSON
     return JSON.stringify(req.body);
