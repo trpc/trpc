@@ -1,5 +1,11 @@
 import { isPlainObject } from '@trpc/server/vendor/is-plain-object';
-import { isAsyncIterable, isFunction, isObject, run } from '../utils';
+import {
+  emptyObject,
+  isAsyncIterable,
+  isFunction,
+  isObject,
+  run,
+} from '../utils';
 import { iteratorResource } from './utils/asyncIterable';
 import type { Deferred } from './utils/createDeferred';
 import { createDeferred } from './utils/createDeferred';
@@ -238,7 +244,7 @@ async function* createBatchStreamProducer(
       return [[value]];
     }
 
-    const newObj: Record<string, unknown> = {};
+    const newObj: Record<string, unknown> = emptyObject();
     const asyncValues: ChunkDefinition[] = [];
     for (const [key, item] of Object.entries(value)) {
       const transformed = encodeAsync(item, [...path, key]);
@@ -252,7 +258,7 @@ async function* createBatchStreamProducer(
     return [[newObj], ...asyncValues];
   }
 
-  const newHead: Head = {};
+  const newHead: Head = emptyObject();
   for (const [key, item] of Object.entries(data)) {
     newHead[key] = encode(item, [key]);
   }
