@@ -260,7 +260,7 @@ export function useSubscription<TOutput, TError>(
   const resultRef = React.useRef<$Result>(getInitialState());
 
   const [state, setState] = React.useState<$Result>(
-    trackResult(resultRef.current, addTrackedProp),
+    trackResult(resultRef, addTrackedProp),
   );
 
   state.reset = reset;
@@ -278,7 +278,7 @@ export function useSubscription<TOutput, TError>(
         }
       }
       if (shouldUpdate) {
-        setState(trackResult(next, addTrackedProp));
+        setState(trackResult(resultRef, addTrackedProp));
       }
     },
     [addTrackedProp],
@@ -299,13 +299,14 @@ export function useSubscription<TOutput, TError>(
 }
 
 function trackResult<T extends object>(
-  result: T,
+  result: React.RefObject<T>,
   onTrackResult: (key: keyof T) => void,
 ): T {
-  const trackedResult = new Proxy(result, {
-    get(target, prop) {
+  const trackedResult = new Proxy(result.current, {
+    get(_target, prop) {
       onTrackResult(prop as keyof T);
-      return target[prop as keyof T];
+      // Bypass target, so that we always get the latest value
+      return result.current[prop as keyof T];
     },
   });
 
