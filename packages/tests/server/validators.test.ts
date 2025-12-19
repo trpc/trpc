@@ -8,8 +8,7 @@ import myzod from 'myzod';
 import * as T from 'runtypes';
 import * as $ from 'scale-codec';
 import * as st from 'superstruct';
-import * as v0 from 'valibot0';
-import * as v1 from 'valibot1';
+import * as v from 'valibot';
 import * as yup from 'yup';
 import { z } from 'zod';
 
@@ -138,106 +137,11 @@ test('zod transform mixed input/output', async () => {
   await close();
 });
 
-test('valibot v0', async () => {
+test('valibot', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
-    num: t.procedure.input(v0.parser(v0.number())).query(({ input }) => {
-      expectTypeOf(input).toBeNumber();
-      return {
-        input,
-      };
-    }),
-  });
-
-  const { close, client } = routerToServerAndClientNew(router);
-  const res = await client.num.query(123);
-
-  await expect(client.num.query('123' as any)).rejects.toMatchInlineSnapshot(
-    '[TRPCClientError: Invalid type: Expected number but received "123"]',
-  );
-  expect(res.input).toBe(123);
-  await close();
-});
-
-test('valibot v0 async', async () => {
-  const t = initTRPC.create();
-  const input = v0.parserAsync(
-    v0.pipeAsync(
-      v0.string(),
-      v0.checkAsync(async (value) => value === 'foo'),
-    ),
-  );
-
-  const router = t.router({
-    q: t.procedure.input(input).query(({ input }) => {
-      expectTypeOf(input).toBeString();
-      return {
-        input,
-      };
-    }),
-  });
-
-  const { close, client } = routerToServerAndClientNew(router);
-
-  await expect(client.q.query('bar')).rejects.toMatchInlineSnapshot(
-    '[TRPCClientError: Invalid input: Received "bar"]',
-  );
-  const res = await client.q.query('foo');
-  expect(res).toMatchInlineSnapshot(`
-      Object {
-        "input": "foo",
-      }
-    `);
-  await close();
-});
-
-test('valibot v0 transform mixed input/output', async () => {
-  const t = initTRPC.create();
-  const input = v0.parser(
-    v0.object({
-      length: v0.pipe(
-        v0.string(),
-        v0.transform((s) => s.length),
-      ),
-    }),
-  );
-
-  const router = t.router({
-    num: t.procedure.input(input).query(({ input }) => {
-      expectTypeOf(input.length).toBeNumber();
-      return {
-        input,
-      };
-    }),
-  });
-
-  const { close, client } = routerToServerAndClientNew(router);
-
-  await expect(client.num.query({ length: '123' })).resolves
-    .toMatchInlineSnapshot(`
-            Object {
-              "input": Object {
-                "length": 3,
-              },
-            }
-          `);
-
-  await expect(
-    // @ts-expect-error this should only accept a string
-    client.num.query({ length: 123 }),
-  ).rejects.toMatchInlineSnapshot(
-    '[TRPCClientError: Invalid type: Expected string but received 123]',
-  );
-
-  await close();
-});
-
-test('valibot v1', async () => {
-  const t = initTRPC.create();
-
-  const router = t.router({
-    num: t.procedure.input(v1.number()).query(({ input }) => {
+    num: t.procedure.input(v.number()).query(({ input }) => {
       expectTypeOf(input).toBeNumber();
       return {
         input,
@@ -258,11 +162,11 @@ test('valibot v1', async () => {
   await ctx.close();
 });
 
-test('valibot v1 error type', async () => {
+test('valibot error type', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
-    num: t.procedure.input(v1.number()).query(({ input }) => {
+    num: t.procedure.input(v.number()).query(({ input }) => {
       expectTypeOf(input).toBeNumber();
       return {
         input,
@@ -303,11 +207,11 @@ test('valibot v1 error type', async () => {
   `);
 });
 
-test('valibot v1 async', async () => {
+test('valibot async', async () => {
   const t = initTRPC.create();
-  const input = v1.pipeAsync(
-    v1.string(),
-    v1.checkAsync(async (value) => value === 'foo'),
+  const input = v.pipeAsync(
+    v.string(),
+    v.checkAsync(async (value) => value === 'foo'),
   );
 
   const router = t.router({
@@ -333,12 +237,12 @@ test('valibot v1 async', async () => {
   await ctx.close();
 });
 
-test('valibot v1 transform mixed input/output', async () => {
+test('valibot transform mixed input/output', async () => {
   const t = initTRPC.create();
-  const input = v1.object({
-    length: v1.pipe(
-      v1.string(),
-      v1.transform((s) => s.length),
+  const input = v.object({
+    length: v.pipe(
+      v.string(),
+      v.transform((s) => s.length),
     ),
   });
 
