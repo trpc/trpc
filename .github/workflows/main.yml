@@ -82,6 +82,7 @@ jobs:
       - uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: true
+          files: ./coverage/**/*.json
           # only use token if not a fork PR
           token: ${{ github.event.pull_request.head.repo.fork == false && secrets.CODECOV_TOKEN || '' }}
 
