@@ -8,7 +8,7 @@ import type {
   DefaultErrorShape,
 } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
-import * as v1 from 'valibot1';
+import * as v from 'valibot';
 import { z, ZodError } from 'zod';
 
 describe('no custom error formatter', () => {
@@ -120,7 +120,7 @@ test('custom error formatter with standard schema v1 (valibot)', async () => {
   });
 
   const appRouter = t.router({
-    greeting: t.procedure.input(v1.number()).query((opts) => opts.input),
+    greeting: t.procedure.input(v.number()).query((opts) => opts.input),
   });
 
   await using ctx = testServerAndClientResource(appRouter);
