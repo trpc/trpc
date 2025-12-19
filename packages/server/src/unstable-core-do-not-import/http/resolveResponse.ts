@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
   isObservable,
-  observable,
   observableToAsyncIterable,
 } from '../../observable/observable';
 import { getErrorShape } from '../error/getErrorShape';
@@ -16,7 +15,12 @@ import type { TRPCResponse } from '../rpc';
 import { isPromise, jsonlStreamProducer } from '../stream/jsonl';
 import { sseHeaders, sseStreamProducer } from '../stream/sse';
 import { transformTRPCResponse } from '../transformer';
-import { isAsyncIterable, isObject, run } from '../utils';
+import {
+  abortSignalsAnyPonyfill,
+  isAsyncIterable,
+  isObject,
+  run,
+} from '../utils';
 import { getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
@@ -313,6 +317,8 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
     interface RPCResultOk {
       data: unknown;
+      abortController: AbortController;
+      signal: AbortSignal;
     }
     type RPCResult = ResultTuple<RPCResultOk>;
     const rpcCalls = info.calls.map(async (call): Promise<RPCResult> => {
@@ -336,6 +342,12 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           });
         }
 
+        const abortController = new AbortController();
+        const signal = abortSignalsAnyPonyfill([
+          opts.req.signal,
+          abortController.signal,
+        ]);
+
         if (proc._def.type === 'subscription') {
           /* istanbul ignore if -- @preserve */
           if (info.isBatchCall) {
@@ -345,118 +357,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             });
           }
         }
-
-        // Create a combined signal for subscriptions that includes maxDurationMs timeout.
-        // This ensures subscription handlers can respond to the timeout via opts.signal.
-        // See: https://github.com/trpc/trpc/issues/6991
-        let signal: AbortSignal = opts.req.signal;
-        if (proc._def.type === 'subscription') {
-          const maxDurationMs = config.sse?.maxDurationMs;
-          if (
-            maxDurationMs &&
-            maxDurationMs > 0 &&
-            maxDurationMs !== Infinity
-          ) {
-            const combinedAc = new AbortController();
-            signal = combinedAc.signal;
-
-            const reqSignal = opts.req.signal;
-
-            let onAbort: (() => void) | undefined;
-            let cleanedUp = false;
-            let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
-            const cleanup = () => {
-              if (cleanedUp) {
-                return;
-              }
-              cleanedUp = true;
-              if (timeoutId !== null) {
-                clearTimeout(timeoutId);
-                timeoutId = null;
-              }
-              if (onAbort) {
-                reqSignal.removeEventListener('abort', onAbort);
-                onAbort = undefined;
-              }
-            };
-            const cleanupOnce = () => cleanup();
-
-            onAbort = () => {
-              cleanupOnce();
-              combinedAc.abort(reqSignal.reason);
-            };
-            timeoutId = setTimeout(() => {
-              cleanupOnce();
-              combinedAc.abort(new DOMException('AbortError', 'AbortError'));
-            }, maxDurationMs);
-
-            if (reqSignal.aborted) {
-              onAbort();
-            } else {
-              reqSignal.addEventListener('abort', onAbort, { once: true });
-            }
-
-            let maybeData: unknown;
-            try {
-              maybeData = await proc({
-                path: call.path,
-                getRawInput: call.getRawInput,
-                ctx: ctxManager.value(),
-                type: proc._def.type,
-                signal,
-              });
-            } catch (cause) {
-              cleanupOnce();
-              throw cause;
-            }
-
-            let data: unknown = maybeData;
-            if (isObservable(data)) {
-              const original = data;
-              data = observable((observer) => {
-                const subscription = original.subscribe({
-                  next(value) {
-                    observer.next?.(value);
-                  },
-                  error(error) {
-                    cleanupOnce();
-                    observer.error?.(error);
-                  },
-                  complete() {
-                    cleanupOnce();
-                    observer.complete?.();
-                  },
-                });
-                return () => {
-                  cleanupOnce();
-                  subscription.unsubscribe();
-                };
-              });
-            } else if (isAsyncIterable(data)) {
-              const original = data;
-              data = run(async function* () {
-                // Keep the current value outside the loop and explicitly clear it after each yield
-                // to avoid retaining references while the consumer is back-pressured.
-                let value: unknown;
-                try {
-                  for await (value of original) {
-                    yield value;
-                    value = undefined;
-                  }
-                } finally {
-                  value = undefined;
-                  cleanupOnce();
-                }
-              });
-            } else {
-              cleanupOnce();
-            }
-
-            return [undefined, { data }];
-          }
-        }
-
         const data: unknown = await proc({
           path: call.path,
           getRawInput: call.getRawInput,
@@ -464,7 +364,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           type: proc._def.type,
           signal,
         });
-        return [undefined, { data }];
+        return [undefined, { data, abortController, signal }];
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
         const input = call.result();
@@ -561,6 +461,17 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               : result.data;
             return dataAsIterable;
           });
+
+          if (result && config.sse?.maxDurationMs) {
+            const { signal, abortController } = result;
+            function cleanup() {
+              clearTimeout(timer);
+              abortController.abort();
+              signal.removeEventListener('abort', cleanup);
+            }
+            const timer = setTimeout(cleanup, config.sse.maxDurationMs);
+            signal.addEventListener('abort', cleanup);
+          }
 
           const stream = sseStreamProducer({
             ...config.sse,
