@@ -2090,12 +2090,9 @@ importers:
       undici:
         specifier: ^7.0.0
         version: 7.5.0
-      valibot0:
-        specifier: npm:valibot@^0.42.0
-        version: valibot@0.42.0(typescript@5.9.2)
-      valibot1:
-        specifier: npm:valibot@^1.0.0-beta.14
-        version: valibot@1.0.0-beta.14(typescript@5.9.2)
+      valibot:
+        specifier: 1.2.0
+        version: 1.2.0(typescript@5.9.2)
       ws:
         specifier: ^8.0.0
         version: 8.17.1
@@ -18147,22 +18144,6 @@ packages:
   uuid@9.0.1:
     resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
     hasBin: true
-
-  valibot@0.42.0:
-    resolution: {integrity: sha512-igMdmHXxDiQY714ssh9bGisMqJ2yg7sko1KOmv/omnrIacGtP6mGrbvVT1IuV1bDrHyG9ybgpHwG1UElDiDCLg==}
-    peerDependencies:
-      typescript: '>=5'
-    peerDependenciesMeta:
-      typescript:
-        optional: true
-
-  valibot@1.0.0-beta.14:
-    resolution: {integrity: sha512-tLyV2rE5QL6U29MFy3xt4AqMrn+/HErcp2ZThASnQvPMwfSozjV1uBGKIGiegtZIGjinJqn0SlBdannf18wENA==}
-    peerDependencies:
-      typescript: '>=5'
-    peerDependenciesMeta:
-      typescript:
-        optional: true
 
   valibot@1.2.0:
     resolution: {integrity: sha512-mm1rxUsmOxzrwnX5arGS+U4T25RdvpPjPN4yR0u9pUBov9+zGVtO84tif1eY4r6zWxVxu3KzIyknJy3rxfRZZg==}
@@ -39100,14 +39081,6 @@ snapshots:
   uuid@9.0.0: {}
 
   uuid@9.0.1: {}
-
-  valibot@0.42.0(typescript@5.9.2):
-    optionalDependencies:
-      typescript: 5.9.2
-
-  valibot@1.0.0-beta.14(typescript@5.9.2):
-    optionalDependencies:
-      typescript: 5.9.2
 
   valibot@1.2.0(typescript@5.9.2):
     optionalDependencies:
