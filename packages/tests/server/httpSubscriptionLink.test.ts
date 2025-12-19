@@ -1431,32 +1431,8 @@ test('timer does not leak after subscription ends', async () => {
   const MAX_DURATION_MS = 60_0000 * 60 * 24 + nonce; // 1 day + nonce
 
   using timeoutSpies = run(() => {
-    const timerCount = new Set<number | Timer>();
-
-    const originalSetTimeout = global.setTimeout;
-    const originalClearTimeout = global.clearTimeout;
-
-    function rmTimer(timer: number | Timer) {
-      timerCount.delete(timer);
-    }
-    const setTimeoutSpy = vi
-      .spyOn(global, 'setTimeout')
-      .mockImplementation((cb, ms) => {
-        const timer = originalSetTimeout(() => {
-          rmTimer(timer);
-          cb();
-        }, ms);
-        timerCount.add(timer);
-        return timer;
-      });
-    const clearTimeoutSpy = vi
-      .spyOn(global, 'clearTimeout')
-      .mockImplementation((timer) => {
-        if (timer) {
-          rmTimer(timer);
-        }
-        originalClearTimeout(timer);
-      });
+    const setTimeoutSpy = vi.spyOn(global, 'setTimeout');
+    const clearTimeoutSpy = vi.spyOn(global, 'clearTimeout');
     return makeResource(
       {
         setTimeoutSpy,
