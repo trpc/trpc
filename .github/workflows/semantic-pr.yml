@@ -49,10 +49,10 @@ jobs:
           echo "PR Title: $PR_TITLE"
           echo ""
           echo "Allowed types:"
-          echo "$TYPES" | tr '|' '\n' | sort
+          echo "$TYPES" | tr '|' '\n' | sort | sed 's/^/- /'
           echo ""
           echo "Allowed scopes:"
-          echo "$ALL_SCOPES" | sort
+          echo "$ALL_SCOPES" | sort | sed 's/^/- /'
           echo ""
 
           # Validate Conventional Commits format: type(scope): subject
