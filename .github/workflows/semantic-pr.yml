@@ -31,20 +31,24 @@ jobs:
       - name: Extract package names
         id: extract-packages
         run: |
-          # Find all package.json files in the repository, excluding node_modules and other build directories
-          # Extract the name field and remove @trpc/ prefix if present
-          PACKAGES=$(find . -name "package.json" -type f \
+          # Additional scopes (comma-separated, easy to modify)
+          ADDITIONAL_SCOPES="www,example,docs"
+
+          # Extract package names from packages/* directory and remove @trpc/ prefix
+          PACKAGES=$(find packages -maxdepth 2 -name "package.json" -type f \
               | while read -r file; do
                   jq -r '.name // empty' "$file" | sed 's/^@trpc\///'
               done | \
               grep -v '^$' | \
-              sort -u | \
-              tr '\n' '|' | \
-              sed 's/|$//')
+              sort -u)
+
+          # Convert comma-separated additional scopes to newlines, then combine with packages
+          ADDITIONAL_SCOPES_NL=$(echo "$ADDITIONAL_SCOPES" | tr ',' '\n')
+          ALL_SCOPES=$(echo -e "$PACKAGES\n$ADDITIONAL_SCOPES_NL" | sort -u | tr '\n' '|' | sed 's/|$//')
 
           # Create regex pattern for single or multiple scopes
           # Pattern: (pkg1|pkg2|pkg3)(,(pkg1|pkg2|pkg3))*
-          SCOPE_PATTERN="($PACKAGES)(,($PACKAGES))*"
+          SCOPE_PATTERN="($ALL_SCOPES)(,($ALL_SCOPES))*"
 
           echo "scope_pattern=$SCOPE_PATTERN" >> $GITHUB_OUTPUT
           echo "Extracted scope pattern: $SCOPE_PATTERN"
