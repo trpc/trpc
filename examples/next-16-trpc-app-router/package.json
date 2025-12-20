@@ -1,0 +1,33 @@
+{
+  "name": "next-16-trpc-app-router",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.80.3",
+    "@trpc/client": "^11.7.2",
+    "@trpc/next": "^11.7.2",
+    "@trpc/react-query": "^11.8.0",
+    "@trpc/server": "^11.7.2",
+    "next": "^15.3.8",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "superjson": "^1.12.4",
+    "zod": "^3.25.51"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^22.13.5",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.1",
+    "eslint": "^9.26.0",
+    "eslint-config-next": "^15.3.1",
+    "tailwindcss": "^3.4.6",
+    "typescript": "^5.9.2"
+  }
+}
