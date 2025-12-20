@@ -1,4 +1,4 @@
-name: "PR title validator"
+name: PR title validator
 
 on:
   pull_request_target:
@@ -6,6 +6,10 @@ on:
       - opened
       - edited
       - synchronize
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   pull-requests: read
