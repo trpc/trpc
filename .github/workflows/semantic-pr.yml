@@ -1,56 +1,56 @@
-name: "PR title validator"
+name: 'PR title validator'
 
 on:
-    pull_request_target:
-        types:
-            - opened
-            - edited
-            - synchronize
+  pull_request_target:
+    types:
+      - opened
+      - edited
+      - synchronize
 
 permissions:
-    pull-requests: read
+  pull-requests: read
 
 jobs:
-    main:
-        name: Validate PR title
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 1
-                  # Checkout the base branch to get the canonical package list
-                  # This works for both same-repo PRs and fork-based PRs
-                  ref: ${{ github.event.pull_request.base.ref }}
-                  repository: ${{ github.event.pull_request.base.repo.full_name }}
+  main:
+    name: Validate PR title
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          # Checkout the base branch to get the canonical package list
+          # This works for both same-repo PRs and fork-based PRs
+          ref: ${{ github.event.pull_request.base.ref }}
+          repository: ${{ github.event.pull_request.base.repo.full_name }}
 
-            - name: Extract package names
-              id: extract-packages
-              run: |
-                  # Find all package.json files in the repository, excluding node_modules and other build directories
-                  # Extract the name field and remove @trpc/ prefix if present
-                  PACKAGES=$(find . -name "package.json" -type f \
-                      | while read -r file; do
-                          jq -r '.name // empty' "$file" | sed 's/^@trpc\///'
-                      done | \
-                      grep -v '^$' | \
-                      sort -u | \
-                      tr '\n' '|' | \
-                      sed 's/|$//')
+      - name: Extract package names
+        id: extract-packages
+        run: |
+          # Find all package.json files in the repository, excluding node_modules and other build directories
+          # Extract the name field and remove @trpc/ prefix if present
+          PACKAGES=$(find . -name "package.json" -type f \
+              | while read -r file; do
+                  jq -r '.name // empty' "$file" | sed 's/^@trpc\///'
+              done | \
+              grep -v '^$' | \
+              sort -u | \
+              tr '\n' '|' | \
+              sed 's/|$//')
 
-                  # Create regex pattern for single or multiple scopes
-                  # Pattern: (pkg1|pkg2|pkg3)(,(pkg1|pkg2|pkg3))*
-                  SCOPE_PATTERN="($PACKAGES)(,($PACKAGES))*"
+          # Create regex pattern for single or multiple scopes
+          # Pattern: (pkg1|pkg2|pkg3)(,(pkg1|pkg2|pkg3))*
+          SCOPE_PATTERN="($PACKAGES)(,($PACKAGES))*"
 
-                  echo "scope_pattern=$SCOPE_PATTERN" >> $GITHUB_OUTPUT
-                  echo "Extracted scope pattern: $SCOPE_PATTERN"
+          echo "scope_pattern=$SCOPE_PATTERN" >> $GITHUB_OUTPUT
+          echo "Extracted scope pattern: $SCOPE_PATTERN"
 
-            - uses: amannn/action-semantic-pull-request@v6
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              with:
-                  # Configure which scopes are allowed (newline-delimited).
-                  # These are regex patterns auto-wrapped in `^ $`.
-                  # Supports single scope (e.g., feat(client): ...) or multiple scopes (e.g., feat(client,server): ...)
-                  scopes: ${{ steps.extract-packages.outputs.scope_pattern }}
-                  # Scopes are optional by default (PRs can have no scope, single scope, or multiple scopes)
+      - uses: amannn/action-semantic-pull-request@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # Configure which scopes are allowed (newline-delimited).
+          # These are regex patterns auto-wrapped in `^ $`.
+          # Supports single scope (e.g., feat(client): ...) or multiple scopes (e.g., feat(client,server): ...)
+          scopes: ${{ steps.extract-packages.outputs.scope_pattern }}
+          # Scopes are optional by default (PRs can have no scope, single scope, or multiple scopes)
