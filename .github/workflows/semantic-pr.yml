@@ -30,7 +30,7 @@ jobs:
       - name: Validate PR title
         run: |
           # Additional scopes (comma-separated, easy to modify)
-          ADDITIONAL_SCOPES="www,example,docs,deps"
+          ADDITIONAL_SCOPES="www,example,docs,deps,monorepo"
 
           # Extract package names and combine with additional scopes
           ALL_SCOPES=$(find packages -maxdepth 2 -name "package.json" -type f \
@@ -46,7 +46,7 @@ jobs:
           # Get PR title
           PR_TITLE="${{ github.event.pull_request.title }}"
 
-          echo "PR Title: $PR_TITLE"
+          echo "PR titles needs to follow the Conventional Commits format: type(scope): subject"
           echo ""
           echo "Allowed types:"
           echo "$TYPES" | tr '|' '\n' | sort | sed 's/^/- /'
