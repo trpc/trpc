@@ -1,4 +1,4 @@
-name: PR title validator
+name: Semantic PR title
 
 on:
   pull_request:
@@ -31,19 +31,15 @@ jobs:
       - name: Validate PR title
         run: |
           # Additional scopes (comma-separated, easy to modify)
-          ADDITIONAL_SCOPES="www,example,docs"
+          ADDITIONAL_SCOPES="www,example,docs,deps"
 
-          # Extract package names from packages/* directory and remove @trpc/ prefix
-          PACKAGES=$(find packages -maxdepth 2 -name "package.json" -type f \
-              | while read -r file; do
-                  jq -r '.name // empty' "$file" | sed 's/^@trpc\///'
-              done | \
-              grep -v '^$' | \
-              sort -u)
-
-          # Convert comma-separated additional scopes to newlines, then combine with packages
-          ADDITIONAL_SCOPES_NL=$(echo "$ADDITIONAL_SCOPES" | tr ',' '\n')
-          ALL_SCOPES=$(echo -e "$PACKAGES\n$ADDITIONAL_SCOPES_NL" | sort -u)
+          # Extract package names and combine with additional scopes
+          ALL_SCOPES=$(find packages -maxdepth 2 -name "package.json" -type f \
+              | xargs -I {} jq -r '.name // empty' {} \
+              | sed 's/^@trpc\///' \
+              | grep -v '^$' \
+              | (cat && echo "$ADDITIONAL_SCOPES" | tr ',' '\n') \
+              | sort -u)
 
           # Get PR title
           PR_TITLE="${{ github.event.pull_request.title }}"
