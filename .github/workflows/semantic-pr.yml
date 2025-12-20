@@ -15,8 +15,7 @@ permissions:
   pull-requests: read
 
 jobs:
-  main:
-    name: Validate PR title
+  test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
