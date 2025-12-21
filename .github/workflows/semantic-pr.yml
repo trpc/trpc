@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   test:
-    name: test
+    name: test title
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

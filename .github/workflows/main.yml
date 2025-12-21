@@ -64,7 +64,7 @@ jobs:
       - run: pnpm typecheck-www
 
   test:
-    name: test
+    name: unit and integration tests
     timeout-minutes: 10
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
