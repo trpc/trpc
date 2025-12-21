@@ -31,7 +31,7 @@ jobs:
       - name: Validate PR title
         run: |
           # Additional scopes (comma-separated, easy to modify)
-          ADDITIONAL_SCOPES="www,example,docs,deps,monorepo"
+          ADDITIONAL_SCOPES="www,example,ci,docs,deps,monorepo"
 
           # Extract package names and combine with additional scopes
           ALL_SCOPES=$(find packages -maxdepth 2 -name "package.json" -type f \
