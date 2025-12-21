@@ -89,7 +89,7 @@ jobs:
   e2e:
     # only run on PRs
     if: github.event_name == 'pull_request'
-    name: "E2E-tests"
+    name: 'E2E-tests'
     needs: [build]
     services:
       postgres:
@@ -155,7 +155,7 @@ jobs:
   e2e-deno:
     # only run on PRs
     if: github.event_name == 'pull_request'
-    name: "E2E-tests (Deno)"
+    name: 'E2E-tests (Deno)'
     needs: [build]
     env:
       NEXTAUTH_SECRET: supersecret
@@ -190,7 +190,7 @@ jobs:
   e2e-bun:
     # only run on PRs
     if: github.event_name == 'pull_request'
-    name: "E2E-tests (Bun)"
+    name: 'E2E-tests (Bun)'
     needs: [build]
     env:
       NEXTAUTH_SECRET: supersecret
@@ -250,7 +250,7 @@ jobs:
             next-prisma-websockets-starter,
             next-prisma-todomvc,
           ]
-        node-start: ["18.x", "20.x"]
+        node-start: ['18.x', '20.x']
     steps:
       - uses: actions/checkout@v6
         with:
@@ -262,7 +262,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-start }}
-          cache: "pnpm"
+          cache: 'pnpm'
       - run: node -v
       - name: Install playwright ???
         # Seems like some of playwright's system deps aren't being cached, so we're making sure they are installed
