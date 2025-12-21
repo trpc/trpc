@@ -16,10 +16,11 @@ permissions:
 
 jobs:
   test:
+    name: test title
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 1
           # Checkout the base branch to get the canonical package list
@@ -30,7 +31,7 @@ jobs:
       - name: Validate PR title
         run: |
           # Additional scopes (comma-separated, easy to modify)
-          ADDITIONAL_SCOPES="www,example,docs,deps,monorepo"
+          ADDITIONAL_SCOPES="www,example,ci,docs,deps,monorepo"
 
           # Extract package names and combine with additional scopes
           ALL_SCOPES=$(find packages -maxdepth 2 -name "package.json" -type f \
