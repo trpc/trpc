@@ -14,7 +14,7 @@
     "@trpc/client": "workspace:*",
     "@trpc/server": "workspace:*",
     "tsx": "^4.19.3",
-    "zod": "^3.25.51"
+    "zod": "^4.0.0"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.149",

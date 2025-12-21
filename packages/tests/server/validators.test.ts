@@ -17,8 +17,8 @@ import * as $ from 'scale-codec';
 import * as st from 'superstruct';
 import * as v from 'valibot';
 import * as yup from 'yup';
-import { z as zod3 } from 'zod/v3';
-import { z as zod4 } from 'zod/v4';
+import { z as zod4 } from 'zod';
+import { z } from 'zod/v3';
 
 test('no validator', async () => {
   const t = initTRPC.create();
@@ -39,7 +39,7 @@ test('zod v3', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
-    num: t.procedure.input(zod3.number()).query((opts) => {
+    num: t.procedure.input(z.number()).query((opts) => {
       const { input } = opts;
       expectTypeOf(input).toBeNumber();
       return {
@@ -68,7 +68,7 @@ test('zod v3', async () => {
 
 test('zod v3 async', async () => {
   const t = initTRPC.create();
-  const input = zod3.string().refine(async (value) => value === 'foo');
+  const input = z.string().refine(async (value) => value === 'foo');
 
   const router = t.router({
     q: t.procedure.input(input).query((opts) => {
@@ -642,7 +642,7 @@ test('recipe: summon context in input parser', async () => {
         const ctx = getContext();
         expect(ctx.foo).toBe('bar');
 
-        return zod3.string().parse(input);
+        return z.string().parse(input);
       })
       .query((opts) => {
         expectTypeOf(opts.input).toBeString();
@@ -803,8 +803,8 @@ test('recipe: get json schemas for procedure', async () => {
 // regerssion: TInputIn / TInputOut
 test('zod v3 default', () => {
   const t = initTRPC.create();
-  const input = zod3.object({
-    users: zod3.array(zod3.number()).optional().default([]),
+  const input = z.object({
+    users: z.array(z.number()).optional().default([]),
   });
 
   const router = t.router({
