@@ -1881,8 +1881,8 @@ importers:
         specifier: ^11.0.0
         version: 11.1.0
       '@oxc-project/runtime':
-        specifier: 0.104.0
-        version: 0.104.0
+        specifier: 0.105.0
+        version: 0.105.0
       '@tanstack/react-query':
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
@@ -6972,8 +6972,8 @@ packages:
     resolution: {integrity: sha512-Dkf9/D87WGBCW3L0+1DtpAfL4SrNsgeRvxwjpKCtbH7Kf6K+pxrT0IridaJfmWKu1Ml+fDvj+7HEyBcfUC/TXQ==}
     deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
 
-  '@oxc-project/runtime@0.104.0':
-    resolution: {integrity: sha512-EnRa1gCbvpMIRD2qe75qb4Cnmi+1nY7Ezar83b/JSjP1oRlVy8D/eEhxZw4Gq4zbgu4yErMVHACktCDBdQQW8w==}
+  '@oxc-project/runtime@0.105.0':
+    resolution: {integrity: sha512-XqTS6uvJkw8ZhgVKtXZS6F1Rsogk/EM9C237+8b596qpuP3tf0XUdohMM1lBCTCEvyyB2N1M5Q+S1hiFHqCRag==}
     engines: {node: ^20.19.0 || >=22.12.0}
 
   '@oxc-project/runtime@0.72.2':
@@ -25288,7 +25288,7 @@ snapshots:
     dependencies:
       '@oxc-project/types': 0.60.0
 
-  '@oxc-project/runtime@0.104.0': {}
+  '@oxc-project/runtime@0.105.0': {}
 
   '@oxc-project/runtime@0.72.2': {}
 
