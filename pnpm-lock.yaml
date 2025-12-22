@@ -1872,8 +1872,8 @@ importers:
         specifier: ^3.25.51
         version: 3.25.51
       zod-form-data:
-        specifier: ^2.0.1
-        version: 2.0.1(zod@3.25.51)
+        specifier: ^3.0.0
+        version: 3.0.1(zod@3.25.51)
 
   packages/server:
     devDependencies:
@@ -2100,8 +2100,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       zod-form-data:
-        specifier: ^2.0.1
-        version: 2.0.1(zod@3.25.51)
+        specifier: ^3.0.0
+        version: 3.0.1(zod@3.25.51)
 
   packages/upgrade:
     dependencies:
@@ -7583,6 +7583,9 @@ packages:
 
   '@rushstack/eslint-patch@1.10.4':
     resolution: {integrity: sha512-WJgX9nzTqknM393q1QJDJmoW28kUfEnybeTfVNcNAPnIx210RXm2DiXiHzfNPJNIUUb1tJnz/l4QGtJ30PgWmA==}
+
+  '@rvf/set-get@7.0.1':
+    resolution: {integrity: sha512-GkTSn9K1GrTYoTUqlUs36k6nJnzjQaFBTTEIqUYmzBcsGsoJM8xG7EAx2WLHWAA4QzFjcwWUSHQ3vM3Fbw50Tg==}
 
   '@serverless/dashboard-plugin@7.2.3':
     resolution: {integrity: sha512-Vu4TKJLEQ5F8ZipfCvd8A/LMIdH8kNGe448sX9mT4/Z0JVUaYmMc3BwkQ+zkNIh3QdBKAhocGn45TYjHV6uPWQ==}
@@ -18781,6 +18784,11 @@ packages:
     peerDependencies:
       zod: ^3.11.x
 
+  zod-form-data@3.0.1:
+    resolution: {integrity: sha512-uwSrDzpLDoXeAxePjPHrjjMelE5pk5zL5JcwLFISvqidGjtPl7hcheH584xGcS76c9IRHq6tqdGkf+A4eKO6Cw==}
+    peerDependencies:
+      zod: '>= 3.25.0'
+
   zod-to-json-schema@3.24.5:
     resolution: {integrity: sha512-/AuWwMP+YqiPbsJx5D6TfgRTc4kTLjsh5SOcd4bLsfUg2RcEXrFMJl1DGgdHy2aCfsIA/cr/1JM0xcB2GZji8g==}
     peerDependencies:
@@ -25791,6 +25799,8 @@ snapshots:
   '@rtsao/scc@1.1.0': {}
 
   '@rushstack/eslint-patch@1.10.4': {}
+
+  '@rvf/set-get@7.0.1': {}
 
   '@serverless/dashboard-plugin@7.2.3(encoding@0.1.13)(supports-color@8.1.1)':
     dependencies:
@@ -39933,6 +39943,11 @@ snapshots:
 
   zod-form-data@2.0.1(zod@3.25.51):
     dependencies:
+      zod: 3.25.51
+
+  zod-form-data@3.0.1(zod@3.25.51):
+    dependencies:
+      '@rvf/set-get': 7.0.1
       zod: 3.25.51
 
   zod-to-json-schema@3.24.5(zod@3.25.51):
