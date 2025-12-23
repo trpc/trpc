@@ -21,7 +21,7 @@ function parseEnv(input) {
       .string()
       .default('n/a')
       .transform((ref) => ref.replace('/', '-')),
-    TYPEDOC: booleanSchema.default('1'),
+    TYPEDOC: booleanSchema.prefault('1'),
   });
 
   const env = envSchema.parse(input);

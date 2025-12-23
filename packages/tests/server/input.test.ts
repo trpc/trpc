@@ -88,7 +88,7 @@ describe('double input validator', () => {
       expect(error.data!.zod!.fieldErrors).toMatchInlineSnapshot(`
         Object {
           "text": Array [
-            "Invalid input: expected string, received undefined",
+            "Required",
           ],
         }
       `);
@@ -106,7 +106,7 @@ describe('double input validator', () => {
       expect(error.data!.zod!.fieldErrors).toMatchInlineSnapshot(`
         Object {
           "roomId": Array [
-            "Invalid input: expected string, received undefined",
+            "Required",
           ],
         }
       `);
@@ -369,7 +369,7 @@ test('zod default() mixed default object', async () => {
           bar: z.string().optional().default('barFoo'),
         })
         .optional()
-        .default({ foo: 'fooBar', bar: 'barFoo' }),
+        .prefault({ foo: 'fooBar' }),
     )
     .query(({ input }) => {
       expectTypeOf(input).toBeObject();
@@ -416,7 +416,7 @@ test('zod default() defaults within object', async () => {
           bar: z.string().optional().default('defaultBar'),
         })
         .optional()
-        .default({ foo: 'defaultFoo', bar: 'defaultBar' }),
+        .prefault({}),
     )
     .query(({ input }) => {
       expectTypeOf(input).toBeObject();
