@@ -388,13 +388,12 @@ test('bad type', async () => {
         },
         "message": "[
       {
-        "code": "invalid_type",
         "expected": "object",
-        "received": "array",
+        "code": "invalid_type",
         "path": [
           "who"
         ],
-        "message": "Expected object, received array"
+        "message": "Invalid input: expected object, received array"
       }
     ]",
       },

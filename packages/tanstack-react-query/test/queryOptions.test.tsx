@@ -275,44 +275,7 @@ describe.each(['user-123', undefined])(
         // done iterating
         ['success', 'idle'],
       ]);
-      expect(states).toMatchSnapshot(`
-        Array [
-          Object {
-            "data": undefined,
-            "fetchStatus": "fetching",
-            "status": "pending",
-          },
-          Object {
-            "data": Array [],
-            "fetchStatus": "fetching",
-            "status": "success",
-          },
-          Object {
-            "data": Array [
-              1,
-            ],
-            "fetchStatus": "fetching",
-            "status": "success",
-          },
-          Object {
-            "data": Array [
-              1,
-              2,
-            ],
-            "fetchStatus": "fetching",
-            "status": "success",
-          },
-          Object {
-            "data": Array [
-              1,
-              2,
-              3,
-            ],
-            "fetchStatus": "idle",
-            "status": "success",
-          },
-        ]
-      `);
+      expect(states).toMatchSnapshot();
     });
 
     test('useSuspenseQuery', async () => {

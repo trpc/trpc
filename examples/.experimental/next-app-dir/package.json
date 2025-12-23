@@ -11,7 +11,7 @@
     "test-start": "start-server-and-test start 3000 test:e2e"
   },
   "dependencies": {
-    "@hookform/resolvers": "^3.9.1",
+    "@hookform/resolvers": "^5.2.2",
     "@js-temporal/polyfill": "^0.4.4",
     "@tanstack/react-query": "^5.80.3",
     "@tanstack/react-query-devtools": "^5.80.3",
@@ -26,13 +26,13 @@
     "next-auth": "5.0.0-beta.25",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-hook-form": "^7.53.2",
+    "react-hook-form": "^7.69.0",
     "react-hot-toast": "^2.4.1",
     "server-only": "^0.0.1",
     "superjson": "^1.12.4",
     "trpc-api": "link:./src/trpc",
     "typescript": "^5.9.2",
-    "zod": "^3.25.51"
+    "zod": "^4.2.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.50.1",

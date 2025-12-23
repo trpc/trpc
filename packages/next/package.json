@@ -137,7 +137,7 @@
     "react-dom": "^19.1.0",
     "tsdown": "0.12.7",
     "typescript": "^5.9.2",
-    "zod": "^3.25.51"
+    "zod": "^4.2.1"
   },
   "publishConfig": {
     "access": "public"
