@@ -256,7 +256,7 @@ describe('zod errors according to docs', () => {
     assert(err.data.zodError);
 
     expectTypeOf(err.data.zodError).toMatchTypeOf<
-      z.typeToFlattenedError<any>
+      z.core.$ZodFlattenedError<any>
     >();
     expect(err.data?.zodError).toMatchInlineSnapshot(`
       Object {

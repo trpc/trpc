@@ -127,7 +127,8 @@ function createAppRouter() {
         z.custom<FormData>((input) => {
           // input instanceof FormData return false but is a FormData type
           // maybe undici version
-          return input.toString() === '[object FormData]';
+          // eslint-disable-next-line @typescript-eslint/no-base-to-string
+          return (input as object).toString() === '[object FormData]';
         }),
       )
       .mutation(async ({ input }) => {

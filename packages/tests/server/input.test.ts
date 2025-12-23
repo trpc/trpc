@@ -369,7 +369,7 @@ test('zod default() mixed default object', async () => {
           bar: z.string().optional().default('barFoo'),
         })
         .optional()
-        .default({ foo: 'fooBar' }),
+        .default({ foo: 'fooBar', bar: 'barFoo' }),
     )
     .query(({ input }) => {
       expectTypeOf(input).toBeObject();
@@ -416,7 +416,7 @@ test('zod default() defaults within object', async () => {
           bar: z.string().optional().default('defaultBar'),
         })
         .optional()
-        .default({}),
+        .default({ foo: 'defaultFoo', bar: 'defaultBar' }),
     )
     .query(({ input }) => {
       expectTypeOf(input).toBeObject();
