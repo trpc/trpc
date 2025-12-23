@@ -88,7 +88,7 @@ describe('double input validator', () => {
       expect(error.data!.zod!.fieldErrors).toMatchInlineSnapshot(`
         Object {
           "text": Array [
-            "Required",
+            "Invalid input: expected string, received undefined",
           ],
         }
       `);
@@ -106,7 +106,7 @@ describe('double input validator', () => {
       expect(error.data!.zod!.fieldErrors).toMatchInlineSnapshot(`
         Object {
           "roomId": Array [
-            "Required",
+            "Invalid input: expected string, received undefined",
           ],
         }
       `);

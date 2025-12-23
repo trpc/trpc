@@ -262,7 +262,7 @@ describe('zod errors according to docs', () => {
       Object {
         "fieldErrors": Object {},
         "formErrors": Array [
-          "Number must be greater than or equal to 10",
+          "Too small: expected number to be >=10",
         ],
       }
     `);
