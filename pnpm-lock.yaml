@@ -114,8 +114,8 @@ importers:
         specifier: ^3.1.2
         version: 3.1.3(@edge-runtime/vm@2.0.2)(@types/debug@4.1.12)(@types/node@22.17.0)(@vitest/ui@3.1.3)(jiti@2.4.2)(jsdom@24.0.0)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(yaml@2.7.0)
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
 
   examples/.experimental/next-app-dir:
     dependencies:
@@ -183,8 +183,8 @@ importers:
         specifier: ^5.9.2
         version: 5.9.2
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
     devDependencies:
       '@playwright/test':
         specifier: ^1.50.1
@@ -223,8 +223,8 @@ importers:
         specifier: ^19.1.0
         version: 19.1.0(react@19.1.0)
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
     devDependencies:
       '@types/node':
         specifier: ^22.13.5
@@ -294,8 +294,8 @@ importers:
         specifier: npm:@trpc/server
         version: link:../../../packages/server
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
     devDependencies:
       '@monotest/tsconfig':
         specifier: workspace:*
@@ -310,8 +310,8 @@ importers:
         specifier: npm:@trpc/server
         version: link:../../../packages/server
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
     devDependencies:
       '@monotest/tsconfig':
         specifier: workspace:*
@@ -393,8 +393,8 @@ importers:
         specifier: ^1.12.4
         version: 1.12.4
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
     devDependencies:
       '@playwright/test':
         specifier: ^1.50.1
@@ -445,8 +445,8 @@ importers:
         specifier: ^19.1.0
         version: 19.1.0(react@19.1.0)
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
     devDependencies:
       '@playwright/test':
         specifier: ^1.50.1
@@ -504,8 +504,8 @@ importers:
         specifier: npm:@trpc/server
         version: link:../../packages/server
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
     devDependencies:
       '@cloudflare/workers-types':
         specifier: 4.20250505.0
@@ -544,8 +544,8 @@ importers:
         specifier: ^5.0.0
         version: 5.2.0
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
     devDependencies:
       '@types/express':
         specifier: ^5.0.0
@@ -593,8 +593,8 @@ importers:
         specifier: ^5.0.0
         version: 5.2.0
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
     devDependencies:
       '@types/express':
         specifier: ^5.0.0
@@ -651,8 +651,8 @@ importers:
         specifier: ^8.0.0
         version: 8.17.1
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
     devDependencies:
       '@types/node':
         specifier: ^22.13.5
@@ -694,8 +694,8 @@ importers:
         specifier: ^4.19.3
         version: 4.19.3
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
     devDependencies:
       '@types/node':
         specifier: ^22.13.5
@@ -731,8 +731,8 @@ importers:
         specifier: ^4.19.3
         version: 4.19.4
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
     devDependencies:
       '@types/aws-lambda':
         specifier: ^8.10.149
@@ -759,8 +759,8 @@ importers:
         specifier: ^4.19.3
         version: 4.19.3
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
     devDependencies:
       '@types/aws-lambda':
         specifier: ^8.10.149
@@ -793,8 +793,8 @@ importers:
         specifier: npm:@trpc/server
         version: link:../../packages/server
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
     devDependencies:
       '@types/node':
         specifier: ^22.13.5
@@ -827,8 +827,8 @@ importers:
         specifier: ^1.12.4
         version: 1.12.4
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
     devDependencies:
       '@types/node':
         specifier: ^22.13.5
@@ -913,8 +913,8 @@ importers:
         specifier: ^2.8.5
         version: 2.8.5
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
     devDependencies:
       '@types/cors':
         specifier: ^2.8.13
@@ -996,8 +996,8 @@ importers:
         specifier: ^2.8.5
         version: 2.8.5
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
     devDependencies:
       '@types/cors':
         specifier: ^2.8.13
@@ -1042,8 +1042,8 @@ importers:
         specifier: ^19.1.0
         version: 19.1.0(react@19.1.0)
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
     devDependencies:
       '@types/node':
         specifier: ^22.13.5
@@ -1091,8 +1091,8 @@ importers:
         specifier: ^19.1.0
         version: 19.1.0(react@19.1.0)
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
     devDependencies:
       '@types/node':
         specifier: ^22.13.5
@@ -1146,11 +1146,11 @@ importers:
         specifier: ^7.53.2
         version: 7.53.2(react@19.1.0)
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
       zod-form-data:
         specifier: ^2.0.1
-        version: 2.0.1(zod@3.25.51)
+        version: 2.0.1(zod@4.2.1)
     devDependencies:
       '@types/node':
         specifier: ^22.13.5
@@ -1198,8 +1198,8 @@ importers:
         specifier: ^1.12.4
         version: 1.12.4
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
     devDependencies:
       '@types/node':
         specifier: ^22.13.5
@@ -1253,8 +1253,8 @@ importers:
         specifier: ^1.12.4
         version: 1.12.4
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
     devDependencies:
       '@playwright/test':
         specifier: ^1.50.1
@@ -1359,8 +1359,8 @@ importers:
         specifier: ^1.0.5
         version: 1.0.5
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
     devDependencies:
       '@playwright/test':
         specifier: ^1.50.1
@@ -1435,8 +1435,8 @@ importers:
         specifier: ^8.0.0
         version: 8.17.1
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
     devDependencies:
       '@playwright/test':
         specifier: ^1.50.1
@@ -1553,8 +1553,8 @@ importers:
         specifier: ^2.0.0
         version: 2.0.0
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
     devDependencies:
       '@types/node':
         specifier: ^22.13.5
@@ -1651,8 +1651,8 @@ importers:
         specifier: ^8.0.0
         version: 8.17.1
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
     devDependencies:
       '@types/node':
         specifier: ^22.13.5
@@ -1691,8 +1691,8 @@ importers:
         specifier: npm:@trpc/server
         version: link:../../packages/server
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
     devDependencies:
       '@edge-runtime/types':
         specifier: ^2.0.2
@@ -1803,8 +1803,8 @@ importers:
         specifier: ^5.9.2
         version: 5.9.2
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
 
   packages/react-query:
     devDependencies:
@@ -1869,11 +1869,11 @@ importers:
         specifier: ^5.9.2
         version: 5.9.2
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
       zod-form-data:
         specifier: ^2.0.1
-        version: 2.0.1(zod@3.25.51)
+        version: 2.0.1(zod@4.2.1)
 
   packages/server:
     devDependencies:
@@ -1959,8 +1959,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
 
   packages/tanstack-react-query:
     devDependencies:
@@ -2007,8 +2007,8 @@ importers:
         specifier: ^8.0.0
         version: 8.17.1
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
 
   packages/tests:
     dependencies:
@@ -2101,7 +2101,7 @@ importers:
         version: 1.0.0
       zod-form-data:
         specifier: ^2.0.1
-        version: 2.0.1(zod@3.25.51)
+        version: 2.0.1(zod@4.2.1)
 
   packages/upgrade:
     dependencies:
@@ -2149,8 +2149,8 @@ importers:
         specifier: 0.12.7
         version: 0.12.7(typescript@5.9.2)
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
 
   www:
     dependencies:
@@ -2216,7 +2216,7 @@ importers:
         version: link:../packages/tanstack-react-query
       '@unkey/ratelimit':
         specifier: ^2.0.0
-        version: 2.0.0(@modelcontextprotocol/sdk@1.11.3)(zod@3.25.51)
+        version: 2.0.0(@modelcontextprotocol/sdk@1.11.3)(zod@4.2.1)
       '@visx/hierarchy':
         specifier: ^3.0.0
         version: 3.0.0(react@19.1.0)
@@ -2272,8 +2272,8 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
     devDependencies:
       '@babel/core':
         specifier: ^7.23.2
@@ -2384,8 +2384,8 @@ importers:
         specifier: ^19.1.0
         version: 19.1.0(react@19.1.0)
       zod:
-        specifier: ^3.25.51
-        version: 3.25.51
+        specifier: ^4.2.1
+        version: 4.2.1
     devDependencies:
       '@types/node':
         specifier: ^22.13.5
@@ -8485,6 +8485,9 @@ packages:
   '@types/node@22.19.2':
     resolution: {integrity: sha512-LPM2G3Syo1GLzXLGJAKdqoU35XvrWzGJ21/7sgZTUpbkBaOasTj8tjwn6w+hCkqaa1TfJ/w67rJSwYItlJ2mYw==}
 
+  '@types/node@22.19.3':
+    resolution: {integrity: sha512-1N9SBnWYOJTrNZCdh/yJE+t910Y128BoyY+zBLWhL3r0TYzlTmFdXrPwHL9DyFZmlEXNQQolTZh3KHV31QDhyA==}
+
   '@types/normalize-package-data@2.4.4':
     resolution: {integrity: sha512-37i+OaWTh9qeK4LSHPsyRC7NahnGotNuZvjLSgcPzblpHB3rrCJxAOgI5gCdKm7coonsaX1Of0ILiTcnZjbfxA==}
 
@@ -9653,6 +9656,9 @@ packages:
 
   caniuse-lite@1.0.30001760:
     resolution: {integrity: sha512-7AAMPcueWELt1p3mi13HR/LHH0TJLT11cnwDJEs3xA4+CK/PLKeO9Kl1oru24htkyUKtkGCvAx4ohB0Ttry8Dw==}
+
+  caniuse-lite@1.0.30001761:
+    resolution: {integrity: sha512-JF9ptu1vP2coz98+5051jZ4PwQgd2ni8A+gYSN7EA7dPKIMf0pDlSUxhdmVOaV3/fYK5uWBkgSXJaRLr4+3A6g==}
 
   ccount@2.0.1:
     resolution: {integrity: sha512-eyrF0jiFpY+3drT6383f1qhkbGsLSifNAjA61IUjZjmLCWjItY6LB9ft9YhoDgwfmclB2zhu51Lc7+95b8NRAg==}
@@ -18795,8 +18801,11 @@ packages:
   zod@3.22.3:
     resolution: {integrity: sha512-EjIevzuJRiRPbVH4mGc8nApb/lVLKVpmUhAaR5R5doKGfAnGJ6Gr3CViAVjP+4FWSxCsybeWQdcgCtbX+7oZug==}
 
-  zod@3.25.51:
-    resolution: {integrity: sha512-TQSnBldh+XSGL+opiSIq0575wvDPqu09AqWe1F7JhUMKY+M91/aGlK4MhpVNO7MgYfHcVCB1ffwAUTJzllKJqg==}
+  zod@3.25.76:
+    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
+
+  zod@4.2.1:
+    resolution: {integrity: sha512-0wZ1IRqGGhMP76gLqz8EyfBXKk0J2qo2+H3fi4mcUP/KtTocoX08nmIAHl1Z2kJIZbZee8KOpBCSNPRgauucjw==}
 
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
@@ -24626,8 +24635,8 @@ snapshots:
       express-rate-limit: 7.5.0(express@5.2.1)
       pkce-challenge: 5.0.0
       raw-body: 3.0.0
-      zod: 3.25.51
-      zod-to-json-schema: 3.24.5(zod@3.25.51)
+      zod: 3.25.76
+      zod-to-json-schema: 3.24.5(zod@3.25.76)
     transitivePeerDependencies:
       - supports-color
 
@@ -25772,7 +25781,7 @@ snapshots:
       '@module-federation/runtime-tools': 0.5.1
       '@rspack/binding': 1.1.8
       '@rspack/lite-tapable': 1.0.1
-      caniuse-lite: 1.0.30001760
+      caniuse-lite: 1.0.30001761
     optionalDependencies:
       '@swc/helpers': 0.5.17
     optional: true
@@ -26749,7 +26758,7 @@ snapshots:
 
   '@types/better-sqlite3@7.6.2':
     dependencies:
-      '@types/node': 22.19.2
+      '@types/node': 22.19.3
     optional: true
 
   '@types/body-parser@1.19.2':
@@ -26909,6 +26918,11 @@ snapshots:
       undici-types: 6.21.0
 
   '@types/node@22.19.2':
+    dependencies:
+      undici-types: 6.21.0
+    optional: true
+
+  '@types/node@22.19.3':
     dependencies:
       undici-types: 6.21.0
     optional: true
@@ -27186,15 +27200,15 @@ snapshots:
       unhead: 2.0.0
       vue: 3.5.13(typescript@5.9.2)
 
-  '@unkey/api@2.0.0-alpha.7(@modelcontextprotocol/sdk@1.11.3)(zod@3.25.51)':
+  '@unkey/api@2.0.0-alpha.7(@modelcontextprotocol/sdk@1.11.3)(zod@4.2.1)':
     dependencies:
-      zod: 3.25.51
+      zod: 4.2.1
     optionalDependencies:
       '@modelcontextprotocol/sdk': 1.11.3
 
-  '@unkey/ratelimit@2.0.0(@modelcontextprotocol/sdk@1.11.3)(zod@3.25.51)':
+  '@unkey/ratelimit@2.0.0(@modelcontextprotocol/sdk@1.11.3)(zod@4.2.1)':
     dependencies:
-      '@unkey/api': 2.0.0-alpha.7(@modelcontextprotocol/sdk@1.11.3)(zod@3.25.51)
+      '@unkey/api': 2.0.0-alpha.7(@modelcontextprotocol/sdk@1.11.3)(zod@4.2.1)
     transitivePeerDependencies:
       - '@modelcontextprotocol/sdk'
       - zod
@@ -28494,6 +28508,9 @@ snapshots:
   caniuse-lite@1.0.30001486: {}
 
   caniuse-lite@1.0.30001760: {}
+
+  caniuse-lite@1.0.30001761:
+    optional: true
 
   ccount@2.0.1: {}
 
@@ -30442,8 +30459,8 @@ snapshots:
       '@babel/plugin-transform-private-methods': 7.25.9(@babel/core@7.26.9)
       eslint: 9.26.0(jiti@2.4.2)
       hermes-parser: 0.25.1
-      zod: 3.25.51
-      zod-validation-error: 3.4.1(zod@3.25.51)
+      zod: 3.25.76
+      zod-validation-error: 3.4.1(zod@3.25.76)
     transitivePeerDependencies:
       - supports-color
 
@@ -30543,7 +30560,7 @@ snapshots:
       minimatch: 3.1.2
       natural-compare: 1.4.0
       optionator: 0.9.3
-      zod: 3.25.51
+      zod: 3.25.76
     optionalDependencies:
       jiti: 2.4.2
     transitivePeerDependencies:
@@ -39931,20 +39948,22 @@ snapshots:
       compress-commons: 6.0.2
       readable-stream: 4.3.0
 
-  zod-form-data@2.0.1(zod@3.25.51):
+  zod-form-data@2.0.1(zod@4.2.1):
     dependencies:
-      zod: 3.25.51
+      zod: 4.2.1
 
-  zod-to-json-schema@3.24.5(zod@3.25.51):
+  zod-to-json-schema@3.24.5(zod@3.25.76):
     dependencies:
-      zod: 3.25.51
+      zod: 3.25.76
 
-  zod-validation-error@3.4.1(zod@3.25.51):
+  zod-validation-error@3.4.1(zod@3.25.76):
     dependencies:
-      zod: 3.25.51
+      zod: 3.25.76
 
   zod@3.22.3: {}
 
-  zod@3.25.51: {}
+  zod@3.25.76: {}
+
+  zod@4.2.1: {}
 
   zwitch@2.0.4: {}
