@@ -18,13 +18,14 @@ interface MiddlewareResultBase {
   readonly marker: MiddlewareMarker;
 }
 
-interface MiddlewareOKResult<_TContextOverride> extends MiddlewareResultBase {
+interface MiddlewareOKResult<_TContextOverride, TData = unknown>
+  extends MiddlewareResultBase {
   ok: true;
-  data: unknown;
+  data: TData;
   // this could be extended with `input`/`rawInput` later
 }
 
-interface MiddlewareErrorResult<_TContextOverride>
+interface MiddlewareErrorResult<_TContextOverride, _TData = unknown>
   extends MiddlewareResultBase {
   ok: false;
   error: TRPCError;
@@ -33,9 +34,9 @@ interface MiddlewareErrorResult<_TContextOverride>
 /**
  * @internal
  */
-export type MiddlewareResult<_TContextOverride> =
-  | MiddlewareErrorResult<_TContextOverride>
-  | MiddlewareOKResult<_TContextOverride>;
+export type MiddlewareResult<_TContextOverride, TData = unknown> =
+  | MiddlewareErrorResult<_TContextOverride, TData>
+  | MiddlewareOKResult<_TContextOverride, TData>;
 
 /**
  * @internal
@@ -92,6 +93,8 @@ export type MiddlewareFunction<
   TContextOverridesIn,
   $ContextOverridesOut,
   TInputOut,
+  TOutputIn = unknown,
+  TOutputOut = unknown,
 > = {
   (opts: {
     ctx: Simplify<Overwrite<TContext, TContextOverridesIn>>;
@@ -102,20 +105,28 @@ export type MiddlewareFunction<
     meta: TMeta | undefined;
     signal: AbortSignal | undefined;
     next: {
-      (): Promise<MiddlewareResult<TContextOverridesIn>>;
+      (): Promise<MiddlewareResult<TContextOverridesIn, TOutputIn>>;
       <$ContextOverride>(opts: {
         ctx?: $ContextOverride;
         input?: unknown;
-      }): Promise<MiddlewareResult<$ContextOverride>>;
+      }): Promise<MiddlewareResult<$ContextOverride, TOutputIn>>;
       (opts: {
         getRawInput: GetRawInputFn;
-      }): Promise<MiddlewareResult<TContextOverridesIn>>;
+      }): Promise<MiddlewareResult<TContextOverridesIn, TOutputIn>>;
     };
-  }): Promise<MiddlewareResult<$ContextOverridesOut>>;
+  }): Promise<MiddlewareResult<$ContextOverridesOut, TOutputOut>>;
   _type?: string | undefined;
 };
 
-export type AnyMiddlewareFunction = MiddlewareFunction<any, any, any, any, any>;
+export type AnyMiddlewareFunction = MiddlewareFunction<
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any
+>;
 export type AnyMiddlewareBuilder = MiddlewareBuilder<any, any, any, any>;
 /**
  * @internal
@@ -212,7 +223,9 @@ export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
 /**
  * @internal
  */
-export function createOutputMiddleware<TOutput>(parse: ParseFn<TOutput>) {
+export function createOutputMiddleware<TOutputIn, TOutputOut>(
+  parse: ParseFn<TOutputOut, TOutputIn>,
+) {
   const outputMiddleware: AnyMiddlewareFunction =
     async function outputValidatorMiddleware({ next }) {
       const result = await next();
@@ -221,7 +234,7 @@ export function createOutputMiddleware<TOutput>(parse: ParseFn<TOutput>) {
         return result;
       }
       try {
-        const data = await parse(result.data);
+        const data = await parse(result.data as TOutputIn);
         return {
           ...result,
           data,

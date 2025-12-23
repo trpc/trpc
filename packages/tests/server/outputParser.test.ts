@@ -369,3 +369,95 @@ test('async validator fn', async () => {
     `[TRPCClientError: Output validation failed]`,
   );
 });
+
+test('zod transform - resolver returns input type, client receives output type', async () => {
+  // This test verifies that with output transforms:
+  // - The resolver must return the INPUT type of the output schema (what the transform expects)
+  // - The client receives the OUTPUT type (what the transform produces)
+
+  const trpc = initTRPC.create();
+
+  // Schema that transforms a bigint to a string (like a codec)
+  const bigintToStringSchema = z.object({
+    value: z.bigint().transform((val) => val.toString()),
+  });
+
+  // Verify the schema types
+  type SchemaInput = z.input<typeof bigintToStringSchema>; // { value: bigint }
+  type SchemaOutput = z.output<typeof bigintToStringSchema>; // { value: string }
+
+  const router = trpc.router({
+    q: trpc.procedure.output(bigintToStringSchema).query(() => {
+      // The resolver returns the INPUT type (bigint)
+      const result = { value: 123n };
+
+      // Type assertion to verify the return type matches schema input
+      expectTypeOf(result).toMatchTypeOf<SchemaInput>();
+
+      return result;
+    }),
+  });
+
+  await using ctx = testServerAndClientResource(router);
+
+  const output = await ctx.client.q.query();
+
+  // The client receives the OUTPUT type (string) after transform
+  expectTypeOf(output.value).toBeString();
+  expect(output).toEqual({ value: '123' });
+});
+
+test('zod preprocess - validates resolver returns schema input type', async () => {
+  // Test with preprocess which also has different input/output types
+
+  const trpc = initTRPC.create();
+
+  // Schema that coerces strings to numbers
+  const stringToNumberSchema = z.object({
+    count: z.preprocess((val) => Number(val), z.number()),
+  });
+
+  const router = trpc.router({
+    q: trpc.procedure.output(stringToNumberSchema).query(() => {
+      // Resolver returns what the preprocess expects
+      return { count: '42' as unknown };
+    }),
+  });
+
+  await using ctx = testServerAndClientResource(router);
+
+  const output = await ctx.client.q.query();
+
+  // Client receives the final validated number
+  expectTypeOf(output.count).toBeNumber();
+  expect(output).toEqual({ count: 42 });
+});
+
+test('nested output transforms', async () => {
+  // Test that nested transforms work correctly
+
+  const trpc = initTRPC.create();
+
+  // A schema with multiple levels of transformation
+  const nestedTransformSchema = z.object({
+    value: z
+      .string()
+      .transform((s) => s.length)
+      .transform((n) => n * 2),
+  });
+
+  const router = trpc.router({
+    q: trpc.procedure.output(nestedTransformSchema).query(() => {
+      // Resolver returns the input type (string)
+      return { value: 'hello' };
+    }),
+  });
+
+  await using ctx = testServerAndClientResource(router);
+
+  const output = await ctx.client.q.query();
+
+  // After transforms: 'hello' -> 5 -> 10
+  expectTypeOf(output.value).toBeNumber();
+  expect(output).toEqual({ value: 10 });
+});

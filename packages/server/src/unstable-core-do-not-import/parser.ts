@@ -79,9 +79,13 @@ export type inferParser<TParser extends Parser> =
           }
         : never;
 
-export type ParseFn<TType> = (value: unknown) => Promise<TType> | TType;
+export type ParseFn<TOutput, TInput = unknown> = (
+  value: TInput,
+) => Promise<TOutput> | TOutput;
 
-export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
+export function getParseFn<TOutput, TInput = unknown>(
+  procedureParser: Parser,
+): ParseFn<TOutput, TInput> {
   const parser = procedureParser as any;
   const isStandardSchema = '~standard' in parser;
 
@@ -121,7 +125,7 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
     // ParserScaleEsque
     return (value) => {
       parser.assert(value);
-      return value as TType;
+      return value as unknown as TOutput;
     };
   }
 
