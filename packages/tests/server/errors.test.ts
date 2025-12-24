@@ -86,11 +86,10 @@ test('input error', async () => {
   expect(clientError.shape.message).toMatchInlineSnapshot(`
     "[
       {
-        "code": "invalid_type",
         "expected": "string",
-        "received": "number",
+        "code": "invalid_type",
         "path": [],
-        "message": "Expected string, received number"
+        "message": "Invalid input: expected string, received number"
       }
     ]"
   `);
@@ -145,7 +144,7 @@ describe('formatError()', () => {
             data: {
               ...shape.data,
               type: 'zod' as const,
-              errors: error.cause.errors,
+              errors: error.cause.issues,
             },
           };
         }
@@ -170,22 +169,21 @@ describe('formatError()', () => {
     );
     delete clientError.data.stack;
     expect(clientError.data).toMatchInlineSnapshot(`
-Object {
-  "code": "BAD_REQUEST",
-  "errors": Array [
-    Object {
-      "code": "invalid_type",
-      "expected": "string",
-      "message": "Expected string, received number",
-      "path": Array [],
-      "received": "number",
-    },
-  ],
-  "httpStatus": 400,
-  "path": "err",
-  "type": "zod",
-}
-`);
+      Object {
+        "code": "BAD_REQUEST",
+        "errors": Array [
+          Object {
+            "code": "invalid_type",
+            "expected": "string",
+            "message": "Invalid input: expected string, received number",
+            "path": Array [],
+          },
+        ],
+        "httpStatus": 400,
+        "path": "err",
+        "type": "zod",
+      }
+    `);
     expect(clientError.shape).toMatchInlineSnapshot(`
       Object {
         "code": -32600,
@@ -195,9 +193,8 @@ Object {
             Object {
               "code": "invalid_type",
               "expected": "string",
-              "message": "Expected string, received number",
+              "message": "Invalid input: expected string, received number",
               "path": Array [],
-              "received": "number",
             },
           ],
           "httpStatus": 400,
@@ -206,11 +203,10 @@ Object {
         },
         "message": "[
         {
-          "code": "invalid_type",
           "expected": "string",
-          "received": "number",
+          "code": "invalid_type",
           "path": [],
-          "message": "Expected string, received number"
+          "message": "Invalid input: expected string, received number"
         }
       ]",
       }

@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@hookform/error-message": "^2.0.1",
-    "@hookform/resolvers": "^3.9.1",
+    "@hookform/resolvers": "^5.2.2",
     "@tanstack/react-query": "^5.80.3",
     "@trpc/client": "npm:@trpc/client",
     "@trpc/next": "npm:@trpc/next",
@@ -18,9 +18,9 @@
     "next": "^15.3.8",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-hook-form": "^7.53.2",
-    "zod": "^3.25.51",
-    "zod-form-data": "^2.0.1"
+    "react-hook-form": "^7.69.0",
+    "zod": "^4.2.1",
+    "zod-form-data": "^3.0.1"
   },
   "devDependencies": {
     "@types/node": "^22.13.5",

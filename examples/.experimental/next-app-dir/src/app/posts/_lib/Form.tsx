@@ -11,7 +11,7 @@ import type { z } from 'zod';
  */
 export function useZodForm<TInput extends FieldValues>(
   props: Omit<UseFormProps<TInput>, 'resolver'> & {
-    schema: z.ZodType<any, any, TInput>;
+    schema: z.ZodType<any, TInput>;
   },
 ) {
   const form = useForm<TInput>({

@@ -17,7 +17,7 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "superjson": "^1.12.4",
-    "zod": "^3.25.51"
+    "zod": "^4.2.1"
   },
   "devDependencies": {
     "@types/node": "^22.13.5",

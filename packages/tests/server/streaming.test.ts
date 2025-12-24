@@ -702,11 +702,10 @@ describe('no transformer', () => {
     expect(clientError.message).toMatchInlineSnapshot(`
       "[
         {
-          "code": "invalid_type",
           "expected": "number",
-          "received": "string",
+          "code": "invalid_type",
           "path": [],
-          "message": "Expected number, received string"
+          "message": "Invalid input: expected number, received string"
         }
       ]"
     `);
@@ -803,11 +802,10 @@ describe('no transformer', () => {
     expect(clientError.message).toMatchInlineSnapshot(`
       "[
         {
-          "code": "invalid_type",
           "expected": "string",
-          "received": "number",
+          "code": "invalid_type",
           "path": [],
-          "message": "Expected string, received number"
+          "message": "Invalid input: expected string, received number"
         }
       ]"
     `);
