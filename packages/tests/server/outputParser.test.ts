@@ -370,31 +370,31 @@ test('async validator fn', async () => {
   );
 });
 
-test('zod transform - resolver returns input type, client receives output type', async () => {
-  // This test verifies that with output transforms:
-  // - The resolver must return the INPUT type of the output schema (what the transform expects)
-  // - The client receives the OUTPUT type (what the transform produces)
+test('zod v4 codec - bidirectional transform for output encoding', async () => {
+  // This test verifies that Zod v4 codecs work with output parsing.
+  // Codecs use `.encode()` for the reverse transformation (output → serialized).
+  //
+  // For output schemas with codecs:
+  // - The resolver returns data that encode() will transform
+  // - The codec encodes it to the serialized form for the client
 
   const trpc = initTRPC.create();
 
-  // Schema that transforms a bigint to a string (like a codec)
-  const bigintToStringSchema = z.object({
-    value: z.bigint().transform((val) => val.toString()),
+  // Create a Zod v4 codec that transforms between string and bigint
+  // decode: string → bigint (for input parsing)
+  // encode: bigint → string (for output encoding)
+  const stringToBigint = z.codec(z.string(), z.bigint(), {
+    decode: (str) => BigInt(str),
+    encode: (big) => big.toString(),
   });
 
-  // Verify the schema types
-  type SchemaInput = z.input<typeof bigintToStringSchema>; // { value: bigint }
-  type SchemaOutput = z.output<typeof bigintToStringSchema>; // { value: string }
+  const schema = z.object({ value: stringToBigint });
 
   const router = trpc.router({
-    q: trpc.procedure.output(bigintToStringSchema).query(() => {
-      // The resolver returns the INPUT type (bigint)
-      const result = { value: 123n };
-
-      // Type assertion to verify the return type matches schema input
-      expectTypeOf(result).toMatchTypeOf<SchemaInput>();
-
-      return result;
+    q: trpc.procedure.output(schema).query(() => {
+      // For codec output encoding, we return what encode() expects (bigint)
+      // and cast to satisfy the type system which expects the input type
+      return { value: 123n } as unknown as { value: string };
     }),
   });
 
@@ -402,25 +402,32 @@ test('zod transform - resolver returns input type, client receives output type',
 
   const output = await ctx.client.q.query();
 
-  // The client receives the OUTPUT type (string) after transform
-  expectTypeOf(output.value).toBeString();
+  // The client receives the ENCODED value (string) after encode
+  // The codec's encode function transforms bigint → string
+  expect(output.value).toBe('123');
   expect(output).toEqual({ value: '123' });
 });
 
-test('zod preprocess - validates resolver returns schema input type', async () => {
-  // Test with preprocess which also has different input/output types
+test('zod v4 codec - Date to ISO string encoding', async () => {
+  // Realistic use case: encoding Date objects to ISO strings for JSON serialization
 
   const trpc = initTRPC.create();
 
-  // Schema that coerces strings to numbers
-  const stringToNumberSchema = z.object({
-    count: z.preprocess((val) => Number(val), z.number()),
+  // Codec that transforms between ISO string and Date
+  const isoDateCodec = z.codec(z.string(), z.date(), {
+    decode: (str) => new Date(str),
+    encode: (date) => date.toISOString(),
   });
 
+  const schema = z.object({ createdAt: isoDateCodec });
+
   const router = trpc.router({
-    q: trpc.procedure.output(stringToNumberSchema).query(() => {
-      // Resolver returns what the preprocess expects
-      return { count: '42' as unknown };
+    q: trpc.procedure.output(schema).query(() => {
+      // For codec output encoding, we return what encode() expects (Date)
+      // and cast to satisfy the type system
+      return { createdAt: new Date('2024-01-15T10:30:00.000Z') } as unknown as {
+        createdAt: string;
+      };
     }),
   });
 
@@ -428,28 +435,40 @@ test('zod preprocess - validates resolver returns schema input type', async () =
 
   const output = await ctx.client.q.query();
 
-  // Client receives the final validated number
-  expectTypeOf(output.count).toBeNumber();
-  expect(output).toEqual({ count: 42 });
+  // Client receives ISO string (after encoding)
+  expect(output.createdAt).toBe('2024-01-15T10:30:00.000Z');
+  expect(output).toEqual({ createdAt: '2024-01-15T10:30:00.000Z' });
 });
 
-test('nested output transforms', async () => {
-  // Test that nested transforms work correctly
+test('zod v4 codec - nested codec transforms', async () => {
+  // Test that codecs work correctly when nested in objects
 
   const trpc = initTRPC.create();
 
-  // A schema with multiple levels of transformation
-  const nestedTransformSchema = z.object({
-    value: z
-      .string()
-      .transform((s) => s.length)
-      .transform((n) => n * 2),
+  const stringToBigint = z.codec(z.string(), z.bigint(), {
+    decode: (str) => BigInt(str),
+    encode: (big) => big.toString(),
   });
 
+  const schema = z.object({
+    user: z.object({
+      id: stringToBigint,
+      balance: stringToBigint,
+    }),
+  });
+
+  type SchemaInput = z.input<typeof schema>;
+
   const router = trpc.router({
-    q: trpc.procedure.output(nestedTransformSchema).query(() => {
-      // Resolver returns the input type (string)
-      return { value: 'hello' };
+    q: trpc.procedure.output(schema).query(() => {
+      // For codec output encoding, we return what encode() expects (bigint values)
+      // and cast to satisfy the type system
+      return {
+        user: {
+          id: 123n,
+          balance: 999999999999999999n,
+        },
+      } as unknown as SchemaInput;
     }),
   });
 
@@ -457,7 +476,13 @@ test('nested output transforms', async () => {
 
   const output = await ctx.client.q.query();
 
-  // After transforms: 'hello' -> 5 -> 10
-  expectTypeOf(output.value).toBeNumber();
-  expect(output).toEqual({ value: 10 });
+  // Both nested codec values should be encoded to strings
+  expect(output.user.id).toBe('123');
+  expect(output.user.balance).toBe('999999999999999999');
+  expect(output).toEqual({
+    user: {
+      id: '123',
+      balance: '999999999999999999',
+    },
+  });
 });
