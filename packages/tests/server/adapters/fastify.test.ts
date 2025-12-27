@@ -7,6 +7,7 @@ import {
   createWSClient,
   httpBatchLink,
   httpBatchStreamLink,
+  httpLink,
   splitLink,
   wsLink,
 } from '@trpc/client';
@@ -121,6 +122,20 @@ function createAppRouter() {
         );
         return opts.input.wait;
       }),
+    multipartForm: publicProcedure
+      .input(
+        z.custom<FormData>((input) => {
+          // input instanceof FormData return false but is a FormData type
+          // maybe undici version
+          // eslint-disable-next-line @typescript-eslint/no-base-to-string
+          return (input as object).toString() === '[object FormData]';
+        }),
+      )
+      .mutation(async ({ input }) => {
+        const result = {} as Record<string, any>;
+        result['id'] = (input as any).get('id');
+        return result;
+      }),
   });
 
   return { appRouter, ee, onNewMessageSubscription, onSubscriptionEnded };
@@ -229,10 +244,18 @@ function createClient(opts: ClientOptions) {
           return op.type === 'subscription';
         },
         true: wsLink({ client: wsClient }),
-        false: httpBatchStreamLink({
-          url: `http://${host}`,
-          headers: opts.headers,
-          fetch: fetch as any,
+        false: splitLink({
+          condition(op) {
+            return op.input instanceof FormData;
+          },
+          true: httpLink({
+            url: `http://${host}`,
+            headers: opts.headers,
+          }),
+          false: httpBatchStreamLink({
+            url: `http://${host}`,
+            headers: opts.headers,
+          }),
         }),
       }),
     ],
@@ -448,6 +471,16 @@ describe('anonymous user', () => {
     ]);
     expect(results).toEqual([3, 1, 2]);
     expect(orderedResults).toEqual([1, 2, 3]);
+  });
+  test('multipart/formdata', async () => {
+    const fd = new FormData();
+    fd.set('id', 'bar');
+
+    expect(await app.client.multipartForm.mutate(fd)).toMatchInlineSnapshot(`
+    Object {
+      "id": "bar",
+    }
+  `);
   });
 });
 

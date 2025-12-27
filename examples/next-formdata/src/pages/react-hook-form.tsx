@@ -2,32 +2,26 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { uploadFileSchema } from '~/utils/schemas';
 import { trpc } from '~/utils/trpc';
 import { useRef, useState } from 'react';
-import type { UseFormProps } from 'react-hook-form';
+import type { FieldValues, UseFormProps, UseFormReturn } from 'react-hook-form';
 import { FormProvider, useForm } from 'react-hook-form';
 import type { z } from 'zod';
 
-/**
- * zod-form-data wraps zod in an effect where the original type is a `FormData`
- */
-type UnwrapZodEffect<TType extends z.ZodType> =
-  TType extends z.ZodEffects<infer U, any, any> ? U : TType;
-
-type GetInput<TType extends z.ZodType> = UnwrapZodEffect<TType>['_input'];
-
-function useZodFormData<TSchema extends z.ZodType>(
-  props: Omit<UseFormProps<GetInput<TSchema>>, 'resolver'> & {
-    schema: TSchema;
+type ZodFormData<TSchema extends FieldValues> = UseFormReturn<TSchema> & {
+  formRef: React.RefObject<HTMLFormElement | null>;
+};
+function useZodForm<TInput extends FieldValues>(
+  props: Omit<UseFormProps<TInput>, 'resolver'> & {
+    schema: z.ZodType<TInput, any>;
   },
 ) {
-  const formRef = useRef<HTMLFormElement>(null);
   const _resolver = zodResolver(props.schema, undefined, {
     raw: true,
   });
 
-  const form = useForm<GetInput<TSchema>>({
+  const form = useForm<TInput>({
     ...props,
-    resolver: (_, ctx, opts) => {
-      if (!formRef.current) {
+    resolver: (_values, ctx, opts) => {
+      if (!form.formRef.current) {
         return {
           values: {},
           errors: {
@@ -37,12 +31,14 @@ function useZodFormData<TSchema extends z.ZodType>(
           },
         };
       }
-      const values = new FormData(formRef.current);
-      return _resolver(values, ctx, opts);
+      const values = new FormData(form.formRef.current);
+      return _resolver(values as any, ctx, opts) as any;
     },
-  });
+  }) as ZodFormData<TInput>;
 
-  return { ...form, formRef };
+  form.formRef = useRef<HTMLFormElement>(null);
+
+  return form;
 }
 
 export default function Page() {
@@ -52,7 +48,7 @@ export default function Page() {
     },
   });
 
-  const form = useZodFormData({
+  const form = useZodForm({
     schema: uploadFileSchema,
     defaultValues: {
       name: 'whadaaaap',

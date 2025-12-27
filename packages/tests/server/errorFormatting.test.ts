@@ -8,7 +8,7 @@ import type {
   DefaultErrorShape,
 } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
-import * as v1 from 'valibot1';
+import * as v from 'valibot';
 import { z, ZodError } from 'zod';
 
 describe('no custom error formatter', () => {
@@ -120,7 +120,7 @@ test('custom error formatter with standard schema v1 (valibot)', async () => {
   });
 
   const appRouter = t.router({
-    greeting: t.procedure.input(v1.number()).query((opts) => opts.input),
+    greeting: t.procedure.input(v.number()).query((opts) => opts.input),
   });
 
   await using ctx = testServerAndClientResource(appRouter);
@@ -256,13 +256,13 @@ describe('zod errors according to docs', () => {
     assert(err.data.zodError);
 
     expectTypeOf(err.data.zodError).toMatchTypeOf<
-      z.typeToFlattenedError<any>
+      z.core.$ZodFlattenedError<any>
     >();
     expect(err.data?.zodError).toMatchInlineSnapshot(`
       Object {
         "fieldErrors": Object {},
         "formErrors": Array [
-          "Number must be greater than or equal to 10",
+          "Too small: expected number to be >=10",
         ],
       }
     `);

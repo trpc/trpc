@@ -11,17 +11,9 @@ export const topSponsors = [
     "createdAt": 1656581731000
   },
   {
-    "name": "Retool",
-    "imgSrc": "https://avatars.githubusercontent.com/u/33817679?v=4",
-    "weight": 75,
-    "login": "tryretool",
-    "link": "https://retool.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
-    "createdAt": 1720565283000
-  },
-  {
     "name": "Ahoy Labs",
     "imgSrc": "https://avatars.githubusercontent.com/u/95662801?v=4",
-    "weight": 30,
+    "weight": 35,
     "login": "ahoylabs",
     "link": "https://backyard.ai/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1671157456000
@@ -29,7 +21,7 @@ export const topSponsors = [
   {
     "name": "Greptile",
     "imgSrc": "https://avatars.githubusercontent.com/u/140149887?v=4",
-    "weight": 23,
+    "weight": 30,
     "login": "greptileai",
     "link": "https://greptile.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1743099912000
@@ -37,10 +29,18 @@ export const topSponsors = [
   {
     "name": "CodeRabbit",
     "imgSrc": "https://avatars.githubusercontent.com/u/132028505?v=4",
-    "weight": 20,
+    "weight": 27,
     "login": "coderabbitai",
     "link": "https://www.coderabbit.ai/?utm_source=github&utm_medium=referral&ref=trpc&utm_campaign=trpc",
     "createdAt": 1737645299000
+  },
+  {
+    "name": "Unkey",
+    "imgSrc": "https://avatars.githubusercontent.com/u/138932600?v=4",
+    "weight": 15,
+    "login": "unkeyed",
+    "link": "https://unkey.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "createdAt": 1708012798000
   }
 ] as const;
 
@@ -69,14 +69,6 @@ export const allSponsors = [
     "login": "debuglebowski",
     "link": "https://iamkhan.io/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1644656389000
-  },
-  {
-    "name": "Jared Wyce",
-    "imgSrc": "https://avatars.githubusercontent.com/u/16946573?u=8a27004b3c768f029b2f49b7cf5d3b94c62a16a1&v=4",
-    "weight": 3,
-    "login": "jwyce",
-    "link": "http://jwyce.gg/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
-    "createdAt": 1646015010000
   },
   {
     "name": "Dmitry Maykov",
@@ -111,33 +103,9 @@ export const allSponsors = [
     "createdAt": 1661242015000
   },
   {
-    "name": "Tom Ballinger",
-    "imgSrc": "https://avatars.githubusercontent.com/u/458879?u=4b045ac75d721b6ac2b42a74d7d37f61f0414031&v=4",
-    "weight": 6,
-    "login": "thomasballinger",
-    "link": "http://ballingt.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
-    "createdAt": 1662563270000
-  },
-  {
-    "name": "Jonas Strassel",
-    "imgSrc": "https://avatars.githubusercontent.com/u/4662748?u=c8153c564cd341ccd0ccbbc695a2292587dc1679&v=4",
-    "weight": 2,
-    "login": "boredland",
-    "link": "https://jonas-strassel.de/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
-    "createdAt": 1668778944000
-  },
-  {
-    "name": "Ascent Factory",
-    "imgSrc": "https://avatars.githubusercontent.com/u/33631274?v=4",
-    "weight": 3,
-    "login": "AscentFactory",
-    "link": "https://github.com/AscentFactory",
-    "createdAt": 1669694752000
-  },
-  {
     "name": "Ahoy Labs",
     "imgSrc": "https://avatars.githubusercontent.com/u/95662801?v=4",
-    "weight": 30,
+    "weight": 35,
     "login": "ahoylabs",
     "link": "https://backyard.ai/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1671157456000
@@ -169,7 +137,7 @@ export const allSponsors = [
   {
     "name": "Proxidize",
     "imgSrc": "https://avatars.githubusercontent.com/u/70805857?v=4",
-    "weight": 6,
+    "weight": 7,
     "login": "proxidize",
     "link": "https://proxidize.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1707060132000
@@ -177,7 +145,7 @@ export const allSponsors = [
   {
     "name": "Unkey",
     "imgSrc": "https://avatars.githubusercontent.com/u/138932600?v=4",
-    "weight": 13,
+    "weight": 15,
     "login": "unkeyed",
     "link": "https://unkey.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1708012798000
@@ -207,30 +175,6 @@ export const allSponsors = [
     "createdAt": 1717016104000
   },
   {
-    "name": "rickk",
-    "imgSrc": "https://avatars.githubusercontent.com/u/28826387?u=34c5f1594ad1ce83b111390b604ed5d26e389815&v=4",
-    "weight": 6,
-    "login": "rickkdev",
-    "link": "http://openq.dev/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
-    "createdAt": 1719988994000
-  },
-  {
-    "name": "Retool",
-    "imgSrc": "https://avatars.githubusercontent.com/u/33817679?v=4",
-    "weight": 75,
-    "login": "tryretool",
-    "link": "https://retool.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
-    "createdAt": 1720565283000
-  },
-  {
-    "name": "Leo Jace",
-    "imgSrc": "https://avatars.githubusercontent.com/u/5610115?u=76c96d0001baca5587d3f833f126ac23e91ff488&v=4",
-    "weight": 3,
-    "login": "cerjs",
-    "link": "https://github.com/cerjs",
-    "createdAt": 1721703779000
-  },
-  {
     "name": "Liminity AB",
     "imgSrc": "https://avatars.githubusercontent.com/u/179804668?v=4",
     "weight": 5,
@@ -239,17 +183,9 @@ export const allSponsors = [
     "createdAt": 1724917223000
   },
   {
-    "name": "Val Town",
-    "imgSrc": "https://avatars.githubusercontent.com/u/114268765?v=4",
-    "weight": 5,
-    "login": "val-town",
-    "link": "https://github.com/val-town",
-    "createdAt": 1725043677000
-  },
-  {
     "name": "Ryan Magoon",
     "imgSrc": "https://avatars.githubusercontent.com/u/5327290?v=4",
-    "weight": 4,
+    "weight": 5,
     "login": "ryanmagoon",
     "link": "https://github.com/ryanmagoon",
     "createdAt": 1729879193000
@@ -257,7 +193,7 @@ export const allSponsors = [
   {
     "name": "CodeRabbit",
     "imgSrc": "https://avatars.githubusercontent.com/u/132028505?v=4",
-    "weight": 20,
+    "weight": 27,
     "login": "coderabbitai",
     "link": "https://www.coderabbit.ai/?utm_source=github&utm_medium=referral&ref=trpc&utm_campaign=trpc",
     "createdAt": 1737645299000
@@ -271,59 +207,43 @@ export const allSponsors = [
     "createdAt": 1739302642000
   },
   {
-    "name": "JonLuca De Caro",
-    "imgSrc": "https://avatars.githubusercontent.com/u/13029040?u=0c8fb3e7ae09935e8f2cb0637affeddfb98cc4c5&v=4",
-    "weight": 9,
-    "login": "jonluca",
-    "link": "https://jonlu.ca/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
-    "createdAt": 1741823766000
-  },
-  {
     "name": "Greptile",
     "imgSrc": "https://avatars.githubusercontent.com/u/140149887?v=4",
-    "weight": 23,
+    "weight": 30,
     "login": "greptileai",
     "link": "https://greptile.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1743099912000
   },
   {
-    "name": "Brian Curliss",
-    "imgSrc": "https://avatars.githubusercontent.com/u/1222949?v=4",
-    "weight": 2,
-    "login": "BrianCurliss",
-    "link": "https://github.com/BrianCurliss",
-    "createdAt": 1744722390000
-  },
-  {
     "name": "BestKru",
     "imgSrc": "https://avatars.githubusercontent.com/u/159320286?v=4",
-    "weight": 2,
+    "weight": 3,
     "login": "BestKru",
     "link": "https://bestkru.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1745489411000
   },
   {
-    "name": "Graphite",
-    "imgSrc": "https://github.com/withgraphite.png",
-    "weight": 12,
-    "login": "withgraphite",
-    "link": "https://graphite.dev/?utm_source=github&utm_medium=repo&utm_campaign=trpc",
-    "createdAt": 1749679200000
+    "name": "Val Town",
+    "imgSrc": "https://avatars.githubusercontent.com/u/114268765?v=4",
+    "weight": 2,
+    "login": "val-town",
+    "link": "https://github.com/val-town",
+    "createdAt": 1762204378000
   },
   {
-    "name": "Mobb",
-    "imgSrc": "https://github.com/mobb-dev.png",
-    "weight": 13,
-    "login": "mobb-dev",
-    "link": "https://mobb.ai",
-    "createdAt": 1750601889000
+    "name": "Ferry Health",
+    "imgSrc": "https://avatars.githubusercontent.com/u/158637456?v=4",
+    "weight": 3,
+    "login": "Ferry-Health",
+    "link": "https://github.com/Ferry-Health",
+    "createdAt": 1764800371000
   },
   {
-    "name": "Mykhailo Marynenko",
-    "imgSrc": "https://avatars.githubusercontent.com/u/46429701?v=4",
+    "name": "Filip Kin",
+    "imgSrc": "https://avatars.githubusercontent.com/u/27921728?u=bd9307f5cb90d79cc8826a0e7b914c73a978f6e1&v=4",
     "weight": 1,
-    "login": "0x77dev",
-    "link": "https://0x77.dev/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
-    "createdAt": 1752869551000
+    "login": "Filip-Kin",
+    "link": "https://filipkin.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "createdAt": 1765009722000
   }
 ] as const;

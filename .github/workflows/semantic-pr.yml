@@ -1,0 +1,91 @@
+name: Semantic PR title
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - synchronize
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  pull-requests: read
+
+jobs:
+  test:
+    name: test title
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          # Checkout the base branch to get the canonical package list
+          # This works for both same-repo PRs and fork-based PRs
+          ref: ${{ github.event.pull_request.base.ref }}
+          repository: ${{ github.event.pull_request.base.repo.full_name }}
+
+      - name: Validate PR title
+        run: |
+          # Additional scopes (comma-separated, easy to modify)
+          ADDITIONAL_SCOPES="www,example,ci,docs,deps,monorepo"
+
+          # Extract package names and combine with additional scopes
+          ALL_SCOPES=$(find packages -maxdepth 2 -name "package.json" -type f \
+              | xargs -I {} jq -r '.name // empty' {} \
+              | sed 's/^@trpc\///' \
+              | grep -v '^$' \
+              | (cat && echo "$ADDITIONAL_SCOPES" | tr ',' '\n') \
+              | sort -u)
+
+          # Commit types (pipe-separated for regex)
+          TYPES="feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert"
+
+          # Get PR title
+          PR_TITLE="${{ github.event.pull_request.title }}"
+
+          echo "PR titles needs to follow the Conventional Commits format: type(scope): subject"
+          echo ""
+          echo "Allowed types:"
+          echo "$TYPES" | tr '|' '\n' | sort | sed 's/^/- /'
+          echo ""
+          echo "Allowed scopes:"
+          echo "$ALL_SCOPES" | sort | sed 's/^/- /'
+          echo ""
+
+          # Validate Conventional Commits format: type(scope): subject
+          # Pattern: type(scope): subject or type: subject (scope optional)
+          if ! echo "$PR_TITLE" | grep -qE "^($TYPES)(\(.+\))?: .+"; then
+            echo "❌ PR title must follow Conventional Commits format: type(scope): subject"
+            echo "   Examples: feat(client): add feature, fix(server): fix bug, feat(client,server): add feature, docs: update docs"
+            exit 1
+          fi
+
+          # Extract scope if present
+          SCOPE=$(echo "$PR_TITLE" | sed -nE 's/^[^(]+\(([^)]+)\):.*/\1/p')
+
+          if [ -n "$SCOPE" ]; then
+            # Normalize separators: replace + with , to handle both formats
+            SCOPE_NORMALIZED=$(echo "$SCOPE" | tr '+' ',')
+            # Validate each scope (supports both comma and plus separators)
+            IFS=',' read -ra SCOPE_ARRAY <<< "$SCOPE_NORMALIZED"
+            for scope_item in "${SCOPE_ARRAY[@]}"; do
+              # Trim whitespace
+              scope_item=$(echo "$scope_item" | xargs)
+              
+              # Check if scope is in allowed list
+              if ! echo "$ALL_SCOPES" | grep -qFx "$scope_item"; then
+                echo "❌ Invalid scope: '$scope_item'"
+                echo "   Allowed scopes: $(echo "$ALL_SCOPES" | tr '\n' ', ' | sed 's/,$//')"
+                exit 1
+              fi
+            done
+            echo "✓ Scope(s) validated: $SCOPE"
+          else
+            echo "✓ No scope provided (optional)"
+          fi
+
+          echo "✅ PR title is valid"

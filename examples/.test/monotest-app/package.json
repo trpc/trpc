@@ -1,6 +1,6 @@
 {
   "name": "@monotest/app",
-  "version": "11.6.0",
+  "version": "11.8.1",
   "private": true,
   "type": "module",
   "scripts": {

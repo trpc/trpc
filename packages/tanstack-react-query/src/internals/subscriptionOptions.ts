@@ -6,11 +6,13 @@ import type { Unsubscribable } from '@trpc/server/observable';
 import type { inferAsyncIterableYield } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
 import type {
+  DefaultFeatureFlags,
+  FeatureFlags,
   ResolverDef,
   TRPCQueryKey,
   TRPCQueryOptionsResult,
 } from './types';
-import { createTRPCOptionsResult } from './utils';
+import { createTRPCOptionsResult, readQueryKey } from './utils';
 
 interface BaseTRPCSubscriptionOptionsIn<TOutput, TError> {
   enabled?: boolean;
@@ -27,17 +29,23 @@ interface UnusedSkipTokenTRPCSubscriptionOptionsIn<TOutput, TError> {
   onConnectionStateChange?: (state: TRPCConnectionState<TError>) => void;
 }
 
-interface TRPCSubscriptionOptionsOut<TOutput, TError>
-  extends UnusedSkipTokenTRPCSubscriptionOptionsIn<TOutput, TError>,
+interface TRPCSubscriptionOptionsOut<
+  TOutput,
+  TError,
+  TFeatureFlags extends FeatureFlags,
+> extends UnusedSkipTokenTRPCSubscriptionOptionsIn<TOutput, TError>,
     TRPCQueryOptionsResult {
   enabled: boolean;
-  queryKey: TRPCQueryKey;
+  queryKey: TRPCQueryKey<TFeatureFlags['keyPrefix']>;
   subscribe: (
     innerOpts: UnusedSkipTokenTRPCSubscriptionOptionsIn<TOutput, TError>,
   ) => Unsubscribable;
 }
 
-export interface TRPCSubscriptionOptions<TDef extends ResolverDef> {
+export interface TRPCSubscriptionOptions<
+  TDef extends ResolverDef,
+  TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
+> {
   (
     input: TDef['input'],
     opts?: UnusedSkipTokenTRPCSubscriptionOptionsIn<
@@ -46,7 +54,8 @@ export interface TRPCSubscriptionOptions<TDef extends ResolverDef> {
     >,
   ): TRPCSubscriptionOptionsOut<
     inferAsyncIterableYield<TDef['output']>,
-    TRPCClientErrorLike<TDef>
+    TRPCClientErrorLike<TDef>,
+    TFeatureFlags
   >;
   (
     input: TDef['input'] | SkipToken,
@@ -56,7 +65,8 @@ export interface TRPCSubscriptionOptions<TDef extends ResolverDef> {
     >,
   ): TRPCSubscriptionOptionsOut<
     inferAsyncIterableYield<TDef['output']>,
-    TRPCClientErrorLike<TDef>
+    TRPCClientErrorLike<TDef>,
+    TFeatureFlags
   >;
 }
 export type TRPCSubscriptionStatus =
@@ -113,27 +123,27 @@ type AnyTRPCSubscriptionOptionsIn =
   | BaseTRPCSubscriptionOptionsIn<unknown, unknown>
   | UnusedSkipTokenTRPCSubscriptionOptionsIn<unknown, unknown>;
 
-type AnyTRPCSubscriptionOptionsOut = TRPCSubscriptionOptionsOut<
-  unknown,
-  unknown
->;
+type AnyTRPCSubscriptionOptionsOut<TFeatureFlags extends FeatureFlags> =
+  TRPCSubscriptionOptionsOut<unknown, unknown, TFeatureFlags>;
 
 /**
  * @internal
  */
-export const trpcSubscriptionOptions = (args: {
+export const trpcSubscriptionOptions = <
+  TFeatureFlags extends FeatureFlags,
+>(args: {
   subscribe: typeof TRPCUntypedClient.prototype.subscription;
-  path: readonly string[];
-  queryKey: TRPCQueryKey;
+  path: string[];
+  queryKey: TRPCQueryKey<TFeatureFlags['keyPrefix']>;
   opts?: AnyTRPCSubscriptionOptionsIn;
-}): AnyTRPCSubscriptionOptionsOut => {
+}): AnyTRPCSubscriptionOptionsOut<TFeatureFlags> => {
   const { subscribe, path, queryKey, opts = {} } = args;
-  const input = queryKey[1]?.input;
+  const input = readQueryKey(queryKey)?.args?.input;
   const enabled = 'enabled' in opts ? !!opts.enabled : input !== skipToken;
 
-  const _subscribe: ReturnType<TRPCSubscriptionOptions<any>>['subscribe'] = (
-    innerOpts,
-  ) => {
+  const _subscribe: ReturnType<
+    TRPCSubscriptionOptions<any, TFeatureFlags>
+  >['subscribe'] = (innerOpts) => {
     return subscribe(path.join('.'), input ?? undefined, innerOpts);
   };
 
@@ -147,7 +157,7 @@ export const trpcSubscriptionOptions = (args: {
 };
 
 export function useSubscription<TOutput, TError>(
-  opts: TRPCSubscriptionOptionsOut<TOutput, TError>,
+  opts: TRPCSubscriptionOptionsOut<TOutput, TError, any>,
 ): TRPCSubscriptionResult<TOutput, TError> {
   type $Result = TRPCSubscriptionResult<TOutput, TError>;
 
@@ -250,7 +260,7 @@ export function useSubscription<TOutput, TError>(
   const resultRef = React.useRef<$Result>(getInitialState());
 
   const [state, setState] = React.useState<$Result>(
-    trackResult(resultRef.current, addTrackedProp),
+    trackResult(resultRef, addTrackedProp),
   );
 
   state.reset = reset;
@@ -268,7 +278,7 @@ export function useSubscription<TOutput, TError>(
         }
       }
       if (shouldUpdate) {
-        setState(trackResult(next, addTrackedProp));
+        setState(trackResult(resultRef, addTrackedProp));
       }
     },
     [addTrackedProp],
@@ -289,13 +299,14 @@ export function useSubscription<TOutput, TError>(
 }
 
 function trackResult<T extends object>(
-  result: T,
+  result: React.RefObject<T>,
   onTrackResult: (key: keyof T) => void,
 ): T {
-  const trackedResult = new Proxy(result, {
-    get(target, prop) {
+  const trackedResult = new Proxy(result.current, {
+    get(_target, prop) {
       onTrackResult(prop as keyof T);
-      return target[prop as keyof T];
+      // Bypass target, so that we always get the latest value
+      return result.current[prop as keyof T];
     },
   });
 
