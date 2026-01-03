@@ -539,6 +539,11 @@
       "source": "/blog/announcing-trpc-11",
       "destination": "/blog/announcing-trpc-v11",
       "permanent": true
+    },
+    {
+      "source": "/docs/react-query",
+      "destination": "/docs/client/react",
+      "permanent": true
     }
   ]
 }
