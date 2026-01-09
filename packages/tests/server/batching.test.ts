@@ -12,6 +12,147 @@ const router = t.router({
     .query((opts) => `Hello ${opts.input ?? 'world'}` as const),
 });
 
+describe('callIndex', () => {
+  test('callIndex is passed correctly in batched requests', async () => {
+    const callIndices: (number | undefined)[] = [];
+
+    const tWithCallIndex = initTRPC.create();
+    const routerWithCallIndex = tWithCallIndex.router({
+      getCallIndex: tWithCallIndex.procedure.input(z.string()).query((opts) => {
+        callIndices.push(opts.callIndex);
+        return { input: opts.input, callIndex: opts.callIndex };
+      }),
+    });
+
+    await using ctx = testServerAndClientResource(routerWithCallIndex, {
+      server: {},
+      clientLink: 'httpBatchLink',
+    });
+
+    const results = await Promise.all([
+      ctx.client.getCallIndex.query('first'),
+      ctx.client.getCallIndex.query('second'),
+      ctx.client.getCallIndex.query('third'),
+    ]);
+
+    expect(results).toEqual([
+      { input: 'first', callIndex: 0 },
+      { input: 'second', callIndex: 1 },
+      { input: 'third', callIndex: 2 },
+    ]);
+
+    expect(callIndices).toEqual([0, 1, 2]);
+
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
+  });
+
+  test('callIndex is passed correctly in streamed batched requests', async () => {
+    const callIndices: (number | undefined)[] = [];
+
+    const tWithCallIndex = initTRPC.create();
+    const routerWithCallIndex = tWithCallIndex.router({
+      getCallIndex: tWithCallIndex.procedure.input(z.string()).query((opts) => {
+        callIndices.push(opts.callIndex);
+        return { input: opts.input, callIndex: opts.callIndex };
+      }),
+    });
+
+    await using ctx = testServerAndClientResource(routerWithCallIndex, {
+      server: {},
+      clientLink: 'httpBatchStreamLink',
+    });
+
+    const results = await Promise.all([
+      ctx.client.getCallIndex.query('first'),
+      ctx.client.getCallIndex.query('second'),
+      ctx.client.getCallIndex.query('third'),
+    ]);
+
+    expect(results).toEqual([
+      { input: 'first', callIndex: 0 },
+      { input: 'second', callIndex: 1 },
+      { input: 'third', callIndex: 2 },
+    ]);
+
+    expect(callIndices).toEqual([0, 1, 2]);
+
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
+  });
+
+  test('callIndex is not provided for non-batched requests', async () => {
+    const callIndices: (number | undefined)[] = [];
+
+    const tWithCallIndex = initTRPC.create();
+    const routerWithCallIndex = tWithCallIndex.router({
+      getCallIndex: tWithCallIndex.procedure.input(z.string()).query((opts) => {
+        callIndices.push(opts.callIndex);
+        return { input: opts.input, callIndex: opts.callIndex };
+      }),
+    });
+
+    await using ctx = testServerAndClientResource(routerWithCallIndex, {
+      server: {},
+      clientLink: 'httpLink',
+    });
+
+    const result = await ctx.client.getCallIndex.query('single');
+
+    expect(result).toEqual({ input: 'single' });
+    expect(callIndices).toEqual([undefined]);
+  });
+
+  test('callIndex is provided for single-call batch requests', async () => {
+    const callIndices: (number | undefined)[] = [];
+
+    const tWithCallIndex = initTRPC.create();
+    const routerWithCallIndex = tWithCallIndex.router({
+      getCallIndex: tWithCallIndex.procedure.input(z.string()).query((opts) => {
+        callIndices.push(opts.callIndex);
+        return { input: opts.input, callIndex: opts.callIndex };
+      }),
+    });
+
+    await using ctx = testServerAndClientResource(routerWithCallIndex, {
+      server: {},
+      clientLink: 'httpBatchLink',
+    });
+
+    const result = await Promise.all([ctx.client.getCallIndex.query('single')]);
+
+    expect(result).toEqual([{ input: 'single', callIndex: 0 }]);
+    expect(callIndices).toEqual([0]);
+  });
+
+  test('callIndex is available in middleware', async () => {
+    const middlewareCallIndices: (number | undefined)[] = [];
+
+    const tWithMiddleware = initTRPC.create();
+
+    const procedureWithMiddleware = tWithMiddleware.procedure.use((opts) => {
+      middlewareCallIndices.push(opts.callIndex);
+      return opts.next();
+    });
+
+    const routerWithMiddleware = tWithMiddleware.router({
+      testProc: procedureWithMiddleware
+        .input(z.string())
+        .query((opts) => opts.input),
+    });
+
+    await using ctx = testServerAndClientResource(routerWithMiddleware, {
+      server: {},
+      clientLink: 'httpBatchLink',
+    });
+
+    await Promise.all([
+      ctx.client.testProc.query('a'),
+      ctx.client.testProc.query('b'),
+    ]);
+
+    expect(middlewareCallIndices).toEqual([0, 1]);
+  });
+});
+
 test('batching enabled', async () => {
   await using ctx = testServerAndClientResource(router, {
     server: {},
