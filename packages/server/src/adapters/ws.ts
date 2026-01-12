@@ -464,15 +464,22 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         }
       }
 
+      // Convert rawData to a format our serializer accepts
+      // ws gives us Buffer for both text and binary frames
+      if (!Buffer.isBuffer(rawData)) {
+        throw new TRPCError({
+          code: 'UNPROCESSABLE_CONTENT',
+          message: 'Unexpected WebSocket message format',
+        });
+      }
+      const data: string | Uint8Array = isBinary ? rawData : rawData.toString('utf8');
+
       if (!ctxPromise) {
         // If the ctxPromise wasn't created immediately, we're expecting the first message to be a TRPCConnectionParamsMessage
         ctxPromise = createCtxPromise(() => {
           let msg;
           try {
-            msg = serializer.deserialize(
-              // eslint-disable-next-line @typescript-eslint/no-base-to-string
-              isBinary ? rawData : rawData.toString(),
-            ) as TRPCConnectionParamsMessage;
+            msg = serializer.deserialize(data) as TRPCConnectionParamsMessage;
 
             if (!isObject(msg)) {
               throw new Error('Message was not an object');
@@ -494,10 +501,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 
       const parsedMsgs = run(() => {
         try {
-          const msgJSON: unknown = serializer.deserialize(
-            // eslint-disable-next-line @typescript-eslint/no-base-to-string
-              isBinary ? rawData : rawData.toString(),
-          );
+          const msgJSON: unknown = serializer.deserialize(data);
           const msgs: unknown[] = Array.isArray(msgJSON) ? msgJSON : [msgJSON];
 
           return msgs.map((raw) => parseTRPCMessage(raw, transformer));
