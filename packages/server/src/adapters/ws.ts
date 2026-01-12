@@ -5,6 +5,8 @@ import type {
   CreateContextCallback,
   inferRouterContext,
 } from '../@trpc/server';
+import type { Serializer } from './wsSerializer';
+import { jsonSerializer } from './wsSerializer';
 import {
   callTRPCProcedure,
   getErrorShape,
@@ -98,6 +100,11 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> =
      * @default false
      */
     dangerouslyDisablePong?: boolean;
+    /**
+     * Custom serializer for wire encoding (e.g., MessagePack for binary)
+     * @default jsonSerializer
+     */
+    experimental_serializer?: Serializer;
   };
 
 export function getWSConnectionHandler<TRouter extends AnyRouter>(
@@ -105,6 +112,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 ) {
   const { createContext, router } = opts;
   const { transformer } = router._def._config;
+  const serializer = opts.experimental_serializer ?? jsonSerializer;
 
   return (client: ws.WebSocket, req: IncomingMessage) => {
     type Context = inferRouterContext<TRouter>;
@@ -120,7 +128,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 
     function respond(untransformedJSON: TRPCResponseMessage) {
       client.send(
-        JSON.stringify(
+        serializer.serialize(
           transformTRPCResponse(router._def._config, untransformedJSON),
         ),
       );
@@ -440,24 +448,30 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         });
       });
     }
-    client.on('message', (rawData) => {
-      // eslint-disable-next-line @typescript-eslint/no-base-to-string
-      const msgStr = rawData.toString();
-      if (msgStr === 'PONG') {
-        return;
-      }
-      if (msgStr === 'PING') {
-        if (!opts.dangerouslyDisablePong) {
-          client.send('PONG');
+    client.on('message', (rawData, isBinary) => {
+      // Handle PING/PONG as text regardless of serializer
+      if (!isBinary) {
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string
+        const msgStr = rawData.toString();
+        if (msgStr === 'PONG') {
+          return;
         }
-        return;
+        if (msgStr === 'PING') {
+          if (!opts.dangerouslyDisablePong) {
+            client.send('PONG');
+          }
+          return;
+        }
       }
+
       if (!ctxPromise) {
         // If the ctxPromise wasn't created immediately, we're expecting the first message to be a TRPCConnectionParamsMessage
         ctxPromise = createCtxPromise(() => {
           let msg;
           try {
-            msg = JSON.parse(msgStr) as TRPCConnectionParamsMessage;
+            msg = serializer.deserialize(
+              isBinary ? rawData : rawData.toString(),
+            ) as TRPCConnectionParamsMessage;
 
             if (!isObject(msg)) {
               throw new Error('Message was not an object');
@@ -479,7 +493,9 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 
       const parsedMsgs = run(() => {
         try {
-          const msgJSON: unknown = JSON.parse(msgStr);
+          const msgJSON: unknown = serializer.deserialize(
+            isBinary ? rawData : rawData.toString(),
+          );
           const msgs: unknown[] = Array.isArray(msgJSON) ? msgJSON : [msgJSON];
 
           return msgs.map((raw) => parseTRPCMessage(raw, transformer));
@@ -577,6 +593,7 @@ export function handleKeepAlive(
 export function applyWSSHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
 ) {
+  const serializer = opts.experimental_serializer ?? jsonSerializer;
   const onConnection = getWSConnectionHandler(opts);
   opts.wss.on('connection', (client, req) => {
     if (opts.prefix && !req.url?.startsWith(opts.prefix)) {
@@ -592,7 +609,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         id: null,
         method: 'reconnect',
       };
-      const data = JSON.stringify(response);
+      const data = serializer.serialize(response);
       for (const client of opts.wss.clients) {
         if (client.readyState === WEBSOCKET_OPEN) {
           client.send(data);
@@ -601,3 +618,6 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
     },
   };
 }
+
+export type { Serializer } from './wsSerializer';
+export { jsonSerializer } from './wsSerializer';

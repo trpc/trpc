@@ -20,6 +20,8 @@ import type { WebSocketClientOptions } from './options';
 import { exponentialBackoff, keepAliveDefaults, lazyDefaults } from './options';
 import type { TCallbacks } from './requestManager';
 import { RequestManager } from './requestManager';
+import type { Serializer } from './serializer';
+import { jsonSerializer } from './serializer';
 import { ResettableTimeout, TRPCWebSocketClosedError } from './utils';
 import { backwardCompatibility, WsConnection } from './wsConnection';
 
@@ -45,8 +47,10 @@ export class WsClient {
     'onOpen' | 'onClose' | 'onError'
   >;
   private readonly lazyMode: boolean;
+  private readonly serializer: Serializer;
 
   constructor(opts: WebSocketClientOptions) {
+    this.serializer = opts.experimental_serializer ?? jsonSerializer;
     // Initialize callbacks, connection parameters, and options.
     this.callbacks = {
       onOpen: opts.onOpen,
@@ -315,9 +319,12 @@ export class WsClient {
     ws.addEventListener('message', ({ data }) => {
       this.inactivityTimeout.reset();
 
-      if (typeof data !== 'string' || ['PING', 'PONG'].includes(data)) return;
+      // Handle PING/PONG as text regardless of serializer
+      if (typeof data === 'string' && ['PING', 'PONG'].includes(data)) return;
 
-      const incomingMessage = JSON.parse(data) as TRPCClientIncomingMessage;
+      const incomingMessage = this.serializer.deserialize(
+        data,
+      ) as TRPCClientIncomingMessage;
       if ('method' in incomingMessage) {
         this.handleIncomingRequest(incomingMessage);
         return;
@@ -401,7 +408,7 @@ export class WsClient {
         ? messageOrMessages
         : [messageOrMessages];
     this.activeConnection.ws.send(
-      JSON.stringify(messages.length === 1 ? messages[0] : messages),
+      this.serializer.serialize(messages.length === 1 ? messages[0] : messages),
     );
   }
 

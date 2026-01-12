@@ -52,4 +52,10 @@ export function wsLink<TRouter extends AnyRouter>(
   };
 }
 
-export { TRPCWebSocketClient, WebSocketClientOptions, createWSClient };
+export {
+  createWSClient,
+  jsonSerializer,
+  type Serializer,
+  type TRPCWebSocketClient,
+  type WebSocketClientOptions,
+};

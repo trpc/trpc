@@ -1,4 +1,5 @@
 import type { UrlOptionsWithConnectionParams } from '../../internals/urlWithConnectionParams';
+import type { Serializer } from './serializer';
 
 export interface WebSocketClientOptions extends UrlOptionsWithConnectionParams {
   /**
@@ -56,6 +57,11 @@ export interface WebSocketClientOptions extends UrlOptionsWithConnectionParams {
      */
     pongTimeoutMs?: number;
   };
+  /**
+   * Custom serializer for wire encoding (e.g., MessagePack for binary)
+   * @default jsonSerializer
+   */
+  experimental_serializer?: Serializer;
 }
 
 /**
