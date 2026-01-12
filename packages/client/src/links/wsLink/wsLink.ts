@@ -7,10 +7,11 @@ import type { TransformerOptions } from '../../unstable-internals';
 import { getTransformer } from '../../unstable-internals';
 import type { TRPCLink } from '../types';
 import type {
+  Serializer,
   TRPCWebSocketClient,
   WebSocketClientOptions,
 } from './createWsClient';
-import { createWSClient } from './createWsClient';
+import { createWSClient, jsonSerializer } from './createWsClient';
 
 export type WebSocketLinkOptions<TRouter extends AnyRouter> = {
   client: TRPCWebSocketClient;

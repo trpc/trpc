@@ -470,6 +470,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           let msg;
           try {
             msg = serializer.deserialize(
+              // eslint-disable-next-line @typescript-eslint/no-base-to-string
               isBinary ? rawData : rawData.toString(),
             ) as TRPCConnectionParamsMessage;
 
@@ -494,7 +495,8 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       const parsedMsgs = run(() => {
         try {
           const msgJSON: unknown = serializer.deserialize(
-            isBinary ? rawData : rawData.toString(),
+            // eslint-disable-next-line @typescript-eslint/no-base-to-string
+              isBinary ? rawData : rawData.toString(),
           );
           const msgs: unknown[] = Array.isArray(msgJSON) ? msgJSON : [msgJSON];
 
