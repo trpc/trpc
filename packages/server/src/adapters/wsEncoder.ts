@@ -1,33 +1,12 @@
 /**
- * Encoder for encoding/decoding tRPC messages on the wire.
- * Operates after transformer.serialize() and before network transmission.
- *
- * @remarks
- * Binary encoders like MessagePack may convert `undefined` to `null`.
- * To match JSON behavior, strip undefined values before encoding:
+ * Encoder for WebSocket wire format.
+ * Encodes outgoing messages and decodes incoming messages.
  *
  * @example
  * ```ts
- * import { encode, decode } from '@msgpack/msgpack';
- * import type { Encoder } from '@trpc/server/adapters/ws';
- *
- * // Strip undefined to match JSON.stringify behavior
- * function stripUndefined<T>(value: T): T {
- *   if (value === null || typeof value !== 'object') return value;
- *   if (Array.isArray(value)) return value.map(stripUndefined) as T;
- *   const result: Record<string, unknown> = {};
- *   for (const [k, v] of Object.entries(value)) {
- *     if (v !== undefined) result[k] = stripUndefined(v);
- *   }
- *   return result as T;
- * }
- *
- * export const msgpackEncoder: Encoder = {
- *   encode: (data) => encode(stripUndefined(data)),
- *   decode: (data) => {
- *     const bytes = data instanceof ArrayBuffer ? new Uint8Array(data) : data;
- *     return decode(bytes as Uint8Array);
- *   },
+ * const customEncoder: Encoder = {
+ *   encode: (data) => myFormat.stringify(data),
+ *   decode: (data) => myFormat.parse(data),
  * };
  * ```
  */
@@ -45,13 +24,12 @@ export interface Encoder {
 export const jsonEncoder: Encoder = {
   encode: (data) => JSON.stringify(data),
   decode: (data) => {
-    if (typeof data === 'string') {
-      return JSON.parse(data);
+    if (typeof data !== 'string') {
+      throw new Error(
+        'jsonEncoder received binary data. JSON uses text frames. ' +
+          'Use a binary encoder for binary data.',
+      );
     }
-    return JSON.parse(
-      new TextDecoder().decode(
-        data instanceof ArrayBuffer ? new Uint8Array(data) : data,
-      ),
-    );
+    return JSON.parse(data);
   },
 };

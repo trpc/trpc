@@ -467,17 +467,21 @@ describe('encoder interface', () => {
     expect(jsonEncoder.decode(serialized)).toEqual(data);
   });
 
-  test('jsonEncoder handles ArrayBuffer input', () => {
+  test('jsonEncoder throws on ArrayBuffer input', () => {
     const data = { foo: 'bar', num: 42 };
     const json = JSON.stringify(data);
     const buffer = new TextEncoder().encode(json).buffer;
-    expect(jsonEncoder.decode(buffer)).toEqual(data);
+    expect(() => jsonEncoder.decode(buffer)).toThrow(
+      'jsonEncoder received binary data',
+    );
   });
 
-  test('jsonEncoder handles Uint8Array input', () => {
+  test('jsonEncoder throws on Uint8Array input', () => {
     const data = { foo: 'bar', num: 42 };
     const json = JSON.stringify(data);
     const uint8 = new TextEncoder().encode(json);
-    expect(jsonEncoder.decode(uint8)).toEqual(data);
+    expect(() => jsonEncoder.decode(uint8)).toThrow(
+      'jsonEncoder received binary data',
+    );
   });
 });
