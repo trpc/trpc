@@ -101,7 +101,7 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> =
      */
     dangerouslyDisablePong?: boolean;
     /**
-     * Custom encoder for wire encoding (e.g., MessagePack for binary)
+     * Custom encoder for wire encoding (e.g. custom binary formats)
      * @default jsonEncoder
      */
     experimental_encoder?: Encoder;
