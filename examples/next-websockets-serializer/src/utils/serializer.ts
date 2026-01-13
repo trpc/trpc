@@ -24,7 +24,10 @@ export const msgpackSerializer: Serializer = {
   serialize: (data) => encode(stripUndefined(data)),
   deserialize: (data) => {
     if (typeof data === 'string') {
-      return JSON.parse(data);
+      throw new Error(
+        'msgpackSerializer received string data but expected binary. ' +
+          'Ensure both client and server are configured with experimental_serializer.',
+      );
     }
     const uint8 = data instanceof ArrayBuffer ? new Uint8Array(data) : data;
     return decode(uint8);

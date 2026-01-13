@@ -467,10 +467,22 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       // Convert rawData to a format our serializer accepts
       // ws gives us Buffer for both text and binary frames
       if (!Buffer.isBuffer(rawData)) {
-        throw new TRPCError({
+        const error = new TRPCError({
           code: 'UNPROCESSABLE_CONTENT',
           message: 'Unexpected WebSocket message format',
         });
+        respond({
+          id: null,
+          error: getErrorShape({
+            config: router._def._config,
+            error,
+            type: 'unknown',
+            path: undefined,
+            input: undefined,
+            ctx,
+          }),
+        });
+        return;
       }
       const data: string | Uint8Array = isBinary ? rawData : rawData.toString('utf8');
 

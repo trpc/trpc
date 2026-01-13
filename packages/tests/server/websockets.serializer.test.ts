@@ -1,4 +1,4 @@
-import { EventEmitter, on } from 'node:events';
+import { EventEmitter } from 'node:events';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
 import type { Serializer as ClientSerializer } from '@trpc/client';
@@ -477,7 +477,7 @@ describe('serializer interface', () => {
     const data = { foo: 'bar', num: 42 };
     const json = JSON.stringify(data);
     const buffer = new TextEncoder().encode(json).buffer;
-    expect(jsonSerializer.deserialize(buffer as ArrayBuffer)).toEqual(data);
+    expect(jsonSerializer.deserialize(buffer)).toEqual(data);
   });
 
   test('jsonSerializer handles Uint8Array input', () => {

@@ -15,14 +15,6 @@ const handler = applyWSSHandler({
 
 wss.on('connection', (ws) => {
   console.log(`➕➕ Connection (${wss.clients.size})`);
-  
-  ws.on('message', (data, isBinary) => {
-    console.log('[DEBUG] Message received, isBinary:', isBinary, 'type:', typeof data, 'isBuffer:', Buffer.isBuffer(data));
-    if (Buffer.isBuffer(data)) {
-      console.log('[DEBUG] First 20 bytes:', data.slice(0, 20).toString('hex'));
-    }
-  });
-  
   ws.once('close', () => {
     console.log(`➖➖ Connection (${wss.clients.size})`);
   });

@@ -4,7 +4,7 @@ This example demonstrates using **MessagePack binary serialization** with tRPC W
 
 ## Features
 
-- Next.js 15 with App Router
+- Next.js 15 with Pages Router
 - tRPC WebSocket subscriptions
 - MessagePack binary serialization via `experimental_serializer`
 - Tailwind CSS
@@ -34,11 +34,23 @@ The serializer is defined in `src/utils/serializer.ts`:
 import { decode, encode } from '@msgpack/msgpack';
 import type { Serializer } from '@trpc/client';
 
+// MessagePack converts undefined to null, but tRPC expects undefined for optional fields.
+// Strip undefined values before encoding to match JSON's behavior.
+function stripUndefined<T>(value: T): T {
+  if (value === null || typeof value !== 'object') return value;
+  if (Array.isArray(value)) return value.map(stripUndefined) as T;
+  const result: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(value)) {
+    if (v !== undefined) result[k] = stripUndefined(v);
+  }
+  return result as T;
+}
+
 export const msgpackSerializer: Serializer = {
-  serialize: (data) => encode(data),
+  serialize: (data) => encode(stripUndefined(data)),
   deserialize: (data) => {
     if (typeof data === 'string') {
-      return JSON.parse(data);
+      throw new Error('msgpackSerializer expected binary data but received a string.');
     }
     return decode(data instanceof ArrayBuffer ? new Uint8Array(data) : data);
   },
