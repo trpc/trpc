@@ -5,8 +5,6 @@ import type {
   CreateContextCallback,
   inferRouterContext,
 } from '../@trpc/server';
-import type { Encoder } from './wsEncoder';
-import { jsonEncoder } from './wsEncoder';
 import {
   callTRPCProcedure,
   getErrorShape,
@@ -41,6 +39,8 @@ import type { Result } from '../unstable-core-do-not-import';
 import { iteratorResource } from '../unstable-core-do-not-import/stream/utils/asyncIterable';
 import { Unpromise } from '../vendor/unpromise';
 import { createURL, type NodeHTTPCreateContextFnOptions } from './node-http';
+import type { Encoder } from './wsEncoder';
+import { jsonEncoder } from './wsEncoder';
 
 /**
  * Importing ws causes a build error
@@ -484,7 +484,9 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         });
         return;
       }
-      const data: string | Uint8Array = isBinary ? rawData : rawData.toString('utf8');
+      const data: string | Uint8Array = isBinary
+        ? rawData
+        : rawData.toString('utf8');
 
       if (!ctxPromise) {
         // If the ctxPromise wasn't created immediately, we're expecting the first message to be a TRPCConnectionParamsMessage

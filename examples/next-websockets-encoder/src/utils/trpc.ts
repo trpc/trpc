@@ -7,8 +7,8 @@ import {
 } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 import { ssrPrepass } from '@trpc/next/ssrPrepass';
-import type { NextPageContext } from 'next';
 import type { AppRouter } from '~/server/routers/_app';
+import type { NextPageContext } from 'next';
 import { msgpackEncoder } from './encoder';
 
 const WS_URL = 'ws://localhost:3001';
@@ -40,10 +40,7 @@ export const trpc = createTRPCNext<AppRouter>({
   ssrPrepass,
   config({ ctx }) {
     return {
-      links: [
-        loggerLink({ enabled: () => true }),
-        getEndingLink(ctx),
-      ],
+      links: [loggerLink({ enabled: () => true }), getEndingLink(ctx)],
     };
   },
 });

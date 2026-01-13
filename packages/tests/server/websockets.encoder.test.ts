@@ -420,9 +420,7 @@ describe('experimental_encoder', () => {
   describe('connection params', () => {
     test('connection params work with binary encoder', async () => {
       const USER_TOKEN = 'secret123';
-      const t = initTRPC
-        .context<{ user: { id: string } | null }>()
-        .create();
+      const t = initTRPC.context<{ user: { id: string } | null }>().create();
 
       const router = t.router({
         whoami: t.procedure.query((opts) => opts.ctx.user),

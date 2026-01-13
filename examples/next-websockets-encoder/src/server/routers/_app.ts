@@ -1,8 +1,8 @@
 /**
  * This file contains the root router of your tRPC-backend
  */
-import { observable } from '@trpc/server/observable';
 import { clearInterval } from 'timers';
+import { observable } from '@trpc/server/observable';
 import { z } from 'zod';
 import { publicProcedure, router } from '../trpc';
 

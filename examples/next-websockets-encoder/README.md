@@ -50,7 +50,9 @@ export const msgpackEncoder: Encoder = {
   encode: (data) => encode(stripUndefined(data)),
   decode: (data) => {
     if (typeof data === 'string') {
-      throw new Error('msgpackEncoder expected binary data but received a string.');
+      throw new Error(
+        'msgpackEncoder expected binary data but received a string.',
+      );
     }
     return decode(data instanceof ArrayBuffer ? new Uint8Array(data) : data);
   },

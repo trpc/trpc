@@ -16,12 +16,12 @@ import {
 import { TRPCClientError } from '../../../TRPCClientError';
 import type { TRPCConnectionState } from '../../internals/subscriptions';
 import type { Operation, OperationResultEnvelope } from '../../types';
+import type { Encoder } from './encoder';
+import { jsonEncoder } from './encoder';
 import type { WebSocketClientOptions } from './options';
 import { exponentialBackoff, keepAliveDefaults, lazyDefaults } from './options';
 import type { TCallbacks } from './requestManager';
 import { RequestManager } from './requestManager';
-import type { Encoder } from './encoder';
-import { jsonEncoder } from './encoder';
 import { ResettableTimeout, TRPCWebSocketClosedError } from './utils';
 import { backwardCompatibility, WsConnection } from './wsConnection';
 
