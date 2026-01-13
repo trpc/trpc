@@ -1,10 +1,8 @@
 import { EventEmitter } from 'node:events';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
-import type { Serializer as ClientSerializer } from '@trpc/client';
 import { initTRPC, tracked } from '@trpc/server';
-import type { Serializer as ServerSerializer } from '@trpc/server/adapters/ws';
-import { jsonSerializer } from '@trpc/server/adapters/ws';
+import { jsonSerializer, type Serializer } from '@trpc/server/adapters/ws';
 import type { Observer } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
@@ -16,7 +14,7 @@ type Message = {
   title?: string;
 };
 
-const mockBinarySerializer: ServerSerializer & ClientSerializer = {
+const mockBinarySerializer: Serializer = {
   serialize: (data) => {
     const json = JSON.stringify(data);
     return new TextEncoder().encode(`BINARY:${json}`);
@@ -36,8 +34,8 @@ const mockBinarySerializer: ServerSerializer & ClientSerializer = {
 };
 
 function factory(config?: {
-  serverSerializer?: ServerSerializer;
-  clientSerializer?: ClientSerializer;
+  serverSerializer?: Serializer;
+  clientSerializer?: Serializer;
 }) {
   const ee = new EventEmitter();
   const subRef: { current: Observer<Message, unknown> } = {} as any;
