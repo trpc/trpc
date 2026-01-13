@@ -5,8 +5,8 @@ import type {
   CreateContextCallback,
   inferRouterContext,
 } from '../@trpc/server';
-import type { Serializer } from './wsSerializer';
-import { jsonSerializer } from './wsSerializer';
+import type { Encoder } from './wsEncoder';
+import { jsonEncoder } from './wsEncoder';
 import {
   callTRPCProcedure,
   getErrorShape,
@@ -101,10 +101,10 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> =
      */
     dangerouslyDisablePong?: boolean;
     /**
-     * Custom serializer for wire encoding (e.g., MessagePack for binary)
-     * @default jsonSerializer
+     * Custom encoder for wire encoding (e.g., MessagePack for binary)
+     * @default jsonEncoder
      */
-    experimental_serializer?: Serializer;
+    experimental_encoder?: Encoder;
   };
 
 export function getWSConnectionHandler<TRouter extends AnyRouter>(
@@ -112,7 +112,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 ) {
   const { createContext, router } = opts;
   const { transformer } = router._def._config;
-  const serializer = opts.experimental_serializer ?? jsonSerializer;
+  const encoder = opts.experimental_encoder ?? jsonEncoder;
 
   return (client: ws.WebSocket, req: IncomingMessage) => {
     type Context = inferRouterContext<TRouter>;
@@ -128,7 +128,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 
     function respond(untransformedJSON: TRPCResponseMessage) {
       client.send(
-        serializer.serialize(
+        encoder.encode(
           transformTRPCResponse(router._def._config, untransformedJSON),
         ),
       );
@@ -491,7 +491,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         ctxPromise = createCtxPromise(() => {
           let msg;
           try {
-            msg = serializer.deserialize(data) as TRPCConnectionParamsMessage;
+            msg = encoder.decode(data) as TRPCConnectionParamsMessage;
 
             if (!isObject(msg)) {
               throw new Error('Message was not an object');
@@ -513,7 +513,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 
       const parsedMsgs = run(() => {
         try {
-          const msgJSON: unknown = serializer.deserialize(data);
+          const msgJSON: unknown = encoder.decode(data);
           const msgs: unknown[] = Array.isArray(msgJSON) ? msgJSON : [msgJSON];
 
           return msgs.map((raw) => parseTRPCMessage(raw, transformer));
@@ -611,7 +611,7 @@ export function handleKeepAlive(
 export function applyWSSHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
 ) {
-  const serializer = opts.experimental_serializer ?? jsonSerializer;
+  const encoder = opts.experimental_encoder ?? jsonEncoder;
   const onConnection = getWSConnectionHandler(opts);
   opts.wss.on('connection', (client, req) => {
     if (opts.prefix && !req.url?.startsWith(opts.prefix)) {
@@ -627,7 +627,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         id: null,
         method: 'reconnect',
       };
-      const data = serializer.serialize(response);
+      const data = encoder.encode(response);
       for (const client of opts.wss.clients) {
         if (client.readyState === WEBSOCKET_OPEN) {
           client.send(data);
@@ -637,5 +637,5 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
   };
 }
 
-export type { Serializer } from './wsSerializer';
-export { jsonSerializer } from './wsSerializer';
+export type { Encoder } from './wsEncoder';
+export { jsonEncoder } from './wsEncoder';

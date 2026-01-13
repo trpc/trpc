@@ -1,5 +1,5 @@
 import { decode, encode } from '@msgpack/msgpack';
-import type { Serializer } from '@trpc/client';
+import type { Encoder } from '@trpc/client';
 
 /**
  * Recursively strips undefined values from objects to match JSON.stringify behavior.
@@ -17,16 +17,16 @@ function stripUndefined<T>(value: T): T {
 }
 
 /**
- * MessagePack serializer for tRPC WebSocket connections.
- * Provides binary serialization for improved performance and smaller payloads.
+ * MessagePack encoder for tRPC WebSocket connections.
+ * Provides binary encoding for improved performance and smaller payloads.
  */
-export const msgpackSerializer: Serializer = {
-  serialize: (data) => encode(stripUndefined(data)),
-  deserialize: (data) => {
+export const msgpackEncoder: Encoder = {
+  encode: (data) => encode(stripUndefined(data)),
+  decode: (data) => {
     if (typeof data === 'string') {
       throw new Error(
-        'msgpackSerializer received string data but expected binary. ' +
-          'Ensure both client and server are configured with experimental_serializer.',
+        'msgpackEncoder received string data but expected binary. ' +
+          'Ensure both client and server are configured with experimental_encoder.',
       );
     }
     const uint8 = data instanceof ArrayBuffer ? new Uint8Array(data) : data;

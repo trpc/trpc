@@ -1,9 +1,9 @@
-import type { Serializer } from '@trpc/server/adapters/ws';
-export type { Serializer }
+import type { Encoder } from '@trpc/server/adapters/ws';
+export type { Encoder };
 
-export const jsonSerializer: Serializer = {
-  serialize: (data) => JSON.stringify(data),
-  deserialize: (data) => {
+export const jsonEncoder: Encoder = {
+  encode: (data) => JSON.stringify(data),
+  decode: (data) => {
     if (typeof data === 'string') {
       return JSON.parse(data);
     }

@@ -1,6 +1,6 @@
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import { WebSocketServer } from 'ws';
-import { msgpackSerializer } from '../utils/serializer';
+import { msgpackEncoder } from '../utils/encoder';
 import { appRouter } from './routers/_app';
 
 const wss = new WebSocketServer({
@@ -10,7 +10,7 @@ const wss = new WebSocketServer({
 const handler = applyWSSHandler({
   wss,
   router: appRouter,
-  experimental_serializer: msgpackSerializer,
+  experimental_encoder: msgpackEncoder,
 });
 
 wss.on('connection', (ws) => {
@@ -21,7 +21,7 @@ wss.on('connection', (ws) => {
 });
 
 console.log('✅ WebSocket Server listening on ws://localhost:3001');
-console.log('📦 Using MessagePack serialization');
+console.log('📦 Using MessagePack encoding');
 
 process.on('SIGTERM', () => {
   console.log('SIGTERM');

@@ -1,6 +1,6 @@
 import type { WebSocketClientOptions } from './wsClient/options';
-import type { Serializer } from './wsClient/serializer';
-import { jsonSerializer } from './wsClient/serializer';
+import type { Encoder } from './wsClient/encoder';
+import { jsonEncoder } from './wsClient/encoder';
 import { WsClient } from './wsClient/wsClient';
 
 export function createWSClient(opts: WebSocketClientOptions) {
@@ -9,4 +9,4 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
 export type TRPCWebSocketClient = ReturnType<typeof createWSClient>;
 
-export { jsonSerializer, type Serializer, type WebSocketClientOptions };
+export { jsonEncoder, type Encoder, type WebSocketClientOptions };

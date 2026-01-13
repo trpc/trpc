@@ -4,7 +4,7 @@ import { parse } from 'node:url';
 import type { Socket } from 'net';
 import { WebSocketServer } from 'ws';
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
-import { msgpackSerializer } from '../utils/serializer';
+import { msgpackEncoder } from '../utils/encoder';
 import { appRouter } from './routers/_app';
 
 const port = parseInt(process.env.PORT ?? '3000', 10);
@@ -23,7 +23,7 @@ void app.prepare().then(() => {
   const handler = applyWSSHandler({
     wss,
     router: appRouter,
-    experimental_serializer: msgpackSerializer,
+    experimental_encoder: msgpackEncoder,
   });
 
   process.on('SIGTERM', () => {
@@ -48,5 +48,5 @@ void app.prepare().then(() => {
       dev ? 'development' : process.env.NODE_ENV
     }`,
   );
-  console.log('📦 Using MessagePack serialization');
+  console.log('📦 Using MessagePack encoding');
 });

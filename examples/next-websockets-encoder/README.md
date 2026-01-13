@@ -1,38 +1,38 @@
-# Next.js + tRPC WebSocket + MessagePack Serializer
+# Next.js + tRPC WebSocket + MessagePack Encoder
 
-This example demonstrates using **MessagePack binary serialization** with tRPC WebSocket connections for improved performance and smaller payloads.
+This example demonstrates using **MessagePack binary encoding** with tRPC WebSocket connections for improved performance and smaller payloads.
 
 ## Features
 
 - Next.js 15 with Pages Router
 - tRPC WebSocket subscriptions
-- MessagePack binary serialization via `experimental_serializer`
+- MessagePack binary encoding via `experimental_encoder`
 - Tailwind CSS
 
 ## How it works
 
-The `experimental_serializer` option allows you to plug in custom serialization for WebSocket messages:
+The `experimental_encoder` option allows you to plug in custom encoding for WebSocket messages:
 
 ```typescript
 // Server (wssDevServer.ts)
 applyWSSHandler({
   wss,
   router: appRouter,
-  experimental_serializer: msgpackSerializer,
+  experimental_encoder: msgpackEncoder,
 });
 
 // Client (trpc.ts)
 createWSClient({
   url: WS_URL,
-  experimental_serializer: msgpackSerializer,
+  experimental_encoder: msgpackEncoder,
 });
 ```
 
-The serializer is defined in `src/utils/serializer.ts`:
+The encoder is defined in `src/utils/encoder.ts`:
 
 ```typescript
 import { decode, encode } from '@msgpack/msgpack';
-import type { Serializer } from '@trpc/client';
+import type { Encoder } from '@trpc/client';
 
 // MessagePack converts undefined to null, but tRPC expects undefined for optional fields.
 // Strip undefined values before encoding to match JSON's behavior.
@@ -46,11 +46,11 @@ function stripUndefined<T>(value: T): T {
   return result as T;
 }
 
-export const msgpackSerializer: Serializer = {
-  serialize: (data) => encode(stripUndefined(data)),
-  deserialize: (data) => {
+export const msgpackEncoder: Encoder = {
+  encode: (data) => encode(stripUndefined(data)),
+  decode: (data) => {
     if (typeof data === 'string') {
-      throw new Error('msgpackSerializer expected binary data but received a string.');
+      throw new Error('msgpackEncoder expected binary data but received a string.');
     }
     return decode(data instanceof ArrayBuffer ? new Uint8Array(data) : data);
   },

@@ -24,14 +24,14 @@ export default function IndexPage() {
   return (
     <>
       <Head>
-        <title>tRPC WebSocket + MessagePack Serializer</title>
+        <title>tRPC WebSocket + MessagePack Encoder</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <div className="min-h-screen bg-gray-900 p-8 text-white">
         <div className="mx-auto max-w-2xl space-y-8">
           <header>
             <h1 className="text-3xl font-bold">
-              tRPC WebSocket + MessagePack Serializer
+              tRPC WebSocket + MessagePack Encoder
             </h1>
             <p className="mt-2 text-gray-400">
               This example demonstrates using MessagePack binary serialization

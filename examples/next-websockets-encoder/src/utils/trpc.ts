@@ -9,7 +9,7 @@ import { createTRPCNext } from '@trpc/next';
 import { ssrPrepass } from '@trpc/next/ssrPrepass';
 import type { NextPageContext } from 'next';
 import type { AppRouter } from '~/server/routers/_app';
-import { msgpackSerializer } from './serializer';
+import { msgpackEncoder } from './encoder';
 
 const WS_URL = 'ws://localhost:3001';
 const APP_URL = 'http://localhost:3000';
@@ -29,7 +29,7 @@ function getEndingLink(ctx: NextPageContext | undefined): TRPCLink<AppRouter> {
 
   const client = createWSClient({
     url: WS_URL,
-    experimental_serializer: msgpackSerializer,
+    experimental_encoder: msgpackEncoder,
   });
 
   return wsLink({ client });
