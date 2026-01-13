@@ -58,7 +58,7 @@ export interface WebSocketClientOptions extends UrlOptionsWithConnectionParams {
     pongTimeoutMs?: number;
   };
   /**
-   * Custom encoder for wire encoding (e.g., MessagePack for binary)
+   * Custom encoder for wire encoding (e.g. custom binary formats)
    * @default jsonEncoder
    */
   experimental_encoder?: Encoder;
