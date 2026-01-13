@@ -449,7 +449,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       });
     }
     client.on('message', (rawData, isBinary) => {
-      // Handle PING/PONG as text regardless of serializer
+      // Handle PING/PONG as text regardless of encoder
       if (!isBinary) {
         // eslint-disable-next-line @typescript-eslint/no-base-to-string
         const msgStr = rawData.toString();
@@ -464,7 +464,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         }
       }
 
-      // Convert rawData to a format our serializer accepts
+      // Convert rawData to a format our encoder accepts
       // ws gives us Buffer for both text and binary frames
       if (!Buffer.isBuffer(rawData)) {
         const error = new TRPCError({
