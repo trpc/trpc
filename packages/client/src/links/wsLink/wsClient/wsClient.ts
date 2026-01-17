@@ -320,7 +320,7 @@ export class WsClient {
       this.inactivityTimeout.reset();
 
       // Handle PING/PONG as text regardless of encoder
-      if (typeof data === 'string' && ['PING', 'PONG'].includes(data)) return;
+      if (['PING', 'PONG'].includes(data)) return;
 
       const incomingMessage = this.encoder.decode(
         data,
