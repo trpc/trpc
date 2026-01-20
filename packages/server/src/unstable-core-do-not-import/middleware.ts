@@ -109,7 +109,11 @@ export type MiddlewareFunction<
       <$ContextOverride extends object | undefined = undefined>(opts: {
         ctx?: $ContextOverride;
         input?: unknown;
-      }): Promise<MiddlewareResult<Overwrite<TContextOverridesIn, EnsureObject<$ContextOverride>>>>;
+      }): Promise<
+        MiddlewareResult<
+          Overwrite<TContextOverridesIn, EnsureObject<$ContextOverride>>
+        >
+      >;
       (opts: {
         getRawInput: GetRawInputFn;
       }): Promise<MiddlewareResult<TContextOverridesIn>>;
@@ -118,8 +122,19 @@ export type MiddlewareFunction<
   _type?: string | undefined;
 };
 
-export type AnyMiddlewareFunction = MiddlewareFunction<unknown, unknown, unknown, unknown, unknown>;
-export type AnyMiddlewareBuilder = MiddlewareBuilder<unknown, unknown, unknown, unknown>;
+export type AnyMiddlewareFunction = MiddlewareFunction<
+  unknown,
+  unknown,
+  unknown,
+  unknown,
+  unknown
+>;
+export type AnyMiddlewareBuilder = MiddlewareBuilder<
+  unknown,
+  unknown,
+  unknown,
+  unknown
+>;
 /**
  * @internal
  */
