@@ -41,6 +41,11 @@ The best way to start with the Fastify adapter is to take a look at the example 
 ```bash
 yarn add @trpc/server fastify zod
 ```
+> ⚠️ **Fastify version requirement**
+>
+> The tRPC v11 Fastify adapter requires **Fastify v5+**.
+> Using Fastify v4 may cause requests to return empty responses without errors.
+
 
 > [Zod](https://github.com/colinhacks/zod) isn't a required dependency, but it's used in the sample router below.
 
