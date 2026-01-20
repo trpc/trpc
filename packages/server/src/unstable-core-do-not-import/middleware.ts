@@ -118,8 +118,8 @@ export type MiddlewareFunction<
   _type?: string | undefined;
 };
 
-export type AnyMiddlewareFunction = MiddlewareFunction<unknown, unknown, unknown, unknown, unknown>;
-export type AnyMiddlewareBuilder = MiddlewareBuilder<unknown, unknown, unknown, unknown>;
+export type AnyMiddlewareFunction = MiddlewareFunction<any, any, any, any, any>;
+export type AnyMiddlewareBuilder = MiddlewareBuilder<any, any, any, any>;
 /**
  * @internal
  */
