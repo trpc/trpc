@@ -4,6 +4,9 @@ import type { ProcedureType } from './procedure';
 import type { GetRawInputFn, Overwrite, Simplify } from './types';
 import { isObject } from './utils';
 
+// Helper to ensure a type is an object; falls back to `unknown` otherwise
+type EnsureObject<T> = [T] extends [object] ? T : unknown;
+
 /** @internal */
 export const middlewareMarker = 'middlewareMarker' as 'middlewareMarker' & {
   __brand: 'middlewareMarker';
@@ -78,7 +81,7 @@ export interface MiddlewareBuilder<
     TContext,
     TMeta,
     TContextOverrides,
-    object,
+    unknown,
     TInputOut
   >[];
 }
@@ -103,10 +106,10 @@ export type MiddlewareFunction<
     signal: AbortSignal | undefined;
     next: {
       (): Promise<MiddlewareResult<TContextOverridesIn>>;
-      <$ContextOverride>(opts: {
+      <$ContextOverride extends object | undefined = undefined>(opts: {
         ctx?: $ContextOverride;
         input?: unknown;
-      }): Promise<MiddlewareResult<$ContextOverride>>;
+      }): Promise<MiddlewareResult<Overwrite<TContextOverridesIn, EnsureObject<$ContextOverride>>>>;
       (opts: {
         getRawInput: GetRawInputFn;
       }): Promise<MiddlewareResult<TContextOverridesIn>>;
@@ -115,8 +118,8 @@ export type MiddlewareFunction<
   _type?: string | undefined;
 };
 
-export type AnyMiddlewareFunction = MiddlewareFunction<any, any, any, any, any>;
-export type AnyMiddlewareBuilder = MiddlewareBuilder<any, any, any, any>;
+export type AnyMiddlewareFunction = MiddlewareFunction<unknown, unknown, unknown, unknown, unknown>;
+export type AnyMiddlewareBuilder = MiddlewareBuilder<unknown, unknown, unknown, unknown>;
 /**
  * @internal
  */
