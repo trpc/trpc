@@ -473,7 +473,7 @@ export function createCallerFactory<
           if (path.length === 1 && path[0] === '_def') {
             return _def;
           }
-          
+
           const fullPathWithCallType = path.join('.');
           let callerCallType = callerCallTypeToProcedureType(
             path[path.length - 1] ?? '',
