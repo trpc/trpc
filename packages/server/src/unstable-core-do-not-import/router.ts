@@ -405,7 +405,10 @@ export async function getProcedureAtPath(
     if (!key) {
       return null;
     }
-    const lazyRouter = _def.lazy[key]!;
+    const lazyRouter = _def.lazy[key];
+    if (!lazyRouter) {
+      return null;
+    }
     await lazyRouter.load();
 
     procedure = _def.procedures[path];
