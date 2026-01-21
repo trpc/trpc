@@ -245,16 +245,15 @@ const reservedWords = [
   'apply',
 ];
 
-const callerCallTypeMap: Record<string, ProcedureType | undefined> = {
-  query: 'query',
-  mutate: 'mutation',
-  subscribe: 'subscription',
-};
+const callerCallTypeMap = new Map<string, ProcedureType>([
+  ['query', 'query'],
+  ['mutate', 'mutation'],
+  ['subscribe', 'subscription'],
+]);
 
 const callerCallTypeToProcedureType = (
   callerCallType: string,
-): ProcedureType | undefined => callerCallTypeMap[callerCallType];
-
+): ProcedureType | undefined => callerCallTypeMap.get(callerCallType);
 /** @internal */
 export type CreateRouterOptions = {
   [key: string]:
