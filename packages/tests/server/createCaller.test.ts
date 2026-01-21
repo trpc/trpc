@@ -47,7 +47,7 @@ describe('with context', () => {
   });
 });
 describe('with async context', () => {
-  /** 
+  /**
    * Test helper that simulates creating an async context object
    * for server-side caller usage.
    */
