@@ -8,6 +8,7 @@ import type {
   inferProcedureInput,
   inferProcedureOutput,
   LegacyObservableSubscriptionProcedure,
+  ProcedureType,
 } from './procedure';
 import type { ProcedureCallOptions } from './procedureBuilder';
 import type { AnyRootTypes, RootConfig } from './rootConfig';
@@ -24,7 +25,17 @@ export interface RouterRecord {
   [key: string]: AnyProcedure | RouterRecord;
 }
 
-type DecorateProcedure<TProcedure extends AnyProcedure> = (
+// type DecorateProcedure<TProcedure extends AnyProcedure> = (
+//   input: inferProcedureInput<TProcedure>,
+// ) => Promise<
+//   TProcedure['_def']['type'] extends 'subscription'
+//     ? TProcedure extends LegacyObservableSubscriptionProcedure<any>
+//       ? Observable<inferProcedureOutput<TProcedure>, TRPCError>
+//       : inferProcedureOutput<TProcedure>
+//     : inferProcedureOutput<TProcedure>
+// >;
+
+type DecorateProcedureResolver<TProcedure extends AnyProcedure> = (
   input: inferProcedureInput<TProcedure>,
 ) => Promise<
   TProcedure['_def']['type'] extends 'subscription'
@@ -33,6 +44,18 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = (
       : inferProcedureOutput<TProcedure>
     : inferProcedureOutput<TProcedure>
 >;
+
+type CallerMethodNameForProcedure<TProcedure extends AnyProcedure> =
+  TProcedure['_def']['type'] extends 'query'
+    ? 'query'
+    : TProcedure['_def']['type'] extends 'mutation'
+      ? 'mutate'
+      : 'subscribe';
+
+type DecorateProcedure<TProcedure extends AnyProcedure> =
+  DecorateProcedureResolver<TProcedure> & {
+    [TKey in CallerMethodNameForProcedure<TProcedure>]: DecorateProcedureResolver<TProcedure>;
+  };
 
 /**
  * @internal
@@ -219,6 +242,15 @@ const reservedWords = [
   'call',
   'apply',
 ];
+
+const callerCallTypeMap: Record<string, ProcedureType | undefined> = {
+  query: 'query',
+  mutate: 'mutation',
+  subscribe: 'subscription',
+};
+
+const callerCallTypeToProcedureType = (callerCallType: string): ProcedureType | undefined =>
+  callerCallTypeMap[callerCallType];
 
 /** @internal */
 export type CreateRouterOptions = {
@@ -451,11 +483,23 @@ export function createCallerFactory<
       return createRecursiveProxy<ReturnType<RouterCaller<any, any>>>(
         async (innerOpts) => {
           const { path, args } = innerOpts;
-          const fullPath = path.join('.');
+          // const fullPath = path.join('.');
 
           if (path.length === 1 && path[0] === '_def') {
             return _def;
           }
+
+          const callerCallType = callerCallTypeToProcedureType(
+            path[path.length - 1] ?? '',
+          );
+
+          const pathWithoutCallType =
+            callerCallType === undefined ? path : path.slice(0, -1);
+          const fullPath = pathWithoutCallType.join('.');
+
+          // if (path.length === 1 && path[0] === '_def') {
+          //   return _def;
+          // }
 
           const procedure = await getProcedureAtPath(router, fullPath);
 
@@ -467,6 +511,15 @@ export function createCallerFactory<
                 message: `No procedure found on path "${path}"`,
               });
             }
+
+            const procedureType = callerCallType ?? procedure._def.type;
+            if (procedure._def.type !== procedureType) {
+              throw new TRPCError({
+                code: 'METHOD_NOT_SUPPORTED',
+                message: `No "${procedureType}"-procedure on path "${fullPath}"`,
+              });
+            }
+
             ctx = isFunction(ctxOrCallback)
               ? await Promise.resolve(ctxOrCallback())
               : ctxOrCallback;
@@ -475,7 +528,8 @@ export function createCallerFactory<
               path: fullPath,
               getRawInput: async () => args[0],
               ctx,
-              type: procedure._def.type,
+              // type: procedure._def.type,
+              type: procedureType,
               signal: opts?.signal,
             });
           } catch (cause) {
@@ -484,7 +538,8 @@ export function createCallerFactory<
               error: getTRPCErrorFromUnknown(cause),
               input: args[0],
               path: fullPath,
-              type: procedure?._def.type ?? 'unknown',
+              // type: procedure?._def.type ?? 'unknown',
+              type: procedure?._def.type ?? callerCallType ?? 'unknown',
             });
             throw cause;
           }

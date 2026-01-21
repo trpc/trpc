@@ -178,6 +178,32 @@ test('input query', async () => {
   expectTypeOf<string>(result);
 });
 
+test('caller exposes query/mutate/subscribe entrypoints', async () => {
+  const onDelete = vi.fn();
+  const router = t.router({
+    greeting: t.procedure.query(() => 'hi'),
+    post: t.procedure.input(z.number()).mutation(({ input }) => input + 1),
+    onDelete: t.procedure.subscription(onDelete),
+  });
+
+  const caller = router.createCaller({});
+  expect(await caller.greeting.query()).toBe('hi');
+  expect(await caller.post.mutate(41)).toBe(42);
+  await caller.onDelete.subscribe();
+  expect(onDelete).toHaveBeenCalledTimes(1);
+});
+
+test('caller call type must match procedure type', async () => {
+  const router = t.router({
+    greeting: t.procedure.query(() => 'hi'),
+  });
+
+  const caller = router.createCaller({});
+  // const err = await waitError(caller.greeting.mutate(), TRPCError);
+  const err = await waitError((caller.greeting as any).mutate(), TRPCError);
+  expect(err.code).toBe('METHOD_NOT_SUPPORTED');
+});
+
 test('input mutation', async () => {
   const posts = ['One', 'Two', 'Three'];
 
