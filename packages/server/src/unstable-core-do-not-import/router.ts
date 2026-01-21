@@ -249,8 +249,9 @@ const callerCallTypeMap: Record<string, ProcedureType | undefined> = {
   subscribe: 'subscription',
 };
 
-const callerCallTypeToProcedureType = (callerCallType: string): ProcedureType | undefined =>
-  callerCallTypeMap[callerCallType];
+const callerCallTypeToProcedureType = (
+  callerCallType: string,
+): ProcedureType | undefined => callerCallTypeMap[callerCallType];
 
 /** @internal */
 export type CreateRouterOptions = {
