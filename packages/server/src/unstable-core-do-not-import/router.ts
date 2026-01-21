@@ -100,6 +100,10 @@ type LazyLoader<TAny> = {
   ref: Lazy<TAny>;
 };
 
+/**
+ * Memoizes a function so it runs once and caches its result for subsequent calls.
+ * @internal
+ */
 function once<T>(fn: () => T): () => T {
   const uncalled = Symbol();
   let result: T | typeof uncalled = uncalled;
@@ -147,6 +151,10 @@ export function lazy<TRouter extends AnyRouter>(
   return resolve as Lazy<NoInfer<TRouter>>;
 }
 
+/**
+ * Type guard for lazily loaded router references created by {@link lazy}.
+ * @internal
+ */
 function isLazy<TAny>(input: unknown): input is Lazy<TAny> {
   return typeof input === 'function' && lazyMarker in input;
 }
@@ -200,6 +208,10 @@ export type inferRouterError<TRouter extends AnyRouter> =
 export type inferRouterMeta<TRouter extends AnyRouter> =
   inferRouterRootTypes<TRouter>['meta'];
 
+/**
+ * Type guard that checks whether a value is a tRPC router instance.
+ * @internal
+ */
 function isRouter(value: unknown): value is AnyRouter {
   return (
     isObject(value) && isObject(value['_def']) && 'router' in value['_def']
@@ -460,6 +472,12 @@ export interface RouterCallerFactory<TRoot extends AnyRootTypes> {
   ): RouterCaller<TRoot, TRecord>;
 }
 
+/**
+ * Creates a caller factory that can invoke procedures directly (server-side calls)
+ * using a proxy (e.g. `caller.post.list()`), with optional call-type entrypoints
+ * (e.g. `caller.post.list.query()`).
+ * @internal
+ */
 export function createCallerFactory<
   TRoot extends AnyRootTypes,
 >(): RouterCallerFactory<TRoot> {
@@ -545,6 +563,10 @@ export type MergeRouters<
   ? MergeRouters<Tail, TRoot, Head['_def']['record'] & TRecord>
   : BuiltRouter<TRoot, TRecord>;
 
+/**
+ * Merges multiple routers into one router while preserving the combined record types.
+ * @internal
+ */
 export function mergeRouters<TRouters extends AnyRouter[]>(
   ...routerList: [...TRouters]
 ): MergeRouters<TRouters> {
