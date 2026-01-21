@@ -1,7 +1,4 @@
 import type { Observable } from '../observable';
-import { createRecursiveProxy } from './createProxy';
-import { defaultFormatter } from './error/formatter';
-import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
   AnyProcedure,
   ErrorHandlerOptions,
@@ -12,8 +9,11 @@ import type {
 } from './procedure';
 import type { ProcedureCallOptions } from './procedureBuilder';
 import type { AnyRootTypes, RootConfig } from './rootConfig';
-import { defaultTransformer } from './transformer';
 import type { MaybePromise, ValueOf } from './types';
+import { createRecursiveProxy } from './createProxy';
+import { defaultFormatter } from './error/formatter';
+import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
+import { defaultTransformer } from './transformer';
 import {
   emptyObject,
   isFunction,
@@ -249,9 +249,8 @@ const callerCallTypeMap: Record<string, ProcedureType | undefined> = {
   subscribe: 'subscription',
 };
 
-const callerCallTypeToProcedureType = (
-  callerCallType: string,
-): ProcedureType | undefined => callerCallTypeMap[callerCallType];
+const callerCallTypeToProcedureType = (callerCallType: string): ProcedureType | undefined =>
+  callerCallTypeMap[callerCallType];
 
 /** @internal */
 export type CreateRouterOptions = {
@@ -490,20 +489,32 @@ export function createCallerFactory<
             return _def;
           }
 
-          const callerCallType = callerCallTypeToProcedureType(
+          // const callerCallType = callerCallTypeToProcedureType(
+          //   path[path.length - 1] ?? '',
+          // );
+
+          // const pathWithoutCallType =
+          //   callerCallType === undefined ? path : path.slice(0, -1);
+          // const fullPath = pathWithoutCallType.join('.');
+
+          // // if (path.length === 1 && path[0] === '_def') {
+          // //   return _def;
+          // // }
+
+          // const procedure = await getProcedureAtPath(router, fullPath);
+
+          const fullPathWithCallType = path.join('.');
+          let callerCallType = callerCallTypeToProcedureType(
             path[path.length - 1] ?? '',
           );
-
-          const pathWithoutCallType =
-            callerCallType === undefined ? path : path.slice(0, -1);
-          const fullPath = pathWithoutCallType.join('.');
-
-          // if (path.length === 1 && path[0] === '_def') {
-          //   return _def;
-          // }
-
-          const procedure = await getProcedureAtPath(router, fullPath);
-
+          let fullPath = fullPathWithCallType;
+          let procedure = await getProcedureAtPath(router, fullPath);
+          if (!procedure && callerCallType !== undefined) {
+            fullPath = path.slice(0, -1).join('.');
+            procedure = await getProcedureAtPath(router, fullPath);
+          } else {
+            callerCallType = undefined;
+          }
           let ctx: Context | undefined = undefined;
           try {
             if (!procedure) {
