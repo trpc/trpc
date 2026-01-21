@@ -25,16 +25,6 @@ export interface RouterRecord {
   [key: string]: AnyProcedure | RouterRecord;
 }
 
-// type DecorateProcedure<TProcedure extends AnyProcedure> = (
-//   input: inferProcedureInput<TProcedure>,
-// ) => Promise<
-//   TProcedure['_def']['type'] extends 'subscription'
-//     ? TProcedure extends LegacyObservableSubscriptionProcedure<any>
-//       ? Observable<inferProcedureOutput<TProcedure>, TRPCError>
-//       : inferProcedureOutput<TProcedure>
-//     : inferProcedureOutput<TProcedure>
-// >;
-
 type DecorateProcedureResolver<TProcedure extends AnyProcedure> = (
   input: inferProcedureInput<TProcedure>,
 ) => Promise<
@@ -323,7 +313,6 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
           )) {
             const nestedRouterKey = [...lazyPath, nestedKey].join('.');
 
-            // console.log('adding lazy', nestedRouterKey);
             lazy[nestedRouterKey] = createLazyLoader({
               ref: nestedItem.ref,
               path: lazyPath,
@@ -411,13 +400,10 @@ export async function getProcedureAtPath(
 
   while (!procedure) {
     const key = Object.keys(_def.lazy).find((key) => path.startsWith(key));
-    // console.log(`found lazy: ${key ?? 'NOPE'} (fullPath: ${fullPath})`);
 
     if (!key) {
       return null;
     }
-    // console.log('loading', key, '.......');
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const lazyRouter = _def.lazy[key]!;
     await lazyRouter.load();
 
@@ -483,26 +469,10 @@ export function createCallerFactory<
       return createRecursiveProxy<ReturnType<RouterCaller<any, any>>>(
         async (innerOpts) => {
           const { path, args } = innerOpts;
-          // const fullPath = path.join('.');
-
           if (path.length === 1 && path[0] === '_def') {
             return _def;
           }
-
-          // const callerCallType = callerCallTypeToProcedureType(
-          //   path[path.length - 1] ?? '',
-          // );
-
-          // const pathWithoutCallType =
-          //   callerCallType === undefined ? path : path.slice(0, -1);
-          // const fullPath = pathWithoutCallType.join('.');
-
-          // // if (path.length === 1 && path[0] === '_def') {
-          // //   return _def;
-          // // }
-
-          // const procedure = await getProcedureAtPath(router, fullPath);
-
+          
           const fullPathWithCallType = path.join('.');
           let callerCallType = callerCallTypeToProcedureType(
             path[path.length - 1] ?? '',
@@ -520,7 +490,7 @@ export function createCallerFactory<
             if (!procedure) {
               throw new TRPCError({
                 code: 'NOT_FOUND',
-                message: `No procedure found on path "${path}"`,
+                message: `No procedure found on path "${fullPath}"`,
               });
             }
 
@@ -540,7 +510,6 @@ export function createCallerFactory<
               path: fullPath,
               getRawInput: async () => args[0],
               ctx,
-              // type: procedure._def.type,
               type: procedureType,
               signal: opts?.signal,
             });
@@ -550,7 +519,6 @@ export function createCallerFactory<
               error: getTRPCErrorFromUnknown(cause),
               input: args[0],
               path: fullPath,
-              // type: procedure?._def.type ?? 'unknown',
               type: procedure?._def.type ?? callerCallType ?? 'unknown',
             });
             throw cause;
