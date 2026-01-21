@@ -1,7 +1,4 @@
 import type { Observable } from '../observable';
-import { createRecursiveProxy } from './createProxy';
-import { defaultFormatter } from './error/formatter';
-import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
   AnyProcedure,
   ErrorHandlerOptions,
@@ -12,8 +9,11 @@ import type {
 } from './procedure';
 import type { ProcedureCallOptions } from './procedureBuilder';
 import type { AnyRootTypes, RootConfig } from './rootConfig';
-import { defaultTransformer } from './transformer';
 import type { MaybePromise, ValueOf } from './types';
+import { createRecursiveProxy } from './createProxy';
+import { defaultFormatter } from './error/formatter';
+import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
+import { defaultTransformer } from './transformer';
 import {
   emptyObject,
   isFunction,
