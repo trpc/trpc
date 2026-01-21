@@ -507,6 +507,7 @@ export function createCallerFactory<
             callerCallType = undefined;
           }
           let ctx: Context | undefined = undefined;
+          let resolvedProcedureType: ProcedureType | undefined = callerCallType;
           try {
             if (!procedure) {
               throw new TRPCError({
@@ -516,6 +517,7 @@ export function createCallerFactory<
             }
 
             const procedureType = callerCallType ?? procedure._def.type;
+            resolvedProcedureType = procedureType;
             if (procedure._def.type !== procedureType) {
               throw new TRPCError({
                 code: 'METHOD_NOT_SUPPORTED',
@@ -540,7 +542,7 @@ export function createCallerFactory<
               error: getTRPCErrorFromUnknown(cause),
               input: args[0],
               path: fullPath,
-              type: procedure?._def.type ?? callerCallType ?? 'unknown',
+              type: resolvedProcedureType ?? procedure?._def.type ?? 'unknown',
             });
             throw cause;
           }
