@@ -47,6 +47,10 @@ describe('with context', () => {
   });
 });
 describe('with async context', () => {
+  /** 
+   * Test helper that simulates creating an async context object
+   * for server-side caller usage.
+   */
   const createContext = async () => {
     return {
       userId: '1',
@@ -83,6 +87,10 @@ describe('with async context', () => {
   });
 
   test('mismatching return type', async () => {
+    /**
+     * Intentionally invalid context creator used to assert
+     * type-safety of the caller factory.
+     */
     const badCreateContext = async () => 'foo' as const;
     // @ts-expect-error - Type '() => Promise<"foo">' is not assignable to type '() => Promise<{ userId: string; }>'.
     createCaller(badCreateContext);
@@ -199,7 +207,6 @@ test('caller call type must match procedure type', async () => {
   });
 
   const caller = router.createCaller({});
-  // const err = await waitError(caller.greeting.mutate(), TRPCError);
   const err = await waitError((caller.greeting as any).mutate(), TRPCError);
   expect(err.code).toBe('METHOD_NOT_SUPPORTED');
 });
@@ -234,6 +241,10 @@ test('input subscription', async () => {
 });
 
 test('context with middleware', async () => {
+  /**
+   * Simple auth middleware used to ensure that the caller
+   * respects context-based authorization logic.
+   */
   const isAuthed = t.middleware(({ next, ctx }) => {
     if (!ctx.foo) {
       throw new TRPCError({
