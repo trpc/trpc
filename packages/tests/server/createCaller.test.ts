@@ -204,11 +204,26 @@ test('caller exposes query/mutate/subscribe entrypoints', async () => {
 test('caller call type must match procedure type', async () => {
   const router = t.router({
     greeting: t.procedure.query(() => 'hi'),
+    createPost: t.procedure.input(z.string()).mutation((opts) => opts.input),
   });
 
   const caller = router.createCaller({});
-  const err = await waitError((caller.greeting as any).mutate(), TRPCError);
-  expect(err.code).toBe('METHOD_NOT_SUPPORTED');
+  
+  // Test calling .mutate() on a query procedure
+  const err1 = await waitError((caller.greeting as any).mutate(), TRPCError);
+  expect(err1.code).toBe('METHOD_NOT_SUPPORTED');
+  
+  // Test calling .query() on a mutation procedure
+  const err2 = await waitError((caller.createPost as any).query('test'), TRPCError);
+  expect(err2.code).toBe('METHOD_NOT_SUPPORTED');
+  
+  // Test calling .subscribe() on a query procedure
+  const err3 = await waitError((caller.greeting as any).subscribe(), TRPCError);
+  expect(err3.code).toBe('METHOD_NOT_SUPPORTED');
+  
+  // Test calling .subscribe() on a mutation procedure
+  const err4 = await waitError((caller.createPost as any).subscribe('test'), TRPCError);
+  expect(err4.code).toBe('METHOD_NOT_SUPPORTED');
 });
 
 test('input mutation', async () => {
