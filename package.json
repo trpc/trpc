@@ -38,7 +38,7 @@
   },
   "dependencies": {
     "@actions/core": "^2.0.0",
-    "@actions/github": "^7.0.0",
+    "@actions/github": "^9.0.0",
     "@eslint/compat": "^2.0.0",
     "@ianvs/prettier-plugin-sort-imports": "^4.4.0",
     "@manypkg/cli": "^0.22.0",
