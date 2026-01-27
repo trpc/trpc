@@ -1,3 +1,5 @@
+import type { Encoder } from './wsClient/encoder';
+import { jsonEncoder } from './wsClient/encoder';
 import type { WebSocketClientOptions } from './wsClient/options';
 import { WsClient } from './wsClient/wsClient';
 
@@ -7,4 +9,4 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
 export type TRPCWebSocketClient = ReturnType<typeof createWSClient>;
 
-export { WebSocketClientOptions };
+export { jsonEncoder, type Encoder, type WebSocketClientOptions };
