@@ -39,6 +39,8 @@ import type { Result } from '../unstable-core-do-not-import';
 import { iteratorResource } from '../unstable-core-do-not-import/stream/utils/asyncIterable';
 import { Unpromise } from '../vendor/unpromise';
 import { createURL, type NodeHTTPCreateContextFnOptions } from './node-http';
+import type { Encoder } from './wsEncoder';
+import { jsonEncoder } from './wsEncoder';
 
 /**
  * Importing ws causes a build error
@@ -98,6 +100,11 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> =
      * @default false
      */
     dangerouslyDisablePong?: boolean;
+    /**
+     * Custom encoder for wire encoding (e.g. custom binary formats)
+     * @default jsonEncoder
+     */
+    experimental_encoder?: Encoder;
   };
 
 export function getWSConnectionHandler<TRouter extends AnyRouter>(
@@ -105,6 +112,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 ) {
   const { createContext, router } = opts;
   const { transformer } = router._def._config;
+  const encoder = opts.experimental_encoder ?? jsonEncoder;
 
   return (client: ws.WebSocket, req: IncomingMessage) => {
     type Context = inferRouterContext<TRouter>;
@@ -120,7 +128,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 
     function respond(untransformedJSON: TRPCResponseMessage) {
       client.send(
-        JSON.stringify(
+        encoder.encode(
           transformTRPCResponse(router._def._config, untransformedJSON),
         ),
       );
@@ -440,24 +448,52 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         });
       });
     }
-    client.on('message', (rawData) => {
-      // eslint-disable-next-line @typescript-eslint/no-base-to-string
-      const msgStr = rawData.toString();
-      if (msgStr === 'PONG') {
-        return;
-      }
-      if (msgStr === 'PING') {
-        if (!opts.dangerouslyDisablePong) {
-          client.send('PONG');
+    client.on('message', (rawData, isBinary) => {
+      // Handle PING/PONG as text regardless of encoder
+      if (!isBinary) {
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string
+        const msgStr = rawData.toString();
+        if (msgStr === 'PONG') {
+          return;
         }
+        if (msgStr === 'PING') {
+          if (!opts.dangerouslyDisablePong) {
+            client.send('PONG');
+          }
+          return;
+        }
+      }
+
+      // Convert rawData to a format our encoder accepts
+      // ws gives us Buffer for both text and binary frames
+      if (!Buffer.isBuffer(rawData)) {
+        const error = new TRPCError({
+          code: 'UNPROCESSABLE_CONTENT',
+          message: 'Unexpected WebSocket message format',
+        });
+        respond({
+          id: null,
+          error: getErrorShape({
+            config: router._def._config,
+            error,
+            type: 'unknown',
+            path: undefined,
+            input: undefined,
+            ctx,
+          }),
+        });
         return;
       }
+      const data: string | Uint8Array = isBinary
+        ? rawData
+        : rawData.toString('utf8');
+
       if (!ctxPromise) {
         // If the ctxPromise wasn't created immediately, we're expecting the first message to be a TRPCConnectionParamsMessage
         ctxPromise = createCtxPromise(() => {
           let msg;
           try {
-            msg = JSON.parse(msgStr) as TRPCConnectionParamsMessage;
+            msg = encoder.decode(data) as TRPCConnectionParamsMessage;
 
             if (!isObject(msg)) {
               throw new Error('Message was not an object');
@@ -479,7 +515,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 
       const parsedMsgs = run(() => {
         try {
-          const msgJSON: unknown = JSON.parse(msgStr);
+          const msgJSON: unknown = encoder.decode(data);
           const msgs: unknown[] = Array.isArray(msgJSON) ? msgJSON : [msgJSON];
 
           return msgs.map((raw) => parseTRPCMessage(raw, transformer));
@@ -577,6 +613,7 @@ export function handleKeepAlive(
 export function applyWSSHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
 ) {
+  const encoder = opts.experimental_encoder ?? jsonEncoder;
   const onConnection = getWSConnectionHandler(opts);
   opts.wss.on('connection', (client, req) => {
     if (opts.prefix && !req.url?.startsWith(opts.prefix)) {
@@ -592,7 +629,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         id: null,
         method: 'reconnect',
       };
-      const data = JSON.stringify(response);
+      const data = encoder.encode(response);
       for (const client of opts.wss.clients) {
         if (client.readyState === WEBSOCKET_OPEN) {
           client.send(data);
@@ -601,3 +638,6 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
     },
   };
 }
+
+export type { Encoder } from './wsEncoder';
+export { jsonEncoder } from './wsEncoder';
