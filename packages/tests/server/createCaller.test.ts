@@ -47,6 +47,10 @@ describe('with context', () => {
   });
 });
 describe('with async context', () => {
+  /**
+   * Test helper that simulates creating an async context object
+   * for server-side caller usage.
+   */
   const createContext = async () => {
     return {
       userId: '1',
@@ -83,6 +87,10 @@ describe('with async context', () => {
   });
 
   test('mismatching return type', async () => {
+    /**
+     * Intentionally invalid context creator used to assert
+     * type-safety of the caller factory.
+     */
     const badCreateContext = async () => 'foo' as const;
     // @ts-expect-error - Type '() => Promise<"foo">' is not assignable to type '() => Promise<{ userId: string; }>'.
     createCaller(badCreateContext);
@@ -178,6 +186,52 @@ test('input query', async () => {
   expectTypeOf<string>(result);
 });
 
+test('caller exposes query/mutate/subscribe entrypoints', async () => {
+  const onDelete = vi.fn();
+  const router = t.router({
+    greeting: t.procedure.query(() => 'hi'),
+    post: t.procedure.input(z.number()).mutation(({ input }) => input + 1),
+    onDelete: t.procedure.subscription(onDelete),
+  });
+
+  const caller = router.createCaller({});
+  expect(await caller.greeting.query()).toBe('hi');
+  expect(await caller.post.mutate(41)).toBe(42);
+  await caller.onDelete.subscribe();
+  expect(onDelete).toHaveBeenCalledTimes(1);
+});
+
+test('caller call type must match procedure type', async () => {
+  const router = t.router({
+    greeting: t.procedure.query(() => 'hi'),
+    createPost: t.procedure.input(z.string()).mutation((opts) => opts.input),
+  });
+
+  const caller = router.createCaller({});
+
+  // Test calling .mutate() on a query procedure
+  const err1 = await waitError((caller.greeting as any).mutate(), TRPCError);
+  expect(err1.code).toBe('METHOD_NOT_SUPPORTED');
+
+  // Test calling .query() on a mutation procedure
+  const err2 = await waitError(
+    (caller.createPost as any).query('test'),
+    TRPCError,
+  );
+  expect(err2.code).toBe('METHOD_NOT_SUPPORTED');
+
+  // Test calling .subscribe() on a query procedure
+  const err3 = await waitError((caller.greeting as any).subscribe(), TRPCError);
+  expect(err3.code).toBe('METHOD_NOT_SUPPORTED');
+
+  // Test calling .subscribe() on a mutation procedure
+  const err4 = await waitError(
+    (caller.createPost as any).subscribe('test'),
+    TRPCError,
+  );
+  expect(err4.code).toBe('METHOD_NOT_SUPPORTED');
+});
+
 test('input mutation', async () => {
   const posts = ['One', 'Two', 'Three'];
 
@@ -208,6 +262,10 @@ test('input subscription', async () => {
 });
 
 test('context with middleware', async () => {
+  /**
+   * Simple auth middleware used to ensure that the caller
+   * respects context-based authorization logic.
+   */
   const isAuthed = t.middleware(({ next, ctx }) => {
     if (!ctx.foo) {
       throw new TRPCError({
