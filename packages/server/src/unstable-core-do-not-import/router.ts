@@ -8,6 +8,7 @@ import type {
   inferProcedureInput,
   inferProcedureOutput,
   LegacyObservableSubscriptionProcedure,
+  ProcedureType,
 } from './procedure';
 import type { ProcedureCallOptions } from './procedureBuilder';
 import type { AnyRootTypes, RootConfig } from './rootConfig';
@@ -24,7 +25,7 @@ export interface RouterRecord {
   [key: string]: AnyProcedure | RouterRecord;
 }
 
-type DecorateProcedure<TProcedure extends AnyProcedure> = (
+type DecorateProcedureResolver<TProcedure extends AnyProcedure> = (
   input: inferProcedureInput<TProcedure>,
 ) => Promise<
   TProcedure['_def']['type'] extends 'subscription'
@@ -33,6 +34,18 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = (
       : inferProcedureOutput<TProcedure>
     : inferProcedureOutput<TProcedure>
 >;
+
+type CallerMethodNameForProcedure<TProcedure extends AnyProcedure> =
+  TProcedure['_def']['type'] extends 'query'
+    ? 'query'
+    : TProcedure['_def']['type'] extends 'mutation'
+      ? 'mutate'
+      : 'subscribe';
+
+type DecorateProcedure<TProcedure extends AnyProcedure> =
+  DecorateProcedureResolver<TProcedure> & {
+    [TKey in CallerMethodNameForProcedure<TProcedure>]: DecorateProcedureResolver<TProcedure>;
+  };
 
 /**
  * @internal
@@ -87,6 +100,10 @@ type LazyLoader<TAny> = {
   ref: Lazy<TAny>;
 };
 
+/**
+ * Memoizes a function so it runs once and caches its result for subsequent calls.
+ * @internal
+ */
 function once<T>(fn: () => T): () => T {
   const uncalled = Symbol();
   let result: T | typeof uncalled = uncalled;
@@ -134,6 +151,10 @@ export function lazy<TRouter extends AnyRouter>(
   return resolve as Lazy<NoInfer<TRouter>>;
 }
 
+/**
+ * Type guard for lazily loaded router references created by {@link lazy}.
+ * @internal
+ */
 function isLazy<TAny>(input: unknown): input is Lazy<TAny> {
   return typeof input === 'function' && lazyMarker in input;
 }
@@ -187,6 +208,10 @@ export type inferRouterError<TRouter extends AnyRouter> =
 export type inferRouterMeta<TRouter extends AnyRouter> =
   inferRouterRootTypes<TRouter>['meta'];
 
+/**
+ * Type guard that checks whether a value is a tRPC router instance.
+ * @internal
+ */
 function isRouter(value: unknown): value is AnyRouter {
   return (
     isObject(value) && isObject(value['_def']) && 'router' in value['_def']
@@ -220,6 +245,15 @@ const reservedWords = [
   'apply',
 ];
 
+const callerCallTypeMap = new Map<string, ProcedureType>([
+  ['query', 'query'],
+  ['mutate', 'mutation'],
+  ['subscribe', 'subscription'],
+]);
+
+const callerCallTypeToProcedureType = (
+  callerCallType: string,
+): ProcedureType | undefined => callerCallTypeMap.get(callerCallType);
 /** @internal */
 export type CreateRouterOptions = {
   [key: string]:
@@ -291,7 +325,6 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
           )) {
             const nestedRouterKey = [...lazyPath, nestedKey].join('.');
 
-            // console.log('adding lazy', nestedRouterKey);
             lazy[nestedRouterKey] = createLazyLoader({
               ref: nestedItem.ref,
               path: lazyPath,
@@ -379,14 +412,14 @@ export async function getProcedureAtPath(
 
   while (!procedure) {
     const key = Object.keys(_def.lazy).find((key) => path.startsWith(key));
-    // console.log(`found lazy: ${key ?? 'NOPE'} (fullPath: ${fullPath})`);
 
     if (!key) {
       return null;
     }
-    // console.log('loading', key, '.......');
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const lazyRouter = _def.lazy[key]!;
+    const lazyRouter = _def.lazy[key];
+    if (!lazyRouter) {
+      return null;
+    }
     await lazyRouter.load();
 
     procedure = _def.procedures[path];
@@ -438,6 +471,12 @@ export interface RouterCallerFactory<TRoot extends AnyRootTypes> {
   ): RouterCaller<TRoot, TRecord>;
 }
 
+/**
+ * Creates a caller factory that can invoke procedures directly (server-side calls)
+ * using a proxy (e.g. `caller.post.list()`), with optional call-type entrypoints
+ * (e.g. `caller.post.list.query()`).
+ * @internal
+ */
 export function createCallerFactory<
   TRoot extends AnyRootTypes,
 >(): RouterCallerFactory<TRoot> {
@@ -451,22 +490,41 @@ export function createCallerFactory<
       return createRecursiveProxy<ReturnType<RouterCaller<any, any>>>(
         async (innerOpts) => {
           const { path, args } = innerOpts;
-          const fullPath = path.join('.');
-
           if (path.length === 1 && path[0] === '_def') {
             return _def;
           }
 
-          const procedure = await getProcedureAtPath(router, fullPath);
-
+          const fullPathWithCallType = path.join('.');
+          let callerCallType = callerCallTypeToProcedureType(
+            path[path.length - 1] ?? '',
+          );
+          let fullPath = fullPathWithCallType;
+          let procedure = await getProcedureAtPath(router, fullPath);
+          if (!procedure && callerCallType !== undefined) {
+            fullPath = path.slice(0, -1).join('.');
+            procedure = await getProcedureAtPath(router, fullPath);
+          } else {
+            callerCallType = undefined;
+          }
           let ctx: Context | undefined = undefined;
+          let resolvedProcedureType: ProcedureType | undefined = callerCallType;
           try {
             if (!procedure) {
               throw new TRPCError({
                 code: 'NOT_FOUND',
-                message: `No procedure found on path "${path}"`,
+                message: `No procedure found on path "${fullPath}"`,
               });
             }
+
+            const procedureType = callerCallType ?? procedure._def.type;
+            resolvedProcedureType = procedureType;
+            if (procedure._def.type !== procedureType) {
+              throw new TRPCError({
+                code: 'METHOD_NOT_SUPPORTED',
+                message: `No "${procedureType}"-procedure on path "${fullPath}"`,
+              });
+            }
+
             ctx = isFunction(ctxOrCallback)
               ? await Promise.resolve(ctxOrCallback())
               : ctxOrCallback;
@@ -475,7 +533,7 @@ export function createCallerFactory<
               path: fullPath,
               getRawInput: async () => args[0],
               ctx,
-              type: procedure._def.type,
+              type: procedureType,
               signal: opts?.signal,
             });
           } catch (cause) {
@@ -484,7 +542,7 @@ export function createCallerFactory<
               error: getTRPCErrorFromUnknown(cause),
               input: args[0],
               path: fullPath,
-              type: procedure?._def.type ?? 'unknown',
+              type: resolvedProcedureType ?? procedure?._def.type ?? 'unknown',
             });
             throw cause;
           }
@@ -506,6 +564,10 @@ export type MergeRouters<
   ? MergeRouters<Tail, TRoot, Head['_def']['record'] & TRecord>
   : BuiltRouter<TRoot, TRecord>;
 
+/**
+ * Merges multiple routers into one router while preserving the combined record types.
+ * @internal
+ */
 export function mergeRouters<TRouters extends AnyRouter[]>(
   ...routerList: [...TRouters]
 ): MergeRouters<TRouters> {
