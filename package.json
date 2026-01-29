@@ -37,7 +37,7 @@
     "merge-main": "git checkout main && git pull && git checkout next && git pull && git checkout -b next-merge-$(date '+%Y-%m-%d--%H-%M') next && git merge --ff main"
   },
   "dependencies": {
-    "@actions/core": "^2.0.0",
+    "@actions/core": "^3.0.0",
     "@actions/github": "^9.0.0",
     "@eslint/compat": "^2.0.0",
     "@ianvs/prettier-plugin-sort-imports": "^4.4.0",
