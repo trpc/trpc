@@ -12,7 +12,7 @@ import {
   middlewareMarker,
 } from './middleware';
 import type { inferParser, Parser } from './parser';
-import { getParseFn } from './parser';
+import { getEncodeFn, getParseFn } from './parser';
 import type {
   AnyMutationProcedure,
   AnyProcedure,
@@ -507,10 +507,10 @@ export function createBuilder<TContext, TMeta>(
       });
     },
     output(output: Parser) {
-      const parser = getParseFn(output);
+      const encoder = getEncodeFn(output);
       return createNewBuilder(_def, {
         output,
-        middlewares: [createOutputMiddleware(parser)],
+        middlewares: [createOutputMiddleware(encoder)],
       });
     },
     meta(meta) {
