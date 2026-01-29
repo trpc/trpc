@@ -167,6 +167,9 @@ export class WsConnection {
     this.openPromise = wsPromise.then(async (ws) => {
       this.ws = ws;
 
+      // Set binaryType to handle both text and binary messages consistently
+      ws.binaryType = 'arraybuffer';
+
       // Setup ping listener
       ws.addEventListener('message', function ({ data }) {
         if (data === 'PING') {
