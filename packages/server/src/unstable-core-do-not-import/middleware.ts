@@ -101,6 +101,11 @@ export type MiddlewareFunction<
     getRawInput: GetRawInputFn;
     meta: TMeta | undefined;
     signal: AbortSignal | undefined;
+    /**
+     * The index of this call in a batch request.
+     * Will be set when the procedure is called as part of a batch.
+     */
+    callIndex?: number;
     next: {
       (): Promise<MiddlewareResult<TContextOverridesIn>>;
       <$ContextOverride>(opts: {
