@@ -84,6 +84,7 @@ export class WsClient {
         ...keepAliveDefaults,
         ...opts.keepAlive,
       },
+      encoder: this.encoder,
     });
     this.activeConnection.wsObservable.subscribe({
       next: (ws) => {
