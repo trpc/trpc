@@ -1,0 +1,54 @@
+{
+  "name": "examples-next-websockets-encoder",
+  "private": true,
+  "engines": {
+    "node": ">=18.15.0"
+  },
+  "packageManager": "pnpm@9.12.2",
+  "scripts": {
+    "build:1-next": "cross-env NODE_ENV=production next build",
+    "build:2-server": "tsc --project tsconfig.server.json",
+    "build": "run-s build:*",
+    "dev:wss": "cross-env PORT=3001 tsx watch src/server/wssDevServer.ts --tsconfig tsconfig.server.json",
+    "dev:next": "next dev",
+    "dev": "run-p dev:*",
+    "start": "cross-env NODE_ENV=production node dist/server/prodServer.js",
+    "lint": "eslint --cache src",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@msgpack/msgpack": "^3.1.3",
+    "@tanstack/react-query": "^5.80.3",
+    "@trpc/client": "npm:@trpc/client",
+    "@trpc/next": "npm:@trpc/next",
+    "@trpc/react-query": "npm:@trpc/react-query",
+    "@trpc/server": "npm:@trpc/server",
+    "next": "^15.3.8",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "tsx": "^4.19.3",
+    "ws": "^8.0.0",
+    "zod": "^4.2.1"
+  },
+  "devDependencies": {
+    "@tanstack/react-query-devtools": "^5.80.3",
+    "@types/node": "^22.13.5",
+    "@types/react": "^19.1.0",
+    "@types/ws": "^8.2.0",
+    "autoprefixer": "^10.4.7",
+    "cross-env": "^7.0.3",
+    "eslint": "^9.26.0",
+    "eslint-config-next": "^15.3.1",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "6.0.0-rc.1",
+    "npm-run-all": "^4.1.5",
+    "postcss": "^8.4.39",
+    "tailwindcss": "^3.4.6",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.31.1"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  },
+  "version": "11.9.0"
+}
