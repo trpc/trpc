@@ -175,6 +175,7 @@ const yearlySponsors = [
   'pingdotgg',
   'nihinihi01',
   'newfront-insurance',
+  'SerpApi',
 ];
 
 async function main() {
@@ -217,7 +218,7 @@ async function main() {
         );
 
         const base = yearly ? 12 : 1;
-        const githubComission = sponsor.__typename === 'Organization' ? 0.1 : 0;
+        const githubComission = sponsor.__typename === 'Organization' && sponsor.login !== 'SerpApi' ? 0.1 : 0;
         let value =
           base * cycles * sponsor.monthlyPriceInDollars * (1 - githubComission);
 
@@ -226,12 +227,7 @@ async function main() {
           // sponsored from private account for 3 months
           value += 500 * 3;
         }
-        if (sponsor.login === 'madisonredtfeldt') {
-          sponsor.name = 'Mobb';
-          sponsor.login = 'mobb-dev';
-          sponsor.imgSrc = 'https://github.com/mobb-dev.png';
-          sponsor.link = 'https://mobb.ai';
-        }
+
         return {
           ...sponsor,
           value,
