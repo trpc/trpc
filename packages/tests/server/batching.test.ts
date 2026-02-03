@@ -12,15 +12,15 @@ const router = t.router({
     .query((opts) => `Hello ${opts.input ?? 'world'}` as const),
 });
 
-describe('callIndex', () => {
-  test('callIndex is passed correctly in batched requests', async () => {
+describe('batchIndex', () => {
+  test('batchIndex is passed correctly in batched requests', async () => {
     const callIndices: (number | undefined)[] = [];
 
     const tWithCallIndex = initTRPC.create();
     const routerWithCallIndex = tWithCallIndex.router({
       getCallIndex: tWithCallIndex.procedure.input(z.string()).query((opts) => {
-        callIndices.push(opts.callIndex);
-        return { input: opts.input, callIndex: opts.callIndex };
+        callIndices.push(opts.batchIndex);
+        return { input: opts.input, batchIndex: opts.batchIndex };
       }),
     });
 
@@ -36,9 +36,9 @@ describe('callIndex', () => {
     ]);
 
     expect(results).toEqual([
-      { input: 'first', callIndex: 0 },
-      { input: 'second', callIndex: 1 },
-      { input: 'third', callIndex: 2 },
+      { input: 'first', batchIndex: 0 },
+      { input: 'second', batchIndex: 1 },
+      { input: 'third', batchIndex: 2 },
     ]);
 
     expect(callIndices).toEqual([0, 1, 2]);
@@ -46,14 +46,14 @@ describe('callIndex', () => {
     expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
   });
 
-  test('callIndex is passed correctly in streamed batched requests', async () => {
+  test('batchIndex is passed correctly in streamed batched requests', async () => {
     const callIndices: (number | undefined)[] = [];
 
     const tWithCallIndex = initTRPC.create();
     const routerWithCallIndex = tWithCallIndex.router({
       getCallIndex: tWithCallIndex.procedure.input(z.string()).query((opts) => {
-        callIndices.push(opts.callIndex);
-        return { input: opts.input, callIndex: opts.callIndex };
+        callIndices.push(opts.batchIndex);
+        return { input: opts.input, batchIndex: opts.batchIndex };
       }),
     });
 
@@ -69,9 +69,9 @@ describe('callIndex', () => {
     ]);
 
     expect(results).toEqual([
-      { input: 'first', callIndex: 0 },
-      { input: 'second', callIndex: 1 },
-      { input: 'third', callIndex: 2 },
+      { input: 'first', batchIndex: 0 },
+      { input: 'second', batchIndex: 1 },
+      { input: 'third', batchIndex: 2 },
     ]);
 
     expect(callIndices).toEqual([0, 1, 2]);
@@ -79,14 +79,14 @@ describe('callIndex', () => {
     expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
   });
 
-  test('callIndex is not provided for non-batched requests', async () => {
+  test('batchIndex is provided for non-batched requests', async () => {
     const callIndices: (number | undefined)[] = [];
 
     const tWithCallIndex = initTRPC.create();
     const routerWithCallIndex = tWithCallIndex.router({
       getCallIndex: tWithCallIndex.procedure.input(z.string()).query((opts) => {
-        callIndices.push(opts.callIndex);
-        return { input: opts.input, callIndex: opts.callIndex };
+        callIndices.push(opts.batchIndex);
+        return { input: opts.input, batchIndex: opts.batchIndex };
       }),
     });
 
@@ -97,18 +97,17 @@ describe('callIndex', () => {
 
     const result = await ctx.client.getCallIndex.query('single');
 
-    expect(result).toEqual({ input: 'single' });
-    expect(callIndices).toEqual([undefined]);
+    expect(result).toEqual({ input: 'single', batchIndex: 0 });
   });
 
-  test('callIndex is provided for single-call batch requests', async () => {
+  test('batchIndex is provided for single-call batch requests', async () => {
     const callIndices: (number | undefined)[] = [];
 
     const tWithCallIndex = initTRPC.create();
     const routerWithCallIndex = tWithCallIndex.router({
       getCallIndex: tWithCallIndex.procedure.input(z.string()).query((opts) => {
-        callIndices.push(opts.callIndex);
-        return { input: opts.input, callIndex: opts.callIndex };
+        callIndices.push(opts.batchIndex);
+        return { input: opts.input, batchIndex: opts.batchIndex };
       }),
     });
 
@@ -119,17 +118,17 @@ describe('callIndex', () => {
 
     const result = await Promise.all([ctx.client.getCallIndex.query('single')]);
 
-    expect(result).toEqual([{ input: 'single', callIndex: 0 }]);
+    expect(result).toEqual([{ input: 'single', batchIndex: 0 }]);
     expect(callIndices).toEqual([0]);
   });
 
-  test('callIndex is available in middleware', async () => {
+  test('batchIndex is available in middleware', async () => {
     const middlewareCallIndices: (number | undefined)[] = [];
 
     const tWithMiddleware = initTRPC.create();
 
     const procedureWithMiddleware = tWithMiddleware.procedure.use((opts) => {
-      middlewareCallIndices.push(opts.callIndex);
+      middlewareCallIndices.push(opts.batchIndex);
       return opts.next();
     });
 

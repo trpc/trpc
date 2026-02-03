@@ -47,6 +47,7 @@ test('untyped caller', async () => {
     type: 'query',
     input: 'foo',
     signal: undefined,
+    batchIndex: 0,
   });
   expect(result).toBe('foo');
 });
@@ -72,6 +73,7 @@ test('getRawInput fails', async () => {
       type: 'query',
       input: 'foo',
       signal: undefined,
+      batchIndex: 0,
     }),
   );
 

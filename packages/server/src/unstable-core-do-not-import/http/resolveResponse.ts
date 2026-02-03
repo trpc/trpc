@@ -328,77 +328,73 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       data: unknown;
     }
     type RPCResult = ResultTuple<RPCResultOk>;
-    const rpcCalls = info.calls.map(
-      async (call, callIndex): Promise<RPCResult> => {
-        const proc = call.procedure;
-        const combinedAbort = combinedAbortController(opts.req.signal);
-        try {
-          if (opts.error) {
-            throw opts.error;
-          }
-
-          if (!proc) {
-            throw new TRPCError({
-              code: 'NOT_FOUND',
-              message: `No procedure found on path "${call.path}"`,
-            });
-          }
-
-          if (
-            !methodMapper[proc._def.type].includes(req.method as HTTPMethods)
-          ) {
-            throw new TRPCError({
-              code: 'METHOD_NOT_SUPPORTED',
-              message: `Unsupported ${req.method}-request to ${proc._def.type} procedure at path "${call.path}"`,
-            });
-          }
-
-          if (proc._def.type === 'subscription') {
-            /* istanbul ignore if -- @preserve */
-            if (info.isBatchCall) {
-              throw new TRPCError({
-                code: 'BAD_REQUEST',
-                message: `Cannot batch subscription calls`,
-              });
-            }
-
-            if (config.sse?.maxDurationMs) {
-              function cleanup() {
-                clearTimeout(timer);
-                combinedAbort.signal.removeEventListener('abort', cleanup);
-
-                combinedAbort.controller.abort();
-              }
-              const timer = setTimeout(cleanup, config.sse.maxDurationMs);
-              combinedAbort.signal.addEventListener('abort', cleanup);
-            }
-          }
-          const data: unknown = await proc({
-            path: call.path,
-            getRawInput: call.getRawInput,
-            ctx: ctxManager.value(),
-            type: proc._def.type,
-            signal: combinedAbort.signal,
-            callIndex: info.isBatchCall ? callIndex : undefined,
-          });
-          return [undefined, { data }];
-        } catch (cause) {
-          const error = getTRPCErrorFromUnknown(cause);
-          const input = call.result();
-
-          opts.onError?.({
-            error,
-            path: call.path,
-            input,
-            ctx: ctxManager.valueOrUndefined(),
-            type: call.procedure?._def.type ?? 'unknown',
-            req: opts.req,
-          });
-
-          return [error, undefined];
+    const rpcCalls = info.calls.map(async (call): Promise<RPCResult> => {
+      const proc = call.procedure;
+      const combinedAbort = combinedAbortController(opts.req.signal);
+      try {
+        if (opts.error) {
+          throw opts.error;
         }
-      },
-    );
+
+        if (!proc) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: `No procedure found on path "${call.path}"`,
+          });
+        }
+
+        if (!methodMapper[proc._def.type].includes(req.method as HTTPMethods)) {
+          throw new TRPCError({
+            code: 'METHOD_NOT_SUPPORTED',
+            message: `Unsupported ${req.method}-request to ${proc._def.type} procedure at path "${call.path}"`,
+          });
+        }
+
+        if (proc._def.type === 'subscription') {
+          /* istanbul ignore if -- @preserve */
+          if (info.isBatchCall) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: `Cannot batch subscription calls`,
+            });
+          }
+
+          if (config.sse?.maxDurationMs) {
+            function cleanup() {
+              clearTimeout(timer);
+              combinedAbort.signal.removeEventListener('abort', cleanup);
+
+              combinedAbort.controller.abort();
+            }
+            const timer = setTimeout(cleanup, config.sse.maxDurationMs);
+            combinedAbort.signal.addEventListener('abort', cleanup);
+          }
+        }
+        const data: unknown = await proc({
+          path: call.path,
+          getRawInput: call.getRawInput,
+          ctx: ctxManager.value(),
+          type: proc._def.type,
+          signal: combinedAbort.signal,
+          batchIndex: call.batchIndex,
+        });
+        return [undefined, { data }];
+      } catch (cause) {
+        const error = getTRPCErrorFromUnknown(cause);
+        const input = call.result();
+
+        opts.onError?.({
+          error,
+          path: call.path,
+          input,
+          ctx: ctxManager.valueOrUndefined(),
+          type: call.procedure?._def.type ?? 'unknown',
+          req: opts.req,
+        });
+
+        return [error, undefined];
+      }
+    });
 
     // ----------- response handlers -----------
     if (!info.isBatchCall) {

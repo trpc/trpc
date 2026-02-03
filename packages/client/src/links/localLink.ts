@@ -82,6 +82,7 @@ export function unstable_localLink<TRouter extends AnyRouter>(
             ctx,
             type: op.type,
             signal,
+            batchIndex: 0,
           });
         }
 

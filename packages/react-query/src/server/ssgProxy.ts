@@ -103,6 +103,7 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
             ctx,
             type: 'query',
             signal: undefined,
+            batchIndex: 0,
           });
         },
       };

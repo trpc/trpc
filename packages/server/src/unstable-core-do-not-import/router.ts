@@ -477,6 +477,7 @@ export function createCallerFactory<
               ctx,
               type: procedure._def.type,
               signal: opts?.signal,
+              batchIndex: 0,
             });
           } catch (cause) {
             opts?.onError?.({

@@ -116,6 +116,7 @@ const jsonContentTypeHandler: ContentTypeHandler = {
         async (path, index): Promise<TRPCRequestInfo['calls'][number]> => {
           const procedure = await getProcedureAtPath(opts.router, path);
           return {
+            batchIndex: index,
             path,
             procedure,
             getRawInput: async () => {
@@ -207,6 +208,7 @@ const formDataContentTypeHandler: ContentTypeHandler = {
       accept: null,
       calls: [
         {
+          batchIndex: 0,
           path: opts.path,
           getRawInput: getInputs.read,
           result: getInputs.result,
@@ -243,6 +245,7 @@ const octetStreamContentTypeHandler: ContentTypeHandler = {
     return {
       calls: [
         {
+          batchIndex: 0,
           path: opts.path,
           getRawInput: getInputs.read,
           result: getInputs.result,
