@@ -218,7 +218,10 @@ async function main() {
         );
 
         const base = yearly ? 12 : 1;
-        const githubComission = sponsor.__typename === 'Organization' && sponsor.login !== 'SerpApi' ? 0.1 : 0;
+        const githubComission =
+          sponsor.__typename === 'Organization' && sponsor.login !== 'SerpApi'
+            ? 0.1
+            : 0;
         let value =
           base * cycles * sponsor.monthlyPriceInDollars * (1 - githubComission);
 
