@@ -105,7 +105,7 @@ export const allSponsors = [
   {
     "name": "Drew Powers",
     "imgSrc": "https://avatars.githubusercontent.com/u/49917220?u=ceb7a6b68f6366882ac7bc599383382f48e41e94&v=4",
-    "weight": 6,
+    "weight": 7,
     "login": "drwpwrs",
     "link": "https://github.com/drwpwrs",
     "createdAt": 1687018575000
@@ -233,9 +233,17 @@ export const allSponsors = [
   {
     "name": "Erik Bjäreholt",
     "imgSrc": "https://avatars.githubusercontent.com/u/1405370?u=8a516a20206354bedf5e1f7639649f3214562d84&v=4",
-    "weight": 1,
+    "weight": 2,
     "login": "ErikBjare",
     "link": "https://erik.bjareholt.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1767946292000
+  },
+  {
+    "name": "SerpApi",
+    "imgSrc": "https://github.com/serpapi.png",
+    "weight": 1,
+    "login": "SerpApi",
+    "link": "https://serpapi.com/",
+    "createdAt": 1772492400000
   }
 ] as const;
