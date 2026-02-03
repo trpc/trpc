@@ -619,12 +619,11 @@ export interface ProcedureCallOptions<TContext> {
   path: string;
   type: ProcedureType;
   signal: AbortSignal | undefined;
-  // TODO: make this non-optional in v12
   /**
    * The index of this call in a batch request.
    * Will be set when the procedure is called as part of a batch.
    */
-  batchIndex?: number;
+  batchIndex: number;
 }
 
 const codeblock = `
