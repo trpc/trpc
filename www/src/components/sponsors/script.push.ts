@@ -22,7 +22,7 @@ const sections: Def = {
   ],
   silver: [
     //
-    'calcom',
+    // 'calcom',
     'coderabbitai',
     'greptileai',
   ],
