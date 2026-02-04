@@ -204,7 +204,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         ? null
         : createCtxPromise(() => null);
 
-    function handleRequest(msg: TRPCClientOutgoingMessage) {
+    function handleRequest(msg: TRPCClientOutgoingMessage, batchIndex: number) {
       const { id, jsonrpc } = msg;
 
       if (id === null) {
@@ -271,6 +271,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           ctx,
           type,
           signal: abortController.signal,
+          batchIndex,
         });
 
         const isIterableResult =
@@ -541,7 +542,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         }
       });
 
-      parsedMsgs.map(handleRequest);
+      parsedMsgs.map((msg, index) => handleRequest(msg, index));
     });
 
     // WebSocket errors should be handled, as otherwise unhandled exceptions will crash Node.js.

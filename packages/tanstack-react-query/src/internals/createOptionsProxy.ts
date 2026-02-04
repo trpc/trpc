@@ -354,6 +354,7 @@ export function createTRPCOptionsProxy<
             ctx: ctx,
             type: type,
             signal: undefined,
+            batchIndex: 0,
           }),
         );
       }

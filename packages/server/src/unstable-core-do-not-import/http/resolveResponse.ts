@@ -376,6 +376,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           ctx: ctxManager.value(),
           type: proc._def.type,
           signal: combinedAbort.signal,
+          batchIndex: call.batchIndex,
         });
         return [undefined, { data }];
       } catch (cause) {

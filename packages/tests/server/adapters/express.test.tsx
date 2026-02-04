@@ -190,9 +190,11 @@ test('request info from context should include both calls', async () => {
         "accept": null,
         "calls": Array [
           Object {
+            "batchIndex": 0,
             "path": "hello",
           },
           Object {
+            "batchIndex": 1,
             "path": "request.info",
           },
         ],
