@@ -77,7 +77,7 @@ export const CompaniesUsing = () => {
         {animationRow.map((_, index) => (
           <ul
             key={`animationRow${index}`}
-            className="flex animate-infinite-scroll items-center justify-center md:justify-start [&_img]:max-w-none [&_li]:mx-8 group-hover:[animation-play-state:paused]"
+            className="flex animate-infinite-scroll items-center justify-center group-hover:[animation-play-state:paused] md:justify-start [&_img]:max-w-none [&_li]:mx-8"
             aria-hidden={index > 0}
           >
             {companies.map((it) => (
