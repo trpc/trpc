@@ -97,6 +97,7 @@ export function nextAppDirCaller<TContext, TMeta>(
             path,
             input,
             signal: undefined,
+            batchIndex: 0,
           })
           .then((data) => {
             if (data instanceof TRPCRedirectError) throw data;
@@ -114,6 +115,7 @@ export function nextAppDirCaller<TContext, TMeta>(
             path,
             input,
             signal: undefined,
+            batchIndex: 0,
           })
           .then((data) => {
             if (data instanceof TRPCRedirectError) throw data;

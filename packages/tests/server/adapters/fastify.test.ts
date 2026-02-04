@@ -513,6 +513,7 @@ describe('authorized user', () => {
         "accept": "application/jsonl",
         "calls": Array [
           Object {
+            "batchIndex": 0,
             "path": "request.info",
           },
         ],

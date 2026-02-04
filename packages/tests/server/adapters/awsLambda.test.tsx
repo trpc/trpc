@@ -271,6 +271,7 @@ test('v1 request info', async () => {
           "accept": null,
           "calls": Array [
             Object {
+              "batchIndex": 0,
               "path": "request.info",
             },
           ],
