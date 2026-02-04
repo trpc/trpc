@@ -2,15 +2,12 @@ import * as React from 'react';
 import ReactDOM from 'react-dom';
 import { companies } from './CompaniesUsing.script.output';
 import { SectionTitle } from './SectionTitle';
+import { cn } from '../utils/cn';
 
 const TOOLTIP_OFFSET = 8;
 
-function Tooltip(props: {
-  content: React.ReactNode;
-  children: React.ReactNode;
-}) {
+function CompanyLogo(props: { src: string; name: string }) {
   const triggerRef = React.useRef<HTMLSpanElement>(null);
-  const [open, setOpen] = React.useState(false);
   const [position, setPosition] = React.useState<{
     top: number;
     left: number;
@@ -20,25 +17,32 @@ function Tooltip(props: {
     <>
       <span
         ref={triggerRef}
+        className={cn(
+          'inline-flex items-center justify-center rounded-lg px-3 py-2 transition-colors',
+          position && 'dark:bg-white/90',
+        )}
         onMouseEnter={() => {
           const el = triggerRef.current;
-          if (!el) return;
-          const rect = el.getBoundingClientRect();
-          setPosition({
-            top: rect.top - TOOLTIP_OFFSET,
-            left: rect.left + rect.width / 2,
-          });
-          setOpen(true);
+          if (el) {
+            const rect = el.getBoundingClientRect();
+            setPosition({
+              top: rect.top - TOOLTIP_OFFSET,
+              left: rect.left + rect.width / 2,
+            });
+          }
         }}
-        onMouseLeave={() => {
-          setOpen(false);
-          setPosition(null);
-        }}
+        onMouseLeave={() => setPosition(null)}
       >
-        {props.children}
+        <img
+          src={props.src}
+          alt={props.name}
+          className={cn(
+            'max-h-9 grayscale transition-all dark:invert',
+            position && 'grayscale-0 dark:invert-0',
+          )}
+        />
       </span>
-      {open &&
-        position &&
+      {position &&
         typeof document !== 'undefined' &&
         ReactDOM.createPortal(
           <span
@@ -51,7 +55,7 @@ function Tooltip(props: {
             }}
             aria-hidden
           >
-            {props.content}
+            {props.name}
           </span>,
           document.body,
         )}
@@ -73,7 +77,7 @@ export const CompaniesUsing = () => {
         title="As used by"
         description="tRPC is tried and trusted by leading tech teams and many Fortune 500 companies."
       />
-      <div className="group my-6 inline-flex w-full flex-nowrap overflow-hidden [mask-image:_linear-gradient(to_right,transparent_0,_black_128px,_black_calc(100%-200px),transparent_100%)]">
+      <div className="group my-6 inline-flex w-full flex-nowrap py-4 [mask-image:_linear-gradient(to_right,transparent_0,_black_128px,_black_calc(100%-200px),transparent_100%)]">
         {animationRow.map((_, index) => (
           <ul
             key={`animationRow${index}`}
@@ -82,13 +86,7 @@ export const CompaniesUsing = () => {
           >
             {companies.map((it) => (
               <li key={it.src}>
-                <Tooltip content={it.name}>
-                  <img
-                    src={it.src}
-                    alt={it.name}
-                    className="max-h-9 grayscale transition-all hover:grayscale-0 dark:invert"
-                  />
-                </Tooltip>
+                <CompanyLogo src={it.src} name={it.name} />
               </li>
             ))}
           </ul>
