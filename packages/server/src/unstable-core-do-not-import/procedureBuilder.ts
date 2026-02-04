@@ -111,6 +111,11 @@ export interface ProcedureResolverOptions<
    * The path of the procedure
    */
   path: string;
+  /**
+   * The index of this call in a batch request.
+   * Will be set when the procedure is called as part of a batch.
+   */
+  batchIndex?: number;
 }
 
 /**
@@ -614,6 +619,10 @@ export interface ProcedureCallOptions<TContext> {
   path: string;
   type: ProcedureType;
   signal: AbortSignal | undefined;
+  /**
+   * The index of this call in a batch request.
+   */
+  batchIndex: number;
 }
 
 const codeblock = `
