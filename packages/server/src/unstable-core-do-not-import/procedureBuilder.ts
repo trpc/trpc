@@ -621,7 +621,6 @@ export interface ProcedureCallOptions<TContext> {
   signal: AbortSignal | undefined;
   /**
    * The index of this call in a batch request.
-   * Will be set when the procedure is called as part of a batch.
    */
   batchIndex: number;
 }
