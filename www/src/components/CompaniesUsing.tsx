@@ -1,8 +1,8 @@
 import * as React from 'react';
 import ReactDOM from 'react-dom';
+import { cn } from '../utils/cn';
 import { companies } from './CompaniesUsing.script.output';
 import { SectionTitle } from './SectionTitle';
-import { cn } from '../utils/cn';
 
 const TOOLTIP_OFFSET = 8;
 
