@@ -272,7 +272,7 @@ async function main() {
           login: sponsor.login,
           link: sponsor.link,
           createdAt: sponsor.createdAt,
-          value: sponsor.value,
+          // value: sponsor.value,
         };
       });
   };
