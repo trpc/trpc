@@ -16,7 +16,10 @@ import type {
   TRPCRouterRecord,
 } from '@trpc/server';
 import { callTRPCProcedure, createTRPCRecursiveProxy } from '@trpc/server';
-import type { MaybePromise } from '@trpc/server/unstable-core-do-not-import';
+import {
+  isFunction,
+  type MaybePromise,
+} from '@trpc/server/unstable-core-do-not-import';
 import {
   trpcInfiniteQueryOptions,
   type TRPCInfiniteQueryOptions,
@@ -305,7 +308,7 @@ export interface TRPCOptionsProxyOptionsInternal<
   router: TRouter;
   ctx:
     | inferRouterContext<TRouter>
-    | (() => MaybePromise<inferRouterContext<TRouter>>);
+    | ((opts?: TRPCRequestOptions) => MaybePromise<inferRouterContext<TRouter>>);
 }
 
 export interface TRPCOptionsProxyOptionsExternal<
@@ -346,7 +349,12 @@ export function createTRPCOptionsProxy<
   const callIt = (type: TRPCProcedureType): any => {
     return (path: string, input: unknown, trpcOpts: TRPCRequestOptions) => {
       if ('router' in opts) {
-        return Promise.resolve(unwrapLazyArg(opts.ctx)).then((ctx) =>
+        // Pass trpcOpts to context factory so it can access client-provided context
+        const ctxPromise = isFunction(opts.ctx)
+          ? Promise.resolve(opts.ctx(trpcOpts))
+          : Promise.resolve(opts.ctx);
+
+        return ctxPromise.then((ctx) =>
           callTRPCProcedure({
             router: opts.router,
             path: path,
