@@ -19,6 +19,14 @@ export const topSponsors = [
     "createdAt": 1743099912000
   },
   {
+    "name": "SerpApi",
+    "imgSrc": "https://github.com/serpapi.png",
+    "weight": 94,
+    "login": "SerpApi",
+    "link": "https://serpapi.com/",
+    "createdAt": 1770076800000
+  },
+  {
     "name": "CodeRabbit",
     "imgSrc": "https://avatars.githubusercontent.com/u/132028505?v=4",
     "weight": 92,
@@ -33,14 +41,6 @@ export const topSponsors = [
     "login": "unkeyed",
     "link": "https://unkey.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1708012798000
-  },
-  {
-    "name": "Dr. B",
-    "imgSrc": "https://avatars.githubusercontent.com/u/77294655?v=4",
-    "weight": 38,
-    "login": "hidrb",
-    "link": "https://github.com/hidrb",
-    "createdAt": 1633034677000
   }
 ] as const;
 
@@ -237,5 +237,13 @@ export const allSponsors = [
     "login": "ErikBjare",
     "link": "https://erik.bjareholt.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1767946292000
+  },
+  {
+    "name": "SerpApi",
+    "imgSrc": "https://github.com/serpapi.png",
+    "weight": 94,
+    "login": "SerpApi",
+    "link": "https://serpapi.com/",
+    "createdAt": 1770076800000
   }
 ] as const;
