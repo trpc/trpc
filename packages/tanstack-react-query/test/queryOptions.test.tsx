@@ -1,3 +1,4 @@
+import { createTRPCOptionsProxy } from '../src';
 import { testReactResource } from './__helpers';
 import { skipToken, useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import '@testing-library/react';
@@ -310,6 +311,38 @@ describe.each(['user-123', undefined])(
       expect(post).toEqual('__result');
 
       expect(fetchSpy).toHaveBeenCalledTimes(0);
+    });
+
+    // regression test for https://github.com/trpc/trpc/issues/6953
+    test('context factory receives trpc options when using router directly', async () => {
+      await using ctx = testContext(keyPrefix);
+
+      const contextFactoryCalls: unknown[] = [];
+
+      const trpcWithContextFactory = createTRPCOptionsProxy({
+        router: ctx.router,
+        ctx: (trpcOpts) => {
+          contextFactoryCalls.push(trpcOpts);
+          return {};
+        },
+        queryClient: ctx.queryClient,
+        keyPrefix: keyPrefix as any,
+      });
+
+      const customContext = { __TEST_CONTEXT__: true };
+
+      const post = await ctx.queryClient.fetchQuery(
+        trpcWithContextFactory.post.byId.queryOptions(
+          { id: '1' },
+          { trpc: { context: customContext } },
+        ),
+      );
+
+      expect(post).toEqual('__result');
+      expect(contextFactoryCalls).toHaveLength(1);
+      expect(contextFactoryCalls[0]).toMatchObject({
+        context: customContext,
+      });
     });
 
     // regression test for https://github.com/trpc/trpc/issues/6792
