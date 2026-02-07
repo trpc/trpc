@@ -1,8 +1,8 @@
 import { spawn } from 'child_process';
 import { observable } from '@trpc/server/observable';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
-import { TRPCClientError } from './TRPCClientError';
 import type { TRPCLink } from './links/types';
+import { TRPCClientError } from './TRPCClientError';
 
 export interface IpcLinkOptions {
   /**

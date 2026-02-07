@@ -39,7 +39,14 @@ beforeEach(() => {
 });
 
 // Helper: build a minimal tRPC operation
-function makeOp(overrides: Partial<{ type: string; path: string; input: unknown; id: number }> = {}) {
+function makeOp(
+  overrides: Partial<{
+    type: string;
+    path: string;
+    input: unknown;
+    id: number;
+  }> = {},
+) {
   return {
     id: overrides.id ?? 1,
     type: (overrides.type ?? 'query') as 'query' | 'mutation' | 'subscription',
@@ -83,7 +90,12 @@ describe('Task 1 — stdin write', () => {
 
   test('payload contains the correct operation fields', () => {
     const link = getLink();
-    const op = makeOp({ id: 42, type: 'mutation', path: 'user.create', input: { email: 'a@b.com' } });
+    const op = makeOp({
+      id: 42,
+      type: 'mutation',
+      path: 'user.create',
+      input: { email: 'a@b.com' },
+    });
 
     link({ op, next: null as any }).subscribe({});
 
@@ -131,7 +143,10 @@ describe('Task 2 — stdout read and parse', () => {
     link({ op: makeOp(), next: null as any }).subscribe({ next, complete });
 
     // Simulate the child writing a JSON response to stdout then exiting 0
-    mockChild.stdout.emit('data', Buffer.from(JSON.stringify({ greeting: 'hello' })));
+    mockChild.stdout.emit(
+      'data',
+      Buffer.from(JSON.stringify({ greeting: 'hello' })),
+    );
     mockChild.emit('close', 0);
 
     expect(next).toHaveBeenCalledTimes(1);
@@ -156,7 +171,10 @@ describe('Task 2 — stdout read and parse', () => {
     mockChild.emit('close', 0);
 
     expect(next).toHaveBeenCalledTimes(1);
-    expect(next.mock.calls[0]![0].result.data).toEqual({ chunked: true, value: 123 });
+    expect(next.mock.calls[0]![0].result.data).toEqual({
+      chunked: true,
+      value: 123,
+    });
     expect(complete).toHaveBeenCalledTimes(1);
   });
 

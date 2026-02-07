@@ -17,15 +17,15 @@ The goal is to create a custom tRPC link (`ipcLink`) that enables a local deskto
 
 ### What I Studied
 
-| File | Purpose | Relevance |
-|------|---------|-----------|
-| `packages/client/src/links/types.ts` | Core link type definitions (`TRPCLink`, `Operation`, `OperationLink`) | Needed to match the exact type signature |
-| `packages/client/src/links/httpLink.ts` | HTTP terminating link | Primary pattern to follow — same 3-layer structure |
-| `packages/client/src/links/localLink.ts` | In-process terminating link | Closest conceptual match (non-HTTP), but way more complex than needed |
-| `packages/client/src/TRPCClientError.ts` | Error class with `.from()` factory | Required for all error paths |
-| `packages/client/src/links.ts` | Barrel export for all links | Will need modification to export `ipcLink` (pending approval) |
-| `packages/client/src/links/splitLink.test.ts` | Test patterns | Reference for how to write link tests with observables |
-| `packages/client/src/links/internals/createChain.test.ts` | Chain test patterns | Reference for `createChain` + `subscribe` testing |
+| File                                                      | Purpose                                                               | Relevance                                                             |
+| --------------------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `packages/client/src/links/types.ts`                      | Core link type definitions (`TRPCLink`, `Operation`, `OperationLink`) | Needed to match the exact type signature                              |
+| `packages/client/src/links/httpLink.ts`                   | HTTP terminating link                                                 | Primary pattern to follow — same 3-layer structure                    |
+| `packages/client/src/links/localLink.ts`                  | In-process terminating link                                           | Closest conceptual match (non-HTTP), but way more complex than needed |
+| `packages/client/src/TRPCClientError.ts`                  | Error class with `.from()` factory                                    | Required for all error paths                                          |
+| `packages/client/src/links.ts`                            | Barrel export for all links                                           | Will need modification to export `ipcLink` (pending approval)         |
+| `packages/client/src/links/splitLink.test.ts`             | Test patterns                                                         | Reference for how to write link tests with observables                |
+| `packages/client/src/links/internals/createChain.test.ts` | Chain test patterns                                                   | Reference for `createChain` + `subscribe` testing                     |
 
 ### Architecture Understanding
 
@@ -47,10 +47,10 @@ Terminating links (like ours) never call `next()`. They produce results directly
 
 **Options considered:**
 
-| Approach | Pros | Cons |
-|----------|------|------|
-| Spawn per request | Simple lifecycle, clean isolation, no state management | Process startup overhead per call |
-| Long-running child | Fast after init, single process | Complex: need message framing, multiplexing, reconnection logic |
+| Approach           | Pros                                                   | Cons                                                            |
+| ------------------ | ------------------------------------------------------ | --------------------------------------------------------------- |
+| Spawn per request  | Simple lifecycle, clean isolation, no state management | Process startup overhead per call                               |
+| Long-running child | Fast after init, single process                        | Complex: need message framing, multiplexing, reconnection logic |
 
 **Chose: Spawn per request.** For a first implementation this is the right call. The lifecycle is trivial: spawn, write, read, done. A long-running persistent child process would require a message framing protocol (delimiters or length-prefixed messages) and request multiplexing — that's a v2 concern.
 
@@ -72,11 +72,11 @@ If the C++ engine later adopts the tRPC envelope format, we can add `transformRe
 
 Three distinct error paths, each with different context:
 
-| Error Type | Source | What We Report |
-|------------|--------|----------------|
-| Spawn failure | `child.on('error')` | The OS error (e.g., ENOENT for missing binary) + any stderr captured |
-| Non-zero exit | `child.on('close')` | Exit code + stderr content |
-| Parse failure | `JSON.parse` in close handler | The raw stdout that failed to parse (truncated to 200 chars) |
+| Error Type    | Source                        | What We Report                                                       |
+| ------------- | ----------------------------- | -------------------------------------------------------------------- |
+| Spawn failure | `child.on('error')`           | The OS error (e.g., ENOENT for missing binary) + any stderr captured |
+| Non-zero exit | `child.on('close')`           | Exit code + stderr content                                           |
+| Parse failure | `JSON.parse` in close handler | The raw stdout that failed to parse (truncated to 200 chars)         |
 
 All errors are wrapped in `TRPCClientError.from()` to stay consistent with the tRPC error chain.
 
@@ -85,18 +85,23 @@ All errors are wrapped in `TRPCClientError.from()` to stay consistent with the t
 ## What Went Well
 
 ### 1. Pattern matching was straightforward
+
 The `httpLink` is a clean, simple terminating link. Following its structure made the implementation predictable. The 3-layer factory pattern is well-designed — it was immediately clear where spawn logic should live (Layer 3, inside the observable).
 
 ### 2. Type system cooperated
+
 The `TRPCLink<TRouter>` generic propagated cleanly. No type gymnastics needed. The `observable()` factory from `@trpc/server/observable` accepted our observer calls without issues.
 
 ### 3. Clean separation of concerns
+
 Despite all three tasks being tightly coupled in a `child_process` implementation, the code reads as three distinct sections:
+
 - Lines 98-99: stdin write (Task 1)
 - Lines 59-61 + 87-95: stdout read/parse (Task 2)
 - Lines 63-65 + 67-85 + 96-103: error handling (Task 3)
 
 ### 4. No modifications to other files required (yet)
+
 The `ipcLink.ts` is self-contained. It only imports from existing tRPC packages. The barrel export in `links.ts` will need updating, but that's a separate conversation per the rules we agreed on.
 
 ---
@@ -140,11 +145,11 @@ You specified tests should go in `packages/client/test/`, but that directory doe
 
 ## Files Modified
 
-| File | Action | Status |
-|------|--------|--------|
-| `packages/client/src/ipcLink.ts` | Created | Done |
-| `packages/client/src/links.ts` | Needs export added | Pending approval |
-| `packages/client/test/ipcLink.test.ts` | Needs creation | Pending |
+| File                                   | Action             | Status           |
+| -------------------------------------- | ------------------ | ---------------- |
+| `packages/client/src/ipcLink.ts`       | Created            | Done             |
+| `packages/client/src/links.ts`         | Needs export added | Pending approval |
+| `packages/client/test/ipcLink.test.ts` | Needs creation     | Pending          |
 
 ---
 
