@@ -204,7 +204,7 @@
     "@types/react-dom": "^19.1.1",
     "@types/ws": "^8.2.0",
     "devalue": "^5.0.0",
-    "eslint": "^10.0.0",
+    "eslint": "^9.26.0",
     "express": "^5.0.0",
     "fastify": "^5.0.0",
     "fastify-plugin": "^5.0.0",
