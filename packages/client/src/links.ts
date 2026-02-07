@@ -10,6 +10,7 @@ export * from './links/wsLink/wsLink';
 export * from './links/httpSubscriptionLink';
 export * from './links/retryLink';
 export * from './links/localLink';
+export * from './ipcLink';
 
 // These are not public (yet) as we get this functionality from tanstack query
 // export * from './links/internals/dedupeLink';
