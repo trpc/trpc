@@ -103,7 +103,7 @@
     "@types/express": "^5.0.0",
     "@types/node": "^22.13.5",
     "@types/react": "^19.1.0",
-    "eslint": "^9.26.0",
+    "eslint": "^10.0.0",
     "express": "^5.0.0",
     "next": "^15.3.8",
     "react": "^19.1.0",
