@@ -1,6 +1,6 @@
 {
   "name": "@monotest/api-router01",
-  "version": "11.10.0",
+  "version": "11.9.0",
   "private": true,
   "type": "module",
   "exports": {
