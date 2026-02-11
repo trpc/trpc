@@ -5,7 +5,7 @@ export const topSponsors = [
   {
     "name": "Ahoy Labs",
     "imgSrc": "https://avatars.githubusercontent.com/u/95662801?v=4",
-    "weight": 101,
+    "weight": 102,
     "login": "ahoylabs",
     "link": "https://backyard.ai/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1671157456000
@@ -19,6 +19,14 @@ export const topSponsors = [
     "createdAt": 1743099912000
   },
   {
+    "name": "SerpApi",
+    "imgSrc": "https://github.com/serpapi.png",
+    "weight": 94,
+    "login": "SerpApi",
+    "link": "https://serpapi.com/",
+    "createdAt": 1770768000000
+  },
+  {
     "name": "CodeRabbit",
     "imgSrc": "https://avatars.githubusercontent.com/u/132028505?v=4",
     "weight": 92,
@@ -29,18 +37,10 @@ export const topSponsors = [
   {
     "name": "Unkey",
     "imgSrc": "https://avatars.githubusercontent.com/u/138932600?v=4",
-    "weight": 43,
+    "weight": 45,
     "login": "unkeyed",
     "link": "https://unkey.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1708012798000
-  },
-  {
-    "name": "Dr. B",
-    "imgSrc": "https://avatars.githubusercontent.com/u/77294655?v=4",
-    "weight": 38,
-    "login": "hidrb",
-    "link": "https://github.com/hidrb",
-    "createdAt": 1633034677000
   }
 ] as const;
 
@@ -57,7 +57,7 @@ export const allSponsors = [
   {
     "name": "Dr. B",
     "imgSrc": "https://avatars.githubusercontent.com/u/77294655?v=4",
-    "weight": 38,
+    "weight": 39,
     "login": "hidrb",
     "link": "https://github.com/hidrb",
     "createdAt": 1633034677000
@@ -97,7 +97,7 @@ export const allSponsors = [
   {
     "name": "Ahoy Labs",
     "imgSrc": "https://avatars.githubusercontent.com/u/95662801?v=4",
-    "weight": 101,
+    "weight": 102,
     "login": "ahoylabs",
     "link": "https://backyard.ai/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1671157456000
@@ -113,7 +113,7 @@ export const allSponsors = [
   {
     "name": "Drizzle Team",
     "imgSrc": "https://avatars.githubusercontent.com/u/108468352?v=4",
-    "weight": 6,
+    "weight": 5,
     "login": "drizzle-team",
     "link": "https://drizzle.team/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1694781987000
@@ -137,7 +137,7 @@ export const allSponsors = [
   {
     "name": "Unkey",
     "imgSrc": "https://avatars.githubusercontent.com/u/138932600?v=4",
-    "weight": 43,
+    "weight": 45,
     "login": "unkeyed",
     "link": "https://unkey.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1708012798000
@@ -161,7 +161,7 @@ export const allSponsors = [
   {
     "name": "Andrei Karushev",
     "imgSrc": "https://avatars.githubusercontent.com/u/5677047?u=d503fccc70c9a66524639691b62853994335af0b&v=4",
-    "weight": 5,
+    "weight": 4,
     "login": "infodusha",
     "link": "https://github.com/infodusha",
     "createdAt": 1717016104000
@@ -237,5 +237,21 @@ export const allSponsors = [
     "login": "ErikBjare",
     "link": "https://erik.bjareholt.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1767946292000
+  },
+  {
+    "name": "Aerius Ventilation AB",
+    "imgSrc": "https://avatars.githubusercontent.com/u/107723282?u=2639caa14ce293a0b6202c5766a40bb99ac9697e&v=4",
+    "weight": 2,
+    "login": "aeriusventilation",
+    "link": "https://aerius.se/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "createdAt": 1770553222000
+  },
+  {
+    "name": "SerpApi",
+    "imgSrc": "https://github.com/serpapi.png",
+    "weight": 94,
+    "login": "SerpApi",
+    "link": "https://serpapi.com/",
+    "createdAt": 1770768000000
   }
 ] as const;
