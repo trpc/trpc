@@ -204,7 +204,7 @@ async function main() {
       link: 'https://serpapi.com/',
       privacyLevel: 'PUBLIC',
       login: 'SerpApi',
-      createdAt: Date.parse('2026-02-03'),
+      createdAt: Date.parse('2026-02-11'),
     });
     const list = rawList
       .map((sponsor) => {
