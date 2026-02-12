@@ -155,7 +155,7 @@ const utils = createTRPCQueryUtils({ queryClient, client: trpcClient });
 const loader = async (params: { id: string }) => {
   await utils.post.byId.ensureData({ id: params.id });
   return null; // it is required to return a value/null
-}
+};
 ```
 
 ### Component-level prefetching with `usePrefetchQuery`
