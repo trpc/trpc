@@ -152,8 +152,10 @@ The performance of suspense queries can be improved by prefetching the query dat
 const utils = createTRPCQueryUtils({ queryClient, client: trpcClient });
 
 // tanstack router/ react router loader
-const loader = async (params: { id: string }) =>
-  utils.post.byId.ensureData({ id: params.id });
+const loader = async (params: { id: string }) => {
+  await utils.post.byId.ensureData({ id: params.id });
+  return null; // it is required to return a value/null
+}
 ```
 
 ### Component-level prefetching with `usePrefetchQuery`
