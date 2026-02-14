@@ -177,7 +177,7 @@ jobs:
 
       - run: pnpm build
 
-      - uses: denoland/setup-deno@v1
+      - uses: denoland/setup-deno@v2
         with:
           deno-version: 2.x
 
@@ -250,7 +250,7 @@ jobs:
             next-prisma-websockets-starter,
             next-prisma-todomvc,
           ]
-        node-start: ['18.x', '20.x']
+        node-start: ['20.x', '22.x']
     steps:
       - uses: actions/checkout@v6
         with:
