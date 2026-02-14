@@ -23,7 +23,7 @@ export const topSponsors = [
     "imgSrc": "https://github.com/serpapi.png",
     "weight": 94,
     "login": "SerpApi",
-    "link": "https://serpapi.com/",
+    "link": "https://serpapi.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1770768000000
   },
   {
@@ -251,7 +251,7 @@ export const allSponsors = [
     "imgSrc": "https://github.com/serpapi.png",
     "weight": 94,
     "login": "SerpApi",
-    "link": "https://serpapi.com/",
+    "link": "https://serpapi.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1770768000000
   }
 ] as const;
