@@ -4,9 +4,9 @@
   "type": "module",
   "engines": {
     "node": "^22.18.0",
-    "pnpm": "^9.12.2"
+    "pnpm": "^10.0.0"
   },
-  "packageManager": "pnpm@9.12.2",
+  "packageManager": "pnpm@10.29.3",
   "scripts": {
     "clean-dev": "pnpm clean && pnpm install && pnpm build && pnpm dev",
     "clean-i": "pnpm clean && pnpm install",
