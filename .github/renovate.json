@@ -1,6 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:base", ":preserveSemverRanges"],
+  "extends": ["config:recommended", ":preserveSemverRanges"],
   "ignorePaths": ["**/node_modules/**", "**/examples/**"],
   "ignoreDeps": ["@swc/core", "autofix-ci/action"],
   "updateInternalDeps": true,

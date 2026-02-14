@@ -1,13 +1,13 @@
 import * as path from 'node:path';
 import { includeIgnoreFile } from '@eslint/compat';
 import reactPlugin from 'eslint-plugin-react';
-import * as reactHooks from 'eslint-plugin-react-hooks';
+import reactHooks from 'eslint-plugin-react-hooks';
 import unicorn from 'eslint-plugin-unicorn';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   includeIgnoreFile(path.join(import.meta.dirname, '.gitignore')),
-  reactHooks.configs.recommended,
+  reactHooks.configs['recommended-latest'],
   { ignores: ['**/vendor/**'] },
   {
     files: ['**/*.ts', '**/*.tsx'],
@@ -22,7 +22,6 @@ export default tseslint.config(
     ],
     rules: {
       ...reactPlugin.configs['jsx-runtime'].rules,
-      'react-hooks/react-compiler': 'error',
 
       // These rules aren't enabled in typescript-eslint's basic recommended config, but we like them
       '@typescript-eslint/no-non-null-assertion': 'error',
