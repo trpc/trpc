@@ -1694,6 +1694,8 @@ importers:
         specifier: ^1.50.1
         version: 1.51.1
 
+  examples/remix-trpc: {}
+
   examples/soa:
     devDependencies:
       '@trpc/client':
