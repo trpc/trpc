@@ -201,7 +201,7 @@ async function main() {
       name: 'SerpApi',
       imgSrc: 'https://github.com/serpapi.png',
       monthlyPriceInDollars: 500,
-      link: 'https://serpapi.com/',
+      link: ensureHttpAndAddRef('https://serpapi.com/'),
       privacyLevel: 'PUBLIC',
       login: 'SerpApi',
       createdAt: Date.parse('2026-02-11'),
