@@ -265,10 +265,7 @@ describe('maxBatchSize', () => {
     });
 
     const err = await waitError(
-      Promise.all([
-        ctx.client.hello.query('1'),
-        ctx.client.hello.query('2'),
-      ]),
+      Promise.all([ctx.client.hello.query('1'), ctx.client.hello.query('2')]),
       TRPCClientError<typeof router>,
     );
     expect(err.data?.code).toMatchInlineSnapshot(`"BAD_REQUEST"`);
