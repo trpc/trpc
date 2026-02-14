@@ -3,7 +3,7 @@ import type { ProcedureType } from '../procedure';
 import { getProcedureAtPath, type AnyRouter } from '../router';
 import { emptyObject, isObject } from '../utils';
 import { parseConnectionParamsFromString } from './parseConnectionParams';
-import type { TRPCAcceptHeader, TRPCRequestInfo } from './types';
+import type { TRPCRequestInfo } from './types';
 
 type GetRequestInfoOptions = {
   path: string;
@@ -172,7 +172,11 @@ const jsonContentTypeHandler: ContentTypeHandler = {
 
     const info: TRPCRequestInfo = {
       isBatchCall,
-      accept: req.headers.get('trpc-accept') as TRPCAcceptHeader | null,
+      accept: (() => {
+        const raw =
+          req.headers.get('trpc-accept') ?? opts.searchParams.get('accept');
+        return raw === 'application/jsonl' ? raw : null;
+      })(),
       calls,
       type,
       connectionParams:

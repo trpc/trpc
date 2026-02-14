@@ -876,6 +876,36 @@ describe('no transformer', () => {
 
     expect(promise).toEqual('foo');
   });
+
+  // https://github.com/trpc/trpc/issues/6819
+  test('content-type is application/jsonl', async () => {
+    const res = await fetch(`${ctx.httpUrl}/trpc/embedPromise?batch=1`, {
+      headers: {
+        accept: 'application/jsonl',
+        'trpc-accept': 'application/jsonl',
+      },
+    });
+    const headers = res.headers;
+    expect(headers.get('content-type')).toEqual('application/jsonl');
+
+    // get first line of response
+    const body = await res.text();
+    const firstLine = body.split('\n')[0];
+    expect(JSON.parse(firstLine!)).toMatchInlineSnapshot(`
+      Object {
+        "0": Array [
+          Array [
+            0,
+          ],
+          Array [
+            null,
+            0,
+            0,
+          ],
+        ],
+      }
+    `);
+  });
 });
 
 describe('with transformer', () => {
