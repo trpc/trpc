@@ -23,7 +23,7 @@
     "lint-fix": "turbo lint --continue -- --fix && manypkg fix && pnpm format-fix",
     "format": "prettier \"**/*\" --ignore-unknown",
     "format-fix": "pnpm format --write --list-different",
-    "lint-prune": "knip --exports",
+    "lint-prune": "knip --exports --exclude duplicates --no-config-hints",
     "clean": "find . -name node_modules -o -name .turbo -o -name .next -o -name dist -o -name __generated__ -type d -prune | xargs rm -rf",
     "prepublish": "pnpm build",
     "prepack": "tsx scripts/version.ts",

@@ -39,6 +39,7 @@ export type UseProcedureRecord<
     : never;
 };
 
+/** @public */
 export function createUseProxy<TRouter extends AnyRouter>(
   client: TRPCUntypedClient<TRouter> | TRPCClient<TRouter>,
 ) {
@@ -80,6 +81,7 @@ type NextAppRouterUse<TRouter extends AnyRouter> = {
 type CreateTRPCNextAppRouterBase<TRouter extends AnyRouter> = {
   use: NextAppRouterUse<TRouter>;
 };
+/** @public */
 export type CreateTRPCNextAppRouter<TRouter extends AnyRouter> =
   ProtectedIntersection<
     CreateTRPCNextAppRouterBase<TRouter>,

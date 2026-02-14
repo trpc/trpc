@@ -10,6 +10,7 @@ import { splitSetCookieString } from '../../vendor/cookie-es/set-cookie/split';
 
 export type LambdaEvent = APIGatewayProxyEvent | APIGatewayProxyEventV2;
 
+/** @public */
 export type APIGatewayResult =
   | APIGatewayProxyResult
   | APIGatewayProxyStructuredResultV2;
