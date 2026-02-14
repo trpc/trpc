@@ -23,7 +23,6 @@ type NextCacheLinkOptions<TRouter extends AnyRouter> = {
   revalidate?: number | false;
 } & TransformerOptions<inferClientTypes<TRouter>>;
 
-// ts-prune-ignore-next
 export function experimental_nextCacheLink<TRouter extends AnyRouter>(
   opts: NextCacheLinkOptions<TRouter>,
 ): TRPCLink<TRouter> {

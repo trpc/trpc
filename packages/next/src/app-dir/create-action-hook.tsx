@@ -61,7 +61,6 @@ interface UseTRPCActionLoadingResult<TDef extends ActionHandlerDef>
   status: 'loading';
 }
 
-// ts-prune-ignore-next
 export type UseTRPCActionResult<TDef extends ActionHandlerDef> =
   | UseTRPCActionErrorResult<TDef>
   | UseTRPCActionIdleResult<TDef>
@@ -72,7 +71,6 @@ type ActionContext = {
   _action: (...args: any[]) => Promise<any>;
 };
 
-// ts-prune-ignore-next
 export function experimental_serverActionLink<
   TInferrable extends InferrableClientTypes,
 >(
@@ -128,7 +126,6 @@ interface UseTRPCActionOptions<TDef extends ActionHandlerDef> {
   onSuccess?: (result: TDef['output']) => MaybePromise<void> | void;
   onError?: (result: TRPCClientError<TDef['errorShape']>) => MaybePromise<void>;
 }
-// ts-prune-ignore-next
 export function experimental_createActionHook<
   TInferrable extends InferrableClientTypes,
 >(
