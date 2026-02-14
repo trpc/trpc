@@ -36,7 +36,7 @@ Open one terminal and run:
 pnpm dev
 ```
 
-In a second terminal, you can run the tests in watch mode using
+In a second terminal, you can run tests in watch mode using:
 
 ```bash
 pnpm test
@@ -48,7 +48,16 @@ pnpm test react
 pnpm test 3085
 ```
 
-Test are mainly coalesced in [./packages/tests](./packages/tests); we import the different libs from here, this makes it easier for us to do integration testing.
+For CI-like one-shot runs (no watch mode), use:
+
+```bash
+pnpm test -- --watch false
+
+# example if you want to test a specific test file:
+pnpm test -- --watch false react
+```
+
+Tests are mainly coalesced in [./packages/tests](./packages/tests); we import the different libs from here, this makes it easier for us to do integration testing.
 
 ### Linting
 

@@ -78,7 +78,7 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - run: MUTE_REACT_ACT_WARNINGS=1 pnpm test -- --coverage
+      - run: MUTE_REACT_ACT_WARNINGS=1 pnpm test -- --coverage --watch false
 
       - uses: codecov/codecov-action@v5
         with:
@@ -138,12 +138,11 @@ jobs:
 
       - run: pnpm build
 
-      - name: Install playwright ???
-        # Seems like some of playwright's system deps aren't being cached, so we're making sure they are installed
+      - name: Install playwright if needed
+        # Some playwright system dependencies are not cached reliably in CI.
         run: |
-          cat ./examples/${{ matrix.dir }}/package.json |
-          if grep --silent '"@playwright/test"';
-            then cd ./examples/${{ matrix.dir }} && pnpm exec playwright install chromium;
+          if node -e "const { readFileSync } = require('node:fs'); const pkg = JSON.parse(readFileSync('./examples/${{ matrix.dir }}/package.json', 'utf8')); process.exit(pkg.dependencies?.['@playwright/test'] || pkg.devDependencies?.['@playwright/test'] ? 0 : 1);"; then
+            cd ./examples/${{ matrix.dir }} && pnpm exec playwright install chromium;
           fi
 
       - run: cp ./examples/${{ matrix.dir }}/.env.example ./examples/${{ matrix.dir }}/.env || true
@@ -264,12 +263,11 @@ jobs:
           node-version: ${{ matrix.node-start }}
           cache: 'pnpm'
       - run: node -v
-      - name: Install playwright ???
-        # Seems like some of playwright's system deps aren't being cached, so we're making sure they are installed
+      - name: Install playwright if needed
+        # Some playwright system dependencies are not cached reliably in CI.
         run: |
-          cat ./examples/${{ matrix.dir }}/package.json |
-          if grep --silent '"@playwright/test"';
-            then cd ./examples/${{ matrix.dir }} && pnpm exec playwright install chromium;
+          if node -e "const { readFileSync } = require('node:fs'); const pkg = JSON.parse(readFileSync('./examples/${{ matrix.dir }}/package.json', 'utf8')); process.exit(pkg.dependencies?.['@playwright/test'] || pkg.devDependencies?.['@playwright/test'] ? 0 : 1);"; then
+            cd ./examples/${{ matrix.dir }} && pnpm exec playwright install chromium;
           fi
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build
