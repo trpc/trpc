@@ -23,7 +23,7 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - name: Run ts-prune
+      - name: Run knip
         run: pnpm lint-prune
 
       # <autofixing>
