@@ -11,7 +11,7 @@ export const input = [
 ];
 
 export default defineConfig({
-  target: ['node18', 'es2017'],
+  target: ['node20', 'es2022'],
   entry: input,
   dts: {
     sourcemap: true,
