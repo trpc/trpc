@@ -8,11 +8,8 @@ import { createRecursiveProxy } from '@trpc/server/unstable-core-do-not-import';
 import type { CreateTRPCNextAppRouterOptions } from './shared';
 
 export {
-  // ts-prune-ignore-next
   experimental_createActionHook,
-  // ts-prune-ignore-next
   experimental_serverActionLink,
-  // ts-prune-ignore-next
   type UseTRPCActionResult,
 } from './create-action-hook';
 
@@ -22,7 +19,6 @@ type QueryResult = {
   promise?: Promise<unknown>;
 };
 
-// ts-prune-ignore-next
 export function experimental_createTRPCNextAppDirClient<
   TRouter extends AnyRouter,
 >(opts: CreateTRPCNextAppRouterOptions<TRouter>) {

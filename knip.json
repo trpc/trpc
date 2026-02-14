@@ -1,0 +1,20 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "ignoreWorkspaces": [
+    "examples/*",
+    "examples/.*/*",
+    "examples/minimal/*",
+    "examples/minimal-react/*",
+    "examples/minimal-content-types/*",
+    "www",
+    "www/og-image"
+  ],
+  "ignore": [
+    "**/__fixtures__/**",
+    "**/__generated__/**"
+  ],
+  "ignoreDependencies": [
+    "@ianvs/prettier-plugin-sort-imports",
+    "prettier-plugin-tailwindcss"
+  ]
+}
