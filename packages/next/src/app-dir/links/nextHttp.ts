@@ -25,7 +25,7 @@ type NextLinkBatchOptions<TRoot extends AnyRootTypes> = NextLinkBaseOptions &
     batch: true;
   };
 
-// ts-prune-ignore-next
+// Intentionally exported for the public API.
 export function experimental_nextHttpLink<TRouter extends AnyRouter>(
   opts:
     | NextLinkSingleOptions<TRouter['_def']['_config']['$types']>

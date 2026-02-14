@@ -37,7 +37,7 @@ import type { NextAppDirDecorateRouterRecord } from './types';
 
 export type { ActionHandlerDef };
 
-// ts-prune-ignore-next
+// Intentionally exported for the public API.
 export function experimental_createTRPCNextAppDirServer<
   TRouter extends AnyRouter,
 >(opts: CreateTRPCNextAppRouterOptions<TRouter>) {
@@ -195,7 +195,7 @@ export function experimental_createServerActionHandler<
   };
 }
 
-// ts-prune-ignore-next
+// Intentionally exported for the public API.
 export async function experimental_revalidateEndpoint(req: Request) {
   const { cacheTag } = await req.json();
 
