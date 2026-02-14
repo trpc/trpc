@@ -96,12 +96,17 @@ The modernization focus is therefore on **reliability, determinism, cross-platfo
 
 ## Acceptance Criteria
 
-- [ ] Plan file exists with actionable phases and validation steps.
-- [ ] Root scripts and Turbo config are modernized.
-- [ ] CI setup/workflow changes are merged and syntactically valid.
-- [ ] Upgrade CLI package manager behavior is fixed with tests.
-- [ ] Contributor docs updated.
-- [ ] Focused validation commands pass locally.
+- [x] Plan file exists with actionable phases and validation steps.
+- [x] Root scripts and Turbo config are modernized.
+- [x] CI setup/workflow changes are merged and syntactically valid.
+- [x] Upgrade CLI package manager behavior is fixed with tests.
+- [x] Contributor docs updated.
+- [x] Focused validation commands pass locally.
+
+## Execution Notes (Completed in this branch)
+
+- `pnpm test -- --watch false packages/upgrade/test/pkgmgr.test.ts`
+- `pnpm --filter @trpc/upgrade build`
 
 ## Rollback Strategy
 
