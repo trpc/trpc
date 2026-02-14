@@ -200,3 +200,113 @@ test('batching disabled', async () => {
   );
   ctx;
 });
+
+describe('maxBatchSize', () => {
+  test('rejects batch requests exceeding maxBatchSize', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      server: {
+        maxBatchSize: 2,
+      },
+      clientLink: 'httpBatchLink',
+    });
+
+    const err = await waitError(
+      Promise.all([
+        ctx.client.hello.query('1'),
+        ctx.client.hello.query('2'),
+        ctx.client.hello.query('3'),
+      ]),
+      TRPCClientError<typeof router>,
+    );
+    expect(err.data?.code).toMatchInlineSnapshot(`"BAD_REQUEST"`);
+    expect(err.data?.httpStatus).toMatchInlineSnapshot(`400`);
+    expect(err.message).toContain('Batch size 3 exceeds maximum of 2');
+  });
+
+  test('allows batch requests within maxBatchSize', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      server: {
+        maxBatchSize: 5,
+      },
+      clientLink: 'httpBatchLink',
+    });
+
+    const results = await Promise.all([
+      ctx.client.hello.query('1'),
+      ctx.client.hello.query('2'),
+    ]);
+
+    expect(results).toEqual(['Hello 1', 'Hello 2']);
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
+  });
+
+  test('allows batch requests at exactly maxBatchSize', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      server: {
+        maxBatchSize: 2,
+      },
+      clientLink: 'httpBatchLink',
+    });
+
+    const results = await Promise.all([
+      ctx.client.hello.query('1'),
+      ctx.client.hello.query('2'),
+    ]);
+
+    expect(results).toEqual(['Hello 1', 'Hello 2']);
+  });
+
+  test('rejects batch requests exceeding maxBatchSize with httpBatchStreamLink', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      server: {
+        maxBatchSize: 1,
+      },
+      clientLink: 'httpBatchStreamLink',
+    });
+
+    const err = await waitError(
+      Promise.all([
+        ctx.client.hello.query('1'),
+        ctx.client.hello.query('2'),
+      ]),
+      TRPCClientError<typeof router>,
+    );
+    expect(err.data?.code).toMatchInlineSnapshot(`"BAD_REQUEST"`);
+    expect(err.message).toContain('Batch size 2 exceeds maximum of 1');
+  });
+
+  test('does not affect non-batch requests', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      server: {
+        maxBatchSize: 1,
+      },
+      clientLink: 'httpLink',
+    });
+
+    const result = await ctx.client.hello.query('1');
+    expect(result).toBe('Hello 1');
+  });
+
+  test('no limit when maxBatchSize is not set', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      server: {},
+      clientLink: 'httpBatchLink',
+    });
+
+    const results = await Promise.all([
+      ctx.client.hello.query('1'),
+      ctx.client.hello.query('2'),
+      ctx.client.hello.query('3'),
+      ctx.client.hello.query('4'),
+      ctx.client.hello.query('5'),
+    ]);
+
+    expect(results).toEqual([
+      'Hello 1',
+      'Hello 2',
+      'Hello 3',
+      'Hello 4',
+      'Hello 5',
+    ]);
+  });
+});

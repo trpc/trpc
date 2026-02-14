@@ -158,4 +158,11 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter, TRequest> {
    * @default true
    */
   allowBatching?: boolean;
+  /**
+   * Maximum number of procedure calls allowed in a single batch request.
+   * This limit is enforced early, before `createContext` is called,
+   * to prevent denial-of-service attacks via excessively large batches.
+   * @default Infinity (no limit)
+   */
+  maxBatchSize?: number;
 }
