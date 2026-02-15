@@ -315,6 +315,16 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         message: `Batching is not enabled on the server`,
       });
     }
+    if (
+      info.isBatchCall &&
+      typeof opts.maxBatchSize === 'number' &&
+      info.calls.length > opts.maxBatchSize
+    ) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: `Batch size ${info.calls.length} exceeds maximum of ${opts.maxBatchSize}`,
+      });
+    }
     /* istanbul ignore if -- @preserve */
     if (isStreamCall && !info.isBatchCall) {
       throw new TRPCError({
