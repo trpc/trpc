@@ -86,6 +86,21 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
           });
 
           const res = await responsePromise;
+
+          // If the response is not OK (e.g., batch size exceeded, batching disabled),
+          // the server returns a plain JSON error, not a JSONL stream.
+          // Handle it like httpBatchLink does to preserve the error shape.
+          if ('ok' in res && !res.ok) {
+            const json = (await res.json()) as TRPCResponse;
+            const errorResults = batchOps.map((): HTTPResult => ({
+              json,
+              meta: {
+                response: res,
+              },
+            }));
+            return errorResults;
+          }
+
           const [head] = await jsonlStreamConsumer<
             Record<string, Promise<any>>
           >({
