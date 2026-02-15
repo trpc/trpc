@@ -92,12 +92,14 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
           // Handle it like httpBatchLink does to preserve the error shape.
           if ('ok' in res && !res.ok) {
             const json = (await res.json()) as TRPCResponse;
-            const errorResults = batchOps.map((): HTTPResult => ({
-              json,
-              meta: {
-                response: res,
-              },
-            }));
+            const errorResults = batchOps.map(
+              (): HTTPResult => ({
+                json,
+                meta: {
+                  response: res,
+                },
+              }),
+            );
             return errorResults;
           }
 
