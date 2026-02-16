@@ -73,6 +73,8 @@ export type NodeJSReadableStreamEsque = {
  */
 export interface ResponseEsque {
   readonly body?: NodeJSReadableStreamEsque | WebReadableStreamEsque | null;
+  readonly ok?: boolean;
+  readonly status?: number;
   /**
    * @remarks
    * The built-in Response::json() method returns Promise<any>, but
