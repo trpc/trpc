@@ -91,12 +91,26 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
           // the server returns a plain JSON error, not a JSONL stream.
           // Handle it like httpBatchLink does to preserve the error shape.
           if ('ok' in res && !res.ok) {
-            const json = (await res.json()) as TRPCResponse;
+            let json: TRPCResponse;
+            try {
+              json = (await res.json()) as TRPCResponse;
+            } catch {
+              // If the response body is not valid JSON (e.g., HTML 502 from a proxy),
+              // synthesize a minimal error shape so we don't lose the response metadata.
+              json = {
+                error: {
+                  message: `Non-JSON error response (HTTP ${res.status})`,
+                  code: -1,
+                  data: { code: 'BAD_REQUEST', httpStatus: res.status },
+                },
+              } as unknown as TRPCResponse;
+            }
             const errorResults = batchOps.map(
               (): HTTPResult => ({
                 json,
                 meta: {
                   response: res,
+                  responseJSON: json,
                 },
               }),
             );
