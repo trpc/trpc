@@ -3,10 +3,10 @@ import { testServerAndClientResource } from '@trpc/client/__tests__/testClientRe
 import { waitError } from '@trpc/server/__tests__/waitError';
 import '@testing-library/react';
 import { getUntypedClient, TRPCClientError, wsLink } from '@trpc/client';
-import type { inferProcedureOutput } from '@trpc/server';
-import { initTRPC } from '@trpc/server';
 import type { Unsubscribable } from '@trpc/observable';
 import { observable } from '@trpc/observable';
+import type { inferProcedureOutput } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import { lazy } from '@trpc/server/unstable-core-do-not-import';
 import { z } from 'zod';
 

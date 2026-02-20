@@ -19,9 +19,9 @@ import {
   splitLink,
 } from '@trpc/client';
 import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
+import { observable } from '@trpc/observable';
 import type { TRPCCombinedDataTransformer } from '@trpc/server';
 import { initTRPC, tracked } from '@trpc/server';
-import { observable } from '@trpc/observable';
 import type {
   Deferred,
   RootConfig,

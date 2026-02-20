@@ -1,9 +1,9 @@
+import { observable } from '@trpc/observable';
 import { initTRPC } from '@trpc/server';
 import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import type { CreateWSSContextFnOptions } from '@trpc/server/adapters/ws';
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
-import { observable } from '@trpc/observable';
 import { WebSocketServer } from 'ws';
 import { z } from 'zod';
 

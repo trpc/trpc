@@ -9,8 +9,8 @@ import {
   TRPCClientError,
   wsLink,
 } from '@trpc/client';
-import { initTRPC, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/observable';
+import { initTRPC, TRPCError } from '@trpc/server';
 import type {
   CombinedDataTransformer,
   DataTransformer,

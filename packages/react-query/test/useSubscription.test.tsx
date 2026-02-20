@@ -5,9 +5,9 @@ import {
   suppressLogsUntil,
 } from '@trpc/server/__tests__/suppressLogs';
 import { fireEvent, render } from '@testing-library/react';
+import { observable } from '@trpc/observable';
 import type { TRPCSubscriptionResult } from '@trpc/react-query/shared';
 import { initTRPC } from '@trpc/server';
-import { observable } from '@trpc/observable';
 import { konn } from 'konn';
 import React, { useState } from 'react';
 import { z } from 'zod';

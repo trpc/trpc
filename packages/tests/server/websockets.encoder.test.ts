@@ -1,10 +1,10 @@
 import { EventEmitter } from 'node:events';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
-import { initTRPC, tracked } from '@trpc/server';
-import { jsonEncoder, type Encoder } from '@trpc/server/adapters/ws';
 import type { Observer } from '@trpc/observable';
 import { observable } from '@trpc/observable';
+import { initTRPC, tracked } from '@trpc/server';
+import { jsonEncoder, type Encoder } from '@trpc/server/adapters/ws';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
 import WebSocket from 'ws';
 import { z } from 'zod';

@@ -11,13 +11,13 @@ import {
   splitLink,
   wsLink,
 } from '@trpc/client';
+import { observable } from '@trpc/observable';
 import { initTRPC } from '@trpc/server';
 import type {
   CreateFastifyContextOptions,
   FastifyTRPCPluginOptions,
 } from '@trpc/server/adapters/fastify';
 import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
-import { observable } from '@trpc/observable';
 import fastify from 'fastify';
 import fp from 'fastify-plugin';
 import fetch from 'node-fetch';

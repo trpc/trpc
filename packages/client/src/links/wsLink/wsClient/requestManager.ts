@@ -1,5 +1,5 @@
-import type { AnyTRPCRouter, inferRouterError } from '@trpc/server';
 import type { Observer } from '@trpc/observable';
+import type { AnyTRPCRouter, inferRouterError } from '@trpc/server';
 import type {
   TRPCClientOutgoingMessage,
   TRPCResponseMessage,

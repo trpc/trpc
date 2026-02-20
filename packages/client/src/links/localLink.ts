@@ -1,9 +1,9 @@
+import { behaviorSubject, observable } from '@trpc/observable';
 import {
   getTRPCErrorFromUnknown,
   getTRPCErrorShape,
   isTrackedEnvelope,
 } from '@trpc/server';
-import { behaviorSubject, observable } from '@trpc/observable';
 import { TRPC_ERROR_CODES_BY_KEY, type TRPCResult } from '@trpc/server/rpc';
 import {
   callProcedure,

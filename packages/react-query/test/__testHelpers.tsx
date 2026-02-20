@@ -9,11 +9,11 @@ import {
   splitLink,
   wsLink,
 } from '@trpc/client';
+import type { Observable, Observer } from '@trpc/observable';
+import { observable } from '@trpc/observable';
 import { createTRPCReact } from '@trpc/react-query';
 import type { OutputWithCursor } from '@trpc/react-query/shared';
 import { initTRPC, TRPCError } from '@trpc/server';
-import type { Observable, Observer } from '@trpc/observable';
-import { observable } from '@trpc/observable';
 import hash from 'hash-sum';
 import type { ReactNode } from 'react';
 import React from 'react';
