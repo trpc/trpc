@@ -102,14 +102,11 @@ test('share', () => {
     }),
   );
 
-  let subscription1: ReturnType<typeof obs.subscribe>;
-  let subscription2: ReturnType<typeof obs.subscribe>;
-
   const next1 = vi.fn();
   const error1 = vi.fn();
   const complete1 = vi.fn();
 
-  subscription1 = obs.subscribe({
+  const subscription1 = obs.subscribe({
     next: next1,
     error: error1,
     complete: complete1,
@@ -123,7 +120,7 @@ test('share', () => {
   const next2 = vi.fn();
   const error2 = vi.fn();
   const complete2 = vi.fn();
-  subscription2 = obs.subscribe({
+  const subscription2 = obs.subscribe({
     next: next2,
     error: error2,
     complete: complete2,
