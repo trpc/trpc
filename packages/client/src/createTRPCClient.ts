@@ -145,7 +145,8 @@ const clientCallTypeMap: Record<
 export const clientCallTypeToProcedureType = (
   clientCallType: string,
 ): ProcedureType => {
-  const mapped = clientCallTypeMap[clientCallType as keyof typeof clientCallTypeMap];
+  const mapped =
+    clientCallTypeMap[clientCallType as keyof typeof clientCallTypeMap];
   if (mapped === 'queryObservable') return 'query';
   if (mapped === 'mutationObservable') return 'mutation';
   return mapped as ProcedureType;

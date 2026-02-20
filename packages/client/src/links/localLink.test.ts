@@ -1,7 +1,7 @@
 import { waitError } from '@trpc/server/__tests__/waitError';
-import { observableToPromise } from '@trpc/server/observable';
 import type { AnyRouter } from '@trpc/server';
 import { initTRPC, tracked, TRPCError } from '@trpc/server';
+import { observableToPromise } from '@trpc/server/observable';
 import { makeResource, run } from '@trpc/server/unstable-core-do-not-import';
 import superjson from 'superjson';
 import { z } from 'zod';
@@ -599,9 +599,7 @@ test('query$ with input', async () => {
     ],
   });
 
-  const result = await observableToPromise(
-    client.add.query$({ a: 2, b: 3 }),
-  );
+  const result = await observableToPromise(client.add.query$({ a: 2, b: 3 }));
   expect(result).toBe(5);
 });
 
@@ -647,9 +645,7 @@ test('mutate$ emits result then completes', async () => {
     ],
   });
 
-  const result = await observableToPromise(
-    client.echo.mutate$('hello world'),
-  );
+  const result = await observableToPromise(client.echo.mutate$('hello world'));
   expect(result).toEqual({ echoed: 'hello world' });
 });
 
@@ -671,9 +667,7 @@ test('mutate$ propagates errors', async () => {
     ],
   });
 
-  const err = await waitError(
-    observableToPromise(client.fail.mutate$()),
-  );
+  const err = await waitError(observableToPromise(client.fail.mutate$()));
   assert(isTRPCClientError<typeof appRouter>(err));
   expect(err.message).toBe('oops');
 });

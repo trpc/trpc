@@ -3,7 +3,11 @@ import type {
   Observable,
   Unsubscribable,
 } from '@trpc/server/observable';
-import { observable, observableToPromise, share } from '@trpc/server/observable';
+import {
+  observable,
+  observableToPromise,
+  share,
+} from '@trpc/server/observable';
 import type {
   AnyRouter,
   inferAsyncIterableYield,
