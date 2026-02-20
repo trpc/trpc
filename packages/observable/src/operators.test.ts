@@ -102,38 +102,35 @@ test('share', () => {
     }),
   );
 
-  {
-    const next = vi.fn();
-    const error = vi.fn();
-    const complete = vi.fn();
+  let subscription1: ReturnType<typeof obs.subscribe>;
+  let subscription2: ReturnType<typeof obs.subscribe>;
 
-    // eslint-disable-next-line no-var
-    var subscription1 = obs.subscribe({
-      next,
-      error,
-      complete,
-    });
-    expect(next.mock.calls).toHaveLength(1);
-    expect(complete.mock.calls).toHaveLength(0);
-    expect(error.mock.calls).toHaveLength(0);
-    expect(next.mock.calls[0]![0]).toBe(1);
-  }
+  const next1 = vi.fn();
+  const error1 = vi.fn();
+  const complete1 = vi.fn();
 
-  {
-    // subscribe again - it's shared so should not propagate any results
-    const next = vi.fn();
-    const error = vi.fn();
-    const complete = vi.fn();
-    // eslint-disable-next-line no-var
-    var subscription2 = obs.subscribe({
-      next,
-      error,
-      complete,
-    });
-    expect(next.mock.calls).toHaveLength(0);
-    expect(complete.mock.calls).toHaveLength(0);
-    expect(error.mock.calls).toHaveLength(0);
-  }
+  subscription1 = obs.subscribe({
+    next: next1,
+    error: error1,
+    complete: complete1,
+  });
+  expect(next1.mock.calls).toHaveLength(1);
+  expect(complete1.mock.calls).toHaveLength(0);
+  expect(error1.mock.calls).toHaveLength(0);
+  expect(next1.mock.calls[0]![0]).toBe(1);
+
+  // subscribe again - it's shared so should not propagate any results
+  const next2 = vi.fn();
+  const error2 = vi.fn();
+  const complete2 = vi.fn();
+  subscription2 = obs.subscribe({
+    next: next2,
+    error: error2,
+    complete: complete2,
+  });
+  expect(next2.mock.calls).toHaveLength(0);
+  expect(complete2.mock.calls).toHaveLength(0);
+  expect(error2.mock.calls).toHaveLength(0);
 
   subscription1.unsubscribe();
   subscription2.unsubscribe();
