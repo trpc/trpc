@@ -75,7 +75,9 @@ describe('skipToken', () => {
       const trpc = useTRPC();
 
       // This must compile without error: spreading .queryOptions() into useSuspenseQuery
-      const { data } = useSuspenseQuery(trpc.post.byId.queryOptions({ id: '1' }));
+      const { data } = useSuspenseQuery(
+        trpc.post.byId.queryOptions({ id: '1' }),
+      );
       expectTypeOf(data).toMatchTypeOf<'__result'>();
 
       return <pre>{String(data)}</pre>;
