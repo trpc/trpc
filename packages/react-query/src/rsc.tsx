@@ -72,7 +72,7 @@ type Caller<TRouter extends AnyRouter> = ReturnType<
   RouterCaller<inferRouterRootTypes<TRouter>, TRouter['_def']['record']>
 >;
 
-// ts-prune-ignore-next
+// Intentionally exported for the public API.
 /**
  * @note This requires `@tanstack/react-query@^5.49.0`
  * @note Make sure to have `dehydrate.serializeData` and `hydrate.deserializeData`
