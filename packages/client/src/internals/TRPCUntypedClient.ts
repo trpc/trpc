@@ -1,8 +1,9 @@
 import type {
   inferObservableValue,
+  Observable,
   Unsubscribable,
 } from '@trpc/server/observable';
-import { observableToPromise, share } from '@trpc/server/observable';
+import { observable, observableToPromise, share } from '@trpc/server/observable';
 import type {
   AnyRouter,
   inferAsyncIterableYield,
@@ -112,6 +113,65 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
       signal: opts?.signal,
     });
   }
+
+  private requestAsObservable<TOutput = unknown>(opts: {
+    type: 'query' | 'mutation';
+    path: string;
+    input?: unknown;
+    context?: OperationContext;
+    signal: Maybe<AbortSignal>;
+  }): Observable<TOutput, TRPCClientError<AnyRouter>> {
+    const req$ = this.$request<unknown, TOutput>({
+      type: opts.type,
+      path: opts.path,
+      input: opts.input ?? undefined,
+      context: opts.context,
+      signal: opts.signal,
+    });
+    return observable((observer) => {
+      return req$.subscribe({
+        next(envelope) {
+          const data = (envelope.result as any).data;
+          observer.next(data as TOutput);
+        },
+        error(err) {
+          observer.error(TRPCClientError.from(err as Error));
+        },
+        complete() {
+          observer.complete();
+        },
+      });
+    });
+  }
+
+  public queryObservable<TOutput = unknown>(
+    path: string,
+    input?: unknown,
+    opts?: TRPCRequestOptions,
+  ): Observable<TOutput, TRPCClientError<AnyRouter>> {
+    return this.requestAsObservable<TOutput>({
+      type: 'query',
+      path,
+      input,
+      context: opts?.context,
+      signal: opts?.signal,
+    });
+  }
+
+  public mutationObservable<TOutput = unknown>(
+    path: string,
+    input?: unknown,
+    opts?: TRPCRequestOptions,
+  ): Observable<TOutput, TRPCClientError<AnyRouter>> {
+    return this.requestAsObservable<TOutput>({
+      type: 'mutation',
+      path,
+      input,
+      context: opts?.context,
+      signal: opts?.signal,
+    });
+  }
+
   public subscription(
     path: string,
     input: unknown,
