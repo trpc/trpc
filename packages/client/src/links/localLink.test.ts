@@ -1,4 +1,5 @@
 import { waitError } from '@trpc/server/__tests__/waitError';
+import { observableToPromise } from '@trpc/server/observable';
 import type { AnyRouter } from '@trpc/server';
 import { initTRPC, tracked, TRPCError } from '@trpc/server';
 import { makeResource, run } from '@trpc/server/unstable-core-do-not-import';
@@ -551,4 +552,128 @@ test('with transformer', async () => {
   expect(result.foo).toBeInstanceOf(Promise);
 
   expect(await result.foo).toBe('bar');
+});
+
+test('query$ emits result then completes', async () => {
+  const t = initTRPC.create();
+
+  const appRouter = t.router({
+    hello: t.procedure.query(() => 'hello'),
+    getNum: t.procedure.query(() => 42),
+  });
+
+  const client = createTRPCClient<typeof appRouter>({
+    links: [
+      localLink({
+        router: appRouter,
+        createContext: async () => ({}),
+      }),
+    ],
+  });
+
+  const obs = client.hello.query$();
+  const promise = observableToPromise(obs);
+  const result = await promise;
+  expect(result).toBe('hello');
+
+  const numObs = client.getNum.query$();
+  const numResult = await observableToPromise(numObs);
+  expect(numResult).toBe(42);
+});
+
+test('query$ with input', async () => {
+  const t = initTRPC.create();
+
+  const appRouter = t.router({
+    add: t.procedure
+      .input(z.object({ a: z.number(), b: z.number() }))
+      .query(({ input }) => input.a + input.b),
+  });
+
+  const client = createTRPCClient<typeof appRouter>({
+    links: [
+      localLink({
+        router: appRouter,
+        createContext: async () => ({}),
+      }),
+    ],
+  });
+
+  const result = await observableToPromise(
+    client.add.query$({ a: 2, b: 3 }),
+  );
+  expect(result).toBe(5);
+});
+
+test('query$ propagates errors', async () => {
+  const t = initTRPC.create();
+
+  const appRouter = t.router({
+    fail: t.procedure.query(() => {
+      throw new TRPCError({ code: 'BAD_REQUEST', message: 'nope' });
+    }),
+  });
+
+  const client = createTRPCClient<typeof appRouter>({
+    links: [
+      localLink({
+        router: appRouter,
+        createContext: async () => ({}),
+      }),
+    ],
+  });
+
+  const obs = client.fail.query$();
+  const err = await waitError(observableToPromise(obs));
+  assert(isTRPCClientError<typeof appRouter>(err));
+  expect(err.message).toBe('nope');
+});
+
+test('mutate$ emits result then completes', async () => {
+  const t = initTRPC.create();
+
+  const appRouter = t.router({
+    echo: t.procedure
+      .input(z.string())
+      .mutation(({ input }) => ({ echoed: input })),
+  });
+
+  const client = createTRPCClient<typeof appRouter>({
+    links: [
+      localLink({
+        router: appRouter,
+        createContext: async () => ({}),
+      }),
+    ],
+  });
+
+  const result = await observableToPromise(
+    client.echo.mutate$('hello world'),
+  );
+  expect(result).toEqual({ echoed: 'hello world' });
+});
+
+test('mutate$ propagates errors', async () => {
+  const t = initTRPC.create();
+
+  const appRouter = t.router({
+    fail: t.procedure.mutation(() => {
+      throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'oops' });
+    }),
+  });
+
+  const client = createTRPCClient<typeof appRouter>({
+    links: [
+      localLink({
+        router: appRouter,
+        createContext: async () => ({}),
+      }),
+    ],
+  });
+
+  const err = await waitError(
+    observableToPromise(client.fail.mutate$()),
+  );
+  assert(isTRPCClientError<typeof appRouter>(err));
+  expect(err.message).toBe('oops');
 });
