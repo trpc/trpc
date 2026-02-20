@@ -10,7 +10,7 @@
     "@tsconfig/node-lts": "^18.12.2",
     "@tsconfig/strictest": "^2.0.1",
     "@types/node": "^22.13.5",
-    "tsdown": "0.12.7",
+    "tsdown": "0.20.1",
     "typescript": "^5.9.2"
   },
   "dependencies": {
