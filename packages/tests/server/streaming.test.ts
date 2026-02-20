@@ -11,7 +11,7 @@ import {
   TRPCClientError,
 } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
-import { observable } from '@trpc/server/observable';
+import { observable } from '@trpc/observable';
 import type { InferrableClientTypes } from '@trpc/server/unstable-core-do-not-import';
 import { createDeferred, run } from '@trpc/server/unstable-core-do-not-import';
 import superjson from 'superjson';

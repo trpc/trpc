@@ -1,11 +1,11 @@
 import { EventEmitter } from 'events';
-import { observable } from './observable';
 import {
   distinctUntilChanged,
   distinctUntilDeepChanged,
   map,
+  observable,
   share,
-} from './operators';
+} from '@trpc/observable';
 
 interface SubscriptionEvents<TOutput> {
   data: (data: TOutput) => void;

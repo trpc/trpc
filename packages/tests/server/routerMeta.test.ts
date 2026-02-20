@@ -1,6 +1,6 @@
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { initTRPC } from '@trpc/server';
-import { observable } from '@trpc/server/observable';
+import { observable } from '@trpc/observable';
 import type { inferRouterMeta } from '@trpc/server/unstable-core-do-not-import';
 
 test('route meta types', async () => {

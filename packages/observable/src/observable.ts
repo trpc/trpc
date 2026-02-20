@@ -1,4 +1,3 @@
-import type { Result } from '../unstable-core-do-not-import';
 import type {
   Observable,
   Observer,
@@ -7,6 +6,14 @@ import type {
   UnaryFunction,
   Unsubscribable,
 } from './types';
+
+/**
+ * @internal
+ * A discriminated union for representing success/error results.
+ */
+type Result<TType, TErr = unknown> =
+  | { ok: true; value: TType }
+  | { ok: false; error: TErr };
 
 /** @public */
 export type inferObservableValue<TObservable> =

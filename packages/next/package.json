@@ -102,6 +102,9 @@
     "!**/*.test.*",
     "!**/__tests__"
   ],
+  "dependencies": {
+    "@trpc/observable": "11.10.0"
+  },
   "peerDependencies": {
     "@tanstack/react-query": "^5.59.15",
     "@trpc/client": "11.10.0",

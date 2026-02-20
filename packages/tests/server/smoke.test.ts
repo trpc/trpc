@@ -5,8 +5,8 @@ import '@testing-library/react';
 import { getUntypedClient, TRPCClientError, wsLink } from '@trpc/client';
 import type { inferProcedureOutput } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
-import type { Unsubscribable } from '@trpc/server/observable';
-import { observable } from '@trpc/server/observable';
+import type { Unsubscribable } from '@trpc/observable';
+import { observable } from '@trpc/observable';
 import { lazy } from '@trpc/server/unstable-core-do-not-import';
 import { z } from 'zod';
 

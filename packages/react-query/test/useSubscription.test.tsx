@@ -7,7 +7,7 @@ import {
 import { fireEvent, render } from '@testing-library/react';
 import type { TRPCSubscriptionResult } from '@trpc/react-query/shared';
 import { initTRPC } from '@trpc/server';
-import { observable } from '@trpc/server/observable';
+import { observable } from '@trpc/observable';
 import { konn } from 'konn';
 import React, { useState } from 'react';
 import { z } from 'zod';

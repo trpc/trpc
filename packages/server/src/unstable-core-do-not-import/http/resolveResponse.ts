@@ -1,8 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import {
-  isObservable,
-  observableToAsyncIterable,
-} from '../../observable/observable';
+import { isObservable, observableToAsyncIterable } from '@trpc/observable';
 import { getErrorShape } from '../error/getErrorShape';
 import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
 import type { ProcedureType } from '../procedure';

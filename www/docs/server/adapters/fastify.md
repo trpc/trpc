@@ -198,7 +198,7 @@ Edit the `router.ts` file created in the previous steps and add the following co
 
 ```ts title='router.ts'
 import { initTRPC } from '@trpc/server';
-import { observable } from '@trpc/server/observable';
+import { observable } from '@trpc/observable';
 
 const t = initTRPC.create();
 

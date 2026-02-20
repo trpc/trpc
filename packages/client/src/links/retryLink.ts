@@ -1,7 +1,7 @@
 /* istanbul ignore file -- @preserve */
 // We're not actually exporting this link
-import type { Unsubscribable } from '@trpc/server/observable';
-import { observable } from '@trpc/server/observable';
+import type { Unsubscribable } from '@trpc/observable';
+import { observable } from '@trpc/observable';
 import type { InferrableClientTypes } from '@trpc/server/unstable-core-do-not-import';
 import { inputWithTrackedEventId } from '../internals/inputWithTrackedEventId';
 import type { TRPCClientError } from '../TRPCClientError';

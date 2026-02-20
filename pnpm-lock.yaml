@@ -583,6 +583,9 @@ importers:
       '@trpc/client':
         specifier: npm:@trpc/client
         version: link:../../packages/client
+      '@trpc/observable':
+        specifier: npm:@trpc/observable
+        version: link:../../packages/observable
       '@trpc/react-query':
         specifier: npm:@trpc/react-query
         version: link:../../packages/react-query
@@ -635,6 +638,9 @@ importers:
       '@trpc/client':
         specifier: npm:@trpc/client
         version: link:../../packages/client
+      '@trpc/observable':
+        specifier: npm:@trpc/observable
+        version: link:../../packages/observable
       '@trpc/server':
         specifier: npm:@trpc/server
         version: link:../../packages/server
@@ -1404,6 +1410,9 @@ importers:
       '@trpc/next':
         specifier: npm:@trpc/next
         version: link:../../packages/next
+      '@trpc/observable':
+        specifier: npm:@trpc/observable
+        version: link:../../packages/observable
       '@trpc/react-query':
         specifier: npm:@trpc/react-query
         version: link:../../packages/react-query
@@ -1516,6 +1525,9 @@ importers:
       '@trpc/client':
         specifier: npm:@trpc/client
         version: link:../../packages/client
+      '@trpc/observable':
+        specifier: npm:@trpc/observable
+        version: link:../../packages/observable
       '@trpc/react-query':
         specifier: npm:@trpc/react-query
         version: link:../../packages/react-query
@@ -1598,6 +1610,9 @@ importers:
       '@trpc/next':
         specifier: npm:@trpc/next
         version: link:../../packages/next
+      '@trpc/observable':
+        specifier: npm:@trpc/observable
+        version: link:../../packages/observable
       '@trpc/react-query':
         specifier: npm:@trpc/react-query
         version: link:../../packages/react-query
@@ -1726,6 +1741,9 @@ importers:
       '@trpc/client':
         specifier: npm:@trpc/client
         version: link:../../packages/client
+      '@trpc/observable':
+        specifier: npm:@trpc/observable
+        version: link:../../packages/observable
       '@trpc/react-query':
         specifier: npm:@trpc/react-query
         version: link:../../packages/react-query
@@ -1799,6 +1817,10 @@ importers:
         version: 5.9.2
 
   packages/client:
+    dependencies:
+      '@trpc/observable':
+        specifier: 11.10.0
+        version: link:../observable
     devDependencies:
       '@trpc/server':
         specifier: 11.10.0
@@ -1838,6 +1860,10 @@ importers:
         version: 8.18.0
 
   packages/next:
+    dependencies:
+      '@trpc/observable':
+        specifier: 11.10.0
+        version: link:../observable
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.80.3
@@ -1891,7 +1917,23 @@ importers:
         specifier: ^4.2.1
         version: 4.2.1
 
+  packages/observable:
+    devDependencies:
+      eslint:
+        specifier: ^9.26.0
+        version: 9.26.0(jiti@2.4.2)
+      tsdown:
+        specifier: 0.12.7
+        version: 0.12.7(typescript@5.9.2)
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.2
+
   packages/react-query:
+    dependencies:
+      '@trpc/observable':
+        specifier: 11.10.0
+        version: link:../observable
     devDependencies:
       '@tanstack/query-sync-storage-persister':
         specifier: ^5.80.2
@@ -1961,6 +2003,10 @@ importers:
         version: 2.0.8(zod@3.25.76)
 
   packages/server:
+    dependencies:
+      '@trpc/observable':
+        specifier: 11.10.0
+        version: link:../observable
     devDependencies:
       '@fastify/websocket':
         specifier: ^11.0.0
@@ -2048,6 +2094,10 @@ importers:
         version: 4.2.1
 
   packages/tanstack-react-query:
+    dependencies:
+      '@trpc/observable':
+        specifier: 11.10.0
+        version: link:../observable
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.80.3
@@ -2109,6 +2159,9 @@ importers:
       '@trpc/client':
         specifier: 11.10.0
         version: link:../client
+      '@trpc/observable':
+        specifier: 11.10.0
+        version: link:../observable
       '@trpc/server':
         specifier: 11.10.0
         version: link:../server
@@ -4292,10 +4345,6 @@ packages:
 
   '@babel/runtime@7.26.0':
     resolution: {integrity: sha512-FDSOghenHTiToteC/QRlv2q3DhPZ/oOXTBoirfWNx1Cx3TMVcGWQtMMmQcSvb/JjpNeGzx8Pq/b4fKEJuWm1sw==}
-    engines: {node: '>=6.9.0'}
-
-  '@babel/runtime@7.28.4':
-    resolution: {integrity: sha512-Q/N6JNWvIvPnLDvjlE1OUBLPQHH6l3CltCEsHIujp45zQUSSh8K+gHnaEX45yAT1nyngnINhvWtzN+Nb9D8RAQ==}
     engines: {node: '>=6.9.0'}
 
   '@babel/runtime@7.28.6':
@@ -22088,8 +22137,6 @@ snapshots:
     dependencies:
       regenerator-runtime: 0.14.1
 
-  '@babel/runtime@7.28.4': {}
-
   '@babel/runtime@7.28.6': {}
 
   '@babel/template@7.22.15':
@@ -36816,7 +36863,7 @@ snapshots:
 
   regenerator-transform@0.15.2:
     dependencies:
-      '@babel/runtime': 7.28.4
+      '@babel/runtime': 7.28.6
 
   regexp-tree@0.1.27: {}
 

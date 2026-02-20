@@ -7,7 +7,7 @@ import {
 import { initTRPC } from '@trpc/server';
 import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
-import { observable, tap } from '@trpc/server/observable';
+import { observable, tap } from '@trpc/observable';
 import { serve } from 'srvx';
 import { z } from 'zod';
 

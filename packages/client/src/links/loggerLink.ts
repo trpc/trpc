@@ -5,7 +5,7 @@
 // Using triple-slash directive makes sure that it will be available,
 // even if end-user `tsconfig.json` omits it in the `lib` array.
 
-import { observable, tap } from '@trpc/server/observable';
+import { observable, tap } from '@trpc/observable';
 import type {
   AnyRouter,
   InferrableClientTypes,

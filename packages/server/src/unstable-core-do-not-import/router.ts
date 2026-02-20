@@ -1,4 +1,4 @@
-import type { Observable } from '../observable';
+import type { Observable } from '@trpc/observable';
 import { createRecursiveProxy } from './createProxy';
 import { defaultFormatter } from './error/formatter';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';

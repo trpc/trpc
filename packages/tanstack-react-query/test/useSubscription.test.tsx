@@ -3,7 +3,7 @@ import { testReactResource } from './__helpers';
 import { fireEvent } from '@testing-library/react';
 import { httpSubscriptionLink, wsLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
-import { observable } from '@trpc/server/observable';
+import { observable } from '@trpc/observable';
 import { makeResource } from '@trpc/server/unstable-core-do-not-import';
 import { isAbortError } from '@trpc/server/unstable-core-do-not-import/http/abortError';
 import * as React from 'react';

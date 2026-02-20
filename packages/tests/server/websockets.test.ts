@@ -10,8 +10,8 @@ import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
 import type { AnyRouter } from '@trpc/server';
 import { initTRPC, tracked, TRPCError } from '@trpc/server';
 import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
-import type { Observable, Observer } from '@trpc/server/observable';
-import { observable, observableToAsyncIterable } from '@trpc/server/observable';
+import type { Observable, Observer } from '@trpc/observable';
+import { observable, observableToAsyncIterable } from '@trpc/observable';
 import type {
   TRPCClientOutgoingMessage,
   TRPCRequestMessage,

@@ -17,7 +17,7 @@ import type {
   FastifyTRPCPluginOptions,
 } from '@trpc/server/adapters/fastify';
 import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
-import { observable } from '@trpc/server/observable';
+import { observable } from '@trpc/observable';
 import fastify from 'fastify';
 import fp from 'fastify-plugin';
 import fetch from 'node-fetch';

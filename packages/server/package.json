@@ -192,6 +192,9 @@
   "publishConfig": {
     "access": "public"
   },
+  "dependencies": {
+    "@trpc/observable": "11.10.0"
+  },
   "devDependencies": {
     "@fastify/websocket": "^11.0.0",
     "@oxc-project/runtime": "0.114.0",

@@ -1,6 +1,6 @@
 import type { AnyTRPCRouter } from '@trpc/server';
-import type { BehaviorSubject } from '@trpc/server/observable';
-import { behaviorSubject, observable } from '@trpc/server/observable';
+import type { BehaviorSubject } from '@trpc/observable';
+import { behaviorSubject, observable } from '@trpc/observable';
 import type {
   CombinedDataTransformer,
   TRPCClientIncomingMessage,

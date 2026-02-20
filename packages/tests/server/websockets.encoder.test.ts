@@ -3,8 +3,8 @@ import { testServerAndClientResource } from '@trpc/client/__tests__/testClientRe
 import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
 import { initTRPC, tracked } from '@trpc/server';
 import { jsonEncoder, type Encoder } from '@trpc/server/adapters/ws';
-import type { Observer } from '@trpc/server/observable';
-import { observable } from '@trpc/server/observable';
+import type { Observer } from '@trpc/observable';
+import { observable } from '@trpc/observable';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
 import WebSocket from 'ws';
 import { z } from 'zod';

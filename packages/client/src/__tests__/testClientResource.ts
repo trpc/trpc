@@ -5,7 +5,7 @@ import {
 } from '@trpc/server/__tests__/trpcServerResource';
 import { httpBatchLink, httpLink, httpSubscriptionLink } from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
-import { tap } from '@trpc/server/observable';
+import { tap } from '@trpc/observable';
 import type { inferClientTypes } from '@trpc/server/unstable-core-do-not-import';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import { WebSocket } from 'ws';

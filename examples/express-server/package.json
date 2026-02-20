@@ -16,6 +16,7 @@
   "dependencies": {
     "@trpc/client": "npm:@trpc/client",
     "@trpc/react-query": "npm:@trpc/react-query",
+    "@trpc/observable": "npm:@trpc/observable",
     "@trpc/server": "npm:@trpc/server",
     "express": "^5.0.0",
     "zod": "^4.2.1"

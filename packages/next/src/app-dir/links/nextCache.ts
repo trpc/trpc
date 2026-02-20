@@ -6,7 +6,7 @@ import {
   getTransformer,
   type TransformerOptions,
 } from '@trpc/client/unstable-internals';
-import { observable } from '@trpc/server/observable';
+import { observable } from '@trpc/observable';
 import type {
   AnyRouter,
   inferClientTypes,
