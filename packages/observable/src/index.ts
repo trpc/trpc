@@ -3,8 +3,9 @@ export {
   observable,
   observableToAsyncIterable,
   observableToPromise,
-  type inferObservableValue,
 } from './observable';
+
+export type { inferObservableValue } from './observable';
 
 export {
   distinctUntilChanged,

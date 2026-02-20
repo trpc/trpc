@@ -197,7 +197,6 @@ server.register(ws);
 Edit the `router.ts` file created in the previous steps and add the following code:
 
 ```ts title='router.ts'
-import { observable } from '@trpc/observable';
 import { initTRPC } from '@trpc/server';
 
 const t = initTRPC.create();

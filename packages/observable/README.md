@@ -34,6 +34,7 @@ obs.subscribe({
 - `isObservable` — Type guard for observables
 - `observableToPromise` — Convert an observable to a promise (resolves with the first value)
 - `observableToAsyncIterable` — Convert an observable to an async iterable
+- `inferObservableValue` — Utility type to extract the value type from an observable
 - `map`, `share`, `tap`, `distinctUntilChanged`, `distinctUntilDeepChanged` — Operators
 - `behaviorSubject` — A stateful observable (BehaviorSubject)
 - Types: `Observable`, `Observer`, `Unsubscribable`, `UnsubscribeFn`, `TeardownLogic`, `BehaviorSubject`, `ReadonlyBehaviorSubject`
