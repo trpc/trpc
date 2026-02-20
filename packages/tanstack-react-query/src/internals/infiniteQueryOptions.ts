@@ -152,7 +152,7 @@ interface UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
         TRPCQueryKey<TFeatureFlags['keyPrefix']>,
         NonNullable<ExtractCursorType<TInput>> | null
       >,
-      'initialPageParam'
+      'initialPageParam' | 'queryFn'
     >,
     TRPCQueryOptionsResult {
   queryKey: DataTag<
@@ -161,6 +161,11 @@ interface UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
     TError
   >;
   initialPageParam: NonNullable<ExtractCursorType<TInput>> | null;
+  queryFn: QueryFunction<
+    TQueryFnData,
+    TRPCQueryKey<TFeatureFlags['keyPrefix']>,
+    NonNullable<ExtractCursorType<TInput>> | null
+  >;
 }
 
 export interface TRPCInfiniteQueryOptions<TDef extends ResolverDef> {

@@ -122,17 +122,24 @@ interface UnusedSkipTokenTRPCQueryOptionsOut<
   TOutput,
   TError,
   TFeatureFlags extends FeatureFlags,
-> extends UnusedSkipTokenOptions<
-      coerceAsyncIterableToArray<TQueryFnData>,
-      TError,
-      coerceAsyncIterableToArray<TOutput>,
-      TRPCQueryKey<TFeatureFlags['keyPrefix']>
+> extends DistributiveOmit<
+      UnusedSkipTokenOptions<
+        coerceAsyncIterableToArray<TQueryFnData>,
+        TError,
+        coerceAsyncIterableToArray<TOutput>,
+        TRPCQueryKey<TFeatureFlags['keyPrefix']>
+      >,
+      'queryFn'
     >,
     TRPCQueryOptionsResult {
   queryKey: DataTag<
     TRPCQueryKey<TFeatureFlags['keyPrefix']>,
     coerceAsyncIterableToArray<TOutput>,
     TError
+  >;
+  queryFn: QueryFunction<
+    coerceAsyncIterableToArray<TQueryFnData>,
+    TRPCQueryKey<TFeatureFlags['keyPrefix']>
   >;
 }
 

@@ -1,10 +1,14 @@
 import { testReactResource } from './__helpers';
-import { skipToken } from '@tanstack/react-query';
+import {
+  skipToken,
+  useSuspenseInfiniteQuery,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
 import '@testing-library/react';
 import { initTRPC } from '@trpc/server';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, expectTypeOf, test } from 'vitest';
 import { z } from 'zod';
 
 const testContext = () => {
@@ -60,6 +64,51 @@ describe('skipToken', () => {
     const utils = ctx.renderApp(<MyComponent />);
     await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`OK`);
+    });
+  });
+
+  test('useSuspenseQuery accepts queryOptions result without TS error (issue #6701)', async () => {
+    await using ctx = testContext();
+
+    const { useTRPC } = ctx;
+    function MyComponent() {
+      const trpc = useTRPC();
+
+      // This must compile without error: spreading .queryOptions() into useSuspenseQuery
+      const { data } = useSuspenseQuery(trpc.post.byId.queryOptions({ id: '1' }));
+      expectTypeOf(data).toMatchTypeOf<'__result'>();
+
+      return <pre>{String(data)}</pre>;
+    }
+
+    const utils = ctx.renderApp(<MyComponent />);
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('__result');
+    });
+  });
+
+  test('useSuspenseInfiniteQuery accepts infiniteQueryOptions result without TS error (issue #6701)', async () => {
+    await using ctx = testContext();
+
+    const { useTRPC } = ctx;
+    function MyComponent() {
+      const trpc = useTRPC();
+
+      // This must compile without error: spreading .infiniteQueryOptions() into useSuspenseInfiniteQuery
+      const { data } = useSuspenseInfiniteQuery({
+        ...trpc.post.list.infiniteQueryOptions(
+          { cursor: '' },
+          { getNextPageParam: () => undefined },
+        ),
+      });
+      expectTypeOf(data.pages).toBeArray();
+
+      return <pre>OK</pre>;
+    }
+
+    const utils = ctx.renderApp(<MyComponent />);
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('OK');
     });
   });
 });
