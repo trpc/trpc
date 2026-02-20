@@ -117,6 +117,17 @@ interface UnusedSkipTokenTRPCQueryOptionsIn<
     >,
     TRPCQueryBaseOptions {}
 
+/**
+ * Output type for tRPC query options when the input is **not** `skipToken`.
+ *
+ * Explicitly omits and re-declares `queryFn` as a concrete `QueryFunction`
+ * (without `SkipToken | undefined`) so this type is assignable to
+ * `UseSuspenseQueryOptions`, which excludes `SkipToken` from `queryFn`.
+ * This matches the runtime guarantee: `trpcQueryOptions` always sets a real
+ * `queryFn` when called with non-`skipToken` input.
+ *
+ * @internal
+ */
 interface UnusedSkipTokenTRPCQueryOptionsOut<
   TQueryFnData,
   TOutput,
@@ -143,6 +154,30 @@ interface UnusedSkipTokenTRPCQueryOptionsOut<
   >;
 }
 
+/**
+ * Options builder for tRPC query procedures, compatible with TanStack Query.
+ *
+ * Returns typed query options that can be spread directly into
+ * `useQuery`, `useSuspenseQuery`, or `queryClient.fetchQuery`.
+ *
+ * Supports three call signatures:
+ * - With `DefinedInitialDataOptions` when `initialData` is provided
+ *   (result data is always defined)
+ * - With `UnusedSkipTokenOptions` when `input` is not `skipToken`
+ *   (guarantees `queryFn` is a concrete function, enabling `useSuspenseQuery`)
+ * - With `UndefinedInitialDataOptions` as the default fallback
+ *
+ * @template TDef - The resolved tRPC procedure definition including input, output,
+ *   transformer, errorShape, and feature flags
+ * @template TFeatureFlags - Feature flags controlling query key shape (defaults to
+ *   {@link DefaultFeatureFlags})
+ *
+ * @example
+ * ```ts
+ * const options = trpc.post.byId.queryOptions({ id: 1 });
+ * const query = useSuspenseQuery(options);
+ * ```
+ */
 export interface TRPCQueryOptions<
   TDef extends ResolverDef,
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
