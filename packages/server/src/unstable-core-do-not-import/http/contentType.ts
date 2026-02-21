@@ -201,6 +201,10 @@ const formDataContentTypeHandler: ContentTypeHandler = {
     }
     const getInputs = memo(async () => {
       const fd = await req.formData();
+      const transformer = opts.router._def._config.transformer.input;
+      if (transformer.unstable_deserializeNonJsonTypes) {
+        return transformer.deserialize(fd);
+      }
       return fd;
     });
     const procedure = await getProcedureAtPath(opts.router, opts.path);
@@ -240,7 +244,12 @@ const octetStreamContentTypeHandler: ContentTypeHandler = {
       });
     }
     const getInputs = memo(async () => {
-      return req.body;
+      const stream = req.body;
+      const transformer = opts.router._def._config.transformer.input;
+      if (transformer.unstable_deserializeNonJsonTypes) {
+        return transformer.deserialize(stream);
+      }
+      return stream;
     });
     return {
       calls: [
