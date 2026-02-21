@@ -302,7 +302,8 @@ type AnyTRPCInfiniteQueryOptionsOut<TFeatureFlags extends FeatureFlags> =
  *
  * @param args.input - The procedure input, or `skipToken` to disable fetching
  * @param args.query - The tRPC untyped client `query` method
- * @param args.queryClient - The TanStack `QueryClient` instance, or a lazy getter
+ * @param args.queryClient - Accepted for API parity with `trpcQueryOptions`; not used
+ *   by the infinite-query implementation (no async-iterable coercion path)
  * @param args.path - The tRPC procedure path segments (e.g. `['posts', 'list']`)
  * @param args.queryKey - The pre-built tRPC query key
  * @param args.opts - Additional TanStack infinite query options (e.g. `getNextPageParam`)

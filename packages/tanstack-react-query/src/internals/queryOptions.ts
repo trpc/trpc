@@ -169,8 +169,6 @@ interface UnusedSkipTokenTRPCQueryOptionsOut<
  *
  * @template TDef - The resolved tRPC procedure definition including input, output,
  *   transformer, errorShape, and feature flags
- * @template TFeatureFlags - Feature flags controlling query key shape (defaults to
- *   {@link DefaultFeatureFlags})
  *
  * @example
  * ```ts
@@ -178,10 +176,7 @@ interface UnusedSkipTokenTRPCQueryOptionsOut<
  * const query = useSuspenseQuery(options);
  * ```
  */
-export interface TRPCQueryOptions<
-  TDef extends ResolverDef,
-  TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
-> {
+export interface TRPCQueryOptions<TDef extends ResolverDef> {
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
     input: TDef['input'] | SkipToken,
     opts: DefinedTRPCQueryOptionsIn<
@@ -191,7 +186,7 @@ export interface TRPCQueryOptions<
         transformer: TDef['transformer'];
         errorShape: TDef['errorShape'];
       }>,
-      TFeatureFlags
+      TDef['featureFlags']
     >,
   ): DefinedTRPCQueryOptionsOut<
     TQueryFnData,
@@ -200,7 +195,7 @@ export interface TRPCQueryOptions<
       transformer: TDef['transformer'];
       errorShape: TDef['errorShape'];
     }>,
-    TFeatureFlags
+    TDef['featureFlags']
   >;
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
     input: TDef['input'],
@@ -211,7 +206,7 @@ export interface TRPCQueryOptions<
         transformer: TDef['transformer'];
         errorShape: TDef['errorShape'];
       }>,
-      TFeatureFlags
+      TDef['featureFlags']
     >,
   ): UnusedSkipTokenTRPCQueryOptionsOut<
     TQueryFnData,
@@ -220,7 +215,7 @@ export interface TRPCQueryOptions<
       transformer: TDef['transformer'];
       errorShape: TDef['errorShape'];
     }>,
-    TFeatureFlags
+    TDef['featureFlags']
   >;
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
     input: TDef['input'] | SkipToken,
@@ -231,7 +226,7 @@ export interface TRPCQueryOptions<
         transformer: TDef['transformer'];
         errorShape: TDef['errorShape'];
       }>,
-      TFeatureFlags
+      TDef['featureFlags']
     >,
   ): UndefinedTRPCQueryOptionsOut<
     TQueryFnData,
@@ -240,7 +235,7 @@ export interface TRPCQueryOptions<
       transformer: TDef['transformer'];
       errorShape: TDef['errorShape'];
     }>,
-    TFeatureFlags
+    TDef['featureFlags']
   >;
 }
 
