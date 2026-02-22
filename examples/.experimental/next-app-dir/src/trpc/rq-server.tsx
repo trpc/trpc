@@ -48,6 +48,6 @@ export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(
   if (queryOptions.queryKey[1]?.type === 'infinite') {
     void queryClient.prefetchInfiniteQuery(queryOptions as any);
   } else {
-    void queryClient.prefetchQuery(queryOptions);
+    void queryClient.prefetchQuery(queryOptions as any);
   }
 }
