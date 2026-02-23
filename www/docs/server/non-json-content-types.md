@@ -137,6 +137,104 @@ export const appRouter = t.router({
 
 For a more advanced code sample you can see our [example project here](https://github.com/juliusmarminge/trpc-interop/blob/66aa760141030ffc421cae1a3bda9b5f1ab340b6/src/server.ts#L28-L43)
 
+### Using Data Transformers with Non-JSON Inputs
+
+By default, non-JSON inputs like `FormData` and binary types bypass the data transformer — they are sent as-is from the client and arrive as-is on the server. This means that even if you have a transformer like `superjson` configured, it will not run on these input types.
+
+If you want your transformer to process these types (for example, to convert a `FormData` into a custom serialization format), you can opt in with two flags on the input transformer:
+
+- **`unstable_serializeNonJsonTypes`** — when `true`, the client-side `serialize()` function will be called on `FormData`, `Blob`, and `Uint8Array` inputs before sending them.
+- **`unstable_deserializeNonJsonTypes`** — when `true`, the server-side `deserialize()` function will be called on `FormData` and `ReadableStream` inputs before passing them to the resolver.
+
+These flags are independent — you can use one without the other.
+
+#### Example: Serializing FormData to JSON on the client
+
+If `serialize()` converts a `FormData` into a plain object, the request will be sent as `application/json` instead of `multipart/form-data`:
+
+```ts
+const transformer = {
+  input: {
+    serialize(obj) {
+      if (obj instanceof FormData) {
+        const data = {};
+        obj.forEach((v, k) => {
+          data[k] = String(v);
+        });
+        return data;
+      }
+      return obj;
+    },
+    deserialize: (obj) => obj,
+    unstable_serializeNonJsonTypes: true,
+  },
+  output: {
+    serialize: (obj) => obj,
+    deserialize: (obj) => obj,
+  },
+};
+```
+
+#### Example: Deserializing FormData on the server
+
+If you want the server-side transformer to convert `FormData` before it reaches the resolver:
+
+```ts
+const transformer = {
+  input: {
+    serialize: (obj) => obj,
+    deserialize(obj) {
+      if (obj instanceof FormData) {
+        const data = {};
+        obj.forEach((v, k) => {
+          data[k] = String(v);
+        });
+        return data;
+      }
+      return obj;
+    },
+    unstable_deserializeNonJsonTypes: true,
+  },
+  output: {
+    serialize: (obj) => obj,
+    deserialize: (obj) => obj,
+  },
+};
+```
+
+#### Example: Converting plain objects to FormData in the serializer
+
+The serializer can also _return_ a `FormData` or binary type from a plain object input. tRPC will detect the output type and set the correct `Content-Type` header automatically:
+
+```ts
+const transformer = {
+  input: {
+    serialize(obj) {
+      // Convert plain object → FormData on the client
+      const fd = new FormData();
+      fd.set('payload', JSON.stringify(obj));
+      return fd;
+    },
+    deserialize(obj) {
+      // Convert FormData → plain object on the server
+      if (obj instanceof FormData) {
+        return JSON.parse(obj.get('payload'));
+      }
+      return obj;
+    },
+    unstable_deserializeNonJsonTypes: true,
+  },
+  output: {
+    serialize: (obj) => obj,
+    deserialize: (obj) => obj,
+  },
+};
+```
+
+:::note
+Batch links (`httpBatchLink` and `httpBatchStreamLink`) do not support `FormData` or binary type inputs. If the transformer returns a `FormData` or binary type, batch links will throw an error. Use `httpLink` or a `splitLink` for these cases.
+:::
+
 ### `File` and other Binary Type Inputs
 
 tRPC converts many octet content types to a `ReadableStream` which can be consumed in a procedure. Currently these are `Blob` `Uint8Array` and `File`.
