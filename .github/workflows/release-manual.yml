@@ -16,17 +16,19 @@ on:
         default: 'latest'
         type: string
 
-permissions:
-  contents: write
-
 jobs:
   publish:
     timeout-minutes: 10
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+      NPM_CONFIG_PROVENANCE: true
 
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # For fixing formatting
+      id-token: write # For OIDC publishing
+      pull-requests: write # For creating release PRs
 
     steps:
       - name: Checkout repo
@@ -41,10 +43,7 @@ jobs:
           git config --global user.name "github-actions[bot]"
 
       - uses: ./.github/setup
-
-      - run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > $HOME/.npmrc
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: pnpm add -g npm@latest # For OIDC publishing
 
       - name: Publish packages
         run: |

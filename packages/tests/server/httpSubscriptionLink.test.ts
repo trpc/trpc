@@ -328,11 +328,10 @@ test('iterable event with bad yield', async () => {
   expect(serverError.message).toMatchInlineSnapshot(`
     "[
       {
-        "code": "invalid_type",
         "expected": "number",
-        "received": "string",
+        "code": "invalid_type",
         "path": [],
-        "message": "Expected number, received string"
+        "message": "Invalid input: expected number, received string"
       }
     ]"
   `);

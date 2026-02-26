@@ -175,6 +175,7 @@ const yearlySponsors = [
   'pingdotgg',
   'nihinihi01',
   'newfront-insurance',
+  'SerpApi',
 ];
 
 async function main() {
@@ -195,16 +196,16 @@ async function main() {
     );
 
     // add manual sponsors
-    // rawList.push({
-    //   __typename: 'Organization',
-    //   name: 'Graphite',
-    //   imgSrc: 'https://github.com/withgraphite.png',
-    //   monthlyPriceInDollars: 1000,
-    //   link: 'https://graphite.dev/?utm_source=github&utm_medium=repo&utm_campaign=trpc',
-    //   privacyLevel: 'PUBLIC',
-    //   login: 'withgraphite',
-    //   createdAt: new Date(2025, 5, 12).getTime(),
-    // });
+    rawList.push({
+      __typename: 'Organization',
+      name: 'SerpApi',
+      imgSrc: 'https://github.com/serpapi.png',
+      monthlyPriceInDollars: 500,
+      link: ensureHttpAndAddRef('https://serpapi.com/'),
+      privacyLevel: 'PUBLIC',
+      login: 'SerpApi',
+      createdAt: Date.parse('2026-02-11'),
+    });
     const list = rawList
       .map((sponsor) => {
         // calculate total value
@@ -217,7 +218,10 @@ async function main() {
         );
 
         const base = yearly ? 12 : 1;
-        const githubComission = sponsor.__typename === 'Organization' ? 0.1 : 0;
+        const githubComission =
+          sponsor.__typename === 'Organization' && sponsor.login !== 'SerpApi'
+            ? 0.1
+            : 0;
         let value =
           base * cycles * sponsor.monthlyPriceInDollars * (1 - githubComission);
 
@@ -226,12 +230,7 @@ async function main() {
           // sponsored from private account for 3 months
           value += 500 * 3;
         }
-        if (sponsor.login === 'madisonredtfeldt') {
-          sponsor.name = 'Mobb';
-          sponsor.login = 'mobb-dev';
-          sponsor.imgSrc = 'https://github.com/mobb-dev.png';
-          sponsor.link = 'https://mobb.ai';
-        }
+
         return {
           ...sponsor,
           value,

@@ -256,13 +256,13 @@ describe('zod errors according to docs', () => {
     assert(err.data.zodError);
 
     expectTypeOf(err.data.zodError).toMatchTypeOf<
-      z.typeToFlattenedError<any>
+      z.core.$ZodFlattenedError<any>
     >();
     expect(err.data?.zodError).toMatchInlineSnapshot(`
       Object {
         "fieldErrors": Object {},
         "formErrors": Array [
-          "Number must be greater than or equal to 10",
+          "Too small: expected number to be >=10",
         ],
       }
     `);

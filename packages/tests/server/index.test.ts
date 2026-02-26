@@ -125,13 +125,12 @@ describe('integration tests', () => {
     expect(err.shape?.message).toMatchInlineSnapshot(`
       "[
         {
-          "code": "invalid_type",
           "expected": "string",
-          "received": "number",
+          "code": "invalid_type",
           "path": [
             "who"
           ],
-          "message": "Expected string, received number"
+          "message": "Invalid input: expected string, received number"
         }
       ]"
     `);

@@ -37,8 +37,8 @@
     "merge-main": "git checkout main && git pull && git checkout next && git pull && git checkout -b next-merge-$(date '+%Y-%m-%d--%H-%M') next && git merge --ff main"
   },
   "dependencies": {
-    "@actions/core": "^2.0.0",
-    "@actions/github": "^6.0.0",
+    "@actions/core": "^3.0.0",
+    "@actions/github": "^9.0.0",
     "@eslint/compat": "^2.0.0",
     "@ianvs/prettier-plugin-sort-imports": "^4.4.0",
     "@manypkg/cli": "^0.22.0",
@@ -54,7 +54,7 @@
     "eslint": "^9.26.0",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "6.0.0-rc.1",
-    "eslint-plugin-unicorn": "62.0.0",
+    "eslint-plugin-unicorn": "63.0.0",
     "event-source-polyfill": "^1.0.31",
     "express": "^5.0.0",
     "fast-glob": "^3.2.12",
@@ -72,6 +72,6 @@
     "typescript-eslint": "^8.31.1",
     "vite": "^6.1.1",
     "vitest": "^3.1.2",
-    "zod": "^3.25.51"
+    "zod": "^4.2.1"
   }
 }

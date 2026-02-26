@@ -271,6 +271,7 @@ test('v1 request info', async () => {
           "accept": null,
           "calls": Array [
             Object {
+              "batchIndex": 0,
               "path": "request.info",
             },
           ],
@@ -388,13 +389,12 @@ test('bad type', async () => {
         },
         "message": "[
       {
-        "code": "invalid_type",
         "expected": "object",
-        "received": "array",
+        "code": "invalid_type",
         "path": [
           "who"
         ],
-        "message": "Expected object, received array"
+        "message": "Invalid input: expected object, received array"
       }
     ]",
       },
