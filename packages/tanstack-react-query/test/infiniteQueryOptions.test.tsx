@@ -372,7 +372,7 @@ describe('infiniteQueryOptions', () => {
     }
 
     // This test just checks for type errors in useSuspenseInfiniteQuery
-    expect(MyComponent).toBe(MyComponent);
+    expect(MyComponent).toBeDefined();
   });
 
   test('no infinite on non cursor types', async () => {
