@@ -1,6 +1,6 @@
-import { createTRPCOptionsProxy } from '../src';
 import { testReactResource } from './__helpers';
 import { skipToken, useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { createTRPCOptionsProxy } from '../src';
 import '@testing-library/react';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import type { inferRouterError } from '@trpc/server';

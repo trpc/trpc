@@ -308,7 +308,9 @@ export interface TRPCOptionsProxyOptionsInternal<
   router: TRouter;
   ctx:
     | inferRouterContext<TRouter>
-    | ((opts?: TRPCRequestOptions) => MaybePromise<inferRouterContext<TRouter>>);
+    | ((
+        opts?: TRPCRequestOptions,
+      ) => MaybePromise<inferRouterContext<TRouter>>);
 }
 
 export interface TRPCOptionsProxyOptionsExternal<
