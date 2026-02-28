@@ -22,12 +22,23 @@ const appRouter = router({
       return user;
     }),
     create: publicProcedure
-      .input(z.object({ name: z.string() }))
+      .use(async (opts) => {
+        const input = (await opts.getRawInput()) as FormData;
+
+        console.log('MYINPUT', input);
+
+        return opts.next({
+          input: {
+            name: input.get('person'),
+          },
+        });
+      })
+      // .input(z.object({ name: z.string() }))
       .mutation(async (opts) => {
         const { input } = opts;
         //      ^?
         // Create a new user in the database
-        const user = await db.user.create(input);
+        const user = await db.user.create(input as any);
         //    ^?
         return user;
       }),
