@@ -73,7 +73,11 @@ const jsonContentTypeHandler: ContentTypeHandler = {
     const maxBatchSize = opts.maxBatchSize;
 
     const paths = isBatchCall ? opts.path.split(',') : [opts.path];
-    if (typeof maxBatchSize === 'number' && paths.length > maxBatchSize) {
+    if (
+      isBatchCall &&
+      typeof maxBatchSize === 'number' &&
+      paths.length > maxBatchSize
+    ) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
         message: `Batch call exceeds maximum size`,
