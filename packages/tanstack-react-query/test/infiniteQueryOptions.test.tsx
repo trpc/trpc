@@ -346,8 +346,20 @@ describe('infiniteQueryOptions', () => {
       // @ts-expect-error getNextPageParam is mandatory
       trpc.post.list.infiniteQueryOptions({}, {});
 
-      // @ts-expect-error object containing getNextPageParam is mandatory
+      // @ts-expect-error second param is mandatory because it contains keys which are mandatory
       trpc.post.list.infiniteQueryOptions({});
+
+      // @ts-expect-error getNextPageParam is mandatory in Tanstack Query
+      infiniteQueryOptions({
+        queryFn: skipToken,
+        queryKey: [1],
+        initialPageParam: 0,
+        initialData: { pages: [], pageParams: [] },
+        // This is a must!
+        // getNextPageParam() {
+        //   return 2
+        // }
+      });
 
       //
       // skip token is not supported by suspense queries
@@ -355,6 +367,7 @@ describe('infiniteQueryOptions', () => {
 
       // skipToken is supported for the general method
       const skipQueryOptions = trpc.post.list.infiniteQueryOptions(skipToken, {
+        initialData: { pages: [], pageParams: [] },
         getNextPageParam: () => 1,
       });
 
