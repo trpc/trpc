@@ -51,7 +51,11 @@ describe('skipToken', () => {
       const options = trpc.post.byId.queryOptions(skipToken);
       expect(options.queryFn).toBe(skipToken);
 
-      const options2 = trpc.post.list.infiniteQueryOptions(skipToken);
+      const options2 = trpc.post.list.infiniteQueryOptions(skipToken, {
+        getNextPageParam() {
+          return 'next';
+        },
+      });
       expect(options2.queryFn).toBe(skipToken);
 
       return <pre>OK</pre>;
