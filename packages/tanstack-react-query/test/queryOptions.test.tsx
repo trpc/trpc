@@ -205,7 +205,7 @@ describe.each(['user-123', undefined])(
 
         useSuspenseQueries({
           queries: [
-            // @ts-expect-error skipToken not supported directly by useSuspenseQuery
+            // @ts-expect-error skipToken not supported directly by useSuspenseQueries
             queryOptions({
               queryKey: [],
               queryFn: skipToken,
@@ -214,7 +214,7 @@ describe.each(['user-123', undefined])(
         });
 
         useSuspenseQueries({
-          // @ts-expect-error skipToken not supported by useSuspenseQuery
+          // @ts-expect-error skipToken not supported by useSuspenseQueries
           queries: [skipQueryOptions],
         });
       }

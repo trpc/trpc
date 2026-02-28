@@ -364,10 +364,10 @@ describe('infiniteQueryOptions', () => {
       // @ts-expect-error skipToken is not supported by useSuspenseQuery
       useSuspenseQuery(skipQueryOptions);
 
-      // @ts-expect-error skipToken is not supported directly by useSuspenseQuery
+      // @ts-expect-error skipToken is not supported directly by useSuspenseInfiniteQuery
       useSuspenseInfiniteQuery({ queryFn: skipToken, queryKey: [] });
 
-      // @ts-expect-error skipToken is not supported by useSuspenseQuery
+      // @ts-expect-error skipToken is not supported by useSuspenseInfiniteQuery
       useSuspenseInfiniteQuery(skipQueryOptions);
     }
 
