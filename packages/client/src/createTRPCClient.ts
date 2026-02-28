@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import type { Unsubscribable } from '@trpc/server/observable';
+import type { Observable, Unsubscribable } from '@trpc/server/observable';
 import type {
   AnyProcedure,
   AnyRouter,
@@ -65,6 +65,15 @@ export type Resolver<TDef extends ResolverDef> = (
   opts?: TRPCProcedureOptions,
 ) => Promise<coerceAsyncGeneratorToIterable<TDef['output']>>;
 
+/** @internal - Observable-based resolver for query$/mutate$ (Angular/RxJS) */
+export type ObservableResolver<TDef extends ResolverDef> = (
+  input: TDef['input'],
+  opts?: TRPCProcedureOptions,
+) => Observable<
+  coerceAsyncGeneratorToIterable<TDef['output']>,
+  TRPCClientError<TDef>
+>;
+
 type SubscriptionResolver<TDef extends ResolverDef> = (
   input: TDef['input'],
   opts: Partial<
@@ -79,10 +88,14 @@ type DecorateProcedure<
 > = TType extends 'query'
   ? {
       query: Resolver<TDef>;
+      /** Observable that emits the query result. Use with Angular/RxJS without fromPromise(). */
+      query$: ObservableResolver<TDef>;
     }
   : TType extends 'mutation'
     ? {
         mutate: Resolver<TDef>;
+        /** Observable that emits the mutation result. Use with Angular/RxJS without fromPromise(). */
+        mutate$: ObservableResolver<TDef>;
       }
     : TType extends 'subscription'
       ? {
@@ -119,10 +132,12 @@ type DecoratedProcedureRecord<
 
 const clientCallTypeMap: Record<
   keyof DecorateProcedure<any, any>,
-  ProcedureType
+  ProcedureType | 'queryObservable' | 'mutationObservable'
 > = {
   query: 'query',
+  query$: 'queryObservable',
   mutate: 'mutation',
+  mutate$: 'mutationObservable',
   subscribe: 'subscription',
 };
 
@@ -130,7 +145,11 @@ const clientCallTypeMap: Record<
 export const clientCallTypeToProcedureType = (
   clientCallType: string,
 ): ProcedureType => {
-  return clientCallTypeMap[clientCallType as keyof typeof clientCallTypeMap];
+  const mapped =
+    clientCallTypeMap[clientCallType as keyof typeof clientCallTypeMap];
+  if (mapped === 'queryObservable') return 'query';
+  if (mapped === 'mutationObservable') return 'mutation';
+  return mapped as ProcedureType;
 };
 
 /**
@@ -141,10 +160,25 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
 ): TRPCClient<TRouter> {
   const proxy = createRecursiveProxy<TRPCClient<TRouter>>(({ path, args }) => {
     const pathCopy = [...path];
-    const procedureType = clientCallTypeToProcedureType(pathCopy.pop()!);
-
+    const callType = pathCopy.pop()!;
     const fullPath = pathCopy.join('.');
 
+    if (callType === 'query$') {
+      return (client as any).queryObservable(
+        fullPath,
+        (args as any)[0],
+        (args as any)[1],
+      );
+    }
+    if (callType === 'mutate$') {
+      return (client as any).mutationObservable(
+        fullPath,
+        (args as any)[0],
+        (args as any)[1],
+      );
+    }
+
+    const procedureType = clientCallTypeToProcedureType(callType);
     return (client[procedureType] as any)(fullPath, ...(args as any));
   });
   return createFlatProxy<TRPCClient<TRouter>>((key) => {
