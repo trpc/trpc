@@ -248,6 +248,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           searchParams: url.searchParams,
           headers: opts.req.headers,
           url,
+          maxBatchSize: opts.maxBatchSize,
         }),
       ];
     } catch (cause) {
