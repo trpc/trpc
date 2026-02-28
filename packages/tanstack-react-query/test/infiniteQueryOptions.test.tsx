@@ -1,9 +1,12 @@
 import { testReactResource } from './__helpers';
 import {
   infiniteQueryOptions,
+  skipToken,
   useInfiniteQuery,
+  useQuery,
   useQueryClient,
   useSuspenseInfiniteQuery,
+  useSuspenseQuery,
   type InfiniteData,
 } from '@tanstack/react-query';
 import '@testing-library/react';
@@ -320,6 +323,56 @@ describe('infiniteQueryOptions', () => {
       expect(utils.container).toHaveTextContent(`[ "1" ]`);
       expect(utils.container).toHaveTextContent(`[ "2" ]`);
     });
+  });
+
+  test('regression #6701: infinite suspense has non-optional getNextPageParam and returns a skipToken related error', async () => {
+    await using ctx = testContext();
+    const { useTRPC } = ctx;
+
+    function MyComponent() {
+      const trpc = useTRPC();
+
+      // Correct usage
+      const queryOptions = trpc.post.list.infiniteQueryOptions(
+        {},
+        {
+          getNextPageParam(lastPage) {
+            return lastPage.next;
+          },
+        },
+      );
+      useSuspenseInfiniteQuery(queryOptions);
+
+      // @ts-expect-error getNextPageParam is mandatory
+      trpc.post.list.infiniteQueryOptions({}, {});
+
+      // @ts-expect-error object containing getNextPageParam is mandatory
+      trpc.post.list.infiniteQueryOptions({});
+
+      //
+      // skip token is not supported by suspense queries
+      //
+
+      // skipToken is supported for the general method
+      const skipQueryOptions = trpc.post.list.infiniteQueryOptions(skipToken, {
+        getNextPageParam: () => 1,
+      });
+
+      // @ts-expect-error skipToken is not supported directly by useSuspenseQuery
+      useSuspenseQuery({ queryFn: skipToken, queryKey: [] });
+
+      // @ts-expect-error skipToken is not supported by useSuspenseQuery
+      useSuspenseQuery(skipQueryOptions);
+
+      // @ts-expect-error skipToken is not supported directly by useSuspenseQuery
+      useSuspenseInfiniteQuery({ queryFn: skipToken, queryKey: [] });
+
+      // @ts-expect-error skipToken is not supported by useSuspenseQuery
+      useSuspenseInfiniteQuery(skipQueryOptions);
+    }
+
+    // This test just checks for type errors in useSuspenseInfiniteQuery
+    expect(MyComponent).toBe(MyComponent);
   });
 
   test('no infinite on non cursor types', async () => {
