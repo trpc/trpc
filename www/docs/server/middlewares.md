@@ -180,11 +180,7 @@ This helper primarily targets creating plugins and libraries with tRPC.
 // 🧩🧩🧩 a library creating a reusable plugin 🧩🧩🧩
 // @filename: myPlugin.ts
 
-import { initTRPC, initTRPC, TRPCError, TRPCError } from '@trpc/server';
-// ------------------------------------
-// 🚀🚀🚀 the app using the plugin 🚀🚀🚀
-// @filename: app.ts
-import { createMyPlugin } from './myPlugin';
+import { initTRPC, TRPCError } from '@trpc/server';
 
 export function createMyPlugin() {
   // When creating a plugin for tRPC, you use the same API as creating any other tRPC-app
@@ -209,6 +205,12 @@ export function createMyPlugin() {
     }),
   };
 }
+// ------------------------------------
+// 🚀🚀🚀 the app using the plugin 🚀🚀🚀
+// @filename: app.ts
+import { createMyPlugin } from './myPlugin';
+import { initTRPC, TRPCError } from '@trpc/server';
+
 
 // the app's root `t`-object
 const t = initTRPC
@@ -216,6 +218,7 @@ const t = initTRPC
     // ...
   }>()
   .create();
+
 
 export const publicProcedure = t.procedure;
 export const router = t.router;
@@ -225,18 +228,21 @@ const plugin = createMyPlugin();
 
 // create a base procedure using the plugin
 const procedureWithPlugin = publicProcedure
-  .concat(plugin.pluginProc)
-  .use((opts) => {
+  .concat(
+    plugin.pluginProc,
+  )
+  .use(opts => {
     const { ctx } = opts;
     //      ^?
-    return opts.next();
-  });
+    return opts.next()
+  })
+
 
 export const appRouter = router({
-  hello: procedureWithPlugin.query((opts) => {
+  hello: procedureWithPlugin.query(opts => {
     return opts.ctx.fromPlugin;
-  }),
-});
+  })
+})
 ```
 
 ## Extending middlewares
