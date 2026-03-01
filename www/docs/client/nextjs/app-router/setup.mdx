@@ -1,25 +1,14 @@
 ---
-id: server-components
-title: Set up with React Server Components
-sidebar_label: Server Components
-slug: /client/tanstack-react-query/server-components
+id: setup
+title: Set up with Next.js App Router
+sidebar_label: Setup
+slug: /client/nextjs/app-router-setup
 ---
 
-import TabItem from '@theme/TabItem';
-import Tabs from '@theme/Tabs';
-
-:::tip
-**Using Next.js?** See the dedicated [Next.js App Router setup guide](/docs/client/nextjs/app-router-setup) for a streamlined walkthrough tailored to Next.js.
-:::
-
-This guide is an overview of how one may use tRPC with a React Server Components (RSC) framework such as Next.js App Router.
-Be aware that RSC on its own solves a lot of the same problems tRPC was designed to solve, so you may not need tRPC at all.
-
-There are also not a one-size-fits-all way to integrate tRPC with RSCs, so see this guide as a starting point and adjust it
-to your needs and preferences.
-
 :::info
-If you're looking for how to use tRPC with Server Actions, see the [Server Actions guide](/docs/client/nextjs/server-actions).
+This guide covers using tRPC with the **Next.js App Router** and React Server Components using the recommended [`@trpc/tanstack-react-query`](/docs/client/tanstack-react-query) integration.
+
+If you're using the **Pages Router**, see the [Pages Router setup guide](/docs/client/nextjs/setup) instead.
 :::
 
 :::caution
@@ -27,7 +16,32 @@ Please read React Query's [Advanced Server Rendering](https://tanstack.com/query
 and what footguns to avoid.
 :::
 
-## Add tRPC to existing projects
+## Recommended file structure
+
+```graphql
+.
+├── src
+│   ├── app
+│   │   ├── api
+│   │   │   └── trpc
+│   │   │       └── [trpc]
+│   │   │           └── route.ts  # <-- tRPC HTTP handler
+│   │   ├── layout.tsx            # <-- mount TRPCReactProvider
+│   │   └── page.tsx              # <-- server component
+│   ├── trpc
+│   │   ├── init.ts               # <-- tRPC server init & context
+│   │   ├── routers
+│   │   │   ├── _app.ts           # <-- main app router
+│   │   │   ├── post.ts           # <-- sub routers
+│   │   │   └── [..]
+│   │   ├── client.tsx            # <-- client hooks & provider
+│   │   ├── query-client.ts       # <-- shared QueryClient factory
+│   │   └── server.tsx            # <-- server-side caller
+│   └── [..]
+└── [..]
+```
+
+## Add tRPC to an existing Next.js App Router project
 
 ### 1. Install deps
 
@@ -98,11 +112,11 @@ export const appRouter = createTRPCRouter({
 export type AppRouter = typeof appRouter;
 ```
 
-<br />
+</details>
 
-:::note
-The backend adapter depends on your framework and how it sets up API routes. The following example sets up GET and POST routes at `/api/trpc/*` using the [fetch adapter](https://trpc.io/docs/server/adapters/fetch) in Next.js.
-:::
+### 3. Create the API route handler
+
+With the App Router, use the [fetch adapter](/docs/server/adapters/fetch) to handle tRPC requests. Create a route handler that exports both `GET` and `POST`:
 
 ```ts title='app/api/trpc/[trpc]/route.ts'
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
@@ -120,9 +134,11 @@ const handler = (req: Request) =>
 export { handler as GET, handler as POST };
 ```
 
-</details>
+:::note
+The App Router uses the [fetch adapter](/docs/server/adapters/fetch) (via `fetchRequestHandler`) rather than the Next.js-specific adapter used by the Pages Router. This is because App Router route handlers are based on the Web standard `Request` and `Response` objects.
+:::
 
-### 3. Create a Query Client factory
+### 4. Create a Query Client factory
 
 Create a shared file `trpc/query-client.ts` that exports a function that creates a `QueryClient` instance.
 
@@ -162,7 +178,7 @@ We're setting a few default options here:
 - `serializeData` and `deserializeData` (optional): If you set up a [data transformer](https://trpc.io/docs/server/data-transformers) in the previous step, set this option
   to make sure the data is serialized correctly when hydrating the query client over the server-client boundary.
 
-### 4. Create a tRPC client for Client Components
+### 5. Create a tRPC client for Client Components
 
 The `trpc/client.tsx` is the entrypoint when consuming your tRPC API from client components. In here, import the **type definition** of
 your tRPC router and create typesafe hooks using `createTRPCContext`. We'll also export our context provider from this file.
@@ -236,9 +252,27 @@ export function TRPCReactProvider(
 }
 ```
 
-Mount the provider in the root of your application (e.g. `app/layout.tsx` when using Next.js).
+Mount the provider in the root layout of your application:
 
-### 5. Create a tRPC caller for Server Components
+```tsx title='app/layout.tsx'
+import { TRPCReactProvider } from '~/trpc/client';
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en">
+      <body>
+        <TRPCReactProvider>{children}</TRPCReactProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+### 6. Create a tRPC caller for Server Components
 
 To prefetch queries from server components, we create a proxy from our router. You can also pass in a client if your router is on a separate server.
 
@@ -261,29 +295,18 @@ export const trpc = createTRPCOptionsProxy({
   queryClient: getQueryClient,
 });
 
-// If your router is on a separate server, pass a client:
-createTRPCOptionsProxy({
-  client: createTRPCClient({
-    links: [httpLink({ url: '...' })],
-  }),
-  queryClient: getQueryClient,
-});
+// If your router is on a separate server, pass a client instead:
+// createTRPCOptionsProxy({
+//   client: createTRPCClient({ links: [httpLink({ url: '...' })] }),
+//   queryClient: getQueryClient,
+// });
 ```
 
-## Using your API
+### 7. Make API requests
 
-Now you can use your tRPC API in your app. While you can use the React Query hooks in client components just like you would in any other React app,
-we can take advantage of the RSC capabilities by prefetching queries in a server component high up the tree. You may be familiar with this
-concept as "render as you fetch" commonly implemented as loaders. This means the request fires as soon as possible but without suspending until
-the data is needed by using the `useQuery` or `useSuspenseQuery` hooks.
+You're all set! You can now prefetch queries in server components and consume them in client components.
 
-This approach leverages Next.js App Router's streaming capabilities, initiating the query on the server and streaming data to the client as it becomes available.
-It optimizes both the time to first byte in the browser and the data fetch time, resulting in faster page loads.
-However, `greeting.data` may initially be `undefined` before the data streams in.
-
-If you prefer to avoid this initial undefined state, you can `await` the `prefetchQuery` call.
-This ensures the query on the client always has data on first render, but it comes with a tradeoff -
-the page will load more slowly since the server must complete the query before sending HTML to the client.
+#### Prefetching in a Server Component
 
 ```tsx title='app/page.tsx'
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
@@ -294,19 +317,19 @@ export default async function Home() {
   const queryClient = getQueryClient();
   void queryClient.prefetchQuery(
     trpc.hello.queryOptions({
-      /** input */
+      text: 'world',
     }),
   );
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <div>...</div>
-      {/** ... */}
       <ClientGreeting />
     </HydrationBoundary>
   );
 }
 ```
+
+#### Using data in a Client Component
 
 ```tsx title='app/client-greeting.tsx'
 'use client';
@@ -324,7 +347,7 @@ export function ClientGreeting() {
 ```
 
 :::tip
-You can also create a `prefetch` and `HydrateClient` helper functions to make it a bit more consice and reusable:
+You can create `prefetch` and `HydrateClient` helper functions to make this more concise:
 
 ```tsx title='trpc/server.tsx'
 export function HydrateClient(props: { children: React.ReactNode }) {
@@ -354,16 +377,10 @@ Then you can use it like this:
 import { HydrateClient, prefetch, trpc } from '~/trpc/server';
 
 function Home() {
-  prefetch(
-    trpc.hello.queryOptions({
-      /** input */
-    }),
-  );
+  prefetch(trpc.hello.queryOptions({ text: 'world' }));
 
   return (
     <HydrateClient>
-      <div>...</div>
-      {/** ... */}
       <ClientGreeting />
     </HydrateClient>
   );
@@ -372,7 +389,7 @@ function Home() {
 
 :::
 
-### Leveraging Suspense
+## Leveraging Suspense
 
 You may prefer handling loading and error states using Suspense and Error Boundaries. You can do this by using the `useSuspenseQuery` hook.
 
@@ -387,8 +404,6 @@ export default async function Home() {
 
   return (
     <HydrateClient>
-      <div>...</div>
-      {/** ... */}
       <ErrorBoundary fallback={<div>Something went wrong</div>}>
         <Suspense fallback={<div>Loading...</div>}>
           <ClientGreeting />
@@ -403,7 +418,7 @@ export default async function Home() {
 'use client';
 
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { trpc } from '~/trpc/client';
+import { useTRPC } from '~/trpc/client';
 
 export function ClientGreeting() {
   const trpc = useTRPC();
@@ -412,7 +427,7 @@ export function ClientGreeting() {
 }
 ```
 
-### Getting data in a server component
+## Getting data in a Server Component
 
 If you need access to the data in a server component, we recommend creating a server caller and using it directly. Please note that this method is detached from your query client and does not
 store the data in the cache. This means that you cannot use the data in a server component and expect it to be available in the client. This is
@@ -450,10 +465,15 @@ export default async function Home() {
 
   return (
     <HydrateClient>
-      <div>...</div>
-      {/** ... */}
       <ClientGreeting />
     </HydrateClient>
   );
 }
 ```
+
+## Next steps
+
+- Learn about [Server Actions](/docs/client/nextjs/server-actions) for defining tRPC-powered server actions
+- Learn about [queries](/docs/client/react/useQuery) and [mutations](/docs/client/react/useMutation) in client components
+- Explore [server-side calls](/docs/server/server-side-calls) for more advanced server-side patterns
+- Check out the [SSE Chat example](https://github.com/trpc/trpc/tree/main/examples/next-sse-chat) for a full App Router example with subscriptions

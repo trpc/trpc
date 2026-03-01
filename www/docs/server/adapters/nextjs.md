@@ -6,7 +6,7 @@ slug: /server/adapters/nextjs
 ---
 
 :::tip
-tRPC's support for Next.js is far more expansive than just an adapter. This page covers a brief summary of how to set up the adapter, but complete documentation is [available here](../../client/nextjs/introduction.mdx)
+tRPC's support for Next.js is far more expansive than just an adapter. This page covers a brief summary of how to set up the adapter. For complete documentation, see the [Next.js Integration guide](../../client/nextjs/introduction.mdx).
 :::
 
 ## Example app
@@ -96,22 +96,22 @@ export default async function handler(
 }
 ```
 
-## Route Handlers
+## App Router (Route Handlers)
 
-If you're trying out the Next.js App Router and want to use [route handlers](https://beta.nextjs.org/docs/routing/route-handlers), you can do so by using the [fetch](fetch) adapter, as they build on web standard Request and Response objects:
+If you're using the Next.js **App Router**, use the [fetch adapter](fetch) instead, as App Router route handlers are based on the Web standard `Request` and `Response` objects. See the [App Router setup guide](/docs/client/nextjs/app-router-setup) for a complete walkthrough.
 
 ```ts title='app/api/trpc/[trpc]/route.ts'
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
-import { appRouter } from '~/server/api/router';
+import { createTRPCContext } from '~/trpc/init';
+import { appRouter } from '~/trpc/routers/_app';
 
-function handler(req: Request) {
-  return fetchRequestHandler({
+const handler = (req: Request) =>
+  fetchRequestHandler({
     endpoint: '/api/trpc',
     req,
     router: appRouter,
-    createContext: () => ({ ... })
+    createContext: createTRPCContext,
   });
-}
 
 export { handler as GET, handler as POST };
 ```

@@ -5,18 +5,44 @@ sidebar_label: Introduction
 slug: /client/nextjs
 ---
 
-### tRPC ❤️ Next.js
+### tRPC + Next.js
 
 Next.js makes it easy to build a client and server together in one codebase. tRPC makes it easy to share types between them, ensuring typesafety for your application's data fetching.
 
-Our Next.js integration is built on top of our [React Query Integration](/docs/client/react) with some Next.js specific APIs, to handle both client and server side rendering.
+tRPC provides first-class support for both the **App Router** and the **Pages Router**. Choose the guide that matches your project:
 
-When using the Next.js integration, you'll get the following features:
+## App Router
 
-- **Server-side rendering** - You can tell tRPC to render your pages on the server, and then hydrate them on the client. This way, you'll avoid an initial loading state, although time to first byte will be blocked by the server. Read more about [Server-side rendering](/docs/client/nextjs/ssr).
-- **Static site generation** - Prefetch queries on the server and generate static HTML files that are ready to be served. Read more about [Static site generation](/docs/client/nextjs/ssg).
-- **Automatic Provider Wrapping** - `@trpc/next` provides a higher-order component (HOC) that wraps your app with the necessary providers so you don't have to do it yourself.
+The recommended approach for new Next.js projects. Uses React Server Components, the [fetch adapter](/docs/server/adapters/fetch), and [`@trpc/tanstack-react-query`](/docs/client/tanstack-react-query).
+
+Key features:
+- **Server Components** - Prefetch data on the server and stream it to the client
+- **Streaming** - Leverage Next.js streaming for optimal loading performance
+- **Suspense** - Use `useSuspenseQuery` with Suspense boundaries for loading states
+
+**[Get started with App Router &rarr;](/docs/client/nextjs/app-router-setup)**
+
+## Pages Router
+
+Uses `@trpc/next` which provides a higher-order component (HOC) and integrated hooks for the Pages Router data-fetching patterns.
+
+Key features:
+- **Server-side rendering** - Render pages on the server and hydrate them on the client. Read more about [SSR](/docs/client/nextjs/ssr).
+- **Static site generation** - Prefetch queries on the server and generate static HTML files. Read more about [SSG](/docs/client/nextjs/ssg).
+- **Automatic Provider Wrapping** - `@trpc/next` provides a HOC that wraps your app with the necessary providers automatically.
+
+**[Get started with Pages Router &rarr;](/docs/client/nextjs/setup)**
+
+## Choosing between App Router and Pages Router
+
+| | App Router | Pages Router |
+|---|---|---|
+| **Recommended for** | New projects | Existing Pages Router projects |
+| **Data fetching** | Server Components, `prefetchQuery` | `getServerSideProps`, `getStaticProps`, SSR via HOC |
+| **Server adapter** | [Fetch adapter](/docs/server/adapters/fetch) | [Next.js adapter](/docs/server/adapters/nextjs) |
+| **Client package** | `@trpc/tanstack-react-query` | `@trpc/next` + `@trpc/react-query` |
+| **Provider setup** | Manual `QueryClientProvider` + `TRPCProvider` | Automatic via `withTRPC()` HOC |
 
 :::tip
-If you're using tRPC in a new project, consider using one of the example projects for reference: [tRPC Example Projects](/docs/example-apps)
+If you're starting a new project, we recommend the App Router. If you have an existing Pages Router project, the Pages Router integration works well and is fully supported.
 :::
