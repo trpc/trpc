@@ -91,12 +91,49 @@ const postList = await caller.post.list();
 
 > Taken from [https://github.com/trpc/examples-next-prisma-starter/blob/main/src/server/routers/post.test.ts](https://github.com/trpc/examples-next-prisma-starter/blob/main/src/server/routers/post.test.ts)
 
-```ts
-import { inferProcedureInput } from '@trpc/server';
-import { createContextInner } from '../context';
-import { AppRouter, createCaller } from './_app';
+```ts twoslash
+// @target: esnext
+// @filename: context.ts
+export async function createContextInner(opts: {}) {
+  return { user: undefined };
+}
 
-test('add and get post', async () => {
+// @filename: _app.ts
+import { initTRPC, type inferProcedureInput } from '@trpc/server';
+import { z } from 'zod';
+import { createContextInner } from './context';
+
+type Context = Awaited<ReturnType<typeof createContextInner>>;
+
+const t = initTRPC.context<Context>().create();
+
+const posts: { id: string; title: string; text: string }[] = [];
+
+export const appRouter = t.router({
+  post: t.router({
+    add: t.procedure
+      .input(z.object({ title: z.string(), text: z.string() }))
+      .mutation((opts) => {
+        const post = { id: `${Math.random()}`, ...opts.input };
+        posts.push(post);
+        return post;
+      }),
+    byId: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query((opts) => posts.find((p) => p.id === opts.input.id)!),
+  }),
+});
+
+export type AppRouter = typeof appRouter;
+export const createCaller = t.createCallerFactory(appRouter);
+
+// @filename: test.ts
+import { type inferProcedureInput } from '@trpc/server';
+import { createContextInner } from './context';
+import { type AppRouter, createCaller } from './_app';
+
+// ---cut---
+async function testAddAndGetPost() {
   const ctx = await createContextInner({});
   const caller = createCaller(ctx);
 
@@ -107,9 +144,7 @@ test('add and get post', async () => {
 
   const post = await caller.post.add(input);
   const byId = await caller.post.byId({ id: post.id });
-
-  expect(byId).toMatchObject(input);
-});
+}
 ```
 
 ## `router.createCaller()`
@@ -240,13 +275,30 @@ how to call a procedure from another, custom endpoint.
 :::
 
 ```ts twoslash
-// @noErrors
-// ---cut---
+// @target: esnext
+// @filename: server/routers/_app.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
+const t = initTRPC.create();
+
+export const appRouter = t.router({
+  post: t.router({
+    byId: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query((opts) => {
+        return { id: opts.input.id, title: 'Example Post' };
+      }),
+  }),
+});
+
+// @filename: pages/api/post.ts
 import { TRPCError } from '@trpc/server';
 import { getHTTPStatusCodeFromError } from '@trpc/server/http';
-import { appRouter } from '~/server/routers/_app';
+import { appRouter } from '../../server/routers/_app';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+// ---cut---
 type ResponseData = {
   data?: {
     postTitle: string;
@@ -293,13 +345,15 @@ export default async (
 The `createFactoryCaller` and the `createCaller` function can take an error handler through the `onError` option. This can be used to throw errors that are not wrapped in a TRPCError, or respond to errors in some other way. Any handler passed to createCallerFactory will be called before the handler passed to createCaller.
 The handler is called with the same arguments as an error formatter would be, except for the shape field:
 
-```ts
-{
-  ctx: unknown; // The request context
-  error: TRPCError; // The TRPCError that was thrown
-  path: string | undefined; // The path of the procedure that threw the error
-  input: unknown; // The input that was passed to the procedure
-  type: 'query' | 'mutation' | 'subscription' | 'unknown'; // The type of the procedure that threw the error
+```ts twoslash
+import { TRPCError } from '@trpc/server';
+// ---cut---
+interface OnErrorShape {
+  ctx: unknown;
+  error: TRPCError;
+  path: string | undefined;
+  input: unknown;
+  type: 'query' | 'mutation' | 'subscription' | 'unknown';
 }
 ```
 

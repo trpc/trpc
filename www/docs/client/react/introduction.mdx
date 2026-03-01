@@ -19,13 +19,56 @@ If you are using Next.js we recommend using [our integration with that](../nextj
 
 No! The integration is fully optional. You can use `@tanstack/react-query` using just a [vanilla tRPC client](/docs/client/vanilla), although then you'll have to manually manage query keys and do not get the same level of DX as when using the integration package.
 
-```ts title='utils/trpc.ts'
+```ts twoslash title='utils/trpc.ts'
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+const appRouter = t.router({
+  post: t.router({
+    list: t.procedure.query(() => {
+      return [{ id: 1, title: 'everlong' }];
+    }),
+  }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.ts
+// ---cut---
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import type { AppRouter } from '../server';
+
 export const trpc = createTRPCClient<AppRouter>({
   links: [httpBatchLink({ url: 'YOUR_API_URL' })],
 });
 ```
 
-```tsx title='components/PostList.tsx'
+```tsx twoslash title='components/PostList.tsx'
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+const appRouter = t.router({
+  post: t.router({
+    list: t.procedure.query(() => {
+      return [{ id: 1, title: 'everlong' }];
+    }),
+  }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.ts
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import type { AppRouter } from '../server';
+export const trpc = createTRPCClient<AppRouter>({
+  links: [httpBatchLink({ url: 'YOUR_API_URL' })],
+});
+
+// @filename: components/PostList.tsx
+// ---cut---
+import { useQuery } from '@tanstack/react-query';
+import { trpc } from '../utils/trpc';
+
 function PostList() {
   const { data } = useQuery({
     queryKey: ['posts'],
@@ -43,7 +86,27 @@ function PostList() {
 
 This library enables usage directly within React components
 
-```tsx title='pages/IndexPage.tsx'
+```tsx twoslash title='pages/IndexPage.tsx'
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+const appRouter = t.router({
+  hello: t.procedure
+    .input(z.object({ name: z.string() }))
+    .query(({ input }) => ({ greeting: `Hello ${input.name}` })),
+  goodbye: t.procedure.mutation(() => 'goodbye'),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: pages/IndexPage.tsx
+import React from 'react';
+// ---cut---
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {

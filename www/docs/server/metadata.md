@@ -13,10 +13,10 @@ Use metadata together with [`trpc-openapi`](https://github.com/jlalmes/trpc-open
 
 ## Create router with typed metadata
 
-```tsx
+```tsx twoslash
 import { initTRPC } from '@trpc/server';
 
-// [...]
+type Context = { user: { name: string } | null };
 
 interface Meta {
   authRequired: boolean;
@@ -31,10 +31,10 @@ export const appRouter = t.router({
 
 ## Example with per route authentication settings
 
-```tsx title='server.ts'
-import { initTRPC } from '@trpc/server';
+```tsx twoslash title='server.ts'
+import { initTRPC, TRPCError } from '@trpc/server';
 
-// [...]
+type Context = { user: { name: string } | null };
 
 interface Meta {
   authRequired: boolean;
@@ -69,11 +69,13 @@ export const appRouter = t.router({
 
 You can set default values for your meta type, and if you chain meta on top of a base procedure it will be shallow merged.
 
-```tsx
+```tsx twoslash
 import { initTRPC } from '@trpc/server';
 
+type Context = { user: { name: string } | null };
+
 interface Meta {
-  authRequired: boolean;
+  authRequired?: boolean;
   role?: 'user' | 'admin'
 }
 
@@ -85,13 +87,15 @@ export const t = initTRPC
     defaultMeta: { authRequired: false }
   });
 
+const authMiddleware = t.middleware((opts) => opts.next());
+
 const publicProcedure = t.procedure
 // ^ Default Meta: { authRequired: false }
 
 const authProcedure = publicProcedure
   .use(authMiddleware)
   .meta({
-    authRequired: true;
+    authRequired: true,
     role: 'user'
   });
 // ^ Meta: { authRequired: true, role: 'user' }

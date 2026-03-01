@@ -1,0 +1,86 @@
+---
+id: test
+title: Test
+---
+
+```twoslash include server
+// @target: esnext
+
+// @filename: server.ts
+import { initTRPC, TRPCError } from '@trpc/server';
+import { z } from 'zod';
+
+const t = initTRPC.create();
+
+const posts = [
+  { id: '1', title: 'everlong' },
+  { id: '2', title: 'After Dark' },
+];
+
+const appRouter = t.router({
+  post: t.router({
+    all: t.procedure
+      .input(
+        z.object({
+          cursor: z.string().optional(),
+        })
+      )
+      .query(({ input }) => {
+        return {
+          posts,
+          nextCursor: '123' as string | undefined,
+        };
+      }),
+    byId: t.procedure
+      .input(
+        z.object({
+          id: z.string(),
+        })
+      )
+      .query(({ input }) => {
+        const post = posts.find(p => p.id === input.id);
+        if (!post) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+          })
+        }
+        return post;
+     }),
+  }),
+});
+
+export type AppRouter = typeof appRouter;
+
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server';
+
+export const trpc = createTRPCReact<AppRouter>();
+
+```
+
+### Test
+
+```tsx twoslash
+// @target: esnext
+// @include: server
+// ---cut---
+// @filename: pages/index.tsx
+import React from 'react';
+import { trpc } from '../utils/trpc';
+
+function PostView() {
+  const [{ pages }, allPostsQuery] = trpc.post.all.useSuspenseInfiniteQuery(
+    {},
+    {
+      getNextPageParam(lastPage) {
+        return lastPage.nextCursor;
+      },
+      initialCursor: '',
+    },
+  );
+
+  return <>{/* ... */}</>;
+}
+```

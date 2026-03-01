@@ -13,7 +13,9 @@ For in-depth information about options and usage patterns, refer to the TanStack
 
 ## Signature
 
-```tsx
+```tsx twoslash
+// @errors: 2391 7010 2304 2552 1005
+
 function useQuery(
   input: TInput | SkipToken,
   opts?: UseTRPCQueryOptions;
@@ -46,7 +48,7 @@ You'll notice that you get autocompletion on the `input` based on what you have 
 <details>
 <summary>Backend code</summary>
 
-```tsx title='server/routers/_app.ts'
+```tsx twoslash title='server/routers/_app.ts'
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -69,11 +71,34 @@ export const appRouter = t.router({
       };
     }),
 });
+
+export type AppRouter = typeof appRouter;
 ```
 
 </details>
 
-```tsx title='components/MyComponent.tsx'
+```tsx twoslash title='components/MyComponent.tsx'
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+const appRouter = t.router({
+  hello: t.procedure
+    .input(z.object({ text: z.string().nullish() }).nullish())
+    .query((opts) => {
+      return { greeting: `hello ${opts.input?.text ?? 'world'}` };
+    }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: components/MyComponent.tsx
+// ---cut---
+import React from 'react';
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {
@@ -113,11 +138,13 @@ When returning an async generators in a query, you will:
 
 ### Example
 
-```tsx title='server/routers/_app.ts'
-import { publicProcedure, router } from './trpc';
+```tsx twoslash title='server/routers/_app.ts'
+import { initTRPC } from '@trpc/server';
 
-const appRouter = router({
-  iterable: publicProcedure.query(async function* () {
+const t = initTRPC.create();
+
+const appRouter = t.router({
+  iterable: t.procedure.query(async function* () {
     for (let i = 0; i < 3; i++) {
       await new Promise((resolve) => setTimeout(resolve, 500));
       yield i;
@@ -128,8 +155,29 @@ const appRouter = router({
 export type AppRouter = typeof appRouter;
 ```
 
-```tsx title='components/MyComponent.tsx'
-import { trpc } from '~/utils';
+```tsx twoslash title='components/MyComponent.tsx'
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+const appRouter = t.router({
+  iterable: t.procedure.query(async function* () {
+    for (let i = 0; i < 3; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      yield i;
+    }
+  }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: components/MyComponent.tsx
+// ---cut---
+import React, { Fragment } from 'react';
+import { trpc } from '../utils/trpc';
 
 export function MyComponent() {
   const result = trpc.iterable.useQuery();

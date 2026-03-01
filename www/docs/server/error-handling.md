@@ -86,10 +86,12 @@ tRPC provides an error subclass, `TRPCError`, which you can use to represent an 
 
 For example, throwing this error:
 
-```ts title='server.ts'
+```ts twoslash title='server.ts'
 import { initTRPC, TRPCError } from '@trpc/server';
 
 const t = initTRPC.create();
+
+const theError = new Error('something went wrong');
 
 const appRouter = t.router({
   hello: t.procedure.query(() => {
@@ -127,8 +129,16 @@ Results to the following response:
 
 All errors that occur in a procedure go through the `onError` method before being sent to the client. Here you can handle errors (To change errors see [error formatting](error-formatting)).
 
-```ts title='server.ts'
+```ts twoslash title='server.ts'
+// @filename: router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: server.ts
+// ---cut---
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { appRouter } from './router';
 
 const server = createHTTPServer({
   router: appRouter,
@@ -144,13 +154,15 @@ const server = createHTTPServer({
 
 The `onError` parameter is an object that contains all information about the error and the context it occurs in:
 
-```ts
-{
-  error: TRPCError; // the original error
+```ts twoslash
+import { TRPCError } from '@trpc/server';
+// ---cut---
+interface OnErrorOpts {
+  error: TRPCError;
   type: 'query' | 'mutation' | 'subscription' | 'unknown';
-  path: string | undefined; // path of the procedure that was triggered
+  path: string | undefined;
   input: unknown;
-  ctx: Context | undefined;
-  req: BaseRequest; // request object
+  ctx: unknown;
+  req: Request;
 }
 ```

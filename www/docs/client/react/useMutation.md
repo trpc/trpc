@@ -16,7 +16,7 @@ Works like react-query's mutations - [see their docs](https://tanstack.com/query
 <details>
 <summary>Backend code</summary>
 
-```tsx title='server/routers/_app.ts'
+```tsx twoslash title='server/routers/_app.ts'
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -37,16 +37,39 @@ export const appRouter = t.router({
       return {
         user: {
           name: opts.input.name,
-          role: 'ADMIN',
+          role: 'ADMIN' as const,
         },
       };
     }),
 });
+
+export type AppRouter = typeof appRouter;
 ```
 
 </details>
 
-```tsx
+```tsx twoslash
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+const appRouter = t.router({
+  login: t.procedure
+    .input(z.object({ name: z.string() }))
+    .mutation((opts) => {
+      return { user: { name: opts.input.name, role: 'ADMIN' as const } };
+    }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: components/MyComponent.tsx
+// ---cut---
+import React from 'react';
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {

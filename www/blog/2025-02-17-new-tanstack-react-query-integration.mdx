@@ -9,7 +9,24 @@ We are excited to announce the new TanStack React Query integration for tRPC is 
 
 {/* truncate */}
 
-```tsx title="greeting.tsx"
+```tsx twoslash title="greeting.tsx"
+// @jsx: react-jsx
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+export const appRouter = t.router({
+  greeting: t.procedure.input(z.object({ name: z.string() })).query(({ input }) => `Hello ${input.name}`),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: trpc.ts
+import { createTRPCContext } from '@trpc/tanstack-react-query';
+import type { AppRouter } from './server';
+export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+
+// @filename: greeting.tsx
+// ---cut---
 import { useQuery } from '@tanstack/react-query';
 import { useTRPC } from './trpc';
 
@@ -20,7 +37,7 @@ export function Greeting() {
 
   // greetingQuery.data === 'Hello Jerry'
 
-  // [...]
+  return null;
 }
 ```
 

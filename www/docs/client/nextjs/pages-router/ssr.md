@@ -18,7 +18,16 @@ In order to execute queries properly during the server-side render step we need 
 
 Additionally, consider [`Response Caching`](../../../server/caching.md).
 
-```tsx title='utils/trpc.ts'
+```tsx twoslash title='utils/trpc.ts'
+// @filename: utils/api/trpc/[trpc].ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.ts
+declare function getBaseUrl(): string;
+// ---cut---
 import { httpBatchLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 import { ssrPrepass } from '@trpc/next/ssrPrepass';
@@ -69,13 +78,24 @@ export const trpc = createTRPCNext<AppRouter>({
 
 or, if you want to SSR conditional on a given request, you can pass a callback to `ssr`. This callback can return a boolean, or a Promise resolving to a boolean:
 
-```tsx title='utils/trpc.ts'
+```tsx twoslash title='utils/trpc.ts'
+// @filename: utils/api/trpc/[trpc].ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.ts
+declare function getBaseUrl(): string;
+// ---cut---
 import { httpBatchLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
+import { ssrPrepass } from '@trpc/next/ssrPrepass';
 import superjson from 'superjson';
 import type { AppRouter } from './api/trpc/[trpc]';
 
 export const trpc = createTRPCNext<AppRouter>({
+  ssrPrepass,
   config(info) {
     const { ctx } = info;
     if (typeof window !== 'undefined') {
@@ -114,14 +134,34 @@ export const trpc = createTRPCNext<AppRouter>({
   },
   ssr(opts) {
     // only SSR if the request is coming from a bot
-    return opts.ctx?.req?.headers['user-agent']?.includes('bot');
+    return opts.ctx?.req?.headers['user-agent']?.includes('bot') ?? false;
   },
 });
 ```
 
-```tsx title='pages/_app.tsx'
-import { trpc } from '~/utils/trpc';
+```tsx twoslash title='pages/_app.tsx'
+// @jsx: react-jsx
+// @filename: server/routers/_app.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.tsx
+import { createTRPCNext } from '@trpc/next';
+import { httpBatchLink } from '@trpc/client';
+import type { AppRouter } from '../server/routers/_app';
+export const trpc = createTRPCNext<AppRouter>({
+  config() {
+    return { links: [httpBatchLink({ url: '/api/trpc' })] };
+  },
+});
+
+// @filename: pages/_app.tsx
+// ---cut---
+import { trpc } from '../utils/trpc';
 import type { AppProps } from 'next/app';
+import type { AppType } from 'next/app';
 import React from 'react';
 
 const MyApp: AppType = ({ Component, pageProps }: AppProps) => {
@@ -137,9 +177,18 @@ If you turn on SSR in your app, you might discover that your app loads slowly on
 
 You can use the `responseMeta` callback on `createTRPCNext` to set cache headers for SSR responses. See also the general [Response Caching](../../../server/caching.md) docs for framework-agnostic caching with `responseMeta`.
 
-```tsx title='utils/trpc.tsx'
+```tsx twoslash title='utils/trpc.tsx'
+// @filename: server/routers/_app.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.tsx
+// ---cut---
 import { httpBatchLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
+import { ssrPrepass } from '@trpc/next/ssrPrepass';
 import type { AppRouter } from '../server/routers/_app';
 
 export const trpc = createTRPCNext<AppRouter>({
@@ -167,6 +216,7 @@ export const trpc = createTRPCNext<AppRouter>({
     };
   },
   ssr: true,
+  ssrPrepass,
   responseMeta(opts) {
     const { clientErrors } = opts;
 
@@ -195,7 +245,7 @@ export const trpc = createTRPCNext<AppRouter>({
 
 You can also use `responseMeta` on the Next.js API handler to cache API responses directly:
 
-```tsx title='pages/api/trpc/[trpc].ts'
+```tsx twoslash title='pages/api/trpc/[trpc].ts'
 import { initTRPC } from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 

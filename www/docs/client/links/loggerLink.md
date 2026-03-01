@@ -11,9 +11,17 @@ slug: /client/links/loggerLink
 
 You can import and add the `loggerLink` to the `links` array as such:
 
-```ts title="client/index.ts"
+```ts twoslash title="client/index.ts"
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
 import { createTRPCClient, httpBatchLink, loggerLink } from '@trpc/client';
-import type { AppRouter } from '../server';
+import type { AppRouter } from './server';
 
 const client = createTRPCClient<AppRouter>({
   links: [
@@ -38,7 +46,12 @@ const client = createTRPCClient<AppRouter>({
 
 The `loggerLink` function takes an options object that has the `LoggerLinkOptions` shape:
 
-```ts
+```ts twoslash
+type AnyRouter = any;
+type LogFn<TRouter> = (opts: any) => void;
+type EnabledFn<TRouter> = (opts: any) => boolean;
+type ConsoleEsque = { log: (...args: any[]) => void; error: (...args: any[]) => void };
+// ---cut---
 type LoggerLinkOptions<TRouter extends AnyRouter> = {
   logger?: LogFn<TRouter>;
   /**

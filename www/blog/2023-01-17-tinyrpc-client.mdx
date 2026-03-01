@@ -63,7 +63,8 @@ const appRouter = router({
 
 The goal of our client is to mimic this object structure on our client so that we can call procedures like:
 
-```ts
+```ts twoslash
+// @errors: 2304 1375 1378
 const post1 = await client.post.byId.query({ id: '123' });
 const post2 = await client.post.byTitle.query({ title: 'Hello world' });
 const newPost = await client.post.create.mutate({ title: 'Foo' });
@@ -315,13 +316,14 @@ And that's it! This is all the code you'll need to call your tRPC procedures on 
 Now, create the client and provide it your server's url and you'll get full autocompletion and type safety when you call your procedures!
 
 ```ts twoslash
+// @errors: 2339
 // @target: esnext
 // @include: proxy
 // @include: resolver
 // @include: decorate
 // @include: decoraterecord
 // @include: tinyrpc
-import { initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 const t = initTRPC.create();
@@ -363,7 +365,7 @@ const url = 'http://localhost:3000/api/trpc';
 const client = createTinyRPCClient<AppRouter>(url);
 
 // 🧙‍♀️ magic autocompletion
-// @noErrors
+
 client.post.b;
 //           ^|
 //

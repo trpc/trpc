@@ -77,7 +77,7 @@ Initialize your tRPC backend in `src/server/trpc.ts` using the `initTRPC` functi
 <details>
 <summary>View sample backend</summary>
 
-```ts title='server/trpc.ts'
+```ts twoslash title='server/trpc.ts'
 import { initTRPC } from '@trpc/server';
 
 // Avoid exporting the entire t-object
@@ -93,7 +93,15 @@ export const procedure = t.procedure;
 
 <br />
 
-```ts title='server/routers/_app.ts'
+```ts twoslash title='server/routers/_app.ts'
+// @filename: server/trpc.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const router = t.router;
+export const procedure = t.procedure;
+
+// @filename: server/routers/_app.ts
+// ---cut---
 import { z } from 'zod';
 import { procedure, router } from '../trpc';
 
@@ -117,7 +125,15 @@ export type AppRouter = typeof appRouter;
 
 <br />
 
-```ts title='pages/api/trpc/[trpc].ts'
+```ts twoslash title='pages/api/trpc/[trpc].ts'
+// @filename: server/routers/_app.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: pages/api/trpc/[trpc].ts
+// ---cut---
 import * as trpcNext from '@trpc/server/adapters/next';
 import { appRouter } from '../../../server/routers/_app';
 
@@ -139,7 +155,15 @@ The backend above is using the [recommended file structure](#recommended-file-st
 
 use the `createTRPCNext` function to create a set of strongly-typed hooks from your API's type signature.
 
-```tsx title='utils/trpc.ts'
+```tsx twoslash title='utils/trpc.ts'
+// @filename: server/routers/_app.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.ts
+// ---cut---
 import { httpBatchLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 import type { AppRouter } from '../server/routers/_app';
@@ -197,7 +221,25 @@ export const trpc = createTRPCNext<AppRouter>({
 
 Wrap your root app page in the `trpc.withTRPC` HOC, similar to this:
 
-```tsx title='pages/_app.tsx'
+```tsx twoslash title='pages/_app.tsx'
+// @jsx: react-jsx
+// @filename: server/routers/_app.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.ts
+import { httpBatchLink } from '@trpc/client';
+import { createTRPCNext } from '@trpc/next';
+import type { AppRouter } from '../server/routers/_app';
+export const trpc = createTRPCNext<AppRouter>({
+  config() { return { links: [httpBatchLink({ url: '/api/trpc' })] }; },
+  ssr: false,
+});
+
+// @filename: pages/_app.tsx
+// ---cut---
 import type { AppType } from 'next/app';
 import { trpc } from '../utils/trpc';
 
@@ -214,7 +256,28 @@ You're all set!
 
 You can now use the React hooks you have just created to invoke your API. For more detail see the [React Query Integration](../../react/setup.mdx)
 
-```tsx title='pages/index.tsx'
+```tsx twoslash title='pages/index.tsx'
+// @jsx: react-jsx
+// @filename: server/routers/_app.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+export const appRouter = t.router({
+  hello: t.procedure.input(z.object({ text: z.string() })).query(({ input }) => ({ greeting: `hello ${input.text}` })),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.ts
+import { httpBatchLink } from '@trpc/client';
+import { createTRPCNext } from '@trpc/next';
+import type { AppRouter } from '../server/routers/_app';
+export const trpc = createTRPCNext<AppRouter>({
+  config() { return { links: [httpBatchLink({ url: '/api/trpc' })] }; },
+  ssr: false,
+});
+
+// @filename: pages/index.tsx
+// ---cut---
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
@@ -259,13 +322,25 @@ Ability to set request headers and HTTP status when server-side rendering.
 
 #### Example
 
-```tsx title='utils/trpc.ts'
+```tsx twoslash title='utils/trpc.ts'
+// @filename: server/routers/_app.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.ts
+// ---cut---
 import { createTRPCNext } from '@trpc/next';
-import type { AppRouter } from '../pages/api/trpc/[trpc]';
+import type { AppRouter } from '../server/routers/_app';
 
 export const trpc = createTRPCNext<AppRouter>({
   config(config) {
-    /* [...] */
+    return {
+      links: [
+        /* [...] */
+      ],
+    };
   },
 });
 ```
