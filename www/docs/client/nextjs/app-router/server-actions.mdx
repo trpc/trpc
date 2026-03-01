@@ -7,8 +7,8 @@ slug: /client/nextjs/server-actions
 
 Server Actions allow you to define functions on the server and call them directly from client components, with the network layer abstracted away by the framework. By defining your server actions using tRPC procedures, you get all of tRPC's built-in features: input validation, authentication and authorization through middlewares, output validation, data transformers, and more.
 
-:::note
-Server Actions require the **Next.js App Router** and **tRPC v11**.
+:::info
+The Server Actions integration uses the `experimental_` prefix and is still under active development. The API may change in future releases.
 :::
 
 ## Setting up Server Action procedures
@@ -163,7 +163,3 @@ Server Actions are not a replacement for all tRPC mutations. Consider the tradeo
 - **Use `useMutation`** when you need to update the client-side cache, show optimistic updates, or manage complex loading/error states in the UI.
 
 You can incrementally adopt server actions alongside your existing tRPC API - there's no need to rewrite your entire API.
-
-:::info
-The Server Actions integration uses the `experimental_` prefix and is still under active development. The API may change in future releases.
-:::
