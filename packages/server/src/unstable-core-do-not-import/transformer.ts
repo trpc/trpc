@@ -24,6 +24,24 @@ interface InputDataTransformer extends DataTransformer {
    * This function runs **on the server** to transform the data before it is passed to the resolver
    */
   deserialize(object: any): any;
+  /**
+   * Whether to serialize non-JSON data types (e.g. `FormData` and `ReadableStream`) with
+   * the transformer. If `false`, these types will be sent as-is and the transformer will not run on
+   * them. If `true`, these types will be serialized with the transformer, but this requires that
+   * the transformer supports serializing and deserializing these types.
+   *
+   * @default false
+   */
+  unstable_serializeNonJsonTypes?: boolean;
+  /**
+   * Whether to deserialize non-JSON data types (e.g. `FormData` and `ReadableStream`) with the
+   * transformer. If `false`, these types will be passed to the resolver as-is and the transformer
+   * will not run on them. If `true`, these types will be deserialized with the transformer, but
+   * this requires that the transformer supports serializing and deserializing these types.
+   *
+   * @default false
+   */
+  unstable_deserializeNonJsonTypes?: boolean;
 }
 
 interface OutputDataTransformer extends DataTransformer {
@@ -55,7 +73,10 @@ export interface CombinedDataTransformer {
  * @public
  */
 export type CombinedDataTransformerClient = {
-  input: Pick<CombinedDataTransformer['input'], 'serialize'>;
+  input: Pick<
+    CombinedDataTransformer['input'],
+    'serialize' | 'unstable_serializeNonJsonTypes'
+  >;
   output: Pick<CombinedDataTransformer['output'], 'deserialize'>;
 };
 
