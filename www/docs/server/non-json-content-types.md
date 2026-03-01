@@ -66,8 +66,8 @@ import {
   isNonJsonSerializable,
   splitLink,
 } from '@trpc/client';
-import type { AppRouter } from './server';
 import superjson from 'superjson';
+import type { AppRouter } from './server';
 
 createTRPCClient<AppRouter>({
   links: [
