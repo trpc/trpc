@@ -47,6 +47,7 @@ export default defineConfig({
     },
     coverage: {
       provider: 'istanbul',
+      reportsDirectory: './coverage',
       include: ['**/src/**'],
       exclude: [
         '**/www/**',
