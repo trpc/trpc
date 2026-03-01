@@ -1,8 +1,8 @@
-import { readFileSync, readdirSync } from 'node:fs';
-import { resolve, relative } from 'node:path';
-import { unified } from 'unified';
+import { readdirSync, readFileSync } from 'node:fs';
+import { relative, resolve } from 'node:path';
 import remarkParse from 'remark-parse';
 import remarkStringify from 'remark-stringify';
+import { unified } from 'unified';
 
 // Match the import pattern used in docusaurus.config.ts
 const remarkShikiTwoslash =
@@ -28,12 +28,14 @@ interface BlockError {
 }
 
 function findMarkdownFiles(baseDir: string): string[] {
-  const entries = readdirSync(baseDir, { withFileTypes: true, recursive: true });
+  const entries = readdirSync(baseDir, {
+    withFileTypes: true,
+    recursive: true,
+  });
   return entries
     .filter(
       (e) =>
-        !e.isDirectory() &&
-        (e.name.endsWith('.md') || e.name.endsWith('.mdx')),
+        !e.isDirectory() && (e.name.endsWith('.md') || e.name.endsWith('.mdx')),
     )
     .map((e) => resolve(e.parentPath ?? e.path, e.name));
 }
