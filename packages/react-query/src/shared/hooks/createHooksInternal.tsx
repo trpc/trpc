@@ -260,7 +260,7 @@ export function createRootHooks<
       ...opts,
       queryKey: queryKey as any,
       queryFn: isInputSkipToken
-        ? input
+        ? undefined
         : (queryFunctionContext) => {
             const actualOpts = {
               trpc: {
@@ -338,7 +338,8 @@ export function createRootHooks<
         },
         onSuccess(...args) {
           const originalFn = () =>
-            opts?.onSuccess?.(...args) ?? defaultOpts?.onSuccess?.(...args);
+            (opts?.onSuccess?.(...args) ??
+              defaultOpts?.onSuccess?.(...args)) as Promise<void>;
 
           return mutationSuccessOverride({
             originalFn,

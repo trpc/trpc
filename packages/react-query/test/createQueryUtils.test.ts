@@ -318,7 +318,9 @@ describe('createTRPCQueryUtils()', () => {
         return fn(variables);
       },
     }));
-    clientUtils.addPost.getMutationDefaults()?.mutationFn?.({ title: '' });
+    clientUtils.addPost
+      .getMutationDefaults()
+      ?.mutationFn?.({ title: '' }, { client: queryClient, meta: undefined });
     expect(fn.mock.calls.length).toBe(1);
   });
 });
