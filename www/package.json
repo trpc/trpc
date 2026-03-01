@@ -20,7 +20,8 @@
     "postinstall": "run-p postinstall:* --print-label",
     "tweetwall-pull": "tsx ./src/components/TwitterWall/script.ts",
     "lint": "eslint --cache src",
-    "typecheck": "tsc --noEmit --preserveWatchOutput --pretty"
+    "typecheck": "tsc --noEmit --preserveWatchOutput --pretty",
+    "check-twoslash": "tsx scripts/check-twoslash.ts"
   },
   "dependencies": {
     "@algolia/client-search": "^5.0.0",
@@ -97,6 +98,8 @@
     "oauth": "^0.10.0",
     "postcss": "^8.4.39",
     "prettier": "^3.3.3",
+    "remark-parse": "^11.0.0",
+    "remark-stringify": "^11.0.0",
     "runtypes": "^7.0.0",
     "scale-codec": "^0.13.0",
     "superstruct": "^2.0.0",
@@ -106,6 +109,7 @@
     "typedoc": "0.27.9",
     "typedoc-plugin-markdown": "4.4.2",
     "typescript": "^5.9.2",
+    "unified": "^11.0.0",
     "valibot": "1.2.0",
     "yup": "^1.0.0"
   },
