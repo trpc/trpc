@@ -57,19 +57,19 @@ You may also override this behaviour at the query level.
 // ---cut---
 import { createTRPCReact } from '@trpc/react-query';
 import type { AppRouter } from '../server/router';
+// ---cut---
+import { trpc } from '../utils/trpc';
 
 export const trpc = createTRPCReact<AppRouter>();
 
 // @filename: pages/posts.tsx
 declare const useRouter: any;
-// ---cut---
-import { trpc } from '../utils/trpc';
 
 function PostViewPage() {
   const { query } = useRouter();
   const postQuery = trpc.post.byId.useQuery(
     { id: query.id },
-    { trpc: { abortOnUnmount: true } }
+    { trpc: { abortOnUnmount: true } },
   );
 
   // ...

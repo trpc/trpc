@@ -452,7 +452,6 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
     client.on('message', (rawData, isBinary) => {
       // Handle PING/PONG as text regardless of encoder
       if (!isBinary) {
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         const msgStr = rawData.toString();
         if (msgStr === 'PONG') {
           return;
