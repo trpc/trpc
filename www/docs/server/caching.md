@@ -91,5 +91,5 @@ server.listen(3000);
 ```
 
 :::tip
-If you are using Next.js, see the [Next.js SSR caching guide](/docs/client/nextjs/ssr#response-caching-with-ssr) for Next.js-specific caching examples using `createTRPCNext` and the Next.js adapter.
+If you are using Next.js, see the [Next.js SSR caching guide](/docs/client/nextjs/pages-router/ssr#response-caching-with-ssr) for Next.js-specific caching examples using `createTRPCNext` and the Next.js adapter.
 :::

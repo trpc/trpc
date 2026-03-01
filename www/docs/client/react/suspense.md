@@ -8,7 +8,7 @@ slug: /client/react/suspense
 :::info
 
 - Ensure you're on the latest version of React
-- If you use suspense with [tRPC's _automatic_ SSR in Next.js](/docs/client/nextjs/ssr), the full page will crash on the server if a query fails, even if you have an `<ErrorBoundary />`
+- If you use suspense with [tRPC's _automatic_ SSR in Next.js](/docs/client/nextjs/pages-router/ssr), the full page will crash on the server if a query fails, even if you have an `<ErrorBoundary />`
 
 :::
 
@@ -140,7 +140,7 @@ The performance of suspense queries can be improved by prefetching the query dat
 :::note
 
 - Prefetching and the render-as-you-fetch model are very dependent on the framework and router you are using. We recommend reading your frameworks router docs along with the [@tanstack/react-query docs](https://tanstack.com/query/v5/docs/react/guides/prefetching) to understand how to implement these patterns.
-- If you are using Next.js please look at the docs on [Server-Side Helpers](/docs/client/nextjs/server-side-helpers) to implement server-side prefetching.
+- If you are using Next.js please look at the docs on [Server-Side Helpers](/docs/client/nextjs/pages-router/server-side-helpers) to implement server-side prefetching.
 
 :::
 

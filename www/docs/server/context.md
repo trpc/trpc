@@ -68,7 +68,7 @@ const caller = createCaller(await createContext());
 ```
 
 ```ts
-// 3. Server-side helpers (Next.js-specific, see /docs/client/nextjs/server-side-helpers)
+// 3. Server-side helpers (Next.js-specific, see /docs/client/nextjs/pages-router/server-side-helpers)
 import { createServerSideHelpers } from '@trpc/react-query/server';
 import { createContext } from './context';
 import { appRouter } from './router';
