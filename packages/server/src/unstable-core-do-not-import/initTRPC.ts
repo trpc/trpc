@@ -32,16 +32,16 @@ export interface RuntimeConfigOptions<
   TContext extends object,
   TMeta extends object,
 > extends Partial<
-  Omit<
-    RootConfig<{
-      ctx: TContext;
-      meta: TMeta;
-      errorShape: any;
-      transformer: any;
-    }>,
-    '$types' | 'transformer'
-  >
-> {
+    Omit<
+      RootConfig<{
+        ctx: TContext;
+        meta: TMeta;
+        errorShape: any;
+        transformer: any;
+      }>,
+      '$types' | 'transformer'
+    >
+  > {
   /**
    * Use a data transformer
    * @see https://trpc.io/docs/v11/data-transformers

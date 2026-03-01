@@ -65,10 +65,8 @@ type ChunkDefinition = [
   chunkId: ChunkIndex,
 ];
 type EncodedValue = [
-  (
-    // data
-    [unknown] | []
-  ),
+  // data
+  [unknown] | [],
   // chunk descriptions
   ...ChunkDefinition[],
 ];

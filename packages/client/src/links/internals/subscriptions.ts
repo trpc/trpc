@@ -8,9 +8,8 @@ interface ConnectionIdleState extends ConnectionStateBase<null> {
   state: 'idle';
 }
 
-interface ConnectionConnectingState<
-  TError,
-> extends ConnectionStateBase<TError | null> {
+interface ConnectionConnectingState<TError>
+  extends ConnectionStateBase<TError | null> {
   state: 'connecting';
 }
 

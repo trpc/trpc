@@ -55,11 +55,8 @@ type ManagedIterator<TYield, TReturn> = ReturnType<
   typeof createManagedIterator<TYield, TReturn>
 >;
 
-interface MergedAsyncIterables<TYield> extends AsyncIterable<
-  TYield,
-  void,
-  unknown
-> {
+interface MergedAsyncIterables<TYield>
+  extends AsyncIterable<TYield, void, unknown> {
   add(iterable: AsyncIterable<TYield>): void;
 }
 

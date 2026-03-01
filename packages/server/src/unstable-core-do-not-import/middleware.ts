@@ -24,9 +24,8 @@ interface MiddlewareOKResult<_TContextOverride> extends MiddlewareResultBase {
   // this could be extended with `input`/`rawInput` later
 }
 
-interface MiddlewareErrorResult<
-  _TContextOverride,
-> extends MiddlewareResultBase {
+interface MiddlewareErrorResult<_TContextOverride>
+  extends MiddlewareResultBase {
   ok: false;
   error: TRPCError;
 }
