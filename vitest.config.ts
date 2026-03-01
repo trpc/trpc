@@ -39,6 +39,7 @@ for (const pkg of dirs.sort()) {
 export default defineConfig({
   clearScreen: true,
   test: {
+    projects: ['packages/*'],
     environment: 'jsdom',
     globals: true,
     setupFiles: [
