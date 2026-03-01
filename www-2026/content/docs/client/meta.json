@@ -1,0 +1,13 @@
+{
+  "title": "Client Usage",
+  "pages": [
+    "overview",
+    "tanstack-react-query",
+    "react",
+    "nextjs",
+    "vanilla",
+    "links",
+    "headers",
+    "cors"
+  ]
+}

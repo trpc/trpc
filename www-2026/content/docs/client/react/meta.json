@@ -1,0 +1,20 @@
+{
+  "title": "React Query Integration (Classic)",
+  "pages": [
+    "introduction",
+    "setup",
+    "server-components",
+    "infer-types",
+    "useQuery",
+    "useMutation",
+    "useInfiniteQuery",
+    "useSubscription",
+    "useUtils",
+    "createTRPCQueryUtils",
+    "useQueries",
+    "suspense",
+    "getQueryKey",
+    "aborting-procedures",
+    "disabling-queries"
+  ]
+}

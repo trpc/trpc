@@ -1,0 +1,21 @@
+{
+  "title": "Documentation",
+  "pages": [
+    "---tRPC---",
+    "introduction",
+    "getting-started",
+    "concepts",
+    "quickstart",
+    "videos-and-community-resources",
+    "example-apps",
+    "---Backend Usage---",
+    "server",
+    "---Client Usage---",
+    "client",
+    "---Extra information---",
+    "further",
+    "migration",
+    "---Community---",
+    "community"
+  ]
+}

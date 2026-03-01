@@ -1,0 +1,15 @@
+@import 'fumadocs-ui/css/ocean.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --fd-primary: 209 65% 51%;
+  --fd-primary-foreground: 0 0% 100%;
+}
+
+.dark {
+  --fd-primary: 209 65% 51%;
+  --fd-primary-foreground: 0 0% 100%;
+}

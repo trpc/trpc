@@ -1,0 +1,12 @@
+{
+  "title": "Next.js Integration",
+  "pages": [
+    "introduction",
+    "setup",
+    "ssr",
+    "ssg",
+    "server-side-helpers",
+    "aborting-procedures",
+    "starter-projects"
+  ]
+}

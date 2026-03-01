@@ -7,3 +7,4 @@ packages:
   - 'examples/minimal-content-types/*'
   - 'www'
   - 'www/og-image'
+  - 'www-2026'

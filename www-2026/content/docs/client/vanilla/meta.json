@@ -1,0 +1,9 @@
+{
+  "title": "Vanilla Client",
+  "pages": [
+    "introduction",
+    "setup",
+    "infer-types",
+    "aborting-procedures"
+  ]
+}

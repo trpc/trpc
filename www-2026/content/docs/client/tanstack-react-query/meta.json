@@ -1,0 +1,9 @@
+{
+  "title": "TanStack React Query",
+  "pages": [
+    "setup",
+    "usage",
+    "migrating",
+    "server-components"
+  ]
+}
