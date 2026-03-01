@@ -210,7 +210,7 @@ export interface TRPCInfiniteQueryOptions<TDef extends ResolverDef> {
   >;
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
     input: TDef['input'] | SkipToken,
-    opts?: UndefinedTRPCInfiniteQueryOptionsIn<
+    opts: UndefinedTRPCInfiniteQueryOptionsIn<
       TDef['input'],
       TQueryFnData,
       TData,
