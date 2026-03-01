@@ -89,29 +89,22 @@ const config: SidebarsConfig = {
       items: [
         {
           type: 'category',
-          label: 'Common APIs',
+          label: 'Links',
           collapsed: true,
+          link: {
+            type: 'doc',
+            id: 'client/links/overview',
+          },
           items: [
-            {
-              type: 'category',
-              label: 'Links',
-              collapsed: true,
-              link: {
-                type: 'doc',
-                id: 'client/links/overview',
-              },
-              items: [
-                'client/links/httpLink',
-                'client/links/httpBatchLink',
-                'client/links/httpBatchStreamLink',
-                'client/links/httpSubscriptionLink',
-                'client/links/localLink',
-                'client/links/wsLink',
-                'client/links/splitLink',
-                'client/links/loggerLink',
-                'client/links/retryLink',
-              ],
-            },
+            'client/links/httpLink',
+            'client/links/httpBatchLink',
+            'client/links/httpBatchStreamLink',
+            'client/links/httpSubscriptionLink',
+            'client/links/localLink',
+            'client/links/wsLink',
+            'client/links/splitLink',
+            'client/links/loggerLink',
+            'client/links/retryLink',
             'client/headers',
             'client/cors',
           ],
