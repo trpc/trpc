@@ -195,7 +195,7 @@
   "devDependencies": {
     "@fastify/websocket": "^11.0.0",
     "@oxc-project/runtime": "0.115.0",
-    "@tanstack/react-query": "^5.80.3",
+    "@tanstack/react-query": "5.80.3",
     "@types/aws-lambda": "^8.10.149",
     "@types/express": "^5.0.0",
     "@types/hash-sum": "^1.0.0",

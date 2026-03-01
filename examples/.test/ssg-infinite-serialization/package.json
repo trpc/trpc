@@ -12,7 +12,7 @@
     "test-start": "start-server-and-test start http://127.0.0.1:3000 test:e2e"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.80.3",
+    "@tanstack/react-query": "5.80.3",
     "@trpc/client": "^11.11.0",
     "@trpc/next": "^11.11.0",
     "@trpc/react-query": "npm:@trpc/react-query",
@@ -28,7 +28,7 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.1",
     "eslint": "9.26.0",
-    "start-server-and-test": "^1.12.0",
+    "start-server-and-test": "1.14.0",
     "typescript": "^5.9.2"
   }
 }

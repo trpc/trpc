@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@msgpack/msgpack": "^3.1.3",
-    "@tanstack/react-query": "^5.80.3",
+    "@tanstack/react-query": "5.80.3",
     "@trpc/client": "npm:@trpc/client",
     "@trpc/next": "npm:@trpc/next",
     "@trpc/react-query": "npm:@trpc/react-query",
@@ -31,7 +31,7 @@
     "zod": "^4.2.1"
   },
   "devDependencies": {
-    "@tanstack/react-query-devtools": "^5.80.3",
+    "@tanstack/react-query-devtools": "5.80.3",
     "@types/node": "^22.13.5",
     "@types/react": "^19.1.0",
     "@types/ws": "^8.2.0",
