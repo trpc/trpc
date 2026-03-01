@@ -35,15 +35,15 @@ In order for these endpoints to be exposed to the frontend, your [Adapter](/docs
 ```ts twoslash title="server/_app.ts"
 // @filename: trpc.ts
 import { initTRPC } from '@trpc/server';
-// @filename: _app.ts
-import * as trpc from '@trpc/server';
-// ---cut---
-import { publicProcedure, router } from './trpc';
-
 const t = initTRPC.create();
 
 export const publicProcedure = t.procedure;
 export const router = t.router;
+
+// @filename: _app.ts
+import * as trpc from '@trpc/server';
+// ---cut---
+import { publicProcedure, router } from './trpc';
 
 const appRouter = router({
   greeting: publicProcedure.query(() => 'hello tRPC v10!'),
