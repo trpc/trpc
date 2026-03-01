@@ -46,11 +46,12 @@ function extractTwoslashBlocks(content: string): TwoslashBlock[] {
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!;
-    const match = line.match(/^```(\w+)\s+(.*twoslash.*)$/);
-    if (!match) continue;
+    if (!line.match(/^```.*twoslash/)) continue;
 
-    const lang = match[1]!;
-    const meta = match[2]!;
+    const afterTicks = line.slice(3);
+    const words = afterTicks.split(/\s+/).filter(Boolean);
+    const lang = words.find((w) => /^\w+$/.test(w) && w !== 'twoslash') ?? 'twoslash';
+    const meta = afterTicks;
     const codeLines: string[] = [];
 
     for (let j = i + 1; j < lines.length; j++) {
