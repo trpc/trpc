@@ -127,11 +127,27 @@ const config: SidebarsConfig = {
             id: 'client/nextjs/introduction',
           },
           items: [
-            'client/nextjs/setup',
-            'client/nextjs/ssr',
-            'client/nextjs/ssg',
-            'client/nextjs/server-side-helpers',
-            'client/nextjs/aborting-procedure-calls',
+            {
+              type: 'category',
+              label: 'App Router',
+              collapsed: false,
+              items: [
+                'client/nextjs/app-router/setup',
+                'client/nextjs/app-router/server-actions',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'Pages Router',
+              collapsed: true,
+              items: [
+                'client/nextjs/pages-router/setup',
+                'client/nextjs/pages-router/ssr',
+                'client/nextjs/pages-router/ssg',
+                'client/nextjs/pages-router/server-side-helpers',
+                'client/nextjs/pages-router/aborting-procedure-calls',
+              ],
+            },
             'client/nextjs/starter-projects',
           ],
         },

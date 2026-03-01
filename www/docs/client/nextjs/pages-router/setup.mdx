@@ -9,7 +9,7 @@ import TabItem from '@theme/TabItem';
 import Tabs from '@theme/Tabs';
 
 :::caution
-This guide is for Next.js Pages Router. If you are using Next.js App Router with React Server components, check out [the RSC docs](/docs/client/react/server-components)
+This guide is for the **Next.js Pages Router**. If you are using the **Next.js App Router**, see the [App Router setup guide](/docs/client/nextjs/app-router-setup) instead.
 :::
 
 ## Recommended file structure
@@ -47,7 +47,7 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 
 <InstallSnippet pkgs="@trpc/server @trpc/client @trpc/react-query @trpc/next @tanstack/react-query@latest zod" />
 
-The Next.js integration is actually a combination of our [React Query Integration](../react/introduction.mdx) and some Next.js specific integrations.
+The Next.js integration is actually a combination of our [React Query Integration](../../react/introduction.mdx) and some Next.js specific integrations.
 
 ### 2. Enable strict mode
 
@@ -190,7 +190,7 @@ export const trpc = createTRPCNext<AppRouter>({
 ```
 
 :::note
-`createTRPCNext` does not work with the tRPC-v9 interop mode. If you are migrating from v9 using interop, you should continue using [the old way of initializing tRPC](../../../versioned_docs/version-9.x/nextjs/introduction.md#4-create-trpc-hooks).
+`createTRPCNext` does not work with the tRPC-v9 interop mode. If you are migrating from v9 using interop, you should continue using [the old way of initializing tRPC](../../../../versioned_docs/version-9.x/nextjs/introduction.md#4-create-trpc-hooks).
 :::
 
 ### 5. Configure `_app.tsx`
@@ -212,7 +212,7 @@ export default trpc.withTRPC(MyApp);
 
 You're all set!
 
-You can now use the React hooks you have just created to invoke your API. For more detail see the [React Query Integration](../react/setup.mdx)
+You can now use the React hooks you have just created to invoke your API. For more detail see the [React Query Integration](../../react/setup.mdx)
 
 ```tsx title='pages/index.tsx'
 import { trpc } from '../utils/trpc';
@@ -234,7 +234,7 @@ export default function IndexPage() {
 
 ### `config`-callback
 
-The `config`-argument is a function that returns an object that configures the tRPC and React Query clients. This function has a `ctx` input that gives you access to the Next.js `req` object, among other things. The returned value can contain the following properties:
+The `config`-argument is a function that returns an object that configures the tRPC and React Query clients. This function receives an object with an optional `ctx` property (of type `NextPageContext`) that gives you access to the Next.js `req` object during server-side rendering. The returned value can contain the following properties:
 
 - **Required**:
 - `links` to customize the flow of data between tRPC Client and the tRPC Server. [Read more](/docs/client/links).

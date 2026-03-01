@@ -16,7 +16,7 @@ Alternatively, you can leave SSR disabled (the default) and use [Server-Side Hel
 
 In order to execute queries properly during the server-side render step we need to add extra logic inside our `config`:
 
-Additionally, consider [`Response Caching`](../../server/caching.md).
+Additionally, consider [`Response Caching`](../../../server/caching.md).
 
 ```tsx title='utils/trpc.ts'
 import { httpBatchLink } from '@trpc/client';
@@ -28,8 +28,8 @@ import type { AppRouter } from './api/trpc/[trpc]';
 export const trpc = createTRPCNext<AppRouter>({
   ssr: true,
   ssrPrepass,
-  config(config) {
-    const { ctx } = opts;
+  config(info) {
+    const { ctx } = info;
     if (typeof window !== 'undefined') {
       // during client requests
       return {
@@ -76,8 +76,8 @@ import superjson from 'superjson';
 import type { AppRouter } from './api/trpc/[trpc]';
 
 export const trpc = createTRPCNext<AppRouter>({
-  config(config) {
-    const { ctx } = opts;
+  config(info) {
+    const { ctx } = info;
     if (typeof window !== 'undefined') {
       // during client requests
       return {
@@ -135,7 +135,7 @@ export default trpc.withTRPC(MyApp);
 
 If you turn on SSR in your app, you might discover that your app loads slowly on, for instance, Vercel, but you can actually statically render your whole app without using SSG; [read this Twitter thread](https://twitter.com/alexdotjs/status/1386274093041950722) for more insights.
 
-You can use the `responseMeta` callback on `createTRPCNext` to set cache headers for SSR responses. See also the general [Response Caching](../../server/caching.md) docs for framework-agnostic caching with `responseMeta`.
+You can use the `responseMeta` callback on `createTRPCNext` to set cache headers for SSR responses. See also the general [Response Caching](../../../server/caching.md) docs for framework-agnostic caching with `responseMeta`.
 
 ```tsx title='utils/trpc.tsx'
 import { httpBatchLink } from '@trpc/client';
@@ -143,7 +143,7 @@ import { createTRPCNext } from '@trpc/next';
 import type { AppRouter } from '../server/routers/_app';
 
 export const trpc = createTRPCNext<AppRouter>({
-  config(config) {
+  config() {
     if (typeof window !== 'undefined') {
       return {
         links: [
@@ -159,11 +159,11 @@ export const trpc = createTRPCNext<AppRouter>({
       : 'http://localhost:3000/api/trpc';
 
     return {
-      links: {
-        http: httpBatchLink({
+      links: [
+        httpBatchLink({
           url,
         }),
-      },
+      ],
     };
   },
   ssr: true,

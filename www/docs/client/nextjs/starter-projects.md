@@ -5,7 +5,39 @@ sidebar_label: Starter Projects
 slug: /client/nextjs/starter-projects
 ---
 
-Get started quickly with one of the sample projects! Copy the snippet from _Quick start with `create-next-app`_ in the below list to clone the project.
+Get started quickly with one of the example projects! Copy the snippet from _Quick start with `create-next-app`_ in the below list to clone the project.
+
+## App Router
+
+<table>
+  <thead>
+    <tr>
+      <th>Description</th>
+      <th>Links</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        Next.js App Router with SSE-based subscriptions and chat.
+        <br/>
+        Uses <code>@trpc/react-query</code> with the fetch adapter.
+        <br/><br/>
+        <details>
+          <summary>Quick start with <code>create-next-app</code></summary>
+          <code>npx create-next-app --example https://github.com/trpc/trpc/tree/main/examples/next-sse-chat trpc-sse-chat</code>
+        </details>
+      </td>
+      <td>
+        <ul>
+          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-sse-chat">Source</a></li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+## Pages Router
 
 <table>
   <thead>
