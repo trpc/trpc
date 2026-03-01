@@ -50,7 +50,8 @@ function extractTwoslashBlocks(content: string): TwoslashBlock[] {
 
     const afterTicks = line.slice(3);
     const words = afterTicks.split(/\s+/).filter(Boolean);
-    const lang = words.find((w) => /^\w+$/.test(w) && w !== 'twoslash') ?? 'twoslash';
+    const lang =
+      words.find((w) => /^\w+$/.test(w) && w !== 'twoslash') ?? 'twoslash';
     const meta = afterTicks;
     const codeLines: string[] = [];
 
