@@ -37,7 +37,7 @@
     "@types/ws": "^8.2.0",
     "autoprefixer": "^10.4.7",
     "cross-env": "^7.0.3",
-    "eslint": "^9.26.0",
+    "eslint": "9.26.0",
     "eslint-config-next": "^15.3.1",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "6.0.0-rc.1",
@@ -45,7 +45,7 @@
     "postcss": "^8.4.39",
     "tailwindcss": "^3.4.6",
     "typescript": "^5.9.2",
-    "typescript-eslint": "^8.31.1"
+    "typescript-eslint": "8.32.1"
   },
   "publishConfig": {
     "access": "restricted"

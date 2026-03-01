@@ -73,11 +73,5 @@
     "vite": "^6.1.1",
     "vitest": "^4.0.18",
     "zod": "^4.2.1"
-  },
-  "pnpm": {
-    "overrides": {
-      "eslint": "9.26.0",
-      "typescript-eslint": "8.32.1"
-    }
   }
 }
