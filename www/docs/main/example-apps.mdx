@@ -6,228 +6,74 @@ slug: /example-apps
 description: Example apps built with tRPC
 ---
 
-import TabItem from '@theme/TabItem';
-import Tabs from '@theme/Tabs';
-
-:::note
-Although it is possible to install the examples using any of listed package managers, the examples are all configured
-to use [pnpm](https://pnpm.io) as the script runner, so make sure to [install](https://pnpm.io/installation) it first.
-
-If you wish to use `npm` or `yarn`, make sure to update the relevant `package.json` `scripts` entries in generated example.
-:::
-
----
-
-### Next.js starter with Prisma, E2E testing, and ESLint (Recommended)
-
-<Tabs>
-  <TabItem value="npm" label="npm" default>
-
-```bash
-npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
-```
-
-  </TabItem>
-  <TabItem value="yarn" label="yarn">
-
-```sh
-yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
-```
-
-  </TabItem>
-  <TabItem value="pnpm" label="pnpm">
-
-```sh
-pnpx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
-```
-
-  </TabItem>
-  <TabItem value="bun" label="bun">
-
-```sh
-bunx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
-```
-
-  </TabItem>
-  <TabItem value="deno" label="deno">
-
-```sh
-deno init --npm next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
-```
-
-  </TabItem>
-</Tabs>
-
-- Example deploy: [nextjs.trpc.io](https://nextjs.trpc.io)
-- [Source code](https://github.com/trpc/examples-next-prisma-starter)
-
----
-
-### create-t3-turbo - T3 Stack with Expo and Turborepo
-
-<Tabs>
-  <TabItem value="git" label="git">
-
-```bash
-git clone git@github.com:t3-oss/create-t3-turbo.git
-```
-
-  </TabItem>
-</Tabs>
-
-- [Source code](https://github.com/t3-oss/create-t3-turbo)
-
----
-
-### Next.js starter with Prisma, E2E testing, ESLint, next-auth, WebSockets, and subscriptions
-
-<Tabs>
-  <TabItem value="npm" label="npm" default>
-
-```bash
-npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-websockets-starter trpc-prisma-websockets-starter
-```
-
-  </TabItem>
-  <TabItem value="yarn" label="yarn">
-
-```sh
-yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-websockets-starter trpc-prisma-websockets-starter
-```
-
-  </TabItem>
-  <TabItem value="pnpm" label="pnpm">
-
-```sh
-pnpx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-websockets-starter trpc-prisma-websockets-starter
-```
-
-  </TabItem>
-  <TabItem value="bun" label="bun">
-
-```sh
-bunx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-websockets-starter trpc-prisma-websockets-starter
-```
-
-  </TabItem>
-  <TabItem value="deno" label="deno">
-
-```sh
-deno init --npm create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-websockets-starter trpc-prisma-websockets-starter
-```
-
-  </TabItem>
-</Tabs>
-
-- Example deploy: [websockets.trpc.io](https://websockets.trpc.io)
-- [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-websockets-starter?file=/src/pages/index.tsx)
-- [Source code](https://github.com/trpc/examples-next-prisma-websockets-starter)
-
----
-
-### Next.js Todo MVC example with SSG and Prisma
-
-<Tabs>
-  <TabItem value="npm" label="npm" default>
-
-```bash
-npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc trpc-todo
-```
-
-  </TabItem>
-  <TabItem value="yarn" label="yarn">
-
-```sh
-yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc trpc-todo
-```
-
-  </TabItem>
-  <TabItem value="pnpm" label="pnpm">
-
-```sh
-pnpx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc trpc-todo
-```
-
-  </TabItem>
-  <TabItem value="bun" label="bun">
-
-```sh
-bunx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc trpc-todo
-```
-
-  </TabItem>
-  <TabItem value="deno" label="deno">
-
-```sh
-deno init --npm next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc trpc-todo
-```
-
-  </TabItem>
-</Tabs>
-
-- Example deploy: [todomvc.trpc.io](https://todomvc.trpc.io)
-- [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-todomvc?file=/pages/%5Bfilter%5D.tsx)
-- [Source code](https://github.com/trpc/examples-next-prisma-todomvc)
-
----
-
-### Minimal (Hello world) server and client in Node.js
-
-- [Source code](https://github.com/trpc/trpc/tree/main/examples/minimal)
-
----
-
-### Vanilla standalone server and Node.js procedure calls
-
-- [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/standalone-server)
-- [Source code](https://github.com/trpc/trpc/tree/main/examples/standalone-server)
-
----
-
-### Express server and Node.js procedure calls
-
-- [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/express-server)
-- [Source code](https://github.com/trpc/trpc/tree/main/examples/express-server)
-
----
-
-### Fastify server with WebSockets and Node.js procedure calls
-
-- [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/fastify-server)
-- [Source code](https://github.com/trpc/trpc/tree/main/examples/fastify-server)
-
----
-
-### SvelteKit with Prisma
-
-- [CodeSandbox](https://codesandbox.io/s/github/icflorescu/trpc-sveltekit-example)
-- [Source code](https://github.com/icflorescu/trpc-sveltekit-example)
-
----
-
-### TanStack Start (Alpha)
-
-- [Source code](https://github.com/trpc/trpc/tree/main/examples/tanstack-start)
-
----
-
-### Sign-In With Ethereum Authentication With Express
-
-<Tabs>
-  <TabItem value="git" label="git">
-
-```bash
-git clone git@github.com:codingwithmanny/trpc-siwe-monorepo.git
-```
-
-  </TabItem>
-</Tabs>
-
-- [Source code](https://github.com/codingwithmanny/trpc-siwe-monorepo)
-
----
-
-### Separate backend & frontend repositories
-
-- [Source code - BE repo (Express.js)](https://github.com/mkosir/trpc-api-boilerplate)
-- [Source code - FE repo (Vite)](https://github.com/mkosir/trpc-fe-boilerplate-vite)
+## Official
+
+### Node.js
+
+| Example               | Description                                               | Links                                                                                                                                                                        |
+| --------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Minimal**           | Hello world server and client                             | [Source](https://github.com/trpc/trpc/tree/main/examples/minimal) · [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/minimal)                     |
+| **Standalone Server** | Custom HTTP server with WebSocket support                 | [Source](https://github.com/trpc/trpc/tree/main/examples/standalone-server) · [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/standalone-server) |
+| **Content Types**     | Binary, text, and JSON content type handling              | [Source](https://github.com/trpc/trpc/tree/main/examples/minimal-content-types) · [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/minimal-content-types) |
+| **Lazy Loading**      | Lazy-loading routes with dynamic imports                  | [Source](https://github.com/trpc/trpc/tree/main/examples/lazy-load) · [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/lazy-load)                |
+| **SOA**               | Service-oriented architecture with multiple tRPC services | [Source](https://github.com/trpc/trpc/tree/main/examples/soa) · [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/soa)                             |
+| **Kitchen Sink**      | Comprehensive examples covering many features             | [Source](https://github.com/trpc/examples-kitchen-sink) · [CodeSandbox](https://codesandbox.io/s/github/trpc/examples-kitchen-sink)                                         |
+
+### React
+
+| Example             | Description                                        | Links                                                                                                                                                                    |
+| ------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Minimal React**   | Node.js server + Vite React client monorepo        | [Source](https://github.com/trpc/trpc/tree/main/examples/minimal-react) · [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/minimal-react)     |
+| **Express + React** | Express server with React client using React Query | [Source](https://github.com/trpc/trpc/tree/main/examples/express-server) · [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/express-server)   |
+
+### Next.js
+
+| Example               | Description                                                   | Links                                                                                                                                                                                                                    |
+| --------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Prisma Starter**    | Full-stack with Prisma, E2E testing, ESLint, and Tailwind CSS | [Source](https://github.com/trpc/examples-next-prisma-starter) · [Demo](https://nextjs.trpc.io) · [CodeSandbox](https://codesandbox.io/s/github/trpc/examples-next-prisma-starter)                                      |
+| **Minimal Starter**   | Bare-bones Next.js + tRPC setup                               | [Source](https://github.com/trpc/trpc/tree/main/examples/next-minimal-starter) · [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-minimal-starter)                                       |
+| **TodoMVC**           | TodoMVC with SSG and Prisma                                   | [Source](https://github.com/trpc/examples-next-prisma-todomvc) · [Demo](https://todomvc.trpc.io) · [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-todomvc)                      |
+| **WebSockets**        | Prisma, WebSockets, NextAuth, and subscriptions               | [Source](https://github.com/trpc/examples-next-prisma-websockets-starter) · [Demo](https://websockets.trpc.io) · [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-websockets-starter) |
+| **SSE Chat**          | Streaming chat with Server-Sent Events and Drizzle ORM        | [Source](https://github.com/trpc/trpc/tree/main/examples/next-sse-chat) · [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-sse-chat)                                                     |
+| **Big Router**        | Large router with code generation                             | [Source](https://github.com/trpc/trpc/tree/main/examples/next-big-router) · [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-big-router)                                                 |
+| **Edge Runtime**      | tRPC on Next.js Edge Runtime                                  | [Source](https://github.com/trpc/trpc/tree/main/examples/next-edge-runtime) · [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-edge-runtime)                                             |
+| **FormData**          | Form handling with React Hook Form and Zod                    | [Source](https://github.com/trpc/trpc/tree/main/examples/next-formdata) · [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-formdata)                                                     |
+| **WebSocket Encoder** | WebSockets with MessagePack binary encoding                   | [Source](https://github.com/trpc/trpc/tree/main/examples/next-websockets-encoder) · [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-websockets-encoder)                                 |
+
+### Serverless
+
+| Example                  | Description                                       | Links                                                                                                                                                                                                |
+| ------------------------ | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Lambda + API Gateway** | AWS Lambda with API Gateway                       | [Source](https://github.com/trpc/trpc/tree/main/examples/lambda-api-gateway) · [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/lambda-api-gateway)                       |
+| **Lambda Streaming**     | AWS Lambda + API Gateway with streaming responses | [Source](https://github.com/trpc/trpc/tree/main/examples/lambda-api-gateway-streaming) · [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/lambda-api-gateway-streaming)   |
+| **Lambda Function URLs** | AWS Lambda with Function URLs                     | [Source](https://github.com/trpc/trpc/tree/main/examples/lambda-url) · [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/lambda-url)                                       |
+| **Cloudflare Workers**   | tRPC on Cloudflare Workers                        | [Source](https://github.com/trpc/trpc/tree/main/examples/cloudflare-workers) · [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/cloudflare-workers)                       |
+| **Vercel Edge Runtime**  | tRPC on Vercel Edge Runtime                       | [Source](https://github.com/trpc/trpc/tree/main/examples/vercel-edge-runtime) · [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/vercel-edge-runtime)                     |
+| **Deno Deploy**          | tRPC client on Deno Deploy                        | [Source](https://github.com/trpc/trpc/tree/main/examples/deno-deploy) · [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/deno-deploy)                                     |
+
+### Other Ecosystems
+
+| Example     | Description                        | Links                                                                                                                                                                    |
+| ----------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Express** | Minimal Express + tRPC setup       | [Source](https://github.com/trpc/trpc/tree/main/examples/express-minimal) · [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/express-minimal) |
+| **Fastify** | Fastify with WebSocket support     | [Source](https://github.com/trpc/trpc/tree/main/examples/fastify-server) · [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/fastify-server)   |
+| **Bun**     | tRPC server and client on Bun      | [Source](https://github.com/trpc/trpc/tree/main/examples/bun) · [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/bun)                         |
+| **Nuxt 3**  | Nuxt 3 integration with trpc-nuxt  | [Source](https://github.com/trpc/trpc/tree/main/examples/nuxt) · [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/nuxt)                       |
+
+## Community
+
+### Frameworks
+
+| Example                | Description                       | Links                                                                                                                                        |
+| ---------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| **create-t3-turbo**    | T3 Stack with Expo and Turborepo  | [Source](https://github.com/t3-oss/create-t3-turbo) · [CodeSandbox](https://codesandbox.io/s/github/t3-oss/create-t3-turbo)                 |
+| **SvelteKit + Prisma** | SvelteKit integration with Prisma | [Source](https://github.com/icflorescu/trpc-sveltekit-example) · [CodeSandbox](https://codesandbox.io/s/github/icflorescu/trpc-sveltekit-example) |
+
+### Integrations
+
+| Example            | Description                                       | Links                                                                                                                                                                                                                                                                                    |
+| ------------------ | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **trpc-chrome**    | Chrome extension with Plasmo framework            | [Source](https://github.com/jlalmes/trpc-chrome/tree/master/examples/with-plasmo) · [CodeSandbox](https://codesandbox.io/s/github/jlalmes/trpc-chrome/tree/master/examples/with-plasmo)                                                                                                 |
+| **trpc-openapi**   | OpenAPI/REST schema generation for tRPC           | [Source (Next.js)](https://github.com/jlalmes/trpc-openapi/tree/master/examples/with-nextjs) · [Source (Express)](https://github.com/jlalmes/trpc-openapi/tree/master/examples/with-express)                                                                                            |
+| **SIWE Auth**      | Sign-In With Ethereum authentication with Express | [Source](https://github.com/codingwithmanny/trpc-siwe-monorepo) · [CodeSandbox](https://codesandbox.io/s/github/codingwithmanny/trpc-siwe-monorepo)                                                                                                                                     |
+| **Separate BE/FE** | Separate backend and frontend repositories        | [Backend (Express)](https://github.com/mkosir/trpc-api-boilerplate) · [Frontend (Vite)](https://github.com/mkosir/trpc-fe-boilerplate-vite)                                                                                                                                             |
