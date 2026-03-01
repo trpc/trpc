@@ -5,15 +5,9 @@ sidebar_label: Setup
 slug: /client/nextjs/app-router-setup
 ---
 
-:::info
-This guide covers using tRPC with the **Next.js App Router** and React Server Components using the recommended [`@trpc/tanstack-react-query`](/docs/client/tanstack-react-query) integration.
-
-If you're using the **Pages Router**, see the [Pages Router setup guide](/docs/client/nextjs/pages-router/setup) instead.
-:::
-
-:::caution
-Please read React Query's [Advanced Server Rendering](https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr) docs before proceeding to understand the different types of server rendering
-and what footguns to avoid.
+:::note
+Re recommend reading TanStack React Query's [Advanced Server Rendering](https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr) docs to understand the different types of server rendering
+and footguns to avoid.
 :::
 
 ## Recommended file structure
@@ -52,13 +46,6 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 ### 2. Create a tRPC router
 
 Initialize your tRPC backend in `trpc/init.ts` using the `initTRPC` function, and create your first router. We're going to make a simple "hello world" router and procedure here - but for deeper information on creating your tRPC API you should refer to the [Quickstart guide](/docs/quickstart) and [Backend usage docs](/docs/server/introduction) for tRPC information.
-
-:::info
-The file names used here are not enforced by tRPC. You may use any file structure you wish.
-:::
-
-<details>
-<summary>View sample backend</summary>
 
 ```ts title='trpc/init.ts'
 import { initTRPC } from '@trpc/server';
@@ -112,8 +99,6 @@ export const appRouter = createTRPCRouter({
 export type AppRouter = typeof appRouter;
 ```
 
-</details>
-
 ### 3. Create the API route handler
 
 With the App Router, use the [fetch adapter](/docs/server/adapters/fetch) to handle tRPC requests. Create a route handler that exports both `GET` and `POST`:
@@ -135,7 +120,7 @@ export { handler as GET, handler as POST };
 ```
 
 :::note
-The App Router uses the [fetch adapter](/docs/server/adapters/fetch) (via `fetchRequestHandler`) rather than the Next.js-specific adapter used by the Pages Router. This is because App Router route handlers are based on the Web standard `Request` and `Response` objects.
+App Router uses the [fetch adapter](/docs/server/adapters/fetch) (via `fetchRequestHandler`) rather than the Next.js-specific adapter used by the Pages Router. This is because App Router route handlers are based on the Web standard `Request` and `Response` objects.
 :::
 
 ### 4. Create a Query Client factory
