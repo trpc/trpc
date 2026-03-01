@@ -24,9 +24,8 @@ export type CreateClientCallback<TRouter extends AnyTRPCRouter> = (opts: {
   transformer?: DataTransformerOptions;
 }) => Partial<WithTRPCConfig<TRouter>>;
 
-interface RouterToServerAndClientNewOpts<
-  TRouter extends AnyTRPCRouter,
-> extends TRPCServerResourceOpts<TRouter> {
+interface RouterToServerAndClientNewOpts<TRouter extends AnyTRPCRouter>
+  extends TRPCServerResourceOpts<TRouter> {
   wsClient?: Partial<WebSocketClientOptions>;
   client?: Partial<WithTRPCConfig<TRouter>> | CreateClientCallback<TRouter>;
   transformer?: DataTransformerOptions;

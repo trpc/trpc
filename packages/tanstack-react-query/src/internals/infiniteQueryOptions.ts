@@ -34,9 +34,7 @@ interface UndefinedTRPCInfiniteQueryOptionsIn<
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
->
-  extends
-    DistributiveOmit<
+> extends DistributiveOmit<
       UndefinedInitialDataInfiniteOptions<
         TQueryFnData,
         TError,
@@ -56,9 +54,7 @@ interface UndefinedTRPCInfiniteQueryOptionsOut<
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
->
-  extends
-    DistributiveOmit<
+> extends DistributiveOmit<
       UndefinedInitialDataInfiniteOptions<
         TQueryFnData,
         TError,
@@ -83,9 +79,7 @@ interface DefinedTRPCInfiniteQueryOptionsIn<
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
->
-  extends
-    DistributiveOmit<
+> extends DistributiveOmit<
       DefinedInitialDataInfiniteOptions<
         TQueryFnData,
         TError,
@@ -105,9 +99,7 @@ interface DefinedTRPCInfiniteQueryOptionsOut<
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
->
-  extends
-    DistributiveOmit<
+> extends DistributiveOmit<
       DefinedInitialDataInfiniteOptions<
         TQueryFnData,
         TError,
@@ -132,9 +124,7 @@ interface UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
->
-  extends
-    DistributiveOmit<
+> extends DistributiveOmit<
       UnusedSkipTokenInfiniteOptions<
         TQueryFnData,
         TError,
@@ -154,9 +144,7 @@ interface UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
->
-  extends
-    DistributiveOmit<
+> extends DistributiveOmit<
       UnusedSkipTokenInfiniteOptions<
         TQueryFnData,
         TError,

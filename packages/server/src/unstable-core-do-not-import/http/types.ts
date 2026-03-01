@@ -45,10 +45,8 @@ export type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
 /**
  * Base interface for anything using HTTP
  */
-export interface HTTPBaseHandlerOptions<
-  TRouter extends AnyRouter,
-  TRequest,
-> extends BaseHandlerOptions<TRouter, TRequest> {
+export interface HTTPBaseHandlerOptions<TRouter extends AnyRouter, TRequest>
+  extends BaseHandlerOptions<TRouter, TRequest> {
   /**
    * Add handler to be called before response is sent to the user
    * Useful for setting cache headers
@@ -123,10 +121,8 @@ export interface TRPCRequestInfo {
 export type ResolveHTTPRequestOptionsContextFn<TRouter extends AnyRouter> =
   (opts: { info: TRPCRequestInfo }) => Promise<inferRouterContext<TRouter>>;
 
-interface HTTPErrorHandlerOptions<
-  TRouter extends AnyRouter,
-  TRequest,
-> extends ErrorHandlerOptions<inferRouterContext<TRouter>> {
+interface HTTPErrorHandlerOptions<TRouter extends AnyRouter, TRequest>
+  extends ErrorHandlerOptions<inferRouterContext<TRouter>> {
   req: TRequest;
 }
 /**

@@ -36,9 +36,7 @@ interface UndefinedTRPCQueryOptionsIn<
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
->
-  extends
-    DistributiveOmit<
+> extends DistributiveOmit<
       UndefinedInitialDataOptions<
         coerceAsyncIterableToArray<TQueryFnData>,
         TError,
@@ -54,9 +52,7 @@ interface UndefinedTRPCQueryOptionsOut<
   TOutput,
   TError,
   TFeatureFlags extends FeatureFlags,
->
-  extends
-    UndefinedInitialDataOptions<
+> extends UndefinedInitialDataOptions<
       coerceAsyncIterableToArray<TQueryFnData>,
       TError,
       coerceAsyncIterableToArray<TOutput>,
@@ -75,9 +71,7 @@ interface DefinedTRPCQueryOptionsIn<
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
->
-  extends
-    DistributiveOmit<
+> extends DistributiveOmit<
       DefinedInitialDataOptions<
         coerceAsyncIterableToArray<NoInfer<TQueryFnData>>,
         TError,
@@ -93,9 +87,7 @@ interface DefinedTRPCQueryOptionsOut<
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
->
-  extends
-    DefinedInitialDataOptions<
+> extends DefinedInitialDataOptions<
       coerceAsyncIterableToArray<TQueryFnData>,
       TError,
       coerceAsyncIterableToArray<TData>,
@@ -114,9 +106,7 @@ interface UnusedSkipTokenTRPCQueryOptionsIn<
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
->
-  extends
-    DistributiveOmit<
+> extends DistributiveOmit<
       UnusedSkipTokenOptions<
         coerceAsyncIterableToArray<TQueryFnData>,
         TError,
@@ -132,9 +122,7 @@ interface UnusedSkipTokenTRPCQueryOptionsOut<
   TOutput,
   TError,
   TFeatureFlags extends FeatureFlags,
->
-  extends
-    UnusedSkipTokenOptions<
+> extends UnusedSkipTokenOptions<
       coerceAsyncIterableToArray<TQueryFnData>,
       TError,
       coerceAsyncIterableToArray<TOutput>,

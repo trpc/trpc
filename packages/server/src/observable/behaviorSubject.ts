@@ -7,10 +7,8 @@ export interface BehaviorSubject<TValue> extends Observable<TValue, never> {
   get: () => TValue;
 }
 
-export interface ReadonlyBehaviorSubject<TValue> extends Omit<
-  BehaviorSubject<TValue>,
-  'next'
-> {}
+export interface ReadonlyBehaviorSubject<TValue>
+  extends Omit<BehaviorSubject<TValue>, 'next'> {}
 
 /**
  * @internal
