@@ -1,4 +1,8 @@
-import { httpBatchLink, httpSubscriptionLink, splitLink } from '@trpc/client';
+import {
+  httpBatchStreamLink,
+  httpSubscriptionLink,
+  splitLink,
+} from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 import { ssrPrepass } from '@trpc/next/ssrPrepass';
 import type { AppRouter } from '../pages/api/trpc/[trpc]';
@@ -31,7 +35,7 @@ export const trpc = createTRPCNext<AppRouter>({
             url,
             transformer,
           }),
-          false: httpBatchLink({
+          false: httpBatchStreamLink({
             url,
             transformer,
           }),
