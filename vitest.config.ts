@@ -42,10 +42,7 @@ export default defineConfig({
     projects: ['packages/*'],
     environment: 'jsdom',
     globals: true,
-    setupFiles: [
-      __dirname + '/packages/tests/suppressActWarnings.ts',
-      '@testing-library/jest-dom/vitest',
-    ],
+    setupFiles: [__dirname + '/packages/tests/suppressActWarnings.ts'],
     snapshotFormat: {
       printBasicPrototype: true,
     },

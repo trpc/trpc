@@ -72,14 +72,10 @@ export function createAppRouter() {
     ],
   };
   const postLiveInputs: unknown[] = [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const createContext = vi.fn(() => ({})) as any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const allPosts = vi.fn() as any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const postById = vi.fn() as any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const paginatedPosts = vi.fn() as any;
+  const createContext = vi.fn(() => ({}));
+  const allPosts = vi.fn();
+  const postById = vi.fn();
+  const paginatedPosts = vi.fn();
   let wsClient: TRPCWebSocketClient = null as any;
 
   const t = initTRPC.create({
@@ -269,10 +265,8 @@ export function createAppRouter() {
   });
 
   const linkSpy = {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    up: vi.fn() as any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    down: vi.fn() as any,
+    up: vi.fn(),
+    down: vi.fn(),
   };
   const { client, trpcClientOptions, close } = testServerAndClientResource(
     appRouter,

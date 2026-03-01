@@ -283,12 +283,7 @@ describe('with transformer', () => {
             onSubmit={(e) => {
               e.preventDefault();
 
-              const formData = new FormData();
-              formData.set(
-                'text',
-                (e.currentTarget.elements.namedItem('text') as HTMLInputElement)
-                  .value,
-              );
+              const formData = new FormData(e.currentTarget);
               mutation.mutate(formData);
             }}
           >

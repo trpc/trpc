@@ -221,18 +221,13 @@ describe('createTRPCQueryUtils()', () => {
     const { client } = factory;
     const queryClient = createQueryClient();
     const clientUtils = createTRPCQueryUtils({ queryClient, client });
-    const fetchPromise = clientUtils.postById
-      .fetch('1', {
-        queryFn: async () => {
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-          return 'never returned' as any;
-        },
-      })
-      .catch(() => {
-        // Expected - query was cancelled
-      });
+    clientUtils.postById.fetch('1', {
+      queryFn: async () => {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        return 'never returned' as any;
+      },
+    });
     await clientUtils.postById.cancel('1');
-    await fetchPromise;
     expect(factory.resolvers.postById.mock.calls.length).toBe(0);
   });
 
@@ -323,9 +318,7 @@ describe('createTRPCQueryUtils()', () => {
         return fn(variables);
       },
     }));
-    clientUtils.addPost
-      .getMutationDefaults()
-      ?.mutationFn?.({ title: '' }, {} as any);
+    clientUtils.addPost.getMutationDefaults()?.mutationFn?.({ title: '' });
     expect(fn.mock.calls.length).toBe(1);
   });
 });
