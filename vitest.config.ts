@@ -41,7 +41,10 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    setupFiles: [__dirname + '/packages/tests/suppressActWarnings.ts'],
+    setupFiles: [
+      __dirname + '/packages/tests/suppressActWarnings.ts',
+      '@testing-library/jest-dom/vitest',
+    ],
     snapshotFormat: {
       printBasicPrototype: true,
     },
@@ -59,22 +62,7 @@ export default defineConfig({
         '**/upgrade/src/**',
       ],
     },
-    poolOptions: {
-      threads: {
-        useAtomics: !!process.env['CI'],
-        execArgv: [
-          '--require',
-          join(__dirname, 'scripts/saveNativeAbortController.cjs'),
-        ],
-      },
-      forks: {
-        execArgv: [
-          '--expose-gc',
-          '--require',
-          join(__dirname, 'scripts/saveNativeAbortController.cjs'),
-        ],
-      },
-    },
+    execArgv: ['--expose-gc'],
     retry: process.env['CI'] ? 2 : 0,
   },
   resolve: {

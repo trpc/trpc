@@ -43,13 +43,13 @@
     "@ianvs/prettier-plugin-sort-imports": "^4.4.0",
     "@manypkg/cli": "^0.22.0",
     "@testing-library/dom": "^10.0.0",
-    "@testing-library/jest-dom": "^6.0.0",
+    "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.1.0",
     "@testing-library/user-event": "^14.4.3",
     "@types/event-source-polyfill": "^1.0.5",
     "@types/node": "^22.13.5",
-    "@vitest/coverage-istanbul": "^3.1.2",
-    "@vitest/ui": "^3.1.2",
+    "@vitest/coverage-istanbul": "^4.0.18",
+    "@vitest/ui": "^4.0.18",
     "concurrently": "^9.0.0",
     "eslint": "^9.26.0",
     "eslint-plugin-react": "^7.37.5",
@@ -71,7 +71,7 @@
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.31.1",
     "vite": "^6.1.1",
-    "vitest": "^3.1.2",
+    "vitest": "^4.0.18",
     "zod": "^4.2.1"
   }
 }
