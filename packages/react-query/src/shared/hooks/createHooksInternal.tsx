@@ -20,10 +20,7 @@ import {
   TRPCUntypedClient,
 } from '@trpc/client';
 import type { Unsubscribable } from '@trpc/server/observable';
-import type {
-  AnyRouter,
-  MaybePromise,
-} from '@trpc/server/unstable-core-do-not-import';
+import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
 import type { SSRState, TRPCContextState } from '../../internals/context';
@@ -263,7 +260,7 @@ export function createRootHooks<
       ...opts,
       queryKey: queryKey as any,
       queryFn: isInputSkipToken
-        ? undefined
+        ? input
         : (queryFunctionContext) => {
             const actualOpts = {
               trpc: {
@@ -341,8 +338,7 @@ export function createRootHooks<
         },
         onSuccess(...args) {
           const originalFn = () =>
-            (opts?.onSuccess?.(...args) ??
-              defaultOpts?.onSuccess?.(...args)) as MaybePromise<void>;
+            opts?.onSuccess?.(...args) ?? defaultOpts?.onSuccess?.(...args);
 
           return mutationSuccessOverride({
             originalFn,

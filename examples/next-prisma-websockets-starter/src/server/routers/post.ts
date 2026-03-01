@@ -140,7 +140,7 @@ export const postRouter = router({
       const onIsTypingUpdate = () => {
         const newData = Object.keys(currentlyTyping);
 
-        if (prev?.toString() !== newData.toString()) {
+        if (!prev || prev.toString() !== newData.toString()) {
           emit.next(newData);
         }
         prev = newData;
