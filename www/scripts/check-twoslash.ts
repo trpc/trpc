@@ -157,16 +157,17 @@ function matchErrorToBlock(
 }
 
 async function main() {
-  const includeVersioned = process.argv.includes('--include-versioned');
+  const args = process.argv.slice(2);
+  const includeVersioned = args.includes('--include-versioned');
+  const operands = args.filter((a) => !a.startsWith('--'));
   const wwwDir = resolve(__dirname, '..');
 
-  // Gather files from docs and blog (optionally versioned_docs)
   const dirs = ['docs', 'blog'];
   if (includeVersioned) {
     dirs.push('versioned_docs');
   }
 
-  const files: string[] = [];
+  let files: string[] = [];
   for (const dir of dirs) {
     const absDir = resolve(wwwDir, dir);
     try {
@@ -174,6 +175,11 @@ async function main() {
     } catch {
       // Directory may not exist (e.g., no blog/)
     }
+  }
+
+  // Filter to files matching any operand
+  if (operands.length > 0) {
+    files = files.filter((f) => operands.some((op) => f.includes(op)));
   }
 
   // Create the unified processor with twoslash
