@@ -106,13 +106,13 @@ You can now use the tRPC React Query integration to call queries and mutations o
 // @filename: utils/trpc.ts
 // ---cut---
 import { createTRPCReact } from '@trpc/react-query';
-// @filename: pages/IndexPage.tsx
-import React from 'react';
 import type { AppRouter } from '../server/router';
-// ---cut---
-import { trpc } from '../utils/trpc';
 
 export const trpc = createTRPCReact<AppRouter>();
+// @filename: pages/IndexPage.tsx
+import React from "react";
+// ---cut---
+import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
   const userQuery = trpc.getUser.useQuery({ id: 'id_bilbo' });

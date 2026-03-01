@@ -74,19 +74,16 @@ You can try this out on the homepage of tRPC.io: [https://trpc.io/?try=minimal#t
 ```ts twoslash
 // @target: esnext
 // @filename: trpc.ts
-
-// @filename: client.ts
-import { createTRPCClient, httpBatchStreamLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
-import type { AppRouter } from './server';
-// ---cut---
-// @filename: server.ts
-import { publicProcedure, router } from './trpc';
 
 const t = initTRPC.create({});
 
 export const router = t.router;
 export const publicProcedure = t.procedure;
+
+// ---cut---
+// @filename: server.ts
+import { publicProcedure, router } from './trpc';
 
 const appRouter = router({
   examples: {
@@ -100,6 +97,11 @@ const appRouter = router({
 });
 
 export type AppRouter = typeof appRouter;
+
+
+// @filename: client.ts
+import { createTRPCClient, httpBatchStreamLink } from '@trpc/client';
+import type { AppRouter } from './server';
 
 const trpc = createTRPCClient<AppRouter>({
   links: [
