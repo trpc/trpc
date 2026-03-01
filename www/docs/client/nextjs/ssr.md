@@ -131,6 +131,131 @@ const MyApp: AppType = ({ Component, pageProps }: AppProps) => {
 export default trpc.withTRPC(MyApp);
 ```
 
+## Response Caching with SSR
+
+If you turn on SSR in your app, you might discover that your app loads slowly on, for instance, Vercel, but you can actually statically render your whole app without using SSG; [read this Twitter thread](https://twitter.com/alexdotjs/status/1386274093041950722) for more insights.
+
+You can use the `responseMeta` callback on `createTRPCNext` to set cache headers for SSR responses. See also the general [Response Caching](../../server/caching.md) docs for framework-agnostic caching with `responseMeta`.
+
+```tsx title='utils/trpc.tsx'
+import { httpBatchLink } from '@trpc/client';
+import { createTRPCNext } from '@trpc/next';
+import type { AppRouter } from '../server/routers/_app';
+
+export const trpc = createTRPCNext<AppRouter>({
+  config(config) {
+    if (typeof window !== 'undefined') {
+      return {
+        links: [
+          httpBatchLink({
+            url: '/api/trpc',
+          }),
+        ],
+      };
+    }
+
+    const url = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}/api/trpc`
+      : 'http://localhost:3000/api/trpc';
+
+    return {
+      links: {
+        http: httpBatchLink({
+          url,
+        }),
+      },
+    };
+  },
+  ssr: true,
+  responseMeta(opts) {
+    const { clientErrors } = opts;
+
+    if (clientErrors.length) {
+      // propagate http first error from API calls
+      return {
+        status: clientErrors[0].data?.httpStatus ?? 500,
+      };
+    }
+
+    // cache request for 1 day + revalidate once every second
+    const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
+    return {
+      headers: new Headers([
+        [
+          'cache-control',
+          `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
+        ],
+      ]),
+    };
+  },
+});
+```
+
+### API Response Caching with Next.js Adapter
+
+You can also use `responseMeta` on the Next.js API handler to cache API responses directly:
+
+```tsx title='pages/api/trpc/[trpc].ts'
+import { initTRPC } from '@trpc/server';
+import * as trpcNext from '@trpc/server/adapters/next';
+
+export const createContext = async ({
+  req,
+  res,
+}: trpcNext.CreateNextContextOptions) => {
+  return {
+    req,
+    res,
+  };
+};
+
+type Context = Awaited<ReturnType<typeof createContext>>;
+
+export const t = initTRPC.context<Context>().create();
+
+export const appRouter = t.router({
+  public: t.router({
+    slowQueryCached: t.procedure.query(async (opts) => {
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+
+      return {
+        lastUpdated: new Date().toJSON(),
+      };
+    }),
+  }),
+});
+
+export type AppRouter = typeof appRouter;
+
+export default trpcNext.createNextApiHandler({
+  router: appRouter,
+  createContext,
+  responseMeta(opts) {
+    const { ctx, paths, errors, type } = opts;
+    // assuming you have all your public routes with the keyword `public` in them
+    const allPublic = paths && paths.every((path) => path.includes('public'));
+    // checking that no procedures errored
+    const allOk = errors.length === 0;
+    // checking we're doing a query request
+    const isQuery = type === 'query';
+
+    if (ctx?.res && allPublic && allOk && isQuery) {
+      // cache request for 1 day + revalidate once every second
+      const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
+      return {
+        headers: new Headers([
+          [
+            'cache-control',
+            `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
+          ],
+        ]),
+      };
+    }
+    return {};
+  },
+});
+```
+
 ## FAQ
 
 ### Q: Why do I need to forward the client's headers to the server manually? Why doesn't tRPC automatically do that for me?

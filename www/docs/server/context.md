@@ -19,14 +19,14 @@ This will make sure your context is properly typed in your procedures and middle
 import * as trpc from '@trpc/server';
 // ---cut---
 import { initTRPC } from '@trpc/server';
-import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
-import { getSession } from 'next-auth/react';
+import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 
-export const createContext = async (opts: CreateNextContextOptions) => {
-  const session = await getSession({ req: opts.req });
+export const createContext = async (opts: CreateHTTPContextOptions) => {
+  // Example: extract a session token from the request headers
+  const token = opts.req.headers['authorization'];
 
   return {
-    session,
+    token,
   };
 };
 
@@ -43,7 +43,7 @@ t.procedure.use((opts) => {
 
 ## Creating the context
 
-The `createContext()` function must be passed to the handler that is mounting your appRouter, which may be via HTTP, a [server-side call](server-side-calls) or our [server-side helpers](/docs/client/nextjs/server-side-helpers).
+The `createContext()` function must be passed to the handler that is mounting your appRouter, which may be via HTTP or a [server-side call](server-side-calls).
 
 `createContext()` is called for each invocation of tRPC, so batched requests will share a context.
 
@@ -68,7 +68,7 @@ const caller = createCaller(await createContext());
 ```
 
 ```ts
-// 3. servers-side helpers
+// 3. Server-side helpers (Next.js-specific, see /docs/client/nextjs/server-side-helpers)
 import { createServerSideHelpers } from '@trpc/react-query/server';
 import { createContext } from './context';
 import { appRouter } from './router';
@@ -83,22 +83,24 @@ const helpers = createServerSideHelpers({
 
 <!-- prettier-ignore-start -->
 
-```tsx twoslash
+```ts twoslash
 // -------------------------------------------------
 // @filename: context.ts
 // -------------------------------------------------
-import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
-import { getSession } from 'next-auth/react';
+import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 
 /**
  * Creates context for an incoming request
  * @see https://trpc.io/docs/v11/context
  */
-export async function createContext(opts: CreateNextContextOptions) {
-  const session = await getSession({ req: opts.req });
+export async function createContext(opts: CreateHTTPContextOptions) {
+  const token = opts.req.headers['authorization'];
+
+  // In a real app, you would verify the token and look up the user
+  const user = token ? { email: 'user@example.com' } : null;
 
   return {
-    session,
+    user,
   };
 }
 
@@ -124,15 +126,15 @@ export const publicProcedure = t.procedure;
  * Protected procedure
  */
 export const protectedProcedure = t.procedure.use(function isAuthed(opts) {
-  if (!opts.ctx.session?.user?.email) {
+  if (!opts.ctx.user?.email) {
     throw new TRPCError({
       code: 'UNAUTHORIZED',
     });
   }
   return opts.next({
     ctx: {
-      // Infers the `session` as non-nullable
-      session: opts.ctx.session,
+      // Infers the `user` as non-nullable
+      user: opts.ctx.user,
     },
   });
 });
@@ -144,7 +146,7 @@ export const protectedProcedure = t.procedure.use(function isAuthed(opts) {
 
 In some scenarios it could make sense to split up your context into "inner" and "outer" functions.
 
-**Inner context** is where you define context which doesn’t depend on the request, e.g. your database connection. You can use this function for integration testing or [server-side helpers](/docs/client/nextjs/server-side-helpers), where you don’t have a request object. Whatever is defined here will **always** be available in your procedures.
+**Inner context** is where you define context which doesn’t depend on the request, e.g. your database connection. You can use this function for integration testing or [server-side calls](/docs/server/server-side-calls), where you don’t have a request object. Whatever is defined here will **always** be available in your procedures.
 
 :::note Tradeoff for large clients in `createContextInner`
 Putting a database client such as `prisma` on `createContextInner` is convenient and common, but large generated clients (like Prisma) can increase type-checking overhead because they become part of your context type across procedures.
@@ -157,14 +159,14 @@ If that overhead becomes noticeable, an alternative is to keep context smaller a
 ### Example for inner & outer context
 
 ```ts
-import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
+import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 import { getSessionFromCookie, type Session } from './auth';
 
 /**
  * Defines your inner context shape.
  * Add fields here that the inner context brings.
  */
-interface CreateInnerContextOptions extends Partial<CreateNextContextOptions> {
+interface CreateInnerContextOptions {
   session: Session | null;
 }
 
@@ -172,14 +174,14 @@ interface CreateInnerContextOptions extends Partial<CreateNextContextOptions> {
  * Inner context. Will always be available in your procedures, in contrast to the outer context.
  *
  * Also useful for:
- * - testing, so you don't have to mock Next.js' `req`/`res`
- * - tRPC's `createServerSideHelpers` where we don't have `req`/`res`
+ * - testing, so you don't have to mock `req`/`res`
+ * - server-side calls where we don't have `req`/`res`
  *
  * @see https://trpc.io/docs/v11/context#inner-and-outer-context
  */
 export async function createContextInner(opts?: CreateInnerContextOptions) {
   return {
-    prisma,
+    db,
     session: opts.session,
   };
 }
@@ -189,7 +191,7 @@ export async function createContextInner(opts?: CreateInnerContextOptions) {
  *
  * @see https://trpc.io/docs/v11/context#inner-and-outer-context
  */
-export async function createContext(opts: CreateNextContextOptions) {
+export async function createContext(opts: CreateHTTPContextOptions) {
   const session = getSessionFromCookie(opts.req);
 
   const contextInner = await createContextInner({ session });

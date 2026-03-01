@@ -16,9 +16,10 @@ While tRPC natively supports several non-json serializable types, your client ma
 `httpLink` supports non-json content types out the box, if you're only using this then your existing setup should work immediately
 
 ```ts
-import { httpLink } from '@trpc/client';
+import { createTRPCClient, httpLink } from '@trpc/client';
+import type { AppRouter } from './server';
 
-trpc.createClient({
+createTRPCClient<AppRouter>({
   links: [
     httpLink({
       url: 'http://localhost:2022',
@@ -31,13 +32,15 @@ However, not all links support these new content types, if you're using `httpBat
 
 ```ts
 import {
+  createTRPCClient,
   httpBatchLink,
   httpLink,
   isNonJsonSerializable,
   splitLink,
 } from '@trpc/client';
+import type { AppRouter } from './server';
 
-trpc.createClient({
+createTRPCClient<AppRouter>({
   links: [
     splitLink({
       condition: (op) => isNonJsonSerializable(op.input),
@@ -57,14 +60,16 @@ Use this example as base:
 
 ```ts
 import {
+  createTRPCClient,
   httpBatchLink,
   httpLink,
   isNonJsonSerializable,
   splitLink,
 } from '@trpc/client';
+import type { AppRouter } from './server';
 import superjson from 'superjson';
 
-trpc.createClient({
+createTRPCClient<AppRouter>({
   links: [
     splitLink({
       condition: (op) => isNonJsonSerializable(op.input),

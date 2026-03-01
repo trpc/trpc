@@ -14,27 +14,17 @@ You can compose links together into an array that you can provide to the tRPC cl
   <small>tRPC Link Diagram. Based on <a href="https://www.apollographql.com/docs/react/api/link/introduction/" target="_blank">Apollo's</a>.</small>
 </div>
 
-:::note
-The below examples are assuming you use Next.js, but the same as below can be added if you use the vanilla tRPC client
-:::
+```ts title='utils/trpc.ts'
+import { createTRPCClient, httpBatchLink, loggerLink } from '@trpc/client';
+import type { AppRouter } from '../server/trpc';
 
-```tsx title='utils/trpc.ts'
-import { httpBatchLink, loggerLink } from '@trpc/client';
-import { createTRPCNext } from '@trpc/next';
-
-export default createTRPCNext<AppRouter>({
-  config() {
-    const url = `http://localhost:3000`;
-
-    return {
-      links: [
-        loggerLink(),
-        httpBatchLink({
-          url,
-        }),
-      ],
-    };
-  },
+export const trpc = createTRPCClient<AppRouter>({
+  links: [
+    loggerLink(),
+    httpBatchLink({
+      url: 'http://localhost:3000',
+    }),
+  ],
 });
 ```
 

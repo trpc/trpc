@@ -76,7 +76,7 @@ if (error instanceof TRPCError) {
 
 :::tip
 
-There's a full example of how this could be used in a Next.js API endpoint in the [Server Side Calls docs](server-side-calls).
+There's a full example of how error handling works in a server-side context in the [Server Side Calls docs](server-side-calls).
 
 :::
 
@@ -127,9 +127,11 @@ Results to the following response:
 
 All errors that occur in a procedure go through the `onError` method before being sent to the client. Here you can handle errors (To change errors see [error formatting](error-formatting)).
 
-```ts title='pages/api/trpc/[trpc].ts'
-export default trpcNext.createNextApiHandler({
-  // ...
+```ts title='server.ts'
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
+
+const server = createHTTPServer({
+  router: appRouter,
   onError(opts) {
     const { error, type, path, input, ctx, req } = opts;
     console.error('Error:', error);
