@@ -63,7 +63,6 @@ export default defineConfig({
       ],
     },
     execArgv: ['--expose-gc'],
-    useAtomics: !!process.env['CI'],
     restoreMocks: true,
     retry: process.env['CI'] ? 2 : 0,
   },
