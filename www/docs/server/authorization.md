@@ -13,10 +13,7 @@ The `createContext` function is called for each incoming request, so here you ca
 import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 import { decodeAndVerifyJwtToken } from './somewhere/in/your/app/utils';
 
-export async function createContext({
-  req,
-  res,
-}: CreateHTTPContextOptions) {
+export async function createContext({ req, res }: CreateHTTPContextOptions) {
   // Create your context based on the request object
   // Will be available as `ctx` in all your resolvers
 
