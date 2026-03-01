@@ -73,7 +73,12 @@ export async function writeResponse(opts: {
     rawResponse.statusCode = response.status;
   }
   for (const [key, value] of response.headers) {
-    rawResponse.setHeader(key, value);
+    if (key.toLowerCase() !== 'set-cookie') {
+      rawResponse.setHeader(key, value);
+    }
+  }
+  for (const cookie of response.headers.getSetCookie()) {
+    rawResponse.appendHeader('set-cookie', cookie);
   }
   try {
     if (response.body) {

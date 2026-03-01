@@ -18,6 +18,7 @@ import hash from 'hash-sum';
 import type { ReactNode } from 'react';
 import React from 'react';
 import { z, ZodError } from 'zod';
+import '@vitest/spy';
 
 export type Post = {
   id: string;

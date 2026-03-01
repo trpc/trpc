@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { EventEmitter } from 'events';
 import ws from '@fastify/websocket';
 import '@testing-library/react';

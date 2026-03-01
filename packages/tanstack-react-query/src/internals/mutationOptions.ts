@@ -133,7 +133,8 @@ export function trpcMutationOptions<TFeatureFlags extends FeatureFlags>(args: {
     mutationFn,
     onSuccess(...args) {
       const originalFn = () =>
-        opts?.onSuccess?.(...args) ?? defaultOpts?.onSuccess?.(...args);
+        (opts?.onSuccess?.(...args) ??
+          defaultOpts?.onSuccess?.(...args)) as Promise<void>;
 
       return mutationSuccessOverride({
         originalFn,

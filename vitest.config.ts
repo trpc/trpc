@@ -39,6 +39,7 @@ for (const pkg of dirs.sort()) {
 export default defineConfig({
   clearScreen: true,
   test: {
+    projects: ['packages/*'],
     environment: 'jsdom',
     globals: true,
     setupFiles: [__dirname + '/packages/tests/suppressActWarnings.ts'],
@@ -59,14 +60,8 @@ export default defineConfig({
         '**/upgrade/src/**',
       ],
     },
-    poolOptions: {
-      threads: {
-        useAtomics: !!process.env['CI'],
-      },
-      forks: {
-        execArgv: ['--expose-gc'],
-      },
-    },
+    execArgv: ['--expose-gc'],
+    restoreMocks: true,
     retry: process.env['CI'] ? 2 : 0,
   },
   resolve: {
