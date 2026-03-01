@@ -46,7 +46,7 @@ import * as trpc from '@trpc/server';
 import { publicProcedure, router } from './trpc';
 
 const appRouter = router({
-  greeting: publicProcedure.query(() => 'hello tRPC v10!'),
+  greeting: publicProcedure.query(() => 'hello tRPC v11!'),
 });
 
 // Export only the type of a router!

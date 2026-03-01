@@ -5,7 +5,7 @@ sidebar_label: Error Formatting
 slug: /server/error-formatting
 ---
 
-The error formatting in your router will be inferred all the way to your client (&&nbsp;React&nbsp;components)
+The error formatting in your router will be inferred all the way to your client
 
 ## Usage example highlighted
 

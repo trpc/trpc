@@ -60,7 +60,7 @@ Devalue works like superjson, but focus in performance and compact payloads, but
 #### 1. Install
 
 ```bash
-yarn add superjson devalue
+yarn add devalue
 ```
 
 #### 2. Add to `utils/trpc.ts`

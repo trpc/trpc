@@ -27,9 +27,9 @@ const config: SidebarsConfig = {
         id: 'main/introduction',
       },
       items: [
-        'main/getting-started',
-        'main/concepts',
         'main/quickstart',
+        'main/concepts',
+        'main/getting-started',
         'main/videos-and-community-resources',
         'main/example-apps',
       ],
@@ -46,11 +46,10 @@ const config: SidebarsConfig = {
       items: [
         'server/routers',
         'server/procedures',
-        'server/validators',
-        'server/non-json-content-types',
-        'server/merging-routers',
         'server/context',
+        'server/validators',
         'server/middlewares',
+        'server/merging-routers',
         {
           type: 'category',
           label: 'Hosting tRPC with Adapters',
@@ -73,6 +72,7 @@ const config: SidebarsConfig = {
         'server/error-handling',
         'server/error-formatting',
         'server/data-transformers',
+        'server/non-json-content-types',
         'server/metadata',
         'server/caching',
         'server/subscriptions',
@@ -90,6 +90,20 @@ const config: SidebarsConfig = {
       items: [
         {
           type: 'category',
+          label: 'Vanilla Client',
+          collapsed: true,
+          link: {
+            type: 'doc',
+            id: 'client/vanilla/introduction',
+          },
+          items: [
+            'client/vanilla/setup',
+            'client/vanilla/infer-types',
+            'client/vanilla/aborting-procedure-calls',
+          ],
+        },
+        {
+          type: 'category',
           label: 'TanStack React Query (⭐️)',
           collapsed: true,
           link: {
@@ -102,6 +116,23 @@ const config: SidebarsConfig = {
             'client/tanstack-react-query/usage',
             'client/tanstack-react-query/migrating',
             'client/tanstack-react-query/server-components',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Next.js Integration',
+          collapsed: true,
+          link: {
+            type: 'doc',
+            id: 'client/nextjs/introduction',
+          },
+          items: [
+            'client/nextjs/setup',
+            'client/nextjs/ssr',
+            'client/nextjs/ssg',
+            'client/nextjs/server-side-helpers',
+            'client/nextjs/aborting-procedure-calls',
+            'client/nextjs/starter-projects',
           ],
         },
         {
@@ -127,37 +158,6 @@ const config: SidebarsConfig = {
             'client/react/getQueryKey',
             'client/react/aborting-procedure-calls',
             'client/react/disabling-queries',
-          ],
-        },
-        {
-          type: 'category',
-          label: 'Next.js Integration',
-          collapsed: true,
-          link: {
-            type: 'doc',
-            id: 'client/nextjs/introduction',
-          },
-          items: [
-            'client/nextjs/setup',
-            'client/nextjs/ssr',
-            'client/nextjs/ssg',
-            'client/nextjs/server-side-helpers',
-            'client/nextjs/aborting-procedure-calls',
-            'client/nextjs/starter-projects',
-          ],
-        },
-        {
-          type: 'category',
-          label: 'Vanilla Client',
-          collapsed: true,
-          link: {
-            type: 'doc',
-            id: 'client/vanilla/introduction',
-          },
-          items: [
-            'client/vanilla/setup',
-            'client/vanilla/infer-types',
-            'client/vanilla/aborting-procedure-calls',
           ],
         },
         {

@@ -10,13 +10,13 @@ The `createContext` function is called for each incoming request, so here you ca
 ## Create context from request headers
 
 ```ts title='server/context.ts'
-import * as trpcNext from '@trpc/server/adapters/next';
+import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 import { decodeAndVerifyJwtToken } from './somewhere/in/your/app/utils';
 
 export async function createContext({
   req,
   res,
-}: trpcNext.CreateNextContextOptions) {
+}: CreateHTTPContextOptions) {
   // Create your context based on the request object
   // Will be available as `ctx` in all your resolvers
 
