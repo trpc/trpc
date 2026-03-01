@@ -107,7 +107,7 @@
     "tailwindcss-elevation": "^2.0.0",
     "tsx": "^4.19.3",
     "typedoc": "0.27.9",
-    "typedoc-plugin-markdown": "4.4.2",
+    "typedoc-plugin-markdown": "4.10.0",
     "typescript": "^5.9.2",
     "unified": "^11.0.0",
     "valibot": "1.2.0",
