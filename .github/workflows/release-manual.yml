@@ -1,0 +1,50 @@
+name: Release packages (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_bump:
+        description: 'Version bump type'
+        required: true
+        type: choice
+        options:
+          - 'patch'
+          - 'minor'
+      dist_tag:
+        description: 'NPM distribution tag'
+        required: false
+        default: 'latest'
+        type: string
+
+jobs:
+  publish:
+    timeout-minutes: 10
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+      NPM_CONFIG_PROVENANCE: true
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # For fixing formatting
+      id-token: write # For OIDC publishing
+      pull-requests: write # For creating release PRs
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.ACCESS_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
+      - uses: ./.github/setup
+      - run: pnpm add -g npm@latest # For OIDC publishing
+
+      - name: Publish packages
+        run: |
+          pnpm lerna publish ${{ inputs.version_bump }} --force-publish --dist-tag ${{ inputs.dist_tag }} --yes

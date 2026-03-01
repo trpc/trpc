@@ -15,6 +15,7 @@ test('call proc directly', async () => {
     type: 'query',
     getRawInput: async () => ({}),
     signal: undefined,
+    batchIndex: 0,
   });
 
   expect(result).toBe('hello');

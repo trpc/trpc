@@ -33,6 +33,7 @@ import {
   makeAsyncResource,
   run,
 } from '@trpc/server/unstable-core-do-not-import';
+import { makeResource } from '@trpc/server/unstable-core-do-not-import/stream/utils/disposable';
 import { uneval } from 'devalue';
 import { konn } from 'konn';
 import superjson from 'superjson';
@@ -327,11 +328,10 @@ test('iterable event with bad yield', async () => {
   expect(serverError.message).toMatchInlineSnapshot(`
     "[
       {
-        "code": "invalid_type",
         "expected": "number",
-        "received": "string",
+        "code": "invalid_type",
         "path": [],
-        "message": "Expected number, received string"
+        "message": "Invalid input: expected number, received string"
       }
     ]"
   `);
@@ -1358,4 +1358,159 @@ test('recipe: pull data in a loop', async () => {
       "Post 2",
     ]
   `);
+});
+
+// regression test for https://github.com/trpc/trpc/issues/6991
+test('maxDurationMs should abort subscription even when not yielding', async () => {
+  const MAX_DURATION_MS = 100;
+
+  using fakeTimers = fakeTimersResource();
+  await using ctx = run(() => {
+    const t = initTRPC.create({
+      sse: {
+        maxDurationMs: MAX_DURATION_MS,
+      },
+    });
+
+    const onSignalAborted = vi.fn();
+    const onFinally = vi.fn();
+
+    const router = t.router({
+      // biome-ignore lint/correctness/useYield: intentionally non-yielding to test maxDurationMs abort behavior
+      sub: t.procedure.subscription(async function* (opts) {
+        assert(opts.signal, 'no signal received');
+        try {
+          // Listen for abort signal
+          opts.signal.addEventListener('abort', onSignalAborted);
+
+          // Simulate a subscription that never yields - just waits forever
+          // This should be interrupted by maxDurationMs via the abort signal
+          while (!opts.signal.aborted) {
+            await sleep(10);
+          }
+        } finally {
+          onFinally();
+        }
+      }),
+    });
+
+    const opts = testServerAndClientResource(router);
+    return {
+      ...opts,
+      onSignalAborted,
+      onFinally,
+    };
+  });
+
+  const onError = vi.fn();
+  const onStarted = vi.fn();
+  const sub = ctx.client.sub.subscribe(undefined, {
+    onError,
+    onStarted,
+  });
+  await vi.waitFor(() => {
+    expect(onStarted).toHaveBeenCalledTimes(1);
+  });
+
+  await fakeTimers.advanceTimersByTimeAsync(MAX_DURATION_MS);
+
+  expect(ctx.onSignalAborted).toHaveBeenCalledTimes(1);
+
+  // Verify the subscription handler completed
+  await vi.waitFor(() => {
+    expect(ctx.onFinally).toHaveBeenCalledTimes(1);
+  });
+  expect(onError).not.toHaveBeenCalled();
+
+  sub.unsubscribe();
+});
+
+test('timer does not leak after subscription ends', async () => {
+  const nonce = Math.floor(Math.random() * 1000);
+  const MAX_DURATION_MS = 60_000 * 60 * 24 + nonce; // 1 day + nonce
+
+  using timeoutSpies = run(() => {
+    const setTimeoutSpy = vi.spyOn(global, 'setTimeout');
+    const clearTimeoutSpy = vi.spyOn(global, 'clearTimeout');
+    return makeResource(
+      {
+        setTimeoutSpy,
+        clearTimeoutSpy,
+      },
+      () => {
+        setTimeoutSpy.mockReset();
+        clearTimeoutSpy.mockReset();
+      },
+    );
+  });
+
+  await using ctx = run(() => {
+    const t = initTRPC.create({
+      sse: {
+        maxDurationMs: MAX_DURATION_MS,
+      },
+    });
+
+    const onSignalAborted = vi.fn();
+    const onFinally = vi.fn();
+
+    const router = t.router({
+      // biome-ignore lint/correctness/useYield: intentionally non-yielding to test maxDurationMs abort behavior
+      sub: t.procedure.subscription(async function* (opts) {
+        assert(opts.signal, 'no signal received');
+        try {
+          // Listen for abort signal
+          opts.signal.addEventListener('abort', onSignalAborted);
+
+          // Simulate a subscription that never yields - just waits forever
+          // This should be interrupted by maxDurationMs via the abort signal
+          while (!opts.signal.aborted) {
+            await sleep(10);
+          }
+        } finally {
+          onFinally();
+        }
+      }),
+    });
+
+    const opts = testServerAndClientResource(router);
+    return {
+      ...opts,
+      onSignalAborted,
+      onFinally,
+    };
+  });
+
+  const onError = vi.fn();
+  const onStarted = vi.fn();
+  const sub = ctx.client.sub.subscribe(undefined, {
+    onError,
+    onStarted,
+  });
+  await vi.waitFor(() => {
+    expect(onStarted).toHaveBeenCalledTimes(1);
+  });
+  // calls to setTimeout:
+  const maxDurationTimerIndex = timeoutSpies.setTimeoutSpy.mock.calls.findIndex(
+    (args) => args[1] === MAX_DURATION_MS,
+  );
+  expect(maxDurationTimerIndex).not.toBe(-1);
+  const maxDurationTimerResult =
+    timeoutSpies.setTimeoutSpy.mock.results[maxDurationTimerIndex];
+  assert(maxDurationTimerResult?.type === 'return');
+
+  expect(timeoutSpies.clearTimeoutSpy).not.toHaveBeenCalledWith(
+    maxDurationTimerResult.value,
+  );
+
+  sub.unsubscribe();
+
+  // Verify the subscription handler completed
+  await vi.waitFor(() => {
+    expect(ctx.onFinally).toHaveBeenCalledTimes(1);
+  });
+
+  expect(timeoutSpies.clearTimeoutSpy).toHaveBeenCalledWith(
+    maxDurationTimerResult.value,
+  );
 });

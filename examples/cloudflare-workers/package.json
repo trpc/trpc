@@ -10,7 +10,7 @@
   "dependencies": {
     "@trpc/client": "npm:@trpc/client",
     "@trpc/server": "npm:@trpc/server",
-    "zod": "^3.25.51"
+    "zod": "^4.2.1"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "4.20250505.0",
@@ -24,5 +24,5 @@
   "publishConfig": {
     "access": "restricted"
   },
-  "version": "11.8.0"
+  "version": "11.10.0"
 }
