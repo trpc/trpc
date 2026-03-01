@@ -112,7 +112,7 @@
     "tslib": "^2.8.1",
     "typescript": "^5.9.2",
     "zod": "npm:zod@^3.0.0",
-    "zod-form-data": "npm:zod-form-data@^2.0.1"
+    "zod-form-data": "npm:zod-form-data@^3.0.0"
   },
   "publishConfig": {
     "access": "public"
