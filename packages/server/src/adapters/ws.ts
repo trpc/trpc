@@ -1,5 +1,5 @@
 import type { IncomingMessage } from 'http';
-import type ws from 'ws';
+import type * as ws from 'ws';
 import type {
   AnyRouter,
   CreateContextCallback,

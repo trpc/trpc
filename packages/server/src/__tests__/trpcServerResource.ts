@@ -22,9 +22,7 @@ export interface TRPCServerResourceOpts<TRouter extends AnyTRPCRouter> {
  * "The inferred type of 'testServerAndClientResource' cannot be named without a reference to X"
  */
 export const __getSpy = <T extends (...args: any[]) => void>(): Mock<T> => {
-  return vi.fn(() => {
-    // noop
-  });
+  return vi.fn() as unknown as Mock<T>;
 };
 
 export function trpcServerResource<TRouter extends AnyTRPCRouter>(
