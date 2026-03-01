@@ -49,14 +49,16 @@ Initialize your tRPC backend in `trpc/init.ts` using the `initTRPC` function, an
 
 ```ts title='trpc/init.ts'
 import { initTRPC } from '@trpc/server';
-import { cache } from 'react';
 
-export const createTRPCContext = cache(async () => {
-  /**
-   * @see: https://trpc.io/docs/server/context
-   */
+/**
+ * This context creator accepts `headers` so it can be reused in both
+ * the RSC server caller (where you pass `next/headers`) and the
+ * API route handler (where you pass the request headers).
+ */
+export const createTRPCContext = async (opts: { headers: Headers }) => {
+  // const user = await auth(opts.headers);
   return { userId: 'user_123' };
-});
+};
 
 // Avoid exporting the entire t-object
 // since it's not very descriptive.
@@ -113,7 +115,7 @@ const handler = (req: Request) =>
     endpoint: '/api/trpc',
     req,
     router: appRouter,
-    createContext: createTRPCContext,
+    createContext: () => createTRPCContext({ headers: req.headers }),
   });
 
 export { handler as GET, handler as POST };
@@ -265,6 +267,7 @@ To prefetch queries from server components, we create a proxy from our router. Y
 import 'server-only'; // <-- ensure this file cannot be imported from the client
 
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import { headers } from 'next/headers';
 import { cache } from 'react';
 import { createTRPCContext } from './init';
 import { makeQueryClient } from './query-client';
@@ -275,7 +278,10 @@ import { appRouter } from './routers/_app';
 export const getQueryClient = cache(makeQueryClient);
 
 export const trpc = createTRPCOptionsProxy({
-  ctx: createTRPCContext,
+  ctx: async () =>
+    createTRPCContext({
+      headers: await headers(),
+    }),
   router: appRouter,
   queryClient: getQueryClient,
 });
@@ -421,7 +427,9 @@ guide.
 
 ```tsx title='trpc/server.tsx'
 // ...
-export const caller = appRouter.createCaller(createTRPCContext);
+export const caller = appRouter.createCaller(async () =>
+  createTRPCContext({ headers: await headers() }),
+);
 ```
 
 ```tsx title='app/page.tsx'
