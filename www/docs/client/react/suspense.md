@@ -147,11 +147,15 @@ The performance of suspense queries can be improved by prefetching the query dat
 ### Route-level prefetching
 
 ```tsx
+// Create the global queryClient and trpcClient and instantiate utils next to it:
+// you cannot use hooks (like useQueryClient) inside React Router loaders.
 const utils = createTRPCQueryUtils({ queryClient, client: trpcClient });
 
-// tanstack router/ react router loader
-const loader = async (params: { id: string }) =>
-  utils.post.byId.ensureQueryData({ id: params.id });
+// tanstack router/ React Router loader
+const loader = async (params: { id: string }) => {
+  await utils.post.byId.ensureData({ id: params.id });
+  return null; // it is required to return a value/null
+};
 ```
 
 ### Component-level prefetching with `usePrefetchQuery`
