@@ -280,17 +280,7 @@ test('bad url does not crash server', async () => {
 test('recipe: max batch size on the server', async () => {
   const MAX_BATCH_SIZE = 10;
 
-  // Initialize a context for the server
-  function createContext(opts: CreateHTTPContextOptions) {
-    if (opts.info.calls.length > MAX_BATCH_SIZE) {
-      throw new TRPCError({
-        code: 'TOO_MANY_REQUESTS',
-      });
-    }
-    return {};
-  }
-
-  const t = initTRPC.context<typeof createContext>().create();
+  const t = initTRPC.create();
 
   const appRouter = t.router({
     hello: t.procedure
@@ -304,7 +294,7 @@ test('recipe: max batch size on the server', async () => {
 
   const server = createHTTPServer({
     router: appRouter,
-    createContext,
+    maxBatchSize: MAX_BATCH_SIZE,
   });
 
   server.listen(0);
@@ -323,20 +313,38 @@ test('recipe: max batch size on the server', async () => {
   const result = await client.hello.query({ who: 'test' });
   expect(result).toBe('hello test');
 
-  // 11 is too many
-  const promises = Array.from({ length: MAX_BATCH_SIZE + 1 }, () =>
+  // 10 is fine
+  const promises1 = Array.from({ length: MAX_BATCH_SIZE }, () =>
     client.hello.query({ who: 'test' }),
   );
-  const results = await Promise.allSettled(promises);
+  const results1 = await Promise.allSettled(promises1);
+  expect(
+    results1.every((res) => {
+      if (res.status !== 'fulfilled') {
+        return false;
+      }
+
+      expect(res.value).toBe('hello test');
+
+      return true;
+    }),
+  ).toBe(true);
+
+  // 11 is too many
+  const promises2 = Array.from({ length: MAX_BATCH_SIZE + 1 }, () =>
+    client.hello.query({ who: 'test' }),
+  );
+  const results2 = await Promise.allSettled(promises2);
 
   expect(
-    results.every((res) => {
+    results2.every((res) => {
       if (res.status !== 'rejected') {
         return false;
       }
 
       const err = res.reason as TRPCClientError<typeof appRouter>;
-      expect(err.data?.code).toBe('TOO_MANY_REQUESTS');
+      expect(err.data?.code).toBe('BAD_REQUEST');
+      expect(err.message).toBe('Batch call exceeds maximum size');
 
       return true;
     }),
