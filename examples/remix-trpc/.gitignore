@@ -1,0 +1,41 @@
+# Node.js
+node_modules/
+dist/
+build/
+*.log
+*.tsbuildinfo
+
+# TypeScript
+*.tsbuildinfo
+
+# Vite (client side)
+.vite/
+
+
+# pnpm (lockファイル)
+pnpm-lock.yaml
+
+# VS Code settings
+.vscode/
+
+# MacOS
+.DS_Store
+
+# Log files
+*.log
+
+# Server-side files
+server/dist/
+server/build/
+
+# Client-side build artifacts
+client/dist/
+client/build/
+client/.vite/
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.production
+.env.test
