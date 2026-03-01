@@ -63,6 +63,7 @@ export default defineConfig({
       ],
     },
     execArgv: ['--expose-gc'],
+    restoreMocks: true,
     retry: process.env['CI'] ? 2 : 0,
   },
   resolve: {
