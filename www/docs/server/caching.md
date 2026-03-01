@@ -23,7 +23,7 @@ Most tRPC adapters support a `responseMeta` callback that lets you set HTTP head
 
 > This works with any hosting provider that supports standard HTTP cache headers (e.g. Vercel, Cloudflare, AWS CloudFront).
 
-```ts title='server.ts'
+```ts twoslash title='server.ts'
 import { initTRPC } from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';

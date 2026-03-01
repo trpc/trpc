@@ -19,7 +19,9 @@ The `useSubscription` hook can be used to subscribe to a [subscription](../../se
 
 :::
 
-```tsx
+```tsx twoslash
+// @errors: 2391 2304
+
 function useSubscription<TOutput, TError>(
   input: TInput | SkipToken,
   opts?: UseTRPCSubscriptionOptions<TOutput, TError>,
@@ -53,7 +55,9 @@ interface UseTRPCSubscriptionOptions<TOutput, TError> {
 
 ### Return type
 
-```ts
+```ts twoslash
+// @errors: 2304
+
 type TRPCSubscriptionResult<TOutput, TError> = {
   /**
    * The current status of the subscription.
@@ -84,7 +88,29 @@ type TRPCSubscriptionResult<TOutput, TError> = {
 
 ## Example
 
-```tsx title='components/MyComponent.tsx'
+```tsx twoslash title='components/MyComponent.tsx'
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { observable } from '@trpc/server/observable';
+const t = initTRPC.create();
+const appRouter = t.router({
+  onNumber: t.procedure.subscription(() => {
+    return observable<number>((emit) => {
+      const timer = setInterval(() => emit.next(Math.random()), 1000);
+      return () => clearInterval(timer);
+    });
+  }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: components/MyComponent.tsx
+// ---cut---
+import React from 'react';
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {

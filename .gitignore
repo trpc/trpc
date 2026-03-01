@@ -33,3 +33,4 @@ packages/*/*/
 packages/tests/node_modules
 
 examples/next-big-router/src/server/routers
+.claude/

@@ -145,7 +145,12 @@ for await (const value of iterable) {
 
 We've introduced a new shorthand syntax for defining your router to simplify the process of defining your routes. [Docs](/docs/server/merging-routers#inline-sub-router)
 
-```ts twosloash
+```ts twoslash
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+const publicProcedure = t.procedure;
+const router = t.router;
+// ---cut---
 const appRouter = router({
   // Shorthand plain object for creating a sub-router
   nested1: {

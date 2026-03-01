@@ -58,7 +58,7 @@ import type { AppRouter } from './server';
 const trpc = createTRPCReact<AppRouter>();
 
 // ---cut---
-// @noErrors
+// @errors: 2339
 function MyComponent() {
   const utils = trpc.useUtils();
   utils.post.all.f;
@@ -100,22 +100,41 @@ In the meantime, you can import and use the function directly from `@tanstack/re
 
 In addition to the above react-query helpers, the context also exposes your tRPC proxy client. This lets you call your procedures with `async`/`await` without needing to create an additional vanilla client.
 
-```tsx
-import { trpc } from '../utils/trpc';
+```tsx twoslash
+// @jsx: react-jsx
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({
+  apiKey: t.router({
+    create: t.procedure.mutation(() => 'new-api-key'),
+  }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: MyComponent.tsx
+// ---cut---
+import { useState } from 'react';
+import { trpc } from './utils/trpc';
 
 function MyComponent() {
-  const [apiKey, setApiKey] = useState();
+  const [apiKey, setApiKey] = useState('');
   const utils = trpc.useUtils();
 
   return (
-    <Form
-      handleSubmit={async (event) => {
-        const apiKey = await utils.client.apiKey.create.mutate(event);
+    <form
+      onSubmit={async (event) => {
+        const apiKey = await utils.client.apiKey.create.mutate();
         setApiKey(apiKey);
       }}
     >
-      ...
-    </Form>
+      {/* form content */}
+    </form>
   );
 }
 ```
@@ -131,8 +150,35 @@ on the input passed to it to prevent unnecessary calls to the back end.
 
 #### Example code
 
-```tsx
-import { trpc } from '../utils/trpc';
+```tsx twoslash
+// @target: esnext
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+const appRouter = t.router({
+  post: t.router({
+    all: t.procedure.query(() => {
+      return { posts: [{ id: 1, title: 'everlong' }] };
+    }),
+    byId: t.procedure
+      .input(z.object({ id: z.number() }))
+      .query(({ input }) => ({ post: { id: input.id, title: 'Look me up!' } })),
+    edit: t.procedure
+      .input(z.object({ id: z.number(), title: z.string() }))
+      .mutation(({ input }) => ({ id: input.id, title: input.title })),
+  }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: MyComponent.tsx
+// ---cut---
+import { trpc } from './utils/trpc';
 
 function MyComponent() {
   const utils = trpc.useUtils();
@@ -140,7 +186,7 @@ function MyComponent() {
   const mutation = trpc.post.edit.useMutation({
     onSuccess(input) {
       utils.post.all.invalidate();
-      utils.post.byId.invalidate({ id: input.id }); // Will not invalidate queries for other id's 👍
+      utils.post.byId.invalidate({ id: input.id }); // Will not invalidate queries for other id's
     },
   });
 
@@ -158,7 +204,7 @@ just one query.
 <details>
   <summary>Backend code</summary>
 
-```tsx title='server/routers/_app.ts'
+```tsx twoslash title='server/routers/_app.ts'
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -203,27 +249,59 @@ export const appRouter = t.router({
 
 </details>
 
-```tsx
-import { trpc } from '../utils/trpc';
+```tsx twoslash
+// @target: esnext
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+const appRouter = t.router({
+  post: t.router({
+    all: t.procedure.query(() => ({
+      posts: [{ id: 1, title: 'everlong' }, { id: 2, title: 'After Dark' }],
+    })),
+    byId: t.procedure
+      .input(z.object({ id: z.number() }))
+      .query(({ input }) => ({ post: { id: input.id, title: 'Look me up!' } })),
+    edit: t.procedure
+      .input(z.object({ id: z.number(), title: z.string() }))
+      .mutation(({ input }) => ({ post: { id: input.id, title: input.title } })),
+  }),
+  user: t.router({
+    all: t.procedure.query(() => ({
+      users: [{ name: 'Dave Grohl' }, { name: 'Haruki Murakami' }],
+    })),
+  }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: MyComponent.tsx
+// ---cut---
+import { trpc } from './utils/trpc';
 
 function MyComponent() {
   const utils = trpc.useUtils();
 
   const invalidateAllQueriesAcrossAllRouters = () => {
     // 1️⃣
-    // All queries on all routers will be invalidated 🔥
+    // All queries on all routers will be invalidated
     utils.invalidate();
   };
 
   const invalidateAllPostQueries = () => {
     // 2️⃣
-    // All post queries will be invalidated 📭
+    // All post queries will be invalidated
     utils.post.invalidate();
   };
 
   const invalidatePostById = () => {
     // 3️⃣
-    // All queries in the post router with input {id:1} invalidated 📭
+    // All queries in the post router with input {id:1} invalidated
     utils.post.byId.invalidate({ id: 1 });
   };
 
@@ -243,8 +321,15 @@ Keeping track of exactly what queries a mutation should invalidate is hard, ther
 
 We have added a feature to help with this:
 
-```ts
-export const trpc = createTRPCReact<AppRouter, SSRContext>({
+```ts twoslash
+// @target: esnext
+// @include: server
+// @filename: utils/trpc.ts
+// ---cut---
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server';
+
+export const trpc = createTRPCReact<AppRouter>({
   overrides: {
     useMutation: {
       /**
@@ -272,7 +357,9 @@ export const trpc = createTRPCReact<AppRouter, SSRContext>({
 
 Aside from the query helpers, the object `useUtils` returns also contains the following properties:
 
-```ts
+```ts twoslash
+// @errors: 2304 2552
+
 interface ProxyTRPCContextProps<TRouter extends AnyRouter, TSSRContext> {
   /**
    * The `TRPCClient`

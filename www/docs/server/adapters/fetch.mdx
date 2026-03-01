@@ -111,10 +111,20 @@ A sample router is given below, save it in a file named `router.ts`.
 <details>
   <summary>router.ts</summary>
 
-```ts title='router.ts'
+```ts twoslash title='router.ts'
+// @filename: context.ts
+import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
+export function createContext({ req, resHeaders }: FetchCreateContextFnOptions) {
+  const user = { name: req.headers.get('username') ?? 'anonymous' };
+  return { req, resHeaders, user };
+}
+export type Context = Awaited<ReturnType<typeof createContext>>;
+
+// @filename: router.ts
+// ---cut---
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
-import { Context } from './context';
+import type { Context } from './context';
 
 type User = {
   id: string;
@@ -163,8 +173,8 @@ A sample context is given below, save it in a file named `context.ts`:
 <details>
   <summary>context.ts</summary>
 
-```ts title='context.ts'
-import { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
+```ts twoslash title='context.ts'
+import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 
 export function createContext({
   req,
@@ -183,7 +193,9 @@ export type Context = Awaited<ReturnType<typeof createContext>>;
 
 ### Astro
 
-```ts title='src/pages/trpc/[trpc].ts'
+```ts twoslash title='src/pages/trpc/[trpc].ts'
+// @errors: 2307 7006
+
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import type { APIRoute } from 'astro';
 import { createContext } from '../../server/context';
@@ -207,7 +219,20 @@ You need the [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/)
 
 #### Create Cloudflare Worker
 
-```ts title='server.ts'
+```ts twoslash title='server.ts'
+// @filename: context.ts
+import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
+export function createContext(opts: FetchCreateContextFnOptions) {
+  return { user: { name: opts.req.headers.get('username') ?? 'anonymous' } };
+}
+
+// @filename: router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: server.ts
+// ---cut---
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { createContext } from './context';
 import { appRouter } from './router';
@@ -239,7 +264,9 @@ This assumes you have Deno installed and setup. Refer to their [getting started 
 
 #### Update the imports in `router.ts`
 
-```ts title='router.ts'
+```ts twoslash title='router.ts'
+// @errors: 2307
+
 import { initTRPC } from 'npm:@trpc/server';
 import { z } from 'npm:zod';
 import { Context } from './context.ts';
@@ -247,13 +274,17 @@ import { Context } from './context.ts';
 
 #### Update the imports in `context.ts`
 
-```ts title='context.ts'
+```ts twoslash title='context.ts'
+// @errors: 2307
+
 import { FetchCreateContextFnOptions } from 'npm:@trpc/server/adapters/fetch';
 ```
 
 #### Use `fetchRequestHandler` with Oak in `app.ts`
 
-```ts title='app.ts'
+```ts twoslash title='app.ts'
+// @errors: 2307 7006 1378
+
 import { Application, Router } from 'https://deno.land/x/oak/mod.ts';
 import { fetchRequestHandler } from 'npm:@trpc/server/adapters/fetch';
 import { createContext } from './context.ts';
@@ -300,7 +331,9 @@ See our example [Deno Deploy app](https://github.com/trpc/trpc/tree/main/example
 
 #### Update the imports in `router.ts`
 
-```ts title='router.ts'
+```ts twoslash title='router.ts'
+// @errors: 2307
+
 import { initTRPC } from 'npm:@trpc/server';
 import { z } from 'npm:zod';
 import { Context } from './context.ts';
@@ -308,13 +341,17 @@ import { Context } from './context.ts';
 
 #### Update the imports in `context.ts`
 
-```ts title='context.ts'
+```ts twoslash title='context.ts'
+// @errors: 2307
+
 import { FetchCreateContextFnOptions } from 'npm:@trpc/server/adapters/fetch';
 ```
 
 #### Create Deno Deploy Function
 
-```ts title='server.ts'
+```ts twoslash title='server.ts'
+// @errors: 2307 7006 2304
+
 import { fetchRequestHandler } from 'npm:@trpc/server/adapters/fetch';
 import { createContext } from './context.ts';
 import { appRouter } from './router.ts';
@@ -344,7 +381,9 @@ See a full example [here](https://github.com/trpc/trpc/tree/main/examples/next-e
 
 ### Remix
 
-```ts title='app/routes/trpc.$trpc.ts'
+```ts twoslash title='app/routes/trpc.$trpc.ts'
+// @errors: 2307
+
 import type { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { createContext } from '~/server/context';
@@ -368,7 +407,9 @@ function handleRequest(args: LoaderFunctionArgs | ActionFunctionArgs) {
 
 ### SolidStart
 
-```ts title='src/routes/api/trpc/[trpc].ts'
+```ts twoslash title='src/routes/api/trpc/[trpc].ts'
+// @errors: 2307
+
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import type { APIEvent } from 'solid-start';
 import { createContext } from '../../server/context';
@@ -429,12 +470,27 @@ bun add -g edge-runtime
 
 #### Create Edge Runtime Function
 
-```ts title='server.ts'
+```ts twoslash title='server.ts'
+
+// @filename: context.ts
+import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
+export function createContext(opts: FetchCreateContextFnOptions) {
+  return { user: { name: opts.req.headers.get('username') ?? 'anonymous' } };
+}
+
+// @filename: router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: server.ts
+// ---cut---
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { createContext } from './context';
 import { appRouter } from './router';
 
-addEventListener('fetch', (event) => {
+// Vercel Edge Runtime uses Service Worker-style addEventListener
+addEventListener('fetch', (event: any) => {
   return event.respondWith(
     fetchRequestHandler({
       endpoint: '/trpc',

@@ -18,15 +18,29 @@ This method is used when you have direct access to your tRPC router. e.g. when d
 Using the helpers makes tRPC call your procedures directly on the server, without an HTTP request, similar to [server-side calls](/docs/server/server-side-calls).
 That also means that you don't have the request and response at hand like you usually do. Make sure you're instantiating the server-side helpers with a context without `req` & `res`, which are typically filled via the context creation. We recommend the concept of ["inner" and "outer" context](/docs/server/context) in that scenario.
 
-```ts
+```ts twoslash
+// @module: esnext
+// @target: es2017
+// @filename: server/context.ts
+export declare function createContext(): Promise<{}>;
+
+// @filename: server/routers/_app.ts
+import { initTRPC } from '@trpc/server';
+import superjson from 'superjson';
+const t = initTRPC.create({ transformer: superjson });
+export const appRouter = t.router({});
+
+// @filename: example.ts
+// ---cut---
 import { createServerSideHelpers } from '@trpc/react-query/server';
-import { createContext } from '~/server/context';
+import { createContext } from './server/context';
+import { appRouter } from './server/routers/_app';
 import superjson from 'superjson';
 
 const helpers = createServerSideHelpers({
   router: appRouter,
   ctx: await createContext(),
-  transformer: superjson, // optional - adds superjson serialization
+  transformer: superjson,
 });
 ```
 
@@ -34,9 +48,18 @@ const helpers = createServerSideHelpers({
 
 This method is used when you don't have direct access to your tRPC router. e.g. when developing a Next.js application and a standalone API hosted separately.
 
-```ts
-import { createTRPCClient } from '@trpc/client';
+```ts twoslash
+// @filename: server/router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import { createServerSideHelpers } from '@trpc/react-query/server';
+import type { AppRouter } from './server/router';
 import superjson from 'superjson';
 
 const proxyClient = createTRPCClient<AppRouter>({
@@ -58,12 +81,21 @@ The server-side helpers methods return an object much like the tRPC client, with
 
 The primary difference between `prefetch` and `fetch` is that `fetch` acts much like a normal function call, returning the result of the query, whereas `prefetch` does not return the result and never throws - if you need that behavior, use `fetch` instead. Instead, `prefetch` will add the query to the cache, which you then dehydrate and send to the client.
 
-```ts
-return {
-  props: {
-    // very important - use `trpcState` as the key
-    trpcState: helpers.dehydrate(),
-  },
+```ts twoslash
+// @filename: server/routers/_app.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: example.ts
+import { createServerSideHelpers } from '@trpc/react-query/server';
+import { appRouter } from './server/routers/_app';
+declare const helpers: Awaited<ReturnType<typeof createServerSideHelpers<typeof appRouter>>>;
+// ---cut---
+// In getServerSideProps / getStaticProps:
+const props = {
+  // very important - use `trpcState` as the key
+  trpcState: helpers.dehydrate(),
 };
 ```
 
@@ -77,10 +109,37 @@ For a full example, see our [E2E SSG test example](https://github.com/trpc/trpc/
 
 ## Next.js Example
 
-```tsx title='pages/posts/[id].tsx'
+```tsx twoslash title='pages/posts/[id].tsx'
+// @jsx: react-jsx
+// @filename: server/routers/_app.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+import superjson from 'superjson';
+const t = initTRPC.create({ transformer: superjson });
+export const appRouter = t.router({
+  post: t.router({
+    byId: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query(() => ({
+        id: '1',
+        title: 'Example Post',
+        text: 'Hello world',
+        createdAt: new Date(),
+      })),
+  }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server/routers/_app';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: page.tsx
+// ---cut---
 import { createServerSideHelpers } from '@trpc/react-query/server';
-import { appRouter } from '~/server/routers/_app';
-import { trpc } from '~/utils/trpc';
+import { appRouter } from './server/routers/_app';
+import { trpc } from './utils/trpc';
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
 import superjson from 'superjson';
 

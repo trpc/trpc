@@ -21,7 +21,7 @@ yarn add superjson
 
 #### 2. Add to your `initTRPC`
 
-```ts title='routers/router/_app.ts'
+```ts twoslash title='routers/router/_app.ts'
 import { initTRPC } from '@trpc/server';
 import superjson from 'superjson';
 
@@ -36,9 +36,18 @@ export const t = initTRPC.create({
 
 `createTRPCClient()`:
 
-```ts title='src/app/_trpc/client.ts'
-import { createTRPCClient } from '@trpc/client';
-import type { AppRouter } from '~/server/routers/_app';
+```ts twoslash title='src/app/_trpc/client.ts'
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import superjson from 'superjson';
+const t = initTRPC.create({ transformer: superjson });
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
+import { createTRPCClient, httpLink } from '@trpc/client';
+import type { AppRouter } from './server';
 import superjson from 'superjson';
 
 export const client = createTRPCClient<AppRouter>({
@@ -67,7 +76,15 @@ yarn add devalue
 
 Here we use `parse` and `stringify` as they [mitigate XSS](https://github.com/Rich-Harris/devalue?tab=readme-ov-file#xss-mitigation).
 
-```ts title='utils/trpc.ts'
+```ts twoslash title='utils/trpc.ts'
+// @filename: devalue.d.ts
+declare module 'devalue' {
+  export function parse(str: string): any;
+  export function stringify(value: any): string;
+}
+
+// @filename: utils/trpc.ts
+// ---cut---
 import { parse, stringify } from 'devalue';
 
 // [...]
@@ -80,7 +97,15 @@ export const transformer = {
 
 #### 3. Add to your `initTRPC`
 
-```ts title='server/routers/_app.ts'
+```ts twoslash title='server/routers/_app.ts'
+// @filename: utils/trpc.ts
+export const transformer = {
+  deserialize: (object: any) => object,
+  serialize: (object: any) => object,
+};
+
+// @filename: server/routers/_app.ts
+// ---cut---
 import { initTRPC } from '@trpc/server';
 import { transformer } from '../../utils/trpc';
 
@@ -95,10 +120,25 @@ export const t = initTRPC.create({
 
 `createTRPCClient()`:
 
-```ts title='src/app/_trpc/client.ts'
-import { createTRPCClient } from '@trpc/client';
-import type { AppRouter } from '~/server/routers/_app';
+```ts twoslash title='src/app/_trpc/client.ts'
+// @filename: utils/trpc.ts
+export const transformer = {
+  deserialize: (object: any) => object,
+  serialize: (object: any) => object,
+};
+
+// @filename: server/routers/_app.ts
+import { initTRPC } from '@trpc/server';
 import { transformer } from '../../utils/trpc';
+const t = initTRPC.create({ transformer });
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
+import { createTRPCClient, httpLink } from '@trpc/client';
+import type { AppRouter } from './server/routers/_app';
+import { transformer } from './utils/trpc';
 
 export const client = createTRPCClient<AppRouter>({
   links: [
@@ -116,7 +156,7 @@ If a transformer should only be used for one direction or different transformers
 
 ## `DataTransformer` interface
 
-```ts
+```ts twoslash
 export interface DataTransformer {
   serialize(object: any): any;
   deserialize(object: any): any;

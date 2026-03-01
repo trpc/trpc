@@ -34,15 +34,19 @@ If you are unsure which one to use, we recommend using SSE for subscriptions as 
 For a full example, see [our full-stack SSE example](https://github.com/trpc/examples-next-sse-chat).
 :::
 
-```ts title="server.ts"
+```ts twoslash title="server.ts"
+// @target: esnext
+// @types: node
+import EventEmitter, { on } from 'events';
 import { initTRPC } from '@trpc/server';
 
 const t = initTRPC.create();
 
+type Post = { id: string; title: string };
 const ee = new EventEmitter();
 
-export const appRouter = router({
-  onPostAdd: publicProcedure.subscription(async function* (opts) {
+export const appRouter = t.router({
+  onPostAdd: t.procedure.subscription(async function* (opts) {
     // listen for new events
     for await (const [data] of on(ee, 'add', {
       // Passing the AbortSignal from the request automatically cancels the event emitter when the request is aborted
@@ -68,12 +72,28 @@ You can send an initial `lastEventId` when initializing the subscription and it 
 If you're fetching data based on the `lastEventId`, and capturing all events is critical, make sure you setup the event listener before fetching events from your database as is done in [our full-stack SSE example](https://github.com/trpc/examples-next-sse-chat), this can prevent newly emitted events being ignored while yield'ing the original batch based on `lastEventId`.
 :::
 
-```ts
+```ts twoslash
+// @errors: 2583 2339
+// @filename: events.d.ts
+declare module 'events' {
+  class EventEmitter {
+    toIterable(event: string, opts?: { signal?: AbortSignal }): AsyncIterable<any[]>;
+  }
+  export function on(emitter: EventEmitter, event: string, opts?: { signal?: AbortSignal }): AsyncIterable<any[]>;
+  export default EventEmitter;
+}
+
+// @filename: index.ts
+// ---cut---
 import EventEmitter, { on } from 'events';
-import type { Post } from '@prisma/client';
-import { tracked } from '@trpc/server';
+import { initTRPC, tracked } from '@trpc/server';
 import { z } from 'zod';
-import { publicProcedure, router } from '../trpc';
+
+type Post = { id: string; title: string };
+
+const t = initTRPC.create();
+const publicProcedure = t.procedure;
+const router = t.router;
 
 const ee = new EventEmitter();
 
@@ -96,7 +116,7 @@ export const subRouter = router({
         signal: opts.signal,
       });
 
-      if (opts.input.lastEventId) {
+      if (opts.input?.lastEventId) {
         // [...] get the posts since the last event id and yield them
         // const items = await db.post.findMany({ ... })
         // for (const item of items) {
@@ -119,11 +139,25 @@ export const subRouter = router({
 
 This recipe is useful when you want to periodically check for new data from a source like a database and push it to the client.
 
-```ts title="server.ts"
-import type { Post } from '@prisma/client';
+```ts twoslash title="server.ts"
+// @filename: trpc.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const publicProcedure = t.procedure;
+export const router = t.router;
+
+// @filename: server.ts
+type Post = { id: string; title: string; createdAt: Date };
+declare const db: {
+  post: {
+    findMany(opts: { where?: { createdAt?: { gt: Date } }; orderBy?: { createdAt: string } }): Promise<Post[]>;
+  };
+};
+declare function sleep(ms: number): Promise<void>;
+// ---cut---
 import { tracked } from '@trpc/server';
 import { z } from 'zod';
-import { publicProcedure, router } from '../trpc';
+import { publicProcedure, router } from './trpc';
 
 export const subRouter = router({
   onPostAdd: publicProcedure
@@ -174,14 +208,20 @@ export const subRouter = router({
 
 If you need to stop a subscription from the server, simply `return` in the generator function.
 
-```ts
-import { publicProcedure, router } from '../trpc';
+```ts twoslash
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
 
+const t = initTRPC.create();
+const publicProcedure = t.procedure;
+const router = t.router;
+
+// ---cut---
 export const subRouter = router({
   onPostAdd: publicProcedure
     .input(
       z.object({
-        lastEventId: z.string().coerce.number().min(0).optional(),
+        lastEventId: z.coerce.number().min(0).optional(),
       }),
     )
     .subscription(async function* (opts) {
@@ -194,8 +234,7 @@ export const subRouter = router({
         }
         await new Promise((resolve) => setTimeout(resolve, 10));
       }
-    }
-  }),
+    }),
 });
 ```
 
@@ -205,17 +244,22 @@ On the client, you just `.unsubscribe()` the subscription.
 
 If you need to clean up any side-effects of your subscription you can use the [`try...finally`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator/return#using_return_with_try...finally) pattern, as `trpc` invokes the `.return()` of the Generator Instance when the subscription stops for any reason.
 
-```ts
+```ts twoslash
+// @types: node
 import EventEmitter, { on } from 'events';
-import type { Post } from '@prisma/client';
-import { z } from 'zod';
-import { publicProcedure, router } from '../trpc';
+import { initTRPC } from '@trpc/server';
+
+type Post = { id: string; title: string };
+
+const t = initTRPC.create();
+const publicProcedure = t.procedure;
+const router = t.router;
 
 const ee = new EventEmitter();
 
 export const subRouter = router({
   onPostAdd: publicProcedure.subscription(async function* (opts) {
-    let timeout;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
     try {
       for await (const [data] of on(ee, 'add', {
         signal: opts.signal,
@@ -243,7 +287,9 @@ Since subscriptions are async iterators, you have to go through the iterator to 
 
 ### Example with zod v4
 
-```ts title="zAsyncIterable.ts"
+```ts twoslash title="zAsyncIterable.ts"
+// @target: esnext
+// @lib: esnext
 import type { TrackedEnvelope } from '@trpc/server';
 import { isTrackedEnvelope, tracked } from '@trpc/server';
 import { z } from 'zod';
@@ -326,96 +372,54 @@ export function zAsyncIterable<
 }
 ```
 
-### Example with zod v3
+Now you can use this helper to validate the output of your subscription procedures:
 
-```ts title="zAsyncIterable.ts"
+```ts twoslash title="_app.ts"
+// @target: esnext
+// @lib: esnext
+// @types: node
+// @filename: trpc.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const publicProcedure = t.procedure;
+export const router = t.router;
+
+// @filename: zAsyncIterable.ts
 import type { TrackedEnvelope } from '@trpc/server';
 import { isTrackedEnvelope, tracked } from '@trpc/server';
 import { z } from 'zod';
-
-function isAsyncIterable<TValue, TReturn = unknown>(
-  value: unknown,
-): value is AsyncIterable<TValue, TReturn> {
+function isAsyncIterable<TValue, TReturn = unknown>(value: unknown): value is AsyncIterable<TValue, TReturn> {
   return !!value && typeof value === 'object' && Symbol.asyncIterator in value;
 }
-const trackedEnvelopeSchema =
-  z.custom<TrackedEnvelope<unknown>>(isTrackedEnvelope);
-
-/**
- * A Zod schema helper designed specifically for validating async iterables. This schema ensures that:
- * 1. The value being validated is an async iterable.
- * 2. Each item yielded by the async iterable conforms to a specified type.
- * 3. The return value of the async iterable, if any, also conforms to a specified type.
- */
-export function zAsyncIterable<
-  TYieldIn,
-  TYieldOut,
-  TReturnIn = void,
-  TReturnOut = void,
-  Tracked extends boolean = false,
->(opts: {
-  /**
-   * Validate the value yielded by the async generator
-   */
-  yield: z.ZodType<TYieldIn, any, TYieldOut>;
-  /**
-   * Validate the return value of the async generator
-   * @remark not applicable for subscriptions
-   */
-  return?: z.ZodType<TReturnIn, any, TReturnOut>;
-  /**
-   * Whether if the yielded values are tracked
-   * @remark only applicable for subscriptions
-   */
+const trackedEnvelopeSchema = z.custom<TrackedEnvelope<unknown>>(isTrackedEnvelope);
+export function zAsyncIterable<TYieldIn, TYieldOut, TReturnIn = void, TReturnOut = void, Tracked extends boolean = false>(opts: {
+  yield: z.ZodType<TYieldOut, TYieldIn>;
+  return?: z.ZodType<TReturnOut, TReturnIn>;
   tracked?: Tracked;
 }) {
-  return z
-    .custom<
-      AsyncIterable<
-        Tracked extends true ? TrackedEnvelope<TYieldIn> : TYieldIn,
-        TReturnIn
-      >
-    >((val) => isAsyncIterable(val))
-    .transform(async function* (iter) {
-      const iterator = iter[Symbol.asyncIterator]();
-
-      try {
-        let next;
-        while ((next = await iterator.next()) && !next.done) {
-          if (opts.tracked) {
-            const [id, data] = trackedEnvelopeSchema.parse(next.value);
-            yield tracked(id, await opts.yield.parseAsync(data));
-            continue;
-          }
-          yield opts.yield.parseAsync(next.value);
+  return z.custom<AsyncIterable<Tracked extends true ? TrackedEnvelope<TYieldIn> : TYieldIn, TReturnIn>>((val) => isAsyncIterable(val)).transform(async function* (iter) {
+    const iterator = iter[Symbol.asyncIterator]();
+    try {
+      let next;
+      while ((next = await iterator.next()) && !next.done) {
+        if (opts.tracked) {
+          const [id, data] = trackedEnvelopeSchema.parse(next.value);
+          yield tracked(id, await opts.yield.parseAsync(data));
+          continue;
         }
-        if (opts.return) {
-          return await opts.return.parseAsync(next.value);
-        }
-        return;
-      } finally {
-        await iterator.return?.();
+        yield opts.yield.parseAsync(next.value);
       }
-    }) as z.ZodType<
-    AsyncIterable<
-      Tracked extends true ? TrackedEnvelope<TYieldIn> : TYieldIn,
-      TReturnIn,
-      unknown
-    >,
-    any,
-    AsyncIterable<
-      Tracked extends true ? TrackedEnvelope<TYieldOut> : TYieldOut,
-      TReturnOut,
-      unknown
-    >
-  >;
+      if (opts.return) { return await opts.return.parseAsync(next.value); }
+      return;
+    } finally { await iterator.return?.(); }
+  }) as z.ZodType<AsyncIterable<Tracked extends true ? TrackedEnvelope<TYieldIn> : TYieldIn, TReturnIn, unknown>, AsyncIterable<Tracked extends true ? TrackedEnvelope<TYieldOut> : TYieldOut, TReturnOut, unknown>>;
 }
-```
 
-Now you can use this helper to validate the output of your subscription procedures:
-
-```ts title="_app.ts"
-import { publicProcedure, router } from '../trpc';
+// @filename: _app.ts
+// ---cut---
+import { tracked } from '@trpc/server';
+import { z } from 'zod';
+import { publicProcedure, router } from './trpc';
 import { zAsyncIterable } from './zAsyncIterable';
 
 export const appRouter = router({
@@ -437,7 +441,7 @@ export const appRouter = router({
       let index = opts.input.lastEventId ?? 0;
       while (true) {
         index++;
-        yield tracked(index, {
+        yield tracked(String(index), {
           count: index,
         });
 

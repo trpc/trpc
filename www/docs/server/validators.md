@@ -16,13 +16,11 @@ To set up an input validator, use the `procedure.input()` method:
 ```ts twoslash
 // @target: esnext
 import { initTRPC } from '@trpc/server';
-// ---cut---
-
-// Our examples use Zod by default, but usage with other libraries is identical
 import { z } from 'zod';
 
-export const t = initTRPC.create();
+const t = initTRPC.create();
 const publicProcedure = t.procedure;
+// ---cut---
 
 export const appRouter = t.router({
   hello: publicProcedure
@@ -96,7 +94,6 @@ If output validation fails, the server will respond with an `INTERNAL_SERVER_ERR
 ```ts twoslash
 // @target: esnext
 import { initTRPC } from '@trpc/server';
-// @noErrors
 // ---cut---
 
 import { z } from 'zod';
@@ -113,8 +110,8 @@ export const appRouter = t.router({
     )
     .query((opts) => {
       return {
-        gre,
-        // ^|
+        greeting: 'hello world',
+        //^?
       };
     }),
 });
@@ -291,7 +288,8 @@ export type AppRouter = typeof appRouter;
 
 ### With [Typia](https://typia.io/docs/utilization/trpc/)
 
-```ts
+```ts twoslash
+// @errors: 2307
 import { initTRPC } from '@trpc/server';
 import typia from 'typia';
 import { v4 } from 'uuid';
@@ -321,7 +319,8 @@ export type AppRouter = typeof appRouter;
 
 ### With [ArkType](https://github.com/arktypeio/arktype#trpc)
 
-```ts
+```ts twoslash
+// @errors: 18046
 import { initTRPC } from '@trpc/server';
 import { type } from 'arktype';
 
@@ -342,7 +341,7 @@ export type AppRouter = typeof appRouter;
 
 ### With [effect](https://github.com/Effect-TS/effect/tree/main/packages/schema)
 
-```ts
+```ts twoslash
 import { initTRPC } from '@trpc/server';
 import { Schema } from 'effect';
 
@@ -421,7 +420,8 @@ export type AppRouter = typeof appRouter;
 You're able to define your own Error types and error throwing function if necessary.
 As a convenience `@robolex/sure` provides [sure/src/err.ts](https://github.com/robolex-app/public_ts/blob/main/packages/sure/src/err.ts):
 
-```ts
+```ts twoslash
+// @errors: 7006
 // sure/src/err.ts
 export const err = (schema) => (input) => {
   const [good, result] = schema(input);
@@ -430,7 +430,8 @@ export const err = (schema) => (input) => {
 };
 ```
 
-```ts
+```ts twoslash
+// @errors: 2307
 import { err, object, string } from '@robolex/sure';
 import { initTRPC } from '@trpc/server';
 
@@ -467,7 +468,8 @@ export type AppRouter = typeof appRouter;
 
 ### With [TypeBox](https://github.com/sinclairzx81/typebox)
 
-```ts
+```ts twoslash
+// @errors: 2307
 import { Type } from '@sinclair/typebox';
 import { initTRPC } from '@trpc/server';
 import { wrap } from '@typeschema/typebox';

@@ -98,7 +98,9 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 
 Let's walk through the steps of building a typesafe API with tRPC. To start, this API will contain three endpoints with these TypeScript signatures:
 
-```ts
+```ts twoslash
+// @errors: 2693 1011
+
 type User = { id: string; name: string; };
 
 userList: () => User[];

@@ -32,17 +32,26 @@ export type AppRouter = typeof appRouter;
 
 ```ts twoslash title="client.ts"
 // @target: esnext
-// ---cut---
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+const appRouter = t.router({
+  post: t.router({
+    byId: t.procedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
+      return { id: input.id, title: 'Hello' };
+    }),
+  }),
+});
+export type AppRouter = typeof appRouter;
+
 // @filename: utils.ts
-// @noErrors
+// ---cut---
 import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from './server';
 
 export const trpc = createTRPCReact<AppRouter>({
   abortOnUnmount: true,
-});
-
-trpc.createClient({
-  // ...
 });
 ```
 

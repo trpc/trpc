@@ -10,16 +10,26 @@ By default, tRPC does not cancel requests on unmount. If you want to opt into th
 ### Globally
 
 ```ts twoslash title="client.ts"
-// @target: esnext
+// @filename: server/routers/_app.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
 // ---cut---
-// @filename: utils.ts
-// @noErrors
+import { httpBatchLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
+import type { AppRouter } from './server/routers/_app';
 
 export const trpc = createTRPCNext<AppRouter>({
   config() {
     return {
-      // ...
+      links: [
+        httpBatchLink({
+          url: '/api/trpc',
+        }),
+      ],
       abortOnUnmount: true,
     };
   },
@@ -30,18 +40,33 @@ export const trpc = createTRPCNext<AppRouter>({
 
 You may also override this behavior at the request level.
 
-```ts twoslash title="client.ts"
-// @target: esnext
+```tsx twoslash title="client.ts"
+// @jsx: react-jsx
+// @filename: server/routers/_app.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+export const appRouter = t.router({
+  post: t.router({
+    byId: t.procedure.input(z.object({ id: z.string() })).query(() => ({ id: '1', title: 'Hello' })),
+  }),
+});
+export type AppRouter = typeof appRouter;
 
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server/routers/_app';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: client.ts
 // ---cut---
-// @filename: pages/posts/[id].tsx
-// @noErrors
-import { trpc } from '~/utils/trpc';
+import { trpc } from './utils/trpc';
+import { useRouter } from 'next/router';
 
-const PostViewPage: NextPageWithLayout = () => {
+function PostViewPage() {
   const id = useRouter().query.id as string;
   const postQuery = trpc.post.byId.useQuery({ id }, { trpc: { abortOnUnmount: true } });
 
-  return (...)
+  return null;
 }
 ```

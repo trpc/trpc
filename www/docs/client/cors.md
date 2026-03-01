@@ -9,8 +9,17 @@ If your API resides on a different origin than your front-end and you wish to se
 
 The arguments provided to the fetch function used by tRPC can be modified as follow.
 
-```ts title='app.ts'
+```ts twoslash title='app.ts'
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import type { AppRouter } from './server';
 
 const client = createTRPCClient<AppRouter>({
   links: [

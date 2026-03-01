@@ -40,7 +40,15 @@ While tRPC natively supports several non-JSON serializable types, your client ma
 
 `httpLink` supports non-JSON content types out of the box — if you're only using this link, your existing setup should work immediately.
 
-```ts
+```ts twoslash
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
 import { createTRPCClient, httpLink } from '@trpc/client';
 import type { AppRouter } from './server';
 
@@ -55,7 +63,15 @@ createTRPCClient<AppRouter>({
 
 However, not all links support these content types. If you're using `httpBatchLink` or `httpBatchStreamLink`, you will need to include a `splitLink` and route requests based on the content type.
 
-```ts
+```ts twoslash
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
 import {
   createTRPCClient,
   httpBatchLink,
@@ -64,6 +80,8 @@ import {
   splitLink,
 } from '@trpc/client';
 import type { AppRouter } from './server';
+
+const url = 'http://localhost:2022';
 
 createTRPCClient<AppRouter>({
   links: [
@@ -83,7 +101,16 @@ createTRPCClient<AppRouter>({
 If you are using `transformer` in your tRPC server, TypeScript requires that your tRPC client link defines `transformer` as well.
 Use this example as a base:
 
-```ts
+```ts twoslash
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import superjson from 'superjson';
+const t = initTRPC.create({ transformer: superjson });
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
 import {
   createTRPCClient,
   httpBatchLink,
@@ -93,6 +120,8 @@ import {
 } from '@trpc/client';
 import superjson from 'superjson';
 import type { AppRouter } from './server';
+
+const url = 'http://localhost:2022';
 
 createTRPCClient<AppRouter>({
   links: [
@@ -104,12 +133,12 @@ createTRPCClient<AppRouter>({
           // request - convert data before sending to the tRPC server
           serialize: (data) => data,
           // response - convert the tRPC response before using it in client
-          deserialize: superjson.deserialize, // or your other transformer
+          deserialize: (data) => superjson.deserialize(data), // or your other transformer
         },
       }),
       false: httpBatchLink({
         url,
-        transformers: superjson, // or your other transformer
+        transformer: superjson, // or your other transformer
       }),
     }),
   ],
@@ -122,20 +151,30 @@ createTRPCClient<AppRouter>({
 When a request is handled by tRPC, it takes care of parsing the request body based on the `Content-Type` header of the request.  
 If you encounter errors like `Failed to parse body as XXX`, make sure that your server (e.g., Express, Next.js) isn't parsing the request body before tRPC handles it.
 
-```ts
+```ts twoslash
+// @filename: router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: app.ts
+// ---cut---
 // Example in express
+import express from 'express';
+import * as trpcExpress from '@trpc/server/adapters/express';
+import { appRouter } from './router';
 
 // incorrect
-const app = express();
-app.use(express.json()); // this try to parse body before tRPC.
-app.post('/express/hello', (req,res) => {/* ... */ }); // normal express route handler
-app.use('/trpc', trpcExpress.createExpressMiddleware({ /* ... */}))// tRPC fails to parse body
+const app1 = express();
+app1.use(express.json()); // this tries to parse body before tRPC.
+app1.post('/express/hello', (req, res) => { res.end(); }); // normal express route handler
+app1.use('/trpc', trpcExpress.createExpressMiddleware({ router: appRouter })); // tRPC fails to parse body
 
 // correct
-const app = express();
-app.use('/express', express.json()); // do it only in "/express/*" path
-app.post('/express/hello', (req,res) => {/* ... */ });
-app.use('/trpc', trpcExpress.createExpressMiddleware({ /* ... */}))// tRPC can parse body
+const app2 = express();
+app2.use('/express', express.json()); // do it only in "/express/*" path
+app2.post('/express/hello', (req, res) => { res.end(); });
+app2.use('/trpc', trpcExpress.createExpressMiddleware({ router: appRouter })); // tRPC can parse body
 ```
 
 :::

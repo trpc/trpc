@@ -48,7 +48,7 @@ It's also not uncommon, where the deployed adapter is hard to run on local machi
 
 Implement your tRPC router. For example:
 
-```ts title='appRouter.ts'
+```ts twoslash title='appRouter.ts'
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -62,9 +62,7 @@ export const appRouter = t.router({
     .input(z.object({ name: z.string().min(5) }))
     .mutation(async (opts) => {
       // use your ORM of choice
-      return await UserModel.create({
-        data: opts.input,
-      });
+      return { id: '1', ...opts.input };
     }),
 });
 
@@ -78,10 +76,16 @@ For more information you can look at the [quickstart guide](/docs/quickstart)
 
 The Standalone adapter runs a simple Node.js HTTP server.
 
-```ts title='server.ts'
+```ts twoslash title='server.ts'
+// @filename: appRouter.ts
 import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: server.ts
+// ---cut---
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
-import { appRouter } from './appRouter.ts';
+import { appRouter } from './appRouter';
 
 createHTTPServer({
   router: appRouter,
@@ -114,10 +118,17 @@ For full information on how to configure this package, [check the docs](https://
 
 This example just throws open CORS to any request, which is useful for development, but you can and should configure it more strictly in a production environment.
 
-```ts title='server.ts'
+```ts twoslash title='server.ts'
+// @filename: appRouter.ts
 import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: server.ts
+// ---cut---
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import cors from 'cors';
+import { appRouter } from './appRouter';
 
 createHTTPServer({
   middleware: cors(),
@@ -139,10 +150,18 @@ The `middleware` option will accept any function which resembles a connect/node.
 
 `createHTTPServer` is returning an instance of Node's built-in `http.Server`(https://nodejs.org/api/http.html#class-httpserver), which means that you have an access to all it's properties and APIs. However, if `createHTTPServer` isn't enough for your usecase, you can also use the standalone adapter's `createHTTPHandler` function to create your own HTTP server. For instance:
 
-```ts title='server.ts'
-import { createServer } from 'http';
+```ts twoslash title='server.ts'
+// @types: node
+// @filename: appRouter.ts
 import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: server.ts
+// ---cut---
+import { createServer } from 'http';
 import { createHTTPHandler } from '@trpc/server/adapters/standalone';
+import { appRouter } from './appRouter';
 
 const handler = createHTTPHandler({
   router: appRouter,
@@ -165,10 +184,18 @@ createServer((req, res) => {
 
 The Standalone adapter also supports a `basePath` option, which will slice the basePath from the beginning of the request path.
 
-```ts title='server.ts'
-import { createServer } from 'http';
+```ts twoslash title='server.ts'
+// @types: node
+// @filename: appRouter.ts
 import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: server.ts
+// ---cut---
+import { createServer } from 'http';
 import { createHTTPHandler } from '@trpc/server/adapters/standalone';
+import { appRouter } from './appRouter';
 
 const handler = createHTTPHandler({
   router: appRouter,
@@ -190,11 +217,25 @@ createServer((req, res) => {
 
 The Standalone adapter also supports HTTP/2.
 
-```ts title='server.ts'
+```ts twoslash title='server.ts'
+// @types: node
+// @filename: _app.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: context.ts
+import type { CreateHTTP2ContextOptions } from '@trpc/server/adapters/standalone';
+export async function createContext(opts: CreateHTTP2ContextOptions) {
+  return {};
+}
+
+// @filename: server.ts
+// ---cut---
 import http2 from 'http2';
 import { createHTTP2Handler } from '@trpc/server/adapters/standalone';
-import { appRouter } from './_app.ts';
-import { createContext } from './context.ts';
+import { appRouter } from './_app';
+import { createContext } from './context';
 
 const handler = createHTTP2Handler({
   router: appRouter,

@@ -58,7 +58,16 @@ Create a tRPC client, and wrap your application in the tRPC Provider, as below. 
 If you already use React Query in your application, you **should** re-use the `QueryClient` and `QueryClientProvider` you already have.
 :::
 
-```tsx title='App.tsx'
+```tsx twoslash title='App.tsx'
+// @include: router
+// @filename: utils/trpc.ts
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server/router';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: App.tsx
+declare function getAuthCookie(): string;
+// ---cut---
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { httpBatchLink } from '@trpc/client';
 import React, { useState } from 'react';

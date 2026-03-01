@@ -21,7 +21,8 @@ There's no code generation involved & you can pretty easily add it to your exist
 
 Here's an example of a tRPC procedure (aka endpoint) called `hello` that takes a `string` argument.
 
-```tsx
+```tsx twoslash
+// @errors: 2304 7031
 const appRouter = trpc.router().query('hello', {
   input: z.string().optional(),
   resolve: ({ input }) => {
@@ -36,7 +37,8 @@ export type AppRouter = typeof appRouter;
 
 And here's a type safe client using said data:
 
-```tsx
+```tsx twoslash
+// @errors: 2307 2304
 import type { AppRouter } from './server';
 
 async function main() {
@@ -65,7 +67,8 @@ There's no code generation involved, you can this to your app today as long as y
 
 I mentioned before that there's a React-library, the way to use the data above in React you do:
 
-```tsx
+```tsx twoslash
+// @errors: 2304
 const { data } = trpc.useQuery(['hello', '@alexdotjs']);
 ```
 
@@ -79,7 +82,8 @@ Mutations are as simple to do as queries, they're actually the same underneath, 
 
 Here's a little more complicated example using a database, taken from our TodoMVC example at todomvc.trpc.io / https://github.com/trpc/trpc/tree/main/examples/next-prisma-todomvc
 
-```tsx
+```tsx twoslash
+// @errors: 2304 7031
 const todoRouter = createRouter().mutation('add', {
   input: z.object({
     id: z.string().uuid(),
@@ -101,7 +105,9 @@ const todoRouter = createRouter().mutation('add', {
 
 And the **React usage** looks like this:
 
-```tsx
+```tsx twoslash
+// @jsx: react-jsx
+// @errors: 2304 1108
 const addTask = trpc.useMutation('todos.add');
 
 return (
