@@ -537,7 +537,9 @@ test('should work to throw after stream is closed', async () => {
 
   ac.abort();
 
-  await expect(head0.deferred).rejects.toMatchInlineSnapshot(`[AbortError: This operation was aborted]`);
+  await expect(head0.deferred).rejects.toMatchInlineSnapshot(
+    `[AbortError: This operation was aborted]`,
+  );
 
   deferred.resolve({
     p: Promise.resolve({

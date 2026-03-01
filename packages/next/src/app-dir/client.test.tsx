@@ -286,11 +286,8 @@ describe('with transformer', () => {
               const formData = new FormData();
               formData.set(
                 'text',
-                (
-                  e.currentTarget.elements.namedItem(
-                    'text',
-                  ) as HTMLInputElement
-                ).value,
+                (e.currentTarget.elements.namedItem('text') as HTMLInputElement)
+                  .value,
               );
               mutation.mutate(formData);
             }}
