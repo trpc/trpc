@@ -569,6 +569,11 @@
       "source": "/docs/client/nextjs/aborting-procedure-calls",
       "destination": "/docs/client/nextjs/pages-router/aborting-procedure-calls",
       "permanent": true
+    },
+    {
+      "source": "/docs/getting-started",
+      "destination": "/docs",
+      "permanent": true
     }
   ]
 }

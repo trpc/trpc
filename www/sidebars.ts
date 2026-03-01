@@ -29,7 +29,6 @@ const config: SidebarsConfig = {
       items: [
         'main/quickstart',
         'main/concepts',
-        'main/getting-started',
         'main/videos-and-community-resources',
         'main/example-apps',
       ],
