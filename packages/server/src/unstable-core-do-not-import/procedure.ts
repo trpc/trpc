@@ -51,17 +51,14 @@ export interface Procedure<
   (opts: ProcedureCallOptions<unknown>): Promise<TDef['output']>;
 }
 
-export interface QueryProcedure<
-  TDef extends BuiltProcedureDef,
-> extends Procedure<'query', TDef> {}
+export interface QueryProcedure<TDef extends BuiltProcedureDef>
+  extends Procedure<'query', TDef> {}
 
-export interface MutationProcedure<
-  TDef extends BuiltProcedureDef,
-> extends Procedure<'mutation', TDef> {}
+export interface MutationProcedure<TDef extends BuiltProcedureDef>
+  extends Procedure<'mutation', TDef> {}
 
-export interface SubscriptionProcedure<
-  TDef extends BuiltProcedureDef,
-> extends Procedure<'subscription', TDef> {}
+export interface SubscriptionProcedure<TDef extends BuiltProcedureDef>
+  extends Procedure<'subscription', TDef> {}
 
 /**
  * @deprecated

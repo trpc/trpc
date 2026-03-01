@@ -45,9 +45,7 @@ interface TRPCMutationOptionsOut<
   TOutput,
   TContext,
   TFeatureFlags extends FeatureFlags,
->
-  extends
-    UseMutationOptions<TOutput, TError, TInput, TContext>,
+> extends UseMutationOptions<TOutput, TError, TInput, TContext>,
     TRPCQueryOptionsResult {
   mutationKey: TRPCMutationKey<TFeatureFlags['keyPrefix']>;
 }

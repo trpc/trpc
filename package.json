@@ -51,7 +51,7 @@
     "@vitest/coverage-istanbul": "^4.0.18",
     "@vitest/ui": "^4.0.18",
     "concurrently": "^9.0.0",
-    "eslint": "^9.26.0",
+    "eslint": "9.26.0",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "6.0.0-rc.1",
     "eslint-plugin-unicorn": "63.0.0",
@@ -69,9 +69,15 @@
     "tsx": "^4.19.3",
     "turbo": "^2.5.4",
     "typescript": "^5.9.2",
-    "typescript-eslint": "^8.31.1",
+    "typescript-eslint": "8.32.1",
     "vite": "^6.1.1",
     "vitest": "^4.0.18",
     "zod": "^4.2.1"
+  },
+  "pnpm": {
+    "overrides": {
+      "eslint": "9.26.0",
+      "typescript-eslint": "8.32.1"
+    }
   }
 }

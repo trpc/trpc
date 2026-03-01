@@ -47,8 +47,7 @@ interface TRPCUseUtilsOptions {
   trpc?: TRPCRequestOptions;
 }
 export interface TRPCFetchQueryOptions<TOutput, TError>
-  extends
-    DistributiveOmit<FetchQueryOptions<TOutput, TError>, 'queryKey'>,
+  extends DistributiveOmit<FetchQueryOptions<TOutput, TError>, 'queryKey'>,
     TRPCUseUtilsOptions {
   //
 }
@@ -108,10 +107,8 @@ export type DecoratedTRPCContextProps<
   client: TRPCClient<TRouter>;
 };
 
-export interface TRPCContextProps<
-  TRouter extends AnyRouter,
-  TSSRContext,
-> extends TRPCContextPropsBase<TRouter, TSSRContext> {
+export interface TRPCContextProps<TRouter extends AnyRouter, TSSRContext>
+  extends TRPCContextPropsBase<TRouter, TSSRContext> {
   /**
    * The react-query `QueryClient`
    */
@@ -131,9 +128,7 @@ export const contextProps: (keyof TRPCContextPropsBase<any, any>)[] = [
 export interface TRPCContextState<
   TRouter extends AnyRouter,
   TSSRContext = undefined,
->
-  extends
-    Required<TRPCContextProps<TRouter, TSSRContext>>,
+> extends Required<TRPCContextProps<TRouter, TSSRContext>>,
     TRPCQueryUtils<TRouter> {}
 
 /**

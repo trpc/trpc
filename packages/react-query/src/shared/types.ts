@@ -38,8 +38,7 @@ type TRPCInfiniteOptionOverrides = TRPCOptionOverrides | 'initialPageParam';
  * QueryOptions API helpers
  */
 export interface UndefinedTRPCQueryOptionsIn<TQueryFnData, TData, TError>
-  extends
-    DistributiveOmit<
+  extends DistributiveOmit<
       UndefinedInitialDataOptions<
         coerceAsyncIterableToArray<TQueryFnData>,
         TError,
@@ -51,8 +50,7 @@ export interface UndefinedTRPCQueryOptionsIn<TQueryFnData, TData, TError>
     TRPCQueryBaseOptions {}
 
 export interface UndefinedTRPCQueryOptionsOut<TQueryFnData, TOutput, TError>
-  extends
-    UndefinedInitialDataOptions<
+  extends UndefinedInitialDataOptions<
       coerceAsyncIterableToArray<TQueryFnData>,
       TError,
       coerceAsyncIterableToArray<TOutput>,
@@ -63,8 +61,7 @@ export interface UndefinedTRPCQueryOptionsOut<TQueryFnData, TOutput, TError>
 }
 
 export interface DefinedTRPCQueryOptionsIn<TQueryFnData, TData, TError>
-  extends
-    DistributiveOmit<
+  extends DistributiveOmit<
       DefinedInitialDataOptions<
         coerceAsyncIterableToArray<TQueryFnData>,
         TError,
@@ -76,8 +73,7 @@ export interface DefinedTRPCQueryOptionsIn<TQueryFnData, TData, TError>
     TRPCQueryBaseOptions {}
 
 export interface DefinedTRPCQueryOptionsOut<TQueryFnData, TData, TError>
-  extends
-    DefinedInitialDataOptions<
+  extends DefinedInitialDataOptions<
       coerceAsyncIterableToArray<TQueryFnData>,
       TError,
       coerceAsyncIterableToArray<TData>,
@@ -88,8 +84,7 @@ export interface DefinedTRPCQueryOptionsOut<TQueryFnData, TData, TError>
 }
 
 export interface UnusedSkipTokenTRPCQueryOptionsIn<TQueryFnData, TData, TError>
-  extends
-    DistributiveOmit<
+  extends DistributiveOmit<
       UnusedSkipTokenOptions<
         coerceAsyncIterableToArray<TQueryFnData>,
         TError,
@@ -104,9 +99,7 @@ export interface UnusedSkipTokenTRPCQueryOptionsOut<
   TQueryFnData,
   TOutput,
   TError,
->
-  extends
-    UnusedSkipTokenOptions<
+> extends UnusedSkipTokenOptions<
       coerceAsyncIterableToArray<TQueryFnData>,
       TError,
       coerceAsyncIterableToArray<TOutput>,
@@ -124,9 +117,7 @@ export interface UndefinedTRPCInfiniteQueryOptionsIn<
   TQueryFnData,
   TData,
   TError,
->
-  extends
-    DistributiveOmit<
+> extends DistributiveOmit<
       UndefinedInitialDataInfiniteOptions<
         TQueryFnData,
         TError,
@@ -145,9 +136,7 @@ export interface UndefinedTRPCInfiniteQueryOptionsOut<
   TQueryFnData,
   TData,
   TError,
->
-  extends
-    DistributiveOmit<
+> extends DistributiveOmit<
       UndefinedInitialDataInfiniteOptions<
         TQueryFnData,
         TError,
@@ -167,9 +156,7 @@ export interface DefinedTRPCInfiniteQueryOptionsIn<
   TQueryFnData,
   TData,
   TError,
->
-  extends
-    DistributiveOmit<
+> extends DistributiveOmit<
       DefinedInitialDataInfiniteOptions<
         TQueryFnData,
         TError,
@@ -188,9 +175,7 @@ export interface DefinedTRPCInfiniteQueryOptionsOut<
   TQueryFnData,
   TData,
   TError,
->
-  extends
-    DistributiveOmit<
+> extends DistributiveOmit<
       DefinedInitialDataInfiniteOptions<
         TQueryFnData,
         TError,
@@ -210,9 +195,7 @@ export interface UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
   TQueryFnData,
   TData,
   TError,
->
-  extends
-    DistributiveOmit<
+> extends DistributiveOmit<
       UnusedSkipTokenInfiniteOptions<
         TQueryFnData,
         TError,
@@ -231,9 +214,7 @@ export interface UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
   TQueryFnData,
   TData,
   TError,
->
-  extends
-    DistributiveOmit<
+> extends DistributiveOmit<
       UnusedSkipTokenInfiniteOptions<
         TQueryFnData,
         TError,
