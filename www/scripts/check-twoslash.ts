@@ -159,6 +159,9 @@ function matchErrorToBlock(
 
 async function main() {
   const includeVersioned = process.argv.includes('--include-versioned');
+  const focusFilters = process.argv
+    .slice(2)
+    .filter((arg) => !arg.startsWith('--'));
   const wwwDir = resolve(__dirname, '..');
 
   // Gather files from docs and blog (optionally versioned_docs)
@@ -167,7 +170,7 @@ async function main() {
     dirs.push('versioned_docs');
   }
 
-  const files: string[] = [];
+  let files: string[] = [];
   for (const dir of dirs) {
     const absDir = resolve(wwwDir, dir);
     try {
@@ -175,6 +178,10 @@ async function main() {
     } catch {
       // Directory may not exist (e.g., no blog/)
     }
+  }
+
+  if (focusFilters.length > 0) {
+    files = files.filter((f) => focusFilters.some((filter) => f.includes(filter)));
   }
 
   // Create the unified processor with twoslash
