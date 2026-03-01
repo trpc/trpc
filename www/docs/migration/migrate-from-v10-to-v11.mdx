@@ -198,11 +198,11 @@ type inferAsyncIterableYield<TOutput> =
 
 This change has been made to ensure the library remains compatible with future updates and allows for the use of the `return` type in subscriptions' `AsyncGenerator`s.
 
-See [subscriptions docs](../server/subscriptions.md#output-validators) for more information.
+See [subscriptions docs](../server/subscriptions.md#output-validation) for more information.
 
 ### Added support for output validators in subscriptions (non-breaking)
 
-See [subscriptions docs](../server/subscriptions.md#output-validators) for more information.
+See [subscriptions docs](../server/subscriptions.md#output-validation) for more information.
 
 ### Deprecation of subscriptions returning `Observable`s (non-breaking)
 
@@ -314,7 +314,7 @@ createTRPCNext<AppRouter>({
 
 This is to fix https://github.com/trpc/trpc/issues/5378 where `react-dom` was imported regardless if you were using this functionality or not.
 
-See [SSR docs](../client/nextjs/ssr.md)
+See [SSR docs](../client/nextjs/pages-router/ssr.md)
 
 ### Added support for short-hand router definitions (non-breaking)
 

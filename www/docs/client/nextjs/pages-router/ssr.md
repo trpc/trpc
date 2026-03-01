@@ -2,7 +2,7 @@
 id: ssr
 title: Server-Side Rendering
 sidebar_label: Server-Side Rendering (SSR)
-slug: /client/nextjs/ssr
+slug: /client/nextjs/pages-router/ssr
 ---
 
 To enable SSR just set `ssr: true` in your `createTRPCNext` config callback.

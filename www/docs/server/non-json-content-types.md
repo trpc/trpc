@@ -22,11 +22,9 @@ export const t = initTRPC.create();
 const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
-  hello: publicProcedure
-    .input(z.object({ name: z.string() }))
-    .query((opts) => {
-      return { greeting: `Hello ${opts.input.name}` };
-    }),
+  hello: publicProcedure.input(z.object({ name: z.string() })).query((opts) => {
+    return { greeting: `Hello ${opts.input.name}` };
+  }),
 });
 ```
 
