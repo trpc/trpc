@@ -323,7 +323,9 @@ describe('createTRPCQueryUtils()', () => {
         return fn(variables);
       },
     }));
-    clientUtils.addPost.getMutationDefaults()?.mutationFn?.({ title: '' }, {} as any);
+    clientUtils.addPost
+      .getMutationDefaults()
+      ?.mutationFn?.({ title: '' }, {} as any);
     expect(fn.mock.calls.length).toBe(1);
   });
 });

@@ -3,7 +3,8 @@ import { httpLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
-const getMockFetch = () => vi.fn((...args: Parameters<typeof fetch>) => fetch(...args));
+const getMockFetch = () =>
+  vi.fn((...args: Parameters<typeof fetch>) => fetch(...args));
 
 test('query should not have content-type header', async () => {
   const t = initTRPC.create();
