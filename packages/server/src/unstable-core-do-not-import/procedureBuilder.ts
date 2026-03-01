@@ -1,4 +1,4 @@
-import type { inferObservableValue, Observable } from '../observable';
+import type { inferObservableValue, Observable } from '@trpc/observable';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
   AnyMiddlewareFunction,

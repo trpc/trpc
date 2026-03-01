@@ -1,6 +1,10 @@
-import { EventEmitter } from 'stream';
-import { observable, observableToAsyncIterable } from './observable';
-import { share, tap } from './operators';
+import { EventEmitter } from 'node:events';
+import {
+  observable,
+  observableToAsyncIterable,
+  share,
+  tap,
+} from '@trpc/observable';
 
 test('vanilla observable - complete()', () => {
   const obs = observable<number, Error>((observer) => {

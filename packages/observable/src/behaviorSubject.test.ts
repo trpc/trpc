@@ -1,4 +1,4 @@
-import { behaviorSubject } from './behaviorSubject';
+import { behaviorSubject } from '@trpc/observable';
 
 test('behaviorSubject', () => {
   const value = behaviorSubject(1);

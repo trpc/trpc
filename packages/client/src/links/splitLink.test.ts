@@ -1,4 +1,4 @@
-import { observable } from '@trpc/server/observable';
+import { observable } from '@trpc/observable';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 import { createChain } from './internals/createChain';
 import { splitLink } from './splitLink';

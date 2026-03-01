@@ -10,6 +10,7 @@
     "@fastify/websocket": "^11.0.0",
     "@js-temporal/polyfill": "^0.4.4",
     "@trpc/client": "11.10.0",
+    "@trpc/observable": "11.10.0",
     "@trpc/server": "11.10.0",
     "@types/node": "^22.13.5",
     "abort-controller": "^3.0.0",

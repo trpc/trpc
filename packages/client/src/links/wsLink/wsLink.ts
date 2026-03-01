@@ -1,4 +1,4 @@
-import { observable } from '@trpc/server/observable';
+import { observable } from '@trpc/observable';
 import type {
   AnyRouter,
   inferClientTypes,

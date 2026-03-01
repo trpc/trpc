@@ -1,4 +1,4 @@
-import type { inferObservableValue } from '../../observable';
+import type { inferObservableValue } from '@trpc/observable';
 import type {
   AnyProcedure,
   inferProcedureInput,

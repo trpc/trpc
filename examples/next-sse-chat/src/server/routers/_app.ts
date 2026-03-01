@@ -1,7 +1,7 @@
 /**
  * This file contains the root router of your tRPC-backend
  */
-import { observable } from '@trpc/server/observable';
+import { observable } from '@trpc/observable';
 import { createCallerFactory } from '@trpc/server/unstable-core-do-not-import';
 import { cache } from 'react';
 import { auth } from '../auth';

@@ -11,9 +11,9 @@ import {
   TRPCClientError,
 } from '@trpc/client';
 import { createChain } from '@trpc/client/links/internals/createChain';
+import { observable, observableToPromise } from '@trpc/observable';
 import type { AnyRouter } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
-import { observable, observableToPromise } from '@trpc/server/observable';
 import type { InferrableClientTypes } from '@trpc/server/unstable-core-do-not-import';
 import type { Mock } from 'vitest';
 import { z } from 'zod';

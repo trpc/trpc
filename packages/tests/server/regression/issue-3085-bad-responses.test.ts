@@ -1,7 +1,7 @@
 import http from 'http';
 import { waitError } from '@trpc/server/__tests__/waitError';
 import { createTRPCClient, httpLink, TRPCClientError } from '@trpc/client';
-import { observable } from '@trpc/server/observable';
+import { observable } from '@trpc/observable';
 import fetch from 'node-fetch';
 import superjson from 'superjson';
 

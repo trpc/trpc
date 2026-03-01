@@ -19,7 +19,7 @@ import {
   getUntypedClient,
   TRPCUntypedClient,
 } from '@trpc/client';
-import type { Unsubscribable } from '@trpc/server/observable';
+import type { Unsubscribable } from '@trpc/observable';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';

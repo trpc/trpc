@@ -9,6 +9,8 @@
       "@trpc/client/*": ["./packages/client/src/*"],
       "@trpc/next": ["./packages/next/src"],
       "@trpc/next/*": ["./packages/next/src/*"],
+      "@trpc/observable": ["./packages/observable/src"],
+      "@trpc/observable/*": ["./packages/observable/src/*"],
       "@trpc/react-query": ["./packages/react-query/src"],
       "@trpc/react-query/*": ["./packages/react-query/src/*"],
       "@trpc/server": ["./packages/server/src"],

@@ -111,6 +111,9 @@
     "!**/*.test.*",
     "!**/__tests__"
   ],
+  "dependencies": {
+    "@trpc/observable": "11.10.0"
+  },
   "peerDependencies": {
     "@trpc/server": "11.10.0",
     "typescript": ">=5.7.2"

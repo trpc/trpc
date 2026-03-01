@@ -1,4 +1,4 @@
-import { behaviorSubject } from '@trpc/server/observable';
+import { behaviorSubject } from '@trpc/observable';
 import type { UrlOptionsWithConnectionParams } from '../../internals/urlWithConnectionParams';
 import type { Encoder } from './encoder';
 import { buildConnectionMessage, prepareUrl, withResolvers } from './utils';

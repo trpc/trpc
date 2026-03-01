@@ -51,6 +51,9 @@
       "@typescript-eslint/prefer-function-type": "off"
     }
   },
+  "dependencies": {
+    "@trpc/observable": "11.10.0"
+  },
   "peerDependencies": {
     "@tanstack/react-query": "^5.80.3",
     "@trpc/client": "11.10.0",
