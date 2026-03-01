@@ -47,7 +47,8 @@ export type TRPCClient<TRouter extends AnyRouter> = DecoratedProcedureRecord<
   [untypedClientSymbol]: TRPCUntypedClient<TRouter>;
 };
 
-type ResolverDef = {
+/** @internal */
+export type TRPCResolverDef = {
   input: any;
   output: any;
   transformer: boolean;
@@ -60,12 +61,13 @@ type coerceAsyncGeneratorToIterable<T> =
     : T;
 
 /** @internal */
-export type Resolver<TDef extends ResolverDef> = (
+export type Resolver<TDef extends TRPCResolverDef> = (
   input: TDef['input'],
   opts?: TRPCProcedureOptions,
 ) => Promise<coerceAsyncGeneratorToIterable<TDef['output']>>;
 
-type SubscriptionResolver<TDef extends ResolverDef> = (
+/** @internal */
+export type SubscriptionResolver<TDef extends TRPCResolverDef> = (
   input: TDef['input'],
   opts: Partial<
     TRPCSubscriptionObserver<TDef['output'], TRPCClientError<TDef>>
@@ -75,7 +77,7 @@ type SubscriptionResolver<TDef extends ResolverDef> = (
 
 type DecorateProcedure<
   TType extends ProcedureType,
-  TDef extends ResolverDef,
+  TDef extends TRPCResolverDef,
 > = TType extends 'query'
   ? {
       query: Resolver<TDef>;
