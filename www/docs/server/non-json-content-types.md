@@ -1,19 +1,46 @@
 ---
 id: non-json-content-types
-title: Non-JSON Content Types
-sidebar_label: Non-JSON Inputs (FormData, File, Blob)
+title: Content Types
+sidebar_label: Content Types (JSON, FormData, File, Blob)
 slug: /server/non-json-content-types
 ---
 
-In addition to JSON-serializable data, tRPC can use FormData, File, and other Binary types as procedure inputs
+tRPC supports multiple content types as procedure inputs: JSON-serializable data, FormData, File, Blob, and other binary types.
 
-## Client Setup
+## JSON (Default)
+
+By default, tRPC sends and receives JSON-serializable data. No extra configuration is needed — any input that can be serialized to JSON works out of the box with all links (`httpLink`, `httpBatchLink`, `httpBatchStreamLink`).
+
+```ts twoslash
+// @target: esnext
+import { initTRPC } from '@trpc/server';
+// ---cut---
+
+import { z } from 'zod';
+
+export const t = initTRPC.create();
+const publicProcedure = t.procedure;
+
+export const appRouter = t.router({
+  hello: publicProcedure
+    .input(z.object({ name: z.string() }))
+    .query((opts) => {
+      return { greeting: `Hello ${opts.input.name}` };
+    }),
+});
+```
+
+## Non-JSON Content Types
+
+In addition to JSON, tRPC can use FormData, File, and other binary types as procedure inputs.
+
+### Client Setup
 
 :::info
-While tRPC natively supports several non-json serializable types, your client may need a little link configuration to support them depending on your setup.
+While tRPC natively supports several non-JSON serializable types, your client may need a little link configuration to support them depending on your setup.
 :::
 
-`httpLink` supports non-json content types out the box, if you're only using this then your existing setup should work immediately
+`httpLink` supports non-JSON content types out of the box — if you're only using this link, your existing setup should work immediately.
 
 ```ts
 import { createTRPCClient, httpLink } from '@trpc/client';
@@ -28,7 +55,7 @@ createTRPCClient<AppRouter>({
 });
 ```
 
-However, not all links support these new content types, if you're using `httpBatchLink` or `httpBatchStreamLink` you will need to include a splitLink and check which link to use depending on the content
+However, not all links support these content types. If you're using `httpBatchLink` or `httpBatchStreamLink`, you will need to include a `splitLink` and route requests based on the content type.
 
 ```ts
 import {
@@ -55,8 +82,8 @@ createTRPCClient<AppRouter>({
 });
 ```
 
-If you are using `transformer` in your tRPC server, typescript requires that your tRPC client link defines `transformer` as well.  
-Use this example as base:
+If you are using `transformer` in your tRPC server, TypeScript requires that your tRPC client link defines `transformer` as well.
+Use this example as a base:
 
 ```ts
 import {
@@ -91,7 +118,7 @@ createTRPCClient<AppRouter>({
 });
 ```
 
-## Server Usage
+### Server Setup
 
 :::info
 When a request is handled by tRPC, it takes care of parsing the request body based on the `Content-Type` header of the request.  
@@ -115,7 +142,7 @@ app.use('/trpc', trpcExpress.createExpressMiddleware({ /* ... */}))// tRPC can p
 
 :::
 
-### `FormData` Input
+#### `FormData` Input
 
 FormData is natively supported, and for more advanced usage you could also combine this with a library like [zod-form-data](https://www.npmjs.com/package/zod-form-data) to validate inputs in a type-safe way.
 
@@ -142,7 +169,7 @@ export const appRouter = t.router({
 
 For a more advanced code sample you can see our [example project here](https://github.com/juliusmarminge/trpc-interop/blob/66aa760141030ffc421cae1a3bda9b5f1ab340b6/src/server.ts#L28-L43)
 
-### `File` and other Binary Type Inputs
+#### `File` and other Binary Type Inputs
 
 tRPC converts many octet content types to a `ReadableStream` which can be consumed in a procedure. Currently these are `Blob` `Uint8Array` and `File`.
 
