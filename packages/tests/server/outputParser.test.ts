@@ -369,3 +369,120 @@ test('async validator fn', async () => {
     `[TRPCClientError: Output validation failed]`,
   );
 });
+
+test('zod v4 codec - bidirectional transform for output encoding', async () => {
+  // This test verifies that Zod v4 codecs work with output parsing.
+  // Codecs use `.encode()` for the reverse transformation (output → serialized).
+  //
+  // For output schemas with codecs:
+  // - The resolver returns data that encode() will transform
+  // - The codec encodes it to the serialized form for the client
+
+  const trpc = initTRPC.create();
+
+  // Create a Zod v4 codec that transforms between string and bigint
+  // decode: string → bigint (for input parsing)
+  // encode: bigint → string (for output encoding)
+  const stringToBigint = z.codec(z.string(), z.bigint(), {
+    decode: (str) => BigInt(str),
+    encode: (big) => big.toString(),
+  });
+
+  const schema = z.object({ value: stringToBigint });
+
+  const router = trpc.router({
+    q: trpc.procedure.output(schema).query(() => {
+      // For codec output encoding, we return what encode() expects (bigint)
+      // and cast to satisfy the type system which expects the input type
+      return { value: 123n } as unknown as { value: string };
+    }),
+  });
+
+  await using ctx = testServerAndClientResource(router);
+
+  const output = await ctx.client.q.query();
+
+  // The client receives the ENCODED value (string) after encode
+  // The codec's encode function transforms bigint → string
+  expect(output.value).toBe('123');
+  expect(output).toEqual({ value: '123' });
+});
+
+test('zod v4 codec - Date to ISO string encoding', async () => {
+  // Realistic use case: encoding Date objects to ISO strings for JSON serialization
+
+  const trpc = initTRPC.create();
+
+  // Codec that transforms between ISO string and Date
+  const isoDateCodec = z.codec(z.string(), z.date(), {
+    decode: (str) => new Date(str),
+    encode: (date) => date.toISOString(),
+  });
+
+  const schema = z.object({ createdAt: isoDateCodec });
+
+  const router = trpc.router({
+    q: trpc.procedure.output(schema).query(() => {
+      // For codec output encoding, we return what encode() expects (Date)
+      // and cast to satisfy the type system
+      return { createdAt: new Date('2024-01-15T10:30:00.000Z') } as unknown as {
+        createdAt: string;
+      };
+    }),
+  });
+
+  await using ctx = testServerAndClientResource(router);
+
+  const output = await ctx.client.q.query();
+
+  // Client receives ISO string (after encoding)
+  expect(output.createdAt).toBe('2024-01-15T10:30:00.000Z');
+  expect(output).toEqual({ createdAt: '2024-01-15T10:30:00.000Z' });
+});
+
+test('zod v4 codec - nested codec transforms', async () => {
+  // Test that codecs work correctly when nested in objects
+
+  const trpc = initTRPC.create();
+
+  const stringToBigint = z.codec(z.string(), z.bigint(), {
+    decode: (str) => BigInt(str),
+    encode: (big) => big.toString(),
+  });
+
+  const schema = z.object({
+    user: z.object({
+      id: stringToBigint,
+      balance: stringToBigint,
+    }),
+  });
+
+  type SchemaInput = z.input<typeof schema>;
+
+  const router = trpc.router({
+    q: trpc.procedure.output(schema).query(() => {
+      // For codec output encoding, we return what encode() expects (bigint values)
+      // and cast to satisfy the type system
+      return {
+        user: {
+          id: 123n,
+          balance: 999999999999999999n,
+        },
+      } as unknown as SchemaInput;
+    }),
+  });
+
+  await using ctx = testServerAndClientResource(router);
+
+  const output = await ctx.client.q.query();
+
+  // Both nested codec values should be encoded to strings
+  expect(output.user.id).toBe('123');
+  expect(output.user.balance).toBe('999999999999999999');
+  expect(output).toEqual({
+    user: {
+      id: '123',
+      balance: '999999999999999999',
+    },
+  });
+});
