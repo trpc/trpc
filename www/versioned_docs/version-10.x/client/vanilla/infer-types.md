@@ -83,23 +83,22 @@ It's also useful to infer the error type for your `AppRouter`
 // @include: server
 
 // @filename: trpc.ts
-// ---cut---
-// @filename: client.ts
-import {
-  createTRPCProxyClient,
-  httpBatchLink,
-  TRPCClientError,
-} from '@trpc/client';
-import type { AppRouter, AppRouter } from './server';
-import { trpc } from './trpc';
+import { createTRPCProxyClient, httpBatchLink } from "@trpc/client";
+import type { AppRouter } from "./server";
 
 export const trpc = createTRPCProxyClient<AppRouter>({
   links: [
     httpBatchLink({
-      url: 'http://localhost:3000/api/trpc',
+      url: "http://localhost:3000/api/trpc",
     }),
   ],
 });
+
+// ---cut---
+// @filename: client.ts
+import { TRPCClientError } from '@trpc/client';
+import type { AppRouter } from './server';
+import { trpc } from './trpc';
 
 export function isTRPCClientError(
   cause: unknown,

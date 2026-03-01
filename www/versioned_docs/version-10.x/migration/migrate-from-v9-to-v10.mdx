@@ -68,12 +68,13 @@ export const mergeRouters = t.mergeRouters;
 
 ```ts
 // v9:
-const appRouter = trpc.router().query('greeting', {
-  input: z.string(),
-  resolve(opts) {
-    return `hello ${opts.input}!`;
-  },
-});
+const appRouter = trpc.router()
+  .query('greeting', {
+    input: z.string(),
+    resolve(opts) {
+      return `hello ${opts.input}!`;
+    },
+  });
 
 // v10:
 const appRouter = router({
@@ -183,7 +184,7 @@ const protectedProcedure = t.procedure.use((opts) => {
 
 const appRouter = t.router({
   greeting: protectedProcedure.query((opts) => {
-    return `Hello ${opts.ctx.user.name}!`;
+    return `Hello ${opts.ctx.user.name}!`
   }),
 });
 ```
@@ -473,12 +474,7 @@ Previously, HTTP options (like headers) were placed straight onto your `createTR
 
 ```ts
 // Before:
-// After:
-import {
-  createTRPCClient,
-  createTRPCProxyClient,
-  httpBatchLink,
-} from '@trpc/client';
+import { createTRPCClient } from '@trpc/client';
 
 const client = createTRPCClient({
   url: '...',
@@ -491,6 +487,9 @@ const client = createTRPCClient({
   },
 });
 
+// After:
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+
 const client = createTRPCProxyClient({
   links: [
     httpBatchLink({
@@ -502,8 +501,8 @@ const client = createTRPCProxyClient({
           'x-foo': 'bar',
         };
       },
-    }),
-  ],
+    })
+  ]
 });
 ```
 
