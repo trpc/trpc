@@ -376,7 +376,7 @@ test('e2e, client aborts request halfway through', async () => {
   );
   expect(errors).toMatchInlineSnapshot(`
     Array [
-      "The operation was aborted.",
+      "This operation was aborted",
     ]
   `);
   expect(onConsumerErrorSpy).toHaveBeenCalledTimes(1);
@@ -445,7 +445,7 @@ test('e2e, client aborts request halfway through - through breaking async iterab
   );
   expect(errors).toMatchInlineSnapshot(`
     Array [
-      "The operation was aborted.",
+      "This operation was aborted",
     ]
   `);
 
@@ -537,7 +537,7 @@ test('should work to throw after stream is closed', async () => {
 
   ac.abort();
 
-  await expect(head0.deferred).rejects.toMatchInlineSnapshot(`DOMException {}`);
+  await expect(head0.deferred).rejects.toMatchInlineSnapshot(`[AbortError: This operation was aborted]`);
 
   deferred.resolve({
     p: Promise.resolve({

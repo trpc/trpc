@@ -612,8 +612,8 @@ describe('no transformer', () => {
           5,
         ]
       `);
-    expect(err).toMatchInlineSnapshot(`DOMException {}`);
-    expect(err.message).toMatchInlineSnapshot(`"The operation was aborted."`);
+    expect(err).toMatchInlineSnapshot(`[AbortError: This operation was aborted]`);
+    expect(err.message).toMatchInlineSnapshot(`"This operation was aborted"`);
   });
 
   test('output validation iterable yield error', async () => {

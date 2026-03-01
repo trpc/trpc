@@ -62,9 +62,17 @@ export default defineConfig({
     poolOptions: {
       threads: {
         useAtomics: !!process.env['CI'],
+        execArgv: [
+          '--require',
+          join(__dirname, 'scripts/saveNativeAbortController.cjs'),
+        ],
       },
       forks: {
-        execArgv: ['--expose-gc'],
+        execArgv: [
+          '--expose-gc',
+          '--require',
+          join(__dirname, 'scripts/saveNativeAbortController.cjs'),
+        ],
       },
     },
     retry: process.env['CI'] ? 2 : 0,
