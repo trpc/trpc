@@ -64,11 +64,9 @@ const appRouter = router({
     .mutation(async ({ input }) => {
       //                ^?
     }),
-  file: publicProcedure
-    .input(octetInputParser)
-    .mutation(async ({ input }) => {
-      //                ^?
-    }),
+  file: publicProcedure.input(octetInputParser).mutation(async ({ input }) => {
+    //                ^?
+  }),
 });
 ```
 
@@ -119,7 +117,6 @@ const appRouter = router({
 });
 
 export type AppRouter = typeof appRouter;
-
 
 // @filename: client.ts
 import { createTRPCClient, httpBatchStreamLink } from '@trpc/client';
