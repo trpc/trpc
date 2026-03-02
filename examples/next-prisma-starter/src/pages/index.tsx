@@ -57,7 +57,7 @@ const IndexPage: NextPageWithLayout = () => {
         .
       </p>
 
-      <div className="flex flex-col py-8 items-start gap-y-2">
+      <div className="flex flex-col items-start gap-y-2 py-8">
         <div className="flex flex-col"></div>
         <h2 className="text-3xl font-semibold">
           Latest Posts
@@ -65,7 +65,7 @@ const IndexPage: NextPageWithLayout = () => {
         </h2>
 
         <button
-          className="bg-gray-900 p-2 rounded-md font-semibold disabled:bg-gray-700 disabled:text-gray-400"
+          className="rounded-md bg-gray-900 p-2 font-semibold disabled:bg-gray-700 disabled:text-gray-400"
           onClick={() => postsQuery.fetchNextPage()}
           disabled={!postsQuery.hasNextPage || postsQuery.isFetchingNextPage}
         >
@@ -92,11 +92,11 @@ const IndexPage: NextPageWithLayout = () => {
 
       <hr />
 
-      <div className="flex flex-col py-8 items-center">
-        <h2 className="text-3xl font-semibold pb-2">Add a Post</h2>
+      <div className="flex flex-col items-center py-8">
+        <h2 className="pb-2 text-3xl font-semibold">Add a Post</h2>
 
         <form
-          className="py-2 w-4/6"
+          className="w-4/6 py-2"
           onSubmit={async (e) => {
             /**
              * In a real app you probably don't want to use this manually
@@ -124,7 +124,7 @@ const IndexPage: NextPageWithLayout = () => {
         >
           <div className="flex flex-col gap-y-4 font-semibold">
             <input
-              className="focus-visible:outline-dashed outline-offset-4 outline-2 outline-gray-700 rounded-xl px-4 py-3 bg-gray-900"
+              className="rounded-xl bg-gray-900 px-4 py-3 outline-2 outline-offset-4 outline-gray-700 focus-visible:outline-dashed"
               id="title"
               name="title"
               type="text"
@@ -132,7 +132,7 @@ const IndexPage: NextPageWithLayout = () => {
               disabled={addPost.isPending}
             />
             <textarea
-              className="resize-none focus-visible:outline-dashed outline-offset-4 outline-2 outline-gray-700 rounded-xl px-4 py-3 bg-gray-900"
+              className="resize-none rounded-xl bg-gray-900 px-4 py-3 outline-2 outline-offset-4 outline-gray-700 focus-visible:outline-dashed"
               id="text"
               name="text"
               placeholder="Text"
@@ -142,7 +142,7 @@ const IndexPage: NextPageWithLayout = () => {
 
             <div className="flex justify-center">
               <input
-                className="cursor-pointer bg-gray-900 p-2 rounded-md px-16"
+                className="cursor-pointer rounded-md bg-gray-900 p-2 px-16"
                 type="submit"
                 disabled={addPost.isPending}
               />

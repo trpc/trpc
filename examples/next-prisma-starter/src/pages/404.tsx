@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 export default function Custom404() {
   return (
-    <div className="flex flex-col items-center justify-center h-screen text-center">
+    <div className="flex h-screen flex-col items-center justify-center text-center">
       <Link href="/" className="text-gray-300 underline">
         Home
       </Link>

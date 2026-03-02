@@ -69,7 +69,7 @@ function PostViewPage() {
   const { query } = useRouter();
   const postQuery = trpc.post.byId.useQuery(
     { id: query.id },
-    { trpc: { abortOnUnmount: true } }
+    { trpc: { abortOnUnmount: true } },
   );
 
   // ...

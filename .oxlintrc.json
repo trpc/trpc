@@ -1,0 +1,206 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react"],
+  "categories": {
+    "correctness": "off"
+  },
+  "env": {
+    "builtin": true
+  },
+  "ignorePatterns": [
+    "**/*.log",
+    "**/.DS_Store",
+    "**/dist/",
+    "**/.next/",
+    "**/.turbo/",
+    "**/.vercel/",
+    "**/.vinxi/",
+    "**/.output/",
+    "**/.eslintcache",
+    "**/*.tsbuildinfo",
+    "**/app.config.timestamp_*",
+    "**/db.sqlite",
+    "**/node_modules/",
+    "**/package-lock.json",
+    "**/yarn.lock",
+    "**/.yalc",
+    "**/yalc.lock",
+    "**/tests-results/",
+    "**/coverage/",
+    "**/__generated__/",
+    "packages/*/*/",
+    "!packages/*/src/",
+    "!packages/*/test/",
+    "!packages/*/__tests__/",
+    "!packages/tests/*/",
+    "packages/tests/node_modules",
+    "examples/next-big-router/src/server/routers",
+    "**/vendor/**"
+  ],
+  "rules": {
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.ts", "**/*.tsx"],
+      "rules": {
+        "constructor-super": "off",
+        "no-class-assign": "off",
+        "no-const-assign": "off",
+        "no-dupe-class-members": "off",
+        "no-dupe-keys": "off",
+        "no-func-assign": "off",
+        "no-import-assign": "off",
+        "no-new-native-nonconstructor": "off",
+        "no-obj-calls": "off",
+        "no-redeclare": "off",
+        "no-setter-return": "off",
+        "no-this-before-super": "off",
+        "no-unsafe-negation": "off",
+        "no-var": "error",
+        "no-with": "off",
+        "prefer-const": "error",
+        "prefer-rest-params": "error",
+        "prefer-spread": "error",
+        "@typescript-eslint/ban-ts-comment": "error",
+        "no-array-constructor": "error",
+        "@typescript-eslint/no-duplicate-enum-values": "error",
+        "@typescript-eslint/no-empty-object-type": "off",
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/no-extra-non-null-assertion": "error",
+        "@typescript-eslint/no-misused-new": "error",
+        "@typescript-eslint/no-namespace": "error",
+        "@typescript-eslint/no-non-null-asserted-optional-chain": "error",
+        "@typescript-eslint/no-require-imports": "error",
+        "@typescript-eslint/no-this-alias": "error",
+        "@typescript-eslint/no-unnecessary-type-constraint": "error",
+        "@typescript-eslint/no-unsafe-declaration-merging": "error",
+        "@typescript-eslint/no-unsafe-function-type": "error",
+        "no-unused-expressions": "error",
+        "no-unused-vars": [
+          "error",
+          {
+            "argsIgnorePattern": "^_",
+            "varsIgnorePattern": "^_",
+            "caughtErrorsIgnorePattern": "^_"
+          }
+        ],
+        "@typescript-eslint/no-wrapper-object-types": "error",
+        "@typescript-eslint/prefer-as-const": "error",
+        "@typescript-eslint/prefer-namespace-keyword": "error",
+        "@typescript-eslint/triple-slash-reference": "error",
+        "no-throw-literal": "off",
+        "prefer-promise-reject-errors": "off",
+        "require-await": "off",
+        "@typescript-eslint/adjacent-overload-signatures": "error",
+        "@typescript-eslint/array-type": "off",
+        "@typescript-eslint/ban-tslint-comment": "error",
+        "@typescript-eslint/class-literal-property-style": "error",
+        "@typescript-eslint/consistent-generic-constructors": "error",
+        "@typescript-eslint/consistent-indexed-object-style": "off",
+        "@typescript-eslint/consistent-type-assertions": "error",
+        "@typescript-eslint/consistent-type-definitions": "off",
+        "@typescript-eslint/no-confusing-non-null-assertion": "error",
+        "no-empty-function": "error",
+        "@typescript-eslint/no-inferrable-types": "error",
+        "@typescript-eslint/prefer-for-of": "error",
+        "@typescript-eslint/prefer-function-type": "off",
+        "react/react-in-jsx-scope": "off",
+        "@typescript-eslint/no-non-null-assertion": "error",
+        "@typescript-eslint/no-empty-interface": "off",
+        "unicorn/filename-case": [
+          "error",
+          {
+            "case": "camelCase",
+            "ignore": "TRPC|RPC|HTTP|JSON|\\.config\\.js|\\.d\\.ts$|issue-\\d+-.*\\.test\\.tsx?$|\\.(t|j)sx$|@trpc/|unstable-|script|URL|next-app-dir"
+          }
+        ],
+        "unicorn/no-thenable": "off",
+        "unicorn/no-useless-fallback-in-spread": "off",
+        "unicorn/no-await-in-promise-methods": "off",
+        "unicorn/no-single-promise-in-promise-methods": "off",
+        "max-params": ["error", 3],
+        "@typescript-eslint/consistent-type-imports": "error",
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@trpc/*/src"],
+                "message": "Remove the \"`/src`\" part of this import",
+                "allowTypeImports": false
+              }
+            ]
+          }
+        ]
+      },
+      "plugins": ["typescript", "unicorn"]
+    },
+    {
+      "files": ["examples/**/*", "packages/*/**/*", "scripts/**/*", "www/**/*"],
+      "rules": {
+        "@typescript-eslint/no-unsafe-declaration-merging": "off"
+      },
+      "plugins": ["typescript"]
+    },
+    {
+      "files": ["examples/**/*"],
+      "rules": {
+        "unicorn/filename-case": "off",
+        "no-unused-vars": "off",
+        "no-unused-expressions": "off"
+      },
+      "plugins": ["typescript", "unicorn"]
+    },
+    {
+      "files": [
+        "**/test/**/*",
+        "packages/tests/**/*",
+        "**/*.test.tsx",
+        "**/*.test.ts"
+      ],
+      "rules": {
+        "@typescript-eslint/no-non-null-assertion": "off",
+        "no-unused-vars": "off",
+        "no-unused-expressions": "off"
+      },
+      "plugins": ["typescript"]
+    },
+    {
+      "files": ["packages/**/*"],
+      "rules": {
+        "no-console": "error"
+      }
+    },
+    {
+      "files": ["packages/server/src/adapters/**/*"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@trpc/server"]
+              },
+              {
+                "group": ["unstable-core-do-not-import"],
+                "message": "Use e.g. `../@trpc/server/http` instead - avoiding importing core helps us ensure third party adapters can be made"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/next/**/*",
+        "packages/react-query/**/*",
+        "packages/tanstack-react-query/**/*"
+      ],
+      "rules": {
+        "react-hooks/exhaustive-deps": "error"
+      }
+    }
+  ]
+}

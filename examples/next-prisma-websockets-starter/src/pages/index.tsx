@@ -255,7 +255,7 @@ export default function IndexPage() {
               </button>
               <div className="space-y-4">
                 {messages?.map((item) => (
-                  <article key={item.id} className=" text-gray-50">
+                  <article key={item.id} className="text-gray-50">
                     <header className="flex space-x-2 text-sm">
                       <h3 className="text-base">
                         {item.source === 'RAW' ? (

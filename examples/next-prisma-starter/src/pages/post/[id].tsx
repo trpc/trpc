@@ -11,8 +11,8 @@ type PostByIdOutput = RouterOutput['post']['byId'];
 function PostItem(props: { post: PostByIdOutput }) {
   const { post } = props;
   return (
-    <div className="flex flex-col justify-center h-full px-8 ">
-      <Link className="text-gray-300 underline mb-4" href="/">
+    <div className="flex h-full flex-col justify-center px-8">
+      <Link className="mb-4 text-gray-300 underline" href="/">
         Home
       </Link>
       <h1 className="text-4xl font-bold">{post.title}</h1>
@@ -20,10 +20,10 @@ function PostItem(props: { post: PostByIdOutput }) {
         Created {post.createdAt.toLocaleDateString('en-us')}
       </em>
 
-      <p className="py-4 break-all">{post.text}</p>
+      <p className="break-all py-4">{post.text}</p>
 
-      <h2 className="text-2xl font-semibold py-2">Raw data:</h2>
-      <pre className="bg-gray-900 p-4 rounded-xl overflow-x-scroll">
+      <h2 className="py-2 text-2xl font-semibold">Raw data:</h2>
+      <pre className="overflow-x-scroll rounded-xl bg-gray-900 p-4">
         {JSON.stringify(post, null, 4)}
       </pre>
     </div>
@@ -45,11 +45,11 @@ const PostViewPage: NextPageWithLayout = () => {
 
   if (postQuery.status !== 'success') {
     return (
-      <div className="flex flex-col justify-center h-full px-8 ">
-        <div className="w-full bg-zinc-900/70 rounded-md h-10 animate-pulse mb-2"></div>
-        <div className="w-2/6 bg-zinc-900/70 rounded-md h-5 animate-pulse mb-8"></div>
+      <div className="flex h-full flex-col justify-center px-8">
+        <div className="mb-2 h-10 w-full animate-pulse rounded-md bg-zinc-900/70"></div>
+        <div className="mb-8 h-5 w-2/6 animate-pulse rounded-md bg-zinc-900/70"></div>
 
-        <div className="w-full bg-zinc-900/70 rounded-md h-40 animate-pulse"></div>
+        <div className="h-40 w-full animate-pulse rounded-md bg-zinc-900/70"></div>
       </div>
     );
   }

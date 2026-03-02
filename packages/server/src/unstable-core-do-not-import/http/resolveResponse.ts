@@ -67,8 +67,9 @@ const TYPE_ACCEPTED_METHOD_MAP_WITH_METHOD_OVERRIDE: Record<
   subscription: ['GET', 'POST'],
 };
 
-interface ResolveHTTPRequestOptions<TRouter extends AnyRouter>
-  extends HTTPBaseHandlerOptions<TRouter, Request> {
+interface ResolveHTTPRequestOptions<
+  TRouter extends AnyRouter,
+> extends HTTPBaseHandlerOptions<TRouter, Request> {
   createContext: ResolveHTTPRequestOptionsContextFn<TRouter>;
   req: Request;
   path: string;
