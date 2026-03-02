@@ -1966,8 +1966,8 @@ importers:
         specifier: ^11.0.0
         version: 11.1.0
       '@oxc-project/runtime':
-        specifier: 0.115.0
-        version: 0.115.0
+        specifier: 0.116.0
+        version: 0.116.0
       '@tanstack/react-query':
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
@@ -7092,8 +7092,8 @@ packages:
     resolution: {integrity: sha512-Dkf9/D87WGBCW3L0+1DtpAfL4SrNsgeRvxwjpKCtbH7Kf6K+pxrT0IridaJfmWKu1Ml+fDvj+7HEyBcfUC/TXQ==}
     deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
 
-  '@oxc-project/runtime@0.115.0':
-    resolution: {integrity: sha512-Rg8Wlt5dCbXhQnsXPrkOjL1DTSvXLgb2R/KYfnf1/K+R0k6UMLEmbQXPM+kwrWqSmWA2t0B1EtHy2/3zikQpvQ==}
+  '@oxc-project/runtime@0.116.0':
+    resolution: {integrity: sha512-LFaAr+svwlXc539pl85rsp645MyJSJpheFPHgh30KDSqiD7L1GuxoVagzjDQQwi1iD6tLIl8UjzaHJubOnWFdg==}
     engines: {node: ^20.19.0 || >=22.12.0}
 
   '@oxc-project/runtime@0.72.2':
@@ -12219,7 +12219,7 @@ packages:
 
   glob@7.2.3:
     resolution: {integrity: sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==}
-    deprecated: Glob versions prior to v9 are no longer supported
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
 
   glob@9.3.5:
     resolution: {integrity: sha512-e1LleDykUz2Iu+MTYdkSsuWX8lvAjAcs0Xef0lNIu0S2wOAzuTxCJtcd9S3cijlwYF18EsU3rzb8jPVobxDh9Q==}
@@ -25553,7 +25553,7 @@ snapshots:
     dependencies:
       '@oxc-project/types': 0.60.0
 
-  '@oxc-project/runtime@0.115.0': {}
+  '@oxc-project/runtime@0.116.0': {}
 
   '@oxc-project/runtime@0.72.2': {}
 
