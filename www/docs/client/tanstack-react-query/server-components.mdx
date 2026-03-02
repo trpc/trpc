@@ -47,6 +47,7 @@ The file names used here are not enforced by tRPC. You may use any file structur
 <summary>View sample backend</summary>
 
 ```ts twoslash title='trpc/init.ts'
+// @errors: 2304 2305 2552
 import { initTRPC } from '@trpc/server';
 import { cache } from 'react';
 
@@ -296,7 +297,7 @@ Mount the provider in the root of your application (e.g. `app/layout.tsx` when u
 
 To prefetch queries from server components, we create a proxy from our router. You can also pass in a client if your router is on a separate server.
 
-```tsx twoslash title='trpc/server.tsx'
+```tsx title='trpc/server.tsx'
 // @filename: trpc/init.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
@@ -320,8 +321,8 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: trpc/server.tsx
+// @errors: 2304 2305 2552
 // ---cut---
-// @errors: 2307
 import 'server-only'; // <-- ensure this file cannot be imported from the client
 
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
@@ -366,7 +367,7 @@ If you prefer to avoid this initial undefined state, you can `await` the `prefet
 This ensures the query on the client always has data on first render, but it comes with a tradeoff -
 the page will load more slowly since the server must complete the query before sending HTML to the client.
 
-```tsx twoslash title='app/page.tsx'
+```tsx title='app/page.tsx'
 // @jsx: react-jsx
 // @filename: trpc/init.ts
 import { initTRPC } from '@trpc/server';
@@ -467,7 +468,7 @@ export function ClientGreeting() {
 :::tip
 You can also create a `prefetch` and `HydrateClient` helper functions to make it a bit more consice and reusable:
 
-```tsx twoslash title='trpc/server.tsx'
+```tsx title='trpc/server.tsx'
 // @jsx: react-jsx
 // @filename: trpc/query-client.ts
 import {

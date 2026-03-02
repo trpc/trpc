@@ -19,6 +19,7 @@ Using the helpers makes tRPC call your procedures directly on the server, withou
 That also means that you don't have the request and response at hand like you usually do. Make sure you're instantiating the server-side helpers with a context without `req` & `res`, which are typically filled via the context creation. We recommend the concept of ["inner" and "outer" context](/docs/server/context) in that scenario.
 
 ```ts twoslash
+// @errors: 2307
 // @module: esnext
 // @target: es2017
 // @filename: server/context.ts
@@ -52,6 +53,7 @@ This method is used when you don't have direct access to your tRPC router. e.g. 
 // @filename: server/router.ts
 
 // @filename: client.ts
+// @errors: 2307
 // ---cut---
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import { createServerSideHelpers } from '@trpc/react-query/server';

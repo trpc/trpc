@@ -12,6 +12,7 @@ slug: /client/links/wsLink
 To use `wsLink`, you need to pass it a `TRPCWebSocketClient`, which you can create with `createWSClient`:
 
 ```ts twoslash title="client/index.ts"
+// @errors: 2307
 // @filename: server.ts
 
 // @filename: client.ts

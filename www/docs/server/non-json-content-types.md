@@ -12,6 +12,7 @@ tRPC supports multiple content types as procedure inputs: JSON-serializable data
 By default, tRPC sends and receives JSON-serializable data. No extra configuration is needed — any input that can be serialized to JSON works out of the box with all links (`httpLink`, `httpBatchLink`, `httpBatchStreamLink`).
 
 ```ts twoslash
+// @errors: 2307
 // @target: esnext
 import { initTRPC } from '@trpc/server';
 // ---cut---
@@ -40,10 +41,11 @@ While tRPC natively supports several non-JSON serializable types, your client ma
 
 `httpLink` supports non-JSON content types out of the box — if you're only using this link, your existing setup should work immediately.
 
-```ts twoslash
+```ts
 // @filename: server.ts
 
 // @filename: client.ts
+// @errors: 2307
 // ---cut---
 import { createTRPCClient, httpLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
@@ -64,7 +66,7 @@ createTRPCClient<AppRouter>({
 
 However, not all links support these content types. If you're using `httpBatchLink` or `httpBatchStreamLink`, you will need to include a `splitLink` and route requests based on the content type.
 
-```ts twoslash
+```ts
 // @filename: server.ts
 
 // @filename: client.ts

@@ -8,6 +8,7 @@ slug: /client/vanilla/aborting-procedure-calls
 tRPC adheres to the industry standard when it comes to aborting procedures. All you have to do is pass an `AbortSignal` to the query or mutation options, and call the `AbortController` instance's `abort` method if you need to cancel the request.
 
 ```ts twoslash title="utils.ts"
+// @errors: 2307
 // @target: esnext
 // @filename: server.ts
 

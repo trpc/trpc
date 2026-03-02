@@ -47,7 +47,8 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 
 Initialize your tRPC backend in `trpc/init.ts` using the `initTRPC` function, and create your first router. We're going to make a simple "hello world" router and procedure here - but for deeper information on creating your tRPC API you should refer to the [Quickstart guide](/docs/quickstart) and [Backend usage docs](/docs/server/introduction) for tRPC information.
 
-```ts twoslash title='trpc/init.ts'
+```ts title='trpc/init.ts'
+// @errors: 1005 2307
 import { initTRPC } from '@trpc/server';
 
 /**
@@ -79,7 +80,7 @@ export const baseProcedure = t.procedure;
 
 <br />
 
-```ts twoslash title='trpc/routers/_app.ts'
+```ts title='trpc/routers/_app.ts'
 // @filename: trpc/init.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
@@ -113,7 +114,7 @@ export type AppRouter = typeof appRouter;
 
 With the App Router, use the [fetch adapter](/docs/server/adapters/fetch) to handle tRPC requests. Create a route handler that exports both `GET` and `POST`:
 
-```ts twoslash title='app/api/trpc/[trpc]/route.ts'
+```ts title='app/api/trpc/[trpc]/route.ts'
 // @filename: trpc/init.ts
 import { initTRPC } from '@trpc/server';
 export const createTRPCContext = async (opts: { headers: Headers }) => {
@@ -153,7 +154,7 @@ App Router uses the [fetch adapter](/docs/server/adapters/fetch) (via `fetchRequ
 
 Create a shared file `trpc/query-client.ts` that exports a function that creates a `QueryClient` instance.
 
-```ts twoslash title='trpc/query-client.ts'
+```ts title='trpc/query-client.ts'
 import {
   defaultShouldDehydrateQuery,
   QueryClient,
@@ -194,7 +195,7 @@ We're setting a few default options here:
 The `trpc/client.tsx` is the entrypoint when consuming your tRPC API from client components. In here, import the **type definition** of
 your tRPC router and create typesafe hooks using `createTRPCContext`. We'll also export our context provider from this file.
 
-```tsx twoslash title='trpc/client.tsx'
+```tsx title='trpc/client.tsx'
 // @jsx: react-jsx
 // @filename: trpc/query-client.ts
 import { QueryClient } from '@tanstack/react-query';
@@ -281,7 +282,8 @@ export function TRPCReactProvider(
 
 Mount the provider in the root layout of your application:
 
-```tsx twoslash title='app/layout.tsx'
+```tsx title='app/layout.tsx'
+// @errors: 1005 2307 1161 1128
 // @filename: app/layout.tsx
 // ---cut---
 import { TRPCReactProvider } from '~/trpc/client';
@@ -313,7 +315,7 @@ export default function RootLayout({
 
 To prefetch queries from server components, we create a proxy from our router. You can also pass in a client if your router is on a separate server.
 
-```tsx twoslash title='trpc/server.tsx'
+```tsx title='trpc/server.tsx'
 // @filename: server-only.d.ts
 export {};
 
@@ -374,7 +376,7 @@ You're all set! You can now prefetch queries in server components and consume th
 
 #### Prefetching in a Server Component
 
-```tsx twoslash title='app/page.tsx'
+```tsx title='app/page.tsx'
 // @filename: app/page.tsx
 // ---cut---
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
@@ -397,6 +399,7 @@ declare module '~/trpc/server' {
 }
 
 // @filename: app/client-greeting.tsx
+// @errors: 2304 2552
 export function ClientGreeting() {
   return <div>Hello</div>;
 }
@@ -419,7 +422,7 @@ export default async function Home() {
 
 #### Using data in a Client Component
 
-```tsx twoslash title='app/client-greeting.tsx'
+```tsx title='app/client-greeting.tsx'
 // <-- hooks can only be used in client components
 import { useQuery } from '@tanstack/react-query';
 import { useTRPC } from '~/trpc/client';
@@ -452,7 +455,7 @@ export function ClientGreeting() {
 :::tip
 You can create `prefetch` and `HydrateClient` helper functions to make this more concise:
 
-```tsx twoslash title='trpc/server.tsx'
+```tsx title='trpc/server.tsx'
 // @jsx: react-jsx
 // @filename: query-client.ts
 import {
@@ -495,7 +498,7 @@ export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(
 
 Then you can use it like this:
 
-```tsx twoslash
+```tsx
 // @filename: app/page.tsx
 // ---cut---
 import { HydrateClient, prefetch, trpc } from '~/trpc/server';
@@ -537,7 +540,7 @@ function Home() {
 
 You may prefer handling loading and error states using Suspense and Error Boundaries. You can do this by using the `useSuspenseQuery` hook.
 
-```tsx twoslash title='app/page.tsx'
+```tsx title='app/page.tsx'
 // @filename: app/page.tsx
 // ---cut---
 import { HydrateClient, prefetch, trpc } from '~/trpc/server';
@@ -579,7 +582,7 @@ export default async function Home() {
 }
 ```
 
-```tsx twoslash title='app/client-greeting.tsx'
+```tsx title='app/client-greeting.tsx'
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useTRPC } from '~/trpc/client';
 
@@ -614,7 +617,7 @@ store the data in the cache. This means that you cannot use the data in a server
 intentional and explained in more detail in the [Advanced Server Rendering](https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr#data-ownership-and-revalidation)
 guide.
 
-```tsx twoslash title='trpc/server.tsx'
+```tsx title='trpc/server.tsx'
 // @filename: init.ts
 export const createTRPCContext = async (opts: { headers: Headers }) => {
   return { userId: 'user_123' };
@@ -645,7 +648,7 @@ export const caller = appRouter.createCaller(async () =>
 );
 ```
 
-```tsx twoslash title='app/page.tsx'
+```tsx title='app/page.tsx'
 // @filename: app/page.tsx
 // ---cut---
 import { caller } from '~/trpc/server';
@@ -670,7 +673,7 @@ If you **really** need to use the data both on the server as well as inside clie
 [Advanced Server Rendering](https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr#data-ownership-and-revalidation)
 guide, you can use `fetchQuery` instead of `prefetch` to have the data both on the server as well as hydrating it down to the client:
 
-```tsx twoslash title='app/page.tsx'
+```tsx title='app/page.tsx'
 // @filename: app/page.tsx
 // ---cut---
 import { getQueryClient, HydrateClient, trpc } from '~/trpc/server';

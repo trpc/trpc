@@ -12,6 +12,7 @@ By default, tRPC does not cancel requests via React Query. If you want to opt in
 :::
 
 ```twoslash include router
+// @errors: 2307
 import { initTRPC } from '@trpc/server';
 import { z } from "zod";
 const t = initTRPC.create();
@@ -35,6 +36,7 @@ export type AppRouter = typeof appRouter;
 // @filename: server.ts
 
 // @filename: utils.ts
+// @errors: 2307
 // ---cut---
 import { createTRPCReact } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';

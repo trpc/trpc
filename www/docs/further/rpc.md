@@ -18,6 +18,7 @@ slug: /rpc
 Nested procedures are separated by dots, so for a request to `byId` below would end up being a request to `/api/trpc/post.byId`.
 
 ```ts twoslash
+// @errors: 2307
 import { initTRPC } from '@trpc/server';
 
 const t = initTRPC.create();
@@ -313,6 +314,7 @@ const handler = createHTTPHandler({
 // @filename: server.ts
 
 // @filename: client.ts
+// @errors: 2307
 // ---cut---
 import { createTRPCClient, httpLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';

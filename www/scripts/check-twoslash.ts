@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 import remarkParse from 'remark-parse';
 import remarkStringify from 'remark-stringify';
@@ -143,6 +143,32 @@ function matchErrorToBlock(
 
   const msg = err instanceof Error ? err.message : String(err);
 
+  // Try to match using virtual filenames listed in "Compiler Errors"
+  // (e.g. `client.ts`, `utils/trpc.ts`).
+  const compilerSectionMatch = msg.match(
+    /Compiler Errors:\n([\s\S]*?)(?:\n## Code|\nDetails:|$)/,
+  );
+  if (compilerSectionMatch) {
+    const files = Array.from(
+      compilerSectionMatch[1]!.matchAll(
+        /^\s*([^\s][^\n]*\.(?:ts|tsx|d\.ts))\s*$/gm,
+      ),
+      (m) => m[1]!,
+    );
+    if (files.length > 0) {
+      const scored = blocks
+        .map((block) => ({
+          block,
+          score: files.filter((f) => block.code.includes(`@filename: ${f}`))
+            .length,
+        }))
+        .sort((a, b) => b.score - a.score);
+      if (scored[0]?.score > 0) {
+        return scored[0].block;
+      }
+    }
+  }
+
   // Try to match using the "## Code" section from the error
   const codeMatch = msg.match(/## Code\n\n```\w+\n([\s\S]+?)```/);
   if (codeMatch) {
@@ -163,6 +189,21 @@ async function main() {
     .slice(2)
     .filter((arg) => !arg.startsWith('--'));
   const wwwDir = resolve(__dirname, '..');
+  const repoRoot = resolve(wwwDir, '..');
+
+  const requiredBuildArtifacts = [
+    resolve(repoRoot, 'packages/server/dist'),
+    resolve(repoRoot, 'packages/client/dist'),
+    resolve(repoRoot, 'packages/react-query/dist'),
+    resolve(repoRoot, 'packages/next/dist'),
+    resolve(repoRoot, 'packages/tanstack-react-query/dist'),
+  ];
+  if (!requiredBuildArtifacts.every((path) => existsSync(path))) {
+    console.error(
+      'Workspace packages are not built. Run `pnpm build` from repo root before `pnpm -C www check-twoslash`.',
+    );
+    process.exit(1);
+  }
 
   // Gather files from docs/blog/versioned_docs (matches docusaurus build scope)
   const dirs = ['docs', 'blog'];

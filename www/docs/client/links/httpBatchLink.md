@@ -11,10 +11,11 @@ slug: /client/links/httpBatchLink
 
 You can import and add the `httpBatchLink` to the `links` array as such:
 
-```ts twoslash title="client/index.ts"
+```ts title="client/index.ts"
 // @filename: server.ts
 
 // @filename: client.ts
+// @errors: 2307
 // ---cut---
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
@@ -36,7 +37,7 @@ const client = createTRPCClient<AppRouter>({
 
 After that, you can make use of batching by setting all your procedures in a `Promise.all`. The code below will produce exactly **one** HTTP request and on the server exactly **one** database query:
 
-```ts twoslash
+```ts
 // @target: esnext
 // @filename: server.ts
 
@@ -125,7 +126,7 @@ When sending batch requests, sometimes the URL can become too large causing HTTP
 
 > An alternative way of doing this is to
 
-```ts twoslash title="client/index.ts"
+```ts title="client/index.ts"
 // @filename: server.ts
 
 // @filename: client.ts
@@ -194,7 +195,7 @@ export default createNextApiHandler({
 
 ### 2. Replace `httpBatchLink` with [`httpLink`](./httpLink.md) in your tRPC Client
 
-```ts twoslash title="client/index.ts"
+```ts title="client/index.ts"
 // @filename: server.ts
 
 // @filename: client.ts
@@ -218,7 +219,7 @@ const client = createTRPCClient<AppRouter>({
 
 or, if you're using Next.js:
 
-```tsx twoslash title='utils/trpc.ts'
+```tsx title='utils/trpc.ts'
 // @filename: server.ts
 import { httpLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';

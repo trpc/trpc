@@ -21,10 +21,11 @@ If you require the ability to change/set response headers (which includes cookie
 
 You can import and add the `httpBatchStreamLink` to the `links` array as such:
 
-```ts twoslash title="client/index.ts"
+```ts title="client/index.ts"
 // @filename: server.ts
 
 // @filename: client.ts
+// @errors: 2307
 // ---cut---
 import { createTRPCClient, httpBatchStreamLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
@@ -45,7 +46,7 @@ const client = createTRPCClient<AppRouter>({
 
 After that, you can make use of batching by setting all your procedures in a `Promise.all`. The code below will produce exactly **one** HTTP request and on the server exactly **one** database query:
 
-```ts twoslash
+```ts
 // @target: esnext
 // @filename: server.ts
 
@@ -80,7 +81,7 @@ const somePosts = await Promise.all([
 
 When batching requests together, the behavior of a regular `httpBatchLink` is to wait for all requests to finish before sending the response. If you want to send responses as soon as they are ready, you can use `httpBatchStreamLink` instead. This is useful for long-running requests.
 
-```ts twoslash title="client/index.ts"
+```ts title="client/index.ts"
 // @filename: server.ts
 
 // @filename: client.ts

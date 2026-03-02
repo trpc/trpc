@@ -10,6 +10,7 @@ The headers option can be customized in the config when using the [`httpBatchLin
 `headers` can be both an object or a function. If it's a function it will get called dynamically for every HTTP request.
 
 ```ts twoslash title='utils/trpc.ts'
+// @errors: 2304 2307
 // @filename: server.ts
 
 // @filename: client.ts
@@ -52,6 +53,7 @@ export const trpc = createTRPCClient<AppRouter>({
 ### Example with auth login
 
 ```ts twoslash title='auth.ts'
+// @errors: 2304 2307
 // @target: esnext
 // @filename: server.ts
 

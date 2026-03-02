@@ -10,6 +10,7 @@ The `createContext` function is called for each incoming request, so here you ca
 ## Create context from request headers
 
 ```ts twoslash title='server/context.ts'
+// @errors: 2304
 // @filename: context.ts
 // ---cut---
 import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';

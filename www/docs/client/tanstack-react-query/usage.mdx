@@ -11,6 +11,7 @@ Compared to our [classic React Query Integration](/docs/client/react) this clien
 ## Quick example query
 
 ```tsx twoslash
+// @errors: 2304 2305
 // @filename: server/router.ts
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
@@ -756,6 +757,7 @@ Enable the feature flag when creating your context:
 import { createTRPCClient } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 // @filename: utils/trpc.ts
+// @errors: 2304 2305
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AccountRouter, BillingRouter } from '../server';
 
@@ -911,6 +913,7 @@ When you need to infer the input and output types for a procedure or router, the
 Infer the input and output types of a full router
 
 ```ts twoslash
+// @errors: 2305 2304
 // @filename: server/router.ts
 import { initTRPC } from '@trpc/server';
 // @filename: types.ts

@@ -16,6 +16,7 @@ slug: /client/react/useInfiniteQuery
 ## Example Procedure
 
 ```tsx twoslash title='server/routers/_app.ts'
+// @errors: 2304 7006
 // ---cut---
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';

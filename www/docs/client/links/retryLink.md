@@ -16,6 +16,7 @@ If you use `@trpc/react-query` you will generally **not** need this link as it's
 You can import and add the `retryLink` to the `links` array when creating your tRPC client. This link can be placed before or after other links in your setup, depending on your requirements.
 
 ```ts twoslash
+// @errors: 2307
 // @filename: server.ts
 
 // @filename: client.ts

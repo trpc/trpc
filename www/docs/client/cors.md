@@ -10,6 +10,7 @@ If your API resides on a different origin than your front-end and you wish to se
 The arguments provided to the fetch function used by tRPC can be modified as follow.
 
 ```ts twoslash title='app.ts'
+// @errors: 2307
 // @filename: server.ts
 
 // @filename: client.ts

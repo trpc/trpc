@@ -18,6 +18,7 @@ yarn add ws
 ```
 
 ```ts twoslash title='server/wsServer.ts'
+// @errors: 2307
 // @filename: trpc.ts
 import type { CreateWSSContextFnOptions } from '@trpc/server/adapters/ws';
 export const createContext = (opts: CreateWSSContextFnOptions) => ({});
@@ -77,6 +78,7 @@ You can use [Links](../client/links/overview.md) to route queries and/or mutatio
 // @filename: server.ts
 
 // @filename: client.ts
+// @errors: 2307
 // ---cut---
 import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';

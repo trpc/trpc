@@ -12,6 +12,7 @@ slug: /client/links/loggerLink
 You can import and add the `loggerLink` to the `links` array as such:
 
 ```ts twoslash title="client/index.ts"
+// @errors: 2307
 // @filename: server.ts
 
 // @filename: client.ts

@@ -18,8 +18,9 @@ In order to execute queries properly during the server-side render step we need 
 
 Additionally, consider [`Response Caching`](../../../server/caching.md).
 
-```tsx twoslash title='utils/trpc.ts'
+```tsx title='utils/trpc.ts'
 // @filename: utils/api/trpc/[trpc].ts
+// @errors: 2307
 
 // ---cut---
 import { httpBatchLink } from '@trpc/client';
@@ -34,6 +35,7 @@ export const appRouter = t.router({});
 export type AppRouter = typeof appRouter;
 
 // @filename: utils/trpc.ts
+// @errors: 2304
 declare function getBaseUrl(): string;
 
 export const trpc = createTRPCNext<AppRouter>({
@@ -80,7 +82,7 @@ export const trpc = createTRPCNext<AppRouter>({
 
 or, if you want to SSR conditional on a given request, you can pass a callback to `ssr`. This callback can return a boolean, or a Promise resolving to a boolean:
 
-```tsx twoslash title='utils/trpc.ts'
+```tsx title='utils/trpc.ts'
 // @filename: utils/api/trpc/[trpc].ts
 
 // ---cut---
@@ -143,7 +145,7 @@ export const trpc = createTRPCNext<AppRouter>({
 });
 ```
 
-```tsx twoslash title='pages/_app.tsx'
+```tsx title='pages/_app.tsx'
 // @jsx: react-jsx
 // @filename: server/routers/_app.ts
 import { initTRPC } from '@trpc/server';
@@ -181,7 +183,7 @@ If you turn on SSR in your app, you might discover that your app loads slowly on
 
 You can use the `responseMeta` callback on `createTRPCNext` to set cache headers for SSR responses. See also the general [Response Caching](../../../server/caching.md) docs for framework-agnostic caching with `responseMeta`.
 
-```tsx twoslash title='utils/trpc.tsx'
+```tsx title='utils/trpc.tsx'
 // @filename: server/routers/_app.ts
 
 // @filename: utils/trpc.tsx

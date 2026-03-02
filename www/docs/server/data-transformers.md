@@ -22,6 +22,7 @@ yarn add superjson
 #### 2. Add to your `initTRPC`
 
 ```ts twoslash title='routers/router/_app.ts'
+// @errors: 2307
 import { initTRPC } from '@trpc/server';
 import superjson from 'superjson';
 
@@ -78,6 +79,7 @@ Here we use `parse` and `stringify` as they [mitigate XSS](https://github.com/Ri
 
 ```ts twoslash title='utils/trpc.ts'
 // @filename: utils/trpc.ts
+// @errors: 2307
 // ---cut---
 import { parse, stringify } from 'devalue';
 
