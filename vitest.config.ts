@@ -52,6 +52,8 @@ export default defineConfig({
       exclude: [
         '**/www/**',
         '**/examples/**',
+        // skip vendor files (may contain non-TS files like LICENSE)
+        '**/vendor/**',
         // skip codecov for experimental features
         // FIXME: delete me once they're stable
         '**/next/src/app-dir/**',

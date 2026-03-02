@@ -320,7 +320,7 @@ describe('createTRPCQueryUtils()', () => {
     }));
     clientUtils.addPost
       .getMutationDefaults()
-      ?.mutationFn?.({ title: '' }, { client: queryClient, meta: undefined });
+      ?.mutationFn?.({ title: '' });
     expect(fn.mock.calls.length).toBe(1);
   });
 });
