@@ -544,6 +544,36 @@
       "source": "/docs/react-query",
       "destination": "/docs/client/react",
       "permanent": true
+    },
+    {
+      "source": "/docs/client/nextjs/setup",
+      "destination": "/docs/client/nextjs/pages-router/setup",
+      "permanent": true
+    },
+    {
+      "source": "/docs/client/nextjs/ssr",
+      "destination": "/docs/client/nextjs/pages-router/ssr",
+      "permanent": true
+    },
+    {
+      "source": "/docs/client/nextjs/ssg",
+      "destination": "/docs/client/nextjs/pages-router/ssg",
+      "permanent": true
+    },
+    {
+      "source": "/docs/client/nextjs/server-side-helpers",
+      "destination": "/docs/client/nextjs/pages-router/server-side-helpers",
+      "permanent": true
+    },
+    {
+      "source": "/docs/client/nextjs/aborting-procedure-calls",
+      "destination": "/docs/client/nextjs/pages-router/aborting-procedure-calls",
+      "permanent": true
+    },
+    {
+      "source": "/docs/getting-started",
+      "destination": "/docs",
+      "permanent": true
     }
   ]
 }

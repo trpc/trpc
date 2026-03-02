@@ -79,7 +79,7 @@ tRPC combines concepts from [REST](https://www.sitepoint.com/rest-api/) and [Gra
 
 ## Installation
 
-tRPC is split between several packages, so you can install only what you need. Make sure to install the packages you want in the proper sections of your codebase. For this quickstart guide we'll keep it simple and use the vanilla client only. For framework guides, checkout [usage with React](/docs/client/tanstack-react-query/setup) and [usage with Next.js](/docs/client/nextjs/setup).
+tRPC is split between several packages, so you can install only what you need. Make sure to install the packages you want in the proper sections of your codebase. For this quickstart guide we'll keep it simple and use the vanilla client only. For framework guides, check out [usage with React](/docs/client/tanstack-react-query/setup) and [usage with Next.js](/docs/client/nextjs/pages-router/setup).
 
 :::info Requirements
 - tRPC requires TypeScript >=5.7.2
@@ -98,7 +98,9 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 
 Let's walk through the steps of building a typesafe API with tRPC. To start, this API will contain three endpoints with these TypeScript signatures:
 
-```ts
+```ts twoslash
+// @errors: 2693 1011
+
 type User = { id: string; name: string; };
 
 userList: () => User[];
@@ -323,7 +325,7 @@ const appRouter = router({
 </Tabs>
 
 :::info
-Throughout the remaining of this documentation, we will use `zod` as our validation library.
+Throughout the remainder of this documentation, we will use `zod` as our validation library.
 :::
 
 ### 4. Adding a mutation procedure
@@ -554,9 +556,8 @@ By default, tRPC will map complex types like `Date` to their JSON-equivalent _(`
 
 tRPC includes more sophisticated client-side tooling designed for React projects and Next.js.
 
-- [Usage with Next.js](../client/nextjs/introduction.mdx)
-- [Usage with Express (server-side)](/docs/server/adapters/express)
 - Usage with React (client-side)
-  - [React Integration (Recommended) -> `@trpc/tanstack-react-query`](../client/tanstack-react-query/setup.mdx)
-  - [React Integration (Classic) -> `@trpc/react-query`](../client/react/introduction.mdx)
-  - If you are unsure use `Recommended`
+  - [TanStack React Query Integration (Recommended) -> `@trpc/tanstack-react-query`](../client/tanstack-react-query/setup.mdx)
+  - [React Query Integration (Classic) -> `@trpc/react-query`](../client/react/introduction.mdx)
+- [Usage with Next.js](../client/nextjs/introduction.mdx)
+- [Server adapters](/docs/server/adapters) (Express, Fastify, and more)

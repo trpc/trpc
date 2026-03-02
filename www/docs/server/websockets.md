@@ -17,13 +17,25 @@ The document here outlines the specific details of using WebSockets. For general
 yarn add ws
 ```
 
-```ts title='server/wsServer.ts'
+```ts twoslash title='server/wsServer.ts'
+// @filename: trpc.ts
+import type { CreateWSSContextFnOptions } from '@trpc/server/adapters/ws';
+export const createContext = (opts: CreateWSSContextFnOptions) => ({});
+
+// @filename: routers/app.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: wsServer.ts
+// @types: node
+// ---cut---
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
-import ws from 'ws';
+import { WebSocketServer } from 'ws';
 import { appRouter } from './routers/app';
 import { createContext } from './trpc';
 
-const wss = new ws.Server({
+const wss = new WebSocketServer({
   port: 3001,
 });
 const handler = applyWSSHandler({
@@ -41,12 +53,12 @@ const handler = applyWSSHandler({
 });
 
 wss.on('connection', (ws) => {
-  console.log(`➕➕ Connection (${wss.clients.size})`);
+  console.log(`++ Connection (${wss.clients.size})`);
   ws.once('close', () => {
-    console.log(`➖➖ Connection (${wss.clients.size})`);
+    console.log(`-- Connection (${wss.clients.size})`);
   });
 });
-console.log('✅ WebSocket Server listening on ws://localhost:3001');
+console.log('WebSocket Server listening on ws://localhost:3001');
 
 process.on('SIGTERM', () => {
   console.log('SIGTERM');
@@ -61,9 +73,18 @@ process.on('SIGTERM', () => {
 You can use [Links](../client/links/overview.md) to route queries and/or mutations to HTTP transport and subscriptions over WebSockets.
 :::
 
-```tsx title='client.ts'
+```tsx twoslash title='client.ts'
+// @filename: server.ts
+
+// @filename: client.ts
+// ---cut---
 import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
-import type { AppRouter } from '../path/to/server/trpc';
+import { initTRPC } from '@trpc/server';
+import type { AppRouter } from './server';
+
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
 
 // create persistent WebSocket connection
 const wsClient = createWSClient({
@@ -103,9 +124,19 @@ export const createContext = async (opts: CreateWSSContextFnOptions) => {
 export type Context = Awaited<ReturnType<typeof createContext>>;
 ```
 
-```ts title="client/trpc.ts"
+```ts twoslash title="client/trpc.ts"
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import superjson from 'superjson';
+const t = initTRPC.create({ transformer: superjson });
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
 import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
-import type { AppRouter } from '~/server/routers/_app';
+import type { AppRouter } from './server';
+import superjson from 'superjson';
 
 const wsClient = createWSClient({
   url: `ws://localhost:3000`,
@@ -131,11 +162,17 @@ You can send an initial `lastEventId` when initializing the subscription and it 
 If you're fetching data based on the `lastEventId`, and capturing all events is critical, you may want to use `ReadableStream`'s or a similar pattern as an intermediary as is done in [our full-stack SSE example](https://github.com/trpc/examples-next-sse-chat) to prevent newly emitted events being ignored while yield'ing the original batch based on `lastEventId`.
 :::
 
-```ts
+```ts twoslash
+// @types: node
 import EventEmitter, { on } from 'events';
-import { tracked } from '@trpc/server';
+import { initTRPC, tracked } from '@trpc/server';
 import { z } from 'zod';
-import { publicProcedure, router } from '../trpc';
+
+type Post = { id: string; title: string };
+
+const t = initTRPC.create();
+const publicProcedure = t.procedure;
+const router = t.router;
 
 const ee = new EventEmitter();
 
@@ -152,7 +189,7 @@ export const subRouter = router({
         .optional(),
     )
     .subscription(async function* (opts) {
-      if (opts.input.lastEventId) {
+      if (opts.input?.lastEventId) {
         // [...] get the posts since the last event id and yield them
       }
       // listen for new events
@@ -179,10 +216,10 @@ export const subRouter = router({
 
 #### Request
 
-```ts
-{
+```ts twoslash
+interface RequestMessage {
   id: number | string;
-  jsonrpc?: '2.0'; // optional
+  jsonrpc?: '2.0';
   method: 'query' | 'mutation';
   params: {
     path: string;
@@ -195,14 +232,16 @@ export const subRouter = router({
 
 _... below, or an error._
 
-```ts
-{
+```ts twoslash
+type TOutput = any;
+// ---cut---
+interface ResponseMessage {
   id: number | string;
-  jsonrpc?: '2.0'; // only defined if included in request
+  jsonrpc?: '2.0';
   result: {
     type: 'data'; // always 'data' for mutation / queries
     data: TOutput; // output from procedure
-  }
+  };
 }
 ```
 
@@ -210,8 +249,8 @@ _... below, or an error._
 
 #### Start a subscription
 
-```ts
-{
+```ts twoslash
+interface SubscriptionRequest {
   id: number | string;
   jsonrpc?: '2.0';
   method: 'subscription';
@@ -224,8 +263,8 @@ _... below, or an error._
 
 #### To cancel a subscription, call `subscription.stop`
 
-```ts
-{
+```ts twoslash
+interface SubscriptionStopRequest {
   id: number | string; // <-- id of your created subscription
   jsonrpc?: '2.0';
   method: 'subscription.stop';
@@ -236,11 +275,13 @@ _... below, or an error._
 
 _... below, or an error._
 
-```ts
-{
+```ts twoslash
+type TData = any;
+// ---cut---
+interface SubscriptionResponse {
   id: number | string;
   jsonrpc?: '2.0';
-  result: (
+  result:
     | {
         type: 'data';
         data: TData; // subscription emitted data
@@ -250,8 +291,7 @@ _... below, or an error._
       }
     | {
         type: 'stopped'; // subscription stopped
-      }
-  )
+      };
 }
 ```
 
@@ -259,8 +299,8 @@ _... below, or an error._
 
 If the connection is initialized with `?connectionParams=1`, the first message has to be connection params.
 
-```ts
-{
+```ts twoslash
+interface ConnectionParamsMessage {
   data: Record<string, string> | null;
   method: 'connectionParams';
 }

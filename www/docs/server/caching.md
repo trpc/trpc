@@ -5,98 +5,33 @@ sidebar_label: Response Caching
 slug: /server/caching
 ---
 
-The below examples uses [Vercel's edge caching](https://vercel.com/docs/edge-network/caching) to serve data to your users as fast as possible.
+Since all tRPC queries are normal HTTP `GET` requests, you can use standard HTTP cache headers to cache responses. This can make responses snappy, give your database a rest, and help scale your API.
 
 :::info
 Always be careful with caching - especially if you handle personal information.
 
-&nbsp;  
+&nbsp;
 Since batching is enabled by default, it's recommended to set your cache headers in the `responseMeta` function and make sure that there are not any concurrent calls that may include personal data - or to omit cache headers completely if there is an auth header or cookie.
 
-&nbsp;  
+&nbsp;
 You can also use a [`splitLink`](../client/links/splitLink.mdx) to split your public requests and those that should be private and uncached.
 :::
 
-## App Caching
+## Using `responseMeta` to cache responses
 
-If you turn on SSR in your app, you might discover that your app loads slowly on, for instance, Vercel, but you can actually statically render your whole app without using SSG; [read this Twitter thread](https://twitter.com/alexdotjs/status/1386274093041950722) for more insights.
+Most tRPC adapters support a `responseMeta` callback that lets you set HTTP headers (including cache headers) based on the procedures being called.
 
-### Example code
+> This works with any hosting provider that supports standard HTTP cache headers (e.g. Vercel, Cloudflare, AWS CloudFront).
 
-```tsx title='utils/trpc.tsx'
-import { httpBatchLink } from '@trpc/client';
-import { createTRPCNext } from '@trpc/next';
-import type { AppRouter } from '../server/routers/_app';
-
-export const trpc = createTRPCNext<AppRouter>({
-  config(config) {
-    if (typeof window !== 'undefined') {
-      return {
-        links: [
-          httpBatchLink({
-            url: '/api/trpc',
-          }),
-        ],
-      };
-    }
-
-    const url = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}/api/trpc`
-      : 'http://localhost:3000/api/trpc';
-
-    return {
-      links: {
-        http: httpBatchLink({
-          url,
-        }),
-      },
-    };
-  },
-  ssr: true,
-  responseMeta(opts) {
-    const { clientErrors } = opts;
-
-    if (clientErrors.length) {
-      // propagate http first error from API calls
-      return {
-        status: clientErrors[0].data?.httpStatus ?? 500,
-      };
-    }
-
-    // cache request for 1 day + revalidate once every second
-    const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
-    return {
-      headers: new Headers([
-        [
-          'cache-control',
-          `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
-        ],
-      ]),
-    };
-  },
-});
-```
-
-## API Response caching
-
-Since all queries are normal HTTP `GET`s, we can use normal HTTP headers to cache responses, make the responses snappy, give your database a rest, and easily scale your API to gazillions of users.
-
-### Using `responseMeta` to cache responses
-
-> Assuming you're deploying your API somewhere that can handle stale-while-revalidate cache headers like Vercel.
-
-```tsx title='server.ts'
+```ts twoslash title='server.ts'
 import { initTRPC } from '@trpc/server';
-import * as trpcNext from '@trpc/server/adapters/next';
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 
-export const createContext = async ({
-  req,
-  res,
-}: trpcNext.CreateNextContextOptions) => {
+export const createContext = async (opts: CreateHTTPContextOptions) => {
   return {
-    req,
-    res,
-    prisma,
+    req: opts.req,
+    res: opts.res,
   };
 };
 
@@ -124,11 +59,11 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // export API handler
-export default trpcNext.createNextApiHandler({
+const server = createHTTPServer({
   router: appRouter,
   createContext,
   responseMeta(opts) {
-    const { ctx, paths, errors, type } = opts;
+    const { paths, errors, type } = opts;
     // assuming you have all your public routes with the keyword `public` in them
     const allPublic = paths && paths.every((path) => path.includes('public'));
     // checking that no procedures errored
@@ -136,7 +71,7 @@ export default trpcNext.createNextApiHandler({
     // checking we're doing a query request
     const isQuery = type === 'query';
 
-    if (ctx?.res && allPublic && allOk && isQuery) {
+    if (allPublic && allOk && isQuery) {
       // cache request for 1 day + revalidate once every second
       const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
       return {
@@ -151,4 +86,10 @@ export default trpcNext.createNextApiHandler({
     return {};
   },
 });
+
+server.listen(3000);
 ```
+
+:::tip
+If you are using Next.js, see the [Next.js SSR caching guide](/docs/client/nextjs/pages-router/ssr#response-caching-with-ssr) for Next.js-specific caching examples using `createTRPCNext` and the Next.js adapter.
+:::

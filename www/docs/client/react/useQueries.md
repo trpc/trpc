@@ -21,7 +21,37 @@ The useQueries hook is the same as that of [@tanstack/query useQueries](https://
 When you're using the [`httpBatchLink`](/docs/client/links/httpBatchLink) or [`wsLink`](/docs/client/links/wsLink), the below will end up being only 1 HTTP call to your server. Additionally, if the underlying procedure is using something like Prisma's `findUnique()` it will [automatically batch](https://www.prisma.io/docs/guides/performance-and-optimization/query-optimization-performance#solving-n1-in-graphql-with-findunique-and-prismas-dataloader) & do exactly 1 database query as a well.
 :::
 
-```tsx
+```tsx twoslash
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+const appRouter = t.router({
+  post: t.router({
+    byId: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query(({ input }) => {
+        return { id: input.id, title: 'Example Post' };
+      }),
+  }),
+  greeting: t.procedure
+    .input(z.object({ text: z.string() }))
+    .query(({ input }) => {
+      return { message: `Hello ${input.text}` };
+    }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: component.tsx
+// ---cut---
+import React from 'react';
+import { trpc } from './utils/trpc';
+
 const Component = (props: { postIds: string[] }) => {
   const postQueries = trpc.useQueries((t) =>
     props.postIds.map((id) => t.post.byId({ id })),
@@ -35,7 +65,37 @@ const Component = (props: { postIds: string[] }) => {
 
 You can also pass in any normal query options to the second parameter of any of the query calls in the array such as `enabled`, `suspense`, `refetchOnWindowFocus`...etc. For a complete overview of all the available options, see the [tanstack useQuery](https://tanstack.com/query/v5/docs/framework/react/reference/useQuery) documentation.
 
-```tsx
+```tsx twoslash
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+const appRouter = t.router({
+  post: t.router({
+    byId: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query(({ input }) => {
+        return { id: input.id, title: 'Example Post' };
+      }),
+  }),
+  greeting: t.procedure
+    .input(z.object({ text: z.string() }))
+    .query(({ input }) => {
+      return { message: `Hello ${input.text}` };
+    }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: component.tsx
+// ---cut---
+import React from 'react';
+import { trpc } from './utils/trpc';
+
 const Component = () => {
   const [post, greeting] = trpc.useQueries((t) => [
     t.post.byId({ id: '1' }, { enabled: false }),
@@ -49,7 +109,7 @@ const Component = () => {
   return (
     <div>
       <h1>{post.data && post.data.title}</h1>
-      <p>{greeting.data.message}</p>
+      <p>{greeting.data?.message}</p>
       <button onClick={onButtonClick}>Click to fetch</button>
     </div>
   );
@@ -60,7 +120,36 @@ const Component = () => {
 
 You can also pass in an optional React Query context to override the default.
 
-```tsx
+```tsx twoslash
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+const appRouter = t.router({
+  post: t.router({
+    byId: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query(({ input }) => {
+        return { id: input.id, title: 'Example Post' };
+      }),
+  }),
+  greeting: t.procedure
+    .input(z.object({ text: z.string() }))
+    .query(({ input }) => {
+      return { message: `Hello ${input.text}` };
+    }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: component.tsx
+import { trpc } from './utils/trpc';
+declare const myCustomContext: any;
+// ---cut---
 const [post, greeting] = trpc.useQueries(
   (t) => [t.post.byId({ id: '1' }), t.greeting({ text: 'world' })],
   myCustomContext,

@@ -9,14 +9,18 @@ The `createContext` function is called for each incoming request, so here you ca
 
 ## Create context from request headers
 
-```ts title='server/context.ts'
-import * as trpcNext from '@trpc/server/adapters/next';
-import { decodeAndVerifyJwtToken } from './somewhere/in/your/app/utils';
+```ts twoslash title='server/context.ts'
+// @filename: context.ts
+// ---cut---
+import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
+import { decodeAndVerifyJwtToken } from './utils';
 
-export async function createContext({
-  req,
-  res,
-}: trpcNext.CreateNextContextOptions) {
+// @filename: utils.ts
+export async function decodeAndVerifyJwtToken(token: string) {
+  return { name: 'user' };
+}
+
+export async function createContext({ req, res }: CreateHTTPContextOptions) {
   // Create your context based on the request object
   // Will be available as `ctx` in all your resolvers
 
@@ -41,9 +45,11 @@ export type Context = Awaited<ReturnType<typeof createContext>>;
 
 ## Option 1: Authorize using resolver
 
-```ts title='server/routers/_app.ts'
+```ts twoslash title='server/routers/_app.ts'
 import { initTRPC, TRPCError } from '@trpc/server';
-import type { Context } from '../context';
+import { z } from 'zod';
+
+type Context = { user: { name: string } | null };
 
 export const t = initTRPC.context<Context>().create();
 
@@ -66,9 +72,11 @@ const appRouter = t.router({
 
 ## Option 2: Authorize using middleware
 
-```ts title='server/routers/_app.ts'
+```ts twoslash title='server/routers/_app.ts'
 import { initTRPC, TRPCError } from '@trpc/server';
-import type { Context } from '../context';
+import { z } from 'zod';
+
+type Context = { user: { name: string } | null };
 
 export const t = initTRPC.context<Context>().create();
 

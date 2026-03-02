@@ -42,7 +42,17 @@ more information.
 
 We now support stopping subscriptions from the server, this means that you can now do things like this:
 
-```ts
+```ts twoslash
+// @types: node
+import EventEmitter, { on } from 'events';
+import { initTRPC } from '@trpc/server';
+
+const t = initTRPC.create();
+const router = t.router;
+const publicProcedure = t.procedure;
+
+const ee = new EventEmitter();
+// ---cut---
 const myRouter = router({
   sub: publicProcedure.subscription(async function* (opts) {
     for await (const data of on(ee, 'data', {
@@ -87,8 +97,13 @@ If you previously used `ProcedureOptions` from `@trpc/server`, you now need to u
 
 We now allow promises to be embedded in nested data when using the [`httpBatchStreamLink`](../client/links/httpBatchStreamLink.md), this means that you can now do things like this:
 
-```ts
-const router = router({
+```ts twoslash
+import { initTRPC } from '@trpc/server';
+
+const t = initTRPC.create();
+const publicProcedure = t.procedure;
+// ---cut---
+const appRouter = t.router({
   embedPromise: publicProcedure.query(() => {
     async function slowThing() {
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -133,9 +148,10 @@ Added support for detecting and recovering from stale connections:
 
 On the server, you can configure a ping interval to keep the connection alive:
 
-```ts
+```ts twoslash
+import { initTRPC } from '@trpc/server';
+
 export const t = initTRPC.create({
-  // ...
   sse: {
     ping: {
       enabled: true,
@@ -171,7 +187,8 @@ If you've used subscriptions with async generators with the v11, this might be b
 
 We changed the inferred output from:
 
-```ts
+```ts twoslash
+// @errors: 2304
 SubscriptionProcedure<{
   input: __INPUT__;
   output: __OUTPUT__;
@@ -180,7 +197,8 @@ SubscriptionProcedure<{
 
 to
 
-```ts
+```ts twoslash
+// @errors: 2304 2583
 SubscriptionProcedure<{
   input: __INPUT__;
   output: AsyncGenerator<__OUTPUT__, void, unknown>;
@@ -189,7 +207,8 @@ SubscriptionProcedure<{
 
 If you need to infer the value you can use a helper like the below:
 
-```ts
+```ts twoslash
+// @target: esnext
 type inferAsyncIterableYield<TOutput> =
   TOutput extends AsyncGenerator<infer $Yield> ? $Yield : never;
 ```
@@ -198,11 +217,11 @@ type inferAsyncIterableYield<TOutput> =
 
 This change has been made to ensure the library remains compatible with future updates and allows for the use of the `return` type in subscriptions' `AsyncGenerator`s.
 
-See [subscriptions docs](../server/subscriptions.md#output-validators) for more information.
+See [subscriptions docs](../server/subscriptions.md#output-validation) for more information.
 
 ### Added support for output validators in subscriptions (non-breaking)
 
-See [subscriptions docs](../server/subscriptions.md#output-validators) for more information.
+See [subscriptions docs](../server/subscriptions.md#output-validation) for more information.
 
 ### Deprecation of subscriptions returning `Observable`s (non-breaking)
 
@@ -296,14 +315,24 @@ You now setup data transformers in the `links`-array instead of when you initial
 
 Wherever you have a HTTP Link you have to add `transformer: superjson` if you use transformers:
 
-```ts
+```ts twoslash
+import { httpBatchLink } from '@trpc/client';
+import superjson from 'superjson';
+
+// ---cut---
 httpBatchLink({
   url: '/api/trpc',
   transformer: superjson, // <-- add this
 });
 ```
 
-```ts
+```ts twoslash
+// @errors: 2345
+import { createTRPCNext } from '@trpc/next';
+import superjson from 'superjson';
+
+type AppRouter = any;
+// ---cut---
 createTRPCNext<AppRouter>({
   // [..]
   transformer: superjson, // <-- add this
@@ -314,13 +343,19 @@ createTRPCNext<AppRouter>({
 
 This is to fix https://github.com/trpc/trpc/issues/5378 where `react-dom` was imported regardless if you were using this functionality or not.
 
-See [SSR docs](../client/nextjs/ssr.md)
+See [SSR docs](../client/nextjs/pages-router/ssr.md)
 
 ### Added support for short-hand router definitions (non-breaking)
 
 See [Merging routers](../server/merging-routers.md#inline-sub-router)
 
-```ts
+```ts twoslash
+import { initTRPC } from '@trpc/server';
+
+const t = initTRPC.create();
+const router = t.router;
+const publicProcedure = t.procedure;
+// ---cut---
 const appRouter = router({
   // Shorthand plain object for creating a sub-router
   nested1: {

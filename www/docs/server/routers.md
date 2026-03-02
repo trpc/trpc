@@ -46,7 +46,7 @@ import * as trpc from '@trpc/server';
 import { publicProcedure, router } from './trpc';
 
 const appRouter = router({
-  greeting: publicProcedure.query(() => 'hello tRPC v10!'),
+  greeting: publicProcedure.query(() => 'hello tRPC v11!'),
 });
 
 // Export only the type of a router!
@@ -66,7 +66,13 @@ When initializing your router, tRPC allows you to:
 
 You can use method chaining to customize your `t`-object on initialization. For example:
 
-```ts
+```ts twoslash
+import { initTRPC } from '@trpc/server';
+
+type Context = { userId: string };
+type Meta = { description: string };
+
+// ---cut---
 const t = initTRPC.context<Context>().meta<Meta>().create({
   /* [...] */
 });
@@ -74,19 +80,22 @@ const t = initTRPC.context<Context>().meta<Meta>().create({
 
 ### Runtime Configuration
 
-```ts
-export interface RootConfig<TTypes extends RootTypes> {
+```ts twoslash
+type DataTransformerOptions = any;
+type ErrorFormatter = any;
+// ---cut---
+interface RootConfig {
   /**
    * Use a data transformer
    * @see https://trpc.io/docs/v11/data-transformers
    */
-  transformer: TTypes['transformer'];
+  transformer: DataTransformerOptions;
 
   /**
    * Use custom error formatting
    * @see https://trpc.io/docs/v11/error-formatting
    */
-  errorFormatter: ErrorFormatter<TTypes['ctx'], any>;
+  errorFormatter: ErrorFormatter;
 
   /**
    * Allow `@trpc/server` to run in non-server environments

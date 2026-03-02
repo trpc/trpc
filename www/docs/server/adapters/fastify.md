@@ -58,7 +58,7 @@ A sample router is given below, save it in a file named `router.ts`.
 <details>
   <summary>router.ts</summary>
 
-```ts title='router.ts'
+```ts twoslash title='router.ts'
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -108,7 +108,7 @@ A sample context is given below, save it in a file named `context.ts`:
 <details>
   <summary>context.ts</summary>
 
-```ts title='context.ts'
+```ts twoslash title='context.ts'
 import { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
 
 export function createContext({ req, res }: CreateFastifyContextOptions) {
@@ -130,7 +130,23 @@ tRPC includes an adapter for [Fastify](https://www.fastify.io/) out of the box. 
 Due to limitations in Fastify's plugin system and type inference, there might be some issues getting for example `onError` typed correctly. You can add a `satisfies FastifyTRPCPluginOptions<AppRouter>['trpcOptions']` to help TypeScript out and get the correct types.
 :::
 
-```ts title='server.ts'
+```ts twoslash title='server.ts'
+// @types: node
+// @filename: router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: context.ts
+import { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
+export function createContext({ req, res }: CreateFastifyContextOptions) {
+  const user = { name: req.headers.username ?? 'anonymous' };
+  return { req, res, user };
+}
+
+// @filename: server.ts
+// ---cut---
 import {
   fastifyTRPCPlugin,
   FastifyTRPCPluginOptions,
@@ -186,8 +202,18 @@ yarn add @fastify/websocket
 
 ### Import and register `@fastify/websocket`
 
-```ts
+```ts twoslash
+// @filename: server.ts
+
+// ---cut---
 import ws from '@fastify/websocket';
+import fastify from 'fastify';
+
+// @filename: node_modules/@fastify/websocket/index.d.ts
+declare const plugin: any;
+export default plugin;
+
+declare const server: ReturnType<typeof fastify>;
 
 server.register(ws);
 ```
@@ -196,9 +222,8 @@ server.register(ws);
 
 Edit the `router.ts` file created in the previous steps and add the following code:
 
-```ts title='router.ts'
+```ts twoslash title='router.ts'
 import { initTRPC } from '@trpc/server';
-import { observable } from '@trpc/server/observable';
 
 const t = initTRPC.create();
 
@@ -214,18 +239,46 @@ export const appRouter = t.router({
 
 ### Activate the `useWSS` option
 
-```ts title='server.ts'
+```ts twoslash title='server.ts'
+// @errors: 2353
+// @filename: router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: context.ts
+import { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
+export function createContext({ req, res }: CreateFastifyContextOptions) {
+  return { req, res };
+}
+
+// @filename: server.ts
+// ---cut---
+import {
+  fastifyTRPCPlugin,
+  FastifyTRPCPluginOptions,
+} from '@trpc/server/adapters/fastify';
+import fastify from 'fastify';
+import { createContext } from './context';
+import { appRouter, type AppRouter } from './router';
+
+const server = fastify();
+
 server.register(fastifyTRPCPlugin, {
   useWSS: true,
-  // Enable heartbeat messages to keep connection open (disabled by default)
-  keepAlive: {
-    enabled: true,
-    // server ping message interval in milliseconds
-    pingMs: 30000,
-    // connection is terminated if pong message is not received in this many milliseconds
-    pongWaitMs: 5000,
-  },
-  // ...
+  trpcOptions: {
+    router: appRouter,
+    createContext,
+    // Enable heartbeat messages to keep connection open (disabled by default)
+    keepAlive: {
+      enabled: true,
+      // server ping message interval in milliseconds
+      pingMs: 30000,
+      // connection is terminated if pong message is not received in this many milliseconds
+      pongWaitMs: 5000,
+    },
+  } satisfies FastifyTRPCPluginOptions<AppRouter>['trpcOptions'],
 });
 ```
 

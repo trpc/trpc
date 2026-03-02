@@ -14,27 +14,26 @@ You can compose links together into an array that you can provide to the tRPC cl
   <small>tRPC Link Diagram. Based on <a href="https://www.apollographql.com/docs/react/api/link/introduction/" target="_blank">Apollo's</a>.</small>
 </div>
 
-:::note
-The below examples are assuming you use Next.js, but the same as below can be added if you use the vanilla tRPC client
-:::
+```ts twoslash title='utils/trpc.ts'
+// @filename: server.ts
 
-```tsx title='utils/trpc.ts'
-import { httpBatchLink, loggerLink } from '@trpc/client';
-import { createTRPCNext } from '@trpc/next';
+// @filename: client.ts
+// ---cut---
+import { createTRPCClient, httpBatchLink, loggerLink } from '@trpc/client';
+import { initTRPC } from '@trpc/server';
+import type { AppRouter } from './server';
 
-export default createTRPCNext<AppRouter>({
-  config() {
-    const url = `http://localhost:3000`;
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
 
-    return {
-      links: [
-        loggerLink(),
-        httpBatchLink({
-          url,
-        }),
-      ],
-    };
-  },
+export const trpc = createTRPCClient<AppRouter>({
+  links: [
+    loggerLink(),
+    httpBatchLink({
+      url: 'http://localhost:3000',
+    }),
+  ],
 });
 ```
 
@@ -48,10 +47,19 @@ A link is a function that follows the `TRPCLink` type. Each link is composed of 
 
 ### Example
 
-```tsx title='utils/customLink.ts'
+```tsx twoslash title='utils/customLink.ts'
+// @filename: server.ts
+
+// @filename: customLink.ts
+// ---cut---
 import { TRPCLink } from '@trpc/client';
+import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import type { AppRouter } from '~/server/routers/_app';
+import type { AppRouter } from './server';
+
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
 
 export const customLink: TRPCLink<AppRouter> = () => {
   // here we just got initialized in the app - this happens once per app

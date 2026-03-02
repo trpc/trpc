@@ -9,8 +9,28 @@ slug: /client/vanilla
 
 The "Vanilla" tRPC client can be used to call your API procedures as if they are local functions, enabling a seamless development experience.
 
-```ts
-import type { AppRouter } from '../path/to/server/trpc';
+```ts twoslash
+// @target: esnext
+// @filename: server.ts
+
+// @filename: client.ts
+// ---cut---
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+import type { AppRouter } from './server';
+
+const t = initTRPC.create();
+const appRouter = t.router({
+  getUser: t.procedure
+    .input(z.string())
+    .query(({ input }) => ({ id: input, name: 'Bilbo' })),
+});
+export type AppRouter = typeof appRouter;
+
+const client = createTRPCClient<AppRouter>({
+  links: [httpBatchLink({ url: 'http://localhost:3000' })],
+});
 
 const bilbo = await client.getUser.query('id_bilbo');
 // => { id: 'id_bilbo', name: 'Bilbo' };
@@ -25,5 +45,5 @@ You are likely to use this client in two scenarios:
 
 ### When **NOT** to use the Vanilla Client?
 
-- While you _can_ use the client to call procedures from a React component, you should usually use our [React Query Integration](../react/introduction.mdx). It offers many additional features such as the ability to manage loading and error state, caching, and invalidation.
+- While you _can_ use the client to call procedures from a React component, you should usually use our [TanStack React Query Integration](../tanstack-react-query/setup.mdx). It offers many additional features such as the ability to manage loading and error state, caching, and invalidation.
 - We recommend you do not use this client when calling procedures of the same API instance, this is because the invocation has to pass through the network layer. For complete recommendations on invoking a procedure in the current API, you can [read more here](/docs/server/server-side-calls).
