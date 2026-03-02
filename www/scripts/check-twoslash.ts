@@ -158,15 +158,15 @@ function matchErrorToBlock(
 }
 
 async function main() {
-  const includeVersioned = process.argv.includes('--include-versioned');
+  const excludeVersioned = process.argv.includes('--exclude-versioned');
   const focusFilters = process.argv
     .slice(2)
     .filter((arg) => !arg.startsWith('--'));
   const wwwDir = resolve(__dirname, '..');
 
-  // Gather files from docs and blog (optionally versioned_docs)
+  // Gather files from docs/blog/versioned_docs (matches docusaurus build scope)
   const dirs = ['docs', 'blog'];
-  if (includeVersioned) {
+  if (!excludeVersioned) {
     dirs.push('versioned_docs');
   }
 
