@@ -26,12 +26,12 @@ export function zAsyncIterable<
   /**
    * Validate the value yielded by the async generator
    */
-  yield: z.ZodType<TYieldIn, TYieldOut>;
+  yield: z.ZodType<TYieldOut, TYieldIn>;
   /**
    * Validate the return value of the async generator
    * @remark not applicable for subscriptions
    */
-  return?: z.ZodType<TReturnIn, TReturnOut>;
+  return?: z.ZodType<TReturnOut, TReturnIn>;
   /**
    * Whether if the yielded values are tracked
    * @remark only applicable for subscriptions
