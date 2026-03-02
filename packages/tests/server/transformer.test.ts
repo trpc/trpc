@@ -444,6 +444,99 @@ describe('transformer on router', () => {
   });
 });
 
+describe('superjson error transformation', () => {
+  // Regression tests for https://github.com/trpc/trpc/issues/7083
+  // Ensures error responses are properly serialized/deserialized when using
+  // `transformer: superjson` across all link types.
+
+  const transformer = superjson;
+  const t = initTRPC.create({ transformer });
+
+  const router = t.router({
+    alwaysFail: t.procedure.query(() => {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'intentional error',
+      });
+    }),
+    needsInput: t.procedure
+      .input(z.object({ x: z.string() }))
+      .mutation(() => ({ ok: true })),
+  });
+
+  test('httpBatchLink: TRPCError is properly deserialized', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      client({ httpUrl }) {
+        return {
+          links: [httpBatchLink({ url: httpUrl, transformer })],
+        };
+      },
+    });
+
+    const err = await waitError(
+      ctx.client.alwaysFail.query(),
+      TRPCClientError,
+    );
+    expect(err.shape.message).toBe('intentional error');
+    expect(err.shape.code).toBe(-32600);
+    expect(err.shape.data.code).toBe('BAD_REQUEST');
+    expect(err.shape.data.httpStatus).toBe(400);
+  });
+
+  test('httpBatchLink: validation error is properly deserialized', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      client({ httpUrl }) {
+        return {
+          links: [httpBatchLink({ url: httpUrl, transformer })],
+        };
+      },
+    });
+
+    const err = await waitError(
+      // @ts-expect-error - intentionally passing invalid input
+      ctx.client.needsInput.mutate({}),
+      TRPCClientError,
+    );
+    expect(err.shape.code).toBe(-32600);
+    expect(err.shape.data.code).toBe('BAD_REQUEST');
+  });
+
+  test('httpBatchStreamLink: TRPCError is properly deserialized', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      client({ httpUrl }) {
+        return {
+          links: [httpBatchStreamLink({ url: httpUrl, transformer })],
+        };
+      },
+    });
+
+    const err = await waitError(
+      ctx.client.alwaysFail.query(),
+      TRPCClientError,
+    );
+    expect(err.message).toBe('intentional error');
+  });
+
+  test('httpLink: TRPCError is properly deserialized', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      client({ httpUrl }) {
+        return {
+          links: [httpLink({ url: httpUrl, transformer })],
+        };
+      },
+    });
+
+    const err = await waitError(
+      ctx.client.alwaysFail.query(),
+      TRPCClientError,
+    );
+    expect(err.shape.message).toBe('intentional error');
+    expect(err.shape.code).toBe(-32600);
+    expect(err.shape.data.code).toBe('BAD_REQUEST');
+    expect(err.shape.data.httpStatus).toBe(400);
+  });
+});
+
 test('superjson - no input', async () => {
   const transformer = superjson;
   const fn = vi.fn();
