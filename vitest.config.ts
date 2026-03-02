@@ -58,6 +58,7 @@ export default defineConfig({
         '**/server/src/adapters/next-app-dir/**',
         // Skip codecov for codemod package
         '**/upgrade/src/**',
+        '**/vendor/**',
       ],
     },
     execArgv: ['--expose-gc'],
