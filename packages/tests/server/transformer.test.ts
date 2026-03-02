@@ -473,10 +473,7 @@ describe('superjson error transformation', () => {
       },
     });
 
-    const err = await waitError(
-      ctx.client.alwaysFail.query(),
-      TRPCClientError,
-    );
+    const err = await waitError(ctx.client.alwaysFail.query(), TRPCClientError);
     expect(err.shape.message).toBe('intentional error');
     expect(err.shape.code).toBe(-32600);
     expect(err.shape.data.code).toBe('BAD_REQUEST');
@@ -510,10 +507,7 @@ describe('superjson error transformation', () => {
       },
     });
 
-    const err = await waitError(
-      ctx.client.alwaysFail.query(),
-      TRPCClientError,
-    );
+    const err = await waitError(ctx.client.alwaysFail.query(), TRPCClientError);
     expect(err.message).toBe('intentional error');
   });
 
@@ -526,10 +520,7 @@ describe('superjson error transformation', () => {
       },
     });
 
-    const err = await waitError(
-      ctx.client.alwaysFail.query(),
-      TRPCClientError,
-    );
+    const err = await waitError(ctx.client.alwaysFail.query(), TRPCClientError);
     expect(err.shape.message).toBe('intentional error');
     expect(err.shape.code).toBe(-32600);
     expect(err.shape.data.code).toBe('BAD_REQUEST');
