@@ -7,7 +7,7 @@
     "dev:og-image": "cd og-image && pnpm dev",
     "dev:docusaurus": "NODE_OPTIONS=--max_old_space_size=16384 docusaurus start",
     "dev": "run-p dev:* --print-label",
-    "build": "docusaurus build",
+    "build": "NODE_OPTIONS=--max-old-space-size=8192 docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
     "serve": "docusaurus serve",
