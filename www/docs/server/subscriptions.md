@@ -35,6 +35,7 @@ For a full example, see [our full-stack SSE example](https://github.com/trpc/exa
 :::
 
 ```ts twoslash title="server.ts"
+// @errors: 2307
 // @target: esnext
 // @types: node
 import EventEmitter, { on } from 'events';
@@ -74,12 +75,12 @@ If you're fetching data based on the `lastEventId`, and capturing all events is 
 
 ```ts twoslash
 // @filename: index.ts
+// @errors: 2307
 // ---cut---
 import EventEmitter, { on } from 'events';
 import { initTRPC, tracked } from '@trpc/server';
 import { z } from 'zod';
 
-// @errors: 2583 2339
 // @filename: events.d.ts
 declare module 'events' {
   class EventEmitter {

@@ -20,6 +20,7 @@ If you are using Next.js we recommend using [our integration with that](../nextj
 No! The integration is fully optional. You can use `@tanstack/react-query` using just a [vanilla tRPC client](/docs/client/vanilla), although then you'll have to manually manage query keys and do not get the same level of DX as when using the integration package.
 
 ```ts twoslash title='utils/trpc.ts'
+// @errors: 2307
 // @filename: server.ts
 
 // @filename: utils/trpc.ts

@@ -44,6 +44,7 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: utils/trpc.tsx
+// @errors: 2304
 import { createTRPCReact } from '@trpc/react-query';
 import type { AppRouter } from '../server/routers/_app';
 export const trpc = createTRPCReact<AppRouter>();
@@ -161,6 +162,7 @@ const data = trpc.example.useQuery(
 Or globally, if every query across your app should behave the same way:
 
 ```tsx twoslash title='utils/trpc.ts'
+// @errors: 2304 2307 7006
 // @filename: utils/api/trpc/[trpc].ts
 
 // ---cut---

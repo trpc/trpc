@@ -24,6 +24,7 @@ You should avoid using `createTRPCQueryUtils` in React Components. Instead, use 
 `createTRPCQueryUtils` returns an object with all the available queries you have in your routers. You use it the same way as your `trpc` client object. Once you reach a query, you'll have access to the query helpers. For example, let's say you have a `post` router with an `all` query:
 
 ```twoslash include server
+// @errors: 2304 2552 2686 7006
 // @target: esnext
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';

@@ -26,7 +26,7 @@ import ImportAppRouter from '../../partials/_import-approuter.mdx';
 
 Create a tRPC client with the `createTRPCClient` method, and add a `links` array with a [terminating link](../links/overview.md#the-terminating-link) pointing at your API. To learn more about tRPC links, [click here](../links/overview.md).
 
-```ts twoslash title='client.ts'
+```ts title='client.ts'
 // @filename: server.ts
 
 // ---cut---
@@ -39,6 +39,7 @@ export const appRouter = t.router({});
 export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
+// @errors: 2307
 declare function getAuthCookie(): string;
 
 const client = createTRPCClient<AppRouter>({
@@ -61,7 +62,7 @@ const client = createTRPCClient<AppRouter>({
 
 Under the hood this creates a typed [JavaScript Proxy](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) which allows you to interact with your tRPC API in a fully type-safe way:
 
-```ts twoslash title='client.ts'
+```ts title='client.ts'
 // @target: esnext
 // @filename: server.ts
 

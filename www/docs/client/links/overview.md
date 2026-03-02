@@ -15,6 +15,7 @@ You can compose links together into an array that you can provide to the tRPC cl
 </div>
 
 ```ts twoslash title='utils/trpc.ts'
+// @errors: 2307
 // @filename: server.ts
 
 // @filename: client.ts
@@ -51,6 +52,7 @@ A link is a function that follows the `TRPCLink` type. Each link is composed of 
 // @filename: server.ts
 
 // @filename: customLink.ts
+// @errors: 2307
 // ---cut---
 import { TRPCLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';

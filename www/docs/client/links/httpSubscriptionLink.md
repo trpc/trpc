@@ -17,10 +17,12 @@ If your client's environment doesn't support EventSource, you need an [EventSour
 
 To use `httpSubscriptionLink`, you need to use a [splitLink](./splitLink.mdx) to make it explicit that we want to use SSE for subscriptions.
 
-```ts twoslash title="client/index.ts"
+```ts title="client/index.ts"
 // @filename: server.ts
+// @errors: 2440
 
 // @filename: client.ts
+// @errors: 2304
 // ---cut---
 import {
   createTRPCClient,
@@ -75,7 +77,7 @@ If the client and server are not on the same domain, you can use `withCredential
 
 **Example:**
 
-```tsx twoslash
+```tsx
 // @filename: server.ts
 
 // @filename: client.ts
@@ -104,7 +106,7 @@ httpSubscriptionLink({
 
 You can ponyfill `EventSource` and use the `eventSourceOptions` -callback to populate headers.
 
-```tsx twoslash
+```tsx
 // @filename: server.ts
 
 // ---cut---
@@ -165,7 +167,7 @@ To address this limitation, you can use a [`retryLink`](./retryLink.md) in conju
 Please note that restarting the connection will result in the `EventSource` being recreated from scratch, which means any previously tracked events will be lost.
 :::
 
-```tsx twoslash
+```tsx
 // @filename: server.ts
 
 // ---cut---
@@ -260,7 +262,7 @@ export const createContext = async (opts: CreateHTTPContextOptions) => {
 export type Context = Awaited<ReturnType<typeof createContext>>;
 ```
 
-```ts twoslash title="client/trpc.ts"
+```ts title="client/trpc.ts"
 // @filename: server.ts
 
 // @filename: client.ts

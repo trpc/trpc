@@ -18,6 +18,7 @@ The Server Actions integration uses the `experimental_` prefix and is still unde
 Use `experimental_caller` on a procedure builder together with `experimental_nextAppDirCaller` to create procedures that can be invoked as plain functions (server actions). The `pathExtractor` option lets you identify procedures by metadata, which is useful for logging and observability since server actions don't have a router path like `user.byId`.
 
 ```ts twoslash title='server/trpc.ts'
+// @errors: 2304 7006 7031
 import { initTRPC, TRPCError } from '@trpc/server';
 import { experimental_nextAppDirCaller } from '@trpc/server/adapters/next-app-dir';
 
@@ -38,7 +39,7 @@ export const serverActionProcedure = t.procedure.experimental_caller(
 
 Since server actions don't go through an HTTP adapter, there's no `createContext` to inject context. Instead, use a middleware to provide context such as session data:
 
-```ts twoslash title='server/trpc.ts'
+```ts title='server/trpc.ts'
 // @filename: server/trpc.ts
 // ---cut---
 import { initTRPC, TRPCError } from '@trpc/server';
@@ -46,6 +47,7 @@ import { experimental_nextAppDirCaller } from '@trpc/server/adapters/next-app-di
 import { currentUser } from '../auth';
 
 // @filename: auth.ts
+// @errors: 2304 7006 7031
 export declare function currentUser(): Promise<{
   id: string;
   name: string;
@@ -73,7 +75,7 @@ export const serverActionProcedure = t.procedure
 
 Add an authorization middleware to create a reusable base for actions that require authentication:
 
-```ts twoslash title='server/trpc.ts'
+```ts title='server/trpc.ts'
 // @filename: server/trpc.ts
 import { initTRPC, TRPCError } from '@trpc/server';
 import { experimental_nextAppDirCaller } from '@trpc/server/adapters/next-app-dir';
@@ -158,7 +160,7 @@ Because of `experimental_caller`, the procedure is now a plain async function th
 
 Import the server action and use it in a client component. Server actions work with both the `action` attribute for progressive enhancement and programmatic calls via `onSubmit`:
 
-```tsx twoslash title='app/post-form.tsx'
+```tsx title='app/post-form.tsx'
 import { createPost } from '../_actions';
 
 // @jsx: react-jsx

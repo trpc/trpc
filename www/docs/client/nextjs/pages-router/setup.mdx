@@ -78,6 +78,7 @@ Initialize your tRPC backend in `src/server/trpc.ts` using the `initTRPC` functi
 <summary>View sample backend</summary>
 
 ```ts twoslash title='server/trpc.ts'
+// @errors: 2307
 import { initTRPC } from '@trpc/server';
 
 // Avoid exporting the entire t-object
@@ -155,10 +156,11 @@ The backend above is using the [recommended file structure](#recommended-file-st
 
 use the `createTRPCNext` function to create a set of strongly-typed hooks from your API's type signature.
 
-```tsx twoslash title='utils/trpc.ts'
+```tsx title='utils/trpc.ts'
 // @filename: server/routers/_app.ts
 
 // @filename: utils/trpc.ts
+// @errors: 2307
 // ---cut---
 import { httpBatchLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
@@ -222,7 +224,7 @@ export const trpc = createTRPCNext<AppRouter>({
 
 Wrap your root app page in the `trpc.withTRPC` HOC, similar to this:
 
-```tsx twoslash title='pages/_app.tsx'
+```tsx title='pages/_app.tsx'
 // @jsx: react-jsx
 // @filename: server/routers/_app.ts
 import { initTRPC } from '@trpc/server';
@@ -257,7 +259,7 @@ You're all set!
 
 You can now use the React hooks you have just created to invoke your API. For more detail see the [React Query Integration](../../react/setup.mdx)
 
-```tsx twoslash title='pages/index.tsx'
+```tsx title='pages/index.tsx'
 // @jsx: react-jsx
 // @filename: server/routers/_app.ts
 import { initTRPC } from '@trpc/server';
@@ -323,7 +325,7 @@ Ability to set request headers and HTTP status when server-side rendering.
 
 #### Example
 
-```tsx twoslash title='utils/trpc.ts'
+```tsx title='utils/trpc.ts'
 // @filename: server/routers/_app.ts
 
 // @filename: utils/trpc.ts

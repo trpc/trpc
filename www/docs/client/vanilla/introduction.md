@@ -10,6 +10,7 @@ slug: /client/vanilla
 The "Vanilla" tRPC client can be used to call your API procedures as if they are local functions, enabling a seamless development experience.
 
 ```ts twoslash
+// @errors: 2307
 // @target: esnext
 // @filename: server.ts
 

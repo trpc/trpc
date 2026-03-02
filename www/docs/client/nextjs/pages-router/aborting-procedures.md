@@ -10,6 +10,7 @@ By default, tRPC does not cancel requests on unmount. If you want to opt into th
 ### Globally
 
 ```ts twoslash title="client.ts"
+// @errors: 2307
 // @filename: server/routers/_app.ts
 
 // @filename: client.ts

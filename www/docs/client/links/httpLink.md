@@ -14,6 +14,7 @@ slug: /client/links/httpLink
 You can import and add the `httpLink` to the `links` array as such:
 
 ```ts twoslash title="client/index.ts"
+// @errors: 2307
 // @filename: server.ts
 
 // @filename: client.ts
