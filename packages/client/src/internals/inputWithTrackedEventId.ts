@@ -9,7 +9,7 @@ export function inputWithTrackedEventId(
     return input;
   }
   return {
-    ...(input ?? {}),
+    ...input,
     lastEventId,
   };
 }

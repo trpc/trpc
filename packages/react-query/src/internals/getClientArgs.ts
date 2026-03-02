@@ -15,7 +15,7 @@ export function getClientArgs<TOptions>(
   let input = queryKey[1]?.input;
   if (infiniteParams) {
     input = {
-      ...(input ?? {}),
+      ...input,
       ...(infiniteParams.pageParam ? { cursor: infiniteParams.pageParam } : {}),
       direction: infiniteParams.direction,
     };
