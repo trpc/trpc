@@ -612,7 +612,9 @@ describe('no transformer', () => {
           5,
         ]
       `);
-    expect(err).toMatchInlineSnapshot(`[AbortError: This operation was aborted]`);
+    expect(err).toMatchInlineSnapshot(
+      `[AbortError: This operation was aborted]`,
+    );
     expect(err.message).toMatchInlineSnapshot(`"This operation was aborted"`);
   });
 
