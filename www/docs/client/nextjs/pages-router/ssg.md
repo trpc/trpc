@@ -162,18 +162,21 @@ Or globally, if every query across your app should behave the same way:
 
 ```tsx twoslash title='utils/trpc.ts'
 // @filename: utils/api/trpc/[trpc].ts
+
+// ---cut---
+import { httpBatchLink } from '@trpc/client';
+import { createTRPCNext } from '@trpc/next';
 import { initTRPC } from '@trpc/server';
+import superjson from 'superjson';
+import type { AppRouter } from './api/trpc/[trpc]';
+
 const t = initTRPC.create();
 export const appRouter = t.router({});
 export type AppRouter = typeof appRouter;
 
 // @filename: utils/trpc.ts
 declare function getBaseUrl(): string;
-// ---cut---
-import { httpBatchLink } from '@trpc/client';
-import { createTRPCNext } from '@trpc/next';
-import superjson from 'superjson';
-import type { AppRouter } from './api/trpc/[trpc]';
+
 export const trpc = createTRPCNext<AppRouter>({
   config(config) {
     return {

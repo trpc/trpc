@@ -16,15 +16,16 @@ You can compose links together into an array that you can provide to the tRPC cl
 
 ```ts twoslash title='utils/trpc.ts'
 // @filename: server.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
 import { createTRPCClient, httpBatchLink, loggerLink } from '@trpc/client';
+import { initTRPC } from '@trpc/server';
 import type { AppRouter } from './server';
+
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
 
 export const trpc = createTRPCClient<AppRouter>({
   links: [
@@ -48,16 +49,17 @@ A link is a function that follows the `TRPCLink` type. Each link is composed of 
 
 ```tsx twoslash title='utils/customLink.ts'
 // @filename: server.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
 
 // @filename: customLink.ts
 // ---cut---
 import { TRPCLink } from '@trpc/client';
+import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import type { AppRouter } from './server';
+
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
 
 export const customLink: TRPCLink<AppRouter> = () => {
   // here we just got initialized in the app - this happens once per app

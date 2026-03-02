@@ -42,15 +42,16 @@ While tRPC natively supports several non-JSON serializable types, your client ma
 
 ```ts twoslash
 // @filename: server.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
 import { createTRPCClient, httpLink } from '@trpc/client';
+import { initTRPC } from '@trpc/server';
 import type { AppRouter } from './server';
+
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
 
 createTRPCClient<AppRouter>({
   links: [
@@ -65,10 +66,6 @@ However, not all links support these content types. If you're using `httpBatchLi
 
 ```ts twoslash
 // @filename: server.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
@@ -79,7 +76,12 @@ import {
   isNonJsonSerializable,
   splitLink,
 } from '@trpc/client';
+import { initTRPC } from '@trpc/server';
 import type { AppRouter } from './server';
+
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
 
 const url = 'http://localhost:2022';
 

@@ -16,15 +16,16 @@ slug: /client/react/useInfiniteQuery
 ## Example Procedure
 
 ```tsx twoslash title='server/routers/_app.ts'
+// ---cut---
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
 // @filename: server/routers/_app.ts
 declare const prisma: {
   post: {
     findMany: (opts: any) => Promise<{ myCursor: number }[]>;
   };
 };
-// ---cut---
-import { initTRPC } from '@trpc/server';
-import { z } from 'zod';
 
 export const t = initTRPC.create();
 

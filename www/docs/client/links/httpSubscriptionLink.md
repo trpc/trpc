@@ -19,10 +19,6 @@ To use `httpSubscriptionLink`, you need to use a [splitLink](./splitLink.mdx) to
 
 ```ts twoslash title="client/index.ts"
 // @filename: server.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
@@ -33,7 +29,12 @@ import {
   loggerLink,
   splitLink,
 } from '@trpc/client';
+import { initTRPC } from '@trpc/server';
 import type { AppRouter } from './server';
+
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
 
 const trpcClient = createTRPCClient<AppRouter>({
   /**
@@ -76,13 +77,15 @@ If the client and server are not on the same domain, you can use `withCredential
 
 ```tsx twoslash
 // @filename: server.ts
+
+// @filename: client.ts
+import { httpSubscriptionLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
+
 const t = initTRPC.create();
 export const appRouter = t.router({});
 export type AppRouter = typeof appRouter;
 
-// @filename: client.ts
-import { httpSubscriptionLink } from '@trpc/client';
 // ---cut---
 // [...]
 httpSubscriptionLink({
@@ -103,13 +106,6 @@ You can ponyfill `EventSource` and use the `eventSourceOptions` -callback to pop
 
 ```tsx twoslash
 // @filename: server.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
-
-// @filename: client.ts
-declare function getSignature(op: any): Promise<string>;
 
 // ---cut---
 import {
@@ -118,8 +114,16 @@ import {
   httpSubscriptionLink,
   splitLink,
 } from '@trpc/client';
+import { initTRPC } from '@trpc/server';
 import { EventSourcePolyfill } from 'event-source-polyfill';
 import type { AppRouter } from './server';
+
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+declare function getSignature(op: any): Promise<string>;
 
 // Initialize the tRPC client
 const trpc = createTRPCClient<AppRouter>({
@@ -163,14 +167,6 @@ Please note that restarting the connection will result in the `EventSource` bein
 
 ```tsx twoslash
 // @filename: server.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
-
-// @filename: client.ts
-declare function getAuthenticatedUri(): string;
-declare const auth: { getOrRenewToken(): Promise<string> };
 
 // ---cut---
 import {
@@ -180,11 +176,20 @@ import {
   retryLink,
   splitLink,
 } from '@trpc/client';
+import { initTRPC } from '@trpc/server';
 import {
   EventSourcePolyfill,
   EventSourcePolyfillInit,
 } from 'event-source-polyfill';
 import type { AppRouter } from './server';
+
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+declare function getAuthenticatedUri(): string;
+declare const auth: { getOrRenewToken(): Promise<string> };
 
 // Initialize the tRPC client
 const trpc = createTRPCClient<AppRouter>({
@@ -257,10 +262,6 @@ export type Context = Awaited<ReturnType<typeof createContext>>;
 
 ```ts twoslash title="client/trpc.ts"
 // @filename: server.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
@@ -270,7 +271,12 @@ import {
   httpSubscriptionLink,
   splitLink,
 } from '@trpc/client';
+import { initTRPC } from '@trpc/server';
 import type { AppRouter } from './server';
+
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
 
 // Initialize the tRPC client
 const trpc = createTRPCClient<AppRouter>({
@@ -396,7 +402,6 @@ type HTTPSubscriptionLinkOptions<
 ## SSE Options on the server
 
 ```ts twoslash
-
 export interface SSEStreamProducerOptions<TValue = unknown> {
   ping?: {
     /**

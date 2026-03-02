@@ -19,6 +19,7 @@ Nested procedures are separated by dots, so for a request to `byId` below would 
 
 ```ts twoslash
 import { initTRPC } from '@trpc/server';
+
 const t = initTRPC.create();
 const router = t.router;
 const publicProcedure = t.procedure;
@@ -50,7 +51,9 @@ import { initTRPC } from '@trpc/server';
 
 type Post = { id: string; title: string; body: string };
 type Context = {
-  post: { findUnique: (opts: { where: { id: string } }) => Promise<Post | null> };
+  post: {
+    findUnique: (opts: { where: { id: string } }) => Promise<Post | null>;
+  };
   findRelatedPostsById: (id: string) => Promise<Post[]>;
 };
 
@@ -73,7 +76,6 @@ export const appRouter = t.router({
 #### ... And two queries defined like this in a React component:
 
 ```tsx twoslash title='MyComponent.tsx'
-
 // @jsx: react-jsx
 import React from 'react';
 
@@ -177,7 +179,7 @@ type TOutput = any;
 interface SuccessResponse {
   result: {
     data: TOutput; // output from procedure
-  }
+  };
 }
 ```
 
@@ -296,6 +298,7 @@ To override the HTTP method used for queries/mutations, you can use the `methodO
 ```tsx twoslash title = 'server/httpHandler.ts'
 import { initTRPC } from '@trpc/server';
 import { createHTTPHandler } from '@trpc/server/adapters/standalone';
+
 const t = initTRPC.create();
 const router = t.router({});
 // ---cut---
@@ -308,15 +311,16 @@ const handler = createHTTPHandler({
 
 ```tsx twoslash title = 'client/trpc.ts'
 // @filename: server.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
 import { createTRPCClient, httpLink } from '@trpc/client';
+import { initTRPC } from '@trpc/server';
 import type { AppRouter } from './server';
+
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
 
 // The client can then specify which HTTP method to use for all queries/mutations
 const client = createTRPCClient<AppRouter>({

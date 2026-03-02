@@ -10,18 +10,21 @@ tRPC adheres to the industry standard when it comes to aborting procedures. All 
 ```ts twoslash title="utils.ts"
 // @target: esnext
 // @filename: server.ts
-import { initTRPC } from '@trpc/server';
-import { z } from 'zod';
-const t = initTRPC.create();
-const appRouter = t.router({
-  userById: t.procedure.input(z.string()).query(({ input }) => ({ id: input, name: 'Bilbo' })),
-});
-export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
 import type { AppRouter } from './server';
+
+const t = initTRPC.create();
+const appRouter = t.router({
+  userById: t.procedure
+    .input(z.string())
+    .query(({ input }) => ({ id: input, name: 'Bilbo' })),
+});
+export type AppRouter = typeof appRouter;
 
 const proxy = createTRPCClient<AppRouter>({
   links: [

@@ -347,6 +347,7 @@ The handler is called with the same arguments as an error formatter would be, ex
 
 ```ts twoslash
 import { TRPCError } from '@trpc/server';
+
 // ---cut---
 interface OnErrorShape {
   ctx: unknown;

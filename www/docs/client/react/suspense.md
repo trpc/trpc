@@ -107,8 +107,8 @@ function PostView() {
 // ---cut---
 // @filename: pages/index.tsx
 import React from 'react';
-import { trpc } from '../utils/trpc';
 import type { PostPage } from '../server';
+import { trpc } from '../utils/trpc';
 
 function PostView() {
   const [{ pages }, allPostsQuery] = trpc.post.all.useSuspenseInfiniteQuery(
@@ -167,13 +167,15 @@ The performance of suspense queries can be improved by prefetching the query dat
 // @include: server
 // ---cut---
 // @filename: loader.ts
-import { createTRPCQueryUtils } from '@trpc/react-query';
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import { QueryClient } from '@tanstack/react-query';
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCQueryUtils } from '@trpc/react-query';
 import type { AppRouter } from './server';
 
 const queryClient = new QueryClient();
-const trpcClient = createTRPCClient<AppRouter>({ links: [httpBatchLink({ url: 'http://localhost:3000' })] });
+const trpcClient = createTRPCClient<AppRouter>({
+  links: [httpBatchLink({ url: 'http://localhost:3000' })],
+});
 const utils = createTRPCQueryUtils({ queryClient, client: trpcClient });
 
 // tanstack router/ react router loader
@@ -214,8 +216,8 @@ function PostViewPage(props: { postId: string }) {
 // ---cut---
 // @filename: pages/index.tsx
 import React, { Suspense } from 'react';
-import { trpc } from '../utils/trpc';
 import type { PostPage } from '../server';
+import { trpc } from '../utils/trpc';
 
 function PostView(props: { postId: string }) {
   return <></>;

@@ -15,15 +15,16 @@ You can import and add the `httpLink` to the `links` array as such:
 
 ```ts twoslash title="client/index.ts"
 // @filename: server.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
 import { createTRPCClient, httpLink } from '@trpc/client';
+import { initTRPC } from '@trpc/server';
 import type { AppRouter } from './server';
+
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
 
 const client = createTRPCClient<AppRouter>({
   links: [

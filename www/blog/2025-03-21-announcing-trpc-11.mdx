@@ -147,6 +147,7 @@ We've introduced a new shorthand syntax for defining your router to simplify the
 
 ```ts twoslash
 import { initTRPC } from '@trpc/server';
+
 const t = initTRPC.create();
 const publicProcedure = t.procedure;
 const router = t.router;

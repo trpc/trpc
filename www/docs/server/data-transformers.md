@@ -77,15 +77,15 @@ yarn add devalue
 Here we use `parse` and `stringify` as they [mitigate XSS](https://github.com/Rich-Harris/devalue?tab=readme-ov-file#xss-mitigation).
 
 ```ts twoslash title='utils/trpc.ts'
+// @filename: utils/trpc.ts
+// ---cut---
+import { parse, stringify } from 'devalue';
+
 // @filename: devalue.d.ts
 declare module 'devalue' {
   export function parse(str: string): any;
   export function stringify(value: any): string;
 }
-
-// @filename: utils/trpc.ts
-// ---cut---
-import { parse, stringify } from 'devalue';
 
 // [...]
 

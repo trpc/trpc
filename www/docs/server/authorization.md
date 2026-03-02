@@ -10,15 +10,15 @@ The `createContext` function is called for each incoming request, so here you ca
 ## Create context from request headers
 
 ```ts twoslash title='server/context.ts'
-// @filename: utils.ts
-export async function decodeAndVerifyJwtToken(token: string) {
-  return { name: 'user' };
-}
-
 // @filename: context.ts
 // ---cut---
 import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 import { decodeAndVerifyJwtToken } from './utils';
+
+// @filename: utils.ts
+export async function decodeAndVerifyJwtToken(token: string) {
+  return { name: 'user' };
+}
 
 export async function createContext({ req, res }: CreateHTTPContextOptions) {
   // Create your context based on the request object

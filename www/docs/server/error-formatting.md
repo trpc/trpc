@@ -94,6 +94,7 @@ export function MyComponent() {
 
 ```ts twoslash
 import { TRPCError } from '@trpc/server';
+
 // ---cut---
 interface ErrorFormatterOpts {
   error: TRPCError;
@@ -109,6 +110,7 @@ interface ErrorFormatterOpts {
 
 ```ts twoslash
 import type { TRPC_ERROR_CODE_KEY, TRPC_ERROR_CODE_NUMBER } from '@trpc/server';
+
 // ---cut---
 type DefaultErrorData = {
   code: TRPC_ERROR_CODE_KEY;

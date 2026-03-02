@@ -21,8 +21,14 @@ No! The integration is fully optional. You can use `@tanstack/react-query` using
 
 ```ts twoslash title='utils/trpc.ts'
 // @filename: server.ts
+
+// @filename: utils/trpc.ts
+// ---cut---
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
+import type { AppRouter } from '../server';
+
 const t = initTRPC.create();
 const appRouter = t.router({
   post: t.router({
@@ -32,11 +38,6 @@ const appRouter = t.router({
   }),
 });
 export type AppRouter = typeof appRouter;
-
-// @filename: utils/trpc.ts
-// ---cut---
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
-import type { AppRouter } from '../server';
 
 export const trpc = createTRPCClient<AppRouter>({
   links: [httpBatchLink({ url: 'YOUR_API_URL' })],

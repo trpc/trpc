@@ -39,14 +39,17 @@ export const serverActionProcedure = t.procedure.experimental_caller(
 Since server actions don't go through an HTTP adapter, there's no `createContext` to inject context. Instead, use a middleware to provide context such as session data:
 
 ```ts twoslash title='server/trpc.ts'
-// @filename: auth.ts
-export declare function currentUser(): Promise<{ id: string; name: string } | null>;
-
 // @filename: server/trpc.ts
 // ---cut---
 import { initTRPC, TRPCError } from '@trpc/server';
 import { experimental_nextAppDirCaller } from '@trpc/server/adapters/next-app-dir';
 import { currentUser } from '../auth';
+
+// @filename: auth.ts
+export declare function currentUser(): Promise<{
+  id: string;
+  name: string;
+} | null>;
 
 interface Meta {
   span: string;
@@ -71,18 +74,26 @@ export const serverActionProcedure = t.procedure
 Add an authorization middleware to create a reusable base for actions that require authentication:
 
 ```ts twoslash title='server/trpc.ts'
-// @filename: auth.ts
-export declare function currentUser(): Promise<{ id: string; name: string } | null>;
-
 // @filename: server/trpc.ts
 import { initTRPC, TRPCError } from '@trpc/server';
 import { experimental_nextAppDirCaller } from '@trpc/server/adapters/next-app-dir';
 import { currentUser } from '../auth';
-interface Meta { span: string; }
+
+// @filename: auth.ts
+export declare function currentUser(): Promise<{
+  id: string;
+  name: string;
+} | null>;
+
+interface Meta {
+  span: string;
+}
 const t = initTRPC.meta<Meta>().create();
 const serverActionProcedure = t.procedure
   .experimental_caller(
-    experimental_nextAppDirCaller({ pathExtractor: ({ meta }) => (meta as Meta).span }),
+    experimental_nextAppDirCaller({
+      pathExtractor: ({ meta }) => (meta as Meta).span,
+    }),
   )
   .use(async (opts) => {
     const user = await currentUser();
@@ -148,15 +159,15 @@ Because of `experimental_caller`, the procedure is now a plain async function th
 Import the server action and use it in a client component. Server actions work with both the `action` attribute for progressive enhancement and programmatic calls via `onSubmit`:
 
 ```tsx twoslash title='app/post-form.tsx'
+import { createPost } from '../_actions';
+
 // @jsx: react-jsx
 // @filename: _actions.ts
 export declare function createPost(input: { title: string }): Promise<void>;
 
 // @filename: app/post-form.tsx
 // ---cut---
-'use client';
-
-import { createPost } from '../_actions';
+('use client');
 
 export function PostForm() {
   return (

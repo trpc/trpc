@@ -23,15 +23,16 @@ You can import and add the `httpBatchStreamLink` to the `links` array as such:
 
 ```ts twoslash title="client/index.ts"
 // @filename: server.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
 import { createTRPCClient, httpBatchStreamLink } from '@trpc/client';
+import { initTRPC } from '@trpc/server';
 import type { AppRouter } from './server';
+
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
 
 const client = createTRPCClient<AppRouter>({
   links: [
@@ -47,20 +48,26 @@ After that, you can make use of batching by setting all your procedures in a `Pr
 ```ts twoslash
 // @target: esnext
 // @filename: server.ts
+
+// @filename: client.ts
+import { createTRPCClient, httpBatchStreamLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
+import type { AppRouter } from './server';
+
 const t = initTRPC.create();
 export const appRouter = t.router({
   post: t.router({
-    byId: t.procedure.input(z.number()).query(({ input }) => ({ id: input, title: `Post ${input}` })),
+    byId: t.procedure
+      .input(z.number())
+      .query(({ input }) => ({ id: input, title: `Post ${input}` })),
   }),
 });
 export type AppRouter = typeof appRouter;
 
-// @filename: client.ts
-import { createTRPCClient, httpBatchStreamLink } from '@trpc/client';
-import type { AppRouter } from './server';
-const trpc = createTRPCClient<AppRouter>({ links: [httpBatchStreamLink({ url: 'http://localhost:3000' })] });
+const trpc = createTRPCClient<AppRouter>({
+  links: [httpBatchStreamLink({ url: 'http://localhost:3000' })],
+});
 // ---cut---
 const somePosts = await Promise.all([
   trpc.post.byId.query(1),
@@ -75,15 +82,16 @@ When batching requests together, the behavior of a regular `httpBatchLink` is to
 
 ```ts twoslash title="client/index.ts"
 // @filename: server.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
 import { createTRPCClient, httpBatchStreamLink } from '@trpc/client';
+import { initTRPC } from '@trpc/server';
 import type { AppRouter } from './server';
+
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
 
 const client = createTRPCClient<AppRouter>({
   links: [
@@ -176,6 +184,7 @@ You will also need to overide the default fetch in the `httpBatchStreamLink` con
 ```ts twoslash
 // @errors: 2769
 import { httpBatchStreamLink } from '@trpc/client';
+
 // ---cut---
 httpBatchStreamLink({
   fetch: (url, opts) =>

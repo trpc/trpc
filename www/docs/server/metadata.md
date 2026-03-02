@@ -76,7 +76,7 @@ type Context = { user: { name: string } | null };
 
 interface Meta {
   authRequired?: boolean;
-  role?: 'user' | 'admin'
+  role?: 'user' | 'admin';
 }
 
 export const t = initTRPC
@@ -84,25 +84,22 @@ export const t = initTRPC
   .meta<Meta>()
   .create({
     // Set a default value
-    defaultMeta: { authRequired: false }
+    defaultMeta: { authRequired: false },
   });
 
 const authMiddleware = t.middleware((opts) => opts.next());
 
-const publicProcedure = t.procedure
+const publicProcedure = t.procedure;
 // ^ Default Meta: { authRequired: false }
 
-const authProcedure = publicProcedure
-  .use(authMiddleware)
-  .meta({
-    authRequired: true,
-    role: 'user'
-  });
+const authProcedure = publicProcedure.use(authMiddleware).meta({
+  authRequired: true,
+  role: 'user',
+});
 // ^ Meta: { authRequired: true, role: 'user' }
 
-const adminProcedure = authProcedure
-  .meta({
-    role: 'admin'
-  });
+const adminProcedure = authProcedure.meta({
+  role: 'admin',
+});
 // ^ Meta: { authRequired: true, role: 'admin' }
 ```

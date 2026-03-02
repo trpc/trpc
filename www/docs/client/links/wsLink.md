@@ -13,15 +13,16 @@ To use `wsLink`, you need to pass it a `TRPCWebSocketClient`, which you can crea
 
 ```ts twoslash title="client/index.ts"
 // @filename: server.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
 import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
+import { initTRPC } from '@trpc/server';
 import type { AppRouter } from './server';
+
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
 
 const wsClient = createWSClient({
   url: 'ws://localhost:3000',

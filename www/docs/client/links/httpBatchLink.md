@@ -13,15 +13,16 @@ You can import and add the `httpBatchLink` to the `links` array as such:
 
 ```ts twoslash title="client/index.ts"
 // @filename: server.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { initTRPC } from '@trpc/server';
 import type { AppRouter } from './server';
+
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
 
 const client = createTRPCClient<AppRouter>({
   links: [
@@ -38,20 +39,26 @@ After that, you can make use of batching by setting all your procedures in a `Pr
 ```ts twoslash
 // @target: esnext
 // @filename: server.ts
+
+// @filename: client.ts
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
+import type { AppRouter } from './server';
+
 const t = initTRPC.create();
 export const appRouter = t.router({
   post: t.router({
-    byId: t.procedure.input(z.number()).query(({ input }) => ({ id: input, title: `Post ${input}` })),
+    byId: t.procedure
+      .input(z.number())
+      .query(({ input }) => ({ id: input, title: `Post ${input}` })),
   }),
 });
 export type AppRouter = typeof appRouter;
 
-// @filename: client.ts
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
-import type { AppRouter } from './server';
-const trpc = createTRPCClient<AppRouter>({ links: [httpBatchLink({ url: 'http://localhost:3000' })] });
+const trpc = createTRPCClient<AppRouter>({
+  links: [httpBatchLink({ url: 'http://localhost:3000' })],
+});
 // ---cut---
 const somePosts = await Promise.all([
   trpc.post.byId.query(1),
@@ -67,7 +74,12 @@ The `httpBatchLink` function takes an options object that has the `HTTPBatchLink
 ```ts twoslash
 type DataTransformerOptions = any;
 type HTTPHeaders = Record<string, string | string[]>;
-type Operation = { id: number; type: 'query' | 'mutation' | 'subscription'; path: string; input: unknown };
+type Operation = {
+  id: number;
+  type: 'query' | 'mutation' | 'subscription';
+  path: string;
+  input: unknown;
+};
 // ---cut---
 export interface HTTPBatchLinkOptions extends HTTPLinkOptions {
   /**
@@ -115,15 +127,16 @@ When sending batch requests, sometimes the URL can become too large causing HTTP
 
 ```ts twoslash title="client/index.ts"
 // @filename: server.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { initTRPC } from '@trpc/server';
 import type { AppRouter } from './server';
+
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
 
 const client = createTRPCClient<AppRouter>({
   links: [
@@ -183,15 +196,16 @@ export default createNextApiHandler({
 
 ```ts twoslash title="client/index.ts"
 // @filename: server.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
 import { createTRPCClient, httpLink } from '@trpc/client';
+import { initTRPC } from '@trpc/server';
 import type { AppRouter } from './server';
+
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
 
 const client = createTRPCClient<AppRouter>({
   links: [
@@ -206,16 +220,16 @@ or, if you're using Next.js:
 
 ```tsx twoslash title='utils/trpc.ts'
 // @filename: server.ts
+import { httpLink } from '@trpc/client';
+import { createTRPCNext } from '@trpc/next';
 import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
-
 // @filename: utils/trpc.ts
 // ---cut---
 import type { AppRouter } from '../server';
-import { httpLink } from '@trpc/client';
-import { createTRPCNext } from '@trpc/next';
+
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
 
 export const trpc = createTRPCNext<AppRouter>({
   config() {

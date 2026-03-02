@@ -113,18 +113,22 @@ A sample router is given below, save it in a file named `router.ts`.
 
 ```ts twoslash title='router.ts'
 // @filename: context.ts
-import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
-export function createContext({ req, resHeaders }: FetchCreateContextFnOptions) {
-  const user = { name: req.headers.get('username') ?? 'anonymous' };
-  return { req, resHeaders, user };
-}
-export type Context = Awaited<ReturnType<typeof createContext>>;
 
 // @filename: router.ts
 // ---cut---
 import { initTRPC } from '@trpc/server';
+import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import { z } from 'zod';
 import type { Context } from './context';
+
+export function createContext({
+  req,
+  resHeaders,
+}: FetchCreateContextFnOptions) {
+  const user = { name: req.headers.get('username') ?? 'anonymous' };
+  return { req, resHeaders, user };
+}
+export type Context = Awaited<ReturnType<typeof createContext>>;
 
 type User = {
   id: string;

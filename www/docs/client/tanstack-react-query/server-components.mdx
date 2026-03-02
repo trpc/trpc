@@ -470,14 +470,20 @@ You can also create a `prefetch` and `HydrateClient` helper functions to make it
 ```tsx twoslash title='trpc/server.tsx'
 // @jsx: react-jsx
 // @filename: trpc/query-client.ts
-import { QueryClient } from '@tanstack/react-query';
-export function makeQueryClient() { return new QueryClient(); }
-
+import {
+  dehydrate,
+  HydrationBoundary,
+  QueryClient,
+} from '@tanstack/react-query';
+import type { TRPCQueryOptions } from '@trpc/tanstack-react-query';
 // @filename: trpc/server.tsx
 import { cache } from 'react';
-import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
-import type { TRPCQueryOptions } from '@trpc/tanstack-react-query';
 import { makeQueryClient } from './query-client';
+
+export function makeQueryClient() {
+  return new QueryClient();
+}
+
 const getQueryClient = cache(makeQueryClient);
 // ---cut---
 export function HydrateClient(props: { children: React.ReactNode }) {

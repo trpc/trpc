@@ -11,15 +11,16 @@ The headers option can be customized in the config when using the [`httpBatchLin
 
 ```ts twoslash title='utils/trpc.ts'
 // @filename: server.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { initTRPC } from '@trpc/server';
 import type { AppRouter } from './server';
+
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
 
 let token: string;
 
@@ -53,8 +54,14 @@ export const trpc = createTRPCClient<AppRouter>({
 ```ts twoslash title='auth.ts'
 // @target: esnext
 // @filename: server.ts
+
+// @filename: auth.ts
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
+import type { AppRouter } from './server';
+import { setToken } from './utils';
+
 const t = initTRPC.create();
 export const appRouter = t.router({
   auth: t.router({
@@ -68,13 +75,15 @@ export type AppRouter = typeof appRouter;
 // @filename: utils.ts
 export function setToken(token: string) {}
 
-// @filename: auth.ts
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
-import type { AppRouter } from './server';
-const trpc = createTRPCClient<AppRouter>({ links: [httpBatchLink({ url: 'http://localhost:3000' })] });
-import { setToken } from './utils';
+const trpc = createTRPCClient<AppRouter>({
+  links: [httpBatchLink({ url: 'http://localhost:3000' })],
+});
+
 // ---cut---
-const result = await trpc.auth.login.mutate({ username: 'user', password: 'pass' });
+const result = await trpc.auth.login.mutate({
+  username: 'user',
+  password: 'pass',
+});
 setToken(result.accessToken);
 ```
 

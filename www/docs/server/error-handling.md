@@ -156,6 +156,7 @@ The `onError` parameter is an object that contains all information about the err
 
 ```ts twoslash
 import { TRPCError } from '@trpc/server';
+
 // ---cut---
 interface OnErrorOpts {
   error: TRPCError;

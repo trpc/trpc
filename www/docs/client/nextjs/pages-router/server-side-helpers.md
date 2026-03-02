@@ -50,17 +50,18 @@ This method is used when you don't have direct access to your tRPC router. e.g. 
 
 ```ts twoslash
 // @filename: server/router.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import { createServerSideHelpers } from '@trpc/react-query/server';
-import type { AppRouter } from './server/router';
+import { initTRPC } from '@trpc/server';
 import superjson from 'superjson';
+import type { AppRouter } from './server/router';
+
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
 
 const proxyClient = createTRPCClient<AppRouter>({
   links: [

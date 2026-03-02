@@ -25,10 +25,6 @@ Let's say you're using `httpBatchLink` as the terminating link in your tRPC clie
 
 ```ts twoslash title="client/index.ts"
 // @filename: server.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
@@ -38,7 +34,12 @@ import {
   httpLink,
   splitLink,
 } from '@trpc/client';
+import { initTRPC } from '@trpc/server';
 import type { AppRouter } from './server';
+
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
 
 const url = `http://localhost:3000`;
 
@@ -66,20 +67,29 @@ const client = createTRPCClient<AppRouter>({
 
 ```ts twoslash title='client.ts'
 // @filename: server.ts
+
+// @filename: client.ts
+import {
+  createTRPCClient,
+  httpBatchLink,
+  httpLink,
+  splitLink,
+} from '@trpc/client';
 import { initTRPC } from '@trpc/server';
+import type { AppRouter } from './server';
+
 const t = initTRPC.create();
 export const appRouter = t.router({
   posts: t.procedure.query(() => []),
 });
 export type AppRouter = typeof appRouter;
 
-// @filename: client.ts
-import { createTRPCClient, httpBatchLink, splitLink, httpLink } from '@trpc/client';
-import type { AppRouter } from './server';
 const proxy = createTRPCClient<AppRouter>({
   links: [
     splitLink({
-      condition(op) { return Boolean(op.context.skipBatch); },
+      condition(op) {
+        return Boolean(op.context.skipBatch);
+      },
       true: httpLink({ url: 'http://localhost:3000' }),
       false: httpBatchLink({ url: 'http://localhost:3000' }),
     }),

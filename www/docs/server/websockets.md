@@ -75,15 +75,16 @@ You can use [Links](../client/links/overview.md) to route queries and/or mutatio
 
 ```tsx twoslash title='client.ts'
 // @filename: server.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
 import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
+import { initTRPC } from '@trpc/server';
 import type { AppRouter } from './server';
+
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
 
 // create persistent WebSocket connection
 const wsClient = createWSClient({

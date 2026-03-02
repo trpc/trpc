@@ -11,16 +11,17 @@ By default, tRPC does not cancel requests on unmount. If you want to opt into th
 
 ```ts twoslash title="client.ts"
 // @filename: server/routers/_app.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
 import { httpBatchLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
+import { initTRPC } from '@trpc/server';
 import type { AppRouter } from './server/routers/_app';
+
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
 
 export const trpc = createTRPCNext<AppRouter>({
   config() {

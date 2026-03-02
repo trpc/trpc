@@ -181,7 +181,9 @@ async function main() {
   }
 
   if (focusFilters.length > 0) {
-    files = files.filter((f) => focusFilters.some((filter) => f.includes(filter)));
+    files = files.filter((f) =>
+      focusFilters.some((filter) => f.includes(filter)),
+    );
   }
 
   // Create the unified processor with twoslash

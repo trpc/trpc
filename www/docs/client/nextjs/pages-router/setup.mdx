@@ -157,16 +157,17 @@ use the `createTRPCNext` function to create a set of strongly-typed hooks from y
 
 ```tsx twoslash title='utils/trpc.ts'
 // @filename: server/routers/_app.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
 
 // @filename: utils/trpc.ts
 // ---cut---
 import { httpBatchLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
+import { initTRPC } from '@trpc/server';
 import type { AppRouter } from '../server/routers/_app';
+
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
 
 function getBaseUrl() {
   if (typeof window !== 'undefined')
@@ -324,15 +325,16 @@ Ability to set request headers and HTTP status when server-side rendering.
 
 ```tsx twoslash title='utils/trpc.ts'
 // @filename: server/routers/_app.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
 
 // @filename: utils/trpc.ts
 // ---cut---
 import { createTRPCNext } from '@trpc/next';
+import { initTRPC } from '@trpc/server';
 import type { AppRouter } from '../server/routers/_app';
+
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
 
 export const trpc = createTRPCNext<AppRouter>({
   config(config) {

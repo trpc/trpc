@@ -50,14 +50,15 @@ export type AppRouter = typeof appRouter;
 Now in our component, when we navigate the object `createTRPCQueryUtils` gives us and reach the `post.all` query, we'll get access to our query helpers!
 
 ```tsx twoslash title="MyPage.tsx"
-// @include: server
-// @filename: MyPage.tsx
-declare function useLoaderData(): unknown;
 // ---cut---
 import { QueryClient } from '@tanstack/react-query';
 import { createTRPCQueryUtils, createTRPCReact } from '@trpc/react-query';
 import React from 'react';
 import type { AppRouter } from './server';
+
+// @include: server
+// @filename: MyPage.tsx
+declare function useLoaderData(): unknown;
 
 const trpc = createTRPCReact<AppRouter>();
 const trpcClient = trpc.createClient({ links: [] });

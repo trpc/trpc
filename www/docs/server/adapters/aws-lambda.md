@@ -117,8 +117,8 @@ API Gateway has two different event data formats when it invokes a Lambda. For R
 To infer what version you might have, supply the context as following:
 
 ```ts twoslash
-import type { APIGatewayProxyEvent } from 'aws-lambda';
 import type { CreateAWSLambdaContextOptions } from '@trpc/server/adapters/aws-lambda';
+import type { APIGatewayProxyEvent } from 'aws-lambda';
 
 // ---cut---
 function createContext({

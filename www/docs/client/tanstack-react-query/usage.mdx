@@ -753,17 +753,22 @@ Enable the feature flag when creating your context:
 
 ```tsx twoslash title='utils/trpc.ts'
 // @filename: server.ts
+import { createTRPCClient } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
+// @filename: utils/trpc.ts
+import { createTRPCContext } from '@trpc/tanstack-react-query';
+import type { AccountRouter, BillingRouter } from '../server';
+
 const t = initTRPC.create();
-const billingRouter = t.router({ list: t.procedure.query(() => [{ id: '1' }]) });
-const accountRouter = t.router({ list: t.procedure.query(() => [{ id: '1' }]) });
+const billingRouter = t.router({
+  list: t.procedure.query(() => [{ id: '1' }]),
+});
+const accountRouter = t.router({
+  list: t.procedure.query(() => [{ id: '1' }]),
+});
 export type BillingRouter = typeof billingRouter;
 export type AccountRouter = typeof accountRouter;
 
-// @filename: utils/trpc.ts
-import { createTRPCContext } from '@trpc/tanstack-react-query';
-import { createTRPCClient } from '@trpc/client';
-import type { BillingRouter, AccountRouter } from '../server';
 // ---cut---
 // [...]
 
@@ -908,17 +913,19 @@ Infer the input and output types of a full router
 ```ts twoslash
 // @filename: server/router.ts
 import { initTRPC } from '@trpc/server';
-import { z } from 'zod';
-const t = initTRPC.create();
-const appRouter = t.router({
-  getUser: t.procedure.input(z.object({ id: z.string() })).query(() => ({ name: 'foo' })),
-});
-export type AppRouter = typeof appRouter;
-
 // @filename: types.ts
 // ---cut---
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+import { z } from 'zod';
 import type { AppRouter } from './server/router';
+
+const t = initTRPC.create();
+const appRouter = t.router({
+  getUser: t.procedure
+    .input(z.object({ id: z.string() }))
+    .query(() => ({ name: 'foo' })),
+});
+export type AppRouter = typeof appRouter;
 
 export type Inputs = inferRouterInputs<AppRouter>;
 export type Outputs = inferRouterOutputs<AppRouter>;

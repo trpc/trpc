@@ -282,15 +282,17 @@ export function TRPCReactProvider(
 Mount the provider in the root layout of your application:
 
 ```tsx twoslash title='app/layout.tsx'
-// @jsx: react-jsx
-// @filename: types.d.ts
-declare module '~/trpc/client' {
-  export function TRPCReactProvider(props: { children: React.ReactNode }): React.JSX.Element;
-}
-
 // @filename: app/layout.tsx
 // ---cut---
 import { TRPCReactProvider } from '~/trpc/client';
+
+// @jsx: react-jsx
+// @filename: types.d.ts
+declare module '~/trpc/client' {
+  export function TRPCReactProvider(props: {
+    children: React.ReactNode;
+  }): React.JSX.Element;
+}
 
 export default function RootLayout({
   children,
@@ -373,6 +375,12 @@ You're all set! You can now prefetch queries in server components and consume th
 #### Prefetching in a Server Component
 
 ```tsx twoslash title='app/page.tsx'
+// @filename: app/page.tsx
+// ---cut---
+import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
+import { getQueryClient, trpc } from '~/trpc/server';
+import { ClientGreeting } from './client-greeting';
+
 // @jsx: react-jsx
 // @filename: types.d.ts
 declare module '~/trpc/server' {
@@ -380,7 +388,10 @@ declare module '~/trpc/server' {
   export function getQueryClient(): QueryClient;
   export const trpc: {
     hello: {
-      queryOptions: (input: { text: string }) => { queryKey: any[]; queryFn: () => Promise<{ greeting: string }> };
+      queryOptions: (input: { text: string }) => {
+        queryKey: any[];
+        queryFn: () => Promise<{ greeting: string }>;
+      };
     };
   };
 }
@@ -389,12 +400,6 @@ declare module '~/trpc/server' {
 export function ClientGreeting() {
   return <div>Hello</div>;
 }
-
-// @filename: app/page.tsx
-// ---cut---
-import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
-import { getQueryClient, trpc } from '~/trpc/server';
-import { ClientGreeting } from './client-greeting';
 
 export default async function Home() {
   const queryClient = getQueryClient();
@@ -415,6 +420,10 @@ export default async function Home() {
 #### Using data in a Client Component
 
 ```tsx twoslash title='app/client-greeting.tsx'
+// <-- hooks can only be used in client components
+import { useQuery } from '@tanstack/react-query';
+import { useTRPC } from '~/trpc/client';
+
 // @jsx: react-jsx
 // @filename: types.d.ts
 declare module '~/trpc/client' {
@@ -430,11 +439,7 @@ declare module '~/trpc/client' {
 
 // @filename: app/client-greeting.tsx
 // ---cut---
-'use client';
-
-// <-- hooks can only be used in client components
-import { useQuery } from '@tanstack/react-query';
-import { useTRPC } from '~/trpc/client';
+('use client');
 
 export function ClientGreeting() {
   const trpc = useTRPC();
@@ -450,14 +455,19 @@ You can create `prefetch` and `HydrateClient` helper functions to make this more
 ```tsx twoslash title='trpc/server.tsx'
 // @jsx: react-jsx
 // @filename: query-client.ts
-import { QueryClient } from '@tanstack/react-query';
-export function makeQueryClient() { return new QueryClient(); }
-
+import {
+  dehydrate,
+  HydrationBoundary,
+  QueryClient,
+} from '@tanstack/react-query';
+import type { TRPCQueryOptions } from '@trpc/tanstack-react-query';
 // @filename: trpc/server.tsx
 import { cache } from 'react';
-import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { makeQueryClient } from '../query-client';
-import type { TRPCQueryOptions } from '@trpc/tanstack-react-query';
+
+export function makeQueryClient() {
+  return new QueryClient();
+}
 
 export const getQueryClient = cache(makeQueryClient);
 
@@ -486,10 +496,17 @@ export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(
 Then you can use it like this:
 
 ```tsx twoslash
+// @filename: app/page.tsx
+// ---cut---
+import { HydrateClient, prefetch, trpc } from '~/trpc/server';
+import { ClientGreeting } from './client-greeting';
+
 // @jsx: react-jsx
 // @filename: types.d.ts
 declare module '~/trpc/server' {
-  export function HydrateClient(props: { children: React.ReactNode }): React.JSX.Element;
+  export function HydrateClient(props: {
+    children: React.ReactNode;
+  }): React.JSX.Element;
   export function prefetch(queryOptions: any): void;
   export const trpc: {
     hello: {
@@ -502,11 +519,6 @@ declare module '~/trpc/server' {
 export function ClientGreeting() {
   return <div>Hello</div>;
 }
-
-// @filename: app/page.tsx
-// ---cut---
-import { HydrateClient, prefetch, trpc } from '~/trpc/server';
-import { ClientGreeting } from './client-greeting';
 
 function Home() {
   prefetch(trpc.hello.queryOptions({ text: 'world' }));
@@ -526,10 +538,19 @@ function Home() {
 You may prefer handling loading and error states using Suspense and Error Boundaries. You can do this by using the `useSuspenseQuery` hook.
 
 ```tsx twoslash title='app/page.tsx'
+// @filename: app/page.tsx
+// ---cut---
+import { HydrateClient, prefetch, trpc } from '~/trpc/server';
+import { Suspense } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
+import { ClientGreeting } from './client-greeting';
+
 // @jsx: react-jsx
 // @filename: types.d.ts
 declare module '~/trpc/server' {
-  export function HydrateClient(props: { children: React.ReactNode }): React.JSX.Element;
+  export function HydrateClient(props: {
+    children: React.ReactNode;
+  }): React.JSX.Element;
   export function prefetch(queryOptions: any): void;
   export const trpc: {
     hello: {
@@ -542,13 +563,6 @@ declare module '~/trpc/server' {
 export function ClientGreeting() {
   return <div>Hello</div>;
 }
-
-// @filename: app/page.tsx
-// ---cut---
-import { HydrateClient, prefetch, trpc } from '~/trpc/server';
-import { Suspense } from 'react';
-import { ErrorBoundary } from 'react-error-boundary';
-import { ClientGreeting } from './client-greeting';
 
 export default async function Home() {
   prefetch(trpc.hello.queryOptions());
@@ -566,6 +580,9 @@ export default async function Home() {
 ```
 
 ```tsx twoslash title='app/client-greeting.tsx'
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { useTRPC } from '~/trpc/client';
+
 // @jsx: react-jsx
 // @filename: types.d.ts
 declare module '~/trpc/client' {
@@ -581,10 +598,7 @@ declare module '~/trpc/client' {
 
 // @filename: app/client-greeting.tsx
 // ---cut---
-'use client';
-
-import { useSuspenseQuery } from '@tanstack/react-query';
-import { useTRPC } from '~/trpc/client';
+('use client');
 
 export function ClientGreeting() {
   const trpc = useTRPC();
@@ -632,6 +646,10 @@ export const caller = appRouter.createCaller(async () =>
 ```
 
 ```tsx twoslash title='app/page.tsx'
+// @filename: app/page.tsx
+// ---cut---
+import { caller } from '~/trpc/server';
+
 // @jsx: react-jsx
 // @filename: types.d.ts
 declare module '~/trpc/server' {
@@ -639,10 +657,6 @@ declare module '~/trpc/server' {
     hello: () => Promise<{ greeting: string }>;
   };
 }
-
-// @filename: app/page.tsx
-// ---cut---
-import { caller } from '~/trpc/server';
 
 export default async function Home() {
   const greeting = await caller.hello();
@@ -657,12 +671,19 @@ If you **really** need to use the data both on the server as well as inside clie
 guide, you can use `fetchQuery` instead of `prefetch` to have the data both on the server as well as hydrating it down to the client:
 
 ```tsx twoslash title='app/page.tsx'
+// @filename: app/page.tsx
+// ---cut---
+import { getQueryClient, HydrateClient, trpc } from '~/trpc/server';
+import { ClientGreeting } from './client-greeting';
+
 // @jsx: react-jsx
 // @filename: types.d.ts
 declare module '~/trpc/server' {
   import { QueryClient } from '@tanstack/react-query';
   export function getQueryClient(): QueryClient;
-  export function HydrateClient(props: { children: React.ReactNode }): React.JSX.Element;
+  export function HydrateClient(props: {
+    children: React.ReactNode;
+  }): React.JSX.Element;
   export const trpc: {
     hello: {
       queryOptions: (input?: { text: string }) => {
@@ -677,11 +698,6 @@ declare module '~/trpc/server' {
 export function ClientGreeting() {
   return <div>Hello</div>;
 }
-
-// @filename: app/page.tsx
-// ---cut---
-import { getQueryClient, HydrateClient, trpc } from '~/trpc/server';
-import { ClientGreeting } from './client-greeting';
 
 export default async function Home() {
   const queryClient = getQueryClient();

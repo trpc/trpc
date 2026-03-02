@@ -73,21 +73,28 @@ If you're fetching data based on the `lastEventId`, and capturing all events is 
 :::
 
 ```ts twoslash
-// @errors: 2583 2339
-// @filename: events.d.ts
-declare module 'events' {
-  class EventEmitter {
-    toIterable(event: string, opts?: { signal?: AbortSignal }): AsyncIterable<any[]>;
-  }
-  export function on(emitter: EventEmitter, event: string, opts?: { signal?: AbortSignal }): AsyncIterable<any[]>;
-  export default EventEmitter;
-}
-
 // @filename: index.ts
 // ---cut---
 import EventEmitter, { on } from 'events';
 import { initTRPC, tracked } from '@trpc/server';
 import { z } from 'zod';
+
+// @errors: 2583 2339
+// @filename: events.d.ts
+declare module 'events' {
+  class EventEmitter {
+    toIterable(
+      event: string,
+      opts?: { signal?: AbortSignal },
+    ): AsyncIterable<any[]>;
+  }
+  export function on(
+    emitter: EventEmitter,
+    event: string,
+    opts?: { signal?: AbortSignal },
+  ): AsyncIterable<any[]>;
+  export default EventEmitter;
+}
 
 type Post = { id: string; title: string };
 

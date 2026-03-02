@@ -203,15 +203,17 @@ yarn add @fastify/websocket
 ### Import and register `@fastify/websocket`
 
 ```ts twoslash
+// @filename: server.ts
+
+// ---cut---
+import ws from '@fastify/websocket';
+import fastify from 'fastify';
+
 // @filename: node_modules/@fastify/websocket/index.d.ts
 declare const plugin: any;
 export default plugin;
 
-// @filename: server.ts
-import fastify from 'fastify';
 declare const server: ReturnType<typeof fastify>;
-// ---cut---
-import ws from '@fastify/websocket';
 
 server.register(ws);
 ```

@@ -20,19 +20,21 @@ Additionally, consider [`Response Caching`](../../../server/caching.md).
 
 ```tsx twoslash title='utils/trpc.ts'
 // @filename: utils/api/trpc/[trpc].ts
+
+// ---cut---
+import { httpBatchLink } from '@trpc/client';
+import { createTRPCNext } from '@trpc/next';
+import { ssrPrepass } from '@trpc/next/ssrPrepass';
 import { initTRPC } from '@trpc/server';
+import superjson from 'superjson';
+import type { AppRouter } from './api/trpc/[trpc]';
+
 const t = initTRPC.create();
 export const appRouter = t.router({});
 export type AppRouter = typeof appRouter;
 
 // @filename: utils/trpc.ts
 declare function getBaseUrl(): string;
-// ---cut---
-import { httpBatchLink } from '@trpc/client';
-import { createTRPCNext } from '@trpc/next';
-import { ssrPrepass } from '@trpc/next/ssrPrepass';
-import superjson from 'superjson';
-import type { AppRouter } from './api/trpc/[trpc]';
 
 export const trpc = createTRPCNext<AppRouter>({
   ssr: true,
@@ -80,19 +82,21 @@ or, if you want to SSR conditional on a given request, you can pass a callback t
 
 ```tsx twoslash title='utils/trpc.ts'
 // @filename: utils/api/trpc/[trpc].ts
+
+// ---cut---
+import { httpBatchLink } from '@trpc/client';
+import { createTRPCNext } from '@trpc/next';
+import { ssrPrepass } from '@trpc/next/ssrPrepass';
 import { initTRPC } from '@trpc/server';
+import superjson from 'superjson';
+import type { AppRouter } from './api/trpc/[trpc]';
+
 const t = initTRPC.create();
 export const appRouter = t.router({});
 export type AppRouter = typeof appRouter;
 
 // @filename: utils/trpc.ts
 declare function getBaseUrl(): string;
-// ---cut---
-import { httpBatchLink } from '@trpc/client';
-import { createTRPCNext } from '@trpc/next';
-import { ssrPrepass } from '@trpc/next/ssrPrepass';
-import superjson from 'superjson';
-import type { AppRouter } from './api/trpc/[trpc]';
 
 export const trpc = createTRPCNext<AppRouter>({
   ssrPrepass,
@@ -179,17 +183,18 @@ You can use the `responseMeta` callback on `createTRPCNext` to set cache headers
 
 ```tsx twoslash title='utils/trpc.tsx'
 // @filename: server/routers/_app.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
 
 // @filename: utils/trpc.tsx
 // ---cut---
 import { httpBatchLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 import { ssrPrepass } from '@trpc/next/ssrPrepass';
+import { initTRPC } from '@trpc/server';
 import type { AppRouter } from '../server/routers/_app';
+
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
 
 export const trpc = createTRPCNext<AppRouter>({
   config() {
