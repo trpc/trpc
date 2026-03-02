@@ -89,6 +89,20 @@ const config: SidebarsConfig = {
       items: [
         {
           type: 'category',
+          label: 'Vanilla Client',
+          collapsed: true,
+          link: {
+            type: 'doc',
+            id: 'client/vanilla/introduction',
+          },
+          items: [
+            'client/vanilla/setup',
+            'client/vanilla/infer-types',
+            'client/vanilla/aborting-procedure-calls',
+          ],
+        },
+        {
+          type: 'category',
           label: 'Links',
           collapsed: true,
           link: {
@@ -107,20 +121,6 @@ const config: SidebarsConfig = {
             'client/links/retryLink',
             'client/headers',
             'client/cors',
-          ],
-        },
-        {
-          type: 'category',
-          label: 'Vanilla Client',
-          collapsed: true,
-          link: {
-            type: 'doc',
-            id: 'client/vanilla/introduction',
-          },
-          items: [
-            'client/vanilla/setup',
-            'client/vanilla/infer-types',
-            'client/vanilla/aborting-procedure-calls',
           ],
         },
         {
