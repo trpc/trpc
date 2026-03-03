@@ -1,4 +1,3 @@
-import { getServerAndReactClient } from '../__reactHelpers';
 import type { DehydratedState, InfiniteData } from '@tanstack/react-query';
 import { dehydrate } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
@@ -7,6 +6,7 @@ import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import React from 'react';
 import { z } from 'zod';
+import { getServerAndReactClient } from '../__reactHelpers';
 
 const fixtureData = ['1', '2'];
 

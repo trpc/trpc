@@ -1,11 +1,11 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import { getServerAndReactClient } from './__reactHelpers';
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import React, { useEffect, useState } from 'react';
 import { z } from 'zod';
+/* eslint-disable react-hooks/exhaustive-deps */
+import { getServerAndReactClient } from './__reactHelpers';
 
 type Post = {
   id: number;

@@ -1,14 +1,14 @@
 'use client';
 
 import { PaperAirplaneIcon } from '@heroicons/react/24/outline';
-import { Avatar } from '~/components/avatar';
-import { Button } from '~/components/button';
-import { Textarea } from '~/components/input';
-import { trpc } from '~/lib/trpc';
 import { cx } from 'class-variance-authority';
 import { format, formatDistanceToNow, isToday } from 'date-fns';
 import { signIn, useSession } from 'next-auth/react';
 import * as React from 'react';
+import { Avatar } from '~/components/avatar';
+import { Button } from '~/components/button';
+import { Textarea } from '~/components/input';
+import { trpc } from '~/lib/trpc';
 import { useLivePosts, useThrottledIsTypingMutation } from './hooks';
 import { listWithAnd, pluralize, run } from './utils';
 

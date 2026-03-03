@@ -1,5 +1,5 @@
-import { auth } from '~/auth';
 import Link from 'next/link';
+import { auth } from '~/auth';
 
 export default async function Index() {
   const session = await auth();

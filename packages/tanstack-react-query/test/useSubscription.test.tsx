@@ -1,5 +1,4 @@
 import { EventEmitter, on } from 'node:events';
-import { testReactResource } from './__helpers';
 import { fireEvent } from '@testing-library/react';
 import { httpSubscriptionLink, wsLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
@@ -11,6 +10,7 @@ import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
 import type { TRPCSubscriptionResult } from '../src';
 import { useSubscription } from '../src';
+import { testReactResource } from './__helpers';
 
 /* eslint-disable no-console */
 export const suppressLogs = () => {

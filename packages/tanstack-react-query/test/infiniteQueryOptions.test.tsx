@@ -1,4 +1,3 @@
-import { testReactResource } from './__helpers';
 import {
   infiniteQueryOptions,
   skipToken,
@@ -9,14 +8,15 @@ import {
   useSuspenseQuery,
   type InfiniteData,
 } from '@tanstack/react-query';
-import '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import '@testing-library/react';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import type { inferRouterError } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import * as React from 'react';
 import { describe, expect, expectTypeOf, test } from 'vitest';
 import { z } from 'zod';
+import { testReactResource } from './__helpers';
 
 const fixtureData = ['1', '2', '3', '4'];
 

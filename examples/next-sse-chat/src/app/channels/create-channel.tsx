@@ -2,6 +2,8 @@
 
 import * as Headless from '@headlessui/react';
 import { PlusIcon } from '@heroicons/react/24/outline';
+import { useRouter } from 'next/navigation';
+import * as React from 'react';
 import { Button } from '~/components/button';
 import {
   Dialog,
@@ -11,8 +13,6 @@ import {
 } from '~/components/dialog';
 import { Input, Label } from '~/components/input';
 import { trpc } from '~/lib/trpc';
-import { useRouter } from 'next/navigation';
-import * as React from 'react';
 
 export function CreateChannelDialog() {
   const [open, setOpen] = React.useState(false);

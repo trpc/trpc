@@ -1,6 +1,6 @@
-import { EventEmitter } from 'node:events';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
+import { EventEmitter } from 'node:events';
 import '@testing-library/react';
 import type { TRPCLink } from '@trpc/client';
 import {

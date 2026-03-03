@@ -1,6 +1,6 @@
-import tseslint from 'typescript-eslint';
 import reactPlugin from 'eslint-plugin-react';
 import * as reactHooks from 'eslint-plugin-react-hooks';
+import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   reactHooks.configs.recommended,

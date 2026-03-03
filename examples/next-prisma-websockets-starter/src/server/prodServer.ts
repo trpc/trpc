@@ -1,11 +1,9 @@
-import next from 'next';
+import type { Socket } from 'net';
 import { createServer } from 'node:http';
 import { parse } from 'node:url';
-import type { Socket } from 'net';
-
-import { WebSocketServer } from 'ws';
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
-
+import next from 'next';
+import { WebSocketServer } from 'ws';
 import { createContext } from './context';
 import { appRouter } from './routers/_app';
 

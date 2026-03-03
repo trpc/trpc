@@ -1,4 +1,3 @@
-import { getServerAndReactClient } from './__reactHelpers';
 import { useIsFetching } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import { getQueryKey } from '@trpc/react-query';
@@ -6,6 +5,7 @@ import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import React from 'react';
 import { z } from 'zod';
+import { getServerAndReactClient } from './__reactHelpers';
 
 type Post = {
   id: number;

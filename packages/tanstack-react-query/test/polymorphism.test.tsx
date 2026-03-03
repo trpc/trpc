@@ -1,3 +1,11 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import userEvent from '@testing-library/user-event';
+import '@testing-library/react';
+import type { ReactNode } from 'react';
+import React, { useState } from 'react';
+import { describe, expect, test } from 'vitest';
+import { z } from 'zod';
+import type { inferOutput } from '../src';
 /*
   It's common to have a data interface which is used across multiple routes in an API,
   for instance a shared CSV Export system which can be applied to multiple entities in an application.
@@ -9,14 +17,6 @@
   interface are compatible with, and allow you to pass around deep router paths to generic components with ease.
 */
 import { testReactResource } from './__helpers';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import type { ReactNode } from 'react';
-import React, { useState } from 'react';
-import { describe, expect, test } from 'vitest';
-import { z } from 'zod';
-import type { inferOutput } from '../src';
 import { t } from './polymorphism.common';
 /**
  * We define a router factory which can be used many times.

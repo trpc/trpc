@@ -1,11 +1,11 @@
-import { createQueryClient } from './__queryClient';
-import { createAppRouter } from './__testHelpers';
 import { QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { getUntypedClient } from '@trpc/client';
 import type { TRPCQueryKey } from '@trpc/react-query/internals/getQueryKey';
 import React, { useState } from 'react';
+import { createQueryClient } from './__queryClient';
+import { createAppRouter } from './__testHelpers';
 
 let factory: ReturnType<typeof createAppRouter>;
 beforeEach(() => {

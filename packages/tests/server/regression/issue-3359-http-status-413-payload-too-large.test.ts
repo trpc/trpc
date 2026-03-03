@@ -1,5 +1,5 @@
-import http from 'http';
 import { waitError } from '@trpc/server/__tests__/waitError';
+import http from 'http';
 import {
   createTRPCClient,
   httpBatchLink,

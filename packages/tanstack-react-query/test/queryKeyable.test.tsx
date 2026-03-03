@@ -1,4 +1,3 @@
-import { testReactResource } from './__helpers';
 import { QueryClient, useQueryClient } from '@tanstack/react-query';
 import {
   createTRPCClient,
@@ -20,6 +19,7 @@ import * as React from 'react';
 import { useState } from 'react';
 import { describe, expect, test } from 'vitest';
 import { z } from 'zod';
+import { testReactResource } from './__helpers';
 
 const testContext = (opts?: { keyPrefix?: string }) => {
   const t = initTRPC.create({

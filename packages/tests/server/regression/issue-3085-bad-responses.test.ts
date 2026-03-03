@@ -1,5 +1,5 @@
-import http from 'http';
 import { waitError } from '@trpc/server/__tests__/waitError';
+import http from 'http';
 import { createTRPCClient, httpLink, TRPCClientError } from '@trpc/client';
 import { observable } from '@trpc/server/observable';
 import fetch from 'node-fetch';

@@ -1,5 +1,5 @@
-import { EventEmitter } from 'node:events';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
+import { EventEmitter } from 'node:events';
 import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
 import { initTRPC, tracked } from '@trpc/server';
 import { jsonEncoder, type Encoder } from '@trpc/server/adapters/ws';

@@ -1,6 +1,6 @@
-import { createAppRouter } from './__testHelpers';
 import { createServerSideHelpers } from '@trpc/react-query/server';
 import { initTRPC } from '@trpc/server';
+import { createAppRouter } from './__testHelpers';
 
 let factory: ReturnType<typeof createAppRouter>;
 beforeEach(() => {

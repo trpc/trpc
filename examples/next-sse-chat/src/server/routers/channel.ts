@@ -1,10 +1,10 @@
 import EventEmitter, { on } from 'node:events';
 import type { TRPCRouterRecord } from '@trpc/server';
+import { z } from 'zod';
 import { db } from '~/server/db/client';
 import type { PostType } from '~/server/db/schema';
 import { Channel } from '~/server/db/schema';
 import { authedProcedure, publicProcedure } from '~/server/trpc';
-import { z } from 'zod';
 
 export type WhoIsTyping = Record<string, { lastTyped: Date }>;
 

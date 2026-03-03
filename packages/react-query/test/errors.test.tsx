@@ -1,4 +1,3 @@
-import { getServerAndReactClient } from './__reactHelpers';
 import { render } from '@testing-library/react';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import { TRPCClientError } from '@trpc/client';
@@ -10,6 +9,7 @@ import type {
 import { konn } from 'konn';
 import React from 'react';
 import { z, ZodError } from 'zod';
+import { getServerAndReactClient } from './__reactHelpers';
 
 describe('custom error formatter', () => {
   const ctx = konn()

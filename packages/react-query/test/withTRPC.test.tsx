@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-import { createAppRouter } from './__testHelpers';
 import type { DehydratedState } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import { withTRPC } from '@trpc/next';
@@ -8,6 +6,8 @@ import { konn } from 'konn';
 import type { AppType, NextPageContext } from 'next/dist/shared/lib/utils';
 import React from 'react';
 import { expect, vitest } from 'vitest';
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import { createAppRouter } from './__testHelpers';
 
 const ctx = konn()
   .beforeEach(() => createAppRouter())

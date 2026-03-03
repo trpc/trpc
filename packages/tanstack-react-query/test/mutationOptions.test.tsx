@@ -1,10 +1,10 @@
-import { testReactResource } from './__helpers';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import '@testing-library/react';
 import { initTRPC } from '@trpc/server';
+import '@testing-library/react';
 import * as React from 'react';
 import { describe, expect, expectTypeOf, test } from 'vitest';
 import { z } from 'zod';
+import { testReactResource } from './__helpers';
 
 const testContext = (keyPrefix?: string) => {
   const t = initTRPC.create({});

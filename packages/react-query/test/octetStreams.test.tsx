@@ -1,6 +1,3 @@
-// Vitest doesn't play nice with JSOM ArrayBuffer's: https://github.com/vitest-dev/vitest/issues/4043#issuecomment-1742028595
-// @vitest-environment node
-import { createQueryClient } from './__queryClient';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { QueryClientProvider } from '@tanstack/react-query';
 import {
@@ -18,6 +15,9 @@ import { octetInputParser } from '@trpc/server/http';
 import { konn } from 'konn';
 import type { ReactNode } from 'react';
 import React from 'react';
+// Vitest doesn't play nice with JSOM ArrayBuffer's: https://github.com/vitest-dev/vitest/issues/4043#issuecomment-1742028595
+// @vitest-environment node
+import { createQueryClient } from './__queryClient';
 
 const ctx = konn()
   .beforeEach(() => {

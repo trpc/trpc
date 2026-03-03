@@ -10,8 +10,8 @@ import { ssrPrepass } from '@trpc/next/ssrPrepass';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { NextPageContext } from 'next';
 import getConfig from 'next/config';
-import type { AppRouter } from '~/server/routers/_app';
 import superjson from 'superjson';
+import type { AppRouter } from '~/server/routers/_app';
 
 // ℹ️ Type-only import:
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export

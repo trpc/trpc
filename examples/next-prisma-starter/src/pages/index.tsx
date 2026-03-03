@@ -1,9 +1,9 @@
-import { trpc } from '../utils/trpc';
-import type { NextPageWithLayout } from './_app';
 import type { inferProcedureInput } from '@trpc/server';
 import Link from 'next/link';
 import { Fragment } from 'react';
 import type { AppRouter } from '~/server/routers/_app';
+import { trpc } from '../utils/trpc';
+import type { NextPageWithLayout } from './_app';
 
 const IndexPage: NextPageWithLayout = () => {
   const utils = trpc.useUtils();

@@ -1,4 +1,3 @@
-import { getServerAndReactClient } from './__reactHelpers';
 import { IterableEventEmitter } from '@trpc/server/__tests__/iterableEventEmitter';
 import {
   ignoreErrors,
@@ -11,6 +10,7 @@ import { observable } from '@trpc/server/observable';
 import { konn } from 'konn';
 import React, { useState } from 'react';
 import { z } from 'zod';
+import { getServerAndReactClient } from './__reactHelpers';
 
 const returnSymbol = Symbol();
 

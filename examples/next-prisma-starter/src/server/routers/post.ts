@@ -1,12 +1,12 @@
+import type { Prisma } from '@prisma/client';
+import { TRPCError } from '@trpc/server';
+import { z } from 'zod';
+import { prisma } from '~/server/prisma';
 /**
  *
  * This is an example router, you can delete this file and then update `../pages/api/trpc/[trpc].tsx`
  */
 import { router, publicProcedure } from '../trpc';
-import type { Prisma } from '@prisma/client';
-import { TRPCError } from '@trpc/server';
-import { z } from 'zod';
-import { prisma } from '~/server/prisma';
 
 /**
  * Default selector for Post.

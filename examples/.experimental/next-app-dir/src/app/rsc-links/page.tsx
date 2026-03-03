@@ -1,5 +1,5 @@
-import { api } from '~/trpc/server-invoker';
 import { Suspense } from 'react';
+import { api } from '~/trpc/server-invoker';
 import { ServerInvokedGreeting } from './ServerInvokedGreeting';
 
 export const dynamic = 'force-dynamic';

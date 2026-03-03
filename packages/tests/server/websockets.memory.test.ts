@@ -1,5 +1,5 @@
-import { EventEmitter, on } from 'node:events';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
+import { EventEmitter, on } from 'node:events';
 import { wsLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import { sleep } from '@trpc/server/unstable-core-do-not-import';

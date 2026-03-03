@@ -1,4 +1,3 @@
-import { createQueryClient } from './__queryClient';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
@@ -8,6 +7,7 @@ import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import type { ReactNode } from 'react';
 import React, { useState } from 'react';
+import { createQueryClient } from './__queryClient';
 
 const ctx = konn()
   .beforeEach(() => {

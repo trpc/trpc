@@ -3,18 +3,33 @@
   "printWidth": 80,
   "trailingComma": "all",
   "singleQuote": true,
-  "importOrder": [
-    "___",
-    "__",
-    "^@trpc/(server|client|react-query|tanstack-react-query|next)/src/__tests__(.*)$",
-    "<THIRD_PARTY_MODULES>",
-    "^[./]"
-  ],
-  "importOrderParserPlugins": [
-    "typescript",
-    "jsx",
-    "explicitResourceManagement"
-  ],
+  "sortImports": {
+    "groups": [
+      "test-polyfills",
+      "double-underscore-imports",
+      "trpc-test-helpers",
+      "builtin",
+      "external",
+      ["internal", "subpath"],
+      ["parent", "sibling", "index"],
+      "unknown"
+    ],
+    "customGroups": [
+      {
+        "groupName": "test-polyfills",
+        "elementNamePattern": ["___*"]
+      },
+      {
+        "groupName": "double-underscore-imports",
+        "elementNamePattern": ["@trpc/*/__tests__/*", "@trpc/*/__tests__"]
+      },
+      {
+        "groupName": "trpc-test-helpers",
+        "elementNamePattern": ["@trpc/*/src/__tests__/*"]
+      }
+    ],
+    "newlinesBetween": false
+  },
   "sortTailwindcss": {
     "config": "./www/tailwind.config.ts"
   },

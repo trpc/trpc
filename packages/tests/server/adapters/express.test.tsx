@@ -1,5 +1,5 @@
-import type http from 'http';
 import { waitError } from '@trpc/server/__tests__/waitError';
+import type http from 'http';
 import { createTRPCClient, httpBatchLink, TRPCClientError } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server';
 import { initTRPC, TRPCError } from '@trpc/server';

@@ -1,4 +1,3 @@
-import { testReactResource } from './__helpers';
 import {
   queryOptions,
   skipToken,
@@ -6,14 +5,15 @@ import {
   useSuspenseQueries,
   useSuspenseQuery,
 } from '@tanstack/react-query';
-import '@testing-library/react';
 import type { TRPCClientErrorLike } from '@trpc/client';
+import '@testing-library/react';
 import type { inferRouterError } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
+import { testReactResource } from './__helpers';
 
 type Post = {
   id: string;

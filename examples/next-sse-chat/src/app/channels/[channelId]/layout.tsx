@@ -1,11 +1,11 @@
 import { HashtagIcon } from '@heroicons/react/24/outline';
+import { cx } from 'class-variance-authority';
+import Link from 'next/link';
+import { Suspense } from 'react';
 import { CreateChannelDialog } from '~/app/channels/create-channel';
 import { Button } from '~/components/button';
 import { auth, SignedIn, SignedOut, signIn, signOut } from '~/server/auth';
 import { caller } from '~/server/routers/_app';
-import { cx } from 'class-variance-authority';
-import Link from 'next/link';
-import { Suspense } from 'react';
 
 export default async function Home(
   props: Readonly<{
