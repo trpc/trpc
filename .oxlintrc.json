@@ -1,3 +1,29 @@
 {
-  "ignorePatterns": ["examples/**"]
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "ignorePatterns": ["examples/**", "**/vendor/**"],
+  "rules": {
+    "require-yield": "off"
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/test/**/*",
+        "**/__tests__/**/*",
+        "packages/tests/**/*",
+        "**/*.test.ts",
+        "**/*.test.tsx"
+      ],
+      "rules": {
+        "no-empty-pattern": "off",
+        "no-eval": "off",
+        "no-unused-expressions": "off",
+        "no-unused-vars": "off",
+        "typescript/no-unsafe-declaration-merging": "off",
+        "unicorn/no-await-in-promise-methods": "off",
+        "unicorn/no-single-promise-in-promise-methods": "off",
+        "unicorn/no-thenable": "off",
+        "unicorn/no-useless-fallback-in-spread": "off"
+      }
+    }
+  ]
 }

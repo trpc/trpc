@@ -166,7 +166,7 @@ function createServer(opts: ServerOptions) {
     );
   }
 
-  const plugin = !!opts.fastifyPluginWrapper
+  const plugin = opts.fastifyPluginWrapper
     ? fp(fastifyTRPCPlugin)
     : fastifyTRPCPlugin;
 

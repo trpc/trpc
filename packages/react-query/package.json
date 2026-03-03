@@ -17,7 +17,7 @@
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
-    "lint": "oxlint --quiet src",
+    "lint": "oxlint --deny-warnings src",
     "typecheck": "tsc --noEmit --preserveWatchOutput --pretty"
   },
   "exports": {

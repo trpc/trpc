@@ -19,7 +19,7 @@
     "build": "tsdown",
     "dev": "tsdown --watch",
     "benchmark": "tsc --project tsconfig.benchmark.json",
-    "lint": "oxlint --quiet src",
+    "lint": "oxlint --deny-warnings src",
     "typecheck": "tsc --noEmit --preserveWatchOutput --pretty"
   },
   "exports": {
