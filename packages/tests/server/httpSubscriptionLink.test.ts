@@ -1514,3 +1514,126 @@ test('timer does not leak after subscription ends', async () => {
     maxDurationTimerResult.value,
   );
 });
+
+// regression test for https://github.com/trpc/trpc/issues/7094
+// Tests that the client reconnects after maxDurationMs causes
+// the server to end the SSE connection, and continues receiving
+// data via tracked() event ID resumption.
+test(
+  'maxDurationMs should reconnect and continue receiving data',
+  { timeout: 30_000 },
+  async () => {
+    const MAX_DURATION_MS = 500;
+
+    const onConnection = vi.fn<() => void>();
+    const results: number[] = [];
+    let deferred: Deferred<void> = createDeferred();
+
+    const t = initTRPC.create({
+      transformer: superjson,
+      sse: {
+        maxDurationMs: MAX_DURATION_MS,
+      },
+    });
+
+    const router = t.router({
+      sub: t.procedure
+        .input(
+          z
+            .object({
+              lastEventId: z.coerce.number().min(0).optional(),
+            })
+            .optional(),
+        )
+        .subscription(async function* (opts) {
+          onConnection();
+          let idx = opts.input?.lastEventId ?? 0;
+          while (!opts.signal?.aborted) {
+            idx++;
+            await deferred.promise;
+            deferred = createDeferred();
+            yield tracked(String(idx), idx);
+          }
+        }),
+    });
+
+    const linkSpy: TRPCLink<typeof router> = () => {
+      return ({ next, op }) => {
+        return observable((observer) => {
+          const unsubscribe = next(op).subscribe({
+            next(envelope) {
+              if (!envelope.result.type || envelope.result.type === 'data') {
+                results.push((envelope.result.data as any).data);
+              }
+              observer.next(envelope);
+            },
+            error: observer.error,
+            complete: observer.complete,
+          });
+          return unsubscribe;
+        });
+      };
+    };
+
+    await using ctx = testServerAndClientResource(router, {
+      server: {},
+      client(opts) {
+        return {
+          links: [
+            linkSpy,
+            httpSubscriptionLink({
+              url: opts.httpUrl,
+              transformer: superjson,
+            }),
+          ],
+        };
+      },
+    });
+
+    const onError = vi.fn();
+    const onComplete = vi.fn();
+    const sub = ctx.client.sub.subscribe(undefined, {
+      onError,
+      onComplete,
+    });
+
+    // Wait for initial connection
+    await vi.waitFor(() => {
+      expect(onConnection).toHaveBeenCalledTimes(1);
+    });
+
+    // Send some data before maxDurationMs fires
+    deferred.resolve();
+
+    await vi.waitFor(() => {
+      expect(results).toHaveLength(1);
+    });
+    expect(results).toEqual([1]);
+
+    // Wait for maxDurationMs to fire (500ms), then the polyfill's
+    // retry delay (min 1000ms), then the reconnection to complete.
+    await suppressLogsUntil(async () => {
+      await vi.waitFor(
+        () => {
+          expect(onConnection).toHaveBeenCalledTimes(2);
+        },
+        { timeout: 15_000 },
+      );
+    });
+
+    // Send more data on the new connection
+    deferred.resolve();
+
+    await vi.waitFor(() => {
+      expect(results).toHaveLength(2);
+    });
+    // tracked() ensures the second connection resumes from lastEventId
+    expect(results).toEqual([1, 2]);
+
+    // Subscription should NOT have errored or completed
+    expect(onError).not.toHaveBeenCalled();
+    expect(onComplete).not.toHaveBeenCalled();
+
+    sub.unsubscribe();
+  },
+);

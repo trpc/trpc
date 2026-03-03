@@ -326,6 +326,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
     interface RPCResultOk {
       data: unknown;
+      signal?: AbortSignal;
     }
     type RPCResult = ResultTuple<RPCResultOk>;
     const rpcCalls = info.calls.map(async (call): Promise<RPCResult> => {
@@ -378,7 +379,16 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           signal: combinedAbort.signal,
           batchIndex: call.batchIndex,
         });
-        return [undefined, { data }];
+        return [
+          undefined,
+          {
+            data,
+            signal:
+              proc._def.type === 'subscription'
+                ? combinedAbort.signal
+                : undefined,
+          },
+        ];
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
         const input = call.result();
@@ -520,7 +530,36 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             untransformedJSON: null,
           });
 
-          return new Response(stream, {
+          // When maxDurationMs fires, combinedAbort.signal is aborted
+          // but writeResponse uses request.signal for pipeTo() — which
+          // only fires on client disconnect. We need maxDurationMs abort
+          // to also terminate the SSE response body (fixes #7094).
+          const abortSignal = result?.signal;
+          let responseBody: ReadableStream<Uint8Array> = stream;
+
+          if (abortSignal && !abortSignal.aborted) {
+            const reader = stream.getReader();
+            const onAbort = () => void reader.cancel();
+            abortSignal.addEventListener('abort', onAbort, { once: true });
+
+            responseBody = new ReadableStream({
+              async pull(controller) {
+                const chunk = await reader.read();
+                if (chunk.done) {
+                  abortSignal.removeEventListener('abort', onAbort);
+                  controller.close();
+                } else {
+                  controller.enqueue(chunk.value);
+                }
+              },
+              cancel() {
+                abortSignal.removeEventListener('abort', onAbort);
+                void reader.cancel();
+              },
+            });
+          }
+
+          return new Response(responseBody, {
             headers,
             status: headResponse.status,
           });
