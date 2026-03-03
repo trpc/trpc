@@ -69,7 +69,7 @@ export function getClientArgs<TOptions, TFeatureFlags extends FeatureFlags>(
   let input = queryKeyData.args?.input;
   if (infiniteParams) {
     input = {
-      ...queryKeyData.args?.input,
+      ...Object(queryKeyData.args?.input),
       ...(infiniteParams.pageParam !== undefined
         ? { cursor: infiniteParams.pageParam }
         : {}),
