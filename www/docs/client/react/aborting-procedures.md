@@ -63,7 +63,6 @@ You may also override this behaviour at the query level.
 // @filename: server/router.ts
 // @include: router
 // @filename: utils/trpc.ts
-// ---cut---
 import { createTRPCReact } from '@trpc/react-query';
 import type { AppRouter } from '../server/router';
 

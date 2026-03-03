@@ -10,6 +10,7 @@ slug: /client/react/infer-types
 ```twoslash include server
 // @module: esnext
 // @filename: server.ts
+// ---cut---
 import { initTRPC } from '@trpc/server';
 import { z } from "zod";
 

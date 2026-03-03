@@ -74,6 +74,7 @@ export interface PostPage {
 }
 
 // @filename: utils/trpc.tsx
+// ---cut---
 import { createTRPCReact } from '@trpc/react-query';
 import type { AppRouter } from '../server';
 
@@ -86,9 +87,9 @@ export const trpc = createTRPCReact<AppRouter>();
 ```tsx twoslash
 // @target: esnext
 // @include: server
-// ---cut---
 // @filename: pages/index.tsx
 import React from 'react';
+// ---cut---
 import { trpc } from '../utils/trpc';
 
 function PostView() {
@@ -104,9 +105,9 @@ function PostView() {
 ```tsx twoslash
 // @target: esnext
 // @include: server
-// ---cut---
 // @filename: pages/index.tsx
 import React from 'react';
+// ---cut---
 import { trpc } from '../utils/trpc';
 import type { PostPage } from '../server';
 
@@ -135,9 +136,9 @@ Suspense equivalent of [`useQueries()`](./useQueries.md).
 ```tsx twoslash
 // @target: esnext
 // @include: server
-// ---cut---
 // @filename: pages/index.tsx
 import React from 'react';
+// ---cut---
 import { trpc } from '../utils/trpc';
 
 const Component = (props: { postIds: string[] }) => {
@@ -165,8 +166,8 @@ The performance of suspense queries can be improved by prefetching the query dat
 ```tsx twoslash
 // @target: esnext
 // @include: server
-// ---cut---
 // @filename: loader.ts
+// ---cut---
 import { createTRPCQueryUtils } from '@trpc/react-query';
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import { QueryClient } from '@tanstack/react-query';
@@ -186,8 +187,8 @@ const loader = async (params: { id: string }) =>
 ```tsx twoslash
 // @target: esnext
 // @include: server
-// ---cut---
 // @filename: pages/index.tsx
+// ---cut---
 import React, { Suspense } from 'react';
 import { trpc } from '../utils/trpc';
 
@@ -211,8 +212,8 @@ function PostViewPage(props: { postId: string }) {
 ```tsx twoslash
 // @target: esnext
 // @include: server
-// ---cut---
 // @filename: pages/index.tsx
+// ---cut---
 import React, { Suspense } from 'react';
 import { trpc } from '../utils/trpc';
 import type { PostPage } from '../server';

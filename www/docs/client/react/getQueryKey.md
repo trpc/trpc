@@ -57,8 +57,8 @@ import type { AppRouter } from '../server';
 export const trpc = createTRPCReact<AppRouter>();
 
 // @filename: component.tsx
-// ---cut---
 import React from 'react';
+// ---cut---
 import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import { getQueryKey } from '@trpc/react-query';
 import { trpc } from './utils/trpc';

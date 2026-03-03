@@ -53,6 +53,7 @@ export type AppRouter = typeof appRouter;
 
 
 // @filename: utils/trpc.tsx
+// ---cut---
 import { createTRPCReact } from '@trpc/react-query';
 import type { AppRouter } from '../server';
 
@@ -65,9 +66,9 @@ export const trpc = createTRPCReact<AppRouter>();
 ```tsx twoslash
 // @target: esnext
 // @include: server
-// ---cut---
 // @filename: pages/index.tsx
 import React from 'react';
+// ---cut---
 import { trpc } from '../utils/trpc';
 
 function PostView() {

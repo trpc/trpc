@@ -48,8 +48,8 @@ import type { AppRouter } from '../server';
 export const trpc = createTRPCReact<AppRouter>();
 
 // @filename: component.tsx
-// ---cut---
 import React from 'react';
+// ---cut---
 import { trpc } from './utils/trpc';
 
 const Component = (props: { postIds: string[] }) => {
@@ -92,8 +92,8 @@ import type { AppRouter } from '../server';
 export const trpc = createTRPCReact<AppRouter>();
 
 // @filename: component.tsx
-// ---cut---
 import React from 'react';
+// ---cut---
 import { trpc } from './utils/trpc';
 
 const Component = () => {

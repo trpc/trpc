@@ -179,8 +179,8 @@ const t = initTRPC.create();
 export const router = t.router;
 export const publicProcedure = t.procedure;
 
-// ---cut---
 // @filename: routers/_app.ts
+// ---cut---
 import { lazy } from '@trpc/server';
 import { router } from '../trpc';
 
@@ -194,6 +194,7 @@ export type AppRouter = typeof appRouter;
 
 // ----------------------------------------------------
 // @filename: routers/greeting.ts
+// ---cut---
 import { router, publicProcedure } from '../trpc';
 export const greetingRouter = router({
   hello: publicProcedure.query(() => 'world'),
@@ -201,6 +202,7 @@ export const greetingRouter = router({
 
 // ----------------------------------------------------
 // @filename: routers/user.ts
+// ---cut---
 import { router, publicProcedure } from '../trpc';
 
 export const userRouter = router({

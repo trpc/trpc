@@ -158,11 +158,11 @@ export const trpc = createTRPCNext<AppRouter>({
 });
 
 // @filename: pages/_app.tsx
+import React from 'react';
 // ---cut---
 import { trpc } from '../utils/trpc';
 import type { AppProps } from 'next/app';
 import type { AppType } from 'next/app';
-import React from 'react';
 
 const MyApp: AppType = ({ Component, pageProps }: AppProps) => {
   return <Component {...pageProps} />;

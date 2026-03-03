@@ -26,6 +26,7 @@ You should avoid using `createTRPCQueryUtils` in React Components. Instead, use 
 ```twoslash include server
 // @target: esnext
 // @filename: server.ts
+// ---cut---
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -53,10 +54,10 @@ Now in our component, when we navigate the object `createTRPCQueryUtils` gives u
 // @include: server
 // @filename: MyPage.tsx
 declare function useLoaderData(): unknown;
+import React from 'react';
 // ---cut---
 import { QueryClient } from '@tanstack/react-query';
 import { createTRPCQueryUtils, createTRPCReact } from '@trpc/react-query';
-import React from 'react';
 import type { AppRouter } from './server';
 
 const trpc = createTRPCReact<AppRouter>();

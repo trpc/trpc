@@ -97,8 +97,8 @@ import type { AppRouter } from '../server';
 export const trpc = createTRPCReact<AppRouter>();
 
 // @filename: components/MyComponent.tsx
-// ---cut---
 import React from 'react';
+// ---cut---
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {

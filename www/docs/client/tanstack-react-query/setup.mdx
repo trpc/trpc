@@ -90,6 +90,7 @@ import Tabs from '@theme/Tabs';
 
 ```twoslash include router
 // @filename: server/router.ts
+// ---cut---
 import { initTRPC } from '@trpc/server';
 import { z } from "zod";
 const t = initTRPC.create();
@@ -240,9 +241,9 @@ export const trpc = createTRPCOptionsProxy<AppRouter>({
 });
 
 // @filename: components/App.tsx
+import React from 'react';
 // ---cut---
 import { QueryClientProvider } from '@tanstack/react-query';
-import React from 'react';
 import { queryClient } from '../utils/trpc';
 
 export function App() {
