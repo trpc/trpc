@@ -1,5 +1,8 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "options": {
+    "typeAware": true
+  },
   "ignorePatterns": ["examples/**", "**/vendor/**"],
   "rules": {
     "require-yield": "off",
