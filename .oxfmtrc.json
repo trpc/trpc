@@ -33,6 +33,8 @@
     "packages/coverage/",
     "pnpm-lock.yaml",
     "examples/**",
+    "**/*.md",
+    "**/*.mdx",
     "www/docs/main/quickstart.mdx",
     ".turbo",
     ".vinxi",

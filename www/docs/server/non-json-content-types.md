@@ -98,28 +98,14 @@ If you encounter errors like `Failed to parse body as XXX`, make sure that your 
 // incorrect
 const app = express();
 app.use(express.json()); // this try to parse body before tRPC.
-app.post('/express/hello', (req, res) => {
-  /* ... */
-}); // normal express route handler
-app.use(
-  '/trpc',
-  trpcExpress.createExpressMiddleware({
-    /* ... */
-  }),
-); // tRPC fails to parse body
+app.post('/express/hello', (req,res) => {/* ... */ }); // normal express route handler
+app.use('/trpc', trpcExpress.createExpressMiddleware({ /* ... */}))// tRPC fails to parse body
 
 // correct
 const app = express();
 app.use('/express', express.json()); // do it only in "/express/*" path
-app.post('/express/hello', (req, res) => {
-  /* ... */
-});
-app.use(
-  '/trpc',
-  trpcExpress.createExpressMiddleware({
-    /* ... */
-  }),
-); // tRPC can parse body
+app.post('/express/hello', (req,res) => {/* ... */ });
+app.use('/trpc', trpcExpress.createExpressMiddleware({ /* ... */}))// tRPC can parse body
 ```
 
 :::

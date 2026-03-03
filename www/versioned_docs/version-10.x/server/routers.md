@@ -37,6 +37,8 @@ In order for these endpoints to be exposed to the frontend, your [Adapter](/docs
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
 
+
+
 export const publicProcedure = t.procedure;
 export const router = t.router;
 
