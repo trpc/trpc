@@ -63,6 +63,7 @@
     "npm-run-all2": "^8.0.0",
     "oxfmt": "^0.36.0",
     "oxlint": "^1.51.0",
+    "oxlint-tsgolint": "^0.16.0",
     "superjson": "^1.12.4",
     "ts-prune": "^0.10.3",
     "tsx": "^4.19.3",
@@ -72,8 +73,5 @@
     "vite": "^6.1.1",
     "vitest": "^4.0.18",
     "zod": "^4.2.1"
-  },
-  "devDependencies": {
-    "oxlint-tsgolint": "^0.16.0"
   }
 }
