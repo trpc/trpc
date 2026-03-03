@@ -1,7 +1,7 @@
 ---
-id: introduction
+id: overview
 title: tRPC Client
-sidebar_label: Introduction
+sidebar_label: Overview
 slug: /client/vanilla
 ---
 

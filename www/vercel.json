@@ -222,7 +222,12 @@
     },
     {
       "source": "/docs/server",
-      "destination": "/docs/server/introduction",
+      "destination": "/docs/server/overview",
+      "permanent": true
+    },
+    {
+      "source": "/docs/server/introduction",
+      "destination": "/docs/server/overview",
       "permanent": true
     },
     {

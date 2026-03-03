@@ -1,7 +1,7 @@
 ---
-id: adapters-intro
-title: Adapters
-sidebar_label: Adapters
+id: adapters
+title: Overview
+sidebar_label: Overview
 slug: /server/adapters
 ---
 

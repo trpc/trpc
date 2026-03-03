@@ -22,11 +22,8 @@ const config: SidebarsConfig = {
       type: 'category',
       label: 'tRPC',
       collapsed: false,
-      link: {
-        type: 'doc',
-        id: 'main/introduction',
-      },
       items: [
+        'main/introduction',
         'main/quickstart',
         'main/concepts',
         'main/videos-and-community-resources',
@@ -37,12 +34,8 @@ const config: SidebarsConfig = {
       type: 'category',
       label: 'Backend Usage',
       collapsed: true,
-      link: {
-        type: 'generated-index',
-        title: 'tRPC server documentation',
-        slug: '/server/introduction',
-      },
       items: [
+        'server/overview',
         'server/routers',
         'server/procedures',
         'server/context',
@@ -51,13 +44,10 @@ const config: SidebarsConfig = {
         'server/merging-routers',
         {
           type: 'category',
-          label: 'Hosting tRPC with Adapters',
+          label: 'Adapters',
           collapsed: true,
-          link: {
-            type: 'doc',
-            id: 'server/adapters-intro',
-          },
           items: [
+            'server/adapters',
             'server/adapters/standalone',
             'server/adapters/express',
             'server/adapters/fastify',
@@ -82,20 +72,14 @@ const config: SidebarsConfig = {
       type: 'category',
       label: 'Client Usage',
       collapsed: true,
-      link: {
-        type: 'doc',
-        id: 'client/overview',
-      },
       items: [
+        'client/overview',
         {
           type: 'category',
           label: 'Vanilla Client',
           collapsed: true,
-          link: {
-            type: 'doc',
-            id: 'client/vanilla/introduction',
-          },
           items: [
+            'client/vanilla/overview',
             'client/vanilla/setup',
             'client/vanilla/infer-types',
             'client/vanilla/aborting-procedure-calls',
@@ -105,12 +89,8 @@ const config: SidebarsConfig = {
           type: 'category',
           label: 'TanStack React Query (⭐️)',
           collapsed: true,
-          link: {
-            type: 'generated-index',
-            title: 'TanStack React Query',
-            slug: '/client/tanstack-react-query',
-          },
           items: [
+            'client/tanstack-react-query/overview',
             'client/tanstack-react-query/setup',
             'client/tanstack-react-query/usage',
             'client/tanstack-react-query/migrating',
@@ -121,11 +101,8 @@ const config: SidebarsConfig = {
           type: 'category',
           label: 'React Query Integration (Classic)',
           collapsed: true,
-          link: {
-            type: 'doc',
-            id: 'client/react/introduction',
-          },
           items: [
+            'client/react/overview',
             'client/react/setup',
             'client/react/server-components',
             'client/react/infer-types',
@@ -146,11 +123,8 @@ const config: SidebarsConfig = {
           type: 'category',
           label: 'Next.js Integration',
           collapsed: true,
-          link: {
-            type: 'doc',
-            id: 'client/nextjs/introduction',
-          },
           items: [
+            'client/nextjs/overview',
             {
               type: 'category',
               label: 'App Router',
@@ -179,11 +153,8 @@ const config: SidebarsConfig = {
           type: 'category',
           label: 'Links',
           collapsed: true,
-          link: {
-            type: 'doc',
-            id: 'client/links/overview',
-          },
           items: [
+            'client/links/overview',
             'client/links/httpLink',
             'client/links/httpBatchLink',
             'client/links/httpBatchStreamLink',
@@ -201,22 +172,6 @@ const config: SidebarsConfig = {
     },
     {
       type: 'category',
-      label: 'Extra information',
-      collapsed: true,
-      link: {
-        type: 'generated-index',
-        title: 'Extra Information',
-        slug: '/further',
-      },
-      items: ['further/faq', 'further/rpc', 'further/further-reading'],
-    },
-    ...(env.TYPEDOC ? [typeDoc] : []),
-    {
-      type: 'doc',
-      id: 'migration/migrate-from-v10-to-v11',
-    },
-    {
-      type: 'category',
       label: 'Community',
       collapsed: true,
       items: [
@@ -226,6 +181,18 @@ const config: SidebarsConfig = {
         'community/sponsors',
       ],
     },
+    {
+      type: 'category',
+      label: 'Extra information',
+      collapsed: true,
+      items: [
+        'further/faq',
+        'further/rpc',
+        'further/further-reading',
+        'migration/migrate-from-v10-to-v11',
+      ],
+    },
+    ...(env.TYPEDOC ? [typeDoc] : []),
   ],
 };
 
