@@ -122,6 +122,18 @@
         "unicorn/no-single-promise-in-promise-methods": "off",
         "max-params": ["error", 3],
         "@typescript-eslint/consistent-type-imports": "error",
+        "@typescript-eslint/await-thenable": "error",
+        "@typescript-eslint/no-floating-promises": "error",
+        "@typescript-eslint/no-for-in-array": "error",
+        "@typescript-eslint/no-implied-eval": "error",
+        "@typescript-eslint/only-throw-error": "error",
+        "@typescript-eslint/switch-exhaustiveness-check": "error",
+        "@typescript-eslint/no-base-to-string": "error",
+        "@typescript-eslint/no-duplicate-type-constituents": "error",
+        "@typescript-eslint/no-redundant-type-constituents": "error",
+        "@typescript-eslint/no-unsafe-enum-comparison": "error",
+        "@typescript-eslint/no-unsafe-unary-minus": "error",
+        "@typescript-eslint/unbound-method": "error",
         "no-restricted-imports": [
           "error",
           {
@@ -162,6 +174,9 @@
       ],
       "rules": {
         "@typescript-eslint/no-non-null-assertion": "off",
+        "@typescript-eslint/no-floating-promises": "off",
+        "@typescript-eslint/only-throw-error": "off",
+        "@typescript-eslint/switch-exhaustiveness-check": "off",
         "no-unused-vars": "off",
         "no-unused-expressions": "off"
       },

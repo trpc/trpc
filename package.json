@@ -72,5 +72,8 @@
     "vite": "^6.1.1",
     "vitest": "^4.0.18",
     "zod": "^4.2.1"
+  },
+  "devDependencies": {
+    "oxlint-tsgolint": "^0.16.0"
   }
 }

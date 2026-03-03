@@ -2,7 +2,7 @@
   "name": "@trpc/tests",
   "private": true,
   "scripts": {
-    "lint": "oxlint .",
+    "lint": "oxlint --type-aware .",
     "typecheck": "tsc --noEmit --preserveWatchOutput --pretty"
   },
   "dependencies": {
