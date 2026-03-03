@@ -61,7 +61,6 @@ export const channelRouter = {
         })
         .returning();
 
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       return channel!.id;
     }),
 
