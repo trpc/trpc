@@ -40,7 +40,7 @@ export const trpc = createTRPCClient<AppRouter>({
 
 A link is a function that follows the `TRPCLink` type. Each link is composed of three parts:
 
-1. The link returns a function that has a parameter with the `TRPCClientRuntime` type. This argument is passed by tRPC and it is used when creating a [**terminating link**](#the-terminating-link). If you're not creating a terminating link, you can just create a function that has no parameters. In such case, the link should be added to the `links` array without invoking (`links: [..., myLink, httpBatchLink(...)]`).
+1. The link returns a function that receives a `TRPCClientRuntime` parameter. This argument is always passed by tRPC and is part of the `TRPCLink` type signature. Even if you're not creating a terminating link and don't need to use the runtime, the parameter is still present in the type.
 2. The function in step 1 returns another function that receives an object with two properties: `op` which is the `Operation` that is being executed by the client, and `next` which is the function we use to call the next link down the chain.
 3. The function in step 2 returns a final function that returns the `observable` function provided by `@trpc/server`. The `observable` accepts a function that receives an `observer` which helps our link notify the next link up the chain how they should handle the operation result. In this function, we can just return `next(op)` and leave it as is, or we can subscribe to `next`, which enables our link to handle the operation result.
 
@@ -100,7 +100,7 @@ The `links` array that you add to the tRPC client config should have at least on
 
 [`httpBatchLink`](./httpBatchLink.md) is the recommended terminating link by tRPC.
 
-[`httpLink`](./httpLink.md), [`wsLink`](./wsLink.md), and [`localLink`](./localLink.mdx) are other examples of terminating links.
+[`httpLink`](./httpLink.md), [`httpBatchStreamLink`](./httpBatchStreamLink.md), [`httpSubscriptionLink`](./httpSubscriptionLink.md), [`wsLink`](./wsLink.md), and [`localLink`](./localLink.mdx) are other examples of terminating links depending on your needs.
 
 ## Managing context
 

@@ -5,7 +5,7 @@ sidebar_label: Disabling Queries
 slug: /client/react/disabling-queries
 ---
 
-To disable queries, you can pass `skipToken` as the first argument to `useQuery` or `useInfiniteQuery`. This will prevent the query from being executed.
+To disable queries, you can pass `skipToken` as the first argument to `useQuery`, `useInfiniteQuery`, and `useSubscription`. This will prevent the query from being executed.
 
 ### Typesafe conditional queries using `skipToken`
 

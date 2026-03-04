@@ -138,7 +138,7 @@ import * as trpcNext from '@trpc/server/adapters/next';
 import { appRouter } from '../../../server/routers/_app';
 
 // export API handler
-// @link https://trpc.io/docs/v11/server/adapters
+// @link https://trpc.io/docs/server/adapters
 export default trpcNext.createNextApiHandler({
   router: appRouter,
   createContext: () => ({}),
@@ -153,7 +153,7 @@ The backend above is using the [recommended file structure](#recommended-file-st
 
 ### 4. Create tRPC hooks
 
-use the `createTRPCNext` function to create a set of strongly-typed hooks from your API's type signature.
+Use the `createTRPCNext` function to create a set of strongly-typed hooks from your API's type signature.
 
 ```tsx twoslash title='utils/trpc.ts'
 // @filename: server/routers/_app.ts
@@ -192,7 +192,7 @@ export const trpc = createTRPCNext<AppRouter>({
         httpBatchLink({
           /**
            * If you want to use SSR, you need to use the server's full URL
-           * @see https://trpc.io/docs/v11/ssr
+           * @see https://trpc.io/docs/client/nextjs/pages-router/ssr
            **/
           url: `${getBaseUrl()}/api/trpc`,
 
@@ -207,7 +207,7 @@ export const trpc = createTRPCNext<AppRouter>({
     };
   },
   /**
-   * @see https://trpc.io/docs/v11/ssr
+   * @see https://trpc.io/docs/client/nextjs/pages-router/ssr
    **/
   ssr: false,
 });

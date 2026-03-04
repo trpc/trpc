@@ -31,7 +31,7 @@ See [react-query-v5](#react-query-v5) for more information.
 
 ### New TanStack React Query integration! (non-breaking)
 
-We are excited to announce the new TanStack React Query integration for tRPC is now available on tRPC's `next`-release!
+We are excited to announce the new TanStack React Query integration for tRPC is now available in tRPC v11!
 
 {/* Uses a `<a>`-link to prevent Docusaurus' build from failing */}
 
@@ -77,7 +77,7 @@ See the [lazy-loading routers docs](../server/merging-routers.md#lazy-load) for 
 
 > As part of this, we've changed the argument of the internal method `callProcedure()` to receive a `{ router: AnyRouter }`-param instead of a `{ _def: AnyRouter['_def'] }`-param.
 
-### Custom `basePath` to handle requests under in the standalone adapter (non-breaking)
+### Custom `basePath` to handle requests in the standalone adapter (non-breaking)
 
 The standalone adapter now supports a `basePath` option, which will slice the basePath from the beginning of the request path.
 
@@ -85,7 +85,7 @@ See the [standalone adapter docs](../server/adapters/standalone.md#custom-basePa
 
 ### Added support for HTTP/2 servers (non-breaking)
 
-We now support HTTP/2 servers, this means that you can now use the `createHTTP2Handler` and `createHTTPServer` functions to create HTTP/2 servers.
+We now support HTTP/2 servers, this means that you can now use the `createHTTP2Handler` to create HTTP/2 servers and `createHTTPServer` to create HTTP/1 servers.
 
 See the [standalone adapter docs](../server/adapters/standalone.md#http2) for more information.
 
@@ -345,7 +345,7 @@ See [SSR docs](../client/nextjs/pages-router/ssr.md)
 
 ### Added support for short-hand router definitions (non-breaking)
 
-See [Merging routers](../server/merging-routers.md#inline-sub-router)
+See [Routers](../server/routers.md#inline-sub-router)
 
 ```ts twoslash
 import { initTRPC } from '@trpc/server';
@@ -380,7 +380,7 @@ https://github.com/trpc/trpc/pull/5226
 
 ### Refactor internal generics (rarely breaking)
 
-We have refactored our internal generics and made them more readable (TODO: link procedure builder sauce)
+We have refactored our internal generics and made them more readable.
 
 ### React is now >=18.2.0 (rarely breaking)
 
@@ -397,7 +397,7 @@ We have added usage of FormData, File, Blob, and ReadableStream. NodeJS 18 is no
 
 ### `rawInput` in middleware is now a `getRawInput` (rarely breaking)
 
-While we're not doing anything differently internally (just yet) this is help support a much requested feature in tRPC: content types other than JSON.
+While we're not doing anything differently internally (just yet) this is to help support a much requested feature in tRPC: content types other than JSON.
 
 ### Simplified types and `.d.ts` outputs
 

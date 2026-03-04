@@ -1,11 +1,11 @@
 ---
 id: headers
-title: Custom header
-sidebar_label: Create Custom Header
+title: Headers
+sidebar_label: Headers
 slug: /client/headers
 ---
 
-The headers option can be customized in the config when using the [`httpBatchLink`](./links/httpBatchLink.md) or the [`httpLink`](./links/httpLink.md).
+The headers option may be used with any of our HTTP links: [`httpBatchLink`](./links/httpBatchLink.md), [`httpBatchStreamLink`](./links/httpBatchStreamLink.md), [`httpLink`](./links/httpLink.md), or [`httpSubscriptionLink`](./links/httpSubscriptionLink.md).
 
 `headers` can be both an object or a function. If it's a function it will get called dynamically for every HTTP request.
 

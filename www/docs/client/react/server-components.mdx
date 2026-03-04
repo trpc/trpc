@@ -19,7 +19,7 @@ These are the docs for our 'Classic' React Query integration, which (while still
 This guide is an overview of how one may use tRPC with a React Server Components (RSC) framework such as Next.js App Router.
 Be aware that RSC on its own solves a lot of the same problems tRPC was designed to solve, so you may not need tRPC at all.
 
-There are also not a one-size-fits-all way to integrate tRPC with RSCs, so see this guide as a starting point and adjust it
+There is also not a one-size-fits-all way to integrate tRPC with RSCs, so see this guide as a starting point and adjust it
 to your needs and preferences.
 
 :::info
@@ -514,7 +514,7 @@ export function ClientGreeting() {
 ### Getting data in a server component
 
 If you need access to the data in a server component, you can invoke the procedure directly instead of using `.prefetch()`, just like you use
-[the normal server caller](/docs/server/server-side-calls). Please note that this method is de-attached from your query client and does not
+[the normal server caller](/docs/server/server-side-calls). Please note that this method is detached from your query client and does not
 store the data in the cache. This means that you cannot use the data in a server component and expect it to be available in the client. This is
 intentional and explained in more detail in the [Advanced Server Rendering](https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr#data-ownership-and-revalidation)
 guide.

@@ -5,7 +5,7 @@ sidebar_label: createTRPCQueryUtils()
 slug: /client/react/createTRPCQueryUtils
 ---
 
-The use case for `createTRPCQueryUtils` is when you need to use the helpers outside of a React Component, for example in `react-router`s loaders.
+The use case for `createTRPCQueryUtils` is when you need to use the helpers outside of a React Component, for example in `react-router`'s loaders.
 
 Similar to `useUtils`, `createTRPCQueryUtils` is a function that gives you access to helpers that let you manage the cached data of the queries you execute via `@trpc/react-query`. These helpers are actually thin wrappers around `@tanstack/react-query`'s [`queryClient`](https://tanstack.com/query/v5/docs/reference/QueryClient) methods. If you want more in-depth information about options and usage patterns for `useUtils` helpers than what we provide here, we will link to their respective `@tanstack/react-query` docs so you can refer to them accordingly.
 
@@ -48,7 +48,7 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
-Now in our component, when we navigate the object `createTRPCQueryUtils` gives us and reach the `post.all` query, we'll get access to our query helpers!
+Now in our route loader, when we navigate the object `createTRPCQueryUtils` gives us and reach the `post.all` query, we'll get access to our query helpers!
 
 ```tsx twoslash title="MyPage.tsx"
 // @include: server
@@ -102,6 +102,6 @@ If you were using Remix Run or SSR you wouldn't re-use the same `queryClient` fo
 
 ## Helpers
 
-Much like `useUtils`, `createTRPCQueryUtils` gives you access to same set of helpers. The only difference is that you need to pass in the `queryClient` and `client` objects.
+Much like `useUtils`, `createTRPCQueryUtils` gives you access to same set of helpers, including `queryOptions` and `infiniteQueryOptions`. The only difference is that you need to pass in the `queryClient` and `client` objects.
 
 You can see them on the [useUtils](./useUtils.mdx#helpers)-page.

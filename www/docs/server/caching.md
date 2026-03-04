@@ -54,7 +54,7 @@ export const appRouter = t.router({
   }),
 });
 
-// Exporting type _type_ AppRouter only exposes types that can be used for inference
+// Exporting `type AppRouter` only exposes types that can be used for inference
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
 export type AppRouter = typeof appRouter;
 

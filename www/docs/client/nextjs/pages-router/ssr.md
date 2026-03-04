@@ -14,9 +14,7 @@ When you enable SSR, tRPC will use `getInitialProps` to prefetch all queries on 
 Alternatively, you can leave SSR disabled (the default) and use [Server-Side Helpers](server-side-helpers) to prefetch queries in `getStaticProps` or `getServerSideProps`.
 :::
 
-In order to execute queries properly during the server-side render step we need to add extra logic inside our `config`:
-
-Additionally, consider [`Response Caching`](../../../server/caching.md).
+In order to execute queries properly during the server-side render step, we need to add extra logic inside our `config`. Additionally, consider [`Response Caching`](../../../server/caching.md).
 
 ```tsx twoslash title='utils/trpc.ts'
 // @filename: utils/api/trpc/[trpc].ts
@@ -31,7 +29,6 @@ declare function getBaseUrl(): string;
 import { httpBatchLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 import { ssrPrepass } from '@trpc/next/ssrPrepass';
-import superjson from 'superjson';
 import type { AppRouter } from './api/trpc/[trpc]';
 
 export const trpc = createTRPCNext<AppRouter>({
@@ -57,7 +54,7 @@ export const trpc = createTRPCNext<AppRouter>({
           url: `${getBaseUrl()}/api/trpc`,
           /**
            * Set custom request headers on every request from tRPC
-           * @see https://trpc.io/docs/v10/header
+           * @see https://trpc.io/docs/client/headers
            */
           headers() {
             if (!ctx?.req?.headers) {
@@ -91,7 +88,6 @@ declare function getBaseUrl(): string;
 import { httpBatchLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 import { ssrPrepass } from '@trpc/next/ssrPrepass';
-import superjson from 'superjson';
 import type { AppRouter } from './api/trpc/[trpc]';
 
 export const trpc = createTRPCNext<AppRouter>({
@@ -116,7 +112,7 @@ export const trpc = createTRPCNext<AppRouter>({
           url: `${getBaseUrl()}/api/trpc`,
           /**
            * Set custom request headers on every request from tRPC
-           * @see https://trpc.io/docs/v10/header
+           * @see https://trpc.io/docs/client/headers
            */
           headers() {
             if (!ctx?.req?.headers) {

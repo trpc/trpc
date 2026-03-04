@@ -130,7 +130,7 @@ export function MyComponent() {
 Since v11 we now support streaming queries when using the [`httpBatchStreamLink`](../links/httpBatchStreamLink.md#generators).
 :::
 
-When returning an async generators in a query, you will:
+When returning an async generator in a query, you will:
 
 - Get the results of the iterator in the `data`-property **as an array** which updates as the response comes in
 - The `status` will be `success` as soon as the first chunk is received.
@@ -198,7 +198,7 @@ export function MyComponent() {
 | ----------- | ------------- | ----------- |
 | `'pending'` | `'fetching'`  | `undefined` |
 | `'success'` | `'fetching'`  | `[]`        |
-| `'success'` | `'fetching'`  | `[1]`       |
-| `'success'` | `'fetching'`  | `[1, 2]`    |
-| `'success'` | `'fetching'`  | `[1, 2, 3]` |
-| `'success'` | `'idle'`      | `[1, 2, 3]` |
+| `'success'` | `'fetching'`  | `[0]`       |
+| `'success'` | `'fetching'`  | `[0, 1]`    |
+| `'success'` | `'fetching'`  | `[0, 1, 2]` |
+| `'success'` | `'idle'`      | `[0, 1, 2]` |

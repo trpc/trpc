@@ -18,7 +18,7 @@ You can either use WebSockets or [Server-sent Events](https://en.wikipedia.org/w
 - For WebSockets, see [the WebSockets page](./websockets.md)
 - For SSE, see the [httpSubscriptionLink](../client/links/httpSubscriptionLink.md)
 
-If you are unsure which one to use, we recommend using SSE for subscriptions as it's easier to setup and don't require setting up a WebSocket server.
+If you are unsure which one to use, we recommend using SSE for subscriptions as it's easier to setup and doesn't require setting up a WebSocket server.
 
 ## Reference projects
 
@@ -37,7 +37,7 @@ For a full example, see [our full-stack SSE example](https://github.com/trpc/exa
 ```ts twoslash title="server.ts"
 // @target: esnext
 // @types: node
-import EventEmitter, { on } from 'events';
+import EventEmitter, { on } from 'node:events';
 import { initTRPC } from '@trpc/server';
 
 const t = initTRPC.create();
@@ -69,25 +69,22 @@ You can send an initial `lastEventId` when initializing the subscription and it 
 - For WebSockets, our `wsLink` will automatically send the last known ID and update it as the browser receives data.
 
 :::tip
-If you're fetching data based on the `lastEventId`, and capturing all events is critical, make sure you setup the event listener before fetching events from your database as is done in [our full-stack SSE example](https://github.com/trpc/examples-next-sse-chat), this can prevent newly emitted events being ignored while yield'ing the original batch based on `lastEventId`.
+If you're fetching data based on the `lastEventId`, and capturing all events is critical, make sure you set up the event listener before fetching events from your database as is done in [our full-stack SSE example](https://github.com/trpc/examples-next-sse-chat), this can prevent newly emitted events being ignored while yield'ing the original batch based on `lastEventId`.
 :::
 
 ```ts twoslash
-// @errors: 2583 2339
-// @filename: events.d.ts
-declare module 'events' {
-  class EventEmitter {
-    toIterable(event: string, opts?: { signal?: AbortSignal }): AsyncIterable<any[]>;
-  }
-  export function on(emitter: EventEmitter, event: string, opts?: { signal?: AbortSignal }): AsyncIterable<any[]>;
-  export default EventEmitter;
-}
-
+// @types: node
 // @filename: index.ts
 // ---cut---
-import EventEmitter, { on } from 'events';
+import EventEmitter, { on } from 'node:events';
 import { initTRPC, tracked } from '@trpc/server';
 import { z } from 'zod';
+
+class IterableEventEmitter extends EventEmitter {
+  toIterable(eventName: string, opts?: { signal?: AbortSignal }) {
+    return on(this, eventName, opts);
+  }
+}
 
 type Post = { id: string; title: string };
 
@@ -95,7 +92,7 @@ const t = initTRPC.create();
 const publicProcedure = t.procedure;
 const router = t.router;
 
-const ee = new EventEmitter();
+const ee = new IterableEventEmitter();
 
 export const subRouter = router({
   onPostAdd: publicProcedure
@@ -123,12 +120,10 @@ export const subRouter = router({
         //   yield tracked(item.id, item);
         // }
       }
-      // listen for new events
-      for await (const [data] of on(ee, 'add', {
-        signal: opts.signal,
-      })) {
+      // listen for new events from the iterable we set up above
+      for await (const [data] of iterable) {
         const post = data as Post;
-        // tracking the post id ensures the client can reconnect at any time and get the latest events this id
+        // tracking the post id ensures the client can reconnect at any time and get the latest events since this id
         yield tracked(post.id, post);
       }
     }),
@@ -285,7 +280,7 @@ If the error thrown is a 5xx error, the client will automatically attempt to rec
 
 Since subscriptions are async iterators, you have to go through the iterator to validate the output.
 
-### Example with zod v4
+### Example with Zod v4
 
 ```ts twoslash title="zAsyncIterable.ts"
 // @target: esnext

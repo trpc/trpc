@@ -15,7 +15,7 @@ slug: /rpc
 
 ## Accessing nested procedures
 
-Nested procedures are separated by dots, so for a request to `byId` below would end up being a request to `/api/trpc/post.byId`.
+Nested procedures are separated by dots, so a request to `byId` below would end up being a request to `/api/trpc/post.byId`.
 
 ```ts twoslash
 import { initTRPC } from '@trpc/server';
@@ -39,7 +39,7 @@ When batching, we combine all parallel procedure calls of the same HTTP method i
 - The called procedures' names are combined by a comma (`,`) in the `pathname`
 - Input parameters are sent as a query parameter called `input` which has the shape `Record<number, unknown>`.
 - We also need to pass `batch=1` as a query parameter.
-- If the response has different statuses, we send back `207 Multi-Status` _(e.g., if one call errored and one succeeded) _
+- If the response has different statuses, we send back `207 Multi-Status` _(e.g., if one call errored and one succeeded)_
 
 ### Batching Example Request
 
@@ -210,7 +210,7 @@ interface SuccessResponse {
 <br/>
 
 - When possible, we propagate HTTP status codes from the error thrown.
-- If the response has different statuses, we send back `207 Multi-Status` _(e.g., if one call errored and one succeeded) _
+- If the response has different statuses, we send back `207 Multi-Status` _(e.g., if one call errored and one succeeded)_
 - For more on errors and how to customize them see [Error Formatting](../server/error-formatting.md).
 
 ## Error Codes \<-> HTTP Status
@@ -220,6 +220,7 @@ const HTTP_STATUS_CODES = {
   PARSE_ERROR: 400,
   BAD_REQUEST: 400,
   UNAUTHORIZED: 401,
+  PAYMENT_REQUIRED: 402,
   FORBIDDEN: 403,
   NOT_FOUND: 404,
   METHOD_NOT_SUPPORTED: 405,
@@ -272,6 +273,7 @@ export const TRPC_ERROR_CODES_BY_KEY = {
 
   // Implementation specific errors
   UNAUTHORIZED: -32001, // 401
+  PAYMENT_REQUIRED: -32002, // 402
   FORBIDDEN: -32003, // 403
   NOT_FOUND: -32004, // 404
   METHOD_NOT_SUPPORTED: -32005, // 405

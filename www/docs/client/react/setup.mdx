@@ -11,7 +11,7 @@ import Tabs from '@theme/Tabs';
 
 ### 1. Install dependencies
 
-The following dependencies should be installed
+The following dependencies should be installed.
 
 import { InstallSnippet } from '@site/src/components/InstallSnippet';
 
@@ -107,7 +107,7 @@ export function App() {
 The reason for using `useState` in the creation of the `queryClient` and the `TRPCClient`, as opposed to declaring them outside of the component, is to ensure that each request gets a unique client when using SSR. If you use client side rendering then you can move them if you wish.
 :::
 
-#### 5. Fetch data
+### 5. Fetch data
 
 You can now use the tRPC React Query integration to call queries and mutations on your API.
 

@@ -45,7 +45,7 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 
 ### 2. Create a tRPC router
 
-Initialize your tRPC backend in `trpc/init.ts` using the `initTRPC` function, and create your first router. We're going to make a simple "hello world" router and procedure here - but for deeper information on creating your tRPC API you should refer to the [Quickstart guide](/docs/quickstart) and [Backend usage docs](/docs/server/overview) for tRPC information.
+Initialize your tRPC backend in `trpc/init.ts` using the `initTRPC` function, and create your first router. We're going to make a simple "hello world" router and procedure here — for deeper information on creating your tRPC API, refer to the [Quickstart guide](/docs/quickstart) and [Backend usage docs](/docs/server/overview).
 
 ```ts twoslash title='trpc/init.ts'
 import { initTRPC } from '@trpc/server';
@@ -64,12 +64,14 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
 // since it's not very descriptive.
 // For instance, the use of a t variable
 // is common in i18n libraries.
-const t = initTRPC.create({
-  /**
-   * @see https://trpc.io/docs/server/data-transformers
-   */
-  // transformer: superjson,
-});
+const t = initTRPC
+  .context<Awaited<ReturnType<typeof createTRPCContext>>>()
+  .create({
+    /**
+     * @see https://trpc.io/docs/server/data-transformers
+     */
+    // transformer: superjson,
+  });
 
 // Base router and procedure helpers
 export const createTRPCRouter = t.router;

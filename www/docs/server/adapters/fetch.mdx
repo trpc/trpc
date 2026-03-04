@@ -10,13 +10,13 @@ import Tabs from '@theme/Tabs';
 
 You can create a tRPC server within any edge runtime that follow the [WinterCG](https://wintercg.org/), specifically the [Minimum Common Web Platform API](https://common-min-api.proposal.wintercg.org/) specification.
 
-Some of these runtimes includes, but not limited to:
+Some of these runtimes include, but are not limited to:
 
 - Cloudflare Workers
 - Deno Deploy
 - Vercel Edge Runtime (& Next.js Edge Runtime)
 
-This also makes it easy to integrate into frameworks that uses the web platform APIs to represent requests and responses, such as:
+This also makes it easy to integrate into frameworks that use the web platform APIs to represent requests and responses, such as:
 
 - Astro (SSR mode)
 - Remix
@@ -189,7 +189,7 @@ export type Context = Awaited<ReturnType<typeof createContext>>;
 
 </details>
 
-## Runtimes-specific setup
+## Runtime-specific setup
 
 ### Astro
 
@@ -411,7 +411,7 @@ function handleRequest(args: LoaderFunctionArgs | ActionFunctionArgs) {
 // @errors: 2307
 
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
-import type { APIEvent } from 'solid-start';
+import type { APIEvent } from '@solidjs/start/server';
 import { createContext } from '../../server/context';
 import { appRouter } from '../../server/router';
 

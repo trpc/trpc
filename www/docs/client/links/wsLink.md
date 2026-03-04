@@ -5,7 +5,7 @@ sidebar_label: WebSocket Link
 slug: /client/links/wsLink
 ---
 
-`wsLink` is a [**terminating link**](./overview.md#the-terminating-link) that's used when using tRPC's WebSockets Client and Subscriptions, which you can learn more about [here](../../server/subscriptions.md)).
+`wsLink` is a [**terminating link**](./overview.md#the-terminating-link) that's used when using tRPC's WebSockets Client and Subscriptions, which you can learn more about [here](../../server/subscriptions.md).
 
 ## Usage
 
@@ -63,7 +63,7 @@ export interface WebSocketClientOptions {
    * Connection params that are available in `createContext()`
    * These are sent as the first message
    */
-  connectionParams: string | (() => MaybePromise<string>);
+  connectionParams?: Record<string, string> | null | (() => MaybePromise<Record<string, string> | null>);
   /**
    * Ponyfill which WebSocket implementation to use
    */
@@ -119,6 +119,11 @@ export interface WebSocketClientOptions {
      */
     pongTimeoutMs?: number;
   };
+  /**
+   * Custom encoder for wire encoding (e.g. custom binary formats)
+   * @default jsonEncoder
+   */
+  experimental_encoder?: Encoder;
 }
 ```
 

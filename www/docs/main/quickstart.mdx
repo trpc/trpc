@@ -80,11 +80,11 @@ server.listen(3000);
 
 ## Installation
 
-tRPC is split between several packages, so you can install only what you need. Make sure to install the packages you want in the proper sections of your codebase. For this quickstart guide we'll keep it simple and use the vanilla client only. For framework guides, check out [usage with React](/docs/client/tanstack-react-query/setup) and [usage with Next.js](/docs/client/nextjs/pages-router/setup).
+tRPC is split between several packages, so you can install only what you need. Make sure to install the packages you want in the proper sections of your codebase. For this quickstart guide we'll keep it simple and use the vanilla client only. For framework guides, check out [usage with React](/docs/client/tanstack-react-query/setup.mdx) and [usage with Next.js](/docs/client/nextjs/overview.mdx).
 
 :::info Requirements
 - tRPC requires TypeScript >=5.7.2
-- We strongly recommend you using `"strict": true` in your `tsconfig.json` as we don't officially support non-strict mode.
+- We strongly recommend using `"strict": true` in your `tsconfig.json` as we don't officially support non-strict mode.
 :::
 
 Start off by installing the `@trpc/server` and `@trpc/client` packages:
@@ -141,7 +141,7 @@ export const router = t.router;
 export const publicProcedure = t.procedure;
 ```
 
-Next, we'll initialize our main router instance, commonly referred to as `appRouter`, in which we'll later add procedures to. Lastly, we need to export the type of the router which we'll later use on the client side.
+Next, we'll initialize our main router instance, commonly referred to as `appRouter`, to which we'll later add procedures. Lastly, we need to export the type of the router which we'll later use on the client side.
 
 ```ts twoslash title='server/appRouter.ts'
 // @filename: trpc.ts
@@ -388,7 +388,7 @@ export type AppRouter = typeof appRouter;
 
 ## Serving the API
 
-Now that we have defined our router, we can serve it. tRPC has first-class [adapters](/docs/server/adapters) for many popular web servers. To keep it simple, we'll use the [`standalone`](/docs/server/adapters/standalone) Node.js adapter here.
+Now that we have defined our router, we can serve it. tRPC has first-class [adapters](../server/adapters-intro.md) for many popular web servers. To keep it simple, we'll use the [`standalone`](../server/adapters/standalone.md) Node.js adapter here.
 
 ```ts twoslash title='server/index.ts'
 // @filename: trpc.ts
@@ -481,9 +481,9 @@ const trpc = createTRPCClient<AppRouter>({
 });
 ```
 
-Links in tRPC are similar to links in GraphQL, they let us control the data flow to the server. In the example above, we use the [httpBatchLink](/docs/client/links/httpBatchLink), which automatically batches up multiple calls into a single HTTP request. For more in-depth usage of links, see the [links documentation](/docs/client/links).
+Links in tRPC are similar to links in GraphQL, they let us control the data flow to the server. In the example above, we use the [httpBatchLink](../client/links/httpBatchLink.md), which automatically batches up multiple calls into a single HTTP request. For more in-depth usage of links, see the [links documentation](../client/links/overview.md).
 
-### 2. Type Inferrence & Autocomplete
+### 2. Type Inference & Autocomplete
 
 You now have access to your API procedures on the `trpc` object. Try it out!
 
@@ -552,5 +552,5 @@ trpc.u;
 | [Example Apps](example-apps.mdx) | Explore tRPC in your chosen framework |
 | [TanStack React Query](../client/tanstack-react-query/setup.mdx) | Recommended React integration via `@trpc/tanstack-react-query` |
 | [Next.js](../client/nextjs/overview.mdx) | Usage with Next.js |
-| [Server Adapters](/docs/server/adapters) | Express, Fastify, and more |
-| [Transformers](/docs/server/data-transformers#using-superjson) | Use superjson to retain complex types like `Date` |
+| [Server Adapters](../server/adapters-intro.md) | Express, Fastify, and more |
+| [Transformers](../server/data-transformers.md#using-superjson) | Use superjson to retain complex types like `Date` |

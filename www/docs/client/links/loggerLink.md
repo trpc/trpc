@@ -67,7 +67,11 @@ type LoggerLinkOptions<TRouter extends AnyRouter> = {
    * Color mode used in the default logger.
    * @default typeof window === 'undefined' ? 'ansi' : 'css'
    */
-  colorMode?: 'ansi' | 'css';
+  colorMode?: 'ansi' | 'css' | 'none';
+  /**
+   * Include context in the log - defaults to false unless colorMode is 'css'
+   */
+  withContext?: boolean;
 };
 ```
 

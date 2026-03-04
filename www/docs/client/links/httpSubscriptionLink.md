@@ -5,7 +5,7 @@ sidebar_label: HTTP Subscription Link
 slug: /client/links/httpSubscriptionLink
 ---
 
-`httpSubscriptionLink` is a [**terminating link**](./overview.md#the-terminating-link) that's uses [Server-sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events) (SSE) for subscriptions.
+`httpSubscriptionLink` is a [**terminating link**](./overview.md#the-terminating-link) that uses [Server-sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events) (SSE) for subscriptions.
 
 SSE is a good option for real-time as it's a bit easier than setting up a WebSockets-server.
 
@@ -238,7 +238,7 @@ const trpc = createTRPCClient<AppRouter>({
 
 ### Connection params {#connectionParams}
 
-In order to authenticate with `EventSource`, you can define `connectionParams` in `httpSubscriptionLink`. This will be sent as part of the URL, which is why other methods are preferred).
+In order to authenticate with `EventSource`, you can define `connectionParams` in `httpSubscriptionLink`. This will be sent as part of the URL, which is why other methods are preferred.
 
 ```ts twoslash title="server/context.ts"
 import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
@@ -322,7 +322,7 @@ import { initTRPC } from '@trpc/server';
 export const t = initTRPC.create({
   sse: {
     // Maximum duration of a single SSE connection in milliseconds
-    // maxDurationMs: 60_00,
+    // maxDurationMs: 60_000,
     ping: {
       // Enable periodic ping messages to keep connection alive
       enabled: true,
@@ -376,6 +376,26 @@ type HTTPSubscriptionLinkOptions<
   TRoot extends AnyClientTypes,
   TEventSource extends EventSourceLike.AnyConstructor = typeof EventSource,
 > = {
+  /**
+   * The URL to connect to (can be a function that returns a URL)
+   */
+  url: string | (() => string | Promise<string>);
+  /**
+   * Connection params that are available in `createContext()`
+   * Serialized as part of the URL under the `connectionParams` query parameter
+   */
+  connectionParams?:
+    | Record<string, string>
+    | null
+    | (() =>
+        | Record<string, string>
+        | null
+        | Promise<Record<string, string> | null>);
+  /**
+   * Data transformer
+   * @see https://trpc.io/docs/v11/data-transformers
+   */
+  transformer?: DataTransformerOptions;
   /**
    * EventSource ponyfill
    */

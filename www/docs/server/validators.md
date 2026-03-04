@@ -43,6 +43,8 @@ export const appRouter = t.router({
 
 `.input()` can be stacked to build more complex types, which is particularly useful when you want to utilise some common input to a collection of procedures in a [middleware](middlewares).
 
+Input merging works by spreading object properties together. This means only **object types** can be chained — non-object types (like `z.string()`) cannot be merged. If two chained `.input()` calls define the same property, the later one takes precedence.
+
 ```ts twoslash
 // @target: esnext
 import { initTRPC, TRPCError } from '@trpc/server';

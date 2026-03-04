@@ -43,9 +43,9 @@ t.procedure.use((opts) => {
 
 ## Creating the context
 
-The `createContext()` function must be passed to the handler that is mounting your appRouter, which may be via HTTP or a [server-side call](server-side-calls).
+The `createContext()` function must be passed to the handler mounting your appRouter. The handler may use HTTP or a [server-side call](server-side-calls).
 
-`createContext()` is called for each invocation of tRPC, so batched requests will share a context.
+`createContext()` is called once per request, so all procedures within a single batched request share the same context.
 
 ```ts twoslash
 // @filename: context.ts

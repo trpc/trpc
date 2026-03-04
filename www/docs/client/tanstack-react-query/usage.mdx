@@ -6,8 +6,6 @@ description: TanStack React Query usage
 slug: /client/tanstack-react-query/usage
 ---
 
-Compared to our [classic React Query Integration](/docs/client/react) this client is simpler and more TanStack Query-native, providing factories for common TanStack React Query interfaces like QueryKeys, QueryOptions, and MutationOptions. We think it's the future and recommend using this over the classic client, <a href="/blog/introducing-tanstack-react-query-client">read the announcement post</a> for more information about this change.
-
 ## Quick example query
 
 ```tsx twoslash
@@ -80,7 +78,7 @@ export default function Basics() {
   const myMutationOptions = trpc.path.to.mutation.mutationOptions()
   const myMutation = useMutation(myMutationOptions)
 
-  // Create a QueryKey which can be used to manipulated many methods
+  // Create a QueryKey which can be used to manipulate many methods
   // on TanStack's QueryClient in a type-safe manner
   const myQueryKey = trpc.path.to.query.queryKey()
 
@@ -572,7 +570,7 @@ await queryClient.invalidateQueries(
 
 ### `mutationOptions` - creating mutation options {#mutationOptions}
 
-Available for all mutation procedures. Provides a type-safe identify function for constructing options that can be passed to `useMutation`.
+Available for all mutation procedures. Provides a type-safe identity function for constructing options that can be passed to `useMutation`.
 
 ```ts twoslash
 // @filename: server.ts
@@ -640,7 +638,7 @@ const mutationKey = trpc.path.to.mutation.mutationKey();
 ### `subscriptionOptions` - creating subscription options {#subscriptionOptions}
 
 TanStack does not provide a subscription hook, so we continue to expose our own abstraction here which works with a [standard tRPC subscription setup](/docs/server/subscriptions).
-Available for all subscription procedures. Provides a type-safe identify function for constructing options that can be passed to `useSubscription`.
+Available for all subscription procedures. Provides a type-safe identity function for constructing options that can be passed to `useSubscription`.
 Note that you need to have either the [`httpSubscriptionLink`](/docs/client/links/httpSubscriptionLink) or [`wsLink`](/docs/client/links/wsLink) configured in your tRPC client to use subscriptions.
 
 ```tsx twoslash

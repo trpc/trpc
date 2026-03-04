@@ -5,7 +5,7 @@ sidebar_label: Middlewares
 slug: /server/middlewares
 ---
 
-You are able to add middleware(s) to a procedure with the `t.procedure.use()` method. The middleware(s) will wrap the invocation of the procedure and must pass through its return value.
+You can add middleware(s) to a procedure with the `t.procedure.use()` method. The middleware(s) will wrap the invocation of the procedure and must call `opts.next()` and return its result.
 
 ## Authorization
 
@@ -338,8 +338,8 @@ barMiddleware.unstable_pipe(fooMiddleware);
 
 ## Experimental: standalone middlewares
 
-:::info
-This has been deprecated in favor of `.concat()`
+:::warning Deprecated
+This has been deprecated in favor of [`.concat()`](#concat). Use `.concat()` for new code.
 :::
 
 tRPC has an experimental API called `experimental_standaloneMiddleware` which allows you to independently define a middleware that can be used with any tRPC instance. Creating middlewares using `t.middleware` has the limitation that

@@ -5,7 +5,7 @@ sidebar_label: Aborting Procedure Calls
 slug: /client/react/aborting-procedure-calls
 ---
 
-By default, tRPC does not cancel requests via React Query. If you want to opt into this behaviour, you can provide `abortOnUnmount` in your configuration.
+By default, tRPC does not cancel requests via React Query. If you want to opt into this behavior, you can provide `abortOnUnmount` in your configuration.
 
 :::note
 @tanstack/react-query only supports aborting queries.
@@ -57,7 +57,7 @@ export const trpc = createTRPCReact<AppRouter>({
 
 ### Per-request
 
-You may also override this behaviour at the query level.
+You may also override this behavior at the query level.
 
 ```tsx twoslash title="pages/post/[id].tsx"
 // @filename: server/router.ts

@@ -185,14 +185,14 @@ server.register(fastifyTRPCPlugin, {
 
 Your endpoints are now available via HTTP!
 
-| Endpoint     | HTTP URI                                                                                                       |
-| ------------ | -------------------------------------------------------------------------------------------------------------- |
-| `getUser`    | `GET http://localhost:3000/trpc/getUserById?input=INPUT` <br/><br/>where `INPUT` is a URI-encoded JSON string. |
-| `createUser` | `POST http://localhost:3000/trpc/createUser` <br/><br/>with `req.body` of type `User`                          |
+| Endpoint      | HTTP URI                                                                                                       |
+| ------------- | -------------------------------------------------------------------------------------------------------------- |
+| `getUserById` | `GET http://localhost:3000/trpc/getUserById?input=INPUT` <br/><br/>where `INPUT` is a URI-encoded JSON string. |
+| `createUser`  | `POST http://localhost:3000/trpc/createUser` <br/><br/>with `req.body` of type `User`                          |
 
 ## Enable WebSockets
 
-The Fastify adapter supports [WebSockets](../websockets.md) via the [@fastify/websocket](https://www.npmjs.com/package/@fastify/websocket) plugin. All you have to do in addition to the above steps is install the dependency, add some subscriptions to your router and activate the `useWSS` [option](#fastify-plugin-options) in the plugin. The minimum Fastify version required for `@fastify/websocket` is `3.11.0`.
+The Fastify adapter supports [WebSockets](../websockets.md) via the [@fastify/websocket](https://www.npmjs.com/package/@fastify/websocket) plugin. All you have to do in addition to the above steps is install the dependency, add some subscriptions to your router, and activate the `useWSS` [option](#fastify-plugin-options) in the plugin. The minimum Fastify version required for `@fastify/websocket` is `3.11.0`.
 
 ### Install dependencies
 
@@ -280,12 +280,12 @@ server.register(fastifyTRPCPlugin, {
 });
 ```
 
-It's alright, you can subscribe to the topic `randomNumber` and you should receive a random number every second 🚀.
+You can now subscribe to the `randomNumber` topic and should receive a random number every second 🚀.
 
 ## Fastify plugin options
 
-| name        | type                     | optional | default   | description |
-| ----------- | ------------------------ | -------- | --------- | ----------- |
-| prefix      | `string`                 | `true`   | `"/trpc"` |             |
-| useWSS      | `boolean`                | `true`   | `false`   |             |
-| trpcOptions | `NodeHTTPHandlerOptions` | `false`  | `n/a`     |             |
+| name        | type                                               | optional | default   | description                                                    |
+| ----------- | -------------------------------------------------- | -------- | --------- | -------------------------------------------------------------- |
+| prefix      | `string`                                           | `true`   | `"/trpc"` | URL prefix for tRPC routes                                     |
+| useWSS      | `boolean`                                          | `true`   | `false`   | Enable WebSocket support via `@fastify/websocket`              |
+| trpcOptions | `FastifyHandlerOptions<AppRouter, Request, Reply>` | `false`  | `n/a`     | tRPC handler options including `router`, `createContext`, etc. |

@@ -7,7 +7,7 @@ slug: /client/cors
 
 If your API resides on a different origin than your front-end and you wish to send cookies to it, you will need to enable [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) on your server and send cookies with your requests by providing the option `{credentials: "include"}` to fetch.
 
-The arguments provided to the fetch function used by tRPC can be modified as follow.
+The arguments provided to the fetch function used by tRPC can be modified as follows.
 
 ```ts twoslash title='app.ts'
 // @filename: server.ts

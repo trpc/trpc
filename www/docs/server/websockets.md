@@ -197,7 +197,7 @@ export const subRouter = router({
         signal: opts.signal,
       })) {
         const post = data as Post;
-        // tracking the post id ensures the client can reconnect at any time and get the latest events this id
+        // tracking the post id ensures the client can reconnect at any time and get the latest events since this id
         yield tracked(post.id, post);
       }
     }),

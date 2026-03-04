@@ -5,7 +5,7 @@ sidebar_label: Error Formatting
 slug: /server/error-formatting
 ---
 
-The error formatting in your router will be inferred all the way to your client
+The error formatting in your router will be inferred all the way to your client.
 
 ## Usage example highlighted
 
@@ -90,7 +90,7 @@ export function MyComponent() {
 
 ## All properties sent to `errorFormatter()`
 
-> Since `v8.x` tRPC is compliant with [JSON-RPC 2.0](https://www.jsonrpc.org/specification)
+> tRPC is compliant with [JSON-RPC 2.0](https://www.jsonrpc.org/specification)
 
 ```ts twoslash
 import { TRPCError } from '@trpc/server';

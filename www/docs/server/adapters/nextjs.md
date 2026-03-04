@@ -59,7 +59,7 @@ export default createNextApiHandler({
 });
 ```
 
-## Handling CORS, and other Advanced usage
+## Handling CORS and other advanced usage
 
 While you can usually just "set and forget" the API Handler as shown above, sometimes you might want to modify it further.
 

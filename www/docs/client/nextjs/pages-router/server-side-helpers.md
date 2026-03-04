@@ -5,7 +5,7 @@ sidebar_label: Server-Side Helpers
 slug: /client/nextjs/pages-router/server-side-helpers
 ---
 
-The server-side helpers provides you with a set of helper functions that you can use to prefetch queries on the server. This is useful for SSG, but also for SSR if you opt not to use `ssr: true`.
+The server-side helpers provide you with a set of helper functions that you can use to prefetch queries on the server. This is useful for SSG, but also for SSR if you opt not to use `ssr: true`.
 
 Prefetching via the server-side helpers allows populating the query cache on the server, which means that these queries do not have to fetch on the client initially.
 
@@ -13,7 +13,7 @@ Prefetching via the server-side helpers allows populating the query cache on the
 
 ### 1. Internal router
 
-This method is used when you have direct access to your tRPC router. e.g. when developing a monolithic Next.js application.
+This method is used when you have direct access to your tRPC router, e.g., when developing a monolithic Next.js application.
 
 Using the helpers makes tRPC call your procedures directly on the server, without an HTTP request, similar to [server-side calls](/docs/server/server-side-calls).
 That also means that you don't have the request and response at hand like you usually do. Make sure you're instantiating the server-side helpers with a context without `req` & `res`, which are typically filled via the context creation. We recommend the concept of ["inner" and "outer" context](/docs/server/context) in that scenario.
@@ -46,7 +46,7 @@ const helpers = createServerSideHelpers({
 
 ### 2. External router
 
-This method is used when you don't have direct access to your tRPC router. e.g. when developing a Next.js application and a standalone API hosted separately.
+This method is used when you don't have direct access to your tRPC router, e.g., when developing a Next.js application and a standalone API hosted separately.
 
 ```ts twoslash
 // @filename: server/router.ts
@@ -77,7 +77,7 @@ const helpers = createServerSideHelpers({
 
 ## Helpers usage
 
-The server-side helpers methods return an object much like the tRPC client, with all of your routers as keys. However, rather than `useQuery` and `useMutation`, you get `prefetch`, `fetch`, `prefetchInfinite`, and `fetchInfinite` functions.
+The server-side helpers methods return an object that mirrors your router structure, with all of your routers as keys. However, rather than `useQuery` and `useMutation`, you get `prefetch`, `fetch`, `prefetchInfinite`, and `fetchInfinite` functions.
 
 The primary difference between `prefetch` and `fetch` is that `fetch` acts much like a normal function call, returning the result of the query, whereas `prefetch` does not return the result and never throws - if you need that behavior, use `fetch` instead. Instead, `prefetch` will add the query to the cache, which you then dehydrate and send to the client.
 

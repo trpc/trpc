@@ -14,7 +14,7 @@ We provide a getQueryKey helper that accepts a `router` or `procedure` so that y
 function getQueryKey(
   procedure: AnyQueryProcedure,
   input?: DeepPartial<TInput>,
-  type?: QueryType; /** @default 'any' */
+  type?: QueryType, /** @default 'any' */
 ): TRPCQueryKey;
 
 // Routers
@@ -84,8 +84,8 @@ function MyComponent() {
 
 Similarly to queries, we provide a getMutationKey for mutations. The underlying function is the same as getQueryKey (in fact, you could technically use getQueryKey for mutations as well), the only difference is in semantics.
 
-```tsx twoslash
-// @errors: 2391 2304
+```tsx
+import { getMutationKey } from '@trpc/react-query';
 
-function getMutationKey(procedure: AnyMutationProcedure): TRPCMutationKey;
+const mutationKey = getMutationKey(trpc.user.create);
 ```

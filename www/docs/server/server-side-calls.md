@@ -24,7 +24,7 @@ With the `t.createCallerFactory`-function you can create a server-side caller of
 
 ### Basic example
 
-We create the router with a query to list posts and a mutation to add posts, and then we a call each method.
+We create the router with a query to list posts and a mutation to add posts, and then we call each method.
 
 ```ts twoslash
 // @target: esnext
@@ -342,7 +342,7 @@ export default async (
 
 ### Error handling
 
-The `createFactoryCaller` and the `createCaller` function can take an error handler through the `onError` option. This can be used to throw errors that are not wrapped in a TRPCError, or respond to errors in some other way. Any handler passed to createCallerFactory will be called before the handler passed to createCaller.
+The `createCallerFactory` and the `createCaller` function can take an error handler through the `onError` option. This can be used to throw errors that are not wrapped in a TRPCError, or respond to errors in some other way. Any handler passed to createCallerFactory will be called before the handler passed to createCaller.
 The handler is called with the same arguments as an error formatter would be, except for the shape field:
 
 ```ts twoslash

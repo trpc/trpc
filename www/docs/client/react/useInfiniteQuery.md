@@ -1,6 +1,6 @@
 ---
 id: useInfiniteQuery
-title: useInfiniteQuery
+title: useInfiniteQuery()
 sidebar_label: useInfiniteQuery()
 slug: /client/react/useInfiniteQuery
 ---

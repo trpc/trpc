@@ -70,7 +70,7 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
-For more information you can look at the [quickstart guide](/docs/quickstart)
+For more information, you can look at the [quickstart guide](/docs/quickstart)
 
 ### 2. Use the Standalone adapter
 
@@ -90,7 +90,6 @@ import { appRouter } from './appRouter';
 createHTTPServer({
   router: appRouter,
   createContext() {
-    console.log('context 3');
     return {};
   },
   // basePath: '/trpc/', // optional, defaults to '/'
@@ -134,7 +133,6 @@ createHTTPServer({
   middleware: cors(),
   router: appRouter,
   createContext() {
-    console.log('context 3');
     return {};
   },
 }).listen(3333);
@@ -146,9 +144,9 @@ The `middleware` option will accept any function which resembles a connect/node.
 2. Use a solution to compose middlewares such as [connect](https://github.com/senchalabs/connect)
 3. Extend the Standalone `createHTTPHandler` with a custom http server (see below)
 
-## Adding a handler to an Custom HTTP server
+## Adding a handler to a Custom HTTP server
 
-`createHTTPServer` is returning an instance of Node's built-in `http.Server`(https://nodejs.org/api/http.html#class-httpserver), which means that you have an access to all it's properties and APIs. However, if `createHTTPServer` isn't enough for your usecase, you can also use the standalone adapter's `createHTTPHandler` function to create your own HTTP server. For instance:
+`createHTTPServer` is returning an instance of Node's built-in [`http.Server`](https://nodejs.org/api/http.html#class-httpserver), which means that you have an access to all its properties and APIs. However, if `createHTTPServer` isn't enough for your use case, you can also use the standalone adapter's `createHTTPHandler` function to create your own HTTP server. For instance:
 
 ```ts twoslash title='server.ts'
 // @types: node
@@ -180,7 +178,7 @@ createServer((req, res) => {
 }).listen(3001);
 ```
 
-## Custom base path to handle requests under {#custom-basePath}
+## Custom base path for handling requests {#custom-basePath}
 
 The Standalone adapter also supports a `basePath` option, which will slice the basePath from the beginning of the request path.
 

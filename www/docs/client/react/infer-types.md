@@ -98,11 +98,11 @@ function usePostCreate(options?: PostCreateOptions) {
 
   return trpc.post.create.useMutation({
     ...options,
-    onSuccess(post, variables, context, mutation) {
+    onSuccess(post, variables, onMutateResult, context) {
       // invalidate all queries on the post router
       // when a new post is created
       utils.post.invalidate();
-      options?.onSuccess?.(post, variables, context, mutation);
+      options?.onSuccess?.(post, variables, onMutateResult, context);
     },
   });
 }

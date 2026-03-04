@@ -68,6 +68,7 @@ The `httpBatchLink` function takes an options object that has the `HTTPBatchLink
 type DataTransformerOptions = any;
 type HTTPHeaders = Record<string, string | string[]>;
 type Operation = { id: number; type: 'query' | 'mutation' | 'subscription'; path: string; input: unknown };
+type NonEmptyArray<T> = [T, ...T[]];
 // ---cut---
 export interface HTTPBatchLinkOptions extends HTTPLinkOptions {
   /**
@@ -83,35 +84,29 @@ export interface HTTPBatchLinkOptions extends HTTPLinkOptions {
 }
 
 export interface HTTPLinkOptions {
-  url: string;
+  url: string | URL;
   /**
    * Add ponyfill for fetch
    */
   fetch?: typeof fetch;
   /**
-   * Add ponyfill for AbortController
-   */
-  AbortController?: typeof AbortController | null;
-  /**
    * Data transformer
-   * @see https://trpc.io/docs/data-transformers
+   * @see https://trpc.io/docs/server/data-transformers
    **/
   transformer?: DataTransformerOptions;
   /**
    * Headers to be set on outgoing requests or a callback that of said headers
-   * @see http://trpc.io/docs/header
+   * @see https://trpc.io/docs/client/headers
    */
   headers?:
     | HTTPHeaders
-    | ((opts: { opList: Operation[] }) => HTTPHeaders | Promise<HTTPHeaders>);
+    | ((opts: { opList: NonEmptyArray<Operation> }) => HTTPHeaders | Promise<HTTPHeaders>);
 }
 ```
 
 ## Setting a maximum URL length
 
 When sending batch requests, sometimes the URL can become too large causing HTTP errors like [`413 Payload Too Large`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/413), [`414 URI Too Long`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/414), and [`404 Not Found`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404). The `maxURLLength` option will limit the number of requests that can be sent together in a batch.
-
-> An alternative way of doing this is to
 
 ```ts twoslash title="client/index.ts"
 // @filename: server.ts

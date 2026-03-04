@@ -92,7 +92,7 @@ import { appRouter } from './router';
 const createContext = ({
   event,
   context,
-}: CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>) => ({}) // no context
+}: CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>) => ({}); // no context
 type Context = Awaited<ReturnType<typeof createContext>>;
 
 export const handler = awsLambdaRequestHandler({
@@ -139,35 +139,6 @@ AWS Lambda supports streaming responses to clients with both Lambda Function URL
 
 > Response streaming is supported for Lambda Function URLs and API Gateway REST APIs. For API Gateway REST APIs, you need to configure the integration with `responseTransferMode: STREAM`. [Read more about Lambda response streaming](https://aws.amazon.com/blogs/compute/introducing-aws-lambda-response-streaming/) and [API Gateway response streaming](https://aws.amazon.com/blogs/compute/building-responsive-apis-with-amazon-api-gateway-response-streaming/).
 
-## Example apps
-
-<table>
-  <thead>
-    <tr>
-      <th>Description</th>
-      <th>Links</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Lambda Function URL with NodeJS client.</td>
-      <td>
-        <ul>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/lambda-url">Source</a></li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>API Gateway REST API with response streaming.</td>
-      <td>
-        <ul>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/lambda-api-gateway-streaming">Source</a></li>
-        </ul>
-      </td>
-    </tr>
-  </tbody>
-</table>
-
 ### Response Streaming
 
 The signature of a streaming handler is different from the default handler. The streaming handler additionally receives a writable stream parameter, `responseStream`, besides the default node handler parameters, `event` and `context`. To indicate that Lambda should stream your responses, you must wrap your function handler with the `awslambda.streamifyResponse()` decorator.
@@ -191,12 +162,24 @@ export const appRouter = t.router({
 // @filename: server.ts
 // ---cut---
 /// <reference types="aws-lambda" />
+import type { APIGatewayProxyEventV2 } from 'aws-lambda';
+import type { CreateAWSLambdaContextOptions } from '@trpc/server/adapters/aws-lambda';
 import { awsLambdaStreamingRequestHandler } from '@trpc/server/adapters/aws-lambda';
 import { appRouter } from './router';
+
+// created for each request
+const createContext = ({
+  event,
+  context,
+}: CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>) => ({
+  // your context
+});
+type Context = Awaited<ReturnType<typeof createContext>>;
 
 export const handler = awslambda.streamifyResponse(
   awsLambdaStreamingRequestHandler({
     router: appRouter,
+    createContext,
   }),
 );
 ```
