@@ -168,6 +168,7 @@ export default {
           'server',
           'client',
           'react-query',
+          'tanstack-react-query',
           'next',
         ])
       : []),
