@@ -44,7 +44,7 @@ export default tseslint.config(
     },
   },
   {
-    linterOptions: { reportUnusedDisableDirectives: true },
+    linterOptions: { reportUnusedDisableDirectives: 'warn' },
     languageOptions: { parserOptions: { projectService: true } },
   },
 );
