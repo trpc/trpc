@@ -15,8 +15,7 @@ export async function writeFileToDisk(file: File) {
   const fd = fs.createWriteStream(path.resolve(`${fileDir}/${file.name}`));
 
   const fileStream = Readable.fromWeb(
-    // @ts-expect-error - unsure why this is not working
-    file.stream(),
+    file.stream() as Parameters<typeof Readable.fromWeb>[0],
   );
   for await (const chunk of fileStream) {
     fd.write(chunk);
