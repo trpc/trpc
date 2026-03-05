@@ -1520,8 +1520,8 @@ test('timer does not leak after subscription ends', async () => {
 // the server to end the SSE connection, and continues receiving
 // data via tracked() event ID resumption.
 test(
-  'maxDurationMs should reconnect and continue receiving data',
-  { timeout: 30_000 },
+  'regression #7094: maxDurationMs should reconnect and continue receiving data',
+  { timeout: 10_000 },
   async () => {
     const MAX_DURATION_MS = 500;
 
@@ -1617,7 +1617,7 @@ test(
         () => {
           expect(onConnection).toHaveBeenCalledTimes(2);
         },
-        { timeout: 15_000 },
+        { timeout: 5_000 },
       );
     });
 
