@@ -1,4 +1,4 @@
-import type { Observable, Observer } from '@trpc/server/observable';
+import type { Observable, Observer } from '@trpc/observable';
 import type {
   InferrableClientTypes,
   Maybe,

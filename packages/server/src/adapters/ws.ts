@@ -1,4 +1,5 @@
 import type { IncomingMessage } from 'http';
+import { isObservable, observableToAsyncIterable } from '@trpc/observable';
 import type ws from 'ws';
 import type {
   AnyRouter,
@@ -24,7 +25,6 @@ import type {
   TRPCResultMessage,
 } from '../@trpc/server/rpc';
 import { parseConnectionParamsFromUnknown } from '../http';
-import { isObservable, observableToAsyncIterable } from '../observable';
 // eslint-disable-next-line no-restricted-imports
 import {
   isAsyncIterable,

@@ -3,7 +3,7 @@
  */
 import { router, publicProcedure } from '../trpc';
 import { postRouter } from './post';
-import { observable } from '@trpc/server/observable';
+import { observable } from '@trpc/observable';
 import { clearInterval } from 'timers';
 
 export const appRouter = router({

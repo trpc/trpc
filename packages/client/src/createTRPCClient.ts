@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import type { Unsubscribable } from '@trpc/server/observable';
+import type { Unsubscribable } from '@trpc/observable';
 import type {
   AnyProcedure,
   AnyRouter,

@@ -1,4 +1,4 @@
-import { behaviorSubject, observable } from '@trpc/server/observable';
+import { behaviorSubject, observable } from '@trpc/observable';
 import type { TRPCErrorShape, TRPCResult } from '@trpc/server/rpc';
 import type {
   AnyClientTypes,

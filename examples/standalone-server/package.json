@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@trpc/client": "npm:@trpc/client",
+    "@trpc/observable": "npm:@trpc/observable",
     "@trpc/react-query": "npm:@trpc/react-query",
     "@trpc/server": "npm:@trpc/server",
     "ws": "^8.0.0",

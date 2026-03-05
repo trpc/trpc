@@ -10,8 +10,8 @@ import {
   retryLink,
   splitLink,
 } from '@trpc/client';
+import { observable } from '@trpc/observable';
 import { initTRPC, tracked, TRPCError } from '@trpc/server';
-import { observable } from '@trpc/server/observable';
 import { EventSourcePolyfill } from 'event-source-polyfill';
 import { konn } from 'konn';
 import superjson from 'superjson';

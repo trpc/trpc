@@ -1,8 +1,5 @@
-import type {
-  inferObservableValue,
-  Unsubscribable,
-} from '@trpc/server/observable';
-import { observableToPromise, share } from '@trpc/server/observable';
+import type { inferObservableValue, Unsubscribable } from '@trpc/observable';
+import { observableToPromise, share } from '@trpc/observable';
 import type {
   AnyRouter,
   inferAsyncIterableYield,
