@@ -1,5 +1,11 @@
 import { testReactResource } from './__helpers';
-import { skipToken, useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import {
+  queryOptions,
+  skipToken,
+  useQuery,
+  useSuspenseQueries,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
 import '@testing-library/react';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import type { inferRouterError } from '@trpc/server';
@@ -171,6 +177,49 @@ describe.each(['user-123', undefined])(
       await vi.waitFor(() => {
         expect(utils.container).toHaveTextContent(`pending`);
       });
+    });
+
+    test('regression #6701: disabling query with skipToken', async () => {
+      await using ctx = testContext(keyPrefix);
+
+      const { useTRPC } = ctx;
+      function MyComponent() {
+        const trpc = useTRPC();
+
+        // Correct usage
+        const skipQueryOptions = trpc.post.byId.queryOptions(skipToken);
+        useQuery(skipQueryOptions);
+        useQuery({
+          queryKey: [],
+          queryFn: skipToken,
+        });
+
+        useSuspenseQuery({
+          queryKey: [],
+          // @ts-expect-error skipToken not supported directly by useSuspenseQuery
+          queryFn: skipToken,
+        });
+
+        // @ts-expect-error skipToken not supported by useSuspenseQuery
+        useSuspenseQuery(skipQueryOptions);
+
+        useSuspenseQueries({
+          queries: [
+            // @ts-expect-error skipToken not supported directly by useSuspenseQueries
+            queryOptions({
+              queryKey: [],
+              queryFn: skipToken,
+            }),
+          ],
+        });
+
+        useSuspenseQueries({
+          // @ts-expect-error skipToken not supported by useSuspenseQueries
+          queries: [skipQueryOptions],
+        });
+      }
+
+      expect(MyComponent).toBeDefined();
     });
 
     test('with extra `trpc` context', async () => {

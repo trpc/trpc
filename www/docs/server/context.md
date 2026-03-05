@@ -5,7 +5,7 @@ sidebar_label: Context
 slug: /server/context
 ---
 
-Your context holds data that all of your tRPC procedures will have access to, and is a great place to put things like database connections or authentication information.
+Your context holds data that all of your tRPC procedures will have access to, and is a great place to put things like authentication information.
 
 Setting up the context is done in 2 steps, defining the type during initialization and then creating the runtime context for each request.
 
@@ -145,6 +145,12 @@ export const protectedProcedure = t.procedure.use(function isAuthed(opts) {
 In some scenarios it could make sense to split up your context into "inner" and "outer" functions.
 
 **Inner context** is where you define context which doesn’t depend on the request, e.g. your database connection. You can use this function for integration testing or [server-side helpers](/docs/client/nextjs/server-side-helpers), where you don’t have a request object. Whatever is defined here will **always** be available in your procedures.
+
+:::note Tradeoff for large clients in `createContextInner`
+Putting a database client such as `prisma` on `createContextInner` is convenient and common, but large generated clients (like Prisma) can increase type-checking overhead because they become part of your context type across procedures.
+
+If that overhead becomes noticeable, an alternative is to keep context smaller and import the client directly at call sites where needed.
+:::
 
 **Outer context** is where you define context which depends on the request, e.g. for the user's session. Whatever is defined here is only available for procedures that are called via HTTP.
 
