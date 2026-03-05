@@ -530,10 +530,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             untransformedJSON: null,
           });
 
-          // When maxDurationMs fires, combinedAbort.signal is aborted
-          // but writeResponse uses request.signal for pipeTo() — which
-          // only fires on client disconnect. We need maxDurationMs abort
-          // to also terminate the SSE response body (fixes #7094).
           const abortSignal = result?.signal;
           let responseBody: ReadableStream<Uint8Array> = stream;
 
