@@ -537,10 +537,15 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           const abortSignal = result?.signal;
           let responseBody: ReadableStream<Uint8Array> = stream;
 
-          if (abortSignal && !abortSignal.aborted) {
+          // Fixes: https://github.com/trpc/trpc/issues/7094
+          if (abortSignal) {
             const reader = stream.getReader();
             const onAbort = () => void reader.cancel();
-            abortSignal.addEventListener('abort', onAbort, { once: true });
+            if (abortSignal.aborted) {
+              onAbort();
+            } else {
+              abortSignal.addEventListener('abort', onAbort, { once: true });
+            }
 
             responseBody = new ReadableStream({
               async pull(controller) {
@@ -554,7 +559,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               },
               cancel() {
                 abortSignal.removeEventListener('abort', onAbort);
-                void reader.cancel();
+                return reader.cancel();
               },
             });
           }
