@@ -5,24 +5,12 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 import { transformResult } from '@trpc/server/unstable-core-do-not-import';
 import { TRPCClientError } from '../TRPCClientError';
-import type {
-  HTTPLinkBaseOptions,
-  HTTPResult,
-  Requester,
-} from './internals/httpUtils';
+import type { HTTPLinkBaseOptions, HTTPResult } from './internals/httpUtils';
 import {
-  getUrl,
-  httpRequest,
-  jsonHttpRequester,
   resolveHTTPLinkOptions,
+  universalRequester,
 } from './internals/httpUtils';
-import {
-  isFormData,
-  isOctetType,
-  type HTTPHeaders,
-  type Operation,
-  type TRPCLink,
-} from './types';
+import { type HTTPHeaders, type Operation, type TRPCLink } from './types';
 
 export type HTTPLinkOptions<TRoot extends AnyClientTypes> =
   HTTPLinkBaseOptions<TRoot> & {
@@ -34,40 +22,6 @@ export type HTTPLinkOptions<TRoot extends AnyClientTypes> =
       | HTTPHeaders
       | ((opts: { op: Operation }) => HTTPHeaders | Promise<HTTPHeaders>);
   };
-
-const universalRequester: Requester = (opts) => {
-  if ('input' in opts) {
-    const { input } = opts;
-    if (isFormData(input)) {
-      if (opts.type !== 'mutation' && opts.methodOverride !== 'POST') {
-        throw new Error('FormData is only supported for mutations');
-      }
-
-      return httpRequest({
-        ...opts,
-        // The browser will set this automatically and include the boundary= in it
-        contentTypeHeader: undefined,
-        getUrl,
-        getBody: () => input,
-      });
-    }
-
-    if (isOctetType(input)) {
-      if (opts.type !== 'mutation' && opts.methodOverride !== 'POST') {
-        throw new Error('Octet type input is only supported for mutations');
-      }
-
-      return httpRequest({
-        ...opts,
-        contentTypeHeader: 'application/octet-stream',
-        getUrl,
-        getBody: () => input,
-      });
-    }
-  }
-
-  return jsonHttpRequester(opts);
-};
 
 /**
  * @see https://trpc.io/docs/client/links/httpLink

@@ -10,8 +10,8 @@ import type { HTTPBatchLinkOptions } from './HTTPBatchLinkOptions';
 import type { HTTPResult } from './internals/httpUtils';
 import {
   getUrl,
-  jsonHttpRequester,
   resolveHTTPLinkOptions,
+  universalRequester,
 } from './internals/httpUtils';
 import type { Operation, TRPCLink } from './types';
 
@@ -56,7 +56,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           const inputs = batchOps.map((op) => op.input);
           const signal = allAbortSignals(...batchOps.map((op) => op.signal));
 
-          const res = await jsonHttpRequester({
+          const res = await universalRequester({
             ...resolvedOpts,
             path,
             inputs,

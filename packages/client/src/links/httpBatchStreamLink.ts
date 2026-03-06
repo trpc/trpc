@@ -11,7 +11,7 @@ import type { HTTPBatchLinkOptions } from './HTTPBatchLinkOptions';
 import type { HTTPResult } from './internals/httpUtils';
 import {
   fetchHTTPResponse,
-  getBody,
+  getBodyAndContentType,
   getUrl,
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
@@ -66,10 +66,9 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
             ...resolvedOpts,
             signal: raceAbortSignals(batchSignals, abortController.signal),
             type,
-            contentTypeHeader: 'application/json',
             trpcAcceptHeader: 'application/jsonl',
             getUrl,
-            getBody,
+            getBodyAndContentType,
             inputs,
             path,
             headers() {

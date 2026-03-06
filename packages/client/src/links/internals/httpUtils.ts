@@ -14,7 +14,7 @@ import type {
 } from '../../internals/types';
 import type { TransformerOptions } from '../../unstable-internals';
 import { getTransformer } from '../../unstable-internals';
-import type { HTTPHeaders } from '../types';
+import { isFormData, isOctetType, type HTTPHeaders } from '../types';
 
 /**
  * @internal
@@ -82,11 +82,34 @@ type GetInputOptions = {
 } & ({ input: unknown } | { inputs: unknown[] });
 
 export function getInput(opts: GetInputOptions) {
-  return 'input' in opts
-    ? opts.transformer.input.serialize(opts.input)
-    : arrayToDict(
-        opts.inputs.map((_input) => opts.transformer.input.serialize(_input)),
-      );
+  if ('input' in opts) {
+    if (
+      (isFormData(opts.input) || isOctetType(opts.input)) &&
+      !opts.transformer.input.unstable_serializeNonJsonTypes
+    ) {
+      return opts.input;
+    }
+    return opts.transformer.input.serialize(opts.input);
+  } else if ('inputs' in opts) {
+    const serializedInputs = opts.inputs.map((_input) => {
+      if (
+        (isFormData(_input) || isOctetType(_input)) &&
+        !opts.transformer.input.unstable_serializeNonJsonTypes
+      ) {
+        throw new Error(
+          'Batch link does not support FormData or Octet type inputs, use httpLink',
+        );
+      }
+      const serialized = opts.transformer.input.serialize(_input);
+      if (isFormData(serialized) || isOctetType(serialized)) {
+        throw new Error(
+          'Batch link does not support FormData or Octet type inputs, use httpLink',
+        );
+      }
+      return serialized;
+    });
+    return arrayToDict(serializedInputs);
+  }
 }
 
 export type HTTPBaseRequestOptions = GetInputOptions &
@@ -97,13 +120,15 @@ export type HTTPBaseRequestOptions = GetInputOptions &
   };
 
 type GetUrl = (opts: HTTPBaseRequestOptions) => string;
-type GetBody = (opts: HTTPBaseRequestOptions) => RequestInitEsque['body'];
+type GetBodyAndContentType = (opts: HTTPBaseRequestOptions) => {
+  body: RequestInitEsque['body'] | undefined;
+  contentTypeHeader: string | undefined;
+};
 
 export type ContentOptions = {
   trpcAcceptHeader?: TRPCAcceptHeader;
-  contentTypeHeader?: string;
   getUrl: GetUrl;
-  getBody: GetBody;
+  getBodyAndContentType: GetBodyAndContentType;
 };
 
 export const getUrl: GetUrl = (opts) => {
@@ -119,9 +144,22 @@ export const getUrl: GetUrl = (opts) => {
   if ('inputs' in opts) {
     queryParts.push('batch=1');
   }
-  if (opts.type === 'query' || opts.type === 'subscription') {
+  if (
+    (opts.type === 'query' || opts.type === 'subscription') &&
+    opts.methodOverride !== 'POST'
+  ) {
     const input = getInput(opts);
-    if (input !== undefined && opts.methodOverride !== 'POST') {
+    if (input !== undefined) {
+      if (isFormData(input)) {
+        throw new Error(
+          'FormData is only supported for mutations, or when using POST methodOverride',
+        );
+      }
+      if (isOctetType(input)) {
+        throw new Error(
+          'Octet type is only supported for mutations, or when using POST methodOverride',
+        );
+      }
       queryParts.push(`input=${encodeURIComponent(JSON.stringify(input))}`);
     }
   }
@@ -131,12 +169,29 @@ export const getUrl: GetUrl = (opts) => {
   return url;
 };
 
-export const getBody: GetBody = (opts) => {
+export const getBodyAndContentType: GetBodyAndContentType = (opts) => {
   if (opts.type === 'query' && opts.methodOverride !== 'POST') {
-    return undefined;
+    return { body: undefined, contentTypeHeader: 'application/json' };
   }
   const input = getInput(opts);
-  return input !== undefined ? JSON.stringify(input) : undefined;
+  if (isFormData(input)) {
+    if (opts.type !== 'mutation' && opts.methodOverride !== 'POST') {
+      throw new Error(
+        'FormData input is only supported for mutations or POST methodOverride',
+      );
+    }
+    // The browser will set the contentType automatically and include the boundary= in it
+    return { body: input, contentTypeHeader: undefined };
+  }
+  if (isOctetType(input)) {
+    if (opts.type !== 'mutation' && opts.methodOverride !== 'POST') {
+      throw new Error(
+        'Octet type input is only supported for mutations or POST methodOverride',
+      );
+    }
+    return { body: input, contentTypeHeader: 'application/octet-stream' };
+  }
+  return { body: JSON.stringify(input), contentTypeHeader: 'application/json' };
 };
 
 export type Requester = (
@@ -145,12 +200,11 @@ export type Requester = (
   },
 ) => Promise<HTTPResult>;
 
-export const jsonHttpRequester: Requester = (opts) => {
+export const universalRequester: Requester = (opts) => {
   return httpRequest({
     ...opts,
-    contentTypeHeader: 'application/json',
     getUrl,
-    getBody,
+    getBodyAndContentType,
   });
 };
 
@@ -196,7 +250,9 @@ export async function fetchHTTPResponse(opts: HTTPRequestOptions) {
   throwIfAborted(opts.signal);
 
   const url = opts.getUrl(opts);
-  const body = opts.getBody(opts);
+  const res = opts.getBodyAndContentType(opts);
+  const body = res?.body;
+  const contentTypeHeader = res?.contentTypeHeader;
   const method = opts.methodOverride ?? METHOD[opts.type];
   const resolvedHeaders = await (async () => {
     const heads = await opts.headers();
@@ -206,8 +262,8 @@ export async function fetchHTTPResponse(opts: HTTPRequestOptions) {
     return heads;
   })();
   const headers = {
-    ...(opts.contentTypeHeader && method !== 'GET'
-      ? { 'content-type': opts.contentTypeHeader }
+    ...(contentTypeHeader && method !== 'GET'
+      ? { 'content-type': contentTypeHeader }
       : {}),
     ...(opts.trpcAcceptHeader
       ? { 'trpc-accept': opts.trpcAcceptHeader }
