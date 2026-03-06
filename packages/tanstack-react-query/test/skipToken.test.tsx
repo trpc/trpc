@@ -1,11 +1,11 @@
-import { testReactResource } from './__helpers';
 import { skipToken } from '@tanstack/react-query';
-import '@testing-library/react';
 import { initTRPC } from '@trpc/server';
+import '@testing-library/react';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
 import { describe, expect, test } from 'vitest';
 import { z } from 'zod';
+import { testReactResource } from './__helpers';
 
 const testContext = () => {
   let iterableDeferred = createDeferred<void>();

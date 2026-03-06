@@ -1,5 +1,5 @@
-import { EventEmitter, on } from 'node:events';
 import { fetchServerResource } from '@trpc/server/__tests__/fetchServerResource';
+import { EventEmitter, on } from 'node:events';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import SuperJSON from 'superjson';
 import type { inferAsyncIterableYield, Maybe } from '../types';

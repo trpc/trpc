@@ -1,6 +1,6 @@
-import { trpc } from '~/utils/trpc';
 import Head from 'next/head';
 import { useState } from 'react';
+import { trpc } from '~/utils/trpc';
 
 export default function IndexPage() {
   const [name, setName] = useState('world');

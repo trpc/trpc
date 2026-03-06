@@ -1,8 +1,8 @@
-import { getServerAndReactClient } from '../__reactHelpers';
 import { ignoreErrors } from '@trpc/server/__tests__/suppressLogs';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import { z } from 'zod';
+import { getServerAndReactClient } from '../__reactHelpers';
 
 const fixtureData = ['1', '2'];
 

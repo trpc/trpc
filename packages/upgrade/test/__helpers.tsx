@@ -1,7 +1,5 @@
 import '@testing-library/dom';
 import '@testing-library/jest-dom/vitest';
-import type { TestServerAndClientResourceOpts } from '../../client/src/__tests__/testClientResource';
-import { testServerAndClientResource } from '../../client/src/__tests__/testClientResource';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import { getUntypedClient } from '@trpc/client';
@@ -9,6 +7,8 @@ import * as rq from '@trpc/react-query';
 import { type AnyTRPCRouter } from '@trpc/server';
 import * as trq from '@trpc/tanstack-react-query';
 import * as React from 'react';
+import type { TestServerAndClientResourceOpts } from '../../client/src/__tests__/testClientResource';
+import { testServerAndClientResource } from '../../client/src/__tests__/testClientResource';
 
 export function testReactResource<TRouter extends AnyTRPCRouter>(
   appRouter: TRouter,

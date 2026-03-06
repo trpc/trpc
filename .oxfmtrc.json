@@ -1,0 +1,57 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 80,
+  "trailingComma": "all",
+  "singleQuote": true,
+  "sortImports": {
+    "groups": [
+      "test-polyfills",
+      "double-underscore-imports",
+      "trpc-test-helpers",
+      "builtin",
+      "external",
+      ["internal", "subpath"],
+      ["parent", "sibling", "index"],
+      "unknown"
+    ],
+    "customGroups": [
+      {
+        "groupName": "test-polyfills",
+        "elementNamePattern": ["___*"]
+      },
+      {
+        "groupName": "double-underscore-imports",
+        "elementNamePattern": ["@trpc/*/__tests__/*", "@trpc/*/__tests__"]
+      },
+      {
+        "groupName": "trpc-test-helpers",
+        "elementNamePattern": ["@trpc/*/src/__tests__/*"]
+      }
+    ],
+    "newlinesBetween": false
+  },
+  "sortTailwindcss": {
+    "config": "./www/tailwind.config.ts"
+  },
+  "sortPackageJson": false,
+  "ignorePatterns": [
+    "__generated__/",
+    ".docusaurus/",
+    "**/.next/",
+    "**/.nuxt",
+    "**/www/build/",
+    "**/www/typedoc/",
+    "dist/",
+    "examples/next-big-router/src/server/routers/*.ts",
+    "examples/.test/diagnostics-big-router/**/*",
+    "packages/tests/vendor/",
+    "packages/server/src/vendor/",
+    "packages/coverage/",
+    "pnpm-lock.yaml",
+    "www/docs/main/quickstart.mdx",
+    ".turbo",
+    ".vinxi",
+    ".output",
+    "www/docs/typedoc"
+  ]
+}

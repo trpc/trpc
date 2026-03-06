@@ -17,7 +17,7 @@
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
-    "lint": "eslint --cache src",
+    "lint": "oxlint --type-aware src",
     "typecheck": "tsc --noEmit --preserveWatchOutput --pretty"
   },
   "exports": {
@@ -41,16 +41,6 @@
     "!**/*.test.*",
     "!**/__tests__"
   ],
-  "eslintConfig": {
-    "rules": {
-      "react-hooks/exhaustive-deps": "error",
-      "no-restricted-imports": [
-        "error",
-        "@trpc/tanstack-react-query"
-      ],
-      "@typescript-eslint/prefer-function-type": "off"
-    }
-  },
   "peerDependencies": {
     "@tanstack/react-query": "^5.80.3",
     "@trpc/client": "11.12.0",
@@ -64,7 +54,6 @@
     "@trpc/server": "11.12.0",
     "@types/node": "^22.13.5",
     "@types/react": "^19.1.0",
-    "eslint": "^9.26.0",
     "event-source-polyfill": "^1.0.31",
     "konn": "^0.7.0",
     "react": "^19.1.0",

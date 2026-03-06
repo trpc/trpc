@@ -1,8 +1,8 @@
-import { trpc } from '~/utils/trpc';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { signIn, signOut, useSession } from 'next-auth/react';
 import Head from 'next/head';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { trpc } from '~/utils/trpc';
 
 function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
   const addPost = trpc.post.add.useMutation();
@@ -255,7 +255,7 @@ export default function IndexPage() {
               </button>
               <div className="space-y-4">
                 {messages?.map((item) => (
-                  <article key={item.id} className=" text-gray-50">
+                  <article key={item.id} className="text-gray-50">
                     <header className="flex space-x-2 text-sm">
                       <h3 className="text-base">
                         {item.source === 'RAW' ? (

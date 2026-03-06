@@ -1,6 +1,6 @@
-import { AsyncLocalStorage } from 'async_hooks';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
+import { AsyncLocalStorage } from 'async_hooks';
 import type {
   AnyRouter,
   AnyTRPCProcedure,

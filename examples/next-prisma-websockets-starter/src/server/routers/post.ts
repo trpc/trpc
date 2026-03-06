@@ -1,14 +1,14 @@
+import { EventEmitter } from 'events';
+import { on } from 'node:events';
 /**
  *
  * This is an example router, you can delete this file and then update `../pages/api/trpc/[trpc].tsx`
  */
 import type { Post } from '@prisma/client';
 import { observable } from '@trpc/server/observable';
-import { EventEmitter } from 'events';
-import { prisma } from '../prisma';
 import { z } from 'zod';
+import { prisma } from '../prisma';
 import { authedProcedure, publicProcedure, router } from '../trpc';
-import { on } from 'node:events';
 
 type EventMap<T> = Record<keyof T, any[]>;
 class IterableEventEmitter<T extends EventMap<T>> extends EventEmitter<T> {

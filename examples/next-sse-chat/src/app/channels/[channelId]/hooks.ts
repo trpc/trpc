@@ -1,6 +1,6 @@
 import { skipToken } from '@tanstack/react-query';
-import { trpc } from '~/lib/trpc';
 import * as React from 'react';
+import { trpc } from '~/lib/trpc';
 
 /**
  * Set isTyping with a throttle of 1s

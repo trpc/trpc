@@ -1,9 +1,9 @@
-import { getServerAndReactClient } from './__reactHelpers';
 import type { InfiniteData } from '@tanstack/react-query';
 import { createServerSideHelpers } from '@trpc/react-query/server';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import { z } from 'zod';
+import { getServerAndReactClient } from './__reactHelpers';
 
 const ctx = konn()
   .beforeEach(() => {

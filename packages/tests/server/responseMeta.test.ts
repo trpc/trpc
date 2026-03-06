@@ -1,5 +1,5 @@
-import type { IncomingMessage, ServerResponse } from 'http';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
+import type { IncomingMessage, ServerResponse } from 'http';
 import { initTRPC } from '@trpc/server';
 import fetch from 'node-fetch';
 

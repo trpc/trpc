@@ -1,9 +1,9 @@
-import { EventEmitter, on } from 'node:events';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 /// <reference types="vitest" />
 import '@testing-library/react';
-import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import type { TRPCServerResourceOpts } from '@trpc/server/__tests__/trpcServerResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
+import { EventEmitter, on } from 'node:events';
 import type { TRPCClientError, WebSocketClientOptions } from '@trpc/client';
 import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
 import type { TRPCConnectionState } from '@trpc/client/unstable-internals';

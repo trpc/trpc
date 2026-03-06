@@ -1,7 +1,7 @@
-import { EventEmitter } from 'node:events';
 /// <reference types="vitest" />
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { suppressLogsUntil } from '@trpc/server/__tests__/suppressLogs';
+import { EventEmitter } from 'node:events';
 import '@testing-library/react';
 import type { TRPCLink } from '@trpc/client';
 import {

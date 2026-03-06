@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-import { createAppRouter } from '../__testHelpers';
 import { withTRPC } from '@trpc/next';
 import { ssrPrepass } from '@trpc/next/ssrPrepass';
 import type { AppType } from 'next/dist/shared/lib/utils';
 import React from 'react';
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import { createAppRouter } from '../__testHelpers';
 
 let factory: ReturnType<typeof createAppRouter>;
 beforeEach(() => {

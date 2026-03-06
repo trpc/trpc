@@ -1,6 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import prettier from 'prettier';
 
 // minimal version of PackageJson type necessary
 export type PackageJson = {
@@ -132,19 +131,19 @@ export async function generateEntrypoints(rawInputs: string[]) {
   pkgJson.peerDependencies['typescript'] = '>=5.7.2';
 
   // write package.json
-  const formattedPkgJson = await prettier.format(JSON.stringify(pkgJson), {
-    parser: 'json-stringify',
-    ...(await prettier.resolveConfig(pkgJsonPath)),
-  });
-  fs.writeFileSync(pkgJsonPath, formattedPkgJson, 'utf8');
+  fs.writeFileSync(
+    pkgJsonPath,
+    JSON.stringify(pkgJson, null, 2) + '\n',
+    'utf8',
+  );
 
   const turboPath = path.resolve('turbo.json');
   const turboJson = JSON.parse(fs.readFileSync(turboPath, 'utf8'));
   turboJson.tasks.build ??= {};
   turboJson.tasks.build.outputs = [...scriptOutputs];
-  const formattedTurboJson = await prettier.format(JSON.stringify(turboJson), {
-    parser: 'json',
-    ...(await prettier.resolveConfig(turboPath)),
-  });
-  fs.writeFileSync(turboPath, formattedTurboJson, 'utf8');
+  fs.writeFileSync(
+    turboPath,
+    JSON.stringify(turboJson, null, 2) + '\n',
+    'utf8',
+  );
 }

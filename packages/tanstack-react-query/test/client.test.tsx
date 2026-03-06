@@ -1,11 +1,11 @@
-import { testReactResource } from './__helpers';
-import '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import '@testing-library/react';
 import { initTRPC } from '@trpc/server';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
 import { describe, expect, test } from 'vitest';
 import { z } from 'zod';
+import { testReactResource } from './__helpers';
 
 const testContext = () => {
   let iterableDeferred = createDeferred<void>();

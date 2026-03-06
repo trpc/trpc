@@ -1,5 +1,3 @@
-import { EventEmitter, on } from 'node:events';
-import { IterableEventEmitter } from './../../server/src/__tests__/iterableEventEmitter';
 /// <reference types="vitest" />
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { fakeTimersResource } from '@trpc/server/__tests__/fakeTimersResource';
@@ -7,6 +5,7 @@ import {
   suppressLogs,
   suppressLogsUntil,
 } from '@trpc/server/__tests__/suppressLogs';
+import { EventEmitter, on } from 'node:events';
 import type {
   OperationResultEnvelope,
   TRPCClientError,
@@ -38,6 +37,7 @@ import { uneval } from 'devalue';
 import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
+import { IterableEventEmitter } from './../../server/src/__tests__/iterableEventEmitter';
 import { zAsyncIterable } from './zAsyncIterable';
 
 const sleep = (ms = 1) => new Promise((resolve) => setTimeout(resolve, ms));

@@ -1,10 +1,10 @@
 import { HashtagIcon } from '@heroicons/react/24/outline';
-import { buttonVariants } from '~/components/button';
-import { SignedIn, SignedOut } from '~/server/auth';
-import { caller } from '~/server/routers/_app';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { twMerge } from 'tailwind-merge';
+import { buttonVariants } from '~/components/button';
+import { SignedIn, SignedOut } from '~/server/auth';
+import { caller } from '~/server/routers/_app';
 import { CreateChannelDialog } from './channels/create-channel';
 
 export default async function Home() {

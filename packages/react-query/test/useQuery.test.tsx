@@ -1,4 +1,3 @@
-import { getServerAndReactClient } from './__reactHelpers';
 import { skipToken, type InfiniteData } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -7,6 +6,7 @@ import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
 import React, { useEffect } from 'react';
 import { z } from 'zod';
+import { getServerAndReactClient } from './__reactHelpers';
 
 const fixtureData = ['1', '2', '3', '4'];
 

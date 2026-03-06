@@ -1,5 +1,5 @@
-import { HydrateClient, prefetch, trpc } from '~/trpc/rq-server';
 import React from 'react';
+import { HydrateClient, prefetch, trpc } from '~/trpc/rq-server';
 import { Post } from './post';
 
 export const dynamic = 'force-dynamic';

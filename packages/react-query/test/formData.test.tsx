@@ -1,7 +1,6 @@
 // Vitest doesn't play nice with JSOM ArrayBuffer's: https://github.com/vitest-dev/vitest/issues/4043#issuecomment-1742028595
 // @vitest-environment node
 
-import { createQueryClient } from './__queryClient';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { QueryClientProvider } from '@tanstack/react-query';
 import {
@@ -21,6 +20,7 @@ import React from 'react';
 import transformer from 'superjson';
 import { z } from 'zod';
 import { zfd } from 'zod-form-data';
+import { createQueryClient } from './__queryClient';
 
 function formDataOrObject<T extends z.ZodRawShape>(input: T) {
   return zfd.formData(input).or(z.object(input));

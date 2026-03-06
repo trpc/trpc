@@ -1,5 +1,5 @@
-import type { IncomingHttpHeaders } from 'http';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
+import type { IncomingHttpHeaders } from 'http';
 import { createTRPCClient, httpBatchLink, httpLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 

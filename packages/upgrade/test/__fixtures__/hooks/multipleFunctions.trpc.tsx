@@ -1,5 +1,5 @@
-import { testReactResource } from '../../__helpers';
 import { initTRPC } from '@trpc/server';
+import { testReactResource } from '../../__helpers';
 
 export const t = initTRPC.create();
 export const appRouter = t.router({

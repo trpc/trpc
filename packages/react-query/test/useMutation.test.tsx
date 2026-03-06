@@ -1,10 +1,10 @@
-import { getServerAndReactClient } from './__reactHelpers';
 import { render } from '@testing-library/react';
 import type { inferReactQueryProcedureOptions } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import React, { useEffect } from 'react';
 import { z } from 'zod';
+import { getServerAndReactClient } from './__reactHelpers';
 
 const ctx = konn()
   .beforeEach(() => {

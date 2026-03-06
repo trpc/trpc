@@ -1,4 +1,3 @@
-import { getServerAndReactClient } from './__reactHelpers';
 import {
   infiniteQueryOptions,
   skipToken,
@@ -15,6 +14,7 @@ import { createDeferred } from '@trpc/server/unstable-core-do-not-import/stream/
 import { konn } from 'konn';
 import React from 'react';
 import { z } from 'zod';
+import { getServerAndReactClient } from './__reactHelpers';
 
 const fixtureData = ['1', '2', '3', '4'];
 

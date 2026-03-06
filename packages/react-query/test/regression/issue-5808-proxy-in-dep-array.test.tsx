@@ -1,4 +1,3 @@
-import { getServerAndReactClient } from '../__reactHelpers';
 import {
   defaultShouldDehydrateQuery,
   QueryClient,
@@ -9,6 +8,7 @@ import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import * as React from 'react';
 import { z } from 'zod';
+import { getServerAndReactClient } from '../__reactHelpers';
 
 describe('original regression', () => {
   const ctx = konn()

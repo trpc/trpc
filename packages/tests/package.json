@@ -2,7 +2,7 @@
   "name": "@trpc/tests",
   "private": true,
   "scripts": {
-    "lint": "eslint --cache .",
+    "lint": "oxlint --type-aware .",
     "typecheck": "tsc --noEmit --preserveWatchOutput --pretty"
   },
   "dependencies": {
@@ -17,7 +17,6 @@
     "dataloader": "^2.2.2",
     "devalue": "^5.0.0",
     "effect": "3.19.19",
-    "eslint": "^9.26.0",
     "fastify": "^5.0.0",
     "fastify-plugin": "^5.0.0",
     "jsdom": "^26.0.0",

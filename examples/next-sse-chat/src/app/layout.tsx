@@ -1,8 +1,8 @@
-import { auth } from '~/server/auth';
 import type { Metadata } from 'next';
 import { SessionProvider } from 'next-auth/react';
 import { Inter } from 'next/font/google';
 import Link from 'next/link';
+import { auth } from '~/server/auth';
 import './globals.css';
 import { TRPCProviders } from './providers';
 

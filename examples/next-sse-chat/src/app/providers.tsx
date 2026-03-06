@@ -9,10 +9,10 @@ import {
   loggerLink,
   splitLink,
 } from '@trpc/client';
-import { createQueryClient } from '~/lib/query-client';
-import { trpc } from '~/lib/trpc';
 import { useState } from 'react';
 import SuperJSON from 'superjson';
+import { createQueryClient } from '~/lib/query-client';
+import { trpc } from '~/lib/trpc';
 
 let clientQueryClientSingleton: QueryClient | undefined = undefined;
 const getQueryClient = () => {

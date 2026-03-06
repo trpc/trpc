@@ -1,7 +1,7 @@
-import { createAppRouter } from './__testHelpers';
 import { render } from '@testing-library/react';
 import type { DefaultErrorShape } from '@trpc/server/unstable-core-do-not-import';
 import React, { useEffect } from 'react';
+import { createAppRouter } from './__testHelpers';
 
 let factory: ReturnType<typeof createAppRouter>;
 beforeEach(() => {

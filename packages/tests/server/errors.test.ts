@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-import http from 'http';
-import { routerToServerAndClientNew } from './___testHelpers';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
+/* eslint-disable @typescript-eslint/no-empty-function */
+import http from 'http';
 import type { TRPCLink } from '@trpc/client';
 import {
   createTRPCClient,
@@ -18,6 +17,7 @@ import { isObject } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
 import fetch from 'node-fetch';
 import { z, ZodError } from 'zod';
+import { routerToServerAndClientNew } from './___testHelpers';
 
 function getMessageFromUnknownError(err: unknown, fallback: string): string {
   if (typeof err === 'string') {

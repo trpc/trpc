@@ -1,5 +1,5 @@
-import EventEmitter, { on } from 'events';
 import { fakeTimersResource } from '@trpc/server/__tests__/fakeTimersResource';
+import EventEmitter, { on } from 'events';
 import { expect, vi } from 'vitest';
 import { run } from '../../utils';
 import { withPing } from './withPing';
