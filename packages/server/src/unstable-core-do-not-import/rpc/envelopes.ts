@@ -26,13 +26,16 @@ export namespace JSONRPC2 {
     jsonrpc?: '2.0';
   }
 
-  export interface BaseRequest<TMethod extends string = string>
-    extends BaseEnvelope {
+  export interface BaseRequest<
+    TMethod extends string = string,
+  > extends BaseEnvelope {
     method: TMethod;
   }
 
-  export interface Request<TMethod extends string = string, TParams = unknown>
-    extends BaseRequest<TMethod> {
+  export interface Request<
+    TMethod extends string = string,
+    TParams = unknown,
+  > extends BaseRequest<TMethod> {
     params: TParams;
   }
 
@@ -40,26 +43,26 @@ export namespace JSONRPC2 {
     result: TResult;
   }
 
-  export interface ErrorResponse<TError extends TRPCErrorShape = TRPCErrorShape>
-    extends BaseEnvelope {
+  export interface ErrorResponse<
+    TError extends TRPCErrorShape = TRPCErrorShape,
+  > extends BaseEnvelope {
     error: TError;
   }
 }
 
 /////////////////////////// HTTP envelopes ///////////////////////
 
-export interface TRPCRequest
-  extends JSONRPC2.Request<
-    ProcedureType,
-    {
-      path: string;
-      input: unknown;
-      /**
-       * The last event id that the client received
-       */
-      lastEventId?: string;
-    }
-  > {}
+export interface TRPCRequest extends JSONRPC2.Request<
+  ProcedureType,
+  {
+    path: string;
+    input: unknown;
+    /**
+     * The last event id that the client received
+     */
+    lastEventId?: string;
+  }
+> {}
 
 export interface TRPCResult<TData = unknown> {
   data: TData;
@@ -70,8 +73,9 @@ export interface TRPCResult<TData = unknown> {
   id?: string;
 }
 
-export interface TRPCSuccessResponse<TData>
-  extends JSONRPC2.ResultResponse<TRPCResult<TData>> {}
+export interface TRPCSuccessResponse<TData> extends JSONRPC2.ResultResponse<
+  TRPCResult<TData>
+> {}
 
 export interface TRPCErrorResponse<
   TError extends TRPCErrorShape = TRPCErrorShape,
@@ -91,8 +95,7 @@ export type TRPCRequestMessage = TRPCRequest & {
 /**
  * The client asked the server to unsubscribe
  */
-export interface TRPCSubscriptionStopNotification
-  extends JSONRPC2.BaseRequest<'subscription.stop'> {
+export interface TRPCSubscriptionStopNotification extends JSONRPC2.BaseRequest<'subscription.stop'> {
   id: null;
 }
 
@@ -108,12 +111,11 @@ export type TRPCClientOutgoingMessage =
   | TRPCRequestMessage
   | (JSONRPC2.BaseRequest<'subscription.stop'> & { id: JSONRPC2.RequestId });
 
-export interface TRPCResultMessage<TData>
-  extends JSONRPC2.ResultResponse<
-    | { type: 'started'; data?: never }
-    | { type: 'stopped'; data?: never }
-    | TRPCResult<TData>
-  > {}
+export interface TRPCResultMessage<TData> extends JSONRPC2.ResultResponse<
+  | { type: 'started'; data?: never }
+  | { type: 'stopped'; data?: never }
+  | TRPCResult<TData>
+> {}
 
 export type TRPCResponseMessage<
   TData = unknown,
@@ -126,8 +128,7 @@ export type TRPCResponseMessage<
 /**
  * The server asked the client to reconnect - useful when restarting/redeploying service
  */
-export interface TRPCReconnectNotification
-  extends JSONRPC2.BaseRequest<'reconnect'> {
+export interface TRPCReconnectNotification extends JSONRPC2.BaseRequest<'reconnect'> {
   id: JSONRPC2.RequestId;
 }
 
@@ -147,7 +148,6 @@ export type TRPCClientIncomingMessage<
 /**
  * The client sends connection params - always sent as the first message
  */
-export interface TRPCConnectionParamsMessage
-  extends JSONRPC2.BaseRequest<'connectionParams'> {
+export interface TRPCConnectionParamsMessage extends JSONRPC2.BaseRequest<'connectionParams'> {
   data: TRPCRequestInfo['connectionParams'];
 }
