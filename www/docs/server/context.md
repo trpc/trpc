@@ -224,27 +224,3 @@ export const apiProcedure = publicProcedure.use((opts) => {
   });
 });
 ```
-
-## Limiting Batch Size
-
-You can use the context to limit the number of requests that can be batched together.
-
-```ts twoslash
-import { TRPCError } from '@trpc/server';
-import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
-
-const MAX_BATCH_SIZE = 10;
-
-// Create a context that checks batch size
-export async function createContext(opts: CreateHTTPContextOptions) {
-  if (opts.info.calls.length > MAX_BATCH_SIZE) {
-    throw new TRPCError({
-      code: 'TOO_MANY_REQUESTS',
-      message: `Batch size limit of ${MAX_BATCH_SIZE} exceeded`,
-    });
-  }
-  return {};
-}
-```
-
-This context will throw a `TOO_MANY_REQUESTS` error if a client tries to batch more than 10 requests together. You can adjust the `MAX_BATCH_SIZE` constant to match your needs.

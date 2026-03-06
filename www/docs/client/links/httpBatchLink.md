@@ -100,6 +100,47 @@ const client = createTRPCClient<AppRouter>({
 });
 ```
 
+## Limiting batch size
+
+### 1. Set a maximum batch size on your server:
+
+`maxBatchSize` limits how many operations may be sent in a single batch request. Requests exceeding this limit will be rejected with a `400 Bad Request` error. This can be passed to any tRPC adapter.
+
+```ts title="server.ts"
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
+
+createHTTPServer({
+  maxBatchSize: 10,
+});
+```
+
+or for example if using Next.js:
+
+```ts title='pages/api/trpc/[trpc].ts'
+export default trpcNext.createNextApiHandler({
+  maxBatchSize: 10,
+});
+```
+
+### 2. Set a matching limit on the client:
+
+Use the `maxItems` option on your batch link to ensure the client doesn't exceed the server's limit. This splits large batches into multiple HTTP requests automatically
+
+```ts title="client/index.ts"
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import type { AppRouter } from '../server';
+
+const client = createTRPCClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000',
+      // 👇 should be the same or lower than the server's maxBatchSize
+      maxItems: 10,
+    }),
+  ],
+});
+```
+
 ## Disabling request batching
 
 ### 1. Disable `batching` on your server:
