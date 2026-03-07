@@ -451,8 +451,10 @@ export const AppRouter = t.router({
       return result;
     }),
 
-    // --- Boolean return ---
-    boolReturn: t.procedure.query(() => false),
+    // --- Boolean returns (literal true, literal false, and true | false) ---
+    boolReturnFalse: t.procedure.query(() => false as const),
+    boolReturnTrue: t.procedure.query(() => true as const),
+    boolReturn: t.procedure.query(() => false as boolean),
 
     // --- Number return ---
     numReturn: t.procedure.query(() => 123),
