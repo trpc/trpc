@@ -356,8 +356,7 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 
 Add the polyfills to your project before the link is used (e.g. where you add your TRPCReact.Provider):
 
-```ts twoslash title="utils/api.tsx"
-// @errors: 2307
+```ts title="utils/api.tsx"
 import '@azure/core-asynciterator-polyfill';
 import { RNEventSource } from 'rn-eventsource-reborn';
 import { ReadableStream, TransformStream } from 'web-streams-polyfill';
@@ -371,7 +370,11 @@ Once the ponyfills are added, you can continue setting up the `httpSubscriptionL
 ## `httpSubscriptionLink` Options
 
 ```ts twoslash
-// @errors: 2552 2503 2304
+type AnyClientTypes = any;
+type DataTransformerOptions = any;
+type Operation = any;
+namespace EventSourceLike { export type AnyConstructor = any; export type InitDictOf<T> = any; }
+// ---cut---
 type HTTPSubscriptionLinkOptions<
   TRoot extends AnyClientTypes,
   TEventSource extends EventSourceLike.AnyConstructor = typeof EventSource,

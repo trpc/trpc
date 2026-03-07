@@ -14,12 +14,14 @@ For in-depth information about options and usage patterns, refer to the TanStack
 ## Signature
 
 ```tsx twoslash
-// @errors: 2391 7010 2304 2552 1005
-
-function useQuery(
+type TInput = unknown;
+type SkipToken = symbol;
+interface UseQueryOptions {}
+// ---cut---
+declare function useQuery(
   input: TInput | SkipToken,
-  opts?: UseTRPCQueryOptions;
-)
+  opts?: UseTRPCQueryOptions,
+): void;
 
 interface UseTRPCQueryOptions
   extends UseQueryOptions {

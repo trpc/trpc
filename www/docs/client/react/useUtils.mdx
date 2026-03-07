@@ -60,11 +60,13 @@ const trpc = createTRPCReact<AppRouter>();
 
 // ---cut---
 // @errors: 2339
+
 function MyComponent() {
   const utils = trpc.useUtils();
   utils.post.all.f;
   //              ^|
-  // [...]
+
+
 }
 ```
 
@@ -360,8 +362,10 @@ export const trpc = createTRPCReact<AppRouter>({
 Aside from the query helpers, the object `useUtils` returns also contains the following properties:
 
 ```ts twoslash
-// @errors: 2304 2552
-
+type AnyRouter = any;
+type TRPCClient<T> = any;
+type SSRState = false | 'prepass' | 'mounting' | 'mounted';
+// ---cut---
 interface ProxyTRPCContextProps<TRouter extends AnyRouter, TSSRContext> {
   /**
    * The `TRPCClient`

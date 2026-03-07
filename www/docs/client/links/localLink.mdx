@@ -55,7 +55,12 @@ const client = createTRPCClient<AppRouter>({
 The `localLink` accepts the following options:
 
 ```ts twoslash
-// @errors: 2304 2552
+type AnyRouter = any;
+type inferRouterContext<T> = any;
+type inferClientTypes<T> = any;
+type ErrorHandlerOptions<T> = any;
+type TransformerOptions<T> = {};
+// ---cut---
 type LocalLinkOptions<TRouter extends AnyRouter> = {
   router: TRouter;
   createContext: () => Promise<inferRouterContext<TRouter>>;

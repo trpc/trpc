@@ -8,17 +8,21 @@ slug: /client/react/getQueryKey
 We provide a getQueryKey helper that accepts a `router` or `procedure` so that you can easily provide the native function the correct query key.
 
 ```tsx twoslash
-// @errors: 2304 2391 1005
-
+type AnyQueryProcedure = any;
+type AnyRouter = any;
+type DeepPartial<T> = T;
+type TInput = unknown;
+type TRPCQueryKey = any[];
+// ---cut---
 // Queries
-function getQueryKey(
+declare function getQueryKey(
   procedure: AnyQueryProcedure,
   input?: DeepPartial<TInput>,
   type?: QueryType, /** @default 'any' */
 ): TRPCQueryKey;
 
 // Routers
-function getQueryKey(
+declare function getQueryKey(
   router: AnyRouter,
 ): TRPCQueryKey;
 

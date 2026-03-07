@@ -64,8 +64,7 @@ The `pos` field reveals the position of the variable in the file's text. Going t
 
 But how could this be? We're just using a simple hook! Let's look at the code:
 
-```tsx twoslash
-// @errors: 2307 2304
+```tsx
 import type { AppRouter } from '~/server/trpc';
 
 const trpc = createTRPCReact<AppRouter>();
@@ -82,8 +81,7 @@ export default Home;
 
 Okay, not much to see here. We only see a single `useContext` and a query invalidation. Nothing that _should be_ TypeScript heavy at face value, indicating that the problem must be deeper in the stack. Let's look at the types behind this variable:
 
-```ts twoslash
-// @errors: 2304 2552 2300
+```ts
 type DecorateProcedure<
   TRouter extends AnyRouter,
   TProcedure extends Procedure<any>,
@@ -138,8 +136,7 @@ We made a change so `v9` routers inject their procedures into a `legacy` field w
 
 Old types:
 
-```ts twoslash
-// @errors: 2552 2304
+```ts
 export type V10Router<TProcedureRecord> = {
   record: TProcedureRecord;
 };
@@ -157,8 +154,7 @@ If you recall the `DecoratedProcedureUtilsRecord` type above, you can see that w
 
 New types:
 
-```ts twoslash
-// @errors: 2552 2304
+```ts
 export type V10Router<TProcedureRecord> = {
   record: TProcedureRecord;
   // by default, no legacy procedures

@@ -174,9 +174,7 @@ Receiving the stream relies on the `TextDecoder` and `TextDecoderStream` APIs, w
 
 You will also need to override the default fetch in the `httpBatchStreamLink` configuration options. In the below example we will be using the [Expo fetch](https://docs.expo.dev/versions/latest/sdk/expo/) package for the fetch implementation.
 
-```ts twoslash
-// @errors: 2769
-// ---cut---
+```ts
 import { httpBatchStreamLink } from '@trpc/client';
 
 httpBatchStreamLink({

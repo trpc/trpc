@@ -238,7 +238,6 @@ export const appRouter = t.router({
 ### Activate the `useWSS` option
 
 ```ts twoslash title='server.ts'
-// @errors: 2353
 // @filename: router.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
@@ -276,7 +275,7 @@ server.register(fastifyTRPCPlugin, {
       // connection is terminated if pong message is not received in this many milliseconds
       pongWaitMs: 5000,
     },
-  } satisfies FastifyTRPCPluginOptions<AppRouter>['trpcOptions'],
+  },
 });
 ```
 

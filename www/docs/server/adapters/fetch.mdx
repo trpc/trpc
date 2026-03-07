@@ -194,8 +194,24 @@ export type Context = Awaited<ReturnType<typeof createContext>>;
 ### Astro
 
 ```ts twoslash title='src/pages/trpc/[trpc].ts'
-// @errors: 2307 7006
+// @filename: astro.d.ts
+declare module 'astro' {
+  export type APIRoute = (context: { request: Request }) => Response | Promise<Response>;
+}
 
+// @filename: src/server/context.ts
+import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
+export function createContext(opts: FetchCreateContextFnOptions) {
+  return { user: { name: opts.req.headers.get('username') ?? 'anonymous' } };
+}
+
+// @filename: src/server/router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: src/pages/trpc/[trpc].ts
+// ---cut---
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import type { APIRoute } from 'astro';
 import { createContext } from '../../server/context';
@@ -264,9 +280,7 @@ This assumes you have Deno installed and setup. Refer to their [getting started 
 
 #### Update the imports in `router.ts`
 
-```ts twoslash title='router.ts'
-// @errors: 2307
-
+```ts title='router.ts'
 import { initTRPC } from 'npm:@trpc/server';
 import { z } from 'npm:zod';
 import { Context } from './context.ts';
@@ -274,17 +288,13 @@ import { Context } from './context.ts';
 
 #### Update the imports in `context.ts`
 
-```ts twoslash title='context.ts'
-// @errors: 2307
-
+```ts title='context.ts'
 import { FetchCreateContextFnOptions } from 'npm:@trpc/server/adapters/fetch';
 ```
 
 #### Use `fetchRequestHandler` with Oak in `app.ts`
 
-```ts twoslash title='app.ts'
-// @errors: 2307 7006 1378
-
+```ts title='app.ts'
 import { Application, Router } from 'https://deno.land/x/oak/mod.ts';
 import { fetchRequestHandler } from 'npm:@trpc/server/adapters/fetch';
 import { createContext } from './context.ts';
@@ -331,9 +341,7 @@ See our example [Deno Deploy app](https://github.com/trpc/trpc/tree/main/example
 
 #### Update the imports in `router.ts`
 
-```ts twoslash title='router.ts'
-// @errors: 2307
-
+```ts title='router.ts'
 import { initTRPC } from 'npm:@trpc/server';
 import { z } from 'npm:zod';
 import { Context } from './context.ts';
@@ -341,17 +349,13 @@ import { Context } from './context.ts';
 
 #### Update the imports in `context.ts`
 
-```ts twoslash title='context.ts'
-// @errors: 2307
-
+```ts title='context.ts'
 import { FetchCreateContextFnOptions } from 'npm:@trpc/server/adapters/fetch';
 ```
 
 #### Create Deno Deploy Function
 
-```ts twoslash title='server.ts'
-// @errors: 2307 7006 2304
-
+```ts title='server.ts'
 import { fetchRequestHandler } from 'npm:@trpc/server/adapters/fetch';
 import { createContext } from './context.ts';
 import { appRouter } from './router.ts';
@@ -382,8 +386,22 @@ See a full example [here](https://github.com/trpc/trpc/tree/main/examples/next-e
 ### Remix
 
 ```ts twoslash title='app/routes/trpc.$trpc.ts'
-// @errors: 2307
+// @filename: remix.d.ts
+declare module '@remix-run/node' {
+  export type ActionFunctionArgs = { request: Request };
+  export type LoaderFunctionArgs = { request: Request };
+}
+declare module '~/server/context' {
+  import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
+  export function createContext(opts: FetchCreateContextFnOptions): any;
+}
+declare module '~/server/router' {
+  import type { AnyTRPCRouter } from '@trpc/server';
+  export const appRouter: AnyTRPCRouter;
+}
 
+// @filename: app/routes/trpc.$trpc.ts
+// ---cut---
 import type { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { createContext } from '~/server/context';
@@ -408,8 +426,24 @@ function handleRequest(args: LoaderFunctionArgs | ActionFunctionArgs) {
 ### SolidStart
 
 ```ts twoslash title='src/routes/api/trpc/[trpc].ts'
-// @errors: 2307
+// @filename: solidstart.d.ts
+declare module '@solidjs/start/server' {
+  export type APIEvent = { request: Request };
+}
 
+// @filename: src/routes/server/context.ts
+import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
+export function createContext(opts: FetchCreateContextFnOptions) {
+  return { user: { name: opts.req.headers.get('username') ?? 'anonymous' } };
+}
+
+// @filename: src/routes/server/router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: src/routes/api/trpc/[trpc].ts
+// ---cut---
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import type { APIEvent } from '@solidjs/start/server';
 import { createContext } from '../../server/context';

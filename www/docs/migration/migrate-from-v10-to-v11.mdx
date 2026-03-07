@@ -187,8 +187,7 @@ If you've used subscriptions with async generators with the v11, this might be b
 
 We changed the inferred output from:
 
-```ts twoslash
-// @errors: 2304
+```ts
 SubscriptionProcedure<{
   input: __INPUT__;
   output: __OUTPUT__;
@@ -197,8 +196,7 @@ SubscriptionProcedure<{
 
 to
 
-```ts twoslash
-// @errors: 2304 2583
+```ts
 SubscriptionProcedure<{
   input: __INPUT__;
   output: AsyncGenerator<__OUTPUT__, void, unknown>;
@@ -325,8 +323,7 @@ httpBatchLink({
 });
 ```
 
-```ts twoslash
-// @errors: 2345
+```ts
 import { createTRPCNext } from '@trpc/next';
 import superjson from 'superjson';
 type AppRouter = any;

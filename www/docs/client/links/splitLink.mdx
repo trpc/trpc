@@ -133,8 +133,11 @@ export function MyComponent() {
 The `splitLink` function takes an options object that has three fields: `condition`, `true`, and `false`.
 
 ```ts twoslash
-// @errors: 7010 2304 1144
-function splitLink<TRouter extends AnyRouter = AnyRouter>(opts: {
+type AnyRouter = any;
+type Operation = any;
+type TRPCLink<T> = any;
+// ---cut---
+declare function splitLink<TRouter extends AnyRouter = AnyRouter>(opts: {
   condition: (op: Operation) => boolean;
   /**
    * The link to execute next if the test function returns `true`.
@@ -144,7 +147,7 @@ function splitLink<TRouter extends AnyRouter = AnyRouter>(opts: {
    * The link to execute next if the test function returns `false`.
    */
   false: TRPCLink<TRouter> | TRPCLink<TRouter>[];
-}) => TRPCLink<TRouter>
+}): TRPCLink<TRouter>;
 ```
 
 ## Reference

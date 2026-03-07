@@ -41,7 +41,12 @@ const trpcClient = createTRPCClient<AppRouter>({
 The `wsLink` function requires a `TRPCWebSocketClient` to be passed, which can be configured with the fields defined in `WebSocketClientOptions`:
 
 ```ts twoslash
-// @errors: 2304 7010 1144
+type TRPCWebSocketClient = any;
+type DataTransformerOptions = any;
+type MaybePromise<T> = T | Promise<T>;
+type Encoder = any;
+declare function exponentialBackoff(attemptIndex: number): number;
+// ---cut---
 export interface WebSocketLinkOptions {
   client: TRPCWebSocketClient;
   /**
@@ -51,7 +56,7 @@ export interface WebSocketLinkOptions {
   transformer?: DataTransformerOptions;
 }
 
-function createWSClient(opts: WebSocketClientOptions) => TRPCWebSocketClient
+declare function createWSClient(opts: WebSocketClientOptions): TRPCWebSocketClient;
 
 
 export interface WebSocketClientOptions {

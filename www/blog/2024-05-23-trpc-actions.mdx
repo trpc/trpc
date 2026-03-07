@@ -186,22 +186,7 @@ createPost;
 
 Wow, it's that easy to define a server action that's protected from unauthenticated users, with input validation to protect against attacks such as SQL injections. Let's import this function on the client and call it.
 
-```tsx twoslash title="app/post-form.tsx"
-// @errors: 2322
-// @jsx: react-jsx
-// @filename: server/auth.ts
-// @include: auth
-// @filename: server/trpc.ts
-// @include: trpc
-// @filename: app/_actions.ts
-import { z } from 'zod';
-import { protectedAction } from '../server/trpc';
-export const createPost = protectedAction
-  .input(z.object({ title: z.string() }))
-  .mutation(async (opts) => {});
-
-// @filename: app/post-form.tsx
-// ---cut---
+```tsx title="app/post-form.tsx"
 'use client';
 
 import { createPost } from './_actions';

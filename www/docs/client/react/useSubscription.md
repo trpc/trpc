@@ -20,8 +20,6 @@ The `useSubscription` hook can be used to subscribe to a [subscription](../../se
 :::
 
 ```tsx twoslash
-// @errors: 2391 2304
-
 interface UseTRPCSubscriptionOptions<TOutput, TError> {
   /**
    * Called when the subscription is started.
@@ -53,8 +51,6 @@ interface UseTRPCSubscriptionOptions<TOutput, TError> {
 The return type is a discriminated union on `status`:
 
 ```ts twoslash
-// @errors: 2304
-
 type TRPCSubscriptionResult<TOutput, TError> =
   | TRPCSubscriptionIdleResult<TOutput>
   | TRPCSubscriptionConnectingResult<TOutput, TError>

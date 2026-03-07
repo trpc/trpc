@@ -529,7 +529,6 @@ const infiniteQueryFilter = trpc.path.to.query.infiniteQueryFilter(
 Useful for creating filters that can be passed to client methods like `queryClient.invalidateQueries` etc.
 
 ```ts twoslash
-// @errors: 2339
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
@@ -559,7 +558,7 @@ await queryClient.invalidateQueries(
     {
       predicate: (query) => {
         // Filter logic based on query state
-        return query.state.data?.pages.length > 0;
+        return query.state.status === 'success';
       },
     },
   ),
@@ -787,7 +786,6 @@ export const createAccountClient = () =>
 ```
 
 ```tsx twoslash title='App.tsx'
-// @errors: 2741
 // @jsx: react-jsx
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
@@ -838,7 +836,7 @@ export function App() {
           queryClient={queryClient}
           keyPrefix="account"
         >
-          {/* ... */}
+          <div>{/* ... */}</div>
         </AccountProvider>
       </BillingProvider>
     </QueryClientProvider>

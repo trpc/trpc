@@ -319,9 +319,10 @@ export const appRouter = t.router({
 });
 export type AppRouter = typeof appRouter;
 
+// @filename: server-only.d.ts
+declare module 'server-only' {}
 // @filename: trpc/server.tsx
 // ---cut---
-// @errors: 2307
 import 'server-only'; // <-- ensure this file cannot be imported from the client
 
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
