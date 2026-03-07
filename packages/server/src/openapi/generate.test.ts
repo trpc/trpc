@@ -208,6 +208,43 @@ describe('generateOpenAPIDocument', () => {
         deepOutput.properties.data.properties.nested.properties.profile,
       ).toEqual({ $ref: '#/components/schemas/UserProfile' });
     });
+
+    it('handles recursive types via self-referencing $ref', () => {
+      const schemas = (doc.components as any).schemas;
+
+      // TreeNode: children is an array of TreeNode (self-ref)
+      expect(schemas).toHaveProperty('TreeNode');
+      expect(schemas.TreeNode.properties.children).toEqual({
+        type: 'array',
+        items: { $ref: '#/components/schemas/TreeNode' },
+      });
+
+      // LinkedListNode: next is LinkedListNode | null (nullable self-ref)
+      expect(schemas).toHaveProperty('LinkedListNode');
+      expect(schemas.LinkedListNode.properties.next).toEqual({
+        allOf: [{ $ref: '#/components/schemas/LinkedListNode' }],
+        nullable: true,
+      });
+
+      // Category: Zod z.lazy() recursive input
+      expect(schemas).toHaveProperty('Category');
+      expect(schemas.Category.properties.subcategories).toEqual({
+        type: 'array',
+        items: { $ref: '#/components/schemas/Category' },
+      });
+
+      // The procedures should reference these schemas
+      const treeOp = doc.paths['/recursiveTypes.tree']?.['get'] as any;
+      expect(
+        treeOp?.responses?.['200']?.content?.['application/json']?.schema,
+      ).toEqual({ $ref: '#/components/schemas/TreeNode' });
+
+      // z.lazy() output resolves through the inferred return type
+      const categoryOp = doc.paths['/recursiveTypes.category']?.['get'] as any;
+      expect(
+        categoryOp?.responses?.['200']?.content?.['application/json']?.schema,
+      ).toEqual({ $ref: '#/components/schemas/Category' });
+    });
   });
 
   describe('custom errorFormatter', () => {
