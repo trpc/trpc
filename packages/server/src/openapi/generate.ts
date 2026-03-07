@@ -16,6 +16,7 @@ export interface JsonSchema {
   allOf?: JsonSchema[];
   not?: JsonSchema;
   additionalProperties?: JsonSchema | boolean;
+  nullable?: boolean;
   format?: string;
   description?: string;
   minItems?: number;
@@ -74,7 +75,7 @@ function typeToJsonSchema(
   if (flags & ts.TypeFlags.String) return { type: 'string' };
   if (flags & ts.TypeFlags.Number) return { type: 'number' };
   if (flags & ts.TypeFlags.Boolean) return { type: 'boolean' };
-  if (flags & ts.TypeFlags.Null) return { type: 'null' };
+  if (flags & ts.TypeFlags.Null) return { nullable: true };
   if (flags & ts.TypeFlags.Undefined) return {};
   if (flags & ts.TypeFlags.Void) return {};
   if (flags & ts.TypeFlags.Any || flags & ts.TypeFlags.Unknown) return {};
@@ -121,10 +122,7 @@ function typeToJsonSchema(
         : { oneOf: schemas };
 
     if (hasNull) {
-      const nullSchema: JsonSchema = { type: 'null' };
-      result = result.oneOf
-        ? { oneOf: [...result.oneOf, nullSchema] }
-        : { oneOf: [result, nullSchema] };
+      result.nullable = true;
     }
     return result;
   }
@@ -396,8 +394,8 @@ function buildOpenAPIDocument(
     // Subscriptions map to WebSocket / SSE, not plain HTTP — skip for now
     if (proc.type === 'subscription') continue;
 
-    // tRPC uses dot-separated paths; map to URL path segments
-    const opPath = `/${proc.path.replace(/\./g, '/')}`;
+    // tRPC uses dot-separated paths; keep them as-is
+    const opPath = `/${proc.path}`;
     const method = proc.type === 'query' ? 'get' : 'post';
 
     const pathItem: Record<string, unknown> = paths[opPath] ?? {};
