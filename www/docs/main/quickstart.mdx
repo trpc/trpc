@@ -149,16 +149,17 @@ The following creates a query procedure called `userList` that returns a list of
 // @filename: trpc.ts
 // @include: trpc
 // @filename: appRouter.ts
-// ---cut---
-import { publicProcedure, router } from './trpc';
 
 type User = { id: string; name: string };
+
+// ---cut---
+import { publicProcedure, router } from './trpc';
 
 export const appRouter = router({
   userList: publicProcedure
     .query(async () => {
       const users: User[] = [{ id: '1', name: 'Katt' }];
-      //    ^?
+
       return users;
     }),
 });
@@ -185,11 +186,12 @@ Throughout the remainder of this documentation, we will use `zod` as our validat
 // @filename: trpc.ts
 // @include: trpc
 // @filename: appRouter.ts
-import { publicProcedure, router } from './trpc';
 
 type User = { id: string; name: string };
 
 // ---cut---
+import { publicProcedure, router } from './trpc';
+
 export const appRouter = router({
   // ...
   userById: publicProcedure
@@ -226,10 +228,10 @@ export type AppRouter = typeof appRouter;
 // @filename: trpc.ts
 // @include: trpc
 // @filename: appRouter.ts
-import { publicProcedure, router } from './trpc';
 
 type User = { id: string; name: string };
 // ---cut---
+import { publicProcedure, router } from './trpc';
 import { z } from 'zod';
 
 export const appRouter = router({
@@ -261,10 +263,10 @@ Throughout the remainder of this documentation, we will use `zod` as our validat
 // @filename: trpc.ts
 // @include: trpc
 // @filename: appRouter.ts
-import { publicProcedure, router } from './trpc';
 
 type User = { id: string; name: string };
 // ---cut---
+import { publicProcedure, router } from './trpc';
 import * as yup from 'yup';
 
 export const appRouter = router({
@@ -297,10 +299,10 @@ Throughout the remainder of this documentation, we will use `zod` as our validat
 // @filename: trpc.ts
 // @include: trpc
 // @filename: appRouter.ts
-import { publicProcedure, router } from './trpc';
 
 type User = { id: string; name: string };
 // ---cut---
+import { publicProcedure, router } from './trpc';
 import * as v from 'valibot';
 
 export const appRouter = router({
@@ -335,10 +337,10 @@ Let's add a `userCreate` mutation by adding it as a new property on our router o
 // @include: trpc
 // @filename: appRouter.ts
 import { z } from 'zod';
-import { publicProcedure, router } from './trpc';
 
 type User = { id: string; name: string };
 // ---cut---
+import { publicProcedure, router } from './trpc';
 
 export const appRouter = router({
   // ...
