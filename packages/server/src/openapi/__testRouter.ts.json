@@ -211,6 +211,2988 @@
         }
       }
     },
+    "/complexTypes.zodEnum": {
+      "get": {
+        "operationId": "complexTypes_zodEnum",
+        "tags": [
+          "complexTypes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "active"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "inactive"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "pending"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "active"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "inactive"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "pending"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "/complexTypes.nativeEnum": {
+      "get": {
+        "operationId": "complexTypes_nativeEnum",
+        "tags": [
+          "complexTypes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "direction": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "UP"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "DOWN"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "LEFT"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "RIGHT"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "direction"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "direction": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "UP"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "DOWN"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "LEFT"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "RIGHT"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "direction"
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "/complexTypes.literal": {
+      "get": {
+        "operationId": "complexTypes_literal",
+        "tags": [
+          "complexTypes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "strLit": {
+                      "type": "string",
+                      "enum": [
+                        "hello"
+                      ]
+                    },
+                    "numLit": {
+                      "type": "number",
+                      "enum": [
+                        42
+                      ]
+                    },
+                    "boolLit": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "strLit",
+                    "numLit",
+                    "boolLit"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "strLit": {
+                      "type": "string",
+                      "enum": [
+                        "hello"
+                      ]
+                    },
+                    "numLit": {
+                      "type": "number",
+                      "enum": [
+                        42
+                      ]
+                    },
+                    "boolLit": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "strLit",
+                    "numLit",
+                    "boolLit"
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "/complexTypes.literalUnion": {
+      "get": {
+        "operationId": "complexTypes_literalUnion",
+        "tags": [
+          "complexTypes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "color": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "red"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "green"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "blue"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "color"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "color": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "red"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "green"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "blue"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "color"
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "/complexTypes.discriminatedUnion": {
+      "post": {
+        "operationId": "complexTypes_discriminatedUnion",
+        "tags": [
+          "complexTypes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "text"
+                          ]
+                        },
+                        "content": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "content"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "image"
+                          ]
+                        },
+                        "url": {
+                          "type": "string"
+                        },
+                        "width": {
+                          "type": "number"
+                        },
+                        "height": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "url",
+                        "width",
+                        "height"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "video"
+                          ]
+                        },
+                        "url": {
+                          "type": "string"
+                        },
+                        "duration": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "url",
+                        "duration"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "text"
+                        ]
+                      },
+                      "content": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "content"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "image"
+                        ]
+                      },
+                      "url": {
+                        "type": "string"
+                      },
+                      "width": {
+                        "type": "number"
+                      },
+                      "height": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "url",
+                      "width",
+                      "height"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "video"
+                        ]
+                      },
+                      "url": {
+                        "type": "string"
+                      },
+                      "duration": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "url",
+                      "duration"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/complexTypes.union": {
+      "get": {
+        "operationId": "complexTypes_union",
+        "tags": [
+          "complexTypes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "boolean",
+                          "enum": [
+                            false
+                          ]
+                        },
+                        {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "value"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "boolean",
+                          "enum": [
+                            false
+                          ]
+                        },
+                        {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "value"
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "/complexTypes.intersection": {
+      "post": {
+        "operationId": "complexTypes_intersection",
+        "tags": [
+          "complexTypes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "id"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "email": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "email"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "id"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "email": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "email"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/complexTypes.tuple": {
+      "get": {
+        "operationId": "complexTypes_tuple",
+        "tags": [
+          "complexTypes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pair": {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ],
+                      "minItems": 2,
+                      "maxItems": 2
+                    },
+                    "triple": {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "boolean"
+                        }
+                      ],
+                      "minItems": 3,
+                      "maxItems": 3
+                    }
+                  },
+                  "required": [
+                    "pair",
+                    "triple"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pair": {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ],
+                      "minItems": 2,
+                      "maxItems": 2
+                    },
+                    "triple": {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "boolean"
+                        }
+                      ],
+                      "minItems": 3,
+                      "maxItems": 3
+                    }
+                  },
+                  "required": [
+                    "pair",
+                    "triple"
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "/complexTypes.record": {
+      "get": {
+        "operationId": "complexTypes_record",
+        "tags": [
+          "complexTypes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "metadata": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    },
+                    "scores": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "number"
+                      }
+                    }
+                  },
+                  "required": [
+                    "metadata",
+                    "scores"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "metadata": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    },
+                    "scores": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "number"
+                      }
+                    }
+                  },
+                  "required": [
+                    "metadata",
+                    "scores"
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "/complexTypes.complexArrays": {
+      "get": {
+        "operationId": "complexTypes_complexArrays",
+        "tags": [
+          "complexTypes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tags": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "number"
+                          },
+                          "label": {
+                            "type": "string"
+                          },
+                          "active": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "label",
+                          "active"
+                        ]
+                      }
+                    },
+                    "matrix": {
+                      "type": "array",
+                      "items": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "tags",
+                    "items",
+                    "matrix"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tags": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "number"
+                          },
+                          "label": {
+                            "type": "string"
+                          },
+                          "active": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "label",
+                          "active"
+                        ]
+                      }
+                    },
+                    "matrix": {
+                      "type": "array",
+                      "items": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "tags",
+                    "items",
+                    "matrix"
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "/complexTypes.deeplyNested": {
+      "get": {
+        "operationId": "complexTypes_deeplyNested",
+        "tags": [
+          "complexTypes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "level1": {
+                      "type": "object",
+                      "properties": {
+                        "level2": {
+                          "type": "object",
+                          "properties": {
+                            "level3": {
+                              "type": "object",
+                              "properties": {
+                                "value": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "value"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "level3"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "level2"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "level1"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "level1": {
+                      "type": "object",
+                      "properties": {
+                        "level2": {
+                          "type": "object",
+                          "properties": {
+                            "level3": {
+                              "type": "object",
+                              "properties": {
+                                "value": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "value"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "level3"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "level2"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "level1"
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "/complexTypes.dateType": {
+      "get": {
+        "operationId": "complexTypes_dateType",
+        "tags": [
+          "complexTypes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "createdAt"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "createdAt"
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "/complexTypes.anyAndUnknown": {
+      "get": {
+        "operationId": "complexTypes_anyAndUnknown",
+        "tags": [
+          "complexTypes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "anything": {},
+                    "something": {}
+                  },
+                  "required": [
+                    "anything",
+                    "something"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "anything": {},
+                    "something": {}
+                  },
+                  "required": [
+                    "anything",
+                    "something"
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "/complexTypes.defaults": {
+      "get": {
+        "operationId": "complexTypes_defaults",
+        "tags": [
+          "complexTypes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "page": {
+                      "type": "number"
+                    },
+                    "limit": {
+                      "type": "number"
+                    },
+                    "sort": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "asc"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "desc"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "page",
+                    "limit",
+                    "sort"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "page": {
+                      "type": "number"
+                    },
+                    "limit": {
+                      "type": "number"
+                    },
+                    "sort": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "asc"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "desc"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "/complexTypes.refined": {
+      "get": {
+        "operationId": "complexTypes_refined",
+        "tags": [
+          "complexTypes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "email": {
+                      "type": "string"
+                    },
+                    "age": {
+                      "type": "number"
+                    },
+                    "url": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "email",
+                    "age",
+                    "url"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "email": {
+                      "type": "string"
+                    },
+                    "age": {
+                      "type": "number"
+                    },
+                    "url": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "email",
+                    "age",
+                    "url"
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "/complexTypes.nullableUnion": {
+      "get": {
+        "operationId": "complexTypes_nullableUnion",
+        "tags": [
+          "complexTypes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ],
+                      "nullable": true
+                    },
+                    "optionalValue": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "value"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ],
+                      "nullable": true
+                    },
+                    "optionalValue": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "value"
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "/complexTypes.passthrough": {
+      "get": {
+        "operationId": "complexTypes_passthrough",
+        "tags": [
+          "complexTypes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "known": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "known"
+                  ],
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "known": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "known"
+                  ],
+                  "additionalProperties": {}
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "/complexTypes.strict": {
+      "get": {
+        "operationId": "complexTypes_strict",
+        "tags": [
+          "complexTypes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "known": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "known"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "known": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "known"
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "/complexTypes.branded": {
+      "get": {
+        "operationId": "complexTypes_branded",
+        "tags": [
+          "complexTypes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "userId": {
+                      "allOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "__@$brand@2303": {
+                              "type": "object",
+                              "properties": {
+                                "UserId": {
+                                  "type": "boolean",
+                                  "enum": [
+                                    true
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "UserId"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "__@$brand@2303"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "userId"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "userId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "userId"
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "/complexTypes.withCatch": {
+      "get": {
+        "operationId": "complexTypes_withCatch",
+        "tags": [
+          "complexTypes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "on"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "off"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "on"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "off"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "/complexTypes.piped": {
+      "get": {
+        "operationId": "complexTypes_piped",
+        "tags": [
+          "complexTypes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "value"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "value"
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "/complexTypes.createContent": {
+      "post": {
+        "operationId": "complexTypes_createContent",
+        "tags": [
+          "complexTypes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "success"
+                          ]
+                        },
+                        "id": {
+                          "type": "number"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "status",
+                        "id",
+                        "createdAt"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "error"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "code": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "status",
+                        "message",
+                        "code"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "body": {
+                    "type": "string"
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "title",
+                  "body"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/complexTypes.search": {
+      "get": {
+        "operationId": "complexTypes_search",
+        "tags": [
+          "complexTypes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "snippet": {
+                            "type": "string"
+                          },
+                          "score": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title",
+                          "snippet",
+                          "score"
+                        ]
+                      }
+                    },
+                    "total": {
+                      "type": "number"
+                    },
+                    "hasMore": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "results",
+                    "total",
+                    "hasMore"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "query": {
+                      "type": "string"
+                    },
+                    "filters": {
+                      "type": "object",
+                      "properties": {
+                        "category": {
+                          "oneOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "all"
+                              ]
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "posts"
+                              ]
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "users"
+                              ]
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "comments"
+                              ]
+                            }
+                          ]
+                        },
+                        "dateRange": {
+                          "type": "object",
+                          "properties": {
+                            "from": {
+                              "type": "string"
+                            },
+                            "to": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "from",
+                            "to"
+                          ]
+                        },
+                        "tags": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "sortBy": {
+                          "oneOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "date"
+                              ]
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "relevance"
+                              ]
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "popularity"
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "number"
+                        },
+                        "limit": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "page",
+                        "limit"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "query"
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "/inferredReturns.enumLike": {
+      "get": {
+        "operationId": "inferredReturns_enumLike",
+        "tags": [
+          "inferredReturns"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "active"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "inactive"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "pending"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/inferredReturns.stringLiteral": {
+      "get": {
+        "operationId": "inferredReturns_stringLiteral",
+        "tags": [
+          "inferredReturns"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "hello"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/inferredReturns.numberLiteral": {
+      "get": {
+        "operationId": "inferredReturns_numberLiteral",
+        "tags": [
+          "inferredReturns"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "number",
+                  "enum": [
+                    42
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/inferredReturns.booleanLiteral": {
+      "get": {
+        "operationId": "inferredReturns_booleanLiteral",
+        "tags": [
+          "inferredReturns"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean",
+                  "enum": [
+                    true
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/inferredReturns.discriminatedResult": {
+      "post": {
+        "operationId": "inferredReturns_discriminatedResult",
+        "tags": [
+          "inferredReturns"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "success"
+                          ]
+                        },
+                        "id": {
+                          "type": "number"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "message": {},
+                        "code": {}
+                      },
+                      "required": [
+                        "type",
+                        "id",
+                        "createdAt"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "error"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "code": {
+                          "type": "number"
+                        },
+                        "id": {},
+                        "createdAt": {}
+                      },
+                      "required": [
+                        "type",
+                        "message",
+                        "code"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/inferredReturns.primitiveUnion": {
+      "get": {
+        "operationId": "inferredReturns_primitiveUnion",
+        "tags": [
+          "inferredReturns"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "boolean",
+                          "enum": [
+                            false
+                          ]
+                        },
+                        {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "value"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/inferredReturns.tupleReturn": {
+      "get": {
+        "operationId": "inferredReturns_tupleReturn",
+        "tags": [
+          "inferredReturns"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "prefixItems": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ],
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/inferredReturns.recordReturn": {
+      "get": {
+        "operationId": "inferredReturns_recordReturn",
+        "tags": [
+          "inferredReturns"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/inferredReturns.arrayOfObjects": {
+      "get": {
+        "operationId": "inferredReturns_arrayOfObjects",
+        "tags": [
+          "inferredReturns"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "number"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "active": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "name",
+                      "active"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/inferredReturns.matrix": {
+      "get": {
+        "operationId": "inferredReturns_matrix",
+        "tags": [
+          "inferredReturns"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/inferredReturns.deeplyNested": {
+      "get": {
+        "operationId": "inferredReturns_deeplyNested",
+        "tags": [
+          "inferredReturns"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "level1": {
+                      "type": "object",
+                      "properties": {
+                        "level2": {
+                          "type": "object",
+                          "properties": {
+                            "level3": {
+                              "type": "object",
+                              "properties": {
+                                "value": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "value"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "level3"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "level2"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "level1"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/inferredReturns.dateReturn": {
+      "get": {
+        "operationId": "inferredReturns_dateReturn",
+        "tags": [
+          "inferredReturns"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "createdAt"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/inferredReturns.nullableReturn": {
+      "get": {
+        "operationId": "inferredReturns_nullableReturn",
+        "tags": [
+          "inferredReturns"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "value"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/inferredReturns.optionalFields": {
+      "get": {
+        "operationId": "inferredReturns_optionalFields",
+        "tags": [
+          "inferredReturns"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "age": {
+                      "type": "number"
+                    },
+                    "email": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/inferredReturns.mixedObject": {
+      "get": {
+        "operationId": "inferredReturns_mixedObject",
+        "tags": [
+          "inferredReturns"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "number"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "tags": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "metadata": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    },
+                    "active": {
+                      "type": "boolean"
+                    },
+                    "score": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "tags",
+                    "metadata",
+                    "active",
+                    "score"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/inferredReturns.voidReturn": {
+      "post": {
+        "operationId": "inferredReturns_voidReturn",
+        "tags": [
+          "inferredReturns"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/inferredReturns.nullReturn": {
+      "get": {
+        "operationId": "inferredReturns_nullReturn",
+        "tags": [
+          "inferredReturns"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/inferredReturns.mergedObject": {
+      "get": {
+        "operationId": "inferredReturns_mergedObject",
+        "tags": [
+          "inferredReturns"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "email",
+                    "id"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/inferredReturns.literalArray": {
+      "get": {
+        "operationId": "inferredReturns_literalArray",
+        "tags": [
+          "inferredReturns"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "prefixItems": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "red"
+                      ]
+                    },
+                    {
+                      "type": "string",
+                      "enum": [
+                        "green"
+                      ]
+                    },
+                    {
+                      "type": "string",
+                      "enum": [
+                        "blue"
+                      ]
+                    }
+                  ],
+                  "minItems": 3,
+                  "maxItems": 3
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/inferredReturns.nestedNullable": {
+      "get": {
+        "operationId": "inferredReturns_nestedNullable",
+        "tags": [
+          "inferredReturns"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "outer": {
+                      "type": "object",
+                      "properties": {
+                        "inner": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "maybeNum": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "inner"
+                      ],
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "outer"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/inferredReturns.boolReturn": {
+      "get": {
+        "operationId": "inferredReturns_boolReturn",
+        "tags": [
+          "inferredReturns"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/inferredReturns.numReturn": {
+      "get": {
+        "operationId": "inferredReturns_numReturn",
+        "tags": [
+          "inferredReturns"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/inferredReturns.strReturn": {
+      "get": {
+        "operationId": "inferredReturns_strReturn",
+        "tags": [
+          "inferredReturns"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/inferredReturns.createItem": {
+      "post": {
+        "operationId": "inferredReturns_createItem",
+        "tags": [
+          "inferredReturns"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "number"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "created"
+                      ]
+                    },
+                    "tags": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "metadata": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "createdAt",
+                    "status",
+                    "tags",
+                    "metadata"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     "/simpleCases.nullish": {
       "get": {
         "operationId": "simpleCases_nullish",

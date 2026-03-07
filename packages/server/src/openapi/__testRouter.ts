@@ -288,7 +288,9 @@ export const AppRouter = t.router({
           query: z.string(),
           filters: z
             .object({
-              category: z.enum(['all', 'posts', 'users', 'comments']).optional(),
+              category: z
+                .enum(['all', 'posts', 'users', 'comments'])
+                .optional(),
               dateRange: z
                 .object({
                   from: z.string(),
@@ -297,7 +299,11 @@ export const AppRouter = t.router({
                 .optional(),
               tags: z.array(z.string()).optional(),
               sortBy: z
-                .union([z.literal('relevance'), z.literal('date'), z.literal('popularity')])
+                .union([
+                  z.literal('relevance'),
+                  z.literal('date'),
+                  z.literal('popularity'),
+                ])
                 .optional(),
             })
             .optional(),
@@ -324,6 +330,147 @@ export const AppRouter = t.router({
         }),
       )
       .query(() => ({ results: [], total: 0, hasMore: false })),
+  }),
+
+  // ---------- Inferred return types (no .output(), const returns) ----------
+
+  inferredReturns: t.router({
+    // --- Enum-like (string literal union) ---
+    enumLike: t.procedure.query(() => {
+      const status = 'active' as 'active' | 'inactive' | 'pending';
+      return { status };
+    }),
+
+    // --- Literal returns ---
+    stringLiteral: t.procedure.query(() => 'hello' as const),
+    numberLiteral: t.procedure.query(() => 42 as const),
+    booleanLiteral: t.procedure.query(() => true as const),
+
+    // --- Discriminated union return ---
+    discriminatedResult: t.procedure.mutation(() => {
+      const result =
+        Math.random() > 0.5
+          ? { type: 'success' as const, id: 1, createdAt: '2024-01-01' }
+          : { type: 'error' as const, message: 'fail', code: 500 };
+      return result;
+    }),
+
+    // --- Union of primitives ---
+    primitiveUnion: t.procedure.query(() => {
+      const val = 'hello' as string | number | boolean;
+      return { value: val };
+    }),
+
+    // --- Tuple ---
+    tupleReturn: t.procedure.query(() => ['hello', 42] as [string, number]),
+
+    // --- Record / index signature ---
+    recordReturn: t.procedure.query(() => {
+      const map: Record<string, number> = { a: 1, b: 2 };
+      return map;
+    }),
+
+    // --- Array of objects ---
+    arrayOfObjects: t.procedure.query(() => [
+      { id: 1, name: 'Alice', active: true },
+      { id: 2, name: 'Bob', active: false },
+    ]),
+
+    // --- Nested arrays (matrix) ---
+    matrix: t.procedure.query(() => [
+      [1, 2, 3],
+      [4, 5, 6],
+    ]),
+
+    // --- Deeply nested object ---
+    deeplyNested: t.procedure.query(() => ({
+      level1: {
+        level2: {
+          level3: {
+            value: 'deep',
+          },
+        },
+      },
+    })),
+
+    // --- Date return ---
+    dateReturn: t.procedure.query(() => ({
+      createdAt: new Date(),
+    })),
+
+    // --- Nullable return ---
+    nullableReturn: t.procedure.query(() => {
+      const val = null as string | null;
+      return { value: val };
+    }),
+
+    // --- Optional fields in return ---
+    optionalFields: t.procedure.query(() => {
+      const result: { name: string; age?: number; email?: string } = {
+        name: 'Alice',
+      };
+      return result;
+    }),
+
+    // --- Complex object with mixed field types ---
+    mixedObject: t.procedure.query(() => ({
+      id: 1,
+      name: 'test',
+      tags: ['a', 'b'],
+      metadata: { key: 'value' } as Record<string, string>,
+      active: true,
+      score: 9.5,
+    })),
+
+    // --- Void / undefined return ---
+    voidReturn: t.procedure.mutation(() => {
+      // no return
+    }),
+
+    // --- Null return ---
+    nullReturn: t.procedure.query(() => null),
+
+    // --- Intersection-like (merged object) ---
+    mergedObject: t.procedure.query(() => {
+      const base = { id: 1 };
+      const details = { name: 'Alice', email: 'alice@example.com' };
+      return { ...base, ...details };
+    }),
+
+    // --- Array of string literals ---
+    literalArray: t.procedure.query(() => ['red', 'green', 'blue'] as const),
+
+    // --- Nested nullable / optional combos ---
+    nestedNullable: t.procedure.query(() => {
+      const result: {
+        outer: {
+          inner: string | null;
+          maybeNum?: number;
+        } | null;
+      } = { outer: { inner: null } };
+      return result;
+    }),
+
+    // --- Boolean return ---
+    boolReturn: t.procedure.query(() => false),
+
+    // --- Number return ---
+    numReturn: t.procedure.query(() => 123),
+
+    // --- String return ---
+    strReturn: t.procedure.query(() => 'hello world'),
+
+    // --- Complex mutation with inferred return ---
+    createItem: t.procedure
+      .input(z.object({ name: z.string() }))
+      .mutation(({ input }) => ({
+        id: 1,
+        name: input.name,
+        createdAt: new Date(),
+        status: 'created' as const,
+        tags: [] as string[],
+        metadata: null as Record<string, string> | null,
+      })),
   }),
 
   simpleCases: {
