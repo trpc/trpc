@@ -28,6 +28,12 @@ import type {
   ResolveHTTPRequestOptionsContextFn,
   TRPCRequestInfo,
 } from './types';
+import {
+  buildOpenApiDocument,
+  DEFAULT_OPENAPI_DOCS_PATH,
+  normalizeOpenApiDocsPath,
+  zod4SchemaSerializer,
+} from '../../openapi';
 
 function errorToAsyncIterable(err: TRPCError): AsyncIterable<never> {
   return run(async function* () {
@@ -229,6 +235,23 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     return new Response(null, {
       status: 204,
     });
+  }
+
+  if (opts.openApi?.enabled && req.method === 'GET') {
+    const openApiPath = normalizeOpenApiDocsPath(
+      opts.openApi.path ?? DEFAULT_OPENAPI_DOCS_PATH,
+    );
+    if (url.pathname === openApiPath) {
+      headers.set('content-type', 'application/json');
+      const document = buildOpenApiDocument({
+        router,
+        schemaSerializer: opts.openApi.schemaSerializer ?? zod4SchemaSerializer,
+      });
+      return new Response(JSON.stringify(document), {
+        status: 200,
+        headers,
+      });
+    }
   }
 
   const allowBatching = opts.allowBatching ?? opts.batching?.enabled ?? true;
