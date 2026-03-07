@@ -14,7 +14,6 @@
  *   --version      OpenAPI info.version                (default: 0.0.0)
  *   --help, -h     Show this help message
  */
-
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { generateOpenAPIDocument } from './generate';

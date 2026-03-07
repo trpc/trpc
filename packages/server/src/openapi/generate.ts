@@ -116,7 +116,7 @@ function typeToJsonSchema(
     if (schemas.length === 0) return {};
 
     const [firstSchema] = schemas;
-    let result: JsonSchema =
+    const result: JsonSchema =
       schemas.length === 1 && firstSchema !== undefined
         ? firstSchema
         : { oneOf: schemas };
@@ -319,11 +319,7 @@ function walkType(type: ts.Type, ctx: WalkCtx, currentPath: string): void {
   }
 }
 
-function walkRecord(
-  recordType: ts.Type,
-  ctx: WalkCtx,
-  prefix: string,
-): void {
+function walkRecord(recordType: ts.Type, ctx: WalkCtx, prefix: string): void {
   for (const prop of recordType.getProperties()) {
     const propType = ctx.checker.getTypeOfSymbol(prop);
     const fullPath = prefix ? `${prefix}.${prop.name}` : prop.name;
@@ -541,4 +537,3 @@ export function generateOpenAPIDocument(
 
   return buildOpenAPIDocument(walkCtx.procedures, options);
 }
-
