@@ -16,13 +16,11 @@ To set up an input validator, use the `procedure.input()` method:
 ```ts twoslash
 // @target: esnext
 import { initTRPC } from '@trpc/server';
-// ---cut---
-
-// Our examples use Zod by default, but usage with other libraries is identical
 import { z } from 'zod';
 
-export const t = initTRPC.create();
+const t = initTRPC.create();
 const publicProcedure = t.procedure;
+// ---cut---
 
 export const appRouter = t.router({
   hello: publicProcedure
@@ -44,6 +42,8 @@ export const appRouter = t.router({
 ### Input Merging
 
 `.input()` can be stacked to build more complex types, which is particularly useful when you want to utilise some common input to a collection of procedures in a [middleware](middlewares).
+
+Input merging works by spreading object properties together. This means only **object types** can be chained — non-object types (like `z.string()`) cannot be merged. If two chained `.input()` calls define the same property, the later one takes precedence.
 
 ```ts twoslash
 // @target: esnext
@@ -96,7 +96,6 @@ If output validation fails, the server will respond with an `INTERNAL_SERVER_ERR
 ```ts twoslash
 // @target: esnext
 import { initTRPC } from '@trpc/server';
-// @noErrors
 // ---cut---
 
 import { z } from 'zod';
@@ -113,8 +112,8 @@ export const appRouter = t.router({
     )
     .query((opts) => {
       return {
-        gre,
-        // ^|
+        greeting: 'hello world',
+        //^?
       };
     }),
 });
@@ -342,7 +341,7 @@ export type AppRouter = typeof appRouter;
 
 ### With [effect](https://github.com/Effect-TS/effect/tree/main/packages/schema)
 
-```ts
+```ts twoslash
 import { initTRPC } from '@trpc/server';
 import { Schema } from 'effect';
 
@@ -423,7 +422,7 @@ As a convenience `@robolex/sure` provides [sure/src/err.ts](https://github.com/r
 
 ```ts
 // sure/src/err.ts
-export const err = (schema) => (input) => {
+export const err = (schema: any) => (input: any) => {
   const [good, result] = schema(input);
   if (good) return result;
   throw result;

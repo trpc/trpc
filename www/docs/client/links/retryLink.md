@@ -15,8 +15,17 @@ If you use `@trpc/react-query` you will generally **not** need this link as it's
 
 You can import and add the `retryLink` to the `links` array when creating your tRPC client. This link can be placed before or after other links in your setup, depending on your requirements.
 
-```ts
-import { createTRPCClient, retryLink } from '@trpc/client';
+```ts twoslash
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
+import { createTRPCClient, httpBatchLink, retryLink } from '@trpc/client';
+import type { AppRouter } from './server';
 
 const client = createTRPCClient<AppRouter>({
   links: [
@@ -47,16 +56,18 @@ const client = createTRPCClient<AppRouter>({
 });
 ```
 
-In the example above, we add the `retryLink` before the `httpBatchLink`. By default, `retryLink` will:
+In the example above, we add the `retryLink` before the `httpBatchLink`. The `retry` function is required and defines when to retry. In this example, it will:
 
 - Retry the request if the error is a `TRPCClientError` with a status code of 500 or if we couldn't get a valid TRPC error.
 - Retry the request up to 3 times.
 
-You can customize the retry logic by providing a custom `retry` function.
-
 ## Options
 
-```ts
+```ts twoslash
+type InferrableClientTypes = any;
+type Operation = { id: number; type: string; input: unknown; path: string };
+type TRPCClientError<T> = Error & { data: any };
+// ---cut---
 interface RetryLinkOptions<TInferrable extends InferrableClientTypes> {
   /**
    * The retry function

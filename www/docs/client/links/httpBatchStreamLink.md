@@ -21,9 +21,17 @@ If you require the ability to change/set response headers (which includes cookie
 
 You can import and add the `httpBatchStreamLink` to the `links` array as such:
 
-```ts title="client/index.ts"
+```ts twoslash title="client/index.ts"
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
 import { createTRPCClient, httpBatchStreamLink } from '@trpc/client';
-import type { AppRouter } from '../server';
+import type { AppRouter } from './server';
 
 const client = createTRPCClient<AppRouter>({
   links: [
@@ -36,7 +44,24 @@ const client = createTRPCClient<AppRouter>({
 
 After that, you can make use of batching by setting all your procedures in a `Promise.all`. The code below will produce exactly **one** HTTP request and on the server exactly **one** database query:
 
-```ts
+```ts twoslash
+// @target: esnext
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+export const appRouter = t.router({
+  post: t.router({
+    byId: t.procedure.input(z.number()).query(({ input }) => ({ id: input, title: `Post ${input}` })),
+  }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+import { createTRPCClient, httpBatchStreamLink } from '@trpc/client';
+import type { AppRouter } from './server';
+const trpc = createTRPCClient<AppRouter>({ links: [httpBatchStreamLink({ url: 'http://localhost:3000' })] });
+// ---cut---
 const somePosts = await Promise.all([
   trpc.post.byId.query(1),
   trpc.post.byId.query(2),
@@ -48,9 +73,17 @@ const somePosts = await Promise.all([
 
 When batching requests together, the behavior of a regular `httpBatchLink` is to wait for all requests to finish before sending the response. If you want to send responses as soon as they are ready, you can use `httpBatchStreamLink` instead. This is useful for long-running requests.
 
-```ts title="client/index.ts"
+```ts twoslash title="client/index.ts"
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
 import { createTRPCClient, httpBatchStreamLink } from '@trpc/client';
-import type { AppRouter } from '../server';
+import type { AppRouter } from './server';
 
 const client = createTRPCClient<AppRouter>({
   links: [
@@ -81,8 +114,8 @@ const t = initTRPC.create({});
 export const router = t.router;
 export const publicProcedure = t.procedure;
 
-// ---cut---
 // @filename: server.ts
+// ---cut---
 import { publicProcedure, router } from './trpc';
 
 const appRouter = router({
@@ -100,6 +133,7 @@ export type AppRouter = typeof appRouter;
 
 
 // @filename: client.ts
+// ---cut---
 import { createTRPCClient, httpBatchStreamLink } from '@trpc/client';
 import type { AppRouter } from './server';
 
@@ -136,26 +170,32 @@ This includes support for `undici`, `node-fetch`, native Node.js fetch implement
 
 ### React Native
 
-Receiving the stream relies on the `TextDecoder` and `TextDecoderStream` APIs, which is not available in React Native. It's important to note that if your `TextDecoderStream` polyfill does not automatically polyfill `ReadableStream` and `WritableStream` those will also need to be polyfilled. If you still want to enable streaming, you need to polyfill those.
+Receiving the stream relies on the `TextDecoder` and `TextDecoderStream` APIs, which are not available in React Native. It's important to note that if your `TextDecoderStream` polyfill does not automatically polyfill `ReadableStream` and `WritableStream` those will also need to be polyfilled. If you still want to enable streaming, you need to polyfill those.
 
-You will also need to overide the default fetch in the `httpBatchStreamLink` configuration options. In the below example we will be using the [Expo fetch](https://docs.expo.dev/versions/latest/sdk/expo/) package for the fetch implementation.
+You will also need to override the default fetch in the `httpBatchStreamLink` configuration options. In the below example we will be using the [Expo fetch](https://docs.expo.dev/versions/latest/sdk/expo/) package for the fetch implementation.
 
-```typescript
+```ts
+import { httpBatchStreamLink } from '@trpc/client';
+
 httpBatchStreamLink({
   fetch: (url, opts) =>
     fetch(url, {
       ...opts,
       reactNative: { textStreaming: true },
     }),
-  ...restOfConfig,
+  url: 'http://localhost:3000',
 });
 ```
 
 ## Compatibility (server-side)
 
-> ⚠️ for **aws lambda**, `httpBatchStreamLink` is not supported (will simply behave like a regular `httpBatchLink`). It should not break anything if enabled, but will not have any effect.
+:::caution AWS Lambda
+`httpBatchStreamLink` only supported on AWS Lambda when your [infrastructure is set up](/docs/server/adapters/aws-lambda#aws-lambda-response-streaming-adapter) for streaming responses. If not this Link will simply behave like a regular `httpBatchLink`.
+:::
 
-> ⚠️ for **cloudflare workers**, you need to enable the `ReadableStream` API through a feature flag: [`streams_enable_constructors`](https://developers.cloudflare.com/workers/platform/compatibility-dates#streams-constructors)
+:::caution Cloudflare Workers
+You need to enable the `ReadableStream` API through a feature flag: [`streams_enable_constructors`](https://developers.cloudflare.com/workers/platform/compatibility-dates#streams-constructors).
+:::
 
 ## Reference
 
@@ -165,7 +205,7 @@ You can check out the source code for this link on [GitHub.](https://github.com/
 
 When setting up your root config, you can pass in a `jsonl` option to configure a ping option to keep the connection alive.
 
-```ts
+```ts twoslash
 import { initTRPC } from '@trpc/server';
 
 const t = initTRPC.create({

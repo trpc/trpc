@@ -41,12 +41,8 @@ function generateTypedocDocusaurusPlugins(directories) {
             // FIXME: this shouldn't be excluded
             return it === 'index.ts';
           case 'server':
-            return (
-              /**
-               * @deprecated remove in v12
-               */
-              it === 'shared.ts'
-            );
+            // Exclude deprecated shared.ts re-export, include everything else
+            return it !== 'shared.ts';
         }
         return true;
       });
@@ -76,6 +72,7 @@ function generateTypedocDocusaurusPlugins(directories) {
         excludeInternal: true,
         excludePrivate: true,
         excludeProtected: true,
+        excludeExternals: true,
 
         parametersFormat: 'table',
         sidebar: {
