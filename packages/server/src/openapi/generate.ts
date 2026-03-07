@@ -57,7 +57,35 @@ export interface OpenAPIDocument {
 }
 
 // ---------------------------------------------------------------------------
-// JSON Schema conversion
+// Flag helpers
+// ---------------------------------------------------------------------------
+
+const PRIMITIVE_FLAGS =
+  ts.TypeFlags.String |
+  ts.TypeFlags.Number |
+  ts.TypeFlags.Boolean |
+  ts.TypeFlags.StringLiteral |
+  ts.TypeFlags.NumberLiteral |
+  ts.TypeFlags.BooleanLiteral;
+
+function hasFlag(type: ts.Type, flag: ts.TypeFlags): boolean {
+  return (type.getFlags() & flag) !== 0;
+}
+
+function isPrimitive(type: ts.Type): boolean {
+  return hasFlag(type, PRIMITIVE_FLAGS);
+}
+
+function isObjectType(type: ts.Type): boolean {
+  return hasFlag(type, ts.TypeFlags.Object);
+}
+
+function isOptionalSymbol(sym: ts.Symbol): boolean {
+  return (sym.flags & ts.SymbolFlags.Optional) !== 0;
+}
+
+// ---------------------------------------------------------------------------
+// JSON Schema conversion — shared state
 // ---------------------------------------------------------------------------
 
 /** Shared state threaded through the type-to-schema recursion. */
@@ -70,29 +98,24 @@ interface SchemaCtx {
   typeToRef: Map<ts.Type, string>;
 }
 
+// ---------------------------------------------------------------------------
+// Brand unwrapping
+// ---------------------------------------------------------------------------
+
 /**
  * If `type` is a branded intersection (primitive & object), return just the
  * primitive part.  Otherwise return the type as-is.
  */
 function unwrapBrand(type: ts.Type): ts.Type {
-  if (!type.isIntersection()) return type;
-  const primitives = type.types.filter(
-    (m) =>
-      !!(
-        m.getFlags() &
-        (ts.TypeFlags.String |
-          ts.TypeFlags.Number |
-          ts.TypeFlags.Boolean |
-          ts.TypeFlags.StringLiteral |
-          ts.TypeFlags.NumberLiteral |
-          ts.TypeFlags.BooleanLiteral)
-      ),
-  );
-  const hasObject = type.types.some(
-    (m) => !!(m.getFlags() & ts.TypeFlags.Object),
-  );
+  if (!type.isIntersection()) {
+    return type;
+  }
+  const primitives = type.types.filter(isPrimitive);
+  const hasObject = type.types.some(isObjectType);
   const [first] = primitives;
-  if (first && hasObject) return first;
+  if (first && hasObject) {
+    return first;
+  }
   return type;
 }
 
@@ -105,10 +128,13 @@ const ANONYMOUS_NAMES = new Set(['__type', '__object', 'Object', '']);
 /** Try to determine a meaningful name for a TS type (type alias or interface). */
 function getTypeName(type: ts.Type): string | null {
   const aliasName = type.aliasSymbol?.getName();
-  if (aliasName && !ANONYMOUS_NAMES.has(aliasName)) return aliasName;
+  if (aliasName && !ANONYMOUS_NAMES.has(aliasName)) {
+    return aliasName;
+  }
   const symName = type.getSymbol()?.getName();
-  if (symName && !ANONYMOUS_NAMES.has(symName) && !symName.startsWith('__'))
+  if (symName && !ANONYMOUS_NAMES.has(symName) && !symName.startsWith('__')) {
     return symName;
+  }
   return null;
 }
 
@@ -116,9 +142,13 @@ function ensureUniqueName(
   name: string,
   existing: Record<string, unknown>,
 ): string {
-  if (!(name in existing)) return name;
+  if (!(name in existing)) {
+    return name;
+  }
   let i = 2;
-  while (`${name}${i}` in existing) i++;
+  while (`${name}${i}` in existing) {
+    i++;
+  }
   return `${name}${i}`;
 }
 
@@ -136,13 +166,14 @@ function typeToJsonSchema(
   ctx: SchemaCtx,
   depth = 0,
 ): JsonSchema {
-  if (depth > 20) return {};
+  if (depth > 20) {
+    return {};
+  }
 
   // If this type is already registered as a named schema, return a $ref.
   const refName = ctx.typeToRef.get(type);
   if (refName) {
     if (refName in ctx.schemas) {
-      // Already converted (or placeholder for circular ref) — just return $ref
       return { $ref: `#/components/schemas/${refName}` };
     }
     // First encounter: set placeholder (circular ref guard), convert, store.
@@ -155,43 +186,62 @@ function typeToJsonSchema(
   return convertTypeToSchema(type, ctx, depth);
 }
 
-/** Core type-to-schema conversion (no ref handling). */
-function convertTypeToSchema(
+// ---------------------------------------------------------------------------
+// Cyclic reference handling
+// ---------------------------------------------------------------------------
+
+/**
+ * When we encounter a type we're already visiting, it's recursive.
+ * Register it as a named schema and return a $ref.
+ */
+function handleCyclicRef(type: ts.Type, ctx: SchemaCtx): JsonSchema {
+  let refName = ctx.typeToRef.get(type);
+  if (!refName) {
+    const name = getTypeName(type) ?? 'RecursiveType';
+    refName = ensureUniqueName(name, ctx.schemas);
+    ctx.typeToRef.set(type, refName);
+    ctx.schemas[refName] = {}; // placeholder — filled by the outer call
+  }
+  return { $ref: `#/components/schemas/${refName}` };
+}
+
+// ---------------------------------------------------------------------------
+// Primitive & literal type conversion
+// ---------------------------------------------------------------------------
+
+function convertPrimitiveOrLiteral(
   type: ts.Type,
-  ctx: SchemaCtx,
-  depth: number,
-): JsonSchema {
-  if (ctx.visited.has(type)) {
-    // Cycle detected — this type is recursive.  JSON Schema can only express
-    // recursion via $ref, so we must extract it into a named schema.  Named
-    // types will already be in typeToRef (early-registered in the object
-    // section); anonymous ones get a generated name here.
-    let refName = ctx.typeToRef.get(type);
-    if (!refName) {
-      const name = getTypeName(type) ?? 'RecursiveType';
-      refName = ensureUniqueName(name, ctx.schemas);
-      ctx.typeToRef.set(type, refName);
-      ctx.schemas[refName] = {}; // placeholder — filled by the outer call
-    }
-    return { $ref: `#/components/schemas/${refName}` };
+  flags: ts.TypeFlags,
+  checker: ts.TypeChecker,
+): JsonSchema | null {
+  if (flags & ts.TypeFlags.String) {
+    return { type: 'string' };
+  }
+  if (flags & ts.TypeFlags.Number) {
+    return { type: 'number' };
+  }
+  if (flags & ts.TypeFlags.Boolean) {
+    return { type: 'boolean' };
+  }
+  if (flags & ts.TypeFlags.Null) {
+    return { nullable: true };
+  }
+  if (flags & ts.TypeFlags.Undefined) {
+    return {};
+  }
+  if (flags & ts.TypeFlags.Void) {
+    return {};
+  }
+  if (flags & ts.TypeFlags.Any || flags & ts.TypeFlags.Unknown) {
+    return {};
+  }
+  if (flags & ts.TypeFlags.Never) {
+    return { not: {} };
+  }
+  if (flags & ts.TypeFlags.BigInt || flags & ts.TypeFlags.BigIntLiteral) {
+    return { type: 'integer' };
   }
 
-  const { checker } = ctx;
-  const flags = type.getFlags();
-
-  // ---- Primitive types ----
-  if (flags & ts.TypeFlags.String) return { type: 'string' };
-  if (flags & ts.TypeFlags.Number) return { type: 'number' };
-  if (flags & ts.TypeFlags.Boolean) return { type: 'boolean' };
-  if (flags & ts.TypeFlags.Null) return { nullable: true };
-  if (flags & ts.TypeFlags.Undefined) return {};
-  if (flags & ts.TypeFlags.Void) return {};
-  if (flags & ts.TypeFlags.Any || flags & ts.TypeFlags.Unknown) return {};
-  if (flags & ts.TypeFlags.Never) return { not: {} };
-  if (flags & ts.TypeFlags.BigInt || flags & ts.TypeFlags.BigIntLiteral)
-    return { type: 'integer' };
-
-  // ---- Literal types ----
   if (flags & ts.TypeFlags.StringLiteral) {
     return { type: 'string', enum: [(type as ts.StringLiteralType).value] };
   }
@@ -203,228 +253,339 @@ function convertTypeToSchema(
     return { type: 'boolean', enum: [isTrue] };
   }
 
-  // ---- Union types ----
-  if (type.isUnion()) {
-    const members = type.types;
-    // Strip undefined / void members (they make the field optional, not typed)
-    const defined = members.filter(
-      (m) => !(m.flags & (ts.TypeFlags.Undefined | ts.TypeFlags.Void)),
-    );
-    if (defined.length === 0) return {};
+  return null;
+}
 
-    const hasNull = defined.some((m) => !!(m.flags & ts.TypeFlags.Null));
-    const nonNull = defined.filter(
-      (m) => !(m.flags & (ts.TypeFlags.Null as number)),
-    );
+// ---------------------------------------------------------------------------
+// Union type conversion
+// ---------------------------------------------------------------------------
 
-    // TypeScript represents `boolean` as `true | false`.  Collapse back to a
-    // single `{ type: "boolean" }` instead of emitting a oneOf with two enums.
-    // Also handles branded booleans where TS distributes the intersection:
-    // `boolean & Brand` → `(true & Brand) | (false & Brand)`.
-    if (
-      nonNull.length === 2 &&
-      nonNull.every(
-        (m) => !!(unwrapBrand(m).getFlags() & ts.TypeFlags.BooleanLiteral),
-      )
-    ) {
-      const result: JsonSchema = { type: 'boolean' };
-      if (hasNull) result.nullable = true;
-      return result;
-    }
+function convertUnionType(
+  type: ts.UnionType,
+  ctx: SchemaCtx,
+  depth: number,
+): JsonSchema {
+  const members = type.types;
 
-    // Collapse unions of same-type literals into a single `enum` array.
-    // e.g. "FOO" | "BAR" → { type: "string", enum: ["FOO", "BAR"] }
-    // instead of { oneOf: [{ type: "string", enum: ["FOO"] }, { type: "string", enum: ["BAR"] }] }
-    const allSameTypeLiterals =
-      nonNull.length > 1 &&
-      nonNull.every(
-        (m) =>
-          !!(
-            m.getFlags() &
-            (ts.TypeFlags.StringLiteral | ts.TypeFlags.NumberLiteral)
-          ),
-      );
-    const [firstNonNull] = nonNull;
-    if (allSameTypeLiterals && firstNonNull) {
-      const isString = !!(firstNonNull.getFlags() & ts.TypeFlags.StringLiteral);
-      const allSameKind = nonNull.every(
-        (m) =>
-          !!(
-            m.getFlags() &
-            (isString ? ts.TypeFlags.StringLiteral : ts.TypeFlags.NumberLiteral)
-          ),
-      );
-      if (allSameKind) {
-        const values = nonNull.map((m) =>
-          isString
-            ? (m as ts.StringLiteralType).value
-            : (m as ts.NumberLiteralType).value,
-        );
-        const result: JsonSchema = {
-          type: isString ? 'string' : 'number',
-          enum: values,
-        };
-        if (hasNull) result.nullable = true;
-        return result;
-      }
-    }
+  // Strip undefined / void members (they make the field optional, not typed)
+  const defined = members.filter(
+    (m) => !hasFlag(m, ts.TypeFlags.Undefined | ts.TypeFlags.Void),
+  );
+  if (defined.length === 0) {
+    return {};
+  }
 
-    const schemas = nonNull
-      .map((m) => typeToJsonSchema(m, ctx, depth + 1))
-      .filter((s) => Object.keys(s).length > 0);
+  const hasNull = defined.some((m) => hasFlag(m, ts.TypeFlags.Null));
+  const nonNull = defined.filter((m) => !hasFlag(m, ts.TypeFlags.Null));
 
-    if (schemas.length === 0) return {};
+  // TypeScript represents `boolean` as `true | false`.  Collapse back to a
+  // single `{ type: "boolean" }` instead of emitting a oneOf with two enums.
+  // Also handles branded booleans: `boolean & Brand` → `(true & Brand) | (false & Brand)`.
+  const isBooleanLiteralPair =
+    nonNull.length === 2 &&
+    nonNull.every((m) => hasFlag(unwrapBrand(m), ts.TypeFlags.BooleanLiteral));
 
-    const [firstSchema] = schemas;
-    const result: JsonSchema =
-      schemas.length === 1 && firstSchema !== undefined
-        ? firstSchema
-        : { oneOf: schemas };
-
+  if (isBooleanLiteralPair) {
+    const result: JsonSchema = { type: 'boolean' };
     if (hasNull) {
-      // In OpenAPI 3.0 a $ref object cannot have sibling properties, so
-      // wrap it in allOf when we need to add nullable.
-      if (result.$ref) {
-        return { allOf: [{ $ref: result.$ref }], nullable: true };
-      }
       result.nullable = true;
     }
     return result;
   }
 
-  // ---- Intersection types ----
-  if (type.isIntersection()) {
-    // Branded types (e.g. z.string().brand<'X'>()) appear as an intersection of
-    // a primitive with a phantom object.  A primitive & object intersection is
-    // impossible at runtime, so when we see one we strip the object members —
-    // they are always brand metadata.
-    const hasPrimitive = type.types.some(
-      (m) =>
-        !!(
-          m.getFlags() &
-          (ts.TypeFlags.String |
-            ts.TypeFlags.Number |
-            ts.TypeFlags.Boolean |
-            ts.TypeFlags.StringLiteral |
-            ts.TypeFlags.NumberLiteral |
-            ts.TypeFlags.BooleanLiteral)
-        ),
-    );
-    const nonBrand = hasPrimitive
-      ? type.types.filter((m) => !(m.getFlags() & ts.TypeFlags.Object))
-      : type.types;
-
-    const schemas = nonBrand
-      .map((m) => typeToJsonSchema(m, ctx, depth + 1))
-      .filter((s) => Object.keys(s).length > 0);
-    if (schemas.length === 0) return {};
-    const [onlySchema] = schemas;
-    if (schemas.length === 1 && onlySchema !== undefined) return onlySchema;
-    return { allOf: schemas };
+  // Collapse unions of same-type literals into a single `enum` array.
+  // e.g. "FOO" | "BAR" → { type: "string", enum: ["FOO", "BAR"] }
+  const collapsedEnum = tryCollapseLiteralUnion(nonNull, hasNull);
+  if (collapsedEnum) {
+    return collapsedEnum;
   }
 
-  // ---- Object types (including arrays, tuples, classes) ----
-  if (flags & ts.TypeFlags.Object) {
-    const sym = type.getSymbol();
-    const symName = sym?.getName();
+  const schemas = nonNull
+    .map((m) => typeToJsonSchema(m, ctx, depth + 1))
+    .filter((s) => Object.keys(s).length > 0);
 
-    // Well-known classes
-    if (symName === 'Date') return { type: 'string', format: 'date-time' };
-    if (symName === 'Uint8Array' || symName === 'Buffer')
-      return { type: 'string', format: 'binary' };
+  if (schemas.length === 0) {
+    return {};
+  }
 
-    // Unwrap Promise<T>
-    if (symName === 'Promise') {
-      const [inner] = checker.getTypeArguments(type as ts.TypeReference);
-      return inner ? typeToJsonSchema(inner, ctx, depth + 1) : {};
+  const [firstSchema] = schemas;
+  const result: JsonSchema =
+    schemas.length === 1 && firstSchema !== undefined
+      ? firstSchema
+      : { oneOf: schemas };
+
+  if (hasNull) {
+    // In OpenAPI 3.0 a $ref object cannot have sibling properties, so
+    // wrap it in allOf when we need to add nullable.
+    if (result.$ref) {
+      return { allOf: [{ $ref: result.$ref }], nullable: true };
     }
+    result.nullable = true;
+  }
+  return result;
+}
 
-    // Array<T>
-    if (checker.isArrayType(type)) {
-      const [elem] = checker.getTypeArguments(type as ts.TypeReference);
-      const schema: JsonSchema = { type: 'array' };
-      if (elem) schema.items = typeToJsonSchema(elem, ctx, depth + 1);
-      return schema;
+/**
+ * If every non-null member is a string or number literal of the same kind,
+ * collapse them into a single `{ type, enum }` schema.
+ */
+function tryCollapseLiteralUnion(
+  nonNull: ts.Type[],
+  hasNull: boolean,
+): JsonSchema | null {
+  if (nonNull.length <= 1) {
+    return null;
+  }
+
+  const allLiterals = nonNull.every((m) =>
+    hasFlag(m, ts.TypeFlags.StringLiteral | ts.TypeFlags.NumberLiteral),
+  );
+  if (!allLiterals) {
+    return null;
+  }
+
+  const [first] = nonNull;
+  if (!first) {
+    return null;
+  }
+
+  const isString = hasFlag(first, ts.TypeFlags.StringLiteral);
+  const targetFlag = isString
+    ? ts.TypeFlags.StringLiteral
+    : ts.TypeFlags.NumberLiteral;
+  const allSameKind = nonNull.every((m) => hasFlag(m, targetFlag));
+  if (!allSameKind) {
+    return null;
+  }
+
+  const values = nonNull.map((m) =>
+    isString
+      ? (m as ts.StringLiteralType).value
+      : (m as ts.NumberLiteralType).value,
+  );
+  const result: JsonSchema = {
+    type: isString ? 'string' : 'number',
+    enum: values,
+  };
+  if (hasNull) {
+    result.nullable = true;
+  }
+  return result;
+}
+
+// ---------------------------------------------------------------------------
+// Intersection type conversion
+// ---------------------------------------------------------------------------
+
+function convertIntersectionType(
+  type: ts.IntersectionType,
+  ctx: SchemaCtx,
+  depth: number,
+): JsonSchema {
+  // Branded types (e.g. z.string().brand<'X'>()) appear as an intersection of
+  // a primitive with a phantom object.  Strip the object members — they are
+  // always brand metadata.
+  const hasPrimitiveMember = type.types.some(isPrimitive);
+  const nonBrand = hasPrimitiveMember
+    ? type.types.filter((m) => !isObjectType(m))
+    : type.types;
+
+  const schemas = nonBrand
+    .map((m) => typeToJsonSchema(m, ctx, depth + 1))
+    .filter((s) => Object.keys(s).length > 0);
+
+  if (schemas.length === 0) {
+    return {};
+  }
+  const [onlySchema] = schemas;
+  if (schemas.length === 1 && onlySchema !== undefined) {
+    return onlySchema;
+  }
+  return { allOf: schemas };
+}
+
+// ---------------------------------------------------------------------------
+// Object type conversion
+// ---------------------------------------------------------------------------
+
+function convertWellKnownType(
+  type: ts.Type,
+  ctx: SchemaCtx,
+  depth: number,
+): JsonSchema | null {
+  const symName = type.getSymbol()?.getName();
+  if (symName === 'Date') {
+    return { type: 'string', format: 'date-time' };
+  }
+  if (symName === 'Uint8Array' || symName === 'Buffer') {
+    return { type: 'string', format: 'binary' };
+  }
+
+  // Unwrap Promise<T>
+  if (symName === 'Promise') {
+    const [inner] = ctx.checker.getTypeArguments(type as ts.TypeReference);
+    return inner ? typeToJsonSchema(inner, ctx, depth + 1) : {};
+  }
+
+  return null;
+}
+
+function convertArrayType(
+  type: ts.Type,
+  ctx: SchemaCtx,
+  depth: number,
+): JsonSchema {
+  const [elem] = ctx.checker.getTypeArguments(type as ts.TypeReference);
+  const schema: JsonSchema = { type: 'array' };
+  if (elem) {
+    schema.items = typeToJsonSchema(elem, ctx, depth + 1);
+  }
+  return schema;
+}
+
+function convertTupleType(
+  type: ts.Type,
+  ctx: SchemaCtx,
+  depth: number,
+): JsonSchema {
+  const args = ctx.checker.getTypeArguments(type as ts.TypeReference);
+  const schemas = args.map((a) => typeToJsonSchema(a, ctx, depth + 1));
+  // Deduplicate identical element schemas
+  const unique = schemas.filter(
+    (s, i, arr) =>
+      arr.findIndex((o) => JSON.stringify(o) === JSON.stringify(s)) === i,
+  );
+  return {
+    type: 'array',
+    items:
+      unique.length === 1 && unique[0] !== undefined
+        ? unique[0]
+        : { oneOf: unique },
+    minItems: args.length,
+    maxItems: args.length,
+  };
+}
+
+function convertPlainObject(
+  type: ts.Type,
+  ctx: SchemaCtx,
+  depth: number,
+): JsonSchema {
+  const { checker } = ctx;
+  const stringIndexType = type.getStringIndexType();
+  const typeProps = type.getProperties();
+
+  // Pure index-signature Record type (no named props)
+  if (typeProps.length === 0 && stringIndexType) {
+    return {
+      type: 'object',
+      additionalProperties: typeToJsonSchema(stringIndexType, ctx, depth + 1),
+    };
+  }
+
+  // Auto-register types with a meaningful TS name BEFORE converting
+  // properties, so that circular or shared refs discovered during recursion
+  // resolve to a $ref via the `typeToJsonSchema` wrapper.
+  let autoRegName: string | null = null;
+  const tsName = getTypeName(type);
+  const isNamedUnregisteredType =
+    tsName !== null && typeProps.length > 0 && !ctx.typeToRef.has(type);
+  if (isNamedUnregisteredType) {
+    autoRegName = ensureUniqueName(tsName, ctx.schemas);
+    ctx.typeToRef.set(type, autoRegName);
+    ctx.schemas[autoRegName] = {}; // placeholder for circular ref guard
+  }
+
+  ctx.visited.add(type);
+  const properties: Record<string, JsonSchema> = {};
+  const required: string[] = [];
+
+  for (const prop of typeProps) {
+    const propType = checker.getTypeOfSymbol(prop);
+    properties[prop.name] = typeToJsonSchema(propType, ctx, depth + 1);
+    if (!isOptionalSymbol(prop)) {
+      required.push(prop.name);
     }
+  }
 
-    // Tuple — OpenAPI 3.0 does not support `prefixItems`, so we express
-    // tuples as `items: oneOf[…]` with min/maxItems.
-    if (checker.isTupleType(type)) {
-      const args = checker.getTypeArguments(type as ts.TypeReference);
-      const schemas = args.map((a) => typeToJsonSchema(a, ctx, depth + 1));
-      // Deduplicate identical element schemas
-      const unique = schemas.filter(
-        (s, i, arr) =>
-          arr.findIndex((o) => JSON.stringify(o) === JSON.stringify(s)) === i,
-      );
-      return {
-        type: 'array',
-        items:
-          unique.length === 1 && unique[0] !== undefined
-            ? unique[0]
-            : { oneOf: unique },
-        minItems: args.length,
-        maxItems: args.length,
-      };
-    }
+  ctx.visited.delete(type);
 
-    // Regular object / interface
-    const stringIndexType = type.getStringIndexType();
-    const typeProps = type.getProperties();
+  const result: JsonSchema = { type: 'object' };
+  if (Object.keys(properties).length > 0) {
+    result.properties = properties;
+  }
+  if (required.length > 0) {
+    result.required = required;
+  }
+  if (stringIndexType) {
+    result.additionalProperties = typeToJsonSchema(
+      stringIndexType,
+      ctx,
+      depth + 1,
+    );
+  }
 
-    // Pure index-signature Record type (no named props)
-    if (typeProps.length === 0 && stringIndexType) {
-      return {
-        type: 'object',
-        additionalProperties: typeToJsonSchema(stringIndexType, ctx, depth + 1),
-      };
-    }
+  // autoRegName covers named types (early-registered).  For anonymous
+  // recursive types, a recursive call may have registered this type during
+  // property conversion — check typeToRef as a fallback.
+  const registeredName = autoRegName ?? ctx.typeToRef.get(type);
+  if (registeredName) {
+    ctx.schemas[registeredName] = result;
+    return { $ref: `#/components/schemas/${registeredName}` };
+  }
 
-    // Auto-register types with a meaningful TS name BEFORE converting
-    // properties, so that circular or shared refs discovered during recursion
-    // resolve to a $ref via the `typeToJsonSchema` wrapper.
-    let autoRegName: string | null = null;
-    const tsName = getTypeName(type);
-    if (tsName && typeProps.length > 0 && !ctx.typeToRef.has(type)) {
-      autoRegName = ensureUniqueName(tsName, ctx.schemas);
-      ctx.typeToRef.set(type, autoRegName);
-      ctx.schemas[autoRegName] = {}; // placeholder for circular ref guard
-    }
+  return result;
+}
 
-    ctx.visited.add(type);
-    const properties: Record<string, JsonSchema> = {};
-    const required: string[] = [];
+function convertObjectType(
+  type: ts.Type,
+  ctx: SchemaCtx,
+  depth: number,
+): JsonSchema {
+  const wellKnown = convertWellKnownType(type, ctx, depth);
+  if (wellKnown) {
+    return wellKnown;
+  }
 
-    for (const prop of typeProps) {
-      const propType = checker.getTypeOfSymbol(prop);
-      const isOptional = !!(prop.flags & ts.SymbolFlags.Optional);
-      properties[prop.name] = typeToJsonSchema(propType, ctx, depth + 1);
-      if (!isOptional) required.push(prop.name);
-    }
+  if (ctx.checker.isArrayType(type)) {
+    return convertArrayType(type, ctx, depth);
+  }
+  if (ctx.checker.isTupleType(type)) {
+    return convertTupleType(type, ctx, depth);
+  }
 
-    ctx.visited.delete(type);
+  return convertPlainObject(type, ctx, depth);
+}
 
-    const result: JsonSchema = { type: 'object' };
-    if (Object.keys(properties).length > 0) result.properties = properties;
-    if (required.length > 0) result.required = required;
-    if (stringIndexType) {
-      result.additionalProperties = typeToJsonSchema(
-        stringIndexType,
-        ctx,
-        depth + 1,
-      );
-    }
+// ---------------------------------------------------------------------------
+// Core dispatcher
+// ---------------------------------------------------------------------------
 
-    // autoRegName covers named types (early-registered).  For anonymous
-    // recursive types, a recursive call may have registered this type during
-    // property conversion — check typeToRef as a fallback.
-    const registeredName = autoRegName ?? ctx.typeToRef.get(type);
-    if (registeredName) {
-      ctx.schemas[registeredName] = result;
-      return { $ref: `#/components/schemas/${registeredName}` };
-    }
+/** Core type-to-schema conversion (no ref handling). */
+function convertTypeToSchema(
+  type: ts.Type,
+  ctx: SchemaCtx,
+  depth: number,
+): JsonSchema {
+  if (ctx.visited.has(type)) {
+    return handleCyclicRef(type, ctx);
+  }
 
-    return result;
+  const flags = type.getFlags();
+
+  const primitive = convertPrimitiveOrLiteral(type, flags, ctx.checker);
+  if (primitive) {
+    return primitive;
+  }
+
+  if (type.isUnion()) {
+    return convertUnionType(type, ctx, depth);
+  }
+  if (type.isIntersection()) {
+    return convertIntersectionType(type, ctx, depth);
+  }
+  if (isObjectType(type)) {
+    return convertObjectType(type, ctx, depth);
   }
 
   return {};
@@ -451,24 +612,81 @@ function getProcedureTypeName(
   checker: ts.TypeChecker,
 ): string | null {
   const typeSym = defType.getProperty('type');
-  if (!typeSym) return null;
+  if (!typeSym) {
+    return null;
+  }
   const typeType = checker.getTypeOfSymbol(typeSym);
-  // checker.typeToString produces e.g. '"query"' (with quotes)
   const raw = checker.typeToString(typeType).replace(/['"]/g, '');
-  if (raw === 'query' || raw === 'mutation' || raw === 'subscription')
+  if (raw === 'query' || raw === 'mutation' || raw === 'subscription') {
     return raw;
+  }
   return null;
 }
 
+function isVoidLikeInput(inputType: ts.Type | null): boolean {
+  if (!inputType) {
+    return true;
+  }
+
+  const isVoidOrUndefinedOrNever = hasFlag(
+    inputType,
+    ts.TypeFlags.Void | ts.TypeFlags.Undefined | ts.TypeFlags.Never,
+  );
+  if (isVoidOrUndefinedOrNever) {
+    return true;
+  }
+
+  const isUnionOfVoids =
+    inputType.isUnion() &&
+    inputType.types.every((t) =>
+      hasFlag(t, ts.TypeFlags.Void | ts.TypeFlags.Undefined),
+    );
+  return isUnionOfVoids;
+}
+
+interface ProcedureDef {
+  defType: ts.Type;
+  typeName: string;
+  path: string;
+}
+
+function extractProcedure(def: ProcedureDef, ctx: WalkCtx): void {
+  const { checker, schemaCtx } = ctx;
+
+  const $typesSym = def.defType.getProperty('$types');
+  if (!$typesSym) {
+    return;
+  }
+  const $typesType = checker.getTypeOfSymbol($typesSym);
+
+  const inputSym = $typesType.getProperty('input');
+  const outputSym = $typesType.getProperty('output');
+
+  const inputType = inputSym ? checker.getTypeOfSymbol(inputSym) : null;
+  const outputType = outputSym ? checker.getTypeOfSymbol(outputSym) : null;
+
+  ctx.procedures.push({
+    path: def.path,
+    type: def.typeName as 'query' | 'mutation' | 'subscription',
+    inputSchema:
+      isVoidLikeInput(inputType) || !inputType
+        ? null
+        : typeToJsonSchema(inputType, schemaCtx),
+    outputSchema: outputType ? typeToJsonSchema(outputType, schemaCtx) : null,
+  });
+}
+
 function walkType(type: ts.Type, ctx: WalkCtx, currentPath: string): void {
-  if (ctx.seen.has(type)) return;
+  if (ctx.seen.has(type)) {
+    return;
+  }
 
   const defSym = type.getProperty('_def');
 
   if (!defSym) {
-    // No `_def` — this is a plain RouterRecord (e.g. DecorateCreateRouterOptions<…>)
-    // or an unrecognised type.  Walk its own properties so nested procedures are found.
-    if (type.getFlags() & ts.TypeFlags.Object) {
+    // No `_def` — this is a plain RouterRecord or an unrecognised type.
+    // Walk its own properties so nested procedures are found.
+    if (isObjectType(type)) {
       ctx.seen.add(type);
       walkRecord(type, ctx, currentPath);
       ctx.seen.delete(type);
@@ -479,60 +697,36 @@ function walkType(type: ts.Type, ctx: WalkCtx, currentPath: string): void {
   const { checker } = ctx;
   const defType = checker.getTypeOfSymbol(defSym);
 
-  // ---- Procedure? ----
   const procedureTypeName = getProcedureTypeName(defType, checker);
   if (procedureTypeName) {
-    const $typesSym = defType.getProperty('$types');
-    if (!$typesSym) return;
-    const $typesType = checker.getTypeOfSymbol($typesSym);
-
-    const inputSym = $typesType.getProperty('input');
-    const outputSym = $typesType.getProperty('output');
-
-    const inputType = inputSym ? checker.getTypeOfSymbol(inputSym) : null;
-    const outputType = outputSym ? checker.getTypeOfSymbol(outputSym) : null;
-
-    const inputFlags = inputType?.getFlags() ?? 0;
-    const isVoidInput =
-      !inputType ||
-      !!(
-        inputFlags &
-        (ts.TypeFlags.Void | ts.TypeFlags.Undefined | ts.TypeFlags.Never)
-      ) ||
-      (inputType.isUnion() &&
-        inputType.types.every(
-          (t) =>
-            !!(t.getFlags() & (ts.TypeFlags.Void | ts.TypeFlags.Undefined)),
-        ));
-
-    const { schemaCtx } = ctx;
-
-    ctx.procedures.push({
-      path: currentPath,
-      type: procedureTypeName as 'query' | 'mutation' | 'subscription',
-      inputSchema:
-        isVoidInput || !inputType
-          ? null
-          : typeToJsonSchema(inputType, schemaCtx),
-      outputSchema: outputType ? typeToJsonSchema(outputType, schemaCtx) : null,
-    });
+    extractProcedure(
+      { defType, typeName: procedureTypeName, path: currentPath },
+      ctx,
+    );
     return;
   }
 
-  // ---- Router? (_def.router === true) ----
+  // Router? (_def.router === true)
   const routerSym = defType.getProperty('router');
-  if (routerSym) {
-    const routerValType = checker.getTypeOfSymbol(routerSym);
-    if (checker.typeToString(routerValType) === 'true') {
-      const recordSym = defType.getProperty('record');
-      if (recordSym) {
-        ctx.seen.add(type);
-        const recordType = checker.getTypeOfSymbol(recordSym);
-        walkRecord(recordType, ctx, currentPath);
-        ctx.seen.delete(type);
-      }
-    }
+  if (!routerSym) {
+    return;
   }
+
+  const isRouter =
+    checker.typeToString(checker.getTypeOfSymbol(routerSym)) === 'true';
+  if (!isRouter) {
+    return;
+  }
+
+  const recordSym = defType.getProperty('record');
+  if (!recordSym) {
+    return;
+  }
+
+  ctx.seen.add(type);
+  const recordType = checker.getTypeOfSymbol(recordSym);
+  walkRecord(recordType, ctx, currentPath);
+  ctx.seen.delete(type);
 }
 
 function walkRecord(recordType: ts.Type, ctx: WalkCtx, prefix: string): void {
@@ -584,7 +778,6 @@ function loadCompilerOptions(startDir: string): ts.CompilerOptions {
     ) {
       options.moduleResolution = ts.ModuleResolutionKind.Bundler;
     } else {
-      // Default for CommonJS / older module kinds
       options.moduleResolution = ts.ModuleResolutionKind.Node10;
     }
   }
@@ -608,9 +801,13 @@ function extractErrorSchema(
 ): JsonSchema | null {
   const walk = (type: ts.Type, keys: string[]): ts.Type | null => {
     const [head, ...rest] = keys;
-    if (!head) return type;
+    if (!head) {
+      return type;
+    }
     const sym = type.getProperty(head);
-    if (!sym) return null;
+    if (!sym) {
+      return null;
+    }
     return walk(checker.getTypeOfSymbol(sym), rest);
   };
 
@@ -620,10 +817,13 @@ function extractErrorSchema(
     '$types',
     'errorShape',
   ]);
-  if (!errorShapeType) return null;
+  if (!errorShapeType) {
+    return null;
+  }
 
-  // If the resolved type is `any`, fall back to the default schema.
-  if (errorShapeType.getFlags() & ts.TypeFlags.Any) return null;
+  if (hasFlag(errorShapeType, ts.TypeFlags.Any)) {
+    return null;
+  }
 
   return typeToJsonSchema(errorShapeType, schemaCtx);
 }
@@ -643,6 +843,53 @@ const DEFAULT_ERROR_SCHEMA: JsonSchema = {
   required: ['message', 'code'],
 };
 
+function buildProcedureOperation(proc: ProcedureInfo): Record<string, unknown> {
+  const method = proc.type === 'query' ? 'get' : 'post';
+
+  const hasOutput =
+    proc.outputSchema !== null && Object.keys(proc.outputSchema).length > 0;
+
+  const operation: Record<string, unknown> = {
+    operationId: proc.path.replace(/\./g, '_'),
+    tags: [proc.path.split('.')[0]],
+    responses: {
+      '200': {
+        description: 'Successful response',
+        ...(hasOutput
+          ? {
+              content: {
+                'application/json': { schema: proc.outputSchema },
+              },
+            }
+          : {}),
+      },
+      default: { $ref: '#/components/responses/error' },
+    },
+  };
+
+  if (proc.inputSchema === null) {
+    return operation;
+  }
+
+  if (method === 'get') {
+    operation['parameters'] = [
+      {
+        name: 'input',
+        in: 'query',
+        required: true,
+        content: { 'application/json': { schema: proc.inputSchema } },
+      },
+    ];
+  } else {
+    operation['requestBody'] = {
+      required: true,
+      content: { 'application/json': { schema: proc.inputSchema } },
+    };
+  }
+
+  return operation;
+}
+
 function buildOpenAPIDocument(
   procedures: ProcedureInfo[],
   options: GenerateOptions,
@@ -653,60 +900,20 @@ function buildOpenAPIDocument(
   const paths: Record<string, Record<string, unknown>> = {};
 
   for (const proc of procedures) {
-    // Subscriptions map to WebSocket / SSE, not plain HTTP — skip for now
-    if (proc.type === 'subscription') continue;
+    if (proc.type === 'subscription') {
+      continue;
+    }
 
-    // tRPC uses dot-separated paths; keep them as-is
     const opPath = `/${proc.path}`;
     const method = proc.type === 'query' ? 'get' : 'post';
 
     const pathItem: Record<string, unknown> = paths[opPath] ?? {};
     paths[opPath] = pathItem;
-
-    const operation: Record<string, unknown> = {
-      operationId: proc.path.replace(/\./g, '_'),
-      tags: [proc.path.split('.')[0]],
-      responses: {
-        '200': {
-          description: 'Successful response',
-          ...(proc.outputSchema !== null &&
-          Object.keys(proc.outputSchema).length > 0
-            ? {
-                content: {
-                  'application/json': { schema: proc.outputSchema },
-                },
-              }
-            : {}),
-        },
-        default: { $ref: '#/components/responses/error' },
-      },
-    };
-
-    if (method === 'get') {
-      // Query procedures: the entire input is serialised as a JSON string in
-      // the `input` query parameter (matching the default tRPC HTTP transport).
-      if (proc.inputSchema !== null) {
-        operation['parameters'] = [
-          {
-            name: 'input',
-            in: 'query',
-            required: true,
-            content: { 'application/json': { schema: proc.inputSchema } },
-          },
-        ];
-      }
-    } else {
-      // Mutation procedures: input as JSON request body
-      if (proc.inputSchema !== null) {
-        operation['requestBody'] = {
-          required: true,
-          content: { 'application/json': { schema: proc.inputSchema } },
-        };
-      }
-    }
-
-    pathItem[method] = operation;
+    pathItem[method] = buildProcedureOperation(proc);
   }
+
+  const hasNamedSchemas =
+    meta.schemas !== undefined && Object.keys(meta.schemas).length > 0;
 
   return {
     openapi: '3.0.3',
@@ -716,9 +923,7 @@ function buildOpenAPIDocument(
     },
     paths,
     components: {
-      ...(meta.schemas && Object.keys(meta.schemas).length > 0
-        ? { schemas: meta.schemas }
-        : {}),
+      ...(hasNamedSchemas ? { schemas: meta.schemas } : {}),
       responses: {
         error: {
           description: 'Error response',
