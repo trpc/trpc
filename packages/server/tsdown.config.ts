@@ -13,6 +13,7 @@ export const input = [
   'src/http.ts',
   'src/index.ts',
   'src/observable/index.ts',
+  'src/openapi/index.ts',
   'src/rpc.ts',
   'src/shared.ts',
   'src/unstable-core-do-not-import.ts',

@@ -144,6 +144,16 @@
         "default": "./dist/observable/index.cjs"
       }
     },
+    "./openapi": {
+      "import": {
+        "types": "./dist/openapi/index.d.mts",
+        "default": "./dist/openapi/index.mjs"
+      },
+      "require": {
+        "types": "./dist/openapi/index.d.cts",
+        "default": "./dist/openapi/index.cjs"
+      }
+    },
     "./rpc": {
       "import": {
         "types": "./dist/rpc.d.mts",
@@ -183,6 +193,7 @@
     "adapters",
     "http",
     "observable",
+    "openapi",
     "rpc",
     "shared",
     "unstable-core-do-not-import",

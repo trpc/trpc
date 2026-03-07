@@ -11,6 +11,7 @@ import type {
 } from '../router';
 import type { TRPCResponse } from '../rpc';
 import type { Dict } from '../types';
+import type { OpenApiOptions } from '../../openapi';
 
 /**
  * @deprecated use `Headers` instead, this will be removed in v12
@@ -53,6 +54,10 @@ export interface HTTPBaseHandlerOptions<TRouter extends AnyRouter, TRequest>
    * @see https://trpc.io/docs/v11/caching
    */
   responseMeta?: ResponseMetaFn<TRouter>;
+  /**
+   * OpenAPI document endpoint options.
+   */
+  openApi?: OpenApiOptions;
 }
 
 export type TRPCAcceptHeader = 'application/jsonl';
