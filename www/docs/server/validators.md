@@ -290,7 +290,7 @@ export type AppRouter = typeof appRouter;
 
 ### With [Typia](https://typia.io/docs/utilization/trpc/)
 
-```ts 
+```ts
 import { initTRPC } from '@trpc/server';
 import typia from 'typia';
 import { v4 } from 'uuid';
