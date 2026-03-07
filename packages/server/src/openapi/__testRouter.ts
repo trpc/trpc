@@ -44,6 +44,38 @@ export const AppRouter = t.router({
           .nullish(),
       )
       .query((opts) => opts.input),
+    optional: t.procedure
+      .input(
+        z
+          .object({
+            name: z.string().optional(),
+          })
+          .optional(),
+      )
+      .output(
+        z
+          .object({
+            name: z.string().optional(),
+          })
+          .optional(),
+      )
+      .query((opts) => opts.input),
+    nullable: t.procedure
+      .input(
+        z
+          .object({
+            name: z.string().nullable(),
+          })
+          .nullable(),
+      )
+      .output(
+        z
+          .object({
+            name: z.string().nullable(),
+          })
+          .nullable(),
+      )
+      .query((opts) => opts.input),
   },
 });
 
