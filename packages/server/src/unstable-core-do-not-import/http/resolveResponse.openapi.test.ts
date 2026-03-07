@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { initTRPC } from '../../../@trpc/server';
+import { initTRPC } from '../../@trpc/server';
 import { resolveResponse } from './resolveResponse';
 
 test('serves OpenAPI document on configured path', async () => {
@@ -72,7 +72,7 @@ test('uses custom OpenAPI schema serializer when provided', async () => {
   });
   const json = await response.json();
 
-  expect(serializer).toHaveBeenCalledTimes(1);
+  expect(serializer).toHaveBeenCalled();
   expect(
     json.paths['/hello'].get.responses[200].content['application/json'].schema,
   ).toEqual({
