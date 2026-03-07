@@ -10,6 +10,25 @@ import { initTRPC } from '../index';
 
 const t = initTRPC.create();
 
+enum Direction {
+  Up = 'UP',
+  Down = 'DOWN',
+  Left = 'LEFT',
+  Right = 'RIGHT',
+}
+
+enum NumericStatus {
+  Active = 1,
+  Inactive = 2,
+  Pending = 3,
+}
+
+enum MixedEnum {
+  Foo = 'FOO',
+  Bar = 1,
+  Baz = 'BAZ',
+}
+
 // ---------- Router with custom errorFormatter ----------
 
 const tCustomError = initTRPC.create({
@@ -501,6 +520,22 @@ export const AppRouter = t.router({
         tags: [] as string[],
         metadata: null as Record<string, string> | null,
       })),
+
+    // --- TypeScript enum returns ---
+    stringEnum: t.procedure.query(() => {
+      const dir = Direction.Up as Direction;
+      return { direction: dir };
+    }),
+
+    numericEnum: t.procedure.query(() => {
+      const status = NumericStatus.Active as NumericStatus;
+      return { status };
+    }),
+
+    mixedEnum: t.procedure.query(() => {
+      const val = MixedEnum.Foo as MixedEnum;
+      return { value: val };
+    }),
 
     // --- Branded type returns (should strip brand, keep base type) ---
     brandedReturns: t.procedure.query(() => {
