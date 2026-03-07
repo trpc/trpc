@@ -1,0 +1,23 @@
+name: Changeset Check
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Check for changesets
+        run: |
+          CHANGESETS=$(git diff --name-only --diff-filter=A origin/main...HEAD -- '.changeset/*.md' | grep -vc README.md || true)
+          if [ "$CHANGESETS" -eq 0 ]; then
+            echo "No changeset found."
+            echo "If this PR needs a release, run: pnpm changeset"
+            echo "If this PR doesn't need a release, run: pnpm changeset --empty"
+            exit 1
+          fi
+          echo "Found $CHANGESETS changeset(s)"

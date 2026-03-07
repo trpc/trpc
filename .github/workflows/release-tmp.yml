@@ -4,15 +4,15 @@ on:
   push:
     branches:
       # Replace this with the branch you want to release from
-      # 👇👇👇👇👇👇👇👇👇👇👇👇👇👇👇👇
       - '6955/again'
-      # 👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆
     paths:
       - '.github/setup/*'
       - '.github/workflows/release-tmp.yml'
       - 'packages/**'
       - '!packages/**/package.json'
-      - '!packages/test/**'
+      - '!packages/tests/**'
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
   publish:
@@ -34,4 +34,29 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - run: pnpm lerna publish --force-publish --canary --preid "alpha-tmp-$(pnpm --silent current-branch)" --dist-tag tmp --yes
+      - name: Determine branch identifier
+        id: branch
+        run: echo "name=$(pnpm --silent current-branch)" >> $GITHUB_OUTPUT
+
+      - name: Ensure a changeset exists for tmp release
+        run: |
+          cat > .changeset/tmp-release.md << 'CHANGESET'
+          ---
+          "@trpc/server": patch
+          ---
+
+          Temporary release
+          CHANGESET
+
+      - name: Create tmp snapshot versions
+        run: |
+          pnpm changeset version --snapshot "alpha-tmp-${{ steps.branch.outputs.name }}"
+          tsx scripts/version.ts
+
+      - name: Build
+        run: pnpm build
+
+      - name: Publish tmp packages
+        run: pnpm changeset publish --tag tmp
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

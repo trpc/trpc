@@ -112,11 +112,11 @@
     "!**/__tests__"
   ],
   "peerDependencies": {
-    "@trpc/server": "11.12.0",
+    "@trpc/server": "workspace:^",
     "typescript": ">=5.7.2"
   },
   "devDependencies": {
-    "@trpc/server": "11.12.0",
+    "@trpc/server": "workspace:^",
     "@types/isomorphic-fetch": "^0.0.39",
     "@types/node": "^22.13.5",
     "dataloader": "^2.2.2",
