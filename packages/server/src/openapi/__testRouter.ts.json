@@ -944,30 +944,34 @@
                   "properties": {
                     "pair": {
                       "type": "array",
-                      "prefixItems": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "number"
-                        }
-                      ],
+                      "items": {
+                        "oneOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "number"
+                          }
+                        ]
+                      },
                       "minItems": 2,
                       "maxItems": 2
                     },
                     "triple": {
                       "type": "array",
-                      "prefixItems": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "number"
-                        },
-                        {
-                          "type": "boolean"
-                        }
-                      ],
+                      "items": {
+                        "oneOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "boolean"
+                          }
+                        ]
+                      },
                       "minItems": 3,
                       "maxItems": 3
                     }
@@ -996,30 +1000,34 @@
                   "properties": {
                     "pair": {
                       "type": "array",
-                      "prefixItems": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "number"
-                        }
-                      ],
+                      "items": {
+                        "oneOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "number"
+                          }
+                        ]
+                      },
                       "minItems": 2,
                       "maxItems": 2
                     },
                     "triple": {
                       "type": "array",
-                      "prefixItems": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "number"
-                        },
-                        {
-                          "type": "boolean"
-                        }
-                      ],
+                      "items": {
+                        "oneOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "boolean"
+                          }
+                        ]
+                      },
                       "minItems": 3,
                       "maxItems": 3
                     }
@@ -2547,14 +2555,16 @@
               "application/json": {
                 "schema": {
                   "type": "array",
-                  "prefixItems": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "number"
-                    }
-                  ],
+                  "items": {
+                    "oneOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
                   "minItems": 2,
                   "maxItems": 2
                 }
@@ -2968,26 +2978,28 @@
               "application/json": {
                 "schema": {
                   "type": "array",
-                  "prefixItems": [
-                    {
-                      "type": "string",
-                      "enum": [
-                        "red"
-                      ]
-                    },
-                    {
-                      "type": "string",
-                      "enum": [
-                        "green"
-                      ]
-                    },
-                    {
-                      "type": "string",
-                      "enum": [
-                        "blue"
-                      ]
-                    }
-                  ],
+                  "items": {
+                    "oneOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "red"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "green"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "blue"
+                        ]
+                      }
+                    ]
+                  },
                   "minItems": 3,
                   "maxItems": 3
                 }
