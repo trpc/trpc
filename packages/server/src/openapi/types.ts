@@ -8,4 +8,8 @@ export interface OpenApiOptions {
   enabled: boolean;
   path?: string;
   schemaSerializer?: OpenApiSchemaSerializer;
+  info?: {
+    title?: string;
+    version?: string;
+  };
 }

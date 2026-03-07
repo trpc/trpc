@@ -42,10 +42,16 @@ function buildOperation(opts: {
     output?: unknown;
     type: AnyProcedure['_def']['type'];
   };
-  const inputSchema = serializeSchema(
-    schemaSerializer,
-    procedureDef.inputs?.at(-1),
-  );
+  const inputSchemas =
+    procedureDef.inputs
+      ?.map((input) => serializeSchema(schemaSerializer, input))
+      .filter((schema): schema is OpenApiSchema => schema !== null) ?? [];
+  const inputSchema =
+    inputSchemas.length === 0
+      ? null
+      : inputSchemas.length === 1
+        ? inputSchemas[0]
+        : ({ allOf: inputSchemas } as OpenApiSchema);
   const outputSchema = serializeSchema(schemaSerializer, procedureDef.output);
 
   const operation: Record<string, unknown> = {
@@ -72,6 +78,8 @@ function buildOperation(opts: {
   }
 
   if (inputSchema && procedureDef.type === 'mutation') {
+    // This prototype only maps body input for mutations.
+    // Query/subscription inputs would need query parameter mapping.
     operation.requestBody = {
       required: true,
       content: {
@@ -96,6 +104,10 @@ export function normalizeOpenApiDocsPath(path: string): string {
 export function buildOpenApiDocument(opts: {
   router: AnyRouter;
   schemaSerializer?: OpenApiSchemaSerializer;
+  info?: {
+    title?: string;
+    version?: string;
+  };
 }) {
   const paths: Record<string, OpenApiPathItem> = {};
 
@@ -116,8 +128,8 @@ export function buildOpenApiDocument(opts: {
   return {
     openapi: '3.1.0',
     info: {
-      title: 'tRPC API',
-      version: '0.0.0',
+      title: opts.info?.title ?? 'tRPC API',
+      version: opts.info?.version ?? '0.0.0',
     },
     paths,
   };

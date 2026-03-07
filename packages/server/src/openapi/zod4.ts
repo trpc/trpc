@@ -1,15 +1,12 @@
 import { z } from 'zod';
 import type { OpenApiSchemaSerializer } from './types';
 
-function isZodV4Schema(value: unknown): value is z.ZodTypeAny {
-  if (!value || typeof value !== 'object') {
-    return false;
-  }
-  return '_zod' in value;
+function isZodSchema(value: unknown): value is z.ZodTypeAny {
+  return value instanceof z.ZodType;
 }
 
 export const zod4SchemaSerializer: OpenApiSchemaSerializer = (schema) => {
-  if (!isZodV4Schema(schema)) {
+  if (!isZodSchema(schema)) {
     return null;
   }
   return z.toJSONSchema(schema) as Record<string, unknown>;

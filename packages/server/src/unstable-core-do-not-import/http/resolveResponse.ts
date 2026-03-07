@@ -246,6 +246,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       const document = buildOpenApiDocument({
         router,
         schemaSerializer: opts.openApi.schemaSerializer ?? zod4SchemaSerializer,
+        info: opts.openApi.info,
       });
       return new Response(JSON.stringify(document), {
         status: 200,

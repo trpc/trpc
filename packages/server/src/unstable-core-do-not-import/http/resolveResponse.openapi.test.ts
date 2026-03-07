@@ -26,6 +26,10 @@ test('serves OpenAPI document on configured path', async () => {
     openApi: {
       enabled: true,
       path: 'docs/openapi.json',
+      info: {
+        title: 'Custom API',
+        version: '1.0.0',
+      },
     },
   });
   const json = await response.json();
@@ -33,6 +37,10 @@ test('serves OpenAPI document on configured path', async () => {
   expect(response.status).toBe(200);
   expect(json).toMatchObject({
     openapi: '3.1.0',
+    info: {
+      title: 'Custom API',
+      version: '1.0.0',
+    },
     paths: {
       '/hello': {
         get: {
