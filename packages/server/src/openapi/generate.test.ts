@@ -83,6 +83,23 @@ describe('generateOpenAPIDocument', () => {
       expect(problems).toEqual([]);
     });
 
+    it('serialises the error shape from errorFormatter into components', () => {
+      // The default router uses `initTRPC.create()` with no custom error formatter,
+      // so the error response schema should match the DefaultErrorShape type.
+      const errorSchema = (doc.components as any).responses.error.content[
+        'application/json'
+      ].schema;
+
+      // DefaultErrorShape has: message (string), code (number), data (object with code, httpStatus, path?, stack?)
+      expect(errorSchema.type).toBe('object');
+      expect(errorSchema.properties).toHaveProperty('message');
+      expect(errorSchema.properties).toHaveProperty('code');
+      expect(errorSchema.properties).toHaveProperty('data');
+      expect(errorSchema.required).toContain('message');
+      expect(errorSchema.required).toContain('code');
+      expect(errorSchema.required).toContain('data');
+    });
+
     it('strips Zod brand metadata from branded types', () => {
       const spec = JSON.stringify(doc);
 
@@ -113,6 +130,59 @@ describe('generateOpenAPIDocument', () => {
       // Boolean branded type should not contain any object/allOf from the brand
       const activeSchema = inferredSchema?.properties?.active;
       expect(JSON.stringify(activeSchema)).not.toContain('__brand');
+    });
+  });
+
+  describe('custom errorFormatter', () => {
+    let doc: OpenAPIDocument;
+
+    beforeAll(() => {
+      doc = generateOpenAPIDocument(testRouterPath, {
+        exportName: 'ErrorFormatterRouter',
+        title: 'Error Formatter API',
+        version: '1.0.0',
+      });
+    });
+
+    it('serialises the custom error shape into the error response', () => {
+      const errorSchema = (doc.components as any).responses.error.content[
+        'application/json'
+      ].schema;
+
+      // The custom formatter extends DefaultErrorShape and adds a zodError
+      // field inside `data`.
+      expect(errorSchema.type).toBe('object');
+      expect(errorSchema.properties).toHaveProperty('message');
+      expect(errorSchema.properties).toHaveProperty('code');
+      expect(errorSchema.properties).toHaveProperty('data');
+
+      // The `data` property should contain the extra `zodError` field
+      const dataSchema = errorSchema.properties.data;
+      expect(dataSchema.properties).toHaveProperty('zodError');
+    });
+
+    it('still includes standard error fields', () => {
+      const errorSchema = (doc.components as any).responses.error.content[
+        'application/json'
+      ].schema;
+
+      // Standard fields from DefaultErrorShape
+      expect(errorSchema.properties.message).toEqual({ type: 'string' });
+      // `code` is TRPC_ERROR_CODE_NUMBER — a union of number literals collapsed to a single enum
+      expect(errorSchema.properties.code.type).toBe('number');
+      expect(errorSchema.properties.code.enum).toBeInstanceOf(Array);
+      expect(errorSchema.properties.code.enum.length).toBeGreaterThan(0);
+
+      // Standard data fields (code, httpStatus)
+      const dataProps = errorSchema.properties.data.properties;
+      expect(dataProps).toHaveProperty('code');
+      expect(dataProps).toHaveProperty('httpStatus');
+    });
+
+    it('produces a valid OpenAPI spec', async () => {
+      const spec = JSON.stringify(doc, null, 2);
+      const problems = await validateOpenAPI(spec);
+      expect(problems).toEqual([]);
     });
   });
 });

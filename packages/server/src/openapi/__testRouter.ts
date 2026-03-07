@@ -10,6 +10,34 @@ import { initTRPC } from '../index';
 
 const t = initTRPC.create();
 
+// ---------- Router with custom errorFormatter ----------
+
+const tCustomError = initTRPC.create({
+  errorFormatter(opts) {
+    const { shape } = opts;
+    return {
+      ...shape,
+      data: {
+        ...shape.data,
+        zodError:
+          opts.error.code === 'BAD_REQUEST'
+            ? (opts.error.cause as { issues?: Array<{ message: string; path: Array<string | number> }> })?.issues ?? null
+            : null,
+      },
+    };
+  },
+});
+
+export const ErrorFormatterRouter = tCustomError.router({
+  hello: tCustomError.procedure
+    .input(z.object({ name: z.string() }))
+    .query(({ input }) => `Hello ${input.name}`),
+});
+
+export type ErrorFormatterRouter = typeof ErrorFormatterRouter;
+
+// ---------- Main test router ----------
+
 export const AppRouter = t.router({
   greeting: t.procedure
     .input(z.object({ name: z.string() }))

@@ -31,6 +31,11 @@ interface ProcedureInfo {
   outputSchema: JsonSchema | null;
 }
 
+/** State extracted from the router's root config. */
+interface RouterMeta {
+  errorSchema: JsonSchema | null;
+}
+
 export interface GenerateOptions {
   /**
    * The name of the exported router symbol.
@@ -148,6 +153,44 @@ function typeToJsonSchema(
       const result: JsonSchema = { type: 'boolean' };
       if (hasNull) result.nullable = true;
       return result;
+    }
+
+    // Collapse unions of same-type literals into a single `enum` array.
+    // e.g. "FOO" | "BAR" → { type: "string", enum: ["FOO", "BAR"] }
+    // instead of { oneOf: [{ type: "string", enum: ["FOO"] }, { type: "string", enum: ["BAR"] }] }
+    const allSameTypeLiterals =
+      nonNull.length > 1 &&
+      nonNull.every(
+        (m) =>
+          !!(
+            m.getFlags() &
+            (ts.TypeFlags.StringLiteral |
+              ts.TypeFlags.NumberLiteral)
+          ),
+      );
+    const [firstNonNull] = nonNull;
+    if (allSameTypeLiterals && firstNonNull) {
+      const isString = !!(firstNonNull.getFlags() & ts.TypeFlags.StringLiteral);
+      const allSameKind = nonNull.every(
+        (m) =>
+          !!(
+            m.getFlags() &
+            (isString ? ts.TypeFlags.StringLiteral : ts.TypeFlags.NumberLiteral)
+          ),
+      );
+      if (allSameKind) {
+        const values = nonNull.map((m) =>
+          isString
+            ? (m as ts.StringLiteralType).value
+            : (m as ts.NumberLiteralType).value,
+        );
+        const result: JsonSchema = {
+          type: isString ? 'string' : 'number',
+          enum: values,
+        };
+        if (hasNull) result.nullable = true;
+        return result;
+      }
     }
 
     const schemas = nonNull
@@ -448,12 +491,59 @@ function loadCompilerOptions(startDir: string): ts.CompilerOptions {
 }
 
 // ---------------------------------------------------------------------------
+// Error shape extraction
+// ---------------------------------------------------------------------------
+
+/**
+ * Walk `_def._config.$types.errorShape` on the router type and convert
+ * it to a JSON Schema.  Returns `null` when the path cannot be resolved
+ * (e.g. older tRPC versions or missing type info).
+ */
+function extractErrorSchema(
+  routerType: ts.Type,
+  checker: ts.TypeChecker,
+): JsonSchema | null {
+  const walk = (type: ts.Type, keys: string[]): ts.Type | null => {
+    const [head, ...rest] = keys;
+    if (!head) return type;
+    const sym = type.getProperty(head);
+    if (!sym) return null;
+    return walk(checker.getTypeOfSymbol(sym), rest);
+  };
+
+  const errorShapeType = walk(routerType, [
+    '_def',
+    '_config',
+    '$types',
+    'errorShape',
+  ]);
+  if (!errorShapeType) return null;
+
+  // If the resolved type is `any`, fall back to the default schema.
+  if (errorShapeType.getFlags() & ts.TypeFlags.Any) return null;
+
+  return typeToJsonSchema(errorShapeType, { checker, visited: new Set() });
+}
+
+// ---------------------------------------------------------------------------
 // OpenAPI document builder
 // ---------------------------------------------------------------------------
+
+/** Fallback error schema when the router type doesn't expose an error shape. */
+const DEFAULT_ERROR_SCHEMA: JsonSchema = {
+  type: 'object',
+  properties: {
+    message: { type: 'string' },
+    code: { type: 'string' },
+    data: { type: 'object' },
+  },
+  required: ['message', 'code'],
+};
 
 function buildOpenAPIDocument(
   procedures: ProcedureInfo[],
   options: GenerateOptions,
+  meta: RouterMeta = { errorSchema: null },
 ): OpenAPIDocument {
   const paths: Record<string, Record<string, unknown>> = {};
 
@@ -526,15 +616,7 @@ function buildOpenAPIDocument(
           description: 'Error response',
           content: {
             'application/json': {
-              schema: {
-                type: 'object',
-                properties: {
-                  message: { type: 'string' },
-                  code: { type: 'string' },
-                  data: { type: 'object' },
-                },
-                required: ['message', 'code'],
-              },
+              schema: meta.errorSchema ?? DEFAULT_ERROR_SCHEMA,
             },
           },
         },
@@ -606,5 +688,6 @@ export function generateOpenAPIDocument(
   };
   walkType(routerType, walkCtx, '');
 
-  return buildOpenAPIDocument(walkCtx.procedures, options);
+  const errorSchema = extractErrorSchema(routerType, checker);
+  return buildOpenAPIDocument(walkCtx.procedures, options, { errorSchema });
 }
