@@ -2,12 +2,13 @@ import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
 import * as path from 'node:path';
-import { AppRouter } from './__testRouter';
+import { AppRouter, SuperjsonRouter } from './__testRouter';
 import {
   getLanguageService,
   LogLevel,
   ReferenceValidationMode,
 } from '@swagger-api/apidom-ls';
+import superjson from 'superjson';
 import { describe, expect, it } from 'vitest';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { createHTTPHandler } from '../adapters/standalone';
@@ -37,6 +38,10 @@ async function validateOpenAPI(spec: string) {
 }
 
 const testRouterPath = path.resolve(__dirname, '__testRouter.ts');
+const openApiTsBin = path.resolve(
+  __dirname,
+  '../../node_modules/.bin/openapi-ts',
+);
 
 /** Resolve a schema that may be a $ref into the actual schema object. */
 function resolveSchema(schema: any, doc: OpenAPIDocument): any {
@@ -266,7 +271,7 @@ describe('generateOpenAPIDocument', () => {
       mkdirSync(path.dirname(specPath), { recursive: true });
       writeFileSync(specPath, JSON.stringify(doc, null, 2));
       execSync(
-        `npx @hey-api/openapi-ts -i ${specPath} -o ${genDir} -c @hey-api/client-fetch --silent`,
+        `${openApiTsBin} -i ${specPath} -o ${genDir} -c @hey-api/client-fetch --silent`,
         { stdio: 'pipe' },
       );
     });
@@ -388,6 +393,136 @@ describe('generateOpenAPIDocument', () => {
       const spec = JSON.stringify(doc, null, 2);
       const problems = await validateOpenAPI(spec);
       expect(problems).toEqual([]);
+    });
+  });
+
+  describe('superjson transformer', () => {
+    const genDir = path.resolve(__dirname, '__gen__', 'superjson');
+    const specPath = path.resolve(__dirname, '__gen__', 'superjson-spec.json');
+
+    beforeAll(() => {
+      rmSync(genDir, { recursive: true, force: true });
+
+      const doc = generateOpenAPIDocument(testRouterPath, {
+        exportName: 'SuperjsonRouter',
+        title: 'Superjson API',
+        version: '1.0.0',
+      });
+      mkdirSync(path.dirname(specPath), { recursive: true });
+      writeFileSync(specPath, JSON.stringify(doc, null, 2));
+      execSync(
+        `${openApiTsBin} -i ${specPath} -o ${genDir} -c @hey-api/client-fetch --silent`,
+        { stdio: 'pipe' },
+      );
+    });
+
+    it('returns raw superjson envelope without a superjson response interceptor', async () => {
+      const handler = createHTTPHandler({ router: SuperjsonRouter });
+      const server = http.createServer(handler);
+
+      await new Promise<void>((resolve) => server.listen(0, resolve));
+      const addr = server.address() as { port: number };
+      const baseUrl = `http://localhost:${addr.port}`;
+      await using _ = server;
+
+      const sdkPath = path.join(__dirname, '__gen__/superjson/sdk.gen');
+      const clientPath = path.join(__dirname, '__gen__/superjson/client.gen');
+      const sdk = await import(/* @vite-ignore */ sdkPath);
+      const clientMod = await import(/* @vite-ignore */ clientPath);
+
+      const client = clientMod.client;
+      client.setConfig({ baseUrl });
+
+      // Unwrap tRPC envelope but do NOT apply superjson deserialization.
+      client.interceptors.response.use(async (response: Response) => {
+        if (!response.ok) return response;
+        const body = await response.json();
+        const unwrapped = body?.result?.data ?? body;
+        return new Response(JSON.stringify(unwrapped), {
+          status: response.status,
+          statusText: response.statusText,
+          headers: response.headers,
+        });
+      });
+
+      // Superjson-serialize the input (with a real Date) so the server accepts it
+      const sjInput = superjson.serialize({
+        id: 'evt_1',
+        at: new Date('2025-06-15T10:00:00Z'),
+      });
+      const result = await sdk.getEvent({
+        query: { input: sjInput },
+        querySerializer: () =>
+          `input=${encodeURIComponent(JSON.stringify(sjInput))}`,
+      });
+
+      // Without superjson deserialization on the response, we get the
+      // raw superjson envelope: { json: { ... }, meta: { values: ... } }
+      expect(result.data).toHaveProperty('json');
+      expect(result.data).toHaveProperty('meta');
+      // The date in the json part is an ISO string, not a Date object
+      expect(typeof result.data.json.at).toBe('string');
+    });
+
+    it('returns proper dates with a superjson interceptor', async () => {
+      const handler = createHTTPHandler({ router: SuperjsonRouter });
+      const server = http.createServer(handler);
+
+      await new Promise<void>((resolve) => server.listen(0, resolve));
+      const addr = server.address() as { port: number };
+      const baseUrl = `http://localhost:${addr.port}`;
+      await using _ = server;
+
+      const sdkPath = path.join(__dirname, '__gen__/superjson/sdk.gen');
+      const clientPath = path.join(__dirname, '__gen__/superjson/client.gen');
+      const sdk = await import(/* @vite-ignore */ sdkPath);
+      const clientMod = await import(/* @vite-ignore */ clientPath);
+
+      const client = clientMod.client;
+      client.setConfig({ baseUrl });
+
+      // Superjson deserialize response output
+      client.interceptors.response.use(async (response: Response) => {
+        if (!response.ok) return response;
+        const body = await response.json();
+        const sjEnvelope = body?.result?.data ?? body;
+        const deserialized = superjson.deserialize(sjEnvelope);
+        return new Response(JSON.stringify(deserialized), {
+          status: response.status,
+          statusText: response.statusText,
+          headers: response.headers,
+        });
+      });
+
+      // --- Query with superjson on both ends ---
+      const sjQueryInput = superjson.serialize({
+        id: 'evt_1',
+        at: new Date('2025-06-15T10:00:00Z'),
+      });
+      const getResult = await sdk.getEvent({
+        query: { input: sjQueryInput },
+        querySerializer: () =>
+          `input=${encodeURIComponent(JSON.stringify(sjQueryInput))}`,
+      });
+
+      expect(getResult.data).toEqual({
+        id: 'evt_1',
+        at: '2025-06-15T10:00:00.000Z',
+      });
+
+      // --- Mutation with superjson on both ends ---
+      const sjMutationInput = superjson.serialize({
+        name: 'Conference',
+        at: new Date('2025-09-01T09:00:00Z'),
+      });
+      const createResult = await sdk.createEvent({
+        body: sjMutationInput as any,
+      });
+
+      expect(createResult.data).toEqual({
+        name: 'Conference',
+        at: '2025-09-01T09:00:00.000Z',
+      });
     });
   });
 });
