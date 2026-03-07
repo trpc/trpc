@@ -33,6 +33,14 @@ async function validateOpenAPI(spec: string) {
 
 const testRouterPath = path.resolve(__dirname, '__testRouter.ts');
 
+/** Resolve a schema that may be a $ref into the actual schema object. */
+function resolveSchema(schema: any, doc: OpenAPIDocument): any {
+  if (!schema?.$ref) return schema;
+  // Only handles #/components/schemas/Name refs
+  const name = schema.$ref.replace('#/components/schemas/', '');
+  return (doc.components as any).schemas?.[name] ?? schema;
+}
+
 describe('generateOpenAPIDocument', () => {
   it('throws when the export is not found', () => {
     expect(() =>
@@ -86,9 +94,10 @@ describe('generateOpenAPIDocument', () => {
     it('serialises the error shape from errorFormatter into components', () => {
       // The default router uses `initTRPC.create()` with no custom error formatter,
       // so the error response schema should match the DefaultErrorShape type.
-      const errorSchema = (doc.components as any).responses.error.content[
+      const rawErrorSchema = (doc.components as any).responses.error.content[
         'application/json'
       ].schema;
+      const errorSchema = resolveSchema(rawErrorSchema, doc);
 
       // DefaultErrorShape has: message (string), code (number), data (object with code, httpStatus, path?, stack?)
       expect(errorSchema.type).toBe('object');
@@ -108,8 +117,9 @@ describe('generateOpenAPIDocument', () => {
 
       // The branded field should be emitted as its base type (string)
       const brandedOp = doc.paths['/complexTypes.branded']?.['get'] as any;
-      const responseSchema =
+      const rawResponseSchema =
         brandedOp?.responses?.['200']?.content?.['application/json']?.schema;
+      const responseSchema = resolveSchema(rawResponseSchema, doc);
 
       expect(responseSchema).toEqual({
         type: 'object',
@@ -121,8 +131,9 @@ describe('generateOpenAPIDocument', () => {
       const inferredOp = doc.paths['/inferredReturns.brandedReturns']?.[
         'get'
       ] as any;
-      const inferredSchema =
+      const rawInferredSchema =
         inferredOp?.responses?.['200']?.content?.['application/json']?.schema;
+      const inferredSchema = resolveSchema(rawInferredSchema, doc);
 
       // No brand object should leak — all fields should resolve to primitives
       expect(inferredSchema?.properties?.userId).toEqual({ type: 'string' });
@@ -130,6 +141,72 @@ describe('generateOpenAPIDocument', () => {
       // Boolean branded type should not contain any object/allOf from the brand
       const activeSchema = inferredSchema?.properties?.active;
       expect(JSON.stringify(activeSchema)).not.toContain('__brand');
+    });
+
+    it('extracts named TS types at any depth into components/schemas', () => {
+      const schemas = (doc.components as any).schemas;
+
+      // Named interfaces should appear in schemas by their TS name
+      expect(schemas).toHaveProperty('UserProfile');
+      expect(schemas).toHaveProperty('Address');
+      expect(schemas).toHaveProperty('OrderItem');
+
+      expect(schemas.UserProfile).toEqual({
+        type: 'object',
+        properties: {
+          id: { type: 'number' },
+          name: { type: 'string' },
+          email: { type: 'string' },
+        },
+        required: ['id', 'name', 'email'],
+      });
+
+      // Depth 1: named type as a direct property → property is a $ref
+      const withProfileOutput = resolveSchema(
+        (doc.paths['/namedTypes.withProfile']?.['get'] as any)?.responses?.[
+          '200'
+        ]?.content?.['application/json']?.schema,
+        doc,
+      );
+      expect(withProfileOutput.properties.profile).toEqual({
+        $ref: '#/components/schemas/UserProfile',
+      });
+
+      // Array items: named type inside array → items is a $ref
+      const orderItemsOutput = resolveSchema(
+        (doc.paths['/namedTypes.orderItems']?.['get'] as any)?.responses?.[
+          '200'
+        ]?.content?.['application/json']?.schema,
+        doc,
+      );
+      expect(orderItemsOutput.properties.items).toEqual({
+        type: 'array',
+        items: { $ref: '#/components/schemas/OrderItem' },
+      });
+
+      // Dedup: same named type reused across procedures → same $ref
+      const paOutput = resolveSchema(
+        (doc.paths['/namedTypes.profileAndAddress']?.['get'] as any)
+          ?.responses?.['200']?.content?.['application/json']?.schema,
+        doc,
+      );
+      expect(paOutput.properties.profile).toEqual({
+        $ref: '#/components/schemas/UserProfile',
+      });
+      expect(paOutput.properties.address).toEqual({
+        $ref: '#/components/schemas/Address',
+      });
+
+      // Depth 3: named type deeply nested → still a $ref
+      const deepOutput = resolveSchema(
+        (doc.paths['/namedTypes.deepNested']?.['get'] as any)?.responses?.[
+          '200'
+        ]?.content?.['application/json']?.schema,
+        doc,
+      );
+      expect(
+        deepOutput.properties.data.properties.nested.properties.profile,
+      ).toEqual({ $ref: '#/components/schemas/UserProfile' });
     });
   });
 
@@ -145,9 +222,10 @@ describe('generateOpenAPIDocument', () => {
     });
 
     it('serialises the custom error shape into the error response', () => {
-      const errorSchema = (doc.components as any).responses.error.content[
+      const rawErrorSchema = (doc.components as any).responses.error.content[
         'application/json'
       ].schema;
+      const errorSchema = resolveSchema(rawErrorSchema, doc);
 
       // The custom formatter extends DefaultErrorShape and adds a zodError
       // field inside `data`.
@@ -157,14 +235,15 @@ describe('generateOpenAPIDocument', () => {
       expect(errorSchema.properties).toHaveProperty('data');
 
       // The `data` property should contain the extra `zodError` field
-      const dataSchema = errorSchema.properties.data;
+      const dataSchema = resolveSchema(errorSchema.properties.data, doc);
       expect(dataSchema.properties).toHaveProperty('zodError');
     });
 
     it('still includes standard error fields', () => {
-      const errorSchema = (doc.components as any).responses.error.content[
+      const rawErrorSchema = (doc.components as any).responses.error.content[
         'application/json'
       ].schema;
+      const errorSchema = resolveSchema(rawErrorSchema, doc);
 
       // Standard fields from DefaultErrorShape
       expect(errorSchema.properties.message).toEqual({ type: 'string' });
@@ -174,9 +253,9 @@ describe('generateOpenAPIDocument', () => {
       expect(errorSchema.properties.code.enum.length).toBeGreaterThan(0);
 
       // Standard data fields (code, httpStatus)
-      const dataProps = errorSchema.properties.data.properties;
-      expect(dataProps).toHaveProperty('code');
-      expect(dataProps).toHaveProperty('httpStatus');
+      const dataSchema = resolveSchema(errorSchema.properties.data, doc);
+      expect(dataSchema.properties).toHaveProperty('code');
+      expect(dataSchema.properties).toHaveProperty('httpStatus');
     });
 
     it('produces a valid OpenAPI spec', async () => {

@@ -5,6 +5,7 @@ import * as ts from 'typescript';
  * A minimal JSON Schema subset used for OpenAPI 3.0 schemas.
  */
 export interface JsonSchema {
+  $ref?: string;
   type?: string | string[];
   properties?: Record<string, JsonSchema>;
   required?: string[];
@@ -63,6 +64,10 @@ export interface OpenAPIDocument {
 interface SchemaCtx {
   checker: ts.TypeChecker;
   visited: Set<ts.Type>;
+  /** Collected named schemas for components/schemas. */
+  schemas: Record<string, JsonSchema>;
+  /** Map from TS type identity to its registered schema name. */
+  typeToRef: Map<ts.Type, string>;
 }
 
 /**
@@ -91,12 +96,71 @@ function unwrapBrand(type: ts.Type): ts.Type {
   return type;
 }
 
+// ---------------------------------------------------------------------------
+// Schema naming helpers
+// ---------------------------------------------------------------------------
+
+const ANONYMOUS_NAMES = new Set(['__type', '__object', 'Object', '']);
+
+/** Try to determine a meaningful name for a TS type (type alias or interface). */
+function getTypeName(type: ts.Type): string | null {
+  const aliasName = type.aliasSymbol?.getName();
+  if (aliasName && !ANONYMOUS_NAMES.has(aliasName)) return aliasName;
+  const symName = type.getSymbol()?.getName();
+  if (symName && !ANONYMOUS_NAMES.has(symName) && !symName.startsWith('__'))
+    return symName;
+  return null;
+}
+
+function ensureUniqueName(
+  name: string,
+  existing: Record<string, unknown>,
+): string {
+  if (!(name in existing)) return name;
+  let i = 2;
+  while (`${name}${i}` in existing) i++;
+  return `${name}${i}`;
+}
+
+// ---------------------------------------------------------------------------
+// Type → JSON Schema (with component extraction)
+// ---------------------------------------------------------------------------
+
+/**
+ * Convert a TS type to a JSON Schema.  If the type has been pre-registered
+ * (or has a meaningful TS name), it is stored in `ctx.schemas` and a `$ref`
+ * is returned instead of an inline schema.
+ */
 function typeToJsonSchema(
   type: ts.Type,
   ctx: SchemaCtx,
   depth = 0,
 ): JsonSchema {
   if (depth > 20) return {};
+
+  // If this type is already registered as a named schema, return a $ref.
+  const refName = ctx.typeToRef.get(type);
+  if (refName) {
+    if (refName in ctx.schemas) {
+      // Already converted (or placeholder for circular ref) — just return $ref
+      return { $ref: `#/components/schemas/${refName}` };
+    }
+    // First encounter: set placeholder (circular ref guard), convert, store.
+    ctx.schemas[refName] = {};
+    const schema = convertTypeToSchema(type, ctx, depth);
+    ctx.schemas[refName] = schema;
+    return { $ref: `#/components/schemas/${refName}` };
+  }
+
+  return convertTypeToSchema(type, ctx, depth);
+}
+
+/** Core type-to-schema conversion (no ref handling). */
+function convertTypeToSchema(
+  type: ts.Type,
+  ctx: SchemaCtx,
+  depth: number,
+): JsonSchema {
   if (ctx.visited.has(type)) return {};
 
   const { checker } = ctx;
@@ -164,8 +228,7 @@ function typeToJsonSchema(
         (m) =>
           !!(
             m.getFlags() &
-            (ts.TypeFlags.StringLiteral |
-              ts.TypeFlags.NumberLiteral)
+            (ts.TypeFlags.StringLiteral | ts.TypeFlags.NumberLiteral)
           ),
       );
     const [firstNonNull] = nonNull;
@@ -206,6 +269,11 @@ function typeToJsonSchema(
         : { oneOf: schemas };
 
     if (hasNull) {
+      // In OpenAPI 3.0 a $ref object cannot have sibling properties, so
+      // wrap it in allOf when we need to add nullable.
+      if (result.$ref) {
+        return { allOf: [{ $ref: result.$ref }], nullable: true };
+      }
       result.nullable = true;
     }
     return result;
@@ -288,21 +356,31 @@ function typeToJsonSchema(
     }
 
     // Regular object / interface
-    ctx.visited.add(type);
-    const properties: Record<string, JsonSchema> = {};
-    const required: string[] = [];
-
     const stringIndexType = type.getStringIndexType();
     const typeProps = type.getProperties();
 
     // Pure index-signature Record type (no named props)
     if (typeProps.length === 0 && stringIndexType) {
-      ctx.visited.delete(type);
       return {
         type: 'object',
         additionalProperties: typeToJsonSchema(stringIndexType, ctx, depth + 1),
       };
     }
+
+    // Auto-register types with a meaningful TS name BEFORE converting
+    // properties, so that circular or shared refs discovered during recursion
+    // resolve to a $ref via the `typeToJsonSchema` wrapper.
+    let autoRegName: string | null = null;
+    const tsName = getTypeName(type);
+    if (tsName && typeProps.length > 0 && !ctx.typeToRef.has(type)) {
+      autoRegName = ensureUniqueName(tsName, ctx.schemas);
+      ctx.typeToRef.set(type, autoRegName);
+      ctx.schemas[autoRegName] = {}; // placeholder for circular ref guard
+    }
+
+    ctx.visited.add(type);
+    const properties: Record<string, JsonSchema> = {};
+    const required: string[] = [];
 
     for (const prop of typeProps) {
       const propType = checker.getTypeOfSymbol(prop);
@@ -323,6 +401,12 @@ function typeToJsonSchema(
         depth + 1,
       );
     }
+
+    if (autoRegName) {
+      ctx.schemas[autoRegName] = result;
+      return { $ref: `#/components/schemas/${autoRegName}` };
+    }
+
     return result;
   }
 
@@ -338,6 +422,7 @@ interface WalkCtx {
   checker: ts.TypeChecker;
   procedures: ProcedureInfo[];
   seen: Set<ts.Type>;
+  schemaCtx: SchemaCtx;
 }
 
 /**
@@ -403,16 +488,16 @@ function walkType(type: ts.Type, ctx: WalkCtx, currentPath: string): void {
             !!(t.getFlags() & (ts.TypeFlags.Void | ts.TypeFlags.Undefined)),
         ));
 
+    const { schemaCtx } = ctx;
+
     ctx.procedures.push({
       path: currentPath,
       type: procedureTypeName as 'query' | 'mutation' | 'subscription',
       inputSchema:
         isVoidInput || !inputType
           ? null
-          : typeToJsonSchema(inputType, { checker, visited: new Set() }),
-      outputSchema: outputType
-        ? typeToJsonSchema(outputType, { checker, visited: new Set() })
-        : null,
+          : typeToJsonSchema(inputType, schemaCtx),
+      outputSchema: outputType ? typeToJsonSchema(outputType, schemaCtx) : null,
     });
     return;
   }
@@ -502,6 +587,7 @@ function loadCompilerOptions(startDir: string): ts.CompilerOptions {
 function extractErrorSchema(
   routerType: ts.Type,
   checker: ts.TypeChecker,
+  schemaCtx: SchemaCtx,
 ): JsonSchema | null {
   const walk = (type: ts.Type, keys: string[]): ts.Type | null => {
     const [head, ...rest] = keys;
@@ -522,7 +608,7 @@ function extractErrorSchema(
   // If the resolved type is `any`, fall back to the default schema.
   if (errorShapeType.getFlags() & ts.TypeFlags.Any) return null;
 
-  return typeToJsonSchema(errorShapeType, { checker, visited: new Set() });
+  return typeToJsonSchema(errorShapeType, schemaCtx);
 }
 
 // ---------------------------------------------------------------------------
@@ -543,7 +629,9 @@ const DEFAULT_ERROR_SCHEMA: JsonSchema = {
 function buildOpenAPIDocument(
   procedures: ProcedureInfo[],
   options: GenerateOptions,
-  meta: RouterMeta = { errorSchema: null },
+  meta: RouterMeta & { schemas?: Record<string, JsonSchema> } = {
+    errorSchema: null,
+  },
 ): OpenAPIDocument {
   const paths: Record<string, Record<string, unknown>> = {};
 
@@ -611,6 +699,9 @@ function buildOpenAPIDocument(
     },
     paths,
     components: {
+      ...(meta.schemas && Object.keys(meta.schemas).length > 0
+        ? { schemas: meta.schemas }
+        : {}),
       responses: {
         error: {
           description: 'Error response',
@@ -681,13 +772,24 @@ export function generateOpenAPIDocument(
     routerType = checker.getDeclaredTypeOfSymbol(routerSymbol);
   }
 
+  const schemaCtx: SchemaCtx = {
+    checker,
+    visited: new Set(),
+    schemas: {},
+    typeToRef: new Map(),
+  };
+
   const walkCtx: WalkCtx = {
     checker,
     procedures: [],
     seen: new Set(),
+    schemaCtx,
   };
   walkType(routerType, walkCtx, '');
 
-  const errorSchema = extractErrorSchema(routerType, checker);
-  return buildOpenAPIDocument(walkCtx.procedures, options, { errorSchema });
+  const errorSchema = extractErrorSchema(routerType, checker, schemaCtx);
+  return buildOpenAPIDocument(walkCtx.procedures, options, {
+    errorSchema,
+    schemas: schemaCtx.schemas,
+  });
 }
