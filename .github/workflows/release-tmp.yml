@@ -12,6 +12,8 @@ on:
       - '!packages/**/package.json'
       - '!packages/tests/**'
 
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
 jobs:
   publish:
     timeout-minutes: 10
