@@ -10,24 +10,6 @@ import CodeBlock from '@theme/CodeBlock';
 import TabItem from '@theme/TabItem';
 import Tabs from '@theme/Tabs';
 
-```twoslash include db
-type User = { id: string; name: string };
-
-// Imaginary database
-const users: User[] = [];
-export const db = {
-  user: {
-    findMany: async () => users,
-    findById: async (id: string) => users.find((user) => user.id === id),
-    create: async (data: { name: string }) => {
-      const user = { id: String(users.length + 1), ...data };
-      users.push(user);
-      return user;
-    },
-  },
-};
-```
-
 ```twoslash include trpc
 import { initTRPC } from '@trpc/server';
 
@@ -39,27 +21,28 @@ export const publicProcedure = t.procedure;
 
 ```twoslash include appRouter
 import { z } from "zod";
-import { db } from "./db";
 import { publicProcedure, router } from "./trpc";
+
+type User = { id: string; name: string };
 
 export const appRouter = router({
   userList: publicProcedure
     .query(async () => {
-      const users = await db.user.findMany();
+      const users: User[] = [{ id: '1', name: 'Katt' }];
       return users;
     }),
   userById: publicProcedure
     .input(z.string())
     .query(async (opts) => {
       const { input } = opts;
-      const user = await db.user.findById(input);
+      const user: User = { id: input, name: 'Katt' };
       return user;
     }),
   userCreate: publicProcedure
     .input(z.object({ name: z.string() }))
     .mutation(async (opts) => {
       const { input } = opts;
-      const user = await db.user.create(input);
+      const user: User = { id: '1', ...input };
       return user;
     }),
 });
@@ -107,12 +90,11 @@ userById: (id: string) => User;
 userCreate: (data: { name: string }) => User;
 ```
 
-Here's the file structure we'll be building. By convention, we recommend separating tRPC initialization, router definition, and server setup into distinct files to prevent cyclic dependencies:
+Here's the file structure we'll be building. We recommend separating tRPC initialization, router definition, and server setup into distinct files to prevent cyclic dependencies:
 
 ```
 .
 ├── server/
-│   ├── db.ts          # an imaginary database (can be whatever you like)
 │   ├── trpc.ts        # tRPC instantiation & setup
 │   ├── appRouter.ts   # Your API logic and type export
 │   └── index.ts       # HTTP server
@@ -161,23 +143,21 @@ export type AppRouter = typeof appRouter;
 
 Use `publicProcedure.query()` to add a query procedure to the router.
 
-The following creates a query procedure called `userList` that returns a list of users from our database:
+The following creates a query procedure called `userList` that returns a list of users:
 
 ```ts twoslash title='server/appRouter.ts'
 // @filename: trpc.ts
 // @include: trpc
-// @filename: db.ts
-// @include: db
 // @filename: appRouter.ts
 // ---cut---
-import { db } from './db';
 import { publicProcedure, router } from './trpc';
+
+type User = { id: string; name: string };
 
 export const appRouter = router({
   userList: publicProcedure
     .query(async () => {
-      // Retrieve users from a datasource, this is an imaginary database
-      const users = await db.user.findMany();
+      const users: User[] = [{ id: '1', name: 'Katt' }];
       //    ^?
       return users;
     }),
@@ -204,11 +184,10 @@ Throughout the remainder of this documentation, we will use `zod` as our validat
 ```ts twoslash title='server/appRouter.ts'
 // @filename: trpc.ts
 // @include: trpc
-// @filename: db.ts
-// @include: db
 // @filename: appRouter.ts
-import { db } from './db';
 import { publicProcedure, router } from './trpc';
+
+type User = { id: string; name: string };
 
 // ---cut---
 export const appRouter = router({
@@ -228,9 +207,8 @@ export const appRouter = router({
     .query(async (opts) => {
       const { input } = opts;
       //      ^?
-      // Retrieve the user with the given ID
-      const user = await db.user.findById(input);
-      //    ^?
+      const user: User = { id: input, name: 'Katt' };
+
       return user;
     }),
 });
@@ -247,11 +225,10 @@ export type AppRouter = typeof appRouter;
 ```ts twoslash title='server/appRouter.ts'
 // @filename: trpc.ts
 // @include: trpc
-// @filename: db.ts
-// @include: db
 // @filename: appRouter.ts
-import { db } from './db';
 import { publicProcedure, router } from './trpc';
+
+type User = { id: string; name: string };
 // ---cut---
 import { z } from 'zod';
 
@@ -262,9 +239,8 @@ export const appRouter = router({
     .query(async (opts) => {
       const { input } = opts;
       //      ^?
-      // Retrieve the user with the given ID
-      const user = await db.user.findById(input);
-      //    ^?
+      const user: User = { id: input, name: 'Katt' };
+
       return user;
     }),
 });
@@ -284,11 +260,10 @@ Throughout the remainder of this documentation, we will use `zod` as our validat
 ```ts twoslash title='server/appRouter.ts'
 // @filename: trpc.ts
 // @include: trpc
-// @filename: db.ts
-// @include: db
 // @filename: appRouter.ts
-import { db } from './db';
 import { publicProcedure, router } from './trpc';
+
+type User = { id: string; name: string };
 // ---cut---
 import * as yup from 'yup';
 
@@ -299,9 +274,8 @@ export const appRouter = router({
     .query(async (opts) => {
       const { input } = opts;
       //      ^?
-      // Retrieve the user with the given ID
-      const user = await db.user.findById(input);
-      //    ^?
+      const user: User = { id: input, name: 'Katt' };
+ 
       return user;
     }),
 });
@@ -322,11 +296,10 @@ Throughout the remainder of this documentation, we will use `zod` as our validat
 ```ts twoslash title='server/appRouter.ts'
 // @filename: trpc.ts
 // @include: trpc
-// @filename: db.ts
-// @include: db
 // @filename: appRouter.ts
-import { db } from './db';
 import { publicProcedure, router } from './trpc';
+
+type User = { id: string; name: string };
 // ---cut---
 import * as v from 'valibot';
 
@@ -337,9 +310,8 @@ export const appRouter = router({
     .query(async (opts) => {
       const { input } = opts;
       //      ^?
-      // Retrieve the user with the given ID
-      const user = await db.user.findById(input);
-      //    ^?
+      const user: User = { id: input, name: 'Katt' };
+
       return user;
     }),
 });
@@ -361,12 +333,11 @@ Let's add a `userCreate` mutation by adding it as a new property on our router o
 ```ts twoslash title='server/appRouter.ts'
 // @filename: trpc.ts
 // @include: trpc
-// @filename: db.ts
-// @include: db
 // @filename: appRouter.ts
 import { z } from 'zod';
-import { db } from './db';
 import { publicProcedure, router } from './trpc';
+
+type User = { id: string; name: string };
 // ---cut---
 
 export const appRouter = router({
@@ -376,9 +347,9 @@ export const appRouter = router({
     .mutation(async (opts) => {
       const { input } = opts;
       //      ^?
-      // Create a new user in the database
-      const user = await db.user.create(input);
-      //    ^?
+      // Create the user in your DB
+      const user: User = { id: '1', ...input };
+
       return user;
     }),
 });
@@ -393,8 +364,6 @@ Now that we have defined our router, we can serve it. tRPC has first-class [adap
 ```ts twoslash title='server/index.ts'
 // @filename: trpc.ts
 // @include: trpc
-// @filename: db.ts
-// @include: db
 // @filename: appRouter.ts
 // @include: appRouter
 // @filename: server.ts
@@ -412,12 +381,6 @@ server.listen(3000);
 <details>
 <summary>See the full backend code</summary>
 
-```ts twoslash title="server/db.ts"
-// @include: db
-```
-
-<br/>
-
 ```ts twoslash title="server/trpc.ts"
 // @include: trpc
 ```
@@ -425,8 +388,6 @@ server.listen(3000);
 <br/>
 
 ```ts twoslash title='server/appRouter.ts'
-// @filename: db.ts
-// @include: db
 // @filename: trpc.ts
 // @include: trpc
 // @filename: appRouter.ts
@@ -439,8 +400,6 @@ server.listen(3000);
 ```ts twoslash title='server/index.ts'
 // @filename: trpc.ts
 // @include: trpc
-// @filename: db.ts
-// @include: db
 // @filename: appRouter.ts
 // @include: appRouter
 // @filename: server.ts
@@ -458,8 +417,6 @@ Let's now move to the client-side code and embrace the power of end-to-end types
 
 ```ts twoslash title="client/index.ts"
 // @target: esnext
-// @filename: db.ts
-// @include: db
 // @filename: trpc.ts
 // @include: trpc
 // @filename: appRouter.ts
@@ -489,8 +446,6 @@ You now have access to your API procedures on the `trpc` object. Try it out!
 
 ```ts twoslash title="client/index.ts"
 // @target: esnext
-// @filename: db.ts
-// @include: db
 // @filename: trpc.ts
 // @include: trpc
 // @filename: appRouter.ts
@@ -520,8 +475,6 @@ You can also use your autocomplete to explore the API on your client
 
 ```ts twoslash title="client/index.ts"
 // @target: esnext
-// @filename: db.ts
-// @include: db
 // @filename: trpc.ts
 // @include: trpc
 // @filename: appRouter.ts
