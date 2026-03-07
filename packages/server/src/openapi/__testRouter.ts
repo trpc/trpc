@@ -471,6 +471,18 @@ export const AppRouter = t.router({
         tags: [] as string[],
         metadata: null as Record<string, string> | null,
       })),
+
+    // --- Branded type returns (should strip brand, keep base type) ---
+    brandedReturns: t.procedure.query(() => {
+      type UserId = string & { __brand: 'UserId' };
+      type Score = number & { __brand: 'Score' };
+      type Active = boolean & { __brand: 'Active' };
+      return {
+        userId: 'abc' as UserId,
+        score: 99 as Score,
+        active: true as Active,
+      };
+    }),
   }),
 
   simpleCases: {

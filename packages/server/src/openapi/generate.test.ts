@@ -82,5 +82,37 @@ describe('generateOpenAPIDocument', () => {
 
       expect(problems).toEqual([]);
     });
+
+    it('strips Zod brand metadata from branded types', () => {
+      const spec = JSON.stringify(doc);
+
+      // Brand internals must never appear in the OpenAPI output
+      expect(spec).not.toContain('__@$brand@');
+
+      // The branded field should be emitted as its base type (string)
+      const brandedOp = doc.paths['/complexTypes.branded']?.['get'] as any;
+      const responseSchema =
+        brandedOp?.responses?.['200']?.content?.['application/json']?.schema;
+
+      expect(responseSchema).toEqual({
+        type: 'object',
+        properties: { userId: { type: 'string' } },
+        required: ['userId'],
+      });
+
+      // Inferred branded returns (string & {__brand}, number & {__brand}, boolean & {__brand})
+      const inferredOp = doc.paths['/inferredReturns.brandedReturns']?.[
+        'get'
+      ] as any;
+      const inferredSchema =
+        inferredOp?.responses?.['200']?.content?.['application/json']?.schema;
+
+      // No brand object should leak — all fields should resolve to primitives
+      expect(inferredSchema?.properties?.userId).toEqual({ type: 'string' });
+      expect(inferredSchema?.properties?.score).toEqual({ type: 'number' });
+      // Boolean branded type should not contain any object/allOf from the brand
+      const activeSchema = inferredSchema?.properties?.active;
+      expect(JSON.stringify(activeSchema)).not.toContain('__brand');
+    });
   });
 });
