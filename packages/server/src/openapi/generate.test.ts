@@ -1,4 +1,8 @@
+import { execSync } from 'node:child_process';
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import http from 'node:http';
 import * as path from 'node:path';
+import { AppRouter } from './__testRouter';
 import {
   getLanguageService,
   LogLevel,
@@ -6,6 +10,7 @@ import {
 } from '@swagger-api/apidom-ls';
 import { describe, expect, it } from 'vitest';
 import { TextDocument } from 'vscode-languageserver-textdocument';
+import { createHTTPHandler } from '../adapters/standalone';
 import type { OpenAPIDocument } from './generate';
 import { generateOpenAPIDocument } from './generate';
 
@@ -244,6 +249,90 @@ describe('generateOpenAPIDocument', () => {
       expect(
         categoryOp?.responses?.['200']?.content?.['application/json']?.schema,
       ).toEqual({ $ref: '#/components/schemas/Category' });
+    });
+  });
+
+  describe('hey-api client generation', () => {
+    const genDir = path.resolve(__dirname, '__gen__', 'heyapi');
+    const specPath = path.resolve(__dirname, '__gen__', 'spec.json');
+
+    beforeAll(() => {
+      rmSync(path.resolve(__dirname, '__gen__'), {
+        recursive: true,
+        force: true,
+      });
+
+      const doc = generateOpenAPIDocument(testRouterPath);
+      mkdirSync(path.dirname(specPath), { recursive: true });
+      writeFileSync(specPath, JSON.stringify(doc, null, 2));
+      execSync(
+        `npx @hey-api/openapi-ts -i ${specPath} -o ${genDir} -c @hey-api/client-fetch --silent`,
+        { stdio: 'pipe' },
+      );
+    });
+
+    it('generates SDK files from the spec', () => {
+      expect(existsSync(path.join(genDir, 'sdk.gen.ts'))).toBe(true);
+      expect(existsSync(path.join(genDir, 'types.gen.ts'))).toBe(true);
+    });
+
+    it('calls query and mutation endpoints via the generated client', async () => {
+      const handler = createHTTPHandler({ router: AppRouter });
+      const server = http.createServer(handler);
+
+      await new Promise<void>((resolve) => server.listen(0, resolve));
+      const addr = server.address() as { port: number };
+      const baseUrl = `http://localhost:${addr.port}`;
+      await using _ = server;
+
+      // Import the generated SDK and client config
+      const sdkPath = path.join(__dirname, '__gen__/heyapi/sdk.gen');
+      const clientPath = path.join(__dirname, '__gen__/heyapi/client.gen');
+      const sdk = await import(/* @vite-ignore */ sdkPath);
+      const clientMod = await import(/* @vite-ignore */ clientPath);
+
+      // Configure the client for our test server with tRPC-compatible
+      // query serialization and response envelope unwrapping.
+      const client = clientMod.client;
+      client.setConfig({ baseUrl });
+
+      // tRPC wraps responses in { result: { data: ... } }, so unwrap
+      // by rewriting the response body before the client parses it.
+      client.interceptors.response.use(async (response: Response) => {
+        if (!response.ok) return response;
+        const body = await response.json();
+        const unwrapped = body?.result?.data ?? body;
+        return new Response(JSON.stringify(unwrapped), {
+          status: response.status,
+          statusText: response.statusText,
+          headers: response.headers,
+        });
+      });
+
+      // --- Query with input ---
+      const greetingResult = await sdk.greeting({
+        query: { input: { name: 'World' } },
+        // tRPC expects ?input=<JSON>, so provide a custom serializer
+        querySerializer: () =>
+          `input=${encodeURIComponent(JSON.stringify({ name: 'World' }))}`,
+      });
+      expect(greetingResult.data).toEqual({ message: 'Hello World' });
+
+      // --- Query without input ---
+      const noInputResult = await sdk.noInput();
+      expect(noInputResult.data).toBe('hello');
+
+      // --- Mutation with input ---
+      const userResult = await sdk.userCreate({
+        body: { name: 'Bob', age: 30 },
+      });
+      expect(userResult.data).toEqual({ id: 2, name: 'Bob', age: 30 });
+
+      // --- Mutation (echo) ---
+      const echoResult = await sdk.echo({
+        body: 'test-echo',
+      });
+      expect(echoResult.data).toBe('test-echo');
     });
   });
 

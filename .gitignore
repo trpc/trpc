@@ -21,6 +21,7 @@ yalc.lock
 tests-results/
 coverage/
 __generated__/
+__gen__/
 
 
 # Ignore all folders except `src/` and `tests/` in every published package

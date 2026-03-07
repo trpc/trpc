@@ -208,6 +208,8 @@
   },
   "devDependencies": {
     "@fastify/websocket": "^11.0.0",
+    "@hey-api/client-fetch": "^0.13.1",
+    "@hey-api/openapi-ts": "^0.94.0",
     "@oxc-project/runtime": "0.115.0",
     "@swagger-api/apidom-ls": "^1.6.0",
     "@tanstack/react-query": "^5.80.3",
