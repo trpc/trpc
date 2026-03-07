@@ -1821,33 +1821,7 @@
                   "type": "object",
                   "properties": {
                     "userId": {
-                      "allOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "__@$brand@2269": {
-                              "type": "object",
-                              "properties": {
-                                "UserId": {
-                                  "type": "boolean",
-                                  "enum": [
-                                    true
-                                  ]
-                                }
-                              },
-                              "required": [
-                                "UserId"
-                              ]
-                            }
-                          },
-                          "required": [
-                            "__@$brand@2269"
-                          ]
-                        }
-                      ]
+                      "type": "string"
                     }
                   },
                   "required": [
@@ -3201,6 +3175,58 @@
                 ]
               }
             }
+          }
+        }
+      }
+    },
+    "/inferredReturns.brandedReturns": {
+      "get": {
+        "operationId": "inferredReturns_brandedReturns",
+        "tags": [
+          "inferredReturns"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "userId": {
+                      "type": "string"
+                    },
+                    "score": {
+                      "type": "number"
+                    },
+                    "active": {
+                      "oneOf": [
+                        {
+                          "type": "boolean",
+                          "enum": [
+                            false
+                          ]
+                        },
+                        {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "userId",
+                    "score",
+                    "active"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
           }
         }
       }

@@ -129,7 +129,27 @@ function typeToJsonSchema(
 
   // ---- Intersection types ----
   if (type.isIntersection()) {
-    const schemas = type.types
+    // Branded types (e.g. z.string().brand<'X'>()) appear as an intersection of
+    // a primitive with a phantom object.  A primitive & object intersection is
+    // impossible at runtime, so when we see one we strip the object members —
+    // they are always brand metadata.
+    const hasPrimitive = type.types.some(
+      (m) =>
+        !!(
+          m.getFlags() &
+          (ts.TypeFlags.String |
+            ts.TypeFlags.Number |
+            ts.TypeFlags.Boolean |
+            ts.TypeFlags.StringLiteral |
+            ts.TypeFlags.NumberLiteral |
+            ts.TypeFlags.BooleanLiteral)
+        ),
+    );
+    const nonBrand = hasPrimitive
+      ? type.types.filter((m) => !(m.getFlags() & ts.TypeFlags.Object))
+      : type.types;
+
+    const schemas = nonBrand
       .map((m) => typeToJsonSchema(m, ctx, depth + 1))
       .filter((s) => Object.keys(s).length > 0);
     if (schemas.length === 0) return {};
