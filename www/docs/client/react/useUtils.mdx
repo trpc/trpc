@@ -21,7 +21,6 @@ This hook was called `useContext()` until `10.41.0` (and is still aliased for th
 // @target: esnext
 
 // @filename: server.ts
-// ---cut---
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -44,7 +43,28 @@ export type AppRouter = typeof appRouter;
 ```
 
 ```ts twoslash title='server.ts'
-// @include: server
+// @target: esnext
+// @filename: server.ts
+// ---cut---
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
+const t = initTRPC.create();
+
+const appRouter = t.router({
+  post: t.router({
+    all: t.procedure.query(() => {
+      return {
+        posts: [
+          { id: 1, title: 'everlong' },
+          { id: 2, title: 'After Dark' },
+        ],
+      };
+    }),
+  }),
+});
+
+export type AppRouter = typeof appRouter;
 ```
 
 Now in our component, when we navigate the object `useUtils` gives us and reach the `post.all` query, we'll get access to our query helpers!
@@ -53,20 +73,17 @@ Now in our component, when we navigate the object `useUtils` gives us and reach 
 // @target: esnext
 // @include: server
 // @filename: MyComponent.tsx
+// ---cut---
+// @errors: 2339
 import { createTRPCReact } from '@trpc/react-query';
 import type { AppRouter } from './server';
 
 const trpc = createTRPCReact<AppRouter>();
 
-// ---cut---
-// @errors: 2339
-
 function MyComponent() {
   const utils = trpc.useUtils();
   utils.post.all.f;
   //              ^|
-
-
 }
 ```
 
