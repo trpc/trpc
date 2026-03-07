@@ -5,6 +5,7 @@
  * the TypeScript compiler can resolve all imports correctly when the
  * `trpc-openapi` CLI is called from this directory.
  */
+import superjson from 'superjson';
 import { z } from 'zod';
 import { initTRPC } from '../index';
 
@@ -713,3 +714,21 @@ export const AppRouter = t.router({
 });
 
 export type AppRouter = typeof AppRouter;
+
+// ---------- Router with superjson transformer ----------
+
+const tSuperjson = initTRPC.create({ transformer: superjson });
+
+export const SuperjsonRouter = tSuperjson.router({
+  getEvent: tSuperjson.procedure
+    .input(z.object({ id: z.string(), at: z.date() }))
+    .output(z.object({ id: z.string(), at: z.date() }))
+    .query(({ input }) => input),
+
+  createEvent: tSuperjson.procedure
+    .input(z.object({ name: z.string(), at: z.date() }))
+    .output(z.object({ name: z.string(), at: z.date() }))
+    .mutation(({ input }) => input),
+});
+
+export type SuperjsonRouter = typeof SuperjsonRouter;
