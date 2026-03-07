@@ -3030,6 +3030,58 @@
         }
       }
     },
+    "/inferredReturns.boolReturnFalse": {
+      "get": {
+        "operationId": "inferredReturns_boolReturnFalse",
+        "tags": [
+          "inferredReturns"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean",
+                  "enum": [
+                    false
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/inferredReturns.boolReturnTrue": {
+      "get": {
+        "operationId": "inferredReturns_boolReturnTrue",
+        "tags": [
+          "inferredReturns"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean",
+                  "enum": [
+                    true
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
     "/inferredReturns.boolReturn": {
       "get": {
         "operationId": "inferredReturns_boolReturn",
@@ -3200,20 +3252,7 @@
                       "type": "number"
                     },
                     "active": {
-                      "oneOf": [
-                        {
-                          "type": "boolean",
-                          "enum": [
-                            false
-                          ]
-                        },
-                        {
-                          "type": "boolean",
-                          "enum": [
-                            true
-                          ]
-                        }
-                      ]
+                      "type": "boolean"
                     }
                   },
                   "required": [

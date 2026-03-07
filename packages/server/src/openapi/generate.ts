@@ -60,6 +60,32 @@ interface SchemaCtx {
   visited: Set<ts.Type>;
 }
 
+/**
+ * If `type` is a branded intersection (primitive & object), return just the
+ * primitive part.  Otherwise return the type as-is.
+ */
+function unwrapBrand(type: ts.Type): ts.Type {
+  if (!type.isIntersection()) return type;
+  const primitives = type.types.filter(
+    (m) =>
+      !!(
+        m.getFlags() &
+        (ts.TypeFlags.String |
+          ts.TypeFlags.Number |
+          ts.TypeFlags.Boolean |
+          ts.TypeFlags.StringLiteral |
+          ts.TypeFlags.NumberLiteral |
+          ts.TypeFlags.BooleanLiteral)
+      ),
+  );
+  const hasObject = type.types.some(
+    (m) => !!(m.getFlags() & ts.TypeFlags.Object),
+  );
+  const [first] = primitives;
+  if (first && hasObject) return first;
+  return type;
+}
+
 function typeToJsonSchema(
   type: ts.Type,
   ctx: SchemaCtx,
@@ -108,6 +134,21 @@ function typeToJsonSchema(
     const nonNull = defined.filter(
       (m) => !(m.flags & (ts.TypeFlags.Null as number)),
     );
+
+    // TypeScript represents `boolean` as `true | false`.  Collapse back to a
+    // single `{ type: "boolean" }` instead of emitting a oneOf with two enums.
+    // Also handles branded booleans where TS distributes the intersection:
+    // `boolean & Brand` → `(true & Brand) | (false & Brand)`.
+    if (
+      nonNull.length === 2 &&
+      nonNull.every(
+        (m) => !!(unwrapBrand(m).getFlags() & ts.TypeFlags.BooleanLiteral),
+      )
+    ) {
+      const result: JsonSchema = { type: 'boolean' };
+      if (hasNull) result.nullable = true;
+      return result;
+    }
 
     const schemas = nonNull
       .map((m) => typeToJsonSchema(m, ctx, depth + 1))
