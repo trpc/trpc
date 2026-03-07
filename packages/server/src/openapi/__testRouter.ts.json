@@ -1828,7 +1828,7 @@
                         {
                           "type": "object",
                           "properties": {
-                            "__@$brand@2303": {
+                            "__@$brand@2269": {
                               "type": "object",
                               "properties": {
                                 "UserId": {
@@ -1844,7 +1844,7 @@
                             }
                           },
                           "required": [
-                            "__@$brand@2303"
+                            "__@$brand@2269"
                           ]
                         }
                       ]

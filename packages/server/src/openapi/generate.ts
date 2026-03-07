@@ -174,7 +174,10 @@ function typeToJsonSchema(
       );
       return {
         type: 'array',
-        items: unique.length === 1 ? unique[0]! : { oneOf: unique },
+        items:
+          unique.length === 1 && unique[0] !== undefined
+            ? unique[0]
+            : { oneOf: unique },
         minItems: args.length,
         maxItems: args.length,
       };
@@ -427,7 +430,7 @@ function buildOpenAPIDocument(
       // Query procedures: the entire input is serialised as a JSON string in
       // the `input` query parameter (matching the default tRPC HTTP transport).
       if (proc.inputSchema !== null) {
-        operation.parameters = [
+        operation['parameters'] = [
           {
             name: 'input',
             in: 'query',
@@ -439,7 +442,7 @@ function buildOpenAPIDocument(
     } else {
       // Mutation procedures: input as JSON request body
       if (proc.inputSchema !== null) {
-        operation.requestBody = {
+        operation['requestBody'] = {
           required: true,
           content: { 'application/json': { schema: proc.inputSchema } },
         };
