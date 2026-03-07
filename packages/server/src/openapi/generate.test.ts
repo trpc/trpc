@@ -1,11 +1,36 @@
 import * as path from 'node:path';
+import {
+  getLanguageService,
+  LogLevel,
+  ReferenceValidationMode,
+} from '@swagger-api/apidom-ls';
 import { describe, expect, it } from 'vitest';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 import { generateOpenAPIDocument } from './generate';
 
-const testRouterPath = path.resolve(
-  __dirname,
-  '__testRouter.ts',
-);
+const languageService = getLanguageService({
+  logLevel: LogLevel.ERROR,
+  validationContext: {
+    referenceValidationContinueOnError: true,
+    referenceValidationMode: ReferenceValidationMode.APIDOM_INDIRECT_EXTERNAL,
+  },
+});
+
+async function validateOpenAPI(spec: string) {
+  const document = TextDocument.create('file:///spec', 'json', 1, spec);
+  const diagnostics = await languageService.doValidation(document);
+
+  return diagnostics.map((d) => ({
+    line: d.range.start.line + 1,
+    character: d.range.start.character + 1,
+    message: d.message,
+    severity: d.severity,
+    code: d.code,
+    source: d.source,
+  }));
+}
+
+const testRouterPath = path.resolve(__dirname, '__testRouter.ts');
 
 describe('generateOpenAPIDocument', () => {
   it('returns a valid OpenAPI 3.0 document', () => {
@@ -18,82 +43,12 @@ describe('generateOpenAPIDocument', () => {
     expect(doc.info.version).toBe('1.0.0');
   });
 
-  it('includes all query and mutation procedures', () => {
+  it('produces a document', () => {
     const doc = generateOpenAPIDocument(testRouterPath);
-    const paths = Object.keys(doc.paths);
-    expect(paths).toContain('/greeting');
-    expect(paths).toContain('/noInput');
-    expect(paths).toContain('/echo');
-    expect(paths).toContain('/user/list');
-    expect(paths).toContain('/user/create');
-  });
 
-  it('maps query procedures to GET', () => {
-    const doc = generateOpenAPIDocument(testRouterPath);
-    expect(doc.paths['/greeting']).toHaveProperty('get');
-    expect(doc.paths['/greeting']).not.toHaveProperty('post');
-  });
-
-  it('maps mutation procedures to POST', () => {
-    const doc = generateOpenAPIDocument(testRouterPath);
-    expect(doc.paths['/echo']).toHaveProperty('post');
-    expect(doc.paths['/echo']).not.toHaveProperty('get');
-  });
-
-  it('includes input schema for queries with input', () => {
-    const doc = generateOpenAPIDocument(testRouterPath);
-    const op = doc.paths['/greeting']!['get'] as {
-      parameters: Array<{ name: string; schema?: unknown; content?: unknown }>;
-    };
-    expect(op.parameters).toBeDefined();
-    const inputParam = op.parameters.find((p) => p.name === 'input');
-    expect(inputParam).toBeDefined();
-    // The input should contain the schema for { name: string }
-    expect(inputParam!.content).toBeDefined();
-  });
-
-  it('omits parameters for queries with no input', () => {
-    const doc = generateOpenAPIDocument(testRouterPath);
-    const op = doc.paths['/noInput']!['get'] as {
-      parameters?: unknown[];
-    };
-    expect(op.parameters).toBeUndefined();
-  });
-
-  it('includes requestBody for mutation procedures', () => {
-    const doc = generateOpenAPIDocument(testRouterPath);
-    const op = doc.paths['/user/create']!['post'] as {
-      requestBody: { content: Record<string, { schema: unknown }> };
-    };
-    expect(op.requestBody).toBeDefined();
-    expect(op.requestBody.content['application/json']!.schema).toMatchObject({
-      type: 'object',
-    });
-  });
-
-  it('includes output schema in responses', () => {
-    const doc = generateOpenAPIDocument(testRouterPath);
-    const op = doc.paths['/greeting']!['get'] as {
-      responses: { '200': { content: Record<string, { schema: unknown }> } };
-    };
-    const schema = op.responses['200'].content['application/json']!.schema;
-    expect(schema).toMatchObject({
-      type: 'object',
-      properties: { message: { type: 'string' } },
-    });
-  });
-
-  it('marks optional fields as not required', () => {
-    const doc = generateOpenAPIDocument(testRouterPath);
-    const op = doc.paths['/user/create']!['post'] as {
-      requestBody: {
-        content: Record<string, { schema: { required: string[] } }>;
-      };
-    };
-    const required =
-      op.requestBody.content['application/json']!.schema.required;
-    expect(required).toContain('name');
-    expect(required).not.toContain('age');
+    expect(JSON.stringify(doc, null, 2)).toMatchFileSnapshot(
+      testRouterPath + '.json',
+    );
   });
 
   it('throws when the export is not found', () => {
@@ -103,8 +58,17 @@ describe('generateOpenAPIDocument', () => {
   });
 
   it('throws when the file does not exist', () => {
-    expect(() =>
-      generateOpenAPIDocument('/non/existent/file.ts'),
-    ).toThrow();
+    expect(() => generateOpenAPIDocument('/non/existent/file.ts')).toThrow();
+  });
+
+  it('produces a spec with no validation errors when validated', async () => {
+    const doc = generateOpenAPIDocument(testRouterPath, {
+      title: 'Test API',
+      version: '1.0.0',
+    });
+    const spec = JSON.stringify(doc, null, 2);
+    const problems = await validateOpenAPI(spec);
+
+    expect(problems).toEqual([]);
   });
 });
