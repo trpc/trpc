@@ -657,9 +657,7 @@ export const AppRouter = t.router({
     ),
 
     // Zod recursive input via z.lazy
-    category: t.procedure
-      .input(categorySchema)
-      .query(({ input }) => input),
+    category: t.procedure.input(categorySchema).query(({ input }) => input),
   }),
 
   simpleCases: {
