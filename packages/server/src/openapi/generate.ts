@@ -161,7 +161,20 @@ function convertTypeToSchema(
   ctx: SchemaCtx,
   depth: number,
 ): JsonSchema {
-  if (ctx.visited.has(type)) return {};
+  if (ctx.visited.has(type)) {
+    // Cycle detected — this type is recursive.  JSON Schema can only express
+    // recursion via $ref, so we must extract it into a named schema.  Named
+    // types will already be in typeToRef (early-registered in the object
+    // section); anonymous ones get a generated name here.
+    let refName = ctx.typeToRef.get(type);
+    if (!refName) {
+      const name = getTypeName(type) ?? 'RecursiveType';
+      refName = ensureUniqueName(name, ctx.schemas);
+      ctx.typeToRef.set(type, refName);
+      ctx.schemas[refName] = {}; // placeholder — filled by the outer call
+    }
+    return { $ref: `#/components/schemas/${refName}` };
+  }
 
   const { checker } = ctx;
   const flags = type.getFlags();
@@ -402,9 +415,13 @@ function convertTypeToSchema(
       );
     }
 
-    if (autoRegName) {
-      ctx.schemas[autoRegName] = result;
-      return { $ref: `#/components/schemas/${autoRegName}` };
+    // autoRegName covers named types (early-registered).  For anonymous
+    // recursive types, a recursive call may have registered this type during
+    // property conversion — check typeToRef as a fallback.
+    const registeredName = autoRegName ?? ctx.typeToRef.get(type);
+    if (registeredName) {
+      ctx.schemas[registeredName] = result;
+      return { $ref: `#/components/schemas/${registeredName}` };
     }
 
     return result;

@@ -3394,6 +3394,87 @@
         }
       }
     },
+    "/recursiveTypes.tree": {
+      "get": {
+        "operationId": "recursiveTypes_tree",
+        "tags": [
+          "recursiveTypes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TreeNode"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/recursiveTypes.linkedList": {
+      "get": {
+        "operationId": "recursiveTypes_linkedList",
+        "tags": [
+          "recursiveTypes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkedListNode"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/recursiveTypes.category": {
+      "get": {
+        "operationId": "recursiveTypes_category",
+        "tags": [
+          "recursiveTypes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Category"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        ]
+      }
+    },
     "/simpleCases.nullish": {
       "get": {
         "operationId": "simpleCases_nullish",
@@ -3607,6 +3688,62 @@
           "street",
           "city",
           "zipCode"
+        ]
+      },
+      "TreeNode": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TreeNode"
+            }
+          }
+        },
+        "required": [
+          "value",
+          "children"
+        ]
+      },
+      "LinkedListNode": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "number"
+          },
+          "next": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LinkedListNode"
+              }
+            ],
+            "nullable": true
+          }
+        },
+        "required": [
+          "value",
+          "next"
+        ]
+      },
+      "Category": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "subcategories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Category"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "subcategories"
         ]
       },
       "DefaultErrorShape": {

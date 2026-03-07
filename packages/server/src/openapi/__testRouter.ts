@@ -29,6 +29,30 @@ enum MixedEnum {
   Baz = 'BAZ',
 }
 
+// ---------- Recursive types ----------
+
+interface TreeNode {
+  value: string;
+  children: TreeNode[];
+}
+
+interface LinkedListNode {
+  value: number;
+  next: LinkedListNode | null;
+}
+
+type Category = {
+  name: string;
+  subcategories: Category[];
+};
+
+const categorySchema: z.ZodType<Category> = z.lazy(() =>
+  z.object({
+    name: z.string(),
+    subcategories: z.array(categorySchema),
+  }),
+);
+
 // ---------- Named types (for nested $ref extraction tests) ----------
 
 interface UserProfile {
@@ -611,6 +635,31 @@ export const AppRouter = t.router({
         },
       }),
     ),
+  }),
+
+  // ---------- Recursive types ----------
+
+  recursiveTypes: t.router({
+    // Inferred return with named recursive type (children: TreeNode[])
+    tree: t.procedure.query(
+      (): TreeNode => ({
+        value: 'root',
+        children: [{ value: 'child', children: [] }],
+      }),
+    ),
+
+    // Nullable recursion (next: LinkedListNode | null)
+    linkedList: t.procedure.query(
+      (): LinkedListNode => ({
+        value: 1,
+        next: { value: 2, next: null },
+      }),
+    ),
+
+    // Zod recursive input via z.lazy
+    category: t.procedure
+      .input(categorySchema)
+      .query(({ input }) => input),
   }),
 
   simpleCases: {
