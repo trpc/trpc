@@ -42,8 +42,8 @@ jobs:
         with:
           version: pnpm changeset:version
           publish: pnpm build && pnpm changeset:publish
-          title: "chore: version packages"
-          commit: "chore: version packages"
+          title: 'chore: version packages'
+          commit: 'chore: version packages'
         env:
           GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

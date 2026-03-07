@@ -13,7 +13,7 @@ on:
 
 jobs:
   publish:
-    if: ${{ !contains(github.event.head_commit.message, 'chore: version packages') }}
+    if: "!contains(github.event.head_commit.message, 'chore: version packages')"
     timeout-minutes: 10
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
