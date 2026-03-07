@@ -35,6 +35,7 @@ interface ProcedureInfo {
 /** State extracted from the router's root config. */
 interface RouterMeta {
   errorSchema: JsonSchema | null;
+  schemas?: Record<string, JsonSchema>;
 }
 
 export interface GenerateOptions {
@@ -152,6 +153,15 @@ function ensureUniqueName(
   return `${name}${i}`;
 }
 
+function schemaRef(name: string): JsonSchema {
+  return { $ref: `#/components/schemas/${name}` };
+}
+
+function isNonEmptySchema(s: JsonSchema): boolean {
+  for (const _ in s) return true;
+  return false;
+}
+
 // ---------------------------------------------------------------------------
 // Type → JSON Schema (with component extraction)
 // ---------------------------------------------------------------------------
@@ -174,13 +184,13 @@ function typeToJsonSchema(
   const refName = ctx.typeToRef.get(type);
   if (refName) {
     if (refName in ctx.schemas) {
-      return { $ref: `#/components/schemas/${refName}` };
+      return schemaRef(refName);
     }
     // First encounter: set placeholder (circular ref guard), convert, store.
     ctx.schemas[refName] = {};
     const schema = convertTypeToSchema(type, ctx, depth);
     ctx.schemas[refName] = schema;
-    return { $ref: `#/components/schemas/${refName}` };
+    return schemaRef(refName);
   }
 
   return convertTypeToSchema(type, ctx, depth);
@@ -202,7 +212,7 @@ function handleCyclicRef(type: ts.Type, ctx: SchemaCtx): JsonSchema {
     ctx.typeToRef.set(type, refName);
     ctx.schemas[refName] = {}; // placeholder — filled by the outer call
   }
-  return { $ref: `#/components/schemas/${refName}` };
+  return schemaRef(refName);
 }
 
 // ---------------------------------------------------------------------------
@@ -302,7 +312,7 @@ function convertUnionType(
 
   const schemas = nonNull
     .map((m) => typeToJsonSchema(m, ctx, depth + 1))
-    .filter((s) => Object.keys(s).length > 0);
+    .filter(isNonEmptySchema);
 
   if (schemas.length === 0) {
     return {};
@@ -392,7 +402,7 @@ function convertIntersectionType(
 
   const schemas = nonBrand
     .map((m) => typeToJsonSchema(m, ctx, depth + 1))
-    .filter((s) => Object.keys(s).length > 0);
+    .filter(isNonEmptySchema);
 
   if (schemas.length === 0) {
     return {};
@@ -451,10 +461,8 @@ function convertTupleType(
   const args = ctx.checker.getTypeArguments(type as ts.TypeReference);
   const schemas = args.map((a) => typeToJsonSchema(a, ctx, depth + 1));
   // Deduplicate identical element schemas
-  const unique = schemas.filter(
-    (s, i, arr) =>
-      arr.findIndex((o) => JSON.stringify(o) === JSON.stringify(s)) === i,
-  );
+  const serialized = schemas.map((s) => JSON.stringify(s));
+  const unique = schemas.filter((_, i) => serialized.indexOf(serialized[i] ?? '') === i);
   return {
     type: 'array',
     items:
@@ -531,7 +539,7 @@ function convertPlainObject(
   const registeredName = autoRegName ?? ctx.typeToRef.get(type);
   if (registeredName) {
     ctx.schemas[registeredName] = result;
-    return { $ref: `#/components/schemas/${registeredName}` };
+    return schemaRef(registeredName);
   }
 
   return result;
@@ -597,7 +605,6 @@ function convertTypeToSchema(
 
 /** State shared across the router-walk recursion. */
 interface WalkCtx {
-  checker: ts.TypeChecker;
   procedures: ProcedureInfo[];
   seen: Set<ts.Type>;
   schemaCtx: SchemaCtx;
@@ -651,7 +658,8 @@ interface ProcedureDef {
 }
 
 function extractProcedure(def: ProcedureDef, ctx: WalkCtx): void {
-  const { checker, schemaCtx } = ctx;
+  const { schemaCtx } = ctx;
+  const { checker } = schemaCtx;
 
   const $typesSym = def.defType.getProperty('$types');
   if (!$typesSym) {
@@ -669,7 +677,7 @@ function extractProcedure(def: ProcedureDef, ctx: WalkCtx): void {
     path: def.path,
     type: def.typeName as 'query' | 'mutation' | 'subscription',
     inputSchema:
-      isVoidLikeInput(inputType) || !inputType
+      !inputType || isVoidLikeInput(inputType)
         ? null
         : typeToJsonSchema(inputType, schemaCtx),
     outputSchema: outputType ? typeToJsonSchema(outputType, schemaCtx) : null,
@@ -694,7 +702,7 @@ function walkType(type: ts.Type, ctx: WalkCtx, currentPath: string): void {
     return;
   }
 
-  const { checker } = ctx;
+  const { checker } = ctx.schemaCtx;
   const defType = checker.getTypeOfSymbol(defSym);
 
   const procedureTypeName = getProcedureTypeName(defType, checker);
@@ -731,7 +739,7 @@ function walkType(type: ts.Type, ctx: WalkCtx, currentPath: string): void {
 
 function walkRecord(recordType: ts.Type, ctx: WalkCtx, prefix: string): void {
   for (const prop of recordType.getProperties()) {
-    const propType = ctx.checker.getTypeOfSymbol(prop);
+    const propType = ctx.schemaCtx.checker.getTypeOfSymbol(prop);
     const fullPath = prefix ? `${prefix}.${prop.name}` : prop.name;
     walkType(propType, ctx, fullPath);
   }
@@ -843,11 +851,12 @@ const DEFAULT_ERROR_SCHEMA: JsonSchema = {
   required: ['message', 'code'],
 };
 
-function buildProcedureOperation(proc: ProcedureInfo): Record<string, unknown> {
-  const method = proc.type === 'query' ? 'get' : 'post';
-
+function buildProcedureOperation(
+  proc: ProcedureInfo,
+  method: 'get' | 'post',
+): Record<string, unknown> {
   const hasOutput =
-    proc.outputSchema !== null && Object.keys(proc.outputSchema).length > 0;
+    proc.outputSchema !== null && isNonEmptySchema(proc.outputSchema);
 
   const operation: Record<string, unknown> = {
     operationId: proc.path.replace(/\./g, '_'),
@@ -893,9 +902,7 @@ function buildProcedureOperation(proc: ProcedureInfo): Record<string, unknown> {
 function buildOpenAPIDocument(
   procedures: ProcedureInfo[],
   options: GenerateOptions,
-  meta: RouterMeta & { schemas?: Record<string, JsonSchema> } = {
-    errorSchema: null,
-  },
+  meta: RouterMeta = { errorSchema: null },
 ): OpenAPIDocument {
   const paths: Record<string, Record<string, unknown>> = {};
 
@@ -909,7 +916,7 @@ function buildOpenAPIDocument(
 
     const pathItem: Record<string, unknown> = paths[opPath] ?? {};
     paths[opPath] = pathItem;
-    pathItem[method] = buildProcedureOperation(proc);
+    pathItem[method] = buildProcedureOperation(proc, method);
   }
 
   const hasNamedSchemas =
@@ -1002,7 +1009,6 @@ export function generateOpenAPIDocument(
   };
 
   const walkCtx: WalkCtx = {
-    checker,
     procedures: [],
     seen: new Set(),
     schemaCtx,
