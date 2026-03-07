@@ -16,3 +16,4 @@ www/docs/main/quickstart.mdx
 .vinxi
 .output
 www/docs/typedoc
+packages/server/src/openapi/__testRouter.ts.json
