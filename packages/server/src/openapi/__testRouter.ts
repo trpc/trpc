@@ -29,6 +29,26 @@ enum MixedEnum {
   Baz = 'BAZ',
 }
 
+// ---------- Named types (for nested $ref extraction tests) ----------
+
+interface UserProfile {
+  id: number;
+  name: string;
+  email: string;
+}
+
+interface Address {
+  street: string;
+  city: string;
+  zipCode: string;
+}
+
+interface OrderItem {
+  productId: number;
+  quantity: number;
+  price: number;
+}
+
 // ---------- Router with custom errorFormatter ----------
 
 const tCustomError = initTRPC.create({
@@ -40,7 +60,14 @@ const tCustomError = initTRPC.create({
         ...shape.data,
         zodError:
           opts.error.code === 'BAD_REQUEST'
-            ? (opts.error.cause as { issues?: Array<{ message: string; path: Array<string | number> }> })?.issues ?? null
+            ? ((
+                opts.error.cause as {
+                  issues?: Array<{
+                    message: string;
+                    path: Array<string | number>;
+                  }>;
+                }
+              )?.issues ?? null)
             : null,
       },
     };
@@ -548,6 +575,42 @@ export const AppRouter = t.router({
         active: true as Active,
       };
     }),
+  }),
+
+  // ---------- Named types at various depths ----------
+
+  namedTypes: t.router({
+    // Named type as a direct property (depth 1)
+    withProfile: t.procedure.query((): { profile: UserProfile } => ({
+      profile: { id: 1, name: 'Alice', email: 'a@b.com' },
+    })),
+
+    // Named type inside an array
+    orderItems: t.procedure.query((): { items: OrderItem[] } => ({
+      items: [{ productId: 1, quantity: 2, price: 9.99 }],
+    })),
+
+    // Same named type reused (should dedup to the same $ref)
+    withAddress: t.procedure.query((): { address: Address } => ({
+      address: { street: '123 Main', city: 'NYC', zipCode: '10001' },
+    })),
+
+    // Multiple named types in one return
+    profileAndAddress: t.procedure.query(
+      (): { profile: UserProfile; address: Address } => ({
+        profile: { id: 1, name: 'Alice', email: 'a@b.com' },
+        address: { street: '123 Main', city: 'NYC', zipCode: '10001' },
+      }),
+    ),
+
+    // Named type deeply nested (depth 3)
+    deepNested: t.procedure.query(
+      (): { data: { nested: { profile: UserProfile } } } => ({
+        data: {
+          nested: { profile: { id: 1, name: 'Alice', email: 'a@b.com' } },
+        },
+      }),
+    ),
   }),
 
   simpleCases: {
