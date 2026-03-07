@@ -114,7 +114,7 @@
         }
       }
     },
-    "/user/list": {
+    "/user.list": {
       "get": {
         "operationId": "user_list",
         "tags": [
@@ -152,7 +152,7 @@
         }
       }
     },
-    "/user/create": {
+    "/user.create": {
       "post": {
         "operationId": "user_create",
         "tags": [
@@ -211,7 +211,7 @@
         }
       }
     },
-    "/simpleCases/nullish": {
+    "/simpleCases.nullish": {
       "get": {
         "operationId": "simpleCases_nullish",
         "tags": [
@@ -223,26 +223,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "type": "object",
-                      "properties": {
-                        "name": {
-                          "oneOf": [
-                            {
-                              "type": "string"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        }
-                      }
-                    },
-                    {
-                      "type": "null"
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "nullable": true
                     }
-                  ]
+                  },
+                  "nullable": true
                 }
               }
             }
@@ -259,26 +247,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "type": "object",
-                      "properties": {
-                        "name": {
-                          "oneOf": [
-                            {
-                              "type": "string"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        }
-                      }
-                    },
-                    {
-                      "type": "null"
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "nullable": true
                     }
-                  ]
+                  },
+                  "nullable": true
                 }
               }
             }
@@ -286,7 +262,7 @@
         ]
       }
     },
-    "/simpleCases/optional": {
+    "/simpleCases.optional": {
       "get": {
         "operationId": "simpleCases_optional",
         "tags": [
@@ -333,7 +309,7 @@
         ]
       }
     },
-    "/simpleCases/nullable": {
+    "/simpleCases.nullable": {
       "get": {
         "operationId": "simpleCases_nullable",
         "tags": [
@@ -345,29 +321,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "type": "object",
-                      "properties": {
-                        "name": {
-                          "oneOf": [
-                            {
-                              "type": "string"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        }
-                      },
-                      "required": [
-                        "name"
-                      ]
-                    },
-                    {
-                      "type": "null"
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "nullable": true
                     }
-                  ]
+                  },
+                  "required": [
+                    "name"
+                  ],
+                  "nullable": true
                 }
               }
             }
@@ -384,29 +348,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "type": "object",
-                      "properties": {
-                        "name": {
-                          "oneOf": [
-                            {
-                              "type": "string"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        }
-                      },
-                      "required": [
-                        "name"
-                      ]
-                    },
-                    {
-                      "type": "null"
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "nullable": true
                     }
-                  ]
+                  },
+                  "required": [
+                    "name"
+                  ],
+                  "nullable": true
                 }
               }
             }
