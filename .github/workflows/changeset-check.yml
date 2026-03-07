@@ -9,8 +9,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-      - uses: ./.github/setup
       - name: Check for changesets
-        run: pnpm changeset status
+        run: |
+          CHANGESETS=$(find .changeset -name '*.md' ! -name 'README.md' | wc -l)
+          if [ "$CHANGESETS" -eq 0 ]; then
+            echo "No changeset found."
+            echo "If this PR needs a release, run: pnpm changeset"
+            echo "If this PR doesn't need a release, run: pnpm changeset --empty"
+            exit 1
+          fi
+          echo "Found $CHANGESETS changeset(s)"
