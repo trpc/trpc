@@ -462,7 +462,9 @@ function convertTupleType(
   const schemas = args.map((a) => typeToJsonSchema(a, ctx, depth + 1));
   // Deduplicate identical element schemas
   const serialized = schemas.map((s) => JSON.stringify(s));
-  const unique = schemas.filter((_, i) => serialized.indexOf(serialized[i] ?? '') === i);
+  const unique = schemas.filter(
+    (_, i) => serialized.indexOf(serialized[i] ?? '') === i,
+  );
   return {
     type: 'array',
     items:
