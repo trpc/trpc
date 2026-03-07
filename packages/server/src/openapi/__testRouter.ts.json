@@ -226,25 +226,11 @@
                   "type": "object",
                   "properties": {
                     "status": {
-                      "oneOf": [
-                        {
-                          "type": "string",
-                          "enum": [
-                            "active"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "inactive"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "pending"
-                          ]
-                        }
+                      "type": "string",
+                      "enum": [
+                        "active",
+                        "inactive",
+                        "pending"
                       ]
                     }
                   },
@@ -270,25 +256,11 @@
                   "type": "object",
                   "properties": {
                     "status": {
-                      "oneOf": [
-                        {
-                          "type": "string",
-                          "enum": [
-                            "active"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "inactive"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "pending"
-                          ]
-                        }
+                      "type": "string",
+                      "enum": [
+                        "active",
+                        "inactive",
+                        "pending"
                       ]
                     }
                   },
@@ -317,31 +289,12 @@
                   "type": "object",
                   "properties": {
                     "direction": {
-                      "oneOf": [
-                        {
-                          "type": "string",
-                          "enum": [
-                            "UP"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "DOWN"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "LEFT"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "RIGHT"
-                          ]
-                        }
+                      "type": "string",
+                      "enum": [
+                        "UP",
+                        "DOWN",
+                        "LEFT",
+                        "RIGHT"
                       ]
                     }
                   },
@@ -367,31 +320,12 @@
                   "type": "object",
                   "properties": {
                     "direction": {
-                      "oneOf": [
-                        {
-                          "type": "string",
-                          "enum": [
-                            "UP"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "DOWN"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "LEFT"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "RIGHT"
-                          ]
-                        }
+                      "type": "string",
+                      "enum": [
+                        "UP",
+                        "DOWN",
+                        "LEFT",
+                        "RIGHT"
                       ]
                     }
                   },
@@ -507,25 +441,11 @@
                   "type": "object",
                   "properties": {
                     "color": {
-                      "oneOf": [
-                        {
-                          "type": "string",
-                          "enum": [
-                            "red"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "green"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "blue"
-                          ]
-                        }
+                      "type": "string",
+                      "enum": [
+                        "red",
+                        "green",
+                        "blue"
                       ]
                     }
                   },
@@ -551,25 +471,11 @@
                   "type": "object",
                   "properties": {
                     "color": {
-                      "oneOf": [
-                        {
-                          "type": "string",
-                          "enum": [
-                            "red"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "green"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "blue"
-                          ]
-                        }
+                      "type": "string",
+                      "enum": [
+                        "red",
+                        "green",
+                        "blue"
                       ]
                     }
                   },
@@ -1471,19 +1377,10 @@
                       "type": "number"
                     },
                     "sort": {
-                      "oneOf": [
-                        {
-                          "type": "string",
-                          "enum": [
-                            "asc"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "desc"
-                          ]
-                        }
+                      "type": "string",
+                      "enum": [
+                        "asc",
+                        "desc"
                       ]
                     }
                   },
@@ -1517,19 +1414,10 @@
                       "type": "number"
                     },
                     "sort": {
-                      "oneOf": [
-                        {
-                          "type": "string",
-                          "enum": [
-                            "asc"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "desc"
-                          ]
-                        }
+                      "type": "string",
+                      "enum": [
+                        "asc",
+                        "desc"
                       ]
                     }
                   }
@@ -1874,19 +1762,10 @@
                   "type": "object",
                   "properties": {
                     "status": {
-                      "oneOf": [
-                        {
-                          "type": "string",
-                          "enum": [
-                            "on"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "off"
-                          ]
-                        }
+                      "type": "string",
+                      "enum": [
+                        "on",
+                        "off"
                       ]
                     }
                   },
@@ -1912,19 +1791,10 @@
                   "type": "object",
                   "properties": {
                     "status": {
-                      "oneOf": [
-                        {
-                          "type": "string",
-                          "enum": [
-                            "on"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "off"
-                          ]
-                        }
+                      "type": "string",
+                      "enum": [
+                        "on",
+                        "off"
                       ]
                     }
                   },
@@ -2168,31 +2038,12 @@
                       "type": "object",
                       "properties": {
                         "category": {
-                          "oneOf": [
-                            {
-                              "type": "string",
-                              "enum": [
-                                "all"
-                              ]
-                            },
-                            {
-                              "type": "string",
-                              "enum": [
-                                "posts"
-                              ]
-                            },
-                            {
-                              "type": "string",
-                              "enum": [
-                                "users"
-                              ]
-                            },
-                            {
-                              "type": "string",
-                              "enum": [
-                                "comments"
-                              ]
-                            }
+                          "type": "string",
+                          "enum": [
+                            "all",
+                            "posts",
+                            "users",
+                            "comments"
                           ]
                         },
                         "dateRange": {
@@ -2217,25 +2068,11 @@
                           }
                         },
                         "sortBy": {
-                          "oneOf": [
-                            {
-                              "type": "string",
-                              "enum": [
-                                "date"
-                              ]
-                            },
-                            {
-                              "type": "string",
-                              "enum": [
-                                "relevance"
-                              ]
-                            },
-                            {
-                              "type": "string",
-                              "enum": [
-                                "popularity"
-                              ]
-                            }
+                          "type": "string",
+                          "enum": [
+                            "date",
+                            "relevance",
+                            "popularity"
                           ]
                         }
                       }
@@ -2281,25 +2118,11 @@
                   "type": "object",
                   "properties": {
                     "status": {
-                      "oneOf": [
-                        {
-                          "type": "string",
-                          "enum": [
-                            "active"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "inactive"
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "pending"
-                          ]
-                        }
+                      "type": "string",
+                      "enum": [
+                        "active",
+                        "inactive",
+                        "pending"
                       ]
                     }
                   },
@@ -3439,15 +3262,76 @@
                   "type": "string"
                 },
                 "code": {
-                  "type": "string"
+                  "type": "number",
+                  "enum": [
+                    -32700,
+                    -32600,
+                    -32603,
+                    -32001,
+                    -32002,
+                    -32003,
+                    -32004,
+                    -32005,
+                    -32008,
+                    -32009,
+                    -32012,
+                    -32013,
+                    -32015,
+                    -32022,
+                    -32028,
+                    -32029,
+                    -32099
+                  ]
                 },
                 "data": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "enum": [
+                        "PARSE_ERROR",
+                        "BAD_REQUEST",
+                        "INTERNAL_SERVER_ERROR",
+                        "NOT_IMPLEMENTED",
+                        "BAD_GATEWAY",
+                        "SERVICE_UNAVAILABLE",
+                        "GATEWAY_TIMEOUT",
+                        "UNAUTHORIZED",
+                        "PAYMENT_REQUIRED",
+                        "FORBIDDEN",
+                        "NOT_FOUND",
+                        "METHOD_NOT_SUPPORTED",
+                        "TIMEOUT",
+                        "CONFLICT",
+                        "PRECONDITION_FAILED",
+                        "PAYLOAD_TOO_LARGE",
+                        "UNSUPPORTED_MEDIA_TYPE",
+                        "UNPROCESSABLE_CONTENT",
+                        "PRECONDITION_REQUIRED",
+                        "TOO_MANY_REQUESTS",
+                        "CLIENT_CLOSED_REQUEST"
+                      ]
+                    },
+                    "httpStatus": {
+                      "type": "number"
+                    },
+                    "path": {
+                      "type": "string"
+                    },
+                    "stack": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "httpStatus"
+                  ]
                 }
               },
               "required": [
                 "message",
-                "code"
+                "code",
+                "data"
               ]
             }
           }
