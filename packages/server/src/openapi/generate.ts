@@ -162,12 +162,19 @@ function typeToJsonSchema(
       return schema;
     }
 
-    // Tuple
+    // Tuple — OpenAPI 3.0 does not support `prefixItems`, so we express
+    // tuples as `items: oneOf[…]` with min/maxItems.
     if (checker.isTupleType(type)) {
       const args = checker.getTypeArguments(type as ts.TypeReference);
+      const schemas = args.map((a) => typeToJsonSchema(a, ctx, depth + 1));
+      // Deduplicate identical element schemas
+      const unique = schemas.filter(
+        (s, i, arr) =>
+          arr.findIndex((o) => JSON.stringify(o) === JSON.stringify(s)) === i,
+      );
       return {
         type: 'array',
-        prefixItems: args.map((a) => typeToJsonSchema(a, ctx, depth + 1)),
+        items: unique.length === 1 ? unique[0]! : { oneOf: unique },
         minItems: args.length,
         maxItems: args.length,
       };
