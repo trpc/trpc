@@ -120,18 +120,6 @@ describe('with per-procedure typed errors', () => {
     };
   };
 
-  class MyTypedAuthError extends TRPCProcedureError<TypedProcedureErrorShape> {
-    constructor() {
-      super({
-        code: -32001,
-        message: 'BAD_PHONE',
-        data: {
-          reason: 'BAD_PHONE',
-        },
-      });
-    }
-  }
-
   const t = initTRPC.create({
     errorFormatter({ shape }) {
       return {
@@ -145,11 +133,30 @@ describe('with per-procedure typed errors', () => {
   });
 
   const appRouter = t.router({
-    typedError: t.procedure.errors([MyTypedAuthError]).query(() => {
-      throw new MyTypedAuthError();
-    }),
+    typedError: t.procedure
+      .errors({
+        UNAUTHORIZED: {
+          message: 'BAD_PHONE',
+          data: z.object({
+            reason: z.literal('BAD_PHONE'),
+          }),
+        },
+      })
+      .query(({ errors }) => {
+        throw errors.UNAUTHORIZED({
+          data: {
+            reason: 'BAD_PHONE',
+          },
+        });
+      }),
     undeclaredTypedError: t.procedure.query(() => {
-      throw new MyTypedAuthError();
+      throw new TRPCProcedureError({
+        code: -32001,
+        message: 'BAD_PHONE',
+        data: {
+          reason: 'BAD_PHONE',
+        },
+      });
     }),
   });
 
