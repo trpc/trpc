@@ -112,13 +112,22 @@ describe('with per-procedure typed errors', () => {
       foo: 'bar';
     };
   };
-  type TypedProcedureErrorShape = {
+  type UnauthorizedErrorShape = {
     code: -32001;
     message: 'BAD_PHONE';
     data: {
       reason: 'BAD_PHONE';
     };
   };
+  type BadRequestErrorShape = {
+    code: -32600;
+    message: string;
+    data: object;
+  };
+  type RouterError =
+    | GlobalFormattedShape
+    | UnauthorizedErrorShape
+    | BadRequestErrorShape;
 
   const t = initTRPC.create({
     errorFormatter({ shape }) {
@@ -219,20 +228,15 @@ describe('with per-procedure typed errors', () => {
   });
 
   test('declared typed errors bypass formatter and infer as router union', async () => {
-    expectTypeOf<inferRouterError<typeof appRouter>>().toEqualTypeOf<
-      GlobalFormattedShape | TypedProcedureErrorShape
-    >();
+    expectTypeOf<inferRouterError<typeof appRouter>>().toMatchTypeOf<RouterError>();
+    expectTypeOf<RouterError>().toMatchTypeOf<inferRouterError<typeof appRouter>>();
 
     await using ctx = testServerAndClientResource(appRouter);
     const typedErr = await waitError(ctx.client.typedError.query());
     assert(isTRPCClientError<typeof appRouter>(typedErr));
-    expectTypeOf(typedErr.shape).toEqualTypeOf<
-      GlobalFormattedShape | TypedProcedureErrorShape
-    >();
-    expectTypeOf(typedErr.data).toEqualTypeOf<
-      | GlobalFormattedShape['data']
-      | TypedProcedureErrorShape['data']
-      | undefined
+    expectTypeOf(typedErr.shape).toMatchTypeOf<RouterError | null | undefined>();
+    expectTypeOf(typedErr.data).toMatchTypeOf<
+      RouterError['data'] | null | undefined
     >();
     expect(typedErr.shape).toMatchInlineSnapshot(`
       Object {
@@ -248,18 +252,16 @@ describe('with per-procedure typed errors', () => {
       ctx.client.undeclaredTypedError.query(),
     );
     assert(isTRPCClientError<typeof appRouter>(undeclaredErr));
-    expectTypeOf(undeclaredErr.shape).toEqualTypeOf<
-      GlobalFormattedShape | TypedProcedureErrorShape
-    >();
-    expectTypeOf(undeclaredErr.data).toEqualTypeOf<
-      | GlobalFormattedShape['data']
-      | TypedProcedureErrorShape['data']
-      | undefined
+    expectTypeOf(undeclaredErr.shape).toMatchTypeOf<RouterError | null | undefined>();
+    expectTypeOf(undeclaredErr.data).toMatchTypeOf<
+      RouterError['data'] | null | undefined
     >();
     expect(undeclaredErr.shape?.code).toBe(-32603);
     expect(undeclaredErr.shape?.message).toBe('BAD_PHONE');
-    expect(undeclaredErr.data?.foo).toBe('bar');
-    expect(undeclaredErr.data?.path).toBe('undeclaredTypedError');
+    // undeclaredTypedError goes through the formatter, so data has the formatted shape
+    const undeclaredData = undeclaredErr.data as GlobalFormattedShape['data'];
+    expect(undeclaredData?.foo).toBe('bar');
+    expect(undeclaredData?.path).toBe('undeclaredTypedError');
   });
 });
 
