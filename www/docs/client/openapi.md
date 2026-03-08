@@ -84,8 +84,8 @@ client.setConfig({
 ```
 
 ```ts title='src/usage.ts'
-import { Sdk } from './generated/sdk.gen';
 import { client } from './generated/client.gen';
+import { Sdk } from './generated/sdk.gen';
 
 const sdk = new Sdk({ client });
 
@@ -102,8 +102,8 @@ If your backend uses a [data transformer](/docs/server/data-transformers) like `
 Pass your transformer and it handles serialisation in both directions automatically:
 
 ```ts title='src/client.ts'
-import superjson from 'superjson';
 import { createTRPCHeyApiClientConfig } from '@trpc/openapi/heyapi';
+import superjson from 'superjson';
 import { client } from './generated/client.gen';
 
 client.setConfig({

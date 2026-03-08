@@ -8,9 +8,7 @@
     "/user.list": {
       "get": {
         "operationId": "user.list",
-        "tags": [
-          "user"
-        ],
+        "tags": ["user"],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -29,14 +27,10 @@
                           }
                         }
                       },
-                      "required": [
-                        "data"
-                      ]
+                      "required": ["data"]
                     }
                   },
-                  "required": [
-                    "result"
-                  ]
+                  "required": ["result"]
                 }
               }
             }
@@ -50,9 +44,7 @@
     "/user.byId": {
       "get": {
         "operationId": "user.byId",
-        "tags": [
-          "user"
-        ],
+        "tags": ["user"],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -68,14 +60,10 @@
                           "$ref": "#/components/schemas/User"
                         }
                       },
-                      "required": [
-                        "data"
-                      ]
+                      "required": ["data"]
                     }
                   },
-                  "required": [
-                    "result"
-                  ]
+                  "required": ["result"]
                 }
               }
             }
@@ -104,9 +92,7 @@
     "/user.create": {
       "post": {
         "operationId": "user.create",
-        "tags": [
-          "user"
-        ],
+        "tags": ["user"],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -128,20 +114,13 @@
                               "type": "string"
                             }
                           },
-                          "required": [
-                            "name",
-                            "id"
-                          ]
+                          "required": ["name", "id"]
                         }
                       },
-                      "required": [
-                        "data"
-                      ]
+                      "required": ["data"]
                     }
                   },
-                  "required": [
-                    "result"
-                  ]
+                  "required": ["result"]
                 }
               }
             }
@@ -161,9 +140,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "name"
-                ]
+                "required": ["name"]
               }
             }
           }
@@ -183,10 +160,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "name"
-        ]
+        "required": ["id", "name"]
       },
       "DefaultErrorShape": {
         "type": "object",
@@ -197,22 +171,8 @@
           "code": {
             "type": "number",
             "enum": [
-              -32700,
-              -32600,
-              -32603,
-              -32001,
-              -32002,
-              -32003,
-              -32004,
-              -32005,
-              -32008,
-              -32009,
-              -32012,
-              -32013,
-              -32015,
-              -32022,
-              -32028,
-              -32029,
+              -32700, -32600, -32603, -32001, -32002, -32003, -32004, -32005,
+              -32008, -32009, -32012, -32013, -32015, -32022, -32028, -32029,
               -32099
             ]
           },
@@ -220,11 +180,7 @@
             "$ref": "#/components/schemas/DefaultErrorData"
           }
         },
-        "required": [
-          "message",
-          "code",
-          "data"
-        ]
+        "required": ["message", "code", "data"]
       },
       "DefaultErrorData": {
         "type": "object",
@@ -265,10 +221,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "code",
-          "httpStatus"
-        ]
+        "required": ["code", "httpStatus"]
       }
     },
     "responses": {
@@ -283,9 +236,7 @@
                   "$ref": "#/components/schemas/DefaultErrorShape"
                 }
               },
-              "required": [
-                "error"
-              ]
+              "required": ["error"]
             }
           }
         }
