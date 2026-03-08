@@ -20,13 +20,14 @@ export function getErrorShape<TRoot extends AnyRootTypes>(opts: {
   procedure?: AnyProcedure | null;
 }): TRoot['errorShape'] {
   const { procedure } = opts;
-  if (procedure && opts.error.cause instanceof TRPCProcedureError) {
+  const cause = opts.error.cause;
+  if (procedure && cause instanceof TRPCProcedureError) {
     const isDeclaredTypedError = procedure._def.errors.some(
-      (ErrorClass) => opts.error.cause instanceof ErrorClass,
+      (ErrorClass) => cause instanceof ErrorClass,
     );
 
     if (isDeclaredTypedError) {
-      return opts.error.cause.shape as TRoot['errorShape'];
+      return cause.shape as TRoot['errorShape'];
     }
   }
 
