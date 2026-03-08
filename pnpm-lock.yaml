@@ -1946,11 +1946,14 @@ importers:
         specifier: ^1.6.0
         version: 1.6.0
       '@trpc/server':
-        specifier: workspace:*
+        specifier: 11.12.0
         version: link:../server
       '@types/node':
         specifier: ^22.13.5
         version: 22.19.11
+      eslint:
+        specifier: ^9.26.0
+        version: 9.26.0(jiti@2.6.1)
       superjson:
         specifier: ^1.12.4
         version: 1.12.4
