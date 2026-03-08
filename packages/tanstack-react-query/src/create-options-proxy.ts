@@ -13,5 +13,3 @@ export type { TRPCInfiniteQueryOptions } from './internals/infiniteQueryOptions'
 export type { TRPCMutationOptions } from './internals/mutationOptions';
 export { createTRPCOptionsProxy } from './internals/createOptionsProxy';
 export type * from './internals/types';
-
-
