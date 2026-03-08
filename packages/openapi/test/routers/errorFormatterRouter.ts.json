@@ -47,6 +47,7 @@
             "name": "input",
             "in": "query",
             "required": true,
+            "style": "deepObject",
             "content": {
               "application/json": {
                 "schema": {

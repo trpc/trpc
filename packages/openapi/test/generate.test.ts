@@ -1,12 +1,6 @@
 import { existsSync } from 'node:fs';
 import http from 'node:http';
 import * as path from 'node:path';
-import { AppRouter } from './routers/appRouter';
-import { SuperjsonRouter } from './routers/superjsonRouter';
-import { client as heyapiClient } from './routers/appRouter-heyapi/client.gen';
-import { Sdk as HeyapiSdk } from './routers/appRouter-heyapi/sdk.gen';
-import { client as superjsonClient } from './routers/superjsonRouter-heyapi/client.gen';
-import { Sdk as SuperjsonSdk } from './routers/superjsonRouter-heyapi/sdk.gen';
 import {
   getLanguageService,
   LogLevel,
@@ -19,6 +13,12 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import type { OpenAPIDocument } from '../src/generate';
 import { generateOpenAPIDocument } from '../src/generate';
 import { createTRPCHeyApiClientConfig } from '../src/heyapi';
+import { AppRouter } from './routers/appRouter';
+import { client as heyapiClient } from './routers/appRouter-heyapi/client.gen';
+import { Sdk as HeyapiSdk } from './routers/appRouter-heyapi/sdk.gen';
+import { SuperjsonRouter } from './routers/superjsonRouter';
+import { client as superjsonClient } from './routers/superjsonRouter-heyapi/client.gen';
+import { Sdk as SuperjsonSdk } from './routers/superjsonRouter-heyapi/sdk.gen';
 
 const languageService = getLanguageService({
   logLevel: LogLevel.ERROR,
@@ -44,7 +44,10 @@ async function validateOpenAPI(spec: string) {
 
 const routersDir = path.resolve(__dirname, 'routers');
 const appRouterPath = path.resolve(routersDir, 'appRouter.ts');
-const errorFormatterRouterPath = path.resolve(routersDir, 'errorFormatterRouter.ts');
+const errorFormatterRouterPath = path.resolve(
+  routersDir,
+  'errorFormatterRouter.ts',
+);
 const superjsonRouterPath = path.resolve(routersDir, 'superjsonRouter.ts');
 
 /** Resolve a schema that may be a $ref into the actual schema object. */
@@ -88,7 +91,7 @@ describe('generateOpenAPIDocument', () => {
     });
 
     it('returns a valid tRPC OpenAPI 3.0 document', () => {
-      expect(doc.openapi).toBe('3.0.3');
+      expect(doc.openapi).toBe('3.1.1');
       expect(doc.info.title).toBe('Test API');
       expect(doc.info.version).toBe('1.0.0');
 
@@ -103,7 +106,7 @@ describe('generateOpenAPIDocument', () => {
       const spec = JSON.stringify(doc, null, 2);
       const problems = await validateOpenAPI(spec);
 
-      expect(problems).toEqual([]);
+      expect(JSON.stringify(problems, null, 2)).toEqual('[]');
     });
 
     it('serialises the error shape from errorFormatter into components', () => {
@@ -473,8 +476,6 @@ describe('generateOpenAPIDocument', () => {
         query: {
           input: { id: 'evt_1', at: new Date('2025-06-15T10:00:00Z') },
         },
-        // TODO: figure out why a default seriualiser under the hood is cloberring out setConfig one
-        querySerializer: superjsonClientConfig.querySerializer,
       });
 
       expect(getResult.data).toBeDefined();
