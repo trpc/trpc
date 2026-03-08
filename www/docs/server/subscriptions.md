@@ -316,12 +316,12 @@ export function zAsyncIterable<
   yield: z.ZodType<TYieldOut, TYieldIn>;
   /**
    * Validate the return value of the async generator
-   * @remark not applicable for subscriptions
+   * @remarks not applicable for subscriptions
    */
   return?: z.ZodType<TReturnOut, TReturnIn>;
   /**
-   * Whether if the yielded values are tracked
-   * @remark only applicable for subscriptions
+   * Whether the yielded values are tracked
+   * @remarks only applicable for subscriptions
    */
   tracked?: Tracked;
 }) {

@@ -21,7 +21,7 @@ yarn add superjson
 
 #### 2. Add to your `initTRPC`
 
-```ts twoslash title='routers/router/_app.ts'
+```ts twoslash title='server/routers/_app.ts'
 import { initTRPC } from '@trpc/server';
 import superjson from 'superjson';
 
@@ -62,7 +62,7 @@ export const client = createTRPCClient<AppRouter>({
 
 ## Using [devalue](https://github.com/Rich-Harris/devalue)
 
-Devalue works like superjson, but focuses on performance and compact payloads, but at the cost of a less human readable body.
+Devalue works like superjson, focusing on performance and compact payloads, but at the cost of a less human-readable body.
 
 ### How to
 

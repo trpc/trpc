@@ -58,7 +58,7 @@ const client = createTRPCClient<AppRouter>({
 
 In the example above, we add the `retryLink` before the `httpBatchLink`. The `retry` function is required and defines when to retry. In this example, it will:
 
-- Retry the request if the error is a `TRPCClientError` with a status code of 500 or if we couldn't get a valid TRPC error.
+- Retry the request if the error is a `TRPCClientError` with a status code of 500 or if we couldn't get a valid tRPC error.
 - Retry the request up to 3 times.
 
 ## Options

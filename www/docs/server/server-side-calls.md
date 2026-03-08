@@ -389,7 +389,6 @@ const caller = router.createCaller(
   },
 );
 
-// The following will log "An error occurred: Error: Invalid name", and then throw a plain error
-//  with the message "This is a custom error"
+// The following will log "An error occurred: Error: Invalid name", and then throw the error
 await caller.greeting({ name: 'invalid' });
 ```

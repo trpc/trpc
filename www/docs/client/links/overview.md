@@ -40,7 +40,7 @@ export const trpc = createTRPCClient<AppRouter>({
 
 A link is a function that follows the `TRPCLink` type. Each link is composed of three parts:
 
-1. The link returns a function that receives a `TRPCClientRuntime` parameter. This argument is always passed by tRPC and is part of the `TRPCLink` type signature. Even if you're not creating a terminating link and don't need to use the runtime, the parameter is still present in the type.
+1. The link returns a function that has no parameters. This is the setup phase where the link is initialized — it happens once per app and is useful for storing caches or other state.
 2. The function in step 1 returns another function that receives an object with two properties: `op` which is the `Operation` that is being executed by the client, and `next` which is the function we use to call the next link down the chain.
 3. The function in step 2 returns a final function that returns the `observable` function provided by `@trpc/server`. The `observable` accepts a function that receives an `observer` which helps our link notify the next link up the chain how they should handle the operation result. In this function, we can just return `next(op)` and leave it as is, or we can subscribe to `next`, which enables our link to handle the operation result.
 

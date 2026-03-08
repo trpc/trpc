@@ -11,7 +11,7 @@ slug: /rpc
 | ------------ | ----------------- | -------------------------------------------------------------------------------------------------------------- |
 | `GET`        | `.query()`        | Input JSON-stringified in query param.<br/>_e.g._ `myQuery?input=${encodeURIComponent(JSON.stringify(input))}` |
 | `POST`       | `.mutation()`     | Input as POST body.                                                                                            |
-| <em>n/a</em> | `.subscription()` | <em>Subscriptions are not supported in HTTP transport</em>                                                     |
+| `GET`        | `.subscription()` | Subscriptions are supported via [Server-sent Events](/docs/client/links/httpSubscriptionLink) using `httpSubscriptionLink`, or via [WebSockets](/docs/server/websockets) using `wsLink`. |
 
 ## Accessing nested procedures
 

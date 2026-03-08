@@ -221,7 +221,7 @@ The result can be passed to `useQuery` or `useSuspenseQuery` hooks or query clie
 
 ### `infiniteQueryOptions` - querying infinite data {#infiniteQueryOptions}
 
-Available for all query procedures that takes a cursor input. Provides a type-safe wrapper around [Tanstack's `infiniteQueryOptions` function](https://tanstack.com/query/latest/docs/framework/react/reference/infiniteQueryOptions). The first argument is the input for the procedure, and the second argument accepts any native Tanstack React Query options.
+Available for all query procedures that take a cursor input. Provides a type-safe wrapper around [Tanstack's `infiniteQueryOptions` function](https://tanstack.com/query/latest/docs/framework/react/reference/infiniteQueryOptions). The first argument is the input for the procedure, and the second argument accepts any native Tanstack React Query options.
 
 ```ts twoslash
 // @filename: server.ts
@@ -339,7 +339,7 @@ const queryKey = trpc.pathKey();
 
 ### `infiniteQueryKey` - getting the infinite query key {#infiniteQueryKey}
 
-Available for all query procedures that takes a cursor input. Allows you to access the query key for an infinite query in a type-safe manner.
+Available for all query procedures that take a cursor input. Allows you to access the query key for an infinite query in a type-safe manner.
 
 ```ts twoslash
 // @filename: server.ts
@@ -487,7 +487,7 @@ Useful for creating filters that can be passed to client methods like `queryClie
 
 ### `infiniteQueryFilter` - creating infinite query filters {#infiniteQueryFilter}
 
-Available for all query procedures that takes a cursor input. Allows creating [query filters](https://tanstack.com/query/latest/docs/framework/react/guides/filters#query-filters) for infinite queries in a type-safe manner.
+Available for all query procedures that take a cursor input. Allows creating [query filters](https://tanstack.com/query/latest/docs/framework/react/guides/filters#query-filters) for infinite queries in a type-safe manner.
 
 ```ts twoslash
 // @filename: server.ts
