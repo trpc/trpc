@@ -1,6 +1,6 @@
 import { defineConfig } from 'tsdown';
 
-export const input = ['src/index.ts', 'src/create-options-proxy.ts'];
+export const input = ['src/index.ts', 'src/createOptionsProxy.ts'];
 
 export default defineConfig({
   target: ['node18', 'es2017'],
