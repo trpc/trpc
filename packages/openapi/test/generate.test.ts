@@ -18,6 +18,7 @@ import { describe, expect, it } from 'vitest';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import type { OpenAPIDocument } from '../src/generate';
 import { generateOpenAPIDocument } from '../src/generate';
+import { createTRPCHeyApiClientConfig } from '../src/heyapi';
 
 const languageService = getLanguageService({
   logLevel: LogLevel.ERROR,
@@ -272,19 +273,7 @@ describe('generateOpenAPIDocument', () => {
   describe('hey-api client generation', () => {
     const genDir = path.resolve(routersDir, 'appRouter-heyapi');
 
-    const transformerlessClientConfig: ReturnType<
-      typeof heyapiClient.getConfig
-    > = {
-      querySerializer: (v) => {
-        const params = new URLSearchParams();
-
-        for (const [key, value] of Object.entries(v)) {
-          params.append(key, JSON.stringify(value));
-        }
-
-        return params.toString();
-      },
-    };
+    const transformerlessClientConfig = createTRPCHeyApiClientConfig();
 
     it('generates SDK files from the spec', () => {
       expect(existsSync(path.join(genDir, 'sdk.gen.ts'))).toBe(true);
@@ -407,40 +396,9 @@ describe('generateOpenAPIDocument', () => {
   describe('superjson transformer', () => {
     let doc: OpenAPIDocument;
 
-    const superjsonClientConfig: ReturnType<
-      typeof superjsonClient.getConfig
-    > = {
-      querySerializer: (v) => {
-        const params = new URLSearchParams();
-
-        for (const [key, value] of Object.entries(v)) {
-          if (key === 'input') {
-            params.append(key, JSON.stringify(superjson.serialize(value)));
-          } else {
-            params.append(key, JSON.stringify(value));
-          }
-        }
-
-        return params.toString();
-      },
-      bodySerializer: (v) => {
-        return JSON.stringify(superjson.serialize(v));
-      },
-      responseTransformer: async (data) => {
-        if (!!data && typeof data === 'object' && 'result' in data) {
-          (data as any).result.data = superjson.deserialize(
-            (data as any).result.data,
-          );
-        }
-        if (!!data && typeof data === 'object' && 'error' in data) {
-          (data as any).error.data = superjson.deserialize(
-            (data as any).error.data,
-          );
-        }
-
-        return data;
-      },
-    };
+    const superjsonClientConfig = createTRPCHeyApiClientConfig({
+      transformer: superjson,
+    });
 
     beforeAll(() => {
       doc = generateOpenAPIDocument(superjsonRouterPath, {
