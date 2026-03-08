@@ -63,24 +63,12 @@ This produces typed SDK functions matching your tRPC procedures:
 
 ## Calling procedures through the generated client
 
-tRPC wraps all responses in a `{ result: { data: ... } }` envelope. Your generated client won't know about this, so you need a **response interceptor** to unwrap it:
+The generated spec includes tRPC's response envelope (`{ result: { data: ... } }`) in every endpoint schema, so the generated client types match the actual HTTP responses out of the box.
 
 ```ts title='src/client.ts'
 import { client } from './generated/client.gen';
 
 client.setConfig({ baseUrl: 'http://localhost:3000' });
-
-// Unwrap the tRPC response envelope
-client.interceptors.response.use(async (response) => {
-  if (!response.ok) return response;
-  const body = await response.json();
-  const unwrapped = body?.result?.data ?? body;
-  return new Response(JSON.stringify(unwrapped), {
-    status: response.status,
-    statusText: response.statusText,
-    headers: response.headers,
-  });
-});
 ```
 
 Then call procedures like normal SDK functions:
@@ -94,13 +82,13 @@ const result = await greeting({
   querySerializer: () =>
     `input=${encodeURIComponent(JSON.stringify({ name: 'World' }))}`,
 });
-console.log(result.data); // { message: "Hello World" }
+console.log(result.data); // { result: { data: { message: "Hello World" } } }
 
 // Mutation with body
 const user = await userCreate({
   body: { name: 'Bob', age: 30 },
 });
-console.log(user.data); // { id: 2, name: "Bob", age: 30 }
+console.log(user.data); // { result: { data: { id: 2, name: "Bob", age: 30 } } }
 ```
 
 ## Handling transformers (superjson, devalue, etc.)
@@ -112,11 +100,11 @@ If your backend uses a [data transformer](/docs/server/data-transformers) like `
 The OpenAPI spec is generated from your declared TypeScript types (e.g. `z.date()` → `{ type: "string", format: "date-time" }`). It does **not** know about the transformer. This means:
 
 1. **Inputs** must be serialized with the transformer before sending
-2. **Outputs** arrive as a transformer envelope (e.g. `{ json: {...}, meta: {...} }` for superjson) and must be deserialized
+2. **Outputs** arrive wrapped in both the tRPC envelope and the transformer envelope (e.g. `{ result: { data: { json: {...}, meta: {...} } } }` for superjson) and must be deserialized
 
 ### What happens without transformer interceptors
 
-Without deserialization, you get the raw superjson envelope instead of your expected types:
+Without deserialization, the `result.data` field contains the raw superjson envelope instead of your expected types:
 
 ```ts
 // ❌ Without superjson deserialization
@@ -124,11 +112,13 @@ const result = await getEvent({
   query: { input: { id: 'evt_1', at: '2025-06-15T10:00:00Z' } },
   querySerializer: () => `input=${encodeURIComponent(JSON.stringify({ id: 'evt_1', at: '2025-06-15' }))}`,
 });
-// result.data = { json: { id: "evt_1", at: "2025-06-15T10:00:00.000Z" }, meta: { values: { at: ["Date"] } } }
-//                ^^^^^ raw envelope, not your data!
+// result.data.result.data = { json: { id: "evt_1", at: "2025-06-15T10:00:00.000Z" }, meta: { values: { at: ["Date"] } } }
+//                            ^^^^^ raw superjson envelope, not your data!
 ```
 
 ### Adding superjson interceptors
+
+You need a response interceptor to deserialize the superjson envelope inside `result.data`:
 
 ```ts title='src/client.ts'
 import superjson from 'superjson';
@@ -136,13 +126,15 @@ import { client } from './generated/client.gen';
 
 client.setConfig({ baseUrl: 'http://localhost:3000' });
 
-// Deserialize the superjson response envelope
+// Deserialize the superjson envelope within the tRPC response
 client.interceptors.response.use(async (response) => {
   if (!response.ok) return response;
   const body = await response.json();
   const sjEnvelope = body?.result?.data ?? body;
   const deserialized = superjson.deserialize(sjEnvelope);
-  return new Response(JSON.stringify(deserialized), {
+  // Rewrite result.data with the deserialized value
+  body.result.data = deserialized;
+  return new Response(JSON.stringify(body), {
     status: response.status,
     statusText: response.statusText,
     headers: response.headers,
@@ -166,7 +158,7 @@ const event = await getEvent({
   querySerializer: () =>
     `input=${encodeURIComponent(JSON.stringify(sjInput))}`,
 });
-// event.data = { id: "evt_1", at: "2025-06-15T10:00:00.000Z" }  ✅
+// event.data.result.data = { id: "evt_1", at: "2025-06-15T10:00:00.000Z" }  ✅
 
 // Mutation — serialize body with superjson
 const sjBody = superjson.serialize({
@@ -176,7 +168,7 @@ const sjBody = superjson.serialize({
 const created = await createEvent({
   body: sjBody,
 });
-// created.data = { name: "Conference", at: "2025-09-01T09:00:00.000Z" }  ✅
+// created.data.result.data = { name: "Conference", at: "2025-09-01T09:00:00.000Z" }  ✅
 ```
 
 :::tip

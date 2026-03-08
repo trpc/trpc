@@ -51,6 +51,17 @@ function resolveSchema(schema: any, doc: OpenAPIDocument): any {
   return (doc.components as any).schemas?.[name] ?? schema;
 }
 
+/**
+ * Extract the procedure's output schema from the tRPC success envelope.
+ * The envelope is `{ result: { data: T } }`, so we dig into
+ * `schema.properties.result.properties.data` and resolve any $ref.
+ */
+function unwrapSuccessData(schema: any, doc: OpenAPIDocument): any {
+  const resolved = resolveSchema(schema, doc);
+  const dataSchema = resolved?.properties?.result?.properties?.data;
+  return dataSchema ? resolveSchema(dataSchema, doc) : undefined;
+}
+
 describe('generateOpenAPIDocument', () => {
   it('throws when the export is not found', () => {
     expect(() =>
@@ -104,9 +115,15 @@ describe('generateOpenAPIDocument', () => {
     it('serialises the error shape from errorFormatter into components', () => {
       // The default router uses `initTRPC.create()` with no custom error formatter,
       // so the error response schema should match the DefaultErrorShape type.
-      const rawErrorSchema = (doc.components as any).responses.error.content[
+      const envelopeSchema = (doc.components as any).responses.error.content[
         'application/json'
       ].schema;
+
+      // The envelope wraps the error shape: { error: TRPCErrorShape }
+      expect(envelopeSchema.type).toBe('object');
+      expect(envelopeSchema.required).toContain('error');
+
+      const rawErrorSchema = envelopeSchema.properties.error;
       const errorSchema = resolveSchema(rawErrorSchema, doc);
 
       // DefaultErrorShape has: message (string), code (number), data (object with code, httpStatus, path?, stack?)
@@ -129,7 +146,7 @@ describe('generateOpenAPIDocument', () => {
       const brandedOp = doc.paths['/complexTypes.branded']?.['get'] as any;
       const rawResponseSchema =
         brandedOp?.responses?.['200']?.content?.['application/json']?.schema;
-      const responseSchema = resolveSchema(rawResponseSchema, doc);
+      const responseSchema = unwrapSuccessData(rawResponseSchema, doc);
 
       expect(responseSchema).toEqual({
         type: 'object',
@@ -143,7 +160,7 @@ describe('generateOpenAPIDocument', () => {
       ] as any;
       const rawInferredSchema =
         inferredOp?.responses?.['200']?.content?.['application/json']?.schema;
-      const inferredSchema = resolveSchema(rawInferredSchema, doc);
+      const inferredSchema = unwrapSuccessData(rawInferredSchema, doc);
 
       // No brand object should leak — all fields should resolve to primitives
       expect(inferredSchema?.properties?.userId).toEqual({ type: 'string' });
@@ -172,7 +189,7 @@ describe('generateOpenAPIDocument', () => {
       });
 
       // Depth 1: named type as a direct property → property is a $ref
-      const withProfileOutput = resolveSchema(
+      const withProfileOutput = unwrapSuccessData(
         (doc.paths['/namedTypes.withProfile']?.['get'] as any)?.responses?.[
           '200'
         ]?.content?.['application/json']?.schema,
@@ -183,7 +200,7 @@ describe('generateOpenAPIDocument', () => {
       });
 
       // Array items: named type inside array → items is a $ref
-      const orderItemsOutput = resolveSchema(
+      const orderItemsOutput = unwrapSuccessData(
         (doc.paths['/namedTypes.orderItems']?.['get'] as any)?.responses?.[
           '200'
         ]?.content?.['application/json']?.schema,
@@ -195,7 +212,7 @@ describe('generateOpenAPIDocument', () => {
       });
 
       // Dedup: same named type reused across procedures → same $ref
-      const paOutput = resolveSchema(
+      const paOutput = unwrapSuccessData(
         (doc.paths['/namedTypes.profileAndAddress']?.['get'] as any)
           ?.responses?.['200']?.content?.['application/json']?.schema,
         doc,
@@ -208,7 +225,7 @@ describe('generateOpenAPIDocument', () => {
       });
 
       // Depth 3: named type deeply nested → still a $ref
-      const deepOutput = resolveSchema(
+      const deepOutput = unwrapSuccessData(
         (doc.paths['/namedTypes.deepNested']?.['get'] as any)?.responses?.[
           '200'
         ]?.content?.['application/json']?.schema,
@@ -243,17 +260,19 @@ describe('generateOpenAPIDocument', () => {
         items: { $ref: '#/components/schemas/Category' },
       });
 
-      // The procedures should reference these schemas
+      // The procedures should reference these schemas (inside the tRPC envelope)
       const treeOp = doc.paths['/recursiveTypes.tree']?.['get'] as any;
-      expect(
-        treeOp?.responses?.['200']?.content?.['application/json']?.schema,
-      ).toEqual({ $ref: '#/components/schemas/TreeNode' });
+      const treeData =
+        treeOp?.responses?.['200']?.content?.['application/json']?.schema
+          ?.properties?.result?.properties?.data;
+      expect(treeData).toEqual({ $ref: '#/components/schemas/TreeNode' });
 
       // z.lazy() output resolves through the inferred return type
       const categoryOp = doc.paths['/recursiveTypes.category']?.['get'] as any;
-      expect(
-        categoryOp?.responses?.['200']?.content?.['application/json']?.schema,
-      ).toEqual({ $ref: '#/components/schemas/Category' });
+      const categoryData =
+        categoryOp?.responses?.['200']?.content?.['application/json']?.schema
+          ?.properties?.result?.properties?.data;
+      expect(categoryData).toEqual({ $ref: '#/components/schemas/Category' });
     });
   });
 
@@ -296,23 +315,10 @@ describe('generateOpenAPIDocument', () => {
       const sdk = await import(/* @vite-ignore */ sdkPath);
       const clientMod = await import(/* @vite-ignore */ clientPath);
 
-      // Configure the client for our test server with tRPC-compatible
-      // query serialization and response envelope unwrapping.
+      // The generated SDK types already include the tRPC envelope, so no
+      // response interceptor is needed.
       const client = clientMod.client;
       client.setConfig({ baseUrl });
-
-      // tRPC wraps responses in { result: { data: ... } }, so unwrap
-      // by rewriting the response body before the client parses it.
-      client.interceptors.response.use(async (response: Response) => {
-        if (!response.ok) return response;
-        const body = (await response.json()) as any;
-        const unwrapped = body?.result?.data ?? body;
-        return new Response(JSON.stringify(unwrapped), {
-          status: response.status,
-          statusText: response.statusText,
-          headers: response.headers,
-        });
-      });
 
       // --- Query with input ---
       const greetingResult = await sdk.greeting({
@@ -321,23 +327,27 @@ describe('generateOpenAPIDocument', () => {
         querySerializer: () =>
           `input=${encodeURIComponent(JSON.stringify({ name: 'World' }))}`,
       });
-      expect(greetingResult.data).toEqual({ message: 'Hello World' });
+      expect(greetingResult.data).toEqual({
+        result: { data: { message: 'Hello World' } },
+      });
 
       // --- Query without input ---
       const noInputResult = await sdk.noInput();
-      expect(noInputResult.data).toBe('hello');
+      expect(noInputResult.data).toEqual({ result: { data: 'hello' } });
 
       // --- Mutation with input ---
       const userResult = await sdk.userCreate({
         body: { name: 'Bob', age: 30 },
       });
-      expect(userResult.data).toEqual({ id: 2, name: 'Bob', age: 30 });
+      expect(userResult.data).toEqual({
+        result: { data: { id: 2, name: 'Bob', age: 30 } },
+      });
 
       // --- Mutation (echo) ---
       const echoResult = await sdk.echo({
         body: 'test-echo',
       });
-      expect(echoResult.data).toBe('test-echo');
+      expect(echoResult.data).toEqual({ result: { data: 'test-echo' } });
     });
   });
 
@@ -353,9 +363,15 @@ describe('generateOpenAPIDocument', () => {
     });
 
     it('serialises the custom error shape into the error response', () => {
-      const rawErrorSchema = (doc.components as any).responses.error.content[
+      const envelopeSchema = (doc.components as any).responses.error.content[
         'application/json'
       ].schema;
+
+      // The envelope wraps the error shape: { error: TRPCErrorShape }
+      expect(envelopeSchema.type).toBe('object');
+      expect(envelopeSchema.required).toContain('error');
+
+      const rawErrorSchema = envelopeSchema.properties.error;
       const errorSchema = resolveSchema(rawErrorSchema, doc);
 
       // The custom formatter extends DefaultErrorShape and adds a zodError
@@ -371,9 +387,10 @@ describe('generateOpenAPIDocument', () => {
     });
 
     it('still includes standard error fields', () => {
-      const rawErrorSchema = (doc.components as any).responses.error.content[
+      const envelopeSchema = (doc.components as any).responses.error.content[
         'application/json'
       ].schema;
+      const rawErrorSchema = envelopeSchema.properties.error;
       const errorSchema = resolveSchema(rawErrorSchema, doc);
 
       // Standard fields from DefaultErrorShape
@@ -433,17 +450,7 @@ describe('generateOpenAPIDocument', () => {
       const client = clientMod.client;
       client.setConfig({ baseUrl });
 
-      // Unwrap tRPC envelope but do NOT apply superjson deserialization.
-      client.interceptors.response.use(async (response: Response) => {
-        if (!response.ok) return response;
-        const body = (await response.json()) as any;
-        const unwrapped = body?.result?.data ?? body;
-        return new Response(JSON.stringify(unwrapped), {
-          status: response.status,
-          statusText: response.statusText,
-          headers: response.headers,
-        });
-      });
+      // No interceptor — the SDK types already include the tRPC envelope.
 
       // Superjson-serialize the input (with a real Date) so the server accepts it
       const sjInput = superjson.serialize({
@@ -456,12 +463,14 @@ describe('generateOpenAPIDocument', () => {
           `input=${encodeURIComponent(JSON.stringify(sjInput))}`,
       });
 
-      // Without superjson deserialization on the response, we get the
-      // raw superjson envelope: { json: { ... }, meta: { values: ... } }
-      expect(result.data).toHaveProperty('json');
-      expect(result.data).toHaveProperty('meta');
+      // Without superjson deserialization on the response, result.data
+      // contains the tRPC envelope whose data is the raw superjson shape:
+      // { json: { ... }, meta: { values: ... } }
+      const innerData = result.data.result.data;
+      expect(innerData).toHaveProperty('json');
+      expect(innerData).toHaveProperty('meta');
       // The date in the json part is an ISO string, not a Date object
-      expect(typeof result.data.json.at).toBe('string');
+      expect(typeof innerData.json.at).toBe('string');
     });
 
     it('returns proper dates with a superjson interceptor', async () => {
@@ -481,13 +490,15 @@ describe('generateOpenAPIDocument', () => {
       const client = clientMod.client;
       client.setConfig({ baseUrl });
 
-      // Superjson deserialize response output
+      // Superjson deserialize the data inside the tRPC envelope
       client.interceptors.response.use(async (response: Response) => {
         if (!response.ok) return response;
         const body = (await response.json()) as any;
-        const sjEnvelope = body?.result?.data ?? body;
-        const deserialized = superjson.deserialize(sjEnvelope);
-        return new Response(JSON.stringify(deserialized), {
+        const sjEnvelope = body?.result?.data;
+        if (sjEnvelope) {
+          body.result.data = superjson.deserialize(sjEnvelope);
+        }
+        return new Response(JSON.stringify(body), {
           status: response.status,
           statusText: response.statusText,
           headers: response.headers,
@@ -506,8 +517,12 @@ describe('generateOpenAPIDocument', () => {
       });
 
       expect(getResult.data).toEqual({
-        id: 'evt_1',
-        at: '2025-06-15T10:00:00.000Z',
+        result: {
+          data: {
+            id: 'evt_1',
+            at: '2025-06-15T10:00:00.000Z',
+          },
+        },
       });
 
       // --- Mutation with superjson on both ends ---
@@ -520,8 +535,12 @@ describe('generateOpenAPIDocument', () => {
       });
 
       expect(createResult.data).toEqual({
-        name: 'Conference',
-        at: '2025-09-01T09:00:00.000Z',
+        result: {
+          data: {
+            name: 'Conference',
+            at: '2025-09-01T09:00:00.000Z',
+          },
+        },
       });
     });
   });
