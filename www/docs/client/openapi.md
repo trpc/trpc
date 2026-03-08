@@ -5,7 +5,7 @@ sidebar_label: OpenAPI Export
 slug: /client/openapi
 ---
 
-The `@trpc/openapi` package generates an OpenAPI 3.0 specification from your tRPC router at build time. You can then feed this spec into any OpenAPI code generator (e.g. [hey-api/openapi-ts](https://github.com/hey-api/openapi-ts)) to produce a typed REST client — useful for consumers that don't use tRPC directly.
+The `@trpc/openapi` package generates an OpenAPI 3.1 specification from your tRPC router at build time. You can then feed this spec into any OpenAPI code generator (e.g. [hey-api/openapi-ts](https://github.com/hey-api/openapi-ts)) to produce a typed REST client — useful for consumers that don't use tRPC directly.
 
 ## Install
 
@@ -59,118 +59,62 @@ This produces typed SDK functions matching your tRPC procedures:
 
 - **Queries** → `GET /procedure.path` with `?input=<JSON>`
 - **Mutations** → `POST /procedure.path` with JSON body
-- **Subscriptions** are skipped (not expressible in REST)
+- **Subscriptions** are skipped (SSE coming soon)
 
-## Calling procedures through the generated client
+## Using the generated client
 
-The generated spec includes tRPC's response envelope (`{ result: { data: ... } }`) in every endpoint schema, so the generated client types match the actual HTTP responses out of the box.
+tRPC uses a custom query format and response envelope that OpenAPI clients don't handle natively. The `@trpc/openapi/heyapi` package provides a `createTRPCHeyApiClientConfig` helper that configures the hey-api client to work correctly with tRPC endpoints.
+
+### Without a transformer
 
 ```ts title='src/client.ts'
+import { createTRPCHeyApiClientConfig } from '@trpc/openapi/heyapi';
 import { client } from './generated/client.gen';
 
-client.setConfig({ baseUrl: 'http://localhost:3000' });
+client.setConfig({
+  baseUrl: 'http://localhost:3000',
+  ...createTRPCHeyApiClientConfig(),
+});
 ```
-
-Then call procedures like normal SDK functions:
 
 ```ts title='src/usage.ts'
-import { greeting, userCreate } from './generated/sdk.gen';
+import { Sdk } from './generated/sdk.gen';
+import { client } from './generated/client.gen';
 
-// Query with input — tRPC expects ?input=<JSON>
-const result = await greeting({
-  query: { input: { name: 'World' } },
-  querySerializer: () =>
-    `input=${encodeURIComponent(JSON.stringify({ name: 'World' }))}`,
-});
-console.log(result.data); // { result: { data: { message: "Hello World" } } }
+const sdk = new Sdk({ client });
 
-// Mutation with body
-const user = await userCreate({
-  body: { name: 'Bob', age: 30 },
-});
-console.log(user.data); // { result: { data: { id: 2, name: "Bob", age: 30 } } }
+const result = await sdk.greeting({ query: { input: { name: 'World' } } });
+const user = await sdk.user.create({ body: { name: 'Bob', age: 30 } });
 ```
 
-## Handling transformers (superjson, devalue, etc.)
+### With a transformer (superjson, devalue, etc.)
 
 :::warning
-If your backend uses a [data transformer](/docs/server/data-transformers) like `superjson`, generated REST clients **must** apply the same serialization on both input and output. Without this, dates, Maps, Sets, and other non-JSON types will be silently wrong.
+If your backend uses a [data transformer](/docs/server/data-transformers) like `superjson`, you **must** pass it to the client config. Without this, dates, Maps, Sets, and other non-JSON types may be silently wrong.
 :::
 
-The OpenAPI spec is generated from your declared TypeScript types (e.g. `z.date()` → `{ type: "string", format: "date-time" }`). It does **not** know about the transformer. This means:
-
-1. **Inputs** must be serialized with the transformer before sending
-2. **Outputs** arrive wrapped in both the tRPC envelope and the transformer envelope (e.g. `{ result: { data: { json: {...}, meta: {...} } } }` for superjson) and must be deserialized
-
-### What happens without transformer interceptors
-
-Without deserialization, the `result.data` field contains the raw superjson envelope instead of your expected types:
-
-```ts
-// ❌ Without superjson deserialization
-const result = await getEvent({
-  query: { input: { id: 'evt_1', at: '2025-06-15T10:00:00Z' } },
-  querySerializer: () => `input=${encodeURIComponent(JSON.stringify({ id: 'evt_1', at: '2025-06-15' }))}`,
-});
-// result.data.result.data = { json: { id: "evt_1", at: "2025-06-15T10:00:00.000Z" }, meta: { values: { at: ["Date"] } } }
-//                            ^^^^^ raw superjson envelope, not your data!
-```
-
-### Adding superjson interceptors
-
-You need a response interceptor to deserialize the superjson envelope inside `result.data`:
+Pass your transformer and it handles serialisation in both directions automatically:
 
 ```ts title='src/client.ts'
 import superjson from 'superjson';
+import { createTRPCHeyApiClientConfig } from '@trpc/openapi/heyapi';
 import { client } from './generated/client.gen';
 
-client.setConfig({ baseUrl: 'http://localhost:3000' });
-
-// Deserialize the superjson envelope within the tRPC response
-client.interceptors.response.use(async (response) => {
-  if (!response.ok) return response;
-  const body = await response.json();
-  const sjEnvelope = body?.result?.data ?? body;
-  const deserialized = superjson.deserialize(sjEnvelope);
-  // Rewrite result.data with the deserialized value
-  body.result.data = deserialized;
-  return new Response(JSON.stringify(body), {
-    status: response.status,
-    statusText: response.statusText,
-    headers: response.headers,
-  });
+client.setConfig({
+  baseUrl: 'http://localhost:3000',
+  ...createTRPCHeyApiClientConfig({ transformer: superjson }),
 });
 ```
 
-Inputs must also be serialized with superjson:
+You can then pass native types directly and get them back deserialised:
 
-```ts title='src/usage-with-superjson.ts'
-import superjson from 'superjson';
-import { getEvent, createEvent } from './generated/sdk.gen';
+```ts title='src/usage.ts'
+const event = await sdk.getEvent({
+  query: { input: { id: 'evt_1', at: new Date('2025-06-15T10:00:00Z') } },
+});
+// event.data.result.data.at is a Date object ✅
 
-// Query — serialize input with superjson
-const sjInput = superjson.serialize({
-  id: 'evt_1',
-  at: new Date('2025-06-15T10:00:00Z'),
+const created = await sdk.createEvent({
+  body: { name: 'Conference', at: new Date('2025-09-01T09:00:00Z') },
 });
-const event = await getEvent({
-  query: { input: sjInput },
-  querySerializer: () =>
-    `input=${encodeURIComponent(JSON.stringify(sjInput))}`,
-});
-// event.data.result.data = { id: "evt_1", at: "2025-06-15T10:00:00.000Z" }  ✅
-
-// Mutation — serialize body with superjson
-const sjBody = superjson.serialize({
-  name: 'Conference',
-  at: new Date('2025-09-01T09:00:00Z'),
-});
-const created = await createEvent({
-  body: sjBody,
-});
-// created.data.result.data = { name: "Conference", at: "2025-09-01T09:00:00.000Z" }  ✅
 ```
-
-:::tip
-The same pattern applies to any transformer — not just superjson. If you use `devalue` or a custom transformer, replace `superjson.serialize()` / `superjson.deserialize()` with your transformer's equivalent methods.
-:::

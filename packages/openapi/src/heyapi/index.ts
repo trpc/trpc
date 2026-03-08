@@ -42,15 +42,13 @@ export interface TRPCHeyApiClientOptions {
   transformer?: DataTransformerOptions;
 }
 
-export type TRPCHeyApiClientConfig = Required<
-  Pick<Config, 'querySerializer'>
-> &
+export type TRPCHeyApiClientConfig = Required<Pick<Config, 'querySerializer'>> &
   Pick<Config, 'bodySerializer' | 'responseTransformer'>;
 
 export function createTRPCHeyApiClientConfig(
   opts?: TRPCHeyApiClientOptions,
 ): TRPCHeyApiClientConfig {
-  const resolved = opts?.transformer
+  const transformer = opts?.transformer
     ? resolveTransformer(opts.transformer)
     : undefined;
 
@@ -59,8 +57,11 @@ export function createTRPCHeyApiClientConfig(
       const params = new URLSearchParams();
 
       for (const [key, value] of Object.entries(query)) {
-        if (key === 'input' && resolved) {
-          params.append(key, JSON.stringify(resolved.input.serialize(value)));
+        if (key === 'input' && transformer) {
+          params.append(
+            key,
+            JSON.stringify(transformer.input.serialize(value)),
+          );
         } else {
           params.append(key, JSON.stringify(value));
         }
@@ -69,19 +70,19 @@ export function createTRPCHeyApiClientConfig(
       return params.toString();
     },
 
-    ...(resolved && {
+    ...(transformer && {
       bodySerializer: (body: unknown) => {
-        return JSON.stringify(resolved.input.serialize(body));
+        return JSON.stringify(transformer.input.serialize(body));
       },
 
       responseTransformer: async (data: unknown) => {
         if (!!data && typeof data === 'object' && 'result' in data) {
-          (data as any).result.data = resolved.output.deserialize(
+          (data as any).result.data = transformer.output.deserialize(
             (data as any).result.data,
           );
         }
         if (!!data && typeof data === 'object' && 'error' in data) {
-          (data as any).error.data = resolved.output.deserialize(
+          (data as any).error.data = transformer.output.deserialize(
             (data as any).error.data,
           );
         }

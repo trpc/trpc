@@ -957,7 +957,7 @@ function buildOpenAPIDocument(
     components: {
       ...(hasNamedSchemas ? { schemas: meta.schemas } : {}),
       responses: {
-        error: {
+        Error: {
           description: 'Error response',
           content: {
             'application/json': {

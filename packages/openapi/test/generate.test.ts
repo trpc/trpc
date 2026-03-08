@@ -112,7 +112,7 @@ describe('generateOpenAPIDocument', () => {
     it('serialises the error shape from errorFormatter into components', () => {
       // The default router uses `initTRPC.create()` with no custom error formatter,
       // so the error response schema should match the DefaultErrorShape type.
-      const envelopeSchema = (doc.components as any).responses.error.content[
+      const envelopeSchema = (doc.components as any).responses.Error.content[
         'application/json'
       ].schema;
 
@@ -346,7 +346,7 @@ describe('generateOpenAPIDocument', () => {
     });
 
     it('serialises the custom error shape into the error response', () => {
-      const envelopeSchema = (doc.components as any).responses.error.content[
+      const envelopeSchema = (doc.components as any).responses.Error.content[
         'application/json'
       ].schema;
 
@@ -370,7 +370,7 @@ describe('generateOpenAPIDocument', () => {
     });
 
     it('still includes standard error fields', () => {
-      const envelopeSchema = (doc.components as any).responses.error.content[
+      const envelopeSchema = (doc.components as any).responses.Error.content[
         'application/json'
       ].schema;
       const rawErrorSchema = envelopeSchema.properties.error;
