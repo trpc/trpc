@@ -1,8 +1,8 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "Error Formatter API",
-    "version": "1.0.0"
+    "title": "tRPC API",
+    "version": "0.0.0"
   },
   "paths": {
     "/hello": {

@@ -1,8 +1,12 @@
-import { existsSync, rmSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import http from 'node:http';
 import * as path from 'node:path';
-import { AppRouter, SuperjsonRouter } from './__testRouter';
-import { createClient } from '@hey-api/openapi-ts';
+import { AppRouter } from './routers/appRouter';
+import { SuperjsonRouter } from './routers/superjsonRouter';
+import { client as heyapiClient } from './routers/appRouter-heyapi/client.gen';
+import { Sdk as HeyapiSdk } from './routers/appRouter-heyapi/sdk.gen';
+import { client as superjsonClient } from './routers/superjsonRouter-heyapi/client.gen';
+import { Sdk as SuperjsonSdk } from './routers/superjsonRouter-heyapi/sdk.gen';
 import {
   getLanguageService,
   LogLevel,
@@ -12,8 +16,8 @@ import { createHTTPHandler } from '@trpc/server/adapters/standalone';
 import superjson from 'superjson';
 import { describe, expect, it } from 'vitest';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import type { OpenAPIDocument } from './generate';
-import { generateOpenAPIDocument } from './generate';
+import type { OpenAPIDocument } from '../src/generate';
+import { generateOpenAPIDocument } from '../src/generate';
 
 const languageService = getLanguageService({
   logLevel: LogLevel.ERROR,
@@ -37,7 +41,10 @@ async function validateOpenAPI(spec: string) {
   }));
 }
 
-const testRouterPath = path.resolve(__dirname, '__testRouter.ts');
+const routersDir = path.resolve(__dirname, 'routers');
+const appRouterPath = path.resolve(routersDir, 'appRouter.ts');
+const errorFormatterRouterPath = path.resolve(routersDir, 'errorFormatterRouter.ts');
+const superjsonRouterPath = path.resolve(routersDir, 'superjsonRouter.ts');
 
 /** Resolve a schema that may be a $ref into the actual schema object. */
 function resolveSchema(schema: any, doc: OpenAPIDocument): any {
@@ -61,7 +68,7 @@ function unwrapSuccessData(schema: any, doc: OpenAPIDocument): any {
 describe('generateOpenAPIDocument', () => {
   it('throws when the export is not found', () => {
     expect(() =>
-      generateOpenAPIDocument(testRouterPath, { exportName: 'NonExistent' }),
+      generateOpenAPIDocument(appRouterPath, { exportName: 'NonExistent' }),
     ).toThrow(/NonExistent/);
   });
 
@@ -73,7 +80,7 @@ describe('generateOpenAPIDocument', () => {
     let doc: OpenAPIDocument;
 
     beforeAll(() => {
-      doc = generateOpenAPIDocument(testRouterPath, {
+      doc = generateOpenAPIDocument(appRouterPath, {
         title: 'Test API',
         version: '1.0.0',
       });
@@ -89,16 +96,6 @@ describe('generateOpenAPIDocument', () => {
         expect(key).not.toMatch(/..+\/.+/);
       }
       expect(Object.keys(doc.paths)).toContain('/user.create');
-    });
-
-    it('matches snapshot', async () => {
-      const doc = generateOpenAPIDocument(testRouterPath);
-
-      // Note to LLMs/Agents, you can read packages/server/src/openapi/__testRouter.ts.json
-      // to understand the output after a snapshot update
-      await expect(JSON.stringify(doc, null, 2)).toMatchFileSnapshot(
-        testRouterPath + '.json',
-      );
     });
 
     it('produces a spec with no validation errors when validated', async () => {
@@ -273,55 +270,21 @@ describe('generateOpenAPIDocument', () => {
   });
 
   describe('hey-api client generation', () => {
-    const genDir = path.resolve(__dirname, '__gen__', 'heyapi');
+    const genDir = path.resolve(routersDir, 'appRouter-heyapi');
 
     const transformerlessClientConfig: ReturnType<
-      // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-      typeof import('./__gen__/heyapi/client.gen').client.getConfig
+      typeof heyapiClient.getConfig
     > = {
       querySerializer: (v) => {
         const params = new URLSearchParams();
 
         for (const [key, value] of Object.entries(v)) {
-          if (key === 'input') {
-            params.append(key, JSON.stringify(superjson.serialize(value)));
-          } else {
-            params.append(key, JSON.stringify(value));
-          }
+          params.append(key, JSON.stringify(value));
         }
 
         return params.toString();
       },
     };
-
-    beforeAll(async () => {
-      rmSync(path.resolve(__dirname, '__gen__'), {
-        recursive: true,
-        force: true,
-      });
-
-      const doc = generateOpenAPIDocument(testRouterPath);
-      await createClient({
-        input: doc as any,
-        output: genDir,
-        plugins: [
-          '@hey-api/typescript',
-          {
-            name: '@hey-api/sdk',
-            operations: {
-              strategy: 'single',
-            },
-          },
-          '@hey-api/client-fetch',
-          {
-            dates: true,
-            bigInt: true,
-            name: '@hey-api/transformers',
-          },
-        ],
-        logs: { level: 'silent' },
-      });
-    });
 
     it('generates SDK files from the spec', () => {
       expect(existsSync(path.join(genDir, 'sdk.gen.ts'))).toBe(true);
@@ -337,23 +300,12 @@ describe('generateOpenAPIDocument', () => {
       const baseUrl = `http://localhost:${addr.port}`;
       await using _ = server;
 
-      // Import the generated SDK and client config
-      const sdkMod = await import(
-        /* @vite-ignore */ './__gen__/heyapi/sdk.gen'
-      );
-      const clientMod = await import(
-        /* @vite-ignore */ './__gen__/heyapi/client.gen'
-      );
-
-      // The generated SDK types already include the tRPC envelope, so no
-      // response interceptor is needed.
-      const client = clientMod.client;
-      client.setConfig({
+      heyapiClient.setConfig({
         baseUrl,
         ...transformerlessClientConfig,
       });
 
-      const sdk = new sdkMod.Sdk({ client });
+      const sdk = new HeyapiSdk({ client: heyapiClient });
 
       // --- Query with input ---
       const greetingResult = await sdk.greeting({
@@ -394,7 +346,7 @@ describe('generateOpenAPIDocument', () => {
     let doc: OpenAPIDocument;
 
     beforeAll(() => {
-      doc = generateOpenAPIDocument(testRouterPath, {
+      doc = generateOpenAPIDocument(errorFormatterRouterPath, {
         exportName: 'ErrorFormatterRouter',
         title: 'Error Formatter API',
         version: '1.0.0',
@@ -445,12 +397,6 @@ describe('generateOpenAPIDocument', () => {
       expect(dataSchema.properties).toHaveProperty('httpStatus');
     });
 
-    it('matches snapshot', async () => {
-      await expect(JSON.stringify(doc, null, 2)).toMatchFileSnapshot(
-        testRouterPath + '.ErrorFormatterRouter.json',
-      );
-    });
-
     it('produces a valid OpenAPI spec', async () => {
       const spec = JSON.stringify(doc, null, 2);
       const problems = await validateOpenAPI(spec);
@@ -459,12 +405,10 @@ describe('generateOpenAPIDocument', () => {
   });
 
   describe('superjson transformer', () => {
-    const genDir = path.resolve(__dirname, '__gen__', 'superjson');
     let doc: OpenAPIDocument;
 
     const superjsonClientConfig: ReturnType<
-      // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-      /* @vite-ignore */ typeof import('./__gen__/superjson/client.gen').client.getConfig
+      typeof superjsonClient.getConfig
     > = {
       querySerializer: (v) => {
         const params = new URLSearchParams();
@@ -498,42 +442,12 @@ describe('generateOpenAPIDocument', () => {
       },
     };
 
-    beforeAll(async () => {
-      rmSync(genDir, { recursive: true, force: true });
-
-      doc = generateOpenAPIDocument(testRouterPath, {
+    beforeAll(() => {
+      doc = generateOpenAPIDocument(superjsonRouterPath, {
         exportName: 'SuperjsonRouter',
         title: 'Superjson API',
         version: '1.0.0',
       });
-      await createClient({
-        input: doc as any,
-        output: genDir,
-        plugins: [
-          '@hey-api/typescript',
-          {
-            name: '@hey-api/sdk',
-            operations: {
-              strategy: 'single',
-            },
-          },
-          {
-            name: '@hey-api/client-fetch',
-          },
-          {
-            dates: true,
-            bigInt: true,
-            name: '@hey-api/transformers',
-          },
-        ],
-        logs: { level: 'info' },
-      });
-    });
-
-    it('matches snapshot', async () => {
-      await expect(JSON.stringify(doc, null, 2)).toMatchFileSnapshot(
-        testRouterPath + '.SuperjsonRouter.json',
-      );
     });
 
     it('returns raw superjson envelope without a superjson response interceptor', async () => {
@@ -545,19 +459,11 @@ describe('generateOpenAPIDocument', () => {
       const baseUrl = `http://localhost:${addr.port}`;
       await using _ = server;
 
-      const sdkMod = await import(
-        /* @vite-ignore */ './__gen__/superjson/sdk.gen'
-      );
-      const clientMod = await import(
-        /* @vite-ignore */ './__gen__/superjson/client.gen'
-      );
-
-      const client = clientMod.client;
-      client.setConfig({
+      superjsonClient.setConfig({
         baseUrl,
       });
 
-      const sdk = new sdkMod.Sdk({ client });
+      const sdk = new SuperjsonSdk({ client: superjsonClient });
 
       const input = { id: 'evt_1', at: new Date('2025-06-15T10:00:00Z') };
 
@@ -600,17 +506,9 @@ describe('generateOpenAPIDocument', () => {
       const baseUrl = `http://localhost:${addr.port}`;
       await using _ = server;
 
-      const sdkMod = await import(
-        /* @vite-ignore */ './__gen__/superjson/sdk.gen'
-      );
-      const clientMod = await import(
-        /* @vite-ignore */ './__gen__/superjson/client.gen'
-      );
+      superjsonClient.setConfig({ baseUrl, ...superjsonClientConfig });
 
-      const client = clientMod.client;
-      client.setConfig({ baseUrl, ...superjsonClientConfig });
-
-      const sdk = new sdkMod.Sdk({ client });
+      const sdk = new SuperjsonSdk({ client: superjsonClient });
 
       // --- Query with superjson on both ends ---
       const getResult = await sdk.getEvent({
