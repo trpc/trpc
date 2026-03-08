@@ -1,0 +1,295 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "Example API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/user.list": {
+      "get": {
+        "operationId": "user.list",
+        "tags": [
+          "user"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/User"
+                          }
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/user.byId": {
+      "get": {
+        "operationId": "user.byId",
+        "tags": [
+          "user"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/User"
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "style": "deepObject",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "/user.create": {
+      "post": {
+        "operationId": "user.create",
+        "tags": [
+          "user"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "id": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "id"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "DefaultErrorShape": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "code": {
+            "type": "number",
+            "enum": [
+              -32700,
+              -32600,
+              -32603,
+              -32001,
+              -32002,
+              -32003,
+              -32004,
+              -32005,
+              -32008,
+              -32009,
+              -32012,
+              -32013,
+              -32015,
+              -32022,
+              -32028,
+              -32029,
+              -32099
+            ]
+          },
+          "data": {
+            "$ref": "#/components/schemas/DefaultErrorData"
+          }
+        },
+        "required": [
+          "message",
+          "code",
+          "data"
+        ]
+      },
+      "DefaultErrorData": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "PARSE_ERROR",
+              "BAD_REQUEST",
+              "INTERNAL_SERVER_ERROR",
+              "NOT_IMPLEMENTED",
+              "BAD_GATEWAY",
+              "SERVICE_UNAVAILABLE",
+              "GATEWAY_TIMEOUT",
+              "UNAUTHORIZED",
+              "PAYMENT_REQUIRED",
+              "FORBIDDEN",
+              "NOT_FOUND",
+              "METHOD_NOT_SUPPORTED",
+              "TIMEOUT",
+              "CONFLICT",
+              "PRECONDITION_FAILED",
+              "PAYLOAD_TOO_LARGE",
+              "UNSUPPORTED_MEDIA_TYPE",
+              "UNPROCESSABLE_CONTENT",
+              "PRECONDITION_REQUIRED",
+              "TOO_MANY_REQUESTS",
+              "CLIENT_CLOSED_REQUEST"
+            ]
+          },
+          "httpStatus": {
+            "type": "number"
+          },
+          "path": {
+            "type": "string"
+          },
+          "stack": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "httpStatus"
+        ]
+      }
+    },
+    "responses": {
+      "Error": {
+        "description": "Error response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "$ref": "#/components/schemas/DefaultErrorShape"
+                }
+              },
+              "required": [
+                "error"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

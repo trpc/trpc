@@ -896,7 +896,7 @@ function buildProcedureOperation(
           },
         },
       },
-      default: { $ref: '#/components/responses/error' },
+      default: { $ref: '#/components/responses/Error' },
     },
   };
 

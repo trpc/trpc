@@ -1694,6 +1694,49 @@ importers:
         specifier: ^1.50.1
         version: 1.51.1
 
+  examples/openapi-codegen:
+    dependencies:
+      '@hey-api/client-fetch':
+        specifier: ^0.13.1
+        version: 0.13.1(@hey-api/openapi-ts@0.94.0(magicast@0.5.2)(typescript@5.9.2))
+      '@trpc/client':
+        specifier: npm:@trpc/client
+        version: link:../../packages/client
+      '@trpc/openapi':
+        specifier: npm:@trpc/openapi
+        version: link:../../packages/openapi
+      '@trpc/server':
+        specifier: npm:@trpc/server
+        version: link:../../packages/server
+      superjson:
+        specifier: ^1.12.4
+        version: 1.12.4
+      zod:
+        specifier: ^4.2.1
+        version: 4.2.1
+    devDependencies:
+      '@hey-api/openapi-ts':
+        specifier: ^0.94.0
+        version: 0.94.0(magicast@0.5.2)(typescript@5.9.2)
+      '@types/node':
+        specifier: ^22.13.5
+        version: 22.19.11
+      npm-run-all:
+        specifier: ^4.1.5
+        version: 4.1.5
+      start-server-and-test:
+        specifier: ^1.12.0
+        version: 1.14.0
+      tsx:
+        specifier: ^4.19.3
+        version: 4.19.4
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.2
+      wait-port:
+        specifier: ^1.0.1
+        version: 1.0.4
+
   examples/soa:
     devDependencies:
       '@trpc/client':
