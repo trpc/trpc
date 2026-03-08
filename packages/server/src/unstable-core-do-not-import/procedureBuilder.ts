@@ -2,7 +2,6 @@ import type { inferObservableValue, Observable } from '../observable';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import {
   procedureErrorKeySymbol,
-  setProcedureErrorShape,
   TRPCProcedureError,
 } from './error/TRPCProcedureError';
 import type {
@@ -96,7 +95,6 @@ type ProcedureBuilderDef<TMeta> = {
   subscription?: boolean;
   type?: ProcedureType;
   caller?: CallerOverride<unknown>;
-  errors: readonly ProcedureErrorConstructor[];
   errorFactories: ProcedureErrorFactoryMap;
 };
 
@@ -566,7 +564,6 @@ function createNewBuilder(
     middlewares = [],
     inputs,
     meta,
-    errors,
     errorFactories,
     ...rest
   } = def2;
@@ -576,7 +573,6 @@ function createNewBuilder(
     ...mergeWithoutOverrides(def1, rest),
     inputs: [...def1.inputs, ...(inputs ?? [])],
     middlewares: [...def1.middlewares, ...middlewares],
-    errors: [...def1.errors, ...(errors ?? [])],
     errorFactories: {
       ...def1.errorFactories,
       ...(errorFactories ?? {}),
@@ -602,7 +598,6 @@ export function createBuilder<TContext, TMeta>(
     procedure: true,
     inputs: [],
     middlewares: [],
-    errors: [],
     errorFactories: {},
     ...initDef,
   };
@@ -630,9 +625,7 @@ export function createBuilder<TContext, TMeta>(
     },
     errors(errors) {
       if (Array.isArray(errors)) {
-        return createNewBuilder(_def, {
-          errors,
-        });
+        return createNewBuilder(_def, {});
       }
 
       const errorFactories = Object.fromEntries(
@@ -829,18 +822,6 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
       });
     }
     if (!result.ok) {
-      const procedureCause = result.error.cause;
-      if (procedureCause instanceof TRPCProcedureError) {
-        const isDeclaredClassTypedError = _def.errors.some(
-          (ErrorClass) => procedureCause instanceof ErrorClass,
-        );
-        const errorKey = procedureCause[procedureErrorKeySymbol];
-        const isDeclaredFactoryTypedError =
-          typeof errorKey === 'string' && errorKey in _def.errorFactories;
-        if (isDeclaredClassTypedError || isDeclaredFactoryTypedError) {
-          setProcedureErrorShape(result.error, procedureCause.shape);
-        }
-      }
       // re-throw original error
       throw result.error;
     }
