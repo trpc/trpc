@@ -21,7 +21,11 @@ function unwrapSuccessData(schema: any, doc: OpenAPIDocument): any {
   return dataSchema ? resolveSchema(dataSchema, doc) : undefined;
 }
 
-function getResponseSchema(doc: OpenAPIDocument, procedurePath: string, method: 'get' | 'post' = 'get'): any {
+function getResponseSchema(
+  doc: OpenAPIDocument,
+  procedurePath: string,
+  method: 'get' | 'post' = 'get',
+): any {
   const op = doc.paths[`/${procedurePath}`]?.[method] as any;
   return op?.responses?.['200']?.content?.['application/json']?.schema;
 }
@@ -53,7 +57,10 @@ describe('generateOpenAPIDocument edge cases', () => {
   });
 
   it('unwraps Promise<T> return types', () => {
-    const schema = unwrapSuccessData(getResponseSchema(doc, 'asyncReturn'), doc);
+    const schema = unwrapSuccessData(
+      getResponseSchema(doc, 'asyncReturn'),
+      doc,
+    );
     expect(schema.properties.data).toEqual({ type: 'string' });
   });
 
@@ -84,7 +91,10 @@ describe('generateOpenAPIDocument edge cases', () => {
   });
 
   it('handles boolean | null', () => {
-    const schema = unwrapSuccessData(getResponseSchema(doc, 'boolNullable'), doc);
+    const schema = unwrapSuccessData(
+      getResponseSchema(doc, 'boolNullable'),
+      doc,
+    );
     expect(schema.properties.flag).toEqual({ type: ['boolean', 'null'] });
   });
 
@@ -102,7 +112,10 @@ describe('generateOpenAPIDocument edge cases', () => {
   });
 
   it('handles nullable objects in oneOf', () => {
-    const schema = unwrapSuccessData(getResponseSchema(doc, 'nullableObject'), doc);
+    const schema = unwrapSuccessData(
+      getResponseSchema(doc, 'nullableObject'),
+      doc,
+    );
     // Should be oneOf: [objectSchema, { type: "null" }] or type: ["object", "null"]
     expect(JSON.stringify(schema)).toContain('null');
   });
@@ -114,7 +127,10 @@ describe('generateOpenAPIDocument edge cases', () => {
   });
 
   it('handles complex nullable union (string | number | null)', () => {
-    const schema = unwrapSuccessData(getResponseSchema(doc, 'complexNullable'), doc);
+    const schema = unwrapSuccessData(
+      getResponseSchema(doc, 'complexNullable'),
+      doc,
+    );
     const valueSchema = schema.properties.value;
     // Should have string, number, and null represented
     const serialized = JSON.stringify(valueSchema);

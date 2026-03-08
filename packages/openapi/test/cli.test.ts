@@ -3,7 +3,8 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-const cliPath = path.resolve(__dirname, '../dist/cli.js');
+const cliPath = path.resolve(__dirname, '../src/cli.ts');
+const tsxPath = path.resolve(__dirname, '../../../node_modules/.bin/tsx');
 const routersDir = path.resolve(__dirname, 'routers');
 const appRouterPath = path.resolve(routersDir, 'appRouter.ts');
 const errorFormatterRouterPath = path.resolve(
@@ -14,11 +15,13 @@ const errorFormatterRouterPath = path.resolve(
 /** Isolated output directory for CLI tests — gitignored via __generated__ prefix. */
 const outDir = path.resolve(__dirname, '__generated__');
 
-function runCli(
-  args: string[],
-): { stdout: string; stderr: string; exitCode: number } {
+function runCli(args: string[]): {
+  stdout: string;
+  stderr: string;
+  exitCode: number;
+} {
   try {
-    const stdout = execFileSync('node', [cliPath, ...args], {
+    const stdout = execFileSync(tsxPath, [cliPath, ...args], {
       encoding: 'utf8',
       timeout: 60_000,
     });
@@ -163,11 +166,11 @@ describe('CLI', () => {
     const defaultOutput = path.join(outDir, 'openapi.json');
 
     try {
-      execFileSync(
-        'node',
-        [cliPath, appRouterPath],
-        { encoding: 'utf8', timeout: 60_000, cwd: outDir },
-      );
+      execFileSync(tsxPath, [cliPath, appRouterPath], {
+        encoding: 'utf8',
+        timeout: 60_000,
+        cwd: outDir,
+      });
     } catch {
       // ignore – we only care about the file
     }
