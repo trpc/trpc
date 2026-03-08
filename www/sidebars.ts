@@ -168,6 +168,7 @@ const config: SidebarsConfig = {
             'client/cors',
           ],
         },
+        'client/openapi',
       ],
     },
     {
