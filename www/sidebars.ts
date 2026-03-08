@@ -180,6 +180,7 @@ const config: SidebarsConfig = {
             'client/links/retryLink',
           ],
         },
+        'client/openapi',
         'client/headers',
         'client/cors',
       ],
