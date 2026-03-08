@@ -1,6 +1,11 @@
 import type { Observable } from '../observable';
 import { createRecursiveProxy } from './createProxy';
 import { defaultFormatter } from './error/formatter';
+import {
+  procedureErrorKeySymbol,
+  procedureErrorShapeSymbol,
+  TRPCProcedureError,
+} from './error/TRPCProcedureError';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
   AnyProcedure,
@@ -441,7 +446,25 @@ export async function callProcedure(
     });
   }
 
-  return proc(opts);
+  try {
+    return await proc(opts);
+  } catch (cause) {
+    const error = getTRPCErrorFromUnknown(cause);
+    const procedureCause = error.cause;
+    if (procedureCause instanceof TRPCProcedureError) {
+      const isDeclaredClassTypedError = proc._def.errors.some(
+        (ErrorClass) => procedureCause instanceof ErrorClass,
+      );
+      const errorKey = procedureCause[procedureErrorKeySymbol];
+      const isDeclaredFactoryTypedError =
+        typeof errorKey === 'string' && errorKey in proc._def.errorFactories;
+
+      if (isDeclaredClassTypedError || isDeclaredFactoryTypedError) {
+        (error as any)[procedureErrorShapeSymbol] = procedureCause.shape;
+      }
+    }
+    throw error;
+  }
 }
 
 export interface RouterCallerFactory<TRoot extends AnyRootTypes> {

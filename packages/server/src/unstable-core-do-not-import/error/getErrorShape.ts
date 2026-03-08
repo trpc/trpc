@@ -1,11 +1,10 @@
 import { getHTTPStatusCodeFromError } from '../http/getHTTPStatusCode';
 import type { ProcedureType } from '../procedure';
-import type { AnyProcedure } from '../procedure';
 import type { AnyRootTypes, RootConfig } from '../rootConfig';
 import { TRPC_ERROR_CODES_BY_KEY } from '../rpc';
 import type { DefaultErrorShape } from './formatter';
+import { procedureErrorShapeSymbol } from './TRPCProcedureError';
 import type { TRPCError } from './TRPCError';
-import { TRPCProcedureError } from './TRPCProcedureError';
 
 /**
  * @internal
@@ -17,18 +16,12 @@ export function getErrorShape<TRoot extends AnyRootTypes>(opts: {
   path: string | undefined;
   input: unknown;
   ctx: TRoot['ctx'] | undefined;
-  procedure?: AnyProcedure | null;
 }): TRoot['errorShape'] {
-  const { procedure } = opts;
-  const cause = opts.error.cause;
-  if (procedure && cause instanceof TRPCProcedureError) {
-    const isDeclaredTypedError = procedure._def.errors.some(
-      (ErrorClass) => cause instanceof ErrorClass,
-    );
-
-    if (isDeclaredTypedError) {
-      return cause.shape as TRoot['errorShape'];
-    }
+  const typedShape = (opts.error as any)[procedureErrorShapeSymbol] as
+    | TRoot['errorShape']
+    | undefined;
+  if (typedShape) {
+    return typedShape;
   }
 
   const { path, error, config } = opts;
