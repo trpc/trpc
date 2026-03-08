@@ -17,3 +17,7 @@ www/docs/main/quickstart.mdx
 .output
 www/docs/typedoc
 packages/server/src/openapi/__testRouter.ts.json
+examples/openapi-codegen/src/client/generated
+examples/openapi-codegen/openapi.json
+packages/openapi/test/routers/*/
+packages/openapi/test/routers/*.json

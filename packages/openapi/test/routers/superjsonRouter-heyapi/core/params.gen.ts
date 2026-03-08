@@ -96,21 +96,13 @@ interface Params {
 
 const stripEmptySlots = (params: Params) => {
   for (const [slot, value] of Object.entries(params)) {
-    if (
-      value &&
-      typeof value === 'object' &&
-      !Array.isArray(value) &&
-      !Object.keys(value).length
-    ) {
+    if (value && typeof value === 'object' && !Array.isArray(value) && !Object.keys(value).length) {
       delete params[slot as Slot];
     }
   }
 };
 
-export const buildClientParams = (
-  args: ReadonlyArray<unknown>,
-  fields: FieldsConfig,
-) => {
+export const buildClientParams = (args: ReadonlyArray<unknown>, fields: FieldsConfig) => {
   const params: Params = {
     body: {},
     headers: {},
@@ -153,15 +145,11 @@ export const buildClientParams = (
             params[field.map] = value;
           }
         } else {
-          const extra = extraPrefixes.find(([prefix]) =>
-            key.startsWith(prefix),
-          );
+          const extra = extraPrefixes.find(([prefix]) => key.startsWith(prefix));
 
           if (extra) {
             const [prefix, slot] = extra;
-            (params[slot] as Record<string, unknown>)[
-              key.slice(prefix.length)
-            ] = value;
+            (params[slot] as Record<string, unknown>)[key.slice(prefix.length)] = value;
           } else if ('allowExtra' in config && config.allowExtra) {
             for (const [slot, allowed] of Object.entries(config.allowExtra)) {
               if (allowed) {

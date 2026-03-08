@@ -8,7 +8,9 @@
     "/hello": {
       "get": {
         "operationId": "hello",
-        "tags": ["hello"],
+        "tags": [
+          "hello"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -24,10 +26,14 @@
                           "type": "string"
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -51,7 +57,9 @@
                       "type": "string"
                     }
                   },
-                  "required": ["name"]
+                  "required": [
+                    "name"
+                  ]
                 }
               }
             }
@@ -88,11 +96,17 @@
                                   "path": {
                                     "type": "array",
                                     "items": {
-                                      "type": ["string", "number"]
+                                      "type": [
+                                        "string",
+                                        "number"
+                                      ]
                                     }
                                   }
                                 },
-                                "required": ["message", "path"]
+                                "required": [
+                                  "message",
+                                  "path"
+                                ]
                               }
                             },
                             {
@@ -136,7 +150,11 @@
                           "type": "string"
                         }
                       },
-                      "required": ["zodError", "code", "httpStatus"]
+                      "required": [
+                        "zodError",
+                        "code",
+                        "httpStatus"
+                      ]
                     },
                     "message": {
                       "type": "string"
@@ -144,16 +162,36 @@
                     "code": {
                       "type": "number",
                       "enum": [
-                        -32700, -32600, -32603, -32001, -32002, -32003, -32004,
-                        -32005, -32008, -32009, -32012, -32013, -32015, -32022,
-                        -32028, -32029, -32099
+                        -32700,
+                        -32600,
+                        -32603,
+                        -32001,
+                        -32002,
+                        -32003,
+                        -32004,
+                        -32005,
+                        -32008,
+                        -32009,
+                        -32012,
+                        -32013,
+                        -32015,
+                        -32022,
+                        -32028,
+                        -32029,
+                        -32099
                       ]
                     }
                   },
-                  "required": ["data", "message", "code"]
+                  "required": [
+                    "data",
+                    "message",
+                    "code"
+                  ]
                 }
               },
-              "required": ["error"]
+              "required": [
+                "error"
+              ]
             }
           }
         }

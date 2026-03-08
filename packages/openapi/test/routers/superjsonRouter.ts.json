@@ -8,7 +8,9 @@
     "/getEvent": {
       "get": {
         "operationId": "getEvent",
-        "tags": ["getEvent"],
+        "tags": [
+          "getEvent"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -31,13 +33,20 @@
                               "format": "date-time"
                             }
                           },
-                          "required": ["id", "at"]
+                          "required": [
+                            "id",
+                            "at"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -65,7 +74,10 @@
                       "format": "date-time"
                     }
                   },
-                  "required": ["id", "at"]
+                  "required": [
+                    "id",
+                    "at"
+                  ]
                 }
               }
             }
@@ -76,7 +88,9 @@
     "/createEvent": {
       "post": {
         "operationId": "createEvent",
-        "tags": ["createEvent"],
+        "tags": [
+          "createEvent"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -99,13 +113,20 @@
                               "format": "date-time"
                             }
                           },
-                          "required": ["name", "at"]
+                          "required": [
+                            "name",
+                            "at"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -129,7 +150,10 @@
                     "format": "date-time"
                   }
                 },
-                "required": ["name", "at"]
+                "required": [
+                  "name",
+                  "at"
+                ]
               }
             }
           }
@@ -148,8 +172,22 @@
           "code": {
             "type": "number",
             "enum": [
-              -32700, -32600, -32603, -32001, -32002, -32003, -32004, -32005,
-              -32008, -32009, -32012, -32013, -32015, -32022, -32028, -32029,
+              -32700,
+              -32600,
+              -32603,
+              -32001,
+              -32002,
+              -32003,
+              -32004,
+              -32005,
+              -32008,
+              -32009,
+              -32012,
+              -32013,
+              -32015,
+              -32022,
+              -32028,
+              -32029,
               -32099
             ]
           },
@@ -157,7 +195,11 @@
             "$ref": "#/components/schemas/DefaultErrorData"
           }
         },
-        "required": ["message", "code", "data"]
+        "required": [
+          "message",
+          "code",
+          "data"
+        ]
       },
       "DefaultErrorData": {
         "type": "object",
@@ -198,7 +240,10 @@
             "type": "string"
           }
         },
-        "required": ["code", "httpStatus"]
+        "required": [
+          "code",
+          "httpStatus"
+        ]
       }
     },
     "responses": {
@@ -213,7 +258,9 @@
                   "$ref": "#/components/schemas/DefaultErrorShape"
                 }
               },
-              "required": ["error"]
+              "required": [
+                "error"
+              ]
             }
           }
         }

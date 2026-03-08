@@ -19,8 +19,7 @@
     "build": "tsdown",
     "dev": "tsdown --watch",
     "lint": "eslint --cache src",
-    "codegen": "tsx test/scripts/codegen.ts",
-    "postinstall": "pnpm run codegen",
+    "codegen": "tsx test/scripts/codegen.run.ts",
     "typecheck": "tsc --noEmit --preserveWatchOutput --pretty"
   },
   "exports": {

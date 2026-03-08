@@ -55,7 +55,7 @@ export async function codegen() {
           name: '@hey-api/transformers',
         },
       ],
-      logs: { level: 'silent' },
+      logs: { level: 'error' },
     });
   }
 }

@@ -22,10 +22,6 @@ import { Sdk as SuperjsonSdk } from './routers/superjsonRouter-heyapi/sdk.gen';
 
 const languageService = getLanguageService({
   logLevel: LogLevel.ERROR,
-  validationContext: {
-    referenceValidationContinueOnError: true,
-    referenceValidationMode: ReferenceValidationMode.APIDOM_INDIRECT_EXTERNAL,
-  },
 });
 
 async function validateOpenAPI(spec: string) {

@@ -8,7 +8,9 @@
     "/greeting": {
       "get": {
         "operationId": "greeting",
-        "tags": ["greeting"],
+        "tags": [
+          "greeting"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -27,13 +29,19 @@
                               "type": "string"
                             }
                           },
-                          "required": ["message"]
+                          "required": [
+                            "message"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -57,7 +65,9 @@
                       "type": "string"
                     }
                   },
-                  "required": ["name"]
+                  "required": [
+                    "name"
+                  ]
                 }
               }
             }
@@ -68,7 +78,9 @@
     "/noInput": {
       "get": {
         "operationId": "noInput",
-        "tags": ["noInput"],
+        "tags": [
+          "noInput"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -84,10 +96,14 @@
                           "type": "string"
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -101,7 +117,9 @@
     "/echo": {
       "post": {
         "operationId": "echo",
-        "tags": ["echo"],
+        "tags": [
+          "echo"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -117,10 +135,14 @@
                           "type": "string"
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -144,7 +166,9 @@
     "/user.list": {
       "get": {
         "operationId": "user.list",
-        "tags": ["user"],
+        "tags": [
+          "user"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -168,14 +192,21 @@
                                 "type": "string"
                               }
                             },
-                            "required": ["id", "name"]
+                            "required": [
+                              "id",
+                              "name"
+                            ]
                           }
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -189,7 +220,9 @@
     "/user.create": {
       "post": {
         "operationId": "user.create",
-        "tags": ["user"],
+        "tags": [
+          "user"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -214,13 +247,20 @@
                               "type": "number"
                             }
                           },
-                          "required": ["name", "id"]
+                          "required": [
+                            "name",
+                            "id"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -243,7 +283,9 @@
                     "type": "number"
                   }
                 },
-                "required": ["name"]
+                "required": [
+                  "name"
+                ]
               }
             }
           }
@@ -253,7 +295,9 @@
     "/complexTypes.zodEnum": {
       "get": {
         "operationId": "complexTypes.zodEnum",
-        "tags": ["complexTypes"],
+        "tags": [
+          "complexTypes"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -270,16 +314,26 @@
                           "properties": {
                             "status": {
                               "type": "string",
-                              "enum": ["active", "inactive", "pending"]
+                              "enum": [
+                                "active",
+                                "inactive",
+                                "pending"
+                              ]
                             }
                           },
-                          "required": ["status"]
+                          "required": [
+                            "status"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -301,10 +355,16 @@
                   "properties": {
                     "status": {
                       "type": "string",
-                      "enum": ["active", "inactive", "pending"]
+                      "enum": [
+                        "active",
+                        "inactive",
+                        "pending"
+                      ]
                     }
                   },
-                  "required": ["status"]
+                  "required": [
+                    "status"
+                  ]
                 }
               }
             }
@@ -315,7 +375,9 @@
     "/complexTypes.nativeEnum": {
       "get": {
         "operationId": "complexTypes.nativeEnum",
-        "tags": ["complexTypes"],
+        "tags": [
+          "complexTypes"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -332,16 +394,27 @@
                           "properties": {
                             "direction": {
                               "type": "string",
-                              "enum": ["UP", "DOWN", "LEFT", "RIGHT"]
+                              "enum": [
+                                "UP",
+                                "DOWN",
+                                "LEFT",
+                                "RIGHT"
+                              ]
                             }
                           },
-                          "required": ["direction"]
+                          "required": [
+                            "direction"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -363,10 +436,17 @@
                   "properties": {
                     "direction": {
                       "type": "string",
-                      "enum": ["UP", "DOWN", "LEFT", "RIGHT"]
+                      "enum": [
+                        "UP",
+                        "DOWN",
+                        "LEFT",
+                        "RIGHT"
+                      ]
                     }
                   },
-                  "required": ["direction"]
+                  "required": [
+                    "direction"
+                  ]
                 }
               }
             }
@@ -377,7 +457,9 @@
     "/complexTypes.literal": {
       "get": {
         "operationId": "complexTypes.literal",
-        "tags": ["complexTypes"],
+        "tags": [
+          "complexTypes"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -405,13 +487,21 @@
                               "const": true
                             }
                           },
-                          "required": ["strLit", "numLit", "boolLit"]
+                          "required": [
+                            "strLit",
+                            "numLit",
+                            "boolLit"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -444,7 +534,11 @@
                       "const": true
                     }
                   },
-                  "required": ["strLit", "numLit", "boolLit"]
+                  "required": [
+                    "strLit",
+                    "numLit",
+                    "boolLit"
+                  ]
                 }
               }
             }
@@ -455,7 +549,9 @@
     "/complexTypes.literalUnion": {
       "get": {
         "operationId": "complexTypes.literalUnion",
-        "tags": ["complexTypes"],
+        "tags": [
+          "complexTypes"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -472,16 +568,26 @@
                           "properties": {
                             "color": {
                               "type": "string",
-                              "enum": ["red", "green", "blue"]
+                              "enum": [
+                                "red",
+                                "green",
+                                "blue"
+                              ]
                             }
                           },
-                          "required": ["color"]
+                          "required": [
+                            "color"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -503,10 +609,16 @@
                   "properties": {
                     "color": {
                       "type": "string",
-                      "enum": ["red", "green", "blue"]
+                      "enum": [
+                        "red",
+                        "green",
+                        "blue"
+                      ]
                     }
                   },
-                  "required": ["color"]
+                  "required": [
+                    "color"
+                  ]
                 }
               }
             }
@@ -517,7 +629,9 @@
     "/complexTypes.discriminatedUnion": {
       "post": {
         "operationId": "complexTypes.discriminatedUnion",
-        "tags": ["complexTypes"],
+        "tags": [
+          "complexTypes"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -542,7 +656,10 @@
                                   "type": "string"
                                 }
                               },
-                              "required": ["type", "content"]
+                              "required": [
+                                "type",
+                                "content"
+                              ]
                             },
                             {
                               "type": "object",
@@ -561,7 +678,12 @@
                                   "type": "number"
                                 }
                               },
-                              "required": ["type", "url", "width", "height"]
+                              "required": [
+                                "type",
+                                "url",
+                                "width",
+                                "height"
+                              ]
                             },
                             {
                               "type": "object",
@@ -577,15 +699,23 @@
                                   "type": "number"
                                 }
                               },
-                              "required": ["type", "url", "duration"]
+                              "required": [
+                                "type",
+                                "url",
+                                "duration"
+                              ]
                             }
                           ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -611,7 +741,10 @@
                         "type": "string"
                       }
                     },
-                    "required": ["type", "content"]
+                    "required": [
+                      "type",
+                      "content"
+                    ]
                   },
                   {
                     "type": "object",
@@ -630,7 +763,12 @@
                         "type": "number"
                       }
                     },
-                    "required": ["type", "url", "width", "height"]
+                    "required": [
+                      "type",
+                      "url",
+                      "width",
+                      "height"
+                    ]
                   },
                   {
                     "type": "object",
@@ -646,7 +784,11 @@
                         "type": "number"
                       }
                     },
-                    "required": ["type", "url", "duration"]
+                    "required": [
+                      "type",
+                      "url",
+                      "duration"
+                    ]
                   }
                 ]
               }
@@ -658,7 +800,9 @@
     "/complexTypes.union": {
       "get": {
         "operationId": "complexTypes.union",
-        "tags": ["complexTypes"],
+        "tags": [
+          "complexTypes"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -674,16 +818,26 @@
                           "type": "object",
                           "properties": {
                             "value": {
-                              "type": ["string", "number", "boolean"]
+                              "type": [
+                                "string",
+                                "number",
+                                "boolean"
+                              ]
                             }
                           },
-                          "required": ["value"]
+                          "required": [
+                            "value"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -704,10 +858,16 @@
                   "type": "object",
                   "properties": {
                     "value": {
-                      "type": ["string", "number", "boolean"]
+                      "type": [
+                        "string",
+                        "number",
+                        "boolean"
+                      ]
                     }
                   },
-                  "required": ["value"]
+                  "required": [
+                    "value"
+                  ]
                 }
               }
             }
@@ -718,7 +878,9 @@
     "/complexTypes.intersection": {
       "post": {
         "operationId": "complexTypes.intersection",
-        "tags": ["complexTypes"],
+        "tags": [
+          "complexTypes"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -743,13 +905,21 @@
                               "type": "string"
                             }
                           },
-                          "required": ["id", "name", "email"]
+                          "required": [
+                            "id",
+                            "name",
+                            "email"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -775,7 +945,11 @@
                     "type": "string"
                   }
                 },
-                "required": ["id", "name", "email"]
+                "required": [
+                  "id",
+                  "name",
+                  "email"
+                ]
               }
             }
           }
@@ -785,7 +959,9 @@
     "/complexTypes.tuple": {
       "get": {
         "operationId": "complexTypes.tuple",
-        "tags": ["complexTypes"],
+        "tags": [
+          "complexTypes"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -832,13 +1008,20 @@
                               "maxItems": 3
                             }
                           },
-                          "required": ["pair", "triple"]
+                          "required": [
+                            "pair",
+                            "triple"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -890,7 +1073,10 @@
                       "maxItems": 3
                     }
                   },
-                  "required": ["pair", "triple"]
+                  "required": [
+                    "pair",
+                    "triple"
+                  ]
                 }
               }
             }
@@ -901,7 +1087,9 @@
     "/complexTypes.record": {
       "get": {
         "operationId": "complexTypes.record",
-        "tags": ["complexTypes"],
+        "tags": [
+          "complexTypes"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -929,13 +1117,20 @@
                               }
                             }
                           },
-                          "required": ["metadata", "scores"]
+                          "required": [
+                            "metadata",
+                            "scores"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -968,7 +1163,10 @@
                       }
                     }
                   },
-                  "required": ["metadata", "scores"]
+                  "required": [
+                    "metadata",
+                    "scores"
+                  ]
                 }
               }
             }
@@ -979,7 +1177,9 @@
     "/complexTypes.complexArrays": {
       "get": {
         "operationId": "complexTypes.complexArrays",
-        "tags": ["complexTypes"],
+        "tags": [
+          "complexTypes"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -1015,7 +1215,11 @@
                                     "type": "boolean"
                                   }
                                 },
-                                "required": ["id", "label", "active"]
+                                "required": [
+                                  "id",
+                                  "label",
+                                  "active"
+                                ]
                               }
                             },
                             "matrix": {
@@ -1028,13 +1232,21 @@
                               }
                             }
                           },
-                          "required": ["tags", "items", "matrix"]
+                          "required": [
+                            "tags",
+                            "items",
+                            "matrix"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -1075,7 +1287,11 @@
                             "type": "boolean"
                           }
                         },
-                        "required": ["id", "label", "active"]
+                        "required": [
+                          "id",
+                          "label",
+                          "active"
+                        ]
                       }
                     },
                     "matrix": {
@@ -1088,7 +1304,11 @@
                       }
                     }
                   },
-                  "required": ["tags", "items", "matrix"]
+                  "required": [
+                    "tags",
+                    "items",
+                    "matrix"
+                  ]
                 }
               }
             }
@@ -1099,7 +1319,9 @@
     "/complexTypes.deeplyNested": {
       "get": {
         "operationId": "complexTypes.deeplyNested",
-        "tags": ["complexTypes"],
+        "tags": [
+          "complexTypes"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -1127,22 +1349,34 @@
                                           "type": "string"
                                         }
                                       },
-                                      "required": ["value"]
+                                      "required": [
+                                        "value"
+                                      ]
                                     }
                                   },
-                                  "required": ["level3"]
+                                  "required": [
+                                    "level3"
+                                  ]
                                 }
                               },
-                              "required": ["level2"]
+                              "required": [
+                                "level2"
+                              ]
                             }
                           },
-                          "required": ["level1"]
+                          "required": [
+                            "level1"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -1175,16 +1409,24 @@
                                   "type": "string"
                                 }
                               },
-                              "required": ["value"]
+                              "required": [
+                                "value"
+                              ]
                             }
                           },
-                          "required": ["level3"]
+                          "required": [
+                            "level3"
+                          ]
                         }
                       },
-                      "required": ["level2"]
+                      "required": [
+                        "level2"
+                      ]
                     }
                   },
-                  "required": ["level1"]
+                  "required": [
+                    "level1"
+                  ]
                 }
               }
             }
@@ -1195,7 +1437,9 @@
     "/complexTypes.dateType": {
       "get": {
         "operationId": "complexTypes.dateType",
-        "tags": ["complexTypes"],
+        "tags": [
+          "complexTypes"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -1215,13 +1459,19 @@
                               "format": "date-time"
                             }
                           },
-                          "required": ["createdAt"]
+                          "required": [
+                            "createdAt"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -1246,7 +1496,9 @@
                       "format": "date-time"
                     }
                   },
-                  "required": ["createdAt"]
+                  "required": [
+                    "createdAt"
+                  ]
                 }
               }
             }
@@ -1257,7 +1509,9 @@
     "/complexTypes.anyAndUnknown": {
       "get": {
         "operationId": "complexTypes.anyAndUnknown",
-        "tags": ["complexTypes"],
+        "tags": [
+          "complexTypes"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -1275,13 +1529,20 @@
                             "anything": {},
                             "something": {}
                           },
-                          "required": ["anything", "something"]
+                          "required": [
+                            "anything",
+                            "something"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -1304,7 +1565,10 @@
                     "anything": {},
                     "something": {}
                   },
-                  "required": ["anything", "something"]
+                  "required": [
+                    "anything",
+                    "something"
+                  ]
                 }
               }
             }
@@ -1315,7 +1579,9 @@
     "/complexTypes.defaults": {
       "get": {
         "operationId": "complexTypes.defaults",
-        "tags": ["complexTypes"],
+        "tags": [
+          "complexTypes"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -1338,16 +1604,27 @@
                             },
                             "sort": {
                               "type": "string",
-                              "enum": ["asc", "desc"]
+                              "enum": [
+                                "asc",
+                                "desc"
+                              ]
                             }
                           },
-                          "required": ["page", "limit", "sort"]
+                          "required": [
+                            "page",
+                            "limit",
+                            "sort"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -1375,7 +1652,10 @@
                     },
                     "sort": {
                       "type": "string",
-                      "enum": ["asc", "desc"]
+                      "enum": [
+                        "asc",
+                        "desc"
+                      ]
                     }
                   }
                 }
@@ -1388,7 +1668,9 @@
     "/complexTypes.refined": {
       "get": {
         "operationId": "complexTypes.refined",
-        "tags": ["complexTypes"],
+        "tags": [
+          "complexTypes"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -1413,13 +1695,21 @@
                               "type": "string"
                             }
                           },
-                          "required": ["email", "age", "url"]
+                          "required": [
+                            "email",
+                            "age",
+                            "url"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -1449,7 +1739,11 @@
                       "type": "string"
                     }
                   },
-                  "required": ["email", "age", "url"]
+                  "required": [
+                    "email",
+                    "age",
+                    "url"
+                  ]
                 }
               }
             }
@@ -1460,7 +1754,9 @@
     "/complexTypes.nullableUnion": {
       "get": {
         "operationId": "complexTypes.nullableUnion",
-        "tags": ["complexTypes"],
+        "tags": [
+          "complexTypes"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -1476,19 +1772,32 @@
                           "type": "object",
                           "properties": {
                             "value": {
-                              "type": ["string", "number", "null"]
+                              "type": [
+                                "string",
+                                "number",
+                                "null"
+                              ]
                             },
                             "optionalValue": {
-                              "type": ["string", "number"]
+                              "type": [
+                                "string",
+                                "number"
+                              ]
                             }
                           },
-                          "required": ["value"]
+                          "required": [
+                            "value"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -1509,13 +1818,22 @@
                   "type": "object",
                   "properties": {
                     "value": {
-                      "type": ["string", "number", "null"]
+                      "type": [
+                        "string",
+                        "number",
+                        "null"
+                      ]
                     },
                     "optionalValue": {
-                      "type": ["string", "number"]
+                      "type": [
+                        "string",
+                        "number"
+                      ]
                     }
                   },
-                  "required": ["value"]
+                  "required": [
+                    "value"
+                  ]
                 }
               }
             }
@@ -1526,7 +1844,9 @@
     "/complexTypes.passthrough": {
       "get": {
         "operationId": "complexTypes.passthrough",
-        "tags": ["complexTypes"],
+        "tags": [
+          "complexTypes"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -1545,14 +1865,20 @@
                               "type": "string"
                             }
                           },
-                          "required": ["known"],
+                          "required": [
+                            "known"
+                          ],
                           "additionalProperties": {}
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -1576,7 +1902,9 @@
                       "type": "string"
                     }
                   },
-                  "required": ["known"],
+                  "required": [
+                    "known"
+                  ],
                   "additionalProperties": {}
                 }
               }
@@ -1588,7 +1916,9 @@
     "/complexTypes.strict": {
       "get": {
         "operationId": "complexTypes.strict",
-        "tags": ["complexTypes"],
+        "tags": [
+          "complexTypes"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -1607,13 +1937,19 @@
                               "type": "string"
                             }
                           },
-                          "required": ["known"]
+                          "required": [
+                            "known"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -1637,7 +1973,9 @@
                       "type": "string"
                     }
                   },
-                  "required": ["known"]
+                  "required": [
+                    "known"
+                  ]
                 }
               }
             }
@@ -1648,7 +1986,9 @@
     "/complexTypes.branded": {
       "get": {
         "operationId": "complexTypes.branded",
-        "tags": ["complexTypes"],
+        "tags": [
+          "complexTypes"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -1667,13 +2007,19 @@
                               "type": "string"
                             }
                           },
-                          "required": ["userId"]
+                          "required": [
+                            "userId"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -1697,7 +2043,9 @@
                       "type": "string"
                     }
                   },
-                  "required": ["userId"]
+                  "required": [
+                    "userId"
+                  ]
                 }
               }
             }
@@ -1708,7 +2056,9 @@
     "/complexTypes.withCatch": {
       "get": {
         "operationId": "complexTypes.withCatch",
-        "tags": ["complexTypes"],
+        "tags": [
+          "complexTypes"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -1725,16 +2075,25 @@
                           "properties": {
                             "status": {
                               "type": "string",
-                              "enum": ["on", "off"]
+                              "enum": [
+                                "on",
+                                "off"
+                              ]
                             }
                           },
-                          "required": ["status"]
+                          "required": [
+                            "status"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -1756,10 +2115,15 @@
                   "properties": {
                     "status": {
                       "type": "string",
-                      "enum": ["on", "off"]
+                      "enum": [
+                        "on",
+                        "off"
+                      ]
                     }
                   },
-                  "required": ["status"]
+                  "required": [
+                    "status"
+                  ]
                 }
               }
             }
@@ -1770,7 +2134,9 @@
     "/complexTypes.piped": {
       "get": {
         "operationId": "complexTypes.piped",
-        "tags": ["complexTypes"],
+        "tags": [
+          "complexTypes"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -1789,13 +2155,19 @@
                               "type": "number"
                             }
                           },
-                          "required": ["value"]
+                          "required": [
+                            "value"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -1819,7 +2191,9 @@
                       "type": "string"
                     }
                   },
-                  "required": ["value"]
+                  "required": [
+                    "value"
+                  ]
                 }
               }
             }
@@ -1830,7 +2204,9 @@
     "/complexTypes.createContent": {
       "post": {
         "operationId": "complexTypes.createContent",
-        "tags": ["complexTypes"],
+        "tags": [
+          "complexTypes"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -1858,7 +2234,11 @@
                                   "type": "string"
                                 }
                               },
-                              "required": ["status", "id", "createdAt"]
+                              "required": [
+                                "status",
+                                "id",
+                                "createdAt"
+                              ]
                             },
                             {
                               "type": "object",
@@ -1874,15 +2254,23 @@
                                   "type": "number"
                                 }
                               },
-                              "required": ["status", "message", "code"]
+                              "required": [
+                                "status",
+                                "message",
+                                "code"
+                              ]
                             }
                           ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -1915,7 +2303,10 @@
                     "additionalProperties": {}
                   }
                 },
-                "required": ["title", "body"]
+                "required": [
+                  "title",
+                  "body"
+                ]
               }
             }
           }
@@ -1925,7 +2316,9 @@
     "/complexTypes.search": {
       "get": {
         "operationId": "complexTypes.search",
-        "tags": ["complexTypes"],
+        "tags": [
+          "complexTypes"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -1958,7 +2351,12 @@
                                     "type": "number"
                                   }
                                 },
-                                "required": ["id", "title", "snippet", "score"]
+                                "required": [
+                                  "id",
+                                  "title",
+                                  "snippet",
+                                  "score"
+                                ]
                               }
                             },
                             "total": {
@@ -1968,13 +2366,21 @@
                               "type": "boolean"
                             }
                           },
-                          "required": ["results", "total", "hasMore"]
+                          "required": [
+                            "results",
+                            "total",
+                            "hasMore"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2002,7 +2408,12 @@
                       "properties": {
                         "category": {
                           "type": "string",
-                          "enum": ["all", "posts", "users", "comments"]
+                          "enum": [
+                            "all",
+                            "posts",
+                            "users",
+                            "comments"
+                          ]
                         },
                         "dateRange": {
                           "type": "object",
@@ -2014,7 +2425,10 @@
                               "type": "string"
                             }
                           },
-                          "required": ["from", "to"]
+                          "required": [
+                            "from",
+                            "to"
+                          ]
                         },
                         "tags": {
                           "type": "array",
@@ -2024,7 +2438,11 @@
                         },
                         "sortBy": {
                           "type": "string",
-                          "enum": ["date", "relevance", "popularity"]
+                          "enum": [
+                            "date",
+                            "relevance",
+                            "popularity"
+                          ]
                         }
                       }
                     },
@@ -2038,10 +2456,15 @@
                           "type": "number"
                         }
                       },
-                      "required": ["page", "limit"]
+                      "required": [
+                        "page",
+                        "limit"
+                      ]
                     }
                   },
-                  "required": ["query"]
+                  "required": [
+                    "query"
+                  ]
                 }
               }
             }
@@ -2052,7 +2475,9 @@
     "/inferredReturns.enumLike": {
       "get": {
         "operationId": "inferredReturns.enumLike",
-        "tags": ["inferredReturns"],
+        "tags": [
+          "inferredReturns"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -2069,16 +2494,26 @@
                           "properties": {
                             "status": {
                               "type": "string",
-                              "enum": ["active", "inactive", "pending"]
+                              "enum": [
+                                "active",
+                                "inactive",
+                                "pending"
+                              ]
                             }
                           },
-                          "required": ["status"]
+                          "required": [
+                            "status"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2092,7 +2527,9 @@
     "/inferredReturns.stringLiteral": {
       "get": {
         "operationId": "inferredReturns.stringLiteral",
-        "tags": ["inferredReturns"],
+        "tags": [
+          "inferredReturns"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -2109,10 +2546,14 @@
                           "const": "hello"
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2126,7 +2567,9 @@
     "/inferredReturns.numberLiteral": {
       "get": {
         "operationId": "inferredReturns.numberLiteral",
-        "tags": ["inferredReturns"],
+        "tags": [
+          "inferredReturns"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -2143,10 +2586,14 @@
                           "const": 42
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2160,7 +2607,9 @@
     "/inferredReturns.booleanLiteral": {
       "get": {
         "operationId": "inferredReturns.booleanLiteral",
-        "tags": ["inferredReturns"],
+        "tags": [
+          "inferredReturns"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -2177,10 +2626,14 @@
                           "const": true
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2194,7 +2647,9 @@
     "/inferredReturns.discriminatedResult": {
       "post": {
         "operationId": "inferredReturns.discriminatedResult",
-        "tags": ["inferredReturns"],
+        "tags": [
+          "inferredReturns"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -2224,7 +2679,11 @@
                                 "message": {},
                                 "code": {}
                               },
-                              "required": ["type", "id", "createdAt"]
+                              "required": [
+                                "type",
+                                "id",
+                                "createdAt"
+                              ]
                             },
                             {
                               "type": "object",
@@ -2242,15 +2701,23 @@
                                 "id": {},
                                 "createdAt": {}
                               },
-                              "required": ["type", "message", "code"]
+                              "required": [
+                                "type",
+                                "message",
+                                "code"
+                              ]
                             }
                           ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2264,7 +2731,9 @@
     "/inferredReturns.primitiveUnion": {
       "get": {
         "operationId": "inferredReturns.primitiveUnion",
-        "tags": ["inferredReturns"],
+        "tags": [
+          "inferredReturns"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -2280,16 +2749,26 @@
                           "type": "object",
                           "properties": {
                             "value": {
-                              "type": ["string", "number", "boolean"]
+                              "type": [
+                                "string",
+                                "number",
+                                "boolean"
+                              ]
                             }
                           },
-                          "required": ["value"]
+                          "required": [
+                            "value"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2303,7 +2782,9 @@
     "/inferredReturns.tupleReturn": {
       "get": {
         "operationId": "inferredReturns.tupleReturn",
-        "tags": ["inferredReturns"],
+        "tags": [
+          "inferredReturns"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -2330,10 +2811,14 @@
                           "maxItems": 2
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2347,7 +2832,9 @@
     "/inferredReturns.recordReturn": {
       "get": {
         "operationId": "inferredReturns.recordReturn",
-        "tags": ["inferredReturns"],
+        "tags": [
+          "inferredReturns"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -2366,10 +2853,14 @@
                           }
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2383,7 +2874,9 @@
     "/inferredReturns.arrayOfObjects": {
       "get": {
         "operationId": "inferredReturns.arrayOfObjects",
-        "tags": ["inferredReturns"],
+        "tags": [
+          "inferredReturns"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -2410,14 +2903,22 @@
                                 "type": "boolean"
                               }
                             },
-                            "required": ["id", "name", "active"]
+                            "required": [
+                              "id",
+                              "name",
+                              "active"
+                            ]
                           }
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2431,7 +2932,9 @@
     "/inferredReturns.matrix": {
       "get": {
         "operationId": "inferredReturns.matrix",
-        "tags": ["inferredReturns"],
+        "tags": [
+          "inferredReturns"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -2453,10 +2956,14 @@
                           }
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2470,7 +2977,9 @@
     "/inferredReturns.deeplyNested": {
       "get": {
         "operationId": "inferredReturns.deeplyNested",
-        "tags": ["inferredReturns"],
+        "tags": [
+          "inferredReturns"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -2498,22 +3007,34 @@
                                           "type": "string"
                                         }
                                       },
-                                      "required": ["value"]
+                                      "required": [
+                                        "value"
+                                      ]
                                     }
                                   },
-                                  "required": ["level3"]
+                                  "required": [
+                                    "level3"
+                                  ]
                                 }
                               },
-                              "required": ["level2"]
+                              "required": [
+                                "level2"
+                              ]
                             }
                           },
-                          "required": ["level1"]
+                          "required": [
+                            "level1"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2527,7 +3048,9 @@
     "/inferredReturns.dateReturn": {
       "get": {
         "operationId": "inferredReturns.dateReturn",
-        "tags": ["inferredReturns"],
+        "tags": [
+          "inferredReturns"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -2547,13 +3070,19 @@
                               "format": "date-time"
                             }
                           },
-                          "required": ["createdAt"]
+                          "required": [
+                            "createdAt"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2567,7 +3096,9 @@
     "/inferredReturns.nullableReturn": {
       "get": {
         "operationId": "inferredReturns.nullableReturn",
-        "tags": ["inferredReturns"],
+        "tags": [
+          "inferredReturns"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -2583,16 +3114,25 @@
                           "type": "object",
                           "properties": {
                             "value": {
-                              "type": ["string", "null"]
+                              "type": [
+                                "string",
+                                "null"
+                              ]
                             }
                           },
-                          "required": ["value"]
+                          "required": [
+                            "value"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2606,7 +3146,9 @@
     "/inferredReturns.optionalFields": {
       "get": {
         "operationId": "inferredReturns.optionalFields",
-        "tags": ["inferredReturns"],
+        "tags": [
+          "inferredReturns"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -2631,13 +3173,19 @@
                               "type": "string"
                             }
                           },
-                          "required": ["name"]
+                          "required": [
+                            "name"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2651,7 +3199,9 @@
     "/inferredReturns.mixedObject": {
       "get": {
         "operationId": "inferredReturns.mixedObject",
-        "tags": ["inferredReturns"],
+        "tags": [
+          "inferredReturns"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -2701,10 +3251,14 @@
                           ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2718,7 +3272,9 @@
     "/inferredReturns.voidReturn": {
       "post": {
         "operationId": "inferredReturns.voidReturn",
-        "tags": ["inferredReturns"],
+        "tags": [
+          "inferredReturns"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -2732,7 +3288,9 @@
                       "properties": {}
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2746,7 +3304,9 @@
     "/inferredReturns.nullReturn": {
       "get": {
         "operationId": "inferredReturns.nullReturn",
-        "tags": ["inferredReturns"],
+        "tags": [
+          "inferredReturns"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -2762,10 +3322,14 @@
                           "type": "null"
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2779,7 +3343,9 @@
     "/inferredReturns.mergedObject": {
       "get": {
         "operationId": "inferredReturns.mergedObject",
-        "tags": ["inferredReturns"],
+        "tags": [
+          "inferredReturns"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -2804,13 +3370,21 @@
                               "type": "number"
                             }
                           },
-                          "required": ["name", "email", "id"]
+                          "required": [
+                            "name",
+                            "email",
+                            "id"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2824,7 +3398,9 @@
     "/inferredReturns.literalArray": {
       "get": {
         "operationId": "inferredReturns.literalArray",
-        "tags": ["inferredReturns"],
+        "tags": [
+          "inferredReturns"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -2857,10 +3433,14 @@
                           "maxItems": 3
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2874,7 +3454,9 @@
     "/inferredReturns.nestedNullable": {
       "get": {
         "operationId": "inferredReturns.nestedNullable",
-        "tags": ["inferredReturns"],
+        "tags": [
+          "inferredReturns"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -2895,13 +3477,18 @@
                                   "type": "object",
                                   "properties": {
                                     "inner": {
-                                      "type": ["string", "null"]
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
                                     },
                                     "maybeNum": {
                                       "type": "number"
                                     }
                                   },
-                                  "required": ["inner"]
+                                  "required": [
+                                    "inner"
+                                  ]
                                 },
                                 {
                                   "type": "null"
@@ -2909,13 +3496,19 @@
                               ]
                             }
                           },
-                          "required": ["outer"]
+                          "required": [
+                            "outer"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2929,7 +3522,9 @@
     "/inferredReturns.boolReturnFalse": {
       "get": {
         "operationId": "inferredReturns.boolReturnFalse",
-        "tags": ["inferredReturns"],
+        "tags": [
+          "inferredReturns"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -2946,10 +3541,14 @@
                           "const": false
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2963,7 +3562,9 @@
     "/inferredReturns.boolReturnTrue": {
       "get": {
         "operationId": "inferredReturns.boolReturnTrue",
-        "tags": ["inferredReturns"],
+        "tags": [
+          "inferredReturns"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -2980,10 +3581,14 @@
                           "const": true
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2997,7 +3602,9 @@
     "/inferredReturns.boolReturn": {
       "get": {
         "operationId": "inferredReturns.boolReturn",
-        "tags": ["inferredReturns"],
+        "tags": [
+          "inferredReturns"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -3013,10 +3620,14 @@
                           "type": "boolean"
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -3030,7 +3641,9 @@
     "/inferredReturns.numReturn": {
       "get": {
         "operationId": "inferredReturns.numReturn",
-        "tags": ["inferredReturns"],
+        "tags": [
+          "inferredReturns"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -3046,10 +3659,14 @@
                           "type": "number"
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -3063,7 +3680,9 @@
     "/inferredReturns.strReturn": {
       "get": {
         "operationId": "inferredReturns.strReturn",
-        "tags": ["inferredReturns"],
+        "tags": [
+          "inferredReturns"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -3079,10 +3698,14 @@
                           "type": "string"
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -3096,7 +3719,9 @@
     "/inferredReturns.createItem": {
       "post": {
         "operationId": "inferredReturns.createItem",
-        "tags": ["inferredReturns"],
+        "tags": [
+          "inferredReturns"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -3155,10 +3780,14 @@
                           ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -3178,7 +3807,9 @@
                     "type": "string"
                   }
                 },
-                "required": ["name"]
+                "required": [
+                  "name"
+                ]
               }
             }
           }
@@ -3188,7 +3819,9 @@
     "/inferredReturns.stringEnum": {
       "get": {
         "operationId": "inferredReturns.stringEnum",
-        "tags": ["inferredReturns"],
+        "tags": [
+          "inferredReturns"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -3205,16 +3838,27 @@
                           "properties": {
                             "direction": {
                               "type": "string",
-                              "enum": ["UP", "DOWN", "LEFT", "RIGHT"]
+                              "enum": [
+                                "UP",
+                                "DOWN",
+                                "LEFT",
+                                "RIGHT"
+                              ]
                             }
                           },
-                          "required": ["direction"]
+                          "required": [
+                            "direction"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -3228,7 +3872,9 @@
     "/inferredReturns.numericEnum": {
       "get": {
         "operationId": "inferredReturns.numericEnum",
-        "tags": ["inferredReturns"],
+        "tags": [
+          "inferredReturns"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -3245,16 +3891,26 @@
                           "properties": {
                             "status": {
                               "type": "number",
-                              "enum": [1, 2, 3]
+                              "enum": [
+                                1,
+                                2,
+                                3
+                              ]
                             }
                           },
-                          "required": ["status"]
+                          "required": [
+                            "status"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -3268,7 +3924,9 @@
     "/inferredReturns.mixedEnum": {
       "get": {
         "operationId": "inferredReturns.mixedEnum",
-        "tags": ["inferredReturns"],
+        "tags": [
+          "inferredReturns"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -3300,13 +3958,19 @@
                               ]
                             }
                           },
-                          "required": ["value"]
+                          "required": [
+                            "value"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -3320,7 +3984,9 @@
     "/inferredReturns.brandedReturns": {
       "get": {
         "operationId": "inferredReturns.brandedReturns",
-        "tags": ["inferredReturns"],
+        "tags": [
+          "inferredReturns"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -3345,13 +4011,21 @@
                               "type": "boolean"
                             }
                           },
-                          "required": ["userId", "score", "active"]
+                          "required": [
+                            "userId",
+                            "score",
+                            "active"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -3365,7 +4039,9 @@
     "/namedTypes.withProfile": {
       "get": {
         "operationId": "namedTypes.withProfile",
-        "tags": ["namedTypes"],
+        "tags": [
+          "namedTypes"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -3384,13 +4060,19 @@
                               "$ref": "#/components/schemas/UserProfile"
                             }
                           },
-                          "required": ["profile"]
+                          "required": [
+                            "profile"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -3404,7 +4086,9 @@
     "/namedTypes.orderItems": {
       "get": {
         "operationId": "namedTypes.orderItems",
-        "tags": ["namedTypes"],
+        "tags": [
+          "namedTypes"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -3426,13 +4110,19 @@
                               }
                             }
                           },
-                          "required": ["items"]
+                          "required": [
+                            "items"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -3446,7 +4136,9 @@
     "/namedTypes.withAddress": {
       "get": {
         "operationId": "namedTypes.withAddress",
-        "tags": ["namedTypes"],
+        "tags": [
+          "namedTypes"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -3465,13 +4157,19 @@
                               "$ref": "#/components/schemas/Address"
                             }
                           },
-                          "required": ["address"]
+                          "required": [
+                            "address"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -3485,7 +4183,9 @@
     "/namedTypes.profileAndAddress": {
       "get": {
         "operationId": "namedTypes.profileAndAddress",
-        "tags": ["namedTypes"],
+        "tags": [
+          "namedTypes"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -3507,13 +4207,20 @@
                               "$ref": "#/components/schemas/Address"
                             }
                           },
-                          "required": ["profile", "address"]
+                          "required": [
+                            "profile",
+                            "address"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -3527,7 +4234,9 @@
     "/namedTypes.deepNested": {
       "get": {
         "operationId": "namedTypes.deepNested",
-        "tags": ["namedTypes"],
+        "tags": [
+          "namedTypes"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -3552,19 +4261,29 @@
                                       "$ref": "#/components/schemas/UserProfile"
                                     }
                                   },
-                                  "required": ["profile"]
+                                  "required": [
+                                    "profile"
+                                  ]
                                 }
                               },
-                              "required": ["nested"]
+                              "required": [
+                                "nested"
+                              ]
                             }
                           },
-                          "required": ["data"]
+                          "required": [
+                            "data"
+                          ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -3578,7 +4297,9 @@
     "/recursiveTypes.tree": {
       "get": {
         "operationId": "recursiveTypes.tree",
-        "tags": ["recursiveTypes"],
+        "tags": [
+          "recursiveTypes"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -3594,10 +4315,14 @@
                           "$ref": "#/components/schemas/TreeNode"
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -3611,7 +4336,9 @@
     "/recursiveTypes.linkedList": {
       "get": {
         "operationId": "recursiveTypes.linkedList",
-        "tags": ["recursiveTypes"],
+        "tags": [
+          "recursiveTypes"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -3627,10 +4354,14 @@
                           "$ref": "#/components/schemas/LinkedListNode"
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -3644,7 +4375,9 @@
     "/recursiveTypes.category": {
       "get": {
         "operationId": "recursiveTypes.category",
-        "tags": ["recursiveTypes"],
+        "tags": [
+          "recursiveTypes"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -3660,10 +4393,14 @@
                           "$ref": "#/components/schemas/Category"
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -3690,7 +4427,9 @@
     "/simpleCases.nullish": {
       "get": {
         "operationId": "simpleCases.nullish",
-        "tags": ["simpleCases"],
+        "tags": [
+          "simpleCases"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -3708,7 +4447,10 @@
                               "type": "object",
                               "properties": {
                                 "name": {
-                                  "type": ["string", "null"]
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
                                 }
                               }
                             },
@@ -3718,10 +4460,14 @@
                           ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -3744,7 +4490,10 @@
                       "type": "object",
                       "properties": {
                         "name": {
-                          "type": ["string", "null"]
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         }
                       }
                     },
@@ -3762,7 +4511,9 @@
     "/simpleCases.optional": {
       "get": {
         "operationId": "simpleCases.optional",
-        "tags": ["simpleCases"],
+        "tags": [
+          "simpleCases"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -3783,10 +4534,14 @@
                           }
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -3820,7 +4575,9 @@
     "/simpleCases.nullable": {
       "get": {
         "operationId": "simpleCases.nullable",
-        "tags": ["simpleCases"],
+        "tags": [
+          "simpleCases"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -3838,10 +4595,15 @@
                               "type": "object",
                               "properties": {
                                 "name": {
-                                  "type": ["string", "null"]
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
                                 }
                               },
-                              "required": ["name"]
+                              "required": [
+                                "name"
+                              ]
                             },
                             {
                               "type": "null"
@@ -3849,10 +4611,14 @@
                           ]
                         }
                       },
-                      "required": ["data"]
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "required": ["result"]
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -3875,10 +4641,15 @@
                       "type": "object",
                       "properties": {
                         "name": {
-                          "type": ["string", "null"]
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         }
                       },
-                      "required": ["name"]
+                      "required": [
+                        "name"
+                      ]
                     },
                     {
                       "type": "null"
@@ -3907,7 +4678,11 @@
             "type": "string"
           }
         },
-        "required": ["id", "name", "email"]
+        "required": [
+          "id",
+          "name",
+          "email"
+        ]
       },
       "OrderItem": {
         "type": "object",
@@ -3922,7 +4697,11 @@
             "type": "number"
           }
         },
-        "required": ["productId", "quantity", "price"]
+        "required": [
+          "productId",
+          "quantity",
+          "price"
+        ]
       },
       "Address": {
         "type": "object",
@@ -3937,7 +4716,11 @@
             "type": "string"
           }
         },
-        "required": ["street", "city", "zipCode"]
+        "required": [
+          "street",
+          "city",
+          "zipCode"
+        ]
       },
       "TreeNode": {
         "type": "object",
@@ -3952,7 +4735,10 @@
             }
           }
         },
-        "required": ["value", "children"]
+        "required": [
+          "value",
+          "children"
+        ]
       },
       "LinkedListNode": {
         "type": "object",
@@ -3971,7 +4757,10 @@
             ]
           }
         },
-        "required": ["value", "next"]
+        "required": [
+          "value",
+          "next"
+        ]
       },
       "Category": {
         "type": "object",
@@ -3986,7 +4775,10 @@
             }
           }
         },
-        "required": ["name", "subcategories"]
+        "required": [
+          "name",
+          "subcategories"
+        ]
       },
       "DefaultErrorShape": {
         "type": "object",
@@ -3997,8 +4789,22 @@
           "code": {
             "type": "number",
             "enum": [
-              -32700, -32600, -32603, -32001, -32002, -32003, -32004, -32005,
-              -32008, -32009, -32012, -32013, -32015, -32022, -32028, -32029,
+              -32700,
+              -32600,
+              -32603,
+              -32001,
+              -32002,
+              -32003,
+              -32004,
+              -32005,
+              -32008,
+              -32009,
+              -32012,
+              -32013,
+              -32015,
+              -32022,
+              -32028,
+              -32029,
               -32099
             ]
           },
@@ -4006,7 +4812,11 @@
             "$ref": "#/components/schemas/DefaultErrorData"
           }
         },
-        "required": ["message", "code", "data"]
+        "required": [
+          "message",
+          "code",
+          "data"
+        ]
       },
       "DefaultErrorData": {
         "type": "object",
@@ -4047,7 +4857,10 @@
             "type": "string"
           }
         },
-        "required": ["code", "httpStatus"]
+        "required": [
+          "code",
+          "httpStatus"
+        ]
       }
     },
     "responses": {
@@ -4062,7 +4875,9 @@
                   "$ref": "#/components/schemas/DefaultErrorShape"
                 }
               },
-              "required": ["error"]
+              "required": [
+                "error"
+              ]
             }
           }
         }

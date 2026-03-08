@@ -2,10 +2,10 @@
 
 import type { BodySerializer, QuerySerializer } from './bodySerializer.gen';
 import {
+  type ArraySeparatorStyle,
   serializeArrayParam,
   serializeObjectParam,
   serializePrimitiveParam,
-  type ArraySeparatorStyle,
 } from './pathSerializer.gen';
 
 export interface PathSerializer {
@@ -44,10 +44,7 @@ export const defaultPathSerializer = ({ path, url: _url }: PathSerializer) => {
       }
 
       if (Array.isArray(value)) {
-        url = url.replace(
-          match,
-          serializeArrayParam({ explode, name, style, value }),
-        );
+        url = url.replace(match, serializeArrayParam({ explode, name, style, value }));
         continue;
       }
 

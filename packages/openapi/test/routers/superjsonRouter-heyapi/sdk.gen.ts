@@ -2,92 +2,73 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type {
-  CreateEventData,
-  CreateEventErrors,
-  CreateEventResponses,
-  GetEventData,
-  GetEventErrors,
-  GetEventResponses,
-} from './types.gen';
+import type { CreateEventData, CreateEventErrors, CreateEventResponses, GetEventData, GetEventErrors, GetEventResponses } from './types.gen';
 
-export type Options<
-  TData extends TDataShape = TDataShape,
-  ThrowOnError extends boolean = boolean,
-> = Options2<TData, ThrowOnError> & {
-  /**
-   * You can provide a client instance returned by `createClient()` instead of
-   * individual options. This might be also useful if you want to implement a
-   * custom client.
-   */
-  client?: Client;
-  /**
-   * You can pass arbitrary values through the `meta` object. This can be
-   * used to access values that aren't defined as part of the SDK function.
-   */
-  meta?: Record<string, unknown>;
+export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
+    /**
+     * You can provide a client instance returned by `createClient()` instead of
+     * individual options. This might be also useful if you want to implement a
+     * custom client.
+     */
+    client?: Client;
+    /**
+     * You can pass arbitrary values through the `meta` object. This can be
+     * used to access values that aren't defined as part of the SDK function.
+     */
+    meta?: Record<string, unknown>;
 };
 
 class HeyApiClient {
-  protected client: Client;
-
-  constructor(args?: { client?: Client }) {
-    this.client = args?.client ?? client;
-  }
+    protected client: Client;
+    
+    constructor(args?: {
+        client?: Client;
+    }) {
+        this.client = args?.client ?? client;
+    }
 }
 
 class HeyApiRegistry<T> {
-  private readonly defaultKey = 'default';
-
-  private readonly instances: Map<string, T> = new Map();
-
-  get(key?: string): T {
-    const instance = this.instances.get(key ?? this.defaultKey);
-    if (!instance) {
-      throw new Error(
-        `No SDK client found. Create one with "new Sdk()" to fix this error.`,
-      );
+    private readonly defaultKey = 'default';
+    
+    private readonly instances: Map<string, T> = new Map();
+    
+    get(key?: string): T {
+        const instance = this.instances.get(key ?? this.defaultKey);
+        if (!instance) {
+            throw new Error(`No SDK client found. Create one with "new Sdk()" to fix this error.`);
+        }
+        return instance;
     }
-    return instance;
-  }
-
-  set(value: T, key?: string): void {
-    this.instances.set(key ?? this.defaultKey, value);
-  }
+    
+    set(value: T, key?: string): void {
+        this.instances.set(key ?? this.defaultKey, value);
+    }
 }
 
 export class Sdk extends HeyApiClient {
-  public static readonly __registry = new HeyApiRegistry<Sdk>();
-
-  constructor(args?: { client?: Client; key?: string }) {
-    super(args);
-    Sdk.__registry.set(this, args?.key);
-  }
-
-  public getEvent<ThrowOnError extends boolean = false>(
-    options: Options<GetEventData, ThrowOnError>,
-  ) {
-    return (options.client ?? this.client).get<
-      GetEventResponses,
-      GetEventErrors,
-      ThrowOnError
-    >({ url: '/getEvent', ...options });
-  }
-
-  public createEvent<ThrowOnError extends boolean = false>(
-    options: Options<CreateEventData, ThrowOnError>,
-  ) {
-    return (options.client ?? this.client).post<
-      CreateEventResponses,
-      CreateEventErrors,
-      ThrowOnError
-    >({
-      url: '/createEvent',
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-    });
-  }
+    public static readonly __registry = new HeyApiRegistry<Sdk>();
+    
+    constructor(args?: {
+        client?: Client;
+        key?: string;
+    }) {
+        super(args);
+        Sdk.__registry.set(this, args?.key);
+    }
+    
+    public getEvent<ThrowOnError extends boolean = false>(options: Options<GetEventData, ThrowOnError>) {
+        return (options.client ?? this.client).get<GetEventResponses, GetEventErrors, ThrowOnError>({ url: '/getEvent', ...options });
+    }
+    
+    public createEvent<ThrowOnError extends boolean = false>(options: Options<CreateEventData, ThrowOnError>) {
+        return (options.client ?? this.client).post<CreateEventResponses, CreateEventErrors, ThrowOnError>({
+            url: '/createEvent',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
 }
