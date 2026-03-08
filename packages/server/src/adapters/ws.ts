@@ -27,6 +27,7 @@ import { parseConnectionParamsFromUnknown } from '../http';
 import { isObservable, observableToAsyncIterable } from '../observable';
 // eslint-disable-next-line no-restricted-imports
 import {
+  getProcedureAtPath,
   isAsyncIterable,
   isObject,
   isTrackedEnvelope,
@@ -264,6 +265,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         }
 
         const abortController = new AbortController();
+        const procedure = await getProcedureAtPath(router, path);
         const result = await callTRPCProcedure({
           router,
           path,
@@ -364,6 +366,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
                   path,
                   input,
                   ctx,
+                  procedure,
                 }),
               });
               break;
@@ -418,6 +421,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
               path,
               input,
               ctx,
+              procedure,
             }),
           });
           abortController.abort();
@@ -445,6 +449,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             path,
             input,
             ctx,
+            procedure,
           }),
         });
       });

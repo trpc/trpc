@@ -13,7 +13,9 @@ import {
   makeResource,
   retryableRpcCodes,
   run,
+  getProcedureAtPath,
   type AnyRouter,
+  type AnyProcedure,
   type ErrorHandlerOptions,
   type inferClientTypes,
   type inferRouterContext,
@@ -60,6 +62,7 @@ export function unstable_localLink<TRouter extends AnyRouter>(
     ({ op }) =>
       observable((observer) => {
         let ctx: inferRouterContext<TRouter> | undefined = undefined;
+        let procedure: AnyProcedure | null = null;
         const ac = new AbortController();
 
         const signal = raceAbortSignals(op.signal, ac.signal);
@@ -74,6 +77,7 @@ export function unstable_localLink<TRouter extends AnyRouter>(
           input = newInput;
 
           ctx = await opts.createContext();
+          procedure = await getProcedureAtPath(opts.router, op.path);
 
           return callProcedure({
             router: opts.router,
@@ -112,6 +116,7 @@ export function unstable_localLink<TRouter extends AnyRouter>(
             input,
             path: op.path,
             type: op.type,
+            procedure,
           });
           return TRPCClientError.from(
             { error: transformChunk(shape) },

@@ -1,4 +1,5 @@
 import type { AnyRootTypes } from '../rootConfig';
+import type { AnyRouter, inferRouterError } from '../router';
 
 export type AnyClientTypes = Pick<AnyRootTypes, 'errorShape' | 'transformer'>;
 
@@ -11,12 +12,7 @@ type InitLike = {
   };
 };
 
-/**
- * Result of `initTRPC.create().router()`
- */
-type RouterLike = {
-  _def: InitLike;
-};
+type RouterLike = AnyRouter;
 
 /**
  * Result of `initTRPC.create()._config`
@@ -49,5 +45,8 @@ export type inferClientTypes<TInferrable extends InferrableClientTypes> =
       : TInferrable extends InitLike
         ? PickTypes<TInferrable['_config']['$types']>
         : TInferrable extends RouterLike
-          ? PickTypes<TInferrable['_def']['_config']['$types']>
+          ? {
+              transformer: TInferrable['_def']['_config']['$types']['transformer'];
+              errorShape: inferRouterError<TInferrable>;
+            }
           : never;

@@ -1,8 +1,13 @@
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
 import { isTRPCClientError, TRPCClientError } from '@trpc/client';
-import type { AnyRouter } from '@trpc/server';
-import { initTRPC, StandardSchemaV1Error, TRPCError } from '@trpc/server';
+import type { AnyRouter, inferRouterError } from '@trpc/server';
+import {
+  initTRPC,
+  StandardSchemaV1Error,
+  TRPCError,
+  TRPCProcedureError,
+} from '@trpc/server';
 import type {
   DefaultErrorData,
   DefaultErrorShape,
@@ -98,6 +103,80 @@ describe('with custom error formatter', () => {
         "message": "Fails",
       }
     `);
+  });
+});
+
+describe('with per-procedure typed errors', () => {
+  type GlobalFormattedShape = DefaultErrorShape & {
+    data: DefaultErrorData & {
+      foo: 'bar';
+    };
+  };
+  type TypedProcedureErrorShape = {
+    code: -32001;
+    message: 'BAD_PHONE';
+    data: {
+      reason: 'BAD_PHONE';
+    };
+  };
+
+  class MyTypedAuthError extends TRPCProcedureError<TypedProcedureErrorShape> {
+    constructor() {
+      super({
+        code: -32001,
+        message: 'BAD_PHONE',
+        data: {
+          reason: 'BAD_PHONE',
+        },
+      });
+    }
+  }
+
+  const t = initTRPC.create({
+    errorFormatter({ shape }) {
+      return {
+        ...shape,
+        data: {
+          ...shape.data,
+          foo: 'bar' as const,
+        },
+      };
+    },
+  });
+
+  const appRouter = t.router({
+    typedError: t.procedure.errors([MyTypedAuthError]).query(() => {
+      throw new MyTypedAuthError();
+    }),
+    undeclaredTypedError: t.procedure.query(() => {
+      throw new MyTypedAuthError();
+    }),
+  });
+
+  test('declared typed errors bypass formatter and infer as router union', async () => {
+    expectTypeOf<inferRouterError<typeof appRouter>>().toEqualTypeOf<
+      GlobalFormattedShape | TypedProcedureErrorShape
+    >();
+
+    await using ctx = testServerAndClientResource(appRouter);
+    const typedErr = await waitError(ctx.client.typedError.query());
+    assert(isTRPCClientError<typeof appRouter>(typedErr));
+    expect(typedErr.shape).toMatchInlineSnapshot(`
+      Object {
+        "code": -32001,
+        "data": Object {
+          "reason": "BAD_PHONE",
+        },
+        "message": "BAD_PHONE",
+      }
+    `);
+
+    const undeclaredErr = await waitError(ctx.client.undeclaredTypedError.query());
+    assert(isTRPCClientError<typeof appRouter>(undeclaredErr));
+    expect(undeclaredErr.shape?.code).toBe(-32603);
+    expect(undeclaredErr.shape?.message).toBe('BAD_PHONE');
+    expect(undeclaredErr.data?.foo).toBe('bar');
+    expect(undeclaredErr.data?.path).toBe('undeclaredTypedError');
   });
 });
 

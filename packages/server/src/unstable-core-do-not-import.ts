@@ -14,6 +14,7 @@ export * from './unstable-core-do-not-import/clientish/serialize';
 export * from './unstable-core-do-not-import/createProxy';
 export * from './unstable-core-do-not-import/error/formatter';
 export * from './unstable-core-do-not-import/error/getErrorShape';
+export * from './unstable-core-do-not-import/error/TRPCProcedureError';
 export * from './unstable-core-do-not-import/error/TRPCError';
 export * from './unstable-core-do-not-import/http/contentType';
 export * from './unstable-core-do-not-import/http/contentTypeParsers';
