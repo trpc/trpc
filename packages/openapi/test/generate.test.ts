@@ -431,7 +431,10 @@ describe('generateOpenAPIDocument', () => {
         ComplexTypesDiscriminatedUnionResponses[200]['result']['data'];
 
       // Each variant should be assignable when the discriminant matches
-      expectTypeOf<{ type: 'text'; content: string }>().toExtend<DiscUnionData>();
+      expectTypeOf<{
+        type: 'text';
+        content: string;
+      }>().toExtend<DiscUnionData>();
       expectTypeOf<{
         type: 'image';
         url: string;
@@ -481,13 +484,10 @@ describe('generateOpenAPIDocument', () => {
       expectTypeOf<GreetingOutput>().toEqualTypeOf<{ message: string }>();
 
       // Record types SHOULD allow arbitrary string keys
-      type RecordOutput =
-        ComplexTypesRecordResponses[200]['result']['data'];
+      type RecordOutput = ComplexTypesRecordResponses[200]['result']['data'];
       expectTypeOf<RecordOutput>().toHaveProperty('metadata');
       // The metadata field should accept any string key
-      expectTypeOf<{ foo: 'bar' }>().toExtend<
-        RecordOutput['metadata']
-      >();
+      expectTypeOf<{ foo: 'bar' }>().toExtend<RecordOutput['metadata']>();
 
       // Passthrough objects SHOULD allow extra string keys
       type PassthroughInput = ComplexTypesPassthroughData['query']['input'];

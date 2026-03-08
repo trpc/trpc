@@ -356,7 +356,10 @@ function convertUnionType(
   // required property whose value is a `const`.  If found, add a `discriminator`.
   const discriminatorProp = detectDiscriminatorProperty(schemas);
   if (discriminatorProp) {
-    return { oneOf: schemas, discriminator: { propertyName: discriminatorProp } };
+    return {
+      oneOf: schemas,
+      discriminator: { propertyName: discriminatorProp },
+    };
   }
 
   return { oneOf: schemas };
