@@ -7,6 +7,17 @@ Custom links are ideal when you need cross-cutting behavior that built-in links 
 
 Every link returns an observable. This lets you intercept responses and still preserve cancellation and streaming semantics.
 
+## When to write a custom link
+
+Reach for a custom link when built-in links cannot express your behavior clearly, for example:
+
+- operation-aware routing (multi-backend dispatch)
+- organization-specific telemetry/tracing envelopes
+- custom retry or circuit-breaker logic
+- app-specific request metadata propagation
+
+If a built-in link already solves it, prefer composition before custom code.
+
 ```ts twoslash
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
@@ -47,3 +58,21 @@ export const timingLink: TRPCLink<AppRouter> = () => {
 ```
 
 For more internals and link composition details, see [Links Overview](../links/overview.md).
+
+## Design guidelines
+
+- Keep each link focused on one responsibility.
+- Put non-terminating links before your terminating transport link.
+- Avoid mutating unrelated operation fields; prefer adding to `op.context`.
+- Always return a cleanup function to preserve cancellation behavior.
+
+## Debugging checklist
+
+- Confirm link order in the `links` array.
+- Verify that your link forwards all events (`next`, `error`, `complete`).
+- Add operation IDs/timestamps to logs to trace request lifecycles.
+
+## References
+
+- [Links overview](../links/overview.md)
+- [Built-in link implementations](https://github.com/trpc/trpc/tree/main/packages/client/src/links)
