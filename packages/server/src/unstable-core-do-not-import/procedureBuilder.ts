@@ -1,5 +1,10 @@
 import type { inferObservableValue, Observable } from '../observable';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
+import {
+  procedureErrorKeySymbol,
+  procedureErrorShapeSymbol,
+  TRPCProcedureError,
+} from './error/TRPCProcedureError';
 import type {
   AnyMiddlewareFunction,
   MiddlewareBuilder,
@@ -17,6 +22,8 @@ import type {
   AnyMutationProcedure,
   AnyProcedure,
   ProcedureErrorConstructor,
+  ProcedureErrorFactoryMap,
+  ProcedureErrorSchemaMap,
   AnyQueryProcedure,
   LegacyObservableSubscriptionProcedure,
   MutationProcedure,
@@ -24,6 +31,7 @@ import type {
   QueryProcedure,
   SubscriptionProcedure,
 } from './procedure';
+import { TRPC_ERROR_CODES_BY_KEY } from './rpc';
 import type { inferTrackedOutput } from './stream/tracked';
 import type {
   GetRawInputFn,
@@ -89,6 +97,7 @@ type ProcedureBuilderDef<TMeta> = {
   type?: ProcedureType;
   caller?: CallerOverride<unknown>;
   errors: readonly ProcedureErrorConstructor[];
+  errorFactories: ProcedureErrorFactoryMap;
 };
 
 type AnyProcedureBuilderDef = ProcedureBuilderDef<any>;
@@ -118,7 +127,29 @@ export interface ProcedureResolverOptions<
    * Will be set when the procedure is called as part of a batch.
    */
   batchIndex?: number;
+  errors: ProcedureErrorFactoryMap;
 }
+
+type inferProcedureErrorShapeFromSchemaMap<
+  TErrorSchemaMap extends ProcedureErrorSchemaMap,
+> = {
+  [TCode in keyof TErrorSchemaMap]:
+    TCode extends keyof typeof TRPC_ERROR_CODES_BY_KEY
+      ? {
+          code: (typeof TRPC_ERROR_CODES_BY_KEY)[TCode];
+          message: TErrorSchemaMap[TCode] extends { message: infer TMessage }
+            ? TMessage extends string
+              ? TMessage
+              : string
+            : string;
+          data: TErrorSchemaMap[TCode] extends {
+            data: infer TDataParser extends Parser;
+          }
+            ? inferParser<TDataParser>['out']
+            : object;
+        }
+      : never;
+}[keyof TErrorSchemaMap];
 
 /**
  * A procedure resolver
@@ -223,6 +254,7 @@ export interface ProcedureBuilder<
     IntersectIfDefined<TInputOut, inferParser<$Parser>['out']>,
     TOutputIn,
     TOutputOut,
+    TErrorShape,
     TCaller
   >;
   /**
@@ -239,6 +271,7 @@ export interface ProcedureBuilder<
     TInputOut,
     IntersectIfDefined<TOutputIn, inferParser<$Parser>['in']>,
     IntersectIfDefined<TOutputOut, inferParser<$Parser>['out']>,
+    TErrorShape,
     TCaller
   >;
   errors<$Errors extends readonly ProcedureErrorConstructor[]>(
@@ -252,6 +285,19 @@ export interface ProcedureBuilder<
     TOutputIn,
     TOutputOut,
     TErrorShape | InstanceType<$Errors[number]>['shape'],
+    TCaller
+  >;
+  errors<$ErrorSchemaMap extends ProcedureErrorSchemaMap>(
+    errors: $ErrorSchemaMap,
+  ): ProcedureBuilder<
+    TContext,
+    TMeta,
+    TContextOverrides,
+    TInputIn,
+    TInputOut,
+    TOutputIn,
+    TOutputOut,
+    TErrorShape | inferProcedureErrorShapeFromSchemaMap<$ErrorSchemaMap>,
     TCaller
   >;
   /**
@@ -289,7 +335,20 @@ export interface ProcedureBuilder<
           TContextOverrides,
           $ContextOverridesOut,
           TInputOut
-        >,
+        >
+      | ((
+          opts: Parameters<
+            MiddlewareFunction<
+              TContext,
+              TMeta,
+              TContextOverrides,
+              $ContextOverridesOut,
+              TInputOut
+            >
+          >[0] & {
+            errors: ProcedureErrorFactoryMap;
+          },
+        ) => Promise<MiddlewareResult<$ContextOverridesOut>>),
   ): ProcedureBuilder<
     TContext,
     TMeta,
@@ -503,7 +562,14 @@ function createNewBuilder(
   def1: AnyProcedureBuilderDef,
   def2: Partial<AnyProcedureBuilderDef>,
 ): AnyProcedureBuilder {
-  const { middlewares = [], inputs, meta, errors, ...rest } = def2;
+  const {
+    middlewares = [],
+    inputs,
+    meta,
+    errors,
+    errorFactories,
+    ...rest
+  } = def2;
 
   // TODO: maybe have a fn here to warn about calls
   return createBuilder({
@@ -511,6 +577,10 @@ function createNewBuilder(
     inputs: [...def1.inputs, ...(inputs ?? [])],
     middlewares: [...def1.middlewares, ...middlewares],
     errors: [...def1.errors, ...(errors ?? [])],
+    errorFactories: {
+      ...def1.errorFactories,
+      ...(errorFactories ?? {}),
+    },
     meta: def1.meta && meta ? { ...def1.meta, ...meta } : (meta ?? def1.meta),
   });
 }
@@ -533,6 +603,7 @@ export function createBuilder<TContext, TMeta>(
     inputs: [],
     middlewares: [],
     errors: [],
+    errorFactories: {},
     ...initDef,
   };
 
@@ -558,8 +629,37 @@ export function createBuilder<TContext, TMeta>(
       });
     },
     errors(errors) {
+      if (Array.isArray(errors)) {
+        return createNewBuilder(_def, {
+          errors,
+        });
+      }
+
+      const errorFactories = Object.fromEntries(
+        Object.entries(errors).map(([errorKey, errorDef]) => [
+          errorKey,
+          (opts?: { message?: string; data?: unknown; cause?: unknown }) => {
+            const error = new TRPCProcedureError(
+              {
+                code:
+                  TRPC_ERROR_CODES_BY_KEY[
+                    errorKey as keyof typeof TRPC_ERROR_CODES_BY_KEY
+                  ],
+                message: opts?.message ?? errorDef?.message ?? errorKey,
+                data: (opts?.data ?? {}) as object,
+              },
+              {
+                cause: opts?.cause,
+              },
+            );
+            error[procedureErrorKeySymbol] = errorKey;
+            return error;
+          },
+        ]),
+      ) as ProcedureErrorFactoryMap;
+
       return createNewBuilder(_def, {
-        errors,
+        errorFactories,
       });
     },
     use(middlewareBuilderOrFn) {
@@ -682,6 +782,7 @@ async function callRecursive(
       ...opts,
       meta: _def.meta,
       input: opts.input,
+      errors: _def.errorFactories,
       next(_nextOpts?: any) {
         const nextOpts = _nextOpts as
           | {
@@ -728,6 +829,18 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
       });
     }
     if (!result.ok) {
+      const procedureCause = result.error.cause;
+      if (procedureCause instanceof TRPCProcedureError) {
+        const isDeclaredClassTypedError = _def.errors.some(
+          (ErrorClass) => procedureCause instanceof ErrorClass,
+        );
+        const errorKey = procedureCause[procedureErrorKeySymbol];
+        const isDeclaredFactoryTypedError =
+          typeof errorKey === 'string' && errorKey in _def.errorFactories;
+        if (isDeclaredClassTypedError || isDeclaredFactoryTypedError) {
+          (result.error as any)[procedureErrorShapeSymbol] = procedureCause.shape;
+        }
+      }
       // re-throw original error
       throw result.error;
     }
