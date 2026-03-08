@@ -2,7 +2,7 @@ import type { inferObservableValue, Observable } from '../observable';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import {
   procedureErrorKeySymbol,
-  procedureErrorShapeSymbol,
+  setProcedureErrorShape,
   TRPCProcedureError,
 } from './error/TRPCProcedureError';
 import type {
@@ -838,7 +838,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
         const isDeclaredFactoryTypedError =
           typeof errorKey === 'string' && errorKey in _def.errorFactories;
         if (isDeclaredClassTypedError || isDeclaredFactoryTypedError) {
-          (result.error as any)[procedureErrorShapeSymbol] = procedureCause.shape;
+          setProcedureErrorShape(result.error, procedureCause.shape);
         }
       }
       // re-throw original error
