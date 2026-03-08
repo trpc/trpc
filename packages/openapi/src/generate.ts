@@ -910,6 +910,7 @@ function buildProcedureOperation(
         name: 'input',
         in: 'query',
         required: true,
+        style: 'deepObject',
         content: { 'application/json': { schema: proc.inputSchema } },
       },
     ];
@@ -947,7 +948,7 @@ function buildOpenAPIDocument(
     meta.schemas !== undefined && Object.keys(meta.schemas).length > 0;
 
   return {
-    openapi: '3.0.3',
+    openapi: '3.1.1',
     info: {
       title: options.title ?? 'tRPC API',
       version: options.version ?? '0.0.0',
