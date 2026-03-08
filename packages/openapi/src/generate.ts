@@ -853,26 +853,48 @@ const DEFAULT_ERROR_SCHEMA: JsonSchema = {
   required: ['message', 'code'],
 };
 
+/**
+ * Wrap a procedure's output schema in the tRPC success envelope.
+ *
+ * tRPC HTTP responses are always serialised as:
+ *   `{ result: { data: T } }`
+ *
+ * When the procedure has no output the envelope is still present but
+ * the `data` property is omitted.
+ */
+function wrapInSuccessEnvelope(outputSchema: JsonSchema | null): JsonSchema {
+  const hasOutput = outputSchema !== null && isNonEmptySchema(outputSchema);
+  const resultSchema: JsonSchema = {
+    type: 'object',
+    properties: {
+      ...(hasOutput ? { data: outputSchema } : {}),
+    },
+    ...(hasOutput ? { required: ['data' as const] } : {}),
+  };
+  return {
+    type: 'object',
+    properties: {
+      result: resultSchema,
+    },
+    required: ['result'],
+  };
+}
+
 function buildProcedureOperation(
   proc: ProcedureInfo,
   method: 'get' | 'post',
 ): Record<string, unknown> {
-  const hasOutput =
-    proc.outputSchema !== null && isNonEmptySchema(proc.outputSchema);
-
   const operation: Record<string, unknown> = {
     operationId: proc.path.replace(/\./g, '_'),
     tags: [proc.path.split('.')[0]],
     responses: {
       '200': {
         description: 'Successful response',
-        ...(hasOutput
-          ? {
-              content: {
-                'application/json': { schema: proc.outputSchema },
-              },
-            }
-          : {}),
+        content: {
+          'application/json': {
+            schema: wrapInSuccessEnvelope(proc.outputSchema),
+          },
+        },
       },
       default: { $ref: '#/components/responses/error' },
     },
@@ -938,7 +960,13 @@ function buildOpenAPIDocument(
           description: 'Error response',
           content: {
             'application/json': {
-              schema: meta.errorSchema ?? DEFAULT_ERROR_SCHEMA,
+              schema: {
+                type: 'object',
+                properties: {
+                  error: meta.errorSchema ?? DEFAULT_ERROR_SCHEMA,
+                },
+                required: ['error'],
+              },
             },
           },
         },

@@ -19,12 +19,28 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "message": {
-                      "type": "string"
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "message": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "message"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
                   "required": [
-                    "message"
+                    "result"
                   ]
                 }
               }
@@ -70,7 +86,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "string"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -93,7 +125,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "string"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -126,22 +174,38 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "id": {
-                        "type": "number"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "number"
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "name"
+                            ]
+                          }
+                        }
                       },
-                      "name": {
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "id",
-                      "name"
-                    ]
-                  }
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -166,19 +230,35 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "name": {
-                      "type": "string"
-                    },
-                    "age": {
-                      "type": "number"
-                    },
-                    "id": {
-                      "type": "number"
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "age": {
+                              "type": "number"
+                            },
+                            "id": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "id"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
                   "required": [
-                    "name",
-                    "id"
+                    "result"
                   ]
                 }
               }
@@ -225,17 +305,33 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "status": {
-                      "type": "string",
-                      "enum": [
-                        "active",
-                        "inactive",
-                        "pending"
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "active",
+                                "inactive",
+                                "pending"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "status"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
                       ]
                     }
                   },
                   "required": [
-                    "status"
+                    "result"
                   ]
                 }
               }
@@ -288,18 +384,34 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "direction": {
-                      "type": "string",
-                      "enum": [
-                        "UP",
-                        "DOWN",
-                        "LEFT",
-                        "RIGHT"
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "direction": {
+                              "type": "string",
+                              "enum": [
+                                "UP",
+                                "DOWN",
+                                "LEFT",
+                                "RIGHT"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "direction"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
                       ]
                     }
                   },
                   "required": [
-                    "direction"
+                    "result"
                   ]
                 }
               }
@@ -353,29 +465,45 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "strLit": {
-                      "type": "string",
-                      "enum": [
-                        "hello"
-                      ]
-                    },
-                    "numLit": {
-                      "type": "number",
-                      "enum": [
-                        42
-                      ]
-                    },
-                    "boolLit": {
-                      "type": "boolean",
-                      "enum": [
-                        true
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "strLit": {
+                              "type": "string",
+                              "enum": [
+                                "hello"
+                              ]
+                            },
+                            "numLit": {
+                              "type": "number",
+                              "enum": [
+                                42
+                              ]
+                            },
+                            "boolLit": {
+                              "type": "boolean",
+                              "enum": [
+                                true
+                              ]
+                            }
+                          },
+                          "required": [
+                            "strLit",
+                            "numLit",
+                            "boolLit"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
                       ]
                     }
                   },
                   "required": [
-                    "strLit",
-                    "numLit",
-                    "boolLit"
+                    "result"
                   ]
                 }
               }
@@ -440,17 +568,33 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "color": {
-                      "type": "string",
-                      "enum": [
-                        "red",
-                        "green",
-                        "blue"
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "color": {
+                              "type": "string",
+                              "enum": [
+                                "red",
+                                "green",
+                                "blue"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "color"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
                       ]
                     }
                   },
                   "required": [
-                    "color"
+                    "result"
                   ]
                 }
               }
@@ -501,73 +645,89 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
+                  "type": "object",
+                  "properties": {
+                    "result": {
                       "type": "object",
                       "properties": {
-                        "type": {
-                          "type": "string",
-                          "enum": [
-                            "text"
+                        "data": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "type": {
+                                  "type": "string",
+                                  "enum": [
+                                    "text"
+                                  ]
+                                },
+                                "content": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "type",
+                                "content"
+                              ]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "type": {
+                                  "type": "string",
+                                  "enum": [
+                                    "image"
+                                  ]
+                                },
+                                "url": {
+                                  "type": "string"
+                                },
+                                "width": {
+                                  "type": "number"
+                                },
+                                "height": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "type",
+                                "url",
+                                "width",
+                                "height"
+                              ]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "type": {
+                                  "type": "string",
+                                  "enum": [
+                                    "video"
+                                  ]
+                                },
+                                "url": {
+                                  "type": "string"
+                                },
+                                "duration": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "type",
+                                "url",
+                                "duration"
+                              ]
+                            }
                           ]
-                        },
-                        "content": {
-                          "type": "string"
                         }
                       },
                       "required": [
-                        "type",
-                        "content"
-                      ]
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "type": {
-                          "type": "string",
-                          "enum": [
-                            "image"
-                          ]
-                        },
-                        "url": {
-                          "type": "string"
-                        },
-                        "width": {
-                          "type": "number"
-                        },
-                        "height": {
-                          "type": "number"
-                        }
-                      },
-                      "required": [
-                        "type",
-                        "url",
-                        "width",
-                        "height"
-                      ]
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "type": {
-                          "type": "string",
-                          "enum": [
-                            "video"
-                          ]
-                        },
-                        "url": {
-                          "type": "string"
-                        },
-                        "duration": {
-                          "type": "number"
-                        }
-                      },
-                      "required": [
-                        "type",
-                        "url",
-                        "duration"
+                        "data"
                       ]
                     }
+                  },
+                  "required": [
+                    "result"
                   ]
                 }
               }
@@ -670,31 +830,47 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "value": {
-                      "oneOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "number"
-                        },
-                        {
-                          "type": "boolean",
-                          "enum": [
-                            false
-                          ]
-                        },
-                        {
-                          "type": "boolean",
-                          "enum": [
-                            true
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "oneOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "type": "boolean",
+                                  "enum": [
+                                    false
+                                  ]
+                                },
+                                {
+                                  "type": "boolean",
+                                  "enum": [
+                                    true
+                                  ]
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "value"
                           ]
                         }
+                      },
+                      "required": [
+                        "data"
                       ]
                     }
                   },
                   "required": [
-                    "value"
+                    "result"
                   ]
                 }
               }
@@ -759,33 +935,49 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
+                  "type": "object",
+                  "properties": {
+                    "result": {
                       "type": "object",
                       "properties": {
-                        "id": {
-                          "type": "number"
+                        "data": {
+                          "allOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "id"
+                              ]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": "string"
+                                },
+                                "email": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "name",
+                                "email"
+                              ]
+                            }
+                          ]
                         }
                       },
                       "required": [
-                        "id"
-                      ]
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "name": {
-                          "type": "string"
-                        },
-                        "email": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "name",
-                        "email"
+                        "data"
                       ]
                     }
+                  },
+                  "required": [
+                    "result"
                   ]
                 }
               }
@@ -848,43 +1040,59 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "pair": {
-                      "type": "array",
-                      "items": {
-                        "oneOf": [
-                          {
-                            "type": "string"
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "pair": {
+                              "type": "array",
+                              "items": {
+                                "oneOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "number"
+                                  }
+                                ]
+                              },
+                              "minItems": 2,
+                              "maxItems": 2
+                            },
+                            "triple": {
+                              "type": "array",
+                              "items": {
+                                "oneOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "boolean"
+                                  }
+                                ]
+                              },
+                              "minItems": 3,
+                              "maxItems": 3
+                            }
                           },
-                          {
-                            "type": "number"
-                          }
-                        ]
+                          "required": [
+                            "pair",
+                            "triple"
+                          ]
+                        }
                       },
-                      "minItems": 2,
-                      "maxItems": 2
-                    },
-                    "triple": {
-                      "type": "array",
-                      "items": {
-                        "oneOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "number"
-                          },
-                          {
-                            "type": "boolean"
-                          }
-                        ]
-                      },
-                      "minItems": 3,
-                      "maxItems": 3
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
                   "required": [
-                    "pair",
-                    "triple"
+                    "result"
                   ]
                 }
               }
@@ -963,22 +1171,38 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "metadata": {
+                    "result": {
                       "type": "object",
-                      "additionalProperties": {
-                        "type": "string"
-                      }
-                    },
-                    "scores": {
-                      "type": "object",
-                      "additionalProperties": {
-                        "type": "number"
-                      }
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "metadata": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "type": "string"
+                              }
+                            },
+                            "scores": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "type": "number"
+                              }
+                            }
+                          },
+                          "required": [
+                            "metadata",
+                            "scores"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
                   "required": [
-                    "metadata",
-                    "scores"
+                    "result"
                   ]
                 }
               }
@@ -1036,48 +1260,64 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "tags": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      }
-                    },
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "number"
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "tags": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "number"
+                                  },
+                                  "label": {
+                                    "type": "string"
+                                  },
+                                  "active": {
+                                    "type": "boolean"
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "label",
+                                  "active"
+                                ]
+                              }
+                            },
+                            "matrix": {
+                              "type": "array",
+                              "items": {
+                                "type": "array",
+                                "items": {
+                                  "type": "number"
+                                }
+                              }
+                            }
                           },
-                          "label": {
-                            "type": "string"
-                          },
-                          "active": {
-                            "type": "boolean"
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "label",
-                          "active"
-                        ]
-                      }
-                    },
-                    "matrix": {
-                      "type": "array",
-                      "items": {
-                        "type": "array",
-                        "items": {
-                          "type": "number"
+                          "required": [
+                            "tags",
+                            "items",
+                            "matrix"
+                          ]
                         }
-                      }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
                   "required": [
-                    "tags",
-                    "items",
-                    "matrix"
+                    "result"
                   ]
                 }
               }
@@ -1161,36 +1401,52 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "level1": {
+                    "result": {
                       "type": "object",
                       "properties": {
-                        "level2": {
+                        "data": {
                           "type": "object",
                           "properties": {
-                            "level3": {
+                            "level1": {
                               "type": "object",
                               "properties": {
-                                "value": {
-                                  "type": "string"
+                                "level2": {
+                                  "type": "object",
+                                  "properties": {
+                                    "level3": {
+                                      "type": "object",
+                                      "properties": {
+                                        "value": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": [
+                                        "value"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "level3"
+                                  ]
                                 }
                               },
                               "required": [
-                                "value"
+                                "level2"
                               ]
                             }
                           },
                           "required": [
-                            "level3"
+                            "level1"
                           ]
                         }
                       },
                       "required": [
-                        "level2"
+                        "data"
                       ]
                     }
                   },
                   "required": [
-                    "level1"
+                    "result"
                   ]
                 }
               }
@@ -1262,13 +1518,29 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "createdAt": {
-                      "type": "string",
-                      "format": "date-time"
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          },
+                          "required": [
+                            "createdAt"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
                   "required": [
-                    "createdAt"
+                    "result"
                   ]
                 }
               }
@@ -1317,12 +1589,28 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "anything": {},
-                    "something": {}
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "anything": {},
+                            "something": {}
+                          },
+                          "required": [
+                            "anything",
+                            "something"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
                   },
                   "required": [
-                    "anything",
-                    "something"
+                    "result"
                   ]
                 }
               }
@@ -1370,24 +1658,40 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "page": {
-                      "type": "number"
-                    },
-                    "limit": {
-                      "type": "number"
-                    },
-                    "sort": {
-                      "type": "string",
-                      "enum": [
-                        "asc",
-                        "desc"
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "page": {
+                              "type": "number"
+                            },
+                            "limit": {
+                              "type": "number"
+                            },
+                            "sort": {
+                              "type": "string",
+                              "enum": [
+                                "asc",
+                                "desc"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "page",
+                            "limit",
+                            "sort"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
                       ]
                     }
                   },
                   "required": [
-                    "page",
-                    "limit",
-                    "sort"
+                    "result"
                   ]
                 }
               }
@@ -1442,20 +1746,36 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "email": {
-                      "type": "string"
-                    },
-                    "age": {
-                      "type": "number"
-                    },
-                    "url": {
-                      "type": "string"
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "email": {
+                              "type": "string"
+                            },
+                            "age": {
+                              "type": "number"
+                            },
+                            "url": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "email",
+                            "age",
+                            "url"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
                   "required": [
-                    "email",
-                    "age",
-                    "url"
+                    "result"
                   ]
                 }
               }
@@ -1511,30 +1831,46 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "value": {
-                      "oneOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "number"
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "oneOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "number"
+                                }
+                              ],
+                              "nullable": true
+                            },
+                            "optionalValue": {
+                              "oneOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "number"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "value"
+                          ]
                         }
-                      ],
-                      "nullable": true
-                    },
-                    "optionalValue": {
-                      "oneOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "number"
-                        }
+                      },
+                      "required": [
+                        "data"
                       ]
                     }
                   },
                   "required": [
-                    "value"
+                    "result"
                   ]
                 }
               }
@@ -1600,14 +1936,30 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "known": {
-                      "type": "string"
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "known": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "known"
+                          ],
+                          "additionalProperties": {}
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
                   "required": [
-                    "known"
-                  ],
-                  "additionalProperties": {}
+                    "result"
+                  ]
                 }
               }
             }
@@ -1655,12 +2007,28 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "known": {
-                      "type": "string"
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "known": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "known"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
                   "required": [
-                    "known"
+                    "result"
                   ]
                 }
               }
@@ -1708,12 +2076,28 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "userId": {
-                      "type": "string"
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "userId": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "userId"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
                   "required": [
-                    "userId"
+                    "result"
                   ]
                 }
               }
@@ -1761,16 +2145,32 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "status": {
-                      "type": "string",
-                      "enum": [
-                        "on",
-                        "off"
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "on",
+                                "off"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "status"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
                       ]
                     }
                   },
                   "required": [
-                    "status"
+                    "result"
                   ]
                 }
               }
@@ -1822,12 +2222,28 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "value": {
-                      "type": "number"
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "value"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
                   "required": [
-                    "value"
+                    "result"
                   ]
                 }
               }
@@ -1873,51 +2289,67 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
+                  "type": "object",
+                  "properties": {
+                    "result": {
                       "type": "object",
                       "properties": {
-                        "status": {
-                          "type": "string",
-                          "enum": [
-                            "success"
+                        "data": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "status": {
+                                  "type": "string",
+                                  "enum": [
+                                    "success"
+                                  ]
+                                },
+                                "id": {
+                                  "type": "number"
+                                },
+                                "createdAt": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "status",
+                                "id",
+                                "createdAt"
+                              ]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "status": {
+                                  "type": "string",
+                                  "enum": [
+                                    "error"
+                                  ]
+                                },
+                                "message": {
+                                  "type": "string"
+                                },
+                                "code": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "status",
+                                "message",
+                                "code"
+                              ]
+                            }
                           ]
-                        },
-                        "id": {
-                          "type": "number"
-                        },
-                        "createdAt": {
-                          "type": "string"
                         }
                       },
                       "required": [
-                        "status",
-                        "id",
-                        "createdAt"
-                      ]
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "status": {
-                          "type": "string",
-                          "enum": [
-                            "error"
-                          ]
-                        },
-                        "message": {
-                          "type": "string"
-                        },
-                        "code": {
-                          "type": "number"
-                        }
-                      },
-                      "required": [
-                        "status",
-                        "message",
-                        "code"
+                        "data"
                       ]
                     }
+                  },
+                  "required": [
+                    "result"
                   ]
                 }
               }
@@ -1975,43 +2407,59 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "results": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string"
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "results": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "title": {
+                                    "type": "string"
+                                  },
+                                  "snippet": {
+                                    "type": "string"
+                                  },
+                                  "score": {
+                                    "type": "number"
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "title",
+                                  "snippet",
+                                  "score"
+                                ]
+                              }
+                            },
+                            "total": {
+                              "type": "number"
+                            },
+                            "hasMore": {
+                              "type": "boolean"
+                            }
                           },
-                          "title": {
-                            "type": "string"
-                          },
-                          "snippet": {
-                            "type": "string"
-                          },
-                          "score": {
-                            "type": "number"
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "title",
-                          "snippet",
-                          "score"
-                        ]
-                      }
-                    },
-                    "total": {
-                      "type": "number"
-                    },
-                    "hasMore": {
-                      "type": "boolean"
+                          "required": [
+                            "results",
+                            "total",
+                            "hasMore"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
                   "required": [
-                    "results",
-                    "total",
-                    "hasMore"
+                    "result"
                   ]
                 }
               }
@@ -2117,17 +2565,33 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "status": {
-                      "type": "string",
-                      "enum": [
-                        "active",
-                        "inactive",
-                        "pending"
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "active",
+                                "inactive",
+                                "pending"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "status"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
                       ]
                     }
                   },
                   "required": [
-                    "status"
+                    "result"
                   ]
                 }
               }
@@ -2151,9 +2615,25 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "string",
-                  "enum": [
-                    "hello"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "string",
+                          "enum": [
+                            "hello"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
                   ]
                 }
               }
@@ -2177,9 +2657,25 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "number",
-                  "enum": [
-                    42
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "number",
+                          "enum": [
+                            42
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
                   ]
                 }
               }
@@ -2203,9 +2699,25 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "boolean",
-                  "enum": [
-                    true
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
                   ]
                 }
               }
@@ -2229,55 +2741,71 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
+                  "type": "object",
+                  "properties": {
+                    "result": {
                       "type": "object",
                       "properties": {
-                        "type": {
-                          "type": "string",
-                          "enum": [
-                            "success"
+                        "data": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "type": {
+                                  "type": "string",
+                                  "enum": [
+                                    "success"
+                                  ]
+                                },
+                                "id": {
+                                  "type": "number"
+                                },
+                                "createdAt": {
+                                  "type": "string"
+                                },
+                                "message": {},
+                                "code": {}
+                              },
+                              "required": [
+                                "type",
+                                "id",
+                                "createdAt"
+                              ]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "type": {
+                                  "type": "string",
+                                  "enum": [
+                                    "error"
+                                  ]
+                                },
+                                "message": {
+                                  "type": "string"
+                                },
+                                "code": {
+                                  "type": "number"
+                                },
+                                "id": {},
+                                "createdAt": {}
+                              },
+                              "required": [
+                                "type",
+                                "message",
+                                "code"
+                              ]
+                            }
                           ]
-                        },
-                        "id": {
-                          "type": "number"
-                        },
-                        "createdAt": {
-                          "type": "string"
-                        },
-                        "message": {},
-                        "code": {}
+                        }
                       },
                       "required": [
-                        "type",
-                        "id",
-                        "createdAt"
-                      ]
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "type": {
-                          "type": "string",
-                          "enum": [
-                            "error"
-                          ]
-                        },
-                        "message": {
-                          "type": "string"
-                        },
-                        "code": {
-                          "type": "number"
-                        },
-                        "id": {},
-                        "createdAt": {}
-                      },
-                      "required": [
-                        "type",
-                        "message",
-                        "code"
+                        "data"
                       ]
                     }
+                  },
+                  "required": [
+                    "result"
                   ]
                 }
               }
@@ -2303,31 +2831,47 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "value": {
-                      "oneOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "number"
-                        },
-                        {
-                          "type": "boolean",
-                          "enum": [
-                            false
-                          ]
-                        },
-                        {
-                          "type": "boolean",
-                          "enum": [
-                            true
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "oneOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "type": "boolean",
+                                  "enum": [
+                                    false
+                                  ]
+                                },
+                                {
+                                  "type": "boolean",
+                                  "enum": [
+                                    true
+                                  ]
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "value"
                           ]
                         }
+                      },
+                      "required": [
+                        "data"
                       ]
                     }
                   },
                   "required": [
-                    "value"
+                    "result"
                   ]
                 }
               }
@@ -2351,19 +2895,35 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "oneOf": [
-                      {
-                        "type": "string"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "oneOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ]
+                          },
+                          "minItems": 2,
+                          "maxItems": 2
+                        }
                       },
-                      {
-                        "type": "number"
-                      }
-                    ]
+                      "required": [
+                        "data"
+                      ]
+                    }
                   },
-                  "minItems": 2,
-                  "maxItems": 2
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2387,9 +2947,25 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "additionalProperties": {
-                    "type": "number"
-                  }
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "number"
+                          }
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2412,26 +2988,42 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "id": {
-                        "type": "number"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "number"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "active": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "name",
+                              "active"
+                            ]
+                          }
+                        }
                       },
-                      "name": {
-                        "type": "string"
-                      },
-                      "active": {
-                        "type": "boolean"
-                      }
-                    },
-                    "required": [
-                      "id",
-                      "name",
-                      "active"
-                    ]
-                  }
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2454,13 +3046,29 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "array",
-                    "items": {
-                      "type": "number"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "array",
+                            "items": {
+                              "type": "number"
+                            }
+                          }
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
-                  }
+                  },
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2485,36 +3093,52 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "level1": {
+                    "result": {
                       "type": "object",
                       "properties": {
-                        "level2": {
+                        "data": {
                           "type": "object",
                           "properties": {
-                            "level3": {
+                            "level1": {
                               "type": "object",
                               "properties": {
-                                "value": {
-                                  "type": "string"
+                                "level2": {
+                                  "type": "object",
+                                  "properties": {
+                                    "level3": {
+                                      "type": "object",
+                                      "properties": {
+                                        "value": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": [
+                                        "value"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "level3"
+                                  ]
                                 }
                               },
                               "required": [
-                                "value"
+                                "level2"
                               ]
                             }
                           },
                           "required": [
-                            "level3"
+                            "level1"
                           ]
                         }
                       },
                       "required": [
-                        "level2"
+                        "data"
                       ]
                     }
                   },
                   "required": [
-                    "level1"
+                    "result"
                   ]
                 }
               }
@@ -2540,13 +3164,29 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "createdAt": {
-                      "type": "string",
-                      "format": "date-time"
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          },
+                          "required": [
+                            "createdAt"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
                   "required": [
-                    "createdAt"
+                    "result"
                   ]
                 }
               }
@@ -2572,13 +3212,29 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "value": {
-                      "type": "string",
-                      "nullable": true
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": "string",
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "value"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
                   "required": [
-                    "value"
+                    "result"
                   ]
                 }
               }
@@ -2604,18 +3260,34 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "name": {
-                      "type": "string"
-                    },
-                    "age": {
-                      "type": "number"
-                    },
-                    "email": {
-                      "type": "string"
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "age": {
+                              "type": "number"
+                            },
+                            "email": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "name"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
                   "required": [
-                    "name"
+                    "result"
                   ]
                 }
               }
@@ -2641,38 +3313,54 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "id": {
-                      "type": "number"
-                    },
-                    "name": {
-                      "type": "string"
-                    },
-                    "tags": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      }
-                    },
-                    "metadata": {
+                    "result": {
                       "type": "object",
-                      "additionalProperties": {
-                        "type": "string"
-                      }
-                    },
-                    "active": {
-                      "type": "boolean"
-                    },
-                    "score": {
-                      "type": "number"
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "number"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "tags": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "metadata": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "type": "string"
+                              }
+                            },
+                            "active": {
+                              "type": "boolean"
+                            },
+                            "score": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "name",
+                            "tags",
+                            "metadata",
+                            "active",
+                            "score"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
                   "required": [
-                    "id",
-                    "name",
-                    "tags",
-                    "metadata",
-                    "active",
-                    "score"
+                    "result"
                   ]
                 }
               }
@@ -2692,7 +3380,23 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful response"
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {}
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
           },
           "default": {
             "$ref": "#/components/responses/error"
@@ -2712,7 +3416,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "nullable": true
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2737,20 +3457,36 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "name": {
-                      "type": "string"
-                    },
-                    "email": {
-                      "type": "string"
-                    },
-                    "id": {
-                      "type": "number"
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": "string"
+                            },
+                            "id": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "email",
+                            "id"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
                   "required": [
-                    "name",
-                    "email",
-                    "id"
+                    "result"
                   ]
                 }
               }
@@ -2774,31 +3510,47 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "oneOf": [
-                      {
-                        "type": "string",
-                        "enum": [
-                          "red"
-                        ]
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "red"
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "green"
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "blue"
+                                ]
+                              }
+                            ]
+                          },
+                          "minItems": 3,
+                          "maxItems": 3
+                        }
                       },
-                      {
-                        "type": "string",
-                        "enum": [
-                          "green"
-                        ]
-                      },
-                      {
-                        "type": "string",
-                        "enum": [
-                          "blue"
-                        ]
-                      }
-                    ]
+                      "required": [
+                        "data"
+                      ]
+                    }
                   },
-                  "minItems": 3,
-                  "maxItems": 3
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2823,25 +3575,41 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "outer": {
+                    "result": {
                       "type": "object",
                       "properties": {
-                        "inner": {
-                          "type": "string",
-                          "nullable": true
-                        },
-                        "maybeNum": {
-                          "type": "number"
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "outer": {
+                              "type": "object",
+                              "properties": {
+                                "inner": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "maybeNum": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "inner"
+                              ],
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "outer"
+                          ]
                         }
                       },
                       "required": [
-                        "inner"
-                      ],
-                      "nullable": true
+                        "data"
+                      ]
                     }
                   },
                   "required": [
-                    "outer"
+                    "result"
                   ]
                 }
               }
@@ -2865,9 +3633,25 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "boolean",
-                  "enum": [
-                    false
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "boolean",
+                          "enum": [
+                            false
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
                   ]
                 }
               }
@@ -2891,9 +3675,25 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "boolean",
-                  "enum": [
-                    true
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
                   ]
                 }
               }
@@ -2917,7 +3717,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "boolean"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2940,7 +3756,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "number"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2963,7 +3795,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "string"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -2988,43 +3836,59 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "id": {
-                      "type": "number"
-                    },
-                    "name": {
-                      "type": "string"
-                    },
-                    "createdAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "status": {
-                      "type": "string",
-                      "enum": [
-                        "created"
-                      ]
-                    },
-                    "tags": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      }
-                    },
-                    "metadata": {
+                    "result": {
                       "type": "object",
-                      "additionalProperties": {
-                        "type": "string"
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "number"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "created"
+                              ]
+                            },
+                            "tags": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "metadata": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "type": "string"
+                              },
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "name",
+                            "createdAt",
+                            "status",
+                            "tags",
+                            "metadata"
+                          ]
+                        }
                       },
-                      "nullable": true
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
                   "required": [
-                    "id",
-                    "name",
-                    "createdAt",
-                    "status",
-                    "tags",
-                    "metadata"
+                    "result"
                   ]
                 }
               }
@@ -3068,18 +3932,34 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "direction": {
-                      "type": "string",
-                      "enum": [
-                        "UP",
-                        "DOWN",
-                        "LEFT",
-                        "RIGHT"
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "direction": {
+                              "type": "string",
+                              "enum": [
+                                "UP",
+                                "DOWN",
+                                "LEFT",
+                                "RIGHT"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "direction"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
                       ]
                     }
                   },
                   "required": [
-                    "direction"
+                    "result"
                   ]
                 }
               }
@@ -3105,17 +3985,33 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "status": {
-                      "type": "number",
-                      "enum": [
-                        1,
-                        2,
-                        3
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "number",
+                              "enum": [
+                                1,
+                                2,
+                                3
+                              ]
+                            }
+                          },
+                          "required": [
+                            "status"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
                       ]
                     }
                   },
                   "required": [
-                    "status"
+                    "result"
                   ]
                 }
               }
@@ -3141,31 +4037,47 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "value": {
-                      "oneOf": [
-                        {
-                          "type": "string",
-                          "enum": [
-                            "FOO"
-                          ]
-                        },
-                        {
-                          "type": "number",
-                          "enum": [
-                            1
-                          ]
-                        },
-                        {
-                          "type": "string",
-                          "enum": [
-                            "BAZ"
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "oneOf": [
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "FOO"
+                                  ]
+                                },
+                                {
+                                  "type": "number",
+                                  "enum": [
+                                    1
+                                  ]
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "BAZ"
+                                  ]
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "value"
                           ]
                         }
+                      },
+                      "required": [
+                        "data"
                       ]
                     }
                   },
                   "required": [
-                    "value"
+                    "result"
                   ]
                 }
               }
@@ -3191,20 +4103,36 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "userId": {
-                      "type": "string"
-                    },
-                    "score": {
-                      "type": "number"
-                    },
-                    "active": {
-                      "type": "boolean"
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "userId": {
+                              "type": "string"
+                            },
+                            "score": {
+                              "type": "number"
+                            },
+                            "active": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "userId",
+                            "score",
+                            "active"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
                   "required": [
-                    "userId",
-                    "score",
-                    "active"
+                    "result"
                   ]
                 }
               }
@@ -3230,12 +4158,28 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "profile": {
-                      "$ref": "#/components/schemas/UserProfile"
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "profile": {
+                              "$ref": "#/components/schemas/UserProfile"
+                            }
+                          },
+                          "required": [
+                            "profile"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
                   "required": [
-                    "profile"
+                    "result"
                   ]
                 }
               }
@@ -3261,15 +4205,31 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/OrderItem"
-                      }
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/OrderItem"
+                              }
+                            }
+                          },
+                          "required": [
+                            "items"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
                   "required": [
-                    "items"
+                    "result"
                   ]
                 }
               }
@@ -3295,12 +4255,28 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "address": {
-                      "$ref": "#/components/schemas/Address"
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "address": {
+                              "$ref": "#/components/schemas/Address"
+                            }
+                          },
+                          "required": [
+                            "address"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
                   "required": [
-                    "address"
+                    "result"
                   ]
                 }
               }
@@ -3326,16 +4302,32 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "profile": {
-                      "$ref": "#/components/schemas/UserProfile"
-                    },
-                    "address": {
-                      "$ref": "#/components/schemas/Address"
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "profile": {
+                              "$ref": "#/components/schemas/UserProfile"
+                            },
+                            "address": {
+                              "$ref": "#/components/schemas/Address"
+                            }
+                          },
+                          "required": [
+                            "profile",
+                            "address"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
                   "required": [
-                    "profile",
-                    "address"
+                    "result"
                   ]
                 }
               }
@@ -3361,28 +4353,44 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "data": {
+                    "result": {
                       "type": "object",
                       "properties": {
-                        "nested": {
+                        "data": {
                           "type": "object",
                           "properties": {
-                            "profile": {
-                              "$ref": "#/components/schemas/UserProfile"
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "nested": {
+                                  "type": "object",
+                                  "properties": {
+                                    "profile": {
+                                      "$ref": "#/components/schemas/UserProfile"
+                                    }
+                                  },
+                                  "required": [
+                                    "profile"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "nested"
+                              ]
                             }
                           },
                           "required": [
-                            "profile"
+                            "data"
                           ]
                         }
                       },
                       "required": [
-                        "nested"
+                        "data"
                       ]
                     }
                   },
                   "required": [
-                    "data"
+                    "result"
                   ]
                 }
               }
@@ -3406,7 +4414,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TreeNode"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/TreeNode"
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -3429,7 +4453,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LinkedListNode"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/LinkedListNode"
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -3452,7 +4492,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Category"
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Category"
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -3489,12 +4545,28 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "name": {
-                      "type": "string",
-                      "nullable": true
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string",
+                              "nullable": true
+                            }
+                          },
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
-                  "nullable": true
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -3540,10 +4612,26 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "name": {
-                      "type": "string"
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
-                  }
+                  },
+                  "required": [
+                    "result"
+                  ]
                 }
               }
             }
@@ -3587,15 +4675,31 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "name": {
-                      "type": "string",
-                      "nullable": true
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string",
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "name"
+                          ],
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
                     }
                   },
                   "required": [
-                    "name"
-                  ],
-                  "nullable": true
+                    "result"
+                  ]
                 }
               }
             }
@@ -3835,7 +4939,15 @@
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/DefaultErrorShape"
+              "type": "object",
+              "properties": {
+                "error": {
+                  "$ref": "#/components/schemas/DefaultErrorShape"
+                }
+              },
+              "required": [
+                "error"
+              ]
             }
           }
         }
