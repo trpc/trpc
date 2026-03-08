@@ -164,7 +164,7 @@
     },
     "/user.list": {
       "get": {
-        "operationId": "user_list",
+        "operationId": "user.list",
         "tags": [
           "user"
         ],
@@ -218,7 +218,7 @@
     },
     "/user.create": {
       "post": {
-        "operationId": "user_create",
+        "operationId": "user.create",
         "tags": [
           "user"
         ],
@@ -293,7 +293,7 @@
     },
     "/complexTypes.zodEnum": {
       "get": {
-        "operationId": "complexTypes_zodEnum",
+        "operationId": "complexTypes.zodEnum",
         "tags": [
           "complexTypes"
         ],
@@ -372,7 +372,7 @@
     },
     "/complexTypes.nativeEnum": {
       "get": {
-        "operationId": "complexTypes_nativeEnum",
+        "operationId": "complexTypes.nativeEnum",
         "tags": [
           "complexTypes"
         ],
@@ -453,7 +453,7 @@
     },
     "/complexTypes.literal": {
       "get": {
-        "operationId": "complexTypes_literal",
+        "operationId": "complexTypes.literal",
         "tags": [
           "complexTypes"
         ],
@@ -556,7 +556,7 @@
     },
     "/complexTypes.literalUnion": {
       "get": {
-        "operationId": "complexTypes_literalUnion",
+        "operationId": "complexTypes.literalUnion",
         "tags": [
           "complexTypes"
         ],
@@ -635,7 +635,7 @@
     },
     "/complexTypes.discriminatedUnion": {
       "post": {
-        "operationId": "complexTypes_discriminatedUnion",
+        "operationId": "complexTypes.discriminatedUnion",
         "tags": [
           "complexTypes"
         ],
@@ -818,7 +818,7 @@
     },
     "/complexTypes.union": {
       "get": {
-        "operationId": "complexTypes_union",
+        "operationId": "complexTypes.union",
         "tags": [
           "complexTypes"
         ],
@@ -925,7 +925,7 @@
     },
     "/complexTypes.intersection": {
       "post": {
-        "operationId": "complexTypes_intersection",
+        "operationId": "complexTypes.intersection",
         "tags": [
           "complexTypes"
         ],
@@ -1028,7 +1028,7 @@
     },
     "/complexTypes.tuple": {
       "get": {
-        "operationId": "complexTypes_tuple",
+        "operationId": "complexTypes.tuple",
         "tags": [
           "complexTypes"
         ],
@@ -1159,7 +1159,7 @@
     },
     "/complexTypes.record": {
       "get": {
-        "operationId": "complexTypes_record",
+        "operationId": "complexTypes.record",
         "tags": [
           "complexTypes"
         ],
@@ -1248,7 +1248,7 @@
     },
     "/complexTypes.complexArrays": {
       "get": {
-        "operationId": "complexTypes_complexArrays",
+        "operationId": "complexTypes.complexArrays",
         "tags": [
           "complexTypes"
         ],
@@ -1389,7 +1389,7 @@
     },
     "/complexTypes.deeplyNested": {
       "get": {
-        "operationId": "complexTypes_deeplyNested",
+        "operationId": "complexTypes.deeplyNested",
         "tags": [
           "complexTypes"
         ],
@@ -1506,7 +1506,7 @@
     },
     "/complexTypes.dateType": {
       "get": {
-        "operationId": "complexTypes_dateType",
+        "operationId": "complexTypes.dateType",
         "tags": [
           "complexTypes"
         ],
@@ -1577,7 +1577,7 @@
     },
     "/complexTypes.anyAndUnknown": {
       "get": {
-        "operationId": "complexTypes_anyAndUnknown",
+        "operationId": "complexTypes.anyAndUnknown",
         "tags": [
           "complexTypes"
         ],
@@ -1646,7 +1646,7 @@
     },
     "/complexTypes.defaults": {
       "get": {
-        "operationId": "complexTypes_defaults",
+        "operationId": "complexTypes.defaults",
         "tags": [
           "complexTypes"
         ],
@@ -1734,7 +1734,7 @@
     },
     "/complexTypes.refined": {
       "get": {
-        "operationId": "complexTypes_refined",
+        "operationId": "complexTypes.refined",
         "tags": [
           "complexTypes"
         ],
@@ -1819,7 +1819,7 @@
     },
     "/complexTypes.nullableUnion": {
       "get": {
-        "operationId": "complexTypes_nullableUnion",
+        "operationId": "complexTypes.nullableUnion",
         "tags": [
           "complexTypes"
         ],
@@ -1924,7 +1924,7 @@
     },
     "/complexTypes.passthrough": {
       "get": {
-        "operationId": "complexTypes_passthrough",
+        "operationId": "complexTypes.passthrough",
         "tags": [
           "complexTypes"
         ],
@@ -1995,7 +1995,7 @@
     },
     "/complexTypes.strict": {
       "get": {
-        "operationId": "complexTypes_strict",
+        "operationId": "complexTypes.strict",
         "tags": [
           "complexTypes"
         ],
@@ -2064,7 +2064,7 @@
     },
     "/complexTypes.branded": {
       "get": {
-        "operationId": "complexTypes_branded",
+        "operationId": "complexTypes.branded",
         "tags": [
           "complexTypes"
         ],
@@ -2133,7 +2133,7 @@
     },
     "/complexTypes.withCatch": {
       "get": {
-        "operationId": "complexTypes_withCatch",
+        "operationId": "complexTypes.withCatch",
         "tags": [
           "complexTypes"
         ],
@@ -2210,7 +2210,7 @@
     },
     "/complexTypes.piped": {
       "get": {
-        "operationId": "complexTypes_piped",
+        "operationId": "complexTypes.piped",
         "tags": [
           "complexTypes"
         ],
@@ -2279,7 +2279,7 @@
     },
     "/complexTypes.createContent": {
       "post": {
-        "operationId": "complexTypes_createContent",
+        "operationId": "complexTypes.createContent",
         "tags": [
           "complexTypes"
         ],
@@ -2395,7 +2395,7 @@
     },
     "/complexTypes.search": {
       "get": {
-        "operationId": "complexTypes_search",
+        "operationId": "complexTypes.search",
         "tags": [
           "complexTypes"
         ],
@@ -2553,7 +2553,7 @@
     },
     "/inferredReturns.enumLike": {
       "get": {
-        "operationId": "inferredReturns_enumLike",
+        "operationId": "inferredReturns.enumLike",
         "tags": [
           "inferredReturns"
         ],
@@ -2605,7 +2605,7 @@
     },
     "/inferredReturns.stringLiteral": {
       "get": {
-        "operationId": "inferredReturns_stringLiteral",
+        "operationId": "inferredReturns.stringLiteral",
         "tags": [
           "inferredReturns"
         ],
@@ -2647,7 +2647,7 @@
     },
     "/inferredReturns.numberLiteral": {
       "get": {
-        "operationId": "inferredReturns_numberLiteral",
+        "operationId": "inferredReturns.numberLiteral",
         "tags": [
           "inferredReturns"
         ],
@@ -2689,7 +2689,7 @@
     },
     "/inferredReturns.booleanLiteral": {
       "get": {
-        "operationId": "inferredReturns_booleanLiteral",
+        "operationId": "inferredReturns.booleanLiteral",
         "tags": [
           "inferredReturns"
         ],
@@ -2731,7 +2731,7 @@
     },
     "/inferredReturns.discriminatedResult": {
       "post": {
-        "operationId": "inferredReturns_discriminatedResult",
+        "operationId": "inferredReturns.discriminatedResult",
         "tags": [
           "inferredReturns"
         ],
@@ -2819,7 +2819,7 @@
     },
     "/inferredReturns.primitiveUnion": {
       "get": {
-        "operationId": "inferredReturns_primitiveUnion",
+        "operationId": "inferredReturns.primitiveUnion",
         "tags": [
           "inferredReturns"
         ],
@@ -2885,7 +2885,7 @@
     },
     "/inferredReturns.tupleReturn": {
       "get": {
-        "operationId": "inferredReturns_tupleReturn",
+        "operationId": "inferredReturns.tupleReturn",
         "tags": [
           "inferredReturns"
         ],
@@ -2936,7 +2936,7 @@
     },
     "/inferredReturns.recordReturn": {
       "get": {
-        "operationId": "inferredReturns_recordReturn",
+        "operationId": "inferredReturns.recordReturn",
         "tags": [
           "inferredReturns"
         ],
@@ -2978,7 +2978,7 @@
     },
     "/inferredReturns.arrayOfObjects": {
       "get": {
-        "operationId": "inferredReturns_arrayOfObjects",
+        "operationId": "inferredReturns.arrayOfObjects",
         "tags": [
           "inferredReturns"
         ],
@@ -3036,7 +3036,7 @@
     },
     "/inferredReturns.matrix": {
       "get": {
-        "operationId": "inferredReturns_matrix",
+        "operationId": "inferredReturns.matrix",
         "tags": [
           "inferredReturns"
         ],
@@ -3081,7 +3081,7 @@
     },
     "/inferredReturns.deeplyNested": {
       "get": {
-        "operationId": "inferredReturns_deeplyNested",
+        "operationId": "inferredReturns.deeplyNested",
         "tags": [
           "inferredReturns"
         ],
@@ -3152,7 +3152,7 @@
     },
     "/inferredReturns.dateReturn": {
       "get": {
-        "operationId": "inferredReturns_dateReturn",
+        "operationId": "inferredReturns.dateReturn",
         "tags": [
           "inferredReturns"
         ],
@@ -3200,7 +3200,7 @@
     },
     "/inferredReturns.nullableReturn": {
       "get": {
-        "operationId": "inferredReturns_nullableReturn",
+        "operationId": "inferredReturns.nullableReturn",
         "tags": [
           "inferredReturns"
         ],
@@ -3248,7 +3248,7 @@
     },
     "/inferredReturns.optionalFields": {
       "get": {
-        "operationId": "inferredReturns_optionalFields",
+        "operationId": "inferredReturns.optionalFields",
         "tags": [
           "inferredReturns"
         ],
@@ -3301,7 +3301,7 @@
     },
     "/inferredReturns.mixedObject": {
       "get": {
-        "operationId": "inferredReturns_mixedObject",
+        "operationId": "inferredReturns.mixedObject",
         "tags": [
           "inferredReturns"
         ],
@@ -3374,7 +3374,7 @@
     },
     "/inferredReturns.voidReturn": {
       "post": {
-        "operationId": "inferredReturns_voidReturn",
+        "operationId": "inferredReturns.voidReturn",
         "tags": [
           "inferredReturns"
         ],
@@ -3406,7 +3406,7 @@
     },
     "/inferredReturns.nullReturn": {
       "get": {
-        "operationId": "inferredReturns_nullReturn",
+        "operationId": "inferredReturns.nullReturn",
         "tags": [
           "inferredReturns"
         ],
@@ -3445,7 +3445,7 @@
     },
     "/inferredReturns.mergedObject": {
       "get": {
-        "operationId": "inferredReturns_mergedObject",
+        "operationId": "inferredReturns.mergedObject",
         "tags": [
           "inferredReturns"
         ],
@@ -3500,7 +3500,7 @@
     },
     "/inferredReturns.literalArray": {
       "get": {
-        "operationId": "inferredReturns_literalArray",
+        "operationId": "inferredReturns.literalArray",
         "tags": [
           "inferredReturns"
         ],
@@ -3563,7 +3563,7 @@
     },
     "/inferredReturns.nestedNullable": {
       "get": {
-        "operationId": "inferredReturns_nestedNullable",
+        "operationId": "inferredReturns.nestedNullable",
         "tags": [
           "inferredReturns"
         ],
@@ -3623,7 +3623,7 @@
     },
     "/inferredReturns.boolReturnFalse": {
       "get": {
-        "operationId": "inferredReturns_boolReturnFalse",
+        "operationId": "inferredReturns.boolReturnFalse",
         "tags": [
           "inferredReturns"
         ],
@@ -3665,7 +3665,7 @@
     },
     "/inferredReturns.boolReturnTrue": {
       "get": {
-        "operationId": "inferredReturns_boolReturnTrue",
+        "operationId": "inferredReturns.boolReturnTrue",
         "tags": [
           "inferredReturns"
         ],
@@ -3707,7 +3707,7 @@
     },
     "/inferredReturns.boolReturn": {
       "get": {
-        "operationId": "inferredReturns_boolReturn",
+        "operationId": "inferredReturns.boolReturn",
         "tags": [
           "inferredReturns"
         ],
@@ -3746,7 +3746,7 @@
     },
     "/inferredReturns.numReturn": {
       "get": {
-        "operationId": "inferredReturns_numReturn",
+        "operationId": "inferredReturns.numReturn",
         "tags": [
           "inferredReturns"
         ],
@@ -3785,7 +3785,7 @@
     },
     "/inferredReturns.strReturn": {
       "get": {
-        "operationId": "inferredReturns_strReturn",
+        "operationId": "inferredReturns.strReturn",
         "tags": [
           "inferredReturns"
         ],
@@ -3824,7 +3824,7 @@
     },
     "/inferredReturns.createItem": {
       "post": {
-        "operationId": "inferredReturns_createItem",
+        "operationId": "inferredReturns.createItem",
         "tags": [
           "inferredReturns"
         ],
@@ -3920,7 +3920,7 @@
     },
     "/inferredReturns.stringEnum": {
       "get": {
-        "operationId": "inferredReturns_stringEnum",
+        "operationId": "inferredReturns.stringEnum",
         "tags": [
           "inferredReturns"
         ],
@@ -3973,7 +3973,7 @@
     },
     "/inferredReturns.numericEnum": {
       "get": {
-        "operationId": "inferredReturns_numericEnum",
+        "operationId": "inferredReturns.numericEnum",
         "tags": [
           "inferredReturns"
         ],
@@ -4025,7 +4025,7 @@
     },
     "/inferredReturns.mixedEnum": {
       "get": {
-        "operationId": "inferredReturns_mixedEnum",
+        "operationId": "inferredReturns.mixedEnum",
         "tags": [
           "inferredReturns"
         ],
@@ -4091,7 +4091,7 @@
     },
     "/inferredReturns.brandedReturns": {
       "get": {
-        "operationId": "inferredReturns_brandedReturns",
+        "operationId": "inferredReturns.brandedReturns",
         "tags": [
           "inferredReturns"
         ],
@@ -4146,7 +4146,7 @@
     },
     "/namedTypes.withProfile": {
       "get": {
-        "operationId": "namedTypes_withProfile",
+        "operationId": "namedTypes.withProfile",
         "tags": [
           "namedTypes"
         ],
@@ -4193,7 +4193,7 @@
     },
     "/namedTypes.orderItems": {
       "get": {
-        "operationId": "namedTypes_orderItems",
+        "operationId": "namedTypes.orderItems",
         "tags": [
           "namedTypes"
         ],
@@ -4243,7 +4243,7 @@
     },
     "/namedTypes.withAddress": {
       "get": {
-        "operationId": "namedTypes_withAddress",
+        "operationId": "namedTypes.withAddress",
         "tags": [
           "namedTypes"
         ],
@@ -4290,7 +4290,7 @@
     },
     "/namedTypes.profileAndAddress": {
       "get": {
-        "operationId": "namedTypes_profileAndAddress",
+        "operationId": "namedTypes.profileAndAddress",
         "tags": [
           "namedTypes"
         ],
@@ -4341,7 +4341,7 @@
     },
     "/namedTypes.deepNested": {
       "get": {
-        "operationId": "namedTypes_deepNested",
+        "operationId": "namedTypes.deepNested",
         "tags": [
           "namedTypes"
         ],
@@ -4404,7 +4404,7 @@
     },
     "/recursiveTypes.tree": {
       "get": {
-        "operationId": "recursiveTypes_tree",
+        "operationId": "recursiveTypes.tree",
         "tags": [
           "recursiveTypes"
         ],
@@ -4443,7 +4443,7 @@
     },
     "/recursiveTypes.linkedList": {
       "get": {
-        "operationId": "recursiveTypes_linkedList",
+        "operationId": "recursiveTypes.linkedList",
         "tags": [
           "recursiveTypes"
         ],
@@ -4482,7 +4482,7 @@
     },
     "/recursiveTypes.category": {
       "get": {
-        "operationId": "recursiveTypes_category",
+        "operationId": "recursiveTypes.category",
         "tags": [
           "recursiveTypes"
         ],
@@ -4533,7 +4533,7 @@
     },
     "/simpleCases.nullish": {
       "get": {
-        "operationId": "simpleCases_nullish",
+        "operationId": "simpleCases.nullish",
         "tags": [
           "simpleCases"
         ],
@@ -4600,7 +4600,7 @@
     },
     "/simpleCases.optional": {
       "get": {
-        "operationId": "simpleCases_optional",
+        "operationId": "simpleCases.optional",
         "tags": [
           "simpleCases"
         ],
@@ -4663,7 +4663,7 @@
     },
     "/simpleCases.nullable": {
       "get": {
-        "operationId": "simpleCases_nullable",
+        "operationId": "simpleCases.nullable",
         "tags": [
           "simpleCases"
         ],

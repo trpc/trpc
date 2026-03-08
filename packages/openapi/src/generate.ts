@@ -885,7 +885,7 @@ function buildProcedureOperation(
   method: 'get' | 'post',
 ): Record<string, unknown> {
   const operation: Record<string, unknown> = {
-    operationId: proc.path.replace(/\./g, '_'),
+    operationId: proc.path,
     tags: [proc.path.split('.')[0]],
     responses: {
       '200': {
