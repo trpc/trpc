@@ -11,7 +11,7 @@ import {
 import superjson from 'superjson';
 import { describe, expect, it } from 'vitest';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { createHTTPHandler } from '../adapters/standalone';
+import { createHTTPHandler } from '@trpc/server/adapters/standalone';
 import type { OpenAPIDocument } from './generate';
 import { generateOpenAPIDocument } from './generate';
 
@@ -40,7 +40,7 @@ async function validateOpenAPI(spec: string) {
 const testRouterPath = path.resolve(__dirname, '__testRouter.ts');
 const openApiTsBin = path.resolve(
   __dirname,
-  '../../node_modules/.bin/openapi-ts',
+  '../node_modules/.bin/openapi-ts',
 );
 
 /** Resolve a schema that may be a $ref into the actual schema object. */
@@ -305,7 +305,7 @@ describe('generateOpenAPIDocument', () => {
       // by rewriting the response body before the client parses it.
       client.interceptors.response.use(async (response: Response) => {
         if (!response.ok) return response;
-        const body = await response.json();
+        const body = (await response.json()) as any;
         const unwrapped = body?.result?.data ?? body;
         return new Response(JSON.stringify(unwrapped), {
           status: response.status,
@@ -436,7 +436,7 @@ describe('generateOpenAPIDocument', () => {
       // Unwrap tRPC envelope but do NOT apply superjson deserialization.
       client.interceptors.response.use(async (response: Response) => {
         if (!response.ok) return response;
-        const body = await response.json();
+        const body = (await response.json()) as any;
         const unwrapped = body?.result?.data ?? body;
         return new Response(JSON.stringify(unwrapped), {
           status: response.status,
@@ -484,7 +484,7 @@ describe('generateOpenAPIDocument', () => {
       // Superjson deserialize response output
       client.interceptors.response.use(async (response: Response) => {
         if (!response.ok) return response;
-        const body = await response.json();
+        const body = (await response.json()) as any;
         const sjEnvelope = body?.result?.data ?? body;
         const deserialized = superjson.deserialize(sjEnvelope);
         return new Response(JSON.stringify(deserialized), {
