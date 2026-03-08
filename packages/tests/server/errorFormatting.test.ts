@@ -135,18 +135,76 @@ describe('with per-procedure typed errors', () => {
   const appRouter = t.router({
     typedError: t.procedure
       .errors({
-        UNAUTHORIZED: {
-          message: 'BAD_PHONE',
+        UNAUTHORIZED: z.object({
+          message: z.literal('BAD_PHONE'),
           data: z.object({
             reason: z.literal('BAD_PHONE'),
           }),
-        },
+        }),
       })
       .query(({ errors }) => {
         throw errors.UNAUTHORIZED({
+          message: 'BAD_PHONE',
           data: {
             reason: 'BAD_PHONE',
           },
+        });
+
+        // @ts-expect-error this isn't on the type so shouldn't be here
+        throw errors.BAD_GATEWAY({
+          message: 'BAD_GATEWAY',
+          data: {} as any,
+        });
+      }),
+    typedMiddlewareChainedError: t.procedure
+      .errors({
+        UNAUTHORIZED: z.object({
+          message: z.literal('BAD_PHONE'),
+          data: z.object({
+            reason: z.literal('BAD_PHONE'),
+          }),
+        }),
+      })
+      .use((opts) => {
+        if (opts.batchIndex === -1) {
+          throw opts.errors.UNAUTHORIZED({
+            message: 'BAD_PHONE',
+            data: {
+              reason: 'BAD_PHONE',
+            },
+          });
+
+          // @ts-expect-error this isn't on the type so shouldn't be here
+          throw opts.errors.BAD_GATEWAY({
+            message: 'BAD_GATEWAY',
+            data: {} as any,
+          });
+        }
+        return opts.next();
+      })
+      .errors({
+        BAD_REQUEST: z.object({
+          message: z.string(),
+          data: z.number(),
+        }),
+      })
+      .query(({ errors }) => {
+        throw errors.UNAUTHORIZED({
+          message: 'BAD_PHONE',
+          data: {
+            reason: 'BAD_PHONE',
+          },
+        });
+
+        throw errors.BAD_REQUEST({
+          message: 'Hello World',
+          data: 1,
+        });
+
+        // @ts-expect-error this isn't on the type so shouldn't be here
+        throw errors.BAD_GATEWAY({
+          message: 'BAD_GATEWAY',
+          data: {} as any,
         });
       }),
     undeclaredTypedError: t.procedure.query(() => {
@@ -172,7 +230,9 @@ describe('with per-procedure typed errors', () => {
       GlobalFormattedShape | TypedProcedureErrorShape
     >();
     expectTypeOf(typedErr.data).toEqualTypeOf<
-      GlobalFormattedShape['data'] | TypedProcedureErrorShape['data'] | undefined
+      | GlobalFormattedShape['data']
+      | TypedProcedureErrorShape['data']
+      | undefined
     >();
     expect(typedErr.shape).toMatchInlineSnapshot(`
       Object {
@@ -184,13 +244,17 @@ describe('with per-procedure typed errors', () => {
       }
     `);
 
-    const undeclaredErr = await waitError(ctx.client.undeclaredTypedError.query());
+    const undeclaredErr = await waitError(
+      ctx.client.undeclaredTypedError.query(),
+    );
     assert(isTRPCClientError<typeof appRouter>(undeclaredErr));
     expectTypeOf(undeclaredErr.shape).toEqualTypeOf<
       GlobalFormattedShape | TypedProcedureErrorShape
     >();
     expectTypeOf(undeclaredErr.data).toEqualTypeOf<
-      GlobalFormattedShape['data'] | TypedProcedureErrorShape['data'] | undefined
+      | GlobalFormattedShape['data']
+      | TypedProcedureErrorShape['data']
+      | undefined
     >();
     expect(undeclaredErr.shape?.code).toBe(-32603);
     expect(undeclaredErr.shape?.message).toBe('BAD_PHONE');

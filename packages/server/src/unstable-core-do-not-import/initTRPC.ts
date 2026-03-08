@@ -83,6 +83,7 @@ export interface TRPCRootObject<
     UnsetMarker,
     UnsetMarker,
     never,
+    {},
     false
   >;
 
