@@ -246,8 +246,10 @@ describe('generateOpenAPIDocument', () => {
       // LinkedListNode: next is LinkedListNode | null (nullable self-ref)
       expect(schemas).toHaveProperty('LinkedListNode');
       expect(schemas.LinkedListNode.properties.next).toEqual({
-        allOf: [{ $ref: '#/components/schemas/LinkedListNode' }],
-        nullable: true,
+        oneOf: [
+          { $ref: '#/components/schemas/LinkedListNode' },
+          { type: 'null' },
+        ],
       });
 
       // Category: Zod z.lazy() recursive input

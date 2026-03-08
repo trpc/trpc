@@ -2,22 +2,22 @@ import * as path from 'node:path';
 import * as ts from 'typescript';
 
 /**
- * A minimal JSON Schema subset used for OpenAPI 3.0 schemas.
+ * A minimal JSON Schema subset used for OpenAPI 3.1 schemas.
  */
 export interface JsonSchema {
   $ref?: string;
   type?: string | string[];
   properties?: Record<string, JsonSchema>;
   required?: string[];
-  items?: JsonSchema;
+  items?: JsonSchema | false;
   prefixItems?: JsonSchema[];
+  const?: string | number | boolean | null;
   enum?: (string | number | boolean | null)[];
   oneOf?: JsonSchema[];
   anyOf?: JsonSchema[];
   allOf?: JsonSchema[];
   not?: JsonSchema;
   additionalProperties?: JsonSchema | boolean;
-  nullable?: boolean;
   format?: string;
   description?: string;
   minItems?: number;
@@ -234,7 +234,7 @@ function convertPrimitiveOrLiteral(
     return { type: 'boolean' };
   }
   if (flags & ts.TypeFlags.Null) {
-    return { nullable: true };
+    return { type: 'null' };
   }
   if (flags & ts.TypeFlags.Undefined) {
     return {};
@@ -253,14 +253,14 @@ function convertPrimitiveOrLiteral(
   }
 
   if (flags & ts.TypeFlags.StringLiteral) {
-    return { type: 'string', enum: [(type as ts.StringLiteralType).value] };
+    return { type: 'string', const: (type as ts.StringLiteralType).value };
   }
   if (flags & ts.TypeFlags.NumberLiteral) {
-    return { type: 'number', enum: [(type as ts.NumberLiteralType).value] };
+    return { type: 'number', const: (type as ts.NumberLiteralType).value };
   }
   if (flags & ts.TypeFlags.BooleanLiteral) {
     const isTrue = checker.typeToString(type) === 'true';
-    return { type: 'boolean', enum: [isTrue] };
+    return { type: 'boolean', const: isTrue };
   }
 
   return null;
@@ -288,51 +288,75 @@ function convertUnionType(
   const hasNull = defined.some((m) => hasFlag(m, ts.TypeFlags.Null));
   const nonNull = defined.filter((m) => !hasFlag(m, ts.TypeFlags.Null));
 
-  // TypeScript represents `boolean` as `true | false`.  Collapse back to a
-  // single `{ type: "boolean" }` instead of emitting a oneOf with two enums.
-  // Also handles branded booleans: `boolean & Brand` → `(true & Brand) | (false & Brand)`.
-  const isBooleanLiteralPair =
-    nonNull.length === 2 &&
-    nonNull.every((m) => hasFlag(unwrapBrand(m), ts.TypeFlags.BooleanLiteral));
+  // TypeScript represents `boolean` as `true | false`.  Collapse boolean
+  // literal pairs back into a single boolean, even when mixed with other types.
+  // e.g. `string | true | false` → treat as `string | boolean`
+  const boolLiterals = nonNull.filter((m) =>
+    hasFlag(unwrapBrand(m), ts.TypeFlags.BooleanLiteral),
+  );
+  const hasBoolPair =
+    boolLiterals.length === 2 &&
+    boolLiterals.some(
+      (m) => ctx.checker.typeToString(unwrapBrand(m)) === 'true',
+    ) &&
+    boolLiterals.some(
+      (m) => ctx.checker.typeToString(unwrapBrand(m)) === 'false',
+    );
 
-  if (isBooleanLiteralPair) {
-    const result: JsonSchema = { type: 'boolean' };
-    if (hasNull) {
-      result.nullable = true;
-    }
-    return result;
+  // Build the effective non-null members, collapsing boolean literal pairs
+  const effective = hasBoolPair
+    ? nonNull.filter(
+        (m) => !hasFlag(unwrapBrand(m), ts.TypeFlags.BooleanLiteral),
+      )
+    : nonNull;
+
+  // Pure boolean (or boolean | null) — no other types
+  if (hasBoolPair && effective.length === 0) {
+    return hasNull ? { type: ['boolean', 'null'] } : { type: 'boolean' };
   }
 
   // Collapse unions of same-type literals into a single `enum` array.
   // e.g. "FOO" | "BAR" → { type: "string", enum: ["FOO", "BAR"] }
-  const collapsedEnum = tryCollapseLiteralUnion(nonNull, hasNull);
+  const collapsedEnum = tryCollapseLiteralUnion(effective, hasNull);
   if (collapsedEnum) {
     return collapsedEnum;
   }
 
-  const schemas = nonNull
+  const schemas = effective
     .map((m) => typeToJsonSchema(m, ctx, depth + 1))
     .filter(isNonEmptySchema);
+
+  // Re-inject the collapsed boolean
+  if (hasBoolPair) {
+    schemas.push({ type: 'boolean' });
+  }
+
+  if (hasNull) {
+    schemas.push({ type: 'null' });
+  }
 
   if (schemas.length === 0) {
     return {};
   }
 
   const [firstSchema] = schemas;
-  const result: JsonSchema =
-    schemas.length === 1 && firstSchema !== undefined
-      ? firstSchema
-      : { oneOf: schemas };
-
-  if (hasNull) {
-    // In OpenAPI 3.0 a $ref object cannot have sibling properties, so
-    // wrap it in allOf when we need to add nullable.
-    if (result.$ref) {
-      return { allOf: [{ $ref: result.$ref }], nullable: true };
-    }
-    result.nullable = true;
+  if (schemas.length === 1 && firstSchema !== undefined) {
+    return firstSchema;
   }
-  return result;
+
+  // When all schemas are simple type-only schemas (no other properties),
+  // collapse into a single `type` array. e.g. string | null → type: ["string", "null"]
+  if (schemas.every(isSimpleTypeSchema)) {
+    return { type: schemas.map((s) => s.type as string) };
+  }
+
+  return { oneOf: schemas };
+}
+
+/** A schema that is just `{ type: "somePrimitive" }` with no other keys. */
+function isSimpleTypeSchema(s: JsonSchema): boolean {
+  const keys = Object.keys(s);
+  return keys.length === 1 && keys[0] === 'type' && typeof s.type === 'string';
 }
 
 /**
@@ -373,14 +397,11 @@ function tryCollapseLiteralUnion(
       ? (m as ts.StringLiteralType).value
       : (m as ts.NumberLiteralType).value,
   );
-  const result: JsonSchema = {
-    type: isString ? 'string' : 'number',
+  const baseType = isString ? 'string' : 'number';
+  return {
+    type: hasNull ? [baseType, 'null'] : baseType,
     enum: values,
   };
-  if (hasNull) {
-    result.nullable = true;
-  }
-  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -411,7 +432,50 @@ function convertIntersectionType(
   if (schemas.length === 1 && onlySchema !== undefined) {
     return onlySchema;
   }
+
+  // When all members are plain inline object schemas (no $ref), merge them
+  // into a single object instead of wrapping in allOf.
+  if (schemas.every(isInlineObjectSchema)) {
+    return mergeObjectSchemas(schemas);
+  }
+
   return { allOf: schemas };
+}
+
+/** True when the schema is an inline `{ type: "object", ... }` (not a $ref). */
+function isInlineObjectSchema(s: JsonSchema): boolean {
+  return s.type === 'object' && !s.$ref;
+}
+
+/** Merge multiple `{ type: "object" }` schemas into one. */
+function mergeObjectSchemas(schemas: JsonSchema[]): JsonSchema {
+  const properties: Record<string, JsonSchema> = {};
+  const required: string[] = [];
+  let additionalProperties: JsonSchema | boolean | undefined;
+
+  for (const s of schemas) {
+    if (s.properties) {
+      Object.assign(properties, s.properties);
+    }
+    if (s.required) {
+      required.push(...s.required);
+    }
+    if (s.additionalProperties !== undefined) {
+      additionalProperties = s.additionalProperties;
+    }
+  }
+
+  const result: JsonSchema = { type: 'object' };
+  if (Object.keys(properties).length > 0) {
+    result.properties = properties;
+  }
+  if (required.length > 0) {
+    result.required = required;
+  }
+  if (additionalProperties !== undefined) {
+    result.additionalProperties = additionalProperties;
+  }
+  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -460,17 +524,10 @@ function convertTupleType(
 ): JsonSchema {
   const args = ctx.checker.getTypeArguments(type as ts.TypeReference);
   const schemas = args.map((a) => typeToJsonSchema(a, ctx, depth + 1));
-  // Deduplicate identical element schemas
-  const serialized = schemas.map((s) => JSON.stringify(s));
-  const unique = schemas.filter(
-    (_, i) => serialized.indexOf(serialized[i] ?? '') === i,
-  );
   return {
     type: 'array',
-    items:
-      unique.length === 1 && unique[0] !== undefined
-        ? unique[0]
-        : { oneOf: unique },
+    prefixItems: schemas,
+    items: false,
     minItems: args.length,
     maxItems: args.length,
   };

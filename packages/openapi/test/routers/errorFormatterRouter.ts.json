@@ -1,5 +1,5 @@
 {
-  "openapi": "3.0.3",
+  "openapi": "3.1.1",
   "info": {
     "title": "tRPC API",
     "version": "0.0.0"
@@ -33,7 +33,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "parameters": [
@@ -62,7 +62,7 @@
   },
   "components": {
     "responses": {
-      "error": {
+      "Error": {
         "description": "Error response",
         "content": {
           "application/json": {
@@ -76,30 +76,29 @@
                       "type": "object",
                       "properties": {
                         "zodError": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "message": {
-                                "type": "string"
-                              },
-                              "path": {
-                                "type": "array",
-                                "items": {
-                                  "oneOf": [
-                                    {
-                                      "type": "string"
-                                    },
-                                    {
-                                      "type": "number"
+                          "oneOf": [
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "message": {
+                                    "type": "string"
+                                  },
+                                  "path": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": ["string", "number"]
                                     }
-                                  ]
-                                }
+                                  }
+                                },
+                                "required": ["message", "path"]
                               }
                             },
-                            "required": ["message", "path"]
-                          },
-                          "nullable": true
+                            {
+                              "type": "null"
+                            }
+                          ]
                         },
                         "code": {
                           "type": "string",

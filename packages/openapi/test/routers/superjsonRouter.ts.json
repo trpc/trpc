@@ -1,5 +1,5 @@
 {
-  "openapi": "3.0.3",
+  "openapi": "3.1.1",
   "info": {
     "title": "tRPC API",
     "version": "0.0.0"
@@ -43,7 +43,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "parameters": [
@@ -111,7 +111,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "requestBody": {
@@ -202,7 +202,7 @@
       }
     },
     "responses": {
-      "error": {
+      "Error": {
         "description": "Error response",
         "content": {
           "application/json": {

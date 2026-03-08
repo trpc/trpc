@@ -1,5 +1,5 @@
 {
-  "openapi": "3.0.3",
+  "openapi": "3.1.1",
   "info": {
     "title": "tRPC API",
     "version": "0.0.0"
@@ -39,7 +39,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "parameters": [
@@ -93,7 +93,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -126,7 +126,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "requestBody": {
@@ -181,7 +181,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -226,7 +226,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "requestBody": {
@@ -285,7 +285,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "parameters": [
@@ -347,7 +347,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "parameters": [
@@ -394,15 +394,15 @@
                           "properties": {
                             "strLit": {
                               "type": "string",
-                              "enum": ["hello"]
+                              "const": "hello"
                             },
                             "numLit": {
                               "type": "number",
-                              "enum": [42]
+                              "const": 42
                             },
                             "boolLit": {
                               "type": "boolean",
-                              "enum": [true]
+                              "const": true
                             }
                           },
                           "required": ["strLit", "numLit", "boolLit"]
@@ -417,7 +417,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "parameters": [
@@ -433,15 +433,15 @@
                   "properties": {
                     "strLit": {
                       "type": "string",
-                      "enum": ["hello"]
+                      "const": "hello"
                     },
                     "numLit": {
                       "type": "number",
-                      "enum": [42]
+                      "const": 42
                     },
                     "boolLit": {
                       "type": "boolean",
-                      "enum": [true]
+                      "const": true
                     }
                   },
                   "required": ["strLit", "numLit", "boolLit"]
@@ -487,7 +487,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "parameters": [
@@ -536,7 +536,7 @@
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": ["text"]
+                                  "const": "text"
                                 },
                                 "content": {
                                   "type": "string"
@@ -549,7 +549,7 @@
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": ["image"]
+                                  "const": "image"
                                 },
                                 "url": {
                                   "type": "string"
@@ -568,7 +568,7 @@
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": ["video"]
+                                  "const": "video"
                                 },
                                 "url": {
                                   "type": "string"
@@ -591,7 +591,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "requestBody": {
@@ -605,7 +605,7 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["text"]
+                        "const": "text"
                       },
                       "content": {
                         "type": "string"
@@ -618,7 +618,7 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["image"]
+                        "const": "image"
                       },
                       "url": {
                         "type": "string"
@@ -637,7 +637,7 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["video"]
+                        "const": "video"
                       },
                       "url": {
                         "type": "string"
@@ -674,22 +674,7 @@
                           "type": "object",
                           "properties": {
                             "value": {
-                              "oneOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "number"
-                                },
-                                {
-                                  "type": "boolean",
-                                  "enum": [false]
-                                },
-                                {
-                                  "type": "boolean",
-                                  "enum": [true]
-                                }
-                              ]
+                              "type": ["string", "number", "boolean"]
                             }
                           },
                           "required": ["value"]
@@ -704,7 +689,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "parameters": [
@@ -719,22 +704,7 @@
                   "type": "object",
                   "properties": {
                     "value": {
-                      "oneOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "number"
-                        },
-                        {
-                          "type": "boolean",
-                          "enum": [false]
-                        },
-                        {
-                          "type": "boolean",
-                          "enum": [true]
-                        }
-                      ]
+                      "type": ["string", "number", "boolean"]
                     }
                   },
                   "required": ["value"]
@@ -761,29 +731,19 @@
                       "type": "object",
                       "properties": {
                         "data": {
-                          "allOf": [
-                            {
-                              "type": "object",
-                              "properties": {
-                                "id": {
-                                  "type": "number"
-                                }
-                              },
-                              "required": ["id"]
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "number"
                             },
-                            {
-                              "type": "object",
-                              "properties": {
-                                "name": {
-                                  "type": "string"
-                                },
-                                "email": {
-                                  "type": "string"
-                                }
-                              },
-                              "required": ["name", "email"]
+                            "name": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": "string"
                             }
-                          ]
+                          },
+                          "required": ["id", "name", "email"]
                         }
                       },
                       "required": ["data"]
@@ -795,7 +755,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "requestBody": {
@@ -803,29 +763,19 @@
           "content": {
             "application/json": {
               "schema": {
-                "allOf": [
-                  {
-                    "type": "object",
-                    "properties": {
-                      "id": {
-                        "type": "number"
-                      }
-                    },
-                    "required": ["id"]
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "number"
                   },
-                  {
-                    "type": "object",
-                    "properties": {
-                      "name": {
-                        "type": "string"
-                      },
-                      "email": {
-                        "type": "string"
-                      }
-                    },
-                    "required": ["name", "email"]
+                  "name": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
                   }
-                ]
+                },
+                "required": ["id", "name", "email"]
               }
             }
           }
@@ -852,34 +802,32 @@
                           "properties": {
                             "pair": {
                               "type": "array",
-                              "items": {
-                                "oneOf": [
-                                  {
-                                    "type": "string"
-                                  },
-                                  {
-                                    "type": "number"
-                                  }
-                                ]
-                              },
+                              "prefixItems": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "number"
+                                }
+                              ],
+                              "items": false,
                               "minItems": 2,
                               "maxItems": 2
                             },
                             "triple": {
                               "type": "array",
-                              "items": {
-                                "oneOf": [
-                                  {
-                                    "type": "string"
-                                  },
-                                  {
-                                    "type": "number"
-                                  },
-                                  {
-                                    "type": "boolean"
-                                  }
-                                ]
-                              },
+                              "prefixItems": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "type": "boolean"
+                                }
+                              ],
+                              "items": false,
                               "minItems": 3,
                               "maxItems": 3
                             }
@@ -896,7 +844,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "parameters": [
@@ -912,34 +860,32 @@
                   "properties": {
                     "pair": {
                       "type": "array",
-                      "items": {
-                        "oneOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "number"
-                          }
-                        ]
-                      },
+                      "prefixItems": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ],
+                      "items": false,
                       "minItems": 2,
                       "maxItems": 2
                     },
                     "triple": {
                       "type": "array",
-                      "items": {
-                        "oneOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "number"
-                          },
-                          {
-                            "type": "boolean"
-                          }
-                        ]
-                      },
+                      "prefixItems": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "boolean"
+                        }
+                      ],
+                      "items": false,
                       "minItems": 3,
                       "maxItems": 3
                     }
@@ -995,7 +941,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "parameters": [
@@ -1094,7 +1040,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "parameters": [
@@ -1202,7 +1148,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "parameters": [
@@ -1281,7 +1227,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "parameters": [
@@ -1341,7 +1287,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "parameters": [
@@ -1407,7 +1353,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "parameters": [
@@ -1479,7 +1425,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "parameters": [
@@ -1530,25 +1476,10 @@
                           "type": "object",
                           "properties": {
                             "value": {
-                              "oneOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "number"
-                                }
-                              ],
-                              "nullable": true
+                              "type": ["string", "number", "null"]
                             },
                             "optionalValue": {
-                              "oneOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "number"
-                                }
-                              ]
+                              "type": ["string", "number"]
                             }
                           },
                           "required": ["value"]
@@ -1563,7 +1494,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "parameters": [
@@ -1578,25 +1509,10 @@
                   "type": "object",
                   "properties": {
                     "value": {
-                      "oneOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "number"
-                        }
-                      ],
-                      "nullable": true
+                      "type": ["string", "number", "null"]
                     },
                     "optionalValue": {
-                      "oneOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "number"
-                        }
-                      ]
+                      "type": ["string", "number"]
                     }
                   },
                   "required": ["value"]
@@ -1642,7 +1558,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "parameters": [
@@ -1703,7 +1619,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "parameters": [
@@ -1763,7 +1679,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "parameters": [
@@ -1824,7 +1740,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "parameters": [
@@ -1885,7 +1801,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "parameters": [
@@ -1933,7 +1849,7 @@
                               "properties": {
                                 "status": {
                                   "type": "string",
-                                  "enum": ["success"]
+                                  "const": "success"
                                 },
                                 "id": {
                                   "type": "number"
@@ -1949,7 +1865,7 @@
                               "properties": {
                                 "status": {
                                   "type": "string",
-                                  "enum": ["error"]
+                                  "const": "error"
                                 },
                                 "message": {
                                   "type": "string"
@@ -1972,7 +1888,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "requestBody": {
@@ -2064,7 +1980,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "parameters": [
@@ -2168,7 +2084,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -2190,7 +2106,7 @@
                       "properties": {
                         "data": {
                           "type": "string",
-                          "enum": ["hello"]
+                          "const": "hello"
                         }
                       },
                       "required": ["data"]
@@ -2202,7 +2118,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -2224,7 +2140,7 @@
                       "properties": {
                         "data": {
                           "type": "number",
-                          "enum": [42]
+                          "const": 42
                         }
                       },
                       "required": ["data"]
@@ -2236,7 +2152,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -2258,7 +2174,7 @@
                       "properties": {
                         "data": {
                           "type": "boolean",
-                          "enum": [true]
+                          "const": true
                         }
                       },
                       "required": ["data"]
@@ -2270,7 +2186,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -2297,7 +2213,7 @@
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": ["success"]
+                                  "const": "success"
                                 },
                                 "id": {
                                   "type": "number"
@@ -2315,7 +2231,7 @@
                               "properties": {
                                 "type": {
                                   "type": "string",
-                                  "enum": ["error"]
+                                  "const": "error"
                                 },
                                 "message": {
                                   "type": "string"
@@ -2340,7 +2256,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -2364,22 +2280,7 @@
                           "type": "object",
                           "properties": {
                             "value": {
-                              "oneOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "number"
-                                },
-                                {
-                                  "type": "boolean",
-                                  "enum": [false]
-                                },
-                                {
-                                  "type": "boolean",
-                                  "enum": [true]
-                                }
-                              ]
+                              "type": ["string", "number", "boolean"]
                             }
                           },
                           "required": ["value"]
@@ -2394,7 +2295,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -2416,16 +2317,15 @@
                       "properties": {
                         "data": {
                           "type": "array",
-                          "items": {
-                            "oneOf": [
-                              {
-                                "type": "string"
-                              },
-                              {
-                                "type": "number"
-                              }
-                            ]
-                          },
+                          "prefixItems": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ],
+                          "items": false,
                           "minItems": 2,
                           "maxItems": 2
                         }
@@ -2439,7 +2339,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -2475,7 +2375,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -2523,7 +2423,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -2562,7 +2462,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -2619,7 +2519,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -2659,7 +2559,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -2683,8 +2583,7 @@
                           "type": "object",
                           "properties": {
                             "value": {
-                              "type": "string",
-                              "nullable": true
+                              "type": ["string", "null"]
                             }
                           },
                           "required": ["value"]
@@ -2699,7 +2598,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -2744,7 +2643,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -2811,7 +2710,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -2839,7 +2738,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -2860,7 +2759,7 @@
                       "type": "object",
                       "properties": {
                         "data": {
-                          "nullable": true
+                          "type": "null"
                         }
                       },
                       "required": ["data"]
@@ -2872,7 +2771,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -2917,7 +2816,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -2939,22 +2838,21 @@
                       "properties": {
                         "data": {
                           "type": "array",
-                          "items": {
-                            "oneOf": [
-                              {
-                                "type": "string",
-                                "enum": ["red"]
-                              },
-                              {
-                                "type": "string",
-                                "enum": ["green"]
-                              },
-                              {
-                                "type": "string",
-                                "enum": ["blue"]
-                              }
-                            ]
-                          },
+                          "prefixItems": [
+                            {
+                              "type": "string",
+                              "const": "red"
+                            },
+                            {
+                              "type": "string",
+                              "const": "green"
+                            },
+                            {
+                              "type": "string",
+                              "const": "blue"
+                            }
+                          ],
+                          "items": false,
                           "minItems": 3,
                           "maxItems": 3
                         }
@@ -2968,7 +2866,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -2992,18 +2890,23 @@
                           "type": "object",
                           "properties": {
                             "outer": {
-                              "type": "object",
-                              "properties": {
-                                "inner": {
-                                  "type": "string",
-                                  "nullable": true
+                              "oneOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "inner": {
+                                      "type": ["string", "null"]
+                                    },
+                                    "maybeNum": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": ["inner"]
                                 },
-                                "maybeNum": {
-                                  "type": "number"
+                                {
+                                  "type": "null"
                                 }
-                              },
-                              "required": ["inner"],
-                              "nullable": true
+                              ]
                             }
                           },
                           "required": ["outer"]
@@ -3018,7 +2921,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -3040,7 +2943,7 @@
                       "properties": {
                         "data": {
                           "type": "boolean",
-                          "enum": [false]
+                          "const": false
                         }
                       },
                       "required": ["data"]
@@ -3052,7 +2955,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -3074,7 +2977,7 @@
                       "properties": {
                         "data": {
                           "type": "boolean",
-                          "enum": [true]
+                          "const": true
                         }
                       },
                       "required": ["data"]
@@ -3086,7 +2989,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -3119,7 +3022,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -3152,7 +3055,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -3185,7 +3088,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -3220,7 +3123,7 @@
                             },
                             "status": {
                               "type": "string",
-                              "enum": ["created"]
+                              "const": "created"
                             },
                             "tags": {
                               "type": "array",
@@ -3229,11 +3132,17 @@
                               }
                             },
                             "metadata": {
-                              "type": "object",
-                              "additionalProperties": {
-                                "type": "string"
-                              },
-                              "nullable": true
+                              "oneOf": [
+                                {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
                             }
                           },
                           "required": [
@@ -3255,7 +3164,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "requestBody": {
@@ -3311,7 +3220,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -3351,7 +3260,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -3378,15 +3287,15 @@
                               "oneOf": [
                                 {
                                   "type": "string",
-                                  "enum": ["FOO"]
+                                  "const": "FOO"
                                 },
                                 {
                                   "type": "number",
-                                  "enum": [1]
+                                  "const": 1
                                 },
                                 {
                                   "type": "string",
-                                  "enum": ["BAZ"]
+                                  "const": "BAZ"
                                 }
                               ]
                             }
@@ -3403,7 +3312,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -3448,7 +3357,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -3487,7 +3396,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -3529,7 +3438,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -3568,7 +3477,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -3610,7 +3519,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -3661,7 +3570,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -3694,7 +3603,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -3727,7 +3636,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         }
       }
@@ -3760,7 +3669,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "parameters": [
@@ -3794,14 +3703,19 @@
                       "type": "object",
                       "properties": {
                         "data": {
-                          "type": "object",
-                          "properties": {
-                            "name": {
-                              "type": "string",
-                              "nullable": true
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": ["string", "null"]
+                                }
+                              }
+                            },
+                            {
+                              "type": "null"
                             }
-                          },
-                          "nullable": true
+                          ]
                         }
                       },
                       "required": ["data"]
@@ -3813,7 +3727,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "parameters": [
@@ -3825,14 +3739,19 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "name": {
-                      "type": "string",
-                      "nullable": true
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": ["string", "null"]
+                        }
+                      }
+                    },
+                    {
+                      "type": "null"
                     }
-                  },
-                  "nullable": true
+                  ]
                 }
               }
             }
@@ -3873,7 +3792,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "parameters": [
@@ -3914,15 +3833,20 @@
                       "type": "object",
                       "properties": {
                         "data": {
-                          "type": "object",
-                          "properties": {
-                            "name": {
-                              "type": "string",
-                              "nullable": true
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": ["string", "null"]
+                                }
+                              },
+                              "required": ["name"]
+                            },
+                            {
+                              "type": "null"
                             }
-                          },
-                          "required": ["name"],
-                          "nullable": true
+                          ]
                         }
                       },
                       "required": ["data"]
@@ -3934,7 +3858,7 @@
             }
           },
           "default": {
-            "$ref": "#/components/responses/error"
+            "$ref": "#/components/responses/Error"
           }
         },
         "parameters": [
@@ -3946,15 +3870,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "name": {
-                      "type": "string",
-                      "nullable": true
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": ["string", "null"]
+                        }
+                      },
+                      "required": ["name"]
+                    },
+                    {
+                      "type": "null"
                     }
-                  },
-                  "required": ["name"],
-                  "nullable": true
+                  ]
                 }
               }
             }
@@ -4032,12 +3961,14 @@
             "type": "number"
           },
           "next": {
-            "allOf": [
+            "oneOf": [
               {
                 "$ref": "#/components/schemas/LinkedListNode"
+              },
+              {
+                "type": "null"
               }
-            ],
-            "nullable": true
+            ]
           }
         },
         "required": ["value", "next"]
@@ -4120,7 +4051,7 @@
       }
     },
     "responses": {
-      "error": {
+      "Error": {
         "description": "Error response",
         "content": {
           "application/json": {
