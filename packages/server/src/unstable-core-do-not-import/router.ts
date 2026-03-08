@@ -3,7 +3,7 @@ import { createRecursiveProxy } from './createProxy';
 import { defaultFormatter } from './error/formatter';
 import {
   procedureErrorKeySymbol,
-  procedureErrorShapeSymbol,
+  setProcedureErrorShape,
   TRPCProcedureError,
 } from './error/TRPCProcedureError';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
@@ -460,7 +460,7 @@ export async function callProcedure(
         typeof errorKey === 'string' && errorKey in proc._def.errorFactories;
 
       if (isDeclaredClassTypedError || isDeclaredFactoryTypedError) {
-        (error as any)[procedureErrorShapeSymbol] = procedureCause.shape;
+        setProcedureErrorShape(error, procedureCause.shape);
       }
     }
     throw error;

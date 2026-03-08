@@ -21,6 +21,11 @@ interface BuiltProcedureDef {
 export type ProcedureErrorConstructor<
   TShape extends TRPCErrorShape = TRPCErrorShape,
 > = abstract new (...args: any[]) => TRPCProcedureError<TShape>;
+/**
+ * Shape declaration for `procedure.errors({...})`.
+ * Each key maps to a tRPC error code and may optionally define a default message
+ * and a `data` parser used purely for type inference of the typed error payload.
+ */
 export type ProcedureErrorSchema = {
   message?: string;
   data?: unknown;
