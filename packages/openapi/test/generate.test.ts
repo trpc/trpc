@@ -562,6 +562,38 @@ describe('generateOpenAPIDocument', () => {
     });
   });
 
+  describe('procedure descriptions from JSDoc', () => {
+    const descriptionsRouterPath = path.resolve(
+      routersDir,
+      'descriptionsRouter.ts',
+    );
+    let doc: OpenAPIDocument;
+
+    beforeAll(() => {
+      doc = generateOpenAPIDocument(descriptionsRouterPath, {
+        exportName: 'descriptionsRouter',
+        title: 'Descriptions API',
+        version: '1.0.0',
+      });
+    });
+
+    it('extracts JSDoc from procedure properties into operation description', () => {
+      const helloOp = doc.paths['/hello']?.['get'] as any;
+      expect(helloOp.description).toBe('Hello Procedure details');
+    });
+
+    it('extracts JSDoc from nested subrouter procedure properties', () => {
+      const nestedOp = doc.paths['/subrouter.hello']?.['get'] as any;
+      expect(nestedOp.description).toBe('Hello Procedure details');
+    });
+
+    it('produces a valid OpenAPI spec', async () => {
+      const spec = JSON.stringify(doc, null, 2);
+      const problems = await validateOpenAPI(spec);
+      expect(problems).toEqual([]);
+    });
+  });
+
   describe('superjson transformer', () => {
     let doc: OpenAPIDocument;
 

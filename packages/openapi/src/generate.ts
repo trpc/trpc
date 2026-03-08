@@ -31,6 +31,7 @@ interface ProcedureInfo {
   type: 'query' | 'mutation' | 'subscription';
   inputSchema: JsonSchema | null;
   outputSchema: JsonSchema | null;
+  description?: string;
 }
 
 /** State extracted from the router's root config. */
@@ -765,6 +766,7 @@ interface ProcedureDef {
   defType: ts.Type;
   typeName: string;
   path: string;
+  description?: string;
 }
 
 function extractProcedure(def: ProcedureDef, ctx: WalkCtx): void {
@@ -791,10 +793,32 @@ function extractProcedure(def: ProcedureDef, ctx: WalkCtx): void {
         ? null
         : typeToJsonSchema(inputType, schemaCtx),
     outputSchema: outputType ? typeToJsonSchema(outputType, schemaCtx) : null,
+    description: def.description,
   });
 }
 
-function walkType(type: ts.Type, ctx: WalkCtx, currentPath: string): void {
+/** Extract the JSDoc comment text from a symbol, if any. */
+function getJsDocComment(
+  sym: ts.Symbol,
+  checker: ts.TypeChecker,
+): string | undefined {
+  const parts = sym.getDocumentationComment(checker);
+  if (parts.length === 0) {
+    return undefined;
+  }
+  const text = parts.map((p) => p.text).join('');
+  return text || undefined;
+}
+
+interface WalkTypeOpts {
+  type: ts.Type;
+  ctx: WalkCtx;
+  currentPath: string;
+  description?: string;
+}
+
+function walkType(opts: WalkTypeOpts): void {
+  const { type, ctx, currentPath, description } = opts;
   if (ctx.seen.has(type)) {
     return;
   }
@@ -818,7 +842,7 @@ function walkType(type: ts.Type, ctx: WalkCtx, currentPath: string): void {
   const procedureTypeName = getProcedureTypeName(defType, checker);
   if (procedureTypeName) {
     extractProcedure(
-      { defType, typeName: procedureTypeName, path: currentPath },
+      { defType, typeName: procedureTypeName, path: currentPath, description },
       ctx,
     );
     return;
@@ -851,7 +875,8 @@ function walkRecord(recordType: ts.Type, ctx: WalkCtx, prefix: string): void {
   for (const prop of recordType.getProperties()) {
     const propType = ctx.schemaCtx.checker.getTypeOfSymbol(prop);
     const fullPath = prefix ? `${prefix}.${prop.name}` : prop.name;
-    walkType(propType, ctx, fullPath);
+    const description = getJsDocComment(prop, ctx.schemaCtx.checker);
+    walkType({ type: propType, ctx, currentPath: fullPath, description });
   }
 }
 
@@ -994,6 +1019,7 @@ function buildProcedureOperation(
 ): Record<string, unknown> {
   const operation: Record<string, unknown> = {
     operationId: proc.path,
+    ...(proc.description ? { description: proc.description } : {}),
     tags: [proc.path.split('.')[0]],
     responses: {
       '200': {
@@ -1155,7 +1181,7 @@ export function generateOpenAPIDocument(
     seen: new Set(),
     schemaCtx,
   };
-  walkType(routerType, walkCtx, '');
+  walkType({ type: routerType, ctx: walkCtx, currentPath: '' });
 
   const errorSchema = extractErrorSchema(routerType, checker, schemaCtx);
   return buildOpenAPIDocument(walkCtx.procedures, options, {
