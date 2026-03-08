@@ -5,6 +5,12 @@ sidebar_label: OpenAPI Export
 slug: /client/openapi
 ---
 
+:::caution
+The package described here is an alpha release and APIs may for no apparently reason.
+
+Given it's targeting a specification the actual results should only improve over time
+:::
+
 The `@trpc/openapi` package generates an OpenAPI 3.1 specification from your tRPC router at build time. You can then feed this spec into any OpenAPI code generator (e.g. [hey-api/openapi-ts](https://github.com/hey-api/openapi-ts)) to produce a typed REST client — useful for consumers that don't use tRPC directly.
 
 ## Install
