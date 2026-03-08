@@ -5,6 +5,8 @@ ignore:
   - '**/deprecated/**'
   - '**/form-data/**'
   - '**/app-dir/**'
+  - 'packages/openapi/src/heyapi/*/'
+  - 'packages/openapi/test/routers/*/'
 coverage:
   range: 50..90 # coverage lower than 50 is red, higher than 90 green, between color code
 
