@@ -1,5 +1,6 @@
 export {
   TRPCError,
+  TRPCProcedureError,
   /**
    * @deprecated use `experimental_trpcMiddleware` instead
    */
