@@ -1,8 +1,13 @@
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
 import { isTRPCClientError, TRPCClientError } from '@trpc/client';
-import type { AnyRouter } from '@trpc/server';
-import { initTRPC, StandardSchemaV1Error, TRPCError } from '@trpc/server';
+import type { AnyRouter, inferRouterError } from '@trpc/server';
+import {
+  initTRPC,
+  StandardSchemaV1Error,
+  TRPCError,
+  TRPCProcedureError,
+} from '@trpc/server';
 import type {
   DefaultErrorData,
   DefaultErrorShape,
@@ -98,6 +103,173 @@ describe('with custom error formatter', () => {
         "message": "Fails",
       }
     `);
+  });
+});
+
+describe('with per-procedure typed errors', () => {
+  type GlobalFormattedShape = DefaultErrorShape & {
+    data: DefaultErrorData & {
+      foo: 'bar';
+    };
+  };
+  type UnauthorizedErrorShape = {
+    code: -32001;
+    message: 'BAD_PHONE';
+    data: {
+      reason: 'BAD_PHONE';
+    };
+  };
+  type BadRequestErrorShape = {
+    code: -32600;
+    message: string;
+    data: object;
+  };
+  type RouterError =
+    | GlobalFormattedShape
+    | UnauthorizedErrorShape
+    | BadRequestErrorShape;
+
+  const t = initTRPC.create({
+    errorFormatter({ shape }) {
+      return {
+        ...shape,
+        data: {
+          ...shape.data,
+          foo: 'bar' as const,
+        },
+      };
+    },
+  });
+
+  const appRouter = t.router({
+    typedError: t.procedure
+      .errors({
+        UNAUTHORIZED: z.object({
+          message: z.literal('BAD_PHONE'),
+          data: z.object({
+            reason: z.literal('BAD_PHONE'),
+          }),
+        }),
+      })
+      .query(({ errors }) => {
+        throw errors.UNAUTHORIZED({
+          message: 'BAD_PHONE',
+          data: {
+            reason: 'BAD_PHONE',
+          },
+        });
+
+        // @ts-expect-error this isn't on the type so shouldn't be here
+        throw errors.BAD_GATEWAY({
+          message: 'BAD_GATEWAY',
+          data: {} as any,
+        });
+      }),
+    typedMiddlewareChainedError: t.procedure
+      .errors({
+        UNAUTHORIZED: z.object({
+          message: z.literal('BAD_PHONE'),
+          data: z.object({
+            reason: z.literal('BAD_PHONE'),
+          }),
+        }),
+      })
+      .use((opts) => {
+        if (opts.batchIndex === -1) {
+          throw opts.errors.UNAUTHORIZED({
+            message: 'BAD_PHONE',
+            data: {
+              reason: 'BAD_PHONE',
+            },
+          });
+
+          // @ts-expect-error this isn't on the type so shouldn't be here
+          throw opts.errors.BAD_GATEWAY({
+            message: 'BAD_GATEWAY',
+            data: {} as any,
+          });
+        }
+        return opts.next();
+      })
+      .errors({
+        BAD_REQUEST: z.object({
+          message: z.string(),
+          data: z.number(),
+        }),
+      })
+      .query(({ errors }) => {
+        throw errors.UNAUTHORIZED({
+          message: 'BAD_PHONE',
+          data: {
+            reason: 'BAD_PHONE',
+          },
+        });
+
+        throw errors.BAD_REQUEST({
+          message: 'Hello World',
+          data: 1,
+        });
+
+        // @ts-expect-error this isn't on the type so shouldn't be here
+        throw errors.BAD_GATEWAY({
+          message: 'BAD_GATEWAY',
+          data: {} as any,
+        });
+      }),
+    undeclaredTypedError: t.procedure.query(() => {
+      throw new TRPCProcedureError({
+        code: -32001,
+        message: 'BAD_PHONE',
+        data: {
+          reason: 'BAD_PHONE',
+        },
+      });
+    }),
+  });
+
+  test('declared typed errors bypass formatter and infer as router union', async () => {
+    expectTypeOf<
+      inferRouterError<typeof appRouter>
+    >().toMatchTypeOf<RouterError>();
+    expectTypeOf<RouterError>().toMatchTypeOf<
+      inferRouterError<typeof appRouter>
+    >();
+
+    await using ctx = testServerAndClientResource(appRouter);
+    const typedErr = await waitError(ctx.client.typedError.query());
+    assert(isTRPCClientError<typeof appRouter>(typedErr));
+    expectTypeOf(typedErr.shape).toMatchTypeOf<
+      RouterError | null | undefined
+    >();
+    expectTypeOf(typedErr.data).toMatchTypeOf<
+      RouterError['data'] | null | undefined
+    >();
+    expect(typedErr.shape).toMatchInlineSnapshot(`
+      Object {
+        "code": -32001,
+        "data": Object {
+          "reason": "BAD_PHONE",
+        },
+        "message": "BAD_PHONE",
+      }
+    `);
+
+    const undeclaredErr = await waitError(
+      ctx.client.undeclaredTypedError.query(),
+    );
+    assert(isTRPCClientError<typeof appRouter>(undeclaredErr));
+    expectTypeOf(undeclaredErr.shape).toMatchTypeOf<
+      RouterError | null | undefined
+    >();
+    expectTypeOf(undeclaredErr.data).toMatchTypeOf<
+      RouterError['data'] | null | undefined
+    >();
+    expect(undeclaredErr.shape?.code).toBe(-32603);
+    expect(undeclaredErr.shape?.message).toBe('BAD_PHONE');
+    // undeclaredTypedError goes through the formatter, so data has the formatted shape
+    const undeclaredData = undeclaredErr.data as GlobalFormattedShape['data'];
+    expect(undeclaredData?.foo).toBe('bar');
+    expect(undeclaredData?.path).toBe('undeclaredTypedError');
   });
 });
 

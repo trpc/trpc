@@ -7,6 +7,7 @@ import type {
   ErrorHandlerOptions,
   inferProcedureInput,
   inferProcedureOutput,
+  inferProcedureParams,
   LegacyObservableSubscriptionProcedure,
 } from './procedure';
 import type { ProcedureCallOptions } from './procedureBuilder';
@@ -180,10 +181,21 @@ export type AnyRouter = Router<any, any>;
 export type inferRouterRootTypes<TRouter extends AnyRouter> =
   TRouter['_def']['_config']['$types'];
 
+type inferProcedureErrorsInRecord<TRecord extends RouterRecord> = {
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
+    ? $Value extends AnyProcedure
+      ? inferProcedureParams<$Value>['$types']['errorShape']
+      : $Value extends RouterRecord
+        ? inferProcedureErrorsInRecord<$Value>
+        : never
+    : never;
+}[keyof TRecord];
+
 export type inferRouterContext<TRouter extends AnyRouter> =
   inferRouterRootTypes<TRouter>['ctx'];
 export type inferRouterError<TRouter extends AnyRouter> =
-  inferRouterRootTypes<TRouter>['errorShape'];
+  | inferRouterRootTypes<TRouter>['errorShape']
+  | inferProcedureErrorsInRecord<TRouter['_def']['record']>;
 export type inferRouterMeta<TRouter extends AnyRouter> =
   inferRouterRootTypes<TRouter>['meta'];
 

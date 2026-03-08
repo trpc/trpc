@@ -74,7 +74,6 @@ export function unstable_localLink<TRouter extends AnyRouter>(
           input = newInput;
 
           ctx = await opts.createContext();
-
           return callProcedure({
             router: opts.router,
             path: op.path,
