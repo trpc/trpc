@@ -45,9 +45,7 @@ export interface TRPCHeyApiClientOptions {
 export type TRPCHeyApiClientConfig = Required<Pick<Config, 'querySerializer'>> &
   Pick<Config, 'bodySerializer' | 'responseTransformer'>;
 
-export function createTRPCHeyApiClientConfig(
-  opts?: TRPCHeyApiClientOptions,
-): TRPCHeyApiClientConfig {
+export function createTRPCHeyApiClientConfig(opts?: TRPCHeyApiClientOptions) {
   const transformer = opts?.transformer
     ? resolveTransformer(opts.transformer)
     : undefined;
@@ -90,5 +88,5 @@ export function createTRPCHeyApiClientConfig(
         return data;
       },
     }),
-  };
+  } as const satisfies TRPCHeyApiClientConfig;
 }

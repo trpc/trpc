@@ -16,10 +16,11 @@
  */
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { parseArgs as nodeParseArgs } from 'node:util';
 import { generateOpenAPIDocument } from './generate';
 
 // ---------------------------------------------------------------------------
-// Minimal arg parser (no external deps)
+// Arg parsing via node:util parseArgs
 // ---------------------------------------------------------------------------
 
 interface ParsedArgs {
@@ -32,50 +33,34 @@ interface ParsedArgs {
 }
 
 function parseArgs(argv: string[]): ParsedArgs {
-  const result: ParsedArgs = {
-    file: undefined,
-    exportName: 'AppRouter',
-    output: 'openapi.json',
-    title: 'tRPC API',
-    version: '0.0.0',
-    help: false,
-  };
-
-  const args = argv.slice(2); // strip 'node' + script path
-  let i = 0;
-  while (i < args.length) {
-    const arg = args[i] ?? '';
-    switch (arg) {
-      case '--help':
-      case '-h':
-        result.help = true;
-        break;
-      case '--export':
-      case '-e':
-        result.exportName = args[++i] ?? result.exportName;
-        break;
-      case '--output':
-      case '-o':
-        result.output = args[++i] ?? result.output;
-        break;
-      case '--title':
-        result.title = args[++i] ?? result.title;
-        break;
-      case '--version':
-        result.version = args[++i] ?? result.version;
-        break;
-      default:
-        if (arg && !arg.startsWith('-')) {
-          result.file = arg;
-        } else if (arg) {
-          console.error(`Unknown option: ${arg}`);
-          process.exit(1);
-        }
-    }
-    i++;
+  let parsed;
+  try {
+    parsed = nodeParseArgs({
+      args: argv.slice(2),
+      options: {
+        help: { type: 'boolean', short: 'h', default: false },
+        export: { type: 'string', short: 'e', default: 'AppRouter' },
+        output: { type: 'string', short: 'o', default: 'openapi.json' },
+        title: { type: 'string', default: 'tRPC API' },
+        version: { type: 'string', default: '0.0.0' },
+      },
+      strict: true,
+      allowPositionals: true,
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`Unknown option: ${message}`);
+    process.exit(1);
   }
 
-  return result;
+  return {
+    file: parsed.positionals[0],
+    exportName: parsed.values.export,
+    output: parsed.values.output,
+    title: parsed.values.title,
+    version: parsed.values.version,
+    help: parsed.values.help,
+  };
 }
 
 // ---------------------------------------------------------------------------
