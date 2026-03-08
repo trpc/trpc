@@ -2,12 +2,10 @@ import type {
   inferClientTypes,
   InferrableClientTypes,
   Maybe,
-  TRPCErrorShape,
   TRPCErrorResponse,
+  TRPCErrorShape,
 } from '@trpc/server/unstable-core-do-not-import';
-import {
-  isObject,
-} from '@trpc/server/unstable-core-do-not-import';
+import { isObject } from '@trpc/server/unstable-core-do-not-import';
 
 type inferErrorShape<TInferrable extends InferrableClientTypes> =
   inferClientTypes<TInferrable>['errorShape'];
