@@ -1,11 +1,18 @@
 import * as path from 'node:path';
 import * as ts from 'typescript';
+import {
+  applyDescriptions,
+  collectRuntimeDescriptions,
+  tryImportRouter,
+  type RuntimeDescriptions,
+} from './schemaExtraction';
 
 /**
  * A minimal JSON Schema subset used for OpenAPI 3.1 schemas.
  */
 export interface JsonSchema {
   $ref?: string;
+  $defs?: Record<string, JsonSchema>;
   type?: string | string[];
   properties?: Record<string, JsonSchema>;
   required?: string[];
@@ -196,7 +203,17 @@ function typeToJsonSchema(
     return schemaRef(refName);
   }
 
-  return convertTypeToSchema(type, ctx, depth);
+  const schema = convertTypeToSchema(type, ctx, depth);
+
+  // Extract JSDoc from type alias symbol (e.g. `/** desc */ type Foo = string`)
+  if (!schema.description && !schema.$ref && type.aliasSymbol) {
+    const aliasJsDoc = getJsDocComment(type.aliasSymbol, ctx.checker);
+    if (aliasJsDoc) {
+      schema.description = aliasJsDoc;
+    }
+  }
+
+  return schema;
 }
 
 // ---------------------------------------------------------------------------
@@ -619,7 +636,15 @@ function convertPlainObject(
 
   for (const prop of typeProps) {
     const propType = checker.getTypeOfSymbol(prop);
-    properties[prop.name] = typeToJsonSchema(propType, ctx, depth + 1);
+    const propSchema = typeToJsonSchema(propType, ctx, depth + 1);
+
+    // Extract JSDoc comment from the property symbol as a description
+    const jsDoc = getJsDocComment(prop, checker);
+    if (jsDoc && !propSchema.description && !propSchema.$ref) {
+      propSchema.description = jsDoc;
+    }
+
+    properties[prop.name] = propSchema;
     if (!isOptionalSymbol(prop)) {
       required.push(prop.name);
     }
@@ -719,6 +744,8 @@ interface WalkCtx {
   procedures: ProcedureInfo[];
   seen: Set<ts.Type>;
   schemaCtx: SchemaCtx;
+  /** Runtime descriptions keyed by procedure path (when a router instance is available). */
+  runtimeDescriptions: Map<string, RuntimeDescriptions>;
 }
 
 /**
@@ -785,14 +812,31 @@ function extractProcedure(def: ProcedureDef, ctx: WalkCtx): void {
   const inputType = inputSym ? checker.getTypeOfSymbol(inputSym) : null;
   const outputType = outputSym ? checker.getTypeOfSymbol(outputSym) : null;
 
+  const inputSchema =
+    !inputType || isVoidLikeInput(inputType)
+      ? null
+      : typeToJsonSchema(inputType, schemaCtx);
+
+  const outputSchema: JsonSchema | null = outputType
+    ? typeToJsonSchema(outputType, schemaCtx)
+    : null;
+
+  // Overlay extracted schema descriptions onto the type-checker-generated schemas.
+  const runtimeDescs = ctx.runtimeDescriptions.get(def.path);
+  if (runtimeDescs) {
+    if (inputSchema && runtimeDescs.input) {
+      applyDescriptions(inputSchema, runtimeDescs.input);
+    }
+    if (outputSchema && runtimeDescs.output) {
+      applyDescriptions(outputSchema, runtimeDescs.output);
+    }
+  }
+
   ctx.procedures.push({
     path: def.path,
     type: def.typeName as 'query' | 'mutation' | 'subscription',
-    inputSchema:
-      !inputType || isVoidLikeInput(inputType)
-        ? null
-        : typeToJsonSchema(inputType, schemaCtx),
-    outputSchema: outputType ? typeToJsonSchema(outputType, schemaCtx) : null,
+    inputSchema,
+    outputSchema,
     description: def.description,
   });
 }
@@ -1125,10 +1169,10 @@ function buildOpenAPIDocument(
  *   the AppRouter.
  * @param options - Optional generation settings (export name, title, version).
  */
-export function generateOpenAPIDocument(
+export async function generateOpenAPIDocument(
   routerFilePath: string,
   options: GenerateOptions = {},
-): OpenAPIDocument {
+): Promise<OpenAPIDocument> {
   const resolvedPath = path.resolve(routerFilePath);
   const exportName = options.exportName ?? 'AppRouter';
 
@@ -1146,11 +1190,11 @@ export function generateOpenAPIDocument(
     throw new Error(`No module exports found in: ${resolvedPath}`);
   }
 
-  const exports = checker.getExportsOfModule(moduleSymbol);
-  const routerSymbol = exports.find((sym) => sym.getName() === exportName);
+  const tsExports = checker.getExportsOfModule(moduleSymbol);
+  const routerSymbol = tsExports.find((sym) => sym.getName() === exportName);
 
   if (!routerSymbol) {
-    const available = exports.map((e) => e.getName()).join(', ');
+    const available = tsExports.map((e) => e.getName()).join(', ');
     throw new Error(
       `No export named '${exportName}' found in: ${resolvedPath}\n` +
         `Available exports: ${available || '(none)'}`,
@@ -1176,10 +1220,18 @@ export function generateOpenAPIDocument(
     typeToRef: new Map(),
   };
 
+  // Try to dynamically import the router to extract schema descriptions
+  const runtimeDescriptions = new Map<string, RuntimeDescriptions>();
+  const router = await tryImportRouter(resolvedPath, exportName);
+  if (router) {
+    collectRuntimeDescriptions(router, '', runtimeDescriptions);
+  }
+
   const walkCtx: WalkCtx = {
     procedures: [],
     seen: new Set(),
     schemaCtx,
+    runtimeDescriptions,
   };
   walkType({ type: routerType, ctx: walkCtx, currentPath: '' });
 

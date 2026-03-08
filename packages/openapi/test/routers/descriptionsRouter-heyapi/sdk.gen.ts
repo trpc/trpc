@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { HelloData, HelloErrors, HelloResponses, SubrouterHelloData, SubrouterHelloErrors, SubrouterHelloResponses } from './types.gen';
+import type { DirectArrayData, DirectArrayErrors, DirectArrayInlineData, DirectArrayInlineErrors, DirectArrayInlineResponses, DirectArrayResponses, HelloData, HelloErrors, HelloInlineData, HelloInlineErrors, HelloInlineResponses, HelloResponses, SubrouterHelloData, SubrouterHelloErrors, SubrouterHelloResponses, SubrouterInlineHelloData, SubrouterInlineHelloErrors, SubrouterInlineHelloResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -48,10 +48,19 @@ class HeyApiRegistry<T> {
 
 export class Subrouter extends HeyApiClient {
     /**
-     * Hello Procedure details
+     * Hello zod Procedure details
      */
     public hello<ThrowOnError extends boolean = false>(options: Options<SubrouterHelloData, ThrowOnError>) {
         return (options.client ?? this.client).get<SubrouterHelloResponses, SubrouterHelloErrors, ThrowOnError>({ url: '/subrouter.hello', ...options });
+    }
+}
+
+export class SubrouterInline extends HeyApiClient {
+    /**
+     * Hello Procedure details
+     */
+    public hello<ThrowOnError extends boolean = false>(options: Options<SubrouterInlineHelloData, ThrowOnError>) {
+        return (options.client ?? this.client).get<SubrouterInlineHelloResponses, SubrouterInlineHelloErrors, ThrowOnError>({ url: '/subrouterInline.hello', ...options });
     }
 }
 
@@ -67,14 +76,54 @@ export class Sdk extends HeyApiClient {
     }
     
     /**
-     * Hello Procedure details
+     * Hello zod Procedure details
      */
     public hello<ThrowOnError extends boolean = false>(options: Options<HelloData, ThrowOnError>) {
         return (options.client ?? this.client).get<HelloResponses, HelloErrors, ThrowOnError>({ url: '/hello', ...options });
     }
     
+    /**
+     * direct array zod procedure
+     */
+    public directArray<ThrowOnError extends boolean = false>(options: Options<DirectArrayData, ThrowOnError>) {
+        return (options.client ?? this.client).post<DirectArrayResponses, DirectArrayErrors, ThrowOnError>({
+            url: '/directArray',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Hello Procedure details
+     */
+    public helloInline<ThrowOnError extends boolean = false>(options: Options<HelloInlineData, ThrowOnError>) {
+        return (options.client ?? this.client).get<HelloInlineResponses, HelloInlineErrors, ThrowOnError>({ url: '/helloInline', ...options });
+    }
+    
+    /**
+     * directArrayInline procedure
+     */
+    public directArrayInline<ThrowOnError extends boolean = false>(options: Options<DirectArrayInlineData, ThrowOnError>) {
+        return (options.client ?? this.client).post<DirectArrayInlineResponses, DirectArrayInlineErrors, ThrowOnError>({
+            url: '/directArrayInline',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
     private _subrouter?: Subrouter;
     get subrouter(): Subrouter {
         return this._subrouter ??= new Subrouter({ client: this.client });
+    }
+    
+    private _subrouterInline?: SubrouterInline;
+    get subrouterInline(): SubrouterInline {
+        return this._subrouterInline ??= new SubrouterInline({ client: this.client });
     }
 }

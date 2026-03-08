@@ -33,8 +33,8 @@ function getResponseSchema(
 describe('generateOpenAPIDocument edge cases', () => {
   let doc: OpenAPIDocument;
 
-  beforeAll(() => {
-    doc = generateOpenAPIDocument(edgeCaseRouterPath, {
+  beforeAll(async () => {
+    doc = await generateOpenAPIDocument(edgeCaseRouterPath, {
       exportName: 'EdgeCaseRouter',
       title: 'Edge Case API',
       version: '1.0.0',
@@ -156,20 +156,23 @@ describe('generateOpenAPIDocument edge cases', () => {
 });
 
 describe('generateOpenAPIDocument default options', () => {
+  let doc: OpenAPIDocument;
+
+  beforeAll(async () => {
+    doc = await generateOpenAPIDocument(appRouterPath);
+  });
+
   it('uses default title and version when not provided', () => {
-    const doc = generateOpenAPIDocument(appRouterPath);
     expect(doc.info.title).toBe('tRPC API');
     expect(doc.info.version).toBe('0.0.0');
   });
 
   it('uses default exportName AppRouter', () => {
     // appRouter.ts exports AppRouter, so default should work
-    const doc = generateOpenAPIDocument(appRouterPath);
     expect(doc.paths).toHaveProperty('/greeting');
   });
 
   it('wraps output in success envelope correctly', () => {
-    const doc = generateOpenAPIDocument(appRouterPath);
     const greetingOp = doc.paths['/greeting']?.['get'] as any;
     const responseSchema =
       greetingOp?.responses?.['200']?.content?.['application/json']?.schema;
@@ -182,7 +185,6 @@ describe('generateOpenAPIDocument default options', () => {
   });
 
   it('wraps output without data for void procedures', () => {
-    const doc = generateOpenAPIDocument(appRouterPath);
     const voidOp = doc.paths['/inferredReturns.voidReturn']?.['post'] as any;
     const responseSchema =
       voidOp?.responses?.['200']?.content?.['application/json']?.schema;
@@ -196,7 +198,6 @@ describe('generateOpenAPIDocument default options', () => {
   });
 
   it('puts query input with deepObject style for GET', () => {
-    const doc = generateOpenAPIDocument(appRouterPath);
     const greetingOp = doc.paths['/greeting']?.['get'] as any;
     const param = greetingOp.parameters[0];
 
@@ -208,7 +209,6 @@ describe('generateOpenAPIDocument default options', () => {
   });
 
   it('puts mutation input as requestBody for POST', () => {
-    const doc = generateOpenAPIDocument(appRouterPath);
     const createOp = doc.paths['/user.create']?.['post'] as any;
 
     expect(createOp.requestBody.required).toBe(true);
@@ -219,21 +219,21 @@ describe('generateOpenAPIDocument default options', () => {
 });
 
 describe('generateOpenAPIDocument error handling', () => {
-  it('throws for non-existent file', () => {
-    expect(() => generateOpenAPIDocument('/non/existent/file.ts')).toThrow(
-      /Could not load TypeScript file/,
-    );
+  it('throws for non-existent file', async () => {
+    await expect(
+      generateOpenAPIDocument('/non/existent/file.ts'),
+    ).rejects.toThrow(/Could not load TypeScript file/);
   });
 
-  it('throws when export name not found', () => {
-    expect(() =>
+  it('throws when export name not found', async () => {
+    await expect(
       generateOpenAPIDocument(appRouterPath, { exportName: 'Nonexistent' }),
-    ).toThrow(/Nonexistent/);
+    ).rejects.toThrow(/Nonexistent/);
   });
 
-  it('includes available exports in error message', () => {
-    expect(() =>
+  it('includes available exports in error message', async () => {
+    await expect(
       generateOpenAPIDocument(appRouterPath, { exportName: 'Nonexistent' }),
-    ).toThrow(/Available exports/);
+    ).rejects.toThrow(/Available exports/);
   });
 });

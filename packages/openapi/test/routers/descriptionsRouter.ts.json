@@ -9,7 +9,7 @@
     "/hello": {
       "get": {
         "operationId": "hello",
-        "description": "Hello Procedure details",
+        "description": "Hello zod Procedure details",
         "tags": [
           "hello"
         ],
@@ -56,13 +56,15 @@
                   "type": "object",
                   "properties": {
                     "name": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "Name of the user"
                     }
                   },
                   "required": [
                     "name"
                   ],
-                  "additionalProperties": false
+                  "additionalProperties": false,
+                  "description": "Input to the procedure"
                 }
               }
             }
@@ -73,7 +75,7 @@
     "/subrouter.hello": {
       "get": {
         "operationId": "subrouter.hello",
-        "description": "Hello Procedure details",
+        "description": "Hello zod Procedure details",
         "tags": [
           "subrouter"
         ],
@@ -120,7 +122,162 @@
                   "type": "object",
                   "properties": {
                     "name": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "Name of the user"
+                    },
+                    "children": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "child": {
+                            "type": "string",
+                            "description": "Child name"
+                          },
+                          "gender": {
+                            "type": "string",
+                            "enum": [
+                              "male",
+                              "female",
+                              "other"
+                            ],
+                            "description": "Child gender"
+                          }
+                        },
+                        "required": [
+                          "child",
+                          "gender"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "An array of children"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "children"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Input to the procedure"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "/directArray": {
+      "post": {
+        "operationId": "directArray",
+        "description": "direct array zod procedure",
+        "tags": [
+          "directArray"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "description": "element of output strings"
+                          },
+                          "description": "Array of output strings"
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "description": "element of inputs strings"
+                },
+                "description": "Array of inputs strings"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/helloInline": {
+      "get": {
+        "operationId": "helloInline",
+        "description": "Hello Procedure details",
+        "tags": [
+          "helloInline"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "style": "deepObject",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "doc comment on name"
                     }
                   },
                   "required": [
@@ -133,9 +290,181 @@
           }
         ]
       }
+    },
+    "/subrouterInline.hello": {
+      "get": {
+        "operationId": "subrouterInline.hello",
+        "description": "Hello Procedure details",
+        "tags": [
+          "subrouterInline"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/HelloInlineResponse"
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "style": "deepObject",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "doc comment on name"
+                    },
+                    "children": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "child": {
+                            "type": "string",
+                            "description": "Child name"
+                          },
+                          "gender": {
+                            "type": "string",
+                            "enum": [
+                              "male",
+                              "female",
+                              "other"
+                            ],
+                            "description": "Child gender"
+                          }
+                        },
+                        "required": [
+                          "child",
+                          "gender"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "children list"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "children"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "/directArrayInline": {
+      "post": {
+        "operationId": "directArrayInline",
+        "description": "directArrayInline procedure",
+        "tags": [
+          "directArrayInline"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "description": "Array of output strings"
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Array of inputs strings"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
+    "schemas": {
+      "HelloInlineResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the user"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date of the greeting"
+          }
+        },
+        "required": [
+          "name",
+          "date"
+        ],
+        "additionalProperties": false
+      }
+    },
     "responses": {
       "Error": {
         "description": "Error response",
@@ -212,10 +541,12 @@
                           "type": "number"
                         },
                         "path": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "Path to the procedure that threw the error"
                         },
                         "stack": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "Stack trace of the error (only in development)"
                         }
                       },
                       "required": [

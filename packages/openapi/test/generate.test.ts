@@ -75,21 +75,23 @@ function unwrapSuccessData(schema: any, doc: OpenAPIDocument): any {
 }
 
 describe('generateOpenAPIDocument', () => {
-  it('throws when the export is not found', () => {
-    expect(() =>
+  it('throws when the export is not found', async () => {
+    await expect(
       generateOpenAPIDocument(appRouterPath, { exportName: 'NonExistent' }),
-    ).toThrow(/NonExistent/);
+    ).rejects.toThrow(/NonExistent/);
   });
 
-  it('throws when the file does not exist', () => {
-    expect(() => generateOpenAPIDocument('/non/existent/file.ts')).toThrow();
+  it('throws when the file does not exist', async () => {
+    await expect(
+      generateOpenAPIDocument('/non/existent/file.ts'),
+    ).rejects.toThrow();
   });
 
   describe('router json generation', () => {
     let doc: OpenAPIDocument;
 
-    beforeAll(() => {
-      doc = generateOpenAPIDocument(appRouterPath, {
+    beforeAll(async () => {
+      doc = await generateOpenAPIDocument(appRouterPath, {
         title: 'Test API',
         version: '1.0.0',
       });
@@ -503,8 +505,8 @@ describe('generateOpenAPIDocument', () => {
   describe('custom errorFormatter', () => {
     let doc: OpenAPIDocument;
 
-    beforeAll(() => {
-      doc = generateOpenAPIDocument(errorFormatterRouterPath, {
+    beforeAll(async () => {
+      doc = await generateOpenAPIDocument(errorFormatterRouterPath, {
         exportName: 'ErrorFormatterRouter',
         title: 'Error Formatter API',
         version: '1.0.0',
@@ -569,8 +571,8 @@ describe('generateOpenAPIDocument', () => {
     );
     let doc: OpenAPIDocument;
 
-    beforeAll(() => {
-      doc = generateOpenAPIDocument(descriptionsRouterPath, {
+    beforeAll(async () => {
+      doc = await generateOpenAPIDocument(descriptionsRouterPath, {
         exportName: 'descriptionsRouter',
         title: 'Descriptions API',
         version: '1.0.0',
@@ -579,12 +581,151 @@ describe('generateOpenAPIDocument', () => {
 
     it('extracts JSDoc from procedure properties into operation description', () => {
       const helloOp = doc.paths['/hello']?.['get'] as any;
-      expect(helloOp.description).toBe('Hello Procedure details');
+      expect(helloOp.description).toBe('Hello zod Procedure details');
     });
 
     it('extracts JSDoc from nested subrouter procedure properties', () => {
       const nestedOp = doc.paths['/subrouter.hello']?.['get'] as any;
-      expect(nestedOp.description).toBe('Hello Procedure details');
+      expect(nestedOp.description).toBe('Hello zod Procedure details');
+    });
+
+    it('produces a valid OpenAPI spec', async () => {
+      const spec = JSON.stringify(doc, null, 2);
+      const problems = await validateOpenAPI(spec);
+      expect(problems).toEqual([]);
+    });
+  });
+
+  describe('runtime Zod schema extraction', () => {
+    const descriptionsRouterPath = path.resolve(
+      routersDir,
+      'descriptionsRouter.ts',
+    );
+    let doc: OpenAPIDocument;
+
+    beforeAll(async () => {
+      // The router file is automatically imported at runtime, so Zod
+      // .describe() metadata flows through without an explicit `router` arg.
+      doc = await generateOpenAPIDocument(descriptionsRouterPath, {
+        exportName: 'descriptionsRouter',
+        title: 'Descriptions API',
+        version: '1.0.0',
+      });
+    });
+
+    it('overlays Zod .describe() strings onto input schemas', () => {
+      const helloOp = doc.paths['/hello']?.['get'] as any;
+      const inputSchema =
+        helloOp?.parameters?.[0]?.content?.['application/json']?.schema;
+
+      // The Zod schema preserves .describe() strings
+      expect(inputSchema.description).toBe('Input to the procedure');
+      expect(inputSchema.properties.name.description).toBe('Name of the user');
+    });
+
+    it('overlays Zod .describe() strings on nested subrouter procedures', () => {
+      const nestedOp = doc.paths['/subrouter.hello']?.['get'] as any;
+      const inputSchema =
+        nestedOp?.parameters?.[0]?.content?.['application/json']?.schema;
+
+      expect(inputSchema.description).toBe('Input to the procedure');
+      expect(inputSchema.properties.name.description).toBe('Name of the user');
+    });
+
+    it('still preserves JSDoc descriptions on operations', () => {
+      const helloOp = doc.paths['/hello']?.['get'] as any;
+      expect(helloOp.description).toBe('Hello zod Procedure details');
+    });
+
+    it('produces a valid OpenAPI spec', async () => {
+      const spec = JSON.stringify(doc, null, 2);
+      const problems = await validateOpenAPI(spec);
+      expect(problems).toEqual([]);
+    });
+  });
+
+  describe('inline type JSDoc descriptions', () => {
+    const descriptionsRouterPath = path.resolve(
+      routersDir,
+      'descriptionsRouter.ts',
+    );
+    let doc: OpenAPIDocument;
+
+    beforeAll(async () => {
+      doc = await generateOpenAPIDocument(descriptionsRouterPath, {
+        exportName: 'descriptionsRouter',
+        title: 'Descriptions API',
+        version: '1.0.0',
+      });
+    });
+
+    it('extracts JSDoc from inline input type properties', () => {
+      const helloOp = doc.paths['/helloInline']?.['get'] as any;
+      const inputSchema =
+        helloOp?.parameters?.[0]?.content?.['application/json']?.schema;
+
+      expect(inputSchema.properties.name.description).toBe(
+        'doc comment on name',
+      );
+    });
+
+    it('resolves primitive type alias output to its base type', () => {
+      // HelloGreeting is `type HelloGreeting = string` — the alias identity is
+      // lost when resolved through tRPC's $types, so no description is expected.
+      const helloOp = doc.paths['/helloInline']?.['get'] as any;
+      const outputSchema = unwrapSuccessData(
+        helloOp?.responses?.['200']?.content?.['application/json']?.schema,
+        doc,
+      );
+
+      expect(outputSchema.type).toBe('string');
+    });
+
+    it('extracts JSDoc from nested inline subrouter input properties', () => {
+      const nestedOp = doc.paths['/subrouterInline.hello']?.['get'] as any;
+      const inputSchema =
+        nestedOp?.parameters?.[0]?.content?.['application/json']?.schema;
+
+      expect(inputSchema.properties.name.description).toBe(
+        'doc comment on name',
+      );
+      expect(
+        inputSchema.properties.children.items.properties.child.description,
+      ).toBe('Child name');
+      expect(
+        inputSchema.properties.children.items.properties.gender.description,
+      ).toBe('Child gender');
+    });
+
+    it('extracts JSDoc from inline output type defined inside callback', () => {
+      const nestedOp = doc.paths['/subrouterInline.hello']?.['get'] as any;
+      const outputSchema = unwrapSuccessData(
+        nestedOp?.responses?.['200']?.content?.['application/json']?.schema,
+        doc,
+      );
+
+      expect(outputSchema.properties.name.description).toBe('Name of the user');
+      expect(outputSchema.properties.date.description).toBe(
+        'Date of the greeting',
+      );
+    });
+
+    it('extracts JSDoc from type alias used as input', () => {
+      const arrayOp = doc.paths['/directArrayInline']?.['post'] as any;
+      const inputSchema =
+        arrayOp?.requestBody?.content?.['application/json']?.schema;
+
+      expect(inputSchema.description).toBe('Array of inputs strings');
+    });
+
+    it('extracts JSDoc from type alias used as output', () => {
+      const arrayOp = doc.paths['/directArrayInline']?.['post'] as any;
+      const outputSchema = unwrapSuccessData(
+        arrayOp?.responses?.['200']?.content?.['application/json']?.schema,
+        doc,
+      );
+
+      expect(outputSchema.description).toBe('Array of output strings');
     });
 
     it('produces a valid OpenAPI spec', async () => {
@@ -601,8 +742,8 @@ describe('generateOpenAPIDocument', () => {
       transformer: superjson,
     });
 
-    beforeAll(() => {
-      doc = generateOpenAPIDocument(superjsonRouterPath, {
+    beforeAll(async () => {
+      doc = await generateOpenAPIDocument(superjsonRouterPath, {
         exportName: 'SuperjsonRouter',
         title: 'Superjson API',
         version: '1.0.0',

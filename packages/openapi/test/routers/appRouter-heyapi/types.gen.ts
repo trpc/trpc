@@ -46,7 +46,13 @@ export type DefaultErrorShape = {
 export type DefaultErrorData = {
     code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
     httpStatus: number;
+    /**
+     * Path to the procedure that threw the error
+     */
     path?: string;
+    /**
+     * Stack trace of the error (only in development)
+     */
     stack?: string;
 };
 
@@ -562,9 +568,15 @@ export type ComplexTypesRecordData = {
     path?: never;
     query: {
         input: {
+            /**
+             * Construct a type with a set of properties K of type T
+             */
             metadata: {
                 [key: string]: string;
             };
+            /**
+             * Construct a type with a set of properties K of type T
+             */
             scores: {
                 [key: string]: number;
             };
@@ -591,9 +603,15 @@ export type ComplexTypesRecordResponses = {
     200: {
         result: {
             data: {
+                /**
+                 * Construct a type with a set of properties K of type T
+                 */
                 metadata: {
                     [key: string]: string;
                 };
+                /**
+                 * Construct a type with a set of properties K of type T
+                 */
                 scores: {
                     [key: string]: number;
                 };
@@ -1091,6 +1109,9 @@ export type ComplexTypesCreateContentData = {
         title: string;
         body: string;
         tags?: Array<string>;
+        /**
+         * Construct a type with a set of properties K of type T
+         */
         metadata?: {
             [key: string]: unknown;
         };
@@ -1449,6 +1470,9 @@ export type InferredReturnsRecordReturnResponses = {
      */
     200: {
         result: {
+            /**
+             * Construct a type with a set of properties K of type T
+             */
             data: {
                 [key: string]: number;
             };
@@ -1692,6 +1716,9 @@ export type InferredReturnsMixedObjectResponses = {
                 id: number;
                 name: string;
                 tags: Array<string>;
+                /**
+                 * Construct a type with a set of properties K of type T
+                 */
                 metadata: {
                     [key: string]: string;
                 };

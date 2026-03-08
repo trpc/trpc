@@ -89,7 +89,7 @@ Examples:
   trpc-openapi ./src/server/router.ts --export appRouter
 `.trim();
 
-function main(): void {
+async function main(): Promise<void> {
   const args = parseArgs(process.argv);
 
   if (args.help) {
@@ -112,9 +112,9 @@ function main(): void {
 
   console.log(`Generating OpenAPI document from: ${routerFile}`);
 
-  let doc: ReturnType<typeof generateOpenAPIDocument>;
+  let doc: Awaited<ReturnType<typeof generateOpenAPIDocument>>;
   try {
-    doc = generateOpenAPIDocument(routerFile, {
+    doc = await generateOpenAPIDocument(routerFile, {
       exportName: args.exportName,
       title: args.title,
       version: args.version,
@@ -130,4 +130,4 @@ function main(): void {
   console.log(`OpenAPI document written to: ${outputPath}`);
 }
 
-main();
+void main();

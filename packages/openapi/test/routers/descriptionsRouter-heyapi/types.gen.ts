@@ -4,11 +4,28 @@ export type ClientOptions = {
     baseUrl: `${string}://${string}` | (string & {});
 };
 
+export type HelloInlineResponse = {
+    /**
+     * Name of the user
+     */
+    name: string;
+    /**
+     * Date of the greeting
+     */
+    date: Date;
+};
+
 export type HelloData = {
     body?: never;
     path?: never;
     query: {
+        /**
+         * Input to the procedure
+         */
         input: {
+            /**
+             * Name of the user
+             */
             name: string;
         };
     };
@@ -28,7 +45,13 @@ export type HelloErrors = {
                 }> | null;
                 code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
                 httpStatus: number;
+                /**
+                 * Path to the procedure that threw the error
+                 */
                 path?: string;
+                /**
+                 * Stack trace of the error (only in development)
+                 */
                 stack?: string;
             };
             message: string;
@@ -56,8 +79,27 @@ export type SubrouterHelloData = {
     body?: never;
     path?: never;
     query: {
+        /**
+         * Input to the procedure
+         */
         input: {
+            /**
+             * Name of the user
+             */
             name: string;
+            /**
+             * An array of children
+             */
+            children: Array<{
+                /**
+                 * Child name
+                 */
+                child: string;
+                /**
+                 * Child gender
+                 */
+                gender: 'male' | 'female' | 'other';
+            }>;
         };
     };
     url: '/subrouter.hello';
@@ -76,7 +118,13 @@ export type SubrouterHelloErrors = {
                 }> | null;
                 code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
                 httpStatus: number;
+                /**
+                 * Path to the procedure that threw the error
+                 */
                 path?: string;
+                /**
+                 * Stack trace of the error (only in development)
+                 */
                 stack?: string;
             };
             message: string;
@@ -99,3 +147,242 @@ export type SubrouterHelloResponses = {
 };
 
 export type SubrouterHelloResponse = SubrouterHelloResponses[keyof SubrouterHelloResponses];
+
+export type DirectArrayData = {
+    /**
+     * Array of inputs strings
+     */
+    body: Array<string>;
+    path?: never;
+    query?: never;
+    url: '/directArray';
+};
+
+export type DirectArrayErrors = {
+    /**
+     * Error response
+     */
+    default: {
+        error: {
+            data: {
+                zodError: Array<{
+                    message: string;
+                    path: Array<string | number>;
+                }> | null;
+                code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
+                httpStatus: number;
+                /**
+                 * Path to the procedure that threw the error
+                 */
+                path?: string;
+                /**
+                 * Stack trace of the error (only in development)
+                 */
+                stack?: string;
+            };
+            message: string;
+            code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
+        };
+    };
+};
+
+export type DirectArrayError = DirectArrayErrors[keyof DirectArrayErrors];
+
+export type DirectArrayResponses = {
+    /**
+     * Successful response
+     */
+    200: {
+        result: {
+            /**
+             * Array of output strings
+             */
+            data: Array<string>;
+        };
+    };
+};
+
+export type DirectArrayResponse = DirectArrayResponses[keyof DirectArrayResponses];
+
+export type HelloInlineData = {
+    body?: never;
+    path?: never;
+    query: {
+        input: {
+            /**
+             * doc comment on name
+             */
+            name: string;
+        };
+    };
+    url: '/helloInline';
+};
+
+export type HelloInlineErrors = {
+    /**
+     * Error response
+     */
+    default: {
+        error: {
+            data: {
+                zodError: Array<{
+                    message: string;
+                    path: Array<string | number>;
+                }> | null;
+                code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
+                httpStatus: number;
+                /**
+                 * Path to the procedure that threw the error
+                 */
+                path?: string;
+                /**
+                 * Stack trace of the error (only in development)
+                 */
+                stack?: string;
+            };
+            message: string;
+            code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
+        };
+    };
+};
+
+export type HelloInlineError = HelloInlineErrors[keyof HelloInlineErrors];
+
+export type HelloInlineResponses = {
+    /**
+     * Successful response
+     */
+    200: {
+        result: {
+            data: string;
+        };
+    };
+};
+
+export type HelloInlineResponse2 = HelloInlineResponses[keyof HelloInlineResponses];
+
+export type SubrouterInlineHelloData = {
+    body?: never;
+    path?: never;
+    query: {
+        input: {
+            /**
+             * doc comment on name
+             */
+            name: string;
+            /**
+             * children list
+             */
+            children: Array<{
+                /**
+                 * Child name
+                 */
+                child: string;
+                /**
+                 * Child gender
+                 */
+                gender: 'male' | 'female' | 'other';
+            }>;
+        };
+    };
+    url: '/subrouterInline.hello';
+};
+
+export type SubrouterInlineHelloErrors = {
+    /**
+     * Error response
+     */
+    default: {
+        error: {
+            data: {
+                zodError: Array<{
+                    message: string;
+                    path: Array<string | number>;
+                }> | null;
+                code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
+                httpStatus: number;
+                /**
+                 * Path to the procedure that threw the error
+                 */
+                path?: string;
+                /**
+                 * Stack trace of the error (only in development)
+                 */
+                stack?: string;
+            };
+            message: string;
+            code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
+        };
+    };
+};
+
+export type SubrouterInlineHelloError = SubrouterInlineHelloErrors[keyof SubrouterInlineHelloErrors];
+
+export type SubrouterInlineHelloResponses = {
+    /**
+     * Successful response
+     */
+    200: {
+        result: {
+            data: HelloInlineResponse;
+        };
+    };
+};
+
+export type SubrouterInlineHelloResponse = SubrouterInlineHelloResponses[keyof SubrouterInlineHelloResponses];
+
+export type DirectArrayInlineData = {
+    /**
+     * Array of inputs strings
+     */
+    body: Array<string>;
+    path?: never;
+    query?: never;
+    url: '/directArrayInline';
+};
+
+export type DirectArrayInlineErrors = {
+    /**
+     * Error response
+     */
+    default: {
+        error: {
+            data: {
+                zodError: Array<{
+                    message: string;
+                    path: Array<string | number>;
+                }> | null;
+                code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
+                httpStatus: number;
+                /**
+                 * Path to the procedure that threw the error
+                 */
+                path?: string;
+                /**
+                 * Stack trace of the error (only in development)
+                 */
+                stack?: string;
+            };
+            message: string;
+            code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
+        };
+    };
+};
+
+export type DirectArrayInlineError = DirectArrayInlineErrors[keyof DirectArrayInlineErrors];
+
+export type DirectArrayInlineResponses = {
+    /**
+     * Successful response
+     */
+    200: {
+        result: {
+            /**
+             * Array of output strings
+             */
+            data: Array<string>;
+        };
+    };
+};
+
+export type DirectArrayInlineResponse = DirectArrayInlineResponses[keyof DirectArrayInlineResponses];

@@ -704,12 +704,12 @@
       "AsyncIterable": {
         "type": "object",
         "properties": {
-          "__@asyncIterator@3989": {
+          "__@asyncIterator@4207": {
             "type": "object"
           }
         },
         "required": [
-          "__@asyncIterator@3989"
+          "__@asyncIterator@4207"
         ],
         "additionalProperties": false
       },
@@ -785,10 +785,12 @@
             "type": "number"
           },
           "path": {
-            "type": "string"
+            "type": "string",
+            "description": "Path to the procedure that threw the error"
           },
           "stack": {
-            "type": "string"
+            "type": "string",
+            "description": "Stack trace of the error (only in development)"
           }
         },
         "required": [

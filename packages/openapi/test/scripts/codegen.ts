@@ -33,7 +33,7 @@ export async function codegen() {
 
     rmSync(outputDir, { recursive: true, force: true });
 
-    const doc = generateOpenAPIDocument(routerPath, { exportName });
+    const doc = await generateOpenAPIDocument(routerPath, { exportName });
     writeFileSync(
       path.resolve(routersDir, `${stem}.ts.json`),
       JSON.stringify(doc, null, 2) + '\n',
