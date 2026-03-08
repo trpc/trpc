@@ -228,13 +228,19 @@ describe('with per-procedure typed errors', () => {
   });
 
   test('declared typed errors bypass formatter and infer as router union', async () => {
-    expectTypeOf<inferRouterError<typeof appRouter>>().toMatchTypeOf<RouterError>();
-    expectTypeOf<RouterError>().toMatchTypeOf<inferRouterError<typeof appRouter>>();
+    expectTypeOf<
+      inferRouterError<typeof appRouter>
+    >().toMatchTypeOf<RouterError>();
+    expectTypeOf<RouterError>().toMatchTypeOf<
+      inferRouterError<typeof appRouter>
+    >();
 
     await using ctx = testServerAndClientResource(appRouter);
     const typedErr = await waitError(ctx.client.typedError.query());
     assert(isTRPCClientError<typeof appRouter>(typedErr));
-    expectTypeOf(typedErr.shape).toMatchTypeOf<RouterError | null | undefined>();
+    expectTypeOf(typedErr.shape).toMatchTypeOf<
+      RouterError | null | undefined
+    >();
     expectTypeOf(typedErr.data).toMatchTypeOf<
       RouterError['data'] | null | undefined
     >();
@@ -252,7 +258,9 @@ describe('with per-procedure typed errors', () => {
       ctx.client.undeclaredTypedError.query(),
     );
     assert(isTRPCClientError<typeof appRouter>(undeclaredErr));
-    expectTypeOf(undeclaredErr.shape).toMatchTypeOf<RouterError | null | undefined>();
+    expectTypeOf(undeclaredErr.shape).toMatchTypeOf<
+      RouterError | null | undefined
+    >();
     expectTypeOf(undeclaredErr.data).toMatchTypeOf<
       RouterError['data'] | null | undefined
     >();
