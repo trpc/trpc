@@ -1,5 +1,6 @@
 {
   "openapi": "3.1.1",
+  "jsonSchemaDialect": "https://spec.openapis.org/oas/3.1/dialect/base",
   "info": {
     "title": "tRPC API",
     "version": "0.0.0"
@@ -31,7 +32,8 @@
                           },
                           "required": [
                             "message"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -67,7 +69,8 @@
                   },
                   "required": [
                     "name"
-                  ]
+                  ],
+                  "additionalProperties": false
                 }
               }
             }
@@ -195,7 +198,8 @@
                             "required": [
                               "id",
                               "name"
-                            ]
+                            ],
+                            "additionalProperties": false
                           }
                         }
                       },
@@ -250,7 +254,8 @@
                           "required": [
                             "name",
                             "id"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -285,7 +290,8 @@
                 },
                 "required": [
                   "name"
-                ]
+                ],
+                "additionalProperties": false
               }
             }
           }
@@ -323,7 +329,8 @@
                           },
                           "required": [
                             "status"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -364,7 +371,8 @@
                   },
                   "required": [
                     "status"
-                  ]
+                  ],
+                  "additionalProperties": false
                 }
               }
             }
@@ -404,7 +412,8 @@
                           },
                           "required": [
                             "direction"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -446,7 +455,8 @@
                   },
                   "required": [
                     "direction"
-                  ]
+                  ],
+                  "additionalProperties": false
                 }
               }
             }
@@ -491,7 +501,8 @@
                             "strLit",
                             "numLit",
                             "boolLit"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -538,7 +549,8 @@
                     "strLit",
                     "numLit",
                     "boolLit"
-                  ]
+                  ],
+                  "additionalProperties": false
                 }
               }
             }
@@ -577,7 +589,8 @@
                           },
                           "required": [
                             "color"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -618,7 +631,8 @@
                   },
                   "required": [
                     "color"
-                  ]
+                  ],
+                  "additionalProperties": false
                 }
               }
             }
@@ -659,7 +673,8 @@
                               "required": [
                                 "type",
                                 "content"
-                              ]
+                              ],
+                              "additionalProperties": false
                             },
                             {
                               "type": "object",
@@ -683,7 +698,8 @@
                                 "url",
                                 "width",
                                 "height"
-                              ]
+                              ],
+                              "additionalProperties": false
                             },
                             {
                               "type": "object",
@@ -703,9 +719,13 @@
                                 "type",
                                 "url",
                                 "duration"
-                              ]
+                              ],
+                              "additionalProperties": false
                             }
-                          ]
+                          ],
+                          "discriminator": {
+                            "propertyName": "type"
+                          }
                         }
                       },
                       "required": [
@@ -744,7 +764,8 @@
                     "required": [
                       "type",
                       "content"
-                    ]
+                    ],
+                    "additionalProperties": false
                   },
                   {
                     "type": "object",
@@ -768,7 +789,8 @@
                       "url",
                       "width",
                       "height"
-                    ]
+                    ],
+                    "additionalProperties": false
                   },
                   {
                     "type": "object",
@@ -788,9 +810,13 @@
                       "type",
                       "url",
                       "duration"
-                    ]
+                    ],
+                    "additionalProperties": false
                   }
-                ]
+                ],
+                "discriminator": {
+                  "propertyName": "type"
+                }
               }
             }
           }
@@ -827,7 +853,8 @@
                           },
                           "required": [
                             "value"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -867,7 +894,8 @@
                   },
                   "required": [
                     "value"
-                  ]
+                  ],
+                  "additionalProperties": false
                 }
               }
             }
@@ -909,7 +937,8 @@
                             "id",
                             "name",
                             "email"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -949,7 +978,8 @@
                   "id",
                   "name",
                   "email"
-                ]
+                ],
+                "additionalProperties": false
               }
             }
           }
@@ -1011,7 +1041,8 @@
                           "required": [
                             "pair",
                             "triple"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -1076,7 +1107,8 @@
                   "required": [
                     "pair",
                     "triple"
-                  ]
+                  ],
+                  "additionalProperties": false
                 }
               }
             }
@@ -1120,7 +1152,8 @@
                           "required": [
                             "metadata",
                             "scores"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -1166,7 +1199,8 @@
                   "required": [
                     "metadata",
                     "scores"
-                  ]
+                  ],
+                  "additionalProperties": false
                 }
               }
             }
@@ -1219,7 +1253,8 @@
                                   "id",
                                   "label",
                                   "active"
-                                ]
+                                ],
+                                "additionalProperties": false
                               }
                             },
                             "matrix": {
@@ -1236,7 +1271,8 @@
                             "tags",
                             "items",
                             "matrix"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -1291,7 +1327,8 @@
                           "id",
                           "label",
                           "active"
-                        ]
+                        ],
+                        "additionalProperties": false
                       }
                     },
                     "matrix": {
@@ -1308,7 +1345,8 @@
                     "tags",
                     "items",
                     "matrix"
-                  ]
+                  ],
+                  "additionalProperties": false
                 }
               }
             }
@@ -1351,22 +1389,26 @@
                                       },
                                       "required": [
                                         "value"
-                                      ]
+                                      ],
+                                      "additionalProperties": false
                                     }
                                   },
                                   "required": [
                                     "level3"
-                                  ]
+                                  ],
+                                  "additionalProperties": false
                                 }
                               },
                               "required": [
                                 "level2"
-                              ]
+                              ],
+                              "additionalProperties": false
                             }
                           },
                           "required": [
                             "level1"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -1411,22 +1453,26 @@
                               },
                               "required": [
                                 "value"
-                              ]
+                              ],
+                              "additionalProperties": false
                             }
                           },
                           "required": [
                             "level3"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
                         "level2"
-                      ]
+                      ],
+                      "additionalProperties": false
                     }
                   },
                   "required": [
                     "level1"
-                  ]
+                  ],
+                  "additionalProperties": false
                 }
               }
             }
@@ -1461,7 +1507,8 @@
                           },
                           "required": [
                             "createdAt"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -1498,7 +1545,8 @@
                   },
                   "required": [
                     "createdAt"
-                  ]
+                  ],
+                  "additionalProperties": false
                 }
               }
             }
@@ -1532,7 +1580,8 @@
                           "required": [
                             "anything",
                             "something"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -1568,7 +1617,8 @@
                   "required": [
                     "anything",
                     "something"
-                  ]
+                  ],
+                  "additionalProperties": false
                 }
               }
             }
@@ -1614,7 +1664,8 @@
                             "page",
                             "limit",
                             "sort"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -1657,7 +1708,8 @@
                         "desc"
                       ]
                     }
-                  }
+                  },
+                  "additionalProperties": false
                 }
               }
             }
@@ -1699,7 +1751,8 @@
                             "email",
                             "age",
                             "url"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -1743,7 +1796,8 @@
                     "email",
                     "age",
                     "url"
-                  ]
+                  ],
+                  "additionalProperties": false
                 }
               }
             }
@@ -1787,7 +1841,8 @@
                           },
                           "required": [
                             "value"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -1833,7 +1888,8 @@
                   },
                   "required": [
                     "value"
-                  ]
+                  ],
+                  "additionalProperties": false
                 }
               }
             }
@@ -1939,7 +1995,8 @@
                           },
                           "required": [
                             "known"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -1975,7 +2032,8 @@
                   },
                   "required": [
                     "known"
-                  ]
+                  ],
+                  "additionalProperties": false
                 }
               }
             }
@@ -2009,7 +2067,8 @@
                           },
                           "required": [
                             "userId"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -2045,7 +2104,8 @@
                   },
                   "required": [
                     "userId"
-                  ]
+                  ],
+                  "additionalProperties": false
                 }
               }
             }
@@ -2083,7 +2143,8 @@
                           },
                           "required": [
                             "status"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -2123,7 +2184,8 @@
                   },
                   "required": [
                     "status"
-                  ]
+                  ],
+                  "additionalProperties": false
                 }
               }
             }
@@ -2157,7 +2219,8 @@
                           },
                           "required": [
                             "value"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -2193,7 +2256,8 @@
                   },
                   "required": [
                     "value"
-                  ]
+                  ],
+                  "additionalProperties": false
                 }
               }
             }
@@ -2238,7 +2302,8 @@
                                 "status",
                                 "id",
                                 "createdAt"
-                              ]
+                              ],
+                              "additionalProperties": false
                             },
                             {
                               "type": "object",
@@ -2258,9 +2323,13 @@
                                 "status",
                                 "message",
                                 "code"
-                              ]
+                              ],
+                              "additionalProperties": false
                             }
-                          ]
+                          ],
+                          "discriminator": {
+                            "propertyName": "status"
+                          }
                         }
                       },
                       "required": [
@@ -2306,7 +2375,8 @@
                 "required": [
                   "title",
                   "body"
-                ]
+                ],
+                "additionalProperties": false
               }
             }
           }
@@ -2356,7 +2426,8 @@
                                   "title",
                                   "snippet",
                                   "score"
-                                ]
+                                ],
+                                "additionalProperties": false
                               }
                             },
                             "total": {
@@ -2370,7 +2441,8 @@
                             "results",
                             "total",
                             "hasMore"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -2428,7 +2500,8 @@
                           "required": [
                             "from",
                             "to"
-                          ]
+                          ],
+                          "additionalProperties": false
                         },
                         "tags": {
                           "type": "array",
@@ -2444,7 +2517,8 @@
                             "popularity"
                           ]
                         }
-                      }
+                      },
+                      "additionalProperties": false
                     },
                     "pagination": {
                       "type": "object",
@@ -2459,12 +2533,14 @@
                       "required": [
                         "page",
                         "limit"
-                      ]
+                      ],
+                      "additionalProperties": false
                     }
                   },
                   "required": [
                     "query"
-                  ]
+                  ],
+                  "additionalProperties": false
                 }
               }
             }
@@ -2503,7 +2579,8 @@
                           },
                           "required": [
                             "status"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -2683,7 +2760,8 @@
                                 "type",
                                 "id",
                                 "createdAt"
-                              ]
+                              ],
+                              "additionalProperties": false
                             },
                             {
                               "type": "object",
@@ -2705,9 +2783,13 @@
                                 "type",
                                 "message",
                                 "code"
-                              ]
+                              ],
+                              "additionalProperties": false
                             }
-                          ]
+                          ],
+                          "discriminator": {
+                            "propertyName": "type"
+                          }
                         }
                       },
                       "required": [
@@ -2758,7 +2840,8 @@
                           },
                           "required": [
                             "value"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -2907,7 +2990,8 @@
                               "id",
                               "name",
                               "active"
-                            ]
+                            ],
+                            "additionalProperties": false
                           }
                         }
                       },
@@ -3009,22 +3093,26 @@
                                       },
                                       "required": [
                                         "value"
-                                      ]
+                                      ],
+                                      "additionalProperties": false
                                     }
                                   },
                                   "required": [
                                     "level3"
-                                  ]
+                                  ],
+                                  "additionalProperties": false
                                 }
                               },
                               "required": [
                                 "level2"
-                              ]
+                              ],
+                              "additionalProperties": false
                             }
                           },
                           "required": [
                             "level1"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -3072,7 +3160,8 @@
                           },
                           "required": [
                             "createdAt"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -3122,7 +3211,8 @@
                           },
                           "required": [
                             "value"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -3175,7 +3265,8 @@
                           },
                           "required": [
                             "name"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -3248,7 +3339,8 @@
                             "metadata",
                             "active",
                             "score"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -3374,7 +3466,8 @@
                             "name",
                             "email",
                             "id"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -3488,7 +3581,8 @@
                                   },
                                   "required": [
                                     "inner"
-                                  ]
+                                  ],
+                                  "additionalProperties": false
                                 },
                                 {
                                   "type": "null"
@@ -3498,7 +3592,8 @@
                           },
                           "required": [
                             "outer"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -3777,7 +3872,8 @@
                             "status",
                             "tags",
                             "metadata"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -3809,7 +3905,8 @@
                 },
                 "required": [
                   "name"
-                ]
+                ],
+                "additionalProperties": false
               }
             }
           }
@@ -3848,7 +3945,8 @@
                           },
                           "required": [
                             "direction"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -3900,7 +3998,8 @@
                           },
                           "required": [
                             "status"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -3960,7 +4059,8 @@
                           },
                           "required": [
                             "value"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -4015,7 +4115,8 @@
                             "userId",
                             "score",
                             "active"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -4062,7 +4163,8 @@
                           },
                           "required": [
                             "profile"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -4112,7 +4214,8 @@
                           },
                           "required": [
                             "items"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -4159,7 +4262,8 @@
                           },
                           "required": [
                             "address"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -4210,7 +4314,8 @@
                           "required": [
                             "profile",
                             "address"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -4263,17 +4368,20 @@
                                   },
                                   "required": [
                                     "profile"
-                                  ]
+                                  ],
+                                  "additionalProperties": false
                                 }
                               },
                               "required": [
                                 "nested"
-                              ]
+                              ],
+                              "additionalProperties": false
                             }
                           },
                           "required": [
                             "data"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -4452,7 +4560,8 @@
                                     "null"
                                   ]
                                 }
-                              }
+                              },
+                              "additionalProperties": false
                             },
                             {
                               "type": "null"
@@ -4495,7 +4604,8 @@
                             "null"
                           ]
                         }
-                      }
+                      },
+                      "additionalProperties": false
                     },
                     {
                       "type": "null"
@@ -4531,7 +4641,8 @@
                             "name": {
                               "type": "string"
                             }
-                          }
+                          },
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -4564,7 +4675,8 @@
                     "name": {
                       "type": "string"
                     }
-                  }
+                  },
+                  "additionalProperties": false
                 }
               }
             }
@@ -4603,7 +4715,8 @@
                               },
                               "required": [
                                 "name"
-                              ]
+                              ],
+                              "additionalProperties": false
                             },
                             {
                               "type": "null"
@@ -4649,7 +4762,8 @@
                       },
                       "required": [
                         "name"
-                      ]
+                      ],
+                      "additionalProperties": false
                     },
                     {
                       "type": "null"
@@ -4682,7 +4796,8 @@
           "id",
           "name",
           "email"
-        ]
+        ],
+        "additionalProperties": false
       },
       "OrderItem": {
         "type": "object",
@@ -4701,7 +4816,8 @@
           "productId",
           "quantity",
           "price"
-        ]
+        ],
+        "additionalProperties": false
       },
       "Address": {
         "type": "object",
@@ -4720,7 +4836,8 @@
           "street",
           "city",
           "zipCode"
-        ]
+        ],
+        "additionalProperties": false
       },
       "TreeNode": {
         "type": "object",
@@ -4738,7 +4855,8 @@
         "required": [
           "value",
           "children"
-        ]
+        ],
+        "additionalProperties": false
       },
       "LinkedListNode": {
         "type": "object",
@@ -4760,7 +4878,8 @@
         "required": [
           "value",
           "next"
-        ]
+        ],
+        "additionalProperties": false
       },
       "Category": {
         "type": "object",
@@ -4778,7 +4897,8 @@
         "required": [
           "name",
           "subcategories"
-        ]
+        ],
+        "additionalProperties": false
       },
       "DefaultErrorShape": {
         "type": "object",
@@ -4816,7 +4936,8 @@
           "message",
           "code",
           "data"
-        ]
+        ],
+        "additionalProperties": false
       },
       "DefaultErrorData": {
         "type": "object",
@@ -4860,7 +4981,8 @@
         "required": [
           "code",
           "httpStatus"
-        ]
+        ],
+        "additionalProperties": false
       }
     },
     "responses": {

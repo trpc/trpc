@@ -8,7 +8,7 @@ import {
 } from '@swagger-api/apidom-ls';
 import { createHTTPHandler } from '@trpc/server/adapters/standalone';
 import superjson from 'superjson';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import type { OpenAPIDocument } from '../src/generate';
 import { generateOpenAPIDocument } from '../src/generate';
@@ -16,6 +16,15 @@ import { createTRPCHeyApiClientConfig } from '../src/heyapi';
 import { AppRouter } from './routers/appRouter';
 import { client as heyapiClient } from './routers/appRouter-heyapi/client.gen';
 import { Sdk as HeyapiSdk } from './routers/appRouter-heyapi/sdk.gen';
+import type {
+  ComplexTypesCreateContentResponses,
+  ComplexTypesDiscriminatedUnionResponses,
+  ComplexTypesPassthroughData,
+  ComplexTypesRecordResponses,
+  GreetingData,
+  GreetingResponses,
+  UserProfile as HeyApiUserProfile,
+} from './routers/appRouter-heyapi/types.gen';
 import { SuperjsonRouter } from './routers/superjsonRouter';
 import { client as superjsonClient } from './routers/superjsonRouter-heyapi/client.gen';
 import { Sdk as SuperjsonSdk } from './routers/superjsonRouter-heyapi/sdk.gen';
@@ -86,8 +95,11 @@ describe('generateOpenAPIDocument', () => {
       });
     });
 
-    it('returns a valid tRPC OpenAPI 3.0 document', () => {
+    it('returns a valid tRPC OpenAPI 3.1 document', () => {
       expect(doc.openapi).toBe('3.1.1');
+      expect(doc.jsonSchemaDialect).toBe(
+        'https://spec.openapis.org/oas/3.1/dialect/base',
+      );
       expect(doc.info.title).toBe('Test API');
       expect(doc.info.version).toBe('1.0.0');
 
@@ -145,6 +157,7 @@ describe('generateOpenAPIDocument', () => {
         type: 'object',
         properties: { userId: { type: 'string' } },
         required: ['userId'],
+        additionalProperties: false,
       });
 
       // Inferred branded returns (string & {__brand}, number & {__brand}, boolean & {__brand})
@@ -179,6 +192,7 @@ describe('generateOpenAPIDocument', () => {
           email: { type: 'string' },
         },
         required: ['id', 'name', 'email'],
+        additionalProperties: false,
       });
 
       // Depth 1: named type as a direct property → property is a $ref
@@ -269,6 +283,86 @@ describe('generateOpenAPIDocument', () => {
           ?.properties?.result?.properties?.data;
       expect(categoryData).toEqual({ $ref: '#/components/schemas/Category' });
     });
+
+    it('adds discriminator to discriminated unions', () => {
+      // Zod discriminatedUnion input (discriminant: "type")
+      const discInputOp = doc.paths['/complexTypes.discriminatedUnion']?.[
+        'post'
+      ] as any;
+      const inputSchema =
+        discInputOp?.requestBody?.content?.['application/json']?.schema;
+      expect(inputSchema).toHaveProperty('oneOf');
+      expect(inputSchema.discriminator).toEqual({ propertyName: 'type' });
+
+      // Zod discriminatedUnion output (discriminant: "status")
+      const createContentOp = doc.paths['/complexTypes.createContent']?.[
+        'post'
+      ] as any;
+      const outputSchema = unwrapSuccessData(
+        createContentOp?.responses?.['200']?.content?.['application/json']
+          ?.schema,
+        doc,
+      );
+      expect(outputSchema).toHaveProperty('oneOf');
+      expect(outputSchema.discriminator).toEqual({
+        propertyName: 'status',
+      });
+
+      // Inferred return discriminated union (discriminant: "type")
+      const inferredOp = doc.paths['/inferredReturns.discriminatedResult']?.[
+        'post'
+      ] as any;
+      const inferredSchema = unwrapSuccessData(
+        inferredOp?.responses?.['200']?.content?.['application/json']?.schema,
+        doc,
+      );
+      expect(inferredSchema).toHaveProperty('oneOf');
+      expect(inferredSchema.discriminator).toEqual({
+        propertyName: 'type',
+      });
+
+      // Regular (non-discriminated) union should NOT have a discriminator
+      const unionOp = doc.paths['/complexTypes.union']?.['get'] as any;
+      const unionInputSchema =
+        unionOp?.parameters?.[0]?.content?.['application/json']?.schema;
+      const valueSchema = unionInputSchema?.properties?.value;
+      expect(valueSchema).not.toHaveProperty('discriminator');
+    });
+
+    it('emits additionalProperties: false for closed objects', () => {
+      // Named schema: UserProfile is a closed object
+      const schemas = (doc.components as any).schemas;
+      expect(schemas.UserProfile.additionalProperties).toBe(false);
+      expect(schemas.Address.additionalProperties).toBe(false);
+      expect(schemas.OrderItem.additionalProperties).toBe(false);
+
+      // Inline object in Zod input
+      const greetingOp = doc.paths['/greeting']?.['get'] as any;
+      const greetingInput =
+        greetingOp?.parameters?.[0]?.content?.['application/json']?.schema;
+      expect(greetingInput.additionalProperties).toBe(false);
+
+      // Record types should NOT have additionalProperties: false
+      const recordOp = doc.paths['/complexTypes.record']?.['get'] as any;
+      const recordInput =
+        recordOp?.parameters?.[0]?.content?.['application/json']?.schema;
+      // metadata is Record<string, string> → additionalProperties: { type: "string" }
+      expect(recordInput.properties.metadata.additionalProperties).toEqual({
+        type: 'string',
+      });
+      // scores is Record<string, number> → additionalProperties: { type: "number" }
+      expect(recordInput.properties.scores.additionalProperties).toEqual({
+        type: 'number',
+      });
+
+      // Passthrough objects should NOT have additionalProperties: false
+      const passthroughOp = doc.paths['/complexTypes.passthrough']?.[
+        'get'
+      ] as any;
+      const passthroughInput =
+        passthroughOp?.parameters?.[0]?.content?.['application/json']?.schema;
+      expect(passthroughInput.additionalProperties).not.toBe(false);
+    });
   });
 
   describe('hey-api client generation', () => {
@@ -329,6 +423,80 @@ describe('generateOpenAPIDocument', () => {
       });
       expect(echoResult.data).toBeDefined();
       expect(echoResult.data!.result.data).toBe('test-echo');
+    });
+
+    it('generates discriminated union types with literal discriminants', () => {
+      // The discriminatedUnion input has discriminant "type" with literals "text", "image", "video"
+      type DiscUnionData =
+        ComplexTypesDiscriminatedUnionResponses[200]['result']['data'];
+
+      // Each variant should be assignable when the discriminant matches
+      expectTypeOf<{ type: 'text'; content: string }>().toExtend<DiscUnionData>();
+      expectTypeOf<{
+        type: 'image';
+        url: string;
+        width: number;
+        height: number;
+      }>().toExtend<DiscUnionData>();
+      expectTypeOf<{
+        type: 'video';
+        url: string;
+        duration: number;
+      }>().toExtend<DiscUnionData>();
+
+      // A non-matching discriminant should NOT match any variant
+      expectTypeOf<{ type: 'audio' }>().not.toExtend<DiscUnionData>();
+
+      // The createContent output has discriminant "status" with "success" | "error"
+      type CreateContentData =
+        ComplexTypesCreateContentResponses[200]['result']['data'];
+
+      expectTypeOf<{
+        status: 'success';
+        id: number;
+        createdAt: string;
+      }>().toExtend<CreateContentData>();
+      expectTypeOf<{
+        status: 'error';
+        message: string;
+        code: number;
+      }>().toExtend<CreateContentData>();
+      expectTypeOf<{ status: 'pending' }>().not.toExtend<CreateContentData>();
+    });
+
+    it('generates closed object types for non-Record objects', () => {
+      // UserProfile should be a closed type with exactly these fields
+      expectTypeOf<HeyApiUserProfile>().toEqualTypeOf<{
+        id: number;
+        name: string;
+        email: string;
+      }>();
+
+      // Greeting input is a closed object — extra properties should be rejected
+      type GreetingInput = GreetingData['query']['input'];
+      expectTypeOf<GreetingInput>().toEqualTypeOf<{ name: string }>();
+
+      // Greeting response data is also closed
+      type GreetingOutput = GreetingResponses[200]['result']['data'];
+      expectTypeOf<GreetingOutput>().toEqualTypeOf<{ message: string }>();
+
+      // Record types SHOULD allow arbitrary string keys
+      type RecordOutput =
+        ComplexTypesRecordResponses[200]['result']['data'];
+      expectTypeOf<RecordOutput>().toHaveProperty('metadata');
+      // The metadata field should accept any string key
+      expectTypeOf<{ foo: 'bar' }>().toExtend<
+        RecordOutput['metadata']
+      >();
+
+      // Passthrough objects SHOULD allow extra string keys
+      type PassthroughInput = ComplexTypesPassthroughData['query']['input'];
+      expectTypeOf<PassthroughInput>().toHaveProperty('known');
+      // Extra properties are allowed via [key: string]: unknown
+      expectTypeOf<{
+        known: string;
+        extra: number;
+      }>().toExtend<PassthroughInput>();
     });
   });
 

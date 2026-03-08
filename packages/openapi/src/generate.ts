@@ -18,6 +18,7 @@ export interface JsonSchema {
   allOf?: JsonSchema[];
   not?: JsonSchema;
   additionalProperties?: JsonSchema | boolean;
+  discriminator?: { propertyName: string; mapping?: Record<string, string> };
   format?: string;
   description?: string;
   minItems?: number;
@@ -52,6 +53,7 @@ export interface GenerateOptions {
 
 export interface OpenAPIDocument {
   openapi: string;
+  jsonSchemaDialect?: string;
   info: { title: string; version: string };
   paths: Record<string, Record<string, unknown>>;
   components: Record<string, unknown>;
@@ -350,7 +352,51 @@ function convertUnionType(
     return { type: schemas.map((s) => s.type as string) };
   }
 
+  // Detect discriminated unions: all oneOf members are objects sharing a common
+  // required property whose value is a `const`.  If found, add a `discriminator`.
+  const discriminatorProp = detectDiscriminatorProperty(schemas);
+  if (discriminatorProp) {
+    return { oneOf: schemas, discriminator: { propertyName: discriminatorProp } };
+  }
+
   return { oneOf: schemas };
+}
+
+/**
+ * If every schema in a oneOf is an object with a common required property
+ * whose value is a `const`, return that property name.  Otherwise return null.
+ */
+function detectDiscriminatorProperty(schemas: JsonSchema[]): string | null {
+  if (schemas.length < 2) {
+    return null;
+  }
+
+  // All schemas must be object types with properties
+  if (!schemas.every((s) => s.type === 'object' && s.properties)) {
+    return null;
+  }
+
+  // Find properties that exist in every schema, are required, and have a `const` value
+  const first = schemas[0];
+  if (!first?.properties) {
+    return null;
+  }
+  const firstProps = Object.keys(first.properties);
+  for (const prop of firstProps) {
+    const allHaveConst = schemas.every((s) => {
+      const propSchema = s.properties?.[prop];
+      return (
+        propSchema !== undefined &&
+        propSchema.const !== undefined &&
+        s.required?.includes(prop)
+      );
+    });
+    if (allHaveConst) {
+      return prop;
+    }
+  }
+
+  return null;
 }
 
 /** A schema that is just `{ type: "somePrimitive" }` with no other keys. */
@@ -590,6 +636,8 @@ function convertPlainObject(
       ctx,
       depth + 1,
     );
+  } else if (Object.keys(properties).length > 0) {
+    result.additionalProperties = false;
   }
 
   // autoRegName covers named types (early-registered).  For anonymous
@@ -967,6 +1015,8 @@ function buildProcedureOperation(
         name: 'input',
         in: 'query',
         required: true,
+        // FIXME: OAS 3.1.1 says a parameter MUST use either schema+style OR content, not both.
+        // style should be removed here, but hey-api requires it to generate a correct query serializer.
         style: 'deepObject',
         content: { 'application/json': { schema: proc.inputSchema } },
       },
@@ -1006,6 +1056,7 @@ function buildOpenAPIDocument(
 
   return {
     openapi: '3.1.1',
+    jsonSchemaDialect: 'https://spec.openapis.org/oas/3.1/dialect/base',
     info: {
       title: options.title ?? 'tRPC API',
       version: options.version ?? '0.0.0',
@@ -1039,7 +1090,7 @@ function buildOpenAPIDocument(
 
 /**
  * Analyse the given TypeScript router file using the TypeScript compiler and
- * return an OpenAPI 3.0 document describing all query and mutation procedures.
+ * return an OpenAPI 3.1 document describing all query and mutation procedures.
  *
  * @param routerFilePath - Absolute or relative path to the file that exports
  *   the AppRouter.

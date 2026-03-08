@@ -1,5 +1,6 @@
 {
   "openapi": "3.1.1",
+  "jsonSchemaDialect": "https://spec.openapis.org/oas/3.1/dialect/base",
   "info": {
     "title": "tRPC API",
     "version": "0.0.0"
@@ -36,7 +37,8 @@
                           "required": [
                             "id",
                             "at"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -77,7 +79,8 @@
                   "required": [
                     "id",
                     "at"
-                  ]
+                  ],
+                  "additionalProperties": false
                 }
               }
             }
@@ -116,7 +119,8 @@
                           "required": [
                             "name",
                             "at"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -153,7 +157,8 @@
                 "required": [
                   "name",
                   "at"
-                ]
+                ],
+                "additionalProperties": false
               }
             }
           }
@@ -199,7 +204,8 @@
           "message",
           "code",
           "data"
-        ]
+        ],
+        "additionalProperties": false
       },
       "DefaultErrorData": {
         "type": "object",
@@ -243,7 +249,8 @@
         "required": [
           "code",
           "httpStatus"
-        ]
+        ],
+        "additionalProperties": false
       }
     },
     "responses": {
