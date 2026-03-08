@@ -2,7 +2,7 @@
   "name": "@trpc/openapi",
   "type": "module",
   "sideEffects": false,
-  "version": "0.0.1-alpha.0",
+  "version": "11.12.0-alpha",
   "description": "OpenAPI document generator for tRPC routers",
   "author": "KATT",
   "license": "MIT",
