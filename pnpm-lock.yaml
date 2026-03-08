@@ -1891,6 +1891,39 @@ importers:
         specifier: ^4.2.1
         version: 4.2.1
 
+  packages/openapi:
+    devDependencies:
+      '@hey-api/client-fetch':
+        specifier: ^0.13.1
+        version: 0.13.1(@hey-api/openapi-ts@0.94.0(magicast@0.5.2)(typescript@5.9.2))
+      '@hey-api/openapi-ts':
+        specifier: ^0.94.0
+        version: 0.94.0(magicast@0.5.2)(typescript@5.9.2)
+      '@swagger-api/apidom-ls':
+        specifier: ^1.6.0
+        version: 1.6.0
+      '@trpc/server':
+        specifier: workspace:*
+        version: link:../server
+      '@types/node':
+        specifier: ^22.13.5
+        version: 22.19.11
+      superjson:
+        specifier: ^1.12.4
+        version: 1.12.4
+      tsdown:
+        specifier: 0.12.7
+        version: 0.12.7(typescript@5.9.2)
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.2
+      vscode-languageserver-textdocument:
+        specifier: ^1.0.12
+        version: 1.0.12
+      zod:
+        specifier: ^4.2.1
+        version: 4.2.1
+
   packages/react-query:
     devDependencies:
       '@tanstack/query-sync-storage-persister':
@@ -1965,18 +1998,9 @@ importers:
       '@fastify/websocket':
         specifier: ^11.0.0
         version: 11.1.0
-      '@hey-api/client-fetch':
-        specifier: ^0.13.1
-        version: 0.13.1(@hey-api/openapi-ts@0.94.0(magicast@0.5.2)(typescript@5.9.2))
-      '@hey-api/openapi-ts':
-        specifier: ^0.94.0
-        version: 0.94.0(magicast@0.5.2)(typescript@5.9.2)
       '@oxc-project/runtime':
         specifier: 0.115.0
         version: 0.115.0
-      '@swagger-api/apidom-ls':
-        specifier: ^1.6.0
-        version: 1.6.0
       '@tanstack/react-query':
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
@@ -2046,9 +2070,6 @@ importers:
       valibot:
         specifier: 1.2.0
         version: 1.2.0(typescript@5.9.2)
-      vscode-languageserver-textdocument:
-        specifier: ^1.0.12
-        version: 1.0.12
       ws:
         specifier: ^8.0.0
         version: 8.17.1
@@ -10972,10 +10993,6 @@ packages:
 
   default-browser-id@5.0.0:
     resolution: {integrity: sha512-A6p/pu/6fyBcA1TRz/GqWYPViplrftcW2gZC9q79ngNCKAeR/X3gcEdXQHl4KNXV+3wgIJ1CPkJQ3IHM6lcsyA==}
-    engines: {node: '>=18'}
-
-  default-browser@5.2.1:
-    resolution: {integrity: sha512-WY/3TUME0x3KPYdRRxEJJvXRHV4PyPoUsxtZa78lwItwRQRHhd2U9xOscaT/YTf8uCXIAjeJOFBVEh/7FtD8Xg==}
     engines: {node: '>=18'}
 
   default-browser@5.5.0:
@@ -23611,7 +23628,7 @@ snapshots:
       '@docusaurus/utils-common': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.18))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       fs-extra: 11.2.0
       joi: 17.13.3
-      js-yaml: 4.1.0
+      js-yaml: 4.1.1
       lodash: 4.17.21
       tslib: 2.8.1
     transitivePeerDependencies:
@@ -23635,7 +23652,7 @@ snapshots:
       globby: 11.1.0
       gray-matter: 4.0.3
       jiti: 1.21.6
-      js-yaml: 4.1.0
+      js-yaml: 4.1.1
       lodash: 4.17.21
       micromatch: 4.0.8
       prompts: 2.4.2
@@ -25107,7 +25124,7 @@ snapshots:
     dependencies:
       fast-glob: 3.3.3
       jju: 1.4.0
-      js-yaml: 4.1.0
+      js-yaml: 4.1.1
 
   '@mapbox/node-pre-gyp@2.0.0(encoding@0.1.13)':
     dependencies:
@@ -26095,7 +26112,7 @@ snapshots:
       colorette: 1.4.0
       https-proxy-agent: 7.0.6(supports-color@9.4.0)
       js-levenshtein: 1.1.6
-      js-yaml: 4.1.0
+      js-yaml: 4.1.1
       minimatch: 5.1.6
       pluralize: 8.0.0
       yaml-ast-parser: 0.0.43
@@ -27992,7 +28009,7 @@ snapshots:
 
   '@types/oauth@0.9.1':
     dependencies:
-      '@types/node': 22.19.7
+      '@types/node': 22.19.11
 
   '@types/parse-json@4.0.0': {}
 
@@ -30121,7 +30138,7 @@ snapshots:
   cosmiconfig@8.3.6(typescript@5.9.2):
     dependencies:
       import-fresh: 3.3.0
-      js-yaml: 4.1.0
+      js-yaml: 4.1.1
       parse-json: 5.2.0
       path-type: 4.0.0
     optionalDependencies:
@@ -30131,7 +30148,7 @@ snapshots:
     dependencies:
       env-paths: 2.2.1
       import-fresh: 3.3.0
-      js-yaml: 4.1.0
+      js-yaml: 4.1.1
       parse-json: 5.2.0
     optionalDependencies:
       typescript: 5.9.2
@@ -30610,11 +30627,6 @@ snapshots:
   deepmerge@4.3.1: {}
 
   default-browser-id@5.0.0: {}
-
-  default-browser@5.2.1:
-    dependencies:
-      bundle-name: 4.1.0
-      default-browser-id: 5.0.0
 
   default-browser@5.5.0:
     dependencies:
@@ -31727,7 +31739,7 @@ snapshots:
 
   eval@0.1.8:
     dependencies:
-      '@types/node': 22.19.7
+      '@types/node': 22.19.11
       require-like: 0.1.2
 
   event-emitter@0.3.5:
@@ -35149,7 +35161,7 @@ snapshots:
     dependencies:
       acorn: 8.14.0
       pathe: 1.1.2
-      pkg-types: 1.2.1
+      pkg-types: 1.3.1
       ufo: 1.5.4
 
   mlly@1.7.4:
@@ -36004,7 +36016,7 @@ snapshots:
 
   open@10.1.0:
     dependencies:
-      default-browser: 5.2.1
+      default-browser: 5.5.0
       define-lazy-prop: 3.0.0
       is-inside-container: 1.0.0
       is-wsl: 3.1.0
@@ -39531,14 +39543,14 @@ snapshots:
   tree-sitter-json@0.24.8(tree-sitter@0.21.1):
     dependencies:
       node-addon-api: 8.6.0
-      node-gyp-build: 4.8.2
+      node-gyp-build: 4.8.4
     optionalDependencies:
       tree-sitter: 0.21.1
 
   tree-sitter@0.21.1:
     dependencies:
       node-addon-api: 8.6.0
-      node-gyp-build: 4.8.2
+      node-gyp-build: 4.8.4
 
   tree-sitter@0.22.4:
     dependencies:

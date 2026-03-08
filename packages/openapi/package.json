@@ -1,0 +1,69 @@
+{
+  "name": "@trpc/openapi",
+  "type": "module",
+  "sideEffects": false,
+  "version": "0.0.1-alpha.0",
+  "description": "OpenAPI document generator for tRPC routers",
+  "author": "KATT",
+  "license": "MIT",
+  "bin": {
+    "trpc-openapi": "./dist/cli.js"
+  },
+  "homepage": "https://trpc.io",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trpc/trpc.git",
+    "directory": "packages/openapi"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "lint": "eslint --cache src",
+    "typecheck": "tsc --noEmit --preserveWatchOutput --pretty"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "package.json",
+    "!**/*.test.*",
+    "!**/__tests__"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@hey-api/client-fetch": "^0.13.1",
+    "@hey-api/openapi-ts": "^0.94.0",
+    "@swagger-api/apidom-ls": "^1.6.0",
+    "@trpc/server": "workspace:*",
+    "@types/node": "^22.13.5",
+    "superjson": "^1.12.4",
+    "tsdown": "0.12.7",
+    "typescript": "^5.9.2",
+    "vscode-languageserver-textdocument": "^1.0.12",
+    "zod": "^4.2.1"
+  },
+  "peerDependencies": {
+    "typescript": ">=5.7.2"
+  },
+  "funding": [
+    "https://trpc.io/sponsor"
+  ]
+}

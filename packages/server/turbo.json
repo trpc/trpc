@@ -9,7 +9,6 @@
         "adapters/**",
         "http/**",
         "observable/**",
-        "openapi/**",
         "rpc/**",
         "shared/**",
         "unstable-core-do-not-import/**"

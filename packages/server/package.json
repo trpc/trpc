@@ -9,9 +9,6 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.cts",
-  "bin": {
-    "trpc-openapi": "./dist/openapi/cli.js"
-  },
   "homepage": "https://trpc.io",
   "repository": {
     "type": "git",
@@ -147,16 +144,6 @@
         "default": "./dist/observable/index.cjs"
       }
     },
-    "./openapi": {
-      "import": {
-        "types": "./dist/openapi/index.d.mts",
-        "default": "./dist/openapi/index.mjs"
-      },
-      "require": {
-        "types": "./dist/openapi/index.d.cts",
-        "default": "./dist/openapi/index.cjs"
-      }
-    },
     "./rpc": {
       "import": {
         "types": "./dist/rpc.d.mts",
@@ -196,7 +183,6 @@
     "adapters",
     "http",
     "observable",
-    "openapi",
     "rpc",
     "shared",
     "unstable-core-do-not-import",
@@ -208,10 +194,7 @@
   },
   "devDependencies": {
     "@fastify/websocket": "^11.0.0",
-    "@hey-api/client-fetch": "^0.13.1",
-    "@hey-api/openapi-ts": "^0.94.0",
     "@oxc-project/runtime": "0.115.0",
-    "@swagger-api/apidom-ls": "^1.6.0",
     "@tanstack/react-query": "^5.80.3",
     "@types/aws-lambda": "^8.10.149",
     "@types/express": "^5.0.0",
@@ -235,7 +218,6 @@
     "tsdown": "0.12.7",
     "typescript": "^5.9.2",
     "valibot": "1.2.0",
-    "vscode-languageserver-textdocument": "^1.0.12",
     "ws": "^8.0.0",
     "yup": "^1.0.0",
     "zod": "^4.2.1"

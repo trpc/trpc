@@ -7,7 +7,7 @@
  */
 import superjson from 'superjson';
 import { z } from 'zod';
-import { initTRPC } from '../index';
+import { initTRPC } from '@trpc/server';
 
 const t = initTRPC.create();
 
