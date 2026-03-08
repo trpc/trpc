@@ -76,6 +76,20 @@ const config: SidebarsConfig = {
         'client/overview',
         {
           type: 'category',
+          label: 'Recipes',
+          collapsed: true,
+          items: [
+            'client/recipes/overview',
+            'client/recipes/making-your-own-client',
+            'client/recipes/integrating-with-ai-sdk',
+            'client/recipes/integrating-with-tanstack-start',
+            'client/recipes/writing-your-own-link',
+            'client/recipes/microservices-soa',
+            'client/recipes/authentication-and-authorization-using-middleware',
+          ],
+        },
+        {
+          type: 'category',
           label: 'Vanilla Client',
           collapsed: true,
           items: [
