@@ -171,6 +171,9 @@ describe('with per-procedure typed errors', () => {
     expectTypeOf(typedErr.shape).toEqualTypeOf<
       GlobalFormattedShape | TypedProcedureErrorShape
     >();
+    expectTypeOf(typedErr.data).toEqualTypeOf<
+      GlobalFormattedShape['data'] | TypedProcedureErrorShape['data'] | undefined
+    >();
     expect(typedErr.shape).toMatchInlineSnapshot(`
       Object {
         "code": -32001,
@@ -185,6 +188,9 @@ describe('with per-procedure typed errors', () => {
     assert(isTRPCClientError<typeof appRouter>(undeclaredErr));
     expectTypeOf(undeclaredErr.shape).toEqualTypeOf<
       GlobalFormattedShape | TypedProcedureErrorShape
+    >();
+    expectTypeOf(undeclaredErr.data).toEqualTypeOf<
+      GlobalFormattedShape['data'] | TypedProcedureErrorShape['data'] | undefined
     >();
     expect(undeclaredErr.shape?.code).toBe(-32603);
     expect(undeclaredErr.shape?.message).toBe('BAD_PHONE');

@@ -71,7 +71,6 @@ export interface Procedure<
     /**
      * Detectable typed errors for this procedure
      */
-    errors: readonly ProcedureErrorConstructor[];
     errorFactories: ProcedureErrorFactoryMap;
   };
   meta: TDef['meta'];
