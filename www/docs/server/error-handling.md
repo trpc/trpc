@@ -33,21 +33,22 @@ tRPC defines a list of error codes that each represent a different type of error
 
 | Code                   | Description                                                                                                                                                                                                                                                                                      | HTTP code |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------- |
+| PARSE_ERROR            | Invalid JSON was received by the server, or an error occurred while parsing the request.                                                                                                                                                                                                         | 400       |
 | BAD_REQUEST            | The server cannot or will not process the request due to something that is perceived to be a client error.                                                                                                                                                                                       | 400       |
 | UNAUTHORIZED           | The client request has not been completed because it lacks valid authentication credentials for the requested resource.                                                                                                                                                                          | 401       |
 | PAYMENT_REQUIRED       | The client request requires payment to access the requested resource.                                                                                                                                                                                                                            | 402       |
-| FORBIDDEN              | The server was unauthorized to access a required data source, such as a REST API.                                                                                                                                                                                                                | 403       |
+| FORBIDDEN              | The client is not authorized to access the requested resource.                                                                                                                                                                                                                                   | 403       |
 | NOT_FOUND              | The server cannot find the requested resource.                                                                                                                                                                                                                                                   | 404       |
 | METHOD_NOT_SUPPORTED   | The server knows the request method, but the target resource doesn't support this method.                                                                                                                                                                                                        | 405       |
 | TIMEOUT                | The server would like to shut down this unused connection.                                                                                                                                                                                                                                       | 408       |
-| CONFLICT               | The server request resource conflict with the current state of the target resource.                                                                                                                                                                                                              | 409       |
+| CONFLICT               | The request conflicts with the current state of the target resource.                                                                                                                                                                                                                             | 409       |
 | PRECONDITION_FAILED    | Access to the target resource has been denied.                                                                                                                                                                                                                                                   | 412       |
 | PAYLOAD_TOO_LARGE      | Request entity is larger than limits defined by server.                                                                                                                                                                                                                                          | 413       |
 | UNSUPPORTED_MEDIA_TYPE | The server refuses to accept the request because the payload format is in an unsupported format.                                                                                                                                                                                                 | 415       |
 | UNPROCESSABLE_CONTENT  | The server understands the request method, and the request entity is correct, but the server was unable to process it.                                                                                                                                                                           | 422       |
 | PRECONDITION_REQUIRED  | [The server cannot process the request because a required precondition header (such as `If-Match`) is missing. When a precondition header does not match the server-side state, the response should be `412 Precondition Failed`.](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/428) | 428       |
 | TOO_MANY_REQUESTS      | The rate limit has been exceeded or too many requests are being sent to the server.                                                                                                                                                                                                              | 429       |
-| CLIENT_CLOSED_REQUEST  | Access to the resource has been denied.                                                                                                                                                                                                                                                          | 499       |
+| CLIENT_CLOSED_REQUEST  | The client closed the connection before the server finished responding.                                                                                                                                                                                                                          | 499       |
 | INTERNAL_SERVER_ERROR  | An unspecified error occurred.                                                                                                                                                                                                                                                                   | 500       |
 | NOT_IMPLEMENTED        | The server does not support the functionality required to fulfill the request.                                                                                                                                                                                                                   | 501       |
 | BAD_GATEWAY            | The server received an invalid response from the upstream server.                                                                                                                                                                                                                                | 502       |
@@ -76,7 +77,7 @@ if (error instanceof TRPCError) {
 
 :::tip
 
-There's a full example of how this could be used in a Next.js API endpoint in the [Server Side Calls docs](server-side-calls).
+There's a full example of how error handling works in a server-side context in the [Server Side Calls docs](server-side-calls).
 
 :::
 
@@ -86,10 +87,12 @@ tRPC provides an error subclass, `TRPCError`, which you can use to represent an 
 
 For example, throwing this error:
 
-```ts title='server.ts'
+```ts twoslash title='server.ts'
 import { initTRPC, TRPCError } from '@trpc/server';
 
 const t = initTRPC.create();
+
+const theError = new Error('something went wrong');
 
 const appRouter = t.router({
   hello: t.procedure.query(() => {
@@ -105,7 +108,7 @@ const appRouter = t.router({
 // [...]
 ```
 
-Results to the following response:
+Results in the following response:
 
 ```json
 {
@@ -127,9 +130,19 @@ Results to the following response:
 
 All errors that occur in a procedure go through the `onError` method before being sent to the client. Here you can handle errors (To change errors see [error formatting](error-formatting)).
 
-```ts title='pages/api/trpc/[trpc].ts'
-export default trpcNext.createNextApiHandler({
-  // ...
+```ts twoslash title='server.ts'
+// @filename: router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: server.ts
+// ---cut---
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { appRouter } from './router';
+
+const server = createHTTPServer({
+  router: appRouter,
   onError(opts) {
     const { error, type, path, input, ctx, req } = opts;
     console.error('Error:', error);
@@ -142,13 +155,15 @@ export default trpcNext.createNextApiHandler({
 
 The `onError` parameter is an object that contains all information about the error and the context it occurs in:
 
-```ts
-{
-  error: TRPCError; // the original error
+```ts twoslash
+import { TRPCError } from '@trpc/server';
+// ---cut---
+interface OnErrorOpts {
+  error: TRPCError;
   type: 'query' | 'mutation' | 'subscription' | 'unknown';
-  path: string | undefined; // path of the procedure that was triggered
+  path: string | undefined;
   input: unknown;
-  ctx: Context | undefined;
-  req: BaseRequest; // request object
+  ctx: unknown;
+  req: Request;
 }
 ```

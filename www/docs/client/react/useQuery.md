@@ -13,11 +13,15 @@ For in-depth information about options and usage patterns, refer to the TanStack
 
 ## Signature
 
-```tsx
-function useQuery(
+```tsx twoslash
+type TInput = unknown;
+type SkipToken = symbol;
+interface UseQueryOptions {}
+// ---cut---
+declare function useQuery(
   input: TInput | SkipToken,
-  opts?: UseTRPCQueryOptions;
-)
+  opts?: UseTRPCQueryOptions,
+): void;
 
 interface UseTRPCQueryOptions
   extends UseQueryOptions {
@@ -31,8 +35,8 @@ interface UseTRPCQueryOptions
 
 Since `UseTRPCQueryOptions` extends `@tanstack/react-query`'s `UseQueryOptions`, you can use any of their options here such as `enabled`, `refetchOnWindowFocus`, etc. We also have some `trpc` specific options that let you opt in or out of certain behaviors on a per-procedure level:
 
-- **`trpc.ssr`:** If you have `ssr: true` in your [global config](/docs/client/nextjs/setup#ssr-boolean-default-false), you can set this to false to disable ssr for this particular query. _Note that this does not work the other way around, i.e., you can not enable ssr on a procedure if your global config is set to false._
-- **`trpc.abortOnUnmount`:** Override the [global config](/docs/client/nextjs/setup#config-callback) and opt in or out of aborting queries on unmount.
+- **`trpc.ssr`:** If you have `ssr: true` in your [global config](/docs/client/nextjs/pages-router/setup#ssr-boolean-default-false), you can set this to false to disable ssr for this particular query. _Note that this does not work the other way around, i.e., you can not enable ssr on a procedure if your global config is set to false._
+- **`trpc.abortOnUnmount`:** Override the [global config](/docs/client/nextjs/pages-router/setup#config-callback) and opt in or out of aborting queries on unmount.
 - **`trpc.context`:** Add extra meta data that could be used in [Links](/docs/client/links).
 
 :::tip
@@ -46,7 +50,7 @@ You'll notice that you get autocompletion on the `input` based on what you have 
 <details>
 <summary>Backend code</summary>
 
-```tsx title='server/routers/_app.ts'
+```tsx twoslash title='server/routers/_app.ts'
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -69,11 +73,34 @@ export const appRouter = t.router({
       };
     }),
 });
+
+export type AppRouter = typeof appRouter;
 ```
 
 </details>
 
-```tsx title='components/MyComponent.tsx'
+```tsx twoslash title='components/MyComponent.tsx'
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+const appRouter = t.router({
+  hello: t.procedure
+    .input(z.object({ text: z.string().nullish() }).nullish())
+    .query((opts) => {
+      return { greeting: `hello ${opts.input?.text ?? 'world'}` };
+    }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: components/MyComponent.tsx
+import React from 'react';
+// ---cut---
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {
@@ -105,7 +132,7 @@ export function MyComponent() {
 Since v11 we now support streaming queries when using the [`httpBatchStreamLink`](../links/httpBatchStreamLink.md#generators).
 :::
 
-When returning an async generators in a query, you will:
+When returning an async generator in a query, you will:
 
 - Get the results of the iterator in the `data`-property **as an array** which updates as the response comes in
 - The `status` will be `success` as soon as the first chunk is received.
@@ -113,11 +140,13 @@ When returning an async generators in a query, you will:
 
 ### Example
 
-```tsx title='server/routers/_app.ts'
-import { publicProcedure, router } from './trpc';
+```tsx twoslash title='server/routers/_app.ts'
+import { initTRPC } from '@trpc/server';
 
-const appRouter = router({
-  iterable: publicProcedure.query(async function* () {
+const t = initTRPC.create();
+
+const appRouter = t.router({
+  iterable: t.procedure.query(async function* () {
     for (let i = 0; i < 3; i++) {
       await new Promise((resolve) => setTimeout(resolve, 500));
       yield i;
@@ -128,8 +157,29 @@ const appRouter = router({
 export type AppRouter = typeof appRouter;
 ```
 
-```tsx title='components/MyComponent.tsx'
-import { trpc } from '~/utils';
+```tsx twoslash title='components/MyComponent.tsx'
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+const appRouter = t.router({
+  iterable: t.procedure.query(async function* () {
+    for (let i = 0; i < 3; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      yield i;
+    }
+  }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: components/MyComponent.tsx
+// ---cut---
+import React, { Fragment } from 'react';
+import { trpc } from '../utils/trpc';
 
 export function MyComponent() {
   const result = trpc.iterable.useQuery();
@@ -150,7 +200,7 @@ export function MyComponent() {
 | ----------- | ------------- | ----------- |
 | `'pending'` | `'fetching'`  | `undefined` |
 | `'success'` | `'fetching'`  | `[]`        |
-| `'success'` | `'fetching'`  | `[1]`       |
-| `'success'` | `'fetching'`  | `[1, 2]`    |
-| `'success'` | `'fetching'`  | `[1, 2, 3]` |
-| `'success'` | `'idle'`      | `[1, 2, 3]` |
+| `'success'` | `'fetching'`  | `[0]`       |
+| `'success'` | `'fetching'`  | `[0, 1]`    |
+| `'success'` | `'fetching'`  | `[0, 1, 2]` |
+| `'success'` | `'idle'`      | `[0, 1, 2]` |

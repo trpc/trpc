@@ -58,7 +58,7 @@ A sample router is given below, save it in a file named `router.ts`.
 <details>
   <summary>router.ts</summary>
 
-```ts title='router.ts'
+```ts twoslash title='router.ts'
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -108,7 +108,7 @@ A sample context is given below, save it in a file named `context.ts`:
 <details>
   <summary>context.ts</summary>
 
-```ts title='context.ts'
+```ts twoslash title='context.ts'
 import { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
 
 export function createContext({ req, res }: CreateFastifyContextOptions) {
@@ -130,7 +130,23 @@ tRPC includes an adapter for [Fastify](https://www.fastify.io/) out of the box. 
 Due to limitations in Fastify's plugin system and type inference, there might be some issues getting for example `onError` typed correctly. You can add a `satisfies FastifyTRPCPluginOptions<AppRouter>['trpcOptions']` to help TypeScript out and get the correct types.
 :::
 
-```ts title='server.ts'
+```ts twoslash title='server.ts'
+// @types: node
+// @filename: router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: context.ts
+import { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
+export function createContext({ req, res }: CreateFastifyContextOptions) {
+  const user = { name: req.headers.username ?? 'anonymous' };
+  return { req, res, user };
+}
+
+// @filename: server.ts
+// ---cut---
 import {
   fastifyTRPCPlugin,
   FastifyTRPCPluginOptions,
@@ -169,14 +185,14 @@ server.register(fastifyTRPCPlugin, {
 
 Your endpoints are now available via HTTP!
 
-| Endpoint     | HTTP URI                                                                                                       |
-| ------------ | -------------------------------------------------------------------------------------------------------------- |
-| `getUser`    | `GET http://localhost:3000/trpc/getUserById?input=INPUT` <br/><br/>where `INPUT` is a URI-encoded JSON string. |
-| `createUser` | `POST http://localhost:3000/trpc/createUser` <br/><br/>with `req.body` of type `User`                          |
+| Endpoint      | HTTP URI                                                                                                       |
+| ------------- | -------------------------------------------------------------------------------------------------------------- |
+| `getUserById` | `GET http://localhost:3000/trpc/getUserById?input=INPUT` <br/><br/>where `INPUT` is a URI-encoded JSON string. |
+| `createUser`  | `POST http://localhost:3000/trpc/createUser` <br/><br/>with `req.body` of type `User`                          |
 
 ## Enable WebSockets
 
-The Fastify adapter supports [WebSockets](../websockets.md) via the [@fastify/websocket](https://www.npmjs.com/package/@fastify/websocket) plugin. All you have to do in addition to the above steps is install the dependency, add some subscriptions to your router and activate the `useWSS` [option](#fastify-plugin-options) in the plugin. The minimum Fastify version required for `@fastify/websocket` is `3.11.0`.
+The Fastify adapter supports [WebSockets](../websockets.md) via the [@fastify/websocket](https://www.npmjs.com/package/@fastify/websocket) plugin. All you have to do in addition to the above steps is install the dependency, add some subscriptions to your router, and activate the `useWSS` [option](#fastify-plugin-options) in the plugin. The minimum `@fastify/websocket` version required is `3.11.0`.
 
 ### Install dependencies
 
@@ -186,7 +202,15 @@ yarn add @fastify/websocket
 
 ### Import and register `@fastify/websocket`
 
-```ts
+```ts twoslash
+// @filename: node_modules/@fastify/websocket/index.d.ts
+declare const plugin: any;
+export default plugin;
+
+// @filename: server.ts
+import fastify from 'fastify';
+declare const server: ReturnType<typeof fastify>;
+// ---cut---
 import ws from '@fastify/websocket';
 
 server.register(ws);
@@ -196,9 +220,8 @@ server.register(ws);
 
 Edit the `router.ts` file created in the previous steps and add the following code:
 
-```ts title='router.ts'
+```ts twoslash title='router.ts'
 import { initTRPC } from '@trpc/server';
-import { observable } from '@trpc/server/observable';
 
 const t = initTRPC.create();
 
@@ -214,27 +237,54 @@ export const appRouter = t.router({
 
 ### Activate the `useWSS` option
 
-```ts title='server.ts'
+```ts twoslash title='server.ts'
+// @filename: router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: context.ts
+import { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
+export function createContext({ req, res }: CreateFastifyContextOptions) {
+  return { req, res };
+}
+
+// @filename: server.ts
+// ---cut---
+import {
+  fastifyTRPCPlugin,
+  FastifyTRPCPluginOptions,
+} from '@trpc/server/adapters/fastify';
+import fastify from 'fastify';
+import { createContext } from './context';
+import { appRouter, type AppRouter } from './router';
+
+const server = fastify();
+
 server.register(fastifyTRPCPlugin, {
   useWSS: true,
-  // Enable heartbeat messages to keep connection open (disabled by default)
-  keepAlive: {
-    enabled: true,
-    // server ping message interval in milliseconds
-    pingMs: 30000,
-    // connection is terminated if pong message is not received in this many milliseconds
-    pongWaitMs: 5000,
+  trpcOptions: {
+    router: appRouter,
+    createContext,
+    // Enable heartbeat messages to keep connection open (disabled by default)
+    keepAlive: {
+      enabled: true,
+      // server ping message interval in milliseconds
+      pingMs: 30000,
+      // connection is terminated if pong message is not received in this many milliseconds
+      pongWaitMs: 5000,
+    },
   },
-  // ...
 });
 ```
 
-It's alright, you can subscribe to the topic `randomNumber` and you should receive a random number every second 🚀.
+You can now subscribe to the `randomNumber` topic and should receive a random number every second 🚀.
 
 ## Fastify plugin options
 
-| name        | type                     | optional | default   | description |
-| ----------- | ------------------------ | -------- | --------- | ----------- |
-| prefix      | `string`                 | `true`   | `"/trpc"` |             |
-| useWSS      | `boolean`                | `true`   | `false`   |             |
-| trpcOptions | `NodeHTTPHandlerOptions` | `false`  | `n/a`     |             |
+| name        | type                                               | optional | default   | description                                                    |
+| ----------- | -------------------------------------------------- | -------- | --------- | -------------------------------------------------------------- |
+| prefix      | `string`                                           | `true`   | `"/trpc"` | URL prefix for tRPC routes                                     |
+| useWSS      | `boolean`                                          | `true`   | `false`   | Enable WebSocket support via `@fastify/websocket`              |
+| trpcOptions | `FastifyHandlerOptions<AppRouter, Request, Reply>` | `false`  | `n/a`     | tRPC handler options including `router`, `createContext`, etc. |

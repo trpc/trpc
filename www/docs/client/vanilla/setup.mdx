@@ -26,9 +26,18 @@ import ImportAppRouter from '../../partials/_import-approuter.mdx';
 
 Create a tRPC client with the `createTRPCClient` method, and add a `links` array with a [terminating link](../links/overview.md#the-terminating-link) pointing at your API. To learn more about tRPC links, [click here](../links/overview.md).
 
-```ts title='client.ts'
+```ts twoslash title='client.ts'
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+declare function getAuthCookie(): string;
+// ---cut---
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
-import type { AppRouter } from '../path/to/server/trpc';
+import type { AppRouter } from './server';
 
 const client = createTRPCClient<AppRouter>({
   links: [
@@ -50,7 +59,25 @@ const client = createTRPCClient<AppRouter>({
 
 Under the hood this creates a typed [JavaScript Proxy](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) which allows you to interact with your tRPC API in a fully type-safe way:
 
-```ts title='client.ts'
+```ts twoslash title='client.ts'
+// @target: esnext
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+const appRouter = t.router({
+  getUser: t.procedure.input(z.string()).query(({ input }) => ({ id: input, name: 'Bilbo' })),
+  createUser: t.procedure.input(z.object({ name: z.string() })).mutation(({ input }) => ({ id: 'id_frodo', ...input })),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import type { AppRouter } from './server';
+const client = createTRPCClient<AppRouter>({
+  links: [httpBatchLink({ url: 'http://localhost:3000/trpc' })],
+});
+// ---cut---
 const bilbo = await client.getUser.query('id_bilbo');
 // => { id: 'id_bilbo', name: 'Bilbo' };
 

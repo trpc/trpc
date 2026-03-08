@@ -22,14 +22,10 @@ const config: SidebarsConfig = {
       type: 'category',
       label: 'tRPC',
       collapsed: false,
-      link: {
-        type: 'doc',
-        id: 'main/introduction',
-      },
       items: [
-        'main/getting-started',
-        'main/concepts',
+        'main/introduction',
         'main/quickstart',
+        'main/concepts',
         'main/videos-and-community-resources',
         'main/example-apps',
       ],
@@ -38,28 +34,20 @@ const config: SidebarsConfig = {
       type: 'category',
       label: 'Backend Usage',
       collapsed: true,
-      link: {
-        type: 'generated-index',
-        title: 'tRPC server documentation',
-        slug: '/server/introduction',
-      },
       items: [
+        'server/overview',
         'server/routers',
         'server/procedures',
-        'server/validators',
-        'server/non-json-content-types',
-        'server/merging-routers',
         'server/context',
+        'server/validators',
         'server/middlewares',
+        'server/merging-routers',
         {
           type: 'category',
-          label: 'Hosting tRPC with Adapters',
+          label: 'Adapters',
           collapsed: true,
-          link: {
-            type: 'doc',
-            id: 'server/adapters-intro',
-          },
           items: [
+            'server/adapters',
             'server/adapters/standalone',
             'server/adapters/express',
             'server/adapters/fastify',
@@ -73,6 +61,7 @@ const config: SidebarsConfig = {
         'server/error-handling',
         'server/error-formatting',
         'server/data-transformers',
+        'server/non-json-content-types',
         'server/metadata',
         'server/caching',
         'server/subscriptions',
@@ -83,21 +72,25 @@ const config: SidebarsConfig = {
       type: 'category',
       label: 'Client Usage',
       collapsed: true,
-      link: {
-        type: 'doc',
-        id: 'client/overview',
-      },
       items: [
+        'client/overview',
+        {
+          type: 'category',
+          label: 'Vanilla Client',
+          collapsed: true,
+          items: [
+            'client/vanilla/overview',
+            'client/vanilla/setup',
+            'client/vanilla/infer-types',
+            'client/vanilla/aborting-procedure-calls',
+          ],
+        },
         {
           type: 'category',
           label: 'TanStack React Query (⭐️)',
           collapsed: true,
-          link: {
-            type: 'generated-index',
-            title: 'TanStack React Query',
-            slug: '/client/tanstack-react-query',
-          },
           items: [
+            'client/tanstack-react-query/overview',
             'client/tanstack-react-query/setup',
             'client/tanstack-react-query/usage',
             'client/tanstack-react-query/migrating',
@@ -108,11 +101,8 @@ const config: SidebarsConfig = {
           type: 'category',
           label: 'React Query Integration (Classic)',
           collapsed: true,
-          link: {
-            type: 'doc',
-            id: 'client/react/introduction',
-          },
           items: [
+            'client/react/overview',
             'client/react/setup',
             'client/react/server-components',
             'client/react/infer-types',
@@ -133,42 +123,38 @@ const config: SidebarsConfig = {
           type: 'category',
           label: 'Next.js Integration',
           collapsed: true,
-          link: {
-            type: 'doc',
-            id: 'client/nextjs/introduction',
-          },
           items: [
-            'client/nextjs/setup',
-            'client/nextjs/ssr',
-            'client/nextjs/ssg',
-            'client/nextjs/server-side-helpers',
-            'client/nextjs/aborting-procedure-calls',
+            'client/nextjs/overview',
+            {
+              type: 'category',
+              label: 'App Router',
+              collapsed: false,
+              items: [
+                'client/nextjs/app-router/setup',
+                'client/nextjs/app-router/server-actions',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'Pages Router',
+              collapsed: true,
+              items: [
+                'client/nextjs/pages-router/setup',
+                'client/nextjs/pages-router/ssr',
+                'client/nextjs/pages-router/ssg',
+                'client/nextjs/pages-router/server-side-helpers',
+                'client/nextjs/pages-router/aborting-procedure-calls',
+              ],
+            },
             'client/nextjs/starter-projects',
-          ],
-        },
-        {
-          type: 'category',
-          label: 'Vanilla Client',
-          collapsed: true,
-          link: {
-            type: 'doc',
-            id: 'client/vanilla/introduction',
-          },
-          items: [
-            'client/vanilla/setup',
-            'client/vanilla/infer-types',
-            'client/vanilla/aborting-procedure-calls',
           ],
         },
         {
           type: 'category',
           label: 'Links',
           collapsed: true,
-          link: {
-            type: 'doc',
-            id: 'client/links/overview',
-          },
           items: [
+            'client/links/overview',
             'client/links/httpLink',
             'client/links/httpBatchLink',
             'client/links/httpBatchStreamLink',
@@ -178,27 +164,11 @@ const config: SidebarsConfig = {
             'client/links/splitLink',
             'client/links/loggerLink',
             'client/links/retryLink',
+            'client/headers',
+            'client/cors',
           ],
         },
-        'client/headers',
-        'client/cors',
       ],
-    },
-    {
-      type: 'category',
-      label: 'Extra information',
-      collapsed: true,
-      link: {
-        type: 'generated-index',
-        title: 'Extra Information',
-        slug: '/further',
-      },
-      items: ['further/faq', 'further/rpc', 'further/further-reading'],
-    },
-    ...(env.TYPEDOC ? [typeDoc] : []),
-    {
-      type: 'doc',
-      id: 'migration/migrate-from-v10-to-v11',
     },
     {
       type: 'category',
@@ -211,6 +181,18 @@ const config: SidebarsConfig = {
         'community/sponsors',
       ],
     },
+    {
+      type: 'category',
+      label: 'Extra information',
+      collapsed: true,
+      items: [
+        'further/faq',
+        'further/rpc',
+        'further/further-reading',
+        'migration/migrate-from-v10-to-v11',
+      ],
+    },
+    ...(env.TYPEDOC ? [typeDoc] : []),
   ],
 };
 
