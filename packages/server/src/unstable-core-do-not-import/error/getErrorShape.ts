@@ -3,11 +3,11 @@ import type { ProcedureType } from '../procedure';
 import type { AnyRootTypes, RootConfig } from '../rootConfig';
 import { TRPC_ERROR_CODES_BY_KEY } from '../rpc';
 import type { DefaultErrorShape } from './formatter';
+import type { TRPCError } from './TRPCError';
 import {
   procedureErrorKeySymbol,
   TRPCProcedureError,
 } from './TRPCProcedureError';
-import type { TRPCError } from './TRPCError';
 
 /**
  * @internal
@@ -25,7 +25,7 @@ export function getErrorShape<TRoot extends AnyRootTypes>(opts: {
     cause instanceof TRPCProcedureError &&
     typeof cause[procedureErrorKeySymbol] === 'string'
   ) {
-      return cause.shape as TRoot['errorShape'];
+    return cause.shape as TRoot['errorShape'];
   }
 
   const { path, error, config } = opts;

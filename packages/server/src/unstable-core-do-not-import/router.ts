@@ -4,10 +4,10 @@ import { defaultFormatter } from './error/formatter';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
   AnyProcedure,
-  inferProcedureParams,
   ErrorHandlerOptions,
   inferProcedureInput,
   inferProcedureOutput,
+  inferProcedureParams,
   LegacyObservableSubscriptionProcedure,
 } from './procedure';
 import type { ProcedureCallOptions } from './procedureBuilder';
