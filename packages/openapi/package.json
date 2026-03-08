@@ -34,6 +34,16 @@
         "types": "./dist/index.d.cts",
         "default": "./dist/index.cjs"
       }
+    },
+    "./heyapi": {
+      "import": {
+        "types": "./dist/heyapi/index.d.mts",
+        "default": "./dist/heyapi/index.mjs"
+      },
+      "require": {
+        "types": "./dist/heyapi/index.d.cts",
+        "default": "./dist/heyapi/index.cjs"
+      }
     }
   },
   "main": "./dist/index.cjs",
@@ -63,7 +73,14 @@
     "zod": "^4.2.1"
   },
   "peerDependencies": {
+    "@hey-api/client-fetch": ">=0.13.0",
+    "@trpc/server": ">=11.0.0",
     "typescript": ">=5.7.2"
+  },
+  "peerDependenciesMeta": {
+    "@hey-api/client-fetch": {
+      "optional": true
+    }
   },
   "funding": [
     "https://trpc.io/sponsor"

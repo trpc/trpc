@@ -3,7 +3,7 @@ import { defineConfig } from 'tsdown';
 export default [
   defineConfig({
     target: ['node18', 'es2017'],
-    entry: ['src/index.ts'],
+    entry: ['src/index.ts', 'src/heyapi/index.ts'],
     dts: {
       sourcemap: true,
       tsconfig: './tsconfig.build.json',
