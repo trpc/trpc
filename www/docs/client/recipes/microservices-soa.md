@@ -11,15 +11,15 @@ This approach is powerful, but adds operational complexity. Prefer a single rout
 
 Good fit:
 
-- independent teams/services already exist
-- strict deployment boundaries are required
-- gateway-level contracts are part of platform architecture
+- Independent teams/services already exist
+- Strict deployment boundaries are required
+- Gateway-level contracts are part of platform architecture
 
 Bad fit:
 
-- one product team with tightly coupled domain logic
-- early-stage product without proven service boundaries
-- no operational capacity for distributed tracing/reliability engineering
+- One product team with tightly coupled domain logic
+- Early-stage product without proven service boundaries
+- No operational capacity for distributed tracing/reliability engineering
 
 ```ts twoslash
 // @filename: gateway.ts
@@ -66,9 +66,9 @@ See the full SOA example in this repo:
 
 The repo example uses:
 
-- multiple servers (`server-a`, `server-b`)
-- a shared server library for consistent base configuration
-- a client-side terminating link that routes calls by path prefix
+- Multiple servers (`server-a`, `server-b`)
+- A shared server library for consistent base configuration
+- A client-side terminating link that routes calls by path prefix
 
 This keeps a single typed client contract while dispatching to multiple service endpoints at runtime.
 

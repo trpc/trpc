@@ -11,10 +11,10 @@ When using the AI SDK, tRPC is a good fit for typed tool calls and chat/session 
 
 This gives you one typed boundary for:
 
-- chat input validation
-- model/provider selection
-- persistence and audit logging
-- stream lifecycle controls (start/stop/resume)
+- Chat input validation
+- Model/provider selection
+- Persistence and audit logging
+- Stream lifecycle controls (start/stop/resume)
 
 ```ts twoslash
 // @target: esnext
@@ -65,9 +65,9 @@ The procedure should stay thin: validate input, call service layer, return strea
 
 The referenced example demonstrates a robust pattern with TanStack React Query where:
 
-- optimistic UI state is applied immediately
-- stream chunks progressively update cached messages
-- resume/stop semantics are implemented explicitly
+- Optimistic UI state is applied immediately
+- Stream chunks progressively update cached messages
+- Resume/stop semantics are implemented explicitly
 
 Reference implementation by Chris Cook:
 

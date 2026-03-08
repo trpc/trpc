@@ -12,9 +12,9 @@ The key is to call tRPC with an untyped client internally and wrap calls in your
 `createTRPCUntypedClient` gives you direct runtime access to procedure calls by `path` and `input`.
 That is ideal when your framework wants:
 
-- service methods with framework-specific return types
-- centralized retry/auth/error behavior
-- request cancellation integration with framework lifecycle hooks
+- Service methods with framework-specific return types
+- Centralized retry/auth/error behavior
+- Request cancellation integration with framework lifecycle hooks
 
 Your wrapper owns the runtime shape, while tRPC still owns transport and procedure contracts.
 
@@ -61,19 +61,19 @@ From here, map `query$` / `mutation$` into your framework's preferred primitives
 1. Build one internal "transport client" (like `untypedClient`) near app boot.
 2. Create framework-facing service methods (`userService.getById$`, `postService.create$`, etc.).
 3. Centralize cross-cutting concerns in one place:
-   - auth headers
-   - retry policy
-   - logging/tracing
-   - error normalization
+   - Auth headers
+   - Retry policy
+   - Logging/tracing
+   - Error normalization
 4. Keep UI/component layers unaware of raw tRPC path strings.
 
 ## Angular-specific notes
 
 If you're integrating with Angular:
 
-- adapt this observable wrapper into RxJS streams returned by injectable services
-- wire request cancellation to subscription teardown
-- map transport errors into your domain-specific error types for better component ergonomics
+- Adapt this observable wrapper into RxJS streams returned by injectable services
+- Wire request cancellation to subscription teardown
+- Map transport errors into your domain-specific error types for better component ergonomics
 
 ## Pitfalls to avoid
 

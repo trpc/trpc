@@ -11,10 +11,10 @@ Every link returns an observable. This lets you intercept responses and still pr
 
 Reach for a custom link when built-in links cannot express your behavior clearly, for example:
 
-- operation-aware routing (multi-backend dispatch)
-- organization-specific telemetry/tracing envelopes
-- custom retry or circuit-breaker logic
-- app-specific request metadata propagation
+- Operation-aware routing (multi-backend dispatch)
+- Organization-specific telemetry/tracing envelopes
+- Custom retry or circuit-breaker logic
+- App-specific request metadata propagation
 
 If a built-in link already solves it, prefer composition before custom code.
 
