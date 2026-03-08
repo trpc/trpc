@@ -168,6 +168,9 @@ describe('with per-procedure typed errors', () => {
     await using ctx = testServerAndClientResource(appRouter);
     const typedErr = await waitError(ctx.client.typedError.query());
     assert(isTRPCClientError<typeof appRouter>(typedErr));
+    expectTypeOf(typedErr.shape).toEqualTypeOf<
+      GlobalFormattedShape | TypedProcedureErrorShape
+    >();
     expect(typedErr.shape).toMatchInlineSnapshot(`
       Object {
         "code": -32001,
@@ -180,6 +183,9 @@ describe('with per-procedure typed errors', () => {
 
     const undeclaredErr = await waitError(ctx.client.undeclaredTypedError.query());
     assert(isTRPCClientError<typeof appRouter>(undeclaredErr));
+    expectTypeOf(undeclaredErr.shape).toEqualTypeOf<
+      GlobalFormattedShape | TypedProcedureErrorShape
+    >();
     expect(undeclaredErr.shape?.code).toBe(-32603);
     expect(undeclaredErr.shape?.message).toBe('BAD_PHONE');
     expect(undeclaredErr.data?.foo).toBe('bar');
