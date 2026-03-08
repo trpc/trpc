@@ -1,17 +1,25 @@
 ---
 id: openapi
 title: OpenAPI / REST Client Generation
-sidebar_label: OpenAPI Export
-slug: /client/openapi
+sidebar_label: OpenAPI Export (alpha)
+slug: /openapi
 ---
 
 :::caution
-The package described here is an alpha release and APIs may for no apparently reason.
-
-Given it's targeting a specification the actual results should only improve over time
+This package is in alpha. APIs may change without notice.
 :::
 
 The `@trpc/openapi` package generates an OpenAPI 3.1 specification from your tRPC router at build time. You can then feed this spec into any OpenAPI code generator (e.g. [hey-api/openapi-ts](https://github.com/hey-api/openapi-ts)) to produce a typed REST client — useful for consumers that don't use tRPC directly.
+
+**The workflow in three steps:**
+
+1. **Generate** an OpenAPI spec from your tRPC router (static analysis — your code is never executed)
+2. **Run** an OpenAPI client generator to produce a typed SDK
+3. **Configure** the SDK with a tRPC-aware helper so it handles tRPC's query format and response envelope
+
+:::tip
+For a complete, runnable project that ties all of these steps together, see the [openapi-codegen example](https://github.com/trpc/trpc/tree/main/examples/openapi-codegen).
+:::
 
 ## Install
 
@@ -67,9 +75,9 @@ This produces typed SDK functions matching your tRPC procedures:
 - **Mutations** → `POST /procedure.path` with JSON body
 - **Subscriptions** are skipped (SSE coming soon)
 
-## Using the generated client
+## Configure the client for tRPC
 
-tRPC uses a custom query format and response envelope that OpenAPI clients don't handle natively. The `@trpc/openapi/heyapi` package provides a `createTRPCHeyApiClientConfig` helper that configures the hey-api client to work correctly with tRPC endpoints.
+Out of the box, an OpenAPI-generated client won't know about transformers usage. The `@trpc/openapi/heyapi` package provides a `createTRPCHeyApiClientConfig` helper that bridges this gap — it configures request serialization and response parsing so the generated SDK works correctly with tRPC endpoints.
 
 ### Without a transformer
 

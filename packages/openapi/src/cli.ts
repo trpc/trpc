@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* eslint-disable no-console */
 /**
- * trpc-openapi – CLI that generates an OpenAPI 3.0 document from a tRPC
+ * trpc-openapi – CLI that generates an OpenAPI 3.1 document from a tRPC
  * AppRouter type.
  *
  * Usage:
@@ -83,7 +83,7 @@ function parseArgs(argv: string[]): ParsedArgs {
 // ---------------------------------------------------------------------------
 
 const HELP = `
-trpc-openapi – Generate an OpenAPI 3.0 document from a tRPC AppRouter type.
+trpc-openapi – Generate an OpenAPI 3.1 document from a tRPC AppRouter type.
 
 Usage:
   trpc-openapi <router-file> [options]

@@ -39,7 +39,6 @@ async function main() {
       {
         name: '@hey-api/sdk',
         operations: { strategy: 'single' },
-        // transformer: true // WTF?!
         transformer: '@hey-api/transformers',
       },
       { name: '@hey-api/client-fetch' },

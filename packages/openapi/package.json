@@ -15,6 +15,14 @@
     "url": "git+https://github.com/trpc/trpc.git",
     "directory": "packages/openapi"
   },
+  "eslintConfig": {
+    "rules": {
+      "no-restricted-imports": [
+        "error",
+        "@trpc/openapi"
+      ]
+    }
+  },
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
@@ -54,7 +62,9 @@
     "README.md",
     "package.json",
     "!**/*.test.*",
-    "!**/__tests__"
+    "!**/__tests__",
+    "!test",
+    "heyapi"
   ],
   "publishConfig": {
     "access": "public"
@@ -63,8 +73,9 @@
     "@hey-api/client-fetch": "^0.13.1",
     "@hey-api/openapi-ts": "^0.94.0",
     "@swagger-api/apidom-ls": "^1.6.0",
-    "@trpc/server": "workspace:*",
+    "@trpc/server": "11.12.0",
     "@types/node": "^22.13.5",
+    "eslint": "^9.26.0",
     "superjson": "^1.12.4",
     "tsdown": "0.12.7",
     "typescript": "^5.9.2",
@@ -73,7 +84,7 @@
   },
   "peerDependencies": {
     "@hey-api/client-fetch": ">=0.13.0",
-    "@trpc/server": ">=11.0.0",
+    "@trpc/server": "11.12.0",
     "typescript": ">=5.7.2"
   },
   "peerDependenciesMeta": {
