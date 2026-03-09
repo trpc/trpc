@@ -605,9 +605,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
     // If the stream closes before emitting any head data,
     // we need to reject the headDeferred to prevent hanging
     if (headDeferred) {
-      headDeferred.reject(
-        new Error('Stream closed before head was received'),
-      );
+      headDeferred.reject(new Error('Stream closed before head was received'));
       headDeferred = null;
     }
     // Close stream controllers (not error them)
