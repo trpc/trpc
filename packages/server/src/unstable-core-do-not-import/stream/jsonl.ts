@@ -602,8 +602,15 @@ export async function jsonlStreamConsumer<THead>(opts: {
   }
 
   const handleClose = () => {
-    // On normal completion, we should not reject the headDeferred
-    // and we should close stream controllers (not error them)
+    // If the stream closes before emitting any head data,
+    // we need to reject the headDeferred to prevent hanging
+    if (headDeferred) {
+      headDeferred.reject(
+        new Error('Stream closed before head was received'),
+      );
+      headDeferred = null;
+    }
+    // Close stream controllers (not error them)
     // to preserve any buffered chunks
     streamManager.closeAll();
   };
