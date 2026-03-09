@@ -667,3 +667,40 @@ test('regression: encode/decode with superjson at top level', async () => {
 
   expect(abortController.signal.aborted).toBe(true);
 });
+
+// https://github.com/trpc/trpc/issues/7209
+test('regression: buffered chunks preserved on normal stream completion', async () => {
+  const abortController = new AbortController();
+  const data = {
+    0: Promise.resolve({
+      [Symbol.asyncIterator]: async function* () {
+        // Yield multiple values quickly
+        for (let i = 0; i < 5; i++) {
+          yield i;
+        }
+      },
+    }),
+  } as const;
+  const stream = jsonlStreamProducer({
+    data,
+    serialize: (v) => SuperJSON.serialize(v),
+  });
+
+  const [head] = await jsonlStreamConsumer<typeof data>({
+    from: stream,
+    deserialize: (v) => SuperJSON.deserialize(v),
+    abortController,
+  });
+
+  const iterable = await head[0];
+
+  // Consume all values from the iterable
+  const values: number[] = [];
+  for await (const item of iterable) {
+    values.push(item);
+  }
+
+  // All buffered chunks should be delivered on normal completion
+  expect(values).toEqual([0, 1, 2, 3, 4]);
+  expect(abortController.signal.aborted).toBe(true);
+});
