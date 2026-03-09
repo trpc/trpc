@@ -615,6 +615,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
 
   const handleAbort = (reason?: unknown) => {
     headDeferred?.reject(reason);
+    headDeferred = null;
     streamManager.cancelAll(reason);
   };
 
