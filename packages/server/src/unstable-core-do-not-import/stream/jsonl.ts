@@ -493,9 +493,19 @@ function createStreamsManager(abortController: AbortController) {
     }
   }
 
+  /**
+   * Closes all pending controllers to preserve buffered data
+   */
+  function closeAll() {
+    for (const controller of controllerMap.values()) {
+      controller.close();
+    }
+  }
+
   return {
     getOrCreate,
     cancelAll,
+    closeAll,
   };
 }
 
@@ -591,7 +601,14 @@ export async function jsonlStreamConsumer<THead>(opts: {
     return data;
   }
 
-  const closeOrAbort = (reason?: unknown) => {
+  const handleClose = () => {
+    // On normal completion, we should not reject the headDeferred
+    // and we should close stream controllers (not error them)
+    // to preserve any buffered chunks
+    streamManager.closeAll();
+  };
+
+  const handleAbort = (reason?: unknown) => {
     headDeferred?.reject(reason);
     streamManager.cancelAll(reason);
   };
@@ -618,13 +635,13 @@ export async function jsonlStreamConsumer<THead>(opts: {
           const controller = streamManager.getOrCreate(idx);
           controller.enqueue(chunk);
         },
-        close: closeOrAbort,
-        abort: closeOrAbort,
+        close: handleClose,
+        abort: handleAbort,
       }),
     )
     .catch((error) => {
       opts.onError?.({ error });
-      closeOrAbort(error);
+      handleAbort(error);
     });
 
   return [await headDeferred.promise] as const;
