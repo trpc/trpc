@@ -1,7 +1,7 @@
 ---
 id: openapi
-title: OpenAPI / REST Client Generation
-sidebar_label: OpenAPI Export (alpha)
+title: OpenAPI (alpha)
+sidebar_label: OpenAPI (alpha)
 slug: /openapi
 ---
 
@@ -52,11 +52,11 @@ const doc = generateOpenAPIDocument('./src/server/router.ts', {
 });
 ```
 
-The generator statically analyzes your router's TypeScript types — it never executes your code.
+The generator statically analyses your router's TypeScript types — it never executes your code.
 
 ## Generate a client from the spec
 
-Any OpenAPI client generator should work. But the most hardened pathway currently is with [HeyAPI](https://heyapi.dev/openapi-ts/get-started)
+Any OpenAPI client generator should work, but the most tested integration is with [HeyAPI](https://heyapi.dev/openapi-ts/get-started).
 
 A generated client will produce typed SDK functions matching your tRPC procedures:
 
@@ -73,9 +73,7 @@ pnpm install @hey-api/openapi-ts
 npx openapi-ts -i openapi.json -o src/generated
 ```
 
-For information on how to customise the generated client
-
-Out of the box, an OpenAPI-generated client won't know about your transformers setup or how to encode query parameters. The `@trpc/openapi/heyapi` package provides a `createTRPCHeyApiClientConfig` helper which bridges this gap — it configures request serialization and response parsing so the generated SDK works correctly with tRPC endpoints.
+Out of the box, an OpenAPI-generated client won't know about your transformer setup or how to encode query parameters. The `@trpc/openapi/heyapi` package provides a `createTRPCHeyApiClientConfig` helper that bridges this gap — it configures request serialisation and response parsing so the generated SDK works correctly with tRPC endpoints.
 
 #### Without a transformer
 
@@ -145,7 +143,7 @@ SuperJSON and Devalue only natively support Node.js. If you need cross-language 
 
 - [MongoDB Extended JSON](https://www.mongodb.com/docs/manual/reference/mongodb-extended-json/#mongodb-extended-json-v2-usage) — C, C#, C++, Go, Java, Node, Perl, PHP, Python, Ruby, Scala
 - [Amazon Ion](https://amazon-ion.github.io/ion-docs/) — C, C#, D, Go, Java, JavaScript, PHP, Python, Rust
-  :::
+:::
 
 ## Full example
 
