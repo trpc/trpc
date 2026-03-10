@@ -15,7 +15,6 @@ The `@trpc/openapi` package generates an OpenAPI 3.1 specification from your tRP
 - Call tRPC endpoints via HTTP tools like Postman or Insomnia
 - Enable AI agent integrations such as MCP servers
 
-
 ## Install
 
 ```bash
@@ -61,7 +60,7 @@ Any OpenAPI client generator should work. But the most hardened pathway currentl
 
 A generated client will produce typed SDK functions matching your tRPC procedures:
 
-- **Queries** → `GET /procedure.path` 
+- **Queries** → `GET /procedure.path`
 - **Mutations** → `POST /procedure.path`
 - **Subscriptions** are ignored (SSE coming soon)
 
@@ -70,7 +69,7 @@ A generated client will produce typed SDK functions matching your tRPC procedure
 [HeyAPI Documentation](https://heyapi.dev/)
 
 ```bash
-pnpm install @hey-api/openapi-ts 
+pnpm install @hey-api/openapi-ts
 npx openapi-ts -i openapi.json -o src/generated
 ```
 
@@ -146,9 +145,8 @@ SuperJSON and Devalue only natively support Node.js. If you need cross-language 
 
 - [MongoDB Extended JSON](https://www.mongodb.com/docs/manual/reference/mongodb-extended-json/#mongodb-extended-json-v2-usage) — C, C#, C++, Go, Java, Node, Perl, PHP, Python, Ruby, Scala
 - [Amazon Ion](https://amazon-ion.github.io/ion-docs/) — C, C#, D, Go, Java, JavaScript, PHP, Python, Rust
-:::
+  :::
 
 ## Full example
 
 For a complete, runnable project that ties all of these steps together, see the [openapi-codegen example](https://github.com/trpc/trpc/tree/main/examples/openapi-codegen).
-
