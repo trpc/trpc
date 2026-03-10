@@ -9,22 +9,17 @@ slug: /openapi
 This package is in alpha. APIs may change without notice.
 :::
 
-The `@trpc/openapi` package generates an OpenAPI 3.1 specification from your tRPC router at build time. You can then feed this spec into any OpenAPI code generator (e.g. [hey-api/openapi-ts](https://github.com/hey-api/openapi-ts)) to produce a typed REST client — useful for consumers that don't use tRPC directly.
+The `@trpc/openapi` package generates an OpenAPI 3.1 specification from your tRPC router. Use the spec to:
 
-**The workflow in three steps:**
+- Generate a typed API client in any language
+- Call tRPC endpoints via HTTP tools like Postman or Insomnia
+- Enable AI agent integrations such as MCP servers
 
-1. **Generate** an OpenAPI spec from your tRPC router (static analysis — your code is never executed)
-2. **Run** an OpenAPI client generator to produce a typed SDK
-3. **Configure** the SDK with a tRPC-aware helper so it handles tRPC's query format and response envelope
-
-:::tip
-For a complete, runnable project that ties all of these steps together, see the [openapi-codegen example](https://github.com/trpc/trpc/tree/main/examples/openapi-codegen).
-:::
 
 ## Install
 
 ```bash
-npm install @trpc/openapi
+pnpm install @trpc/openapi
 ```
 
 ## Generate the spec
@@ -62,24 +57,28 @@ The generator statically analyzes your router's TypeScript types — it never ex
 
 ## Generate a client from the spec
 
-Any OpenAPI client generator works. Here's an example with `@hey-api/openapi-ts`:
+Any OpenAPI client generator should work. But the most hardened pathway currently is with [HeyAPI](https://heyapi.dev/openapi-ts/get-started)
+
+A generated client will produce typed SDK functions matching your tRPC procedures:
+
+- **Queries** → `GET /procedure.path` 
+- **Mutations** → `POST /procedure.path`
+- **Subscriptions** are ignored (SSE coming soon)
+
+### HeyAPI (TypeScript)
+
+[HeyAPI Documentation](https://heyapi.dev/)
 
 ```bash
-npm install @hey-api/openapi-ts @hey-api/client-fetch
-npx openapi-ts -i openapi.json -o src/generated -c @hey-api/client-fetch
+pnpm install @hey-api/openapi-ts 
+npx openapi-ts -i openapi.json -o src/generated
 ```
 
-This produces typed SDK functions matching your tRPC procedures:
+For information on how to customise the generated client
 
-- **Queries** → `GET /procedure.path` with `?input=<JSON>`
-- **Mutations** → `POST /procedure.path` with JSON body
-- **Subscriptions** are skipped (SSE coming soon)
+Out of the box, an OpenAPI-generated client won't know about your transformers setup or how to encode query parameters. The `@trpc/openapi/heyapi` package provides a `createTRPCHeyApiClientConfig` helper which bridges this gap — it configures request serialization and response parsing so the generated SDK works correctly with tRPC endpoints.
 
-## Configure the client for tRPC
-
-Out of the box, an OpenAPI-generated client won't know about transformers usage. The `@trpc/openapi/heyapi` package provides a `createTRPCHeyApiClientConfig` helper that bridges this gap — it configures request serialization and response parsing so the generated SDK works correctly with tRPC endpoints.
-
-### Without a transformer
+#### Without a transformer
 
 ```ts title='src/client.ts'
 import { createTRPCHeyApiClientConfig } from '@trpc/openapi/heyapi';
@@ -101,7 +100,7 @@ const result = await sdk.greeting({ query: { input: { name: 'World' } } });
 const user = await sdk.user.create({ body: { name: 'Bob', age: 30 } });
 ```
 
-### With a transformer (superjson, devalue, etc.)
+#### With a transformer (superjson, devalue, etc.)
 
 :::warning
 If your backend uses a [data transformer](/docs/server/data-transformers) like `superjson`, you **must** pass it to the client config. Without this, dates, Maps, Sets, and other non-JSON types may be silently wrong.
@@ -132,3 +131,24 @@ const created = await sdk.createEvent({
   body: { name: 'Conference', at: new Date('2025-09-01T09:00:00Z') },
 });
 ```
+
+### Using a different generator or language
+
+The generated OpenAPI spec works with any OpenAPI-compatible client generator. To integrate correctly with tRPC's protocol, your client needs to handle two things:
+
+- **Query Inputs** — GET requests encode input as `?input=<JSON>`, not as individual query parameters
+- **Transformers** — if your tRPC API uses a transformer, the client must serialise inputs and deserialise outputs using the same format
+
+See the [HeyAPI config source](https://github.com/trpc/trpc/blob/f346e9bb97ff3c8a7e874f59110a47730293097a/packages/openapi/src/heyapi/index.ts) for a complete reference implementation.
+
+:::note
+SuperJSON and Devalue only natively support Node.js. If you need cross-language transformer support, consider:
+
+- [MongoDB Extended JSON](https://www.mongodb.com/docs/manual/reference/mongodb-extended-json/#mongodb-extended-json-v2-usage) — C, C#, C++, Go, Java, Node, Perl, PHP, Python, Ruby, Scala
+- [Amazon Ion](https://amazon-ion.github.io/ion-docs/) — C, C#, D, Go, Java, JavaScript, PHP, Python, Rust
+:::
+
+## Full example
+
+For a complete, runnable project that ties all of these steps together, see the [openapi-codegen example](https://github.com/trpc/trpc/tree/main/examples/openapi-codegen).
+
