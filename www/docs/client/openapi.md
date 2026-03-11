@@ -143,7 +143,7 @@ SuperJSON and Devalue only natively support Node.js. If you need cross-language 
 
 - [MongoDB Extended JSON](https://www.mongodb.com/docs/manual/reference/mongodb-extended-json/#mongodb-extended-json-v2-usage) — C, C#, C++, Go, Java, Node, Perl, PHP, Python, Ruby, Scala
 - [Amazon Ion](https://amazon-ion.github.io/ion-docs/) — C, C#, D, Go, Java, JavaScript, PHP, Python, Rust
-:::
+  :::
 
 ## Full example
 
