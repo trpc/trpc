@@ -183,7 +183,7 @@ function factory(config?: {
       };
     },
     server: {
-      ...(config ?? {}),
+      ...config,
     },
     wssServer: {
       ...config?.wssServer,

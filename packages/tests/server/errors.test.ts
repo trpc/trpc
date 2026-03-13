@@ -331,11 +331,7 @@ test('retain stack trace', async () => {
   const t = initTRPC.create();
   const router = t.router({
     hello: t.procedure.query(() => {
-      if (true) {
-        throw new CustomError();
-      }
-
-      return 'toStringValue';
+      throw new CustomError();
     }),
   });
 

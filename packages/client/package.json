@@ -25,7 +25,7 @@
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
-    "lint": "eslint --cache src",
+    "lint": "oxlint --deny-warnings src",
     "typecheck": "tsc --noEmit --preserveWatchOutput --pretty"
   },
   "exports": {

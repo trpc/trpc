@@ -96,7 +96,7 @@ export type WithoutIndexSignature<TObj> = {
 export type Overwrite<TType, TWith> = TWith extends any
   ? TType extends object
     ? {
-        [K in  // Exclude index signature from keys
+        [K in // Exclude index signature from keys
           | keyof WithoutIndexSignature<TType>
           | keyof WithoutIndexSignature<TWith>]: K extends keyof TWith
           ? TWith[K]

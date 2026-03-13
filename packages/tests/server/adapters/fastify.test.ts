@@ -166,7 +166,7 @@ function createServer(opts: ServerOptions) {
     );
   }
 
-  const plugin = !!opts.fastifyPluginWrapper
+  const plugin = opts.fastifyPluginWrapper
     ? fp(fastifyTRPCPlugin)
     : fastifyTRPCPlugin;
 
@@ -288,7 +288,7 @@ interface AppOptions {
 async function createApp(opts: AppOptions = {}) {
   const { appRouter, ee } = createAppRouter();
   const { instance, stop } = createServer({
-    ...(opts.serverOptions ?? {}),
+    ...opts.serverOptions,
     appRouter,
   });
 

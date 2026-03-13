@@ -39,7 +39,7 @@ export function formDataToObject(formData: FormData) {
   const obj: Record<string, unknown> = emptyObject();
 
   for (const [key, value] of formData.entries()) {
-    const parts = key.split(/[\.\[\]]/).filter(Boolean);
+    const parts = key.split(/[.[\]]/).filter(Boolean);
     set(obj, parts, value);
   }
 
