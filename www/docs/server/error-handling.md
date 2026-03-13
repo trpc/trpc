@@ -28,7 +28,7 @@ Here's an example error response caused by a bad request input:
 :::note Stack traces in production
 
 By default, tRPC includes `error.data.stack` only when [`isDev`](routers#initialize-trpc) is `true`.
-[`initTRPC.create()`](routers#initialize-trpc) sets `isDev` to `process.env.NODE_ENV !== 'production'` by default.
+`initTRPC.create()` sets `isDev` to `process.env.NODE_ENV !== 'production'` by default.
 If you need deterministic behavior across runtimes, override `isDev` manually.
 
 ```ts twoslash title='server.ts'
