@@ -25,7 +25,7 @@ Here's an example error response caused by a bad request input:
 }
 ```
 
-:::note Stack traces in production
+## Stack traces in production
 
 By default, tRPC includes `error.data.stack` only when [`isDev`](routers#initialize-trpc) is `true`.
 `initTRPC.create()` sets `isDev` to `process.env.NODE_ENV !== 'production'` by default.
@@ -38,8 +38,6 @@ const t = initTRPC.create({ isDev: false });
 ```
 
 If you need stricter control over which error fields are returned, use [error formatting](error-formatting).
-
-:::
 
 ## Error codes
 
