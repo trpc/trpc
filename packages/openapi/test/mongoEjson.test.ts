@@ -2,7 +2,7 @@ import http from 'node:http';
 import { createHTTPHandler } from '@trpc/server/adapters/standalone';
 import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import/stream/utils/disposable';
 import { describe, expect, it } from 'vitest';
-import { createTRPCHeyApiClientConfig } from '../src/heyapi';
+import { configureTRPCHeyApiClient } from '../src/heyapi';
 import {
   MongoEjsonRouter,
   mongoEjsonTransformer,
@@ -23,10 +23,6 @@ const richInput = {
   ],
 };
 
-const ejsonClientConfig = createTRPCHeyApiClientConfig({
-  transformer: mongoEjsonTransformer,
-});
-
 describe('MongoDB Extended JSON v2 transformer', () => {
   async function setupSdk() {
     const server = http.createServer(
@@ -35,7 +31,10 @@ describe('MongoDB Extended JSON v2 transformer', () => {
     await new Promise<void>((resolve) => server.listen(0, resolve));
     const baseUrl = `http://localhost:${(server.address() as { port: number }).port}`;
 
-    client.setConfig({ baseUrl, ...ejsonClientConfig });
+    configureTRPCHeyApiClient(client, {
+      baseUrl,
+      transformer: mongoEjsonTransformer,
+    });
 
     return makeAsyncResource(
       { sdk: new Sdk({ client }) },

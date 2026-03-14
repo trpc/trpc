@@ -6,15 +6,15 @@
  * Run `pnpm codegen` to regenerate.
  */
 import assert from 'node:assert/strict';
-import { createTRPCHeyApiClientConfig } from '@trpc/openapi/heyapi';
+import { configureTRPCHeyApiClient } from '@trpc/openapi/heyapi';
 import { transformer } from '../shared/transformer.js';
 import { client } from './generated/client.gen.js';
 import { Sdk } from './generated/sdk.gen.js';
 
 // Configure the hey-api client with tRPC serialization helpers
-client.setConfig({
+configureTRPCHeyApiClient(client, {
   baseUrl: 'http://localhost:3000',
-  ...createTRPCHeyApiClientConfig({ transformer }),
+  transformer,
 });
 
 // Create an SDK instance
@@ -45,8 +45,6 @@ async function main() {
     query: {
       input: '1',
     },
-    querySerializer: createTRPCHeyApiClientConfig({ transformer })
-      .querySerializer,
   });
   console.log('User 1:', byIdResult.data?.result.data);
   assert.ok(byIdResult.data, 'byId response should have data');

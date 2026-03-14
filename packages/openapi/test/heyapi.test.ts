@@ -1,16 +1,22 @@
-import { describe, expect, it } from 'vitest';
+import http from 'node:http';
+import { createHTTPHandler } from '@trpc/server/adapters/standalone';
+import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import/stream/utils/disposable';
+import SuperJSON from 'superjson';
+import { describe, expect, it, test } from 'vitest';
 import {
+  configureTRPCHeyApiClient,
   createTRPCHeyApiClientConfig,
-  createTRPCHeyApiTypeResolvers,
 } from '../src/heyapi';
+import { ErrorFormatterRouter } from './routers/errorFormatterRouter';
+import { client as errorFormatterClient } from './routers/errorFormatterRouter-heyapi/client.gen';
+import { Sdk as ErrorFormatterSdk } from './routers/errorFormatterRouter-heyapi/sdk.gen';
+import { SuperjsonRouter } from './routers/superjsonRouter';
+import { client as superjsonClient } from './routers/superjsonRouter-heyapi/client.gen';
+import { Sdk as SuperjsonSdk } from './routers/superjsonRouter-heyapi/sdk.gen';
 
 describe('createTRPCHeyApiClientConfig', () => {
   describe('without transformer', () => {
     const config = createTRPCHeyApiClientConfig();
-
-    it('returns a querySerializer', () => {
-      expect(config.querySerializer).toBeTypeOf('function');
-    });
 
     it('does not return bodySerializer or responseTransformer', () => {
       expect(config.bodySerializer).toBeUndefined();
@@ -103,19 +109,42 @@ describe('createTRPCHeyApiClientConfig', () => {
         },
       };
 
-      const transformed = await config.responseTransformer!(rawResponse);
-      expect((transformed as any).result.data).toEqual({ message: 'hello' });
+      const transformed = (await config.responseTransformer!(
+        rawResponse,
+      )) as any;
+      expect(transformed.result.data).toEqual({ message: 'hello' });
     });
 
-    it('deserializes response error.data through the transformer', async () => {
+    it('deserializes response result.data when result.type is "data"', async () => {
       const rawResponse = {
-        error: {
-          data: { json: { code: 'NOT_FOUND' }, meta: { type: 'mock' } },
+        result: {
+          type: 'data' as const,
+          data: { json: { message: 'hello' }, meta: { type: 'mock' } },
         },
       };
 
-      const transformed = await config.responseTransformer!(rawResponse);
-      expect((transformed as any).error.data).toEqual({ code: 'NOT_FOUND' });
+      const transformed = (await config.responseTransformer!(
+        rawResponse,
+      )) as any;
+      expect(transformed.result.data).toEqual({ message: 'hello' });
+    });
+
+    it('does not deserialize result.data when result.type is not "data"', async () => {
+      const rawResponse = {
+        result: {
+          type: 'stopped' as const,
+          data: { json: { message: 'hello' }, meta: { type: 'mock' } },
+        },
+      };
+
+      const transformed = (await config.responseTransformer!(
+        rawResponse,
+      )) as any;
+      // Should NOT have been deserialized
+      expect(transformed.result.data).toEqual({
+        json: { message: 'hello' },
+        meta: { type: 'mock' },
+      });
     });
 
     it('passes through responses without result or error', async () => {
@@ -165,8 +194,10 @@ describe('createTRPCHeyApiClientConfig', () => {
         },
       };
 
-      const transformed = await config.responseTransformer!(rawResponse);
-      expect((transformed as any).result.data).toEqual({ message: 'hello' });
+      const transformed = (await config.responseTransformer!(
+        rawResponse,
+      )) as any;
+      expect(transformed.result.data).toEqual({ message: 'hello' });
     });
   });
 
@@ -181,6 +212,191 @@ describe('createTRPCHeyApiClientConfig', () => {
       expect(config.querySerializer).toBeTypeOf('function');
       expect(config.bodySerializer).toBeUndefined();
       expect(config.responseTransformer).toBeUndefined();
+    });
+  });
+
+  describe('error response via real server without transformer', () => {
+    async function setupSdk() {
+      const server = http.createServer(
+        createHTTPHandler({ router: ErrorFormatterRouter }),
+      );
+      await new Promise<void>((resolve) => server.listen(0, resolve));
+      const baseUrl = `http://localhost:${(server.address() as { port: number }).port}`;
+
+      configureTRPCHeyApiClient(errorFormatterClient, { baseUrl });
+
+      return makeAsyncResource(
+        { sdk: new ErrorFormatterSdk({ client: errorFormatterClient }) },
+        () => new Promise<void>((resolve) => server.close(() => resolve())),
+      );
+    }
+
+    it('returns custom errorFormatter fields in the error response', async () => {
+      await using ctx = await setupSdk();
+      const { sdk } = ctx;
+
+      type IntentionallyWillError = any;
+
+      // Send invalid input (number instead of string) to trigger BAD_REQUEST
+      const result = await sdk.hello({
+        query: { input: { name: 123 as IntentionallyWillError } },
+      });
+
+      // Without a transformer the raw JSON comes back unchanged
+      expect(result.error).toBeDefined();
+      const error = result.error!;
+      expect(error).toBeDefined();
+      expect(error.error.code).toBe(-32600); // BAD_REQUEST
+      expect(error.error.data.code).toBe('BAD_REQUEST');
+      expect(error.error.data.httpStatus).toBe(400);
+      expect(error.error.data).toHaveProperty('zodError');
+    });
+  });
+
+  describe('error response via real server with SuperJSON transformer', () => {
+    async function setupSdk() {
+      const server = http.createServer(
+        createHTTPHandler({ router: SuperjsonRouter }),
+      );
+      await new Promise<void>((resolve) => server.listen(0, resolve));
+      const baseUrl = `http://localhost:${(server.address() as { port: number }).port}`;
+
+      configureTRPCHeyApiClient(superjsonClient, {
+        baseUrl,
+        transformer: SuperJSON,
+      });
+
+      return makeAsyncResource(
+        { sdk: new SuperjsonSdk({ client: superjsonClient }) },
+        () => new Promise<void>((resolve) => server.close(() => resolve())),
+      );
+    }
+
+    it('deserializes the entire error object through the error interceptor', async () => {
+      await using ctx = await setupSdk();
+      const { sdk } = ctx;
+
+      type IntentionallyWillError = any;
+
+      // Send invalid input to trigger BAD_REQUEST
+      const result = await sdk.getEvent({
+        query: {
+          input: {
+            id: 123 as IntentionallyWillError,
+            at: 'not-a-date' as IntentionallyWillError,
+          },
+        },
+      });
+
+      expect(result.error).toBeDefined();
+      // After the error interceptor deserializes, the standard shape is restored
+      const error = result.error!;
+      expect(error).toBeDefined();
+      expect(error.error.code).toBe(-32600); // BAD_REQUEST
+      expect(error.error.data.code).toBe('BAD_REQUEST');
+      expect(error.error.data.httpStatus).toBe(400);
+      expect(error.error.message).toBeTypeOf('string');
+    });
+  });
+
+  describe('bad values', () => {
+    test.each([
+      {
+        label: 'undefined',
+        value: undefined,
+        included: false,
+        expectedValue: undefined,
+      },
+      { label: 'null', value: null, included: true, expectedValue: 'null' },
+      { label: 'empty string', value: '', included: true, expectedValue: '""' },
+      { label: 'zero', value: 0, included: true, expectedValue: '0' },
+    ])(
+      'querySerializer handles $label values in query params',
+      ({ value, included, expectedValue }) => {
+        const config = createTRPCHeyApiClientConfig();
+        const result = config.querySerializer({ input: value });
+        const params = new URLSearchParams(result);
+
+        expect(params.has('input')).toBe(included);
+        if (included) {
+          expect(params.get('input')).toEqual(expectedValue);
+        }
+      },
+    );
+
+    test.each([
+      {
+        label: 'undefined',
+        value: undefined,
+        included: false,
+        expectedParsed: undefined,
+      },
+      {
+        label: 'null',
+        value: null,
+        included: true,
+        expectedParsed: '{"json":null}',
+      },
+      {
+        label: 'empty string',
+        value: '',
+        included: true,
+        expectedParsed: '{"json":""}',
+      },
+      { label: 'zero', value: 0, included: true, expectedParsed: '{"json":0}' },
+    ])(
+      'querySerializer with transformer handles $label values in query params',
+      ({ value, included, expectedParsed }) => {
+        const config = createTRPCHeyApiClientConfig({
+          transformer: SuperJSON,
+        });
+        const result = config.querySerializer({ input: value });
+        const params = new URLSearchParams(result);
+
+        expect(params.has('input')).toBe(included);
+        if (included) {
+          expect(params.get('input')).toEqual(expectedParsed);
+        }
+      },
+    );
+
+    test.each([
+      {
+        label: 'undefined',
+        value: undefined,
+        expectedParsed: '{"json":null,"meta":{"values":["undefined"]}}',
+      },
+      { label: 'null', value: null, expectedParsed: '{"json":null}' },
+      {
+        label: 'empty string',
+        value: '',
+        expectedParsed: '{"json":""}',
+      },
+      {
+        label: 'zero',
+        value: 0,
+        expectedParsed: '{"json":0}',
+      },
+    ])('bodySerializer handles $label body', ({ value, expectedParsed }) => {
+      const config = createTRPCHeyApiClientConfig({
+        transformer: SuperJSON,
+      });
+      const result = config.bodySerializer!(value);
+
+      expect(result).toBe(expectedParsed);
+    });
+
+    test.each([
+      { label: 'undefined', value: undefined },
+      { label: 'null', value: null },
+      { label: 'empty string', value: '' },
+      { label: 'zero', value: 0 },
+    ])('responseTransformer handles $label data', async ({ value }) => {
+      const config = createTRPCHeyApiClientConfig({
+        transformer: SuperJSON,
+      });
+      const transformed = await config.responseTransformer!(value);
+      expect(transformed).toEqual(value);
     });
   });
 });

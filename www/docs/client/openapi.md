@@ -78,10 +78,10 @@ A generated client will produce typed SDK functions matching your tRPC procedure
 [Hey API Documentation](https://heyapi.dev/)
 
 ```bash
-pnpm add @trpc/openapi @hey-api/openapi-ts @hey-api/client-fetch
+pnpm add @trpc/openapi @hey-api/openapi-ts
 ```
 
-Out of the box, an OpenAPI-generated client won't know about your transformer setup or how to encode query parameters. The `@trpc/openapi/heyapi` package provides a `createTRPCHeyApiClientConfig` helper that bridges this gap — it configures request serialisation and response parsing so the generated SDK works correctly with tRPC endpoints.
+Out of the box, an OpenAPI-generated client won't know about your transformer setup or how to encode query parameters. The `@trpc/openapi/heyapi` package provides a `configureTRPCHeyApiClient` helper that bridges this gap — it configures request serialisation, response parsing, and error deserialization so the generated SDK works correctly with tRPC endpoints.
 
 #### Without a transformer
 
@@ -93,20 +93,14 @@ pnpm exec openapi-ts -i openapi.json -o ./generated
 
 Next a little configuration is required at runtime:
 
-```ts title='src/client.ts'
-import { createTRPCHeyApiClientConfig } from '@trpc/openapi/heyapi';
-import { client } from './generated/client.gen';
-
-client.setConfig({
-  baseUrl: 'http://localhost:3000',
-  ...createTRPCHeyApiClientConfig(),
-});
-```
-
 ```ts title='src/usage.ts'
+import { configureTRPCHeyApiClient } from '@trpc/openapi/heyapi';
 import { client } from './generated/client.gen';
 import { Sdk } from './generated/sdk.gen';
 
+configureTRPCHeyApiClient(client, {
+  baseUrl: 'http://localhost:3000',
+});
 const sdk = new Sdk({ client });
 
 const result = await sdk.greeting({ query: { input: { name: 'World' } } });
@@ -145,23 +139,20 @@ await createClient({
 });
 ```
 
-At runtime configure the generated client with your transformer:
+At runtime configure the generated client with your transformer, you can then pass native types directly and get them back deserialised:
 
-```ts title='src/client.ts'
-import { createTRPCHeyApiClientConfig } from '@trpc/openapi/heyapi';
+```ts title='src/usage.ts'
+import { configureTRPCHeyApiClient } from '@trpc/openapi/heyapi';
 import superjson from 'superjson';
 import { client } from './generated/client.gen';
 
-client.setConfig({
+configureTRPCHeyApiClient(client, {
   baseUrl: 'http://localhost:3000',
-  // Important, this transformer must match your tRPC API's setup:
-  ...createTRPCHeyApiClientConfig({ transformer: superjson }),
+  // Important, this transformer must match your tRPC API's transformer:
+  transformer: superjson,
 });
-```
+const sdk = new Sdk({ client });
 
-You can then pass native types directly and get them back deserialised:
-
-```ts title='src/usage.ts'
 const event = await sdk.getEvent({
   query: { input: { id: 'evt_1', at: new Date('2025-06-15T10:00:00Z') } },
 });
@@ -190,7 +181,7 @@ See the [Hey API config source](https://github.com/trpc/trpc/blob/f346e9bb97ff3c
 
 tRPC [data transformers](/docs/server/data-transformers) let you send rich types like `Date`, `Map`, `Set`, and `BigInt` over the wire. When using the OpenAPI client, the same transformer must be configured on both the server and client so that inputs are serialised and outputs are deserialised correctly.
 
-Any transformer that implements the tRPC `DataTransformer` interface (`serialize` / `deserialize`) works with `createTRPCHeyApiClientConfig`. Below are some tested options.
+Any transformer that implements the tRPC `DataTransformer` interface (`serialize` / `deserialize`) works with `configureTRPCHeyApiClient`. Below are some tested options.
 
 ### SuperJSON
 
@@ -208,13 +199,13 @@ const t = initTRPC.create({ transformer: superjson });
 ```
 
 ```ts title='src/client.ts'
-import { createTRPCHeyApiClientConfig } from '@trpc/openapi/heyapi';
+import { configureTRPCHeyApiClient } from '@trpc/openapi/heyapi';
 import superjson from 'superjson';
 import { client } from './generated/client.gen';
 
-client.setConfig({
+configureTRPCHeyApiClient(client, {
   baseUrl: 'http://localhost:3000',
-  ...createTRPCHeyApiClientConfig({ transformer: superjson }),
+  transformer: superjson,
 });
 ```
 
@@ -241,13 +232,13 @@ export const ejsonTransformer: TRPCDataTransformer = {
 ```
 
 ```ts title='src/client.ts'
-import { createTRPCHeyApiClientConfig } from '@trpc/openapi/heyapi';
+import { configureTRPCHeyApiClient } from '@trpc/openapi/heyapi';
 import { client } from './generated/client.gen';
 import { ejsonTransformer } from './transformer';
 
-client.setConfig({
+configureTRPCHeyApiClient(client, {
   baseUrl: 'http://localhost:3000',
-  ...createTRPCHeyApiClientConfig({ transformer: ejsonTransformer }),
+  transformer: ejsonTransformer,
 });
 ```
 
@@ -282,7 +273,7 @@ const myTransformer: TRPCDataTransformer = {
 };
 ```
 
-Pass it to both `initTRPC.create({ transformer })` on the server and `createTRPCHeyApiClientConfig({ transformer })` on the client. See the [data transformers docs](/docs/server/data-transformers) for more details.
+Pass it to both `initTRPC.create({ transformer })` on the server and `configureTRPCHeyApiClient(client, { transformer })` on the client. See the [data transformers docs](/docs/server/data-transformers) for more details.
 
 ## Full example
 

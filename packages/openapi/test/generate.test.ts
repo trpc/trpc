@@ -12,7 +12,10 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import type { OpenAPIDocument } from '../src/generate';
 import { generateOpenAPIDocument } from '../src/generate';
-import { createTRPCHeyApiClientConfig } from '../src/heyapi';
+import {
+  configureTRPCHeyApiClient,
+  createTRPCHeyApiClientConfig,
+} from '../src/heyapi';
 import { AppRouter } from './routers/appRouter';
 import { client as heyapiClient } from './routers/appRouter-heyapi/client.gen';
 import { Sdk as HeyapiSdk } from './routers/appRouter-heyapi/sdk.gen';
@@ -384,8 +387,6 @@ describe('generateOpenAPIDocument', () => {
   describe('hey-api client generation', () => {
     const genDir = path.resolve(routersDir, 'appRouter-heyapi');
 
-    const transformerlessClientConfig = createTRPCHeyApiClientConfig();
-
     it('generates SDK files from the spec', () => {
       expect(existsSync(path.join(genDir, 'sdk.gen.ts'))).toBe(true);
       expect(existsSync(path.join(genDir, 'types.gen.ts'))).toBe(true);
@@ -400,17 +401,13 @@ describe('generateOpenAPIDocument', () => {
       const baseUrl = `http://localhost:${addr.port}`;
       await using _ = server;
 
-      heyapiClient.setConfig({
-        baseUrl,
-        ...transformerlessClientConfig,
-      });
+      configureTRPCHeyApiClient(heyapiClient, { baseUrl });
 
       const sdk = new HeyapiSdk({ client: heyapiClient });
 
       // --- Query with input ---
       const greetingResult = await sdk.greeting({
         query: { input: { name: 'World' } },
-        querySerializer: transformerlessClientConfig.querySerializer,
       });
       expect(greetingResult.data).toBeDefined();
       expect(greetingResult.data!.result.data).toEqual({
@@ -752,10 +749,6 @@ describe('generateOpenAPIDocument', () => {
   describe('superjson transformer', () => {
     let doc: OpenAPIDocument;
 
-    const superjsonClientConfig = createTRPCHeyApiClientConfig({
-      transformer: superjson,
-    });
-
     beforeAll(async () => {
       doc = await generateOpenAPIDocument(superjsonRouterPath, {
         exportName: 'SuperjsonRouter',
@@ -814,13 +807,16 @@ describe('generateOpenAPIDocument', () => {
         query: {
           input,
         },
-        // Add a serialiser so we can get a response
-        querySerializer: superjsonClientConfig.querySerializer,
+        // Only done like this for testing, do not remove
+        querySerializer: createTRPCHeyApiClientConfig({
+          transformer: superjson,
+        }).querySerializer,
       });
 
       // Without superjson deserialization on the response, result.data
       // contains the tRPC envelope whose data is the raw superjson shape:
       // { json: { ... }, meta: { values: ... } }
+      expect(result.error).not.toBeDefined();
       expect(result.data).toBeDefined();
       const innerData = result.data!.result.data as any;
       expect(innerData).toHaveProperty('json');
@@ -838,7 +834,10 @@ describe('generateOpenAPIDocument', () => {
       const baseUrl = `http://localhost:${addr.port}`;
       await using _ = server;
 
-      superjsonClient.setConfig({ baseUrl, ...superjsonClientConfig });
+      configureTRPCHeyApiClient(superjsonClient, {
+        baseUrl,
+        transformer: superjson,
+      });
 
       const sdk = new SuperjsonSdk({ client: superjsonClient });
 
