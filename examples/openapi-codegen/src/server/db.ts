@@ -1,4 +1,4 @@
-type User = { id: string; name: string };
+type User = { id: string; name: string; createdAt: Date };
 
 // Imaginary database
 const users: User[] = [];
@@ -7,7 +7,7 @@ export const db = {
     findMany: async () => users,
     findById: async (id: string) => users.find((user) => user.id === id),
     create: async (data: { name: string }) => {
-      const user = { id: String(users.length + 1), ...data };
+      const user = { id: String(users.length + 1), createdAt: new Date(), ...data };
       users.push(user);
       return user;
     },

@@ -7,6 +7,7 @@ export type ClientOptions = {
 export type User = {
     id: string;
     name: string;
+    createdAt: Date;
 };
 
 export type DefaultErrorShape = {
@@ -121,6 +122,7 @@ export type UserCreateResponses = {
             data: {
                 name: string;
                 id: string;
+                createdAt: Date;
             };
         };
     };

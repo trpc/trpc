@@ -1698,7 +1698,7 @@ importers:
     dependencies:
       '@hey-api/client-fetch':
         specifier: ^0.13.1
-        version: 0.13.1(@hey-api/openapi-ts@0.94.0(magicast@0.5.2)(typescript@5.9.2))
+        version: 0.13.1(@hey-api/openapi-ts@0.94.1(magicast@0.5.2)(typescript@5.9.2))
       '@trpc/client':
         specifier: npm:@trpc/client
         version: link:../../packages/client
@@ -1716,11 +1716,14 @@ importers:
         version: 4.2.1
     devDependencies:
       '@hey-api/openapi-ts':
-        specifier: ^0.94.0
-        version: 0.94.0(magicast@0.5.2)(typescript@5.9.2)
+        specifier: ^0.94.1
+        version: 0.94.1(magicast@0.5.2)(typescript@5.9.2)
       '@types/node':
         specifier: ^22.13.5
         version: 22.19.11
+      esbuild:
+        specifier: ^0.17.10
+        version: 0.17.10
       npm-run-all:
         specifier: ^4.1.5
         version: 4.1.5
@@ -6177,6 +6180,12 @@ packages:
     peerDependencies:
       typescript: '>=5.5.3'
 
+  '@hey-api/codegen-core@0.7.2':
+    resolution: {integrity: sha512-nWEyUNbc1O7R5FHMwPh24+127jCbIs6vT89ncHqFSprE0tUVNemGO3cZflZCeGw8XhJAk6O18TcruUbMmwv0Rg==}
+    engines: {node: '>=20.19.0'}
+    peerDependencies:
+      typescript: '>=5.5.3'
+
   '@hey-api/json-schema-ref-parser@1.3.1':
     resolution: {integrity: sha512-7atnpUkT8TyUPHYPLk91j/GyaqMuwTEHanLOe50Dlx0EEvNuQqFD52Yjg8x4KU0UFL1mWlyhE+sUE/wAtQ1N2A==}
     engines: {node: '>=20.19.0'}
@@ -6188,8 +6197,21 @@ packages:
     peerDependencies:
       typescript: '>=5.5.3'
 
+  '@hey-api/openapi-ts@0.94.1':
+    resolution: {integrity: sha512-WffyHMzsB8uVrzVxjK+0zII0msuqLL5JOGaZsWQzRvoZQJsJcGe9+kUaBNKPVDupcghHncSRJCdcC5ZcCdy/sw==}
+    engines: {node: '>=20.19.0'}
+    hasBin: true
+    peerDependencies:
+      typescript: '>=5.5.3'
+
   '@hey-api/shared@0.2.2':
     resolution: {integrity: sha512-vMqCS+j7F9xpWoXC7TBbqZkaelwrdeuSB+s/3elu54V5iq++S59xhkSq5rOgDIpI1trpE59zZQa6dpyUxItOgw==}
+    engines: {node: '>=20.19.0'}
+    peerDependencies:
+      typescript: '>=5.5.3'
+
+  '@hey-api/shared@0.2.3':
+    resolution: {integrity: sha512-XQsI/VmQeoHJFdZmBshQnMLGRq6kvSIXFgpxsb8k4F8nuKZ+54GAnq0DuTZcgnL6egAO/pN0KBaFbyl/yl9WFg==}
     engines: {node: '>=20.19.0'}
     peerDependencies:
       typescript: '>=5.5.3'
@@ -10454,10 +10476,6 @@ packages:
   connect-history-api-fallback@2.0.0:
     resolution: {integrity: sha512-U73+6lQFmfiNPrYbXqr6kZ1i1wiRqXnp2nhMsINseWXO8lDau0LGEffJ8kQi4EjLZympVgRdvqjAgiZ1tgzDDA==}
     engines: {node: '>=0.8'}
-
-  consola@3.2.3:
-    resolution: {integrity: sha512-I5qxpzLv+sJhTVEoLYNcTW+bThDCPsit0vLNKShZx6rLtpilNpmmeTPaeqJb9ZE9dV3DGaeby6Vuhrw38WjeyQ==}
-    engines: {node: ^14.18.0 || >=16.10.0}
 
   consola@3.4.2:
     resolution: {integrity: sha512-5IKcdX0nnYavi6G7TtOhwkYzyjfJlatbjMjuLSfE2kYT5pMDOilZ4OvMhi637CcDICTmz3wARPoyhqyX1Y+XvA==}
@@ -15464,9 +15482,6 @@ packages:
   pkg-dir@7.0.0:
     resolution: {integrity: sha512-Ie9z/WINcxxLp27BKOCHGde4ITq9UklYKDzVo1nhk5sqGEXU3FpkwP5GM2voTGJkGd9B3Otl+Q4uwSOeSUtOBA==}
     engines: {node: '>=14.16'}
-
-  pkg-types@1.2.1:
-    resolution: {integrity: sha512-sQoqa8alT3nHjGuTjuKgOnvjo4cljkufdtLMnO2LBP/wRwuDlo1tkaEdMxCRhyGRPacv/ztlZgDPm2b7FAmEvw==}
 
   pkg-types@1.3.1:
     resolution: {integrity: sha512-/Jm5M4RvtBFVkKWRu2BLUTNP8/M2a+UwuAX+ae4770q1qVGtfjG+WTCupoZixokjmHiry8uI+dlY8KXYV5HVVQ==}
@@ -24566,7 +24581,21 @@ snapshots:
     dependencies:
       '@hey-api/openapi-ts': 0.94.0(magicast@0.5.2)(typescript@5.9.2)
 
+  '@hey-api/client-fetch@0.13.1(@hey-api/openapi-ts@0.94.1(magicast@0.5.2)(typescript@5.9.2))':
+    dependencies:
+      '@hey-api/openapi-ts': 0.94.1(magicast@0.5.2)(typescript@5.9.2)
+
   '@hey-api/codegen-core@0.7.1(magicast@0.5.2)(typescript@5.9.2)':
+    dependencies:
+      '@hey-api/types': 0.1.3(typescript@5.9.2)
+      ansi-colors: 4.1.3
+      c12: 3.3.3(magicast@0.5.2)
+      color-support: 1.1.3
+      typescript: 5.9.2
+    transitivePeerDependencies:
+      - magicast
+
+  '@hey-api/codegen-core@0.7.2(magicast@0.5.2)(typescript@5.9.2)':
     dependencies:
       '@hey-api/types': 0.1.3(typescript@5.9.2)
       ansi-colors: 4.1.3
@@ -24595,9 +24624,35 @@ snapshots:
     transitivePeerDependencies:
       - magicast
 
+  '@hey-api/openapi-ts@0.94.1(magicast@0.5.2)(typescript@5.9.2)':
+    dependencies:
+      '@hey-api/codegen-core': 0.7.2(magicast@0.5.2)(typescript@5.9.2)
+      '@hey-api/json-schema-ref-parser': 1.3.1
+      '@hey-api/shared': 0.2.3(magicast@0.5.2)(typescript@5.9.2)
+      '@hey-api/types': 0.1.3(typescript@5.9.2)
+      ansi-colors: 4.1.3
+      color-support: 1.1.3
+      commander: 14.0.3
+      typescript: 5.9.2
+    transitivePeerDependencies:
+      - magicast
+
   '@hey-api/shared@0.2.2(magicast@0.5.2)(typescript@5.9.2)':
     dependencies:
       '@hey-api/codegen-core': 0.7.1(magicast@0.5.2)(typescript@5.9.2)
+      '@hey-api/json-schema-ref-parser': 1.3.1
+      '@hey-api/types': 0.1.3(typescript@5.9.2)
+      ansi-colors: 4.1.3
+      cross-spawn: 7.0.6
+      open: 11.0.0
+      semver: 7.7.3
+      typescript: 5.9.2
+    transitivePeerDependencies:
+      - magicast
+
+  '@hey-api/shared@0.2.3(magicast@0.5.2)(typescript@5.9.2)':
+    dependencies:
+      '@hey-api/codegen-core': 0.7.2(magicast@0.5.2)(typescript@5.9.2)
       '@hey-api/json-schema-ref-parser': 1.3.1
       '@hey-api/types': 0.1.3(typescript@5.9.2)
       ansi-colors: 4.1.3
@@ -25174,7 +25229,7 @@ snapshots:
 
   '@mapbox/node-pre-gyp@2.0.0(encoding@0.1.13)':
     dependencies:
-      consola: 3.2.3
+      consola: 3.4.2
       detect-libc: 2.1.2
       https-proxy-agent: 7.0.6(supports-color@9.4.0)
       node-fetch: 2.6.9(encoding@0.1.13)
@@ -25494,7 +25549,7 @@ snapshots:
 
   '@nuxt/cli@3.23.1(magicast@0.3.5)':
     dependencies:
-      c12: 3.0.2(magicast@0.3.5)
+      c12: 3.3.3(magicast@0.3.5)
       chokidar: 4.0.3
       citty: 0.1.6
       clipboardy: 4.0.0
@@ -25538,7 +25593,7 @@ snapshots:
       execa: 8.0.1
       magicast: 0.3.5
       pathe: 2.0.3
-      pkg-types: 2.1.0
+      pkg-types: 2.3.0
       prompts: 2.4.2
       semver: 7.7.3
 
@@ -25585,7 +25640,7 @@ snapshots:
 
   '@nuxt/kit@3.16.1(magicast@0.3.5)':
     dependencies:
-      c12: 3.0.2(magicast@0.3.5)
+      c12: 3.3.3(magicast@0.3.5)
       consola: 3.4.2
       defu: 6.1.4
       destr: 2.0.3
@@ -26453,7 +26508,7 @@ snapshots:
       chokidar: 3.6.0
       flat: 5.0.2
       fs-extra: 9.1.0
-      js-yaml: 4.1.0
+      js-yaml: 4.1.1
       jszip: 3.10.1
       lodash: 4.17.21
       memoizee: 0.4.15
@@ -26520,7 +26575,7 @@ snapshots:
       get-stream: 6.0.1
       got: 11.8.6
       inquirer: 8.2.5
-      js-yaml: 4.1.0
+      js-yaml: 4.1.1
       jwt-decode: 3.1.2
       lodash: 4.17.21
       log: 6.3.1
@@ -26558,7 +26613,7 @@ snapshots:
       get-stream: 6.0.1
       got: 11.8.5
       inquirer: 8.2.5
-      js-yaml: 4.1.0
+      js-yaml: 4.1.1
       jwt-decode: 3.1.2
       lodash: 4.17.21
       log: 6.3.1
@@ -29519,6 +29574,23 @@ snapshots:
     optionalDependencies:
       magicast: 0.3.5
 
+  c12@3.3.3(magicast@0.3.5):
+    dependencies:
+      chokidar: 5.0.0
+      confbox: 0.2.4
+      defu: 6.1.4
+      dotenv: 17.3.1
+      exsolve: 1.0.8
+      giget: 2.0.0
+      jiti: 2.6.1
+      ohash: 2.0.11
+      pathe: 2.0.3
+      perfect-debounce: 2.1.0
+      pkg-types: 2.3.0
+      rc9: 2.1.2
+    optionalDependencies:
+      magicast: 0.3.5
+
   c12@3.3.3(magicast@0.5.2):
     dependencies:
       chokidar: 5.0.0
@@ -29778,7 +29850,7 @@ snapshots:
 
   citty@0.1.6:
     dependencies:
-      consola: 3.2.3
+      consola: 3.4.2
 
   class-variance-authority@0.7.0:
     dependencies:
@@ -30035,8 +30107,6 @@ snapshots:
       xdg-basedir: 5.1.0
 
   connect-history-api-fallback@2.0.0: {}
-
-  consola@3.2.3: {}
 
   consola@3.4.2: {}
 
@@ -31845,7 +31915,7 @@ snapshots:
 
   execa@6.1.0:
     dependencies:
-      cross-spawn: 7.0.3
+      cross-spawn: 7.0.6
       get-stream: 6.0.1
       human-signals: 3.0.1
       is-stream: 3.0.0
@@ -34228,13 +34298,13 @@ snapshots:
       '@parcel/watcher-wasm': 2.4.1
       citty: 0.1.6
       clipboardy: 4.0.0
-      consola: 3.2.3
+      consola: 3.4.2
       crossws: 0.3.4
       defu: 6.1.4
       get-port-please: 3.1.2
       h3: 1.15.1
       http-shutdown: 1.2.2
-      jiti: 2.4.2
+      jiti: 2.6.1
       mlly: 1.7.2
       node-forge: 1.3.1
       pathe: 1.1.2
@@ -34286,7 +34356,7 @@ snapshots:
   local-pkg@1.1.1:
     dependencies:
       mlly: 1.7.4
-      pkg-types: 2.1.0
+      pkg-types: 2.3.0
       quansync: 0.2.10
 
   locate-path@2.0.0:
@@ -35437,7 +35507,7 @@ snapshots:
       '@rollup/plugin-terser': 0.4.4(rollup@4.52.5)
       '@vercel/nft': 0.29.2(encoding@0.1.13)(rollup@4.52.5)
       archiver: 7.0.1
-      c12: 3.0.2(magicast@0.3.5)
+      c12: 3.3.3(magicast@0.3.5)
       chokidar: 4.0.3
       citty: 0.1.6
       compatx: 0.1.8
@@ -36550,12 +36620,6 @@ snapshots:
   pkg-dir@7.0.0:
     dependencies:
       find-up: 6.3.0
-
-  pkg-types@1.2.1:
-    dependencies:
-      confbox: 0.1.8
-      mlly: 1.7.2
-      pathe: 1.1.2
 
   pkg-types@1.3.1:
     dependencies:
@@ -40157,7 +40221,7 @@ snapshots:
   untun@0.1.3:
     dependencies:
       citty: 0.1.6
-      consola: 3.2.3
+      consola: 3.4.2
       pathe: 1.1.2
 
   untyped@2.0.0:
@@ -40174,7 +40238,7 @@ snapshots:
       magic-string: 0.30.21
       mlly: 1.7.2
       pathe: 1.1.2
-      pkg-types: 1.2.1
+      pkg-types: 1.3.1
       unplugin: 1.14.1(webpack-sources@3.2.3)
     transitivePeerDependencies:
       - webpack-sources
@@ -40743,7 +40807,7 @@ snapshots:
     dependencies:
       ansi-escapes: 4.3.2
       chalk: 4.1.2
-      consola: 3.2.3
+      consola: 3.4.2
       figures: 3.2.0
       markdown-table: 2.0.0
       pretty-time: 1.1.0

@@ -127,11 +127,16 @@
                             },
                             "id": {
                               "type": "string"
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time"
                             }
                           },
                           "required": [
                             "name",
-                            "id"
+                            "id",
+                            "createdAt"
                           ],
                           "additionalProperties": false
                         }
@@ -184,11 +189,16 @@
           },
           "name": {
             "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "required": [
           "id",
-          "name"
+          "name",
+          "createdAt"
         ],
         "additionalProperties": false
       },

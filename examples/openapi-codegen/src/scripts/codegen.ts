@@ -36,11 +36,23 @@ async function main() {
     input: specPath,
     output: outputDir,
     plugins: [
-      '@hey-api/typescript',
+      {
+        name: '@hey-api/typescript',
+        '~resolvers': {
+          string(ctx) {
+            if (
+              ctx.schema.format === 'date-time' ||
+              ctx.schema.format === 'date'
+            ) {
+              return ctx.$.type('Date');
+            }
+          },
+        },
+      },
       {
         name: '@hey-api/sdk',
         operations: { strategy: 'single' },
-        transformer: '@hey-api/transformers',
+        // transformer: '@hey-api/transformers',
       },
       { name: '@hey-api/client-fetch' },
     ],
@@ -48,6 +60,8 @@ async function main() {
   });
 
   console.log('SDK generated at', outputDir);
+
+  process.exit(0);
 }
 
 main().catch((err) => {
