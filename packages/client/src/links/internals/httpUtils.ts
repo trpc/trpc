@@ -94,7 +94,6 @@ export type HTTPBaseRequestOptions = GetInputOptions &
     type: ProcedureType;
     path: string;
     signal: Maybe<AbortSignal>;
-    trpcAcceptQueryParam?: TRPCAcceptHeader;
   };
 
 type GetUrl = (opts: HTTPBaseRequestOptions) => string;
@@ -102,6 +101,7 @@ type GetBody = (opts: HTTPBaseRequestOptions) => RequestInitEsque['body'];
 
 export type ContentOptions = {
   trpcAcceptHeader?: TRPCAcceptHeader;
+  trpcAcceptHeaderKey?: 'trpc-accept' | 'accept';
   contentTypeHeader?: string;
   getUrl: GetUrl;
   getBody: GetBody;
@@ -119,9 +119,6 @@ export const getUrl: GetUrl = (opts) => {
   }
   if ('inputs' in opts) {
     queryParts.push('batch=1');
-  }
-  if (opts.trpcAcceptQueryParam) {
-    queryParts.push(`accept=${encodeURIComponent(opts.trpcAcceptQueryParam)}`);
   }
   if (opts.type === 'query' || opts.type === 'subscription') {
     const input = getInput(opts);
@@ -214,7 +211,7 @@ export async function fetchHTTPResponse(opts: HTTPRequestOptions) {
       ? { 'content-type': opts.contentTypeHeader }
       : {}),
     ...(opts.trpcAcceptHeader
-      ? { 'trpc-accept': opts.trpcAcceptHeader }
+      ? { [opts.trpcAcceptHeaderKey ?? 'trpc-accept']: opts.trpcAcceptHeader }
       : undefined),
     ...resolvedHeaders,
   };

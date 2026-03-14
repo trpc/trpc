@@ -1302,8 +1302,8 @@ describe('with transformer', () => {
   });
 });
 
-describe('streamIndicator query param', () => {
-  test('streamIndicator: query sends accept query param without trpc-accept header', async () => {
+describe('streamHeader option', () => {
+  test('streamHeader: accept sends Accept header without trpc-accept header', async () => {
     const t = initTRPC.create({});
 
     const router = t.router({
@@ -1327,7 +1327,7 @@ describe('streamIndicator query param', () => {
           links: [
             httpBatchStreamLink({
               url: opts.httpUrl,
-              streamIndicator: 'query',
+              streamHeader: 'accept',
               fetch(url, init) {
                 fetchSpy(url as string, init as RequestInit);
                 return nativeFetch(url, init);
@@ -1346,12 +1346,12 @@ describe('streamIndicator query param', () => {
     expect(results).toEqual([2, 1]);
 
     expect(fetchSpy).toHaveBeenCalledOnce();
-    const [url, init] = fetchSpy.mock.calls[0]!;
-    expect(url).toContain('accept=application%2Fjsonl');
+    const [, init] = fetchSpy.mock.calls[0]!;
+    expect(init.headers).toHaveProperty('accept', 'application/jsonl');
     expect(init.headers).not.toHaveProperty('trpc-accept');
   });
 
-  test('streamIndicator: header (default) sends trpc-accept header without accept query param', async () => {
+  test('streamHeader: trpc-accept sends trpc-accept header without Accept header', async () => {
     const t = initTRPC.create({});
 
     const router = t.router({
@@ -1375,7 +1375,7 @@ describe('streamIndicator query param', () => {
           links: [
             httpBatchStreamLink({
               url: opts.httpUrl,
-              streamIndicator: 'header',
+              streamHeader: 'trpc-accept',
               fetch(url, init) {
                 fetchSpy(url as string, init as RequestInit);
                 return nativeFetch(url, init);
@@ -1394,12 +1394,12 @@ describe('streamIndicator query param', () => {
     expect(results).toEqual([2, 1]);
 
     expect(fetchSpy).toHaveBeenCalledOnce();
-    const [url, init] = fetchSpy.mock.calls[0]!;
-    expect(url).not.toContain('accept=');
+    const [, init] = fetchSpy.mock.calls[0]!;
     expect(init.headers).toHaveProperty('trpc-accept', 'application/jsonl');
+    expect(init.headers).not.toHaveProperty('accept');
   });
 
-  test('streamIndicator defaults to header when omitted', async () => {
+  test('streamHeader defaults to trpc-accept when omitted', async () => {
     const t = initTRPC.create({});
 
     const router = t.router({
@@ -1441,8 +1441,8 @@ describe('streamIndicator query param', () => {
     expect(results).toEqual([2, 1]);
 
     expect(fetchSpy).toHaveBeenCalledOnce();
-    const [url, init] = fetchSpy.mock.calls[0]!;
-    expect(url).not.toContain('accept=');
+    const [, init] = fetchSpy.mock.calls[0]!;
     expect(init.headers).toHaveProperty('trpc-accept', 'application/jsonl');
+    expect(init.headers).not.toHaveProperty('accept');
   });
 });

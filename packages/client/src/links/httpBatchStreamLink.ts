@@ -21,12 +21,12 @@ import type { Operation, TRPCLink } from './types';
 type HTTPBatchStreamLinkOptions<TRoot extends AnyClientTypes> =
   HTTPBatchLinkOptions<TRoot> & {
     /**
-     * How to signal the server that the client wants a streaming response.
-     * - `'header'` (default): sends `trpc-accept: application/jsonl` header
-     * - `'query'`: sends `accept=application/jsonl` query parameter (can avoid CORS preflight for cross-origin streaming queries)
-     * @default 'header'
+     * Which header to use to signal the server that the client wants a streaming response.
+     * - `'trpc-accept'` (default): sends `trpc-accept: application/jsonl` header
+     * - `'accept'`: sends `Accept: application/jsonl` header (can avoid CORS preflight for cross-origin streaming queries)
+     * @default 'trpc-accept'
      */
-    streamIndicator?: 'header' | 'query';
+    streamHeader?: 'trpc-accept' | 'accept';
   };
 
 /**
@@ -61,9 +61,6 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
             path,
             inputs,
             signal: null,
-            ...(opts.streamIndicator === 'query' && {
-              trpcAcceptQueryParam: 'application/jsonl' as const,
-            }),
           });
 
           return url.length <= maxURLLength;
@@ -82,13 +79,8 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
             signal: raceAbortSignals(batchSignals, abortController.signal),
             type,
             contentTypeHeader: 'application/json',
-            trpcAcceptHeader:
-              opts.streamIndicator === 'query'
-                ? undefined
-                : 'application/jsonl',
-            ...(opts.streamIndicator === 'query' && {
-              trpcAcceptQueryParam: 'application/jsonl' as const,
-            }),
+            trpcAcceptHeader: 'application/jsonl',
+            trpcAcceptHeaderKey: opts.streamHeader ?? 'trpc-accept',
             getUrl,
             getBody,
             inputs,

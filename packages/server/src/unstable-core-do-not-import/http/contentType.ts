@@ -174,7 +174,12 @@ const jsonContentTypeHandler: ContentTypeHandler = {
       isBatchCall,
       accept:
         (req.headers.get('trpc-accept') as TRPCAcceptHeader | null) ??
-        (opts.searchParams.get('accept') as TRPCAcceptHeader | null),
+        (req.headers
+          .get('accept')
+          ?.split(',')
+          .some((t) => t.trim() === 'application/jsonl')
+          ? ('application/jsonl' as TRPCAcceptHeader)
+          : null),
       calls,
       type,
       connectionParams:
