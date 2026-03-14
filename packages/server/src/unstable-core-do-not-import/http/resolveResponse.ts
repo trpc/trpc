@@ -301,7 +301,9 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   /**
    * @deprecated
    */
-  const isStreamCall = req.headers.get('trpc-accept') === 'application/jsonl';
+  const isStreamCall =
+    req.headers.get('trpc-accept') === 'application/jsonl' ||
+    url.searchParams.get('accept') === 'application/jsonl';
 
   const experimentalSSE = config.sse?.enabled ?? true;
   try {

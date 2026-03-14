@@ -1,4 +1,5 @@
 import type { AnyRouter, ProcedureType } from '@trpc/server';
+import type { AnyClientTypes } from '@trpc/server/unstable-core-do-not-import';
 import { observable } from '@trpc/server/observable';
 import type { TRPCErrorShape, TRPCResponse } from '@trpc/server/rpc';
 import { jsonlStreamConsumer } from '@trpc/server/unstable-core-do-not-import';
@@ -17,11 +18,22 @@ import {
 } from './internals/httpUtils';
 import type { Operation, TRPCLink } from './types';
 
+type HTTPBatchStreamLinkOptions<TRoot extends AnyClientTypes> =
+  HTTPBatchLinkOptions<TRoot> & {
+  /**
+   * How to signal the server that the client wants a streaming response.
+   * - `'header'` (default): sends `trpc-accept: application/jsonl` header
+   * - `'query'`: sends `accept=application/jsonl` query parameter (can avoid CORS preflight for cross-origin streaming queries)
+   * @default 'header'
+   */
+  streamIndicator?: 'header' | 'query';
+};
+
 /**
  * @see https://trpc.io/docs/client/links/httpBatchStreamLink
  */
 export function httpBatchStreamLink<TRouter extends AnyRouter>(
-  opts: HTTPBatchLinkOptions<TRouter['_def']['_config']['$types']>,
+  opts: HTTPBatchStreamLinkOptions<TRouter['_def']['_config']['$types']>,
 ): TRPCLink<TRouter> {
   const resolvedOpts = resolveHTTPLinkOptions(opts);
   const maxURLLength = opts.maxURLLength ?? Infinity;
@@ -49,6 +61,9 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
             path,
             inputs,
             signal: null,
+            ...(opts.streamIndicator === 'query' && {
+              trpcAcceptQueryParam: 'application/jsonl' as const,
+            }),
           });
 
           return url.length <= maxURLLength;
@@ -67,7 +82,10 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
             signal: raceAbortSignals(batchSignals, abortController.signal),
             type,
             contentTypeHeader: 'application/json',
-            trpcAcceptHeader: 'application/jsonl',
+            trpcAcceptHeader: opts.streamIndicator === 'query' ? undefined : 'application/jsonl',
+            ...(opts.streamIndicator === 'query' && {
+              trpcAcceptQueryParam: 'application/jsonl' as const,
+            }),
             getUrl,
             getBody,
             inputs,

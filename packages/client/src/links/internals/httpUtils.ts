@@ -94,6 +94,7 @@ export type HTTPBaseRequestOptions = GetInputOptions &
     type: ProcedureType;
     path: string;
     signal: Maybe<AbortSignal>;
+    trpcAcceptQueryParam?: TRPCAcceptHeader;
   };
 
 type GetUrl = (opts: HTTPBaseRequestOptions) => string;
@@ -118,6 +119,9 @@ export const getUrl: GetUrl = (opts) => {
   }
   if ('inputs' in opts) {
     queryParts.push('batch=1');
+  }
+  if (opts.trpcAcceptQueryParam) {
+    queryParts.push(`accept=${encodeURIComponent(opts.trpcAcceptQueryParam)}`);
   }
   if (opts.type === 'query' || opts.type === 'subscription') {
     const input = getInput(opts);

@@ -9,7 +9,11 @@ slug: /client/links/httpBatchStreamLink
 
 ## Options
 
-Options are identical to [`httpBatchLink options`](./httpBatchLink.md#options).
+Options are identical to [`httpBatchLink options`](./httpBatchLink.md#options), with the following addition:
+
+| Option            | Type                    | Default    | Description                                                                                              |
+| ----------------- | ----------------------- | ---------- | -------------------------------------------------------------------------------------------------------- |
+| `streamIndicator` | `'header'` \| `'query'` | `'header'` | How to signal the server that the client wants a streaming response. `'query'` sends `accept=application/jsonl` as a query parameter instead of the `trpc-accept` header, which can avoid CORS preflight for cross-origin streaming queries. |
 
 ## Usage
 
@@ -96,7 +100,7 @@ const client = createTRPCClient<AppRouter>({
 
 Compared to a regular `httpBatchLink`, a `httpBatchStreamLink` will:
 
-- Cause the requests to be sent with a `trpc-accept: application/jsonl` header
+- Cause the requests to be sent with a `trpc-accept: application/jsonl` header (or an `accept=application/jsonl` query parameter when using `streamIndicator: 'query'`)
 - Cause the response to be sent with a `transfer-encoding: chunked` and `content-type: application/jsonl`
 - Remove the `data` key from the argument object passed to `responseMeta` (because with a streamed response, the headers are sent before the data is available)
 
