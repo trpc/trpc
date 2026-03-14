@@ -7,7 +7,11 @@ export const db = {
     findMany: async () => users,
     findById: async (id: string) => users.find((user) => user.id === id),
     create: async (data: { name: string }) => {
-      const user = { id: String(users.length + 1), createdAt: new Date(), ...data };
+      const user = {
+        id: String(users.length + 1),
+        createdAt: new Date(),
+        ...data,
+      };
       users.push(user);
       return user;
     },
