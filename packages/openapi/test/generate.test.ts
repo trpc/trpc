@@ -151,7 +151,10 @@ describe('generateOpenAPIDocument', () => {
         bigintOp?.responses?.['200']?.content?.['application/json']?.schema;
       const responseSchema = unwrapSuccessData(rawResponseSchema, doc);
 
-      expect(responseSchema.properties.amount).toEqual({ type: 'integer', format: 'bigint' });
+      expect(responseSchema.properties.amount).toEqual({
+        type: 'integer',
+        format: 'bigint',
+      });
     });
 
     it('strips Zod brand metadata from branded types', () => {
@@ -765,12 +768,18 @@ describe('generateOpenAPIDocument', () => {
       const getBigIntOp = doc.paths['/getBigInt']?.['get'] as any;
       const inputSchema =
         getBigIntOp?.parameters?.[0]?.content?.['application/json']?.schema;
-      expect(inputSchema.properties.amount).toEqual({ type: 'integer', format: 'bigint' });
+      expect(inputSchema.properties.amount).toEqual({
+        type: 'integer',
+        format: 'bigint',
+      });
 
       const rawResponseSchema =
         getBigIntOp?.responses?.['200']?.content?.['application/json']?.schema;
       const responseSchema = unwrapSuccessData(rawResponseSchema, doc);
-      expect(responseSchema.properties.amount).toEqual({ type: 'integer', format: 'bigint' });
+      expect(responseSchema.properties.amount).toEqual({
+        type: 'integer',
+        format: 'bigint',
+      });
     });
 
     it('returns raw superjson envelope without a superjson response interceptor', async () => {
