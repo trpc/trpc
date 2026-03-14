@@ -11,8 +11,8 @@ slug: /client/links/httpBatchStreamLink
 
 Options are identical to [`httpBatchLink options`](./httpBatchLink.md#options), with the following addition:
 
-| Option            | Type                    | Default    | Description                                                                                              |
-| ----------------- | ----------------------- | ---------- | -------------------------------------------------------------------------------------------------------- |
+| Option            | Type                    | Default    | Description                                                                                                                                                                                                                                  |
+| ----------------- | ----------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `streamIndicator` | `'header'` \| `'query'` | `'header'` | How to signal the server that the client wants a streaming response. `'query'` sends `accept=application/jsonl` as a query parameter instead of the `trpc-accept` header, which can avoid CORS preflight for cross-origin streaming queries. |
 
 ## Usage

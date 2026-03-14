@@ -1397,7 +1397,7 @@ describe('streamIndicator query param', () => {
     const [url, init] = fetchSpy.mock.calls[0]!;
     expect(url).not.toContain('accept=');
     expect(init.headers).toHaveProperty('trpc-accept', 'application/jsonl');
-    });
+  });
 
   test('streamIndicator defaults to header when omitted', async () => {
     const t = initTRPC.create({});

@@ -1,7 +1,7 @@
 import type { AnyRouter, ProcedureType } from '@trpc/server';
-import type { AnyClientTypes } from '@trpc/server/unstable-core-do-not-import';
 import { observable } from '@trpc/server/observable';
 import type { TRPCErrorShape, TRPCResponse } from '@trpc/server/rpc';
+import type { AnyClientTypes } from '@trpc/server/unstable-core-do-not-import';
 import { jsonlStreamConsumer } from '@trpc/server/unstable-core-do-not-import';
 import type { BatchLoader } from '../internals/dataLoader';
 import { dataLoader } from '../internals/dataLoader';
@@ -20,14 +20,14 @@ import type { Operation, TRPCLink } from './types';
 
 type HTTPBatchStreamLinkOptions<TRoot extends AnyClientTypes> =
   HTTPBatchLinkOptions<TRoot> & {
-  /**
-   * How to signal the server that the client wants a streaming response.
-   * - `'header'` (default): sends `trpc-accept: application/jsonl` header
-   * - `'query'`: sends `accept=application/jsonl` query parameter (can avoid CORS preflight for cross-origin streaming queries)
-   * @default 'header'
-   */
-  streamIndicator?: 'header' | 'query';
-};
+    /**
+     * How to signal the server that the client wants a streaming response.
+     * - `'header'` (default): sends `trpc-accept: application/jsonl` header
+     * - `'query'`: sends `accept=application/jsonl` query parameter (can avoid CORS preflight for cross-origin streaming queries)
+     * @default 'header'
+     */
+    streamIndicator?: 'header' | 'query';
+  };
 
 /**
  * @see https://trpc.io/docs/client/links/httpBatchStreamLink
@@ -82,7 +82,10 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
             signal: raceAbortSignals(batchSignals, abortController.signal),
             type,
             contentTypeHeader: 'application/json',
-            trpcAcceptHeader: opts.streamIndicator === 'query' ? undefined : 'application/jsonl',
+            trpcAcceptHeader:
+              opts.streamIndicator === 'query'
+                ? undefined
+                : 'application/jsonl',
             ...(opts.streamIndicator === 'query' && {
               trpcAcceptQueryParam: 'application/jsonl' as const,
             }),
