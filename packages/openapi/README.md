@@ -3,6 +3,7 @@
 ## TODO
 
 - [ ] SSE subscriptions
+- [ ] non-json content types (might already work, needs tests)
 - [ ] non-nodejs example
 - [ ] an ai/mcp example
 
