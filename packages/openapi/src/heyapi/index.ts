@@ -80,6 +80,12 @@ export function createTRPCHeyApiTypeResolvers(): HeyAPIResolvers {
       }
       return undefined;
     },
+    number(ctx) {
+      if (ctx.schema.format === 'bigint') {
+        return ctx.$.type('bigint');
+      }
+      return undefined;
+    },
   };
 }
 

@@ -143,6 +143,17 @@ describe('generateOpenAPIDocument', () => {
       expect(errorSchema.required).toContain('data');
     });
 
+    it('handles bigint inferred return types as integer schema', () => {
+      const bigintOp = doc.paths['/inferredReturns.bigintReturn']?.[
+        'get'
+      ] as any;
+      const rawResponseSchema =
+        bigintOp?.responses?.['200']?.content?.['application/json']?.schema;
+      const responseSchema = unwrapSuccessData(rawResponseSchema, doc);
+
+      expect(responseSchema.properties.amount).toEqual({ type: 'integer', format: 'bigint' });
+    });
+
     it('strips Zod brand metadata from branded types', () => {
       const spec = JSON.stringify(doc);
 
@@ -750,6 +761,18 @@ describe('generateOpenAPIDocument', () => {
       });
     });
 
+    it('generates integer schema for bigint fields', () => {
+      const getBigIntOp = doc.paths['/getBigInt']?.['get'] as any;
+      const inputSchema =
+        getBigIntOp?.parameters?.[0]?.content?.['application/json']?.schema;
+      expect(inputSchema.properties.amount).toEqual({ type: 'integer', format: 'bigint' });
+
+      const rawResponseSchema =
+        getBigIntOp?.responses?.['200']?.content?.['application/json']?.schema;
+      const responseSchema = unwrapSuccessData(rawResponseSchema, doc);
+      expect(responseSchema.properties.amount).toEqual({ type: 'integer', format: 'bigint' });
+    });
+
     it('returns raw superjson envelope without a superjson response interceptor', async () => {
       const handler = createHTTPHandler({ router: SuperjsonRouter });
       const server = http.createServer(handler);
@@ -836,6 +859,19 @@ describe('generateOpenAPIDocument', () => {
       expect(createResult.data!.result.data).toEqual({
         name: 'Conference',
         at: new Date('2025-09-01T09:00:00.000Z'),
+      });
+
+      // --- BigInt query with superjson on both ends ---
+      const bigintResult = await sdk.getBigInt({
+        query: {
+          input: { id: 'bi_1', amount: BigInt(9007199254740991) },
+        },
+      });
+
+      expect(bigintResult.data).toBeDefined();
+      expect(bigintResult.data!.result.data).toEqual({
+        id: 'bi_1',
+        amount: BigInt(9007199254740991),
       });
     });
   });

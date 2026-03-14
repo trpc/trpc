@@ -5,7 +5,7 @@ export type ClientOptions = {
 };
 
 export type WithBigInt = {
-    id: number;
+    id: bigint;
 };
 
 export type NeverField = {
@@ -14,7 +14,7 @@ export type NeverField = {
 };
 
 export type AsyncIterable = {
-    '__@asyncIterator@5418': {
+    '__@asyncIterator@5454': {
         [key: string]: unknown;
     };
 };

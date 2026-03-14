@@ -269,7 +269,7 @@ function convertPrimitiveOrLiteral(
     return { not: {} };
   }
   if (flags & ts.TypeFlags.BigInt || flags & ts.TypeFlags.BigIntLiteral) {
-    return { type: 'integer' };
+    return { type: 'integer', format: 'bigint' };
   }
 
   if (flags & ts.TypeFlags.StringLiteral) {

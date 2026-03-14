@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateEventData, CreateEventErrors, CreateEventResponses, GetEventData, GetEventErrors, GetEventResponses } from './types.gen';
+import type { CreateEventData, CreateEventErrors, CreateEventResponses, GetBigIntData, GetBigIntErrors, GetBigIntResponses, GetEventData, GetEventErrors, GetEventResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -70,5 +70,9 @@ export class Sdk extends HeyApiClient {
                 ...options.headers
             }
         });
+    }
+    
+    public getBigInt<ThrowOnError extends boolean = false>(options: Options<GetBigIntData, ThrowOnError>) {
+        return (options.client ?? this.client).get<GetBigIntResponses, GetBigIntErrors, ThrowOnError>({ url: '/getBigInt', ...options });
     }
 }

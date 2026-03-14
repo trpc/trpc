@@ -1620,6 +1620,39 @@ export type InferredReturnsDateReturnResponses = {
 
 export type InferredReturnsDateReturnResponse = InferredReturnsDateReturnResponses[keyof InferredReturnsDateReturnResponses];
 
+export type InferredReturnsBigintReturnData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/inferredReturns.bigintReturn';
+};
+
+export type InferredReturnsBigintReturnErrors = {
+    /**
+     * Error response
+     */
+    default: {
+        error: DefaultErrorShape;
+    };
+};
+
+export type InferredReturnsBigintReturnError = InferredReturnsBigintReturnErrors[keyof InferredReturnsBigintReturnErrors];
+
+export type InferredReturnsBigintReturnResponses = {
+    /**
+     * Successful response
+     */
+    200: {
+        result: {
+            data: {
+                amount: bigint;
+            };
+        };
+    };
+};
+
+export type InferredReturnsBigintReturnResponse = InferredReturnsBigintReturnResponses[keyof InferredReturnsBigintReturnResponses];
+
 export type InferredReturnsNullableReturnData = {
     body?: never;
     path?: never;

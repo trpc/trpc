@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { RichMutateData, RichMutateErrors, RichMutateResponses, RichQueryData, RichQueryErrors, RichQueryResponses } from './types.gen';
+import type { BigintData, BigintErrors, BigintResponses, RichMutateData, RichMutateErrors, RichMutateResponses, RichQueryData, RichQueryErrors, RichQueryResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -72,6 +72,10 @@ export class Sdk extends HeyApiClient {
     }) {
         super(args);
         Sdk.__registry.set(this, args?.key);
+    }
+    
+    public bigint<ThrowOnError extends boolean = false>(options: Options<BigintData, ThrowOnError>) {
+        return (options.client ?? this.client).get<BigintResponses, BigintErrors, ThrowOnError>({ url: '/bigint', ...options });
     }
     
     private _rich?: Rich;

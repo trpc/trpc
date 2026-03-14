@@ -456,6 +456,11 @@ export const AppRouter = t.router({
       createdAt: new Date(),
     })),
 
+    // --- BigInt return ---
+    bigintReturn: t.procedure.query(() => ({
+      amount: BigInt(9007199254740991),
+    })),
+
     // --- Nullable return ---
     nullableReturn: t.procedure.query(() => {
       const val = null as string | null;

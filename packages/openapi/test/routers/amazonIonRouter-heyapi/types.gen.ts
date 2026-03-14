@@ -142,3 +142,42 @@ export type RichMutateResponses = {
 };
 
 export type RichMutateResponse = RichMutateResponses[keyof RichMutateResponses];
+
+export type BigintData = {
+    body?: never;
+    path?: never;
+    query: {
+        input: {
+            id: string;
+            amount: bigint;
+        };
+    };
+    url: '/bigint';
+};
+
+export type BigintErrors = {
+    /**
+     * Error response
+     */
+    default: {
+        error: DefaultErrorShape;
+    };
+};
+
+export type BigintError = BigintErrors[keyof BigintErrors];
+
+export type BigintResponses = {
+    /**
+     * Successful response
+     */
+    200: {
+        result: {
+            data: {
+                id: string;
+                amount: bigint;
+            };
+        };
+    };
+};
+
+export type BigintResponse = BigintResponses[keyof BigintResponses];

@@ -680,7 +680,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "integer"
+            "type": "integer",
+            "format": "bigint"
           }
         },
         "required": [
@@ -704,12 +705,12 @@
       "AsyncIterable": {
         "type": "object",
         "properties": {
-          "__@asyncIterator@5418": {
+          "__@asyncIterator@5454": {
             "type": "object"
           }
         },
         "required": [
-          "__@asyncIterator@5418"
+          "__@asyncIterator@5454"
         ],
         "additionalProperties": false
       },

@@ -98,3 +98,42 @@ export type CreateEventResponses = {
 };
 
 export type CreateEventResponse = CreateEventResponses[keyof CreateEventResponses];
+
+export type GetBigIntData = {
+    body?: never;
+    path?: never;
+    query: {
+        input: {
+            id: string;
+            amount: bigint;
+        };
+    };
+    url: '/getBigInt';
+};
+
+export type GetBigIntErrors = {
+    /**
+     * Error response
+     */
+    default: {
+        error: DefaultErrorShape;
+    };
+};
+
+export type GetBigIntError = GetBigIntErrors[keyof GetBigIntErrors];
+
+export type GetBigIntResponses = {
+    /**
+     * Successful response
+     */
+    200: {
+        result: {
+            data: {
+                id: string;
+                amount: bigint;
+            };
+        };
+    };
+};
+
+export type GetBigIntResponse = GetBigIntResponses[keyof GetBigIntResponses];

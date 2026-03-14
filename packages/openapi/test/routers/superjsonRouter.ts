@@ -14,6 +14,11 @@ export const SuperjsonRouter = t.router({
     .input(z.object({ name: z.string(), at: z.date() }))
     .output(z.object({ name: z.string(), at: z.date() }))
     .mutation(({ input }) => input),
+
+  getBigInt: t.procedure
+    .input(z.object({ id: z.string(), amount: z.bigint() }))
+    .output(z.object({ id: z.string(), amount: z.bigint() }))
+    .query(({ input }) => input),
 });
 
 export type SuperjsonRouter = typeof SuperjsonRouter;

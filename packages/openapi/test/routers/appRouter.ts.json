@@ -3188,6 +3188,55 @@
         }
       }
     },
+    "/inferredReturns.bigintReturn": {
+      "get": {
+        "operationId": "inferredReturns.bigintReturn",
+        "tags": [
+          "inferredReturns"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "amount": {
+                              "type": "integer",
+                              "format": "bigint"
+                            }
+                          },
+                          "required": [
+                            "amount"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
     "/inferredReturns.nullableReturn": {
       "get": {
         "operationId": "inferredReturns.nullableReturn",

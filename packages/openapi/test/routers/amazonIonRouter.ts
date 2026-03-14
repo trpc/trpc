@@ -115,6 +115,11 @@ const richSchema = z.object({
   items: z.array(z.object({ id: z.number(), label: z.string() })),
 });
 
+const bigintSchema = z.object({
+  id: z.string(),
+  amount: z.bigint(),
+});
+
 export const AmazonIonRouter = t.router({
   rich: t.router({
     query: t.procedure
@@ -127,6 +132,11 @@ export const AmazonIonRouter = t.router({
       .output(richSchema)
       .mutation(({ input }) => input),
   }),
+
+  bigint: t.procedure
+    .input(bigintSchema)
+    .output(bigintSchema)
+    .query(({ input }) => input),
 });
 
 export type AmazonIonRouter = typeof AmazonIonRouter;

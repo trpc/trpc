@@ -43,7 +43,7 @@ describe('generateOpenAPIDocument edge cases', () => {
 
   it('handles bigint types as integer schema', () => {
     const schema = unwrapSuccessData(getResponseSchema(doc, 'bigint'), doc);
-    expect(schema.properties.id).toEqual({ type: 'integer' });
+    expect(schema.properties.id).toEqual({ type: 'integer', format: 'bigint' });
   });
 
   it('handles never type in optional fields', () => {
