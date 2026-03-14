@@ -26,7 +26,7 @@ async function main() {
 
   // Create a user
   const createResult = await sdk.user.create({
-    body: { name: 'sachinraja' },
+    body: { name: 'nick' },
   });
   console.log('Created user:', createResult.data?.result.data);
 

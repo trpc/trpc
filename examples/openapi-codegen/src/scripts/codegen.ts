@@ -17,8 +17,9 @@ const outputDir = path.resolve(__dirname, '..', 'client', 'generated');
 const specPath = path.resolve(__dirname, '..', '..', 'openapi.json');
 
 async function main() {
+  debugger;
   // Generate the OpenAPI document from the router
-  const doc = generateOpenAPIDocument(routerPath, {
+  const doc = await generateOpenAPIDocument(routerPath, {
     exportName: 'appRouter',
     title: 'Example API',
     version: '1.0.0',
