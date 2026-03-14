@@ -65,7 +65,7 @@ The generator statically analyses your router's TypeScript types — it never ex
 
 ## Generate a client from the spec
 
-Any OpenAPI client generator should work, but the most tested integration is with [HeyAPI](https://heyapi.dev/openapi-ts/get-started).
+Any OpenAPI client generator should work, but the most tested integration is with [Hey API](https://heyapi.dev/openapi-ts/get-started).
 
 A generated client will produce typed SDK functions matching your tRPC procedures:
 
@@ -73,9 +73,9 @@ A generated client will produce typed SDK functions matching your tRPC procedure
 - **Mutations** → `POST /procedure.path`
 - **Subscriptions** are ignored (SSE coming soon)
 
-### HeyAPI (TypeScript)
+### Hey API (TypeScript)
 
-[HeyAPI Documentation](https://heyapi.dev/)
+[Hey API Documentation](https://heyapi.dev/)
 
 ```bash
 pnpm install @hey-api/openapi-ts
@@ -145,7 +145,7 @@ The generated OpenAPI spec works with any OpenAPI-compatible client generator. T
 - **Query Inputs** — GET requests encode input as `?input=<JSON>`, not as individual query parameters
 - **Transformers** — if your tRPC API uses a transformer, the client must serialise inputs and deserialise outputs using the same format
 
-See the [HeyAPI config source](https://github.com/trpc/trpc/blob/f346e9bb97ff3c8a7e874f59110a47730293097a/packages/openapi/src/heyapi/index.ts) for a complete reference implementation.
+See the [Hey API config source](https://github.com/trpc/trpc/blob/f346e9bb97ff3c8a7e874f59110a47730293097a/packages/openapi/src/heyapi/index.ts) for a complete reference implementation.
 
 ## Transformers
 
