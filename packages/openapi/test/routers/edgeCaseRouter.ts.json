@@ -704,12 +704,12 @@
       "AsyncIterable": {
         "type": "object",
         "properties": {
-          "__@asyncIterator@5417": {
+          "__@asyncIterator@5418": {
             "type": "object"
           }
         },
         "required": [
-          "__@asyncIterator@5417"
+          "__@asyncIterator@5418"
         ],
         "additionalProperties": false
       },

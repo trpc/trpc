@@ -8,6 +8,7 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createClient } from '@hey-api/openapi-ts';
 import { generateOpenAPIDocument } from '@trpc/openapi';
+import { createTRPCHeyApiTypeResolvers } from '@trpc/openapi/heyapi';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -38,23 +39,12 @@ async function main() {
     plugins: [
       {
         name: '@hey-api/typescript',
-        '~resolvers': {
-          string(ctx) {
-            if (
-              ctx.schema.format === 'date-time' ||
-              ctx.schema.format === 'date'
-            ) {
-              return ctx.$.type('Date');
-            }
-          },
-        },
+        '~resolvers': createTRPCHeyApiTypeResolvers(),
       },
       {
         name: '@hey-api/sdk',
         operations: { strategy: 'single' },
-        // transformer: '@hey-api/transformers',
       },
-      { name: '@hey-api/client-fetch' },
     ],
     logs: { level: 'info' },
   });

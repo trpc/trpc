@@ -20,6 +20,7 @@
  */
 
 import type { Config } from '@hey-api/client-fetch';
+import type { UserConfig } from '@hey-api/openapi-ts';
 import type {
   TRPCCombinedDataTransformer,
   TRPCDataTransformer,
@@ -28,6 +29,14 @@ import type {
 export type DataTransformerOptions =
   | TRPCDataTransformer
   | TRPCCombinedDataTransformer;
+
+type HeyAPIResolvers = Exclude<
+  Extract<
+    Exclude<UserConfig['plugins'], undefined | string>[number],
+    { name: '@hey-api/typescript' }
+  >['~resolvers'],
+  undefined
+>;
 
 function resolveTransformer(
   transformer: DataTransformerOptions,
@@ -44,6 +53,35 @@ export interface TRPCHeyApiClientOptions {
 
 export type TRPCHeyApiClientConfig = Required<Pick<Config, 'querySerializer'>> &
   Pick<Config, 'bodySerializer' | 'responseTransformer'>;
+
+/**
+ * Returns the `~resolvers` object for the `@hey-api/typescript` plugin.
+ *
+ * Maps `date` and `date-time` string formats to `Date` so that the
+ * generated SDK uses `Date` instead of `string` for those fields.
+ *
+ * @example
+ * ```ts
+ * import { createClient } from '@hey-api/openapi-ts';
+ * import { createTRPCHeyApiTypeResolvers } from '@trpc/openapi/heyapi';
+ *
+ * await createClient({
+ *   plugins: [
+ *     { name: '@hey-api/typescript', '~resolvers': createTRPCHeyApiTypeResolvers() },
+ *   ],
+ * });
+ * ```
+ */
+export function createTRPCHeyApiTypeResolvers(): HeyAPIResolvers {
+  return {
+    string(ctx) {
+      if (ctx.schema.format === 'date-time' || ctx.schema.format === 'date') {
+        return ctx.$.type('Date');
+      }
+      return undefined;
+    },
+  };
+}
 
 export function createTRPCHeyApiClientConfig(opts?: TRPCHeyApiClientOptions) {
   const transformer = opts?.transformer

@@ -13,7 +13,6 @@
     "test-start": "start-server-and-test 'node dist/server' 3000 'node dist/client'"
   },
   "dependencies": {
-    "@hey-api/client-fetch": "^0.13.1",
     "@trpc/client": "npm:@trpc/client",
     "@trpc/openapi": "npm:@trpc/openapi",
     "@trpc/server": "npm:@trpc/server",

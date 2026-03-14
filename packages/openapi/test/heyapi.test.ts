@@ -1,5 +1,50 @@
 import { describe, expect, it } from 'vitest';
-import { createTRPCHeyApiClientConfig } from '../src/heyapi';
+import {
+  createTRPCHeyApiClientConfig,
+  createTRPCHeyApiTypeResolvers,
+} from '../src/heyapi';
+
+describe('createTRPCHeyApiTypeResolvers', () => {
+  const resolvers = createTRPCHeyApiTypeResolvers();
+
+  it('returns an object with a string resolver', () => {
+    expect(resolvers.string).toBeTypeOf('function');
+  });
+
+  it('resolves date-time format to Date type', () => {
+    const dateType = Symbol('Date');
+    const ctx = {
+      schema: { format: 'date-time' },
+      $: { type: (_name: string) => dateType },
+    };
+    expect(resolvers.string(ctx)).toBe(dateType);
+  });
+
+  it('resolves date format to Date type', () => {
+    const dateType = Symbol('Date');
+    const ctx = {
+      schema: { format: 'date' },
+      $: { type: (_name: string) => dateType },
+    };
+    expect(resolvers.string(ctx)).toBe(dateType);
+  });
+
+  it('returns undefined for other string formats', () => {
+    const ctx = {
+      schema: { format: 'email' },
+      $: { type: (_name: string) => 'should not be called' },
+    };
+    expect(resolvers.string(ctx)).toBeUndefined();
+  });
+
+  it('returns undefined when no format is specified', () => {
+    const ctx = {
+      schema: {},
+      $: { type: (_name: string) => 'should not be called' },
+    };
+    expect(resolvers.string(ctx)).toBeUndefined();
+  });
+});
 
 describe('createTRPCHeyApiClientConfig', () => {
   describe('without transformer', () => {

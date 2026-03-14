@@ -10,6 +10,7 @@ import { readdirSync, rmSync, writeFileSync } from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createClient } from '@hey-api/openapi-ts';
+import { createTRPCHeyApiTypeResolvers } from '@trpc/openapi/heyapi';
 import { generateOpenAPIDocument } from '../../src/generate';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -34,25 +35,20 @@ export async function codegen() {
     rmSync(outputDir, { recursive: true, force: true });
 
     const doc = await generateOpenAPIDocument(routerPath, { exportName });
-    writeFileSync(
-      path.resolve(routersDir, `${stem}.ts.json`),
-      JSON.stringify(doc, null, 2) + '\n',
-    );
+    const docPath = path.resolve(routersDir, `${stem}.ts.json`);
+    writeFileSync(docPath, JSON.stringify(doc, null, 2) + '\n');
 
     await createClient({
-      input: doc as any,
+      input: docPath,
       output: outputDir,
       plugins: [
-        '@hey-api/typescript',
+        {
+          name: '@hey-api/typescript',
+          '~resolvers': createTRPCHeyApiTypeResolvers(),
+        },
         {
           name: '@hey-api/sdk',
           operations: { strategy: 'single' },
-        },
-        { name: '@hey-api/client-fetch' },
-        {
-          dates: true,
-          bigInt: true,
-          name: '@hey-api/transformers',
         },
       ],
       logs: { level: 'error' },

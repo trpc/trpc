@@ -18,7 +18,7 @@ The `@trpc/openapi` package generates an OpenAPI 3.1 specification from your tRP
 ## Install
 
 ```bash
-pnpm install @trpc/openapi
+pnpm add @trpc/openapi
 ```
 
 ## Adapting your tRPC setup
@@ -35,7 +35,7 @@ The generator works with your existing router — no annotations or decorators r
 ### CLI
 
 ```bash
-npx trpc-openapi ./src/server/router.ts
+pnpm exec trpc-openapi ./src/server/router.ts
 ```
 
 | Option                | Default        | Description                      |
@@ -46,7 +46,7 @@ npx trpc-openapi ./src/server/router.ts
 | `--version <ver>`     | `0.0.0`        | OpenAPI `info.version`           |
 
 ```bash
-npx trpc-openapi ./src/server/router.ts -o api.json --title "My API" --version 1.0.0
+pnpm exec trpc-openapi ./src/server/router.ts -o api.json --title "My API" --version 1.0.0
 ```
 
 ### Programmatic
@@ -78,13 +78,20 @@ A generated client will produce typed SDK functions matching your tRPC procedure
 [Hey API Documentation](https://heyapi.dev/)
 
 ```bash
-pnpm install @hey-api/openapi-ts
-npx openapi-ts -i openapi.json -o src/generated
+pnpm add @trpc/openapi @hey-api/openapi-ts @hey-api/client-fetch
 ```
 
 Out of the box, an OpenAPI-generated client won't know about your transformer setup or how to encode query parameters. The `@trpc/openapi/heyapi` package provides a `createTRPCHeyApiClientConfig` helper that bridges this gap — it configures request serialisation and response parsing so the generated SDK works correctly with tRPC endpoints.
 
 #### Without a transformer
+
+You can generate your client using Hey API's CLI or programmatic API in this case
+
+```bash
+pnpm exec openapi-ts -i openapi.json -o ./generated
+```
+
+Next a little configuration is required at runtime:
 
 ```ts title='src/client.ts'
 import { createTRPCHeyApiClientConfig } from '@trpc/openapi/heyapi';
@@ -109,10 +116,36 @@ const user = await sdk.user.create({ body: { name: 'Bob', age: 30 } });
 #### With a transformer (superjson, devalue, etc.)
 
 :::warning
-If your backend uses a [data transformer](/docs/server/data-transformers) like `superjson`, you **must** pass it to the client config. Without this, dates, Maps, Sets, and other non-JSON types may be silently wrong.
+If your backend uses a [data transformer](/docs/server/data-transformers) like `superjson`, you **must** pass it to the client config. Without this, Dates, Maps, Sets, and other non-JSON types may be silently wrong.
 :::
 
-Pass your transformer and it handles serialisation in both directions automatically:
+First generate your client code using Hey API's programmatic API, this way you can use `createTRPCHeyApiTypeResolvers` to ensure your emitted types are correct:
+
+```ts title='src/client.ts'
+import { createClient } from '@hey-api/openapi-ts';
+import { createTRPCHeyApiTypeResolvers } from '@trpc/openapi/heyapi';
+
+const openApiJson = './path/to/openapi.json'
+const outputDir = './generated'
+
+await createClient({
+  input: openApiJson,
+  output: outputDir,
+  plugins: [
+    {
+      name: '@hey-api/typescript',
+      // Important: this ensures that your emitted types like Dates are correct
+      '~resolvers': createTRPCHeyApiTypeResolvers(),
+    },
+    {
+      name: '@hey-api/sdk',
+      operations: { strategy: 'single' },
+    },
+  ],
+});
+```
+
+At runtime configure the generated client with your transformer:
 
 ```ts title='src/client.ts'
 import { createTRPCHeyApiClientConfig } from '@trpc/openapi/heyapi';
@@ -121,6 +154,7 @@ import { client } from './generated/client.gen';
 
 client.setConfig({
   baseUrl: 'http://localhost:3000',
+  // Important, this transformer must match your tRPC API's setup:
   ...createTRPCHeyApiClientConfig({ transformer: superjson }),
 });
 ```
@@ -140,10 +174,15 @@ const created = await sdk.createEvent({
 
 ### Using a different generator or language
 
-The generated OpenAPI spec works with any OpenAPI-compatible client generator. To integrate correctly with tRPC's protocol, your client needs to handle two things:
+The generated OpenAPI spec works with any OpenAPI-compatible client generator which can:
 
+* Emit accurate types for classes like Date
+* Support customising Search Params and request/response body serialization
+
+To integrate correctly with tRPC's protocol, you need to set up your generated client to do two things:
+
+- **Transformers** — If your tRPC API uses a transformer, the client must serialise inputs and deserialise outputs using the same format
 - **Query Inputs** — GET requests encode input as `?input=<JSON>`, not as individual query parameters
-- **Transformers** — if your tRPC API uses a transformer, the client must serialise inputs and deserialise outputs using the same format
 
 See the [Hey API config source](https://github.com/trpc/trpc/blob/f346e9bb97ff3c8a7e874f59110a47730293097a/packages/openapi/src/heyapi/index.ts) for a complete reference implementation.
 
@@ -158,7 +197,7 @@ Any transformer that implements the tRPC `DataTransformer` interface (`serialize
 The most popular transformer for TypeScript-to-TypeScript setups. Handles `Date`, `Map`, `Set`, `BigInt`, `RegExp`, and more.
 
 ```bash
-pnpm install superjson
+pnpm add superjson
 ```
 
 ```ts title='src/server.ts'
@@ -188,7 +227,7 @@ See the [superjson test](https://github.com/trpc/trpc/blob/main/packages/openapi
 Available in: C, C#, C++, Go, Java, Node.js, Perl, PHP, Python, Ruby, Scala
 
 ```bash
-pnpm install bson
+pnpm add bson
 ```
 
 ```ts title='src/transformer.ts'
@@ -221,7 +260,7 @@ See the [MongoDB EJSON test](https://github.com/trpc/trpc/blob/main/packages/ope
 Available in: C, C#, D, Go, Java, JavaScript, PHP, Python, Rust
 
 ```bash
-pnpm install ion-js
+pnpm add ion-js
 ```
 
 See the [Amazon Ion test](https://github.com/trpc/trpc/blob/main/packages/openapi/test/amazonIon.test.ts) for the transformer implementation, boilerplate, and a full end-to-end example.
