@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AsyncReturnData, AsyncReturnErrors, AsyncReturnResponses, BigintData, BigintErrors, BigintResponses, BinaryData, BinaryErrors, BinaryResponses, BoolNullableData, BoolNullableErrors, BoolNullableResponses, BoolUnionData, BoolUnionErrors, BoolUnionResponses, ComplexNullableData, ComplexNullableErrors, ComplexNullableResponses, Level1Level2Level3DeepData, Level1Level2Level3DeepErrors, Level1Level2Level3DeepResponses, NeverFieldData, NeverFieldErrors, NeverFieldResponses, NoInputMutationData, NoInputMutationErrors, NoInputMutationResponses, NullableObjectData, NullableObjectErrors, NullableObjectResponses, NullOnlyData, NullOnlyErrors, NullOnlyResponses, SimpleQueryData, SimpleQueryErrors, SimpleQueryResponses, UndefinedInputData, UndefinedInputErrors, UndefinedInputResponses, VoidExplicitData, VoidExplicitErrors, VoidExplicitResponses, VoidInputData, VoidInputErrors, VoidInputResponses } from './types.gen';
+import type { AsyncReturnData, AsyncReturnErrors, AsyncReturnResponses, BigintData, BigintErrors, BigintResponses, BinaryData, BinaryErrors, BinaryResponses, BoolNullableData, BoolNullableErrors, BoolNullableResponses, BoolUnionData, BoolUnionErrors, BoolUnionResponses, ComplexNullableData, ComplexNullableErrors, ComplexNullableResponses, ConflictingIntersectionData, ConflictingIntersectionErrors, ConflictingIntersectionResponses, DisjointIntersectionData, DisjointIntersectionErrors, DisjointIntersectionResponses, Level1Level2Level3DeepData, Level1Level2Level3DeepErrors, Level1Level2Level3DeepResponses, NeverFieldData, NeverFieldErrors, NeverFieldResponses, NoInputMutationData, NoInputMutationErrors, NoInputMutationResponses, NullableObjectData, NullableObjectErrors, NullableObjectResponses, NullOnlyData, NullOnlyErrors, NullOnlyResponses, SimpleQueryData, SimpleQueryErrors, SimpleQueryResponses, UndefinedInputData, UndefinedInputErrors, UndefinedInputResponses, VoidExplicitData, VoidExplicitErrors, VoidExplicitResponses, VoidInputData, VoidInputErrors, VoidInputResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -127,6 +127,14 @@ export class Sdk extends HeyApiClient {
     
     public noInputMutation<ThrowOnError extends boolean = false>(options?: Options<NoInputMutationData, ThrowOnError>) {
         return (options?.client ?? this.client).post<NoInputMutationResponses, NoInputMutationErrors, ThrowOnError>({ url: '/noInputMutation', ...options });
+    }
+    
+    public disjointIntersection<ThrowOnError extends boolean = false>(options?: Options<DisjointIntersectionData, ThrowOnError>) {
+        return (options?.client ?? this.client).get<DisjointIntersectionResponses, DisjointIntersectionErrors, ThrowOnError>({ url: '/disjointIntersection', ...options });
+    }
+    
+    public conflictingIntersection<ThrowOnError extends boolean = false>(options?: Options<ConflictingIntersectionData, ThrowOnError>) {
+        return (options?.client ?? this.client).get<ConflictingIntersectionResponses, ConflictingIntersectionErrors, ThrowOnError>({ url: '/conflictingIntersection', ...options });
     }
     
     public complexNullable<ThrowOnError extends boolean = false>(options?: Options<ComplexNullableData, ThrowOnError>) {

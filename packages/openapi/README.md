@@ -4,6 +4,7 @@
 
 - [ ] SSE subscriptions
 - [ ] non-json content types (might already work, needs tests)
+- [ ] Improved handling of recursive/self-referencing types like trees/graphs - may be limited to 20 depth currently
 - [ ] non-nodejs example
 - [ ] an ai/mcp example
 

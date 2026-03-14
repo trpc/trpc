@@ -7,6 +7,8 @@ import {
   type RuntimeDescriptions,
 } from './schemaExtraction';
 
+const log = console;
+
 /**
  * A minimal JSON Schema subset used for OpenAPI 3.1 schemas.
  */
@@ -187,6 +189,9 @@ function typeToJsonSchema(
   depth = 0,
 ): JsonSchema {
   if (depth > 20) {
+    log.warn(
+      `[openapi] Schema conversion reached maximum depth (20) for type "${ctx.checker.typeToString(type)}". The resulting schema will be incomplete.`,
+    );
     return {};
   }
 
@@ -514,8 +519,25 @@ function isInlineObjectSchema(s: JsonSchema): boolean {
   return s.type === 'object' && !s.$ref;
 }
 
-/** Merge multiple `{ type: "object" }` schemas into one. */
+/**
+ * Merge multiple `{ type: "object" }` schemas into one.
+ * Falls back to `allOf` if any property names conflict across schemas.
+ */
 function mergeObjectSchemas(schemas: JsonSchema[]): JsonSchema {
+  // Check for property name conflicts before merging.
+  const seen = new Set<string>();
+  for (const s of schemas) {
+    if (s.properties) {
+      for (const prop of Object.keys(s.properties)) {
+        if (seen.has(prop)) {
+          // Conflicting property — fall back to allOf to preserve both definitions.
+          return { allOf: schemas };
+        }
+        seen.add(prop);
+      }
+    }
+  }
+
   const properties: Record<string, JsonSchema> = {};
   const required: string[] = [];
   let additionalProperties: JsonSchema | boolean | undefined;
