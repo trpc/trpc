@@ -176,8 +176,8 @@ const created = await sdk.createEvent({
 
 The generated OpenAPI spec works with any OpenAPI-compatible client generator which can:
 
-* Emit accurate types for classes like Date
-* Support customising Search Params and request/response body serialization
+- Emit accurate types for classes like Date
+- Support customising Search Params and request/response body serialization
 
 To integrate correctly with tRPC's protocol, you need to set up your generated client to do two things:
 
