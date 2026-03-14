@@ -21,6 +21,15 @@ The `@trpc/openapi` package generates an OpenAPI 3.1 specification from your tRP
 pnpm install @trpc/openapi
 ```
 
+## Adapting your tRPC setup
+
+The generator works with your existing router — no annotations or decorators required. A few things to be aware of:
+
+- **No output types needed** — unlike other OpenAPI tools, `.output()` schemas are optional. The generator infers return types from your implementation automatically.
+- **Transformers** — if your server uses a [data transformer](/docs/server/data-transformers), your OpenAPI clients must use the same one. See [Transformers](#transformers) for setup and cross-language options.
+- **Subscriptions** — currently excluded from the generated spec. SSE support is planned.
+- **Descriptions** — Zod `.describe()` calls and JSDoc comments on types, routers, and procedures, all become `description` fields in the spec.
+
 ## Generate the spec
 
 ### CLI
