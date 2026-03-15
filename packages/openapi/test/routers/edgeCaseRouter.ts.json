@@ -621,6 +621,130 @@
         }
       }
     },
+    "/disjointIntersection": {
+      "get": {
+        "operationId": "disjointIntersection",
+        "tags": [
+          "disjointIntersection"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "age": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "age"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/conflictingIntersection": {
+      "get": {
+        "operationId": "conflictingIntersection",
+        "tags": [
+          "conflictingIntersection"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "allOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "label": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "label"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "number"
+                                },
+                                "extra": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "extra"
+                              ],
+                              "additionalProperties": false
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
     "/complexNullable": {
       "get": {
         "operationId": "complexNullable",
@@ -705,12 +829,12 @@
       "AsyncIterable": {
         "type": "object",
         "properties": {
-          "__@asyncIterator@5454": {
+          "__@asyncIterator@5456": {
             "type": "object"
           }
         },
         "required": [
-          "__@asyncIterator@5454"
+          "__@asyncIterator@5456"
         ],
         "additionalProperties": false
       },

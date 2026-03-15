@@ -1,7 +1,11 @@
 import * as path from 'node:path';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, expectTypeOf, it } from 'vitest';
 import type { OpenAPIDocument } from '../src/generate';
 import { generateOpenAPIDocument } from '../src/generate';
+import type {
+  ConflictingIntersectionResponses,
+  DisjointIntersectionResponses,
+} from './routers/edgeCaseRouter-heyapi/types.gen';
 
 const routersDir = path.resolve(__dirname, 'routers');
 const edgeCaseRouterPath = path.resolve(routersDir, 'edgeCaseRouter.ts');
@@ -137,6 +141,57 @@ describe('generateOpenAPIDocument edge cases', () => {
     expect(serialized).toContain('string');
     expect(serialized).toContain('number');
     expect(serialized).toContain('null');
+  });
+
+  it('merges disjoint intersection into a single object schema', () => {
+    // Verify the generated client type is a flat object with both properties
+    type DisjointData = DisjointIntersectionResponses[200]['result']['data'];
+    expectTypeOf<DisjointData>().toEqualTypeOf<{
+      name: string;
+      age: number;
+    }>();
+
+    // Verify the OpenAPI schema is a merged object, not allOf
+    const schema = unwrapSuccessData(
+      getResponseSchema(doc, 'disjointIntersection'),
+      doc,
+    );
+    expect(schema.type).toBe('object');
+    expect(schema).not.toHaveProperty('allOf');
+    expect(schema.properties.name).toEqual({ type: 'string' });
+    expect(schema.properties.age).toEqual({ type: 'number' });
+    expect(schema.required).toContain('name');
+    expect(schema.required).toContain('age');
+  });
+
+  it('uses allOf for intersection with conflicting property types', () => {
+    // Verify the generated client type preserves the intersection via allOf
+    type ConflictingData =
+      ConflictingIntersectionResponses[200]['result']['data'];
+    expectTypeOf<ConflictingData>().toHaveProperty('id');
+    expectTypeOf<ConflictingData>().toHaveProperty('label');
+    expectTypeOf<ConflictingData>().toHaveProperty('extra');
+    // Both sides of the intersection contribute their `id` type
+    expectTypeOf<
+      { id: string; label: string } & { id: number; extra: boolean }
+    >().toEqualTypeOf<ConflictingData>();
+
+    // Verify the OpenAPI schema uses allOf to preserve both definitions
+    const schema = unwrapSuccessData(
+      getResponseSchema(doc, 'conflictingIntersection'),
+      doc,
+    );
+    expect(schema).toHaveProperty('allOf');
+    expect(schema).not.toHaveProperty('type');
+    expect(schema.allOf).toHaveLength(2);
+
+    // Both schemas in allOf should retain their own definition of `id`
+    const allSchemas = schema.allOf as Array<{
+      properties?: Record<string, { type?: string }>;
+    }>;
+    const idTypes = allSchemas.map((s) => s.properties?.['id']?.type);
+    expect(idTypes).toContain('string');
+    expect(idTypes).toContain('number');
   });
 
   it('assigns correct tags based on top-level procedure path', () => {

@@ -5,6 +5,15 @@ const t = initTRPC.create();
 
 // ---------- Edge case types ----------
 
+// Intersection with disjoint anonymous properties (should merge into single object)
+type DisjointIntersection = { name: string } & { age: number };
+
+// Intersection with conflicting anonymous property types (should use allOf)
+type ConflictingIntersection = { id: string; label: string } & {
+  id: number;
+  extra: boolean;
+};
+
 // BigInt type
 type WithBigInt = {
   id: bigint;
@@ -100,6 +109,21 @@ export const EdgeCaseRouter = t.router({
 
   // --- Mutation with no input ---
   noInputMutation: t.procedure.mutation(() => ({ success: true })),
+
+  // --- Intersection with disjoint properties (merged into single object) ---
+  disjointIntersection: t.procedure.query(
+    (): DisjointIntersection => ({ name: 'Alice', age: 30 }),
+  ),
+
+  // --- Intersection with conflicting property types (allOf) ---
+  conflictingIntersection: t.procedure.query(
+    () =>
+      ({
+        id: 1,
+        label: 'test',
+        extra: true,
+      }) as ConflictingIntersection,
+  ),
 
   // --- Query with complex nullable union ---
   complexNullable: t.procedure.query(() => {

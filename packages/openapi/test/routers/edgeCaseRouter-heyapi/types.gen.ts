@@ -14,7 +14,7 @@ export type NeverField = {
 };
 
 export type AsyncIterable = {
-    '__@asyncIterator@5454': {
+    '__@asyncIterator@5456': {
         [key: string]: unknown;
     };
 };
@@ -484,6 +484,77 @@ export type NoInputMutationResponses = {
 };
 
 export type NoInputMutationResponse = NoInputMutationResponses[keyof NoInputMutationResponses];
+
+export type DisjointIntersectionData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/disjointIntersection';
+};
+
+export type DisjointIntersectionErrors = {
+    /**
+     * Error response
+     */
+    default: {
+        error: DefaultErrorShape;
+    };
+};
+
+export type DisjointIntersectionError = DisjointIntersectionErrors[keyof DisjointIntersectionErrors];
+
+export type DisjointIntersectionResponses = {
+    /**
+     * Successful response
+     */
+    200: {
+        result: {
+            data: {
+                name: string;
+                age: number;
+            };
+        };
+    };
+};
+
+export type DisjointIntersectionResponse = DisjointIntersectionResponses[keyof DisjointIntersectionResponses];
+
+export type ConflictingIntersectionData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/conflictingIntersection';
+};
+
+export type ConflictingIntersectionErrors = {
+    /**
+     * Error response
+     */
+    default: {
+        error: DefaultErrorShape;
+    };
+};
+
+export type ConflictingIntersectionError = ConflictingIntersectionErrors[keyof ConflictingIntersectionErrors];
+
+export type ConflictingIntersectionResponses = {
+    /**
+     * Successful response
+     */
+    200: {
+        result: {
+            data: {
+                id: string;
+                label: string;
+            } & {
+                id: number;
+                extra: boolean;
+            };
+        };
+    };
+};
+
+export type ConflictingIntersectionResponse = ConflictingIntersectionResponses[keyof ConflictingIntersectionResponses];
 
 export type ComplexNullableData = {
     body?: never;
