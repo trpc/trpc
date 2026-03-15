@@ -42,6 +42,14 @@ It's also not uncommon, where the deployed adapter is hard to run on local machi
   </tbody>
 </table>
 
+:::tip AI Agents
+If you use an AI coding agent, install tRPC skills for better code generation:
+
+```bash
+npx @tanstack/intent@latest install
+```
+:::
+
 ## Setting up a Standalone tRPC Server
 
 ### 1. Implement your App Router

@@ -38,6 +38,14 @@ The generator statically analyses your router's TypeScript types — it never ex
 
 Full documentation is available at [trpc.io/docs/openapi](https://trpc.io/docs/openapi).
 
+## AI Agents
+
+If you use an AI coding agent, install tRPC skills for better code generation:
+
+```bash
+npx @tanstack/intent@latest install
+```
+
 ## TODO
 
 - [ ] SSE subscriptions

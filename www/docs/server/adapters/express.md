@@ -37,6 +37,14 @@ yarn add @trpc/server zod
 
 > [Zod](https://github.com/colinhacks/zod) isn't a required dependency, but it's used in the sample router below.
 
+:::tip AI Agents
+If you use an AI coding agent, install tRPC skills for better code generation:
+
+```bash
+npx @tanstack/intent@latest install
+```
+:::
+
 ### 2. Create a tRPC router
 
 Implement your tRPC router. A sample router is given below:

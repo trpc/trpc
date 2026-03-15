@@ -49,6 +49,14 @@ The AWS Lambda adapter is supported for API Gateway [REST API(v1)](https://docs.
 yarn add @trpc/server
 ```
 
+:::tip AI Agents
+If you use an AI coding agent, install tRPC skills for better code generation:
+
+```bash
+npx @tanstack/intent@latest install
+```
+:::
+
 ### 2. Create a tRPC router
 
 Implement your tRPC router. A sample router is given below:

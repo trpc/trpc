@@ -43,6 +43,14 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 
 <InstallSnippet pkgs="@trpc/server @trpc/client @trpc/tanstack-react-query @tanstack/react-query@latest zod client-only server-only" />
 
+:::tip AI Agents
+If you use an AI coding agent, install tRPC skills for better code generation:
+
+```bash
+npx @tanstack/intent@latest install
+```
+:::
+
 ### 2. Create a tRPC router
 
 Initialize your tRPC backend in `trpc/init.ts` using the `initTRPC` function, and create your first router. We're going to make a simple "hello world" router and procedure here — for deeper information on creating your tRPC API, refer to the [Quickstart guide](/docs/quickstart) and [Backend usage docs](/docs/server/overview).
