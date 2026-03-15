@@ -188,7 +188,9 @@ import { lazy } from '@trpc/server';
 import { router } from '../trpc';
 
 export const appRouter = router({
+  // Short-hand when the module has exactly one router exported
   greeting: lazy(() => import('./greeting.js')),
+  // Use .then() to pick a named export when the module exports multiple routers
   user: lazy(() => import('./user.js').then((m) => m.userRouter)),
 });
 

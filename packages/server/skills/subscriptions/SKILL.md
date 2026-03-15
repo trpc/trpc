@@ -4,8 +4,8 @@ description: >
   Set up real-time event streams with async generator subscriptions using
   .subscription(async function*() { yield }). SSE via httpSubscriptionLink is
   recommended over WebSocket. Use tracked(id, data) from @trpc/server for
-  reconnection recovery with lastEventId. WebSocket via wsLink, createWSClient,
-  applyWSSHandler from @trpc/server/adapters/ws. Configure SSE ping with
+  reconnection recovery with lastEventId. WebSocket via wsLink and
+  createWSClient from @trpc/client, applyWSSHandler from @trpc/server/adapters/ws. Configure SSE ping with
   initTRPC.create({ sse: { ping: { enabled, intervalMs } } }). AbortSignal
   via opts.signal for cleanup. splitLink to route subscriptions.
 type: core

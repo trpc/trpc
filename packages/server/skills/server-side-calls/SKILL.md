@@ -33,6 +33,7 @@ export const createCallerFactory = t.createCallerFactory;
 
 ```ts
 // server/appRouter.ts
+import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { createCallerFactory, publicProcedure, router } from './trpc';
 
@@ -50,6 +51,13 @@ export const appRouter = router({
       .mutation(({ input }) => {
         const post: Post = { ...input, id: `${Math.random()}` };
         posts.push(post);
+        return post;
+      }),
+    byId: publicProcedure
+      .input(z.object({ id: z.string() }))
+      .query(({ input }) => {
+        const post = posts.find((p) => p.id === input.id);
+        if (!post) throw new TRPCError({ code: 'NOT_FOUND' });
         return post;
       }),
     list: publicProcedure.query(() => posts),

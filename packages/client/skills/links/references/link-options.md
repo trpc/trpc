@@ -80,7 +80,12 @@ Sends `trpc-accept: application/jsonl` (or `Accept: application/jsonl`). Respons
 Non-terminating link that branches the link chain based on a condition.
 
 ```ts
-import { httpBatchLink, httpLink, splitLink } from '@trpc/client';
+import {
+  httpBatchLink,
+  httpLink,
+  httpSubscriptionLink,
+  splitLink,
+} from '@trpc/client';
 
 splitLink({
   condition: (op) => op.type === 'subscription',

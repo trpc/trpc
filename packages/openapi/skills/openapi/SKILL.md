@@ -219,6 +219,7 @@ For non-TypeScript clients, EJSON provides a language-agnostic serialization for
 
 ```ts
 import type { TRPCDataTransformer } from '@trpc/server';
+import type { Document } from 'bson';
 import { EJSON } from 'bson';
 
 export const ejsonTransformer: TRPCDataTransformer = {

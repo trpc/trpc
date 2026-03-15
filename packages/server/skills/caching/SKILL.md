@@ -66,7 +66,8 @@ const server = createHTTPServer({
   responseMeta(opts) {
     const { paths, errors, type } = opts;
 
-    const allPublic = paths && paths.every((path) => path.includes('public'));
+    const allPublic =
+      paths && paths.every((path) => path.startsWith('public.'));
     const allOk = errors.length === 0;
     const isQuery = type === 'query';
 
@@ -101,7 +102,8 @@ const server = createHTTPServer({
   router: appRouter,
   createContext,
   responseMeta({ paths, errors, type }) {
-    const allPublic = paths && paths.every((path) => path.includes('public'));
+    const allPublic =
+      paths && paths.every((path) => path.startsWith('public.'));
     const allOk = errors.length === 0;
     const isQuery = type === 'query';
 

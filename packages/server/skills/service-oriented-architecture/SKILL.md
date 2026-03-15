@@ -130,6 +130,11 @@ export const client = createTRPCClient<AppRouter>({
         const path = pathParts.join('.');
 
         const link = servers[serverName];
+        if (!link) {
+          throw new Error(
+            `Unknown service: ${String(serverName)}. Known: ${Object.keys(servers).join(', ')}`,
+          );
+        }
         return link({
           ...ctx,
           op: { ...op, path },
@@ -152,7 +157,7 @@ const status = await client.serviceB.status.query();
 
 ```ts
 (runtime) => {
-  const servers: Record<string, ReturnType<typeof httpBatchLink>> = {
+  const servers = {
     users: httpBatchLink({ url: 'http://users-service:3000' })(runtime),
     billing: httpBatchLink({ url: 'http://billing-service:3000' })(runtime),
     notifications: httpBatchLink({ url: 'http://notifications-service:3000' })(

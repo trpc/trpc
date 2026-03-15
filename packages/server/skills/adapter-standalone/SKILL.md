@@ -116,9 +116,13 @@ The `basePath` option strips the prefix before routing, so `/trpc/greet` resolve
 
 ```ts
 import http2 from 'http2';
+import { readFileSync } from 'node:fs';
 import { createHTTP2Handler } from '@trpc/server/adapters/standalone';
 import type { CreateHTTP2ContextOptions } from '@trpc/server/adapters/standalone';
 import { appRouter } from './router';
+
+const tlsKey = readFileSync('./certs/server.key');
+const tlsCert = readFileSync('./certs/server.crt');
 
 async function createContext(opts: CreateHTTP2ContextOptions) {
   return {};

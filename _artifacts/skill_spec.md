@@ -40,7 +40,7 @@ autocompletion, and zero runtime overhead.
 | subscriptions                 | core        | realtime              | async generators, tracked(), SSE, WebSocket, reconnection             | 7             |
 | nextjs-app-router             | framework   | framework-integration | fetch adapter, RSC prefetch, HydrateClient, Server Actions            | 4             |
 | nextjs-pages-router           | framework   | framework-integration | withTRPC HOC, SSR, SSG, createNextApiHandler                          | 2             |
-| auth                          | composition | defining-api          | JWT/cookie auth, middleware, context narrowing, SSE auth              | 5             |
+| auth                          | composition | defining-api          | JWT/cookie auth, middleware, context narrowing, SSE auth              | 4             |
 | openapi                       | composition | interop               | OpenAPI spec generation, HeyAPI client, transformers                  | 2             |
 | service-oriented-architecture | composition | interop               | Custom routing links, gateway pattern, shared routers                 | 1             |
 
@@ -211,7 +211,7 @@ autocompletion, and zero runtime overhead.
 | 1   | SSR prepass renders multiple times                 | MEDIUM   | source | —            |
 | 2   | Using ssr: true without understanding implications | MEDIUM   | docs   | —            |
 
-### auth (5 failure modes)
+### auth (4 failure modes)
 
 | #   | Mistake                                      | Priority | Source       | Cross-skill? |
 | --- | -------------------------------------------- | -------- | ------------ | ------------ |

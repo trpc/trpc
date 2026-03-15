@@ -4,8 +4,8 @@ description: >
   Implement JWT/cookie authentication and authorization in tRPC using createContext
   for user extraction, t.middleware with opts.next({ ctx }) for context narrowing to
   non-null user, protectedProcedure base pattern, client-side Authorization headers
-  via httpBatchLink headers(), WebSocket connectionParams, and SSE auth via cookies,
-  EventSource polyfill custom headers, or httpSubscriptionLink connectionParams.
+  via httpBatchLink headers(), WebSocket connectionParams, and SSE auth via cookies
+  or EventSource polyfill custom headers.
 type: composition
 library: trpc
 library_version: '11.13.4'
