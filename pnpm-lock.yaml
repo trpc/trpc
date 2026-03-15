@@ -1908,7 +1908,7 @@ importers:
         version: 19.1.1(@types/react@19.1.0)
       devalue:
         specifier: ^5.0.0
-        version: 5.6.3
+        version: 5.6.4
       eslint:
         specifier: ^9.26.0
         version: 9.26.0(jiti@2.6.1)
@@ -2076,7 +2076,7 @@ importers:
         version: 8.5.10
       devalue:
         specifier: ^5.0.0
-        version: 5.6.3
+        version: 5.6.4
       eslint:
         specifier: ^9.26.0
         version: 9.26.0(jiti@2.6.1)
@@ -2208,7 +2208,7 @@ importers:
         version: 2.2.2
       devalue:
         specifier: ^5.0.0
-        version: 5.6.3
+        version: 5.6.4
       effect:
         specifier: 3.19.19
         version: 3.19.19
@@ -11200,8 +11200,8 @@ packages:
   devalue@5.1.1:
     resolution: {integrity: sha512-maua5KUiapvEwiEAe+XnlZ3Rh0GD+qI1J/nb9vrJc3muPXvcF/8gXYTWF76+5DAqHyDUtOIImEuo0YKE9mshVw==}
 
-  devalue@5.6.3:
-    resolution: {integrity: sha512-nc7XjUU/2Lb+SvEFVGcWLiKkzfw8+qHI7zn8WYXKkLMgfGSHbgCEaR6bJpev8Cm6Rmrb19Gfd/tZvGqx9is3wg==}
+  devalue@5.6.4:
+    resolution: {integrity: sha512-Gp6rDldRsFh/7XuouDbxMH3Mx8GMCcgzIb1pDTvNyn8pZGQ22u+Wa+lGV9dQCltFQ7uVw0MhRyb8XDskNFOReA==}
 
   devlop@1.1.0:
     resolution: {integrity: sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA==}
@@ -30896,7 +30896,7 @@ snapshots:
 
   devalue@5.1.1: {}
 
-  devalue@5.6.3: {}
+  devalue@5.6.4: {}
 
   devlop@1.1.0:
     dependencies:
