@@ -219,7 +219,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   opts: ResolveHTTPRequestOptions<TRouter>,
 ): Promise<Response> {
   const { router, req } = opts;
-  const headers = new Headers([['vary', 'trpc-accept']]);
+  const headers = new Headers([['vary', 'trpc-accept, accept']]);
   const config = router._def._config;
 
   const url = new URL(req.url);
