@@ -1,0 +1,485 @@
+# skills/_artifacts/skill_tree.yaml
+library:
+  name: '@trpc/server'
+  version: '11.13.4'
+  repository: 'https://github.com/trpc/trpc'
+  description: 'End-to-end typesafe APIs for TypeScript without schemas or code generation.'
+generated_from:
+  domain_map: '_artifacts/domain_map.yaml'
+  skill_spec: '_artifacts/skill_spec.md'
+generated_at: '2026-03-15'
+
+skills:
+  # ── Router skill (entry point) ────────────────────────────────────
+
+  - name: 'tRPC Skill Router'
+    slug: 'trpc-router'
+    type: 'core'
+    domain: 'defining-api'
+    path: 'packages/server/skills/trpc-router/SKILL.md'
+    package: 'packages/server'
+    description: >
+      Entry point for all tRPC skills. Decision tree for which skill to
+      load based on developer task: server setup, client setup, adapters,
+      subscriptions, Next.js, React Query, OpenAPI, auth, or links.
+    requires: []
+    sources:
+      - 'trpc/trpc:www/docs/main/introduction.mdx'
+      - 'trpc/trpc:www/docs/main/quickstart.mdx'
+
+  # ── Defining the API (packages/server) ────────────────────────────
+
+  - name: 'Server Setup'
+    slug: 'server-setup'
+    type: 'core'
+    domain: 'defining-api'
+    path: 'packages/server/skills/server-setup/SKILL.md'
+    package: 'packages/server'
+    description: >
+      Initialize tRPC with initTRPC.create(), define routers with
+      t.router(), create procedures with .query()/.mutation()/.subscription(),
+      configure context with createContext(), export AppRouter type,
+      merge routers, and lazy-load routers for serverless.
+    requires: []
+    sources:
+      - 'trpc/trpc:www/docs/server/overview.md'
+      - 'trpc/trpc:www/docs/server/routers.md'
+      - 'trpc/trpc:www/docs/server/procedures.md'
+      - 'trpc/trpc:www/docs/server/context.md'
+      - 'trpc/trpc:www/docs/server/merging-routers.md'
+      - 'trpc/trpc:www/docs/main/quickstart.mdx'
+      - 'trpc/trpc:packages/server/src/unstable-core-do-not-import/initTRPC.ts'
+      - 'trpc/trpc:packages/server/src/unstable-core-do-not-import/router.ts'
+
+  - name: 'Middlewares'
+    slug: 'middlewares'
+    type: 'core'
+    domain: 'defining-api'
+    path: 'packages/server/skills/middlewares/SKILL.md'
+    package: 'packages/server'
+    description: >
+      Create and compose tRPC middleware with .use(), extend context via
+      opts.next({ ctx }), build reusable middleware with .concat() and
+      .unstable_pipe(), define base procedures like publicProcedure and
+      authedProcedure. Advanced: OTEL tracing, logging, getRawInput().
+    requires:
+      - 'server-setup'
+    sources:
+      - 'trpc/trpc:www/docs/server/middlewares.md'
+      - 'trpc/trpc:www/docs/server/authorization.md'
+      - 'trpc/trpc:packages/server/src/unstable-core-do-not-import/middleware.ts'
+      - 'trpc/trpc:packages/server/src/unstable-core-do-not-import/procedureBuilder.ts'
+
+  - name: 'Validators'
+    slug: 'validators'
+    type: 'core'
+    domain: 'defining-api'
+    path: 'packages/server/skills/validators/SKILL.md'
+    package: 'packages/server'
+    description: >
+      Configure input and output validation with .input() and .output()
+      using Zod, Yup, Superstruct, ArkType, Valibot, Effect, or custom
+      validator functions. Chain multiple .input() calls to merge object
+      schemas. Standard Schema protocol support.
+    requires:
+      - 'server-setup'
+    sources:
+      - 'trpc/trpc:www/docs/server/validators.md'
+      - 'trpc/trpc:packages/server/src/unstable-core-do-not-import/parser.ts'
+
+  - name: 'Error Handling'
+    slug: 'error-handling'
+    type: 'core'
+    domain: 'defining-api'
+    path: 'packages/server/skills/error-handling/SKILL.md'
+    package: 'packages/server'
+    description: >
+      Throw typed errors with TRPCError and error codes (NOT_FOUND,
+      UNAUTHORIZED, BAD_REQUEST, etc.), configure errorFormatter for
+      client-side Zod error display, handle errors globally with onError
+      callback, map tRPC errors to HTTP status codes with
+      getHTTPStatusCodeFromError().
+    requires:
+      - 'server-setup'
+    sources:
+      - 'trpc/trpc:www/docs/server/error-handling.md'
+      - 'trpc/trpc:www/docs/server/error-formatting.md'
+      - 'trpc/trpc:packages/server/src/unstable-core-do-not-import/error/TRPCError.ts'
+
+  - name: 'Server-Side Calls'
+    slug: 'server-side-calls'
+    type: 'core'
+    domain: 'defining-api'
+    path: 'packages/server/skills/server-side-calls/SKILL.md'
+    package: 'packages/server'
+    description: >
+      Call tRPC procedures directly from server code using
+      t.createCallerFactory() and router.createCaller(context) for
+      integration testing, internal server logic, and custom API endpoints.
+    requires:
+      - 'server-setup'
+    sources:
+      - 'trpc/trpc:www/docs/server/server-side-calls.md'
+
+  - name: 'Caching'
+    slug: 'caching'
+    type: 'core'
+    domain: 'defining-api'
+    path: 'packages/server/skills/caching/SKILL.md'
+    package: 'packages/server'
+    description: >
+      Set HTTP cache headers on tRPC query responses via responseMeta
+      callback for CDN and browser caching. Configure Cache-Control,
+      s-maxage, stale-while-revalidate. Handle caching with batching
+      and authenticated requests.
+    requires:
+      - 'server-setup'
+    sources:
+      - 'trpc/trpc:www/docs/server/caching.md'
+
+  - name: 'Non-JSON Content Types'
+    slug: 'non-json-content-types'
+    type: 'core'
+    domain: 'defining-api'
+    path: 'packages/server/skills/non-json-content-types/SKILL.md'
+    package: 'packages/server'
+    description: >
+      Handle FormData, file uploads, Blob, Uint8Array, and ReadableStream
+      inputs in tRPC mutations. Use octetInputParser from @trpc/server/http
+      for binary data. Route non-JSON requests with splitLink and
+      isNonJsonSerializable().
+    requires:
+      - 'server-setup'
+      - 'links'
+    sources:
+      - 'trpc/trpc:www/docs/server/non-json-content-types.md'
+      - 'trpc/trpc:examples/next-formdata/'
+
+  - name: 'Auth'
+    slug: 'auth'
+    type: 'composition'
+    domain: 'defining-api'
+    path: 'packages/server/skills/auth/SKILL.md'
+    package: 'packages/server'
+    description: >
+      Implement authentication and authorization in tRPC with OAuth2.0
+      JWT bearer tokens or cookies. Create auth middleware that narrows
+      context user type. Send Authorization headers from client. Authenticate
+      WebSocket connectionParams and SSE subscriptions (cookies, custom
+      headers via EventSource polyfill, connection params).
+    requires:
+      - 'server-setup'
+      - 'middlewares'
+      - 'client-setup'
+    sources:
+      - 'trpc/trpc:www/docs/server/authorization.md'
+      - 'trpc/trpc:www/docs/client/headers.md'
+      - 'trpc/trpc:www/docs/client/links/httpSubscriptionLink.md'
+      - 'trpc/trpc:www/docs/server/websockets.md'
+
+  # ── Hosting the API (packages/server — adapters) ──────────────────
+
+  - name: 'Adapter: Standalone'
+    slug: 'adapter-standalone'
+    type: 'core'
+    domain: 'hosting-api'
+    path: 'packages/server/skills/adapter-standalone/SKILL.md'
+    package: 'packages/server'
+    description: >
+      Mount tRPC on Node.js built-in HTTP server with createHTTPServer(),
+      createHTTPHandler(), createHTTP2Handler(). Configure basePath, CORS
+      via cors package middleware. Simplest adapter for local dev.
+    requires:
+      - 'server-setup'
+    sources:
+      - 'trpc/trpc:www/docs/server/adapters/standalone.md'
+      - 'trpc/trpc:examples/standalone-server/src/server.ts'
+
+  - name: 'Adapter: Express'
+    slug: 'adapter-express'
+    type: 'core'
+    domain: 'hosting-api'
+    path: 'packages/server/skills/adapter-express/SKILL.md'
+    package: 'packages/server'
+    description: >
+      Mount tRPC as Express middleware with createExpressMiddleware().
+      Access Express req/res in createContext via CreateExpressContextOptions.
+      Avoid global body parser conflicts with tRPC routes.
+    requires:
+      - 'server-setup'
+    sources:
+      - 'trpc/trpc:www/docs/server/adapters/express.md'
+      - 'trpc/trpc:examples/express-server/src/server.ts'
+
+  - name: 'Adapter: Fastify'
+    slug: 'adapter-fastify'
+    type: 'core'
+    domain: 'hosting-api'
+    path: 'packages/server/skills/adapter-fastify/SKILL.md'
+    package: 'packages/server'
+    description: >
+      Mount tRPC as Fastify plugin with fastifyTRPCPlugin. Enable WebSocket
+      subscriptions with useWSS and @fastify/websocket. Set maxParamLength
+      for batch requests. Requires Fastify v5+.
+    requires:
+      - 'server-setup'
+    sources:
+      - 'trpc/trpc:www/docs/server/adapters/fastify.md'
+      - 'trpc/trpc:examples/fastify-server/'
+
+  - name: 'Adapter: AWS Lambda'
+    slug: 'adapter-aws-lambda'
+    type: 'core'
+    domain: 'hosting-api'
+    path: 'packages/server/skills/adapter-aws-lambda/SKILL.md'
+    package: 'packages/server'
+    description: >
+      Deploy tRPC on AWS Lambda with awsLambdaRequestHandler() and
+      awsLambdaStreamingRequestHandler(). Support API Gateway v1 (REST),
+      v2 (HTTP), Lambda Function URLs. Enable response streaming with
+      streamifyResponse() wrapper.
+    requires:
+      - 'server-setup'
+    sources:
+      - 'trpc/trpc:www/docs/server/adapters/aws-lambda.md'
+      - 'trpc/trpc:examples/lambda-url/'
+      - 'trpc/trpc:examples/lambda-api-gateway/'
+
+  - name: 'Adapter: Fetch / Edge'
+    slug: 'adapter-fetch'
+    type: 'core'
+    domain: 'hosting-api'
+    path: 'packages/server/skills/adapter-fetch/SKILL.md'
+    package: 'packages/server'
+    description: >
+      Deploy tRPC on WinterCG-compliant edge runtimes with
+      fetchRequestHandler(). Supports Cloudflare Workers, Deno Deploy,
+      Vercel Edge Runtime, Astro, Remix, SolidStart. Context via
+      FetchCreateContextFnOptions with req (Request) and resHeaders.
+    requires:
+      - 'server-setup'
+    sources:
+      - 'trpc/trpc:www/docs/server/adapters/fetch.mdx'
+      - 'trpc/trpc:examples/cloudflare-workers/'
+      - 'trpc/trpc:examples/deno-deploy/'
+
+  # ── Consuming the API (packages/client) ───────────────────────────
+
+  - name: 'Client Setup'
+    slug: 'client-setup'
+    type: 'core'
+    domain: 'consuming-api'
+    path: 'packages/client/skills/client-setup/SKILL.md'
+    package: 'packages/client'
+    description: >
+      Create a vanilla tRPC client with createTRPCClient<AppRouter>(),
+      configure link chain, dynamic headers for auth, transformer on
+      links (not client constructor). Infer types with inferRouterInputs
+      and inferRouterOutputs. AbortController support. Diagnose common
+      errors like HTML-instead-of-JSON responses.
+    requires:
+      - 'server-setup'
+    sources:
+      - 'trpc/trpc:www/docs/client/overview.md'
+      - 'trpc/trpc:www/docs/client/vanilla/overview.md'
+      - 'trpc/trpc:www/docs/client/vanilla/setup.mdx'
+      - 'trpc/trpc:www/docs/client/vanilla/infer-types.md'
+      - 'trpc/trpc:www/docs/client/headers.md'
+      - 'trpc/trpc:packages/client/src/internals/TRPCUntypedClient.ts'
+
+  - name: 'Links'
+    slug: 'links'
+    type: 'core'
+    domain: 'consuming-api'
+    path: 'packages/client/skills/links/SKILL.md'
+    package: 'packages/client'
+    description: >
+      Configure the tRPC client link chain: httpLink, httpBatchLink,
+      httpBatchStreamLink, splitLink, loggerLink, wsLink, createWSClient,
+      httpSubscriptionLink, unstable_localLink. Choose the right
+      terminating link. Route subscriptions via splitLink. Build custom
+      links for SOA routing.
+    requires:
+      - 'client-setup'
+    sources:
+      - 'trpc/trpc:www/docs/client/links/overview.md'
+      - 'trpc/trpc:www/docs/client/links/httpLink.md'
+      - 'trpc/trpc:www/docs/client/links/httpBatchLink.md'
+      - 'trpc/trpc:www/docs/client/links/httpBatchStreamLink.md'
+      - 'trpc/trpc:www/docs/client/links/splitLink.mdx'
+      - 'trpc/trpc:www/docs/client/links/wsLink.md'
+      - 'trpc/trpc:www/docs/client/links/httpSubscriptionLink.md'
+      - 'trpc/trpc:www/docs/client/links/localLink.mdx'
+      - 'trpc/trpc:www/docs/client/links/loggerLink.md'
+      - 'trpc/trpc:packages/client/src/links/'
+    references:
+      - 'references/link-options.md'
+
+  - name: 'SuperJSON'
+    slug: 'superjson'
+    type: 'composition'
+    domain: 'consuming-api'
+    path: 'packages/client/skills/superjson/SKILL.md'
+    package: 'packages/client'
+    description: >
+      Configure SuperJSON transformer on both server initTRPC.create()
+      and every client terminating link (httpBatchLink, httpLink, wsLink,
+      httpSubscriptionLink) to support Date, Map, Set, BigInt, and other
+      non-JSON-serializable types. Handle error response serialization edge
+      cases.
+    requires:
+      - 'server-setup'
+      - 'client-setup'
+    sources:
+      - 'trpc/trpc:www/docs/server/data-transformers.md'
+
+  # ── Real-time (packages/server + packages/client) ─────────────────
+
+  - name: 'Subscriptions'
+    slug: 'subscriptions'
+    type: 'core'
+    domain: 'realtime'
+    path: 'packages/server/skills/subscriptions/SKILL.md'
+    package: 'packages/server'
+    description: >
+      Set up real-time event streams with async generator subscriptions.
+      SSE via httpSubscriptionLink is recommended. WebSocket via wsLink
+      and applyWSSHandler only when bidirectional features are required.
+      Use tracked(id, data) for reconnection recovery. Authenticate with
+      connectionParams or EventSource polyfill headers. Configure keepAlive
+      and ping intervals.
+    requires:
+      - 'server-setup'
+      - 'links'
+    sources:
+      - 'trpc/trpc:www/docs/server/subscriptions.md'
+      - 'trpc/trpc:www/docs/server/websockets.md'
+      - 'trpc/trpc:www/docs/client/links/httpSubscriptionLink.md'
+      - 'trpc/trpc:www/docs/client/links/wsLink.md'
+      - 'trpc/trpc:packages/server/src/unstable-core-do-not-import/stream/sse.ts'
+      - 'trpc/trpc:packages/server/src/unstable-core-do-not-import/stream/tracked.ts'
+      - 'trpc/trpc:examples/standalone-server/src/server.ts'
+
+  # ── Framework integration ─────────────────────────────────────────
+
+  - name: 'TanStack React Query Setup'
+    slug: 'react-query-setup'
+    type: 'framework'
+    domain: 'framework-integration'
+    path: 'packages/tanstack-react-query/skills/react-query-setup/SKILL.md'
+    package: 'packages/tanstack-react-query'
+    description: >
+      Set up @trpc/tanstack-react-query with createTRPCContext(),
+      TRPCProvider, useTRPC() hook. Use queryOptions(), mutationOptions(),
+      subscriptionOptions(), infiniteQueryOptions() factories with TanStack
+      React Query useQuery/useMutation hooks. Invalidate queries with
+      queryClient.invalidateQueries(trpc.procedure.queryFilter()). Infer
+      types with inferInput/inferOutput.
+    requires:
+      - 'client-setup'
+      - 'links'
+    sources:
+      - 'trpc/trpc:www/docs/client/tanstack-react-query/overview.md'
+      - 'trpc/trpc:www/docs/client/tanstack-react-query/setup.mdx'
+      - 'trpc/trpc:www/docs/client/tanstack-react-query/usage.mdx'
+      - 'trpc/trpc:packages/tanstack-react-query/src/'
+
+  - name: 'Classic React Query Migration'
+    slug: 'react-query-classic-migration'
+    type: 'lifecycle'
+    domain: 'framework-integration'
+    path: 'packages/tanstack-react-query/skills/react-query-classic-migration/SKILL.md'
+    package: 'packages/tanstack-react-query'
+    description: >
+      Migrate from @trpc/react-query (classic) to @trpc/tanstack-react-query.
+      Run npx @trpc/upgrade CLI for automated codemod. Manually migrate
+      remaining patterns: hook-based to options-factory, utils.invalidate
+      to queryClient.invalidateQueries with queryFilter, provider changes.
+      Typecheck and fix remaining issues.
+    requires:
+      - 'react-query-setup'
+    sources:
+      - 'trpc/trpc:www/docs/client/tanstack-react-query/migrating.mdx'
+
+  - name: 'Next.js App Router'
+    slug: 'nextjs-app-router'
+    type: 'framework'
+    domain: 'framework-integration'
+    path: 'packages/next/skills/nextjs-app-router/SKILL.md'
+    package: 'packages/next'
+    description: >
+      Set up tRPC in Next.js App Router end-to-end: fetchRequestHandler
+      in app/api/trpc/[trpc]/route.ts (export GET and POST), create
+      TRPCProvider and QueryClient per request, createTRPCOptionsProxy for
+      server components, prefetchQuery + HydrateClient/HydrationBoundary
+      for RSC hydration, useSuspenseQuery for Suspense, Server Actions.
+      Complete setup from example apps and docs.
+    requires:
+      - 'server-setup'
+      - 'client-setup'
+      - 'react-query-setup'
+      - 'adapter-fetch'
+    sources:
+      - 'trpc/trpc:www/docs/client/nextjs/overview.mdx'
+      - 'trpc/trpc:www/docs/client/tanstack-react-query/server-components.mdx'
+      - 'trpc/trpc:www/docs/server/adapters/nextjs.md'
+      - 'trpc/trpc:examples/next-prisma-starter/'
+      - 'trpc/trpc:examples/next-sse-chat/'
+
+  - name: 'Next.js Pages Router'
+    slug: 'nextjs-pages-router'
+    type: 'framework'
+    domain: 'framework-integration'
+    path: 'packages/next/skills/nextjs-pages-router/SKILL.md'
+    package: 'packages/next'
+    description: >
+      Set up tRPC in Next.js Pages Router: createNextApiHandler in
+      pages/api/trpc/[trpc].ts, withTRPC() HOC wrapping App component,
+      createTRPCNext() configuration, SSR via ssr option, SSG via
+      createSSGHelpers with getStaticProps, server-side helpers for
+      getServerSideProps prefetching.
+    requires:
+      - 'server-setup'
+      - 'client-setup'
+    sources:
+      - 'trpc/trpc:www/docs/client/nextjs/overview.mdx'
+      - 'trpc/trpc:www/docs/server/adapters/nextjs.md'
+      - 'trpc/trpc:examples/next-prisma-starter/'
+
+  # ── Interop and publishing ────────────────────────────────────────
+
+  - name: 'OpenAPI'
+    slug: 'openapi'
+    type: 'composition'
+    domain: 'interop'
+    path: 'packages/openapi/skills/openapi/SKILL.md'
+    package: 'packages/openapi'
+    description: >
+      Generate OpenAPI 3.1 spec from tRPC router with trpc-openapi CLI.
+      Generate typed REST client with @hey-api/openapi-ts and
+      createTRPCHeyApiClientConfig(). Configure transformers for generated
+      clients (superjson, EJSON). Alpha status — APIs may change.
+    requires:
+      - 'server-setup'
+    sources:
+      - 'trpc/trpc:www/docs/client/openapi.md'
+      - 'trpc/trpc:packages/openapi/test/heyapi.test.ts'
+      - 'trpc/trpc:examples/openapi-codegen/'
+
+  - name: 'Service-Oriented Architecture'
+    slug: 'service-oriented-architecture'
+    type: 'composition'
+    domain: 'interop'
+    path: 'packages/server/skills/service-oriented-architecture/SKILL.md'
+    package: 'packages/server'
+    description: >
+      Break a tRPC backend into multiple services with custom routing
+      links, path-based service routing, shared procedure/router libraries,
+      and a gateway pattern. Build custom links that route by path prefix
+      to different backend service URLs.
+    requires:
+      - 'server-setup'
+      - 'client-setup'
+      - 'links'
+    sources:
+      - 'trpc/trpc:examples/soa/'

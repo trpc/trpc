@@ -187,7 +187,10 @@
     "shared",
     "unstable-core-do-not-import",
     "!**/*.test.*",
-    "!**/__tests__"
+    "!**/__tests__",
+    "skills",
+    "bin",
+    "!skills/_artifacts"
   ],
   "publishConfig": {
     "access": "public"
@@ -227,5 +230,11 @@
   ],
   "peerDependencies": {
     "typescript": ">=5.7.2"
+  },
+  "keywords": [
+    "tanstack-intent"
+  ],
+  "bin": {
+    "intent": "./bin/intent.js"
   }
 }

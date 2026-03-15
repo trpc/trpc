@@ -109,7 +109,10 @@
     "links",
     "unstable-internals",
     "!**/*.test.*",
-    "!**/__tests__"
+    "!**/__tests__",
+    "skills",
+    "bin",
+    "!skills/_artifacts"
   ],
   "peerDependencies": {
     "@trpc/server": "11.14.0",
@@ -134,5 +137,11 @@
   },
   "funding": [
     "https://trpc.io/sponsor"
-  ]
+  ],
+  "keywords": [
+    "tanstack-intent"
+  ],
+  "bin": {
+    "intent": "./bin/intent.js"
+  }
 }
