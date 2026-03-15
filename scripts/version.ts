@@ -3,8 +3,10 @@ import path from 'path';
 
 console.log('ℹ️ Running custom script to pin versions to each other');
 
-// Packages that should always have an -alpha prerelease suffix
-const ALPHA_PACKAGES = new Set(['openapi']);
+// Packages that should have a prerelease suffix (alpha or beta)
+const PRERELEASE_PACKAGES = new Map<string, 'alpha' | 'beta'>([
+  ['openapi', 'alpha'],
+]);
 
 const packages = fs
   .readdirSync(path.join(import.meta.dirname, '..', 'packages'), {
@@ -32,9 +34,10 @@ for (const name of packages) {
   let version = parsed.version;
 
   // Ensure designated packages always have their prerelease suffix
-  if (ALPHA_PACKAGES.has(name)) {
+  const prereleaseTag = PRERELEASE_PACKAGES.get(name);
+  if (prereleaseTag && !version.includes('-')) {
     const baseVersion = version.replace(/-.*$/, '');
-    const suffixedVersion = `${baseVersion}-alpha`;
+    const suffixedVersion = `${baseVersion}-${prereleaseTag}`;
     if (version !== suffixedVersion) {
       content = content.replace(
         `"version": "${version}"`,
