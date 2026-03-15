@@ -47,4 +47,4 @@ jobs:
 
       - name: Publish packages
         run: |
-          pnpm lerna publish ${{ inputs.version_bump }} --force-publish --dist-tag ${{ inputs.dist_tag }} --no-verify-access --yes
+          pnpm lerna publish ${{ inputs.version_bump }} --force-publish --dist-tag ${{ inputs.dist_tag }} --yes
