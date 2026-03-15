@@ -22,14 +22,22 @@ jobs:
 
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write # For fixing formatting
       id-token: write # For OIDC publishing
+      pull-requests: write # For creating release PRs
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          token: ${{ secrets.ACCESS_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
       - uses: ./.github/setup
       - run: pnpm add -g npm@latest # For OIDC publishing
 
