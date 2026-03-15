@@ -141,12 +141,12 @@ httpBatchLink({ url: 'https://api.example.com' });
 Correct:
 
 ```ts
-// Option A: Single catch-all resource (e.g., /{proxy+})
-// Option B: Per-procedure resources with httpLink (no batching)
 import { httpBatchLink, httpLink } from '@trpc/client';
 
+// Option A: Single catch-all resource (e.g., /{proxy+})
 httpBatchLink({ url: 'https://api.example.com' });
 
+// Option B: Per-procedure resources with httpLink (no batching)
 httpLink({ url: 'https://api.example.com' });
 ```
 

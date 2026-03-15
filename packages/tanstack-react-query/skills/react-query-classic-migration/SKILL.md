@@ -30,7 +30,7 @@ npx @trpc/upgrade
 
 When prompted, select:
 
-- `Migrate Hooks to xxxOptions API`
+- `Migrate Hooks to queryOptions/mutationOptions API`
 - `Migrate context provider setup`
 
 The codemod handles common patterns but is a work in progress. Always typecheck after running it.
@@ -68,7 +68,7 @@ Update the provider in your app root:
 
 // AFTER (new)
 import { QueryClientProvider } from '@tanstack/react-query';
-import { trpc, TRPCProvider } from '../utils/trpc';
+import { TRPCProvider } from '../utils/trpc';
 
 <QueryClientProvider client={queryClient}>
   <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
@@ -171,7 +171,7 @@ npx tsc --noEmit
 Common type errors after migration:
 
 - Missing `useTRPC()` call (the new pattern requires calling the hook inside the component)
-- Incorrect options shape (the new `queryOptions`/`mutationOptions` take input as the first arg, TanStack options as the second)
+- Incorrect options shape (`queryOptions` takes the procedure input as the first arg; `mutationOptions` takes TanStack Query options like `onSuccess`/`onError`, with mutation variables passed later to `mutate(...)`)
 - `useUtils()` references that need to become `useQueryClient()` + `useTRPC()` pairs
 
 ## Step 5: Remove classic package

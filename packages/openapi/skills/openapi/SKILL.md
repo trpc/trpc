@@ -260,7 +260,7 @@ Zod `.describe()` calls and JSDoc comments on types, routers, and procedures bec
 
 ### Missing transformer config in HeyAPI client
 
-When the tRPC server uses `superjson` or another transformer, the generated HeyAPI client must also be configured with the same transformer via `configureTRPCHeyApiClient({ transformer })`. Without this, `Date`, `Map`, `Set`, and other non-JSON types will be silently wrong at runtime -- they arrive as raw serialized objects instead of their native types.
+When the tRPC server uses `superjson` or another transformer, the generated HeyAPI client must also be configured with the same transformer via `configureTRPCHeyApiClient(client, { transformer })`. Without this, `Date`, `Map`, `Set`, and other non-JSON types will be silently wrong at runtime -- they arrive as raw serialized objects instead of their native types.
 
 Wrong:
 

@@ -307,7 +307,7 @@ useQuery(trpc.user.byId.queryOptions({ id }));
 
 ### Missing TRPCProvider wrapper
 
-`useTRPC()` throws `"can only be used inside of a <TRPCProvider>"` if the component tree is not wrapped. Ensure `TRPCProvider` is mounted above all components that call `useTRPC()`, typically in your root `App` component.
+`useTRPC()` throws `"can only be used inside a <TRPCProvider>"` if the component tree is not wrapped. Ensure `TRPCProvider` is mounted above all components that call `useTRPC()`, typically in your root `App` component.
 
 ### Invalidating queries with the classic utils pattern
 
