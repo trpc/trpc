@@ -1,5 +1,5 @@
 ---
-name: skills/error-handling
+name: error-handling
 description: >
   Throw typed errors with TRPCError and error codes (NOT_FOUND, UNAUTHORIZED,
   BAD_REQUEST, INTERNAL_SERVER_ERROR), configure errorFormatter for client-side

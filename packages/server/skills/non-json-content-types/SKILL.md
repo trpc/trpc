@@ -1,5 +1,5 @@
 ---
-name: skills/non-json-content-types
+name: non-json-content-types
 description: >
   Handle FormData, file uploads, Blob, Uint8Array, and ReadableStream inputs in
   tRPC mutations. Use octetInputParser from @trpc/server/http for binary data.

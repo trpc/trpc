@@ -9,8 +9,8 @@ name: Validate Skills
 on:
   pull_request:
     paths:
-      - "skills/**"
-      - "**/skills/**"
+      - 'skills/**'
+      - '**/skills/**'
 
 jobs:
   validate:

@@ -1,5 +1,5 @@
 ---
-name: skills/client-setup
+name: client-setup
 description: >
   Create a vanilla tRPC client with createTRPCClient<AppRouter>(), configure
   link chain with httpBatchLink/httpLink, dynamic headers for auth, transformer

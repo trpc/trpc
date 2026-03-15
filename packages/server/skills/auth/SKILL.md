@@ -1,5 +1,5 @@
 ---
-name: skills/auth
+name: auth
 description: >
   Implement JWT/cookie authentication and authorization in tRPC using createContext
   for user extraction, t.middleware with opts.next({ ctx }) for context narrowing to

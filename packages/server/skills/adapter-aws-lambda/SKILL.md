@@ -1,5 +1,5 @@
 ---
-name: skills/adapter-aws-lambda
+name: adapter-aws-lambda
 description: >
   Deploy tRPC on AWS Lambda with awsLambdaRequestHandler() from
   @trpc/server/adapters/aws-lambda for API Gateway v1 (REST, APIGatewayProxyEvent)

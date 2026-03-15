@@ -1,5 +1,5 @@
 ---
-name: skills/adapter-fastify
+name: adapter-fastify
 description: >
   Mount tRPC as a Fastify plugin with fastifyTRPCPlugin from
   @trpc/server/adapters/fastify. Configure prefix, trpcOptions (router,

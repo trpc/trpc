@@ -1,5 +1,5 @@
 ---
-name: skills/trpc-router
+name: trpc-router
 description: >
   Entry point for all tRPC skills. Decision tree routing by task: initTRPC.create(),
   t.router(), t.procedure, createTRPCClient, adapters, subscriptions, React Query,

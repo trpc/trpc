@@ -1,5 +1,5 @@
 ---
-name: skills/subscriptions
+name: subscriptions
 description: >
   Set up real-time event streams with async generator subscriptions using
   .subscription(async function*() { yield }). SSE via httpSubscriptionLink is

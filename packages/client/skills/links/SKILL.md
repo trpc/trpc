@@ -1,5 +1,5 @@
 ---
-name: skills/links
+name: links
 description: >
   Configure the tRPC client link chain: httpLink, httpBatchLink,
   httpBatchStreamLink, splitLink, loggerLink, wsLink, createWSClient,

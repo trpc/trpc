@@ -1,5 +1,5 @@
 ---
-name: skills/validators
+name: validators
 description: >
   Configure input and output validation with .input() and .output() using Zod,
   Yup, Superstruct, ArkType, Valibot, Effect, or custom validator functions.

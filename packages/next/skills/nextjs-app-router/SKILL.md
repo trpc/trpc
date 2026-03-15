@@ -1,5 +1,5 @@
 ---
-name: skills/nextjs-app-router
+name: nextjs-app-router
 description: >
   Full end-to-end tRPC setup for Next.js App Router. Covers route handler
   with fetchRequestHandler (GET + POST exports), TRPCProvider with
@@ -147,7 +147,8 @@ import { useState } from 'react';
 import { makeQueryClient } from './query-client';
 import type { AppRouter } from './routers/_app';
 
-export const { TRPCProvider, useTRPC, useTRPCClient } = createTRPCContext<AppRouter>();
+export const { TRPCProvider, useTRPC, useTRPCClient } =
+  createTRPCContext<AppRouter>();
 
 let browserQueryClient: QueryClient;
 function getQueryClient() {

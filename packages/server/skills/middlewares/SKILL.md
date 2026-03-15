@@ -1,5 +1,5 @@
 ---
-name: skills/middlewares
+name: middlewares
 description: >
   Create and compose tRPC middleware with t.procedure.use(), extend context via
   opts.next({ ctx }), build reusable middleware with .concat() and .unstable_pipe(),

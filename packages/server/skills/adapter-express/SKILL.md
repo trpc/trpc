@@ -1,5 +1,5 @@
 ---
-name: skills/adapter-express
+name: adapter-express
 description: >
   Mount tRPC as Express middleware with createExpressMiddleware() from
   @trpc/server/adapters/express. Access Express req/res in createContext via

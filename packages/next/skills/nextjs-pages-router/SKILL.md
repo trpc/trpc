@@ -1,5 +1,5 @@
 ---
-name: skills/nextjs-pages-router
+name: nextjs-pages-router
 description: >
   Set up tRPC in Next.js Pages Router with createNextApiHandler,
   createTRPCNext, withTRPC HOC, SSR via ssr option and ssrPrepass,

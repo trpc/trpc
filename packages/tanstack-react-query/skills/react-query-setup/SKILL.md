@@ -1,5 +1,5 @@
 ---
-name: skills/react-query-setup
+name: react-query-setup
 description: >
   Set up @trpc/tanstack-react-query with createTRPCContext(), TRPCProvider,
   useTRPC() hook, queryOptions/mutationOptions factories, query invalidation

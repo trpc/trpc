@@ -1,5 +1,5 @@
 ---
-name: skills/adapter-fetch
+name: adapter-fetch
 description: >
   Deploy tRPC on WinterCG-compliant edge runtimes with fetchRequestHandler() from
   @trpc/server/adapters/fetch. Supports Cloudflare Workers, Deno Deploy, Vercel

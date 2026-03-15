@@ -1,5 +1,5 @@
 ---
-name: skills/superjson
+name: superjson
 description: >
   Configure SuperJSON transformer on both server initTRPC.create({ transformer:
   superjson }) and every client terminating link (httpBatchLink, httpLink, wsLink,

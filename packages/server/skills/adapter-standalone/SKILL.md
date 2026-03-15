@@ -1,5 +1,5 @@
 ---
-name: skills/adapter-standalone
+name: adapter-standalone
 description: >
   Mount tRPC on Node.js built-in HTTP server with createHTTPServer() from
   @trpc/server/adapters/standalone, createHTTPHandler() for custom http.createServer,

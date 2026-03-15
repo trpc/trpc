@@ -1,5 +1,5 @@
 ---
-name: skills/react-query-classic-migration
+name: react-query-classic-migration
 description: >
   Migrate from @trpc/react-query (classic) to @trpc/tanstack-react-query.
   Run npx @trpc/upgrade CLI for automated codemod. Manually migrate

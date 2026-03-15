@@ -1,5 +1,5 @@
 ---
-name: skills/server-side-calls
+name: server-side-calls
 description: >
   Call tRPC procedures directly from server code using t.createCallerFactory()
   and router.createCaller(context) for integration testing, internal server logic,

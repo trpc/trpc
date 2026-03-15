@@ -1,5 +1,5 @@
 ---
-name: skills/server-setup
+name: server-setup
 description: >
   Initialize tRPC with initTRPC.create(), define routers with t.router(),
   create procedures with .query()/.mutation()/.subscription(), configure context

@@ -1,5 +1,5 @@
 ---
-name: skills/service-oriented-architecture
+name: service-oriented-architecture
 description: >
   Break a tRPC backend into multiple services with custom routing links that
   split on the first path segment (op.path.split('.')) to route to different

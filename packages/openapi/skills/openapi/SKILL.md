@@ -1,5 +1,5 @@
 ---
-name: skills/openapi
+name: openapi
 description: >
   Generate OpenAPI 3.1 spec from a tRPC router with @trpc/openapi CLI or
   programmatic API. Generate typed REST client with @hey-api/openapi-ts and

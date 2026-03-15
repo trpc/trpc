@@ -1,5 +1,5 @@
 ---
-name: skills/caching
+name: caching
 description: >
   Set HTTP cache headers on tRPC query responses via responseMeta callback for
   CDN and browser caching. Configure Cache-Control, s-maxage,
