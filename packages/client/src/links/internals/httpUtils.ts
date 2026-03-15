@@ -101,6 +101,7 @@ type GetBody = (opts: HTTPBaseRequestOptions) => RequestInitEsque['body'];
 
 export type ContentOptions = {
   trpcAcceptHeader?: TRPCAcceptHeader;
+  trpcAcceptHeaderKey?: 'trpc-accept' | 'accept';
   contentTypeHeader?: string;
   getUrl: GetUrl;
   getBody: GetBody;
@@ -210,7 +211,7 @@ export async function fetchHTTPResponse(opts: HTTPRequestOptions) {
       ? { 'content-type': opts.contentTypeHeader }
       : {}),
     ...(opts.trpcAcceptHeader
-      ? { 'trpc-accept': opts.trpcAcceptHeader }
+      ? { [opts.trpcAcceptHeaderKey ?? 'trpc-accept']: opts.trpcAcceptHeader }
       : undefined),
     ...resolvedHeaders,
   };

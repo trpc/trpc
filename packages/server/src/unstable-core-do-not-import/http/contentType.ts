@@ -5,6 +5,18 @@ import { emptyObject, isObject } from '../utils';
 import { parseConnectionParamsFromString } from './parseConnectionParams';
 import type { TRPCAcceptHeader, TRPCRequestInfo } from './types';
 
+export function getAcceptHeader(headers: Headers): TRPCAcceptHeader | null {
+  return (
+    (headers.get('trpc-accept') as TRPCAcceptHeader | null) ??
+    (headers
+      .get('accept')
+      ?.split(',')
+      .some((t) => t.trim() === 'application/jsonl')
+      ? ('application/jsonl' as TRPCAcceptHeader)
+      : null)
+  );
+}
+
 type GetRequestInfoOptions = {
   path: string;
   req: Request;
@@ -172,7 +184,7 @@ const jsonContentTypeHandler: ContentTypeHandler = {
 
     const info: TRPCRequestInfo = {
       isBatchCall,
-      accept: req.headers.get('trpc-accept') as TRPCAcceptHeader | null,
+      accept: getAcceptHeader(req.headers),
       calls,
       type,
       connectionParams:

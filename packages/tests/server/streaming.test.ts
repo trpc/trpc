@@ -1301,3 +1301,148 @@ describe('with transformer', () => {
     expect(error.message).toBe('foo');
   });
 });
+
+describe('streamHeader option', () => {
+  test('streamHeader: accept sends Accept header without trpc-accept header', async () => {
+    const t = initTRPC.create({});
+
+    const router = t.router({
+      deferred: t.procedure
+        .input(z.object({ wait: z.number() }))
+        .query(async (opts) => {
+          await new Promise<void>((resolve) =>
+            setTimeout(resolve, opts.input.wait * 10),
+          );
+          return opts.input.wait;
+        }),
+    });
+
+    const fetchSpy = vi.fn<(url: string, init: RequestInit) => void>();
+
+    await using ctx = testServerAndClientResource(router, {
+      server: {},
+      client(opts) {
+        const nativeFetch = globalThis.fetch;
+        return {
+          links: [
+            httpBatchStreamLink({
+              url: opts.httpUrl,
+              streamHeader: 'accept',
+              fetch(url, init) {
+                fetchSpy(url as string, init as RequestInit);
+                return nativeFetch(url, init);
+              },
+            }),
+          ],
+        };
+      },
+    });
+
+    const results = await Promise.all([
+      ctx.client.deferred.query({ wait: 2 }),
+      ctx.client.deferred.query({ wait: 1 }),
+    ]);
+
+    expect(results).toEqual([2, 1]);
+
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    const [, init] = fetchSpy.mock.calls[0]!;
+    expect(init.headers).toHaveProperty('accept', 'application/jsonl');
+    expect(init.headers).not.toHaveProperty('trpc-accept');
+  });
+
+  test('streamHeader: trpc-accept sends trpc-accept header without Accept header', async () => {
+    const t = initTRPC.create({});
+
+    const router = t.router({
+      deferred: t.procedure
+        .input(z.object({ wait: z.number() }))
+        .query(async (opts) => {
+          await new Promise<void>((resolve) =>
+            setTimeout(resolve, opts.input.wait * 10),
+          );
+          return opts.input.wait;
+        }),
+    });
+
+    const fetchSpy = vi.fn<(url: string, init: RequestInit) => void>();
+
+    await using ctx = testServerAndClientResource(router, {
+      server: {},
+      client(opts) {
+        const nativeFetch = globalThis.fetch;
+        return {
+          links: [
+            httpBatchStreamLink({
+              url: opts.httpUrl,
+              streamHeader: 'trpc-accept',
+              fetch(url, init) {
+                fetchSpy(url as string, init as RequestInit);
+                return nativeFetch(url, init);
+              },
+            }),
+          ],
+        };
+      },
+    });
+
+    const results = await Promise.all([
+      ctx.client.deferred.query({ wait: 2 }),
+      ctx.client.deferred.query({ wait: 1 }),
+    ]);
+
+    expect(results).toEqual([2, 1]);
+
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    const [, init] = fetchSpy.mock.calls[0]!;
+    expect(init.headers).toHaveProperty('trpc-accept', 'application/jsonl');
+    expect(init.headers).not.toHaveProperty('accept');
+  });
+
+  test('streamHeader defaults to trpc-accept when omitted', async () => {
+    const t = initTRPC.create({});
+
+    const router = t.router({
+      deferred: t.procedure
+        .input(z.object({ wait: z.number() }))
+        .query(async (opts) => {
+          await new Promise<void>((resolve) =>
+            setTimeout(resolve, opts.input.wait * 10),
+          );
+          return opts.input.wait;
+        }),
+    });
+
+    const fetchSpy = vi.fn<(url: string, init: RequestInit) => void>();
+
+    await using ctx = testServerAndClientResource(router, {
+      server: {},
+      client(opts) {
+        const nativeFetch = globalThis.fetch;
+        return {
+          links: [
+            httpBatchStreamLink({
+              url: opts.httpUrl,
+              fetch(url, init) {
+                fetchSpy(url as string, init as RequestInit);
+                return nativeFetch(url, init);
+              },
+            }),
+          ],
+        };
+      },
+    });
+
+    const results = await Promise.all([
+      ctx.client.deferred.query({ wait: 2 }),
+      ctx.client.deferred.query({ wait: 1 }),
+    ]);
+
+    expect(results).toEqual([2, 1]);
+
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    const [, init] = fetchSpy.mock.calls[0]!;
+    expect(init.headers).toHaveProperty('trpc-accept', 'application/jsonl');
+    expect(init.headers).not.toHaveProperty('accept');
+  });
+});
