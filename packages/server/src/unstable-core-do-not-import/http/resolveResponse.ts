@@ -21,7 +21,7 @@ import {
   isObject,
   run,
 } from '../utils';
-import { getRequestInfo } from './contentType';
+import { getAcceptHeader, getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
   HTTPBaseHandlerOptions,
@@ -301,12 +301,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   /**
    * @deprecated
    */
-  const isStreamCall =
-    req.headers.get('trpc-accept') === 'application/jsonl' ||
-    !!req.headers
-      .get('accept')
-      ?.split(',')
-      .some((t) => t.trim() === 'application/jsonl');
+  const isStreamCall = getAcceptHeader(req.headers) === 'application/jsonl';
 
   const experimentalSSE = config.sse?.enabled ?? true;
   try {

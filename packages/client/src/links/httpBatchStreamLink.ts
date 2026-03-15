@@ -23,7 +23,7 @@ type HTTPBatchStreamLinkOptions<TRoot extends AnyClientTypes> =
     /**
      * Which header to use to signal the server that the client wants a streaming response.
      * - `'trpc-accept'` (default): sends `trpc-accept: application/jsonl` header
-     * - `'accept'`: sends `Accept: application/jsonl` header (can avoid CORS preflight for cross-origin streaming queries)
+     * - `'accept'`: sends `Accept: application/jsonl` header, which can avoid CORS preflight for cross-origin streaming queries. Be aware that `application/jsonl` is not an official MIME type and so this is not completely spec-compliant - you should test that your infrastructure supports this value.
      * @default 'trpc-accept'
      */
     streamHeader?: 'trpc-accept' | 'accept';
