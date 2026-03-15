@@ -18,7 +18,7 @@ import {
 } from './internals/httpUtils';
 import type { Operation, TRPCLink } from './types';
 
-type HTTPBatchStreamLinkOptions<TRoot extends AnyClientTypes> =
+export type HTTPBatchStreamLinkOptions<TRoot extends AnyClientTypes> =
   HTTPBatchLinkOptions<TRoot> & {
     /**
      * Which header to use to signal the server that the client wants a streaming response.
