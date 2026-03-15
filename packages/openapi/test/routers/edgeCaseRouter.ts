@@ -117,11 +117,12 @@ export const EdgeCaseRouter = t.router({
 
   // --- Intersection with conflicting property types (allOf) ---
   conflictingIntersection: t.procedure.query(
-    (): ConflictingIntersection => ({
-      id: 1 as any,
-      label: 'test',
-      extra: true,
-    }),
+    () =>
+      ({
+        id: 1,
+        label: 'test',
+        extra: true,
+      }) as ConflictingIntersection,
   ),
 
   // --- Query with complex nullable union ---
