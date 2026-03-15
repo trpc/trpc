@@ -242,20 +242,9 @@ httpLink and httpBatchLink throw on subscription operations. Subscriptions must 
 
 Source: packages/client/src/links/httpLink.ts
 
-### [HIGH] Batch headers callback using { op } instead of { opList }
+### [HIGH] httpBatchLink and httpBatchStreamLink headers callback receives { opList }
 
-Wrong:
-
-```ts
-httpBatchLink({
-  url: 'http://localhost:3000/trpc',
-  headers({ op }) {
-    return { authorization: op.context.token };
-  },
-});
-```
-
-Correct:
+`httpBatchLink` and `httpBatchStreamLink` headers callbacks receive `{ opList }` (a `NonEmptyArray<Operation>`), not `{ op }` like `httpLink`. Access per-operation context via `opList[0]?.context`:
 
 ```ts
 httpBatchLink({
@@ -266,7 +255,7 @@ httpBatchLink({
 });
 ```
 
-`httpBatchLink` headers callback receives `{ opList }` (an array of operations), not `{ op }`. Using `op` silently returns `undefined`.
+`httpBatchLink` headers callback receives `{ opList }` (an array of operations)
 
 Source: packages/client/src/links/httpBatchLink.ts
 

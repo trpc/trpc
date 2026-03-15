@@ -162,20 +162,9 @@ Without the type parameter, all procedure calls return `any` and type safety is 
 
 Source: www/docs/client/vanilla/setup.mdx
 
-### [CRITICAL] Passing transformer to createTRPCClient instead of links
+### [CRITICAL] Transformer goes on individual links, not createTRPCClient
 
-Wrong:
-
-```ts
-import superjson from 'superjson';
-
-createTRPCClient<AppRouter>({
-  transformer: superjson,
-  links: [httpBatchLink({ url: 'http://localhost:3000' })],
-});
-```
-
-Correct:
+In v11, the `transformer` option is on individual terminating links, not the client constructor:
 
 ```ts
 import superjson from 'superjson';

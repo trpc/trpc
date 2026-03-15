@@ -183,18 +183,9 @@ Server encodes with superjson but client tries to parse raw JSON, causing "Unabl
 
 Source: www/docs/server/data-transformers.md
 
-### [CRITICAL] Passing transformer to createTRPCClient instead of links
+### [CRITICAL] Transformer goes on individual links, not createTRPCClient
 
-Wrong:
-
-```ts
-createTRPCClient<AppRouter>({
-  transformer: superjson,
-  links: [httpBatchLink({ url: 'http://localhost:3000/trpc' })],
-});
-```
-
-Correct:
+The `transformer` option is on individual terminating links:
 
 ```ts
 createTRPCClient<AppRouter>({

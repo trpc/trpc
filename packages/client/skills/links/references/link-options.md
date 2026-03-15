@@ -54,7 +54,7 @@ httpBatchLink({
 
 ## httpBatchStreamLink
 
-Terminating link identical to httpBatchLink but streams responses as they arrive instead of waiting for all to complete.
+Terminating link similar to httpBatchLink but streams responses as they arrive instead of waiting for all to complete.
 
 ```ts
 import { httpBatchStreamLink } from '@trpc/client';
