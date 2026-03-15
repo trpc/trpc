@@ -1,6 +1,7 @@
 name: Release "@canary"-tagged packages
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - 'main'
