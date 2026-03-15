@@ -67,8 +67,7 @@
     "heyapi"
   ],
   "publishConfig": {
-    "access": "public",
-    "tag": "alpha"
+    "access": "public"
   },
   "devDependencies": {
     "@hey-api/openapi-ts": "^0.94.1",
