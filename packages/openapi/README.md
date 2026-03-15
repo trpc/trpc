@@ -45,6 +45,7 @@ Full documentation is available at [trpc.io/docs/openapi](https://trpc.io/docs/o
 - [ ] Improved handling of recursive/self-referencing types like trees/graphs - may be limited to 20 depth currently
 - [ ] non-nodejs example
 - [ ] an ai/mcp example
+- [ ] Document breaking change detection via [oasdiff](https://github.com/oasdiff/oasdiff/blob/main/docs/BREAKING-CHANGES.md)
 
 ## Maybes
 
