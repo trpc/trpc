@@ -7,7 +7,7 @@ description: >
   Avoid caching mutations, errors, and authenticated responses.
 type: core
 library: trpc
-library_version: "11.13.4"
+library_version: '11.13.4'
 requires:
   - server-setup
 sources:
@@ -147,6 +147,7 @@ const server = createHTTPServer({
 ### [CRITICAL] Caching authenticated responses
 
 Wrong:
+
 ```ts
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import { appRouter } from './appRouter';
@@ -162,6 +163,7 @@ const server = createHTTPServer({
 ```
 
 Correct:
+
 ```ts
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import { appRouter } from './appRouter';

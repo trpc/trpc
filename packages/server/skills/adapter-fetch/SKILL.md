@@ -8,7 +8,7 @@ description: >
   must match the URL path prefix where the handler is mounted.
 type: core
 library: trpc
-library_version: "11.13.4"
+library_version: '11.13.4'
 requires:
   - server-setup
 sources:
@@ -23,9 +23,9 @@ sources:
 
 ```ts
 // Cloudflare Worker example
+import { initTRPC } from '@trpc/server';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
-import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
 function createContext({ req, resHeaders }: FetchCreateContextFnOptions) {
@@ -62,8 +62,8 @@ export default {
 
 ```ts
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
-import { appRouter } from './router';
 import { createContext } from './context';
+import { appRouter } from './router';
 
 export default {
   async fetch(request: Request): Promise<Response> {
@@ -83,8 +83,8 @@ export default {
 // src/pages/trpc/[trpc].ts
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import type { APIRoute } from 'astro';
-import { appRouter } from '../../server/router';
 import { createContext } from '../../server/context';
+import { appRouter } from '../../server/router';
 
 export const ALL: APIRoute = (opts) => {
   return fetchRequestHandler({
@@ -102,8 +102,8 @@ export const ALL: APIRoute = (opts) => {
 // app/routes/trpc.$trpc.ts
 import type { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
-import { appRouter } from '~/server/router';
 import { createContext } from '~/server/context';
+import { appRouter } from '~/server/router';
 
 function handleRequest(args: LoaderFunctionArgs | ActionFunctionArgs) {
   return fetchRequestHandler({
@@ -122,8 +122,8 @@ export const action = async (args: ActionFunctionArgs) => handleRequest(args);
 
 ```ts
 import { fetchRequestHandler } from 'npm:@trpc/server/adapters/fetch';
-import { appRouter } from './router.ts';
 import { createContext } from './context.ts';
+import { appRouter } from './router.ts';
 
 Deno.serve((request) => {
   return fetchRequestHandler({
@@ -140,6 +140,7 @@ Deno.serve((request) => {
 ### HIGH Mismatched endpoint path in fetchRequestHandler
 
 Wrong:
+
 ```ts
 // Handler mounted at /api/trpc/[trpc] but endpoint says /trpc
 fetchRequestHandler({
@@ -151,6 +152,7 @@ fetchRequestHandler({
 ```
 
 Correct:
+
 ```ts
 // endpoint must match the actual URL path prefix
 fetchRequestHandler({

@@ -10,7 +10,7 @@ description: >
   via opts.signal for cleanup. splitLink to route subscriptions.
 type: core
 library: trpc
-library_version: "11.13.4"
+library_version: '11.13.4'
 requires:
   - server-setup
   - links
@@ -67,7 +67,12 @@ const appRouter = t.router({
 
 export type AppRouter = typeof appRouter;
 
-createHTTPServer({ router: appRouter, createContext() { return {}; } }).listen(3000);
+createHTTPServer({
+  router: appRouter,
+  createContext() {
+    return {};
+  },
+}).listen(3000);
 ```
 
 ### Client (SSE)
@@ -184,7 +189,9 @@ const wss = new WebSocketServer({ port: 3001 });
 const handler = applyWSSHandler({
   wss,
   router: appRouter,
-  createContext() { return {}; },
+  createContext() {
+    return {};
+  },
   keepAlive: {
     enabled: true,
     pingMs: 30000,
@@ -200,7 +207,13 @@ process.on('SIGTERM', () => {
 
 ```ts
 // client
-import { createTRPCClient, createWSClient, wsLink, httpBatchLink, splitLink } from '@trpc/client';
+import {
+  createTRPCClient,
+  createWSClient,
+  httpBatchLink,
+  splitLink,
+  wsLink,
+} from '@trpc/client';
 import type { AppRouter } from './server';
 
 const wsClient = createWSClient({ url: 'ws://localhost:3001' });
@@ -240,6 +253,7 @@ tRPC invokes `.return()` on the generator when the subscription stops, triggerin
 ### HIGH Using Observable instead of async generator
 
 Wrong:
+
 ```ts
 import { observable } from '@trpc/server/observable';
 
@@ -247,16 +261,17 @@ t.procedure.subscription(({ input }) => {
   return observable((emit) => {
     emit.next(data);
   });
-})
+});
 ```
 
 Correct:
+
 ```ts
 t.procedure.subscription(async function* ({ input, signal }) {
   for await (const [data] of on(ee, 'event', { signal })) {
     yield data;
   }
-})
+});
 ```
 
 Observable subscriptions are deprecated and will be removed in v12. Use async generator syntax (`async function*`).
@@ -266,11 +281,13 @@ Source: packages/server/src/unstable-core-do-not-import/procedureBuilder.ts
 ### MEDIUM Empty string as tracked event ID
 
 Wrong:
+
 ```ts
 yield tracked('', data);
 ```
 
 Correct:
+
 ```ts
 yield tracked(event.id.toString(), data);
 ```
@@ -282,22 +299,30 @@ Source: packages/server/src/unstable-core-do-not-import/stream/tracked.ts
 ### HIGH Fetching history before setting up event listener
 
 Wrong:
+
 ```ts
 t.procedure.subscription(async function* (opts) {
   const history = await db.getEvents(); // events may fire here and be lost
   yield* history;
-  for await (const event of listener) { yield event; }
-})
+  for await (const event of listener) {
+    yield event;
+  }
+});
 ```
 
 Correct:
+
 ```ts
 t.procedure.subscription(async function* (opts) {
   const iterable = on(ee, 'event', { signal: opts.signal }); // listen first
   const history = await db.getEvents();
-  for (const item of history) { yield tracked(item.id, item); }
-  for await (const [event] of iterable) { yield tracked(event.id, event); }
-})
+  for (const item of history) {
+    yield tracked(item.id, item);
+  }
+  for await (const [event] of iterable) {
+    yield tracked(event.id, event);
+  }
+});
 ```
 
 If you fetch historical data before setting up the event listener, events emitted between the fetch and listener setup are lost.
@@ -307,6 +332,7 @@ Source: www/docs/server/subscriptions.md
 ### MEDIUM SSE ping interval >= client reconnect interval
 
 Wrong:
+
 ```ts
 initTRPC.create({
   sse: {
@@ -317,6 +343,7 @@ initTRPC.create({
 ```
 
 Correct:
+
 ```ts
 initTRPC.create({
   sse: {
@@ -333,14 +360,16 @@ Source: packages/server/src/unstable-core-do-not-import/stream/sse.ts
 ### HIGH Sending custom headers with SSE without EventSource polyfill
 
 Wrong:
+
 ```ts
 httpSubscriptionLink({
   url: 'http://localhost:3000',
   // Native EventSource does not support custom headers
-})
+});
 ```
 
 Correct:
+
 ```ts
 import { EventSourcePolyfill } from 'event-source-polyfill';
 
@@ -350,7 +379,7 @@ httpSubscriptionLink({
   eventSourceOptions: async () => ({
     headers: { authorization: 'Bearer token' },
   }),
-})
+});
 ```
 
 The native EventSource API does not support custom headers. Use an EventSource polyfill and pass it via the `EventSource` option on `httpSubscriptionLink`.

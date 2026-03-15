@@ -43,6 +43,7 @@ If you use an AI coding agent, install tRPC skills for better code generation:
 ```bash
 npx @tanstack/intent@latest install
 ```
+
 :::
 
 ### 2. Create a tRPC router

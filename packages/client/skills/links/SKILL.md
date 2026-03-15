@@ -9,7 +9,7 @@ description: >
   maxItems, connectionParams, EventSource ponyfill.
 type: core
 library: trpc
-library_version: "11.13.4"
+library_version: '11.13.4'
 requires:
   - client-setup
 sources:
@@ -30,11 +30,7 @@ sources:
 ## Setup
 
 ```ts
-import {
-  createTRPCClient,
-  httpBatchLink,
-  loggerLink,
-} from '@trpc/client';
+import { createTRPCClient, httpBatchLink, loggerLink } from '@trpc/client';
 import type { AppRouter } from './server';
 
 const client = createTRPCClient<AppRouter>({
@@ -198,6 +194,7 @@ export const timingLink: TRPCLink<AppRouter> = () => {
 ### [CRITICAL] No terminating link in the chain
 
 Wrong:
+
 ```ts
 const client = createTRPCClient<AppRouter>({
   links: [loggerLink()],
@@ -205,12 +202,10 @@ const client = createTRPCClient<AppRouter>({
 ```
 
 Correct:
+
 ```ts
 const client = createTRPCClient<AppRouter>({
-  links: [
-    loggerLink(),
-    httpBatchLink({ url: 'http://localhost:3000/trpc' }),
-  ],
+  links: [loggerLink(), httpBatchLink({ url: 'http://localhost:3000/trpc' })],
 });
 ```
 
@@ -221,6 +216,7 @@ Source: packages/client/src/links/internals/createChain.ts
 ### [CRITICAL] Sending subscriptions through httpLink or httpBatchLink
 
 Wrong:
+
 ```ts
 const client = createTRPCClient<AppRouter>({
   links: [httpBatchLink({ url: 'http://localhost:3000/trpc' })],
@@ -229,6 +225,7 @@ await client.onMessage.subscribe({});
 ```
 
 Correct:
+
 ```ts
 const client = createTRPCClient<AppRouter>({
   links: [
@@ -248,23 +245,25 @@ Source: packages/client/src/links/httpLink.ts
 ### [HIGH] Batch headers callback using { op } instead of { opList }
 
 Wrong:
+
 ```ts
 httpBatchLink({
   url: 'http://localhost:3000/trpc',
   headers({ op }) {
     return { authorization: op.context.token };
   },
-})
+});
 ```
 
 Correct:
+
 ```ts
 httpBatchLink({
   url: 'http://localhost:3000/trpc',
   headers({ opList }) {
     return { authorization: opList[0]?.context.token };
   },
-})
+});
 ```
 
 `httpBatchLink` headers callback receives `{ opList }` (an array of operations), not `{ op }`. Using `op` silently returns `undefined`.
@@ -274,17 +273,19 @@ Source: packages/client/src/links/httpBatchLink.ts
 ### [MEDIUM] Default batch limits are Infinity
 
 Wrong:
+
 ```ts
-httpBatchLink({ url: 'http://localhost:3000/trpc' })
+httpBatchLink({ url: 'http://localhost:3000/trpc' });
 ```
 
 Correct:
+
 ```ts
 httpBatchLink({
   url: 'http://localhost:3000/trpc',
   maxURLLength: 2083,
   maxItems: 10,
-})
+});
 ```
 
 Both `maxURLLength` and `maxItems` default to `Infinity`, which can cause 413/414 HTTP errors on servers or CDNs with URL length limits.

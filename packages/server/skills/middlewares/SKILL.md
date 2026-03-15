@@ -7,7 +7,7 @@ description: >
   with getRawInput(). Logging, timing, OTEL tracing patterns.
 type: core
 library: trpc
-library_version: "11.13.4"
+library_version: '11.13.4'
 requires:
   - server-setup
 sources:
@@ -169,6 +169,7 @@ Piped middlewares run in order and each receives the context from the previous m
 ### [CRITICAL] Forgetting to call and return opts.next()
 
 Wrong:
+
 ```ts
 import { initTRPC } from '@trpc/server';
 
@@ -181,6 +182,7 @@ const logMiddleware = t.middleware(async (opts) => {
 ```
 
 Correct:
+
 ```ts
 import { initTRPC } from '@trpc/server';
 
@@ -201,6 +203,7 @@ Source: packages/server/src/unstable-core-do-not-import/procedureBuilder.ts
 ### [HIGH] Extending context with wrong type in opts.next()
 
 Wrong:
+
 ```ts
 import { initTRPC } from '@trpc/server';
 
@@ -212,6 +215,7 @@ const middleware = t.middleware(async (opts) => {
 ```
 
 Correct:
+
 ```ts
 import { initTRPC } from '@trpc/server';
 

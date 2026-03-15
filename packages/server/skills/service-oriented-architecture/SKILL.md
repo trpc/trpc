@@ -9,7 +9,7 @@ description: >
   initTRPC instance. Each service runs its own standalone/Express/Fastify server.
 type: composition
 library: trpc
-library_version: "11.13.4"
+library_version: '11.13.4'
 requires:
   - server-setup
   - client-setup
@@ -60,7 +60,9 @@ import { serviceARouter } from './router';
 
 createHTTPServer({
   router: serviceARouter,
-  createContext() { return {}; },
+  createContext() {
+    return {};
+  },
 }).listen(2021);
 ```
 
@@ -82,7 +84,9 @@ import { serviceBRouter } from './router';
 
 createHTTPServer({
   router: serviceBRouter,
-  createContext() { return {}; },
+  createContext() {
+    return {};
+  },
 }).listen(2022);
 ```
 
@@ -151,7 +155,9 @@ const status = await client.serviceB.status.query();
   const servers: Record<string, ReturnType<typeof httpBatchLink>> = {
     users: httpBatchLink({ url: 'http://users-service:3000' })(runtime),
     billing: httpBatchLink({ url: 'http://billing-service:3000' })(runtime),
-    notifications: httpBatchLink({ url: 'http://notifications-service:3000' })(runtime),
+    notifications: httpBatchLink({ url: 'http://notifications-service:3000' })(
+      runtime,
+    ),
   };
 
   return (ctx) => {
@@ -168,7 +174,7 @@ const status = await client.serviceB.status.query();
       op: { ...op, path: rest.join('.') },
     });
   };
-}
+};
 ```
 
 The first segment of the procedure path (before the first `.`) maps to a service name. The remaining path is forwarded to the target service.
@@ -180,11 +186,15 @@ The first segment of the procedure path (before the first `.`) maps to a service
   const servers = {
     serviceA: httpBatchLink({
       url: 'http://localhost:2021',
-      headers() { return { 'x-request-id': crypto.randomUUID() }; },
+      headers() {
+        return { 'x-request-id': crypto.randomUUID() };
+      },
     })(runtime),
     serviceB: httpBatchLink({
       url: 'http://localhost:2022',
-      headers() { return { 'x-request-id': crypto.randomUUID() }; },
+      headers() {
+        return { 'x-request-id': crypto.randomUUID() };
+      },
     })(runtime),
   };
 
@@ -195,7 +205,7 @@ The first segment of the procedure path (before the first `.`) maps to a service
       op: { ...ctx.op, path: rest.join('.') },
     });
   };
-}
+};
 ```
 
 ## Common Mistakes
@@ -203,12 +213,14 @@ The first segment of the procedure path (before the first `.`) maps to a service
 ### MEDIUM Path routing assumes first segment is server name
 
 Wrong:
+
 ```ts
 const serverName = op.path.split('.').shift();
 // Breaks if router structure changes or has nested namespaces
 ```
 
 Correct:
+
 ```ts
 const [serverName, ...rest] = op.path.split('.');
 const link = servers[serverName as keyof typeof servers];

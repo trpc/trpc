@@ -7,7 +7,7 @@ description: >
   to HTTP status codes with getHTTPStatusCodeFromError().
 type: core
 library: trpc
-library_version: "11.13.4"
+library_version: '11.13.4'
 requires:
   - server-setup
 sources:
@@ -140,6 +140,7 @@ function handleError(error: unknown) {
 ### [HIGH] Throwing plain Error instead of TRPCError
 
 Wrong:
+
 ```ts
 import { publicProcedure } from './trpc';
 
@@ -150,6 +151,7 @@ const proc = publicProcedure.query(() => {
 ```
 
 Correct:
+
 ```ts
 import { TRPCError } from '@trpc/server';
 import { publicProcedure } from './trpc';
@@ -170,6 +172,7 @@ Source: www/docs/server/error-handling.md
 ### [MEDIUM] Expecting stack traces in production
 
 Wrong:
+
 ```ts
 import { initTRPC } from '@trpc/server';
 
@@ -179,6 +182,7 @@ const t = initTRPC.create();
 ```
 
 Correct:
+
 ```ts
 import { initTRPC } from '@trpc/server';
 
@@ -194,6 +198,7 @@ Source: www/docs/server/error-handling.md
 ### [HIGH] Not handling Zod errors in errorFormatter
 
 Wrong:
+
 ```ts
 import { initTRPC } from '@trpc/server';
 
@@ -202,6 +207,7 @@ const t = initTRPC.create();
 ```
 
 Correct:
+
 ```ts
 import { initTRPC } from '@trpc/server';
 import { ZodError } from 'zod';
@@ -228,16 +234,16 @@ Source: www/docs/server/error-formatting.md
 
 ## Error Code Reference
 
-| Code                  | HTTP | Use when                                      |
-|-----------------------|------|-----------------------------------------------|
-| BAD_REQUEST           | 400  | Invalid input                                 |
-| UNAUTHORIZED          | 401  | Missing or invalid auth credentials           |
-| FORBIDDEN             | 403  | Authenticated but not authorized              |
-| NOT_FOUND             | 404  | Resource does not exist                       |
-| CONFLICT              | 409  | Request conflicts with current state          |
-| UNPROCESSABLE_CONTENT | 422  | Valid syntax but semantic error               |
-| TOO_MANY_REQUESTS     | 429  | Rate limit exceeded                           |
-| INTERNAL_SERVER_ERROR | 500  | Unexpected server error                       |
+| Code                  | HTTP | Use when                             |
+| --------------------- | ---- | ------------------------------------ |
+| BAD_REQUEST           | 400  | Invalid input                        |
+| UNAUTHORIZED          | 401  | Missing or invalid auth credentials  |
+| FORBIDDEN             | 403  | Authenticated but not authorized     |
+| NOT_FOUND             | 404  | Resource does not exist              |
+| CONFLICT              | 409  | Request conflicts with current state |
+| UNPROCESSABLE_CONTENT | 422  | Valid syntax but semantic error      |
+| TOO_MANY_REQUESTS     | 429  | Rate limit exceeded                  |
+| INTERNAL_SERVER_ERROR | 500  | Unexpected server error              |
 
 ## See Also
 

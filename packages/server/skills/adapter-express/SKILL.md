@@ -7,7 +7,7 @@ description: >
   Avoid global express.json() conflicting with tRPC body parsing for FormData.
 type: core
 library: trpc
-library_version: "11.13.4"
+library_version: '11.13.4'
 requires:
   - server-setup
 sources:
@@ -26,7 +26,10 @@ import * as trpcExpress from '@trpc/server/adapters/express';
 import express from 'express';
 import { z } from 'zod';
 
-const createContext = ({ req, res }: trpcExpress.CreateExpressContextOptions) => {
+const createContext = ({
+  req,
+  res,
+}: trpcExpress.CreateExpressContextOptions) => {
   return { req, res };
 };
 type Context = Awaited<ReturnType<typeof createContext>>;
@@ -63,7 +66,10 @@ app.listen(4000, () => {
 ```ts
 import * as trpcExpress from '@trpc/server/adapters/express';
 
-const createContext = ({ req, res }: trpcExpress.CreateExpressContextOptions) => {
+const createContext = ({
+  req,
+  res,
+}: trpcExpress.CreateExpressContextOptions) => {
   const token = req.headers.authorization?.split(' ')[1];
   return { token, res };
 };
@@ -76,11 +82,11 @@ type Context = Awaited<ReturnType<typeof createContext>>;
 ### Adding tRPC alongside existing Express routes
 
 ```ts
-import express from 'express';
-import cors from 'cors';
 import * as trpcExpress from '@trpc/server/adapters/express';
-import { appRouter } from './router';
+import cors from 'cors';
+import express from 'express';
 import { createContext } from './context';
+import { appRouter } from './router';
 
 const app = express();
 
@@ -106,24 +112,32 @@ app.listen(4000);
 ### HIGH Global express.json() consuming tRPC request body
 
 Wrong:
+
 ```ts
 const app = express();
 app.use(express.json()); // global body parser
-app.use('/trpc', trpcExpress.createExpressMiddleware({
-  router: appRouter,
-  createContext,
-}));
+app.use(
+  '/trpc',
+  trpcExpress.createExpressMiddleware({
+    router: appRouter,
+    createContext,
+  }),
+);
 ```
 
 Correct:
+
 ```ts
 const app = express();
 // Only apply body parser to non-tRPC routes
 app.use('/api', express.json());
-app.use('/trpc', trpcExpress.createExpressMiddleware({
-  router: appRouter,
-  createContext,
-}));
+app.use(
+  '/trpc',
+  trpcExpress.createExpressMiddleware({
+    router: appRouter,
+    createContext,
+  }),
+);
 ```
 
 If `express.json()` is applied globally before the tRPC middleware, it consumes and parses the request body. tRPC then receives an already-parsed body, which breaks FormData and binary content type handling.

@@ -7,7 +7,7 @@ description: >
   @trpc/client. FormData and binary inputs only work with mutations (POST).
 type: core
 library: trpc
-library_version: "11.13.4"
+library_version: '11.13.4'
 requires:
   - server-setup
   - links
@@ -34,8 +34,8 @@ export const publicProcedure = t.procedure;
 
 ```ts
 // server/appRouter.ts
-import { z } from 'zod';
 import { octetInputParser } from '@trpc/server/http';
+import { z } from 'zod';
 import { publicProcedure, router } from './trpc';
 
 export const appRouter = router({
@@ -45,12 +45,10 @@ export const appRouter = router({
       const name = input.get('name');
       return { greeting: `Hello ${name}` };
     }),
-  uploadFile: publicProcedure
-    .input(octetInputParser)
-    .mutation(({ input }) => {
-      // input is a ReadableStream
-      return { valid: true };
-    }),
+  uploadFile: publicProcedure.input(octetInputParser).mutation(({ input }) => {
+    // input is a ReadableStream
+    return { valid: true };
+  }),
 });
 
 export type AppRouter = typeof appRouter;
@@ -119,16 +117,18 @@ import { octetInputParser } from '@trpc/server/http';
 import { publicProcedure, router } from './trpc';
 
 export const appRouter = router({
-  upload: publicProcedure.input(octetInputParser).mutation(async ({ input }) => {
-    const reader = input.getReader();
-    let totalBytes = 0;
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      totalBytes += value.byteLength;
-    }
-    return { totalBytes };
-  }),
+  upload: publicProcedure
+    .input(octetInputParser)
+    .mutation(async ({ input }) => {
+      const reader = input.getReader();
+      let totalBytes = 0;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        totalBytes += value.byteLength;
+      }
+      return { totalBytes };
+    }),
 });
 ```
 
@@ -182,6 +182,7 @@ When using a transformer, the non-JSON httpLink needs a custom transformer that 
 ### [HIGH] Using httpBatchLink for FormData requests
 
 Wrong:
+
 ```ts
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from '../server/appRouter';
@@ -192,6 +193,7 @@ const trpc = createTRPCClient<AppRouter>({
 ```
 
 Correct:
+
 ```ts
 import {
   createTRPCClient,
@@ -222,9 +224,10 @@ Source: www/docs/server/non-json-content-types.md
 ### [HIGH] Global body parser intercepting FormData before tRPC
 
 Wrong:
+
 ```ts
-import express from 'express';
 import * as trpcExpress from '@trpc/server/adapters/express';
+import express from 'express';
 import { appRouter } from './appRouter';
 
 const app = express();
@@ -233,9 +236,10 @@ app.use('/trpc', trpcExpress.createExpressMiddleware({ router: appRouter }));
 ```
 
 Correct:
+
 ```ts
-import express from 'express';
 import * as trpcExpress from '@trpc/server/adapters/express';
+import express from 'express';
 import { appRouter } from './appRouter';
 
 const app = express();

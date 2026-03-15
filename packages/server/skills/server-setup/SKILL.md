@@ -7,7 +7,7 @@ description: >
   lazy-load routers with lazy().
 type: core
 library: trpc
-library_version: "11.13.4"
+library_version: '11.13.4'
 requires: []
 sources:
   - 'trpc/trpc:www/docs/server/overview.md'
@@ -146,7 +146,7 @@ Infer `Context` from `createContextInner` so server-side callers and tests never
 
 ```ts
 // server/routers/user.ts
-import { router, publicProcedure } from '../trpc';
+import { publicProcedure, router } from '../trpc';
 
 export const userRouter = router({
   list: publicProcedure.query(() => []),
@@ -156,7 +156,7 @@ export const userRouter = router({
 ```ts
 // server/routers/post.ts
 import { z } from 'zod';
-import { router, publicProcedure } from '../trpc';
+import { publicProcedure, router } from '../trpc';
 
 export const postRouter = router({
   create: publicProcedure
@@ -169,8 +169,8 @@ export const postRouter = router({
 ```ts
 // server/routers/_app.ts
 import { router } from '../trpc';
-import { userRouter } from './user';
 import { postRouter } from './post';
+import { userRouter } from './user';
 
 export const appRouter = router({
   user: userRouter,
@@ -200,6 +200,7 @@ export type AppRouter = typeof appRouter;
 ### [CRITICAL] Calling initTRPC.create() more than once
 
 Wrong:
+
 ```ts
 // file: userRouter.ts
 import { initTRPC } from '@trpc/server';
@@ -213,6 +214,7 @@ export const postRouter = t2.router({});
 ```
 
 Correct:
+
 ```ts
 // file: trpc.ts (single file, created once)
 import { initTRPC } from '@trpc/server';
@@ -231,8 +233,9 @@ Source: www/docs/server/routers.md
 ### [HIGH] Using reserved words as procedure names
 
 Wrong:
+
 ```ts
-import { router, publicProcedure } from './trpc';
+import { publicProcedure, router } from './trpc';
 
 const appRouter = router({
   then: publicProcedure.query(() => 'hello'),
@@ -240,8 +243,9 @@ const appRouter = router({
 ```
 
 Correct:
+
 ```ts
-import { router, publicProcedure } from './trpc';
+import { publicProcedure, router } from './trpc';
 
 const appRouter = router({
   next: publicProcedure.query(() => 'hello'),
@@ -255,12 +259,14 @@ Source: packages/server/src/unstable-core-do-not-import/router.ts
 ### [CRITICAL] Importing AppRouter as a value import
 
 Wrong:
+
 ```ts
 // client.ts
 import { AppRouter } from '../server/router';
 ```
 
 Correct:
+
 ```ts
 // client.ts
 import type { AppRouter } from '../server/router';
@@ -273,6 +279,7 @@ Source: www/docs/server/routers.md
 ### [MEDIUM] Creating context without inner/outer split
 
 Wrong:
+
 ```ts
 import type { CreateExpressContextOptions } from '@trpc/server/adapters/express';
 
@@ -282,6 +289,7 @@ export function createContext({ req }: CreateExpressContextOptions) {
 ```
 
 Correct:
+
 ```ts
 import type { CreateExpressContextOptions } from '@trpc/server/adapters/express';
 
@@ -301,6 +309,7 @@ Source: www/docs/server/context.md
 ### [HIGH] Merging routers with different transformers
 
 Wrong:
+
 ```ts
 import { initTRPC } from '@trpc/server';
 import superjson from 'superjson';
@@ -315,6 +324,7 @@ t1.mergeRouters(router1, router2);
 ```
 
 Correct:
+
 ```ts
 import { initTRPC } from '@trpc/server';
 import superjson from 'superjson';
@@ -334,19 +344,22 @@ Source: packages/server/src/unstable-core-do-not-import/router.ts
 ### [CRITICAL] Importing appRouter value into client code
 
 Wrong:
+
 ```ts
 // client.ts
 import { appRouter } from '../server/router';
+
 type AppRouter = typeof appRouter;
 ```
 
 Correct:
-```ts
-// server/router.ts
-export type AppRouter = typeof appRouter;
 
+```ts
 // client.ts
 import type { AppRouter } from '../server/router';
+
+// server/router.ts
+export type AppRouter = typeof appRouter;
 ```
 
 Importing the appRouter value bundles the entire server into the client, even if you only use `typeof`.

@@ -9,7 +9,7 @@ description: >
   CreateFastifyContextOptions provides req, res.
 type: core
 library: trpc
-library_version: "11.13.4"
+library_version: '11.13.4'
 requires:
   - server-setup
 sources:
@@ -23,13 +23,13 @@ sources:
 
 ```ts
 // server.ts
+import { initTRPC } from '@trpc/server';
 import {
   fastifyTRPCPlugin,
   FastifyTRPCPluginOptions,
 } from '@trpc/server/adapters/fastify';
 import type { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
 import fastify from 'fastify';
-import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
 function createContext({ req, res }: CreateFastifyContextOptions) {
@@ -86,8 +86,8 @@ import {
   FastifyTRPCPluginOptions,
 } from '@trpc/server/adapters/fastify';
 import fastify from 'fastify';
-import { appRouter, type AppRouter } from './router';
 import { createContext } from './context';
+import { appRouter, type AppRouter } from './router';
 
 const server = fastify({
   routerOptions: { maxParamLength: 5000 },
@@ -137,15 +137,23 @@ Due to Fastify plugin type inference limitations, use `satisfies FastifyTRPCPlug
 ### HIGH Registering @fastify/websocket after tRPC plugin
 
 Wrong:
+
 ```ts
-server.register(fastifyTRPCPlugin, { useWSS: true, trpcOptions: { router: appRouter, createContext } });
+server.register(fastifyTRPCPlugin, {
+  useWSS: true,
+  trpcOptions: { router: appRouter, createContext },
+});
 server.register(ws); // too late!
 ```
 
 Correct:
+
 ```ts
 server.register(ws); // register FIRST
-server.register(fastifyTRPCPlugin, { useWSS: true, trpcOptions: { router: appRouter, createContext } });
+server.register(fastifyTRPCPlugin, {
+  useWSS: true,
+  trpcOptions: { router: appRouter, createContext },
+});
 ```
 
 The WebSocket plugin must be registered before the tRPC plugin. Reverse order causes WebSocket routes to not be recognized.
@@ -155,11 +163,13 @@ Source: www/docs/server/adapters/fastify.md
 ### HIGH Missing maxParamLength for batch requests
 
 Wrong:
+
 ```ts
 const server = fastify();
 ```
 
 Correct:
+
 ```ts
 const server = fastify({
   routerOptions: { maxParamLength: 5000 },
@@ -173,11 +183,13 @@ Source: www/docs/server/adapters/fastify.md
 ### CRITICAL Using Fastify v4 with tRPC v11
 
 Wrong:
+
 ```json
 { "dependencies": { "fastify": "^4.0.0" } }
 ```
 
 Correct:
+
 ```json
 { "dependencies": { "fastify": "^5.0.0" } }
 ```

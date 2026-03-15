@@ -7,7 +7,7 @@ description: >
   support. Output validation returns INTERNAL_SERVER_ERROR on failure.
 type: core
 library: trpc
-library_version: "11.13.4"
+library_version: '11.13.4'
 requires:
   - server-setup
 sources:
@@ -55,11 +55,9 @@ import { z } from 'zod';
 import { publicProcedure, router } from './trpc';
 
 export const appRouter = router({
-  userById: publicProcedure
-    .input(z.string())
-    .query(({ input }) => {
-      return { id: input, name: 'Katt' };
-    }),
+  userById: publicProcedure.input(z.string()).query(({ input }) => {
+    return { id: input, name: 'Katt' };
+  }),
   userCreate: publicProcedure
     .input(z.object({ name: z.string(), email: z.string().email() }))
     .mutation(({ input }) => {
@@ -71,8 +69,8 @@ export const appRouter = router({
 ### Input chaining to merge object schemas
 
 ```ts
-import { z } from 'zod';
 import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
 
 const t = initTRPC.create();
 
@@ -139,16 +137,16 @@ export const appRouter = t.router({
 ### [MEDIUM] Chaining non-object inputs
 
 Wrong:
+
 ```ts
 import { z } from 'zod';
 import { publicProcedure } from './trpc';
 
-const proc = publicProcedure
-  .input(z.string())
-  .input(z.number());
+const proc = publicProcedure.input(z.string()).input(z.number());
 ```
 
 Correct:
+
 ```ts
 import { z } from 'zod';
 import { publicProcedure } from './trpc';
@@ -165,6 +163,7 @@ Source: www/docs/server/validators.md
 ### [MEDIUM] Output validation failure returns 500
 
 Wrong:
+
 ```ts
 import { z } from 'zod';
 import { publicProcedure } from './trpc';
@@ -175,6 +174,7 @@ const proc = publicProcedure
 ```
 
 Correct:
+
 ```ts
 import { z } from 'zod';
 import { publicProcedure } from './trpc';
@@ -191,6 +191,7 @@ Source: www/docs/server/validators.md
 ### [HIGH] Using cursor: z.optional() without nullable for infinite queries
 
 Wrong:
+
 ```ts
 import { z } from 'zod';
 import { publicProcedure } from './trpc';
@@ -203,6 +204,7 @@ const proc = publicProcedure
 ```
 
 Correct:
+
 ```ts
 import { z } from 'zod';
 import { publicProcedure } from './trpc';

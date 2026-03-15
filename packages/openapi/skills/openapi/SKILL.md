@@ -7,13 +7,13 @@ description: >
   generated clients. Alpha status.
 type: composition
 library: trpc
-library_version: "11.13.4"
+library_version: '11.13.4'
 requires:
   - server-setup
 sources:
-  - "trpc/trpc:www/docs/client/openapi.md"
-  - "trpc/trpc:packages/openapi/test/heyapi.test.ts"
-  - "trpc/trpc:examples/openapi-codegen/"
+  - 'trpc/trpc:www/docs/client/openapi.md'
+  - 'trpc/trpc:packages/openapi/test/heyapi.test.ts'
+  - 'trpc/trpc:examples/openapi-codegen/'
 ---
 
 # tRPC -- OpenAPI
@@ -44,12 +44,12 @@ The generator statically analyses your router's TypeScript types. It never execu
 pnpm exec trpc-openapi ./src/server/index.ts -e appRouter -o openapi.json --title "My API" --version 1.0.0
 ```
 
-| Option                | Default        | Description                      |
-| --------------------- | -------------- | -------------------------------- |
-| `-e, --export <name>` | `AppRouter`    | Name of the exported router      |
-| `-o, --output <file>` | `openapi.json` | Output file path                 |
-| `--title <text>`      | `tRPC API`     | OpenAPI `info.title`             |
-| `--version <ver>`     | `0.0.0`        | OpenAPI `info.version`           |
+| Option                | Default        | Description                 |
+| --------------------- | -------------- | --------------------------- |
+| `-e, --export <name>` | `AppRouter`    | Name of the exported router |
+| `-o, --output <file>` | `openapi.json` | Output file path            |
+| `--title <text>`      | `tRPC API`     | OpenAPI `info.title`        |
+| `--version <ver>`     | `0.0.0`        | OpenAPI `info.version`      |
 
 **Programmatic:**
 
@@ -180,6 +180,7 @@ When the tRPC server uses `superjson`, the client must be configured with the sa
 ```ts
 // src/shared/transformer.ts
 import superjson from 'superjson';
+
 export const transformer = superjson;
 ```
 
@@ -217,8 +218,8 @@ const event = await sdk.getEvent({
 For non-TypeScript clients, EJSON provides a language-agnostic serialization format:
 
 ```ts
-import { EJSON } from 'bson';
 import type { TRPCDataTransformer } from '@trpc/server';
+import { EJSON } from 'bson';
 
 export const ejsonTransformer: TRPCDataTransformer = {
   serialize: (value) => EJSON.serialize(value),

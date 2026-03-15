@@ -7,7 +7,7 @@ description: >
   inferRouterOutputs. AbortController signal support. TRPCClientError typing.
 type: core
 library: trpc
-library_version: "11.13.4"
+library_version: '11.13.4'
 requires:
   - server-setup
 sources:
@@ -145,13 +145,16 @@ try {
 ### [CRITICAL] Missing AppRouter type parameter on createTRPCClient
 
 Wrong:
+
 ```ts
 const client = createTRPCClient({ links: [httpBatchLink({ url })] });
 ```
 
 Correct:
+
 ```ts
 import type { AppRouter } from './server';
+
 const client = createTRPCClient<AppRouter>({ links: [httpBatchLink({ url })] });
 ```
 
@@ -162,6 +165,7 @@ Source: www/docs/client/vanilla/setup.mdx
 ### [CRITICAL] Passing transformer to createTRPCClient instead of links
 
 Wrong:
+
 ```ts
 import superjson from 'superjson';
 
@@ -172,6 +176,7 @@ createTRPCClient<AppRouter>({
 ```
 
 Correct:
+
 ```ts
 import superjson from 'superjson';
 
@@ -192,17 +197,19 @@ Source: packages/client/src/internals/TRPCUntypedClient.ts
 ### [CRITICAL] Transformer on server but not on client links
 
 Wrong:
+
 ```ts
 // Server: initTRPC.create({ transformer: superjson })
 // Client:
-httpBatchLink({ url: 'http://localhost:3000' })
+httpBatchLink({ url: 'http://localhost:3000' });
 ```
 
 Correct:
+
 ```ts
 // Server: initTRPC.create({ transformer: superjson })
 // Client:
-httpBatchLink({ url: 'http://localhost:3000', transformer: superjson })
+httpBatchLink({ url: 'http://localhost:3000', transformer: superjson });
 ```
 
 If the server uses a transformer, every terminating link on the client must also specify that transformer. Mismatch causes "Unable to transform response" errors.
@@ -212,11 +219,13 @@ Source: https://github.com/trpc/trpc/issues/7083
 ### [CRITICAL] Using import instead of import type for AppRouter
 
 Wrong:
+
 ```ts
 import { AppRouter } from '../server/router';
 ```
 
 Correct:
+
 ```ts
 import type { AppRouter } from '../server/router';
 ```
@@ -228,12 +237,15 @@ Source: www/docs/client/vanilla/setup.mdx
 ### [CRITICAL] Importing appRouter value to derive type in client
 
 Wrong:
+
 ```ts
 import { appRouter } from '../server/router';
+
 type AppRouter = typeof appRouter;
 ```
 
 Correct:
+
 ```ts
 // In server: export type AppRouter = typeof appRouter;
 // In client:
@@ -247,14 +259,17 @@ Source: www/docs/server/routers.md
 ### [CRITICAL] Using type assertions to bypass AppRouter import errors
 
 Wrong:
+
 ```ts
 const client = createTRPCClient<any>({ links: [httpBatchLink({ url })] });
 ```
 
 Correct:
+
 ```ts
 // Fix the import path or monorepo configuration
 import type { AppRouter } from '@myorg/api-types';
+
 const client = createTRPCClient<AppRouter>({ links: [httpBatchLink({ url })] });
 ```
 
@@ -265,11 +280,13 @@ Source: www/docs/client/vanilla/setup.mdx
 ### [CRITICAL] Using createTRPCProxyClient (renamed in v11)
 
 Wrong:
+
 ```ts
 import { createTRPCProxyClient } from '@trpc/client';
 ```
 
 Correct:
+
 ```ts
 import { createTRPCClient } from '@trpc/client';
 ```
@@ -281,11 +298,13 @@ Source: www/docs/client/vanilla/setup.mdx
 ### [CRITICAL] Treating tRPC as a REST API
 
 Wrong:
+
 ```ts
 fetch('/api/trpc/users/123', { method: 'GET' });
 ```
 
 Correct:
+
 ```ts
 const user = await client.user.byId.query({ id: '123' });
 // Raw equivalent: GET /api/trpc/user.byId?input={"id":"123"}

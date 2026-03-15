@@ -9,7 +9,7 @@ description: >
 type: framework
 library: trpc
 framework: react
-library_version: "11.13.4"
+library_version: '11.13.4'
 requires:
   - server-setup
   - client-setup
@@ -194,10 +194,9 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
 
 ```tsx title="trpc/server.tsx"
 import 'server-only';
-
+import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import type { TRPCQueryOptions } from '@trpc/tanstack-react-query';
-import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { headers } from 'next/headers';
 import { cache } from 'react';
 import { createTRPCContext } from './init';
@@ -292,9 +291,9 @@ export function ClientGreeting() {
 ### Suspense with prefetch
 
 ```tsx title="app/page.tsx"
-import { HydrateClient, prefetch, trpc } from '../trpc/server';
 import { Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
+import { HydrateClient, prefetch, trpc } from '../trpc/server';
 import { ClientGreeting } from './client-greeting';
 
 export default async function Home() {
@@ -411,8 +410,7 @@ new QueryClient({
   defaultOptions: {
     dehydrate: {
       shouldDehydrateQuery: (query) =>
-        defaultShouldDehydrateQuery(query) ||
-        query.state.status === 'pending',
+        defaultShouldDehydrateQuery(query) || query.state.status === 'pending',
     },
   },
 });

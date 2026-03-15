@@ -9,7 +9,7 @@ description: >
   context for context creation.
 type: core
 library: trpc
-library_version: "11.13.4"
+library_version: '11.13.4'
 requires:
   - server-setup
 sources:
@@ -24,10 +24,10 @@ sources:
 
 ```ts
 // server.ts
-import type { APIGatewayProxyEventV2 } from 'aws-lambda';
+import { initTRPC } from '@trpc/server';
 import type { CreateAWSLambdaContextOptions } from '@trpc/server/adapters/aws-lambda';
 import { awsLambdaRequestHandler } from '@trpc/server/adapters/aws-lambda';
-import { initTRPC } from '@trpc/server';
+import type { APIGatewayProxyEventV2 } from 'aws-lambda';
 import { z } from 'zod';
 
 const t = initTRPC.create();
@@ -59,9 +59,9 @@ export const handler = awsLambdaRequestHandler({
 ### API Gateway v1 (REST) handler
 
 ```ts
-import type { APIGatewayProxyEvent } from 'aws-lambda';
 import type { CreateAWSLambdaContextOptions } from '@trpc/server/adapters/aws-lambda';
 import { awsLambdaRequestHandler } from '@trpc/server/adapters/aws-lambda';
+import type { APIGatewayProxyEvent } from 'aws-lambda';
 import { appRouter } from './router';
 
 const createContext = ({
@@ -83,9 +83,9 @@ Use `APIGatewayProxyEvent` for REST API (v1 payload format) and `APIGatewayProxy
 
 ```ts
 /// <reference types="aws-lambda" />
-import type { APIGatewayProxyEventV2 } from 'aws-lambda';
 import type { CreateAWSLambdaContextOptions } from '@trpc/server/adapters/aws-lambda';
 import { awsLambdaStreamingRequestHandler } from '@trpc/server/adapters/aws-lambda';
+import type { APIGatewayProxyEventV2 } from 'aws-lambda';
 import { appRouter } from './router';
 
 const createContext = ({
@@ -127,24 +127,27 @@ Pair with `httpBatchStreamLink` on the client for streamed responses.
 ### HIGH Using httpBatchLink with per-procedure API Gateway resources
 
 Wrong:
+
 ```ts
 // API Gateway has a separate resource for each procedure
 // e.g., /getUser, /createUser
 // Client uses:
 import { httpBatchLink } from '@trpc/client';
-httpBatchLink({ url: 'https://api.example.com' })
+
+httpBatchLink({ url: 'https://api.example.com' });
 // Batch request to /getUser,createUser → 404
 ```
 
 Correct:
+
 ```ts
 // Option A: Single catch-all resource (e.g., /{proxy+})
-import { httpBatchLink } from '@trpc/client';
-httpBatchLink({ url: 'https://api.example.com' })
-
 // Option B: Per-procedure resources with httpLink (no batching)
-import { httpLink } from '@trpc/client';
-httpLink({ url: 'https://api.example.com' })
+import { httpBatchLink, httpLink } from '@trpc/client';
+
+httpBatchLink({ url: 'https://api.example.com' });
+
+httpLink({ url: 'https://api.example.com' });
 ```
 
 `httpBatchLink` sends multiple procedure names in the URL path (e.g., `getUser,createUser`). If API Gateway routes are per-procedure, the combined path does not match any resource and returns 404. Use a single catch-all resource or switch to `httpLink`.
@@ -154,6 +157,7 @@ Source: www/docs/server/adapters/aws-lambda.md
 ### HIGH Forgetting streamifyResponse wrapper for streaming
 
 Wrong:
+
 ```ts
 export const handler = awsLambdaStreamingRequestHandler({
   router: appRouter,
@@ -162,6 +166,7 @@ export const handler = awsLambdaStreamingRequestHandler({
 ```
 
 Correct:
+
 ```ts
 export const handler = awslambda.streamifyResponse(
   awsLambdaStreamingRequestHandler({

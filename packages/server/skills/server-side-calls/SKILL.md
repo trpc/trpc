@@ -7,7 +7,7 @@ description: >
   getHTTPStatusCodeFromError(). Error handling via onError option.
 type: core
 library: trpc
-library_version: "11.13.4"
+library_version: '11.13.4'
 requires:
   - server-setup
 sources:
@@ -34,7 +34,7 @@ export const createCallerFactory = t.createCallerFactory;
 ```ts
 // server/appRouter.ts
 import { z } from 'zod';
-import { publicProcedure, router, createCallerFactory } from './trpc';
+import { createCallerFactory, publicProcedure, router } from './trpc';
 
 interface Post {
   id: string;
@@ -75,10 +75,10 @@ const newPost = await caller.post.add({ title: 'New post' });
 
 ```ts
 // server/appRouter.test.ts
-import { createContextInner } from './context';
-import { createCaller } from './appRouter';
 import type { inferProcedureInput } from '@trpc/server';
+import { createCaller } from './appRouter';
 import type { AppRouter } from './appRouter';
+import { createContextInner } from './context';
 
 async function testAddAndGetPost() {
   const ctx = await createContextInner({ user: undefined });
@@ -118,8 +118,8 @@ const result = await caller.greeting({ name: 'tRPC' });
 ```ts
 import { TRPCError } from '@trpc/server';
 import { getHTTPStatusCodeFromError } from '@trpc/server/http';
-import { appRouter } from './appRouter';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { appRouter } from './appRouter';
 
 export default async function handler(
   req: NextApiRequest,
@@ -175,10 +175,10 @@ const caller = appRouter.createCaller(
 ### [HIGH] Using createCaller inside another procedure
 
 Wrong:
+
 ```ts
-import { createCallerFactory } from './trpc';
 import { appRouter } from './appRouter';
-import { publicProcedure } from './trpc';
+import { createCallerFactory, publicProcedure } from './trpc';
 
 const createCaller = createCallerFactory(appRouter);
 
@@ -189,9 +189,10 @@ const proc = publicProcedure.query(async () => {
 ```
 
 Correct:
+
 ```ts
-import { publicProcedure } from './trpc';
 import type { Context } from './context';
+import { publicProcedure } from './trpc';
 
 async function listPosts(ctx: Context) {
   return ctx.db.post.findMany();
@@ -209,6 +210,7 @@ Source: www/docs/server/server-side-calls.md
 ### [MEDIUM] Not providing context to createCaller
 
 Wrong:
+
 ```ts
 import { appRouter } from './appRouter';
 
@@ -218,9 +220,10 @@ await caller.protectedRoute();
 ```
 
 Correct:
+
 ```ts
-import { createContextInner } from './context';
 import { appRouter } from './appRouter';
+import { createContextInner } from './context';
 
 const ctx = await createContextInner({ user: { id: '1' } });
 const caller = appRouter.createCaller(ctx);

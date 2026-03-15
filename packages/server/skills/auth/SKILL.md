@@ -8,7 +8,7 @@ description: >
   EventSource polyfill custom headers, or httpSubscriptionLink connectionParams.
 type: composition
 library: trpc
-library_version: "11.13.4"
+library_version: '11.13.4'
 requires:
   - server-setup
   - middlewares
@@ -47,17 +47,19 @@ const t = initTRPC.context<Context>().create();
 
 export const publicProcedure = t.procedure;
 
-export const protectedProcedure = t.procedure.use(async function isAuthed(opts) {
-  const { ctx } = opts;
-  if (!ctx.user) {
-    throw new TRPCError({ code: 'UNAUTHORIZED' });
-  }
-  return opts.next({
-    ctx: {
-      user: ctx.user, // narrows user to non-null
-    },
-  });
-});
+export const protectedProcedure = t.procedure.use(
+  async function isAuthed(opts) {
+    const { ctx } = opts;
+    if (!ctx.user) {
+      throw new TRPCError({ code: 'UNAUTHORIZED' });
+    }
+    return opts.next({
+      ctx: {
+        user: ctx.user, // narrows user to non-null
+      },
+    });
+  },
+);
 
 export const router = t.router;
 ```
@@ -183,7 +185,12 @@ const trpc = createTRPCClient<AppRouter>({
 ### SSE auth with cookies (same domain)
 
 ```ts
-import { httpSubscriptionLink, splitLink, httpBatchLink, createTRPCClient } from '@trpc/client';
+import {
+  createTRPCClient,
+  httpBatchLink,
+  httpSubscriptionLink,
+  splitLink,
+} from '@trpc/client';
 import type { AppRouter } from '../server/router';
 
 const trpc = createTRPCClient<AppRouter>({
@@ -207,6 +214,7 @@ const trpc = createTRPCClient<AppRouter>({
 ### HIGH Not narrowing user type in auth middleware
 
 Wrong:
+
 ```ts
 const authMiddleware = t.middleware(async ({ ctx, next }) => {
   if (!ctx.user) throw new TRPCError({ code: 'UNAUTHORIZED' });
@@ -215,6 +223,7 @@ const authMiddleware = t.middleware(async ({ ctx, next }) => {
 ```
 
 Correct:
+
 ```ts
 const authMiddleware = t.middleware(async ({ ctx, next }) => {
   if (!ctx.user) throw new TRPCError({ code: 'UNAUTHORIZED' });
@@ -229,16 +238,18 @@ Source: www/docs/server/authorization.md
 ### HIGH SSE auth via URL query params exposes tokens
 
 Wrong:
+
 ```ts
 httpSubscriptionLink({
   url: 'http://localhost:3000/trpc',
   connectionParams: async () => ({
     token: 'my-secret-jwt',
   }),
-})
+});
 ```
 
 Correct:
+
 ```ts
 import { EventSourcePolyfill } from 'event-source-polyfill';
 
@@ -248,7 +259,7 @@ httpSubscriptionLink({
   eventSourceOptions: async () => ({
     headers: { authorization: 'Bearer my-secret-jwt' },
   }),
-})
+});
 ```
 
 `connectionParams` are serialized as URL query strings for SSE, exposing tokens in server logs and browser history. Use cookies for same-domain or custom headers via an EventSource polyfill instead.
@@ -258,6 +269,7 @@ Source: www/docs/client/links/httpSubscriptionLink.md
 ### MEDIUM Async headers causing stuck isFetching
 
 Wrong:
+
 ```ts
 httpBatchLink({
   url: '/api/trpc',
@@ -265,10 +277,11 @@ httpBatchLink({
     const token = await refreshToken(); // can race
     return { Authorization: `Bearer ${token}` };
   },
-})
+});
 ```
 
 Correct:
+
 ```ts
 let cachedToken: string | null = null;
 
@@ -282,7 +295,7 @@ httpBatchLink({
   async headers() {
     return { Authorization: `Bearer ${await ensureToken()}` };
   },
-})
+});
 ```
 
 When the headers function is async (e.g., refreshing auth tokens), React Query's `isFetching` can get stuck permanently in certain race conditions.
@@ -292,18 +305,24 @@ Source: https://github.com/trpc/trpc/issues/7001
 ### HIGH Skipping auth or opening CORS too wide in prototypes
 
 Wrong:
+
 ```ts
 import cors from 'cors';
+
 createHTTPServer({
   middleware: cors(), // origin: '*' by default
   router: appRouter,
-  createContext() { return {}; }, // no auth
+  createContext() {
+    return {};
+  }, // no auth
 }).listen(3000);
 ```
 
 Correct:
+
 ```ts
 import cors from 'cors';
+
 createHTTPServer({
   middleware: cors({ origin: 'https://myapp.com' }),
   router: appRouter,

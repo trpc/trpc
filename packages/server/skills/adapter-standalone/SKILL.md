@@ -8,7 +8,7 @@ description: >
   provides req and res for context creation.
 type: core
 library: trpc
-library_version: "11.13.4"
+library_version: '11.13.4'
 requires:
   - server-setup
 sources:
@@ -22,8 +22,8 @@ sources:
 
 ```ts
 // server.ts
-import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import { initTRPC } from '@trpc/server';
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import { z } from 'zod';
 
 const t = initTRPC.create();
@@ -53,8 +53,8 @@ console.log('Listening on http://localhost:3000');
 ```ts
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import cors from 'cors';
-import { appRouter } from './router';
 import { createContext } from './context';
+import { appRouter } from './router';
 
 createHTTPServer({
   middleware: cors({ origin: 'http://localhost:5173' }),
@@ -144,21 +144,27 @@ server.listen(3001);
 ### HIGH No CORS configuration for cross-origin requests
 
 Wrong:
+
 ```ts
 createHTTPServer({
   router: appRouter,
-  createContext() { return {}; },
+  createContext() {
+    return {};
+  },
 }).listen(3000);
 ```
 
 Correct:
+
 ```ts
 import cors from 'cors';
 
 createHTTPServer({
   middleware: cors({ origin: 'http://localhost:5173' }),
   router: appRouter,
-  createContext() { return {}; },
+  createContext() {
+    return {};
+  },
 }).listen(3000);
 ```
 

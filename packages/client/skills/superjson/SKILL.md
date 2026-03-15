@@ -8,7 +8,7 @@ description: >
   client constructor.
 type: composition
 library: trpc
-library_version: "11.13.4"
+library_version: '11.13.4'
 requires:
   - server-setup
   - client-setup
@@ -141,7 +141,7 @@ export type AppRouter = typeof appRouter;
 // client
 const event = await client.getEvent.query({ id: '1' });
 console.log(event.date instanceof Date); // true
-console.log(event.date.getFullYear());   // 2025
+console.log(event.date.getFullYear()); // 2025
 ```
 
 Without superjson, `event.date` would be a string like `"2025-01-01T00:00:00.000Z"`.
@@ -151,6 +151,7 @@ Without superjson, `event.date` would be a string like `"2025-01-01T00:00:00.000
 ### [CRITICAL] Transformer on server but missing from client link
 
 Wrong:
+
 ```ts
 // Server
 const t = initTRPC.create({ transformer: superjson });
@@ -162,6 +163,7 @@ const client = createTRPCClient<AppRouter>({
 ```
 
 Correct:
+
 ```ts
 // Server
 const t = initTRPC.create({ transformer: superjson });
@@ -184,6 +186,7 @@ Source: www/docs/server/data-transformers.md
 ### [CRITICAL] Passing transformer to createTRPCClient instead of links
 
 Wrong:
+
 ```ts
 createTRPCClient<AppRouter>({
   transformer: superjson,
@@ -192,6 +195,7 @@ createTRPCClient<AppRouter>({
 ```
 
 Correct:
+
 ```ts
 createTRPCClient<AppRouter>({
   links: [
@@ -210,6 +214,7 @@ Source: packages/client/src/internals/TRPCUntypedClient.ts
 ### [CRITICAL] Transformer on only some terminating links in splitLink
 
 Wrong:
+
 ```ts
 splitLink({
   condition: (op) => op.type === 'subscription',
@@ -221,10 +226,11 @@ splitLink({
     url: 'http://localhost:3000/trpc',
     transformer: superjson,
   }),
-})
+});
 ```
 
 Correct:
+
 ```ts
 splitLink({
   condition: (op) => op.type === 'subscription',
@@ -236,7 +242,7 @@ splitLink({
     url: 'http://localhost:3000/trpc',
     transformer: superjson,
   }),
-})
+});
 ```
 
 Every terminating link must have the same transformer. A missing transformer on one branch causes deserialization failures only for operations routed through that branch.
@@ -246,21 +252,23 @@ Source: www/docs/server/data-transformers.md
 ### [HIGH] Using transformer on client but not on server
 
 Wrong:
+
 ```ts
 // Server -- no transformer
 const t = initTRPC.create();
 
 // Client
-httpBatchLink({ url, transformer: superjson })
+httpBatchLink({ url, transformer: superjson });
 ```
 
 Correct:
+
 ```ts
 // Server
 const t = initTRPC.create({ transformer: superjson });
 
 // Client
-httpBatchLink({ url, transformer: superjson })
+httpBatchLink({ url, transformer: superjson });
 ```
 
 The transformer must be configured on both `initTRPC.create()` and every client link. Client-only transformer corrupts the request encoding because the server expects plain JSON.

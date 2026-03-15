@@ -7,7 +7,7 @@ description: >
   to queryClient.invalidateQueries with queryFilter, provider changes.
 type: lifecycle
 library: trpc
-library_version: "11.13.4"
+library_version: '11.13.4'
 requires:
   - react-query-setup
 sources:
@@ -29,6 +29,7 @@ npx @trpc/upgrade
 ```
 
 When prompted, select:
+
 - `Migrate Hooks to xxxOptions API`
 - `Migrate context provider setup`
 
@@ -62,18 +63,18 @@ Update the provider in your app root:
 
 ```tsx title="App.tsx"
 // BEFORE (classic)
-import { trpc } from '../utils/trpc';
+
 // trpc.Provider wrapping with queryClient and client props
 
 // AFTER (new)
 import { QueryClientProvider } from '@tanstack/react-query';
-import { TRPCProvider } from '../utils/trpc';
+import { trpc, TRPCProvider } from '../utils/trpc';
 
 <QueryClientProvider client={queryClient}>
   <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
     {children}
   </TRPCProvider>
-</QueryClientProvider>
+</QueryClientProvider>;
 ```
 
 ## Migration Patterns
@@ -152,12 +153,12 @@ function Users() {
 
 Any classic `trpc.useUtils()` usage maps to standard TanStack Query `useQueryClient()` calls:
 
-| Classic (`utils.xxx`)          | New (queryClient + trpc)                                    |
-| ------------------------------ | ----------------------------------------------------------- |
-| `utils.post.invalidate()`     | `queryClient.invalidateQueries(trpc.post.queryFilter())`    |
-| `utils.post.refetch()`        | `queryClient.refetchQueries(trpc.post.queryFilter())`       |
-| `utils.post.getData(input)`   | `queryClient.getQueryData(trpc.post.byId.queryKey(input))` |
-| `utils.post.setData(input,d)` | `queryClient.setQueryData(trpc.post.byId.queryKey(input),d)`|
+| Classic (`utils.xxx`)         | New (queryClient + trpc)                                     |
+| ----------------------------- | ------------------------------------------------------------ |
+| `utils.post.invalidate()`     | `queryClient.invalidateQueries(trpc.post.queryFilter())`     |
+| `utils.post.refetch()`        | `queryClient.refetchQueries(trpc.post.queryFilter())`        |
+| `utils.post.getData(input)`   | `queryClient.getQueryData(trpc.post.byId.queryKey(input))`   |
+| `utils.post.setData(input,d)` | `queryClient.setQueryData(trpc.post.byId.queryKey(input),d)` |
 
 ## Step 4: Typecheck and fix
 
@@ -168,6 +169,7 @@ npx tsc --noEmit
 ```
 
 Common type errors after migration:
+
 - Missing `useTRPC()` call (the new pattern requires calling the hook inside the component)
 - Incorrect options shape (the new `queryOptions`/`mutationOptions` take input as the first arg, TanStack options as the second)
 - `useUtils()` references that need to become `useQueryClient()` + `useTRPC()` pairs

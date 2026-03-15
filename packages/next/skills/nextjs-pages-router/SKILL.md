@@ -8,7 +8,7 @@ description: >
 type: framework
 library: trpc
 framework: react
-library_version: "11.13.4"
+library_version: '11.13.4'
 requires:
   - server-setup
   - client-setup
@@ -68,11 +68,9 @@ import { z } from 'zod';
 import { procedure, router } from '../trpc';
 
 export const appRouter = router({
-  hello: procedure
-    .input(z.object({ text: z.string() }))
-    .query(({ input }) => ({
-      greeting: `hello ${input.text}`,
-    })),
+  hello: procedure.input(z.object({ text: z.string() })).query(({ input }) => ({
+    greeting: `hello ${input.text}`,
+  })),
 });
 
 export type AppRouter = typeof appRouter;
@@ -188,14 +186,14 @@ export const trpc = createTRPCNext<AppRouter>({
 
 ```tsx title="pages/posts/[id].tsx"
 import { createServerSideHelpers } from '@trpc/react-query/server';
-import { appRouter } from '../../server/routers/_app';
-import { trpc } from '../../utils/trpc';
 import type {
   GetStaticPaths,
   GetStaticPropsContext,
   InferGetStaticPropsType,
 } from 'next';
 import superjson from 'superjson';
+import { appRouter } from '../../server/routers/_app';
+import { trpc } from '../../utils/trpc';
 
 export async function getStaticProps(
   context: GetStaticPropsContext<{ id: string }>,
@@ -237,13 +235,13 @@ export default function PostPage(
 
 ```tsx title="pages/posts/[id].tsx"
 import { createServerSideHelpers } from '@trpc/react-query/server';
-import { appRouter } from '../../server/routers/_app';
-import { trpc } from '../../utils/trpc';
 import type {
   GetServerSidePropsContext,
   InferGetServerSidePropsType,
 } from 'next';
 import superjson from 'superjson';
+import { appRouter } from '../../server/routers/_app';
+import { trpc } from '../../utils/trpc';
 
 export async function getServerSideProps(
   context: GetServerSidePropsContext<{ id: string }>,
@@ -279,9 +277,9 @@ export default function PostPage(
 ### SSR response caching
 
 ```ts title="utils/trpc.ts"
+import { httpBatchLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 import { ssrPrepass } from '@trpc/next/ssrPrepass';
-import { httpBatchLink } from '@trpc/client';
 import type { AppRouter } from '../server/routers/_app';
 
 export const trpc = createTRPCNext<AppRouter>({
@@ -300,7 +298,10 @@ export const trpc = createTRPCNext<AppRouter>({
     const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
     return {
       headers: new Headers([
-        ['cache-control', `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`],
+        [
+          'cache-control',
+          `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
+        ],
       ]),
     };
   },
@@ -310,8 +311,8 @@ export const trpc = createTRPCNext<AppRouter>({
 ### CORS on the API handler
 
 ```ts title="pages/api/trpc/[trpc].ts"
-import type { NextApiRequest, NextApiResponse } from 'next';
 import { createNextApiHandler } from '@trpc/server/adapters/next';
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { appRouter } from '../../../server/routers/_app';
 
 const nextApiHandler = createNextApiHandler({

@@ -8,7 +8,7 @@ description: >
 type: framework
 library: trpc
 framework: react
-library_version: "11.13.4"
+library_version: '11.13.4'
 requires:
   - client-setup
   - links
@@ -119,7 +119,7 @@ When using the singleton pattern, wrap your app with `QueryClientProvider` only 
 ### queryOptions -- querying data
 
 ```tsx title="components/UserList.tsx"
-import { useQuery, useSuspenseQuery, skipToken } from '@tanstack/react-query';
+import { skipToken, useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { useTRPC } from '../utils/trpc';
 
 function UserList() {
@@ -138,9 +138,7 @@ function UserList() {
 
   // Conditional query with skipToken
   const conditionalQuery = useQuery(
-    trpc.user.byId.queryOptions(
-      userId ? { id: userId } : skipToken,
-    ),
+    trpc.user.byId.queryOptions(userId ? { id: userId } : skipToken),
   );
 
   return <div>{userQuery.data?.name}</div>;
@@ -166,9 +164,7 @@ function CreateUser() {
   );
 
   return (
-    <button onClick={() => createUser.mutate({ name: 'Alice' })}>
-      Create
-    </button>
+    <button onClick={() => createUser.mutate({ name: 'Alice' })}>Create</button>
   );
 }
 ```
@@ -185,9 +181,7 @@ function InvalidationExample() {
 
   // Invalidate a specific query
   const invalidateOne = () =>
-    queryClient.invalidateQueries(
-      trpc.user.byId.queryFilter({ id: '1' }),
-    );
+    queryClient.invalidateQueries(trpc.user.byId.queryFilter({ id: '1' }));
 
   // Invalidate all queries under a router
   const invalidateAll = () =>
@@ -198,13 +192,11 @@ function InvalidationExample() {
     queryClient.invalidateQueries({ queryKey: trpc.pathKey() });
 
   // Read/write cache directly
-  const cached = queryClient.getQueryData(
-    trpc.user.byId.queryKey({ id: '1' }),
-  );
-  queryClient.setQueryData(
-    trpc.user.byId.queryKey({ id: '1' }),
-    { id: '1', name: 'Updated' },
-  );
+  const cached = queryClient.getQueryData(trpc.user.byId.queryKey({ id: '1' }));
+  queryClient.setQueryData(trpc.user.byId.queryKey({ id: '1' }), {
+    id: '1',
+    name: 'Updated',
+  });
 }
 ```
 
@@ -260,7 +252,11 @@ function ChatMessages() {
     ),
   );
 
-  return <div>Status: {sub.status}, Last: {JSON.stringify(sub.data)}</div>;
+  return (
+    <div>
+      Status: {sub.status}, Last: {JSON.stringify(sub.data)}
+    </div>
+  );
 }
 ```
 
