@@ -70,7 +70,7 @@
     "access": "public"
   },
   "devDependencies": {
-    "@hey-api/openapi-ts": "^0.94.1",
+    "@hey-api/openapi-ts": "https://pkg.pr.new/@hey-api/openapi-ts@3586",
     "@swagger-api/apidom-ls": "^1.6.0",
     "@trpc/server": "11.13.4",
     "@types/node": "^22.13.5",
