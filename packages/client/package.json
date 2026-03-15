@@ -109,10 +109,7 @@
     "links",
     "unstable-internals",
     "!**/*.test.*",
-    "!**/__tests__",
-    "skills",
-    "bin",
-    "!skills/_artifacts"
+    "!**/__tests__"
   ],
   "peerDependencies": {
     "@trpc/server": "11.14.0",

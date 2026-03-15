@@ -187,10 +187,7 @@
     "shared",
     "unstable-core-do-not-import",
     "!**/*.test.*",
-    "!**/__tests__",
-    "skills",
-    "bin",
-    "!skills/_artifacts"
+    "!**/__tests__"
   ],
   "publishConfig": {
     "access": "public"

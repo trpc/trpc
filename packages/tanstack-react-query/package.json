@@ -39,10 +39,7 @@
     "README.md",
     "package.json",
     "!**/*.test.*",
-    "!**/__tests__",
-    "skills",
-    "bin",
-    "!skills/_artifacts"
+    "!**/__tests__"
   ],
   "eslintConfig": {
     "rules": {
