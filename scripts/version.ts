@@ -35,7 +35,7 @@ for (const name of packages) {
 
   // Ensure designated packages always have their prerelease suffix
   const prereleaseTag = PRERELEASE_PACKAGES.get(name);
-  if (prereleaseTag) {
+  if (prereleaseTag && !version.includes('-')) {
     const baseVersion = version.replace(/-.*$/, '');
     const suffixedVersion = `${baseVersion}-${prereleaseTag}`;
     if (version !== suffixedVersion) {
