@@ -7,7 +7,8 @@
   "author": "KATT",
   "license": "MIT",
   "bin": {
-    "trpc-openapi": "./dist/cli.js"
+    "trpc-openapi": "./dist/cli.js",
+    "intent": "./bin/intent.js"
   },
   "homepage": "https://trpc.io",
   "repository": {
@@ -64,7 +65,10 @@
     "!**/*.test.*",
     "!**/__tests__",
     "!test",
-    "heyapi"
+    "heyapi",
+    "skills",
+    "bin",
+    "!skills/_artifacts"
   ],
   "publishConfig": {
     "access": "public"
@@ -99,5 +103,8 @@
   },
   "funding": [
     "https://trpc.io/sponsor"
+  ],
+  "keywords": [
+    "tanstack-intent"
   ]
 }

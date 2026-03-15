@@ -100,7 +100,10 @@
     "app-dir",
     "ssrPrepass",
     "!**/*.test.*",
-    "!**/__tests__"
+    "!**/__tests__",
+    "skills",
+    "bin",
+    "!skills/_artifacts"
   ],
   "peerDependencies": {
     "@tanstack/react-query": "^5.59.15",
