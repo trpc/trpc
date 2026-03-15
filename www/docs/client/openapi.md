@@ -21,6 +21,10 @@ The `@trpc/openapi` package generates an OpenAPI 3.1 specification from your tRP
 pnpm add @trpc/openapi
 ```
 
+:::note
+`@trpc/openapi` is currently versioned like 11.x.x-alpha, and should work with any recent tRPC v11 version, but as always we recommend aligning the version numbers
+:::
+
 ## Adapting your tRPC setup
 
 The generator works with your existing router — no annotations or decorators required. A few things to be aware of:
