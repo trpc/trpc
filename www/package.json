@@ -98,7 +98,7 @@
     "autoprefixer": "^10.4.7",
     "docusaurus-plugin-typedoc": "1.4.2",
     "dotenv": "^16.0.1",
-    "effect": "3.19.19",
+    "effect": "3.20.0",
     "eslint": "^9.26.0",
     "fastify": "^5.0.0",
     "next": "^15.3.8",
