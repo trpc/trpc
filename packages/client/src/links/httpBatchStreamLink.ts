@@ -99,6 +99,23 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
           });
 
           const res = await responsePromise;
+
+          if (!res.ok) {
+            // Server returned a non-2xx response (e.g. batching disabled).
+            // The body is plain JSON, not JSONL, so parse it directly and
+            // propagate the same error to every operation in the batch.
+            const json = (await res.json()) as TRPCResponse;
+            return batchOps.map(
+              (): Promise<HTTPResult> =>
+                Promise.resolve({
+                  json,
+                  meta: {
+                    response: res,
+                  },
+                }),
+            );
+          }
+
           const [head] = await jsonlStreamConsumer<
             Record<string, Promise<any>>
           >({
