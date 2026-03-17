@@ -1,7 +1,7 @@
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { TRPCClientError } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
-import { z } from 'zod';
+import * as z from 'zod';
 
 const t = initTRPC.create();
 
