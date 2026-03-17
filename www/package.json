@@ -119,7 +119,7 @@
     "typedoc-plugin-markdown": "4.4.2",
     "typescript": "^5.9.2",
     "unified": "^11.0.0",
-    "valibot": "1.2.0",
+    "valibot": "1.3.0",
     "ws": "^8.0.0",
     "yup": "^1.0.0"
   },
