@@ -105,6 +105,12 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
             // The body is plain JSON, not JSONL, so parse it directly and
             // propagate the same error to every operation in the batch.
             const json = (await res.json()) as TRPCResponse;
+            if ('error' in json) {
+              json.error = resolvedOpts.transformer.output.deserialize(
+                json.error,
+              );
+            }
+
             return batchOps.map(
               (): Promise<HTTPResult> =>
                 Promise.resolve({

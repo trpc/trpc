@@ -2,19 +2,29 @@ import { testServerAndClientResource } from '@trpc/client/__tests__/testClientRe
 import { waitError } from '@trpc/server/__tests__/waitError';
 import { TRPCClientError } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
+import superjson from 'superjson';
 import { z } from 'zod';
 
-const t = initTRPC.create();
+const scenarios = [
+  { clientLink: 'httpBatchLink', transformer: 'none' },
+  { clientLink: 'httpBatchLink', transformer: 'superjson' },
+  { clientLink: 'httpBatchStreamLink', transformer: 'none' },
+  { clientLink: 'httpBatchStreamLink', transformer: 'superjson' },
+] as const;
 
-const router = t.router({
-  hello: t.procedure
-    .input(z.string().optional())
-    .query((opts) => `Hello ${opts.input ?? 'world'}` as const),
-});
+describe.each(scenarios)(
+  'Server support for $clientLink (transformer: $transformer)',
+  ({ clientLink, transformer }) => {
+    const t = initTRPC.create({
+      transformer: transformer === 'none' ? undefined : superjson,
+    });
 
-describe.each(['httpBatchLink', 'httpBatchStreamLink'] as const)(
-  'server support for %s',
-  (clientLink) => {
+    const router = t.router({
+      hello: t.procedure
+        .input(z.string().optional())
+        .query((opts) => `Hello ${opts.input ?? 'world'}` as const),
+    });
+
     test('batching enabled', async () => {
       await using ctx = testServerAndClientResource(router, {
         server: {},
@@ -93,14 +103,11 @@ describe.each(['httpBatchLink', 'httpBatchStreamLink'] as const)(
       test('batchIndex is passed correctly in batched requests', async () => {
         const callIndices: (number | undefined)[] = [];
 
-        const tWithCallIndex = initTRPC.create();
-        const routerWithCallIndex = tWithCallIndex.router({
-          getCallIndex: tWithCallIndex.procedure
-            .input(z.string())
-            .query((opts) => {
-              callIndices.push(opts.batchIndex);
-              return { input: opts.input, batchIndex: opts.batchIndex };
-            }),
+        const routerWithCallIndex = t.router({
+          getCallIndex: t.procedure.input(z.string()).query((opts) => {
+            callIndices.push(opts.batchIndex);
+            return { input: opts.input, batchIndex: opts.batchIndex };
+          }),
         });
 
         await using ctx = testServerAndClientResource(routerWithCallIndex, {
@@ -128,14 +135,11 @@ describe.each(['httpBatchLink', 'httpBatchStreamLink'] as const)(
       test('batchIndex is provided for single-call batch requests', async () => {
         const callIndices: (number | undefined)[] = [];
 
-        const tWithCallIndex = initTRPC.create();
-        const routerWithCallIndex = tWithCallIndex.router({
-          getCallIndex: tWithCallIndex.procedure
-            .input(z.string())
-            .query((opts) => {
-              callIndices.push(opts.batchIndex);
-              return { input: opts.input, batchIndex: opts.batchIndex };
-            }),
+        const routerWithCallIndex = t.router({
+          getCallIndex: t.procedure.input(z.string()).query((opts) => {
+            callIndices.push(opts.batchIndex);
+            return { input: opts.input, batchIndex: opts.batchIndex };
+          }),
         });
 
         await using ctx = testServerAndClientResource(routerWithCallIndex, {
@@ -154,16 +158,12 @@ describe.each(['httpBatchLink', 'httpBatchStreamLink'] as const)(
       test('batchIndex is available in middleware', async () => {
         const middlewareCallIndices: (number | undefined)[] = [];
 
-        const tWithMiddleware = initTRPC.create();
+        const procedureWithMiddleware = t.procedure.use((opts) => {
+          middlewareCallIndices.push(opts.batchIndex);
+          return opts.next();
+        });
 
-        const procedureWithMiddleware = tWithMiddleware.procedure.use(
-          (opts) => {
-            middlewareCallIndices.push(opts.batchIndex);
-            return opts.next();
-          },
-        );
-
-        const routerWithMiddleware = tWithMiddleware.router({
+        const routerWithMiddleware = t.router({
           testProc: procedureWithMiddleware
             .input(z.string())
             .query((opts) => opts.input),
@@ -189,9 +189,9 @@ describe('batchIndex', () => {
   test('batchIndex is provided for non-batched requests', async () => {
     const callIndices: (number | undefined)[] = [];
 
-    const tWithCallIndex = initTRPC.create();
-    const routerWithCallIndex = tWithCallIndex.router({
-      getCallIndex: tWithCallIndex.procedure.input(z.string()).query((opts) => {
+    const t = initTRPC.create();
+    const routerWithCallIndex = t.router({
+      getCallIndex: t.procedure.input(z.string()).query((opts) => {
         callIndices.push(opts.batchIndex);
         return { input: opts.input, batchIndex: opts.batchIndex };
       }),
