@@ -597,10 +597,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
          * }
          */
         maxDepth: Infinity,
-        data: rpcCalls.map(async (res) => {
+        data: rpcCalls.map(async (res, index) => {
           const [error, result] = await res;
 
-          const call = info.calls[0];
+          const call = info.calls[index];
 
           if (error) {
             return {
