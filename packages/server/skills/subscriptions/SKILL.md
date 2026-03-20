@@ -10,7 +10,7 @@ description: >
   via opts.signal for cleanup. splitLink to route subscriptions.
 type: core
 library: trpc
-library_version: '11.13.4'
+library_version: '11.14.0'
 requires:
   - server-setup
   - links

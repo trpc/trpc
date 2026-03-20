@@ -7,7 +7,7 @@ description: >
   support. Output validation returns INTERNAL_SERVER_ERROR on failure.
 type: core
 library: trpc
-library_version: '11.13.4'
+library_version: '11.14.0'
 requires:
   - server-setup
 sources:

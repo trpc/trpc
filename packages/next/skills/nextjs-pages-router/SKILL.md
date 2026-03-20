@@ -8,7 +8,7 @@ description: >
 type: framework
 library: trpc
 framework: react
-library_version: '11.13.4'
+library_version: '11.14.0'
 requires:
   - server-setup
   - client-setup

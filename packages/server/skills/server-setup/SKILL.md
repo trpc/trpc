@@ -7,7 +7,7 @@ description: >
   lazy-load routers with lazy().
 type: core
 library: trpc
-library_version: '11.13.4'
+library_version: '11.14.0'
 requires: []
 sources:
   - 'trpc/trpc:www/docs/server/overview.md'

@@ -7,7 +7,7 @@ description: >
   to HTTP status codes with getHTTPStatusCodeFromError().
 type: core
 library: trpc
-library_version: '11.13.4'
+library_version: '11.14.0'
 requires:
   - server-setup
 sources:

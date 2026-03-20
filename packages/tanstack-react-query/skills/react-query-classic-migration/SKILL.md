@@ -7,7 +7,7 @@ description: >
   to queryClient.invalidateQueries with queryFilter, provider changes.
 type: lifecycle
 library: trpc
-library_version: '11.13.4'
+library_version: '11.14.0'
 requires:
   - react-query-setup
 sources:

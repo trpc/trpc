@@ -7,7 +7,7 @@ description: >
   @trpc/client. FormData and binary inputs only work with mutations (POST).
 type: core
 library: trpc
-library_version: '11.13.4'
+library_version: '11.14.0'
 requires:
   - server-setup
   - links

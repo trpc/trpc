@@ -8,7 +8,7 @@ description: >
   provides req and res for context creation.
 type: core
 library: trpc
-library_version: '11.13.4'
+library_version: '11.14.0'
 requires:
   - server-setup
 sources:

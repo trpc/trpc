@@ -8,7 +8,7 @@ description: >
   or EventSource polyfill custom headers.
 type: composition
 library: trpc
-library_version: '11.13.4'
+library_version: '11.14.0'
 requires:
   - server-setup
   - middlewares
