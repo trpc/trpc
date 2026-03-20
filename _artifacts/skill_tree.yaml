@@ -1,4 +1,4 @@
-# skills/_artifacts/skill_tree.yaml
+# _artifacts/skill_tree.yaml
 library:
   name: '@trpc/server'
   version: '11.14.0'
