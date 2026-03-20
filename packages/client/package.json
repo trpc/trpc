@@ -119,6 +119,7 @@
     "typescript": ">=5.7.2"
   },
   "devDependencies": {
+    "@tanstack/intent": "^0.0.20",
     "@trpc/server": "11.14.0",
     "@types/isomorphic-fetch": "^0.0.39",
     "@types/node": "^22.13.5",
