@@ -1,7 +1,7 @@
 # skills/_artifacts/skill_tree.yaml
 library:
   name: '@trpc/server'
-  version: '11.13.4'
+  version: '11.14.0'
   repository: 'https://github.com/trpc/trpc'
   description: 'End-to-end typesafe APIs for TypeScript without schemas or code generation.'
 generated_from:

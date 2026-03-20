@@ -7,7 +7,7 @@
 
 library:
   name: '@trpc/server'
-  version: '11.13.4'
+  version: '11.14.0'
   repository: 'https://github.com/trpc/trpc'
   description: >
     End-to-end typesafe APIs for TypeScript. tRPC lets you define server
