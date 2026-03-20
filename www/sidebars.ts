@@ -28,6 +28,7 @@ const config: SidebarsConfig = {
         'main/concepts',
         'main/videos-and-community-resources',
         'main/example-apps',
+        'main/skills',
       ],
     },
     {
