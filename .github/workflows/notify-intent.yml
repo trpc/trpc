@@ -18,12 +18,12 @@ on:
   push:
     branches: [main]
     paths:
-      - 'packages/www/docs/**'
-      - 'packages/client/src/**'
-      - 'packages/next/src/**'
-      - 'packages/openapi/src/**'
-      - 'packages/server/src/**'
-      - 'packages/tanstack-react-query/src/**'
+      - "www/docs/**"
+      - "packages/client/src/**"
+      - "packages/next/src/**"
+      - "packages/openapi/src/**"
+      - "packages/server/src/**"
+      - "packages/tanstack-react-query/src/**"
 
 jobs:
   notify:
