@@ -24,8 +24,8 @@ importers:
         specifier: ^0.22.0
         version: 0.22.0
       '@tanstack/intent':
-        specifier: ^0.0.20
-        version: 0.0.20
+        specifier: ^0.0.23
+        version: 0.0.23
       '@testing-library/dom':
         specifier: ^10.0.0
         version: 10.0.0
@@ -1847,8 +1847,8 @@ importers:
   packages/client:
     devDependencies:
       '@tanstack/intent':
-        specifier: ^0.0.20
-        version: 0.0.20
+        specifier: ^0.0.23
+        version: 0.0.23
       '@trpc/server':
         specifier: 11.14.1
         version: link:../server
@@ -1889,8 +1889,8 @@ importers:
   packages/next:
     devDependencies:
       '@tanstack/intent':
-        specifier: ^0.0.20
-        version: 0.0.20
+        specifier: ^0.0.23
+        version: 0.0.23
       '@tanstack/react-query':
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
@@ -1952,8 +1952,8 @@ importers:
         specifier: ^1.6.0
         version: 1.6.0
       '@tanstack/intent':
-        specifier: ^0.0.20
-        version: 0.0.20
+        specifier: ^0.0.23
+        version: 0.0.23
       '@trpc/server':
         specifier: 11.14.1
         version: link:../server
@@ -2063,8 +2063,8 @@ importers:
         specifier: 0.115.0
         version: 0.115.0
       '@tanstack/intent':
-        specifier: ^0.0.20
-        version: 0.0.20
+        specifier: ^0.0.23
+        version: 0.0.23
       '@tanstack/react-query':
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
@@ -2147,8 +2147,8 @@ importers:
   packages/tanstack-react-query:
     devDependencies:
       '@tanstack/intent':
-        specifier: ^0.0.20
-        version: 0.0.20
+        specifier: ^0.0.23
+        version: 0.0.23
       '@tanstack/react-query':
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
@@ -8678,8 +8678,8 @@ packages:
     resolution: {integrity: sha512-+PmQX0PiAYPMeVYe237LJAYvOMYW1j2rH5YROyS3b4CTVJum34HfRvKvAzozHAQG0TnHNdUfY9nCeUyRAs//cw==}
     engines: {node: '>=14.16'}
 
-  '@tanstack/intent@0.0.20':
-    resolution: {integrity: sha512-C1/OFpz5m97X3TCgradEIe0tZM5mnelOu0CHYDKwlSLss4bXHBTh7BQhoczU+Go4LvlGU6F9ojyiYQGQtXqnVQ==}
+  '@tanstack/intent@0.0.23':
+    resolution: {integrity: sha512-q5e0sh5e+xBOR5Z7eoZTBcXtakgTwucm2m0bNUkj7h4UagSgIDmPRYbtC7B81AF4FB5rW2OP1zgl7Jd9EH4qEw==}
     hasBin: true
 
   '@tanstack/query-core@5.80.2':
@@ -27834,8 +27834,9 @@ snapshots:
     dependencies:
       defer-to-connect: 2.0.1
 
-  '@tanstack/intent@0.0.20':
+  '@tanstack/intent@0.0.23':
     dependencies:
+      cac: 6.7.14
       yaml: 2.7.0
 
   '@tanstack/query-core@5.80.2': {}
