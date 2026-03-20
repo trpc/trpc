@@ -76,7 +76,7 @@
   "devDependencies": {
     "@hey-api/openapi-ts": "^0.94.1",
     "@swagger-api/apidom-ls": "^1.6.0",
-    "@tanstack/intent": "^0.0.20",
+    "@tanstack/intent": "^0.0.23",
     "@trpc/server": "11.14.1",
     "@types/node": "^22.13.5",
     "bson": "^7.2.0",
