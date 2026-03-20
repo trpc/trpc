@@ -25,10 +25,10 @@ const config: SidebarsConfig = {
       items: [
         'main/introduction',
         'main/quickstart',
+        'main/skills',
         'main/concepts',
         'main/videos-and-community-resources',
         'main/example-apps',
-        'main/skills',
       ],
     },
     {
