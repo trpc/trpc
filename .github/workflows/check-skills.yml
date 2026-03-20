@@ -7,7 +7,7 @@
 # Triggers: new release published, or manual workflow_dispatch.
 #
 # Template variables (replaced by `intent setup`):
-#   root — e.g. @tanstack/query or my-workspace workspace
+#   @trpc/trpc — e.g. @tanstack/query or my-workspace workspace
 
 name: Check Skills
 
@@ -81,7 +81,7 @@ jobs:
             const summary = lines.join('\n');
 
             const prompt = [
-              'Review and update the following stale intent skills for root:',
+              'Review and update the following stale intent skills for @trpc/trpc:',
               '',
               ...stale.map(s => '- ' + s.skill + ': ' + s.reasons.join(', ')),
               '',
