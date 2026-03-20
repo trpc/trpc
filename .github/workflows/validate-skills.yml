@@ -1,0 +1,52 @@
+# validate-skills.yml — Drop this into your library repo's .github/workflows/
+#
+# Validates skill files on PRs that touch the skills/ directory.
+# Ensures frontmatter is correct, names match paths, and files stay under
+# the 500-line limit.
+
+name: Validate Skills
+
+on:
+  pull_request:
+    paths:
+      - 'skills/**'
+      - '**/skills/**'
+
+jobs:
+  validate:
+    name: Validate skill files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install intent CLI
+        run: npm install -g @tanstack/intent
+
+      - name: Find and validate skills
+        run: |
+          # Find all directories containing SKILL.md files
+          SKILLS_DIR=""
+          if [ -d "skills" ]; then
+            SKILLS_DIR="skills"
+          elif [ -d "packages" ]; then
+            # Monorepo — find skills/ under packages
+            for dir in packages/*/skills; do
+              if [ -d "$dir" ]; then
+                echo "Validating $dir..."
+                intent validate "$dir"
+              fi
+            done
+            exit 0
+          fi
+
+          if [ -n "$SKILLS_DIR" ]; then
+            intent validate "$SKILLS_DIR"
+          else
+            echo "No skills/ directory found — skipping validation."
+          fi

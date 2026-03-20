@@ -1,0 +1,55 @@
+# notify-intent.yml — Drop this into your library repo's .github/workflows/
+#
+# Fires a repository_dispatch event whenever docs or source files change
+# on merge to main. This triggers the skill staleness check workflow.
+#
+# Requirements:
+#   - A fine-grained PAT with contents:write on this repository stored
+#     as the INTENT_NOTIFY_TOKEN repository secret.
+#
+# Template variables (replaced by `intent setup`):
+#   @trpc/trpc — e.g. @tanstack/query or my-workspace workspace
+#   packages/*/docs/**       — e.g. docs/**
+#   packages/*/src/**        — e.g. packages/query-core/src/**
+
+name: Trigger Skill Review
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'www/docs/**'
+      - 'packages/client/src/**'
+      - 'packages/next/src/**'
+      - 'packages/openapi/src/**'
+      - 'packages/server/src/**'
+      - 'packages/tanstack-react-query/src/**'
+
+jobs:
+  notify:
+    name: Trigger Skill Review
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Collect changed files
+        id: changes
+        run: |
+          FILES=$(git diff --name-only HEAD~1 HEAD | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "files=$FILES" >> "$GITHUB_OUTPUT"
+
+      - name: Dispatch to intent repo
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.INTENT_NOTIFY_TOKEN }}
+          repository: ${{ github.repository }}
+          event-type: skill-check
+          client-payload: |
+            {
+              "package": "@trpc/trpc",
+              "sha": "${{ github.sha }}",
+              "changed_files": ${{ steps.changes.outputs.files }}
+            }

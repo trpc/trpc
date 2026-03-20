@@ -21,6 +21,15 @@ The `@trpc/openapi` package generates an OpenAPI 3.1 specification from your tRP
 pnpm add @trpc/openapi
 ```
 
+:::tip AI Agents
+If you use an AI coding agent, install tRPC skills for better code generation:
+
+```bash
+npx @tanstack/intent@latest install
+```
+
+:::
+
 :::note
 `@trpc/openapi` is currently versioned like 11.x.x-alpha, and should work with any recent tRPC v11 version, but as always we recommend aligning the version numbers
 :::
