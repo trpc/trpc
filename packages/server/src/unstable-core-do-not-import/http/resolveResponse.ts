@@ -661,14 +661,20 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           };
         }),
         serialize: (data) => config.transformer.output.serialize(data),
-        onError: (cause) => {
+        onError: ({ error: cause, path }) => {
+          const call = info?.calls[path[0] as any];
+          const error = resolveProcedureError(getTRPCErrorFromUnknown(cause), {
+            declaredErrors: call?.procedure?._def.declaredErrors,
+            path: call?.path,
+          });
+
           opts.onError?.({
-            error: getTRPCErrorFromUnknown(cause.error),
-            path: undefined,
-            input: undefined,
+            error,
+            path: call?.path,
+            input: call?.result(),
             ctx: ctxManager.valueOrUndefined(),
             req: opts.req,
-            type: info?.type ?? 'unknown',
+            type: call?.procedure?._def.type ?? info?.type ?? 'unknown',
           });
         },
 

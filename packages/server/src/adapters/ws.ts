@@ -36,6 +36,14 @@ import {
 // eslint-disable-next-line no-restricted-imports
 import type { Result } from '../unstable-core-do-not-import';
 // eslint-disable-next-line no-restricted-imports
+import {
+  isTRPCDeclaredError,
+  resolveRegisteredDeclaredErrorOrDowngrade,
+  type AnyTRPCDeclaredErrorClass,
+} from '../unstable-core-do-not-import/error/TRPCDeclaredError';
+// eslint-disable-next-line no-restricted-imports
+import { getProcedureAtPath } from '../unstable-core-do-not-import/router';
+// eslint-disable-next-line no-restricted-imports
 import { iteratorResource } from '../unstable-core-do-not-import/stream/utils/asyncIterable';
 import { Unpromise } from '../vendor/unpromise';
 import { createURL, type NodeHTTPCreateContextFnOptions } from './node-http';
@@ -106,6 +114,20 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> =
      */
     experimental_encoder?: Encoder;
   };
+
+function resolveProcedureError(
+  error: TRPCError,
+  opts?: {
+    declaredErrors?: readonly AnyTRPCDeclaredErrorClass[];
+    path?: string;
+  },
+): TRPCError {
+  if (isTRPCDeclaredError(error)) {
+    return resolveRegisteredDeclaredErrorOrDowngrade(error, opts);
+  }
+
+  return error;
+}
 
 export function getWSConnectionHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
@@ -263,6 +285,9 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           throw res.error;
         }
 
+        const procedure = await getProcedureAtPath(router, path);
+        const declaredErrors = procedure?._def.declaredErrors;
+
         const abortController = new AbortController();
         const result = await callTRPCProcedure({
           router,
@@ -352,7 +377,13 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
               break;
             }
             if (next instanceof Error) {
-              const error = getTRPCErrorFromUnknown(next);
+              const error = resolveProcedureError(
+                getTRPCErrorFromUnknown(next),
+                {
+                  declaredErrors,
+                  path,
+                },
+              );
               opts.onError?.({ error, path, type, ctx, req, input });
               respond({
                 id,
@@ -406,7 +437,10 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           });
           clientSubscriptions.delete(id);
         }).catch((cause) => {
-          const error = getTRPCErrorFromUnknown(cause);
+          const error = resolveProcedureError(getTRPCErrorFromUnknown(cause), {
+            declaredErrors,
+            path,
+          });
           opts.onError?.({ error, path, type, ctx, req, input });
           respond({
             id,
@@ -433,7 +467,9 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         });
       }).catch((cause) => {
         // procedure threw an error
-        const error = getTRPCErrorFromUnknown(cause);
+        const error = resolveProcedureError(getTRPCErrorFromUnknown(cause), {
+          path,
+        });
         opts.onError?.({ error, path, type, ctx, req, input });
         respond({
           id,
