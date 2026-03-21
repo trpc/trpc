@@ -3,22 +3,22 @@ import { TRPC_ERROR_CODES_BY_KEY } from '../rpc/codes';
 import type { TRPCErrorShape } from '../rpc/envelopes';
 import { TRPCError } from './TRPCError';
 
-export const trpcFineGrainedErrorSymbol = Symbol('trpc.fineGrainedError');
+export const trpcDeclaredErrorSymbol = Symbol('trpc.declaredError');
 
-export type InferTRPCFineGrainedErrorShape<TClass> = TClass extends {
-  readonly __trpcFineGrainedErrorShape: infer TShape extends TRPCErrorShape;
+export type InferTRPCDeclaredErrorShape<TClass> = TClass extends {
+  readonly __trpcDeclaredErrorShape: infer TShape extends TRPCErrorShape;
 }
   ? TShape
   : never;
 
-export type AnyTRPCFineGrainedErrorClass = {
+export type AnyTRPCDeclaredErrorClass = {
   new (
     ...args: any[]
-  ): TRPCError & { readonly [trpcFineGrainedErrorSymbol]: true };
-  readonly __trpcFineGrainedErrorShape: TRPCErrorShape;
+  ): TRPCError & { readonly [trpcDeclaredErrorSymbol]: true };
+  readonly __trpcDeclaredErrorShape: TRPCErrorShape;
 };
 
-type FineGrainedErrorShape<
+type DeclaredErrorShape<
   TCode extends TRPC_ERROR_CODE_KEY,
   TData extends object,
 > = {
@@ -27,11 +27,11 @@ type FineGrainedErrorShape<
   data: TData;
 };
 
-interface TRPCFineGrainedErrorInstance<
+interface TRPCDeclaredErrorInstance<
   TData extends object = object,
   TMessage extends string = string,
 > extends TRPCError {
-  readonly [trpcFineGrainedErrorSymbol]: true;
+  readonly [trpcDeclaredErrorSymbol]: true;
   message: TMessage;
   toShape(): {
     code: TRPCErrorShape<TData>['code'];
@@ -40,10 +40,10 @@ interface TRPCFineGrainedErrorInstance<
   };
 }
 
-export function isTRPCFineGrainedError(
+export function isTRPCDeclaredError(
   error: TRPCError,
-): error is TRPCError & TRPCFineGrainedErrorInstance {
-  return trpcFineGrainedErrorSymbol in error;
+): error is TRPCError & TRPCDeclaredErrorInstance {
+  return trpcDeclaredErrorSymbol in error;
 }
 
 type BasicErrorKeys = {
@@ -74,7 +74,10 @@ type ConstructorExtraParams<
   Partial<
     Pick<
       TExtraParams,
-      Exclude<Exclude<OptionalKeys<TExtraParams>, keyof TDefaults>, keyof TConstants>
+      Exclude<
+        Exclude<OptionalKeys<TExtraParams>, keyof TDefaults>,
+        keyof TConstants
+      >
     >
   >;
 
@@ -87,7 +90,7 @@ type ConstructorInput<
 type DefaultsInput<TExtraParams extends Record<string, unknown>> =
   Partial<TExtraParams>;
 
-type TRPCFineGrainedErrorClass<
+type TRPCDeclaredErrorClass<
   TCode extends TRPC_ERROR_CODE_KEY,
   TExtraParams extends Record<string, unknown>,
   TDefaults extends object,
@@ -97,38 +100,34 @@ type TRPCFineGrainedErrorClass<
       new (
         input?: ConstructorInput<TExtraParams, TDefaults, TConstants>,
       ): TRPCError &
-        TRPCFineGrainedErrorInstance<TExtraParams, TCode> &
+        TRPCDeclaredErrorInstance<TExtraParams, TCode> &
         Omit<TExtraParams, 'message'>;
     }
   : {
       new (
         input: ConstructorInput<TExtraParams, TDefaults, TConstants>,
       ): TRPCError &
-        TRPCFineGrainedErrorInstance<TExtraParams, TCode> &
+        TRPCDeclaredErrorInstance<TExtraParams, TCode> &
         Omit<TExtraParams, 'message'>;
     }) & {
-  readonly __trpcFineGrainedErrorShape: FineGrainedErrorShape<
-    TCode,
-    TExtraParams
-  >;
+  readonly __trpcDeclaredErrorShape: DeclaredErrorShape<TCode, TExtraParams>;
 };
 
-type TRPCFineGrainedErrorBuilder<
+type TRPCDeclaredErrorBuilder<
   TCode extends TRPC_ERROR_CODE_KEY,
   TExtraParams extends Record<string, unknown>,
 > = {
-  data<const TNewExtraParams extends Record<string, unknown>>(): TRPCFineGrainedErrorBuilder<
-    TCode,
-    TNewExtraParams
-  >;
-  create(): TRPCFineGrainedErrorClass<TCode, TExtraParams, {}, {}>;
+  data<
+    const TNewExtraParams extends Record<string, unknown>,
+  >(): TRPCDeclaredErrorBuilder<TCode, TNewExtraParams>;
+  create(): TRPCDeclaredErrorClass<TCode, TExtraParams, {}, {}>;
   create<
     const TDefaults extends Partial<TExtraParams> = {},
     const TConstants extends Partial<TExtraParams> = {},
   >(opts: {
     defaults?: DefaultsInput<TExtraParams> & TDefaults;
     constants?: DefaultsInput<TExtraParams> & TConstants;
-  }): TRPCFineGrainedErrorClass<TCode, TExtraParams, TDefaults, TConstants>;
+  }): TRPCDeclaredErrorClass<TCode, TExtraParams, TDefaults, TConstants>;
 };
 
 /**
@@ -140,7 +139,7 @@ type TRPCFineGrainedErrorBuilder<
  * - `create({ defaults, constants })` materializes the error class
  *
  * ```ts
- * const MyError = createTRPCFineGrainedError('NOT_FOUND')
+ * const MyError = createTRPCDeclaredError('NOT_FOUND')
  *   .data<{
  *     resourceType: 'user';
  *   }>()
@@ -154,24 +153,24 @@ type TRPCFineGrainedErrorBuilder<
  * // error.resourceType === 'user'
  * ```
  */
-export function createTRPCFineGrainedError<
+export function createTRPCDeclaredError<
   const TCode extends TRPC_ERROR_CODE_KEY,
->(code: TCode): TRPCFineGrainedErrorBuilder<TCode, {}>;
+>(code: TCode): TRPCDeclaredErrorBuilder<TCode, {}>;
 
-export function createTRPCFineGrainedError(code: TRPC_ERROR_CODE_KEY): any {
-  return createTRPCFineGrainedErrorBuilder({ code });
+export function createTRPCDeclaredError(code: TRPC_ERROR_CODE_KEY): any {
+  return createTRPCDeclaredErrorBuilder({ code });
 }
 
-function createTRPCFineGrainedErrorBuilder(
+function createTRPCDeclaredErrorBuilder(
   opts: BasicErrorKeys & Record<string, unknown>,
 ) {
   return {
-    data: () => createTRPCFineGrainedErrorBuilder(opts),
+    data: () => createTRPCDeclaredErrorBuilder(opts),
     create: (createOpts?: {
       defaults?: Record<string, unknown>;
       constants?: Record<string, unknown>;
     }) =>
-      createTRPCFineGrainedErrorClass({
+      createTRPCDeclaredErrorClass({
         ...opts,
         ...(createOpts?.defaults ?? {}),
         ...(createOpts?.constants ?? {}),
@@ -179,15 +178,15 @@ function createTRPCFineGrainedErrorBuilder(
   };
 }
 
-function createTRPCFineGrainedErrorClass(
+function createTRPCDeclaredErrorClass(
   opts: BasicErrorKeys & Record<string, unknown>,
 ) {
   const { code, ...consts } = opts;
   const numericCode = TRPC_ERROR_CODES_BY_KEY[code];
 
-  const TRPCFineGrainedError = class TRPCFineGrainedError extends TRPCError {
-    static readonly __trpcFineGrainedErrorShape = null as any;
-    readonly [trpcFineGrainedErrorSymbol] = true as const;
+  const TRPCDeclaredError = class TRPCDeclaredError extends TRPCError {
+    static readonly __trpcDeclaredErrorShape = null as any;
+    readonly [trpcDeclaredErrorSymbol] = true as const;
     #rest: Record<string, unknown>;
 
     constructor(input?: Record<string, unknown>) {
@@ -199,7 +198,7 @@ function createTRPCFineGrainedErrorClass(
       Object.assign(this, instanceFields);
     }
 
-    toShape(): FineGrainedErrorShape<typeof code, Record<string, unknown>> {
+    toShape(): DeclaredErrorShape<typeof code, Record<string, unknown>> {
       return {
         code: numericCode,
         message: code,
@@ -208,5 +207,5 @@ function createTRPCFineGrainedErrorClass(
     }
   };
 
-  return TRPCFineGrainedError;
+  return TRPCDeclaredError;
 }

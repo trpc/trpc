@@ -1,8 +1,8 @@
 import type { inferObservableValue, Observable } from '../observable';
 import type {
-  AnyTRPCFineGrainedErrorClass,
-  InferTRPCFineGrainedErrorShape,
-} from './error/TRPCFineGrainedError';
+  AnyTRPCDeclaredErrorClass,
+  InferTRPCDeclaredErrorShape,
+} from './error/TRPCDeclaredError';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
   AnyMiddlewareFunction,
@@ -91,7 +91,7 @@ type ProcedureBuilderDef<TMeta> = {
   subscription?: boolean;
   type?: ProcedureType;
   caller?: CallerOverride<unknown>;
-  fineGrainedErrors: AnyTRPCFineGrainedErrorClass[];
+  declaredErrors: AnyTRPCDeclaredErrorClass[];
 };
 
 type AnyProcedureBuilderDef = ProcedureBuilderDef<any>;
@@ -247,11 +247,11 @@ export interface ProcedureBuilder<
     TCaller
   >;
   /**
-   * Declare fine-grained error types for this procedure.
-   * Accepts an array of error classes created with `createFineGrainedError`.
+   * Declare error types for this procedure.
+   * Accepts an array of error classes created with `createTRPCDeclaredError`.
    * Chaining `.errors()` calls merges error types.
    */
-  errors<$Errors extends AnyTRPCFineGrainedErrorClass[]>(
+  errors<$Errors extends AnyTRPCDeclaredErrorClass[]>(
     errors: [...$Errors],
   ): ProcedureBuilder<
     TContext,
@@ -261,7 +261,7 @@ export interface ProcedureBuilder<
     TInputOut,
     TOutputIn,
     TOutputOut,
-    TErrorShape | InferTRPCFineGrainedErrorShape<$Errors[number]>,
+    TErrorShape | InferTRPCDeclaredErrorShape<$Errors[number]>,
     TCaller
   >;
   /**
@@ -513,17 +513,14 @@ function createNewBuilder(
   def1: AnyProcedureBuilderDef,
   def2: Partial<AnyProcedureBuilderDef>,
 ): AnyProcedureBuilder {
-  const { middlewares = [], inputs, meta, fineGrainedErrors, ...rest } = def2;
+  const { middlewares = [], inputs, meta, declaredErrors, ...rest } = def2;
 
   // TODO: maybe have a fn here to warn about calls
   return createBuilder({
     ...mergeWithoutOverrides(def1, rest),
     inputs: [...def1.inputs, ...(inputs ?? [])],
     middlewares: [...def1.middlewares, ...middlewares],
-    fineGrainedErrors: [
-      ...def1.fineGrainedErrors,
-      ...(fineGrainedErrors ?? []),
-    ],
+    declaredErrors: [...def1.declaredErrors, ...(declaredErrors ?? [])],
     meta: def1.meta && meta ? { ...def1.meta, ...meta } : (meta ?? def1.meta),
   });
 }
@@ -545,7 +542,7 @@ export function createBuilder<TContext, TMeta>(
     procedure: true,
     inputs: [],
     middlewares: [],
-    fineGrainedErrors: [],
+    declaredErrors: [],
     ...initDef,
   };
 
@@ -570,9 +567,9 @@ export function createBuilder<TContext, TMeta>(
         meta,
       });
     },
-    errors(errors: AnyTRPCFineGrainedErrorClass[]) {
+    errors(errors: AnyTRPCDeclaredErrorClass[]) {
       return createNewBuilder(_def, {
-        fineGrainedErrors: errors,
+        declaredErrors: errors,
       });
     },
     use(middlewareBuilderOrFn) {

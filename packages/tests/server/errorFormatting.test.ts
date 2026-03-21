@@ -3,7 +3,7 @@ import { waitError } from '@trpc/server/__tests__/waitError';
 import { isTRPCClientError, TRPCClientError } from '@trpc/client';
 import type { AnyRouter, inferRouterError } from '@trpc/server';
 import {
-  createTRPCFineGrainedError,
+  createTRPCDeclaredError,
   initTRPC,
   StandardSchemaV1Error,
   TRPCError,
@@ -106,8 +106,8 @@ describe('with custom error formatter', () => {
   });
 });
 
-describe('with per-procedure fine-grained errors', () => {
-  const BadPhoneError = createTRPCFineGrainedError('UNAUTHORIZED')
+describe('with per-procedure declared errors', () => {
+  const BadPhoneError = createTRPCDeclaredError('UNAUTHORIZED')
     .data<{
       reason: 'BAD_PHONE';
     }>()
@@ -117,7 +117,7 @@ describe('with per-procedure fine-grained errors', () => {
       },
     });
 
-  const ValidationError = createTRPCFineGrainedError('BAD_REQUEST')
+  const ValidationError = createTRPCDeclaredError('BAD_REQUEST')
     .data<{
       field: string;
     }>()
@@ -168,7 +168,7 @@ describe('with per-procedure fine-grained errors', () => {
     }),
   });
 
-  test('fine-grained errors bypass formatter and infer as router union', async () => {
+  test('declared errors bypass formatter and infer as router union', async () => {
     expectTypeOf<inferRouterError<typeof appRouter>>().not.toBeAny();
 
     await using ctx = testServerAndClientResource(appRouter);
@@ -208,11 +208,11 @@ describe('with per-procedure fine-grained errors', () => {
     // We can't easily trigger the middleware path, so test the resolver path
     const err = await waitError(ctx.client.chainedErrors.query());
     assert(isTRPCClientError<typeof appRouter>(err));
-    // The error should be a fine-grained error (BadPhoneError from resolver)
+    // The error should be a declared error (BadPhoneError from resolver)
     expect(err.shape?.code).toBe(-32001);
   });
 
-  test('fine-grained errors work with instanceof', () => {
+  test('declared errors work with instanceof', () => {
     const err = new BadPhoneError();
     expect(err instanceof TRPCError).toBe(true);
     expect(err instanceof BadPhoneError).toBe(true);

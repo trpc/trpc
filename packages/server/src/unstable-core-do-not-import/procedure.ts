@@ -1,4 +1,4 @@
-import type { AnyTRPCFineGrainedErrorClass } from './error/TRPCFineGrainedError';
+import type { AnyTRPCDeclaredErrorClass } from './error/TRPCDeclaredError';
 import type { TRPCError } from './error/TRPCError';
 import type { Parser } from './parser';
 import type { ProcedureCallOptions } from './procedureBuilder';
@@ -47,9 +47,9 @@ export interface Procedure<
      */
     inputs: Parser[];
     /**
-     * Declared fine-grained error classes for this procedure
+     * Declared error classes for this procedure
      */
-    fineGrainedErrors: AnyTRPCFineGrainedErrorClass[];
+    declaredErrors: AnyTRPCDeclaredErrorClass[];
   };
   meta: TDef['meta'];
   /**

@@ -1,14 +1,14 @@
 import { describe, expectTypeOf, test } from 'vitest';
-import { TRPCError } from './TRPCError';
 import {
-  createTRPCFineGrainedError,
-  isTRPCFineGrainedError,
-} from './TRPCFineGrainedError';
+  createTRPCDeclaredError,
+  isTRPCDeclaredError,
+} from './TRPCDeclaredError';
+import { TRPCError } from './TRPCError';
 
-describe(createTRPCFineGrainedError, () => {
-  test('creates distinct fine-grained error classes', () => {
-    const MyError = createTRPCFineGrainedError('NOT_FOUND').create();
-    const OtherError = createTRPCFineGrainedError('NOT_FOUND').create();
+describe(createTRPCDeclaredError, () => {
+  test('creates distinct declared error classes', () => {
+    const MyError = createTRPCDeclaredError('NOT_FOUND').create();
+    const OtherError = createTRPCDeclaredError('NOT_FOUND').create();
     const err = new MyError();
     const otherErr = new OtherError();
 
@@ -16,12 +16,12 @@ describe(createTRPCFineGrainedError, () => {
     expect(otherErr).toBeInstanceOf(TRPCError);
     expect(err).toBeInstanceOf(MyError);
     expect(err).not.toBeInstanceOf(OtherError);
-    expect(isTRPCFineGrainedError(err)).toBe(true);
-    expect(isTRPCFineGrainedError(otherErr)).toBe(true);
+    expect(isTRPCDeclaredError(err)).toBe(true);
+    expect(isTRPCDeclaredError(otherErr)).toBe(true);
   });
 
   test('uses the code as the literal message', () => {
-    const MyError = createTRPCFineGrainedError('BAD_REQUEST').create();
+    const MyError = createTRPCDeclaredError('BAD_REQUEST').create();
 
     const err = new MyError();
     expect(err.message).toBe('BAD_REQUEST');
@@ -29,7 +29,7 @@ describe(createTRPCFineGrainedError, () => {
   });
 
   test('toShape returns correct shape with defaulted data', () => {
-    const MyError = createTRPCFineGrainedError('NOT_FOUND')
+    const MyError = createTRPCDeclaredError('NOT_FOUND')
       .data<{
         resourceType: 'user';
       }>()
@@ -48,7 +48,7 @@ describe(createTRPCFineGrainedError, () => {
   });
 
   test('constructor input requires only missing required extra fields', () => {
-    const NeedsFoo = createTRPCFineGrainedError('BAD_REQUEST')
+    const NeedsFoo = createTRPCDeclaredError('BAD_REQUEST')
       .data<{
         foo: string;
         bar?: number;
@@ -74,7 +74,7 @@ describe(createTRPCFineGrainedError, () => {
   });
 
   test('constructor input makes defaulted extra fields optional', () => {
-    const needsFooBuilder = createTRPCFineGrainedError('BAD_REQUEST').data<{
+    const needsFooBuilder = createTRPCDeclaredError('BAD_REQUEST').data<{
       foo: string;
       bar: number;
     }>();
@@ -106,7 +106,7 @@ describe(createTRPCFineGrainedError, () => {
   });
 
   test('constants are removed from constructor input', () => {
-    const needsFooBuilder = createTRPCFineGrainedError('BAD_REQUEST').data<{
+    const needsFooBuilder = createTRPCDeclaredError('BAD_REQUEST').data<{
       foo: string;
       bar: number;
     }>();
@@ -146,7 +146,7 @@ describe(createTRPCFineGrainedError, () => {
   });
 
   test('defaults and constants compose correctly', () => {
-    const needsFooBuilder = createTRPCFineGrainedError('BAD_REQUEST').data<{
+    const needsFooBuilder = createTRPCDeclaredError('BAD_REQUEST').data<{
       foo: string;
       bar: number;
       baz: 'CONST';
@@ -207,9 +207,7 @@ describe(createTRPCFineGrainedError, () => {
   });
 
   test('constructor becomes optional when all required data is defaulted', () => {
-    const badPhoneErrorBuilder = createTRPCFineGrainedError(
-      'UNAUTHORIZED',
-    ).data<{
+    const badPhoneErrorBuilder = createTRPCDeclaredError('UNAUTHORIZED').data<{
       reason: 'BAD_PHONE';
     }>();
     const BadPhoneError = badPhoneErrorBuilder.create({
@@ -241,9 +239,7 @@ describe(createTRPCFineGrainedError, () => {
   });
 
   test('constructor becomes optional when all required data is constant', () => {
-    const badPhoneErrorBuilder = createTRPCFineGrainedError(
-      'UNAUTHORIZED',
-    ).data<{
+    const badPhoneErrorBuilder = createTRPCDeclaredError('UNAUTHORIZED').data<{
       reason: 'BAD_PHONE';
     }>();
     const BadPhoneError = badPhoneErrorBuilder.create({
@@ -268,7 +264,7 @@ describe(createTRPCFineGrainedError, () => {
   });
 
   test('message can be used as data without colliding', () => {
-    const MyError = createTRPCFineGrainedError('BAD_REQUEST')
+    const MyError = createTRPCDeclaredError('BAD_REQUEST')
       .data<{
         message: 'DETAIL';
       }>()
@@ -287,8 +283,8 @@ describe(createTRPCFineGrainedError, () => {
     });
   });
 
-  test('constant message data does not collide with the error message', () => {
-    const MyError = createTRPCFineGrainedError('BAD_REQUEST')
+  test('constant message data does not collide with the declared error message', () => {
+    const MyError = createTRPCDeclaredError('BAD_REQUEST')
       .data<{
         message: 'DETAIL';
       }>()
