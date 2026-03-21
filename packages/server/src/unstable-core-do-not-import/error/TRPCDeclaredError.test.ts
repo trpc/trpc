@@ -1,7 +1,8 @@
-import { describe, expectTypeOf, test } from 'vitest';
+import { describe, expectTypeOf, test, vi } from 'vitest';
 import {
   createTRPCDeclaredError,
   isTRPCDeclaredError,
+  resolveRegisteredDeclaredErrorOrDowngrade,
 } from './TRPCDeclaredError';
 import { TRPCError } from './TRPCError';
 
@@ -26,6 +27,65 @@ describe(createTRPCDeclaredError, () => {
     const err = new MyError();
     expect(err.message).toBe('BAD_REQUEST');
     expectTypeOf(err.message).toEqualTypeOf<'BAD_REQUEST'>();
+  });
+
+  test('resolveRegisteredDeclaredErrorOrDowngrade preserves registered declared errors', () => {
+    const BadPhoneError = createTRPCDeclaredError('UNAUTHORIZED')
+      .data<{
+        reason: 'BAD_PHONE';
+      }>()
+      .create({
+        constants: {
+          reason: 'BAD_PHONE' as const,
+        },
+      });
+
+    const error = new BadPhoneError();
+
+    expect(
+      resolveRegisteredDeclaredErrorOrDowngrade(error, {
+        declaredErrors: [BadPhoneError],
+        path: 'registeredBadPhone',
+      }),
+    ).toBe(error);
+  });
+
+  test('resolveRegisteredDeclaredErrorOrDowngrade downgrades unregistered declared errors and warns', () => {
+    const BadPhoneError = createTRPCDeclaredError('UNAUTHORIZED')
+      .data<{
+        reason: 'BAD_PHONE';
+      }>()
+      .create({
+        constants: {
+          reason: 'BAD_PHONE' as const,
+        },
+      });
+
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {
+      //
+    });
+
+    try {
+      const downgraded = resolveRegisteredDeclaredErrorOrDowngrade(
+        new BadPhoneError(),
+        {
+          declaredErrors: [],
+          path: 'unregisteredBadPhone',
+        },
+      );
+
+      expect(downgraded).toBeInstanceOf(TRPCError);
+      expect(downgraded).not.toBeInstanceOf(BadPhoneError);
+      expect(downgraded.code).toBe('INTERNAL_SERVER_ERROR');
+      expect(downgraded.message).toBe('An unrecognized error occured');
+      expect(downgraded.cause).toBeInstanceOf(BadPhoneError);
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0]?.[0]).toContain(
+        'Unregistered declared error',
+      );
+    } finally {
+      warnSpy.mockRestore();
+    }
   });
 
   test('toShape returns correct shape with defaulted data', () => {

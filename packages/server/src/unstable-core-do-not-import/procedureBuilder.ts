@@ -1,4 +1,8 @@
 import type { inferObservableValue, Observable } from '../observable';
+import {
+  isTRPCDeclaredError,
+  resolveRegisteredDeclaredErrorOrDowngrade,
+} from './error/TRPCDeclaredError';
 import type {
   AnyTRPCDeclaredErrorClass,
   InferTRPCDeclaredErrorShape,
@@ -712,9 +716,16 @@ async function callRecursive(
 
     return result;
   } catch (cause) {
+    const error = getTRPCErrorFromUnknown(cause);
+
     return {
       ok: false,
-      error: getTRPCErrorFromUnknown(cause),
+      error: isTRPCDeclaredError(error)
+        ? resolveRegisteredDeclaredErrorOrDowngrade(error, {
+            declaredErrors: _def.declaredErrors,
+            path: opts.path,
+          })
+        : error,
       marker: middlewareMarker,
     };
   }
