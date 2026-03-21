@@ -3,6 +3,7 @@ import type { ProcedureType } from '../procedure';
 import type { AnyRootTypes, RootConfig } from '../rootConfig';
 import { TRPC_ERROR_CODES_BY_KEY } from '../rpc';
 import type { DefaultErrorShape } from './formatter';
+import { isTRPCDeclaredError } from './TRPCDeclaredError';
 import type { TRPCError } from './TRPCError';
 import {
   procedureErrorKeySymbol,
@@ -20,6 +21,10 @@ export function getErrorShape<TRoot extends AnyRootTypes>(opts: {
   input: unknown;
   ctx: TRoot['ctx'] | undefined;
 }): TRoot['errorShape'] {
+  if (isTRPCDeclaredError(opts.error)) {
+    return opts.error.toShape() as TRoot['errorShape'];
+  }
+
   const cause = opts.error.cause;
   if (
     cause instanceof TRPCProcedureError &&
