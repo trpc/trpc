@@ -14,6 +14,7 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
 import * as v from 'valibot';
+import { vi } from 'vitest';
 import { z, ZodError } from 'zod';
 
 describe('no custom error formatter', () => {
@@ -141,25 +142,35 @@ describe('with per-procedure declared errors', () => {
     },
   });
 
+  const chainedErrorsProcedure = t.procedure
+    .errors([BadPhoneError])
+    .input(
+      z.object({
+        source: z.enum(['middleware', 'resolver']),
+      }),
+    )
+    .use((opts) => {
+      if (opts.input.source === 'middleware') {
+        throw new BadPhoneError();
+      }
+      return opts.next();
+    })
+    .errors([ValidationError])
+    .query(({ input }) => {
+      throw new ValidationError({ field: input.source });
+    });
+
   const appRouter = t.router({
-    typedError: t.procedure.errors([BadPhoneError]).query(() => {
+    registeredBadPhone: t.procedure.errors([BadPhoneError]).query(() => {
       throw new BadPhoneError();
     }),
-    chainedErrors: t.procedure
-      .errors([BadPhoneError])
-      .use((opts) => {
-        if (opts.batchIndex === -1) {
-          throw new BadPhoneError();
-        }
-        return opts.next();
-      })
-      .errors([ValidationError])
-      .query(() => {
-        // Both error types available after chaining
-        throw new BadPhoneError();
-
-        throw new ValidationError({ field: 'email' });
-      }),
+    unregisteredBadPhone: t.procedure.query(() => {
+      throw new BadPhoneError();
+    }),
+    validationOnlyBadPhone: t.procedure.errors([ValidationError]).query(() => {
+      throw new BadPhoneError();
+    }),
+    chainedErrors: chainedErrorsProcedure,
     regularError: t.procedure.query(() => {
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
@@ -172,11 +183,12 @@ describe('with per-procedure declared errors', () => {
     expectTypeOf<inferRouterError<typeof appRouter>>().not.toBeAny();
 
     await using ctx = testServerAndClientResource(appRouter);
-    const typedErr = await waitError(ctx.client.typedError.query());
-    assert(isTRPCClientError<typeof appRouter>(typedErr));
-    expectTypeOf(typedErr.shape).not.toBeAny();
-    expectTypeOf(typedErr.data).not.toBeAny();
-    expect(typedErr.shape).toMatchInlineSnapshot(`
+    const error = await waitError(ctx.client.registeredBadPhone.query());
+    assert(isTRPCClientError<typeof appRouter>(error));
+
+    expectTypeOf(error.shape).not.toBeAny();
+    expectTypeOf(error.data).not.toBeAny();
+    expect(error.shape).toMatchInlineSnapshot(`
       Object {
         "code": -32001,
         "data": Object {
@@ -185,6 +197,51 @@ describe('with per-procedure declared errors', () => {
         "message": "UNAUTHORIZED",
       }
     `);
+  });
+
+  test('unregistered declared errors become internal server errors, use the formatter, and warn', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {
+      //
+    });
+    try {
+      await using ctx = testServerAndClientResource(appRouter);
+
+      const unregisteredErr = await waitError(
+        ctx.client.unregisteredBadPhone.query(),
+      );
+      const wrongChainErr = await waitError(
+        ctx.client.validationOnlyBadPhone.query(),
+      );
+
+      assert(isTRPCClientError<typeof appRouter>(unregisteredErr));
+      assert(isTRPCClientError<typeof appRouter>(wrongChainErr));
+
+      expect(unregisteredErr.shape?.code).toBe(-32603);
+      expect(unregisteredErr.data).toMatchObject({
+        code: 'INTERNAL_SERVER_ERROR',
+        foo: 'bar',
+        httpStatus: 500,
+        path: 'unregisteredBadPhone',
+      });
+
+      expect(wrongChainErr.shape?.code).toBe(-32603);
+      expect(wrongChainErr.data).toMatchObject({
+        code: 'INTERNAL_SERVER_ERROR',
+        foo: 'bar',
+        httpStatus: 500,
+        path: 'validationOnlyBadPhone',
+      });
+
+      expect(warnSpy).toHaveBeenCalledTimes(2);
+      expect(warnSpy.mock.calls[0]?.[0]).toContain(
+        'Unregistered declared error',
+      );
+      expect(warnSpy.mock.calls[1]?.[0]).toContain(
+        'Unregistered declared error',
+      );
+    } finally {
+      warnSpy.mockRestore();
+    }
   });
 
   test('regular errors still go through formatter', async () => {
@@ -198,18 +255,49 @@ describe('with per-procedure declared errors', () => {
     expect(data?.path).toBe('regularError');
   });
 
-  test('chained .errors() merges types', async () => {
+  test('procedureBuilder stores registrations per procedure', () => {
+    expect(
+      appRouter._def.procedures.registeredBadPhone._def.declaredErrors,
+    ).toEqual([BadPhoneError]);
+    expect(
+      appRouter._def.procedures.validationOnlyBadPhone._def.declaredErrors,
+    ).toEqual([ValidationError]);
+    expect(
+      appRouter._def.procedures.unregisteredBadPhone._def.declaredErrors,
+    ).toEqual([]);
+  });
+
+  test('chained .errors() accrues registrations instead of squashing', async () => {
+    expect(appRouter._def.procedures.chainedErrors._def.declaredErrors).toEqual(
+      [BadPhoneError, ValidationError],
+    );
+
     await using ctx = testServerAndClientResource(appRouter);
 
-    // Throw BadPhoneError from middleware
-    // (batchIndex is not -1 in this test so it won't throw, but types are tested above)
+    const middlewareErr = await waitError(
+      ctx.client.chainedErrors.query({ source: 'middleware' }),
+    );
+    const resolverErr = await waitError(
+      ctx.client.chainedErrors.query({ source: 'resolver' }),
+    );
 
-    // Throw ValidationError from resolver
-    // We can't easily trigger the middleware path, so test the resolver path
-    const err = await waitError(ctx.client.chainedErrors.query());
-    assert(isTRPCClientError<typeof appRouter>(err));
-    // The error should be a declared error (BadPhoneError from resolver)
-    expect(err.shape?.code).toBe(-32001);
+    assert(isTRPCClientError<typeof appRouter>(middlewareErr));
+    assert(isTRPCClientError<typeof appRouter>(resolverErr));
+
+    expect(middlewareErr.shape).toEqual({
+      code: -32001,
+      message: 'UNAUTHORIZED',
+      data: {
+        reason: 'BAD_PHONE',
+      },
+    });
+    expect(resolverErr.shape).toEqual({
+      code: -32600,
+      message: 'BAD_REQUEST',
+      data: {
+        field: 'resolver',
+      },
+    });
   });
 
   test('declared errors work with instanceof', () => {

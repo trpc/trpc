@@ -1,9 +1,19 @@
 import type { TRPCErrorShape } from '../rpc';
 import type { TRPCError } from './TRPCError';
 
+/**
+ * @deprecated prefer TRPCDeclaredError for fully typesafe error handling
+ */
 export const procedureErrorKeySymbol = Symbol('trpc.procedureErrorKey');
+
+/**
+ * @deprecated prefer TRPCDeclaredError for fully typesafe error handling
+ */
 export const procedureErrorShapeSymbol = Symbol('trpc.procedureErrorShape');
 
+/**
+ * @deprecated prefer TRPCDeclaredError for fully typesafe error handling
+ */
 export class TRPCProcedureError<
   TShape extends TRPCErrorShape = TRPCErrorShape,
 > extends Error {
@@ -23,6 +33,9 @@ type TRPCErrorWithProcedureShape = TRPCError & {
   [procedureErrorShapeSymbol]?: TRPCErrorShape;
 };
 
+/**
+ * @deprecated prefer TRPCDeclaredError for fully typesafe error handling
+ */
 export function setProcedureErrorShape(
   error: TRPCError,
   shape: TRPCErrorShape,
@@ -30,6 +43,9 @@ export function setProcedureErrorShape(
   (error as TRPCErrorWithProcedureShape)[procedureErrorShapeSymbol] = shape;
 }
 
+/**
+ * @deprecated prefer TRPCDeclaredError for fully typesafe error handling
+ */
 export function getProcedureErrorShape(
   error: TRPCError,
 ): TRPCErrorShape | undefined {

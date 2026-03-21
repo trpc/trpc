@@ -22,7 +22,7 @@ export function getErrorShape<TRoot extends AnyRootTypes>(opts: {
   ctx: TRoot['ctx'] | undefined;
 }): TRoot['errorShape'] {
   if (isTRPCDeclaredError(opts.error)) {
-    return opts.error.toShape() as TRoot['errorShape'];
+    return opts.error.toShape();
   }
 
   const cause = opts.error.cause;
@@ -30,11 +30,24 @@ export function getErrorShape<TRoot extends AnyRootTypes>(opts: {
     cause instanceof TRPCProcedureError &&
     typeof cause[procedureErrorKeySymbol] === 'string'
   ) {
-    return cause.shape as TRoot['errorShape'];
+    return cause.shape;
   }
 
-  const { path, error, config } = opts;
-  const { code } = opts.error;
+  return getFormattedErrorShape(opts, opts.error);
+}
+
+function getFormattedErrorShape<TRoot extends AnyRootTypes>(
+  opts: {
+    config: RootConfig<TRoot>;
+    type: ProcedureType | 'unknown';
+    path: string | undefined;
+    input: unknown;
+    ctx: TRoot['ctx'] | undefined;
+  },
+  error: TRPCError,
+): TRoot['errorShape'] {
+  const { config, path } = opts;
+  const { code } = error;
   const shape: DefaultErrorShape = {
     message: error.message,
     code: TRPC_ERROR_CODES_BY_KEY[code],
@@ -43,11 +56,18 @@ export function getErrorShape<TRoot extends AnyRootTypes>(opts: {
       httpStatus: getHTTPStatusCodeFromError(error),
     },
   };
-  if (config.isDev && typeof opts.error.stack === 'string') {
-    shape.data.stack = opts.error.stack;
+  if (config.isDev && typeof error.stack === 'string') {
+    shape.data.stack = error.stack;
   }
   if (typeof path === 'string') {
     shape.data.path = path;
   }
-  return config.errorFormatter({ ...opts, shape });
+  return config.errorFormatter({
+    ctx: opts.ctx,
+    error,
+    input: opts.input,
+    path,
+    shape,
+    type: opts.type,
+  });
 }
