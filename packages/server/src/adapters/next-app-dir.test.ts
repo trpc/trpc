@@ -1,4 +1,9 @@
-import { experimental_trpcMiddleware, initTRPC } from '../@trpc/server';
+import {
+  createTRPCDeclaredError,
+  experimental_trpcMiddleware,
+  initTRPC,
+  TRPCError,
+} from '../@trpc/server';
 import { nextAppDirCaller } from './next-app-dir/nextAppDirCaller';
 
 test('experimental caller', async () => {
@@ -90,4 +95,69 @@ test('with path extractor', async () => {
       expect.stringContaining('hello took'),
     );
   }
+});
+
+describe('declared errors with nextAppDirCaller', () => {
+  const BadPhoneError = createTRPCDeclaredError('UNAUTHORIZED')
+    .data<{
+      reason: 'BAD_PHONE';
+    }>()
+    .create({
+      constants: {
+        reason: 'BAD_PHONE' as const,
+      },
+    });
+
+  test('registered declared errors are preserved', async () => {
+    const onError = vi.fn();
+    const t = initTRPC.create();
+    const base = t.procedure.experimental_caller(
+      nextAppDirCaller({
+        onError,
+      }),
+    );
+
+    const proc = base.errors([BadPhoneError]).query(() => {
+      throw new BadPhoneError();
+    });
+
+    const error = await proc().catch((cause) => cause as unknown);
+
+    expect(error).toBeInstanceOf(BadPhoneError);
+    expect(onError).toHaveBeenCalledOnce();
+    expect(onError.mock.calls[0]?.[0]?.error).toBe(error);
+  });
+
+  test('unregistered declared errors are downgraded', async () => {
+    const onError = vi.fn();
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {
+      // no-op
+    });
+    const t = initTRPC.create();
+    const base = t.procedure.experimental_caller(
+      nextAppDirCaller({
+        onError,
+      }),
+    );
+
+    const proc = base.query(() => {
+      throw new BadPhoneError();
+    });
+
+    try {
+      const error = await proc().catch((cause) => cause as TRPCError);
+
+      expect(error).toBeInstanceOf(TRPCError);
+      expect(error).not.toBeInstanceOf(BadPhoneError);
+      expect(error.code).toBe('INTERNAL_SERVER_ERROR');
+      expect(error.message).toBe('An unrecognized error occured');
+      expect(error.cause).toBeInstanceOf(BadPhoneError);
+
+      expect(onError).toHaveBeenCalledOnce();
+      expect(onError.mock.calls[0]?.[0]?.error).toBe(error);
+      expect(warnSpy).toHaveBeenCalledOnce();
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
 });

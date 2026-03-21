@@ -4,6 +4,9 @@ import type { TRPCErrorShape } from '../rpc/envelopes';
 import { TRPCError } from './TRPCError';
 
 export const trpcDeclaredErrorSymbol = Symbol('trpc.declaredError');
+const trpcDowngradedDeclaredErrorSymbol = Symbol(
+  'trpc.downgradedDeclaredError',
+);
 
 export type InferTRPCDeclaredErrorShape<TClass> = TClass extends {
   readonly __trpcDeclaredErrorShape: infer TShape extends TRPCErrorShape;
@@ -32,6 +35,7 @@ interface TRPCDeclaredErrorInstance<
   TMessage extends string = string,
 > extends TRPCError {
   readonly [trpcDeclaredErrorSymbol]: true;
+  [trpcDowngradedDeclaredErrorSymbol]?: TRPCError;
   message: TMessage;
   toShape(): {
     code: TRPCErrorShape<TData>['code'];
@@ -70,6 +74,11 @@ export function resolveRegisteredDeclaredErrorOrDowngrade(
     return error;
   }
 
+  const cachedDowngradedError = error[trpcDowngradedDeclaredErrorSymbol];
+  if (cachedDowngradedError) {
+    return cachedDowngradedError;
+  }
+
   const pathSuffix = opts?.path ? ` in procedure "${opts.path}"` : '';
 
   // eslint-disable-next-line no-console
@@ -78,11 +87,14 @@ export function resolveRegisteredDeclaredErrorOrDowngrade(
     error,
   );
 
-  return new TRPCError({
+  const downgradedError = new TRPCError({
     code: 'INTERNAL_SERVER_ERROR',
     message: 'An unrecognized error occured',
     cause: error,
   });
+  error[trpcDowngradedDeclaredErrorSymbol] = downgradedError;
+
+  return downgradedError;
 }
 
 /**
