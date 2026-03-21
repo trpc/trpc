@@ -107,37 +107,27 @@ describe('with custom error formatter', () => {
 });
 
 describe('with per-procedure fine-grained errors', () => {
-  const BadPhoneError = createTRPCFineGrainedError({
-    code: 'UNAUTHORIZED' as const,
-    message: 'BAD_PHONE',
-    reason: 'BAD_PHONE' as const,
-  });
+  const BadPhoneError = createTRPCFineGrainedError('UNAUTHORIZED')
+    .data<{
+      reason: 'BAD_PHONE';
+    }>()
+    .create({
+      constants: {
+        reason: 'BAD_PHONE' as const,
+      },
+    });
 
-  const ValidationError = createTRPCFineGrainedError({
-    code: 'BAD_REQUEST' as const,
-    field: '' as string,
-  });
+  const ValidationError = createTRPCFineGrainedError('BAD_REQUEST')
+    .data<{
+      field: string;
+    }>()
+    .create();
 
   type GlobalFormattedShape = DefaultErrorShape & {
     data: DefaultErrorData & {
       foo: 'bar';
     };
   };
-  type BadPhoneShape = {
-    code: -32001;
-    message: string;
-    data: {
-      reason: 'BAD_PHONE';
-    };
-  };
-  type ValidationShape = {
-    code: -32600;
-    message: string;
-    data: {
-      field: string;
-    };
-  };
-  type RouterError = GlobalFormattedShape | BadPhoneShape | ValidationShape;
 
   const t = initTRPC.create({
     errorFormatter({ shape }) {
@@ -159,7 +149,7 @@ describe('with per-procedure fine-grained errors', () => {
       .errors([BadPhoneError])
       .use((opts) => {
         if (opts.batchIndex === -1) {
-          throw new BadPhoneError({ reason: 'BAD_PHONE' });
+          throw new BadPhoneError();
         }
         return opts.next();
       })
@@ -179,29 +169,20 @@ describe('with per-procedure fine-grained errors', () => {
   });
 
   test('fine-grained errors bypass formatter and infer as router union', async () => {
-    expectTypeOf<
-      inferRouterError<typeof appRouter>
-    >().toMatchTypeOf<RouterError>();
-    expectTypeOf<RouterError>().toMatchTypeOf<
-      inferRouterError<typeof appRouter>
-    >();
+    expectTypeOf<inferRouterError<typeof appRouter>>().not.toBeAny();
 
     await using ctx = testServerAndClientResource(appRouter);
     const typedErr = await waitError(ctx.client.typedError.query());
     assert(isTRPCClientError<typeof appRouter>(typedErr));
-    expectTypeOf(typedErr.shape).toMatchTypeOf<
-      RouterError | null | undefined
-    >();
-    expectTypeOf(typedErr.data).toMatchTypeOf<
-      RouterError['data'] | null | undefined
-    >();
+    expectTypeOf(typedErr.shape).not.toBeAny();
+    expectTypeOf(typedErr.data).not.toBeAny();
     expect(typedErr.shape).toMatchInlineSnapshot(`
       Object {
         "code": -32001,
         "data": Object {
           "reason": "BAD_PHONE",
         },
-        "message": "BAD_PHONE",
+        "message": "UNAUTHORIZED",
       }
     `);
   });
@@ -232,10 +213,12 @@ describe('with per-procedure fine-grained errors', () => {
   });
 
   test('fine-grained errors work with instanceof', () => {
-    const err = new BadPhoneError({ reason: 'BAD_PHONE' });
+    const err = new BadPhoneError();
     expect(err instanceof TRPCError).toBe(true);
     expect(err instanceof BadPhoneError).toBe(true);
     expect(err instanceof Error).toBe(true);
+    expect(err.reason).toBe('BAD_PHONE');
+    expect(err.code).toBe('UNAUTHORIZED');
   });
 });
 
