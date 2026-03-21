@@ -1,7 +1,11 @@
-import { vi } from 'vitest';
 import { initTRPC } from '../initTRPC';
 import { getErrorShape } from './getErrorShape';
 import { createTRPCDeclaredError } from './TRPCDeclaredError';
+import { TRPCError } from './TRPCError';
+import {
+  procedureErrorKeySymbol,
+  TRPCProcedureError,
+} from './TRPCProcedureError';
 
 describe(getErrorShape, () => {
   const BadPhoneError = createTRPCDeclaredError('UNAUTHORIZED')
@@ -13,12 +17,6 @@ describe(getErrorShape, () => {
         reason: 'BAD_PHONE' as const,
       },
     });
-
-  const ValidationError = createTRPCDeclaredError('BAD_REQUEST')
-    .data<{
-      field: string;
-    }>()
-    .create();
 
   const t = initTRPC.create({
     errorFormatter({ shape }) {
@@ -32,7 +30,7 @@ describe(getErrorShape, () => {
     },
   });
 
-  test('registered declared errors bypass the formatter', () => {
+  test('declared errors bypass the formatter', () => {
     const shape = getErrorShape({
       config: t._config,
       error: new BadPhoneError(),
@@ -40,7 +38,6 @@ describe(getErrorShape, () => {
       path: 'registeredBadPhone',
       input: undefined,
       ctx: undefined,
-      declaredErrors: [BadPhoneError],
     });
 
     expect(shape).toEqual({
@@ -52,70 +49,56 @@ describe(getErrorShape, () => {
     });
   });
 
-  test('unregistered declared errors become internal server errors, go through the formatter, and warn', () => {
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {
-      //
+  test('procedure errors use their stored shape', () => {
+    const procedureError = new TRPCProcedureError({
+      code: -32600,
+      message: 'BAD_REQUEST',
+      data: {
+        field: 'email',
+      },
+    });
+    procedureError[procedureErrorKeySymbol] = 'validation_error';
+
+    const shape = getErrorShape({
+      config: t._config,
+      error: new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        cause: procedureError,
+      }),
+      type: 'query',
+      path: 'validationOnlyBadPhone',
+      input: undefined,
+      ctx: undefined,
     });
 
-    try {
-      const shape = getErrorShape({
-        config: t._config,
-        error: new BadPhoneError(),
-        type: 'query',
-        path: 'unregisteredBadPhone',
-        input: undefined,
-        ctx: undefined,
-        declaredErrors: [],
-      });
-
-      expect(shape).toMatchObject({
-        code: -32603,
-        message: 'An unrecognized error occured',
-        data: {
-          code: 'INTERNAL_SERVER_ERROR',
-          foo: 'bar',
-          httpStatus: 500,
-          path: 'unregisteredBadPhone',
-        },
-      });
-      expect(shape.data).not.toHaveProperty('reason');
-      expect(warnSpy).toHaveBeenCalledTimes(1);
-      expect(warnSpy.mock.calls[0]?.[0]).toContain(
-        'Unregistered declared error',
-      );
-    } finally {
-      warnSpy.mockRestore();
-    }
+    expect(shape).toEqual({
+      code: -32600,
+      message: 'BAD_REQUEST',
+      data: {
+        field: 'email',
+      },
+    });
   });
 
-  test('registration is checked against the current procedure chain', () => {
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {
-      //
+  test('non-declared errors go through the formatter', () => {
+    const shape = getErrorShape({
+      config: t._config,
+      error: new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'regular error',
+      }),
+      type: 'query',
+      path: 'regularError',
+      input: undefined,
+      ctx: undefined,
     });
 
-    try {
-      const shape = getErrorShape({
-        config: t._config,
-        error: new BadPhoneError(),
-        type: 'query',
-        path: 'validationOnlyBadPhone',
-        input: undefined,
-        ctx: undefined,
-        declaredErrors: [ValidationError],
-      });
-
-      expect(shape).toMatchObject({
-        code: -32603,
-        data: {
-          code: 'INTERNAL_SERVER_ERROR',
-          foo: 'bar',
-          httpStatus: 500,
-          path: 'validationOnlyBadPhone',
-        },
-      });
-      expect(warnSpy).toHaveBeenCalledTimes(1);
-    } finally {
-      warnSpy.mockRestore();
-    }
+    expect(shape).toMatchObject({
+      message: 'regular error',
+      data: {
+        foo: 'bar',
+        path: 'regularError',
+      },
+    });
   });
 });

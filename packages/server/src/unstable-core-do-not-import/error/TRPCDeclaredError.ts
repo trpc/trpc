@@ -46,7 +46,7 @@ export function isTRPCDeclaredError(
   return trpcDeclaredErrorSymbol in error;
 }
 
-export function isRegisteredTRPCDeclaredError(
+function isRegistered(
   error: TRPCError & TRPCDeclaredErrorInstance,
   declaredErrors: readonly AnyTRPCDeclaredErrorClass[] | undefined,
 ) {
@@ -57,6 +57,32 @@ export function isRegisteredTRPCDeclaredError(
   return declaredErrors.some(
     (RegisteredDeclaredError) => error instanceof RegisteredDeclaredError,
   );
+}
+
+export function resolveRegisteredDeclaredErrorOrDowngrade(
+  error: TRPCError & TRPCDeclaredErrorInstance,
+  opts?: {
+    declaredErrors?: readonly AnyTRPCDeclaredErrorClass[];
+    path?: string;
+  },
+): TRPCError {
+  if (isRegistered(error, opts?.declaredErrors)) {
+    return error;
+  }
+
+  const pathSuffix = opts?.path ? ` in procedure "${opts.path}"` : '';
+
+  // eslint-disable-next-line no-console
+  console.warn(
+    `Unregistered declared error was thrown${pathSuffix}. Treating it as INTERNAL_SERVER_ERROR and passing it through the error formatter.`,
+    error,
+  );
+
+  return new TRPCError({
+    code: 'INTERNAL_SERVER_ERROR',
+    message: 'An unrecognized error occured',
+    cause: error,
+  });
 }
 
 /**

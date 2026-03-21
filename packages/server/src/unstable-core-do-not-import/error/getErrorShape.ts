@@ -3,12 +3,8 @@ import type { ProcedureType } from '../procedure';
 import type { AnyRootTypes, RootConfig } from '../rootConfig';
 import { TRPC_ERROR_CODES_BY_KEY } from '../rpc';
 import type { DefaultErrorShape } from './formatter';
-import type { AnyTRPCDeclaredErrorClass } from './TRPCDeclaredError';
-import {
-  isRegisteredTRPCDeclaredError,
-  isTRPCDeclaredError,
-} from './TRPCDeclaredError';
-import { TRPCError } from './TRPCError';
+import { isTRPCDeclaredError } from './TRPCDeclaredError';
+import type { TRPCError } from './TRPCError';
 import {
   procedureErrorKeySymbol,
   TRPCProcedureError,
@@ -24,30 +20,9 @@ export function getErrorShape<TRoot extends AnyRootTypes>(opts: {
   path: string | undefined;
   input: unknown;
   ctx: TRoot['ctx'] | undefined;
-  declaredErrors?: readonly AnyTRPCDeclaredErrorClass[];
 }): TRoot['errorShape'] {
   if (isTRPCDeclaredError(opts.error)) {
-    if (isRegisteredTRPCDeclaredError(opts.error, opts.declaredErrors)) {
-      // Registered declared errors will bypass the formatter because they have their own shape already
-      return opts.error.toShape();
-    }
-
-    const pathSuffix = opts?.path ? ` in procedure "${opts.path}"` : '';
-
-    // eslint-disable-next-line no-console
-    console.warn(
-      `Unregistered declared error was thrown${pathSuffix}. Treating it as INTERNAL_SERVER_ERROR and passing it through the error formatter.`,
-      opts.error,
-    );
-
-    return getFormattedErrorShape(
-      opts,
-      new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'An unrecognized error occured',
-        cause: opts.error,
-      }),
-    );
+    return opts.error.toShape();
   }
 
   const cause = opts.error.cause;
@@ -55,7 +30,7 @@ export function getErrorShape<TRoot extends AnyRootTypes>(opts: {
     cause instanceof TRPCProcedureError &&
     typeof cause[procedureErrorKeySymbol] === 'string'
   ) {
-    return cause.shape as TRoot['errorShape'];
+    return cause.shape;
   }
 
   return getFormattedErrorShape(opts, opts.error);

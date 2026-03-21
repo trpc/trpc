@@ -4,6 +4,11 @@ import {
   observableToAsyncIterable,
 } from '../../observable/observable';
 import { getErrorShape } from '../error/getErrorShape';
+import {
+  isTRPCDeclaredError,
+  resolveRegisteredDeclaredErrorOrDowngrade,
+  type AnyTRPCDeclaredErrorClass,
+} from '../error/TRPCDeclaredError';
 import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
 import type { ProcedureType } from '../procedure';
 import {
@@ -76,6 +81,20 @@ interface ResolveHTTPRequestOptions<TRouter extends AnyRouter>
    * If the request had an issue before reaching the handler
    */
   error: TRPCError | null;
+}
+
+function resolveProcedureError(
+  error: TRPCError,
+  opts?: {
+    declaredErrors?: readonly AnyTRPCDeclaredErrorClass[];
+    path?: string;
+  },
+): TRPCError {
+  if (isTRPCDeclaredError(error)) {
+    return resolveRegisteredDeclaredErrorOrDowngrade(error, opts);
+  }
+
+  return error;
 }
 
 function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
@@ -163,7 +182,10 @@ function unhandledErrorToData<TRouter extends AnyRouter>(
   },
 ) {
   const { router, req, onError } = errorOpts.opts;
-  const error = getTRPCErrorFromUnknown(cause);
+  const error = resolveProcedureError(getTRPCErrorFromUnknown(cause), {
+    declaredErrors: [],
+    path: errorOpts.path,
+  });
   onError?.({
     error,
     path: errorOpts.path,
@@ -180,7 +202,6 @@ function unhandledErrorToData<TRouter extends AnyRouter>(
       path: errorOpts.path,
       input: errorOpts.input,
       ctx: errorOpts.ctx,
-      declaredErrors: [],
     }),
   };
   const transformedJSON = transformTRPCResponse(
@@ -391,7 +412,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           },
         ];
       } catch (cause) {
-        const error = getTRPCErrorFromUnknown(cause);
+        const error = resolveProcedureError(getTRPCErrorFromUnknown(cause), {
+          declaredErrors: proc?._def.declaredErrors,
+          path: call.path,
+        });
         const input = call.result();
 
         opts.onError?.({
@@ -435,7 +459,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                   input: call!.result(),
                   path: call!.path,
                   type: info.type,
-                  declaredErrors: call!.procedure?._def.declaredErrors,
                 }),
               }
             : { result: { data: result.data } };
@@ -493,10 +516,16 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             data: iterable,
             serialize: (v) => config.transformer.output.serialize(v),
             formatError(errorOpts) {
-              const error = getTRPCErrorFromUnknown(errorOpts.error);
               const input = call?.result();
               const path = call?.path;
               const type = call?.procedure?._def.type ?? 'unknown';
+              const error = resolveProcedureError(
+                getTRPCErrorFromUnknown(errorOpts.error),
+                {
+                  declaredErrors: call?.procedure?._def.declaredErrors,
+                  path,
+                },
+              );
 
               opts.onError?.({
                 error,
@@ -514,7 +543,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                 input,
                 path,
                 type,
-                declaredErrors: call?.procedure?._def.declaredErrors,
               });
 
               return shape;
@@ -614,7 +642,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                 input: call!.result(),
                 path: call!.path,
                 type: call!.procedure?._def.type ?? 'unknown',
-                declaredErrors: call!.procedure?._def.declaredErrors,
               }),
             };
           }
@@ -646,11 +673,16 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
         formatError(errorOpts) {
           const call = info?.calls[errorOpts.path[0] as any];
-
-          const error = getTRPCErrorFromUnknown(errorOpts.error);
           const input = call?.result();
           const path = call?.path;
           const type = call?.procedure?._def.type ?? 'unknown';
+          const error = resolveProcedureError(
+            getTRPCErrorFromUnknown(errorOpts.error),
+            {
+              declaredErrors: call?.procedure?._def.declaredErrors,
+              path,
+            },
+          );
 
           // no need to call `onError` here as it will be propagated through the stream itself
 
@@ -661,7 +693,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             input,
             path,
             type,
-            declaredErrors: call?.procedure?._def.declaredErrors,
           });
 
           return shape;
@@ -717,7 +748,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               input: call.result(),
               path: call.path,
               type: call.procedure?._def.type ?? 'unknown',
-              declaredErrors: call.procedure?._def.declaredErrors,
             }),
           };
         }

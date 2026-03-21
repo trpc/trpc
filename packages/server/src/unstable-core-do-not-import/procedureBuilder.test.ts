@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { z } from 'zod';
 import { createTRPCDeclaredError } from './error/TRPCDeclaredError';
 import { TRPCError } from './error/TRPCError';
@@ -253,7 +254,9 @@ test('declared error registrations are per procedure and accrue across .errors()
   const registeredBadPhone = t.procedure
     .errors([BadPhoneError])
     .query(() => 'ok');
-  const validationOnly = t.procedure.errors([ValidationError]).query(() => 'ok');
+  const validationOnly = t.procedure
+    .errors([ValidationError])
+    .query(() => 'ok');
   const unregistered = t.procedure.query(() => 'ok');
   const chained = t.procedure
     .errors([BadPhoneError])
@@ -264,10 +267,69 @@ test('declared error registrations are per procedure and accrue across .errors()
   expect(registeredBadPhone._def.declaredErrors).toEqual([BadPhoneError]);
   expect(validationOnly._def.declaredErrors).toEqual([ValidationError]);
   expect(unregistered._def.declaredErrors).toEqual([]);
-  expect(chained._def.declaredErrors).toEqual([
-    BadPhoneError,
-    ValidationError,
-  ]);
+  expect(chained._def.declaredErrors).toEqual([BadPhoneError, ValidationError]);
+});
+
+test('procedure error boundary preserves registered declared errors', async () => {
+  const t = initTRPC.create();
+
+  const BadPhoneError = createTRPCDeclaredError('UNAUTHORIZED')
+    .data<{
+      reason: 'BAD_PHONE';
+    }>()
+    .create({
+      constants: {
+        reason: 'BAD_PHONE' as const,
+      },
+    });
+
+  const appRouter = t.router({
+    registered: t.procedure.errors([BadPhoneError]).query(() => {
+      throw new BadPhoneError();
+    }),
+  });
+
+  const caller = t.createCallerFactory(appRouter)({});
+  const registeredError = await waitError(caller.registered(), TRPCError);
+
+  expect(registeredError).toBeInstanceOf(BadPhoneError);
+  expect(registeredError.code).toBe('UNAUTHORIZED');
+});
+
+test('procedure error boundary downgrades unregistered declared errors', async () => {
+  const t = initTRPC.create();
+
+  const BadPhoneError = createTRPCDeclaredError('UNAUTHORIZED')
+    .data<{
+      reason: 'BAD_PHONE';
+    }>()
+    .create({
+      constants: {
+        reason: 'BAD_PHONE' as const,
+      },
+    });
+
+  const appRouter = t.router({
+    unregistered: t.procedure.query(() => {
+      throw new BadPhoneError();
+    }),
+  });
+
+  const caller = t.createCallerFactory(appRouter)({});
+  const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {
+    //
+  });
+
+  try {
+    const unregisteredError = await waitError(caller.unregistered(), TRPCError);
+
+    expect(unregisteredError).not.toBeInstanceOf(BadPhoneError);
+    expect(unregisteredError.code).toBe('INTERNAL_SERVER_ERROR');
+    expect(unregisteredError.cause).toBeInstanceOf(BadPhoneError);
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+  } finally {
+    warnSpy.mockRestore();
+  }
 });
 
 describe('concat()', () => {
