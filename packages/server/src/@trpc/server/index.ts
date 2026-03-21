@@ -1,6 +1,9 @@
 export {
   TRPCError,
   TRPCProcedureError,
+  createTRPCFineGrainedError,
+  type AnyTRPCFineGrainedErrorClass,
+  type InferTRPCFineGrainedErrorShape,
   /**
    * @deprecated use `experimental_trpcMiddleware` instead
    */

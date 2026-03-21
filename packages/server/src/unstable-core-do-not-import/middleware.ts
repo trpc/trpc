@@ -1,10 +1,6 @@
 import { TRPCError } from './error/TRPCError';
 import type { ParseFn } from './parser';
-import type {
-  ProcedureErrorFactoryMap,
-  ProcedureErrorSchemaMap,
-  ProcedureType,
-} from './procedure';
+import type { ProcedureType } from './procedure';
 import type { GetRawInputFn, Overwrite, Simplify } from './types';
 import { isObject } from './utils';
 
@@ -96,7 +92,6 @@ export type MiddlewareFunction<
   TContextOverridesIn,
   $ContextOverridesOut,
   TInputOut,
-  TErrorSchemaMap extends ProcedureErrorSchemaMap = ProcedureErrorSchemaMap,
 > = {
   (opts: {
     ctx: Simplify<Overwrite<TContext, TContextOverridesIn>>;
@@ -110,7 +105,6 @@ export type MiddlewareFunction<
      * The index of this call in a batch request.
      */
     batchIndex: number;
-    errors: ProcedureErrorFactoryMap<TErrorSchemaMap>;
     next: {
       (): Promise<MiddlewareResult<TContextOverridesIn>>;
       <$ContextOverride>(opts: {
@@ -126,7 +120,6 @@ export type MiddlewareFunction<
 };
 
 export type AnyMiddlewareFunction = MiddlewareFunction<
-  any,
   any,
   any,
   any,
