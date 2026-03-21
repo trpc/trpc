@@ -1853,6 +1853,7 @@ describe('subscriptions with createCaller', () => {
         input: string | null | undefined;
         output: AsyncIterable<Message, void, any>;
         meta: object;
+        errorShape: never;
       }>
     >();
     const abortController = new AbortController();
@@ -1911,6 +1912,7 @@ describe('subscriptions with createCaller', () => {
         input: string | null | undefined;
         output: Message;
         meta: object;
+        errorShape: never;
       }>
     >();
 
