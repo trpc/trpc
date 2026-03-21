@@ -42,7 +42,7 @@ jobs:
           echo "files=$FILES" >> "$GITHUB_OUTPUT"
 
       - name: Dispatch to intent repo
-        uses: peter-evans/repository-dispatch@v3
+        uses: peter-evans/repository-dispatch@v4
         with:
           token: ${{ secrets.INTENT_NOTIFY_TOKEN }}
           repository: ${{ github.repository }}
