@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { createTRPCDeclaredError } from './error/TRPCDeclaredError';
 import { TRPCError } from './error/TRPCError';
 import { initTRPC } from './initTRPC';
 import type { inferProcedureBuilderResolverOptions } from './procedureBuilder';
@@ -228,6 +229,45 @@ test('inferProcedureBuilderResolverOptions', async () => {
     );
     expect(err.code).toBe('FORBIDDEN');
   }
+});
+
+test('declared error registrations are per procedure and accrue across .errors() calls', () => {
+  const t = initTRPC.create();
+
+  const BadPhoneError = createTRPCDeclaredError('UNAUTHORIZED')
+    .data<{
+      reason: 'BAD_PHONE';
+    }>()
+    .create({
+      constants: {
+        reason: 'BAD_PHONE' as const,
+      },
+    });
+
+  const ValidationError = createTRPCDeclaredError('BAD_REQUEST')
+    .data<{
+      field: string;
+    }>()
+    .create();
+
+  const registeredBadPhone = t.procedure
+    .errors([BadPhoneError])
+    .query(() => 'ok');
+  const validationOnly = t.procedure.errors([ValidationError]).query(() => 'ok');
+  const unregistered = t.procedure.query(() => 'ok');
+  const chained = t.procedure
+    .errors([BadPhoneError])
+    .use((opts) => opts.next())
+    .errors([ValidationError])
+    .query(() => 'ok');
+
+  expect(registeredBadPhone._def.declaredErrors).toEqual([BadPhoneError]);
+  expect(validationOnly._def.declaredErrors).toEqual([ValidationError]);
+  expect(unregistered._def.declaredErrors).toEqual([]);
+  expect(chained._def.declaredErrors).toEqual([
+    BadPhoneError,
+    ValidationError,
+  ]);
 });
 
 describe('concat()', () => {

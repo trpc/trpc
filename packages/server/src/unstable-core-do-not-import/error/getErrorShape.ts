@@ -3,8 +3,12 @@ import type { ProcedureType } from '../procedure';
 import type { AnyRootTypes, RootConfig } from '../rootConfig';
 import { TRPC_ERROR_CODES_BY_KEY } from '../rpc';
 import type { DefaultErrorShape } from './formatter';
-import { isTRPCDeclaredError } from './TRPCDeclaredError';
-import type { TRPCError } from './TRPCError';
+import type { AnyTRPCDeclaredErrorClass } from './TRPCDeclaredError';
+import {
+  isRegisteredTRPCDeclaredError,
+  isTRPCDeclaredError,
+} from './TRPCDeclaredError';
+import { TRPCError } from './TRPCError';
 import {
   procedureErrorKeySymbol,
   TRPCProcedureError,
@@ -20,9 +24,30 @@ export function getErrorShape<TRoot extends AnyRootTypes>(opts: {
   path: string | undefined;
   input: unknown;
   ctx: TRoot['ctx'] | undefined;
+  declaredErrors?: readonly AnyTRPCDeclaredErrorClass[];
 }): TRoot['errorShape'] {
   if (isTRPCDeclaredError(opts.error)) {
-    return opts.error.toShape() as TRoot['errorShape'];
+    if (isRegisteredTRPCDeclaredError(opts.error, opts.declaredErrors)) {
+      // Registered declared errors will bypass the formatter because they have their own shape already
+      return opts.error.toShape();
+    }
+
+    const pathSuffix = opts?.path ? ` in procedure "${opts.path}"` : '';
+
+    // eslint-disable-next-line no-console
+    console.warn(
+      `Unregistered declared error was thrown${pathSuffix}. Treating it as INTERNAL_SERVER_ERROR and passing it through the error formatter.`,
+      opts.error,
+    );
+
+    return getFormattedErrorShape(
+      opts,
+      new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'An unrecognized error occured',
+        cause: opts.error,
+      }),
+    );
   }
 
   const cause = opts.error.cause;
@@ -33,8 +58,21 @@ export function getErrorShape<TRoot extends AnyRootTypes>(opts: {
     return cause.shape as TRoot['errorShape'];
   }
 
-  const { path, error, config } = opts;
-  const { code } = opts.error;
+  return getFormattedErrorShape(opts, opts.error);
+}
+
+function getFormattedErrorShape<TRoot extends AnyRootTypes>(
+  opts: {
+    config: RootConfig<TRoot>;
+    type: ProcedureType | 'unknown';
+    path: string | undefined;
+    input: unknown;
+    ctx: TRoot['ctx'] | undefined;
+  },
+  error: TRPCError,
+): TRoot['errorShape'] {
+  const { config, path } = opts;
+  const { code } = error;
   const shape: DefaultErrorShape = {
     message: error.message,
     code: TRPC_ERROR_CODES_BY_KEY[code],
@@ -43,11 +81,18 @@ export function getErrorShape<TRoot extends AnyRootTypes>(opts: {
       httpStatus: getHTTPStatusCodeFromError(error),
     },
   };
-  if (config.isDev && typeof opts.error.stack === 'string') {
-    shape.data.stack = opts.error.stack;
+  if (config.isDev && typeof error.stack === 'string') {
+    shape.data.stack = error.stack;
   }
   if (typeof path === 'string') {
     shape.data.path = path;
   }
-  return config.errorFormatter({ ...opts, shape });
+  return config.errorFormatter({
+    ctx: opts.ctx,
+    error,
+    input: opts.input,
+    path,
+    shape,
+    type: opts.type,
+  });
 }

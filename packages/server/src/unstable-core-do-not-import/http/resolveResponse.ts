@@ -149,7 +149,7 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
   };
 }
 
-function caughtErrorToData<TRouter extends AnyRouter>(
+function unhandledErrorToData<TRouter extends AnyRouter>(
   cause: unknown,
   errorOpts: {
     opts: Pick<
@@ -180,6 +180,7 @@ function caughtErrorToData<TRouter extends AnyRouter>(
       path: errorOpts.path,
       input: errorOpts.input,
       ctx: errorOpts.ctx,
+      declaredErrors: [],
     }),
   };
   const transformedJSON = transformTRPCResponse(
@@ -434,6 +435,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                   input: call!.result(),
                   path: call!.path,
                   type: info.type,
+                  declaredErrors: call!.procedure?._def.declaredErrors,
                 }),
               }
             : { result: { data: result.data } };
@@ -512,6 +514,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                 input,
                 path,
                 type,
+                declaredErrors: call?.procedure?._def.declaredErrors,
               });
 
               return shape;
@@ -611,6 +614,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                 input: call!.result(),
                 path: call!.path,
                 type: call!.procedure?._def.type ?? 'unknown',
+                declaredErrors: call!.procedure?._def.declaredErrors,
               }),
             };
           }
@@ -657,6 +661,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             input,
             path,
             type,
+            declaredErrors: call?.procedure?._def.declaredErrors,
           });
 
           return shape;
@@ -712,6 +717,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               input: call.result(),
               path: call.path,
               type: call.procedure?._def.type ?? 'unknown',
+              declaredErrors: call.procedure?._def.declaredErrors,
             }),
           };
         }
@@ -751,7 +757,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     // - post body is too large
     // - input deserialization fails
     // - `errorFormatter` return value is malformed
-    const { error, untransformedJSON, body } = caughtErrorToData(cause, {
+    const { error, untransformedJSON, body } = unhandledErrorToData(cause, {
       opts,
       ctx: ctxManager.valueOrUndefined(),
       type: info?.type ?? 'unknown',
