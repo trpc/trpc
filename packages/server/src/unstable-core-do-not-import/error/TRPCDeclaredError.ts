@@ -4,7 +4,9 @@ import type { TRPCErrorShape } from '../rpc/envelopes';
 import { TRPCError } from './TRPCError';
 
 export const trpcDeclaredErrorSymbol = Symbol('trpc.declaredError');
-const trpcDowngradedDeclaredErrorSymbol = Symbol('trpc.downgradedDeclaredError');
+const trpcDowngradedDeclaredErrorSymbol = Symbol(
+  'trpc.downgradedDeclaredError',
+);
 
 export type InferTRPCDeclaredErrorShape<TClass> = TClass extends {
   readonly __trpcDeclaredErrorShape: infer TShape extends TRPCErrorShape;
