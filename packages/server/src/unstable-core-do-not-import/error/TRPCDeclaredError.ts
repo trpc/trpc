@@ -124,6 +124,7 @@ export function createTRPCDeclaredError<
   const TCode extends TRPC_ERROR_CODE_KEY,
 >(code: TCode): TRPCDeclaredErrorBuilder<TCode, {}>;
 
+// TODO: any isn't okay here, we need to add type safety all the way down
 export function createTRPCDeclaredError(code: TRPC_ERROR_CODE_KEY): any {
   return createTRPCDeclaredErrorBuilder({ code });
 }
@@ -133,15 +134,17 @@ function createTRPCDeclaredErrorBuilder(
 ) {
   return {
     data: () => createTRPCDeclaredErrorBuilder(opts),
+
     create: (createOpts?: {
       defaults?: Record<string, unknown>;
       constants?: Record<string, unknown>;
-    }) =>
-      createTRPCDeclaredErrorClass({
+    }) => {
+      return createTRPCDeclaredErrorClass({
         ...opts,
         ...(createOpts?.defaults ?? {}),
         ...(createOpts?.constants ?? {}),
-      }),
+      });
+    },
   };
 }
 
@@ -151,8 +154,8 @@ function createTRPCDeclaredErrorClass(
   const { code, ...consts } = opts;
   const numericCode = TRPC_ERROR_CODES_BY_KEY[code];
 
-  const TRPCDeclaredError = class TRPCDeclaredError extends TRPCError {
-    static readonly __trpcDeclaredErrorShape = null as any;
+  return class TRPCDeclaredError extends TRPCError {
+    static readonly __trpcDeclaredErrorShape = null;
     readonly [trpcDeclaredErrorSymbol] = true as const;
     #rest: Record<string, unknown>;
 
@@ -173,8 +176,6 @@ function createTRPCDeclaredErrorClass(
       };
     }
   };
-
-  return TRPCDeclaredError;
 }
 
 //
@@ -260,7 +261,13 @@ type TRPCDeclaredErrorBuilder<
     const TDefaults extends Partial<TExtraParams> = {},
     const TConstants extends Partial<TExtraParams> = {},
   >(opts: {
+    /**
+     * Define default value values, optionally overridable in the error constructor
+     */
     defaults?: DefaultsInput<TExtraParams> & TDefaults;
+    /**
+     * Define permanent values, keys set here will not appear in the error constructor
+     */
     constants?: DefaultsInput<TExtraParams> & TConstants;
   }): TRPCDeclaredErrorClass<TCode, TExtraParams, TDefaults, TConstants>;
 };
