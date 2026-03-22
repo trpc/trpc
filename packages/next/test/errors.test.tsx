@@ -1,9 +1,13 @@
+import { isTRPCClientError, type TRPCClientErrorLike } from '@trpc/client';
 import { createTRPCDeclaredError, initTRPC } from '@trpc/server';
 import { expectTypeOf, test } from 'vitest';
 import { createTRPCNext } from '../src';
 
 test('declared errors are inferred and can be discriminated', () => {
-  const BadPhoneError = createTRPCDeclaredError('UNAUTHORIZED')
+  const BadPhoneError = createTRPCDeclaredError({
+    code: 'UNAUTHORIZED',
+    key: 'BAD_PHONE',
+  })
     .data<{
       reason: 'BAD_PHONE';
     }>()
@@ -43,35 +47,38 @@ test('declared errors are inferred and can be discriminated', () => {
     },
   });
 
+  type AppError = TRPCClientErrorLike<typeof appRouter>;
+  type RegisteredShape = Extract<
+    NonNullable<AppError['shape']>,
+    { '~': { declaredErrorKey: 'BAD_PHONE' } }
+  >;
+  type FormattedShape = Extract<
+    NonNullable<AppError['shape']>,
+    { '~': { kind: 'formatted' } }
+  >;
+
+  expectTypeOf<
+    RegisteredShape['data']['reason']
+  >().toEqualTypeOf<'BAD_PHONE'>();
+  expectTypeOf<FormattedShape['data']['foo']>().toEqualTypeOf<'bar'>();
+
   function MyComponent() {
     const registered = trpc.registered.useQuery();
     const unregistered = trpc.unregistered.useQuery();
 
     if (registered.error && unregistered.error) {
       if (
-        registered.error.shape &&
-        'reason' in registered.error.shape.data &&
-        registered.error.shape.data.reason === 'BAD_PHONE'
+        isTRPCClientError<typeof appRouter>(registered.error) &&
+        registered.error.isDeclaredError('BAD_PHONE')
       ) {
-        expectTypeOf(
-          registered.error.shape.data.reason,
-        ).toEqualTypeOf<'BAD_PHONE'>();
+        expectTypeOf(registered.error.data.reason).toEqualTypeOf<'BAD_PHONE'>();
       }
 
       if (
-        unregistered.error.data &&
-        'code' in unregistered.error.data &&
-        unregistered.error.data.code === 'INTERNAL_SERVER_ERROR'
+        isTRPCClientError<typeof appRouter>(unregistered.error) &&
+        unregistered.error.isFormattedError()
       ) {
         expectTypeOf(unregistered.error.data.foo).toEqualTypeOf<'bar'>();
-      }
-
-      if (
-        unregistered.error.shape &&
-        'code' in unregistered.error.shape.data &&
-        unregistered.error.shape.data.code === 'INTERNAL_SERVER_ERROR'
-      ) {
-        expectTypeOf(unregistered.error.shape.data.foo).toEqualTypeOf<'bar'>();
       }
     }
 

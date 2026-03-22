@@ -6,10 +6,30 @@ import type { TRPC_ERROR_CODE_NUMBER } from './codes';
 /**
  * Error response
  */
-export interface TRPCErrorShape<TData extends object = object> {
+export interface TRPCFormattedErrorMeta {
+  kind: 'formatted';
+  declaredErrorKey?: undefined;
+}
+
+export interface TRPCDeclaredErrorMeta<
+  TDeclaredErrorKey extends string = string,
+> {
+  kind: 'declared';
+  declaredErrorKey: TDeclaredErrorKey;
+}
+
+export type TRPCErrorShapeMeta<TDeclaredErrorKey extends string = string> =
+  | TRPCFormattedErrorMeta
+  | TRPCDeclaredErrorMeta<TDeclaredErrorKey>;
+
+export interface TRPCErrorShape<
+  TData extends object = object,
+  TMeta extends TRPCErrorShapeMeta = TRPCErrorShapeMeta,
+> {
   code: TRPC_ERROR_CODE_NUMBER;
   message: string;
   data: TData;
+  '~': TMeta;
 }
 
 /**

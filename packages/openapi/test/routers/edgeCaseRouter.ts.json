@@ -829,12 +829,12 @@
       "AsyncIterable": {
         "type": "object",
         "properties": {
-          "__@asyncIterator@5456": {
+          "__@asyncIterator@5526": {
             "type": "object"
           }
         },
         "required": [
-          "__@asyncIterator@5456"
+          "__@asyncIterator@5526"
         ],
         "additionalProperties": false
       },
@@ -868,12 +868,16 @@
           },
           "data": {
             "$ref": "#/components/schemas/DefaultErrorData"
+          },
+          "~": {
+            "$ref": "#/components/schemas/TRPCFormattedErrorMeta"
           }
         },
         "required": [
           "message",
           "code",
-          "data"
+          "data",
+          "~"
         ],
         "additionalProperties": false
       },
@@ -921,6 +925,20 @@
         "required": [
           "code",
           "httpStatus"
+        ],
+        "additionalProperties": false
+      },
+      "TRPCFormattedErrorMeta": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "formatted"
+          },
+          "declaredErrorKey": {}
+        },
+        "required": [
+          "kind"
         ],
         "additionalProperties": false
       }

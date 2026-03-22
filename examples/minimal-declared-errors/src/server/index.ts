@@ -5,7 +5,10 @@ import { createTRPCDeclaredError } from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import { publicProcedure, router } from './trpc.js';
 
-const UserNotFoundError = createTRPCDeclaredError('UNAUTHORIZED')
+const UserNotFoundError = createTRPCDeclaredError({
+  code: 'UNAUTHORIZED',
+  key: 'USER_NOT_FOUND',
+})
   .data<{
     reason: 'USER_NOT_FOUND';
   }>()

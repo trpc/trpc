@@ -135,7 +135,10 @@ test('getMessageFromUnknownError()', () => {
 });
 
 describe('declared errors over http links', () => {
-  const BadPhoneError = createTRPCDeclaredError('UNAUTHORIZED')
+  const BadPhoneError = createTRPCDeclaredError({
+    code: 'UNAUTHORIZED',
+    key: 'BAD_PHONE',
+  })
     .data<{
       reason: 'BAD_PHONE';
     }>()
@@ -175,12 +178,17 @@ describe('declared errors over http links', () => {
 
       const registeredError = await waitError(
         ctx.client.registered.query(),
-        TRPCClientError,
+        TRPCClientError<typeof router>,
       );
 
+      assert(registeredError.isDeclaredError('BAD_PHONE'));
       expect(registeredError.shape).toEqual({
         code: -32001,
         message: 'UNAUTHORIZED',
+        '~': {
+          kind: 'declared',
+          declaredErrorKey: 'BAD_PHONE',
+        },
         data: {
           reason: 'BAD_PHONE',
         },
@@ -300,6 +308,9 @@ describe('formatError()', () => {
           "message": "Invalid input: expected string, received number"
         }
       ]",
+        "~": Object {
+          "kind": "formatted",
+        },
       }
     `);
     expect(onError).toHaveBeenCalledTimes(1);

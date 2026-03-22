@@ -8,11 +8,12 @@ import type {
   UnusedSkipTokenInfiniteOptions,
 } from '@tanstack/react-query';
 import { infiniteQueryOptions, skipToken } from '@tanstack/react-query';
-import type { TRPCClientErrorLike, TRPCUntypedClient } from '@trpc/client';
+import type { TRPCClientError, TRPCUntypedClient } from '@trpc/client';
 import type { DistributiveOmit } from '@trpc/server/unstable-core-do-not-import';
 import type {
   ExtractCursorType,
   FeatureFlags,
+  ResolverClientTypes,
   ResolverDef,
   TRPCInfiniteData,
   TRPCQueryBaseOptions,
@@ -170,20 +171,14 @@ export interface TRPCInfiniteQueryOptions<TDef extends ResolverDef> {
       TDef['input'],
       TQueryFnData,
       TData,
-      TRPCClientErrorLike<{
-        transformer: TDef['transformer'];
-        errorShape: TDef['errorShape'];
-      }>,
+      TRPCClientError<ResolverClientTypes<TDef>>,
       TDef['featureFlags']
     >,
   ): DefinedTRPCInfiniteQueryOptionsOut<
     TDef['input'],
     TQueryFnData,
     TData,
-    TRPCClientErrorLike<{
-      transformer: TDef['transformer'];
-      errorShape: TDef['errorShape'];
-    }>,
+    TRPCClientError<ResolverClientTypes<TDef>>,
     TDef['featureFlags']
   >;
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
@@ -192,20 +187,14 @@ export interface TRPCInfiniteQueryOptions<TDef extends ResolverDef> {
       TDef['input'],
       TQueryFnData,
       TData,
-      TRPCClientErrorLike<{
-        transformer: TDef['transformer'];
-        errorShape: TDef['errorShape'];
-      }>,
+      TRPCClientError<ResolverClientTypes<TDef>>,
       TDef['featureFlags']
     >,
   ): UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
     TDef['input'],
     TQueryFnData,
     TData,
-    TRPCClientErrorLike<{
-      transformer: TDef['transformer'];
-      errorShape: TDef['errorShape'];
-    }>,
+    TRPCClientError<ResolverClientTypes<TDef>>,
     TDef['featureFlags']
   >;
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
@@ -214,20 +203,14 @@ export interface TRPCInfiniteQueryOptions<TDef extends ResolverDef> {
       TDef['input'],
       TQueryFnData,
       TData,
-      TRPCClientErrorLike<{
-        transformer: TDef['transformer'];
-        errorShape: TDef['errorShape'];
-      }>,
+      TRPCClientError<ResolverClientTypes<TDef>>,
       TDef['featureFlags']
     >,
   ): UndefinedTRPCInfiniteQueryOptionsOut<
     TDef['input'],
     TQueryFnData,
     TData,
-    TRPCClientErrorLike<{
-      transformer: TDef['transformer'];
-      errorShape: TDef['errorShape'];
-    }>,
+    TRPCClientError<ResolverClientTypes<TDef>>,
     TDef['featureFlags']
   >;
 }

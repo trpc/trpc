@@ -14,7 +14,7 @@ export type NeverField = {
 };
 
 export type AsyncIterable = {
-    '__@asyncIterator@5456': {
+    '__@asyncIterator@5526': {
         [key: string]: unknown;
     };
 };
@@ -23,6 +23,7 @@ export type DefaultErrorShape = {
     message: string;
     code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
     data: DefaultErrorData;
+    '~': TrpcFormattedErrorMeta;
 };
 
 export type DefaultErrorData = {
@@ -36,6 +37,11 @@ export type DefaultErrorData = {
      * Stack trace of the error (only in development)
      */
     stack?: string;
+};
+
+export type TrpcFormattedErrorMeta = {
+    kind: 'formatted';
+    declaredErrorKey?: unknown;
 };
 
 export type BigintData = {

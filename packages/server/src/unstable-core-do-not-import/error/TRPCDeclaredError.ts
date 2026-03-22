@@ -1,6 +1,6 @@
 import type { TRPC_ERROR_CODE_KEY } from '../rpc/codes';
 import { TRPC_ERROR_CODES_BY_KEY } from '../rpc/codes';
-import type { TRPCErrorShape } from '../rpc/envelopes';
+import type { TRPCDeclaredErrorMeta, TRPCErrorShape } from '../rpc/envelopes';
 import { TRPCError } from './TRPCError';
 
 export const trpcDeclaredErrorSymbol = Symbol('trpc.declaredError');
@@ -23,25 +23,22 @@ export type AnyTRPCDeclaredErrorClass = {
 
 type DeclaredErrorShape<
   TCode extends TRPC_ERROR_CODE_KEY,
+  TDeclaredErrorKey extends string,
   TData extends object,
-> = {
+> = TRPCErrorShape<TData, TRPCDeclaredErrorMeta<TDeclaredErrorKey>> & {
   code: (typeof TRPC_ERROR_CODES_BY_KEY)[TCode];
   message: TCode;
-  data: TData;
 };
 
 interface TRPCDeclaredErrorInstance<
   TData extends object = object,
   TMessage extends string = string,
+  TDeclaredErrorKey extends string = string,
 > extends TRPCError {
   readonly [trpcDeclaredErrorSymbol]: true;
   [trpcDowngradedDeclaredErrorSymbol]?: TRPCError;
   message: TMessage;
-  toShape(): {
-    code: TRPCErrorShape<TData>['code'];
-    message: TMessage;
-    data: TData;
-  };
+  toShape(): DeclaredErrorShape<any, TDeclaredErrorKey, TData>;
 }
 
 export function isTRPCDeclaredError(
@@ -100,13 +97,14 @@ export function resolveRegisteredDeclaredErrorOrDowngrade(
 /**
  * Creates a typed error class for per-procedure error definitions.
  *
- * - `code` is mandatory in the first call
- * - error `message` is always the code literal
- * - `data<...>()` declares extra per-instance data fields
- * - `create({ defaults, constants })` materializes the error class
+ * - `code` sets the HTTP and JSON-RPC response code
+ * - `key` becomes the canonical client-side discriminator and should be globally unique
  *
  * ```ts
- * const MyError = createTRPCDeclaredError('NOT_FOUND')
+ * const MyError = createTRPCDeclaredError({
+ *   code: 'NOT_FOUND',
+ *   key: 'USER_NOT_FOUND',
+ * })
  *   .data<{
  *     resourceType: 'user';
  *   }>()
@@ -122,11 +120,18 @@ export function resolveRegisteredDeclaredErrorOrDowngrade(
  */
 export function createTRPCDeclaredError<
   const TCode extends TRPC_ERROR_CODE_KEY,
->(code: TCode): TRPCDeclaredErrorBuilder<TCode, {}>;
+  const TDeclaredErrorKey extends string,
+>(opts: {
+  code: TCode;
+  key: TDeclaredErrorKey;
+}): TRPCDeclaredErrorBuilder<TCode, TDeclaredErrorKey, {}>;
 
 // TODO: any isn't okay here, we need to add type safety all the way down
-export function createTRPCDeclaredError(code: TRPC_ERROR_CODE_KEY): any {
-  return createTRPCDeclaredErrorBuilder({ code });
+export function createTRPCDeclaredError(opts: {
+  code: TRPC_ERROR_CODE_KEY;
+  key: string;
+}): any {
+  return createTRPCDeclaredErrorBuilder(opts);
 }
 
 function createTRPCDeclaredErrorBuilder(
@@ -151,7 +156,7 @@ function createTRPCDeclaredErrorBuilder(
 function createTRPCDeclaredErrorClass(
   opts: BasicErrorKeys & Record<string, unknown>,
 ) {
-  const { code, ...consts } = opts;
+  const { code, key, ...consts } = opts;
   const numericCode = TRPC_ERROR_CODES_BY_KEY[code];
 
   return class TRPCDeclaredError extends TRPCError {
@@ -168,10 +173,18 @@ function createTRPCDeclaredErrorClass(
       Object.assign(this, instanceFields);
     }
 
-    toShape(): DeclaredErrorShape<typeof code, Record<string, unknown>> {
+    toShape(): DeclaredErrorShape<
+      typeof code,
+      typeof key,
+      Record<string, unknown>
+    > {
       return {
         code: numericCode,
         message: code,
+        '~': {
+          kind: 'declared',
+          declaredErrorKey: key,
+        },
         data: { ...consts, ...this.#rest },
       };
     }
@@ -184,6 +197,7 @@ function createTRPCDeclaredErrorClass(
 
 type BasicErrorKeys = {
   code: TRPC_ERROR_CODE_KEY;
+  key: string;
 };
 
 type OptionalKeys<T extends object> = {
@@ -228,6 +242,7 @@ type DefaultsInput<TExtraParams extends Record<string, unknown>> =
 
 type TRPCDeclaredErrorClass<
   TCode extends TRPC_ERROR_CODE_KEY,
+  TDeclaredErrorKey extends string,
   TExtraParams extends Record<string, unknown>,
   TDefaults extends object,
   TConstants extends object,
@@ -236,27 +251,38 @@ type TRPCDeclaredErrorClass<
       new (
         input?: ConstructorInput<TExtraParams, TDefaults, TConstants>,
       ): TRPCError &
-        TRPCDeclaredErrorInstance<TExtraParams, TCode> &
+        TRPCDeclaredErrorInstance<TExtraParams, TCode, TDeclaredErrorKey> &
         Omit<TExtraParams, 'message'>;
     }
   : {
       new (
         input: ConstructorInput<TExtraParams, TDefaults, TConstants>,
       ): TRPCError &
-        TRPCDeclaredErrorInstance<TExtraParams, TCode> &
+        TRPCDeclaredErrorInstance<TExtraParams, TCode, TDeclaredErrorKey> &
         Omit<TExtraParams, 'message'>;
     }) & {
-  readonly __trpcDeclaredErrorShape: DeclaredErrorShape<TCode, TExtraParams>;
+  readonly __trpcDeclaredErrorShape: DeclaredErrorShape<
+    TCode,
+    TDeclaredErrorKey,
+    TExtraParams
+  >;
 };
 
 type TRPCDeclaredErrorBuilder<
   TCode extends TRPC_ERROR_CODE_KEY,
+  TDeclaredErrorKey extends string,
   TExtraParams extends Record<string, unknown>,
 > = {
   data<
     const TNewExtraParams extends Record<string, unknown>,
-  >(): TRPCDeclaredErrorBuilder<TCode, TNewExtraParams>;
-  create(): TRPCDeclaredErrorClass<TCode, TExtraParams, {}, {}>;
+  >(): TRPCDeclaredErrorBuilder<TCode, TDeclaredErrorKey, TNewExtraParams>;
+  create(): TRPCDeclaredErrorClass<
+    TCode,
+    TDeclaredErrorKey,
+    TExtraParams,
+    {},
+    {}
+  >;
   create<
     const TDefaults extends Partial<TExtraParams> = {},
     const TConstants extends Partial<TExtraParams> = {},
@@ -269,5 +295,11 @@ type TRPCDeclaredErrorBuilder<
      * Define permanent values, keys set here will not appear in the error constructor
      */
     constants?: DefaultsInput<TExtraParams> & TConstants;
-  }): TRPCDeclaredErrorClass<TCode, TExtraParams, TDefaults, TConstants>;
+  }): TRPCDeclaredErrorClass<
+    TCode,
+    TDeclaredErrorKey,
+    TExtraParams,
+    TDefaults,
+    TConstants
+  >;
 };
