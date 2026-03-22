@@ -61,7 +61,7 @@ export const appRouter = router({
 ```
 
 :::tip
-See [Error Handling](error-handling.md) to learn more about the `TRPCError` thrown in the above example.
+See [Errors](./errors.mdx) to learn more about the `TRPCError` thrown in the above example.
 :::
 
 ## Logging

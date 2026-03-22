@@ -1,6 +1,11 @@
 import { waitError } from '@trpc/server/__tests__/waitError';
 import type { AnyRouter } from '@trpc/server';
-import { initTRPC, tracked, TRPCError } from '@trpc/server';
+import {
+  createTRPCDeclaredError,
+  initTRPC,
+  tracked,
+  TRPCError,
+} from '@trpc/server';
 import { makeResource, run } from '@trpc/server/unstable-core-do-not-import';
 import superjson from 'superjson';
 import { z } from 'zod';
@@ -523,6 +528,82 @@ test('error formatting', async () => {
         "message": "BAD_GATEWAY",
       }
     `);
+  }
+});
+
+test('declared error data is inferred and can be discriminated on the client', async () => {
+  const BadPhoneError = createTRPCDeclaredError('UNAUTHORIZED')
+    .data<{
+      reason: 'BAD_PHONE';
+    }>()
+    .create({
+      constants: {
+        reason: 'BAD_PHONE' as const,
+      },
+    });
+
+  const t = initTRPC.create({
+    errorFormatter(opts) {
+      return {
+        ...opts.shape,
+        data: {
+          ...opts.shape.data,
+          foo: 'bar' as const,
+        },
+      };
+    },
+  });
+
+  const appRouter = t.router({
+    registered: t.procedure.errors([BadPhoneError]).query(() => {
+      throw new BadPhoneError();
+    }),
+    unregistered: t.procedure.query(() => {
+      throw new BadPhoneError();
+    }),
+  });
+
+  const { client } = localLinkClient<typeof appRouter>({
+    router: appRouter,
+    createContext: async () => ({}),
+  });
+
+  const registeredError = await waitError(client.registered.query());
+  assert(isTRPCClientError<typeof appRouter>(registeredError));
+
+  if (
+    registeredError.shape &&
+    'reason' in registeredError.shape.data &&
+    registeredError.shape.data.reason === 'BAD_PHONE'
+  ) {
+    expectTypeOf(
+      registeredError.shape.data.reason,
+    ).toEqualTypeOf<'BAD_PHONE'>();
+  } else {
+    throw new Error('expected registered declared error');
+  }
+
+  const unregisteredError = await waitError(client.unregistered.query());
+  assert(isTRPCClientError<typeof appRouter>(unregisteredError));
+
+  if (
+    unregisteredError.data &&
+    'code' in unregisteredError.data &&
+    unregisteredError.data.code === 'INTERNAL_SERVER_ERROR'
+  ) {
+    expectTypeOf(unregisteredError.data.foo).toEqualTypeOf<'bar'>();
+  } else {
+    throw new Error('expected downgraded declared error');
+  }
+
+  if (
+    unregisteredError.shape &&
+    'code' in unregisteredError.shape.data &&
+    unregisteredError.shape.data.code === 'INTERNAL_SERVER_ERROR'
+  ) {
+    expectTypeOf(unregisteredError.shape.data.foo).toEqualTypeOf<'bar'>();
+  } else {
+    throw new Error('expected downgraded declared error');
   }
 });
 
