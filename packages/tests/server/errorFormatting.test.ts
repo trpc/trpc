@@ -102,13 +102,19 @@ describe('with custom error formatter', () => {
           "stack": "[redacted]",
         },
         "message": "Fails",
+        "~": Object {
+          "kind": "formatted",
+        },
       }
     `);
   });
 });
 
 describe('with per-procedure declared errors', () => {
-  const BadPhoneError = createTRPCDeclaredError('UNAUTHORIZED')
+  const BadPhoneError = createTRPCDeclaredError({
+    code: 'UNAUTHORIZED',
+    key: 'BAD_PHONE',
+  })
     .data<{
       reason: 'BAD_PHONE';
     }>()
@@ -118,7 +124,10 @@ describe('with per-procedure declared errors', () => {
       },
     });
 
-  const ValidationError = createTRPCDeclaredError('BAD_REQUEST')
+  const ValidationError = createTRPCDeclaredError({
+    code: 'BAD_REQUEST',
+    key: 'VALIDATION_ERROR',
+  })
     .data<{
       field: string;
     }>()
@@ -195,6 +204,10 @@ describe('with per-procedure declared errors', () => {
           "reason": "BAD_PHONE",
         },
         "message": "UNAUTHORIZED",
+        "~": Object {
+          "declaredErrorKey": "BAD_PHONE",
+          "kind": "declared",
+        },
       }
     `);
   });
@@ -287,6 +300,10 @@ describe('with per-procedure declared errors', () => {
     expect(middlewareErr.shape).toEqual({
       code: -32001,
       message: 'UNAUTHORIZED',
+      '~': {
+        kind: 'declared',
+        declaredErrorKey: 'BAD_PHONE',
+      },
       data: {
         reason: 'BAD_PHONE',
       },
@@ -294,6 +311,10 @@ describe('with per-procedure declared errors', () => {
     expect(resolverErr.shape).toEqual({
       code: -32600,
       message: 'BAD_REQUEST',
+      '~': {
+        kind: 'declared',
+        declaredErrorKey: 'VALIDATION_ERROR',
+      },
       data: {
         field: 'resolver',
       },
@@ -431,6 +452,9 @@ describe('custom error sub-classes', () => {
           "stack": "[redacted]",
         },
         "message": "BAD_PHONE",
+        "~": Object {
+          "kind": "formatted",
+        },
       }
     `);
   });
@@ -478,5 +502,125 @@ describe('zod errors according to docs', () => {
 
     // good
     expect(await ctx.client.greeting.query(10)).toBe(10);
+  });
+});
+
+describe('declared error key narrowing', () => {
+  const PhoneContactInvalidError = createTRPCDeclaredError({
+    code: 'BAD_REQUEST',
+    key: 'CONTACT_INVALID',
+  })
+    .data<{
+      channel: 'phone';
+      phoneNumber: string;
+    }>()
+    .create();
+
+  const EmailContactInvalidError = createTRPCDeclaredError({
+    code: 'BAD_REQUEST',
+    key: 'CONTACT_INVALID',
+  })
+    .data<{
+      channel: 'email';
+      emailAddress: string;
+    }>()
+    .create();
+
+  type ContactInvalidData =
+    | {
+        channel: 'phone';
+        phoneNumber: string;
+      }
+    | {
+        channel: 'email';
+        emailAddress: string;
+      };
+
+  const t = initTRPC.create();
+
+  const appRouter = t.router({
+    duplicateKeySameProcedure: t.procedure
+      .errors([PhoneContactInvalidError, EmailContactInvalidError])
+      .input(
+        z.object({
+          channel: z.enum(['phone', 'email']),
+        }),
+      )
+      .query(({ input }) => {
+        if (input.channel === 'phone') {
+          throw new PhoneContactInvalidError({
+            channel: 'phone',
+            phoneNumber: '+441234567890',
+          });
+        }
+
+        throw new EmailContactInvalidError({
+          channel: 'email',
+          emailAddress: 'bad@example.com',
+        });
+      }),
+    duplicateKeyPhoneProcedure: t.procedure
+      .errors([PhoneContactInvalidError])
+      .query(() => {
+        throw new PhoneContactInvalidError({
+          channel: 'phone',
+          phoneNumber: '+441234567890',
+        });
+      }),
+    duplicateKeyEmailProcedure: t.procedure
+      .errors([EmailContactInvalidError])
+      .query(() => {
+        throw new EmailContactInvalidError({
+          channel: 'email',
+          emailAddress: 'bad@example.com',
+        });
+      }),
+  });
+
+  test('isTRPCClientError narrows same-key declared errors on one procedure to the matching union', async () => {
+    await using ctx = testServerAndClientResource(appRouter);
+
+    const err = await waitError(
+      ctx.client.duplicateKeySameProcedure.query({
+        channel: 'phone',
+      }),
+    );
+
+    assert(isTRPCClientError<typeof appRouter>(err));
+    assert(err.isDeclaredError('CONTACT_INVALID'));
+
+    expectTypeOf(err.data).toEqualTypeOf<ContactInvalidData>();
+    expect(err.data).toEqual({
+      channel: 'phone',
+      phoneNumber: '+441234567890',
+    });
+  });
+
+  test('isTRPCClientError narrows same-key declared errors across procedures to the matching router union', async () => {
+    await using ctx = testServerAndClientResource(appRouter);
+
+    const phoneErr = await waitError(
+      ctx.client.duplicateKeyPhoneProcedure.query(),
+    );
+    const emailErr = await waitError(
+      ctx.client.duplicateKeyEmailProcedure.query(),
+    );
+
+    assert(isTRPCClientError<typeof appRouter>(phoneErr));
+    assert(isTRPCClientError<typeof appRouter>(emailErr));
+    assert(phoneErr.isDeclaredError('CONTACT_INVALID'));
+    assert(emailErr.isDeclaredError('CONTACT_INVALID'));
+
+    expectTypeOf(phoneErr.data).toEqualTypeOf<ContactInvalidData>();
+    expectTypeOf(emailErr.data).toEqualTypeOf<ContactInvalidData>();
+
+    expect(phoneErr.data).toEqual({
+      channel: 'phone',
+      phoneNumber: '+441234567890',
+    });
+    expect(emailErr.data).toEqual({
+      channel: 'email',
+      emailAddress: 'bad@example.com',
+    });
   });
 });

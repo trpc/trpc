@@ -118,7 +118,7 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> =
 function resolveProcedureError(
   error: TRPCError,
   opts?: {
-    declaredErrors?: readonly AnyTRPCDeclaredErrorClass[];
+    declaredErrors: readonly AnyTRPCDeclaredErrorClass[] | undefined;
     path?: string;
   },
 ): TRPCError {
@@ -278,6 +278,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           };
         }
       }
+      let declaredErrors: readonly AnyTRPCDeclaredErrorClass[] | undefined;
       run(async () => {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const res = await ctxPromise!; // asserts context has been set
@@ -286,7 +287,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         }
 
         const procedure = await getProcedureAtPath(router, path);
-        const declaredErrors = procedure?._def.declaredErrors;
+        declaredErrors = procedure?._def.declaredErrors;
 
         const abortController = new AbortController();
         const result = await callTRPCProcedure({
@@ -468,6 +469,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       }).catch((cause) => {
         // procedure threw an error
         const error = resolveProcedureError(getTRPCErrorFromUnknown(cause), {
+          declaredErrors,
           path,
         });
         opts.onError?.({ error, path, type, ctx, req, input });

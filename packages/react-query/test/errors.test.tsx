@@ -1,7 +1,7 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { render } from '@testing-library/react';
 import type { TRPCClientErrorLike } from '@trpc/client';
-import { TRPCClientError } from '@trpc/client';
+import { isTRPCClientError, TRPCClientError } from '@trpc/client';
 import { createTRPCDeclaredError, initTRPC } from '@trpc/server';
 import type {
   DefaultErrorData,
@@ -192,7 +192,10 @@ describe('no custom formatter', () => {
 describe('declared errors', () => {
   const ctx = konn()
     .beforeEach(() => {
-      const BadPhoneError = createTRPCDeclaredError('UNAUTHORIZED')
+      const BadPhoneError = createTRPCDeclaredError({
+        code: 'UNAUTHORIZED',
+        key: 'BAD_PHONE',
+      })
         .data<{
           reason: 'BAD_PHONE';
         }>()
@@ -234,12 +237,19 @@ describe('declared errors', () => {
     const { client, App } = ctx;
     const queryErrorCallback = vi.fn();
     type AppError = TRPCClientErrorLike<(typeof ctx)['appRouter']>;
-    type RegisteredData = Extract<
-      NonNullable<AppError['shape']>['data'],
-      { reason: string }
+    type RegisteredShape = Extract<
+      NonNullable<AppError['shape']>,
+      { '~': { declaredErrorKey: 'BAD_PHONE' } }
+    >;
+    type FormattedShape = Extract<
+      NonNullable<AppError['shape']>,
+      { '~': { kind: 'formatted' } }
     >;
 
-    expectTypeOf<RegisteredData['reason']>().toEqualTypeOf<'BAD_PHONE'>();
+    expectTypeOf<
+      RegisteredShape['data']['reason']
+    >().toEqualTypeOf<'BAD_PHONE'>();
+    expectTypeOf<FormattedShape['data']['foo']>().toEqualTypeOf<'bar'>();
 
     function MyComponent() {
       const registered = client.registered.useQuery();
@@ -250,27 +260,17 @@ describe('declared errors', () => {
       }
 
       if (
-        registered.error.shape &&
-        'reason' in registered.error.shape.data &&
-        registered.error.shape.data.reason === 'BAD_PHONE'
+        isTRPCClientError<(typeof ctx)['appRouter']>(registered.error) &&
+        registered.error.isDeclaredError('BAD_PHONE')
       ) {
-        registered.error.shape.data.reason;
+        expectTypeOf(registered.error.data.reason).toEqualTypeOf<'BAD_PHONE'>();
       }
 
       if (
-        unregistered.error.data &&
-        'code' in unregistered.error.data &&
-        unregistered.error.data.code === 'INTERNAL_SERVER_ERROR'
+        isTRPCClientError<(typeof ctx)['appRouter']>(unregistered.error) &&
+        unregistered.error.isFormattedError()
       ) {
         expectTypeOf(unregistered.error.data.foo).toEqualTypeOf<'bar'>();
-      }
-
-      if (
-        unregistered.error.shape &&
-        'code' in unregistered.error.shape.data &&
-        unregistered.error.shape.data.code === 'INTERNAL_SERVER_ERROR'
-      ) {
-        expectTypeOf(unregistered.error.shape.data.foo).toEqualTypeOf<'bar'>();
       }
 
       queryErrorCallback({

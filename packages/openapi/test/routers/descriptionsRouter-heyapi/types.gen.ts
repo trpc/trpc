@@ -19,6 +19,11 @@ export type HelloInlineResponse = {
     date: Date;
 };
 
+export type TrpcFormattedErrorMeta = {
+    kind: 'formatted';
+    declaredErrorKey?: unknown;
+};
+
 export type HelloData = {
     body?: never;
     path?: never;
@@ -60,6 +65,7 @@ export type HelloErrors = {
             };
             message: string;
             code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
+            '~': TrpcFormattedErrorMeta;
         };
     };
 };
@@ -133,6 +139,7 @@ export type SubrouterHelloErrors = {
             };
             message: string;
             code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
+            '~': TrpcFormattedErrorMeta;
         };
     };
 };
@@ -186,6 +193,7 @@ export type DirectArrayErrors = {
             };
             message: string;
             code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
+            '~': TrpcFormattedErrorMeta;
         };
     };
 };
@@ -367,6 +375,7 @@ export type HelloInlineErrors = {
             };
             message: string;
             code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
+            '~': TrpcFormattedErrorMeta;
         };
     };
 };
@@ -437,6 +446,7 @@ export type SubrouterInlineHelloErrors = {
             };
             message: string;
             code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
+            '~': TrpcFormattedErrorMeta;
         };
     };
 };
@@ -490,6 +500,7 @@ export type DirectArrayInlineErrors = {
             };
             message: string;
             code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
+            '~': TrpcFormattedErrorMeta;
         };
     };
 };

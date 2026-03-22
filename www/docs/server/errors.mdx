@@ -287,7 +287,10 @@ import { createTRPCDeclaredError, initTRPC } from '@trpc/server';
 
 const t = initTRPC.create();
 
-const BadPhoneError = createTRPCDeclaredError('UNAUTHORIZED')
+const BadPhoneError = createTRPCDeclaredError({
+  code: 'UNAUTHORIZED',
+  key: 'BAD_PHONE',
+})
   .data<{
     reason: 'BAD_PHONE';
     phoneNumber: string;
@@ -315,7 +318,7 @@ const appRouter = t.router({
 // @filename: server.ts
 import { createTRPCDeclaredError, initTRPC } from '@trpc/server';
 
-  // You can still define an errorFormatter, but DeclaredErrors will bypass it
+// You can still define an errorFormatter, but DeclaredErrors will bypass it
 const t = initTRPC.create({
   errorFormatter(opts) {
     return {
@@ -329,7 +332,10 @@ const t = initTRPC.create({
 });
 
 // Create your Declared Error type
-const BadPhoneError = createTRPCDeclaredError('UNAUTHORIZED')
+const BadPhoneError = createTRPCDeclaredError({
+  code: 'UNAUTHORIZED',
+  key: 'BAD_PHONE',
+})
   .data<{
     reason: 'BAD_PHONE';
   }>()
@@ -351,24 +357,19 @@ export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
-import { TRPCClientError } from '@trpc/client';
+import {
+  isTRPCClientError,
+  TRPCClientError,
+} from '@trpc/client';
 import type { AppRouter } from './server';
 
 declare const error: TRPCClientError<AppRouter>;
 
-if (
-  error.shape &&
-  'reason' in error.shape.data &&
-  error.shape.data.reason === 'BAD_PHONE'
-) {
-  error.shape.data.reason;
+if (isTRPCClientError<AppRouter>(error) && error.isDeclaredError('BAD_PHONE')) {
+  error.data.reason;
 }
 
-if (
-  error.data &&
-  'code' in error.data &&
-  error.data.code === 'INTERNAL_SERVER_ERROR'
-) {
+if (isTRPCClientError<AppRouter>(error) && error.isFormattedError()) {
   error.data.requestId;
 }
 ```
@@ -376,10 +377,11 @@ if (
 ### Important behavior
 
 - Registered declared errors bypass `errorFormatter` and preserve their declared shape.
-- Registered declared errors are available on the client via `error.shape.data`.
-- If you want ergonomic frontend narrowing for declared errors, include a literal discriminator such as `reason` or `kind` in the declared data.
+- Registered declared errors and formatted errors are both read from `error.data` on the client.
+- Use `error.isDeclaredError(key)` and `error.isFormattedError()` once `isTRPCClientError(...)` has established the client error type.
+- The `key` passed to `createTRPCDeclaredError({ code, key })` is mandatory and becomes that canonical client-side discriminator.
 - Unregistered declared errors are treated as unknown, downgraded to `INTERNAL_SERVER_ERROR`, and passed through `errorFormatter`.
-- Downgraded declared errors use the normal formatted client path, so formatter data is available via `error.data`.
+- Downgraded declared errors use the normal formatted client path, so formatter data stays available via `error.data`.
 - Unregistered declared errors also emit a server-side warning so they can be detected and fixed.
 - `.errors([...])` registrations accrue across chained procedure builder calls, they can be chained to serve middlewares, and any procedure type.
 

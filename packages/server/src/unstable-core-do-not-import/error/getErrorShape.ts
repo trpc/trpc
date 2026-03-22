@@ -51,6 +51,9 @@ function getFormattedErrorShape<TRoot extends AnyRootTypes>(
   const shape: DefaultErrorShape = {
     message: error.message,
     code: TRPC_ERROR_CODES_BY_KEY[code],
+    '~': {
+      kind: 'formatted',
+    },
     data: {
       code,
       httpStatus: getHTTPStatusCodeFromError(error),

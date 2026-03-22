@@ -235,7 +235,10 @@ test('inferProcedureBuilderResolverOptions', async () => {
 test('declared error registrations are per procedure and accrue across .errors() calls', () => {
   const t = initTRPC.create();
 
-  const BadPhoneError = createTRPCDeclaredError('UNAUTHORIZED')
+  const BadPhoneError = createTRPCDeclaredError({
+    code: 'UNAUTHORIZED',
+    key: 'BAD_PHONE',
+  })
     .data<{
       reason: 'BAD_PHONE';
     }>()
@@ -245,7 +248,10 @@ test('declared error registrations are per procedure and accrue across .errors()
       },
     });
 
-  const ValidationError = createTRPCDeclaredError('BAD_REQUEST')
+  const ValidationError = createTRPCDeclaredError({
+    code: 'BAD_REQUEST',
+    key: 'VALIDATION_ERROR',
+  })
     .data<{
       field: string;
     }>()
@@ -273,7 +279,10 @@ test('declared error registrations are per procedure and accrue across .errors()
 test('procedure error boundary preserves registered declared errors', async () => {
   const t = initTRPC.create();
 
-  const BadPhoneError = createTRPCDeclaredError('UNAUTHORIZED')
+  const BadPhoneError = createTRPCDeclaredError({
+    code: 'UNAUTHORIZED',
+    key: 'BAD_PHONE',
+  })
     .data<{
       reason: 'BAD_PHONE';
     }>()
@@ -299,7 +308,10 @@ test('procedure error boundary preserves registered declared errors', async () =
 test('procedure error boundary downgrades unregistered declared errors', async () => {
   const t = initTRPC.create();
 
-  const BadPhoneError = createTRPCDeclaredError('UNAUTHORIZED')
+  const BadPhoneError = createTRPCDeclaredError({
+    code: 'UNAUTHORIZED',
+    key: 'BAD_PHONE',
+  })
     .data<{
       reason: 'BAD_PHONE';
     }>()
