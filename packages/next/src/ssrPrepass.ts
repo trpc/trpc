@@ -32,8 +32,6 @@ function transformQueryOrMutationCacheErrors<
       message: error.message,
       data: error.data,
       shape: error.shape,
-      errorType: error.errorType,
-      declaredErrorKey: error.declaredErrorKey,
     };
     return {
       ...result,
