@@ -7,13 +7,17 @@ import { behaviorSubject, observable } from '@trpc/server/observable';
 import { TRPC_ERROR_CODES_BY_KEY, type TRPCResult } from '@trpc/server/rpc';
 import {
   callProcedure,
+  getProcedureAtPath,
   isAbortError,
   isAsyncIterable,
+  isTRPCDeclaredError,
   iteratorResource,
   makeResource,
+  resolveRegisteredDeclaredErrorOrDowngrade,
   retryableRpcCodes,
   run,
   type AnyRouter,
+  type AnyTRPCDeclaredErrorClass,
   type ErrorHandlerOptions,
   type inferClientTypes,
   type inferRouterContext,
@@ -60,6 +64,7 @@ export function unstable_localLink<TRouter extends AnyRouter>(
     ({ op }) =>
       observable((observer) => {
         let ctx: inferRouterContext<TRouter> | undefined = undefined;
+        let declaredErrors: readonly AnyTRPCDeclaredErrorClass[] | undefined;
         const ac = new AbortController();
 
         const signal = raceAbortSignals(op.signal, ac.signal);
@@ -74,7 +79,8 @@ export function unstable_localLink<TRouter extends AnyRouter>(
           input = newInput;
 
           ctx = await opts.createContext();
-
+          declaredErrors = (await getProcedureAtPath(opts.router, op.path))
+            ?._def.declaredErrors;
           return callProcedure({
             router: opts.router,
             path: op.path,
@@ -86,12 +92,25 @@ export function unstable_localLink<TRouter extends AnyRouter>(
           });
         }
 
+        function resolveProcedureError(cause: unknown) {
+          const error = getTRPCErrorFromUnknown(cause);
+
+          if (isTRPCDeclaredError(error)) {
+            return resolveRegisteredDeclaredErrorOrDowngrade(error, {
+              declaredErrors,
+              path: op.path,
+            });
+          }
+
+          return error;
+        }
+
         function onErrorCallback(cause: unknown) {
           if (isAbortError(cause)) {
             return;
           }
           opts.onError?.({
-            error: getTRPCErrorFromUnknown(cause),
+            error: resolveProcedureError(cause),
             type: op.type,
             path: op.path,
             input,
@@ -103,7 +122,7 @@ export function unstable_localLink<TRouter extends AnyRouter>(
           if (isTRPCClientError<TRouter>(cause)) {
             return cause;
           }
-          const error = getTRPCErrorFromUnknown(cause);
+          const error = resolveProcedureError(cause);
 
           const shape = getTRPCErrorShape({
             config: opts.router._def._config,

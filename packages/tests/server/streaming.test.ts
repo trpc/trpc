@@ -10,7 +10,7 @@ import {
   splitLink,
   TRPCClientError,
 } from '@trpc/client';
-import { initTRPC, TRPCError } from '@trpc/server';
+import { createTRPCDeclaredError, initTRPC, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import type { InferrableClientTypes } from '@trpc/server/unstable-core-do-not-import';
 import { createDeferred, run } from '@trpc/server/unstable-core-do-not-import';
@@ -715,7 +715,7 @@ describe('no transformer', () => {
 
     const serverError = ctx.onErrorSpy.mock.calls[0]![0].error;
     expect(serverError.code).toBe('INTERNAL_SERVER_ERROR');
-    expect(serverError.message).toMatchInlineSnapshot(`""`);
+    expect(serverError.message).toBe(clientError.message);
   });
 
   test('output validation iterable return error', async () => {
@@ -815,7 +815,7 @@ describe('no transformer', () => {
 
     const serverError = ctx.onErrorSpy.mock.calls[0]![0].error;
     expect(serverError.code).toBe('INTERNAL_SERVER_ERROR');
-    expect(serverError.message).toMatchInlineSnapshot(`""`);
+    expect(serverError.message).toBe(clientError.message);
   });
 
   test('embed promise', async () => {
@@ -877,6 +877,95 @@ describe('no transformer', () => {
     const promise = await nested.promise;
 
     expect(promise).toEqual('foo');
+  });
+});
+
+describe('declared errors over httpBatchStreamLink', () => {
+  const BadPhoneError = createTRPCDeclaredError({
+    code: 'UNAUTHORIZED',
+    key: 'BAD_PHONE',
+  })
+    .data<{
+      reason: 'BAD_PHONE';
+    }>()
+    .create({
+      constants: {
+        reason: 'BAD_PHONE' as const,
+      },
+    });
+
+  const t = initTRPC.create({
+    errorFormatter({ shape }) {
+      return {
+        ...shape,
+        data: {
+          ...shape.data,
+          foo: 'bar' as const,
+        },
+      };
+    },
+  });
+
+  const router = t.router({
+    registered: t.procedure.errors([BadPhoneError]).query(() => {
+      throw new BadPhoneError();
+    }),
+    unregistered: t.procedure.query(() => {
+      throw new BadPhoneError();
+    }),
+  });
+
+  test('propagates registered declared errors', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      clientLink: 'httpBatchStreamLink',
+    });
+
+    const registeredError = await waitTRPCClientError<typeof router>(
+      ctx.client.registered.query(),
+    );
+
+    expect(registeredError.shape).toEqual({
+      code: -32001,
+      message: 'UNAUTHORIZED',
+      '~': {
+        kind: 'declared',
+        declaredErrorKey: 'BAD_PHONE',
+      },
+      data: {
+        reason: 'BAD_PHONE',
+      },
+    });
+    expect(registeredError.data).toEqual({
+      reason: 'BAD_PHONE',
+    });
+  });
+
+  test('downgrades unregistered declared errors', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      clientLink: 'httpBatchStreamLink',
+    });
+
+    const unregisteredError = await waitTRPCClientError<typeof router>(
+      ctx.client.unregistered.query(),
+    );
+
+    expect(unregisteredError.shape).toMatchObject({
+      code: -32603,
+      message: 'An unrecognized error occured',
+      data: {
+        code: 'INTERNAL_SERVER_ERROR',
+        foo: 'bar',
+        httpStatus: 500,
+        path: 'unregistered',
+      },
+    });
+    expect(unregisteredError.data).toMatchObject({
+      code: 'INTERNAL_SERVER_ERROR',
+      foo: 'bar',
+      httpStatus: 500,
+      path: 'unregistered',
+    });
+    expect(unregisteredError.data).not.toHaveProperty('reason');
   });
 });
 

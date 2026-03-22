@@ -3,6 +3,7 @@ import type {
   TRPC_ERROR_CODE_KEY,
   TRPC_ERROR_CODE_NUMBER,
   TRPCErrorShape,
+  TRPCFormattedErrorMeta,
 } from '../rpc';
 import type { TRPCError } from './TRPCError';
 
@@ -37,7 +38,8 @@ export type DefaultErrorData = {
 /**
  * @internal
  */
-export interface DefaultErrorShape extends TRPCErrorShape<DefaultErrorData> {
+export interface DefaultErrorShape
+  extends TRPCErrorShape<DefaultErrorData, TRPCFormattedErrorMeta> {
   message: string;
   code: TRPC_ERROR_CODE_NUMBER;
 }

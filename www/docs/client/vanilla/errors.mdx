@@ -1,0 +1,134 @@
+---
+id: errors
+title: Error Handling
+sidebar_label: Errors
+slug: /client/vanilla/errors
+---
+
+The vanilla client gives you two straightforward ways to handle and discriminate type-safe errors
+
+## Using `try`/`catch`
+
+```ts twoslash title='client.ts'
+// @module: esnext
+// @filename: server.ts
+import { createTRPCDeclaredError, initTRPC } from '@trpc/server';
+const t = initTRPC.create({
+  errorFormatter(opts) {
+    return {
+      ...opts.shape,
+      data: {
+        ...opts.shape.data,
+        requestId: 'req_123' as const,
+      },
+    };
+  },
+});
+const BadPhoneError = createTRPCDeclaredError({
+  code: 'UNAUTHORIZED',
+  key: 'BAD_PHONE',
+})
+  .data<{ reason: 'BAD_PHONE' }>()
+  .create({
+    constants: {
+      reason: 'BAD_PHONE' as const,
+    },
+  });
+export const appRouter = t.router({
+  login: t.procedure.errors([BadPhoneError]).mutation(() => 'ok' as const),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: trpc.ts
+import { createTRPCClient, httpBatchLink, TRPCClientError } from '@trpc/client';
+import type { AppRouter } from './server';
+export const trpc = createTRPCClient<AppRouter>({
+  links: [httpBatchLink({ url: 'http://localhost:3000/api/trpc' })],
+});
+export function isTRPCClientError(
+  cause: unknown,
+): cause is TRPCClientError<AppRouter> {
+  return cause instanceof TRPCClientError;
+}
+
+// @filename: client.ts
+// ---cut---
+import { isTRPCClientError, trpc } from './trpc';
+
+async function main() {
+  try {
+    await trpc.login.mutate();
+  } catch (cause) {
+    if (isTRPCClientError(cause) && cause.isDeclaredError('BAD_PHONE')) {
+      cause.data.reason;
+    }
+
+    if (isTRPCClientError(cause) && cause.isFormattedError()) {
+      cause.data.requestId;
+    }
+  }
+}
+
+main();
+```
+
+## Using `safe(...)`
+
+`safe()` provides superior type-safety over try-catch by returning any error as a tuple element. It will be pre-refined to only errors registered for the procedure you called.
+
+```ts twoslash title='client.ts'
+// @module: esnext
+// @filename: server.ts
+import { createTRPCDeclaredError, initTRPC } from '@trpc/server';
+const t = initTRPC.create({
+  errorFormatter(opts) {
+    return {
+      ...opts.shape,
+      data: {
+        ...opts.shape.data,
+        requestId: 'req_123' as const,
+      },
+    };
+  },
+});
+const BadPhoneError = createTRPCDeclaredError({
+  code: 'UNAUTHORIZED',
+  key: 'BAD_PHONE',
+})
+  .data<{ reason: 'BAD_PHONE' }>()
+  .create({
+    constants: {
+      reason: 'BAD_PHONE' as const,
+    },
+  });
+export const appRouter = t.router({
+  login: t.procedure.errors([BadPhoneError]).mutation(() => 'ok' as const),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: trpc.ts
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import type { AppRouter } from './server';
+export const trpc = createTRPCClient<AppRouter>({
+  links: [httpBatchLink({ url: 'http://localhost:3000/api/trpc' })],
+});
+
+// @filename: client.ts
+// ---cut---
+import { safe } from '@trpc/client';
+import { trpc } from './trpc';
+
+async function main() {
+  const [, error] = await safe(trpc.login.mutate());
+
+  if (error?.isDeclaredError('BAD_PHONE')) {
+    error.data.reason;
+  }
+
+  if (error?.isFormattedError()) {
+    error.data.requestId;
+  }
+}
+
+main();
+```

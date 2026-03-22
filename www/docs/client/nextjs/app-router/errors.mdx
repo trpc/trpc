@@ -1,0 +1,135 @@
+---
+id: errors
+title: Error Handling
+sidebar_label: Errors
+slug: /client/nextjs/app-router/errors
+---
+
+Next.js App Router has two common error-handling paths:
+
+1. Client components using TanStack Query hooks
+2. Server actions using `experimental_nextAppDirCaller` procedures with `safe()`
+
+## Client components
+
+In client components, TanStack Query errors are typed as `TRPCClientError<AppRouter> | null`, so you can narrow them directly.
+
+```tsx twoslash title='app/login-button.tsx'
+// @jsx: react-jsx
+// @filename: trpc/routers/_app.ts
+import { createTRPCDeclaredError, initTRPC } from '@trpc/server';
+const t = initTRPC.create({
+  errorFormatter(opts) {
+    return {
+      ...opts.shape,
+      data: {
+        ...opts.shape.data,
+        requestId: 'req_123' as const,
+      },
+    };
+  },
+});
+const BadPhoneError = createTRPCDeclaredError({
+  code: 'UNAUTHORIZED',
+  key: 'BAD_PHONE',
+})
+  .data<{ reason: 'BAD_PHONE' }>()
+  .create({
+    constants: {
+      reason: 'BAD_PHONE' as const,
+    },
+  });
+export const appRouter = t.router({
+  login: t.procedure.errors([BadPhoneError]).mutation(() => 'ok' as const),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: trpc/client.tsx
+'use client';
+import { createTRPCContext } from '@trpc/tanstack-react-query';
+import type { AppRouter } from './routers/_app';
+export const { useTRPC } = createTRPCContext<AppRouter>();
+
+// @filename: app/login-button.tsx
+'use client';
+import { useMutation } from '@tanstack/react-query';
+// ---cut---
+import { useTRPC } from '../trpc/client';
+
+export function LoginButton() {
+  const trpc = useTRPC();
+  const mutation = useMutation(trpc.login.mutationOptions());
+
+  if (mutation.error?.isDeclaredError('BAD_PHONE')) {
+    mutation.error.data.reason;
+  }
+
+  if (mutation.error?.isFormattedError()) {
+    mutation.error.data.requestId;
+  }
+
+  return <button onClick={() => mutation.mutate()}>Log in</button>;
+}
+```
+
+- Use `error.isDeclaredError(key)` for registered declared errors on that procedure.
+- Use `error.isFormattedError()` for formatted errors coming through `errorFormatter`.
+- Unregistered declared errors are downgraded to the formatted path. See [Server Errors](/docs/server/errors) for the full behavior.
+
+## `experimental_nextAppDirCaller` callers
+
+When you're calling a procedure through `experimental_nextAppDirCaller`, use `safe()` from `@trpc/server/adapters/next-app-dir`.
+
+```ts twoslash title='app/actions.ts'
+// @filename: server/trpc.ts
+import {
+  createTRPCDeclaredError,
+  initTRPC,
+  TRPCError,
+} from '@trpc/server';
+import {
+  experimental_nextAppDirCaller,
+  safe,
+} from '@trpc/server/adapters/next-app-dir';
+const t = initTRPC.create();
+export const BadPhoneError = createTRPCDeclaredError({
+  code: 'UNAUTHORIZED',
+  key: 'BAD_PHONE',
+})
+  .data<{ reason: 'BAD_PHONE' }>()
+  .create({
+    constants: {
+      reason: 'BAD_PHONE' as const,
+    },
+  });
+const actionProcedure = t.procedure.experimental_caller(
+  experimental_nextAppDirCaller({}),
+);
+export const login = actionProcedure
+  .errors([BadPhoneError])
+  .mutation(() => 'ok' as const);
+export { TRPCError, safe };
+
+// @filename: app/actions.ts
+'use server';
+// ---cut---
+import { BadPhoneError, login, safe, TRPCError } from '../server/trpc';
+
+export async function submitLogin() {
+  const [, error] = await safe(login());
+
+  // You can check if the error is one of your DeclaredErrors directly
+  if (error instanceof BadPhoneError) {
+    return { error: error.reason };
+  }
+
+  // Or handle as a normal TRPCError
+  if (error instanceof TRPCError) {
+    return { error: error.code };
+  }
+}
+```
+
+- In this server-side path, `safe()` returns either your result or a typed error tuple.
+- Registered declared errors stay typed and can be matched with `instanceof YourDeclaredError`.
+- Other failures come back as `TRPCError`.

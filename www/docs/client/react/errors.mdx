@@ -1,0 +1,71 @@
+---
+id: errors
+title: Error Handling
+sidebar_label: Errors
+slug: /client/react/errors
+---
+
+Hook errors are typed as `TRPCClientError<AppRouter> | null`, so you can
+narrow them directly on the client.
+
+```tsx twoslash title='components/LoginButton.tsx'
+// @jsx: react-jsx
+// @filename: server/router.ts
+import { createTRPCDeclaredError, initTRPC } from '@trpc/server';
+const t = initTRPC.create({
+  errorFormatter(opts) {
+    return {
+      ...opts.shape,
+      data: {
+        ...opts.shape.data,
+        requestId: 'req_123' as const,
+      },
+    };
+  },
+});
+const BadPhoneError = createTRPCDeclaredError({
+  code: 'UNAUTHORIZED',
+  key: 'BAD_PHONE',
+})
+  .data<{ reason: 'BAD_PHONE' }>()
+  .create({
+    constants: {
+      reason: 'BAD_PHONE' as const,
+    },
+  });
+const appRouter = t.router({
+  login: t.procedure.errors([BadPhoneError]).mutation(() => 'ok' as const),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server/router';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: components/LoginButton.tsx
+import React from 'react';
+import type { AppRouter } from '../server/router';
+// ---cut---
+import { trpc } from '../utils/trpc';
+
+export function LoginButton() {
+  const mutation = trpc.login.useMutation();
+
+  // For procedures with DeclaredErrors
+  if (mutation.error?.isDeclaredError('BAD_PHONE')) {
+    return <div>Bad Phone: {mutation.error.data.reason}</div>;
+  }
+
+  // For global errorFormatter errors
+  if (mutation.error?.isFormattedError()) {
+    return <div>Error: {mutation.error.data.requestId}</div>;
+  }
+
+  if (mutation.error) {
+    return <div>Unknown Error: {mutation.error.message}</div>;
+  }
+
+  return <button onClick={() => mutation.mutate()}>Log in</button>;
+}
+```

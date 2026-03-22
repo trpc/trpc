@@ -1,6 +1,11 @@
 import { waitError } from '@trpc/server/__tests__/waitError';
 import type { AnyRouter } from '@trpc/server';
-import { initTRPC, tracked, TRPCError } from '@trpc/server';
+import {
+  createTRPCDeclaredError,
+  initTRPC,
+  tracked,
+  TRPCError,
+} from '@trpc/server';
 import { makeResource, run } from '@trpc/server/unstable-core-do-not-import';
 import superjson from 'superjson';
 import { z } from 'zod';
@@ -493,6 +498,9 @@ test('error formatting', async () => {
           "stack": "redacted",
         },
         "message": "test",
+        "~": Object {
+          "kind": "formatted",
+        },
       }
     `);
   }
@@ -521,9 +529,72 @@ test('error formatting', async () => {
           "stack": "redacted",
         },
         "message": "BAD_GATEWAY",
+        "~": Object {
+          "kind": "formatted",
+        },
       }
     `);
   }
+});
+
+test('declared error data is inferred and can be discriminated on the client', async () => {
+  const BadPhoneError = createTRPCDeclaredError({
+    code: 'UNAUTHORIZED',
+    key: 'BAD_PHONE',
+  })
+    .data<{
+      reason: 'BAD_PHONE';
+    }>()
+    .create({
+      constants: {
+        reason: 'BAD_PHONE' as const,
+      },
+    });
+
+  const t = initTRPC.create({
+    errorFormatter(opts) {
+      return {
+        ...opts.shape,
+        data: {
+          ...opts.shape.data,
+          foo: 'bar' as const,
+        },
+      };
+    },
+  });
+
+  const appRouter = t.router({
+    registered: t.procedure.errors([BadPhoneError]).query(() => {
+      throw new BadPhoneError();
+    }),
+    unregistered: t.procedure.query(() => {
+      throw new BadPhoneError();
+    }),
+  });
+
+  const { client } = localLinkClient<typeof appRouter>({
+    router: appRouter,
+    createContext: async () => ({}),
+  });
+
+  const registeredError = await waitError(client.registered.query());
+  assert(isTRPCClientError<typeof appRouter>(registeredError));
+  assert(registeredError.isDeclaredError('BAD_PHONE'));
+
+  expect(registeredError.shape?.['~']).toEqual({
+    kind: 'declared',
+    declaredErrorKey: 'BAD_PHONE',
+  });
+  expectTypeOf(registeredError.data.reason).toEqualTypeOf<'BAD_PHONE'>();
+
+  const unregisteredError = await waitError(client.unregistered.query());
+  assert(isTRPCClientError<typeof appRouter>(unregisteredError));
+  assert(unregisteredError.isFormattedError());
+
+  expect(unregisteredError.shape?.['~']).toEqual({
+    kind: 'formatted',
+  });
+  expectTypeOf(unregisteredError.data.foo).toEqualTypeOf<'bar'>();
 });
 
 test('with transformer', async () => {
