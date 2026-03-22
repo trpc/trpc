@@ -5,7 +5,8 @@ sidebar_label: Errors
 slug: /client/react/errors
 ---
 
-Hook errors are typed as `TRPCClientError<AppRouter> | null`, so you can narrow them directly on the client.
+Hook errors are typed as `TRPCClientError<AppRouter> | null`, so you can
+narrow them directly on the client.
 
 ```tsx twoslash title='components/LoginButton.tsx'
 // @jsx: react-jsx
@@ -44,6 +45,7 @@ export const trpc = createTRPCReact<AppRouter>();
 
 // @filename: components/LoginButton.tsx
 import React from 'react';
+import type { AppRouter } from '../server/router';
 // ---cut---
 import { trpc } from '../utils/trpc';
 

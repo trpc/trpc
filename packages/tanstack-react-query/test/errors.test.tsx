@@ -1,26 +1,31 @@
 import { testReactResource } from './__helpers';
-import { useQuery } from '@tanstack/react-query';
+import {
+  QueryErrorResetBoundary,
+  useQuery,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
 import '@testing-library/react';
-import type { TRPCClientErrorLike } from '@trpc/client';
+import { fireEvent } from '@testing-library/react';
+import { isTRPCClientError, type TRPCClientErrorLike } from '@trpc/client';
 import { createTRPCDeclaredError, initTRPC } from '@trpc/server';
 import * as React from 'react';
 import { expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
 
-test('declared errors are inferred and can be discriminated', async () => {
-  const BadPhoneError = createTRPCDeclaredError({
-    code: 'UNAUTHORIZED',
-    key: 'BAD_PHONE',
-  })
-    .data<{
-      reason: 'BAD_PHONE';
-    }>()
-    .create({
-      constants: {
-        reason: 'BAD_PHONE' as const,
-      },
-    });
+const BadPhoneError = createTRPCDeclaredError({
+  code: 'UNAUTHORIZED',
+  key: 'BAD_PHONE',
+})
+  .data<{
+    reason: 'BAD_PHONE';
+  }>()
+  .create({
+    constants: {
+      reason: 'BAD_PHONE' as const,
+    },
+  });
 
+test('declared errors are inferred and can be discriminated', async () => {
   const t = initTRPC.create({
     errorFormatter(opts) {
       return {
@@ -280,5 +285,120 @@ test('TanStack query errors should narrow per procedure with duplicate declared-
   expect(errors?.email.data).toEqual({
     channel: 'email',
     emailAddress: 'bad@example.com',
+  });
+});
+
+test('TanStack suspense query declared errors are handled in an error boundary', async () => {
+  class TestErrorBoundary extends React.Component<
+    {
+      children: React.ReactNode;
+      fallbackRender: (opts: {
+        error: unknown;
+        resetErrorBoundary: () => void;
+      }) => React.ReactNode;
+      onReset?: () => void;
+    },
+    { error: unknown }
+  > {
+    public override state = {
+      error: null as unknown,
+    };
+
+    public static getDerivedStateFromError(error: unknown) {
+      return { error };
+    }
+
+    private readonly resetErrorBoundary = () => {
+      this.props.onReset?.();
+      this.setState({ error: null });
+    };
+
+    public override render() {
+      if (this.state.error) {
+        return this.props.fallbackRender({
+          error: this.state.error,
+          resetErrorBoundary: this.resetErrorBoundary,
+        });
+      }
+
+      return this.props.children;
+    }
+  }
+
+  let shouldFail = true;
+
+  const t = initTRPC.create();
+  const appRouter = t.router({
+    registered: t.procedure.errors([BadPhoneError]).query(() => {
+      if (shouldFail) {
+        throw new BadPhoneError();
+      }
+
+      return 'ok' as const;
+    }),
+  });
+
+  await using ctx = testReactResource(appRouter);
+  const boundaryErrorCallback = vi.fn();
+  const { useTRPC } = ctx;
+
+  function SuspenseQueryComponent() {
+    const trpc = useTRPC();
+    const { data } = useSuspenseQuery(
+      trpc.registered.queryOptions(undefined, {
+        retry: false,
+      }),
+    );
+
+    return <>{data}</>;
+  }
+
+  const utils = ctx.renderApp(
+    <QueryErrorResetBoundary>
+      {({ reset }) => (
+        <TestErrorBoundary
+          onReset={reset}
+          fallbackRender={({ error, resetErrorBoundary }) => {
+            boundaryErrorCallback(error);
+
+            if (
+              isTRPCClientError<typeof appRouter>(error) &&
+              error.isDeclaredError('BAD_PHONE')
+            ) {
+              expectTypeOf(error.data.reason).toEqualTypeOf<'BAD_PHONE'>();
+
+              return (
+                <button
+                  onClick={() => {
+                    shouldFail = false;
+                    resetErrorBoundary();
+                  }}
+                  type="button"
+                >
+                  retry:{error.data.reason}
+                </button>
+              );
+            }
+
+            return <div>unexpected-error</div>;
+          }}
+        >
+          <React.Suspense fallback={<div>loading</div>}>
+            <SuspenseQueryComponent />
+          </React.Suspense>
+        </TestErrorBoundary>
+      )}
+    </QueryErrorResetBoundary>,
+  );
+
+  await vi.waitFor(() => {
+    expect(utils.container).toHaveTextContent('retry:BAD_PHONE');
+    expect(boundaryErrorCallback).toHaveBeenCalled();
+  });
+
+  fireEvent.click(utils.getByRole('button', { name: 'retry:BAD_PHONE' }));
+
+  await vi.waitFor(() => {
+    expect(utils.container).toHaveTextContent('ok');
   });
 });
