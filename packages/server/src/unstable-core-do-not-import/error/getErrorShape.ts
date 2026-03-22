@@ -4,6 +4,10 @@ import type { AnyRootTypes, RootConfig } from '../rootConfig';
 import { TRPC_ERROR_CODES_BY_KEY } from '../rpc';
 import type { DefaultErrorShape } from './formatter';
 import type { TRPCError } from './TRPCError';
+import {
+  procedureErrorKeySymbol,
+  TRPCProcedureError,
+} from './TRPCProcedureError';
 
 /**
  * @internal
@@ -16,6 +20,14 @@ export function getErrorShape<TRoot extends AnyRootTypes>(opts: {
   input: unknown;
   ctx: TRoot['ctx'] | undefined;
 }): TRoot['errorShape'] {
+  const cause = opts.error.cause;
+  if (
+    cause instanceof TRPCProcedureError &&
+    typeof cause[procedureErrorKeySymbol] === 'string'
+  ) {
+    return cause.shape as TRoot['errorShape'];
+  }
+
   const { path, error, config } = opts;
   const { code } = opts.error;
   const shape: DefaultErrorShape = {
