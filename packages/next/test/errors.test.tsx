@@ -1,4 +1,4 @@
-import { isTRPCClientError, type TRPCClientErrorLike } from '@trpc/client';
+import type { TRPCClientError } from '@trpc/client';
 import { createTRPCDeclaredError, initTRPC } from '@trpc/server';
 import { expectTypeOf, test } from 'vitest';
 import { createTRPCNext } from '../src';
@@ -47,7 +47,7 @@ test('declared errors are inferred and can be discriminated', () => {
     },
   });
 
-  type AppError = TRPCClientErrorLike<typeof appRouter>;
+  type AppError = TRPCClientError<typeof appRouter>;
   type RegisteredShape = Extract<
     NonNullable<AppError['shape']>,
     { '~': { declaredErrorKey: 'BAD_PHONE' } }
@@ -67,17 +67,11 @@ test('declared errors are inferred and can be discriminated', () => {
     const unregistered = trpc.unregistered.useQuery();
 
     if (registered.error && unregistered.error) {
-      if (
-        isTRPCClientError<typeof appRouter>(registered.error) &&
-        registered.error.isDeclaredError('BAD_PHONE')
-      ) {
+      if (registered.error.isDeclaredError('BAD_PHONE')) {
         expectTypeOf(registered.error.data.reason).toEqualTypeOf<'BAD_PHONE'>();
       }
 
-      if (
-        isTRPCClientError<typeof appRouter>(unregistered.error) &&
-        unregistered.error.isFormattedError()
-      ) {
+      if (unregistered.error.isFormattedError()) {
         expectTypeOf(unregistered.error.data.foo).toEqualTypeOf<'bar'>();
       }
     }
