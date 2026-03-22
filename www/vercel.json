@@ -207,12 +207,22 @@
     },
     {
       "source": "/docs/error-formatting",
-      "destination": "/docs/server/error-formatting",
+      "destination": "/docs/server/errors",
       "permanent": true
     },
     {
       "source": "/docs/error-handling",
-      "destination": "/docs/server/error-handling",
+      "destination": "/docs/server/errors",
+      "permanent": true
+    },
+    {
+      "source": "/docs/server/error-formatting",
+      "destination": "/docs/server/errors",
+      "permanent": true
+    },
+    {
+      "source": "/docs/server/error-handling",
+      "destination": "/docs/server/errors",
       "permanent": true
     },
     {

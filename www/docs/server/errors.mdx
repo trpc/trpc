@@ -1,11 +1,13 @@
 ---
-id: error-handling
-title: Error Handling
-sidebar_label: Error Handling
-slug: /server/error-handling
+id: errors
+title: Errors
+sidebar_label: Errors
+slug: /server/errors
 ---
 
-Whenever an error occurs in a procedure, tRPC responds to the client with an object that includes an "error" property. This property contains all the information that you need to handle the error in the client.
+Whenever an error occurs in a procedure, tRPC responds with a JSON-RPC error object. That response is also the source of the client-side error types inferred by `@trpc/client`, `@trpc/react-query`, `@trpc/tanstack-react-query`, and `@trpc/next`.
+
+## Default error shape
 
 Here's an example error response caused by a bad request input:
 
@@ -19,13 +21,11 @@ Here's an example error response caused by a bad request input:
       "code": "BAD_REQUEST",
       "httpStatus": 400,
       "stack": "...",
-      "path": "user.changepassword"
+      "path": "user.changePassword"
     }
   }
 }
 ```
-
-## Stack traces in production
 
 By default, tRPC includes `error.data.stack` only when [`isDev`](routers#initialize-trpc) is `true`.
 `initTRPC.create()` sets `isDev` to `process.env.NODE_ENV !== 'production'` by default.
@@ -37,11 +37,9 @@ import { initTRPC } from '@trpc/server';
 const t = initTRPC.create({ isDev: false });
 ```
 
-If you need stricter control over which error fields are returned, use [error formatting](error-formatting).
-
 ## Error codes
 
-tRPC defines a list of error codes that each represent a different type of error and response with a different HTTP code.
+tRPC defines a list of error codes that each represent a different type of error and map to a different HTTP status.
 
 | Code                   | Description                                                                                                                                                                                                                                                                                      | HTTP code |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------- |
@@ -67,14 +65,13 @@ tRPC defines a list of error codes that each represent a different type of error
 | SERVICE_UNAVAILABLE    | The server is not ready to handle the request.                                                                                                                                                                                                                                                   | 503       |
 | GATEWAY_TIMEOUT        | The server did not get a response in time from the upstream server that it needed in order to complete the request.                                                                                                                                                                              | 504       |
 
-tRPC exposes a helper function, `getHTTPStatusCodeFromError`, to help you extract the HTTP code from the error:
+tRPC exposes `getHTTPStatusCodeFromError` to extract the HTTP status code from a `TRPCError`:
 
 ```ts twoslash
 import { TRPCError } from '@trpc/server';
 // ---cut---
 import { getHTTPStatusCodeFromError } from '@trpc/server/http';
 
-// Example error you might get if your input validation fails
 const error: TRPCError = {
   name: 'TRPCError',
   code: 'BAD_REQUEST',
@@ -88,16 +85,12 @@ if (error instanceof TRPCError) {
 ```
 
 :::tip
-
 There's a full example of how error handling works in a server-side context in the [Server Side Calls docs](server-side-calls).
-
 :::
 
-## Throwing errors
+## Throwing `TRPCError`
 
-tRPC provides an error subclass, `TRPCError`, which you can use to represent an error that occurred inside a procedure.
-
-For example, throwing this error:
+Use `TRPCError` for general-purpose application errors:
 
 ```ts twoslash title='server.ts'
 import { initTRPC, TRPCError } from '@trpc/server';
@@ -116,31 +109,11 @@ const appRouter = t.router({
     });
   }),
 });
-
-// [...]
 ```
 
-Results in the following response:
+## Handling errors with `onError`
 
-```json
-{
-  "id": null,
-  "error": {
-    "message": "An unexpected error occurred, please try again later.",
-    "code": -32603,
-    "data": {
-      "code": "INTERNAL_SERVER_ERROR",
-      "httpStatus": 500,
-      "stack": "...",
-      "path": "hello"
-    }
-  }
-}
-```
-
-## Handling errors
-
-All errors that occur in a procedure go through the `onError` method before being sent to the client. Here you can handle errors (To change errors see [error formatting](error-formatting)).
+All procedure errors go through `onError` before a response is sent. Use this for logging, telemetry, and bug reporting. You cannot affect what is sent to the client from here, for that keep reading to [Error Formatting](#error-formatting).
 
 ```ts twoslash title='server.ts'
 // @filename: router.ts
@@ -165,7 +138,7 @@ const server = createHTTPServer({
 });
 ```
 
-The `onError` parameter is an object that contains all information about the error and the context it occurs in:
+The `onError` callback receives:
 
 ```ts twoslash
 import { TRPCError } from '@trpc/server';
@@ -179,3 +152,235 @@ interface OnErrorOpts {
   req: Request;
 }
 ```
+
+## Error formatting
+
+Your router's `errorFormatter` return type is inferred all the way to the client. Here you can handle globally caught errors, detect known errors, and structure as a custom shape before returning to the client.
+
+```ts twoslash title='server.ts'
+import { initTRPC } from '@trpc/server';
+import { ZodError } from 'zod';
+
+export const t = initTRPC.create({
+  errorFormatter(opts) {
+    const { shape, error } = opts;
+    return {
+      ...shape,
+      data: {
+        ...shape.data,
+        zodError:
+          error.code === 'BAD_REQUEST' && error.cause instanceof ZodError
+            ? error.cause.flatten()
+            : null,
+      },
+    };
+  },
+});
+```
+
+On the client, that formatter output is available with the inferred type:
+
+```tsx twoslash title='components/MyComponent.tsx'
+// @jsx: react-jsx
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { ZodError, z } from 'zod';
+
+const t = initTRPC.create({
+  errorFormatter(opts) {
+    const { shape, error } = opts;
+    return {
+      ...shape,
+      data: {
+        ...shape.data,
+        zodError:
+          error.code === 'BAD_REQUEST' && error.cause instanceof ZodError
+            ? error.cause.flatten()
+            : null,
+      },
+    };
+  },
+});
+export const appRouter = t.router({
+  addPost: t.procedure
+    .input(z.object({ title: z.string() }))
+    .mutation(({ input }) => input),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: components/MyComponent.tsx
+// ---cut---
+import { useEffect } from 'react';
+import { trpc } from '../utils/trpc';
+
+export function MyComponent() {
+  const mutation = trpc.addPost.useMutation();
+
+  useEffect(() => {
+    mutation.mutate({ title: 'example' });
+  }, []);
+
+  if (mutation.error?.data?.zodError) {
+    return (
+      <pre>Error: {JSON.stringify(mutation.error.data.zodError, null, 2)}</pre>
+    );
+  }
+
+  return <>[...]</>;
+}
+```
+
+### `errorFormatter()` input
+
+```ts twoslash
+import { TRPCError } from '@trpc/server';
+// ---cut---
+interface ErrorFormatterOpts {
+  error: TRPCError;
+  type: 'query' | 'mutation' | 'subscription' | 'unknown';
+  path: string | undefined;
+  input: unknown;
+  ctx: unknown;
+  shape: { message: string; code: number; data: unknown };
+}
+```
+
+### `DefaultErrorShape`
+
+```ts twoslash
+import type { TRPC_ERROR_CODE_KEY, TRPC_ERROR_CODE_NUMBER } from '@trpc/server';
+// ---cut---
+type DefaultErrorData = {
+  code: TRPC_ERROR_CODE_KEY;
+  httpStatus: number;
+  path?: string;
+  stack?: string;
+};
+
+interface DefaultErrorShape {
+  message: string;
+  code: TRPC_ERROR_CODE_NUMBER;
+  data: DefaultErrorData;
+}
+```
+
+## Per-procedure "Declared Errors"
+
+Declared Errors let you opt specific procedures into a typed, explicit error contract.
+
+### Why use them?
+
+- They give you a stable `.data` shape for known business errors.
+- They flow into client-side error inference.
+- They make frontend discrimination straightforward
+- They keep the contract local to the procedure instead of making the entire API share one combined error type.
+
+### Declaring and registering an error
+
+```ts twoslash title='server.ts'
+import { createTRPCDeclaredError, initTRPC } from '@trpc/server';
+
+const t = initTRPC.create();
+
+const BadPhoneError = createTRPCDeclaredError('UNAUTHORIZED')
+  .data<{
+    reason: 'BAD_PHONE';
+    phoneNumber: string;
+  }>()
+  .create({
+    constants: {
+      reason: 'BAD_PHONE' as const,
+    },
+  });
+
+const appRouter = t.router({
+  sendSms: t.procedure
+    .errors([BadPhoneError])
+    .mutation(() => {
+      throw new BadPhoneError({
+        phoneNumber: '+441234567890',
+      });
+    }),
+});
+```
+
+### Client-side discrimination
+
+```ts twoslash title='client.ts'
+// @filename: server.ts
+import { createTRPCDeclaredError, initTRPC } from '@trpc/server';
+
+  // You can still define an errorFormatter, but DeclaredErrors will bypass it
+const t = initTRPC.create({
+  errorFormatter(opts) {
+    return {
+      ...opts.shape,
+      data: {
+        ...opts.shape.data,
+        requestId: 'req_demo' as const,
+      },
+    };
+  },
+});
+
+// Create your Declared Error type
+const BadPhoneError = createTRPCDeclaredError('UNAUTHORIZED')
+  .data<{
+    reason: 'BAD_PHONE';
+  }>()
+  .create({
+    constants: {
+      reason: 'BAD_PHONE' as const,
+    },
+  });
+
+export const appRouter = t.router({
+  registered: t.procedure.errors([BadPhoneError]).query(() => {
+    throw new BadPhoneError();
+  }),
+  unregistered: t.procedure.query(() => {
+    throw new BadPhoneError();
+  }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
+import { TRPCClientError } from '@trpc/client';
+import type { AppRouter } from './server';
+
+declare const error: TRPCClientError<AppRouter>;
+
+if (
+  error.shape &&
+  'reason' in error.shape.data &&
+  error.shape.data.reason === 'BAD_PHONE'
+) {
+  error.shape.data.reason;
+}
+
+if (
+  error.data &&
+  'code' in error.data &&
+  error.data.code === 'INTERNAL_SERVER_ERROR'
+) {
+  error.data.requestId;
+}
+```
+
+### Important behavior
+
+- Registered declared errors bypass `errorFormatter` and preserve their declared shape.
+- Registered declared errors are available on the client via `error.shape.data`.
+- If you want ergonomic frontend narrowing for declared errors, include a literal discriminator such as `reason` or `kind` in the declared data.
+- Unregistered declared errors are treated as unknown, downgraded to `INTERNAL_SERVER_ERROR`, and passed through `errorFormatter`.
+- Downgraded declared errors use the normal formatted client path, so formatter data is available via `error.data`.
+- Unregistered declared errors also emit a server-side warning so they can be detected and fixed.
+- `.errors([...])` registrations accrue across chained procedure builder calls, they can be chained to serve middlewares, and any procedure type.
+
+Use declared errors when the client should be able to rely on a specific, documented error contract from a specific procedure.
