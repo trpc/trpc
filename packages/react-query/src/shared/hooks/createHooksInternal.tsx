@@ -13,7 +13,7 @@ import {
   hashKey,
   skipToken,
 } from '@tanstack/react-query';
-import type { TRPCClientErrorLike } from '@trpc/client';
+import type { TRPCClientError } from '@trpc/client';
 import {
   createTRPCClient,
   getUntypedClient,
@@ -88,7 +88,7 @@ export function createRootHooks<
     config?.overrides?.useMutation?.onSuccess ??
     ((options) => options.originalFn());
 
-  type TError = TRPCClientErrorLike<TRouter>;
+  type TError = TRPCClientError<TRouter>;
 
   type ProviderContext = TRPCContextState<TRouter, TSSRContext>;
 

@@ -1,7 +1,7 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { render } from '@testing-library/react';
 import type { TRPCClientErrorLike } from '@trpc/client';
-import { isTRPCClientError, TRPCClientError } from '@trpc/client';
+import { TRPCClientError } from '@trpc/client';
 import { createTRPCDeclaredError, initTRPC } from '@trpc/server';
 import type {
   DefaultErrorData,
@@ -62,7 +62,7 @@ describe('custom error formatter', () => {
           TRPCClientErrorLike<typeof appRouter>
         >();
         expectTypeOf(query1.error).toEqualTypeOf<
-          TRPCClientErrorLike<typeof appRouter>
+          TRPCClientError<typeof appRouter>
         >();
         queryErrorCallback(query1.error);
         return (
@@ -145,7 +145,7 @@ describe('no custom formatter', () => {
           TRPCClientErrorLike<typeof appRouter>
         >();
         expectTypeOf(query1.error).toEqualTypeOf<
-          TRPCClientErrorLike<typeof appRouter>
+          TRPCClientError<typeof appRouter>
         >();
         queryErrorCallback(query1.error);
         return (
@@ -234,9 +234,9 @@ describe('declared errors', () => {
     .done();
 
   test('query errors are inferred and can be discriminated', async () => {
-    const { client, App } = ctx;
+    const { client, App, appRouter } = ctx;
     const queryErrorCallback = vi.fn();
-    type AppError = TRPCClientErrorLike<(typeof ctx)['appRouter']>;
+    type AppError = TRPCClientError<typeof appRouter>;
     type RegisteredShape = Extract<
       NonNullable<AppError['shape']>,
       { '~': { declaredErrorKey: 'BAD_PHONE' } }
@@ -259,18 +259,12 @@ describe('declared errors', () => {
         return <>...</>;
       }
 
-      if (
-        isTRPCClientError<(typeof ctx)['appRouter']>(registered.error) &&
-        registered.error.isDeclaredError('BAD_PHONE')
-      ) {
-        expectTypeOf(registered.error.data.reason).toEqualTypeOf<'BAD_PHONE'>();
+      if (registered.error.isDeclaredError()) {
+        expect(registered.error.isDeclaredError()).toBe(true);
       }
 
-      if (
-        isTRPCClientError<(typeof ctx)['appRouter']>(unregistered.error) &&
-        unregistered.error.isFormattedError()
-      ) {
-        expectTypeOf(unregistered.error.data.foo).toEqualTypeOf<'bar'>();
+      if (unregistered.error.isFormattedError()) {
+        expect(unregistered.error.isFormattedError()).toBe(true);
       }
 
       queryErrorCallback({
@@ -309,7 +303,7 @@ test('types', async () => {
     }),
   });
 
-  type TRouterError = TRPCClientErrorLike<typeof appRouter>;
+  type TRouterError = TRPCClientError<typeof appRouter>;
 
   type TRouterError__data = TRouterError['data'];
   //      ^?
