@@ -5,6 +5,7 @@ import type {
   AnyRouter,
   inferClientTypes,
   inferProcedureInput,
+  inferProcedureParams,
   InferrableClientTypes,
   inferTransformedProcedureOutput,
   ProcedureType,
@@ -60,11 +61,17 @@ type coerceAsyncGeneratorToIterable<T> =
     ? AsyncIterable<$T, $Return, $Next>
     : T;
 
+type ResolverResultPromise<TDef extends TRPCResolverDef> = Promise<
+  coerceAsyncGeneratorToIterable<TDef['output']>
+> & {
+  readonly __errorShape?: TDef['errorShape'];
+};
+
 /** @internal */
 export type Resolver<TDef extends TRPCResolverDef> = (
   input: TDef['input'],
   opts?: TRPCProcedureOptions,
-) => Promise<coerceAsyncGeneratorToIterable<TDef['output']>>;
+) => ResolverResultPromise<TDef>;
 
 /** @internal */
 export type SubscriptionResolver<TDef extends TRPCResolverDef> = (
@@ -109,7 +116,9 @@ type DecoratedProcedureRecord<
               inferClientTypes<TRoot>,
               $Value
             >;
-            errorShape: inferClientTypes<TRoot>['errorShape'];
+            errorShape:
+              | inferClientTypes<TRoot>['errorShape']
+              | inferProcedureParams<$Value>['$types']['errorShape'];
             transformer: inferClientTypes<TRoot>['transformer'];
           }
         >

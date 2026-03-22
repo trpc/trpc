@@ -25,13 +25,14 @@ const trpc = createTRPCClient<AppRouter>({
 async function main() {
   try {
     // This procedure registers the declared error, so the client receives
-    // the declared shape on `error.shape.data`.
+    // the declared payload unchanged and can narrow it by key.
     await trpc.examples.registered.query();
   } catch (error) {
-    if (isTRPCClientError<AppRouter>(error)) {
-      if (error.shape?.data && 'reason' in error.shape.data) {
-        console.log(`Registered declared error: ${error.shape.data.reason}`);
-      }
+    if (
+      isTRPCClientError<AppRouter>(error) &&
+      error.isDeclaredError('USER_NOT_FOUND')
+    ) {
+      console.log(`Registered declared error: ${error.data.reason}`);
     }
   }
 
@@ -40,10 +41,8 @@ async function main() {
     // so it is downgraded and passed through the normal formatter path.
     await trpc.examples.unregistered.query();
   } catch (error) {
-    if (isTRPCClientError<AppRouter>(error)) {
-      if (error.data && 'code' in error.data) {
-        console.log(`Formatted error requestId: ${error.data.requestId}`);
-      }
+    if (isTRPCClientError<AppRouter>(error) && error.isFormattedError()) {
+      console.log(`Formatted error requestId: ${error.data.requestId}`);
     }
   }
 }

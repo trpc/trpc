@@ -11,7 +11,10 @@ function createTestRequest(url: string, init?: RequestInit) {
 }
 
 describe(resolveResponse, () => {
-  const BadPhoneError = createTRPCDeclaredError('UNAUTHORIZED')
+  const BadPhoneError = createTRPCDeclaredError({
+    code: 'UNAUTHORIZED',
+    key: 'BAD_PHONE',
+  })
     .data<{
       reason: 'BAD_PHONE';
     }>()
@@ -56,6 +59,10 @@ describe(resolveResponse, () => {
     expect(body.error).toEqual({
       code: -32001,
       message: 'UNAUTHORIZED',
+      '~': {
+        kind: 'declared',
+        declaredErrorKey: 'BAD_PHONE',
+      },
       data: {
         reason: 'BAD_PHONE',
       },

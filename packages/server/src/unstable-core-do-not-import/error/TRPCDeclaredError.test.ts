@@ -8,8 +8,14 @@ import { TRPCError } from './TRPCError';
 
 describe(createTRPCDeclaredError, () => {
   test('creates distinct declared error classes', () => {
-    const MyError = createTRPCDeclaredError('NOT_FOUND').create();
-    const OtherError = createTRPCDeclaredError('NOT_FOUND').create();
+    const MyError = createTRPCDeclaredError({
+      code: 'NOT_FOUND',
+      key: 'MY_ERROR',
+    }).create();
+    const OtherError = createTRPCDeclaredError({
+      code: 'NOT_FOUND',
+      key: 'OTHER_ERROR',
+    }).create();
     const err = new MyError();
     const otherErr = new OtherError();
 
@@ -22,7 +28,10 @@ describe(createTRPCDeclaredError, () => {
   });
 
   test('uses the code as the literal message', () => {
-    const MyError = createTRPCDeclaredError('BAD_REQUEST').create();
+    const MyError = createTRPCDeclaredError({
+      code: 'BAD_REQUEST',
+      key: 'BAD_REQUEST_ERROR',
+    }).create();
 
     const err = new MyError();
     expect(err.message).toBe('BAD_REQUEST');
@@ -30,7 +39,10 @@ describe(createTRPCDeclaredError, () => {
   });
 
   test('resolveRegisteredDeclaredErrorOrDowngrade preserves registered declared errors', () => {
-    const BadPhoneError = createTRPCDeclaredError('UNAUTHORIZED')
+    const BadPhoneError = createTRPCDeclaredError({
+      code: 'UNAUTHORIZED',
+      key: 'BAD_PHONE',
+    })
       .data<{
         reason: 'BAD_PHONE';
       }>()
@@ -51,7 +63,10 @@ describe(createTRPCDeclaredError, () => {
   });
 
   test('resolveRegisteredDeclaredErrorOrDowngrade downgrades unregistered declared errors and warns', () => {
-    const BadPhoneError = createTRPCDeclaredError('UNAUTHORIZED')
+    const BadPhoneError = createTRPCDeclaredError({
+      code: 'UNAUTHORIZED',
+      key: 'BAD_PHONE',
+    })
       .data<{
         reason: 'BAD_PHONE';
       }>()
@@ -89,7 +104,10 @@ describe(createTRPCDeclaredError, () => {
   });
 
   test('toShape returns correct shape with defaulted data', () => {
-    const MyError = createTRPCDeclaredError('NOT_FOUND')
+    const MyError = createTRPCDeclaredError({
+      code: 'NOT_FOUND',
+      key: 'USER_NOT_FOUND',
+    })
       .data<{
         resourceType: 'user';
       }>()
@@ -103,12 +121,19 @@ describe(createTRPCDeclaredError, () => {
     expect(err.toShape()).toEqual({
       code: -32004,
       message: 'NOT_FOUND',
+      '~': {
+        kind: 'declared',
+        declaredErrorKey: 'USER_NOT_FOUND',
+      },
       data: { resourceType: 'user' },
     });
   });
 
   test('constructor input requires only missing required extra fields', () => {
-    const NeedsFoo = createTRPCDeclaredError('BAD_REQUEST')
+    const NeedsFoo = createTRPCDeclaredError({
+      code: 'BAD_REQUEST',
+      key: 'NEEDS_FOO',
+    })
       .data<{
         foo: string;
         bar?: number;
@@ -134,7 +159,10 @@ describe(createTRPCDeclaredError, () => {
   });
 
   test('constructor input makes defaulted extra fields optional', () => {
-    const needsFooBuilder = createTRPCDeclaredError('BAD_REQUEST').data<{
+    const needsFooBuilder = createTRPCDeclaredError({
+      code: 'BAD_REQUEST',
+      key: 'NEEDS_FOO',
+    }).data<{
       foo: string;
       bar: number;
     }>();
@@ -166,7 +194,10 @@ describe(createTRPCDeclaredError, () => {
   });
 
   test('constants are removed from constructor input', () => {
-    const needsFooBuilder = createTRPCDeclaredError('BAD_REQUEST').data<{
+    const needsFooBuilder = createTRPCDeclaredError({
+      code: 'BAD_REQUEST',
+      key: 'NEEDS_FOO',
+    }).data<{
       foo: string;
       bar: number;
     }>();
@@ -198,6 +229,10 @@ describe(createTRPCDeclaredError, () => {
     expect(err.toShape()).toEqual({
       code: -32600,
       message: 'BAD_REQUEST',
+      '~': {
+        kind: 'declared',
+        declaredErrorKey: 'NEEDS_FOO',
+      },
       data: {
         foo: 'hello',
         bar: 1,
@@ -206,7 +241,10 @@ describe(createTRPCDeclaredError, () => {
   });
 
   test('defaults and constants compose correctly', () => {
-    const needsFooBuilder = createTRPCDeclaredError('BAD_REQUEST').data<{
+    const needsFooBuilder = createTRPCDeclaredError({
+      code: 'BAD_REQUEST',
+      key: 'NEEDS_FOO',
+    }).data<{
       foo: string;
       bar: number;
       baz: 'CONST';
@@ -243,6 +281,10 @@ describe(createTRPCDeclaredError, () => {
     expect(err1.toShape()).toEqual({
       code: -32600,
       message: 'BAD_REQUEST',
+      '~': {
+        kind: 'declared',
+        declaredErrorKey: 'NEEDS_FOO',
+      },
       data: {
         foo: 'hello',
         bar: 1,
@@ -257,6 +299,10 @@ describe(createTRPCDeclaredError, () => {
     expect(err2.toShape()).toEqual({
       code: -32600,
       message: 'BAD_REQUEST',
+      '~': {
+        kind: 'declared',
+        declaredErrorKey: 'NEEDS_FOO',
+      },
       data: {
         foo: 'hello',
         bar: 2,
@@ -267,7 +313,10 @@ describe(createTRPCDeclaredError, () => {
   });
 
   test('constructor becomes optional when all required data is defaulted', () => {
-    const badPhoneErrorBuilder = createTRPCDeclaredError('UNAUTHORIZED').data<{
+    const badPhoneErrorBuilder = createTRPCDeclaredError({
+      code: 'UNAUTHORIZED',
+      key: 'BAD_PHONE',
+    }).data<{
       reason: 'BAD_PHONE';
     }>();
     const BadPhoneError = badPhoneErrorBuilder.create({
@@ -294,12 +343,19 @@ describe(createTRPCDeclaredError, () => {
     expect(err1.toShape()).toEqual({
       code: -32001,
       message: 'UNAUTHORIZED',
+      '~': {
+        kind: 'declared',
+        declaredErrorKey: 'BAD_PHONE',
+      },
       data: { reason: 'BAD_PHONE' },
     });
   });
 
   test('constructor becomes optional when all required data is constant', () => {
-    const badPhoneErrorBuilder = createTRPCDeclaredError('UNAUTHORIZED').data<{
+    const badPhoneErrorBuilder = createTRPCDeclaredError({
+      code: 'UNAUTHORIZED',
+      key: 'BAD_PHONE',
+    }).data<{
       reason: 'BAD_PHONE';
     }>();
     const BadPhoneError = badPhoneErrorBuilder.create({
@@ -324,7 +380,10 @@ describe(createTRPCDeclaredError, () => {
   });
 
   test('message can be used as data without colliding', () => {
-    const MyError = createTRPCDeclaredError('BAD_REQUEST')
+    const MyError = createTRPCDeclaredError({
+      code: 'BAD_REQUEST',
+      key: 'DETAIL_MESSAGE',
+    })
       .data<{
         message: 'DETAIL';
       }>()
@@ -339,12 +398,19 @@ describe(createTRPCDeclaredError, () => {
     expect(err.toShape()).toEqual({
       code: -32600,
       message: 'BAD_REQUEST',
+      '~': {
+        kind: 'declared',
+        declaredErrorKey: 'DETAIL_MESSAGE',
+      },
       data: { message: 'DETAIL' },
     });
   });
 
   test('constant message data does not collide with the declared error message', () => {
-    const MyError = createTRPCDeclaredError('BAD_REQUEST')
+    const MyError = createTRPCDeclaredError({
+      code: 'BAD_REQUEST',
+      key: 'DETAIL_MESSAGE',
+    })
       .data<{
         message: 'DETAIL';
       }>()
@@ -359,6 +425,10 @@ describe(createTRPCDeclaredError, () => {
     expect(err.toShape()).toEqual({
       code: -32600,
       message: 'BAD_REQUEST',
+      '~': {
+        kind: 'declared',
+        declaredErrorKey: 'DETAIL_MESSAGE',
+      },
       data: { message: 'DETAIL' },
     });
   });

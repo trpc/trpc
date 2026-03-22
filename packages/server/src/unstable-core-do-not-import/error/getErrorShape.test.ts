@@ -8,7 +8,10 @@ import {
 } from './TRPCProcedureError';
 
 describe(getErrorShape, () => {
-  const BadPhoneError = createTRPCDeclaredError('UNAUTHORIZED')
+  const BadPhoneError = createTRPCDeclaredError({
+    code: 'UNAUTHORIZED',
+    key: 'BAD_PHONE',
+  })
     .data<{
       reason: 'BAD_PHONE';
     }>()
@@ -43,6 +46,10 @@ describe(getErrorShape, () => {
     expect(shape).toEqual({
       code: -32001,
       message: 'UNAUTHORIZED',
+      '~': {
+        kind: 'declared',
+        declaredErrorKey: 'BAD_PHONE',
+      },
       data: {
         reason: 'BAD_PHONE',
       },
@@ -53,6 +60,9 @@ describe(getErrorShape, () => {
     const procedureError = new TRPCProcedureError({
       code: -32600,
       message: 'BAD_REQUEST',
+      '~': {
+        kind: 'formatted',
+      },
       data: {
         field: 'email',
       },
@@ -74,6 +84,9 @@ describe(getErrorShape, () => {
     expect(shape).toEqual({
       code: -32600,
       message: 'BAD_REQUEST',
+      '~': {
+        kind: 'formatted',
+      },
       data: {
         field: 'email',
       },
@@ -95,6 +108,9 @@ describe(getErrorShape, () => {
 
     expect(shape).toMatchObject({
       message: 'regular error',
+      '~': {
+        kind: 'formatted',
+      },
       data: {
         foo: 'bar',
         path: 'regularError',

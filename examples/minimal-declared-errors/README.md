@@ -18,8 +18,8 @@ This example keeps just enough code to show the two important cases:
 
 On the client:
 
-- the registered case is available on `error.shape.data`
-- the unregistered case is downgraded and comes through the normal formatter path on `error.data`
+- the registered case is narrowed with `isTRPCClientError<AppRouter>(error)` and then `error.isDeclaredError('USER_NOT_FOUND')`
+- the unregistered case is narrowed with `isTRPCClientError<AppRouter>(error)` and then `error.isFormattedError()`
 
 ## Building
 

@@ -4,11 +4,23 @@ import type {
   Maybe,
   TRPCErrorResponse,
   TRPCErrorShape,
+  TRPCFormattedErrorMeta,
 } from '@trpc/server/unstable-core-do-not-import';
 import { isObject } from '@trpc/server/unstable-core-do-not-import';
 
 type inferErrorShape<TInferrable extends InferrableClientTypes> =
   inferClientTypes<TInferrable>['errorShape'];
+type inferFormattedShape<TShape extends TRPCErrorShape> = Extract<
+  TShape,
+  { '~': TRPCFormattedErrorMeta }
+>;
+type inferDeclaredShape<TShape extends TRPCErrorShape> = Extract<
+  TShape,
+  { '~': { declaredErrorKey: string } }
+>;
+type inferDeclaredKey<TShape extends TRPCErrorShape> =
+  inferDeclaredShape<TShape>['~']['declaredErrorKey'];
+
 export interface TRPCClientErrorBase<TShape extends TRPCErrorShape> {
   readonly message: string;
   readonly shape: Maybe<TShape>;
@@ -19,9 +31,30 @@ export type TRPCClientErrorLike<TInferrable extends InferrableClientTypes> =
 
 export function isTRPCClientError<TInferrable extends InferrableClientTypes>(
   cause: unknown,
-): cause is TRPCClientError<TInferrable> {
+): cause is TRPCClientError<TInferrable> & TRPCClientErrorLike<TInferrable> {
   return cause instanceof TRPCClientError;
 }
+
+type inferFormattedErrorShape<TInferrable extends InferrableClientTypes> =
+  inferFormattedShape<inferErrorShape<TInferrable>>;
+type inferDeclaredErrorShape<TInferrable extends InferrableClientTypes> =
+  inferDeclaredShape<inferErrorShape<TInferrable>>;
+type inferDeclaredClientErrorKey<TInferrable extends InferrableClientTypes> =
+  inferDeclaredKey<inferErrorShape<TInferrable>>;
+type inferDeclaredErrorShapeByKey<
+  TInferrable extends InferrableClientTypes,
+  TDeclaredErrorKey extends inferDeclaredClientErrorKey<TInferrable>,
+> = Extract<
+  inferDeclaredErrorShape<TInferrable>,
+  { '~': { declaredErrorKey: TDeclaredErrorKey } }
+>;
+type narrowedTRPCClientError<
+  TRouterOrProcedure extends InferrableClientTypes,
+  TShape extends inferErrorShape<TRouterOrProcedure>,
+> = Omit<TRPCClientError<TRouterOrProcedure>, 'shape' | 'data'> & {
+  readonly shape: TShape;
+  readonly data: TShape['data'];
+};
 
 function isTRPCErrorResponse(obj: unknown): obj is TRPCErrorResponse<any> {
   return (
@@ -80,6 +113,35 @@ export class TRPCClientError<TRouterOrProcedure extends InferrableClientTypes>
     this.name = 'TRPCClientError';
 
     Object.setPrototypeOf(this, TRPCClientError.prototype);
+  }
+
+  public isFormattedError(): this is narrowedTRPCClientError<
+    TRouterOrProcedure,
+    inferFormattedErrorShape<TRouterOrProcedure>
+  > {
+    return this.shape?.['~'].kind === 'formatted';
+  }
+
+  public isDeclaredError(): this is narrowedTRPCClientError<
+    TRouterOrProcedure,
+    inferDeclaredErrorShape<TRouterOrProcedure>
+  >;
+  public isDeclaredError<
+    const TDeclaredErrorKey extends inferDeclaredClientErrorKey<
+      NoInfer<TRouterOrProcedure>
+    >,
+  >(
+    declaredErrorKey: TDeclaredErrorKey,
+  ): this is narrowedTRPCClientError<
+    TRouterOrProcedure,
+    inferDeclaredErrorShapeByKey<TRouterOrProcedure, TDeclaredErrorKey>
+  >;
+  public isDeclaredError(declaredErrorKey?: string) {
+    return (
+      this.shape?.['~'].kind === 'declared' &&
+      (declaredErrorKey === undefined ||
+        this.shape?.['~'].declaredErrorKey === declaredErrorKey)
+    );
   }
 
   public static from<TRouterOrProcedure extends InferrableClientTypes>(

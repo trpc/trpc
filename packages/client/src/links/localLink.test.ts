@@ -498,6 +498,9 @@ test('error formatting', async () => {
           "stack": "redacted",
         },
         "message": "test",
+        "~": Object {
+          "kind": "formatted",
+        },
       }
     `);
   }
@@ -526,13 +529,19 @@ test('error formatting', async () => {
           "stack": "redacted",
         },
         "message": "BAD_GATEWAY",
+        "~": Object {
+          "kind": "formatted",
+        },
       }
     `);
   }
 });
 
 test('declared error data is inferred and can be discriminated on the client', async () => {
-  const BadPhoneError = createTRPCDeclaredError('UNAUTHORIZED')
+  const BadPhoneError = createTRPCDeclaredError({
+    code: 'UNAUTHORIZED',
+    key: 'BAD_PHONE',
+  })
     .data<{
       reason: 'BAD_PHONE';
     }>()
@@ -570,41 +579,22 @@ test('declared error data is inferred and can be discriminated on the client', a
 
   const registeredError = await waitError(client.registered.query());
   assert(isTRPCClientError<typeof appRouter>(registeredError));
+  assert(registeredError.isDeclaredError('BAD_PHONE'));
 
-  if (
-    registeredError.shape &&
-    'reason' in registeredError.shape.data &&
-    registeredError.shape.data.reason === 'BAD_PHONE'
-  ) {
-    expectTypeOf(
-      registeredError.shape.data.reason,
-    ).toEqualTypeOf<'BAD_PHONE'>();
-  } else {
-    throw new Error('expected registered declared error');
-  }
+  expect(registeredError.shape?.['~']).toEqual({
+    kind: 'declared',
+    declaredErrorKey: 'BAD_PHONE',
+  });
+  expectTypeOf(registeredError.data.reason).toEqualTypeOf<'BAD_PHONE'>();
 
   const unregisteredError = await waitError(client.unregistered.query());
   assert(isTRPCClientError<typeof appRouter>(unregisteredError));
+  assert(unregisteredError.isFormattedError());
 
-  if (
-    unregisteredError.data &&
-    'code' in unregisteredError.data &&
-    unregisteredError.data.code === 'INTERNAL_SERVER_ERROR'
-  ) {
-    expectTypeOf(unregisteredError.data.foo).toEqualTypeOf<'bar'>();
-  } else {
-    throw new Error('expected downgraded declared error');
-  }
-
-  if (
-    unregisteredError.shape &&
-    'code' in unregisteredError.shape.data &&
-    unregisteredError.shape.data.code === 'INTERNAL_SERVER_ERROR'
-  ) {
-    expectTypeOf(unregisteredError.shape.data.foo).toEqualTypeOf<'bar'>();
-  } else {
-    throw new Error('expected downgraded declared error');
-  }
+  expect(unregisteredError.shape?.['~']).toEqual({
+    kind: 'formatted',
+  });
+  expectTypeOf(unregisteredError.data.foo).toEqualTypeOf<'bar'>();
 });
 
 test('with transformer', async () => {

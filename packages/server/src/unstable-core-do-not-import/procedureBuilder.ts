@@ -25,6 +25,7 @@ import type {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
+  BuiltProcedureDef,
   LegacyObservableSubscriptionProcedure,
   MutationProcedure,
   ProcedureType,
@@ -68,6 +69,18 @@ type inferSubscriptionOutput<TOutput> =
         inferAsyncIterable<TOutput>['next']
       >
     : TypeError<'Subscription output could not be inferred'>;
+
+type CallerResultPromise<TOutput, TErrorShape> = Promise<TOutput> & {
+  readonly __errorShape?: TErrorShape;
+};
+type CallerQueryProcedure<TDef extends BuiltProcedureDef> = ((
+  input: TDef['input'],
+) => CallerResultPromise<TDef['output'], TDef['errorShape']>) &
+  QueryProcedure<TDef>;
+type CallerMutationProcedure<TDef extends BuiltProcedureDef> = ((
+  input: TDef['input'],
+) => CallerResultPromise<TDef['output'], TDef['errorShape']>) &
+  MutationProcedure<TDef>;
 
 export type CallerOverride<TContext> = (opts: {
   args: unknown[];
@@ -409,9 +422,12 @@ export interface ProcedureBuilder<
       $Output
     >,
   ): TCaller extends true
-    ? (
-        input: DefaultValue<TInputIn, void>,
-      ) => Promise<DefaultValue<TOutputOut, $Output>>
+    ? CallerQueryProcedure<{
+        input: DefaultValue<TInputIn, void>;
+        output: DefaultValue<TOutputOut, $Output>;
+        meta: TMeta;
+        errorShape: TErrorShape;
+      }>
     : QueryProcedure<{
         input: DefaultValue<TInputIn, void>;
         output: DefaultValue<TOutputOut, $Output>;
@@ -433,9 +449,12 @@ export interface ProcedureBuilder<
       $Output
     >,
   ): TCaller extends true
-    ? (
-        input: DefaultValue<TInputIn, void>,
-      ) => Promise<DefaultValue<TOutputOut, $Output>>
+    ? CallerMutationProcedure<{
+        input: DefaultValue<TInputIn, void>;
+        output: DefaultValue<TOutputOut, $Output>;
+        meta: TMeta;
+        errorShape: TErrorShape;
+      }>
     : MutationProcedure<{
         input: DefaultValue<TInputIn, void>;
         output: DefaultValue<TOutputOut, $Output>;

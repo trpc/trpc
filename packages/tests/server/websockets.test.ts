@@ -923,6 +923,9 @@ describe('regression test - slow createContext', () => {
               "stack": "[redacted]",
             },
             "message": "test",
+            "~": Object {
+              "kind": "formatted",
+            },
           },
           "id": null,
         },
@@ -936,6 +939,9 @@ describe('regression test - slow createContext', () => {
               "stack": "[redacted]",
             },
             "message": "test",
+            "~": Object {
+              "kind": "formatted",
+            },
           },
           "id": 1,
         },
@@ -987,6 +993,9 @@ test('malformatted JSON', async () => {
           "stack": "[redacted]",
         },
         "message": "Unexpected token [... redacted b/c it is different in node 20]",
+        "~": Object {
+          "kind": "formatted",
+        },
       },
       "id": null,
     }
@@ -1027,6 +1036,9 @@ test('regression - badly shaped request', async () => {
           "stack": "[redacted]",
         },
         "message": "\`id\` is required",
+        "~": Object {
+          "kind": "formatted",
+        },
       },
       "id": null,
     }
@@ -2253,7 +2265,10 @@ test('connection state should not be updated for subscriptions', async () => {
 });
 
 describe('declared errors over wsLink', () => {
-  const BadPhoneError = createTRPCDeclaredError('UNAUTHORIZED')
+  const BadPhoneError = createTRPCDeclaredError({
+    code: 'UNAUTHORIZED',
+    key: 'BAD_PHONE',
+  })
     .data<{
       reason: 'BAD_PHONE';
     }>()
@@ -2297,6 +2312,10 @@ describe('declared errors over wsLink', () => {
     expect(registeredError.shape).toEqual({
       code: -32001,
       message: 'UNAUTHORIZED',
+      '~': {
+        kind: 'declared',
+        declaredErrorKey: 'BAD_PHONE',
+      },
       data: {
         reason: 'BAD_PHONE',
       },
@@ -2337,7 +2356,10 @@ describe('declared errors over wsLink', () => {
 });
 
 describe('declared subscription errors over wsLink', () => {
-  const BadPhoneError = createTRPCDeclaredError('UNAUTHORIZED')
+  const BadPhoneError = createTRPCDeclaredError({
+    code: 'UNAUTHORIZED',
+    key: 'BAD_PHONE',
+  })
     .data<{
       reason: 'BAD_PHONE';
     }>()
@@ -2386,6 +2408,10 @@ describe('declared subscription errors over wsLink', () => {
     expect(registeredError.shape).toEqual({
       code: -32001,
       message: 'UNAUTHORIZED',
+      '~': {
+        kind: 'declared',
+        declaredErrorKey: 'BAD_PHONE',
+      },
       data: {
         reason: 'BAD_PHONE',
       },
