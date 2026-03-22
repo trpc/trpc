@@ -74,7 +74,7 @@
     "access": "public"
   },
   "devDependencies": {
-    "@hey-api/openapi-ts": "^0.94.1",
+    "@hey-api/openapi-ts": "https://pkg.pr.new/@hey-api/openapi-ts@3586",
     "@swagger-api/apidom-ls": "^1.6.0",
     "@tanstack/intent": "^0.0.23",
     "@trpc/server": "11.14.1",
