@@ -425,7 +425,7 @@ export type DecorateRouterRecord<
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
     ? $Value extends AnyProcedure
-        ? DecorateProcedure<
+      ? DecorateProcedure<
           $Value['_def']['type'],
           {
             input: inferProcedureInput<$Value>;
