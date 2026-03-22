@@ -1,6 +1,6 @@
-import { createTRPCNext } from '../src';
 import { createTRPCDeclaredError, initTRPC } from '@trpc/server';
 import { expectTypeOf, test } from 'vitest';
+import { createTRPCNext } from '../src';
 
 test('declared errors are inferred and can be discriminated', () => {
   const BadPhoneError = createTRPCDeclaredError('UNAUTHORIZED')
@@ -53,9 +53,9 @@ test('declared errors are inferred and can be discriminated', () => {
         'reason' in registered.error.shape.data &&
         registered.error.shape.data.reason === 'BAD_PHONE'
       ) {
-        expectTypeOf(registered.error.shape.data.reason).toEqualTypeOf<
-          'BAD_PHONE'
-        >();
+        expectTypeOf(
+          registered.error.shape.data.reason,
+        ).toEqualTypeOf<'BAD_PHONE'>();
       }
 
       if (

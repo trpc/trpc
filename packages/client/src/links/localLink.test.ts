@@ -576,9 +576,9 @@ test('declared error data is inferred and can be discriminated on the client', a
     'reason' in registeredError.shape.data &&
     registeredError.shape.data.reason === 'BAD_PHONE'
   ) {
-    expectTypeOf(registeredError.shape.data.reason).toEqualTypeOf<
-      'BAD_PHONE'
-    >();
+    expectTypeOf(
+      registeredError.shape.data.reason,
+    ).toEqualTypeOf<'BAD_PHONE'>();
   } else {
     throw new Error('expected registered declared error');
   }

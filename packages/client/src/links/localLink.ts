@@ -10,14 +10,14 @@ import {
   getProcedureAtPath,
   isAbortError,
   isAsyncIterable,
+  isTRPCDeclaredError,
   iteratorResource,
   makeResource,
+  resolveRegisteredDeclaredErrorOrDowngrade,
   retryableRpcCodes,
   run,
-  isTRPCDeclaredError,
-  resolveRegisteredDeclaredErrorOrDowngrade,
-  type AnyTRPCDeclaredErrorClass,
   type AnyRouter,
+  type AnyTRPCDeclaredErrorClass,
   type ErrorHandlerOptions,
   type inferClientTypes,
   type inferRouterContext,
@@ -79,8 +79,8 @@ export function unstable_localLink<TRouter extends AnyRouter>(
           input = newInput;
 
           ctx = await opts.createContext();
-          declaredErrors = (await getProcedureAtPath(opts.router, op.path))?._def
-            .declaredErrors;
+          declaredErrors = (await getProcedureAtPath(opts.router, op.path))
+            ?._def.declaredErrors;
           return callProcedure({
             router: opts.router,
             path: op.path,
