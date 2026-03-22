@@ -1,0 +1,70 @@
+---
+id: errors
+title: Error Handling
+sidebar_label: Errors
+slug: /client/tanstack-react-query/errors
+---
+
+TanStack Query hook errors are typed as `TRPCClientError<AppRouter> | null`, so you can narrow them directly.
+
+```tsx twoslash title='components/login-button.tsx'
+// @jsx: react-jsx
+// @filename: server/router.ts
+import { createTRPCDeclaredError, initTRPC } from '@trpc/server';
+const t = initTRPC.create({
+  errorFormatter(opts) {
+    return {
+      ...opts.shape,
+      data: {
+        ...opts.shape.data,
+        requestId: 'req_123' as const,
+      },
+    };
+  },
+});
+const BadPhoneError = createTRPCDeclaredError({
+  code: 'UNAUTHORIZED',
+  key: 'BAD_PHONE',
+})
+  .data<{ reason: 'BAD_PHONE' }>()
+  .create({
+    constants: {
+      reason: 'BAD_PHONE' as const,
+    },
+  });
+const appRouter = t.router({
+  login: t.procedure.errors([BadPhoneError]).mutation(() => 'ok' as const),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.ts
+import { createTRPCContext } from '@trpc/tanstack-react-query';
+import type { AppRouter } from '../server/router';
+export const { useTRPC } = createTRPCContext<AppRouter>();
+
+// @filename: components/login-button.tsx
+import { useMutation } from '@tanstack/react-query';
+// ---cut---
+import { useTRPC } from '../utils/trpc';
+
+export function LoginButton() {
+  const trpc = useTRPC();
+  const mutation = useMutation(trpc.login.mutationOptions());
+
+  // For procedures with DeclaredErrors
+  if (mutation.error?.isDeclaredError('BAD_PHONE')) {
+    return <div>Bad Phone: {mutation.error.data.reason}</div>;
+  }
+
+  // For global errorFormatter errors
+  if (mutation.error?.isFormattedError()) {
+    return <div>Error: {mutation.error.data.requestId}</div>;
+  }
+
+  if (mutation.error) {
+    return <div>Unknown Error: {mutation.error.message}</div>;
+  }
+
+  return <button onClick={() => mutation.mutate()}>Log in</button>;
+}
+```
