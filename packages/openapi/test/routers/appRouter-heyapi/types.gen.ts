@@ -2499,7 +2499,7 @@ export type RecursiveTypesCategoryData = {
     body?: never;
     path?: never;
     query: {
-        input: unknown;
+        input: Category;
     };
     url: '/recursiveTypes.category';
 };

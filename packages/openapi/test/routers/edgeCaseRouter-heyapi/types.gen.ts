@@ -14,9 +14,7 @@ export type NeverField = {
 };
 
 export type AsyncIterable = {
-    '__@asyncIterator@6317': {
-        [key: string]: unknown;
-    };
+    [key: string]: unknown;
 };
 
 export type DefaultErrorShape = {

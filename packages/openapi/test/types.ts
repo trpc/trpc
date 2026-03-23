@@ -22,6 +22,13 @@ export type HttpMethod =
 
 export type SchemaOrRef = SchemaObject | ReferenceObject;
 
+export interface ResponseLookupOptions {
+  doc: Document;
+  procPath: string;
+  method?: HttpMethod;
+  status?: string;
+}
+
 export function isRef(value: unknown): value is ReferenceObject {
   return !!value && typeof value === 'object' && '$ref' in value;
 }
@@ -137,12 +144,12 @@ export function getRequestBody(
   return requestBody;
 }
 
-export function getResponse(
-  doc: Document,
-  procPath: string,
-  method: HttpMethod = 'get',
+export function getResponse({
+  doc,
+  procPath,
+  method = 'get',
   status = '200',
-): ResponseObject | undefined {
+}: ResponseLookupOptions): ResponseObject | undefined {
   const response = getOperation(doc, procPath, method)?.responses?.[status];
   if (!response || isRef(response)) {
     return undefined;
@@ -150,24 +157,24 @@ export function getResponse(
   return response;
 }
 
-export function getResponseSchema(
-  doc: Document,
-  procPath: string,
-  method: HttpMethod = 'get',
+export function getResponseSchema({
+  doc,
+  procPath,
+  method = 'get',
   status = '200',
-): SchemaOrRef | undefined {
-  return getResponse(doc, procPath, method, status)?.content?.[
+}: ResponseLookupOptions): SchemaOrRef | undefined {
+  return getResponse({ doc, procPath, method, status })?.content?.[
     'application/json'
   ]?.schema;
 }
 
-export function requireResponseSchema(
-  doc: Document,
-  procPath: string,
-  method: HttpMethod = 'get',
+export function requireResponseSchema({
+  doc,
+  procPath,
+  method = 'get',
   status = '200',
-): SchemaOrRef {
-  const schema = getResponseSchema(doc, procPath, method, status);
+}: ResponseLookupOptions): SchemaOrRef {
+  const schema = getResponseSchema({ doc, procPath, method, status });
   if (!schema) {
     throw new Error(
       `Expected application/json response schema for ${method.toUpperCase()} /${procPath}`,
@@ -228,13 +235,13 @@ export function requireSchemaObject(
   return resolved;
 }
 
-export function getEnvelopeDataSchema(
-  doc: Document,
-  procPath: string,
-  method: HttpMethod = 'get',
+export function getEnvelopeDataSchema({
+  doc,
+  procPath,
+  method = 'get',
   status = '200',
-): SchemaOrRef | undefined {
-  const responseSchema = getResponseSchema(doc, procPath, method, status);
+}: ResponseLookupOptions): SchemaOrRef | undefined {
+  const responseSchema = getResponseSchema({ doc, procPath, method, status });
   const envelope = responseSchema
     ? requireSchemaObject(responseSchema, doc, `${procPath} response`)
     : undefined;
@@ -245,13 +252,13 @@ export function getEnvelopeDataSchema(
   return resultSchema?.properties?.['data'];
 }
 
-export function requireEnvelopeDataSchema(
-  doc: Document,
-  procPath: string,
-  method: HttpMethod = 'get',
+export function requireEnvelopeDataSchema({
+  doc,
+  procPath,
+  method = 'get',
   status = '200',
-): SchemaOrRef {
-  const schema = getEnvelopeDataSchema(doc, procPath, method, status);
+}: ResponseLookupOptions): SchemaOrRef {
+  const schema = getEnvelopeDataSchema({ doc, procPath, method, status });
   if (!schema) {
     throw new Error(
       `Expected result.data schema for ${method.toUpperCase()} /${procPath}`,
@@ -260,23 +267,23 @@ export function requireEnvelopeDataSchema(
   return schema;
 }
 
-export function getOutputData(
-  doc: Document,
-  procPath: string,
-  method: HttpMethod = 'get',
+export function getOutputData({
+  doc,
+  procPath,
+  method = 'get',
   status = '200',
-): SchemaObject | undefined {
-  const data = getEnvelopeDataSchema(doc, procPath, method, status);
+}: ResponseLookupOptions): SchemaObject | undefined {
+  const data = getEnvelopeDataSchema({ doc, procPath, method, status });
   return data ? resolveSchema(data, doc) : undefined;
 }
 
-export function requireOutputData(
-  doc: Document,
-  procPath: string,
-  method: HttpMethod = 'get',
+export function requireOutputData({
+  doc,
+  procPath,
+  method = 'get',
   status = '200',
-): SchemaObject {
-  const schema = getOutputData(doc, procPath, method, status);
+}: ResponseLookupOptions): SchemaObject {
+  const schema = getOutputData({ doc, procPath, method, status });
   if (!schema) {
     throw new Error(
       `Expected output data schema for ${method.toUpperCase()} /${procPath}`,

@@ -461,7 +461,9 @@
             "style": "deepObject",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/ZodCategory"
+                }
               }
             }
           }
@@ -514,7 +516,9 @@
             "style": "deepObject",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/ZodTreeNode"
+                }
               }
             }
           }
@@ -567,7 +571,9 @@
             "style": "deepObject",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/ZodLinkedList"
+                }
               }
             }
           }
@@ -620,7 +626,9 @@
             "style": "deepObject",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/ZodComment"
+                }
               }
             }
           }
@@ -926,6 +934,10 @@
           "name": {
             "type": "string"
           },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
           "subcategories": {
             "type": "array",
             "items": {
@@ -935,6 +947,7 @@
         },
         "required": [
           "name",
+          "createdAt",
           "subcategories"
         ],
         "additionalProperties": false
@@ -945,6 +958,10 @@
           "value": {
             "type": "string"
           },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
           "children": {
             "type": "array",
             "items": {
@@ -954,6 +971,7 @@
         },
         "required": [
           "value",
+          "createdAt",
           "children"
         ],
         "additionalProperties": false
@@ -963,6 +981,10 @@
         "properties": {
           "value": {
             "type": "number"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
           },
           "next": {
             "oneOf": [
@@ -977,6 +999,7 @@
         },
         "required": [
           "value",
+          "createdAt",
           "next"
         ],
         "additionalProperties": false
@@ -987,6 +1010,10 @@
           "text": {
             "type": "string"
           },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
           "replies": {
             "type": "array",
             "items": {
@@ -995,7 +1022,8 @@
           }
         },
         "required": [
-          "text"
+          "text",
+          "createdAt"
         ],
         "additionalProperties": false
       },

@@ -3,7 +3,7 @@ import type { OpenAPIV3_1 as BaseOpenAPIV3_1 } from 'openapi-types';
 export type Replace<TTarget, TReplaceWith> = Omit<TTarget, keyof TReplaceWith> &
   TReplaceWith;
 
-export type PrimitiveSchemaType =
+export type SchemaType =
   | 'array'
   | 'boolean'
   | 'integer'
@@ -11,6 +11,8 @@ export type PrimitiveSchemaType =
   | 'number'
   | 'object'
   | 'string';
+
+export type PrimitiveSchemaType = SchemaType;
 
 export type HttpMethods = BaseOpenAPIV3_1.HttpMethods;
 export type ReferenceObject = BaseOpenAPIV3_1.ReferenceObject;
@@ -23,19 +25,7 @@ export type LinkObject = BaseOpenAPIV3_1.LinkObject;
 export type SecuritySchemeObject = BaseOpenAPIV3_1.SecuritySchemeObject;
 
 export type SchemaObject = Replace<
-  Omit<
-    BaseOpenAPIV3_1.BaseSchemaObject,
-    | 'additionalProperties'
-    | 'allOf'
-    | 'anyOf'
-    | 'discriminator'
-    | 'example'
-    | 'externalDocs'
-    | 'not'
-    | 'oneOf'
-    | 'properties'
-    | 'xml'
-  >,
+  BaseOpenAPIV3_1.BaseSchemaObject,
   {
     $ref?: string;
     $defs?: Record<string, SchemaObject>;
@@ -55,7 +45,6 @@ export type SchemaObject = Replace<
     discriminator?: DiscriminatorObject;
     externalDocs?: ExternalDocumentationObject;
     xml?: XMLObject;
-    examples?: BaseOpenAPIV3_1.BaseSchemaObject['example'][];
     contentMediaType?: string;
     exclusiveMinimum?: boolean | number;
     exclusiveMaximum?: boolean | number;
@@ -124,7 +113,7 @@ export type OperationObject<T extends {} = {}> = Replace<
   T;
 
 export type PathItemObject<T extends {} = {}> = Replace<
-  Omit<BaseOpenAPIV3_1.PathItemObject<T>, HttpMethods>,
+  BaseOpenAPIV3_1.PathItemObject<T>,
   {
     parameters?: (ReferenceObject | ParameterObject)[];
   }

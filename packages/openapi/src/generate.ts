@@ -122,6 +122,30 @@ function getTypeName(type: ts.Type): string | null {
   return null;
 }
 
+// Skips asyncGenerator and branded symbols etc when creating types
+// Symbols can't be serialised
+function shouldSkipPropertySymbol(prop: ts.Symbol): boolean {
+  return (
+    prop.declarations?.some((declaration) => {
+      const name = ts.getNameOfDeclaration(declaration);
+      return !!name && ts.isComputedPropertyName(name);
+    }) ?? false
+  );
+}
+
+function getReferencedSchema(
+  schema: SchemaObject | null,
+  schemas: Record<string, SchemaObject>,
+): SchemaObject | null {
+  const ref = schema?.$ref;
+  if (!ref?.startsWith('#/components/schemas/')) {
+    return schema;
+  }
+
+  const refName = ref.slice('#/components/schemas/'.length);
+  return refName ? (schemas[refName] ?? null) : schema;
+}
+
 function ensureUniqueName(
   name: string,
   existing: Record<string, unknown>,
@@ -646,6 +670,10 @@ function convertPlainObject(
   const required: string[] = [];
 
   for (const prop of typeProps) {
+    if (shouldSkipPropertySymbol(prop)) {
+      continue;
+    }
+
     const propType = checker.getTypeOfSymbol(prop);
     const propSchema = typeToJsonSchema(propType, ctx, depth + 1);
 
@@ -829,6 +857,8 @@ function extractProcedure(def: ProcedureDef, ctx: WalkCtx): void {
   const inputType = inputSym ? checker.getTypeOfSymbol(inputSym) : null;
   const outputType = outputSym ? checker.getTypeOfSymbol(outputSym) : null;
 
+  // Recursive z.lazy() inputs can collapse to `{}` here because the compiler
+  // exposes only the inferred procedure input type, not the original parser.
   const inputSchema =
     !inputType || isVoidLikeInput(inputType)
       ? null
@@ -841,11 +871,20 @@ function extractProcedure(def: ProcedureDef, ctx: WalkCtx): void {
   // Overlay extracted schema descriptions onto the type-checker-generated schemas.
   const runtimeDescs = ctx.runtimeDescriptions.get(def.path);
   if (runtimeDescs) {
-    if (inputSchema && runtimeDescs.input) {
-      applyDescriptions(inputSchema, runtimeDescs.input);
+    const resolvedInputSchema = getReferencedSchema(
+      inputSchema,
+      schemaCtx.schemas,
+    );
+    const resolvedOutputSchema = getReferencedSchema(
+      outputSchema,
+      schemaCtx.schemas,
+    );
+
+    if (resolvedInputSchema && runtimeDescs.input) {
+      applyDescriptions(resolvedInputSchema, runtimeDescs.input);
     }
-    if (outputSchema && runtimeDescs.output) {
-      applyDescriptions(outputSchema, runtimeDescs.output);
+    if (resolvedOutputSchema && runtimeDescs.output) {
+      applyDescriptions(resolvedOutputSchema, runtimeDescs.output);
     }
   }
 
@@ -1065,7 +1104,7 @@ function wrapInSuccessEnvelope(
     properties: {
       ...(hasOutput ? { data: outputSchema } : {}),
     },
-    ...(hasOutput ? { required: ['data' as const] } : {}),
+    ...(hasOutput ? { required: ['data'] } : {}),
   };
   return {
     type: 'object',

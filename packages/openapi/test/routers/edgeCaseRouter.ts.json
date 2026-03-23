@@ -827,16 +827,7 @@
         "additionalProperties": false
       },
       "AsyncIterable": {
-        "type": "object",
-        "properties": {
-          "__@asyncIterator@6317": {
-            "type": "object"
-          }
-        },
-        "required": [
-          "__@asyncIterator@6317"
-        ],
-        "additionalProperties": false
+        "type": "object"
       },
       "DefaultErrorShape": {
         "type": "object",

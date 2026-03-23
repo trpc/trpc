@@ -4582,7 +4582,9 @@
             "style": "deepObject",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/Category"
+                }
               }
             }
           }

@@ -83,21 +83,25 @@ export type NodeC = {
 
 export type ZodCategory = {
     name: string;
+    createdAt: Date;
     subcategories: Array<ZodCategory>;
 };
 
 export type ZodTreeNode = {
     value: string;
+    createdAt: Date;
     children: Array<ZodTreeNode>;
 };
 
 export type ZodLinkedList = {
     value: number;
+    createdAt: Date;
     next: ZodLinkedList | null;
 };
 
 export type ZodComment = {
     text: string;
+    createdAt: Date;
     replies?: Array<ZodComment>;
 };
 
@@ -436,7 +440,7 @@ export type ZodTypesCategoryData = {
     body?: never;
     path?: never;
     query: {
-        input: unknown;
+        input: ZodCategory;
     };
     url: '/zodTypes.category';
 };
@@ -469,7 +473,7 @@ export type ZodTypesTreeNodeData = {
     body?: never;
     path?: never;
     query: {
-        input: unknown;
+        input: ZodTreeNode;
     };
     url: '/zodTypes.treeNode';
 };
@@ -502,7 +506,7 @@ export type ZodTypesLinkedListData = {
     body?: never;
     path?: never;
     query: {
-        input: unknown;
+        input: ZodLinkedList;
     };
     url: '/zodTypes.linkedList';
 };
@@ -535,7 +539,7 @@ export type ZodTypesCommentData = {
     body?: never;
     path?: never;
     query: {
-        input: unknown;
+        input: ZodComment;
     };
     url: '/zodTypes.comment';
 };

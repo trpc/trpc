@@ -1,5 +1,5 @@
 import { initTRPC } from '@trpc/server';
-import { z } from 'zod';
+import * as z from 'zod';
 
 const t = initTRPC.create();
 
@@ -95,48 +95,56 @@ interface NodeC {
 
 type ZodCategory = {
   name: string;
+  createdAt: Date;
   subcategories: ZodCategory[];
 };
 
 const zodCategorySchema: z.ZodType<ZodCategory> = z.lazy(() =>
   z.object({
     name: z.string(),
+    createdAt: z.date(),
     subcategories: z.array(zodCategorySchema),
   }),
 );
 
 type ZodTreeNode = {
   value: string;
+  createdAt: Date;
   children: ZodTreeNode[];
 };
 
 const zodTreeNodeSchema: z.ZodType<ZodTreeNode> = z.lazy(() =>
   z.object({
     value: z.string(),
+    createdAt: z.date(),
     children: z.array(zodTreeNodeSchema),
   }),
 );
 
 type ZodLinkedList = {
   value: number;
+  createdAt: Date;
   next: ZodLinkedList | null;
 };
 
 const zodLinkedListSchema: z.ZodType<ZodLinkedList> = z.lazy(() =>
   z.object({
     value: z.number(),
+    createdAt: z.date(),
     next: zodLinkedListSchema.nullable(),
   }),
 );
 
 type ZodComment = {
   text: string;
+  createdAt: Date;
   replies?: ZodComment[];
 };
 
 const zodCommentSchema: z.ZodType<ZodComment> = z.lazy(() =>
   z.object({
     text: z.string(),
+    createdAt: z.date(),
     replies: z.array(zodCommentSchema).optional(),
   }),
 );

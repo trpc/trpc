@@ -1,9 +1,10 @@
 import * as path from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { generateOpenAPIDocument } from '../src/generate';
 import type { Document } from '../src/types';
 import {
   getOutputData,
+  getParameter,
   getResponseSchema,
   getSchemas,
   isRef,
@@ -46,7 +47,7 @@ describe('cyclic types', () => {
 
       // The procedure output should reference TreeNode
       const responseSchema = requireSchemaObject(
-        getResponseSchema(doc, 'tsTypes.tree'),
+        getResponseSchema({ doc, procPath: 'tsTypes.tree' }),
         doc,
         'tsTypes.tree response',
       );
@@ -132,7 +133,7 @@ describe('cyclic types', () => {
         ]),
       );
 
-      const data = getOutputData(doc, 'tsTypes.jsonValue');
+      const data = getOutputData({ doc, procPath: 'tsTypes.jsonValue' });
       expect(data).toBeDefined();
       expect(data?.properties?.['data']).toEqual({
         $ref: '#/components/schemas/JsonValue',
@@ -171,7 +172,7 @@ describe('cyclic types', () => {
       });
 
       // Organization output should reference Department
-      const data = getOutputData(doc, 'tsTypes.organization');
+      const data = getOutputData({ doc, procPath: 'tsTypes.organization' });
       expect(data).toBeDefined();
       expect(data?.properties?.['rootDepartment']).toEqual({
         $ref: '#/components/schemas/Department',
@@ -253,15 +254,23 @@ describe('cyclic types', () => {
 
       expect(cat.type).toBe('object');
       expect(cat.properties?.['name']).toEqual({ type: 'string' });
+      expect(cat.properties?.['createdAt']).toEqual({
+        type: 'string',
+        format: 'date-time',
+      });
       expect(cat.properties?.['subcategories']).toEqual({
         type: 'array',
         items: { $ref: '#/components/schemas/ZodCategory' },
       });
 
       // The output (inferred from `({ input }) => input`) references ZodCategory
-      const data = getOutputData(doc, 'zodTypes.category');
+      const data = getOutputData({ doc, procPath: 'zodTypes.category' });
       expect(data).toBeDefined();
       expect(data?.properties?.['name']).toEqual({ type: 'string' });
+      expect(data?.properties?.['createdAt']).toEqual({
+        type: 'string',
+        format: 'date-time',
+      });
     });
 
     it('handles Zod recursive tree node', () => {
@@ -271,6 +280,10 @@ describe('cyclic types', () => {
 
       expect(tree.type).toBe('object');
       expect(tree.properties?.['value']).toEqual({ type: 'string' });
+      expect(tree.properties?.['createdAt']).toEqual({
+        type: 'string',
+        format: 'date-time',
+      });
       expect(tree.properties?.['children']).toEqual({
         type: 'array',
         items: { $ref: '#/components/schemas/ZodTreeNode' },
@@ -284,6 +297,10 @@ describe('cyclic types', () => {
 
       expect(list.type).toBe('object');
       expect(list.properties?.['value']).toEqual({ type: 'number' });
+      expect(list.properties?.['createdAt']).toEqual({
+        type: 'string',
+        format: 'date-time',
+      });
       expect(list.properties?.['next']).toEqual({
         oneOf: [
           { $ref: '#/components/schemas/ZodLinkedList' },
@@ -299,12 +316,44 @@ describe('cyclic types', () => {
 
       expect(comment.type).toBe('object');
       expect(comment.properties?.['text']).toEqual({ type: 'string' });
+      expect(comment.properties?.['createdAt']).toEqual({
+        type: 'string',
+        format: 'date-time',
+      });
       expect(comment.required).toContain('text');
+      expect(comment.required).toContain('createdAt');
       expect(comment.required).not.toContain('replies');
       expect(comment.properties?.['replies']).toEqual({
         type: 'array',
         items: { $ref: '#/components/schemas/ZodComment' },
       });
+    });
+
+    it('emits component refs for recursive z.lazy() inputs', () => {
+      const expectedRefs = {
+        'zodTypes.category': '#/components/schemas/ZodCategory',
+        'zodTypes.treeNode': '#/components/schemas/ZodTreeNode',
+        'zodTypes.linkedList': '#/components/schemas/ZodLinkedList',
+        'zodTypes.comment': '#/components/schemas/ZodComment',
+      } as const;
+
+      for (const [procPath, ref] of Object.entries(expectedRefs)) {
+        const parameter = getParameter(doc, procPath);
+        expect(parameter).toBeDefined();
+        expect(parameter?.content?.['application/json']?.schema).toEqual({
+          $ref: ref,
+        });
+
+        const inputSchema = requireSchemaObject(
+          parameter?.content?.['application/json']?.schema,
+          doc,
+          `${procPath} input schema`,
+        );
+        expect(inputSchema.properties?.['createdAt']).toEqual({
+          type: 'string',
+          format: 'date-time',
+        });
+      }
     });
   });
 

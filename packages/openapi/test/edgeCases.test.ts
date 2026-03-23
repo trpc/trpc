@@ -32,7 +32,7 @@ describe('generateOpenAPIDocument edge cases', () => {
   });
 
   it('handles bigint types as integer schema', () => {
-    const schema = requireOutputData(doc, 'bigint');
+    const schema = requireOutputData({ doc, procPath: 'bigint' });
     expect(requireProperty(schema, 'id')).toEqual({
       type: 'integer',
       format: 'bigint',
@@ -40,7 +40,7 @@ describe('generateOpenAPIDocument edge cases', () => {
   });
 
   it('handles never type in optional fields', () => {
-    const schema = requireOutputData(doc, 'neverField');
+    const schema = requireOutputData({ doc, procPath: 'neverField' });
     expect(requireProperty(schema, 'valid')).toEqual({ type: 'string' });
     // `impossible?: never` is typed as `never | undefined` which collapses to
     // an empty schema `{}` (undefined is stripped, never maps to `not: {}`
@@ -50,7 +50,7 @@ describe('generateOpenAPIDocument edge cases', () => {
   });
 
   it('unwraps Promise<T> return types', () => {
-    const schema = requireOutputData(doc, 'asyncReturn');
+    const schema = requireOutputData({ doc, procPath: 'asyncReturn' });
     expect(requireProperty(schema, 'data')).toEqual({ type: 'string' });
   });
 
@@ -76,24 +76,24 @@ describe('generateOpenAPIDocument edge cases', () => {
   });
 
   it('collapses true | false union to boolean', () => {
-    const schema = requireOutputData(doc, 'boolUnion');
+    const schema = requireOutputData({ doc, procPath: 'boolUnion' });
     expect(requireProperty(schema, 'flag')).toEqual({ type: 'boolean' });
   });
 
   it('handles boolean | null', () => {
-    const schema = requireOutputData(doc, 'boolNullable');
+    const schema = requireOutputData({ doc, procPath: 'boolNullable' });
     expect(requireProperty(schema, 'flag')).toEqual({
       type: ['boolean', 'null'],
     });
   });
 
   it('handles null-only return', () => {
-    const schema = requireOutputData(doc, 'nullOnly');
+    const schema = requireOutputData({ doc, procPath: 'nullOnly' });
     expect(schema).toEqual({ type: 'null' });
   });
 
   it('handles Uint8Array as binary format', () => {
-    const schema = requireOutputData(doc, 'binary');
+    const schema = requireOutputData({ doc, procPath: 'binary' });
     expect(requireProperty(schema, 'data')).toEqual({
       type: 'string',
       format: 'binary',
@@ -101,7 +101,7 @@ describe('generateOpenAPIDocument edge cases', () => {
   });
 
   it('handles nullable objects in oneOf', () => {
-    const schema = requireOutputData(doc, 'nullableObject');
+    const schema = requireOutputData({ doc, procPath: 'nullableObject' });
     // Should be oneOf: [objectSchema, { type: "null" }] or type: ["object", "null"]
     expect(JSON.stringify(schema)).toContain('null');
   });
@@ -113,7 +113,7 @@ describe('generateOpenAPIDocument edge cases', () => {
   });
 
   it('handles complex nullable union (string | number | null)', () => {
-    const schema = requireOutputData(doc, 'complexNullable');
+    const schema = requireOutputData({ doc, procPath: 'complexNullable' });
     const valueSchema = requireProperty(schema, 'value');
     // Should have string, number, and null represented
     const serialized = JSON.stringify(valueSchema);
@@ -131,7 +131,10 @@ describe('generateOpenAPIDocument edge cases', () => {
     }>();
 
     // Verify the OpenAPI schema is a merged object, not allOf
-    const schema = requireOutputData(doc, 'disjointIntersection');
+    const schema = requireOutputData({
+      doc,
+      procPath: 'disjointIntersection',
+    });
     expect(schema.type).toBe('object');
     expect(schema).not.toHaveProperty('allOf');
     expect(requireProperty(schema, 'name')).toEqual({ type: 'string' });
@@ -153,7 +156,10 @@ describe('generateOpenAPIDocument edge cases', () => {
     >().toEqualTypeOf<ConflictingData>();
 
     // Verify the OpenAPI schema uses allOf to preserve both definitions
-    const schema = requireOutputData(doc, 'conflictingIntersection');
+    const schema = requireOutputData({
+      doc,
+      procPath: 'conflictingIntersection',
+    });
     expect(schema).toHaveProperty('allOf');
     expect(schema).not.toHaveProperty('type');
     expect(schema.allOf).toHaveLength(2);
@@ -191,6 +197,10 @@ describe('generateOpenAPIDocument edge cases', () => {
       $ref: '#/components/responses/Error',
     });
   });
+
+  it('omits compiler-internal symbol keys from schemas', () => {
+    expect(JSON.stringify(doc)).not.toMatch(/__@.*@\d+/);
+  });
 });
 
 describe('generateOpenAPIDocument default options', () => {
@@ -212,7 +222,7 @@ describe('generateOpenAPIDocument default options', () => {
 
   it('wraps output in success envelope correctly', () => {
     const responseSchema = requireSchemaObject(
-      requireResponseSchema(doc, 'greeting'),
+      requireResponseSchema({ doc, procPath: 'greeting' }),
       doc,
       'greeting response',
     );
@@ -231,7 +241,11 @@ describe('generateOpenAPIDocument default options', () => {
 
   it('wraps output without data for void procedures', () => {
     const responseSchema = requireSchemaObject(
-      requireResponseSchema(doc, 'inferredReturns.voidReturn', 'post'),
+      requireResponseSchema({
+        doc,
+        procPath: 'inferredReturns.voidReturn',
+        method: 'post',
+      }),
       doc,
       'inferredReturns.voidReturn response',
     );

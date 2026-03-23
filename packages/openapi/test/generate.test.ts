@@ -147,10 +147,10 @@ describe('generateOpenAPIDocument', () => {
     });
 
     it('handles bigint inferred return types as integer schema', () => {
-      const responseSchema = requireOutputData(
+      const responseSchema = requireOutputData({
         doc,
-        'inferredReturns.bigintReturn',
-      );
+        procPath: 'inferredReturns.bigintReturn',
+      });
 
       expect(requireProperty(responseSchema, 'amount')).toEqual({
         type: 'integer',
@@ -165,7 +165,10 @@ describe('generateOpenAPIDocument', () => {
       expect(spec).not.toContain('__@$brand@');
 
       // The branded field should be emitted as its base type (string)
-      const responseSchema = requireOutputData(doc, 'complexTypes.branded');
+      const responseSchema = requireOutputData({
+        doc,
+        procPath: 'complexTypes.branded',
+      });
 
       expect(responseSchema).toEqual({
         type: 'object',
@@ -175,10 +178,10 @@ describe('generateOpenAPIDocument', () => {
       });
 
       // Inferred branded returns (string & {__brand}, number & {__brand}, boolean & {__brand})
-      const inferredSchema = requireOutputData(
+      const inferredSchema = requireOutputData({
         doc,
-        'inferredReturns.brandedReturns',
-      );
+        procPath: 'inferredReturns.brandedReturns',
+      });
 
       // No brand object should leak — all fields should resolve to primitives
       expect(requireProperty(inferredSchema, 'userId')).toEqual({
@@ -212,23 +215,29 @@ describe('generateOpenAPIDocument', () => {
       });
 
       // Depth 1: named type as a direct property → property is a $ref
-      const withProfileOutput = requireOutputData(
+      const withProfileOutput = requireOutputData({
         doc,
-        'namedTypes.withProfile',
-      );
+        procPath: 'namedTypes.withProfile',
+      });
       expect(requireProperty(withProfileOutput, 'profile')).toEqual({
         $ref: '#/components/schemas/UserProfile',
       });
 
       // Array items: named type inside array → items is a $ref
-      const orderItemsOutput = requireOutputData(doc, 'namedTypes.orderItems');
+      const orderItemsOutput = requireOutputData({
+        doc,
+        procPath: 'namedTypes.orderItems',
+      });
       expect(requireProperty(orderItemsOutput, 'items')).toEqual({
         type: 'array',
         items: { $ref: '#/components/schemas/OrderItem' },
       });
 
       // Dedup: same named type reused across procedures → same $ref
-      const paOutput = requireOutputData(doc, 'namedTypes.profileAndAddress');
+      const paOutput = requireOutputData({
+        doc,
+        procPath: 'namedTypes.profileAndAddress',
+      });
       expect(requireProperty(paOutput, 'profile')).toEqual({
         $ref: '#/components/schemas/UserProfile',
       });
@@ -237,7 +246,10 @@ describe('generateOpenAPIDocument', () => {
       });
 
       // Depth 3: named type deeply nested → still a $ref
-      const deepOutput = requireOutputData(doc, 'namedTypes.deepNested');
+      const deepOutput = requireOutputData({
+        doc,
+        procPath: 'namedTypes.deepNested',
+      });
       const dataSchema = requireSchemaObject(
         requireProperty(deepOutput, 'data'),
         doc,
@@ -286,16 +298,21 @@ describe('generateOpenAPIDocument', () => {
       });
 
       // The procedures should reference these schemas (inside the tRPC envelope)
-      expect(requireEnvelopeDataSchema(doc, 'recursiveTypes.tree')).toEqual({
+      expect(
+        requireEnvelopeDataSchema({ doc, procPath: 'recursiveTypes.tree' }),
+      ).toEqual({
         $ref: '#/components/schemas/TreeNode',
       });
 
       // z.lazy() output resolves through the inferred return type
-      expect(requireEnvelopeDataSchema(doc, 'recursiveTypes.category')).toEqual(
-        {
-          $ref: '#/components/schemas/Category',
-        },
-      );
+      expect(
+        requireEnvelopeDataSchema({
+          doc,
+          procPath: 'recursiveTypes.category',
+        }),
+      ).toEqual({
+        $ref: '#/components/schemas/Category',
+      });
     });
 
     it('adds discriminator to discriminated unions', () => {
@@ -309,22 +326,22 @@ describe('generateOpenAPIDocument', () => {
       expect(inputSchema.discriminator).toEqual({ propertyName: 'type' });
 
       // Zod discriminatedUnion output (discriminant: "status")
-      const outputSchema = requireOutputData(
+      const outputSchema = requireOutputData({
         doc,
-        'complexTypes.createContent',
-        'post',
-      );
+        procPath: 'complexTypes.createContent',
+        method: 'post',
+      });
       expect(outputSchema).toHaveProperty('oneOf');
       expect(outputSchema.discriminator).toEqual({
         propertyName: 'status',
       });
 
       // Inferred return discriminated union (discriminant: "type")
-      const inferredSchema = requireOutputData(
+      const inferredSchema = requireOutputData({
         doc,
-        'inferredReturns.discriminatedResult',
-        'post',
-      );
+        procPath: 'inferredReturns.discriminatedResult',
+        method: 'post',
+      });
       expect(inferredSchema).toHaveProperty('oneOf');
       expect(inferredSchema.discriminator).toEqual({
         propertyName: 'type',
@@ -726,7 +743,10 @@ describe('generateOpenAPIDocument', () => {
     it('resolves primitive type alias output to its base type', () => {
       // HelloGreeting is `type HelloGreeting = string` — the alias identity is
       // lost when resolved through tRPC's $types, so no description is expected.
-      const outputSchema = requireOutputData(doc, 'helloInline');
+      const outputSchema = requireOutputData({
+        doc,
+        procPath: 'helloInline',
+      });
 
       expect(outputSchema.type).toBe('string');
     });
@@ -774,7 +794,10 @@ describe('generateOpenAPIDocument', () => {
     });
 
     it('extracts JSDoc from inline output type defined inside callback', () => {
-      const outputSchema = requireOutputData(doc, 'subrouterInline.hello');
+      const outputSchema = requireOutputData({
+        doc,
+        procPath: 'subrouterInline.hello',
+      });
 
       expect(
         requireSchemaObject(
@@ -803,7 +826,11 @@ describe('generateOpenAPIDocument', () => {
     });
 
     it('extracts JSDoc from type alias used as output', () => {
-      const outputSchema = requireOutputData(doc, 'directArrayInline', 'post');
+      const outputSchema = requireOutputData({
+        doc,
+        procPath: 'directArrayInline',
+        method: 'post',
+      });
 
       expect(outputSchema.description).toBe('Array of output strings');
     });
@@ -837,7 +864,10 @@ describe('generateOpenAPIDocument', () => {
         format: 'bigint',
       });
 
-      const responseSchema = requireOutputData(doc, 'getBigInt');
+      const responseSchema = requireOutputData({
+        doc,
+        procPath: 'getBigInt',
+      });
       expect(requireProperty(responseSchema, 'amount')).toEqual({
         type: 'integer',
         format: 'bigint',
