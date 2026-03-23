@@ -1,0 +1,4 @@
+{
+  "setup": ["pnpm install"],
+  "teardown": []
+}
