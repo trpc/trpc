@@ -8,10 +8,7 @@ import {
   type RuntimeDescriptions,
 } from '../src/schemaExtraction';
 import type { SchemaObject } from '../src/types';
-import {
-  requireArrayItemsSchema,
-  requirePropertySchema,
-} from './types';
+import { requireArrayItemsSchema, requirePropertySchema } from './types';
 
 // ---------------------------------------------------------------------------
 // extractDescriptions
