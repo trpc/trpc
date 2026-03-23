@@ -1,4 +1,5 @@
 import * as path from 'node:path';
+import type { OpenAPIV3_1 } from 'openapi-types';
 import * as ts from 'typescript';
 import {
   applyDescriptions,
@@ -6,8 +7,6 @@ import {
   tryImportRouter,
   type RuntimeDescriptions,
 } from './schemaExtraction';
-
-const log = console;
 
 /**
  * A minimal JSON Schema subset used for OpenAPI 3.1 schemas.
@@ -61,13 +60,7 @@ export interface GenerateOptions {
   version?: string;
 }
 
-export interface OpenAPIDocument {
-  openapi: string;
-  jsonSchemaDialect?: string;
-  info: { title: string; version: string };
-  paths: Record<string, Record<string, unknown>>;
-  components: Record<string, unknown>;
-}
+export type OpenAPIDocument = OpenAPIV3_1.Document;
 
 // ---------------------------------------------------------------------------
 // Flag helpers
@@ -182,33 +175,43 @@ function isNonEmptySchema(s: JsonSchema): boolean {
  * Convert a TS type to a JSON Schema.  If the type has been pre-registered
  * (or has a meaningful TS name), it is stored in `ctx.schemas` and a `$ref`
  * is returned instead of an inline schema.
+ *
+ * Named types (type aliases, interfaces) are auto-registered before conversion
+ * so that recursive references (including through unions and intersections)
+ * resolve to a `$ref` instead of causing infinite recursion.
  */
 function typeToJsonSchema(
   type: ts.Type,
   ctx: SchemaCtx,
   depth = 0,
 ): JsonSchema {
-  if (depth > 20) {
-    log.warn(
-      `[openapi] Schema conversion reached maximum depth (20) for type "${ctx.checker.typeToString(type)}". The resulting schema will be incomplete.`,
-    );
-    return {};
-  }
-
   // If this type is already registered as a named schema, return a $ref.
-  const refName = ctx.typeToRef.get(type);
-  if (refName) {
-    if (refName in ctx.schemas) {
-      return schemaRef(refName);
+  const existingRef = ctx.typeToRef.get(type);
+  if (existingRef) {
+    if (existingRef in ctx.schemas) {
+      return schemaRef(existingRef);
     }
     // First encounter: set placeholder (circular ref guard), convert, store.
-    ctx.schemas[refName] = {};
+    ctx.schemas[existingRef] = {};
     const schema = convertTypeToSchema(type, ctx, depth);
-    ctx.schemas[refName] = schema;
-    return schemaRef(refName);
+    ctx.schemas[existingRef] = schema;
+    return schemaRef(existingRef);
   }
 
   const schema = convertTypeToSchema(type, ctx, depth);
+
+  // If a recursive reference was detected during conversion (via handleCyclicRef
+  // or convertPlainObject's auto-registration), the type is now registered in
+  // typeToRef.  If the stored schema is still the empty placeholder, fill it in
+  // with the actual converted schema.  Either way, return a $ref.
+  const postConvertRef = ctx.typeToRef.get(type);
+  if (postConvertRef) {
+    const stored = ctx.schemas[postConvertRef];
+    if (stored && !isNonEmptySchema(stored)) {
+      ctx.schemas[postConvertRef] = schema;
+    }
+    return schemaRef(postConvertRef);
+  }
 
   // Extract JSDoc from type alias symbol (e.g. `/** desc */ type Foo = string`)
   if (!schema.description && !schema.$ref && type.aliasSymbol) {
@@ -745,10 +748,16 @@ function convertTypeToSchema(
   }
 
   if (type.isUnion()) {
-    return convertUnionType(type, ctx, depth);
+    ctx.visited.add(type);
+    const result = convertUnionType(type, ctx, depth);
+    ctx.visited.delete(type);
+    return result;
   }
   if (type.isIntersection()) {
-    return convertIntersectionType(type, ctx, depth);
+    ctx.visited.add(type);
+    const result = convertIntersectionType(type, ctx, depth);
+    ctx.visited.delete(type);
+    return result;
   }
   if (isObjectType(type)) {
     return convertObjectType(type, ctx, depth);

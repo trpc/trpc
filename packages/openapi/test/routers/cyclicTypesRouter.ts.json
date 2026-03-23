@@ -6,11 +6,12 @@
     "version": "0.0.0"
   },
   "paths": {
-    "/bigint": {
+    "/tsTypes.tree": {
       "get": {
-        "operationId": "bigint",
+        "operationId": "tsTypes.tree",
+        "description": "Tree: children is array of self",
         "tags": [
-          "bigint"
+          "tsTypes"
         ],
         "responses": {
           "200": {
@@ -24,7 +25,7 @@
                       "type": "object",
                       "properties": {
                         "data": {
-                          "$ref": "#/components/schemas/WithBigInt"
+                          "$ref": "#/components/schemas/TreeNode"
                         }
                       },
                       "required": [
@@ -45,11 +46,12 @@
         }
       }
     },
-    "/neverField": {
+    "/tsTypes.linkedList": {
       "get": {
-        "operationId": "neverField",
+        "operationId": "tsTypes.linkedList",
+        "description": "Linked list: nullable self-reference",
         "tags": [
-          "neverField"
+          "tsTypes"
         ],
         "responses": {
           "200": {
@@ -63,7 +65,7 @@
                       "type": "object",
                       "properties": {
                         "data": {
-                          "$ref": "#/components/schemas/NeverField"
+                          "$ref": "#/components/schemas/LinkedListNode"
                         }
                       },
                       "required": [
@@ -84,11 +86,92 @@
         }
       }
     },
-    "/asyncReturn": {
+    "/tsTypes.graph": {
       "get": {
-        "operationId": "asyncReturn",
+        "operationId": "tsTypes.graph",
+        "description": "Graph: array of self (cyclic)",
         "tags": [
-          "asyncReturn"
+          "tsTypes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/GraphNode"
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tsTypes.mutualRecursion": {
+      "get": {
+        "operationId": "tsTypes.mutualRecursion",
+        "description": "Mutual recursion: Person <-> Pet",
+        "tags": [
+          "tsTypes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Person"
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tsTypes.jsonValue": {
+      "get": {
+        "operationId": "tsTypes.jsonValue",
+        "description": "JSON-like recursive union type",
+        "tags": [
+          "tsTypes"
         ],
         "responses": {
           "200": {
@@ -105,7 +188,7 @@
                           "type": "object",
                           "properties": {
                             "data": {
-                              "type": "string"
+                              "$ref": "#/components/schemas/JsonValue"
                             }
                           },
                           "required": [
@@ -132,11 +215,12 @@
         }
       }
     },
-    "/voidInput": {
+    "/tsTypes.comment": {
       "get": {
-        "operationId": "voidInput",
+        "operationId": "tsTypes.comment",
+        "description": "Optional self-reference",
         "tags": [
-          "voidInput"
+          "tsTypes"
         ],
         "responses": {
           "200": {
@@ -150,7 +234,7 @@
                       "type": "object",
                       "properties": {
                         "data": {
-                          "type": "string"
+                          "$ref": "#/components/schemas/Comment"
                         }
                       },
                       "required": [
@@ -171,11 +255,12 @@
         }
       }
     },
-    "/undefinedInput": {
+    "/tsTypes.organization": {
       "get": {
-        "operationId": "undefinedInput",
+        "operationId": "tsTypes.organization",
+        "description": "Recursive type nested inside a non-recursive wrapper",
         "tags": [
-          "undefinedInput"
+          "tsTypes"
         ],
         "responses": {
           "200": {
@@ -189,7 +274,7 @@
                       "type": "object",
                       "properties": {
                         "data": {
-                          "type": "string"
+                          "$ref": "#/components/schemas/Organization"
                         }
                       },
                       "required": [
@@ -210,11 +295,12 @@
         }
       }
     },
-    "/voidExplicit": {
+    "/tsTypes.fileSystem": {
       "get": {
-        "operationId": "voidExplicit",
+        "operationId": "tsTypes.fileSystem",
+        "description": "FileSystem with both array and nullable self-reference",
         "tags": [
-          "voidExplicit"
+          "tsTypes"
         ],
         "responses": {
           "200": {
@@ -228,7 +314,7 @@
                       "type": "object",
                       "properties": {
                         "data": {
-                          "type": "string"
+                          "$ref": "#/components/schemas/FileSystemEntry"
                         }
                       },
                       "required": [
@@ -249,11 +335,12 @@
         }
       }
     },
-    "/simpleQuery": {
+    "/tsTypes.categoryMap": {
       "get": {
-        "operationId": "simpleQuery",
+        "operationId": "tsTypes.categoryMap",
+        "description": "Recursive type through Record",
         "tags": [
-          "simpleQuery"
+          "tsTypes"
         ],
         "responses": {
           "200": {
@@ -267,7 +354,7 @@
                       "type": "object",
                       "properties": {
                         "data": {
-                          "type": "number"
+                          "$ref": "#/components/schemas/CategoryMap"
                         }
                       },
                       "required": [
@@ -288,11 +375,12 @@
         }
       }
     },
-    "/level1.level2.level3.deep": {
+    "/tsTypes.tripleRecursion": {
       "get": {
-        "operationId": "level1.level2.level3.deep",
+        "operationId": "tsTypes.tripleRecursion",
+        "description": "Triple mutual recursion: A -> B -> C -> A",
         "tags": [
-          "level1"
+          "tsTypes"
         ],
         "responses": {
           "200": {
@@ -306,7 +394,7 @@
                       "type": "object",
                       "properties": {
                         "data": {
-                          "type": "string"
+                          "$ref": "#/components/schemas/NodeA"
                         }
                       },
                       "required": [
@@ -327,11 +415,12 @@
         }
       }
     },
-    "/boolUnion": {
+    "/zodTypes.category": {
       "get": {
-        "operationId": "boolUnion",
+        "operationId": "zodTypes.category",
+        "description": "Zod recursive category tree",
         "tags": [
-          "boolUnion"
+          "zodTypes"
         ],
         "responses": {
           "200": {
@@ -345,16 +434,7 @@
                       "type": "object",
                       "properties": {
                         "data": {
-                          "type": "object",
-                          "properties": {
-                            "flag": {
-                              "type": "boolean"
-                            }
-                          },
-                          "required": [
-                            "flag"
-                          ],
-                          "additionalProperties": false
+                          "$ref": "#/components/schemas/ZodCategory"
                         }
                       },
                       "required": [
@@ -372,14 +452,28 @@
           "default": {
             "$ref": "#/components/responses/Error"
           }
-        }
+        },
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "style": "deepObject",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        ]
       }
     },
-    "/boolNullable": {
+    "/zodTypes.treeNode": {
       "get": {
-        "operationId": "boolNullable",
+        "operationId": "zodTypes.treeNode",
+        "description": "Zod recursive tree node",
         "tags": [
-          "boolNullable"
+          "zodTypes"
         ],
         "responses": {
           "200": {
@@ -393,19 +487,7 @@
                       "type": "object",
                       "properties": {
                         "data": {
-                          "type": "object",
-                          "properties": {
-                            "flag": {
-                              "type": [
-                                "boolean",
-                                "null"
-                              ]
-                            }
-                          },
-                          "required": [
-                            "flag"
-                          ],
-                          "additionalProperties": false
+                          "$ref": "#/components/schemas/ZodTreeNode"
                         }
                       },
                       "required": [
@@ -423,14 +505,28 @@
           "default": {
             "$ref": "#/components/responses/Error"
           }
-        }
+        },
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "style": "deepObject",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        ]
       }
     },
-    "/nullOnly": {
+    "/zodTypes.linkedList": {
       "get": {
-        "operationId": "nullOnly",
+        "operationId": "zodTypes.linkedList",
+        "description": "Zod recursive linked list with nullable",
         "tags": [
-          "nullOnly"
+          "zodTypes"
         ],
         "responses": {
           "200": {
@@ -444,7 +540,7 @@
                       "type": "object",
                       "properties": {
                         "data": {
-                          "type": "null"
+                          "$ref": "#/components/schemas/ZodLinkedList"
                         }
                       },
                       "required": [
@@ -462,14 +558,28 @@
           "default": {
             "$ref": "#/components/responses/Error"
           }
-        }
+        },
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "style": "deepObject",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        ]
       }
     },
-    "/binary": {
+    "/zodTypes.comment": {
       "get": {
-        "operationId": "binary",
+        "operationId": "zodTypes.comment",
+        "description": "Zod recursive comment with optional",
         "tags": [
-          "binary"
+          "zodTypes"
         ],
         "responses": {
           "200": {
@@ -483,17 +593,7 @@
                       "type": "object",
                       "properties": {
                         "data": {
-                          "type": "object",
-                          "properties": {
-                            "data": {
-                              "type": "string",
-                              "format": "binary"
-                            }
-                          },
-                          "required": [
-                            "data"
-                          ],
-                          "additionalProperties": false
+                          "$ref": "#/components/schemas/ZodComment"
                         }
                       },
                       "required": [
@@ -511,330 +611,366 @@
           "default": {
             "$ref": "#/components/responses/Error"
           }
-        }
-      }
-    },
-    "/nullableObject": {
-      "get": {
-        "operationId": "nullableObject",
-        "tags": [
-          "nullableObject"
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful response",
+        },
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "style": "deepObject",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "result": {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "oneOf": [
-                            {
-                              "type": "object",
-                              "properties": {
-                                "id": {
-                                  "type": "number"
-                                },
-                                "name": {
-                                  "type": "string"
-                                }
-                              },
-                              "required": [
-                                "id",
-                                "name"
-                              ],
-                              "additionalProperties": false
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        }
-                      },
-                      "required": [
-                        "data"
-                      ]
-                    }
-                  },
-                  "required": [
-                    "result"
-                  ]
-                }
+                "schema": {}
               }
             }
-          },
-          "default": {
-            "$ref": "#/components/responses/Error"
           }
-        }
-      }
-    },
-    "/noInputMutation": {
-      "post": {
-        "operationId": "noInputMutation",
-        "tags": [
-          "noInputMutation"
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "result": {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "type": "object",
-                          "properties": {
-                            "success": {
-                              "type": "boolean"
-                            }
-                          },
-                          "required": [
-                            "success"
-                          ],
-                          "additionalProperties": false
-                        }
-                      },
-                      "required": [
-                        "data"
-                      ]
-                    }
-                  },
-                  "required": [
-                    "result"
-                  ]
-                }
-              }
-            }
-          },
-          "default": {
-            "$ref": "#/components/responses/Error"
-          }
-        }
-      }
-    },
-    "/disjointIntersection": {
-      "get": {
-        "operationId": "disjointIntersection",
-        "tags": [
-          "disjointIntersection"
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "result": {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "type": "object",
-                          "properties": {
-                            "name": {
-                              "type": "string"
-                            },
-                            "age": {
-                              "type": "number"
-                            }
-                          },
-                          "required": [
-                            "name",
-                            "age"
-                          ],
-                          "additionalProperties": false
-                        }
-                      },
-                      "required": [
-                        "data"
-                      ]
-                    }
-                  },
-                  "required": [
-                    "result"
-                  ]
-                }
-              }
-            }
-          },
-          "default": {
-            "$ref": "#/components/responses/Error"
-          }
-        }
-      }
-    },
-    "/conflictingIntersection": {
-      "get": {
-        "operationId": "conflictingIntersection",
-        "tags": [
-          "conflictingIntersection"
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "result": {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "allOf": [
-                            {
-                              "type": "object",
-                              "properties": {
-                                "id": {
-                                  "type": "string"
-                                },
-                                "label": {
-                                  "type": "string"
-                                }
-                              },
-                              "required": [
-                                "id",
-                                "label"
-                              ],
-                              "additionalProperties": false
-                            },
-                            {
-                              "type": "object",
-                              "properties": {
-                                "id": {
-                                  "type": "number"
-                                },
-                                "extra": {
-                                  "type": "boolean"
-                                }
-                              },
-                              "required": [
-                                "id",
-                                "extra"
-                              ],
-                              "additionalProperties": false
-                            }
-                          ]
-                        }
-                      },
-                      "required": [
-                        "data"
-                      ]
-                    }
-                  },
-                  "required": [
-                    "result"
-                  ]
-                }
-              }
-            }
-          },
-          "default": {
-            "$ref": "#/components/responses/Error"
-          }
-        }
-      }
-    },
-    "/complexNullable": {
-      "get": {
-        "operationId": "complexNullable",
-        "tags": [
-          "complexNullable"
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "result": {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "type": "object",
-                          "properties": {
-                            "value": {
-                              "type": [
-                                "string",
-                                "number",
-                                "null"
-                              ]
-                            }
-                          },
-                          "required": [
-                            "value"
-                          ],
-                          "additionalProperties": false
-                        }
-                      },
-                      "required": [
-                        "data"
-                      ]
-                    }
-                  },
-                  "required": [
-                    "result"
-                  ]
-                }
-              }
-            }
-          },
-          "default": {
-            "$ref": "#/components/responses/Error"
-          }
-        }
+        ]
       }
     }
   },
   "components": {
     "schemas": {
-      "WithBigInt": {
+      "TreeNode": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TreeNode"
+            }
+          }
+        },
+        "required": [
+          "value",
+          "children"
+        ],
+        "additionalProperties": false
+      },
+      "LinkedListNode": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "number"
+          },
+          "next": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/LinkedListNode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "value",
+          "next"
+        ],
+        "additionalProperties": false
+      },
+      "GraphNode": {
         "type": "object",
         "properties": {
           "id": {
-            "type": "integer",
-            "format": "bigint"
-          }
-        },
-        "required": [
-          "id"
-        ],
-        "additionalProperties": false
-      },
-      "NeverField": {
-        "type": "object",
-        "properties": {
-          "valid": {
             "type": "string"
           },
-          "impossible": {}
-        },
-        "required": [
-          "valid"
-        ],
-        "additionalProperties": false
-      },
-      "AsyncIterable": {
-        "type": "object",
-        "properties": {
-          "__@asyncIterator@6317": {
-            "type": "object"
+          "label": {
+            "type": "string"
+          },
+          "neighbors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GraphNode"
+            }
           }
         },
         "required": [
-          "__@asyncIterator@6317"
+          "id",
+          "label",
+          "neighbors"
+        ],
+        "additionalProperties": false
+      },
+      "Person": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "pets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Pet"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "pets"
+        ],
+        "additionalProperties": false
+      },
+      "Pet": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "owner": {
+            "$ref": "#/components/schemas/Person"
+          }
+        },
+        "required": [
+          "name",
+          "owner"
+        ],
+        "additionalProperties": false
+      },
+      "JsonValue": {
+        "$ref": "#/components/schemas/JsonValue"
+      },
+      "Comment": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "replies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Comment"
+            }
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      "Organization": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "rootDepartment": {
+            "$ref": "#/components/schemas/Department"
+          }
+        },
+        "required": [
+          "name",
+          "rootDepartment"
+        ],
+        "additionalProperties": false
+      },
+      "Department": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "manager": {
+            "type": "string"
+          },
+          "subdepartments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Department"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "manager",
+          "subdepartments"
+        ],
+        "additionalProperties": false
+      },
+      "FileSystemEntry": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FileSystemEntry"
+            }
+          },
+          "parent": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/FileSystemEntry"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "entries",
+          "parent"
+        ],
+        "additionalProperties": false
+      },
+      "CategoryMap": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "children": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CategoryMap"
+            },
+            "description": "Construct a type with a set of properties K of type T"
+          }
+        },
+        "required": [
+          "name",
+          "children"
+        ],
+        "additionalProperties": false
+      },
+      "NodeA": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string"
+          },
+          "toB": {
+            "$ref": "#/components/schemas/NodeB"
+          }
+        },
+        "required": [
+          "value",
+          "toB"
+        ],
+        "additionalProperties": false
+      },
+      "NodeB": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "number"
+          },
+          "toC": {
+            "$ref": "#/components/schemas/NodeC"
+          }
+        },
+        "required": [
+          "value",
+          "toC"
+        ],
+        "additionalProperties": false
+      },
+      "NodeC": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "boolean"
+          },
+          "toA": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/NodeA"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "value",
+          "toA"
+        ],
+        "additionalProperties": false
+      },
+      "ZodCategory": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "subcategories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ZodCategory"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "subcategories"
+        ],
+        "additionalProperties": false
+      },
+      "ZodTreeNode": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ZodTreeNode"
+            }
+          }
+        },
+        "required": [
+          "value",
+          "children"
+        ],
+        "additionalProperties": false
+      },
+      "ZodLinkedList": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "number"
+          },
+          "next": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ZodLinkedList"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "value",
+          "next"
+        ],
+        "additionalProperties": false
+      },
+      "ZodComment": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "replies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ZodComment"
+            }
+          }
+        },
+        "required": [
+          "text"
         ],
         "additionalProperties": false
       },

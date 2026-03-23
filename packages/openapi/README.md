@@ -50,9 +50,9 @@ npx @tanstack/intent@latest install
 
 - [ ] SSE subscriptions
 - [ ] non-json content types (might already work, needs tests)
-- [ ] Improved handling of recursive/self-referencing types like trees/graphs - may be limited to 20 depth currently
 - [ ] non-nodejs example
 - [ ] an ai/mcp example
+- [ ] investigate async generators support (types generate... poorly) and probably
 - [ ] Document breaking change detection via [oasdiff](https://github.com/oasdiff/oasdiff/blob/main/docs/BREAKING-CHANGES.md)
 
 ## Maybes

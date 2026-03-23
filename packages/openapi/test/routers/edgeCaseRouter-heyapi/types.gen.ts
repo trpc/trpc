@@ -14,7 +14,7 @@ export type NeverField = {
 };
 
 export type AsyncIterable = {
-    '__@asyncIterator@5456': {
+    '__@asyncIterator@6317': {
         [key: string]: unknown;
     };
 };
