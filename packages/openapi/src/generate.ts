@@ -194,13 +194,21 @@ function typeToJsonSchema(
   // If this type is already registered as a named schema, return a $ref.
   const existingRef = ctx.typeToRef.get(type);
   if (existingRef) {
-    if (existingRef in ctx.schemas) {
+    const storedSchema = ctx.schemas[existingRef];
+    if (
+      storedSchema &&
+      (isNonEmptySchema(storedSchema) || ctx.visited.has(type))
+    ) {
       return schemaRef(existingRef);
     }
-    // First encounter: set placeholder (circular ref guard), convert, store.
-    ctx.schemas[existingRef] = {};
+
+    // First encounter for a pre-registered placeholder: convert once, but keep
+    // returning $ref for recursive edges while the type is actively visiting.
+    ctx.schemas[existingRef] = storedSchema ?? {};
     const schema = convertTypeToSchema(type, ctx, depth);
-    ctx.schemas[existingRef] = schema;
+    if (!isSelfSchemaRef(schema, existingRef)) {
+      ctx.schemas[existingRef] = schema;
+    }
     return schemaRef(existingRef);
   }
 
@@ -839,6 +847,130 @@ interface ProcedureDef {
   typeName: string;
   path: string;
   description?: string;
+  symbol: ts.Symbol;
+}
+
+function getProcedureInputTypeName(type: ts.Type, path: string): string {
+  const directName = getTypeName(type);
+  if (directName) {
+    return directName;
+  }
+
+  for (const sym of [type.aliasSymbol, type.getSymbol()].filter(
+    (candidate): candidate is ts.Symbol => !!candidate,
+  )) {
+    for (const declaration of sym.declarations ?? []) {
+      const declarationName = ts.getNameOfDeclaration(declaration)?.getText();
+      if (
+        declarationName &&
+        !ANONYMOUS_NAMES.has(declarationName) &&
+        !declarationName.startsWith('__')
+      ) {
+        return declarationName;
+      }
+    }
+  }
+
+  const fallbackName = path
+    .split('.')
+    .filter(Boolean)
+    .map((segment) =>
+      segment
+        .split(/[^A-Za-z0-9]+/)
+        .filter(Boolean)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(''),
+    )
+    .join('');
+
+  return `${fallbackName || 'Procedure'}Input`;
+}
+
+function isUnknownLikeType(type: ts.Type): boolean {
+  return hasFlag(type, ts.TypeFlags.Unknown | ts.TypeFlags.Any);
+}
+
+function isCollapsedProcedureInputType(type: ts.Type): boolean {
+  return (
+    isUnknownLikeType(type) ||
+    (isObjectType(type) &&
+      type.getProperties().length === 0 &&
+      !type.getStringIndexType())
+  );
+}
+
+function recoverProcedureInputType(
+  def: ProcedureDef,
+  checker: ts.TypeChecker,
+): ts.Type | null {
+  let initializer: ts.Expression | null = null;
+  for (const declaration of def.symbol.declarations ?? []) {
+    if (ts.isPropertyAssignment(declaration)) {
+      initializer = declaration.initializer;
+      break;
+    }
+    if (ts.isVariableDeclaration(declaration) && declaration.initializer) {
+      initializer = declaration.initializer;
+      break;
+    }
+  }
+  if (!initializer) {
+    return null;
+  }
+
+  let recovered: ts.Type | null = null;
+  // Walk the builder chain and keep the last `.input(...)` parser output type.
+  const visit = (expr: ts.Expression): void => {
+    if (!ts.isCallExpression(expr)) {
+      return;
+    }
+
+    const callee = expr.expression;
+    if (!ts.isPropertyAccessExpression(callee)) {
+      return;
+    }
+
+    visit(callee.expression);
+    if (callee.name.text !== 'input') {
+      return;
+    }
+
+    const [parserExpr] = expr.arguments;
+    if (!parserExpr) {
+      return;
+    }
+
+    const parserType = checker.getTypeAtLocation(parserExpr);
+    const standardSym = parserType.getProperty('~standard');
+    if (!standardSym) {
+      return;
+    }
+
+    const standardType = checker.getTypeOfSymbolAtLocation(
+      standardSym,
+      parserExpr,
+    );
+    const typesSym = standardType.getProperty('types');
+    if (!typesSym) {
+      return;
+    }
+
+    const typesType = checker.getNonNullableType(
+      checker.getTypeOfSymbolAtLocation(typesSym, parserExpr),
+    );
+    const outputSym = typesType.getProperty('output');
+    if (!outputSym) {
+      return;
+    }
+
+    const outputType = checker.getTypeOfSymbolAtLocation(outputSym, parserExpr);
+    if (!isUnknownLikeType(outputType)) {
+      recovered = outputType;
+    }
+  };
+  visit(initializer);
+
+  return recovered;
 }
 
 function extractProcedure(def: ProcedureDef, ctx: WalkCtx): void {
@@ -856,13 +988,45 @@ function extractProcedure(def: ProcedureDef, ctx: WalkCtx): void {
 
   const inputType = inputSym ? checker.getTypeOfSymbol(inputSym) : null;
   const outputType = outputSym ? checker.getTypeOfSymbol(outputSym) : null;
+  const resolvedInputType =
+    inputType && isCollapsedProcedureInputType(inputType)
+      ? (recoverProcedureInputType(def, checker) ?? inputType)
+      : inputType;
 
-  // Recursive z.lazy() inputs can collapse to `{}` here because the compiler
-  // exposes only the inferred procedure input type, not the original parser.
-  const inputSchema =
-    !inputType || isVoidLikeInput(inputType)
-      ? null
-      : typeToJsonSchema(inputType, schemaCtx);
+  let inputSchema: SchemaObject | null = null;
+  if (!resolvedInputType || isVoidLikeInput(resolvedInputType)) {
+    // null is fine
+  } else {
+    // Pre-register recovered parser output types so recursive edges resolve to a
+    // stable component ref instead of collapsing into `{}`.
+    const ensureRecoveredInputRegistration = (type: ts.Type): void => {
+      if (schemaCtx.typeToRef.has(type)) {
+        return;
+      }
+
+      const refName = ensureUniqueName(
+        getProcedureInputTypeName(type, def.path),
+        schemaCtx.schemas,
+      );
+      schemaCtx.typeToRef.set(type, refName);
+      schemaCtx.schemas[refName] = {};
+    };
+
+    if (resolvedInputType !== inputType) {
+      ensureRecoveredInputRegistration(resolvedInputType);
+    }
+
+    const initialSchema = typeToJsonSchema(resolvedInputType, schemaCtx);
+    if (
+      !isNonEmptySchema(initialSchema) &&
+      !schemaCtx.typeToRef.has(resolvedInputType)
+    ) {
+      ensureRecoveredInputRegistration(resolvedInputType);
+      inputSchema = typeToJsonSchema(resolvedInputType, schemaCtx);
+    } else {
+      inputSchema = initialSchema;
+    }
+  }
 
   const outputSchema: SchemaObject | null = outputType
     ? typeToJsonSchema(outputType, schemaCtx)
@@ -915,10 +1079,11 @@ interface WalkTypeOpts {
   ctx: WalkCtx;
   currentPath: string;
   description?: string;
+  symbol?: ts.Symbol;
 }
 
 function walkType(opts: WalkTypeOpts): void {
-  const { type, ctx, currentPath, description } = opts;
+  const { type, ctx, currentPath, description, symbol } = opts;
   if (ctx.seen.has(type)) {
     return;
   }
@@ -942,7 +1107,13 @@ function walkType(opts: WalkTypeOpts): void {
   const procedureTypeName = getProcedureTypeName(defType, checker);
   if (procedureTypeName) {
     extractProcedure(
-      { defType, typeName: procedureTypeName, path: currentPath, description },
+      {
+        defType,
+        typeName: procedureTypeName,
+        path: currentPath,
+        description,
+        symbol: symbol ?? type.getSymbol() ?? defSym,
+      },
       ctx,
     );
     return;
@@ -976,7 +1147,13 @@ function walkRecord(recordType: ts.Type, ctx: WalkCtx, prefix: string): void {
     const propType = ctx.schemaCtx.checker.getTypeOfSymbol(prop);
     const fullPath = prefix ? `${prefix}.${prop.name}` : prop.name;
     const description = getJsDocComment(prop, ctx.schemaCtx.checker);
-    walkType({ type: propType, ctx, currentPath: fullPath, description });
+    walkType({
+      type: propType,
+      ctx,
+      currentPath: fullPath,
+      description,
+      symbol: prop,
+    });
   }
 }
 
@@ -1180,7 +1357,10 @@ function buildOpenAPIDocument(
 
     const pathItem: PathItemObject = paths[opPath] ?? {};
     paths[opPath] = pathItem;
-    pathItem[method] = buildProcedureOperation(proc, method);
+    pathItem[method] = buildProcedureOperation(
+      proc,
+      method,
+    ) as PathItemObject[typeof method];
   }
 
   const hasNamedSchemas =

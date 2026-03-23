@@ -81,7 +81,6 @@ const wrapperDefTypes: ReadonlySet<$ZodTypeDef['type']> = new Set([
   'pipe',
   'transform',
   'promise',
-  'lazy',
 ]);
 
 /**
@@ -129,7 +128,7 @@ export function extractZodDescriptions(schema: unknown): DescriptionMap | null {
   }
 
   // Walk object shape
-  walkZodShape(schema, '', { registry, map });
+  walkZodShape(schema, '', { registry, map, seenLazy: new Set() });
   if (map.properties.size > 0) hasAny = true;
 
   return hasAny ? map : null;
@@ -138,9 +137,26 @@ export function extractZodDescriptions(schema: unknown): DescriptionMap | null {
 function walkZodShape(
   schema: $ZodType,
   prefix: string,
-  ctx: { registry: $ZodRegistry<GlobalMeta>; map: DescriptionMap },
+  ctx: {
+    registry: $ZodRegistry<GlobalMeta>;
+    map: DescriptionMap;
+    seenLazy: Set<$ZodType>;
+  },
 ): void {
   const unwrapped = unwrapZodSchema(schema);
+  const def = unwrapped._zod.def;
+
+  if (def.type === 'lazy' && 'getter' in def) {
+    if (ctx.seenLazy.has(unwrapped)) {
+      return;
+    }
+    ctx.seenLazy.add(unwrapped);
+    const inner = (def as { getter: () => unknown }).getter();
+    if (isZodSchema(inner)) {
+      walkZodShape(inner, prefix, ctx);
+    }
+    return;
+  }
 
   // If this is an array, check for a description on the element schema itself
   // (stored as `[]` in the path) and recurse into the element's shape.

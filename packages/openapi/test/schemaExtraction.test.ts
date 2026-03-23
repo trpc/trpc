@@ -101,6 +101,65 @@ describe('extractDescriptions', () => {
     expect(result!.properties.get('groups.members.id')).toBe('Member ID');
   });
 
+  it('walks z.lazy() schemas without recursing forever', () => {
+    type Category = {
+      name: string;
+      children: Category[];
+    };
+
+    const categorySchema: z.ZodType<Category> = z.lazy(() =>
+      z.object({
+        name: z.string().describe('Category name'),
+        children: z.array(categorySchema),
+      }),
+    );
+
+    const result = extractZodDescriptions(categorySchema);
+    expect(result).toMatchInlineSnapshot(`
+      Object {
+        "properties": Map {
+          "name" => "Category name",
+        },
+      }
+    `);
+  });
+
+  it('walks deeper z.lazy() cycles without recursing forever', () => {
+    type Category = {
+      name: string;
+      children: Array<{
+        foo: {
+          label: string;
+          category: Category;
+        };
+      }>;
+    };
+
+    const categorySchema: z.ZodType<Category> = z.lazy(() =>
+      z.object({
+        name: z.string().describe('Category name'),
+        children: z.array(
+          z.object({
+            foo: z.object({
+              label: z.string().describe('Foo label'),
+              category: categorySchema,
+            }),
+          }),
+        ),
+      }),
+    );
+
+    const result = extractZodDescriptions(categorySchema);
+    expect(result).toMatchInlineSnapshot(`
+      Object {
+        "properties": Map {
+          "name" => "Category name",
+          "children.foo.label" => "Foo label",
+        },
+      }
+    `);
+  });
+
   it('returns null when no descriptions exist', () => {
     const schema = z.object({ name: z.string(), age: z.number() });
     const result = extractZodDescriptions(schema);
