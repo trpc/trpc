@@ -21,7 +21,7 @@ import {
   isObject,
   run,
 } from '../utils';
-import { getRequestInfo } from './contentType';
+import { getAcceptHeader, getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
   HTTPBaseHandlerOptions,
@@ -219,7 +219,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   opts: ResolveHTTPRequestOptions<TRouter>,
 ): Promise<Response> {
   const { router, req } = opts;
-  const headers = new Headers([['vary', 'trpc-accept']]);
+  const headers = new Headers([['vary', 'trpc-accept, accept']]);
   const config = router._def._config;
 
   const url = new URL(req.url);
@@ -302,7 +302,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   /**
    * @deprecated
    */
-  const isStreamCall = req.headers.get('trpc-accept') === 'application/jsonl';
+  const isStreamCall = getAcceptHeader(req.headers) === 'application/jsonl';
 
   const experimentalSSE = config.sse?.enabled ?? true;
   try {
@@ -598,10 +598,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
          * }
          */
         maxDepth: Infinity,
-        data: rpcCalls.map(async (res) => {
+        data: rpcCalls.map(async (res, index) => {
           const [error, result] = await res;
 
-          const call = info.calls[0];
+          const call = info.calls[index];
 
           if (error) {
             return {

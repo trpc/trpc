@@ -79,6 +79,14 @@ deno init --npm next-app --example https://github.com/trpc/trpc --example-path e
 
 **👉 See full documentation on [tRPC.io](https://trpc.io/docs). 👈**
 
+## AI Agents
+
+If you use an AI coding agent (Claude Code, Cursor, Windsurf, etc.), install tRPC skills for better code generation:
+
+```sh
+npx @tanstack/intent@latest install
+```
+
 ## Star History
 
 <a href="https://star-history.com/#trpc/trpc"><img src="https://api.star-history.com/svg?repos=trpc/trpc&type=Date" alt="Star History Chart" width="600" /></a>
@@ -139,8 +147,8 @@ If you enjoy working with tRPC and want to support us, consider giving a token a
 <table>
   <tr>
    <td align="center"><a href="https://greptile.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/140149887?v=4&s=150" width="150" alt="Greptile"/><br />Greptile</a></td>
-   <td align="center"><a href="https://serpapi.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://github.com/serpapi.png?s=150" width="150" alt="SerpApi"/><br />SerpApi</a></td>
    <td align="center"><a href="https://www.coderabbit.ai/?utm_source=github&utm_medium=referral&ref=trpc&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/132028505?v=4&s=150" width="150" alt="CodeRabbit"/><br />CodeRabbit</a></td>
+   <td align="center"><a href="https://serpapi.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://github.com/serpapi.png?s=150" width="150" alt="SerpApi"/><br />SerpApi</a></td>
   </tr>
 </table>
 
@@ -176,6 +184,7 @@ If you enjoy working with tRPC and want to support us, consider giving a token a
    <td align="center"><a href="https://venue.ink/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/67328248?v=4&s=100" width="100" alt="Venue%20Ink"/><br />Venue Ink</a></td>
    <td align="center"><a href="https://watchapi.dev/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/238667680?v=4&s=100" width="100" alt="WatchAPI"/><br />WatchAPI</a></td>
    <td align="center"><a href="https://aerius.se/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/107723282?u=2639caa14ce293a0b6202c5766a40bb99ac9697e&v=4&s=100" width="100" alt="Aerius%20Ventilation%20AB"/><br />Aerius Ventilation AB</a></td>
+   <td align="center"><a href="https://automatio.ai/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/1984909?u=b7bf5bc40ed49df3c22f69d2da7b8d78709c49ed&v=4&s=100" width="100" alt="Stefan%20Smiljkovic"/><br />Stefan Smiljkovic</a></td>
    <td align="center"><a href="https://erik.bjareholt.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/1405370?u=8a516a20206354bedf5e1f7639649f3214562d84&v=4&s=100" width="100" alt="Erik%20Bj%C3%A4reholt"/><br />Erik Bjäreholt</a></td>
   </tr>
 </table>

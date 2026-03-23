@@ -49,11 +49,20 @@ The AWS Lambda adapter is supported for API Gateway [REST API(v1)](https://docs.
 yarn add @trpc/server
 ```
 
+:::tip AI Agents
+If you use an AI coding agent, install tRPC skills for better code generation:
+
+```bash
+npx @tanstack/intent@latest install
+```
+
+:::
+
 ### 2. Create a tRPC router
 
 Implement your tRPC router. A sample router is given below:
 
-```ts title='server.ts'
+```ts twoslash title='server.ts'
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -74,16 +83,25 @@ export type AppRouter = typeof appRouter;
 
 tRPC includes an adapter for API Gateway out of the box. This adapter lets you run your routes through the API Gateway handler.
 
-```ts title='server.ts'
-import { CreateAWSLambdaContextOptions, awsLambdaRequestHandler } from '@trpc/server/adapters/aws-lambda';
+```ts twoslash title='server.ts'
+// @filename: router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
 
-const appRouter = /* ... */;
+// @filename: server.ts
+// ---cut---
+import type { APIGatewayProxyEventV2 } from 'aws-lambda';
+import type { CreateAWSLambdaContextOptions } from '@trpc/server/adapters/aws-lambda';
+import { awsLambdaRequestHandler } from '@trpc/server/adapters/aws-lambda';
+import { appRouter } from './router';
 
 // created for each request
 const createContext = ({
   event,
   context,
-}: CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>) => ({}) // no context
+}: CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>) => ({}); // no context
 type Context = Awaited<ReturnType<typeof createContext>>;
 
 export const handler = awsLambdaRequestHandler({
@@ -107,12 +125,16 @@ API Gateway has two different event data formats when it invokes a Lambda. For R
 
 To infer what version you might have, supply the context as following:
 
-```ts
+```ts twoslash
+import type { APIGatewayProxyEvent } from 'aws-lambda';
+import type { CreateAWSLambdaContextOptions } from '@trpc/server/adapters/aws-lambda';
+
+// ---cut---
 function createContext({
   event,
   context,
 }: CreateAWSLambdaContextOptions<APIGatewayProxyEvent>) {
-  ...
+  // ...
 }
 
 // CreateAWSLambdaContextOptions<APIGatewayProxyEvent> or CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>
@@ -126,47 +148,19 @@ AWS Lambda supports streaming responses to clients with both Lambda Function URL
 
 > Response streaming is supported for Lambda Function URLs and API Gateway REST APIs. For API Gateway REST APIs, you need to configure the integration with `responseTransferMode: STREAM`. [Read more about Lambda response streaming](https://aws.amazon.com/blogs/compute/introducing-aws-lambda-response-streaming/) and [API Gateway response streaming](https://aws.amazon.com/blogs/compute/building-responsive-apis-with-amazon-api-gateway-response-streaming/).
 
-## Example apps
-
-<table>
-  <thead>
-    <tr>
-      <th>Description</th>
-      <th>Links</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Lambda Function URL with NodeJS client.</td>
-      <td>
-        <ul>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/lambda-url">Source</a></li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>API Gateway REST API with response streaming.</td>
-      <td>
-        <ul>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/lambda-api-gateway-streaming">Source</a></li>
-        </ul>
-      </td>
-    </tr>
-  </tbody>
-</table>
-
 ### Response Streaming
 
 The signature of a streaming handler is different from the default handler. The streaming handler additionally receives a writable stream parameter, `responseStream`, besides the default node handler parameters, `event` and `context`. To indicate that Lambda should stream your responses, you must wrap your function handler with the `awslambda.streamifyResponse()` decorator.
 
 > Note that the `awslambda` namespace is automatically provided by the Lambda execution environment. You can import the types from `@types/aws-lambda` to augment the global namespace with the `awslambda` namespace.
 
-```ts title='server.ts'
-import { awsLambdaStreamingRequestHandler } from '@trpc/server/adapters/aws-lambda';
-import type { StreamifyHandler } from 'aws-lambda';
-
-const appRouter = router({
-  iterable: publicProcedure.query(async function* () {
+```ts twoslash title='server.ts'
+/// <reference types="aws-lambda" />
+// @filename: router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({
+  iterable: t.procedure.query(async function* () {
     for (let i = 0; i < 10; i++) {
       await new Promise((resolve) => setTimeout(resolve, 500));
       yield i;
@@ -174,10 +168,27 @@ const appRouter = router({
   }),
 });
 
+// @filename: server.ts
+// ---cut---
+/// <reference types="aws-lambda" />
+import type { APIGatewayProxyEventV2 } from 'aws-lambda';
+import type { CreateAWSLambdaContextOptions } from '@trpc/server/adapters/aws-lambda';
+import { awsLambdaStreamingRequestHandler } from '@trpc/server/adapters/aws-lambda';
+import { appRouter } from './router';
+
+// created for each request
+const createContext = ({
+  event,
+  context,
+}: CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>) => ({
+  // your context
+});
+type Context = Awaited<ReturnType<typeof createContext>>;
+
 export const handler = awslambda.streamifyResponse(
   awsLambdaStreamingRequestHandler({
     router: appRouter,
-    /* ... */
+    createContext,
   }),
 );
 ```

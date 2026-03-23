@@ -667,3 +667,71 @@ test('regression: encode/decode with superjson at top level', async () => {
 
   expect(abortController.signal.aborted).toBe(true);
 });
+
+// https://github.com/trpc/trpc/issues/7209
+test('regression: buffered chunks preserved on normal stream completion', async () => {
+  const abortController = new AbortController();
+  const data = {
+    0: Promise.resolve({
+      [Symbol.asyncIterator]: async function* () {
+        // Yield multiple values quickly so they buffer in the ReadableStream
+        for (let i = 0; i < 5; i++) {
+          yield i;
+        }
+      },
+    }),
+  } as const;
+  const stream = jsonlStreamProducer({
+    data,
+    serialize: (v) => SuperJSON.serialize(v),
+  });
+
+  const [head] = await jsonlStreamConsumer<typeof data>({
+    from: stream,
+    deserialize: (v) => SuperJSON.deserialize(v),
+    abortController,
+  });
+
+  const iterable = await head[0];
+
+  // Consume values with a slow reader so that the pipeTo pipeline completes
+  // (including its close/abort callback) while chunks are still buffered.
+  // Without the fix, the close handler calls controller.error() which discards
+  // buffered chunks; with the fix it calls controller.close() preserving them.
+  const values: number[] = [];
+  for await (const item of iterable) {
+    values.push(item);
+
+    // Yield to the event loop so pipeTo can finish and fire close/abort
+    await new Promise((r) => setTimeout(r, 10));
+  }
+
+  // All buffered chunks should be delivered on normal completion
+  expect(values).toEqual([0, 1, 2, 3, 4]);
+  expect(abortController.signal.aborted).toBe(true);
+});
+
+// https://github.com/trpc/trpc/issues/7209
+test('regression: stream closing before head rejects headDeferred with descriptive error', async () => {
+  const abortController = new AbortController();
+
+  // Create a ReadableStream that closes immediately with no data
+  const emptyStream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.close();
+    },
+  });
+
+  const rejection = await jsonlStreamConsumer({
+    from: emptyStream,
+    abortController,
+  }).catch((e) => e);
+
+  // Without the fix, close calls closeOrAbort(undefined) which rejects with undefined.
+  // With the fix, handleClose rejects with a descriptive Error.
+  expect(rejection).toBeInstanceOf(Error);
+  expect(rejection).toHaveProperty(
+    'message',
+    'Stream closed before head was received',
+  );
+});

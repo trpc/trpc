@@ -3,7 +3,7 @@ description: Composite action that sets up pnpm
 runs:
   using: 'composite'
   steps:
-    - uses: pnpm/action-setup@v4
+    - uses: pnpm/action-setup@v5
     - uses: actions/setup-node@v6
       with:
         node-version: 24.x

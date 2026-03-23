@@ -72,6 +72,7 @@ export type NodeJSReadableStreamEsque = {
  * @see Response from lib.dom.d.ts
  */
 export interface ResponseEsque {
+  readonly ok: boolean;
   readonly body?: NodeJSReadableStreamEsque | WebReadableStreamEsque | null;
   /**
    * @remarks

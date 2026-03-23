@@ -125,6 +125,7 @@ jobs:
             next-prisma-todomvc,
             next-prisma-websockets-starter,
             # next-sse-chat,
+            openapi-codegen,
             soa,
             standalone-server,
             vercel-edge-runtime,

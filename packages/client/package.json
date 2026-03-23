@@ -1,7 +1,7 @@
 {
   "name": "@trpc/client",
   "type": "module",
-  "version": "11.12.0",
+  "version": "11.14.1",
   "description": "The tRPC client library",
   "author": "KATT",
   "license": "MIT",
@@ -109,14 +109,18 @@
     "links",
     "unstable-internals",
     "!**/*.test.*",
-    "!**/__tests__"
+    "!**/__tests__",
+    "skills",
+    "!skills/_artifacts",
+    "bin"
   ],
   "peerDependencies": {
-    "@trpc/server": "11.12.0",
+    "@trpc/server": "11.14.1",
     "typescript": ">=5.7.2"
   },
   "devDependencies": {
-    "@trpc/server": "11.12.0",
+    "@tanstack/intent": "^0.0.23",
+    "@trpc/server": "11.14.1",
     "@types/isomorphic-fetch": "^0.0.39",
     "@types/node": "^22.13.5",
     "dataloader": "^2.2.2",
@@ -134,5 +138,11 @@
   },
   "funding": [
     "https://trpc.io/sponsor"
-  ]
+  ],
+  "keywords": [
+    "tanstack-intent"
+  ],
+  "bin": {
+    "intent": "./bin/intent.js"
+  }
 }

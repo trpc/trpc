@@ -37,11 +37,20 @@ yarn add @trpc/server zod
 
 > [Zod](https://github.com/colinhacks/zod) isn't a required dependency, but it's used in the sample router below.
 
+:::tip AI Agents
+If you use an AI coding agent, install tRPC skills for better code generation:
+
+```bash
+npx @tanstack/intent@latest install
+```
+
+:::
+
 ### 2. Create a tRPC router
 
 Implement your tRPC router. A sample router is given below:
 
-```ts title='server.ts'
+```ts twoslash title='server.ts'
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -56,9 +65,7 @@ export const appRouter = t.router({
     .input(z.object({ name: z.string().min(5) }))
     .mutation(async (opts) => {
       // use your ORM of choice
-      return await UserModel.create({
-        data: opts.input,
-      });
+      return { id: '1', ...opts.input };
     }),
 });
 
@@ -72,7 +79,7 @@ If your router file starts getting too big, split your router into several subro
 
 tRPC includes an adapter for Express out of the box. This adapter lets you convert your tRPC router into an Express middleware.
 
-```ts title='server.ts'
+```ts twoslash title='server.ts'
 import { initTRPC } from '@trpc/server';
 import * as trpcExpress from '@trpc/server/adapters/express';
 import express from 'express';
