@@ -111,9 +111,32 @@ describe('cyclic types', () => {
     });
 
     it('handles JsonValue recursive union type', () => {
+      const jsonValue = requireSchema(doc, 'JsonValue');
+      expect(jsonValue.oneOf).toHaveLength(6);
+      expect(jsonValue.oneOf).toEqual(
+        expect.arrayContaining([
+          { type: 'string' },
+          { type: 'number' },
+          { type: 'boolean' },
+          { type: 'null' },
+          {
+            type: 'array',
+            items: { $ref: '#/components/schemas/JsonValue' },
+          },
+          {
+            type: 'object',
+            additionalProperties: {
+              $ref: '#/components/schemas/JsonValue',
+            },
+          },
+        ]),
+      );
+
       const data = getOutputData(doc, 'tsTypes.jsonValue');
       expect(data).toBeDefined();
-      expect(data?.properties).toHaveProperty('data');
+      expect(data?.properties?.['data']).toEqual({
+        $ref: '#/components/schemas/JsonValue',
+      });
     });
 
     it('handles Comment with optional self-reference', () => {

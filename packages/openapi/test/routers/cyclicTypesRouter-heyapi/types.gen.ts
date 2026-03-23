@@ -30,7 +30,9 @@ export type Pet = {
     owner: Person;
 };
 
-export type JsonValue = JsonValue;
+export type JsonValue = string | number | Array<JsonValue> | {
+    [key: string]: JsonValue;
+} | boolean | null;
 
 export type Comment = {
     text: string;

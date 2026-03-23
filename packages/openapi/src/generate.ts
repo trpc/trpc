@@ -140,6 +140,10 @@ function schemaRef(name: string): SchemaObject {
   return { $ref: `#/components/schemas/${name}` };
 }
 
+function isSelfSchemaRef(schema: SchemaObject, name: string): boolean {
+  return schema.$ref === schemaRef(name).$ref;
+}
+
 function isNonEmptySchema(s: SchemaObject): boolean {
   for (const _ in s) return true;
   return false;
@@ -185,7 +189,11 @@ function typeToJsonSchema(
   const postConvertRef = ctx.typeToRef.get(type);
   if (postConvertRef) {
     const stored = ctx.schemas[postConvertRef];
-    if (stored && !isNonEmptySchema(stored)) {
+    if (
+      stored &&
+      !isNonEmptySchema(stored) &&
+      !isSelfSchemaRef(schema, postConvertRef)
+    ) {
       ctx.schemas[postConvertRef] = schema;
     }
     return schemaRef(postConvertRef);
