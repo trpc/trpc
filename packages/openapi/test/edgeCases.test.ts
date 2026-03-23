@@ -1,41 +1,27 @@
 import * as path from 'node:path';
 import { beforeAll, describe, expect, expectTypeOf, it } from 'vitest';
-import type { OpenAPIDocument } from '../src/generate';
 import { generateOpenAPIDocument } from '../src/generate';
+import type { Document } from '../src/types';
 import type {
   ConflictingIntersectionResponses,
   DisjointIntersectionResponses,
 } from './routers/edgeCaseRouter-heyapi/types.gen';
+import {
+  getParameter,
+  getRequestBody,
+  requireOperation,
+  requireOutputData,
+  requireProperty,
+  requireResponseSchema,
+  requireSchemaObject,
+} from './types';
 
 const routersDir = path.resolve(__dirname, 'routers');
 const edgeCaseRouterPath = path.resolve(routersDir, 'edgeCaseRouter.ts');
 const appRouterPath = path.resolve(routersDir, 'appRouter.ts');
 
-/** Resolve a schema that may be a $ref into the actual schema object. */
-function resolveSchema(schema: any, doc: OpenAPIDocument): any {
-  if (!schema?.$ref) return schema;
-  const name = schema.$ref.replace('#/components/schemas/', '');
-  return (doc.components as any).schemas?.[name] ?? schema;
-}
-
-/** Extract the output data schema from the tRPC success envelope. */
-function unwrapSuccessData(schema: any, doc: OpenAPIDocument): any {
-  const resolved = resolveSchema(schema, doc);
-  const dataSchema = resolved?.properties?.result?.properties?.data;
-  return dataSchema ? resolveSchema(dataSchema, doc) : undefined;
-}
-
-function getResponseSchema(
-  doc: OpenAPIDocument,
-  procedurePath: string,
-  method: 'get' | 'post' = 'get',
-): any {
-  const op = doc.paths[`/${procedurePath}`]?.[method] as any;
-  return op?.responses?.['200']?.content?.['application/json']?.schema;
-}
-
 describe('generateOpenAPIDocument edge cases', () => {
-  let doc: OpenAPIDocument;
+  let doc: Document;
 
   beforeAll(async () => {
     doc = await generateOpenAPIDocument(edgeCaseRouterPath, {
@@ -46,13 +32,16 @@ describe('generateOpenAPIDocument edge cases', () => {
   });
 
   it('handles bigint types as integer schema', () => {
-    const schema = unwrapSuccessData(getResponseSchema(doc, 'bigint'), doc);
-    expect(schema.properties.id).toEqual({ type: 'integer', format: 'bigint' });
+    const schema = requireOutputData(doc, 'bigint');
+    expect(requireProperty(schema, 'id')).toEqual({
+      type: 'integer',
+      format: 'bigint',
+    });
   });
 
   it('handles never type in optional fields', () => {
-    const schema = unwrapSuccessData(getResponseSchema(doc, 'neverField'), doc);
-    expect(schema.properties.valid).toEqual({ type: 'string' });
+    const schema = requireOutputData(doc, 'neverField');
+    expect(requireProperty(schema, 'valid')).toEqual({ type: 'string' });
     // `impossible?: never` is typed as `never | undefined` which collapses to
     // an empty schema `{}` (undefined is stripped, never maps to `not: {}`
     // but the union with undefined may simplify).  Just verify it exists and
@@ -61,81 +50,71 @@ describe('generateOpenAPIDocument edge cases', () => {
   });
 
   it('unwraps Promise<T> return types', () => {
-    const schema = unwrapSuccessData(
-      getResponseSchema(doc, 'asyncReturn'),
-      doc,
-    );
-    expect(schema.properties.data).toEqual({ type: 'string' });
+    const schema = requireOutputData(doc, 'asyncReturn');
+    expect(requireProperty(schema, 'data')).toEqual({ type: 'string' });
   });
 
   it('handles void/undefined inputs as no parameters', () => {
-    const voidOp = doc.paths['/voidInput']?.['get'] as any;
+    const voidOp = requireOperation(doc, 'voidInput');
     expect(voidOp.parameters).toBeUndefined();
 
-    const undefinedOp = doc.paths['/undefinedInput']?.['get'] as any;
+    const undefinedOp = requireOperation(doc, 'undefinedInput');
     expect(undefinedOp.parameters).toBeUndefined();
 
-    const voidExplicitOp = doc.paths['/voidExplicit']?.['get'] as any;
+    const voidExplicitOp = requireOperation(doc, 'voidExplicit');
     expect(voidExplicitOp.parameters).toBeUndefined();
   });
 
   it('excludes subscriptions from OpenAPI paths', () => {
-    expect(doc.paths['/sub']).toBeUndefined();
+    expect(doc.paths?.['/sub']).toBeUndefined();
   });
 
   it('handles deeply nested routers', () => {
-    expect(doc.paths['/level1.level2.level3.deep']).toBeDefined();
-    const op = doc.paths['/level1.level2.level3.deep']?.['get'] as any;
+    expect(doc.paths?.['/level1.level2.level3.deep']).toBeDefined();
+    const op = requireOperation(doc, 'level1.level2.level3.deep');
     expect(op.operationId).toBe('level1.level2.level3.deep');
   });
 
   it('collapses true | false union to boolean', () => {
-    const schema = unwrapSuccessData(getResponseSchema(doc, 'boolUnion'), doc);
-    expect(schema.properties.flag).toEqual({ type: 'boolean' });
+    const schema = requireOutputData(doc, 'boolUnion');
+    expect(requireProperty(schema, 'flag')).toEqual({ type: 'boolean' });
   });
 
   it('handles boolean | null', () => {
-    const schema = unwrapSuccessData(
-      getResponseSchema(doc, 'boolNullable'),
-      doc,
-    );
-    expect(schema.properties.flag).toEqual({ type: ['boolean', 'null'] });
+    const schema = requireOutputData(doc, 'boolNullable');
+    expect(requireProperty(schema, 'flag')).toEqual({
+      type: ['boolean', 'null'],
+    });
   });
 
   it('handles null-only return', () => {
-    const schema = unwrapSuccessData(getResponseSchema(doc, 'nullOnly'), doc);
+    const schema = requireOutputData(doc, 'nullOnly');
     expect(schema).toEqual({ type: 'null' });
   });
 
   it('handles Uint8Array as binary format', () => {
-    const schema = unwrapSuccessData(getResponseSchema(doc, 'binary'), doc);
-    expect(schema.properties.data).toEqual({
+    const schema = requireOutputData(doc, 'binary');
+    expect(requireProperty(schema, 'data')).toEqual({
       type: 'string',
       format: 'binary',
     });
   });
 
   it('handles nullable objects in oneOf', () => {
-    const schema = unwrapSuccessData(
-      getResponseSchema(doc, 'nullableObject'),
-      doc,
-    );
+    const schema = requireOutputData(doc, 'nullableObject');
     // Should be oneOf: [objectSchema, { type: "null" }] or type: ["object", "null"]
     expect(JSON.stringify(schema)).toContain('null');
   });
 
   it('handles mutations with no input', () => {
-    const op = doc.paths['/noInputMutation']?.['post'] as any;
+    const op = requireOperation(doc, 'noInputMutation', 'post');
     expect(op).toBeDefined();
     expect(op.requestBody).toBeUndefined();
   });
 
   it('handles complex nullable union (string | number | null)', () => {
-    const schema = unwrapSuccessData(
-      getResponseSchema(doc, 'complexNullable'),
-      doc,
-    );
-    const valueSchema = schema.properties.value;
+    const schema = requireOutputData(doc, 'complexNullable');
+    const valueSchema = requireProperty(schema, 'value');
     // Should have string, number, and null represented
     const serialized = JSON.stringify(valueSchema);
     expect(serialized).toContain('string');
@@ -152,14 +131,11 @@ describe('generateOpenAPIDocument edge cases', () => {
     }>();
 
     // Verify the OpenAPI schema is a merged object, not allOf
-    const schema = unwrapSuccessData(
-      getResponseSchema(doc, 'disjointIntersection'),
-      doc,
-    );
+    const schema = requireOutputData(doc, 'disjointIntersection');
     expect(schema.type).toBe('object');
     expect(schema).not.toHaveProperty('allOf');
-    expect(schema.properties.name).toEqual({ type: 'string' });
-    expect(schema.properties.age).toEqual({ type: 'number' });
+    expect(requireProperty(schema, 'name')).toEqual({ type: 'string' });
+    expect(requireProperty(schema, 'age')).toEqual({ type: 'number' });
     expect(schema.required).toContain('name');
     expect(schema.required).toContain('age');
   });
@@ -177,41 +153,48 @@ describe('generateOpenAPIDocument edge cases', () => {
     >().toEqualTypeOf<ConflictingData>();
 
     // Verify the OpenAPI schema uses allOf to preserve both definitions
-    const schema = unwrapSuccessData(
-      getResponseSchema(doc, 'conflictingIntersection'),
-      doc,
-    );
+    const schema = requireOutputData(doc, 'conflictingIntersection');
     expect(schema).toHaveProperty('allOf');
     expect(schema).not.toHaveProperty('type');
     expect(schema.allOf).toHaveLength(2);
 
     // Both schemas in allOf should retain their own definition of `id`
-    const allSchemas = schema.allOf as Array<{
-      properties?: Record<string, { type?: string }>;
-    }>;
-    const idTypes = allSchemas.map((s) => s.properties?.['id']?.type);
+    const idTypes =
+      schema.allOf?.map((part, index) => {
+        const partSchema = requireSchemaObject(
+          part,
+          doc,
+          `conflictingIntersection.allOf[${index}]`,
+        );
+        const idSchema = requireSchemaObject(
+          requireProperty(partSchema, 'id'),
+          doc,
+          `conflictingIntersection.allOf[${index}].id`,
+        );
+        return idSchema.type;
+      }) ?? [];
     expect(idTypes).toContain('string');
     expect(idTypes).toContain('number');
   });
 
   it('assigns correct tags based on top-level procedure path', () => {
-    const op = doc.paths['/level1.level2.level3.deep']?.['get'] as any;
+    const op = requireOperation(doc, 'level1.level2.level3.deep');
     expect(op.tags).toEqual(['level1']);
 
-    const simpleOp = doc.paths['/simpleQuery']?.['get'] as any;
+    const simpleOp = requireOperation(doc, 'simpleQuery');
     expect(simpleOp.tags).toEqual(['simpleQuery']);
   });
 
   it('sets default error response reference', () => {
-    const op = doc.paths['/simpleQuery']?.['get'] as any;
-    expect(op.responses.default).toEqual({
+    const op = requireOperation(doc, 'simpleQuery');
+    expect(op.responses?.['default']).toEqual({
       $ref: '#/components/responses/Error',
     });
   });
 });
 
 describe('generateOpenAPIDocument default options', () => {
-  let doc: OpenAPIDocument;
+  let doc: Document;
 
   beforeAll(async () => {
     doc = await generateOpenAPIDocument(appRouterPath);
@@ -228,48 +211,65 @@ describe('generateOpenAPIDocument default options', () => {
   });
 
   it('wraps output in success envelope correctly', () => {
-    const greetingOp = doc.paths['/greeting']?.['get'] as any;
-    const responseSchema =
-      greetingOp?.responses?.['200']?.content?.['application/json']?.schema;
+    const responseSchema = requireSchemaObject(
+      requireResponseSchema(doc, 'greeting'),
+      doc,
+      'greeting response',
+    );
 
     // Should have result.data envelope
     expect(responseSchema.type).toBe('object');
     expect(responseSchema.required).toContain('result');
-    expect(responseSchema.properties.result.type).toBe('object');
-    expect(responseSchema.properties.result.required).toContain('data');
+    const resultSchema = requireSchemaObject(
+      requireProperty(responseSchema, 'result'),
+      doc,
+      'greeting result',
+    );
+    expect(resultSchema.type).toBe('object');
+    expect(resultSchema.required).toContain('data');
   });
 
   it('wraps output without data for void procedures', () => {
-    const voidOp = doc.paths['/inferredReturns.voidReturn']?.['post'] as any;
-    const responseSchema =
-      voidOp?.responses?.['200']?.content?.['application/json']?.schema;
+    const responseSchema = requireSchemaObject(
+      requireResponseSchema(doc, 'inferredReturns.voidReturn', 'post'),
+      doc,
+      'inferredReturns.voidReturn response',
+    );
 
     // Should have result but no data
     expect(responseSchema.type).toBe('object');
     expect(responseSchema.required).toContain('result');
     // result.properties should not have data (or data should be empty)
-    const resultProps = responseSchema.properties.result.properties;
-    expect(resultProps.data).toBeUndefined();
+    const resultSchema = requireSchemaObject(
+      requireProperty(responseSchema, 'result'),
+      doc,
+      'inferredReturns.voidReturn result',
+    );
+    const resultProps = resultSchema.properties ?? {};
+    expect(resultProps['data']).toBeUndefined();
   });
 
   it('puts query input with deepObject style for GET', () => {
-    const greetingOp = doc.paths['/greeting']?.['get'] as any;
-    const param = greetingOp.parameters[0];
+    const param = getParameter(doc, 'greeting');
+    if (!param) {
+      throw new Error('Expected greeting input parameter');
+    }
 
     expect(param.name).toBe('input');
     expect(param.in).toBe('query');
     expect(param.required).toBe(true);
     expect(param.style).toBe('deepObject');
-    expect(param.content['application/json'].schema).toBeDefined();
+    expect(param.content?.['application/json']?.schema).toBeDefined();
   });
 
   it('puts mutation input as requestBody for POST', () => {
-    const createOp = doc.paths['/user.create']?.['post'] as any;
+    const requestBody = getRequestBody(doc, 'user.create', 'post');
+    if (!requestBody) {
+      throw new Error('Expected user.create request body');
+    }
 
-    expect(createOp.requestBody.required).toBe(true);
-    expect(
-      createOp.requestBody.content['application/json'].schema,
-    ).toBeDefined();
+    expect(requestBody.required).toBe(true);
+    expect(requestBody.content?.['application/json']?.schema).toBeDefined();
   });
 });
 

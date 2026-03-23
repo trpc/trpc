@@ -13,7 +13,7 @@ import type {
   $ZodTypeDef,
   GlobalMeta,
 } from 'zod/v4/core';
-import type { JsonSchema } from './generate';
+import type { SchemaObject } from './types';
 
 /** Description strings extracted from Zod `.describe()` calls, keyed by dot-delimited property path. */
 export interface DescriptionMap {
@@ -325,7 +325,7 @@ function isProcedure(
  * JSON schema produced by the TypeScript type checker.  Mutates in place.
  */
 export function applyDescriptions(
-  schema: JsonSchema,
+  schema: SchemaObject,
   descs: DescriptionMap,
 ): void {
   if (descs.self) {
@@ -337,8 +337,23 @@ export function applyDescriptions(
   }
 }
 
+function getArrayItemsSchema(schema: SchemaObject): SchemaObject | null {
+  const items = schema.items;
+  if (schema.type !== 'array' || items == null || items === false) {
+    return null;
+  }
+  return items;
+}
+
+function getPropertySchema(
+  schema: SchemaObject,
+  propertyName: string,
+): SchemaObject | null {
+  return schema.properties?.[propertyName] ?? null;
+}
+
 function setNestedDescription(
-  schema: JsonSchema,
+  schema: SchemaObject,
   pathParts: string[],
   description: string,
 ): void {
@@ -349,12 +364,7 @@ function setNestedDescription(
 
   // `[]` means "array items" — navigate to the `items` sub-schema
   if (head === '[]') {
-    const items =
-      schema.type === 'array' &&
-      schema.items &&
-      typeof schema.items === 'object'
-        ? schema.items
-        : null;
+    const items = getArrayItemsSchema(schema);
     if (!items) return;
     if (rest.length === 0) {
       items.description = description;
@@ -364,20 +374,15 @@ function setNestedDescription(
     return;
   }
 
-  const propSchema = schema.properties?.[head];
-  if (!propSchema || typeof propSchema !== 'object') return;
+  const propSchema = getPropertySchema(schema, head);
+  if (!propSchema) return;
 
   if (rest.length === 0) {
     // Leaf — Zod .describe() takes priority over JSDoc
     propSchema.description = description;
   } else {
     // For arrays, step through `items` transparently
-    const target =
-      propSchema.type === 'array' &&
-      propSchema.items &&
-      typeof propSchema.items === 'object'
-        ? propSchema.items
-        : propSchema;
+    const target = getArrayItemsSchema(propSchema) ?? propSchema;
     setNestedDescription(target, rest, description);
   }
 }

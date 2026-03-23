@@ -1,21 +1,17 @@
 import { existsSync } from 'node:fs';
 import http from 'node:http';
 import * as path from 'node:path';
-import {
-  getLanguageService,
-  LogLevel,
-  ReferenceValidationMode,
-} from '@swagger-api/apidom-ls';
+import { getLanguageService, LogLevel } from '@swagger-api/apidom-ls';
 import { createHTTPHandler } from '@trpc/server/adapters/standalone';
 import superjson from 'superjson';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import type { OpenAPIDocument } from '../src/generate';
 import { generateOpenAPIDocument } from '../src/generate';
 import {
   configureTRPCHeyApiClient,
   createTRPCHeyApiClientConfig,
 } from '../src/heyapi';
+import type { Document } from '../src/types';
 import { AppRouter } from './routers/appRouter';
 import { client as heyapiClient } from './routers/appRouter-heyapi/client.gen';
 import { Sdk as HeyapiSdk } from './routers/appRouter-heyapi/sdk.gen';
@@ -31,6 +27,18 @@ import type {
 import { SuperjsonRouter } from './routers/superjsonRouter';
 import { client as superjsonClient } from './routers/superjsonRouter-heyapi/client.gen';
 import { Sdk as SuperjsonSdk } from './routers/superjsonRouter-heyapi/sdk.gen';
+import {
+  getSchemas,
+  isArraySchema,
+  requireEnvelopeDataSchema,
+  requireInputSchema,
+  requireOperation,
+  requireOutputData,
+  requireProperty,
+  requireResponseComponentSchema,
+  requireSchema,
+  requireSchemaObject,
+} from './types';
 
 const languageService = getLanguageService({
   logLevel: LogLevel.ERROR,
@@ -58,23 +66,12 @@ const errorFormatterRouterPath = path.resolve(
 );
 const superjsonRouterPath = path.resolve(routersDir, 'superjsonRouter.ts');
 
-/** Resolve a schema that may be a $ref into the actual schema object. */
-function resolveSchema(schema: any, doc: OpenAPIDocument): any {
-  if (!schema?.$ref) return schema;
-  // Only handles #/components/schemas/Name refs
-  const name = schema.$ref.replace('#/components/schemas/', '');
-  return (doc.components as any).schemas?.[name] ?? schema;
-}
-
-/**
- * Extract the procedure's output schema from the tRPC success envelope.
- * The envelope is `{ result: { data: T } }`, so we dig into
- * `schema.properties.result.properties.data` and resolve any $ref.
- */
-function unwrapSuccessData(schema: any, doc: OpenAPIDocument): any {
-  const resolved = resolveSchema(schema, doc);
-  const dataSchema = resolved?.properties?.result?.properties?.data;
-  return dataSchema ? resolveSchema(dataSchema, doc) : undefined;
+function getErrorEnvelopeSchema(doc: Document) {
+  return requireSchemaObject(
+    requireResponseComponentSchema(doc, 'Error'),
+    doc,
+    'Error response',
+  );
 }
 
 describe('generateOpenAPIDocument', () => {
@@ -91,7 +88,7 @@ describe('generateOpenAPIDocument', () => {
   });
 
   describe('router json generation', () => {
-    let doc: OpenAPIDocument;
+    let doc: Document;
 
     beforeAll(async () => {
       doc = await generateOpenAPIDocument(appRouterPath, {
@@ -101,6 +98,8 @@ describe('generateOpenAPIDocument', () => {
     });
 
     it('returns a valid tRPC OpenAPI 3.1 document', () => {
+      const paths = doc.paths ?? {};
+
       expect(doc.openapi).toBe('3.1.1');
       expect(doc.jsonSchemaDialect).toBe(
         'https://spec.openapis.org/oas/3.1/dialect/base',
@@ -109,10 +108,10 @@ describe('generateOpenAPIDocument', () => {
       expect(doc.info.version).toBe('1.0.0');
 
       // Keys should be formatted tRPC style as `path.to.procedure`
-      for (const key of Object.keys(doc.paths)) {
+      for (const key of Object.keys(paths)) {
         expect(key).not.toMatch(/..+\/.+/);
       }
-      expect(Object.keys(doc.paths)).toContain('/user.create');
+      expect(Object.keys(paths)).toContain('/user.create');
     });
 
     it('produces a spec with no validation errors when validated', async () => {
@@ -125,16 +124,17 @@ describe('generateOpenAPIDocument', () => {
     it('serialises the error shape from errorFormatter into components', () => {
       // The default router uses `initTRPC.create()` with no custom error formatter,
       // so the error response schema should match the DefaultErrorShape type.
-      const envelopeSchema = (doc.components as any).responses.Error.content[
-        'application/json'
-      ].schema;
+      const envelopeSchema = getErrorEnvelopeSchema(doc);
 
       // The envelope wraps the error shape: { error: TRPCErrorShape }
       expect(envelopeSchema.type).toBe('object');
       expect(envelopeSchema.required).toContain('error');
 
-      const rawErrorSchema = envelopeSchema.properties.error;
-      const errorSchema = resolveSchema(rawErrorSchema, doc);
+      const errorSchema = requireSchemaObject(
+        requireProperty(envelopeSchema, 'error'),
+        doc,
+        'Error response.error',
+      );
 
       // DefaultErrorShape has: message (string), code (number), data (object with code, httpStatus, path?, stack?)
       expect(errorSchema.type).toBe('object');
@@ -147,14 +147,12 @@ describe('generateOpenAPIDocument', () => {
     });
 
     it('handles bigint inferred return types as integer schema', () => {
-      const bigintOp = doc.paths['/inferredReturns.bigintReturn']?.[
-        'get'
-      ] as any;
-      const rawResponseSchema =
-        bigintOp?.responses?.['200']?.content?.['application/json']?.schema;
-      const responseSchema = unwrapSuccessData(rawResponseSchema, doc);
+      const responseSchema = requireOutputData(
+        doc,
+        'inferredReturns.bigintReturn',
+      );
 
-      expect(responseSchema.properties.amount).toEqual({
+      expect(requireProperty(responseSchema, 'amount')).toEqual({
         type: 'integer',
         format: 'bigint',
       });
@@ -167,10 +165,7 @@ describe('generateOpenAPIDocument', () => {
       expect(spec).not.toContain('__@$brand@');
 
       // The branded field should be emitted as its base type (string)
-      const brandedOp = doc.paths['/complexTypes.branded']?.['get'] as any;
-      const rawResponseSchema =
-        brandedOp?.responses?.['200']?.content?.['application/json']?.schema;
-      const responseSchema = unwrapSuccessData(rawResponseSchema, doc);
+      const responseSchema = requireOutputData(doc, 'complexTypes.branded');
 
       expect(responseSchema).toEqual({
         type: 'object',
@@ -180,30 +175,32 @@ describe('generateOpenAPIDocument', () => {
       });
 
       // Inferred branded returns (string & {__brand}, number & {__brand}, boolean & {__brand})
-      const inferredOp = doc.paths['/inferredReturns.brandedReturns']?.[
-        'get'
-      ] as any;
-      const rawInferredSchema =
-        inferredOp?.responses?.['200']?.content?.['application/json']?.schema;
-      const inferredSchema = unwrapSuccessData(rawInferredSchema, doc);
+      const inferredSchema = requireOutputData(
+        doc,
+        'inferredReturns.brandedReturns',
+      );
 
       // No brand object should leak — all fields should resolve to primitives
-      expect(inferredSchema?.properties?.userId).toEqual({ type: 'string' });
-      expect(inferredSchema?.properties?.score).toEqual({ type: 'number' });
+      expect(requireProperty(inferredSchema, 'userId')).toEqual({
+        type: 'string',
+      });
+      expect(requireProperty(inferredSchema, 'score')).toEqual({
+        type: 'number',
+      });
       // Boolean branded type should not contain any object/allOf from the brand
-      const activeSchema = inferredSchema?.properties?.active;
+      const activeSchema = requireProperty(inferredSchema, 'active');
       expect(JSON.stringify(activeSchema)).not.toContain('__brand');
     });
 
     it('extracts named TS types at any depth into components/schemas', () => {
-      const schemas = (doc.components as any).schemas;
+      const schemas = getSchemas(doc);
 
       // Named interfaces should appear in schemas by their TS name
       expect(schemas).toHaveProperty('UserProfile');
       expect(schemas).toHaveProperty('Address');
       expect(schemas).toHaveProperty('OrderItem');
 
-      expect(schemas.UserProfile).toEqual({
+      expect(requireSchema(doc, 'UserProfile')).toEqual({
         type: 'object',
         properties: {
           id: { type: 'number' },
@@ -215,66 +212,64 @@ describe('generateOpenAPIDocument', () => {
       });
 
       // Depth 1: named type as a direct property → property is a $ref
-      const withProfileOutput = unwrapSuccessData(
-        (doc.paths['/namedTypes.withProfile']?.['get'] as any)?.responses?.[
-          '200'
-        ]?.content?.['application/json']?.schema,
+      const withProfileOutput = requireOutputData(
         doc,
+        'namedTypes.withProfile',
       );
-      expect(withProfileOutput.properties.profile).toEqual({
+      expect(requireProperty(withProfileOutput, 'profile')).toEqual({
         $ref: '#/components/schemas/UserProfile',
       });
 
       // Array items: named type inside array → items is a $ref
-      const orderItemsOutput = unwrapSuccessData(
-        (doc.paths['/namedTypes.orderItems']?.['get'] as any)?.responses?.[
-          '200'
-        ]?.content?.['application/json']?.schema,
-        doc,
-      );
-      expect(orderItemsOutput.properties.items).toEqual({
+      const orderItemsOutput = requireOutputData(doc, 'namedTypes.orderItems');
+      expect(requireProperty(orderItemsOutput, 'items')).toEqual({
         type: 'array',
         items: { $ref: '#/components/schemas/OrderItem' },
       });
 
       // Dedup: same named type reused across procedures → same $ref
-      const paOutput = unwrapSuccessData(
-        (doc.paths['/namedTypes.profileAndAddress']?.['get'] as any)
-          ?.responses?.['200']?.content?.['application/json']?.schema,
-        doc,
-      );
-      expect(paOutput.properties.profile).toEqual({
+      const paOutput = requireOutputData(doc, 'namedTypes.profileAndAddress');
+      expect(requireProperty(paOutput, 'profile')).toEqual({
         $ref: '#/components/schemas/UserProfile',
       });
-      expect(paOutput.properties.address).toEqual({
+      expect(requireProperty(paOutput, 'address')).toEqual({
         $ref: '#/components/schemas/Address',
       });
 
       // Depth 3: named type deeply nested → still a $ref
-      const deepOutput = unwrapSuccessData(
-        (doc.paths['/namedTypes.deepNested']?.['get'] as any)?.responses?.[
-          '200'
-        ]?.content?.['application/json']?.schema,
+      const deepOutput = requireOutputData(doc, 'namedTypes.deepNested');
+      const dataSchema = requireSchemaObject(
+        requireProperty(deepOutput, 'data'),
         doc,
+        'namedTypes.deepNested.data',
       );
-      expect(
-        deepOutput.properties.data.properties.nested.properties.profile,
-      ).toEqual({ $ref: '#/components/schemas/UserProfile' });
+      const nestedSchema = requireSchemaObject(
+        requireProperty(dataSchema, 'nested'),
+        doc,
+        'namedTypes.deepNested.data.nested',
+      );
+      expect(requireProperty(nestedSchema, 'profile')).toEqual({
+        $ref: '#/components/schemas/UserProfile',
+      });
     });
 
     it('handles recursive types via self-referencing $ref', () => {
-      const schemas = (doc.components as any).schemas;
+      const schemas = getSchemas(doc);
 
       // TreeNode: children is an array of TreeNode (self-ref)
       expect(schemas).toHaveProperty('TreeNode');
-      expect(schemas.TreeNode.properties.children).toEqual({
+      expect(
+        requireProperty(requireSchema(doc, 'TreeNode'), 'children'),
+      ).toEqual({
         type: 'array',
         items: { $ref: '#/components/schemas/TreeNode' },
       });
 
       // LinkedListNode: next is LinkedListNode | null (nullable self-ref)
       expect(schemas).toHaveProperty('LinkedListNode');
-      expect(schemas.LinkedListNode.properties.next).toEqual({
+      expect(
+        requireProperty(requireSchema(doc, 'LinkedListNode'), 'next'),
+      ).toEqual({
         oneOf: [
           { $ref: '#/components/schemas/LinkedListNode' },
           { type: 'null' },
@@ -283,44 +278,41 @@ describe('generateOpenAPIDocument', () => {
 
       // Category: Zod z.lazy() recursive input
       expect(schemas).toHaveProperty('Category');
-      expect(schemas.Category.properties.subcategories).toEqual({
+      expect(
+        requireProperty(requireSchema(doc, 'Category'), 'subcategories'),
+      ).toEqual({
         type: 'array',
         items: { $ref: '#/components/schemas/Category' },
       });
 
       // The procedures should reference these schemas (inside the tRPC envelope)
-      const treeOp = doc.paths['/recursiveTypes.tree']?.['get'] as any;
-      const treeData =
-        treeOp?.responses?.['200']?.content?.['application/json']?.schema
-          ?.properties?.result?.properties?.data;
-      expect(treeData).toEqual({ $ref: '#/components/schemas/TreeNode' });
+      expect(requireEnvelopeDataSchema(doc, 'recursiveTypes.tree')).toEqual({
+        $ref: '#/components/schemas/TreeNode',
+      });
 
       // z.lazy() output resolves through the inferred return type
-      const categoryOp = doc.paths['/recursiveTypes.category']?.['get'] as any;
-      const categoryData =
-        categoryOp?.responses?.['200']?.content?.['application/json']?.schema
-          ?.properties?.result?.properties?.data;
-      expect(categoryData).toEqual({ $ref: '#/components/schemas/Category' });
+      expect(requireEnvelopeDataSchema(doc, 'recursiveTypes.category')).toEqual(
+        {
+          $ref: '#/components/schemas/Category',
+        },
+      );
     });
 
     it('adds discriminator to discriminated unions', () => {
       // Zod discriminatedUnion input (discriminant: "type")
-      const discInputOp = doc.paths['/complexTypes.discriminatedUnion']?.[
-        'post'
-      ] as any;
-      const inputSchema =
-        discInputOp?.requestBody?.content?.['application/json']?.schema;
+      const inputSchema = requireSchemaObject(
+        requireInputSchema(doc, 'complexTypes.discriminatedUnion', 'post'),
+        doc,
+        'complexTypes.discriminatedUnion input',
+      );
       expect(inputSchema).toHaveProperty('oneOf');
       expect(inputSchema.discriminator).toEqual({ propertyName: 'type' });
 
       // Zod discriminatedUnion output (discriminant: "status")
-      const createContentOp = doc.paths['/complexTypes.createContent']?.[
-        'post'
-      ] as any;
-      const outputSchema = unwrapSuccessData(
-        createContentOp?.responses?.['200']?.content?.['application/json']
-          ?.schema,
+      const outputSchema = requireOutputData(
         doc,
+        'complexTypes.createContent',
+        'post',
       );
       expect(outputSchema).toHaveProperty('oneOf');
       expect(outputSchema.discriminator).toEqual({
@@ -328,12 +320,10 @@ describe('generateOpenAPIDocument', () => {
       });
 
       // Inferred return discriminated union (discriminant: "type")
-      const inferredOp = doc.paths['/inferredReturns.discriminatedResult']?.[
-        'post'
-      ] as any;
-      const inferredSchema = unwrapSuccessData(
-        inferredOp?.responses?.['200']?.content?.['application/json']?.schema,
+      const inferredSchema = requireOutputData(
         doc,
+        'inferredReturns.discriminatedResult',
+        'post',
       );
       expect(inferredSchema).toHaveProperty('oneOf');
       expect(inferredSchema.discriminator).toEqual({
@@ -341,45 +331,62 @@ describe('generateOpenAPIDocument', () => {
       });
 
       // Regular (non-discriminated) union should NOT have a discriminator
-      const unionOp = doc.paths['/complexTypes.union']?.['get'] as any;
-      const unionInputSchema =
-        unionOp?.parameters?.[0]?.content?.['application/json']?.schema;
-      const valueSchema = unionInputSchema?.properties?.value;
+      const unionInputSchema = requireSchemaObject(
+        requireInputSchema(doc, 'complexTypes.union'),
+        doc,
+        'complexTypes.union input',
+      );
+      const valueSchema = requireProperty(unionInputSchema, 'value');
       expect(valueSchema).not.toHaveProperty('discriminator');
     });
 
     it('emits additionalProperties: false for closed objects', () => {
       // Named schema: UserProfile is a closed object
-      const schemas = (doc.components as any).schemas;
-      expect(schemas.UserProfile.additionalProperties).toBe(false);
-      expect(schemas.Address.additionalProperties).toBe(false);
-      expect(schemas.OrderItem.additionalProperties).toBe(false);
+      expect(requireSchema(doc, 'UserProfile').additionalProperties).toBe(
+        false,
+      );
+      expect(requireSchema(doc, 'Address').additionalProperties).toBe(false);
+      expect(requireSchema(doc, 'OrderItem').additionalProperties).toBe(false);
 
       // Inline object in Zod input
-      const greetingOp = doc.paths['/greeting']?.['get'] as any;
-      const greetingInput =
-        greetingOp?.parameters?.[0]?.content?.['application/json']?.schema;
+      const greetingInput = requireSchemaObject(
+        requireInputSchema(doc, 'greeting'),
+        doc,
+        'greeting input',
+      );
       expect(greetingInput.additionalProperties).toBe(false);
 
       // Record types should NOT have additionalProperties: false
-      const recordOp = doc.paths['/complexTypes.record']?.['get'] as any;
-      const recordInput =
-        recordOp?.parameters?.[0]?.content?.['application/json']?.schema;
+      const recordInput = requireSchemaObject(
+        requireInputSchema(doc, 'complexTypes.record'),
+        doc,
+        'complexTypes.record input',
+      );
       // metadata is Record<string, string> → additionalProperties: { type: "string" }
-      expect(recordInput.properties.metadata.additionalProperties).toEqual({
+      const metadataSchema = requireSchemaObject(
+        requireProperty(recordInput, 'metadata'),
+        doc,
+        'complexTypes.record.metadata',
+      );
+      expect(metadataSchema.additionalProperties).toEqual({
         type: 'string',
       });
       // scores is Record<string, number> → additionalProperties: { type: "number" }
-      expect(recordInput.properties.scores.additionalProperties).toEqual({
+      const scoresSchema = requireSchemaObject(
+        requireProperty(recordInput, 'scores'),
+        doc,
+        'complexTypes.record.scores',
+      );
+      expect(scoresSchema.additionalProperties).toEqual({
         type: 'number',
       });
 
       // Passthrough objects should NOT have additionalProperties: false
-      const passthroughOp = doc.paths['/complexTypes.passthrough']?.[
-        'get'
-      ] as any;
-      const passthroughInput =
-        passthroughOp?.parameters?.[0]?.content?.['application/json']?.schema;
+      const passthroughInput = requireSchemaObject(
+        requireInputSchema(doc, 'complexTypes.passthrough'),
+        doc,
+        'complexTypes.passthrough input',
+      );
       expect(passthroughInput.additionalProperties).not.toBe(false);
     });
   });
@@ -514,7 +521,7 @@ describe('generateOpenAPIDocument', () => {
   });
 
   describe('custom errorFormatter', () => {
-    let doc: OpenAPIDocument;
+    let doc: Document;
 
     beforeAll(async () => {
       doc = await generateOpenAPIDocument(errorFormatterRouterPath, {
@@ -525,16 +532,17 @@ describe('generateOpenAPIDocument', () => {
     });
 
     it('serialises the custom error shape into the error response', () => {
-      const envelopeSchema = (doc.components as any).responses.Error.content[
-        'application/json'
-      ].schema;
+      const envelopeSchema = getErrorEnvelopeSchema(doc);
 
       // The envelope wraps the error shape: { error: TRPCErrorShape }
       expect(envelopeSchema.type).toBe('object');
       expect(envelopeSchema.required).toContain('error');
 
-      const rawErrorSchema = envelopeSchema.properties.error;
-      const errorSchema = resolveSchema(rawErrorSchema, doc);
+      const errorSchema = requireSchemaObject(
+        requireProperty(envelopeSchema, 'error'),
+        doc,
+        'Error response.error',
+      );
 
       // The custom formatter extends DefaultErrorShape and adds a zodError
       // field inside `data`.
@@ -544,26 +552,42 @@ describe('generateOpenAPIDocument', () => {
       expect(errorSchema.properties).toHaveProperty('data');
 
       // The `data` property should contain the extra `zodError` field
-      const dataSchema = resolveSchema(errorSchema.properties.data, doc);
+      const dataSchema = requireSchemaObject(
+        requireProperty(errorSchema, 'data'),
+        doc,
+        'Error response.error.data',
+      );
       expect(dataSchema.properties).toHaveProperty('zodError');
     });
 
     it('still includes standard error fields', () => {
-      const envelopeSchema = (doc.components as any).responses.Error.content[
-        'application/json'
-      ].schema;
-      const rawErrorSchema = envelopeSchema.properties.error;
-      const errorSchema = resolveSchema(rawErrorSchema, doc);
+      const envelopeSchema = getErrorEnvelopeSchema(doc);
+      const errorSchema = requireSchemaObject(
+        requireProperty(envelopeSchema, 'error'),
+        doc,
+        'Error response.error',
+      );
 
       // Standard fields from DefaultErrorShape
-      expect(errorSchema.properties.message).toEqual({ type: 'string' });
+      expect(requireProperty(errorSchema, 'message')).toEqual({
+        type: 'string',
+      });
       // `code` is TRPC_ERROR_CODE_NUMBER — a union of number literals collapsed to a single enum
-      expect(errorSchema.properties.code.type).toBe('number');
-      expect(errorSchema.properties.code.enum).toBeInstanceOf(Array);
-      expect(errorSchema.properties.code.enum.length).toBeGreaterThan(0);
+      const codeSchema = requireSchemaObject(
+        requireProperty(errorSchema, 'code'),
+        doc,
+        'Error response.error.code',
+      );
+      expect(codeSchema.type).toBe('number');
+      expect(codeSchema.enum).toBeInstanceOf(Array);
+      expect(codeSchema.enum?.length).toBeGreaterThan(0);
 
       // Standard data fields (code, httpStatus)
-      const dataSchema = resolveSchema(errorSchema.properties.data, doc);
+      const dataSchema = requireSchemaObject(
+        requireProperty(errorSchema, 'data'),
+        doc,
+        'Error response.error.data',
+      );
       expect(dataSchema.properties).toHaveProperty('code');
       expect(dataSchema.properties).toHaveProperty('httpStatus');
     });
@@ -580,7 +604,7 @@ describe('generateOpenAPIDocument', () => {
       routersDir,
       'descriptionsRouter.ts',
     );
-    let doc: OpenAPIDocument;
+    let doc: Document;
 
     beforeAll(async () => {
       doc = await generateOpenAPIDocument(descriptionsRouterPath, {
@@ -591,12 +615,12 @@ describe('generateOpenAPIDocument', () => {
     });
 
     it('extracts JSDoc from procedure properties into operation description', () => {
-      const helloOp = doc.paths['/hello']?.['get'] as any;
+      const helloOp = requireOperation(doc, 'hello');
       expect(helloOp.description).toBe('Hello zod Procedure details');
     });
 
     it('extracts JSDoc from nested subrouter procedure properties', () => {
-      const nestedOp = doc.paths['/subrouter.hello']?.['get'] as any;
+      const nestedOp = requireOperation(doc, 'subrouter.hello');
       expect(nestedOp.description).toBe('Hello zod Procedure details');
     });
 
@@ -612,7 +636,7 @@ describe('generateOpenAPIDocument', () => {
       routersDir,
       'descriptionsRouter.ts',
     );
-    let doc: OpenAPIDocument;
+    let doc: Document;
 
     beforeAll(async () => {
       // The router file is automatically imported at runtime, so Zod
@@ -625,26 +649,40 @@ describe('generateOpenAPIDocument', () => {
     });
 
     it('overlays Zod .describe() strings onto input schemas', () => {
-      const helloOp = doc.paths['/hello']?.['get'] as any;
-      const inputSchema =
-        helloOp?.parameters?.[0]?.content?.['application/json']?.schema;
+      const inputSchema = requireSchemaObject(
+        requireInputSchema(doc, 'hello'),
+        doc,
+        'hello input',
+      );
 
       // The Zod schema preserves .describe() strings
       expect(inputSchema.description).toBe('Input to the procedure');
-      expect(inputSchema.properties.name.description).toBe('Name of the user');
+      const nameSchema = requireSchemaObject(
+        requireProperty(inputSchema, 'name'),
+        doc,
+        'hello input.name',
+      );
+      expect(nameSchema.description).toBe('Name of the user');
     });
 
     it('overlays Zod .describe() strings on nested subrouter procedures', () => {
-      const nestedOp = doc.paths['/subrouter.hello']?.['get'] as any;
-      const inputSchema =
-        nestedOp?.parameters?.[0]?.content?.['application/json']?.schema;
+      const inputSchema = requireSchemaObject(
+        requireInputSchema(doc, 'subrouter.hello'),
+        doc,
+        'subrouter.hello input',
+      );
 
       expect(inputSchema.description).toBe('Input to the procedure');
-      expect(inputSchema.properties.name.description).toBe('Name of the user');
+      const nameSchema = requireSchemaObject(
+        requireProperty(inputSchema, 'name'),
+        doc,
+        'subrouter.hello input.name',
+      );
+      expect(nameSchema.description).toBe('Name of the user');
     });
 
     it('still preserves JSDoc descriptions on operations', () => {
-      const helloOp = doc.paths['/hello']?.['get'] as any;
+      const helloOp = requireOperation(doc, 'hello');
       expect(helloOp.description).toBe('Hello zod Procedure details');
     });
 
@@ -660,7 +698,7 @@ describe('generateOpenAPIDocument', () => {
       routersDir,
       'descriptionsRouter.ts',
     );
-    let doc: OpenAPIDocument;
+    let doc: Document;
 
     beforeAll(async () => {
       doc = await generateOpenAPIDocument(descriptionsRouterPath, {
@@ -671,70 +709,101 @@ describe('generateOpenAPIDocument', () => {
     });
 
     it('extracts JSDoc from inline input type properties', () => {
-      const helloOp = doc.paths['/helloInline']?.['get'] as any;
-      const inputSchema =
-        helloOp?.parameters?.[0]?.content?.['application/json']?.schema;
-
-      expect(inputSchema.properties.name.description).toBe(
-        'doc comment on name',
+      const inputSchema = requireSchemaObject(
+        requireInputSchema(doc, 'helloInline'),
+        doc,
+        'helloInline input',
       );
+
+      const nameSchema = requireSchemaObject(
+        requireProperty(inputSchema, 'name'),
+        doc,
+        'helloInline input.name',
+      );
+      expect(nameSchema.description).toBe('doc comment on name');
     });
 
     it('resolves primitive type alias output to its base type', () => {
       // HelloGreeting is `type HelloGreeting = string` — the alias identity is
       // lost when resolved through tRPC's $types, so no description is expected.
-      const helloOp = doc.paths['/helloInline']?.['get'] as any;
-      const outputSchema = unwrapSuccessData(
-        helloOp?.responses?.['200']?.content?.['application/json']?.schema,
-        doc,
-      );
+      const outputSchema = requireOutputData(doc, 'helloInline');
 
       expect(outputSchema.type).toBe('string');
     });
 
     it('extracts JSDoc from nested inline subrouter input properties', () => {
-      const nestedOp = doc.paths['/subrouterInline.hello']?.['get'] as any;
-      const inputSchema =
-        nestedOp?.parameters?.[0]?.content?.['application/json']?.schema;
+      const inputSchema = requireSchemaObject(
+        requireInputSchema(doc, 'subrouterInline.hello'),
+        doc,
+        'subrouterInline.hello input',
+      );
+      const nameSchema = requireSchemaObject(
+        requireProperty(inputSchema, 'name'),
+        doc,
+        'subrouterInline.hello input.name',
+      );
+      expect(nameSchema.description).toBe('doc comment on name');
 
-      expect(inputSchema.properties.name.description).toBe(
-        'doc comment on name',
+      const childrenSchema = requireSchemaObject(
+        requireProperty(inputSchema, 'children'),
+        doc,
+        'subrouterInline.hello input.children',
+      );
+      if (!isArraySchema(childrenSchema) || !childrenSchema.items) {
+        throw new Error('Expected subrouterInline.hello input.children items');
+      }
+      const childSchema = requireSchemaObject(
+        childrenSchema.items,
+        doc,
+        'subrouterInline.hello input.children[]',
       );
       expect(
-        inputSchema.properties.children.items.properties.child.description,
+        requireSchemaObject(
+          requireProperty(childSchema, 'child'),
+          doc,
+          'subrouterInline.hello input.children[].child',
+        ).description,
       ).toBe('Child name');
       expect(
-        inputSchema.properties.children.items.properties.gender.description,
+        requireSchemaObject(
+          requireProperty(childSchema, 'gender'),
+          doc,
+          'subrouterInline.hello input.children[].gender',
+        ).description,
       ).toBe('Child gender');
     });
 
     it('extracts JSDoc from inline output type defined inside callback', () => {
-      const nestedOp = doc.paths['/subrouterInline.hello']?.['get'] as any;
-      const outputSchema = unwrapSuccessData(
-        nestedOp?.responses?.['200']?.content?.['application/json']?.schema,
-        doc,
-      );
+      const outputSchema = requireOutputData(doc, 'subrouterInline.hello');
 
-      expect(outputSchema.properties.name.description).toBe('Name of the user');
-      expect(outputSchema.properties.date.description).toBe(
-        'Date of the greeting',
-      );
+      expect(
+        requireSchemaObject(
+          requireProperty(outputSchema, 'name'),
+          doc,
+          'subrouterInline.hello output.name',
+        ).description,
+      ).toBe('Name of the user');
+      expect(
+        requireSchemaObject(
+          requireProperty(outputSchema, 'date'),
+          doc,
+          'subrouterInline.hello output.date',
+        ).description,
+      ).toBe('Date of the greeting');
     });
 
     it('extracts JSDoc from type alias used as input', () => {
-      const arrayOp = doc.paths['/directArrayInline']?.['post'] as any;
-      const inputSchema =
-        arrayOp?.requestBody?.content?.['application/json']?.schema;
+      const inputSchema = requireSchemaObject(
+        requireInputSchema(doc, 'directArrayInline', 'post'),
+        doc,
+        'directArrayInline input',
+      );
 
       expect(inputSchema.description).toBe('Array of inputs strings');
     });
 
     it('extracts JSDoc from type alias used as output', () => {
-      const arrayOp = doc.paths['/directArrayInline']?.['post'] as any;
-      const outputSchema = unwrapSuccessData(
-        arrayOp?.responses?.['200']?.content?.['application/json']?.schema,
-        doc,
-      );
+      const outputSchema = requireOutputData(doc, 'directArrayInline', 'post');
 
       expect(outputSchema.description).toBe('Array of output strings');
     });
@@ -747,7 +816,7 @@ describe('generateOpenAPIDocument', () => {
   });
 
   describe('superjson transformer', () => {
-    let doc: OpenAPIDocument;
+    let doc: Document;
 
     beforeAll(async () => {
       doc = await generateOpenAPIDocument(superjsonRouterPath, {
@@ -758,18 +827,18 @@ describe('generateOpenAPIDocument', () => {
     });
 
     it('generates integer schema for bigint fields', () => {
-      const getBigIntOp = doc.paths['/getBigInt']?.['get'] as any;
-      const inputSchema =
-        getBigIntOp?.parameters?.[0]?.content?.['application/json']?.schema;
-      expect(inputSchema.properties.amount).toEqual({
+      const inputSchema = requireSchemaObject(
+        requireInputSchema(doc, 'getBigInt'),
+        doc,
+        'getBigInt input',
+      );
+      expect(requireProperty(inputSchema, 'amount')).toEqual({
         type: 'integer',
         format: 'bigint',
       });
 
-      const rawResponseSchema =
-        getBigIntOp?.responses?.['200']?.content?.['application/json']?.schema;
-      const responseSchema = unwrapSuccessData(rawResponseSchema, doc);
-      expect(responseSchema.properties.amount).toEqual({
+      const responseSchema = requireOutputData(doc, 'getBigInt');
+      expect(requireProperty(responseSchema, 'amount')).toEqual({
         type: 'integer',
         format: 'bigint',
       });
