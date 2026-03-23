@@ -11,7 +11,9 @@ class UnknownCauseError extends Error {
 }
 
 function getMessage(cause: object) {
-  return (cause as Error).message;
+  if ('message' in cause) return String(cause.message);
+
+  return undefined;
 }
 
 export function getCauseFromUnknown(cause: unknown): Error | undefined {
