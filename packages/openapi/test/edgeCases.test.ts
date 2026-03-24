@@ -201,6 +201,16 @@ describe('generateOpenAPIDocument edge cases', () => {
   it('omits compiler-internal symbol keys from schemas', () => {
     expect(JSON.stringify(doc)).not.toMatch(/__@.*@\d+/);
   });
+
+  it('preserves literal computed property names in output schemas', () => {
+    const schema = requireOutputData({
+      doc,
+      procPath: 'literalComputedKey',
+    });
+
+    expect(requireProperty(schema, 'x-trace-id')).toEqual({ type: 'string' });
+    expect(schema.required).toContain('x-trace-id');
+  });
 });
 
 describe('generateOpenAPIDocument default options', () => {

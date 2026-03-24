@@ -108,6 +108,7 @@ function unwrapBrand(type: ts.Type): ts.Type {
 // ---------------------------------------------------------------------------
 
 const ANONYMOUS_NAMES = new Set(['__type', '__object', 'Object', '']);
+const INTERNAL_COMPUTED_PROPERTY_SYMBOL = /^__@.*@\d+$/;
 
 /** Try to determine a meaningful name for a TS type (type alias or interface). */
 function getTypeName(type: ts.Type): string | null {
@@ -127,8 +128,12 @@ function getTypeName(type: ts.Type): string | null {
 function shouldSkipPropertySymbol(prop: ts.Symbol): boolean {
   return (
     prop.declarations?.some((declaration) => {
-      const name = ts.getNameOfDeclaration(declaration);
-      return !!name && ts.isComputedPropertyName(name);
+      const declarationName = ts.getNameOfDeclaration(declaration);
+      if (!declarationName || !ts.isComputedPropertyName(declarationName)) {
+        return false;
+      }
+
+      return INTERNAL_COMPUTED_PROPERTY_SYMBOL.test(prop.getName());
     }) ?? false
   );
 }

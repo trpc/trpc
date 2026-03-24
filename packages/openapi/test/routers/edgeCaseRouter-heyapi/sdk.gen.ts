@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AsyncReturnData, AsyncReturnErrors, AsyncReturnResponses, BigintData, BigintErrors, BigintResponses, BinaryData, BinaryErrors, BinaryResponses, BoolNullableData, BoolNullableErrors, BoolNullableResponses, BoolUnionData, BoolUnionErrors, BoolUnionResponses, ComplexNullableData, ComplexNullableErrors, ComplexNullableResponses, ConflictingIntersectionData, ConflictingIntersectionErrors, ConflictingIntersectionResponses, DisjointIntersectionData, DisjointIntersectionErrors, DisjointIntersectionResponses, Level1Level2Level3DeepData, Level1Level2Level3DeepErrors, Level1Level2Level3DeepResponses, NeverFieldData, NeverFieldErrors, NeverFieldResponses, NoInputMutationData, NoInputMutationErrors, NoInputMutationResponses, NullableObjectData, NullableObjectErrors, NullableObjectResponses, NullOnlyData, NullOnlyErrors, NullOnlyResponses, SimpleQueryData, SimpleQueryErrors, SimpleQueryResponses, UndefinedInputData, UndefinedInputErrors, UndefinedInputResponses, VoidExplicitData, VoidExplicitErrors, VoidExplicitResponses, VoidInputData, VoidInputErrors, VoidInputResponses } from './types.gen';
+import type { AsyncReturnData, AsyncReturnErrors, AsyncReturnResponses, BigintData, BigintErrors, BigintResponses, BinaryData, BinaryErrors, BinaryResponses, BoolNullableData, BoolNullableErrors, BoolNullableResponses, BoolUnionData, BoolUnionErrors, BoolUnionResponses, ComplexNullableData, ComplexNullableErrors, ComplexNullableResponses, ConflictingIntersectionData, ConflictingIntersectionErrors, ConflictingIntersectionResponses, DisjointIntersectionData, DisjointIntersectionErrors, DisjointIntersectionResponses, Level1Level2Level3DeepData, Level1Level2Level3DeepErrors, Level1Level2Level3DeepResponses, LiteralComputedKeyData, LiteralComputedKeyErrors, LiteralComputedKeyResponses, NeverFieldData, NeverFieldErrors, NeverFieldResponses, NoInputMutationData, NoInputMutationErrors, NoInputMutationResponses, NullableObjectData, NullableObjectErrors, NullableObjectResponses, NullOnlyData, NullOnlyErrors, NullOnlyResponses, SimpleQueryData, SimpleQueryErrors, SimpleQueryResponses, UndefinedInputData, UndefinedInputErrors, UndefinedInputResponses, VoidExplicitData, VoidExplicitErrors, VoidExplicitResponses, VoidInputData, VoidInputErrors, VoidInputResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -139,6 +139,10 @@ export class Sdk extends HeyApiClient {
     
     public complexNullable<ThrowOnError extends boolean = false>(options?: Options<ComplexNullableData, ThrowOnError>) {
         return (options?.client ?? this.client).get<ComplexNullableResponses, ComplexNullableErrors, ThrowOnError>({ url: '/complexNullable', ...options });
+    }
+    
+    public literalComputedKey<ThrowOnError extends boolean = false>(options?: Options<LiteralComputedKeyData, ThrowOnError>) {
+        return (options?.client ?? this.client).get<LiteralComputedKeyResponses, LiteralComputedKeyErrors, ThrowOnError>({ url: '/literalComputedKey', ...options });
     }
     
     private _level1?: Level1;

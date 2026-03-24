@@ -586,3 +586,36 @@ export type ComplexNullableResponses = {
 };
 
 export type ComplexNullableResponse = ComplexNullableResponses[keyof ComplexNullableResponses];
+
+export type LiteralComputedKeyData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/literalComputedKey';
+};
+
+export type LiteralComputedKeyErrors = {
+    /**
+     * Error response
+     */
+    default: {
+        error: DefaultErrorShape;
+    };
+};
+
+export type LiteralComputedKeyError = LiteralComputedKeyErrors[keyof LiteralComputedKeyErrors];
+
+export type LiteralComputedKeyResponses = {
+    /**
+     * Successful response
+     */
+    200: {
+        result: {
+            data: {
+                'x-trace-id': string;
+            };
+        };
+    };
+};
+
+export type LiteralComputedKeyResponse = LiteralComputedKeyResponses[keyof LiteralComputedKeyResponses];
