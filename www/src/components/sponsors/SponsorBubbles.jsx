@@ -23,7 +23,32 @@ export function SponsorBubbles() {
   return (
     <ParentSize>
       {({ width = 800 }) => {
-        return width < 10 ? null : (
+        if (width < 10) {
+          // SSR/SSG fallback: render plain links so search engines can discover sponsor URLs
+          return (
+            <div className="flex flex-wrap items-center justify-center gap-4 p-4">
+              {allSponsors.map((sponsor) => (
+                <a
+                  key={sponsor.login}
+                  href={sponsor.link}
+                  title={sponsor.name}
+                  className="block rounded-full"
+                >
+                  <img
+                    src={sponsor.imgSrc}
+                    alt={sponsor.name}
+                    width={48}
+                    height={48}
+                    loading="lazy"
+                    className="rounded-full"
+                  />
+                </a>
+              ))}
+            </div>
+          );
+        }
+
+        return (
           <div
             style={{
               width,
