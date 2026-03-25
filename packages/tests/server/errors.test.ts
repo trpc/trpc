@@ -324,7 +324,7 @@ test('retain stack trace', async () => {
     }
   }
 
-  const onErrorFn: HTTPErrorHandler<any, any> = () => { };
+  const onErrorFn: HTTPErrorHandler<any, any> = () => {};
 
   const onError = vi.fn(onErrorFn);
 
