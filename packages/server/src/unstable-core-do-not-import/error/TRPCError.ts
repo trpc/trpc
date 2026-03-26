@@ -3,7 +3,19 @@ import { isObject } from '../utils';
 
 class UnknownCauseError extends Error {
   [key: string]: unknown;
+
+  constructor(cause: object) {
+    super(getMessage(cause));
+    Object.assign(this, cause);
+  }
 }
+
+function getMessage(cause: object) {
+  if ('message' in cause) return String(cause.message);
+
+  return undefined;
+}
+
 export function getCauseFromUnknown(cause: unknown): Error | undefined {
   if (cause instanceof Error) {
     return cause;
@@ -22,7 +34,7 @@ export function getCauseFromUnknown(cause: unknown): Error | undefined {
 
   // If it's an object, we'll create a synthetic error
   if (isObject(cause)) {
-    return Object.assign(new UnknownCauseError(), cause);
+    return new UnknownCauseError(cause);
   }
 
   return undefined;
