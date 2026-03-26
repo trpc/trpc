@@ -23,6 +23,7 @@
   <br />
   <a href="https://twitter.com/trpcio">
     <img alt="Twitter" src="https://img.shields.io/twitter/url.svg?label=%40trpcio&style=social&url=https%3A%2F%2Ftwitter.com%2Falexdotjs" />
+[![Stack Health](https://indiestack.ai/api/badge/health/trpc/trpc.svg)](https://indiestack.ai/audit?repo=trpc/trpc)
   </a>
   <br />
   <br />
