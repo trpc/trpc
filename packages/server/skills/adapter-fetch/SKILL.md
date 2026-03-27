@@ -8,7 +8,7 @@ description: >
   must match the URL path prefix where the handler is mounted.
 type: core
 library: trpc
-library_version: '11.14.0'
+library_version: '11.15.1'
 requires:
   - server-setup
 sources:
@@ -134,6 +134,28 @@ Deno.serve((request) => {
   });
 });
 ```
+
+### Limiting batch size with maxBatchSize
+
+```ts
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import { createContext } from './context';
+import { appRouter } from './router';
+
+export default {
+  async fetch(request: Request): Promise<Response> {
+    return fetchRequestHandler({
+      endpoint: '/trpc',
+      req: request,
+      router: appRouter,
+      createContext,
+      maxBatchSize: 10,
+    });
+  },
+};
+```
+
+Requests batching more than `maxBatchSize` operations are rejected with a `400 Bad Request` error. Set `maxItems` on your client's `httpBatchLink` to the same value to avoid exceeding the limit.
 
 ## Common Mistakes
 

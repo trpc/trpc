@@ -9,7 +9,7 @@ description: >
   maxItems, connectionParams, EventSource ponyfill.
 type: core
 library: trpc
-library_version: '11.14.0'
+library_version: '11.15.1'
 requires:
   - client-setup
 sources:
@@ -273,11 +273,12 @@ Correct:
 httpBatchLink({
   url: 'http://localhost:3000/trpc',
   maxURLLength: 2083,
+  // should be the same or lower than the server's maxBatchSize
   maxItems: 10,
 });
 ```
 
-Both `maxURLLength` and `maxItems` default to `Infinity`, which can cause 413/414 HTTP errors on servers or CDNs with URL length limits.
+Both `maxURLLength` and `maxItems` default to `Infinity`, which can cause 413/414 HTTP errors on servers or CDNs with URL length limits. When the server sets `maxBatchSize`, set `maxItems` to the same or lower value so the client auto-splits batches instead of triggering a `400 Bad Request`.
 
 Source: packages/client/src/links/httpBatchLink.ts
 

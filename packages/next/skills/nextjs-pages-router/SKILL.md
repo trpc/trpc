@@ -8,7 +8,7 @@ description: >
 type: framework
 library: trpc
 framework: react
-library_version: '11.14.0'
+library_version: '11.15.1'
 requires:
   - server-setup
   - client-setup
@@ -336,6 +336,21 @@ export default async function handler(
   return nextApiHandler(req, res);
 }
 ```
+
+### Limiting batch size with maxBatchSize
+
+```ts title="pages/api/trpc/[trpc].ts"
+import { createNextApiHandler } from '@trpc/server/adapters/next';
+import { appRouter } from '../../../server/routers/_app';
+
+export default createNextApiHandler({
+  router: appRouter,
+  createContext: () => ({}),
+  maxBatchSize: 10,
+});
+```
+
+Requests batching more than `maxBatchSize` operations are rejected with a `400 Bad Request` error. Set `maxItems` on your client's `httpBatchLink` to the same value to avoid exceeding the limit.
 
 ## Common Mistakes
 

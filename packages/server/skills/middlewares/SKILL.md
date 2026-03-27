@@ -7,7 +7,7 @@ description: >
   with getRawInput(). Logging, timing, OTEL tracing patterns.
 type: core
 library: trpc
-library_version: '11.14.0'
+library_version: '11.15.1'
 requires:
   - server-setup
 sources:
