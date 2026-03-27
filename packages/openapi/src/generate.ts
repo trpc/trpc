@@ -1050,10 +1050,18 @@ function extractProcedure(def: ProcedureDef, ctx: WalkCtx): void {
     );
 
     if (resolvedInputSchema && runtimeDescs.input) {
-      applyDescriptions(resolvedInputSchema, runtimeDescs.input);
+      applyDescriptions(
+        resolvedInputSchema,
+        runtimeDescs.input,
+        schemaCtx.schemas,
+      );
     }
     if (resolvedOutputSchema && runtimeDescs.output) {
-      applyDescriptions(resolvedOutputSchema, runtimeDescs.output);
+      applyDescriptions(
+        resolvedOutputSchema,
+        runtimeDescs.output,
+        schemaCtx.schemas,
+      );
     }
   }
 

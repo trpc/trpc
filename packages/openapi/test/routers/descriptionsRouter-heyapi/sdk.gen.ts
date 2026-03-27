@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { DirectArrayData, DirectArrayErrors, DirectArrayInlineData, DirectArrayInlineErrors, DirectArrayInlineResponses, DirectArrayResponses, HelloData, HelloErrors, HelloInlineData, HelloInlineErrors, HelloInlineResponses, HelloResponses, SubrouterHelloData, SubrouterHelloErrors, SubrouterHelloResponses, SubrouterInlineHelloData, SubrouterInlineHelloErrors, SubrouterInlineHelloResponses } from './types.gen';
+import type { DirectArrayData, DirectArrayErrors, DirectArrayInlineData, DirectArrayInlineErrors, DirectArrayInlineResponses, DirectArrayResponses, HelloData, HelloErrors, HelloInlineData, HelloInlineErrors, HelloInlineResponses, HelloResponses, ReferencedChildrenData, ReferencedChildrenErrors, ReferencedChildrenResponses, SubrouterHelloData, SubrouterHelloErrors, SubrouterHelloResponses, SubrouterInlineHelloData, SubrouterInlineHelloErrors, SubrouterInlineHelloResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -94,6 +94,13 @@ export class Sdk extends HeyApiClient {
                 ...options.headers
             }
         });
+    }
+    
+    /**
+     * Referenced child descriptions
+     */
+    public referencedChildren<ThrowOnError extends boolean = false>(options: Options<ReferencedChildrenData, ThrowOnError>) {
+        return (options.client ?? this.client).get<ReferencedChildrenResponses, ReferencedChildrenErrors, ThrowOnError>({ url: '/referencedChildren', ...options });
     }
     
     /**

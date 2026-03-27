@@ -36,6 +36,14 @@ type InputStrings = InputString[];
 /** Array of output strings */
 type DirectArrayInlineOutputStrings = string[];
 
+const describedChildSchema = z.object({
+  name: z.string().describe('Child name'),
+});
+
+const describedParentSchema = z.object({
+  children: z.array(describedChildSchema).describe('Child collection'),
+});
+
 function asType<T>() {
   return (value: unknown): T => value as T;
 }
@@ -109,6 +117,13 @@ export const descriptionsRouter = t.router({
         .describe('Array of output strings'),
     )
     .mutation((opts) => opts.input),
+
+  /**
+   * Referenced child descriptions
+   */
+  referencedChildren: t.procedure
+    .input(describedParentSchema)
+    .query(({ input }) => input),
 
   /**
    * Hello Procedure details

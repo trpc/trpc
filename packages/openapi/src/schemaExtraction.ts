@@ -343,14 +343,36 @@ function isProcedure(
 export function applyDescriptions(
   schema: SchemaObject,
   descs: DescriptionMap,
+  schemas?: Record<string, SchemaObject>,
 ): void {
   if (descs.self) {
     schema.description = descs.self;
   }
 
   for (const [propPath, description] of descs.properties) {
-    setNestedDescription(schema, propPath.split('.'), description);
+    setNestedDescription({
+      schema,
+      pathParts: propPath.split('.'),
+      description,
+      schemas,
+    });
   }
+}
+
+function resolveSchemaRef(
+  schema: SchemaObject,
+  schemas?: Record<string, SchemaObject>,
+): SchemaObject | null {
+  const ref = schema.$ref;
+  if (!ref) {
+    return schema;
+  }
+  if (!schemas || !ref.startsWith('#/components/schemas/')) {
+    return null;
+  }
+
+  const refName = ref.slice('#/components/schemas/'.length);
+  return refName ? (schemas[refName] ?? null) : null;
 }
 
 function getArrayItemsSchema(schema: SchemaObject): SchemaObject | null {
@@ -368,11 +390,17 @@ function getPropertySchema(
   return schema.properties?.[propertyName] ?? null;
 }
 
-function setNestedDescription(
-  schema: SchemaObject,
-  pathParts: string[],
-  description: string,
-): void {
+function setNestedDescription({
+  schema,
+  pathParts,
+  description,
+  schemas,
+}: {
+  schema: SchemaObject;
+  pathParts: string[];
+  description: string;
+  schemas?: Record<string, SchemaObject>;
+}): void {
   if (pathParts.length === 0) return;
 
   const [head, ...rest] = pathParts;
@@ -385,7 +413,13 @@ function setNestedDescription(
     if (rest.length === 0) {
       items.description = description;
     } else {
-      setNestedDescription(items, rest, description);
+      const target = resolveSchemaRef(items, schemas) ?? items;
+      setNestedDescription({
+        schema: target,
+        pathParts: rest,
+        description,
+        schemas,
+      });
     }
     return;
   }
@@ -399,6 +433,12 @@ function setNestedDescription(
   } else {
     // For arrays, step through `items` transparently
     const target = getArrayItemsSchema(propSchema) ?? propSchema;
-    setNestedDescription(target, rest, description);
+    const resolvedTarget = resolveSchemaRef(target, schemas) ?? target;
+    setNestedDescription({
+      schema: resolvedTarget,
+      pathParts: rest,
+      description,
+      schemas,
+    });
   }
 }

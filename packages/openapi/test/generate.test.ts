@@ -30,6 +30,7 @@ import { Sdk as SuperjsonSdk } from './routers/superjsonRouter-heyapi/sdk.gen';
 import {
   getSchemas,
   isArraySchema,
+  requireArrayItemsSchema,
   requireEnvelopeDataSchema,
   requireInputSchema,
   requireOperation,
@@ -696,6 +697,32 @@ describe('generateOpenAPIDocument', () => {
         'subrouter.hello input.name',
       );
       expect(nameSchema.description).toBe('Name of the user');
+    });
+
+    it('overlays Zod .describe() strings through array item $refs', () => {
+      const inputSchema = requireSchemaObject(
+        requireInputSchema(doc, 'referencedChildren'),
+        doc,
+        'referencedChildren input',
+      );
+      const childrenSchema = requireSchemaObject(
+        requireProperty(inputSchema, 'children'),
+        doc,
+        'referencedChildren input.children',
+      );
+      const childSchema = requireSchemaObject(
+        requireArrayItemsSchema(childrenSchema),
+        doc,
+        'referencedChildren input.children[]',
+      );
+      const childNameSchema = requireSchemaObject(
+        requireProperty(childSchema, 'name'),
+        doc,
+        'referencedChildren input.children[].name',
+      );
+
+      expect(childrenSchema.description).toBe('Child collection');
+      expect(childNameSchema.description).toBe('Child name');
     });
 
     it('still preserves JSDoc descriptions on operations', () => {
