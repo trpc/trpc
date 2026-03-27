@@ -44,6 +44,20 @@ const describedParentSchema = z.object({
   children: z.array(describedChildSchema).describe('Child collection'),
 });
 
+type RecursiveLeafNode = {
+  child: RecursiveLeafNode;
+};
+
+const recursiveLeafNodeSchema: z.ZodType<RecursiveLeafNode> = z.lazy(() =>
+  z.object({
+    child: recursiveLeafNodeSchema,
+  }),
+);
+
+const recursiveLeafInputSchema = z.object({
+  child: recursiveLeafNodeSchema.describe('Recursive child'),
+});
+
 function asType<T>() {
   return (value: unknown): T => value as T;
 }
@@ -124,6 +138,18 @@ export const descriptionsRouter = t.router({
   referencedChildren: t.procedure
     .input(describedParentSchema)
     .query(({ input }) => input),
+
+  /**
+   * Referenced child leaf description in output
+   */
+  referencedChildLeafOutput: t.procedure
+    .output(recursiveLeafInputSchema)
+    .query(
+      () =>
+        ({ child: null as unknown as RecursiveLeafNode }) as unknown as z.infer<
+          typeof recursiveLeafInputSchema
+        >,
+    ),
 
   /**
    * Hello Procedure details

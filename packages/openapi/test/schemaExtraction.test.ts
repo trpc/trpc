@@ -405,4 +405,20 @@ describe('applyDescriptions', () => {
     applyDescriptions(schema, { properties: props });
     expect(requirePropertySchema(schema, 'name').description).toBe('New');
   });
+
+  it('wraps referenced property schemas in allOf when applying leaf descriptions', () => {
+    const schema: SchemaObject = {
+      type: 'object',
+      properties: {
+        profile: { $ref: '#/components/schemas/Profile' },
+      },
+    };
+    const props = new Map([['profile', 'Profile details']]);
+    applyDescriptions(schema, { properties: props });
+
+    const profile = requirePropertySchema(schema, 'profile');
+    expect(profile.$ref).toBeUndefined();
+    expect(profile.allOf).toEqual([{ $ref: '#/components/schemas/Profile' }]);
+    expect(profile.description).toBe('Profile details');
+  });
 });

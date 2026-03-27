@@ -325,6 +325,60 @@
         ]
       }
     },
+    "/referencedChildLeafOutput": {
+      "get": {
+        "operationId": "referencedChildLeafOutput",
+        "description": "Referenced child leaf description in output",
+        "tags": [
+          "referencedChildLeafOutput"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "child": {
+                              "allOf": [
+                                {
+                                  "$ref": "#/components/schemas/RecursiveLeafNode"
+                                }
+                              ],
+                              "description": "Recursive child"
+                            }
+                          },
+                          "required": [
+                            "child"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
     "/helloInline": {
       "get": {
         "operationId": "helloInline",
@@ -544,6 +598,18 @@
   },
   "components": {
     "schemas": {
+      "RecursiveLeafNode": {
+        "type": "object",
+        "properties": {
+          "child": {
+            "$ref": "#/components/schemas/RecursiveLeafNode"
+          }
+        },
+        "required": [
+          "child"
+        ],
+        "additionalProperties": false
+      },
       "HelloInlineResponse": {
         "type": "object",
         "properties": {

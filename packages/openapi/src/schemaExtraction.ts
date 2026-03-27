@@ -390,6 +390,15 @@ function getPropertySchema(
   return schema.properties?.[propertyName] ?? null;
 }
 
+function setLeafDescription(schema: SchemaObject, description: string): void {
+  if (schema.$ref) {
+    const ref = schema.$ref;
+    delete schema.$ref;
+    schema.allOf = [{ $ref: ref }, ...(schema.allOf ?? [])];
+  }
+  schema.description = description;
+}
+
 function setNestedDescription({
   schema,
   pathParts,
@@ -411,7 +420,7 @@ function setNestedDescription({
     const items = getArrayItemsSchema(schema);
     if (!items) return;
     if (rest.length === 0) {
-      items.description = description;
+      setLeafDescription(items, description);
     } else {
       const target = resolveSchemaRef(items, schemas) ?? items;
       setNestedDescription({
@@ -429,7 +438,7 @@ function setNestedDescription({
 
   if (rest.length === 0) {
     // Leaf — Zod .describe() takes priority over JSDoc
-    propSchema.description = description;
+    setLeafDescription(propSchema, description);
   } else {
     // For arrays, step through `items` transparently
     const target = getArrayItemsSchema(propSchema) ?? propSchema;

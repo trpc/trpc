@@ -30,6 +30,7 @@ import { Sdk as SuperjsonSdk } from './routers/superjsonRouter-heyapi/sdk.gen';
 import {
   getSchemas,
   isArraySchema,
+  isRef,
   requireArrayItemsSchema,
   requireEnvelopeDataSchema,
   requireInputSchema,
@@ -723,6 +724,24 @@ describe('generateOpenAPIDocument', () => {
 
       expect(childrenSchema.description).toBe('Child collection');
       expect(childNameSchema.description).toBe('Child name');
+    });
+
+    it('wraps referenced property leaf descriptions using allOf in generated output schema', () => {
+      const outputSchema = requireOutputData({
+        doc,
+        procPath: 'referencedChildLeafOutput',
+      });
+      const childSchema = requireProperty(outputSchema, 'child');
+
+      expect(isRef(childSchema)).toBe(false);
+      if (isRef(childSchema)) {
+        throw new Error('Expected child schema to be wrapped, not a bare $ref');
+      }
+
+      expect(childSchema.description).toBe('Recursive child');
+      expect(childSchema.allOf?.[0]).toEqual({
+        $ref: expect.stringMatching(/^#\/components\/schemas\//),
+      });
     });
 
     it('still preserves JSDoc descriptions on operations', () => {
