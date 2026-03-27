@@ -9,10 +9,18 @@ import {
 import { observable } from '@trpc/server/observable';
 import type {
   AnyRouter,
+  AnyTRPCDeclaredErrorClass,
   inferClientTypes,
   inferRouterContext,
 } from '@trpc/server/unstable-core-do-not-import';
-import { callProcedure } from '@trpc/server/unstable-core-do-not-import';
+import {
+  callProcedure,
+  getErrorShape,
+  getProcedureAtPath,
+  getTRPCErrorFromUnknown,
+  isTRPCDeclaredError,
+  resolveRegisteredDeclaredErrorOrDowngrade,
+} from '@trpc/server/unstable-core-do-not-import';
 import { unstable_cache } from 'next/cache';
 import { generateCacheTag } from '../shared';
 
@@ -45,22 +53,51 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
         const promise = opts
           .createContext()
           .then(async (ctx) => {
-            const callProc = async (_cachebuster: string) => {
-              //   // _cachebuster is not used by us but to make sure
-              //   // that calls with different tags are properly separated
-              //   // @link https://github.com/trpc/trpc/issues/4622
-              const procedureResult = await callProcedure({
-                router: opts.router,
-                path,
-                getRawInput: async () => input,
-                ctx: ctx,
-                type,
-                signal: undefined,
-                batchIndex: 0,
-              });
+            const procedure = await getProcedureAtPath(opts.router, path);
+            const declaredErrors = procedure?._def.declaredErrors as
+              | readonly AnyTRPCDeclaredErrorClass[]
+              | undefined;
 
-              // We need to serialize cause the cache only accepts JSON
-              return transformer.input.serialize(procedureResult);
+            const callProc = async (_cachebuster: string) => {
+              // _cachebuster is not used by us but to make sure
+              // that calls with different tags are properly separated
+              // @link https://github.com/trpc/trpc/issues/4622
+              try {
+                const procedureResult = await callProcedure({
+                  router: opts.router,
+                  path,
+                  getRawInput: async () => input,
+                  ctx: ctx,
+                  type,
+                  signal: undefined,
+                  batchIndex: 0,
+                });
+
+                // We need to serialize cause the cache only accepts JSON
+                return transformer.input.serialize(procedureResult);
+              } catch (cause) {
+                const error = getTRPCErrorFromUnknown(cause);
+                const resolvedError = isTRPCDeclaredError(error)
+                  ? resolveRegisteredDeclaredErrorOrDowngrade(error, {
+                      declaredErrors,
+                      path,
+                    })
+                  : error;
+
+                throw TRPCClientError.from(
+                  {
+                    error: getErrorShape({
+                      config: opts.router._def._config,
+                      ctx,
+                      error: resolvedError,
+                      input,
+                      path,
+                      type,
+                    }),
+                  },
+                  { cause: resolvedError },
+                );
+              }
             };
 
             if (type === 'query') {
