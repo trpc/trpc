@@ -112,8 +112,8 @@ app.listen(4000);
 ```ts
 import * as trpcExpress from '@trpc/server/adapters/express';
 import express from 'express';
-import { appRouter } from './router';
 import { createContext } from './context';
+import { appRouter } from './router';
 
 const app = express();
 
