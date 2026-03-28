@@ -8,7 +8,7 @@ description: >
   provides req and res for context creation.
 type: core
 library: trpc
-library_version: '11.14.0'
+library_version: '11.15.1'
 requires:
   - server-setup
 sources:
@@ -142,6 +142,20 @@ const server = http2.createSecureServer(
 
 server.listen(3001);
 ```
+
+### Limiting batch size with maxBatchSize
+
+```ts
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { appRouter } from './router';
+
+createHTTPServer({
+  router: appRouter,
+  maxBatchSize: 10,
+}).listen(3000);
+```
+
+Requests batching more than `maxBatchSize` operations are rejected with a `400 Bad Request` error. Set `maxItems` on your client's `httpBatchLink` to the same value to avoid exceeding the limit.
 
 ## Common Mistakes
 

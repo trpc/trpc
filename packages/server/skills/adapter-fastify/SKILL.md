@@ -9,7 +9,7 @@ description: >
   CreateFastifyContextOptions provides req, res.
 type: core
 library: trpc
-library_version: '11.14.0'
+library_version: '11.15.1'
 requires:
   - server-setup
 sources:
@@ -131,6 +131,21 @@ server.register(fastifyTRPCPlugin, {
 ```
 
 Due to Fastify plugin type inference limitations, use `satisfies FastifyTRPCPluginOptions<AppRouter>['trpcOptions']` to get correct types on `onError` and other callbacks.
+
+### Limiting batch size with maxBatchSize
+
+```ts
+server.register(fastifyTRPCPlugin, {
+  prefix: '/trpc',
+  trpcOptions: {
+    router: appRouter,
+    createContext,
+    maxBatchSize: 10,
+  } satisfies FastifyTRPCPluginOptions<AppRouter>['trpcOptions'],
+});
+```
+
+Requests batching more than `maxBatchSize` operations are rejected with a `400 Bad Request` error. Set `maxItems` on your client's `httpBatchLink` to the same value to avoid exceeding the limit.
 
 ## Common Mistakes
 

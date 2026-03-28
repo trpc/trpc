@@ -7,7 +7,7 @@ description: >
   Avoid global express.json() conflicting with tRPC body parsing for FormData.
 type: core
 library: trpc
-library_version: '11.14.0'
+library_version: '11.15.1'
 requires:
   - server-setup
 sources:
@@ -106,6 +106,30 @@ app.use(
 
 app.listen(4000);
 ```
+
+### Limiting batch size with maxBatchSize
+
+```ts
+import * as trpcExpress from '@trpc/server/adapters/express';
+import express from 'express';
+import { createContext } from './context';
+import { appRouter } from './router';
+
+const app = express();
+
+app.use(
+  '/trpc',
+  trpcExpress.createExpressMiddleware({
+    router: appRouter,
+    createContext,
+    maxBatchSize: 10,
+  }),
+);
+
+app.listen(4000);
+```
+
+Requests batching more than `maxBatchSize` operations are rejected with a `400 Bad Request` error. Set `maxItems` on your client's `httpBatchLink` to the same value to avoid exceeding the limit.
 
 ## Common Mistakes
 

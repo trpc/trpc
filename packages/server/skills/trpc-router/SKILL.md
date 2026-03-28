@@ -6,7 +6,7 @@ description: >
   Next.js, links, middleware, validators, error handling, caching, FormData.
 type: core
 library: trpc
-library_version: '11.14.0'
+library_version: '11.15.1'
 requires: []
 sources:
   - 'trpc/trpc:www/docs/main/introduction.mdx'

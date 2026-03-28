@@ -8,7 +8,7 @@ description: >
   client constructor.
 type: composition
 library: trpc
-library_version: '11.14.0'
+library_version: '11.15.1'
 requires:
   - server-setup
   - client-setup
