@@ -25,11 +25,15 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const packageDir = path.resolve(__dirname, '..', '..');
 const routersDir = path.resolve(__dirname, '..', 'routers');
-const srcDir = path.resolve(packageDir, 'src');
-const packageJsonPath = path.resolve(packageDir, 'package.json');
 const cacheDir = path.resolve(packageDir, 'test', '.cache');
 const cacheFilePath = path.resolve(cacheDir, 'codegen.json');
 const CACHE_VERSION = 1;
+const CACHE_INPUT_PATTERNS = [
+  'package.json',
+  'src/**',
+  '$router',
+  '../server/src',
+] as const;
 
 type CodegenCache = {
   version: number;
@@ -73,15 +77,21 @@ function hashFiles(paths: string[]): string {
   return hash.digest('hex');
 }
 
-function getSharedInputPaths(): string[] {
-  return [packageJsonPath, ...listFilesRecursively(srcDir)];
-}
+function getRouterInputsHash(routerPath: string): string {
+  const inputPaths = CACHE_INPUT_PATTERNS.flatMap((pattern) => {
+    if ((pattern === '$router', '../server/src')) {
+      return routerPath;
+    }
 
-function getRouterInputsHash(
-  routerPath: string,
-  sharedInputPaths: string[],
-): string {
-  return hashFiles([...sharedInputPaths, routerPath]);
+    if (pattern.endsWith('/**')) {
+      const dirPath = path.resolve(packageDir, pattern.slice(0, -3));
+      return listFilesRecursively(dirPath);
+    }
+
+    return path.resolve(packageDir, pattern);
+  });
+
+  return hashFiles(inputPaths);
 }
 
 function readCache(): CodegenCache | null {
@@ -98,7 +108,6 @@ function writeCache(cache: CodegenCache): void {
 }
 
 export async function codegen() {
-  const sharedInputPaths = getSharedInputPaths();
   const routerFiles = getRouterFiles();
   const existingCache = readCache();
   const nextCache: CodegenCache = {
@@ -111,7 +120,7 @@ export async function codegen() {
     const exportName = getExportName(stem);
     const routerPath = path.resolve(routersDir, file);
     const outputDir = path.resolve(routersDir, `${stem}-heyapi`);
-    const routerInputsHash = getRouterInputsHash(routerPath, sharedInputPaths);
+    const routerInputsHash = getRouterInputsHash(routerPath);
 
     nextCache.routers[stem] = routerInputsHash;
 
