@@ -130,6 +130,11 @@ export const EdgeCaseRouter = t.router({
     const val = null as string | number | null;
     return { value: val };
   }),
+
+  // --- Computed literal property name ---
+  literalComputedKey: t.procedure.query((): { ['x-trace-id']: string } => ({
+    ['x-trace-id']: 'trace-123',
+  })),
 });
 
 export type EdgeCaseRouter = typeof EdgeCaseRouter;

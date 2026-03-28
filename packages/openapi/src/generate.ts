@@ -1,3 +1,4 @@
+import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as ts from 'typescript';
 import {
@@ -6,47 +7,26 @@ import {
   tryImportRouter,
   type RuntimeDescriptions,
 } from './schemaExtraction';
-
-const log = console;
-
-/**
- * A minimal JSON Schema subset used for OpenAPI 3.1 schemas.
- */
-export interface JsonSchema {
-  $ref?: string;
-  $defs?: Record<string, JsonSchema>;
-  type?: string | string[];
-  properties?: Record<string, JsonSchema>;
-  required?: string[];
-  items?: JsonSchema | false;
-  prefixItems?: JsonSchema[];
-  const?: string | number | boolean | null;
-  enum?: (string | number | boolean | null)[];
-  oneOf?: JsonSchema[];
-  anyOf?: JsonSchema[];
-  allOf?: JsonSchema[];
-  not?: JsonSchema;
-  additionalProperties?: JsonSchema | boolean;
-  discriminator?: { propertyName: string; mapping?: Record<string, string> };
-  format?: string;
-  description?: string;
-  minItems?: number;
-  maxItems?: number;
-  $schema?: string;
-}
+import type {
+  Document,
+  OperationObject,
+  PathItemObject,
+  PathsObject,
+  SchemaObject,
+} from './types';
 
 interface ProcedureInfo {
   path: string;
   type: 'query' | 'mutation' | 'subscription';
-  inputSchema: JsonSchema | null;
-  outputSchema: JsonSchema | null;
+  inputSchema: SchemaObject | null;
+  outputSchema: SchemaObject | null;
   description?: string;
 }
 
 /** State extracted from the router's root config. */
 interface RouterMeta {
-  errorSchema: JsonSchema | null;
-  schemas?: Record<string, JsonSchema>;
+  errorSchema: SchemaObject | null;
+  schemas?: Record<string, SchemaObject>;
 }
 
 export interface GenerateOptions {
@@ -59,14 +39,6 @@ export interface GenerateOptions {
   title?: string;
   /** Version string for the generated OpenAPI `info` object. */
   version?: string;
-}
-
-export interface OpenAPIDocument {
-  openapi: string;
-  jsonSchemaDialect?: string;
-  info: { title: string; version: string };
-  paths: Record<string, Record<string, unknown>>;
-  components: Record<string, unknown>;
 }
 
 // ---------------------------------------------------------------------------
@@ -106,7 +78,7 @@ interface SchemaCtx {
   checker: ts.TypeChecker;
   visited: Set<ts.Type>;
   /** Collected named schemas for components/schemas. */
-  schemas: Record<string, JsonSchema>;
+  schemas: Record<string, SchemaObject>;
   /** Map from TS type identity to its registered schema name. */
   typeToRef: Map<ts.Type, string>;
 }
@@ -137,6 +109,7 @@ function unwrapBrand(type: ts.Type): ts.Type {
 // ---------------------------------------------------------------------------
 
 const ANONYMOUS_NAMES = new Set(['__type', '__object', 'Object', '']);
+const INTERNAL_COMPUTED_PROPERTY_SYMBOL = /^__@.*@\d+$/;
 
 /** Try to determine a meaningful name for a TS type (type alias or interface). */
 function getTypeName(type: ts.Type): string | null {
@@ -149,6 +122,34 @@ function getTypeName(type: ts.Type): string | null {
     return symName;
   }
   return null;
+}
+
+// Skips asyncGenerator and branded symbols etc when creating types
+// Symbols can't be serialised
+function shouldSkipPropertySymbol(prop: ts.Symbol): boolean {
+  return (
+    prop.declarations?.some((declaration) => {
+      const declarationName = ts.getNameOfDeclaration(declaration);
+      if (!declarationName || !ts.isComputedPropertyName(declarationName)) {
+        return false;
+      }
+
+      return INTERNAL_COMPUTED_PROPERTY_SYMBOL.test(prop.getName());
+    }) ?? false
+  );
+}
+
+function getReferencedSchema(
+  schema: SchemaObject | null,
+  schemas: Record<string, SchemaObject>,
+): SchemaObject | null {
+  const ref = schema?.$ref;
+  if (!ref?.startsWith('#/components/schemas/')) {
+    return schema;
+  }
+
+  const refName = ref.slice('#/components/schemas/'.length);
+  return refName ? (schemas[refName] ?? null) : schema;
 }
 
 function ensureUniqueName(
@@ -165,11 +166,15 @@ function ensureUniqueName(
   return `${name}${i}`;
 }
 
-function schemaRef(name: string): JsonSchema {
+function schemaRef(name: string): SchemaObject {
   return { $ref: `#/components/schemas/${name}` };
 }
 
-function isNonEmptySchema(s: JsonSchema): boolean {
+function isSelfSchemaRef(schema: SchemaObject, name: string): boolean {
+  return schema.$ref === schemaRef(name).$ref;
+}
+
+function isNonEmptySchema(s: SchemaObject): boolean {
   for (const _ in s) return true;
   return false;
 }
@@ -182,33 +187,55 @@ function isNonEmptySchema(s: JsonSchema): boolean {
  * Convert a TS type to a JSON Schema.  If the type has been pre-registered
  * (or has a meaningful TS name), it is stored in `ctx.schemas` and a `$ref`
  * is returned instead of an inline schema.
+ *
+ * Named types (type aliases, interfaces) are auto-registered before conversion
+ * so that recursive references (including through unions and intersections)
+ * resolve to a `$ref` instead of causing infinite recursion.
  */
 function typeToJsonSchema(
   type: ts.Type,
   ctx: SchemaCtx,
   depth = 0,
-): JsonSchema {
-  if (depth > 20) {
-    log.warn(
-      `[openapi] Schema conversion reached maximum depth (20) for type "${ctx.checker.typeToString(type)}". The resulting schema will be incomplete.`,
-    );
-    return {};
-  }
-
+): SchemaObject {
   // If this type is already registered as a named schema, return a $ref.
-  const refName = ctx.typeToRef.get(type);
-  if (refName) {
-    if (refName in ctx.schemas) {
-      return schemaRef(refName);
+  const existingRef = ctx.typeToRef.get(type);
+  if (existingRef) {
+    const storedSchema = ctx.schemas[existingRef];
+    if (
+      storedSchema &&
+      (isNonEmptySchema(storedSchema) || ctx.visited.has(type))
+    ) {
+      return schemaRef(existingRef);
     }
-    // First encounter: set placeholder (circular ref guard), convert, store.
-    ctx.schemas[refName] = {};
+
+    // First encounter for a pre-registered placeholder: convert once, but keep
+    // returning $ref for recursive edges while the type is actively visiting.
+    ctx.schemas[existingRef] = storedSchema ?? {};
     const schema = convertTypeToSchema(type, ctx, depth);
-    ctx.schemas[refName] = schema;
-    return schemaRef(refName);
+    if (!isSelfSchemaRef(schema, existingRef)) {
+      ctx.schemas[existingRef] = schema;
+    }
+    return schemaRef(existingRef);
   }
 
   const schema = convertTypeToSchema(type, ctx, depth);
+
+  // If a recursive reference was detected during conversion (via handleCyclicRef
+  // or convertPlainObject's auto-registration), the type is now registered in
+  // typeToRef.  If the stored schema is still the empty placeholder, fill it in
+  // with the actual converted schema.  Either way, return a $ref.
+  const postConvertRef = ctx.typeToRef.get(type);
+  if (postConvertRef) {
+    const stored = ctx.schemas[postConvertRef];
+    if (
+      stored &&
+      !isNonEmptySchema(stored) &&
+      !isSelfSchemaRef(schema, postConvertRef)
+    ) {
+      ctx.schemas[postConvertRef] = schema;
+    }
+    return schemaRef(postConvertRef);
+  }
 
   // Extract JSDoc from type alias symbol (e.g. `/** desc */ type Foo = string`)
   if (!schema.description && !schema.$ref && type.aliasSymbol) {
@@ -229,7 +256,7 @@ function typeToJsonSchema(
  * When we encounter a type we're already visiting, it's recursive.
  * Register it as a named schema and return a $ref.
  */
-function handleCyclicRef(type: ts.Type, ctx: SchemaCtx): JsonSchema {
+function handleCyclicRef(type: ts.Type, ctx: SchemaCtx): SchemaObject {
   let refName = ctx.typeToRef.get(type);
   if (!refName) {
     const name = getTypeName(type) ?? 'RecursiveType';
@@ -248,7 +275,7 @@ function convertPrimitiveOrLiteral(
   type: ts.Type,
   flags: ts.TypeFlags,
   checker: ts.TypeChecker,
-): JsonSchema | null {
+): SchemaObject | null {
   if (flags & ts.TypeFlags.String) {
     return { type: 'string' };
   }
@@ -299,7 +326,7 @@ function convertUnionType(
   type: ts.UnionType,
   ctx: SchemaCtx,
   depth: number,
-): JsonSchema {
+): SchemaObject {
   const members = type.types;
 
   // Strip undefined / void members (they make the field optional, not typed)
@@ -392,7 +419,7 @@ function convertUnionType(
  * If every schema in a oneOf is an object with a common required property
  * whose value is a `const`, return that property name.  Otherwise return null.
  */
-function detectDiscriminatorProperty(schemas: JsonSchema[]): string | null {
+function detectDiscriminatorProperty(schemas: SchemaObject[]): string | null {
   if (schemas.length < 2) {
     return null;
   }
@@ -426,7 +453,7 @@ function detectDiscriminatorProperty(schemas: JsonSchema[]): string | null {
 }
 
 /** A schema that is just `{ type: "somePrimitive" }` with no other keys. */
-function isSimpleTypeSchema(s: JsonSchema): boolean {
+function isSimpleTypeSchema(s: SchemaObject): boolean {
   const keys = Object.keys(s);
   return keys.length === 1 && keys[0] === 'type' && typeof s.type === 'string';
 }
@@ -438,7 +465,7 @@ function isSimpleTypeSchema(s: JsonSchema): boolean {
 function tryCollapseLiteralUnion(
   nonNull: ts.Type[],
   hasNull: boolean,
-): JsonSchema | null {
+): SchemaObject | null {
   if (nonNull.length <= 1) {
     return null;
   }
@@ -484,7 +511,7 @@ function convertIntersectionType(
   type: ts.IntersectionType,
   ctx: SchemaCtx,
   depth: number,
-): JsonSchema {
+): SchemaObject {
   // Branded types (e.g. z.string().brand<'X'>()) appear as an intersection of
   // a primitive with a phantom object.  Strip the object members — they are
   // always brand metadata.
@@ -515,7 +542,7 @@ function convertIntersectionType(
 }
 
 /** True when the schema is an inline `{ type: "object", ... }` (not a $ref). */
-function isInlineObjectSchema(s: JsonSchema): boolean {
+function isInlineObjectSchema(s: SchemaObject): boolean {
   return s.type === 'object' && !s.$ref;
 }
 
@@ -523,7 +550,7 @@ function isInlineObjectSchema(s: JsonSchema): boolean {
  * Merge multiple `{ type: "object" }` schemas into one.
  * Falls back to `allOf` if any property names conflict across schemas.
  */
-function mergeObjectSchemas(schemas: JsonSchema[]): JsonSchema {
+function mergeObjectSchemas(schemas: SchemaObject[]): SchemaObject {
   // Check for property name conflicts before merging.
   const seen = new Set<string>();
   for (const s of schemas) {
@@ -538,9 +565,9 @@ function mergeObjectSchemas(schemas: JsonSchema[]): JsonSchema {
     }
   }
 
-  const properties: Record<string, JsonSchema> = {};
+  const properties: Record<string, SchemaObject> = {};
   const required: string[] = [];
-  let additionalProperties: JsonSchema | boolean | undefined;
+  let additionalProperties: SchemaObject | boolean | undefined;
 
   for (const s of schemas) {
     if (s.properties) {
@@ -554,7 +581,7 @@ function mergeObjectSchemas(schemas: JsonSchema[]): JsonSchema {
     }
   }
 
-  const result: JsonSchema = { type: 'object' };
+  const result: SchemaObject = { type: 'object' };
   if (Object.keys(properties).length > 0) {
     result.properties = properties;
   }
@@ -575,7 +602,7 @@ function convertWellKnownType(
   type: ts.Type,
   ctx: SchemaCtx,
   depth: number,
-): JsonSchema | null {
+): SchemaObject | null {
   const symName = type.getSymbol()?.getName();
   if (symName === 'Date') {
     return { type: 'string', format: 'date-time' };
@@ -597,9 +624,9 @@ function convertArrayType(
   type: ts.Type,
   ctx: SchemaCtx,
   depth: number,
-): JsonSchema {
+): SchemaObject {
   const [elem] = ctx.checker.getTypeArguments(type as ts.TypeReference);
-  const schema: JsonSchema = { type: 'array' };
+  const schema: SchemaObject = { type: 'array' };
   if (elem) {
     schema.items = typeToJsonSchema(elem, ctx, depth + 1);
   }
@@ -610,7 +637,7 @@ function convertTupleType(
   type: ts.Type,
   ctx: SchemaCtx,
   depth: number,
-): JsonSchema {
+): SchemaObject {
   const args = ctx.checker.getTypeArguments(type as ts.TypeReference);
   const schemas = args.map((a) => typeToJsonSchema(a, ctx, depth + 1));
   return {
@@ -626,7 +653,7 @@ function convertPlainObject(
   type: ts.Type,
   ctx: SchemaCtx,
   depth: number,
-): JsonSchema {
+): SchemaObject {
   const { checker } = ctx;
   const stringIndexType = type.getStringIndexType();
   const typeProps = type.getProperties();
@@ -653,10 +680,14 @@ function convertPlainObject(
   }
 
   ctx.visited.add(type);
-  const properties: Record<string, JsonSchema> = {};
+  const properties: Record<string, SchemaObject> = {};
   const required: string[] = [];
 
   for (const prop of typeProps) {
+    if (shouldSkipPropertySymbol(prop)) {
+      continue;
+    }
+
     const propType = checker.getTypeOfSymbol(prop);
     const propSchema = typeToJsonSchema(propType, ctx, depth + 1);
 
@@ -674,7 +705,7 @@ function convertPlainObject(
 
   ctx.visited.delete(type);
 
-  const result: JsonSchema = { type: 'object' };
+  const result: SchemaObject = { type: 'object' };
   if (Object.keys(properties).length > 0) {
     result.properties = properties;
   }
@@ -707,7 +738,7 @@ function convertObjectType(
   type: ts.Type,
   ctx: SchemaCtx,
   depth: number,
-): JsonSchema {
+): SchemaObject {
   const wellKnown = convertWellKnownType(type, ctx, depth);
   if (wellKnown) {
     return wellKnown;
@@ -732,7 +763,7 @@ function convertTypeToSchema(
   type: ts.Type,
   ctx: SchemaCtx,
   depth: number,
-): JsonSchema {
+): SchemaObject {
   if (ctx.visited.has(type)) {
     return handleCyclicRef(type, ctx);
   }
@@ -745,10 +776,16 @@ function convertTypeToSchema(
   }
 
   if (type.isUnion()) {
-    return convertUnionType(type, ctx, depth);
+    ctx.visited.add(type);
+    const result = convertUnionType(type, ctx, depth);
+    ctx.visited.delete(type);
+    return result;
   }
   if (type.isIntersection()) {
-    return convertIntersectionType(type, ctx, depth);
+    ctx.visited.add(type);
+    const result = convertIntersectionType(type, ctx, depth);
+    ctx.visited.delete(type);
+    return result;
   }
   if (isObjectType(type)) {
     return convertObjectType(type, ctx, depth);
@@ -777,7 +814,7 @@ interface WalkCtx {
 function getProcedureTypeName(
   defType: ts.Type,
   checker: ts.TypeChecker,
-): string | null {
+): ProcedureInfo['type'] | null {
   const typeSym = defType.getProperty('type');
   if (!typeSym) {
     return null;
@@ -816,6 +853,134 @@ interface ProcedureDef {
   typeName: string;
   path: string;
   description?: string;
+  symbol: ts.Symbol;
+}
+
+function shouldIncludeProcedureInOpenAPI(type: ProcedureInfo['type']): boolean {
+  return type !== 'subscription';
+}
+
+function getProcedureInputTypeName(type: ts.Type, path: string): string {
+  const directName = getTypeName(type);
+  if (directName) {
+    return directName;
+  }
+
+  for (const sym of [type.aliasSymbol, type.getSymbol()].filter(
+    (candidate): candidate is ts.Symbol => !!candidate,
+  )) {
+    for (const declaration of sym.declarations ?? []) {
+      const declarationName = ts.getNameOfDeclaration(declaration)?.getText();
+      if (
+        declarationName &&
+        !ANONYMOUS_NAMES.has(declarationName) &&
+        !declarationName.startsWith('__')
+      ) {
+        return declarationName;
+      }
+    }
+  }
+
+  const fallbackName = path
+    .split('.')
+    .filter(Boolean)
+    .map((segment) =>
+      segment
+        .split(/[^A-Za-z0-9]+/)
+        .filter(Boolean)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(''),
+    )
+    .join('');
+
+  return `${fallbackName || 'Procedure'}Input`;
+}
+
+function isUnknownLikeType(type: ts.Type): boolean {
+  return hasFlag(type, ts.TypeFlags.Unknown | ts.TypeFlags.Any);
+}
+
+function isCollapsedProcedureInputType(type: ts.Type): boolean {
+  return (
+    isUnknownLikeType(type) ||
+    (isObjectType(type) &&
+      type.getProperties().length === 0 &&
+      !type.getStringIndexType())
+  );
+}
+
+function recoverProcedureInputType(
+  def: ProcedureDef,
+  checker: ts.TypeChecker,
+): ts.Type | null {
+  let initializer: ts.Expression | null = null;
+  for (const declaration of def.symbol.declarations ?? []) {
+    if (ts.isPropertyAssignment(declaration)) {
+      initializer = declaration.initializer;
+      break;
+    }
+    if (ts.isVariableDeclaration(declaration) && declaration.initializer) {
+      initializer = declaration.initializer;
+      break;
+    }
+  }
+  if (!initializer) {
+    return null;
+  }
+
+  let recovered: ts.Type | null = null;
+  // Walk the builder chain and keep the last `.input(...)` parser output type.
+  const visit = (expr: ts.Expression): void => {
+    if (!ts.isCallExpression(expr)) {
+      return;
+    }
+
+    const callee = expr.expression;
+    if (!ts.isPropertyAccessExpression(callee)) {
+      return;
+    }
+
+    visit(callee.expression);
+    if (callee.name.text !== 'input') {
+      return;
+    }
+
+    const [parserExpr] = expr.arguments;
+    if (!parserExpr) {
+      return;
+    }
+
+    const parserType = checker.getTypeAtLocation(parserExpr);
+    const standardSym = parserType.getProperty('~standard');
+    if (!standardSym) {
+      return;
+    }
+
+    const standardType = checker.getTypeOfSymbolAtLocation(
+      standardSym,
+      parserExpr,
+    );
+    const typesSym = standardType.getProperty('types');
+    if (!typesSym) {
+      return;
+    }
+
+    const typesType = checker.getNonNullableType(
+      checker.getTypeOfSymbolAtLocation(typesSym, parserExpr),
+    );
+    const outputSym = typesType.getProperty('output');
+    if (!outputSym) {
+      return;
+    }
+
+    const outputType = checker.getTypeOfSymbolAtLocation(outputSym, parserExpr);
+    if (!isUnknownLikeType(outputType)) {
+      recovered = outputType;
+    }
+  };
+  visit(initializer);
+
+  return recovered;
 }
 
 function extractProcedure(def: ProcedureDef, ctx: WalkCtx): void {
@@ -833,24 +998,75 @@ function extractProcedure(def: ProcedureDef, ctx: WalkCtx): void {
 
   const inputType = inputSym ? checker.getTypeOfSymbol(inputSym) : null;
   const outputType = outputSym ? checker.getTypeOfSymbol(outputSym) : null;
+  const resolvedInputType =
+    inputType && isCollapsedProcedureInputType(inputType)
+      ? (recoverProcedureInputType(def, checker) ?? inputType)
+      : inputType;
 
-  const inputSchema =
-    !inputType || isVoidLikeInput(inputType)
-      ? null
-      : typeToJsonSchema(inputType, schemaCtx);
+  let inputSchema: SchemaObject | null = null;
+  if (!resolvedInputType || isVoidLikeInput(resolvedInputType)) {
+    // null is fine
+  } else {
+    // Pre-register recovered parser output types so recursive edges resolve to a
+    // stable component ref instead of collapsing into `{}`.
+    const ensureRecoveredInputRegistration = (type: ts.Type): void => {
+      if (schemaCtx.typeToRef.has(type)) {
+        return;
+      }
 
-  const outputSchema: JsonSchema | null = outputType
+      const refName = ensureUniqueName(
+        getProcedureInputTypeName(type, def.path),
+        schemaCtx.schemas,
+      );
+      schemaCtx.typeToRef.set(type, refName);
+      schemaCtx.schemas[refName] = {};
+    };
+
+    if (resolvedInputType !== inputType) {
+      ensureRecoveredInputRegistration(resolvedInputType);
+    }
+
+    const initialSchema = typeToJsonSchema(resolvedInputType, schemaCtx);
+    if (
+      !isNonEmptySchema(initialSchema) &&
+      !schemaCtx.typeToRef.has(resolvedInputType)
+    ) {
+      ensureRecoveredInputRegistration(resolvedInputType);
+      inputSchema = typeToJsonSchema(resolvedInputType, schemaCtx);
+    } else {
+      inputSchema = initialSchema;
+    }
+  }
+
+  const outputSchema: SchemaObject | null = outputType
     ? typeToJsonSchema(outputType, schemaCtx)
     : null;
 
   // Overlay extracted schema descriptions onto the type-checker-generated schemas.
   const runtimeDescs = ctx.runtimeDescriptions.get(def.path);
   if (runtimeDescs) {
-    if (inputSchema && runtimeDescs.input) {
-      applyDescriptions(inputSchema, runtimeDescs.input);
+    const resolvedInputSchema = getReferencedSchema(
+      inputSchema,
+      schemaCtx.schemas,
+    );
+    const resolvedOutputSchema = getReferencedSchema(
+      outputSchema,
+      schemaCtx.schemas,
+    );
+
+    if (resolvedInputSchema && runtimeDescs.input) {
+      applyDescriptions(
+        resolvedInputSchema,
+        runtimeDescs.input,
+        schemaCtx.schemas,
+      );
     }
-    if (outputSchema && runtimeDescs.output) {
-      applyDescriptions(outputSchema, runtimeDescs.output);
+    if (resolvedOutputSchema && runtimeDescs.output) {
+      applyDescriptions(
+        resolvedOutputSchema,
+        runtimeDescs.output,
+        schemaCtx.schemas,
+      );
     }
   }
 
@@ -868,6 +1084,48 @@ function getJsDocComment(
   sym: ts.Symbol,
   checker: ts.TypeChecker,
 ): string | undefined {
+  const isWithinPath = (candidate: string, parent: string): boolean => {
+    const rel = path.relative(parent, candidate);
+    return rel !== '' && !rel.startsWith('..') && !path.isAbsolute(rel);
+  };
+
+  const normalize = (filePath: string): string => filePath.replace(/\\/g, '/');
+  const workspaceRoot = normalize(process.cwd());
+
+  const declarations = sym.declarations ?? [];
+  const isExternalNodeModulesDeclaration =
+    declarations.length > 0 &&
+    declarations.every((declaration) => {
+      const sourceFile = declaration.getSourceFile();
+      if (!sourceFile.isDeclarationFile) {
+        return false;
+      }
+
+      const declarationPath = normalize(sourceFile.fileName);
+      if (!declarationPath.includes('/node_modules/')) {
+        return false;
+      }
+
+      try {
+        const realPath = normalize(fs.realpathSync.native(sourceFile.fileName));
+        // Keep JSDoc for workspace packages linked into node_modules
+        // (e.g. monorepos using pnpm/yarn workspaces).
+        if (
+          isWithinPath(realPath, workspaceRoot) &&
+          !realPath.includes('/node_modules/')
+        ) {
+          return false;
+        }
+      } catch {
+        // Fall back to treating the declaration as external.
+      }
+
+      return true;
+    });
+  if (isExternalNodeModulesDeclaration) {
+    return undefined;
+  }
+
   const parts = sym.getDocumentationComment(checker);
   if (parts.length === 0) {
     return undefined;
@@ -881,10 +1139,11 @@ interface WalkTypeOpts {
   ctx: WalkCtx;
   currentPath: string;
   description?: string;
+  symbol?: ts.Symbol;
 }
 
 function walkType(opts: WalkTypeOpts): void {
-  const { type, ctx, currentPath, description } = opts;
+  const { type, ctx, currentPath, description, symbol } = opts;
   if (ctx.seen.has(type)) {
     return;
   }
@@ -907,8 +1166,18 @@ function walkType(opts: WalkTypeOpts): void {
 
   const procedureTypeName = getProcedureTypeName(defType, checker);
   if (procedureTypeName) {
+    if (!shouldIncludeProcedureInOpenAPI(procedureTypeName)) {
+      return;
+    }
+
     extractProcedure(
-      { defType, typeName: procedureTypeName, path: currentPath, description },
+      {
+        defType,
+        typeName: procedureTypeName,
+        path: currentPath,
+        description,
+        symbol: symbol ?? type.getSymbol() ?? defSym,
+      },
       ctx,
     );
     return;
@@ -942,7 +1211,13 @@ function walkRecord(recordType: ts.Type, ctx: WalkCtx, prefix: string): void {
     const propType = ctx.schemaCtx.checker.getTypeOfSymbol(prop);
     const fullPath = prefix ? `${prefix}.${prop.name}` : prop.name;
     const description = getJsDocComment(prop, ctx.schemaCtx.checker);
-    walkType({ type: propType, ctx, currentPath: fullPath, description });
+    walkType({
+      type: propType,
+      ctx,
+      currentPath: fullPath,
+      description,
+      symbol: prop,
+    });
   }
 }
 
@@ -1007,7 +1282,7 @@ function extractErrorSchema(
   routerType: ts.Type,
   checker: ts.TypeChecker,
   schemaCtx: SchemaCtx,
-): JsonSchema | null {
+): SchemaObject | null {
   const walk = (type: ts.Type, keys: string[]): ts.Type | null => {
     const [head, ...rest] = keys;
     if (!head) {
@@ -1042,7 +1317,7 @@ function extractErrorSchema(
 // ---------------------------------------------------------------------------
 
 /** Fallback error schema when the router type doesn't expose an error shape. */
-const DEFAULT_ERROR_SCHEMA: JsonSchema = {
+const DEFAULT_ERROR_SCHEMA: SchemaObject = {
   type: 'object',
   properties: {
     message: { type: 'string' },
@@ -1061,14 +1336,16 @@ const DEFAULT_ERROR_SCHEMA: JsonSchema = {
  * When the procedure has no output the envelope is still present but
  * the `data` property is omitted.
  */
-function wrapInSuccessEnvelope(outputSchema: JsonSchema | null): JsonSchema {
+function wrapInSuccessEnvelope(
+  outputSchema: SchemaObject | null,
+): SchemaObject {
   const hasOutput = outputSchema !== null && isNonEmptySchema(outputSchema);
-  const resultSchema: JsonSchema = {
+  const resultSchema: SchemaObject = {
     type: 'object',
     properties: {
       ...(hasOutput ? { data: outputSchema } : {}),
     },
-    ...(hasOutput ? { required: ['data' as const] } : {}),
+    ...(hasOutput ? { required: ['data'] } : {}),
   };
   return {
     type: 'object',
@@ -1082,11 +1359,12 @@ function wrapInSuccessEnvelope(outputSchema: JsonSchema | null): JsonSchema {
 function buildProcedureOperation(
   proc: ProcedureInfo,
   method: 'get' | 'post',
-): Record<string, unknown> {
-  const operation: Record<string, unknown> = {
+): OperationObject {
+  const [tag = proc.path] = proc.path.split('.');
+  const operation: OperationObject = {
     operationId: proc.path,
     ...(proc.description ? { description: proc.description } : {}),
-    tags: [proc.path.split('.')[0]],
+    tags: [tag],
     responses: {
       '200': {
         description: 'Successful response',
@@ -1105,7 +1383,7 @@ function buildProcedureOperation(
   }
 
   if (method === 'get') {
-    operation['parameters'] = [
+    operation.parameters = [
       {
         name: 'input',
         in: 'query',
@@ -1117,7 +1395,7 @@ function buildProcedureOperation(
       },
     ];
   } else {
-    operation['requestBody'] = {
+    operation.requestBody = {
       required: true,
       content: { 'application/json': { schema: proc.inputSchema } },
     };
@@ -1130,20 +1408,23 @@ function buildOpenAPIDocument(
   procedures: ProcedureInfo[],
   options: GenerateOptions,
   meta: RouterMeta = { errorSchema: null },
-): OpenAPIDocument {
-  const paths: Record<string, Record<string, unknown>> = {};
+): Document {
+  const paths: PathsObject = {};
 
   for (const proc of procedures) {
-    if (proc.type === 'subscription') {
+    if (!shouldIncludeProcedureInOpenAPI(proc.type)) {
       continue;
     }
 
     const opPath = `/${proc.path}`;
     const method = proc.type === 'query' ? 'get' : 'post';
 
-    const pathItem: Record<string, unknown> = paths[opPath] ?? {};
+    const pathItem: PathItemObject = paths[opPath] ?? {};
     paths[opPath] = pathItem;
-    pathItem[method] = buildProcedureOperation(proc, method);
+    pathItem[method] = buildProcedureOperation(
+      proc,
+      method,
+    ) as PathItemObject[typeof method];
   }
 
   const hasNamedSchemas =
@@ -1158,7 +1439,7 @@ function buildOpenAPIDocument(
     },
     paths,
     components: {
-      ...(hasNamedSchemas ? { schemas: meta.schemas } : {}),
+      ...(hasNamedSchemas && meta.schemas ? { schemas: meta.schemas } : {}),
       responses: {
         Error: {
           description: 'Error response',
@@ -1194,7 +1475,7 @@ function buildOpenAPIDocument(
 export async function generateOpenAPIDocument(
   routerFilePath: string,
   options: GenerateOptions = {},
-): Promise<OpenAPIDocument> {
+): Promise<Document> {
   const resolvedPath = path.resolve(routerFilePath);
   const exportName = options.exportName ?? 'AppRouter';
 

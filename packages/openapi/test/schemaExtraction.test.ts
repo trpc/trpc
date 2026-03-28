@@ -1,13 +1,14 @@
 import { initTRPC } from '@trpc/server';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import type { JsonSchema } from '../src/generate';
 import {
   applyDescriptions,
   collectRuntimeDescriptions,
   extractZodDescriptions,
   type RuntimeDescriptions,
 } from '../src/schemaExtraction';
+import type { SchemaObject } from '../src/types';
+import { requireArrayItemsSchema, requirePropertySchema } from './types';
 
 // ---------------------------------------------------------------------------
 // extractDescriptions
@@ -98,6 +99,65 @@ describe('extractDescriptions', () => {
     const result = extractZodDescriptions(schema);
     expect(result).not.toBeNull();
     expect(result!.properties.get('groups.members.id')).toBe('Member ID');
+  });
+
+  it('walks z.lazy() schemas without recursing forever', () => {
+    type Category = {
+      name: string;
+      children: Category[];
+    };
+
+    const categorySchema: z.ZodType<Category> = z.lazy(() =>
+      z.object({
+        name: z.string().describe('Category name'),
+        children: z.array(categorySchema),
+      }),
+    );
+
+    const result = extractZodDescriptions(categorySchema);
+    expect(result).toMatchInlineSnapshot(`
+      Object {
+        "properties": Map {
+          "name" => "Category name",
+        },
+      }
+    `);
+  });
+
+  it('walks deeper z.lazy() cycles without recursing forever', () => {
+    type Category = {
+      name: string;
+      children: Array<{
+        foo: {
+          label: string;
+          category: Category;
+        };
+      }>;
+    };
+
+    const categorySchema: z.ZodType<Category> = z.lazy(() =>
+      z.object({
+        name: z.string().describe('Category name'),
+        children: z.array(
+          z.object({
+            foo: z.object({
+              label: z.string().describe('Foo label'),
+              category: categorySchema,
+            }),
+          }),
+        ),
+      }),
+    );
+
+    const result = extractZodDescriptions(categorySchema);
+    expect(result).toMatchInlineSnapshot(`
+      Object {
+        "properties": Map {
+          "name" => "Category name",
+          "children.foo.label" => "Foo label",
+        },
+      }
+    `);
   });
 
   it('returns null when no descriptions exist', () => {
@@ -242,13 +302,13 @@ describe('collectRuntimeDescriptions', () => {
 
 describe('applyDescriptions', () => {
   it('applies top-level description', () => {
-    const schema: JsonSchema = { type: 'object', properties: {} };
+    const schema: SchemaObject = { type: 'object', properties: {} };
     applyDescriptions(schema, { self: 'A schema', properties: new Map() });
     expect(schema.description).toBe('A schema');
   });
 
   it('overwrites existing description (Zod .describe() takes priority)', () => {
-    const schema: JsonSchema = {
+    const schema: SchemaObject = {
       type: 'object',
       description: 'Existing',
       properties: {},
@@ -258,7 +318,7 @@ describe('applyDescriptions', () => {
   });
 
   it('applies property descriptions', () => {
-    const schema: JsonSchema = {
+    const schema: SchemaObject = {
       type: 'object',
       properties: {
         name: { type: 'string' },
@@ -270,12 +330,12 @@ describe('applyDescriptions', () => {
       ['age', 'User age'],
     ]);
     applyDescriptions(schema, { properties: props });
-    expect(schema.properties!['name']!.description).toBe('User name');
-    expect(schema.properties!['age']!.description).toBe('User age');
+    expect(requirePropertySchema(schema, 'name').description).toBe('User name');
+    expect(requirePropertySchema(schema, 'age').description).toBe('User age');
   });
 
   it('applies nested property descriptions', () => {
-    const schema: JsonSchema = {
+    const schema: SchemaObject = {
       type: 'object',
       properties: {
         address: {
@@ -288,13 +348,14 @@ describe('applyDescriptions', () => {
     };
     const props = new Map([['address.street', 'Street name']]);
     applyDescriptions(schema, { properties: props });
-    expect(
-      schema.properties!['address']!.properties!['street']!.description,
-    ).toBe('Street name');
+    const address = requirePropertySchema(schema, 'address');
+    expect(requirePropertySchema(address, 'street').description).toBe(
+      'Street name',
+    );
   });
 
   it('applies descriptions through array items', () => {
-    const schema: JsonSchema = {
+    const schema: SchemaObject = {
       type: 'object',
       properties: {
         children: {
@@ -314,13 +375,15 @@ describe('applyDescriptions', () => {
       ['children.age', 'Child age'],
     ]);
     applyDescriptions(schema, { properties: props });
-    const items = schema.properties!['children']!.items as JsonSchema;
-    expect(items.properties!['name']!.description).toBe('Child name');
-    expect(items.properties!['age']!.description).toBe('Child age');
+    const items = requireArrayItemsSchema(
+      requirePropertySchema(schema, 'children'),
+    );
+    expect(requirePropertySchema(items, 'name').description).toBe('Child name');
+    expect(requirePropertySchema(items, 'age').description).toBe('Child age');
   });
 
   it('applies description to array items via [] path', () => {
-    const schema: JsonSchema = {
+    const schema: SchemaObject = {
       type: 'array',
       items: {
         type: 'string',
@@ -328,11 +391,11 @@ describe('applyDescriptions', () => {
     };
     const props = new Map([['[]', 'A string item']]);
     applyDescriptions(schema, { properties: props });
-    expect((schema.items as JsonSchema).description).toBe('A string item');
+    expect(requireArrayItemsSchema(schema).description).toBe('A string item');
   });
 
   it('overwrites existing property descriptions (Zod takes priority)', () => {
-    const schema: JsonSchema = {
+    const schema: SchemaObject = {
       type: 'object',
       properties: {
         name: { type: 'string', description: 'Existing' },
@@ -340,6 +403,22 @@ describe('applyDescriptions', () => {
     };
     const props = new Map([['name', 'New']]);
     applyDescriptions(schema, { properties: props });
-    expect(schema.properties!['name']!.description).toBe('New');
+    expect(requirePropertySchema(schema, 'name').description).toBe('New');
+  });
+
+  it('wraps referenced property schemas in allOf when applying leaf descriptions', () => {
+    const schema: SchemaObject = {
+      type: 'object',
+      properties: {
+        profile: { $ref: '#/components/schemas/Profile' },
+      },
+    };
+    const props = new Map([['profile', 'Profile details']]);
+    applyDescriptions(schema, { properties: props });
+
+    const profile = requirePropertySchema(schema, 'profile');
+    expect(profile.$ref).toBeUndefined();
+    expect(profile.allOf).toEqual([{ $ref: '#/components/schemas/Profile' }]);
+    expect(profile.description).toBe('Profile details');
   });
 });

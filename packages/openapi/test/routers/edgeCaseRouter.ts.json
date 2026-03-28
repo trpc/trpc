@@ -796,6 +796,54 @@
           }
         }
       }
+    },
+    "/literalComputedKey": {
+      "get": {
+        "operationId": "literalComputedKey",
+        "tags": [
+          "literalComputedKey"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "x-trace-id": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "x-trace-id"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -823,18 +871,6 @@
         },
         "required": [
           "valid"
-        ],
-        "additionalProperties": false
-      },
-      "AsyncIterable": {
-        "type": "object",
-        "properties": {
-          "__@asyncIterator@5456": {
-            "type": "object"
-          }
-        },
-        "required": [
-          "__@asyncIterator@5456"
         ],
         "additionalProperties": false
       },
