@@ -9,7 +9,7 @@ description: >
   initTRPC instance. Each service runs its own standalone/Express/Fastify server.
 type: composition
 library: trpc
-library_version: '11.15.1'
+library_version: '11.16.0'
 requires:
   - server-setup
   - client-setup

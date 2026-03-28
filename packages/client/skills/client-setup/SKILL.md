@@ -7,7 +7,7 @@ description: >
   inferRouterOutputs. AbortController signal support. TRPCClientError typing.
 type: core
 library: trpc
-library_version: '11.15.1'
+library_version: '11.16.0'
 requires:
   - server-setup
 sources:
