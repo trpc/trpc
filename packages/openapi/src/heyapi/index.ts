@@ -1,7 +1,4 @@
-import type {
-  FetchClient as HeyApiFetchClient,
-  UserConfig,
-} from '@hey-api/openapi-ts';
+import type { Plugins } from '@hey-api/openapi-ts';
 import type {
   TRPCCombinedDataTransformer,
   TRPCDataTransformer,
@@ -11,13 +8,7 @@ export type DataTransformerOptions =
   | TRPCDataTransformer
   | TRPCCombinedDataTransformer;
 
-type HeyAPIResolvers = Exclude<
-  Extract<
-    Exclude<UserConfig['plugins'], undefined | string>[number],
-    { name: '@hey-api/typescript' }
-  >['~resolvers'],
-  undefined
->;
+export type HeyAPIResolvers = Plugins.HeyApiTypeScript.Resolvers;
 
 function resolveTransformer(
   transformer: DataTransformerOptions,
@@ -32,7 +23,9 @@ export interface TRPCHeyApiClientOptions {
   transformer?: DataTransformerOptions;
 }
 
-export type HeyApiConfig = ReturnType<HeyApiFetchClient['getConfig']>;
+export type HeyApiConfig = ReturnType<
+  Plugins.HeyApiClientFetch.Client['getConfig']
+>;
 export type TRPCHeyApiClientConfig = Required<
   Pick<HeyApiConfig, 'querySerializer'>
 > &
@@ -159,7 +152,7 @@ export function createTRPCErrorInterceptor(
  * ```
  */
 export function configureTRPCHeyApiClient(
-  client: HeyApiFetchClient,
+  client: Plugins.HeyApiClientFetch.Client,
   opts: TRPCHeyApiClientOptions &
     Omit<HeyApiConfig, keyof TRPCHeyApiClientConfig>,
 ) {

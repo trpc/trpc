@@ -1716,8 +1716,8 @@ importers:
         version: 4.2.1
     devDependencies:
       '@hey-api/openapi-ts':
-        specifier: ^0.94.1
-        version: 0.94.1(magicast@0.5.2)(typescript@5.9.2)
+        specifier: ^0.94.5
+        version: 0.94.5(magicast@0.5.2)(typescript@5.9.2)
       '@types/node':
         specifier: ^22.13.5
         version: 22.19.11
