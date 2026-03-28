@@ -632,7 +632,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         serialize: (data) => config.transformer.output.serialize(data),
         onError: (cause) => {
           opts.onError?.({
-            error: getTRPCErrorFromUnknown(cause),
+            error: getTRPCErrorFromUnknown(cause.error),
             path: undefined,
             input: undefined,
             ctx: ctxManager.valueOrUndefined(),
