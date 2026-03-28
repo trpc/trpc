@@ -874,9 +874,6 @@
         ],
         "additionalProperties": false
       },
-      "AsyncIterable": {
-        "type": "object"
-      },
       "DefaultErrorShape": {
         "type": "object",
         "properties": {

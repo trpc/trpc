@@ -58,9 +58,6 @@ export type FileSystemEntry = {
 
 export type CategoryMap = {
     name: string;
-    /**
-     * Construct a type with a set of properties K of type T
-     */
     children: {
         [key: string]: CategoryMap;
     };

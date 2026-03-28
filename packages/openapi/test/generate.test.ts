@@ -1,11 +1,9 @@
 import { existsSync } from 'node:fs';
 import http from 'node:http';
 import * as path from 'node:path';
-import { getLanguageService, LogLevel } from '@swagger-api/apidom-ls';
 import { createHTTPHandler } from '@trpc/server/adapters/standalone';
 import superjson from 'superjson';
 import { describe, expect, expectTypeOf, it } from 'vitest';
-import { TextDocument } from 'vscode-languageserver-textdocument';
 import { generateOpenAPIDocument } from '../src/generate';
 import {
   configureTRPCHeyApiClient,
@@ -41,24 +39,7 @@ import {
   requireSchema,
   requireSchemaObject,
 } from './types';
-
-const languageService = getLanguageService({
-  logLevel: LogLevel.ERROR,
-});
-
-async function validateOpenAPI(spec: string) {
-  const document = TextDocument.create('file:///spec', 'json', 1, spec);
-  const diagnostics = await languageService.doValidation(document);
-
-  return diagnostics.map((d) => ({
-    line: d.range.start.line + 1,
-    character: d.range.start.character + 1,
-    message: d.message,
-    severity: d.severity,
-    code: d.code,
-    source: d.source,
-  }));
-}
+import { validateOpenApi } from './validateOpenApi';
 
 const routersDir = path.resolve(__dirname, 'routers');
 const appRouterPath = path.resolve(routersDir, 'appRouter.ts');
@@ -99,6 +80,13 @@ describe('generateOpenAPIDocument', () => {
       });
     });
 
+    it('produces a spec with no validation errors when validated', async () => {
+      const spec = JSON.stringify(doc, null, 2);
+      const problems = await validateOpenApi(spec);
+
+      expect(JSON.stringify(problems, null, 2)).toEqual('[]');
+    });
+
     it('returns a valid tRPC OpenAPI 3.1 document', () => {
       const paths = doc.paths ?? {};
 
@@ -114,13 +102,6 @@ describe('generateOpenAPIDocument', () => {
         expect(key).not.toMatch(/..+\/.+/);
       }
       expect(Object.keys(paths)).toContain('/user.create');
-    });
-
-    it('produces a spec with no validation errors when validated', async () => {
-      const spec = JSON.stringify(doc, null, 2);
-      const problems = await validateOpenAPI(spec);
-
-      expect(JSON.stringify(problems, null, 2)).toEqual('[]');
     });
 
     it('serialises the error shape from errorFormatter into components', () => {
@@ -550,6 +531,12 @@ describe('generateOpenAPIDocument', () => {
       });
     });
 
+    it('produces a valid OpenAPI spec', async () => {
+      const spec = JSON.stringify(doc, null, 2);
+      const problems = await validateOpenApi(spec);
+      expect(problems).toEqual([]);
+    });
+
     it('serialises the custom error shape into the error response', () => {
       const envelopeSchema = getErrorEnvelopeSchema(doc);
 
@@ -610,12 +597,6 @@ describe('generateOpenAPIDocument', () => {
       expect(dataSchema.properties).toHaveProperty('code');
       expect(dataSchema.properties).toHaveProperty('httpStatus');
     });
-
-    it('produces a valid OpenAPI spec', async () => {
-      const spec = JSON.stringify(doc, null, 2);
-      const problems = await validateOpenAPI(spec);
-      expect(problems).toEqual([]);
-    });
   });
 
   describe('procedure descriptions from JSDoc', () => {
@@ -633,6 +614,12 @@ describe('generateOpenAPIDocument', () => {
       });
     });
 
+    it('produces a valid OpenAPI spec', async () => {
+      const spec = JSON.stringify(doc, null, 2);
+      const problems = await validateOpenApi(spec);
+      expect(problems).toEqual([]);
+    });
+
     it('extracts JSDoc from procedure properties into operation description', () => {
       const helloOp = requireOperation(doc, 'hello');
       expect(helloOp.description).toBe('Hello zod Procedure details');
@@ -641,12 +628,6 @@ describe('generateOpenAPIDocument', () => {
     it('extracts JSDoc from nested subrouter procedure properties', () => {
       const nestedOp = requireOperation(doc, 'subrouter.hello');
       expect(nestedOp.description).toBe('Hello zod Procedure details');
-    });
-
-    it('produces a valid OpenAPI spec', async () => {
-      const spec = JSON.stringify(doc, null, 2);
-      const problems = await validateOpenAPI(spec);
-      expect(problems).toEqual([]);
     });
   });
 
@@ -665,6 +646,12 @@ describe('generateOpenAPIDocument', () => {
         title: 'Descriptions API',
         version: '1.0.0',
       });
+    });
+
+    it('produces a valid OpenAPI spec', async () => {
+      const spec = JSON.stringify(doc, null, 2);
+      const problems = await validateOpenApi(spec);
+      expect(problems).toEqual([]);
     });
 
     it('overlays Zod .describe() strings onto input schemas', () => {
@@ -748,12 +735,6 @@ describe('generateOpenAPIDocument', () => {
       const helloOp = requireOperation(doc, 'hello');
       expect(helloOp.description).toBe('Hello zod Procedure details');
     });
-
-    it('produces a valid OpenAPI spec', async () => {
-      const spec = JSON.stringify(doc, null, 2);
-      const problems = await validateOpenAPI(spec);
-      expect(problems).toEqual([]);
-    });
   });
 
   describe('inline type JSDoc descriptions', () => {
@@ -769,6 +750,12 @@ describe('generateOpenAPIDocument', () => {
         title: 'Descriptions API',
         version: '1.0.0',
       });
+    });
+
+    it('produces a valid OpenAPI spec', async () => {
+      const spec = JSON.stringify(doc, null, 2);
+      const problems = await validateOpenApi(spec);
+      expect(problems).toEqual([]);
     });
 
     it('extracts JSDoc from inline input type properties', () => {
@@ -879,12 +866,6 @@ describe('generateOpenAPIDocument', () => {
       });
 
       expect(outputSchema.description).toBe('Array of output strings');
-    });
-
-    it('produces a valid OpenAPI spec', async () => {
-      const spec = JSON.stringify(doc, null, 2);
-      const problems = await validateOpenAPI(spec);
-      expect(problems).toEqual([]);
     });
   });
 

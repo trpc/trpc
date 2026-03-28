@@ -89,6 +89,7 @@
     "tsdown": "0.12.7",
     "typescript": "^5.9.2",
     "vscode-languageserver-textdocument": "^1.0.12",
+    "vscode-languageserver-types": "^3.17.5",
     "zod": "^4.2.1"
   },
   "peerDependencies": {

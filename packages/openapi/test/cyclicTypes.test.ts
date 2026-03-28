@@ -12,6 +12,7 @@ import {
   requireSchema,
   requireSchemaObject,
 } from './types';
+import { validateOpenApi } from './validateOpenApi';
 
 const routerPath = path.resolve(__dirname, 'routers/cyclicTypesRouter.ts');
 
@@ -24,6 +25,13 @@ describe('cyclic types', () => {
       title: 'Cyclic Types API',
       version: '1.0.0',
     });
+  });
+
+  it('produces a spec with no validation errors when validated', async () => {
+    const spec = JSON.stringify(doc, null, 2);
+    const problems = await validateOpenApi(spec);
+
+    expect(JSON.stringify(problems, null, 2)).toEqual('[]');
   });
 
   // ----------------------------------------------------------------
@@ -208,6 +216,7 @@ describe('cyclic types', () => {
       const children = catMap.properties?.['children'];
       if (!children || isRef(children)) throw new Error('unexpected');
       expect(children.type).toBe('object');
+      expect(children.description).toBeUndefined();
       expect(children.additionalProperties).toEqual({
         $ref: '#/components/schemas/CategoryMap',
       });

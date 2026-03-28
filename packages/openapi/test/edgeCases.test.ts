@@ -15,6 +15,7 @@ import {
   requireResponseSchema,
   requireSchemaObject,
 } from './types';
+import { validateOpenApi } from './validateOpenApi';
 
 const routersDir = path.resolve(__dirname, 'routers');
 const edgeCaseRouterPath = path.resolve(routersDir, 'edgeCaseRouter.ts');
@@ -29,6 +30,13 @@ describe('generateOpenAPIDocument edge cases', () => {
       title: 'Edge Case API',
       version: '1.0.0',
     });
+  });
+
+  it('produces a valid OpenAPI document', async () => {
+    const spec = JSON.stringify(doc, null, 2);
+    const problems = await validateOpenApi(spec);
+
+    expect(JSON.stringify(problems, null, 2)).toEqual('[]');
   });
 
   it('handles bigint types as integer schema', () => {
@@ -67,6 +75,10 @@ describe('generateOpenAPIDocument edge cases', () => {
 
   it('excludes subscriptions from OpenAPI paths', () => {
     expect(doc.paths?.['/sub']).toBeUndefined();
+  });
+
+  it('does not emit component schemas for excluded subscription procedures', () => {
+    expect(doc.components?.schemas?.['AsyncIterable']).toBeUndefined();
   });
 
   it('handles deeply nested routers', () => {
@@ -218,6 +230,13 @@ describe('generateOpenAPIDocument default options', () => {
 
   beforeAll(async () => {
     doc = await generateOpenAPIDocument(appRouterPath);
+  });
+
+  it('produces a valid OpenAPI document', async () => {
+    const spec = JSON.stringify(doc, null, 2);
+    const problems = await validateOpenApi(spec);
+
+    expect(JSON.stringify(problems, null, 2)).toEqual('[]');
   });
 
   it('uses default title and version when not provided', () => {

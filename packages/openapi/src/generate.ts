@@ -1,3 +1,4 @@
+import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as ts from 'typescript';
 import {
@@ -813,7 +814,7 @@ interface WalkCtx {
 function getProcedureTypeName(
   defType: ts.Type,
   checker: ts.TypeChecker,
-): string | null {
+): ProcedureInfo['type'] | null {
   const typeSym = defType.getProperty('type');
   if (!typeSym) {
     return null;
@@ -853,6 +854,10 @@ interface ProcedureDef {
   path: string;
   description?: string;
   symbol: ts.Symbol;
+}
+
+function shouldIncludeProcedureInOpenAPI(type: ProcedureInfo['type']): boolean {
+  return type !== 'subscription';
 }
 
 function getProcedureInputTypeName(type: ts.Type, path: string): string {
@@ -1079,6 +1084,48 @@ function getJsDocComment(
   sym: ts.Symbol,
   checker: ts.TypeChecker,
 ): string | undefined {
+  const isWithinPath = (candidate: string, parent: string): boolean => {
+    const rel = path.relative(parent, candidate);
+    return rel !== '' && !rel.startsWith('..') && !path.isAbsolute(rel);
+  };
+
+  const normalize = (filePath: string): string => filePath.replace(/\\/g, '/');
+  const workspaceRoot = normalize(process.cwd());
+
+  const declarations = sym.declarations ?? [];
+  const isExternalNodeModulesDeclaration =
+    declarations.length > 0 &&
+    declarations.every((declaration) => {
+      const sourceFile = declaration.getSourceFile();
+      if (!sourceFile.isDeclarationFile) {
+        return false;
+      }
+
+      const declarationPath = normalize(sourceFile.fileName);
+      if (!declarationPath.includes('/node_modules/')) {
+        return false;
+      }
+
+      try {
+        const realPath = normalize(fs.realpathSync.native(sourceFile.fileName));
+        // Keep JSDoc for workspace packages linked into node_modules
+        // (e.g. monorepos using pnpm/yarn workspaces).
+        if (
+          isWithinPath(realPath, workspaceRoot) &&
+          !realPath.includes('/node_modules/')
+        ) {
+          return false;
+        }
+      } catch {
+        // Fall back to treating the declaration as external.
+      }
+
+      return true;
+    });
+  if (isExternalNodeModulesDeclaration) {
+    return undefined;
+  }
+
   const parts = sym.getDocumentationComment(checker);
   if (parts.length === 0) {
     return undefined;
@@ -1119,6 +1166,10 @@ function walkType(opts: WalkTypeOpts): void {
 
   const procedureTypeName = getProcedureTypeName(defType, checker);
   if (procedureTypeName) {
+    if (!shouldIncludeProcedureInOpenAPI(procedureTypeName)) {
+      return;
+    }
+
     extractProcedure(
       {
         defType,
@@ -1361,7 +1412,7 @@ function buildOpenAPIDocument(
   const paths: PathsObject = {};
 
   for (const proc of procedures) {
-    if (proc.type === 'subscription') {
+    if (!shouldIncludeProcedureInOpenAPI(proc.type)) {
       continue;
     }
 

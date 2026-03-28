@@ -863,8 +863,7 @@
             "type": "object",
             "additionalProperties": {
               "$ref": "#/components/schemas/CategoryMap"
-            },
-            "description": "Construct a type with a set of properties K of type T"
+            }
           }
         },
         "required": [

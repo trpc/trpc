@@ -1140,15 +1140,13 @@
                               "type": "object",
                               "additionalProperties": {
                                 "type": "string"
-                              },
-                              "description": "Construct a type with a set of properties K of type T"
+                              }
                             },
                             "scores": {
                               "type": "object",
                               "additionalProperties": {
                                 "type": "number"
-                              },
-                              "description": "Construct a type with a set of properties K of type T"
+                              }
                             }
                           },
                           "required": [
@@ -1189,15 +1187,13 @@
                       "type": "object",
                       "additionalProperties": {
                         "type": "string"
-                      },
-                      "description": "Construct a type with a set of properties K of type T"
+                      }
                     },
                     "scores": {
                       "type": "object",
                       "additionalProperties": {
                         "type": "number"
-                      },
-                      "description": "Construct a type with a set of properties K of type T"
+                      }
                     }
                   },
                   "required": [
@@ -2373,8 +2369,7 @@
                   },
                   "metadata": {
                     "type": "object",
-                    "additionalProperties": {},
-                    "description": "Construct a type with a set of properties K of type T"
+                    "additionalProperties": {}
                   }
                 },
                 "required": [
@@ -2938,8 +2933,7 @@
                           "type": "object",
                           "additionalProperties": {
                             "type": "number"
-                          },
-                          "description": "Construct a type with a set of properties K of type T"
+                          }
                         }
                       },
                       "required": [
@@ -3378,8 +3372,7 @@
                               "type": "object",
                               "additionalProperties": {
                                 "type": "string"
-                              },
-                              "description": "Construct a type with a set of properties K of type T"
+                              }
                             },
                             "active": {
                               "type": "boolean"
@@ -3913,8 +3906,7 @@
                                   "type": "object",
                                   "additionalProperties": {
                                     "type": "string"
-                                  },
-                                  "description": "Construct a type with a set of properties K of type T"
+                                  }
                                 },
                                 {
                                   "type": "null"
