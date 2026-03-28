@@ -84,7 +84,7 @@ jobs:
         run: |
           if [[ -n "$(git status --porcelain -- packages/openapi/test/routers/)" ]]; then
             echo "Generated files in packages/openapi/test/routers/ are out of date."
-            echo "Run the openapi codegen locally and commit the resulting changes."
+            echo "Run 'pnpm -C packages/openapi codegen' locally and commit the resulting changes."
             git status --short -- packages/openapi/test/routers/
             exit 1
           fi
