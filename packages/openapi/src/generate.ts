@@ -1084,13 +1084,7 @@ function getJsDocComment(
   sym: ts.Symbol,
   checker: ts.TypeChecker,
 ): string | undefined {
-  const isWithinPath = (candidate: string, parent: string): boolean => {
-    const rel = path.relative(parent, candidate);
-    return rel !== '' && !rel.startsWith('..') && !path.isAbsolute(rel);
-  };
-
   const normalize = (filePath: string): string => filePath.replace(/\\/g, '/');
-  const workspaceRoot = normalize(process.cwd());
 
   const declarations = sym.declarations ?? [];
   const isExternalNodeModulesDeclaration =
@@ -1109,11 +1103,9 @@ function getJsDocComment(
       try {
         const realPath = normalize(fs.realpathSync.native(sourceFile.fileName));
         // Keep JSDoc for workspace packages linked into node_modules
-        // (e.g. monorepos using pnpm/yarn workspaces).
-        if (
-          isWithinPath(realPath, workspaceRoot) &&
-          !realPath.includes('/node_modules/')
-        ) {
+        // (e.g. monorepos using pnpm/yarn workspaces). The resolved target
+        // may sit outside the current cwd, so avoid cwd-based checks here.
+        if (!realPath.includes('/node_modules/')) {
           return false;
         }
       } catch {
