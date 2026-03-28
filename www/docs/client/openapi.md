@@ -76,38 +76,6 @@ const doc = generateOpenAPIDocument('./src/server/router.ts', {
 
 The generator statically analyses your router's TypeScript types — it never executes your code.
 
-## API changelog and breaking-change checks (oasdiff)
-
-After generating OpenAPI specs, you can compare two versions with [`oasdiff`](https://github.com/oasdiff/oasdiff).
-
-For installation options (Homebrew, Docker, binaries, etc), see the official docs:
-
-- [oasdiff install docs](https://github.com/oasdiff/oasdiff/blob/main/docs/README.md)
-- [oasdiff changelog and breaking checks](https://github.com/oasdiff/oasdiff/blob/main/docs/BREAKING-CHANGES.md)
-
-Using this you can quick generate changelogs or detect inadvertent breaking changes to APIs to help plan and coordinate releases
-
-```sh
-# Get a complete changelog including minor and breaking changes
-$ oasdiff changelog packages/openapi/test/routers/superjsonRouter.openapi.json /tmp/superjsonRouter.openapi.next.json
-
-3 changes: 2 error, 0 warning, 1 info
-error [new-required-request-property] in API POST /createEvent
-  added the new required request property 'location'
-error [api-path-removed-without-deprecation] in API GET /getBigInt
-  api path removed without deprecation
-info [endpoint-added] in API GET /health
-  endpoint added
-
-# Get a list of breaking changes if any
-$ oasdiff breaking packages/openapi/test/routers/superjsonRouter.openapi.json /tmp/superjsonRouter.openapi.next.json
-2 changes: 2 error, 0 warning, 0 info
-error [new-required-request-property] in API POST /createEvent
-  added the new required request property 'location'
-error [api-path-removed-without-deprecation] in API GET /getBigInt
-  api path removed without deprecation
-```
-
 ## Generate a client from the spec
 
 Any OpenAPI client generator should work, but the most tested integration is with [Hey API](https://heyapi.dev/openapi-ts/get-started).
@@ -222,13 +190,13 @@ To integrate correctly with tRPC's protocol, you need to set up your generated c
 
 See the [Hey API config source](https://github.com/trpc/trpc/blob/f346e9bb97ff3c8a7e874f59110a47730293097a/packages/openapi/src/heyapi/index.ts) for a complete reference implementation.
 
-## Transformers
+### Transformers
 
 tRPC [data transformers](/docs/server/data-transformers) let you send rich types like `Date`, `Map`, `Set`, and `BigInt` over the wire. When using the OpenAPI client, the same transformer must be configured on both the server and client so that inputs are serialised and outputs are deserialised correctly.
 
 Any transformer that implements the tRPC `DataTransformer` interface (`serialize` / `deserialize`) works with `configureTRPCHeyApiClient`. Below are some tested options.
 
-### SuperJSON
+#### SuperJSON
 
 The most popular transformer for TypeScript-to-TypeScript setups. Handles `Date`, `Map`, `Set`, `BigInt`, `RegExp`, and more.
 
@@ -256,7 +224,7 @@ configureTRPCHeyApiClient(client, {
 
 See the [superjson test](https://github.com/trpc/trpc/blob/main/packages/openapi/test/generate.test.ts) for a full end-to-end example.
 
-### MongoDB Extended JSON v2
+#### MongoDB Extended JSON v2
 
 [EJSON](https://www.mongodb.com/docs/manual/reference/mongodb-extended-json/#mongodb-extended-json-v2-usage) is a good choice when you need cross-language support. The `bson` npm package provides `EJSON.serialize` / `EJSON.deserialize` which map directly to a tRPC `DataTransformer`.
 
@@ -289,7 +257,7 @@ configureTRPCHeyApiClient(client, {
 
 See the [MongoDB EJSON test](https://github.com/trpc/trpc/blob/main/packages/openapi/test/mongoEjson.test.ts) for a full end-to-end example.
 
-### Amazon Ion
+#### Amazon Ion
 
 [Amazon Ion](https://amazon-ion.github.io/ion-docs/) is a richly-typed data format with broad language support. It doesn't directly support the `TRPCDataTransformer` interface and requires a bit of boilerplate to make work with tRPC in JS/TS, but may be a good choice for your own system.
 
@@ -301,7 +269,7 @@ pnpm add ion-js
 
 See the [Amazon Ion test](https://github.com/trpc/trpc/blob/main/packages/openapi/test/amazonIon.test.ts) for the transformer implementation, boilerplate, and a full end-to-end example.
 
-### Writing a custom transformer
+#### Writing a custom transformer
 
 Any object with `serialize` and `deserialize` methods works:
 
@@ -320,6 +288,39 @@ const myTransformer: TRPCDataTransformer = {
 
 Pass it to both `initTRPC.create({ transformer })` on the server and `configureTRPCHeyApiClient(client, { transformer })` on the client. See the [data transformers docs](/docs/server/data-transformers) for more details.
 
-## Full example
+### Full example
 
 For a complete, runnable project that ties all of these steps together, see the [openapi-codegen example](https://github.com/trpc/trpc/tree/main/examples/openapi-codegen).
+
+## API changelog and breaking-change checks with `oasdiff`
+
+After generating OpenAPI specs, you can compare two versions with [`oasdiff`](https://github.com/oasdiff/oasdiff).
+
+For installation options (Homebrew, Docker, binaries, etc), see the official docs:
+
+- [oasdiff install docs](https://github.com/oasdiff/oasdiff/blob/main/docs/README.md)
+- [oasdiff changelog and breaking checks](https://github.com/oasdiff/oasdiff/blob/main/docs/BREAKING-CHANGES.md)
+
+Using this you can quick generate changelogs or detect inadvertent breaking changes to APIs to help plan and coordinate releases
+
+```sh
+# Get a complete changelog including minor and breaking changes
+$ oasdiff changelog packages/openapi/test/routers/superjsonRouter.openapi.json /tmp/superjsonRouter.openapi.next.json
+
+3 changes: 2 error, 0 warning, 1 info
+error [new-required-request-property] in API POST /createEvent
+  added the new required request property 'location'
+error [api-path-removed-without-deprecation] in API GET /getBigInt
+  api path removed without deprecation
+info [endpoint-added] in API GET /health
+  endpoint added
+
+# Get a list of breaking changes if any
+$ oasdiff breaking packages/openapi/test/routers/superjsonRouter.openapi.json /tmp/superjsonRouter.openapi.next.json
+
+2 changes: 2 error, 0 warning, 0 info
+error [new-required-request-property] in API POST /createEvent
+  added the new required request property 'location'
+error [api-path-removed-without-deprecation] in API GET /getBigInt
+  api path removed without deprecation
+```
