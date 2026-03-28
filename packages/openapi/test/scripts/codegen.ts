@@ -9,6 +9,7 @@
  */
 import { createHash } from 'node:crypto';
 import {
+  existsSync,
   mkdirSync,
   readdirSync,
   readFileSync,
@@ -30,9 +31,11 @@ const cacheFilePath = path.resolve(cacheDir, 'codegen.json');
 const CACHE_VERSION = 1;
 const CACHE_INPUT_PATTERNS = [
   'package.json',
+  '../../pnpm-lock.yaml',
   'src/**',
+  '../server/src/**',
+  'test/scripts/**',
   '$router',
-  '../server/src',
 ] as const;
 
 type CodegenCache = {
@@ -79,7 +82,7 @@ function hashFiles(paths: string[]): string {
 
 function getRouterInputsHash(routerPath: string): string {
   const inputPaths = CACHE_INPUT_PATTERNS.flatMap((pattern) => {
-    if ((pattern === '$router', '../server/src')) {
+    if (pattern === '$router') {
       return routerPath;
     }
 
@@ -92,6 +95,10 @@ function getRouterInputsHash(routerPath: string): string {
   });
 
   return hashFiles(inputPaths);
+}
+
+function hasExpectedArtifacts(docPath: string, outputDir: string): boolean {
+  return existsSync(docPath) && existsSync(outputDir);
 }
 
 function readCache(): CodegenCache | null {
@@ -118,15 +125,18 @@ export async function codegen() {
   for (const file of routerFiles) {
     const stem = path.basename(file, '.ts');
     const exportName = getExportName(stem);
-    const routerPath = path.resolve(routersDir, file);
+    const routerPath = file;
+    const docPath = path.resolve(routersDir, `${stem}.ts.json`);
     const outputDir = path.resolve(routersDir, `${stem}-heyapi`);
     const routerInputsHash = getRouterInputsHash(routerPath);
+    const artifactsExist = hasExpectedArtifacts(docPath, outputDir);
 
     nextCache.routers[stem] = routerInputsHash;
 
     if (
       existingCache?.version === CACHE_VERSION &&
-      existingCache.routers[stem] === routerInputsHash
+      existingCache.routers[stem] === routerInputsHash &&
+      artifactsExist
     ) {
       console.log(`[openapi codegen] Cache hit for ${file}, skipping`);
       continue;
@@ -135,7 +145,6 @@ export async function codegen() {
     rmSync(outputDir, { recursive: true, force: true });
 
     const doc = await generateOpenAPIDocument(routerPath, { exportName });
-    const docPath = path.resolve(routersDir, `${stem}.ts.json`);
     writeFileSync(docPath, JSON.stringify(doc, null, 2) + '\n');
 
     await createClient({
