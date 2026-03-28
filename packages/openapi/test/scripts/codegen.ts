@@ -3,7 +3,8 @@
  * Generates hey-api SDK clients from all router files in test/routers/.
  * Used by both vitest globalSetup and the postinstall script.
  *
- * Convention: each router file `fooBar.ts` must export a router named `FooBar`
+ * Convention: each router file `fooBar.router.ts` must export a router named
+ * `FooBar`
  * (filename stem with first letter uppercased). The generated hey-api client
  * is output to `fooBar-heyapi/` alongside the source file.
  */
@@ -62,7 +63,7 @@ function listFilesRecursively(dir: string): string[] {
 
 function getRouterFiles(): string[] {
   return readdirSync(routersDir)
-    .filter((file) => file.endsWith('.ts') && !file.endsWith('.d.ts'))
+    .filter((file) => file.endsWith('.router.ts'))
     .sort()
     .map((file) => path.resolve(routersDir, file));
 }
@@ -123,10 +124,10 @@ export async function codegen() {
   };
 
   for (const file of routerFiles) {
-    const stem = path.basename(file, '.ts');
+    const stem = path.basename(file, '.router.ts');
     const exportName = getExportName(stem);
     const routerPath = file;
-    const docPath = path.resolve(routersDir, `${stem}.ts.json`);
+    const docPath = path.resolve(routersDir, `${stem}.openapi.json`);
     const outputDir = path.resolve(routersDir, `${stem}-heyapi`);
     const routerInputsHash = getRouterInputsHash(routerPath);
     const artifactsExist = hasExpectedArtifacts(docPath, outputDir);

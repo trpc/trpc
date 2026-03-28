@@ -9,7 +9,7 @@ export default mergeConfig(
 
       // force a rerun of globalSetup whenever these files change under watch mode
       forceRerunTriggers: [
-        './test/routers/**/*.ts',
+        './test/routers/**/*.router.ts',
         './src/**/*.ts',
         './package.json',
       ],

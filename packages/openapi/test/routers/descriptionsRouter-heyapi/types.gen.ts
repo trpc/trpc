@@ -23,9 +23,12 @@ export type HelloData = {
     body?: never;
     path?: never;
     query: {
+        /**
+         * Input to the procedure
+         */
         input: {
             /**
-             * doc comment on name
+             * Name of the user
              */
             name: string;
         };
@@ -80,16 +83,25 @@ export type SubrouterHelloData = {
     body?: never;
     path?: never;
     query: {
+        /**
+         * Input to the procedure
+         */
         input: {
             /**
-             * doc comment on name
+             * Name of the user
              */
             name: string;
             /**
-             * children list
+             * An array of children
              */
             children: Array<{
+                /**
+                 * Child name
+                 */
                 child: string;
+                /**
+                 * Child gender
+                 */
                 gender: 'male' | 'female' | 'other';
             }>;
         };
@@ -141,6 +153,9 @@ export type SubrouterHelloResponses = {
 export type SubrouterHelloResponse = SubrouterHelloResponses[keyof SubrouterHelloResponses];
 
 export type DirectArrayData = {
+    /**
+     * Array of inputs strings
+     */
     body: Array<string>;
     path?: never;
     query?: never;
@@ -183,6 +198,9 @@ export type DirectArrayResponses = {
      */
     200: {
         result: {
+            /**
+             * Array of output strings
+             */
             data: Array<string>;
         };
     };
@@ -195,7 +213,13 @@ export type ReferencedChildrenData = {
     path?: never;
     query: {
         input: {
+            /**
+             * Child collection
+             */
             children: Array<{
+                /**
+                 * Child name
+                 */
                 name: string;
             }>;
         };
@@ -294,6 +318,9 @@ export type ReferencedChildLeafOutputResponses = {
     200: {
         result: {
             data: {
+                /**
+                 * Recursive child
+                 */
                 child: RecursiveLeafNode;
             };
         };

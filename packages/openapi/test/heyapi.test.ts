@@ -7,12 +7,12 @@ import {
   configureTRPCHeyApiClient,
   createTRPCHeyApiClientConfig,
 } from '../src/heyapi';
-import { ErrorFormatterRouter } from './routers/errorFormatterRouter';
 import { client as errorFormatterClient } from './routers/errorFormatterRouter-heyapi/client.gen';
 import { Sdk as ErrorFormatterSdk } from './routers/errorFormatterRouter-heyapi/sdk.gen';
-import { SuperjsonRouter } from './routers/superjsonRouter';
+import { ErrorFormatterRouter } from './routers/errorFormatterRouter.router';
 import { client as superjsonClient } from './routers/superjsonRouter-heyapi/client.gen';
 import { Sdk as SuperjsonSdk } from './routers/superjsonRouter-heyapi/sdk.gen';
+import { SuperjsonRouter } from './routers/superjsonRouter.router';
 
 describe('createTRPCHeyApiClientConfig', () => {
   describe('without transformer', () => {

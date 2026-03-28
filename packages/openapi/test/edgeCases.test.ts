@@ -18,8 +18,8 @@ import {
 import { validateOpenApi } from './validateOpenApi';
 
 const routersDir = path.resolve(__dirname, 'routers');
-const edgeCaseRouterPath = path.resolve(routersDir, 'edgeCaseRouter.ts');
-const appRouterPath = path.resolve(routersDir, 'appRouter.ts');
+const edgeCaseRouterPath = path.resolve(routersDir, 'edgeCaseRouter.router.ts');
+const appRouterPath = path.resolve(routersDir, 'appRouter.router.ts');
 
 describe('generateOpenAPIDocument edge cases', () => {
   let doc: Document;
@@ -245,7 +245,7 @@ describe('generateOpenAPIDocument default options', () => {
   });
 
   it('uses default exportName AppRouter', () => {
-    // appRouter.ts exports AppRouter, so default should work
+    // appRouter.router.ts exports AppRouter, so default should work
     expect(doc.paths).toHaveProperty('/greeting');
   });
 

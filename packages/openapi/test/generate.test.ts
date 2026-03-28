@@ -10,7 +10,6 @@ import {
   createTRPCHeyApiClientConfig,
 } from '../src/heyapi';
 import type { Document } from '../src/types';
-import { AppRouter } from './routers/appRouter';
 import { client as heyapiClient } from './routers/appRouter-heyapi/client.gen';
 import { Sdk as HeyapiSdk } from './routers/appRouter-heyapi/sdk.gen';
 import type {
@@ -22,9 +21,10 @@ import type {
   GreetingResponses,
   UserProfile as HeyApiUserProfile,
 } from './routers/appRouter-heyapi/types.gen';
-import { SuperjsonRouter } from './routers/superjsonRouter';
+import { AppRouter } from './routers/appRouter.router';
 import { client as superjsonClient } from './routers/superjsonRouter-heyapi/client.gen';
 import { Sdk as SuperjsonSdk } from './routers/superjsonRouter-heyapi/sdk.gen';
+import { SuperjsonRouter } from './routers/superjsonRouter.router';
 import {
   getSchemas,
   isArraySchema,
@@ -42,12 +42,15 @@ import {
 import { validateOpenApi } from './validateOpenApi';
 
 const routersDir = path.resolve(__dirname, 'routers');
-const appRouterPath = path.resolve(routersDir, 'appRouter.ts');
+const appRouterPath = path.resolve(routersDir, 'appRouter.router.ts');
 const errorFormatterRouterPath = path.resolve(
   routersDir,
-  'errorFormatterRouter.ts',
+  'errorFormatterRouter.router.ts',
 );
-const superjsonRouterPath = path.resolve(routersDir, 'superjsonRouter.ts');
+const superjsonRouterPath = path.resolve(
+  routersDir,
+  'superjsonRouter.router.ts',
+);
 
 function getErrorEnvelopeSchema(doc: Document) {
   return requireSchemaObject(
@@ -602,7 +605,7 @@ describe('generateOpenAPIDocument', () => {
   describe('procedure descriptions from JSDoc', () => {
     const descriptionsRouterPath = path.resolve(
       routersDir,
-      'descriptionsRouter.ts',
+      'descriptionsRouter.router.ts',
     );
     let doc: Document;
 
@@ -634,7 +637,7 @@ describe('generateOpenAPIDocument', () => {
   describe('runtime Zod schema extraction', () => {
     const descriptionsRouterPath = path.resolve(
       routersDir,
-      'descriptionsRouter.ts',
+      'descriptionsRouter.router.ts',
     );
     let doc: Document;
 
@@ -740,7 +743,7 @@ describe('generateOpenAPIDocument', () => {
   describe('inline type JSDoc descriptions', () => {
     const descriptionsRouterPath = path.resolve(
       routersDir,
-      'descriptionsRouter.ts',
+      'descriptionsRouter.router.ts',
     );
     let doc: Document;
 

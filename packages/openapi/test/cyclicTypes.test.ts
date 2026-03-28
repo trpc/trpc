@@ -14,7 +14,10 @@ import {
 } from './types';
 import { validateOpenApi } from './validateOpenApi';
 
-const routerPath = path.resolve(__dirname, 'routers/cyclicTypesRouter.ts');
+const routerPath = path.resolve(
+  __dirname,
+  'routers/cyclicTypesRouter.router.ts',
+);
 
 describe('cyclic types', () => {
   let doc: Document;

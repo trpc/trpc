@@ -57,13 +57,14 @@
                   "properties": {
                     "name": {
                       "type": "string",
-                      "description": "doc comment on name"
+                      "description": "Name of the user"
                     }
                   },
                   "required": [
                     "name"
                   ],
-                  "additionalProperties": false
+                  "additionalProperties": false,
+                  "description": "Input to the procedure"
                 }
               }
             }
@@ -122,7 +123,7 @@
                   "properties": {
                     "name": {
                       "type": "string",
-                      "description": "doc comment on name"
+                      "description": "Name of the user"
                     },
                     "children": {
                       "type": "array",
@@ -130,7 +131,8 @@
                         "type": "object",
                         "properties": {
                           "child": {
-                            "type": "string"
+                            "type": "string",
+                            "description": "Child name"
                           },
                           "gender": {
                             "type": "string",
@@ -138,7 +140,8 @@
                               "male",
                               "female",
                               "other"
-                            ]
+                            ],
+                            "description": "Child gender"
                           }
                         },
                         "required": [
@@ -147,14 +150,15 @@
                         ],
                         "additionalProperties": false
                       },
-                      "description": "children list"
+                      "description": "An array of children"
                     }
                   },
                   "required": [
                     "name",
                     "children"
                   ],
-                  "additionalProperties": false
+                  "additionalProperties": false,
+                  "description": "Input to the procedure"
                 }
               }
             }
@@ -183,8 +187,10 @@
                         "data": {
                           "type": "array",
                           "items": {
-                            "type": "string"
-                          }
+                            "type": "string",
+                            "description": "element of output strings"
+                          },
+                          "description": "Array of output strings"
                         }
                       },
                       "required": [
@@ -210,8 +216,10 @@
               "schema": {
                 "type": "array",
                 "items": {
-                  "type": "string"
-                }
+                  "type": "string",
+                  "description": "element of inputs strings"
+                },
+                "description": "Array of inputs strings"
               }
             }
           }
@@ -294,14 +302,16 @@
                         "type": "object",
                         "properties": {
                           "name": {
-                            "type": "string"
+                            "type": "string",
+                            "description": "Child name"
                           }
                         },
                         "required": [
                           "name"
                         ],
                         "additionalProperties": false
-                      }
+                      },
+                      "description": "Child collection"
                     }
                   },
                   "required": [
@@ -337,7 +347,12 @@
                           "type": "object",
                           "properties": {
                             "child": {
-                              "$ref": "#/components/schemas/RecursiveLeafNode"
+                              "allOf": [
+                                {
+                                  "$ref": "#/components/schemas/RecursiveLeafNode"
+                                }
+                              ],
+                              "description": "Recursive child"
                             }
                           },
                           "required": [
