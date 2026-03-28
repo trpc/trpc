@@ -76,6 +76,38 @@ const doc = generateOpenAPIDocument('./src/server/router.ts', {
 
 The generator statically analyses your router's TypeScript types — it never executes your code.
 
+## API changelog and breaking-change checks (oasdiff)
+
+After generating OpenAPI specs, you can compare two versions with [`oasdiff`](https://github.com/oasdiff/oasdiff).
+
+For installation options (Homebrew, Docker, binaries, etc), see the official docs:
+
+- [oasdiff install docs](https://github.com/oasdiff/oasdiff/blob/main/docs/README.md)
+- [oasdiff changelog and breaking checks](https://github.com/oasdiff/oasdiff/blob/main/docs/BREAKING-CHANGES.md)
+
+Using this you can quick generate changelogs or detect inadvertent breaking changes to APIs to help plan and coordinate releases
+
+```sh
+# Get a complete changelog including minor and breaking changes
+$ oasdiff changelog packages/openapi/test/routers/superjsonRouter.openapi.json /tmp/superjsonRouter.openapi.next.json
+
+3 changes: 2 error, 0 warning, 1 info
+error [new-required-request-property] in API POST /createEvent
+  added the new required request property 'location'
+error [api-path-removed-without-deprecation] in API GET /getBigInt
+  api path removed without deprecation
+info [endpoint-added] in API GET /health
+  endpoint added
+
+# Get a list of breaking changes if any
+$ oasdiff breaking packages/openapi/test/routers/superjsonRouter.openapi.json /tmp/superjsonRouter.openapi.next.json
+2 changes: 2 error, 0 warning, 0 info
+error [new-required-request-property] in API POST /createEvent
+  added the new required request property 'location'
+error [api-path-removed-without-deprecation] in API GET /getBigInt
+  api path removed without deprecation
+```
+
 ## Generate a client from the spec
 
 Any OpenAPI client generator should work, but the most tested integration is with [Hey API](https://heyapi.dev/openapi-ts/get-started).

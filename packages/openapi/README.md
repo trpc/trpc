@@ -53,7 +53,6 @@ npx @tanstack/intent@latest install
 - [ ] non-nodejs example
 - [ ] an ai/mcp example
 - [ ] investigate async generators support (types generate... poorly)
-- [ ] Document breaking change detection via [oasdiff](https://github.com/oasdiff/oasdiff/blob/main/docs/BREAKING-CHANGES.md)
 
 ## Maybes
 
