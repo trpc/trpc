@@ -1,6 +1,12 @@
 import type { TRPCError } from './error/TRPCError';
-import type { Parser } from './parser';
+import type { TRPCProcedureError } from './error/TRPCProcedureError';
+import type { inferParser, Parser, ParserLike } from './parser';
 import type { ProcedureCallOptions } from './procedureBuilder';
+import type {
+  TRPC_ERROR_CODE_KEY,
+  TRPC_ERROR_CODES_BY_KEY,
+  TRPCErrorShape,
+} from './rpc';
 
 export const procedureTypes = ['query', 'mutation', 'subscription'] as const;
 /**
@@ -12,7 +18,37 @@ interface BuiltProcedureDef {
   meta: unknown;
   input: unknown;
   output: unknown;
+  errorShape: unknown;
 }
+
+export type ProcedureErrorConstructor<
+  TShape extends TRPCErrorShape = TRPCErrorShape,
+> = abstract new (...args: any[]) => TRPCProcedureError<TShape>;
+/**
+ * Shape declaration for `procedure.errors({...})`.
+ * Each key maps to a tRPC error code and may optionally define a default message
+ * and a `data` parser used purely for type inference of the typed error payload.
+ */
+export type ProcedureErrorSchema = {
+  message?: string;
+  data?: unknown;
+};
+export type ProcedureErrorSchemaMap = Partial<
+  Record<TRPC_ERROR_CODE_KEY, ParserLike<ProcedureErrorSchema>>
+>;
+export type ProcedureErrorFactoryMap<
+  TSchemaMap extends ProcedureErrorSchemaMap = ProcedureErrorSchemaMap,
+> = {
+  [TCode in keyof TSchemaMap & TRPC_ERROR_CODE_KEY]: NonNullable<
+    TSchemaMap[TCode]
+  > extends infer TParser extends Parser
+    ? (opts: inferParser<TParser>['out']) => TRPCProcedureError<{
+        code: (typeof TRPC_ERROR_CODES_BY_KEY)[TCode];
+        data: inferParser<TParser>['out']['data'];
+        message: inferParser<TParser>['out']['message'];
+      }>
+    : never;
+};
 
 /**
  *
@@ -30,6 +66,7 @@ export interface Procedure<
     $types: {
       input: TDef['input'];
       output: TDef['output'];
+      errorShape: TDef['errorShape'];
     };
     procedure: true;
     type: TType;
@@ -43,6 +80,10 @@ export interface Procedure<
      * The input parsers for the procedure
      */
     inputs: Parser[];
+    /**
+     * Detectable typed errors for this procedure
+     */
+    errorFactories: ProcedureErrorFactoryMap<ProcedureErrorSchemaMap>;
   };
   meta: TDef['meta'];
   /**
