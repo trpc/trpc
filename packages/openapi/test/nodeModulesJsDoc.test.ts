@@ -9,7 +9,10 @@ import {
 } from './types';
 import { validateOpenApi } from './validateOpenApi';
 
-const routerPath = path.resolve(__dirname, 'routers/nodeModulesJsDocRouter.ts');
+const routerPath = path.resolve(
+  __dirname,
+  'routers/nodeModulesJsDocRouter.router.ts',
+);
 
 describe('JSDoc source filtering', () => {
   let doc: Document;

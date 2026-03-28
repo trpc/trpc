@@ -6,10 +6,10 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 const cliPath = path.resolve(__dirname, '../src/cli.ts');
 const tsxPath = path.resolve(__dirname, '../../../node_modules/.bin/tsx');
 const routersDir = path.resolve(__dirname, 'routers');
-const appRouterPath = path.resolve(routersDir, 'appRouter.ts');
+const appRouterPath = path.resolve(routersDir, 'appRouter.router.ts');
 const errorFormatterRouterPath = path.resolve(
   routersDir,
-  'errorFormatterRouter.ts',
+  'errorFormatterRouter.router.ts',
 );
 
 /** Isolated output directory for CLI tests — gitignored via __generated__ prefix. */
