@@ -9,7 +9,7 @@ description: >
   maxItems, connectionParams, EventSource ponyfill.
 type: core
 library: trpc
-library_version: '11.15.1'
+library_version: '11.16.0'
 requires:
   - client-setup
 sources:

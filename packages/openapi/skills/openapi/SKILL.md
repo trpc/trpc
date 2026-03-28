@@ -7,7 +7,7 @@ description: >
   generated clients. Alpha status.
 type: composition
 library: trpc
-library_version: '11.15.1-alpha'
+library_version: '11.16.0-alpha'
 requires:
   - server-setup
 sources:

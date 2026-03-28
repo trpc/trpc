@@ -7,7 +7,7 @@ description: >
   Avoid global express.json() conflicting with tRPC body parsing for FormData.
 type: core
 library: trpc
-library_version: '11.15.1'
+library_version: '11.16.0'
 requires:
   - server-setup
 sources:
