@@ -1,14 +1,20 @@
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
 import { isTRPCClientError, TRPCClientError } from '@trpc/client';
-import type { AnyRouter } from '@trpc/server';
-import { initTRPC, StandardSchemaV1Error, TRPCError } from '@trpc/server';
+import type { AnyRouter, inferRouterError } from '@trpc/server';
+import {
+  createTRPCDeclaredError,
+  initTRPC,
+  StandardSchemaV1Error,
+  TRPCError,
+} from '@trpc/server';
 import type {
   DefaultErrorData,
   DefaultErrorShape,
 } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
 import * as v from 'valibot';
+import { vi } from 'vitest';
 import { z, ZodError } from 'zod';
 
 describe('no custom error formatter', () => {
@@ -96,8 +102,232 @@ describe('with custom error formatter', () => {
           "stack": "[redacted]",
         },
         "message": "Fails",
+        "~": Object {
+          "kind": "formatted",
+        },
       }
     `);
+  });
+});
+
+describe('with per-procedure declared errors', () => {
+  const BadPhoneError = createTRPCDeclaredError({
+    code: 'UNAUTHORIZED',
+    key: 'BAD_PHONE',
+  })
+    .data<{
+      reason: 'BAD_PHONE';
+    }>()
+    .create({
+      constants: {
+        reason: 'BAD_PHONE' as const,
+      },
+    });
+
+  const ValidationError = createTRPCDeclaredError({
+    code: 'BAD_REQUEST',
+    key: 'VALIDATION_ERROR',
+  })
+    .data<{
+      field: string;
+    }>()
+    .create();
+
+  type GlobalFormattedShape = DefaultErrorShape & {
+    data: DefaultErrorData & {
+      foo: 'bar';
+    };
+  };
+
+  const t = initTRPC.create({
+    errorFormatter({ shape }) {
+      return {
+        ...shape,
+        data: {
+          ...shape.data,
+          foo: 'bar' as const,
+        },
+      };
+    },
+  });
+
+  const chainedErrorsProcedure = t.procedure
+    .errors([BadPhoneError])
+    .input(
+      z.object({
+        source: z.enum(['middleware', 'resolver']),
+      }),
+    )
+    .use((opts) => {
+      if (opts.input.source === 'middleware') {
+        throw new BadPhoneError();
+      }
+      return opts.next();
+    })
+    .errors([ValidationError])
+    .query(({ input }) => {
+      throw new ValidationError({ field: input.source });
+    });
+
+  const appRouter = t.router({
+    registeredBadPhone: t.procedure.errors([BadPhoneError]).query(() => {
+      throw new BadPhoneError();
+    }),
+    unregisteredBadPhone: t.procedure.query(() => {
+      throw new BadPhoneError();
+    }),
+    validationOnlyBadPhone: t.procedure.errors([ValidationError]).query(() => {
+      throw new BadPhoneError();
+    }),
+    chainedErrors: chainedErrorsProcedure,
+    regularError: t.procedure.query(() => {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Something broke',
+      });
+    }),
+  });
+
+  test('declared errors bypass formatter and infer as router union', async () => {
+    expectTypeOf<inferRouterError<typeof appRouter>>().not.toBeAny();
+
+    await using ctx = testServerAndClientResource(appRouter);
+    const error = await waitError(ctx.client.registeredBadPhone.query());
+    assert(isTRPCClientError<typeof appRouter>(error));
+
+    expectTypeOf(error.shape).not.toBeAny();
+    expectTypeOf(error.data).not.toBeAny();
+    expect(error.shape).toMatchInlineSnapshot(`
+      Object {
+        "code": -32001,
+        "data": Object {
+          "reason": "BAD_PHONE",
+        },
+        "message": "UNAUTHORIZED",
+        "~": Object {
+          "declaredErrorKey": "BAD_PHONE",
+          "kind": "declared",
+        },
+      }
+    `);
+  });
+
+  test('unregistered declared errors become internal server errors, use the formatter, and warn', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {
+      //
+    });
+    try {
+      await using ctx = testServerAndClientResource(appRouter);
+
+      const unregisteredErr = await waitError(
+        ctx.client.unregisteredBadPhone.query(),
+      );
+      const wrongChainErr = await waitError(
+        ctx.client.validationOnlyBadPhone.query(),
+      );
+
+      assert(isTRPCClientError<typeof appRouter>(unregisteredErr));
+      assert(isTRPCClientError<typeof appRouter>(wrongChainErr));
+
+      expect(unregisteredErr.shape?.code).toBe(-32603);
+      expect(unregisteredErr.data).toMatchObject({
+        code: 'INTERNAL_SERVER_ERROR',
+        foo: 'bar',
+        httpStatus: 500,
+        path: 'unregisteredBadPhone',
+      });
+
+      expect(wrongChainErr.shape?.code).toBe(-32603);
+      expect(wrongChainErr.data).toMatchObject({
+        code: 'INTERNAL_SERVER_ERROR',
+        foo: 'bar',
+        httpStatus: 500,
+        path: 'validationOnlyBadPhone',
+      });
+
+      expect(warnSpy).toHaveBeenCalledTimes(2);
+      expect(warnSpy.mock.calls[0]?.[0]).toContain(
+        'Unregistered declared error',
+      );
+      expect(warnSpy.mock.calls[1]?.[0]).toContain(
+        'Unregistered declared error',
+      );
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  test('regular errors still go through formatter', async () => {
+    await using ctx = testServerAndClientResource(appRouter);
+    const err = await waitError(ctx.client.regularError.query());
+    assert(isTRPCClientError<typeof appRouter>(err));
+
+    // Regular errors go through the formatter (has foo: 'bar')
+    const data = err.data as GlobalFormattedShape['data'];
+    expect(data?.foo).toBe('bar');
+    expect(data?.path).toBe('regularError');
+  });
+
+  test('procedureBuilder stores registrations per procedure', () => {
+    expect(
+      appRouter._def.procedures.registeredBadPhone._def.declaredErrors,
+    ).toEqual([BadPhoneError]);
+    expect(
+      appRouter._def.procedures.validationOnlyBadPhone._def.declaredErrors,
+    ).toEqual([ValidationError]);
+    expect(
+      appRouter._def.procedures.unregisteredBadPhone._def.declaredErrors,
+    ).toEqual([]);
+  });
+
+  test('chained .errors() accrues registrations instead of squashing', async () => {
+    expect(appRouter._def.procedures.chainedErrors._def.declaredErrors).toEqual(
+      [BadPhoneError, ValidationError],
+    );
+
+    await using ctx = testServerAndClientResource(appRouter);
+
+    const middlewareErr = await waitError(
+      ctx.client.chainedErrors.query({ source: 'middleware' }),
+    );
+    const resolverErr = await waitError(
+      ctx.client.chainedErrors.query({ source: 'resolver' }),
+    );
+
+    assert(isTRPCClientError<typeof appRouter>(middlewareErr));
+    assert(isTRPCClientError<typeof appRouter>(resolverErr));
+
+    expect(middlewareErr.shape).toEqual({
+      code: -32001,
+      message: 'UNAUTHORIZED',
+      '~': {
+        kind: 'declared',
+        declaredErrorKey: 'BAD_PHONE',
+      },
+      data: {
+        reason: 'BAD_PHONE',
+      },
+    });
+    expect(resolverErr.shape).toEqual({
+      code: -32600,
+      message: 'BAD_REQUEST',
+      '~': {
+        kind: 'declared',
+        declaredErrorKey: 'VALIDATION_ERROR',
+      },
+      data: {
+        field: 'resolver',
+      },
+    });
+  });
+
+  test('declared errors work with instanceof', () => {
+    const err = new BadPhoneError();
+    expect(err instanceof TRPCError).toBe(true);
+    expect(err instanceof BadPhoneError).toBe(true);
+    expect(err instanceof Error).toBe(true);
+    expect(err.reason).toBe('BAD_PHONE');
+    expect(err.code).toBe('UNAUTHORIZED');
   });
 });
 
@@ -222,6 +452,9 @@ describe('custom error sub-classes', () => {
           "stack": "[redacted]",
         },
         "message": "BAD_PHONE",
+        "~": Object {
+          "kind": "formatted",
+        },
       }
     `);
   });
@@ -269,5 +502,125 @@ describe('zod errors according to docs', () => {
 
     // good
     expect(await ctx.client.greeting.query(10)).toBe(10);
+  });
+});
+
+describe('declared error key narrowing', () => {
+  const PhoneContactInvalidError = createTRPCDeclaredError({
+    code: 'BAD_REQUEST',
+    key: 'CONTACT_INVALID',
+  })
+    .data<{
+      channel: 'phone';
+      phoneNumber: string;
+    }>()
+    .create();
+
+  const EmailContactInvalidError = createTRPCDeclaredError({
+    code: 'BAD_REQUEST',
+    key: 'CONTACT_INVALID',
+  })
+    .data<{
+      channel: 'email';
+      emailAddress: string;
+    }>()
+    .create();
+
+  type ContactInvalidData =
+    | {
+        channel: 'phone';
+        phoneNumber: string;
+      }
+    | {
+        channel: 'email';
+        emailAddress: string;
+      };
+
+  const t = initTRPC.create();
+
+  const appRouter = t.router({
+    duplicateKeySameProcedure: t.procedure
+      .errors([PhoneContactInvalidError, EmailContactInvalidError])
+      .input(
+        z.object({
+          channel: z.enum(['phone', 'email']),
+        }),
+      )
+      .query(({ input }) => {
+        if (input.channel === 'phone') {
+          throw new PhoneContactInvalidError({
+            channel: 'phone',
+            phoneNumber: '+441234567890',
+          });
+        }
+
+        throw new EmailContactInvalidError({
+          channel: 'email',
+          emailAddress: 'bad@example.com',
+        });
+      }),
+    duplicateKeyPhoneProcedure: t.procedure
+      .errors([PhoneContactInvalidError])
+      .query(() => {
+        throw new PhoneContactInvalidError({
+          channel: 'phone',
+          phoneNumber: '+441234567890',
+        });
+      }),
+    duplicateKeyEmailProcedure: t.procedure
+      .errors([EmailContactInvalidError])
+      .query(() => {
+        throw new EmailContactInvalidError({
+          channel: 'email',
+          emailAddress: 'bad@example.com',
+        });
+      }),
+  });
+
+  test('isTRPCClientError narrows same-key declared errors on one procedure to the matching union', async () => {
+    await using ctx = testServerAndClientResource(appRouter);
+
+    const err = await waitError(
+      ctx.client.duplicateKeySameProcedure.query({
+        channel: 'phone',
+      }),
+    );
+
+    assert(isTRPCClientError<typeof appRouter>(err));
+    assert(err.isDeclaredError('CONTACT_INVALID'));
+
+    expectTypeOf(err.data).toEqualTypeOf<ContactInvalidData>();
+    expect(err.data).toEqual({
+      channel: 'phone',
+      phoneNumber: '+441234567890',
+    });
+  });
+
+  test('isTRPCClientError narrows same-key declared errors across procedures to the matching router union', async () => {
+    await using ctx = testServerAndClientResource(appRouter);
+
+    const phoneErr = await waitError(
+      ctx.client.duplicateKeyPhoneProcedure.query(),
+    );
+    const emailErr = await waitError(
+      ctx.client.duplicateKeyEmailProcedure.query(),
+    );
+
+    assert(isTRPCClientError<typeof appRouter>(phoneErr));
+    assert(isTRPCClientError<typeof appRouter>(emailErr));
+    assert(phoneErr.isDeclaredError('CONTACT_INVALID'));
+    assert(emailErr.isDeclaredError('CONTACT_INVALID'));
+
+    expectTypeOf(phoneErr.data).toEqualTypeOf<ContactInvalidData>();
+    expectTypeOf(emailErr.data).toEqualTypeOf<ContactInvalidData>();
+
+    expect(phoneErr.data).toEqual({
+      channel: 'phone',
+      phoneNumber: '+441234567890',
+    });
+    expect(emailErr.data).toEqual({
+      channel: 'email',
+      emailAddress: 'bad@example.com',
+    });
   });
 });

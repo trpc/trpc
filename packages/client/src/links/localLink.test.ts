@@ -1,10 +1,18 @@
 import { waitError } from '@trpc/server/__tests__/waitError';
-import type { AnyRouter } from '@trpc/server';
-import { initTRPC, tracked, TRPCError } from '@trpc/server';
+import type { AnyRouter, inferSubscriptionOutput } from '@trpc/server';
+import {
+  createTRPCDeclaredError,
+  initTRPC,
+  tracked,
+  TRPCError,
+} from '@trpc/server';
 import { makeResource, run } from '@trpc/server/unstable-core-do-not-import';
 import superjson from 'superjson';
 import { z } from 'zod';
-import { createTRPCClient } from '../createTRPCClient';
+import {
+  createTRPCClient,
+  type inferSubscriptionClientError,
+} from '../createTRPCClient';
 import { isTRPCClientError } from '../TRPCClientError';
 import type { LocalLinkOptions } from './localLink';
 import { experimental_localLink as localLink } from './localLink';
@@ -295,6 +303,105 @@ test('subscription reconnects on errors', async () => {
   expect(result).toEqual(['hello', 'world']);
 });
 
+describe('subscription declared error behavior', () => {
+  const DeclaredAuthError = createTRPCDeclaredError({
+    code: 'UNAUTHORIZED',
+    key: 'DECLARED_AUTH',
+  }).create();
+
+  function setupSubscriptionRouter() {
+    const t = initTRPC.create();
+    let firstUnregisteredRun = true;
+    let firstRegisteredRun = true;
+
+    const appRouter = t.router({
+      unregistered: t.procedure.subscription(async function* () {
+        if (firstUnregisteredRun) {
+          yield 'hello';
+          firstUnregisteredRun = false;
+          throw new DeclaredAuthError();
+        }
+        yield 'world';
+      }),
+      registered: t.procedure
+        .errors([DeclaredAuthError])
+        .subscription(async function* () {
+          if (firstRegisteredRun) {
+            yield 'hello';
+            firstRegisteredRun = false;
+            throw new DeclaredAuthError();
+          }
+          yield 'world';
+        }),
+    });
+
+    return {
+      appRouter,
+      ...localLinkClient<typeof appRouter>({
+        router: appRouter,
+        createContext: async () => ({}),
+      }),
+    };
+  }
+
+  test('reconnects on unregistered declared errors', async () => {
+    const ctx = setupSubscriptionRouter();
+    const { client } = ctx;
+
+    const result = await new Promise<string[]>((resolve) => {
+      const aggregated: string[] = [];
+      client.unregistered.subscribe(undefined, {
+        onData: (data) => {
+          aggregated.push(data);
+        },
+        onComplete: () => {
+          resolve(aggregated);
+        },
+      });
+    });
+
+    expect(ctx.onError).toHaveBeenCalledOnce();
+    expect(ctx.onError.mock.calls[0]?.[0].error.code).toBe(
+      'INTERNAL_SERVER_ERROR',
+    );
+    expect(result).toEqual(['hello', 'world']);
+  });
+
+  test('does not reconnect on registered declared errors', async () => {
+    const ctx = setupSubscriptionRouter();
+    const { appRouter, client } = ctx;
+    type RegisteredProcedure =
+      (typeof appRouter)['_def']['record']['registered'];
+    type RegisteredData = inferSubscriptionOutput<RegisteredProcedure>;
+    type RegisteredError = inferSubscriptionClientError<RegisteredProcedure>;
+
+    const result = await new Promise<{
+      data: RegisteredData[];
+      error: RegisteredError;
+    }>((resolve, reject) => {
+      const aggregated: RegisteredData[] = [];
+      client.registered.subscribe(undefined, {
+        onData: (data) => {
+          aggregated.push(data);
+        },
+        onError: (error) => {
+          resolve({
+            data: aggregated,
+            error,
+          });
+        },
+        onComplete: () => {
+          reject(new Error('Expected registered subscription to fail'));
+        },
+      });
+    });
+
+    expect(result.data).toEqual(['hello']);
+    assert(isTRPCClientError(result.error));
+    expect(result.error.isDeclaredError('DECLARED_AUTH')).toBe(true);
+  });
+});
+
 test('subscription reconnects on errors with the last event id', async () => {
   const t = initTRPC.create();
 
@@ -493,6 +600,9 @@ test('error formatting', async () => {
           "stack": "redacted",
         },
         "message": "test",
+        "~": Object {
+          "kind": "formatted",
+        },
       }
     `);
   }
@@ -521,9 +631,72 @@ test('error formatting', async () => {
           "stack": "redacted",
         },
         "message": "BAD_GATEWAY",
+        "~": Object {
+          "kind": "formatted",
+        },
       }
     `);
   }
+});
+
+test('declared error data is inferred and can be discriminated on the client', async () => {
+  const BadPhoneError = createTRPCDeclaredError({
+    code: 'UNAUTHORIZED',
+    key: 'BAD_PHONE',
+  })
+    .data<{
+      reason: 'BAD_PHONE';
+    }>()
+    .create({
+      constants: {
+        reason: 'BAD_PHONE' as const,
+      },
+    });
+
+  const t = initTRPC.create({
+    errorFormatter(opts) {
+      return {
+        ...opts.shape,
+        data: {
+          ...opts.shape.data,
+          foo: 'bar' as const,
+        },
+      };
+    },
+  });
+
+  const appRouter = t.router({
+    registered: t.procedure.errors([BadPhoneError]).query(() => {
+      throw new BadPhoneError();
+    }),
+    unregistered: t.procedure.query(() => {
+      throw new BadPhoneError();
+    }),
+  });
+
+  const { client } = localLinkClient<typeof appRouter>({
+    router: appRouter,
+    createContext: async () => ({}),
+  });
+
+  const registeredError = await waitError(client.registered.query());
+  assert(isTRPCClientError<typeof appRouter>(registeredError));
+  assert(registeredError.isDeclaredError('BAD_PHONE'));
+
+  expect(registeredError.shape?.['~']).toEqual({
+    kind: 'declared',
+    declaredErrorKey: 'BAD_PHONE',
+  });
+  expectTypeOf(registeredError.data.reason).toEqualTypeOf<'BAD_PHONE'>();
+
+  const unregisteredError = await waitError(client.unregistered.query());
+  assert(isTRPCClientError<typeof appRouter>(unregisteredError));
+  assert(unregisteredError.isFormattedError());
+
+  expect(unregisteredError.shape?.['~']).toEqual({
+    kind: 'formatted',
+  });
+  expectTypeOf(unregisteredError.data.foo).toEqualTypeOf<'bar'>();
 });
 
 test('with transformer', async () => {

@@ -3,8 +3,11 @@ import type { Unsubscribable } from '@trpc/server/observable';
 import type {
   AnyProcedure,
   AnyRouter,
+  AnySubscriptionProcedure,
+  DefaultErrorShape,
   inferClientTypes,
   inferProcedureInput,
+  inferProcedureParams,
   InferrableClientTypes,
   inferTransformedProcedureOutput,
   ProcedureType,
@@ -60,11 +63,17 @@ type coerceAsyncGeneratorToIterable<T> =
     ? AsyncIterable<$T, $Return, $Next>
     : T;
 
+type ResolverResultPromise<TDef extends TRPCResolverDef> = Promise<
+  coerceAsyncGeneratorToIterable<TDef['output']>
+> & {
+  readonly __errorShape?: TDef['errorShape'];
+};
+
 /** @internal */
 export type Resolver<TDef extends TRPCResolverDef> = (
   input: TDef['input'],
   opts?: TRPCProcedureOptions,
-) => Promise<coerceAsyncGeneratorToIterable<TDef['output']>>;
+) => ResolverResultPromise<TDef>;
 
 /** @internal */
 export type SubscriptionResolver<TDef extends TRPCResolverDef> = (
@@ -74,6 +83,30 @@ export type SubscriptionResolver<TDef extends TRPCResolverDef> = (
   > &
     TRPCProcedureOptions,
 ) => Unsubscribable;
+
+type inferProcedureClientErrorShape<TProcedure extends AnyProcedure> = [
+  inferProcedureParams<TProcedure>['$types']['errorShape'],
+] extends [never]
+  ? DefaultErrorShape
+  :
+      | DefaultErrorShape
+      | inferProcedureParams<TProcedure>['$types']['errorShape'];
+
+/**
+ * Infer the client error type for a procedure.
+ */
+export type inferProcedureClientError<TProcedure extends AnyProcedure> =
+  TRPCClientError<{
+    transformer: false;
+    errorShape: inferProcedureClientErrorShape<TProcedure>;
+  }>;
+
+/**
+ * Infer the client error type for a subscription procedure.
+ */
+export type inferSubscriptionClientError<
+  TProcedure extends AnySubscriptionProcedure,
+> = inferProcedureClientError<TProcedure>;
 
 type DecorateProcedure<
   TType extends ProcedureType,
@@ -109,7 +142,9 @@ type DecoratedProcedureRecord<
               inferClientTypes<TRoot>,
               $Value
             >;
-            errorShape: inferClientTypes<TRoot>['errorShape'];
+            errorShape:
+              | inferClientTypes<TRoot>['errorShape']
+              | inferProcedureParams<$Value>['$types']['errorShape'];
             transformer: inferClientTypes<TRoot>['transformer'];
           }
         >

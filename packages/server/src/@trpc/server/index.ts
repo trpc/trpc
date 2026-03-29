@@ -1,5 +1,9 @@
 export {
   TRPCError,
+  TRPCProcedureError,
+  createTRPCDeclaredError,
+  type AnyTRPCDeclaredErrorClass,
+  type InferTRPCDeclaredErrorShape,
   /**
    * @deprecated use `experimental_trpcMiddleware` instead
    */
@@ -13,6 +17,8 @@ export {
   createRecursiveProxy as createTRPCRecursiveProxy,
   type inferProcedureInput,
   type inferProcedureOutput,
+  type inferSubscriptionInput,
+  type inferSubscriptionOutput,
   type inferProcedureBuilderResolverOptions,
   type inferRouterError,
   type inferRouterInputs,

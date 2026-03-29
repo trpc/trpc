@@ -66,6 +66,9 @@ test('bad setup', async () => {
           "stack": "[redacted]",
         },
         "message": "Query "trpc" not found - is the file named \`[trpc]\`.ts or \`[...trpc].ts\`?",
+        "~": Object {
+          "kind": "formatted",
+        },
       },
     }
   `);
@@ -137,6 +140,9 @@ test('404', async () => {
           "stack": "[redacted]",
         },
         "message": "No procedure found on path "not-found-path"",
+        "~": Object {
+          "kind": "formatted",
+        },
       },
     }
   `);
@@ -203,6 +209,9 @@ test('PUT request (fails)', async () => {
           "stack": "[redacted]",
         },
         "message": "Unsupported PUT-request to query procedure at path "hello"",
+        "~": Object {
+          "kind": "formatted",
+        },
       },
     }
   `);

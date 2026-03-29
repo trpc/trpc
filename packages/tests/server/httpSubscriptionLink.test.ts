@@ -20,7 +20,7 @@ import {
 } from '@trpc/client';
 import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
 import type { TRPCCombinedDataTransformer } from '@trpc/server';
-import { initTRPC, tracked } from '@trpc/server';
+import { createTRPCDeclaredError, initTRPC, tracked } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import type {
   Deferred,
@@ -47,6 +47,22 @@ const returnSymbol = Symbol();
 type MyEvents = {
   data: [Error | number | typeof returnSymbol];
 };
+
+function waitForSubscriptionError<TError>(
+  subscribe: (handlers: { onError: (error: TError) => void }) => {
+    unsubscribe: () => void;
+  },
+) {
+  return new Promise<TError>((resolve) => {
+    const subscription = subscribe({
+      onError(error) {
+        resolve(error);
+        subscription?.unsubscribe();
+      },
+    });
+  });
+}
+
 const orderedResults: number[] = [];
 const ctx = konn()
   .beforeEach(() => {
@@ -301,6 +317,137 @@ test(
     `);
   },
 );
+
+describe('declared errors over httpSubscriptionLink', () => {
+  const BadPhoneError = createTRPCDeclaredError({
+    code: 'UNAUTHORIZED',
+    key: 'BAD_PHONE',
+  })
+    .data<{
+      reason: 'BAD_PHONE';
+    }>()
+    .create({
+      constants: {
+        reason: 'BAD_PHONE' as const,
+      },
+    });
+
+  const t = initTRPC.create({
+    errorFormatter({ shape }) {
+      return {
+        ...shape,
+        data: {
+          ...shape.data,
+          foo: 'bar' as const,
+        },
+      };
+    },
+  });
+
+  const router = t.router({
+    registered: t.procedure
+      .errors([BadPhoneError])
+      .subscription(async function* () {
+        throw new BadPhoneError();
+      }),
+    unregistered: t.procedure.subscription(async function* () {
+      throw new BadPhoneError();
+    }),
+  });
+
+  test('propagates registered declared errors', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      clientLink: 'httpSubscriptionLink',
+    });
+
+    const registeredError = await waitForSubscriptionError<
+      TRPCClientError<typeof router>
+    >((handlers) =>
+      ctx.client.registered.subscribe(undefined, {
+        onError: handlers.onError,
+      }),
+    );
+
+    expect(registeredError.shape).toEqual({
+      code: -32001,
+      message: 'UNAUTHORIZED',
+      '~': {
+        kind: 'declared',
+        declaredErrorKey: 'BAD_PHONE',
+      },
+      data: {
+        reason: 'BAD_PHONE',
+      },
+    });
+  });
+
+  test('downgrades unregistered declared errors', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      clientLink: 'httpSubscriptionLink',
+    });
+
+    const onStarted = vi.fn();
+    const onError = vi.fn<(error: TRPCClientError<typeof router>) => void>();
+    const onConnectionStateChange =
+      vi.fn<
+        (state: TRPCConnectionState<TRPCClientError<typeof router>>) => void
+      >();
+
+    const releaseLogs = suppressLogs();
+    try {
+      const subscription = ctx.client.unregistered.subscribe(undefined, {
+        onStarted,
+        onError,
+        onConnectionStateChange,
+      });
+
+      await vi.waitFor(() => {
+        expect(onStarted).toHaveBeenCalledTimes(1);
+      });
+
+      await vi.waitFor(() => {
+        const errorState = onConnectionStateChange.mock.calls.find(
+          ([state]) => state.state === 'connecting' && state.error,
+        )?.[0];
+
+        expect(errorState).toBeDefined();
+      });
+
+      subscription.unsubscribe();
+    } finally {
+      releaseLogs();
+    }
+
+    expect(onError).not.toHaveBeenCalled();
+    expect(onConnectionStateChange.mock.calls[0]?.[0]).toMatchObject({
+      type: 'state',
+      state: 'connecting',
+      error: null,
+    });
+    expect(onConnectionStateChange.mock.calls[1]?.[0]).toMatchObject({
+      type: 'state',
+      state: 'pending',
+      error: null,
+    });
+
+    const errorState = onConnectionStateChange.mock.calls.find(
+      ([state]) => state.state === 'connecting' && state.error,
+    )?.[0];
+
+    expect(errorState).toBeDefined();
+    const unregisteredError = errorState!.error!;
+    expect(unregisteredError.shape?.code).toBe(-32603);
+    expect(unregisteredError.shape?.message).toBe(
+      'An unrecognized error occured',
+    );
+    expect(unregisteredError.data).toMatchObject({
+      code: 'INTERNAL_SERVER_ERROR',
+      foo: 'bar',
+      httpStatus: 500,
+      path: 'unregistered',
+    });
+  });
+});
 
 test('iterable event with bad yield', async () => {
   const onStarted = vi.fn<() => void>();

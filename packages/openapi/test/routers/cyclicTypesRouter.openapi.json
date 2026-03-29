@@ -1056,12 +1056,16 @@
           },
           "data": {
             "$ref": "#/components/schemas/DefaultErrorData"
+          },
+          "~": {
+            "$ref": "#/components/schemas/TRPCFormattedErrorMeta"
           }
         },
         "required": [
           "message",
           "code",
-          "data"
+          "data",
+          "~"
         ],
         "additionalProperties": false
       },
@@ -1109,6 +1113,20 @@
         "required": [
           "code",
           "httpStatus"
+        ],
+        "additionalProperties": false
+      },
+      "TRPCFormattedErrorMeta": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "formatted"
+          },
+          "declaredErrorKey": {}
+        },
+        "required": [
+          "kind"
         ],
         "additionalProperties": false
       }
