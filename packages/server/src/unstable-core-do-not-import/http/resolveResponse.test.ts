@@ -113,7 +113,7 @@ describe(resolveResponse, () => {
 
       expect(body.error).toMatchObject({
         code: -32603,
-        message: 'An unrecognized error occured',
+        message: 'An unrecognized error occurred',
         data: {
           code: 'INTERNAL_SERVER_ERROR',
           foo: 'bar',
@@ -175,7 +175,7 @@ describe(resolveResponse, () => {
 
       expect(body.error).toMatchObject({
         code: -32603,
-        message: 'An unrecognized error occured',
+        message: 'An unrecognized error occurred',
         data: {
           code: 'INTERNAL_SERVER_ERROR',
           foo: 'bar',
@@ -287,7 +287,7 @@ describe(resolveResponse, () => {
         }),
       );
       expect(body).toContain('INTERNAL_SERVER_ERROR');
-      expect(body).toContain('An unrecognized error occured');
+      expect(body).toContain('An unrecognized error occurred');
       expect(warnSpy).toHaveBeenCalledTimes(1);
     } finally {
       warnSpy.mockRestore();
@@ -366,7 +366,7 @@ describe(resolveResponse, () => {
         }),
       );
       expect(body).toContain('INTERNAL_SERVER_ERROR');
-      expect(body).toContain('An unrecognized error occured');
+      expect(body).toContain('An unrecognized error occurred');
       expect(warnSpy).toHaveBeenCalledTimes(1);
     } finally {
       warnSpy.mockRestore();

@@ -126,7 +126,7 @@ describe('next-app-dir errors helpers', () => {
       assert(error instanceof TRPCError);
       expect(error).not.toBeInstanceOf(BadPhoneError);
       expect(error.code).toBe('INTERNAL_SERVER_ERROR');
-      expect(error.message).toBe('An unrecognized error occured');
+      expect(error.message).toBe('An unrecognized error occurred');
       assert(error.cause instanceof BadPhoneError);
       expect(error.cause.toShape()).toEqual({
         code: -32001,

@@ -86,7 +86,7 @@ export function resolveRegisteredDeclaredErrorOrDowngrade(
 
   const downgradedError = new TRPCError({
     code: 'INTERNAL_SERVER_ERROR',
-    message: 'An unrecognized error occured',
+    message: 'An unrecognized error occurred',
     cause: error,
   });
   error[trpcDowngradedDeclaredErrorSymbol] = downgradedError;

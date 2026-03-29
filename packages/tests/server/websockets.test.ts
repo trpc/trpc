@@ -2337,7 +2337,7 @@ describe('declared errors over wsLink', () => {
 
     expect(unregisteredError.shape).toMatchObject({
       code: -32603,
-      message: 'An unrecognized error occured',
+      message: 'An unrecognized error occurred',
       data: {
         code: 'INTERNAL_SERVER_ERROR',
         foo: 'bar',
@@ -2441,7 +2441,7 @@ describe('declared subscription errors over wsLink', () => {
 
       expect(unregisteredError.shape).toMatchObject({
         code: -32603,
-        message: 'An unrecognized error occured',
+        message: 'An unrecognized error occurred',
         data: {
           code: 'INTERNAL_SERVER_ERROR',
           foo: 'bar',

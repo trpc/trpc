@@ -92,7 +92,7 @@ describe(createTRPCDeclaredError, () => {
       expect(downgraded).toBeInstanceOf(TRPCError);
       expect(downgraded).not.toBeInstanceOf(BadPhoneError);
       expect(downgraded.code).toBe('INTERNAL_SERVER_ERROR');
-      expect(downgraded.message).toBe('An unrecognized error occured');
+      expect(downgraded.message).toBe('An unrecognized error occurred');
       expect(downgraded.cause).toBeInstanceOf(BadPhoneError);
       expect(warnSpy).toHaveBeenCalledTimes(1);
       expect(warnSpy.mock.calls[0]?.[0]).toContain(
