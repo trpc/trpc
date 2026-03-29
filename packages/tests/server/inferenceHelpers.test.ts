@@ -1,4 +1,6 @@
 import type {
+  inferProcedureInput,
+  inferProcedureOutput,
   inferRouterInputs,
   inferRouterOutputs,
   inferSubscriptionInput,
@@ -35,7 +37,6 @@ const appRouter = t.router({
       }
       return input;
     }),
-
   sendMessage2: roomProcedure
     .input(
       z.object({
@@ -66,18 +67,42 @@ const appRouter = t.router({
   }),
 });
 
-// @ts-expect-error alternative async-iterable return values are not supported for subscriptions
-roomProcedure.subscription(async function* ({ input }) {
-  yield {
-    roomId: input.roomId,
-    text: 'hello',
-  };
-
-  return {
-    done: true,
-  };
-});
 type AppRouter = typeof appRouter;
+
+describe('inferProcedureInput', () => {
+  test('query procedure', () => {
+    type Input = inferProcedureInput<AppRouter['getRoom']>;
+    expectTypeOf<Input>().toEqualTypeOf<{ roomId: string }>();
+  });
+
+  test('mutation procedure', () => {
+    type Input = inferProcedureInput<AppRouter['sendMessage']>;
+    expectTypeOf<Input>().toEqualTypeOf<{
+      roomId: string;
+      text: string;
+      optionalKey?: string | undefined;
+    }>();
+  });
+});
+
+describe('inferProcedureOutput', () => {
+  test('query procedure', () => {
+    type Output = inferProcedureOutput<AppRouter['getRoom']>;
+    expectTypeOf<Output>().toEqualTypeOf<{
+      id: string;
+      name: string;
+      type: string;
+    }>();
+  });
+
+  test('mutation procedure', () => {
+    type Output = inferProcedureOutput<AppRouter['sendMessage2']>;
+    expectTypeOf<Output>().toEqualTypeOf<{
+      roomId: string;
+      text: string;
+    }>();
+  });
+});
 
 describe('inferRouterInputs', () => {
   type AppRouterInputs = inferRouterInputs<AppRouter>;
