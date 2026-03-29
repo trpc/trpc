@@ -95,11 +95,59 @@ httpSubscriptionLink({
 });
 ```
 
+### Custom headers with the built-in fetch transport
+
+If you need custom headers or `credentials: 'include'`, `httpSubscriptionLink` can use a built-in fetch-based SSE transport. The `headers()` and `credentials` options are re-evaluated whenever the subscription reconnects, so refreshed auth state is picked up automatically.
+
+```tsx twoslash
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+declare function getSignature(op: any): Promise<string>;
+declare function getToken(): Promise<string>;
+
+// ---cut---
+import {
+  createTRPCClient,
+  httpBatchLink,
+  httpSubscriptionLink,
+  splitLink,
+} from '@trpc/client';
+import type { AppRouter } from './server';
+
+const trpc = createTRPCClient<AppRouter>({
+  links: [
+    splitLink({
+      condition: (op) => op.type === 'subscription',
+      true: httpSubscriptionLink({
+        url: 'http://localhost:3000',
+        headers: async ({ op }) => {
+          const token = await getToken();
+          const signature = await getSignature(op);
+          return {
+            authorization: `Bearer ${token}`,
+            'x-signature': signature,
+          };
+        },
+        credentials: 'include',
+      }),
+      false: httpBatchLink({
+        url: 'http://localhost:3000',
+      }),
+    }),
+  ],
+});
+```
+
 ### Custom headers through ponyfill
 
-**Recommended for non-web environments**
+**Recommended for environments that already depend on an EventSource ponyfill**
 
-You can ponyfill `EventSource` and use the `eventSourceOptions` -callback to populate headers.
+You can still ponyfill `EventSource` and use the `eventSourceOptions` callback to populate headers.
 
 ```tsx twoslash
 // @filename: server.ts
@@ -153,7 +201,7 @@ const trpc = createTRPCClient<AppRouter>({
 
 ### Updating configuration on an active connection {#updatingConfig}
 
-`httpSubscriptionLink` leverages SSE through `EventSource`, ensuring that connections encountering errors like network failures or bad response codes are automatically retried. However, `EventSource` does not allow re-execution of the `eventSourceOptions()` or `url()` options to update its configuration, which is particularly important in scenarios where authentication has expired since the last connection.
+`httpSubscriptionLink` leverages SSE through `EventSource` by default. When you use the built-in fetch transport (`headers`, `credentials`, or `fetch`), reconnects recreate the request with fresh configuration. For custom `EventSource` implementations, `eventSourceOptions()` is still bound to the lifetime of that EventSource instance.
 
 To address this limitation, you can use a [`retryLink`](./retryLink.md) in conjunction with `httpSubscriptionLink`. This approach ensures that the connection is re-established with the latest configuration, including any updated authentication details.
 
@@ -399,6 +447,24 @@ type HTTPSubscriptionLinkOptions<
    * @see https://trpc.io/docs/v11/data-transformers
    */
   transformer?: DataTransformerOptions;
+  /**
+   * Fetch ponyfill used by the built-in fetch-based SSE transport
+   */
+  fetch?: typeof fetch;
+  /**
+   * Request headers for the built-in fetch-based SSE transport
+   */
+  headers?:
+    | Record<string, string>
+    | ((opts: { op: Operation }) =>
+        | Record<string, string>
+        | Promise<Record<string, string>>);
+  /**
+   * Credentials mode for the built-in fetch-based SSE transport
+   */
+  credentials?:
+    | RequestCredentials
+    | ((opts: { op: Operation }) => RequestCredentials | Promise<RequestCredentials>);
   /**
    * EventSource ponyfill
    */

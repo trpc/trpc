@@ -13,15 +13,17 @@ import {
 } from '@trpc/server/unstable-core-do-not-import';
 import { inputWithTrackedEventId } from '../internals/inputWithTrackedEventId';
 import { raceAbortSignals } from '../internals/signals';
+import type { FetchEsque } from '../internals/types';
 import { TRPCClientError } from '../TRPCClientError';
 import type { TRPCConnectionState } from '../unstable-internals';
 import { getTransformer, type TransformerOptions } from '../unstable-internals';
+import { FetchEventSource } from './internals/fetchEventSource';
 import { getUrl } from './internals/httpUtils';
 import {
   resultOf,
   type UrlOptionsWithConnectionParams,
 } from './internals/urlWithConnectionParams';
-import type { Operation, TRPCLink } from './types';
+import type { HTTPHeaders, Operation, TRPCLink } from './types';
 
 async function urlWithConnectionParams(
   opts: UrlOptionsWithConnectionParams,
@@ -56,6 +58,24 @@ type HTTPSubscriptionLinkOptions<
       }) =>
         | EventSourceLike.InitDictOf<TEventSource>
         | Promise<EventSourceLike.InitDictOf<TEventSource>>);
+  /**
+   * Fetch ponyfill used by the built-in fetch-based SSE transport.
+   */
+  fetch?: FetchEsque;
+  /**
+   * Request headers for the built-in fetch-based SSE transport.
+   */
+  headers?:
+    | HTTPHeaders
+    | ((opts: { op: Operation }) => HTTPHeaders | Promise<HTTPHeaders>);
+  /**
+   * Credentials mode for the built-in fetch-based SSE transport.
+   */
+  credentials?:
+    | RequestCredentials
+    | ((opts: {
+        op: Operation;
+      }) => RequestCredentials | Promise<RequestCredentials>);
 } & TransformerOptions<TRoot> &
   UrlOptionsWithConnectionParams;
 
@@ -86,6 +106,11 @@ export function httpSubscriptionLink<
         let lastEventId: string | undefined = undefined;
         const ac = new AbortController();
         const signal = raceAbortSignals(op.signal, ac.signal);
+        const shouldUseFetchEventSource =
+          !opts.EventSource &&
+          (opts.fetch !== undefined ||
+            opts.headers !== undefined ||
+            opts.credentials !== undefined);
         const eventSourceStream = sseStreamConsumer<{
           EventSource: TEventSource;
           data: Partial<{
@@ -103,12 +128,31 @@ export function httpSubscriptionLink<
               type,
               signal: null,
             }),
-          init: () => resultOf(opts.eventSourceOptions, { op }),
+          init: async () => {
+            const [eventSourceOptions, headers, credentials] =
+              await Promise.all([
+                resultOf(opts.eventSourceOptions, { op }),
+                resultOf(opts.headers, { op }),
+                resultOf(opts.credentials, { op }),
+              ]);
+
+            if (!shouldUseFetchEventSource) {
+              return eventSourceOptions;
+            }
+
+            return {
+              ...eventSourceOptions,
+              fetch: opts.fetch,
+              headers,
+              credentials,
+            } as EventSourceLike.InitDictOf<TEventSource>;
+          },
           signal,
           deserialize: (data) => transformer.output.deserialize(data),
-          EventSource:
-            opts.EventSource ??
-            (globalThis.EventSource as never as TEventSource),
+          EventSource: shouldUseFetchEventSource
+            ? (FetchEventSource as never as TEventSource)
+            : (opts.EventSource ??
+              (globalThis.EventSource as never as TEventSource)),
         });
 
         const connectionState = behaviorSubject<
