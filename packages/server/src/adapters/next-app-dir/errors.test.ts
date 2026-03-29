@@ -1,5 +1,21 @@
 import assert from 'node:assert';
-import { describe, expectTypeOf, test, vi } from 'vitest';
+import { beforeEach, describe, expect, expectTypeOf, test, vi } from 'vitest';
+
+const nextNavigation = vi.hoisted(() => ({
+  redirect: vi.fn((url: string) => {
+    const error = new Error('NEXT_REDIRECT') as Error & { digest: string };
+    error.digest = `NEXT_REDIRECT;replace;${url};307`;
+    throw error;
+  }),
+  notFound: vi.fn(() => {
+    const error = new Error('NEXT_NOT_FOUND') as Error & { digest: string };
+    error.digest = 'NEXT_NOT_FOUND';
+    throw error;
+  }),
+}));
+
+vi.mock('next/navigation', () => nextNavigation);
+
 import {
   createTRPCDeclaredError,
   initTRPC,
@@ -7,8 +23,14 @@ import {
 } from '../../@trpc/server';
 import { safe } from './errors';
 import { nextAppDirCaller } from './nextAppDirCaller';
+import { notFound } from './notFound';
+import { redirect } from './redirect';
 
 describe('next-app-dir errors helpers', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   const BadPhoneError = createTRPCDeclaredError({
     code: 'UNAUTHORIZED',
     key: 'BAD_PHONE',
@@ -124,5 +146,41 @@ describe('next-app-dir errors helpers', () => {
     } finally {
       warnSpy.mockRestore();
     }
+  });
+
+  test('safe rethrows redirect errors handled by Next.js', async () => {
+    const t = initTRPC.create();
+    const base = t.procedure.experimental_caller(
+      nextAppDirCaller({
+        onError: () => {
+          //
+        },
+      }),
+    );
+
+    const proc = base.query(() => redirect('/dashboard'));
+
+    await expect(safe(proc())).rejects.toMatchObject({
+      digest: 'NEXT_REDIRECT;replace;/dashboard;307',
+    });
+    expect(nextNavigation.redirect).toHaveBeenCalledWith('/dashboard', undefined);
+  });
+
+  test('safe rethrows notFound errors handled by Next.js', async () => {
+    const t = initTRPC.create();
+    const base = t.procedure.experimental_caller(
+      nextAppDirCaller({
+        onError: () => {
+          //
+        },
+      }),
+    );
+
+    const proc = base.query(() => notFound());
+
+    await expect(safe(proc())).rejects.toMatchObject({
+      digest: 'NEXT_NOT_FOUND',
+    });
+    expect(nextNavigation.notFound).toHaveBeenCalledOnce();
   });
 });

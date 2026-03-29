@@ -1,5 +1,6 @@
 import type { TRPCError } from '../../@trpc/server';
 import { getTRPCErrorFromUnknown } from '../../@trpc/server';
+import { rethrowNextErrors } from './rethrowNextErrors';
 
 type inferPromiseErrorShape<TPromise> = TPromise extends {
   readonly __errorShape?: infer TErrorShape;
@@ -41,11 +42,15 @@ export async function safe<TPromise extends Promise<unknown>>(
   try {
     return [await promise, null];
   } catch (cause) {
+    const error = getTRPCErrorFromUnknown(cause) as
+      | TRPCError
+      | inferDeclaredErrorFromShape<inferPromiseErrorShape<TPromise>>;
+
+    rethrowNextErrors(error);
+
     return [
       undefined,
-      getTRPCErrorFromUnknown(cause) as
-        | TRPCError
-        | inferDeclaredErrorFromShape<inferPromiseErrorShape<TPromise>>,
+      error,
     ];
   }
 }
