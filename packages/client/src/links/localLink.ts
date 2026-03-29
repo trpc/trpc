@@ -197,8 +197,6 @@ export function unstable_localLink<TRouter extends AnyRouter>(
               let lastEventId: string | undefined = undefined;
 
               using _finally = makeResource({}, async () => {
-                observer.complete();
-
                 connectionState.next({
                   type: 'state',
                   state: 'idle',
@@ -233,29 +231,31 @@ export function unstable_localLink<TRouter extends AnyRouter>(
                     res = await Promise.race([iterator.next(), signalPromise]);
                   } catch (cause) {
                     if (isAbortError(cause)) {
+                      observer.complete();
                       return;
                     }
-                    const error = getTRPCErrorFromUnknown(cause);
+                    const error = resolveProcedureError(cause);
 
                     if (
                       !retryableRpcCodes.includes(
                         TRPC_ERROR_CODES_BY_KEY[error.code],
                       )
                     ) {
-                      throw coerceToTRPCClientError(error);
+                      throw coerceToTRPCClientError(cause);
                     }
 
-                    onErrorCallback(error);
+                    onErrorCallback(cause);
                     connectionState.next({
                       type: 'state',
                       state: 'connecting',
-                      error: coerceToTRPCClientError(error),
+                      error: coerceToTRPCClientError(cause),
                     });
 
                     break;
                   }
 
                   if (res.done) {
+                    observer.complete();
                     return;
                   }
                   let chunk: TRPCResult<unknown>;

@@ -25,5 +25,5 @@ On the client:
 
 ```
 npm run build
-npm run start
+npm run dev
 ```
