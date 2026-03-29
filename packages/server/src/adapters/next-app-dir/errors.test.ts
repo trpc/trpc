@@ -1,5 +1,14 @@
 import assert from 'node:assert';
 import { beforeEach, describe, expect, expectTypeOf, test, vi } from 'vitest';
+import {
+  createTRPCDeclaredError,
+  initTRPC,
+  TRPCError,
+} from '../../@trpc/server';
+import { safe } from './errors';
+import { nextAppDirCaller } from './nextAppDirCaller';
+import { notFound } from './notFound';
+import { redirect } from './redirect';
 
 const nextNavigation = vi.hoisted(() => ({
   redirect: vi.fn((url: string) => {
@@ -15,16 +24,6 @@ const nextNavigation = vi.hoisted(() => ({
 }));
 
 vi.mock('next/navigation', () => nextNavigation);
-
-import {
-  createTRPCDeclaredError,
-  initTRPC,
-  TRPCError,
-} from '../../@trpc/server';
-import { safe } from './errors';
-import { nextAppDirCaller } from './nextAppDirCaller';
-import { notFound } from './notFound';
-import { redirect } from './redirect';
 
 describe('next-app-dir errors helpers', () => {
   beforeEach(() => {
@@ -163,7 +162,10 @@ describe('next-app-dir errors helpers', () => {
     await expect(safe(proc())).rejects.toMatchObject({
       digest: 'NEXT_REDIRECT;replace;/dashboard;307',
     });
-    expect(nextNavigation.redirect).toHaveBeenCalledWith('/dashboard', undefined);
+    expect(nextNavigation.redirect).toHaveBeenCalledWith(
+      '/dashboard',
+      undefined,
+    );
   });
 
   test('safe rethrows notFound errors handled by Next.js', async () => {
