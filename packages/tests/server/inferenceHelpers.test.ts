@@ -1,5 +1,11 @@
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+import type {
+  inferRouterInputs,
+  inferRouterOutputs,
+  inferSubscriptionInput,
+  inferSubscriptionOutput,
+} from '@trpc/server';
 import { initTRPC } from '@trpc/server';
+import { observable } from '@trpc/server/observable';
 import { z } from 'zod';
 
 const t = initTRPC.create();
@@ -42,6 +48,34 @@ const appRouter = t.router({
       input.text;
       return input;
     }),
+  subscriptionWithObservable: roomProcedure.subscription(({ input }) => {
+    return observable<{ roomId: string }>((emit) => {
+      emit.next({
+        roomId: input.roomId,
+      });
+      emit.complete();
+    });
+  }),
+  subscriptionWithIterable: roomProcedure.subscription(async function* ({
+    input,
+  }) {
+    yield {
+      roomId: input.roomId,
+      text: 'hello',
+    };
+  }),
+});
+
+// @ts-expect-error alternative async-iterable return values are not supported for subscriptions
+roomProcedure.subscription(async function* ({ input }) {
+  yield {
+    roomId: input.roomId,
+    text: 'hello',
+  };
+
+  return {
+    done: true,
+  };
 });
 type AppRouter = typeof appRouter;
 
@@ -103,5 +137,38 @@ describe('inferRouterOutputs', () => {
   test('sad path', async () => {
     type Output = AppRouterOutputs['sendMessage2'];
     expectTypeOf({ roomId: 2, text: 'testing' }).not.toEqualTypeOf<Output>();
+  });
+});
+
+describe('inferSubscriptionInput', () => {
+  test('observable subscription', () => {
+    type Input = inferSubscriptionInput<
+      AppRouter['subscriptionWithObservable']
+    >;
+    expectTypeOf<Input>().toEqualTypeOf<{ roomId: string }>();
+  });
+
+  test('iterable subscription', () => {
+    type Input = inferSubscriptionInput<AppRouter['subscriptionWithIterable']>;
+    expectTypeOf<Input>().toEqualTypeOf<{ roomId: string }>();
+  });
+});
+
+describe('inferSubscriptionOutput', () => {
+  test('observable subscription', () => {
+    type Output = inferSubscriptionOutput<
+      AppRouter['subscriptionWithObservable']
+    >;
+    expectTypeOf<Output>().toEqualTypeOf<{ roomId: string }>();
+  });
+
+  test('iterable subscription', () => {
+    type Output = inferSubscriptionOutput<
+      AppRouter['subscriptionWithIterable']
+    >;
+    expectTypeOf<Output>().toEqualTypeOf<{
+      roomId: string;
+      text: string;
+    }>();
   });
 });
