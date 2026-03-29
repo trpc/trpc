@@ -67,6 +67,18 @@ const appRouter = t.router({
   }),
 });
 
+// @ts-expect-error alternative async-iterable return values are not supported for subscriptions
+roomProcedure.subscription(async function* ({ input }) {
+  yield {
+    roomId: input.roomId,
+    text: 'hello',
+  };
+
+  return {
+    done: true,
+  };
+});
+
 type AppRouter = typeof appRouter;
 
 describe('inferProcedureInput', () => {
