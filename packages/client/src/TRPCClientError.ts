@@ -152,11 +152,16 @@ export class TRPCClientError<TRouterOrProcedure extends InferrableClientTypes>
 
     if (isTRPCClientError(cause)) {
       if (opts.meta) {
-        // Decorate with meta error data
-        cause.meta = {
-          ...cause.meta,
-          ...opts.meta,
-        };
+        // Return a new instance to avoid mutating the original error's meta
+        const merged = new TRPCClientError<TRouterOrProcedure>(cause.message, {
+          result: cause.shape ? { error: cause.shape } : undefined,
+          cause: cause.cause instanceof Error ? cause.cause : undefined,
+          meta: {
+            ...cause.meta,
+            ...opts.meta,
+          },
+        });
+        return merged;
       }
       return cause;
     }

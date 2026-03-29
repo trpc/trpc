@@ -438,7 +438,7 @@ describe('declared errors over httpSubscriptionLink', () => {
     const unregisteredError = errorState!.error!;
     expect(unregisteredError.shape?.code).toBe(-32603);
     expect(unregisteredError.shape?.message).toBe(
-      'An unrecognized error occured',
+      'An unrecognized error occurred',
     );
     expect(unregisteredError.data).toMatchObject({
       code: 'INTERNAL_SERVER_ERROR',
