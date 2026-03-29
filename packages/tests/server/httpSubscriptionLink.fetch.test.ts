@@ -2,11 +2,13 @@ import { EventEmitter, on } from 'node:events';
 /// <reference types="vitest" />
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { createTRPCClient, httpSubscriptionLink } from '@trpc/client';
+import { FetchEventSource } from '@trpc/client/unstable-internals';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
-import { FetchEventSource } from '../../client/src/links/internals/fetchEventSource';
 
 describe('httpSubscriptionLink fetch transport', () => {
+  const noop = vi.fn();
+
   describe('headers', () => {
     const USER_TOKEN = 'supersecret';
     type User = {
@@ -145,7 +147,7 @@ describe('httpSubscriptionLink fetch transport', () => {
       });
 
       const subscription = client.iterableEvent.subscribe(undefined, {
-        onStarted() {},
+        onStarted: noop,
       });
 
       await vi.waitFor(() => {
@@ -189,6 +191,37 @@ describe('httpSubscriptionLink fetch transport', () => {
         expect(requestCount).toBeGreaterThanOrEqual(2);
       },
       { timeout: 3_000 },
+    );
+
+    eventSource.close();
+  });
+
+  test('FetchEventSource honors retry instructions from the SSE stream', async () => {
+    let requestCount = 0;
+    const encoder = new TextEncoder();
+
+    const eventSource = new FetchEventSource('http://example.com/sse', {
+      retry: 1_000,
+      fetch: async () => {
+        requestCount++;
+        return new Response(
+          new ReadableStream({
+            start(controller) {
+              controller.enqueue(
+                encoder.encode('retry: 10\nevent: connected\ndata: {}\n\n'),
+              );
+              controller.close();
+            },
+          }),
+        );
+      },
+    });
+
+    await vi.waitFor(
+      () => {
+        expect(requestCount).toBeGreaterThanOrEqual(2);
+      },
+      { timeout: 500 },
     );
 
     eventSource.close();

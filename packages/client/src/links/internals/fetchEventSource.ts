@@ -17,6 +17,7 @@ export interface FetchEventSourceInit extends EventSourceInit {
   fetch?: FetchEsque;
   headers?: HTTPHeaders;
   credentials?: RequestCredentials;
+  retry?: number;
 }
 
 type SSEMessage = {
@@ -90,6 +91,7 @@ function nodeJsStreamToReaderEsque(source: NodeJSReadableStreamEsque) {
 async function readSSEStream(opts: {
   body: NodeJSReadableStreamEsque | WebReadableStreamEsque;
   onMessage: (message: SSEMessage) => void;
+  onRetry: (retryMs: number) => void;
   signal: AbortSignal;
 }) {
   const reader =
@@ -120,6 +122,40 @@ async function readSSEStream(opts: {
     currentId = undefined;
   };
 
+  const parseLine = (line: string) => {
+    if (line === '') {
+      emit();
+      return;
+    }
+    if (line.startsWith(':')) {
+      return;
+    }
+
+    const separator = line.indexOf(':');
+    const field = separator === -1 ? line : line.slice(0, separator);
+    const rawValue = separator === -1 ? '' : line.slice(separator + 1);
+    const value = rawValue.startsWith(' ') ? rawValue.slice(1) : rawValue;
+
+    switch (field) {
+      case 'event':
+        currentEvent = value || 'message';
+        break;
+      case 'data':
+        currentData += `${value}\n`;
+        break;
+      case 'id':
+        currentId = value;
+        break;
+      case 'retry': {
+        const retryMs = Number.parseInt(value, 10);
+        if (Number.isFinite(retryMs) && retryMs >= 0) {
+          opts.onRetry(retryMs);
+        }
+        break;
+      }
+    }
+  };
+
   while (!opts.signal.aborted) {
     const { done, value } = await reader.read();
     if (done) {
@@ -132,48 +168,14 @@ async function readSSEStream(opts: {
     buffer = lines.pop() ?? '';
 
     for (const line of lines) {
-      if (line === '') {
-        emit();
-        continue;
-      }
-      if (line.startsWith(':')) {
-        continue;
-      }
-
-      const separator = line.indexOf(':');
-      const field = separator === -1 ? line : line.slice(0, separator);
-      const rawValue = separator === -1 ? '' : line.slice(separator + 1);
-      const value = rawValue.startsWith(' ') ? rawValue.slice(1) : rawValue;
-
-      switch (field) {
-        case 'event':
-          currentEvent = value || 'message';
-          break;
-        case 'data':
-          currentData += `${value}\n`;
-          break;
-        case 'id':
-          currentId = value;
-          break;
-      }
+      parseLine(line);
     }
   }
 
   if (buffer) {
     const trailingLines = buffer.split(/\r?\n/);
     for (const line of trailingLines) {
-      if (!line) {
-        emit();
-        continue;
-      }
-      if (line.startsWith('data:')) {
-        const value = line.slice(5).trimStart();
-        currentData += `${value}\n`;
-      } else if (line.startsWith('event:')) {
-        currentEvent = line.slice(6).trimStart() || 'message';
-      } else if (line.startsWith('id:')) {
-        currentId = line.slice(3).trimStart();
-      }
+      parseLine(line);
     }
   }
 
@@ -186,15 +188,22 @@ export class FetchEventSource {
   public readonly CLOSED = 2;
 
   public readyState = this.CONNECTING;
+  public readonly withCredentials: boolean;
+  public onmessage: Listener | null = null;
+  public onerror: Listener | null = null;
+  public onopen: Listener | null = null;
 
   private readonly listeners = new Map<string, Set<ListenerEntry>>();
   private readonly controller = new AbortController();
   private closed = false;
+  private retryDelayMs: number;
 
   constructor(
-    private readonly url: string,
+    public readonly url: string,
     private readonly init: FetchEventSourceInit = {},
   ) {
+    this.withCredentials = init.withCredentials ?? false;
+    this.retryDelayMs = init.retry ?? 1_000;
     void this.start();
   }
 
@@ -233,6 +242,14 @@ export class FetchEventSource {
   };
 
   private dispatch(type: string, event: any) {
+    if (type === 'message') {
+      this.onmessage?.(event);
+    } else if (type === 'error') {
+      this.onerror?.(event);
+    } else if (type === 'open') {
+      this.onopen?.(event);
+    }
+
     const listeners = this.listeners.get(type);
     if (!listeners) {
       return;
@@ -252,7 +269,6 @@ export class FetchEventSource {
 
   private async start() {
     const fetch = getFetch(this.init.fetch);
-    const retryDelayMs = 1_000;
 
     while (!this.closed) {
       this.readyState = this.CONNECTING;
@@ -266,21 +282,19 @@ export class FetchEventSource {
         });
 
         if (!response.ok || !response.body) {
-          throw new Error(
-            `SSE request failed with status ${
-              'status' in response
-                ? String((response as any).status)
-                : 'unknown'
-            }`,
-          );
+          throw new Error(`SSE request failed with status ${response.status}`);
         }
 
         this.readyState = this.OPEN;
+        this.dispatch('open', { type: 'open' });
 
         let shouldReconnect = true;
 
         await readSSEStream({
           body: response.body,
+          onRetry: (retryMs) => {
+            this.retryDelayMs = retryMs;
+          },
           signal: this.controller.signal,
           onMessage: (message) => {
             switch (message.event) {
@@ -321,7 +335,7 @@ export class FetchEventSource {
         return;
       }
 
-      await sleep(retryDelayMs);
+      await sleep(this.retryDelayMs);
     }
   }
 }
