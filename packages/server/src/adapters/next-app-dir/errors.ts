@@ -48,9 +48,6 @@ export async function safe<TPromise extends Promise<unknown>>(
 
     rethrowNextErrors(error);
 
-    return [
-      undefined,
-      error,
-    ];
+    return [undefined, error];
   }
 }
