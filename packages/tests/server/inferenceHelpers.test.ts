@@ -1,16 +1,47 @@
 import type {
+  inferProcedureClientError,
+  inferSubscriptionClientError,
+  TRPCClient,
+  TRPCClientError,
+} from '@trpc/client';
+import type {
   inferProcedureInput,
   inferProcedureOutput,
   inferRouterInputs,
   inferRouterOutputs,
   inferSubscriptionInput,
   inferSubscriptionOutput,
+  TRPCDefaultErrorShape,
 } from '@trpc/server';
-import { initTRPC } from '@trpc/server';
+import { createTRPCDeclaredError, initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { z } from 'zod';
 
 const t = initTRPC.create();
+const RoomNotFoundError = createTRPCDeclaredError({
+  code: 'NOT_FOUND',
+  key: 'ROOM_NOT_FOUND',
+})
+  .data<{
+    reason: 'ROOM_NOT_FOUND';
+  }>()
+  .create({
+    constants: {
+      reason: 'ROOM_NOT_FOUND' as const,
+    },
+  });
+const MessageBlockedError = createTRPCDeclaredError({
+  code: 'FORBIDDEN',
+  key: 'MESSAGE_BLOCKED',
+})
+  .data<{
+    reason: 'MESSAGE_BLOCKED';
+  }>()
+  .create({
+    constants: {
+      reason: 'MESSAGE_BLOCKED' as const,
+    },
+  });
 const roomProcedure = t.procedure.input(
   z.object({
     roomId: z.string(),
@@ -65,9 +96,61 @@ const appRouter = t.router({
       text: 'hello',
     };
   }),
+  getRoomWithRegisteredError: roomProcedure
+    .errors([RoomNotFoundError])
+    .query(({ input }) => {
+      return {
+        id: input.roomId,
+        name: 'This is my room',
+        type: 'Best Room',
+      };
+    }),
+  sendMessageWithRegisteredError: roomProcedure
+    .errors([MessageBlockedError])
+    .mutation(({ input }) => {
+      return input;
+    }),
+  subscriptionWithRegisteredError: roomProcedure
+    .errors([RoomNotFoundError])
+    .subscription(async function* ({ input }) {
+      yield {
+        roomId: input.roomId,
+      };
+    }),
 });
 
 type AppRouter = typeof appRouter;
+type Client = TRPCClient<AppRouter>;
+
+type inferPromiseErrorShape<TPromise> = TPromise extends {
+  readonly __errorShape?: infer TErrorShape;
+}
+  ? TErrorShape
+  : never;
+
+type RoomNotFoundDeclaredErrorShape = {
+  code: -32004;
+  message: 'NOT_FOUND';
+  '~': {
+    kind: 'declared';
+    declaredErrorKey: 'ROOM_NOT_FOUND';
+  };
+  data: {
+    reason: 'ROOM_NOT_FOUND';
+  };
+};
+
+type MessageBlockedDeclaredErrorShape = {
+  code: -32003;
+  message: 'FORBIDDEN';
+  '~': {
+    kind: 'declared';
+    declaredErrorKey: 'MESSAGE_BLOCKED';
+  };
+  data: {
+    reason: 'MESSAGE_BLOCKED';
+  };
+};
 
 describe('inferProcedureInput', () => {
   test('query procedure', () => {
@@ -114,7 +197,7 @@ describe('inferRouterInputs', () => {
 
   test('happy path with optional fields', async () => {
     type Input = AppRouterInputs['sendMessage'];
-    expectTypeOf({ roomId: 'abcd', text: 'testing' }).toMatchTypeOf<Input>();
+    expectTypeOf({ roomId: 'abcd', text: 'testing' }).toExtend<Input>();
   });
 
   test('sad path', async () => {
@@ -140,23 +223,23 @@ describe('inferRouterOutputs', () => {
     expectTypeOf({
       roomId: 'abcd',
       text: 'testing 1',
-    }).toMatchTypeOf<Output>();
+    }).toExtend<Output>();
     expectTypeOf({
       roomId: 'abcd',
       text: 'testing 2',
       optionalKey: 'this is optional',
-    }).toMatchTypeOf<Output>();
+    }).toExtend<Output>();
     expectTypeOf({
       roomId: 'abcd',
       text: 'testing 3',
       optionalKey: 'this is optional',
       testField: 'hey',
-    }).toMatchTypeOf<Output>();
+    }).toExtend<Output>();
     expectTypeOf({
       roomId: 'abcd',
       text: 'testing 3',
       testField: 'hey',
-    }).toMatchTypeOf<Output>();
+    }).toExtend<Output>();
   });
 
   test('sad path', async () => {
@@ -195,5 +278,107 @@ describe('inferSubscriptionOutput', () => {
       roomId: string;
       text: string;
     }>();
+  });
+});
+
+describe('inferProcedureClientError', () => {
+  test('query procedure', () => {
+    type Error = inferProcedureClientError<AppRouter['getRoom']>;
+    type Expected = TRPCClientError<{
+      transformer: false;
+      errorShape: TRPCDefaultErrorShape;
+    }>;
+    expectTypeOf<Error>().toEqualTypeOf<Expected>();
+  });
+
+  test('mutation procedure', () => {
+    type Error = inferProcedureClientError<AppRouter['sendMessage']>;
+    type Expected = TRPCClientError<{
+      transformer: false;
+      errorShape: TRPCDefaultErrorShape;
+    }>;
+    expectTypeOf<Error>().toEqualTypeOf<Expected>();
+  });
+
+  test('subscription procedure', () => {
+    type Error = inferProcedureClientError<
+      AppRouter['subscriptionWithIterable']
+    >;
+    type Expected = TRPCClientError<{
+      transformer: false;
+      errorShape: TRPCDefaultErrorShape;
+    }>;
+    expectTypeOf<Error>().toEqualTypeOf<Expected>();
+  });
+
+  test('query procedure with registered errors matches client reality', () => {
+    type Error = inferProcedureClientError<
+      AppRouter['getRoomWithRegisteredError']
+    >;
+    type ClientErrorShape = inferPromiseErrorShape<
+      ReturnType<Client['getRoomWithRegisteredError']['query']>
+    >;
+    type ClientError = TRPCClientError<{
+      transformer: false;
+      errorShape: ClientErrorShape;
+    }>;
+
+    expectTypeOf<Error>().toEqualTypeOf<ClientError>();
+  });
+
+  test('mutation procedure with registered errors matches client reality', () => {
+    type Error = inferProcedureClientError<
+      AppRouter['sendMessageWithRegisteredError']
+    >;
+    type ClientErrorShape = inferPromiseErrorShape<
+      ReturnType<Client['sendMessageWithRegisteredError']['mutate']>
+    >;
+    type ClientError = TRPCClientError<{
+      transformer: false;
+      errorShape: ClientErrorShape;
+    }>;
+
+    expectTypeOf<Error>().toEqualTypeOf<ClientError>();
+  });
+});
+
+describe('inferSubscriptionClientError', () => {
+  test('observable subscription', () => {
+    type SubscriptionError = inferSubscriptionClientError<
+      AppRouter['subscriptionWithObservable']
+    >;
+    type ProcedureError = inferProcedureClientError<
+      AppRouter['subscriptionWithObservable']
+    >;
+    expectTypeOf<SubscriptionError>().toEqualTypeOf<ProcedureError>();
+  });
+
+  test('iterable subscription', () => {
+    type SubscriptionError = inferSubscriptionClientError<
+      AppRouter['subscriptionWithIterable']
+    >;
+    type ProcedureError = inferProcedureClientError<
+      AppRouter['subscriptionWithIterable']
+    >;
+    expectTypeOf<SubscriptionError>().toEqualTypeOf<ProcedureError>();
+  });
+
+  test('registered subscription matches client reality', () => {
+    type SubscriptionError = inferSubscriptionClientError<
+      AppRouter['subscriptionWithRegisteredError']
+    >;
+    type ProcedureError = inferProcedureClientError<
+      AppRouter['subscriptionWithRegisteredError']
+    >;
+    type ClientSubscriptionError = Parameters<
+      NonNullable<
+        Parameters<
+          Client['subscriptionWithRegisteredError']['subscribe']
+        >[1]['onError']
+      >
+    >[0];
+
+    expectTypeOf<SubscriptionError>().toEqualTypeOf<ProcedureError>();
+    expectTypeOf<SubscriptionError>().toEqualTypeOf<ClientSubscriptionError>();
   });
 });

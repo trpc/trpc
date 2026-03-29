@@ -1,5 +1,5 @@
 import { waitError } from '@trpc/server/__tests__/waitError';
-import type { AnyRouter } from '@trpc/server';
+import type { AnyRouter, inferSubscriptionOutput } from '@trpc/server';
 import {
   createTRPCDeclaredError,
   initTRPC,
@@ -9,7 +9,10 @@ import {
 import { makeResource, run } from '@trpc/server/unstable-core-do-not-import';
 import superjson from 'superjson';
 import { z } from 'zod';
-import { createTRPCClient } from '../createTRPCClient';
+import {
+  createTRPCClient,
+  type inferSubscriptionClientError,
+} from '../createTRPCClient';
 import { isTRPCClientError } from '../TRPCClientError';
 import type { LocalLinkOptions } from './localLink';
 import { experimental_localLink as localLink } from './localLink';
@@ -298,6 +301,105 @@ test('subscription reconnects on errors', async () => {
   `);
 
   expect(result).toEqual(['hello', 'world']);
+});
+
+describe('subscription declared error behavior', () => {
+  const DeclaredAuthError = createTRPCDeclaredError({
+    code: 'UNAUTHORIZED',
+    key: 'DECLARED_AUTH',
+  }).create();
+
+  function setupSubscriptionRouter() {
+    const t = initTRPC.create();
+    let firstUnregisteredRun = true;
+    let firstRegisteredRun = true;
+
+    const appRouter = t.router({
+      unregistered: t.procedure.subscription(async function* () {
+        if (firstUnregisteredRun) {
+          yield 'hello';
+          firstUnregisteredRun = false;
+          throw new DeclaredAuthError();
+        }
+        yield 'world';
+      }),
+      registered: t.procedure
+        .errors([DeclaredAuthError])
+        .subscription(async function* () {
+          if (firstRegisteredRun) {
+            yield 'hello';
+            firstRegisteredRun = false;
+            throw new DeclaredAuthError();
+          }
+          yield 'world';
+        }),
+    });
+
+    return {
+      appRouter,
+      ...localLinkClient<typeof appRouter>({
+        router: appRouter,
+        createContext: async () => ({}),
+      }),
+    };
+  }
+
+  test('reconnects on unregistered declared errors', async () => {
+    const ctx = setupSubscriptionRouter();
+    const { client } = ctx;
+
+    const result = await new Promise<string[]>((resolve) => {
+      const aggregated: string[] = [];
+      client.unregistered.subscribe(undefined, {
+        onData: (data) => {
+          aggregated.push(data);
+        },
+        onComplete: () => {
+          resolve(aggregated);
+        },
+      });
+    });
+
+    expect(ctx.onError).toHaveBeenCalledOnce();
+    expect(ctx.onError.mock.calls[0]?.[0].error.code).toBe(
+      'INTERNAL_SERVER_ERROR',
+    );
+    expect(result).toEqual(['hello', 'world']);
+  });
+
+  test('does not reconnect on registered declared errors', async () => {
+    const ctx = setupSubscriptionRouter();
+    const { appRouter, client } = ctx;
+    type RegisteredProcedure =
+      (typeof appRouter)['_def']['record']['registered'];
+    type RegisteredData = inferSubscriptionOutput<RegisteredProcedure>;
+    type RegisteredError = inferSubscriptionClientError<RegisteredProcedure>;
+
+    const result = await new Promise<{
+      data: RegisteredData[];
+      error: RegisteredError;
+    }>((resolve, reject) => {
+      const aggregated: RegisteredData[] = [];
+      client.registered.subscribe(undefined, {
+        onData: (data) => {
+          aggregated.push(data);
+        },
+        onError: (error) => {
+          resolve({
+            data: aggregated,
+            error,
+          });
+        },
+        onComplete: () => {
+          reject(new Error('Expected registered subscription to fail'));
+        },
+      });
+    });
+
+    expect(result.data).toEqual(['hello']);
+    assert(isTRPCClientError(result.error));
+    expect(result.error.isDeclaredError('DECLARED_AUTH')).toBe(true);
+  });
 });
 
 test('subscription reconnects on errors with the last event id', async () => {
