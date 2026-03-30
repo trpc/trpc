@@ -122,7 +122,7 @@ export interface ActionHandlerDef {
   errorShape: any;
 }
 
-// ts-prune-ignore-next
+// Intentionally exported for the public API.
 /**
  * @internal
  */
