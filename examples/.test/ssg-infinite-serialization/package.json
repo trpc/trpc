@@ -1,6 +1,5 @@
 {
   "name": "examples-test-ssg-infinite-serialization",
-  "version": "11.16.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
