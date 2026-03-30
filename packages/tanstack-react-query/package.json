@@ -62,7 +62,7 @@
     "typescript": ">=5.7.2"
   },
   "devDependencies": {
-    "@tanstack/intent": "^0.0.23",
+    "@tanstack/intent": "^0.0.27",
     "@tanstack/react-query": "^5.80.3",
     "@trpc/client": "11.16.0",
     "@trpc/server": "11.16.0",

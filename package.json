@@ -42,7 +42,7 @@
     "@eslint/compat": "^2.0.0",
     "@ianvs/prettier-plugin-sort-imports": "^4.4.0",
     "@manypkg/cli": "^0.22.0",
-    "@tanstack/intent": "^0.0.23",
+    "@tanstack/intent": "^0.0.27",
     "@testing-library/dom": "^10.0.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.1.0",
