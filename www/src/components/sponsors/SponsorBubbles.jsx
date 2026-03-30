@@ -86,6 +86,7 @@ export function SponsorBubbles() {
                         <a
                           key={`circle-${i}`}
                           href={circle.data.link}
+                          aria-label={circle.data.name}
                           className={
                             `spon-link ` +
                             `absolute z-0 rounded-full bg-white shadow-lg`
