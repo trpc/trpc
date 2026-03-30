@@ -1,4 +1,4 @@
-import { routerToServerAndClientNew } from './___testHelpers';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { initTRPC } from '@trpc/server';
 
 test('children', async () => {
@@ -25,14 +25,12 @@ test('children', async () => {
     }
   `);
 
-  const { close, client } = routerToServerAndClientNew(router);
+  await using ctx = testServerAndClientResource(router);
 
-  expect(await client.foo.query()).toBe('bar');
+  expect(await ctx.client.foo.query()).toBe('bar');
 
-  expect(await client.child.grandchild.foo.query()).toBe('grandchild');
-  expect(await client.child.grandchild.mut.mutate()).toBe('mut');
-
-  await close();
+  expect(await ctx.client.child.grandchild.foo.query()).toBe('grandchild');
+  expect(await ctx.client.child.grandchild.mut.mutate()).toBe('mut');
 });
 
 test('w/o children', async () => {

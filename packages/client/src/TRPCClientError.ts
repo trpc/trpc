@@ -86,7 +86,7 @@ export class TRPCClientError<TRouterOrProcedure extends InferrableClientTypes>
 
   public static from<TRouterOrProcedure extends InferrableClientTypes>(
     _cause: Error | TRPCErrorResponse<any> | object,
-    opts: { meta?: Record<string, unknown> } = {},
+    opts: { meta?: Record<string, unknown>; cause?: Error } = {},
   ): TRPCClientError<TRouterOrProcedure> {
     const cause = _cause as unknown;
 
@@ -104,6 +104,7 @@ export class TRPCClientError<TRouterOrProcedure extends InferrableClientTypes>
       return new TRPCClientError(cause.error.message, {
         ...opts,
         result: cause,
+        cause: opts.cause,
       });
     }
     return new TRPCClientError(

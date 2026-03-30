@@ -7,16 +7,22 @@ slug: /client/react/getQueryKey
 
 We provide a getQueryKey helper that accepts a `router` or `procedure` so that you can easily provide the native function the correct query key.
 
-```tsx
+```tsx twoslash
+type AnyQueryProcedure = any;
+type AnyRouter = any;
+type DeepPartial<T> = T;
+type TInput = unknown;
+type TRPCQueryKey = any[];
+// ---cut---
 // Queries
-function getQueryKey(
+declare function getQueryKey(
   procedure: AnyQueryProcedure,
   input?: DeepPartial<TInput>,
-  type?: QueryType; /** @default 'any' */
+  type?: QueryType, /** @default 'any' */
 ): TRPCQueryKey;
 
 // Routers
-function getQueryKey(
+declare function getQueryKey(
   router: AnyRouter,
 ): TRPCQueryKey;
 
@@ -32,10 +38,34 @@ The query type `any` will match all queries in the cache only if the `react quer
 
 :::
 
-```tsx
+```tsx twoslash
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+const appRouter = t.router({
+  post: t.router({
+    list: t.procedure.query(() => {
+      return [
+        { id: '1', title: 'everlong' },
+        { id: '2', title: 'After Dark' },
+      ];
+    }),
+  }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: component.tsx
+import React from 'react';
+// ---cut---
 import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import { getQueryKey } from '@trpc/react-query';
-import { trpc } from '~/utils/trpc';
+import { trpc } from './utils/trpc';
 
 function MyComponent() {
   const queryClient = useQueryClient();
@@ -44,7 +74,7 @@ function MyComponent() {
 
   // See if a query is fetching
   const postListKey = getQueryKey(trpc.post.list, undefined, 'query');
-  const isFetching = useIsFetching(postListKey);
+  const isFetching = useIsFetching({ queryKey: postListKey });
 
   // Set some query defaults for an entire router
   const postKey = getQueryKey(trpc.post);
@@ -59,5 +89,7 @@ function MyComponent() {
 Similarly to queries, we provide a getMutationKey for mutations. The underlying function is the same as getQueryKey (in fact, you could technically use getQueryKey for mutations as well), the only difference is in semantics.
 
 ```tsx
-function getMutationKey(procedure: AnyMutationProcedure): TRPCMutationKey;
+import { getMutationKey } from '@trpc/react-query';
+
+const mutationKey = getMutationKey(trpc.user.create);
 ```

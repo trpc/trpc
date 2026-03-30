@@ -1,4 +1,4 @@
-import { routerToServerAndClientNew } from '../___testHelpers';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { initTRPC } from '@trpc/server';
 
 test('using client as procedure name', async () => {
@@ -8,10 +8,8 @@ test('using client as procedure name', async () => {
     request: t.procedure.query(() => 'x'),
   });
 
-  const ctx = routerToServerAndClientNew(router);
+  await using ctx = testServerAndClientResource(router);
 
   expect(await ctx.client.client.query()).toBe('x');
   expect(await ctx.client.request.query()).toBe('x');
-
-  await ctx.close();
 });

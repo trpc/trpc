@@ -26,7 +26,7 @@ export function setToken(newToken: string) {
 }
 
 export const trpc = createTRPCNext<AppRouter>({
-  config(opts) {
+  config(config) {
     return {
       links: [
         httpBatchLink({

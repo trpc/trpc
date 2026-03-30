@@ -62,17 +62,22 @@ export type ParserWithInputOutput<TInput, TParsedInput> =
 export type Parser = ParserWithInputOutput<any, any> | ParserWithoutInput<any>;
 
 export type inferParser<TParser extends Parser> =
-  TParser extends ParserWithInputOutput<infer $TIn, infer $TOut>
+  TParser extends ParserStandardSchemaEsque<infer $TIn, infer $TOut>
     ? {
         in: $TIn;
         out: $TOut;
       }
-    : TParser extends ParserWithoutInput<infer $InOut>
+    : TParser extends ParserWithInputOutput<infer $TIn, infer $TOut>
       ? {
-          in: $InOut;
-          out: $InOut;
+          in: $TIn;
+          out: $TOut;
         }
-      : never;
+      : TParser extends ParserWithoutInput<infer $InOut>
+        ? {
+            in: $InOut;
+            out: $InOut;
+          }
+        : never;
 
 export type ParseFn<TType> = (value: unknown) => Promise<TType> | TType;
 

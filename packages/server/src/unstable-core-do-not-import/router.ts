@@ -14,10 +14,10 @@ import type { AnyRootTypes, RootConfig } from './rootConfig';
 import { defaultTransformer } from './transformer';
 import type { MaybePromise, ValueOf } from './types';
 import {
+  emptyObject,
   isFunction,
   isObject,
   mergeWithoutOverrides,
-  omitPrototype,
 } from './utils';
 
 export interface RouterRecord {
@@ -74,8 +74,13 @@ export type RouterCaller<
   },
 ) => DecorateRouterRecord<TRecord>;
 
-const lazySymbol = Symbol('lazy');
-export type Lazy<TAny> = (() => Promise<TAny>) & { [lazySymbol]: true };
+/**
+ * @internal
+ */
+const lazyMarker = 'lazyMarker' as 'lazyMarker' & {
+  __brand: 'lazyMarker';
+};
+export type Lazy<TAny> = (() => Promise<TAny>) & { [lazyMarker]: true };
 
 type LazyLoader<TAny> = {
   load: () => Promise<void>;
@@ -123,13 +128,14 @@ export function lazy<TRouter extends AnyRouter>(
 
     return routers[0];
   }
-  resolve[lazySymbol] = true as const;
 
-  return resolve;
+  (resolve as Lazy<NoInfer<TRouter>>)[lazyMarker] = true as const;
+
+  return resolve as Lazy<NoInfer<TRouter>>;
 }
 
 function isLazy<TAny>(input: unknown): input is Lazy<TAny> {
-  return typeof input === 'function' && lazySymbol in input;
+  return typeof input === 'function' && lazyMarker in input;
 }
 
 /**
@@ -259,8 +265,8 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
       );
     }
 
-    const procedures: Record<string, AnyProcedure> = omitPrototype({});
-    const lazy: Record<string, LazyLoader<AnyRouter>> = omitPrototype({});
+    const procedures: Record<string, AnyProcedure> = emptyObject();
+    const lazy: Record<string, LazyLoader<AnyRouter>> = emptyObject();
 
     function createLazyLoader(opts: {
       ref: Lazy<AnyRouter>;
@@ -298,7 +304,7 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
     }
 
     function step(from: CreateRouterOptions, path: readonly string[] = []) {
-      const aggregate: RouterRecord = omitPrototype({});
+      const aggregate: RouterRecord = emptyObject();
       for (const [key, item] of Object.entries(from ?? {})) {
         if (isLazy(item)) {
           lazy[[...path, key].join('.')] = createLazyLoader({
@@ -443,7 +449,8 @@ export function createCallerFactory<
 
     return function createCaller(ctxOrCallback, opts) {
       return createRecursiveProxy<ReturnType<RouterCaller<any, any>>>(
-        async ({ path, args }) => {
+        async (innerOpts) => {
+          const { path, args } = innerOpts;
           const fullPath = path.join('.');
 
           if (path.length === 1 && path[0] === '_def') {
@@ -470,6 +477,7 @@ export function createCallerFactory<
               ctx,
               type: procedure._def.type,
               signal: opts?.signal,
+              batchIndex: 0,
             });
           } catch (cause) {
             opts?.onError?.({
@@ -550,6 +558,7 @@ export function mergeRouters<TRouters extends AnyRouter[]>(
     ),
     isServer: routerList.every((r) => r._def._config.isServer),
     $types: routerList[0]?._def._config.$types,
+    sse: routerList[0]?._def._config.sse,
   })(record);
 
   return router as MergeRouters<TRouters>;

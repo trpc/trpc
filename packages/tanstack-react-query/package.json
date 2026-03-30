@@ -1,7 +1,7 @@
 {
   "name": "@trpc/tanstack-react-query",
   "type": "module",
-  "version": "11.4.2",
+  "version": "11.16.0",
   "description": "TanStack React Query Integration for tRPC",
   "author": "juliusmarminge",
   "license": "MIT",
@@ -18,8 +18,7 @@
     "build": "tsdown",
     "dev": "tsdown --watch",
     "lint": "eslint --cache src",
-    "test-run:tsc": "tsc --noEmit --pretty",
-    "ts-watch": "tsc --watch"
+    "typecheck": "tsc --noEmit --preserveWatchOutput --pretty"
   },
   "exports": {
     "./package.json": "./package.json",
@@ -40,7 +39,10 @@
     "README.md",
     "package.json",
     "!**/*.test.*",
-    "!**/__tests__"
+    "!**/__tests__",
+    "skills",
+    "!skills/_artifacts",
+    "bin"
   ],
   "eslintConfig": {
     "rules": {
@@ -54,16 +56,16 @@
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.80.3",
-    "@trpc/client": "11.4.2",
-    "@trpc/server": "11.4.2",
+    "@trpc/client": "11.16.0",
+    "@trpc/server": "11.16.0",
     "react": ">=18.2.0",
-    "react-dom": ">=18.2.0",
     "typescript": ">=5.7.2"
   },
   "devDependencies": {
+    "@tanstack/intent": "^0.0.23",
     "@tanstack/react-query": "^5.80.3",
-    "@trpc/client": "11.4.2",
-    "@trpc/server": "11.4.2",
+    "@trpc/client": "11.16.0",
+    "@trpc/server": "11.16.0",
     "@types/node": "^22.13.5",
     "@types/react": "^19.1.0",
     "eslint": "^9.26.0",
@@ -72,15 +74,21 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "tsdown": "0.12.7",
-    "typescript": "^5.8.2",
-    "vitest": "^3.1.2",
+    "typescript": "^5.9.2",
+    "vitest": "^4.0.18",
     "ws": "^8.0.0",
-    "zod": "^3.25.51"
+    "zod": "^4.2.1"
   },
   "publishConfig": {
     "access": "public"
   },
   "funding": [
     "https://trpc.io/sponsor"
-  ]
+  ],
+  "keywords": [
+    "tanstack-intent"
+  ],
+  "bin": {
+    "intent": "./bin/intent.js"
+  }
 }

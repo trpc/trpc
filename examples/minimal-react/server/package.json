@@ -10,14 +10,14 @@
   "dependencies": {
     "@trpc/server": "npm:@trpc/server",
     "cors": "^2.8.5",
-    "zod": "^3.25.51"
+    "zod": "^4.2.1"
   },
   "devDependencies": {
     "@types/cors": "^2.8.13",
     "@types/node": "^22.13.5",
     "eslint": "^9.26.0",
     "tsx": "^4.19.3",
-    "typescript": "^5.8.2"
+    "typescript": "^5.9.2"
   },
-  "version": "11.4.2"
+  "version": "11.16.0"
 }

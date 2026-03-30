@@ -82,6 +82,7 @@ export function unstable_localLink<TRouter extends AnyRouter>(
             ctx,
             type: op.type,
             signal,
+            batchIndex: 0,
           });
         }
 
@@ -112,9 +113,10 @@ export function unstable_localLink<TRouter extends AnyRouter>(
             path: op.path,
             type: op.type,
           });
-          return TRPCClientError.from({
-            error: transformChunk(shape),
-          });
+          return TRPCClientError.from(
+            { error: transformChunk(shape) },
+            { cause: cause instanceof Error ? cause : undefined },
+          );
         }
 
         run(async () => {

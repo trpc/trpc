@@ -1,0 +1,126 @@
+---
+description: tRPC React Query (legacy) testing patterns using createAppRouter
+globs: ['packages/react-query/**/*.test.tsx']
+alwaysApply: false
+---
+
+# tRPC React Query (Legacy) Testing Patterns
+
+## Legacy React Query Specific Testing
+
+### ALWAYS use createAppRouter pattern
+
+- **ALWAYS** use `createAppRouter()` helper for legacy React Query tests
+- Import from `./__testHelpers` or create inline router with `testServerAndClientResource`
+- Uses older React Query patterns with `createTRPCReact()`
+
+### Test Resource Management
+
+```typescript
+// ✅ CORRECT: Legacy React Query pattern
+const ctx = konn()
+  .beforeEach(() => createAppRouter())
+  .afterEach((ctx) => ctx?.close?.())
+  .done();
+
+// Or inline pattern
+const { client, trpcClientOptions, close } = testServerAndClientResource(
+  appRouter,
+  {
+    server: { createContext },
+    client({ httpUrl, wssUrl }) {
+      return {
+        links: [
+          // custom link configuration
+        ],
+      };
+    },
+  },
+);
+```
+
+### Legacy React Query APIs
+
+- Use `trpc` created with `createTRPCReact<typeof appRouter>()`
+- Use `App` component wrapper with legacy Provider pattern
+- Access `queryClient`, `db`, `resolvers` from createAppRouter
+
+### Test Structure for Legacy React Query
+
+```typescript
+test('legacy react query test', async () => {
+  const { trpc, App, db } = ctx;
+
+  function MyComponent() {
+    const query = trpc.allPosts.useQuery();
+
+    return (
+      <div>
+        {query.data ? `Posts: ${query.data.length}` : 'Loading...'}
+      </div>
+    );
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>
+  );
+
+  await vi.waitFor(() => {
+    expect(utils.container).toHaveTextContent('Posts:');
+  });
+});
+```
+
+### Provider Setup for Legacy React Query
+
+- Uses `trpc.Provider` with legacy pattern
+- Wraps with `QueryClientProvider`
+- Custom `App` component provides both providers
+
+### Legacy Helpers Available
+
+- `createAppRouter()` - Creates full router with test data
+- `db` - Direct access to test database
+- `resolvers` - Spy functions for route calls
+- `linkSpy` - Link operation spying
+- `createContext` - Context creation spy
+
+### Import Requirements for Legacy React Query
+
+#### Test Helper Imports
+
+- **ALWAYS** import `createAppRouter` from `./__testHelpers` (note the different filename from other packages)
+- **Alternative**: Import `testServerAndClientResource` directly and create inline router
+- Path: `import { createAppRouter } from './__testHelpers';`
+- **NEVER** use `__helpers` (without 'test' prefix) - that's for other packages
+
+#### Other Required Imports
+
+- Import `createTRPCReact` from `@trpc/react-query` for legacy pattern
+- Import `konn` from `konn` for test lifecycle management
+- Import `@testing-library/react` for rendering
+- Import `getUntypedClient` from `@trpc/client`
+- Import React Query utilities for legacy patterns
+
+### Key Differences from TanStack React Query
+
+- Uses older `createTRPCReact()` pattern
+- Has built-in test database and resolvers
+- Uses `konn()` for test lifecycle
+- More complex provider setup with custom App component
+- Legacy link configuration patterns
+
+### Helper Import Comparison
+
+```typescript
+// ✅ Legacy React Query (this package)
+import { createAppRouter } from './__testHelpers'; // Note: __testHelpers
+
+// ❌ DON'T use TanStack React Query pattern
+import { testReactResource } from './__helpers'; // Wrong package
+
+// ❌ DON'T use upgrade package pattern
+import { testReactResource } from './test/__helpers'; // Wrong approach
+```

@@ -5,7 +5,7 @@ sidebar_label: Input & Output Validators
 slug: /server/validators
 ---
 
-tRPC procedures may define validation logic for their input and/or output, and validators are also used to infer the types of inputs and outputs. We have first class support for many popular validators, and you can [integrate validators](#contributing-your-own-validator-library) which we don't directly support.
+tRPC procedures may define validation logic for their input and/or output, and validators are also used to infer the types of inputs and outputs (using the [Standard Schema](https://standardschema.dev) interface if available, or custom interfaces for supported validators if not). We have first class support for many popular validators, and you can [integrate validators](#contributing-your-own-validator-library) which we don't directly support.
 
 ## Input Validators
 
@@ -16,13 +16,11 @@ To set up an input validator, use the `procedure.input()` method:
 ```ts twoslash
 // @target: esnext
 import { initTRPC } from '@trpc/server';
-// ---cut---
-
-// Our examples use Zod by default, but usage with other libraries is identical
 import { z } from 'zod';
 
-export const t = initTRPC.create();
+const t = initTRPC.create();
 const publicProcedure = t.procedure;
+// ---cut---
 
 export const appRouter = t.router({
   hello: publicProcedure
@@ -44,6 +42,8 @@ export const appRouter = t.router({
 ### Input Merging
 
 `.input()` can be stacked to build more complex types, which is particularly useful when you want to utilise some common input to a collection of procedures in a [middleware](middlewares).
+
+Input merging works by spreading object properties together. This means only **object types** can be chained — non-object types (like `z.string()`) cannot be merged. If two chained `.input()` calls define the same property, the later one takes precedence.
 
 ```ts twoslash
 // @target: esnext
@@ -96,7 +96,6 @@ If output validation fails, the server will respond with an `INTERNAL_SERVER_ERR
 ```ts twoslash
 // @target: esnext
 import { initTRPC } from '@trpc/server';
-// @noErrors
 // ---cut---
 
 import { z } from 'zod';
@@ -113,8 +112,8 @@ export const appRouter = t.router({
     )
     .query((opts) => {
       return {
-        gre,
-        // ^|
+        greeting: 'hello world',
+        //^?
       };
     }),
 });
@@ -169,7 +168,7 @@ export type AppRouter = typeof appRouter;
 
 ## Library integrations
 
-tRPC works out of the box with a number of popular validation and parsing libraries, including any library conforming to [standard-schema](https://standardschema.dev). The below are some examples of usage with validators which we officially maintain support for.
+tRPC works out of the box with a number of popular validation and parsing libraries, including any library conforming to [Standard Schema](https://standardschema.dev). The below are some examples of usage with validators which we officially maintain support for.
 
 ### With [Zod](https://github.com/colinhacks/zod)
 
@@ -321,7 +320,7 @@ export type AppRouter = typeof appRouter;
 
 ### With [ArkType](https://github.com/arktypeio/arktype#trpc)
 
-```ts twoslash
+```ts
 import { initTRPC } from '@trpc/server';
 import { type } from 'arktype';
 
@@ -330,10 +329,9 @@ export const t = initTRPC.create();
 const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
-  hello: publicProcedure.input(type({ name: 'string' })).query(({ input }) => {
-    //                                                            ^?
+  hello: publicProcedure.input(type({ name: 'string' })).query((opts) => {
     return {
-      greeting: `hello ${input.name}`,
+      greeting: `hello ${opts.input.name}`,
     };
   }),
 });
@@ -343,7 +341,7 @@ export type AppRouter = typeof appRouter;
 
 ### With [effect](https://github.com/Effect-TS/effect/tree/main/packages/schema)
 
-```ts
+```ts twoslash
 import { initTRPC } from '@trpc/server';
 import { Schema } from 'effect';
 
@@ -424,7 +422,7 @@ As a convenience `@robolex/sure` provides [sure/src/err.ts](https://github.com/r
 
 ```ts
 // sure/src/err.ts
-export const err = (schema) => (input) => {
+export const err = (schema: any) => (input: any) => {
   const [good, result] = schema(input);
   if (good) return result;
   throw result;
@@ -495,4 +493,4 @@ export type AppRouter = typeof appRouter;
 
 If you work on a validator library which supports tRPC usage, please feel free to open a PR for this page with equivalent usage to the other examples here, and a link to your docs.
 
-Integration with tRPC in most cases is as simple as meeting one of several existing type interfaces. Conforming to [standard-schema](https://standardschema.dev) is recommended, but in some cases we may accept a PR to add a new supported interface. Feel free to open an issue for discussion. You can check the existing supported interfaces and functions for parsing/validation [in code](https://github.com/trpc/trpc/blob/main/packages/server/src/unstable-core-do-not-import/parser.ts).
+Integration with tRPC in most cases is as simple as meeting one of several existing type interfaces. Conforming to [Standard Schema](https://standardschema.dev) is recommended, but in some cases we may accept a PR to add a new supported interface. Feel free to open an issue for discussion. You can check the existing supported interfaces and functions for parsing/validation [in code](https://github.com/trpc/trpc/blob/main/packages/server/src/unstable-core-do-not-import/parser.ts).

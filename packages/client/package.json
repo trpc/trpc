@@ -1,7 +1,7 @@
 {
   "name": "@trpc/client",
   "type": "module",
-  "version": "11.4.2",
+  "version": "11.16.0",
   "description": "The tRPC client library",
   "author": "KATT",
   "license": "MIT",
@@ -26,7 +26,7 @@
     "build": "tsdown",
     "dev": "tsdown --watch",
     "lint": "eslint --cache src",
-    "ts-watch": "tsc --watch"
+    "typecheck": "tsc --noEmit --preserveWatchOutput --pretty"
   },
   "exports": {
     "./package.json": "./package.json",
@@ -109,14 +109,18 @@
     "links",
     "unstable-internals",
     "!**/*.test.*",
-    "!**/__tests__"
+    "!**/__tests__",
+    "skills",
+    "!skills/_artifacts",
+    "bin"
   ],
   "peerDependencies": {
-    "@trpc/server": "11.4.2",
+    "@trpc/server": "11.16.0",
     "typescript": ">=5.7.2"
   },
   "devDependencies": {
-    "@trpc/server": "11.4.2",
+    "@tanstack/intent": "^0.0.23",
+    "@trpc/server": "11.16.0",
     "@types/isomorphic-fetch": "^0.0.39",
     "@types/node": "^22.13.5",
     "dataloader": "^2.2.2",
@@ -125,7 +129,7 @@
     "node-fetch": "^3.3.0",
     "tsdown": "0.12.7",
     "tslib": "^2.8.1",
-    "typescript": "^5.8.2",
+    "typescript": "^5.9.2",
     "undici": "^7.0.0",
     "ws": "^8.0.0"
   },
@@ -134,5 +138,11 @@
   },
   "funding": [
     "https://trpc.io/sponsor"
-  ]
+  ],
+  "keywords": [
+    "tanstack-intent"
+  ],
+  "bin": {
+    "intent": "./bin/intent.js"
+  }
 }

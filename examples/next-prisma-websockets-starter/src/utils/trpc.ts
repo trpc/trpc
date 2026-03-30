@@ -62,7 +62,7 @@ export const trpc = createTRPCNext<AppRouter>({
    */
   ssr: true,
   ssrPrepass,
-  config({ ctx }) {
+  config(config) {
     /**
      * If you want to use SSR, you need to use the server's full URL
      * @see https://trpc.io/docs/v11/ssr
@@ -80,7 +80,7 @@ export const trpc = createTRPCNext<AppRouter>({
               typeof window !== 'undefined') ||
             (opts.direction === 'down' && opts.result instanceof Error),
         }),
-        getEndingLink(ctx),
+        getEndingLink(config.ctx),
       ],
       /**
        * @see https://tanstack.com/query/v5/docs/reference/QueryClient

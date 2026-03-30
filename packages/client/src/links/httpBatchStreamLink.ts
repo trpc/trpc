@@ -1,6 +1,7 @@
 import type { AnyRouter, ProcedureType } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import type { TRPCErrorShape, TRPCResponse } from '@trpc/server/rpc';
+import type { AnyClientTypes } from '@trpc/server/unstable-core-do-not-import';
 import { jsonlStreamConsumer } from '@trpc/server/unstable-core-do-not-import';
 import type { BatchLoader } from '../internals/dataLoader';
 import { dataLoader } from '../internals/dataLoader';
@@ -17,11 +18,22 @@ import {
 } from './internals/httpUtils';
 import type { Operation, TRPCLink } from './types';
 
+export type HTTPBatchStreamLinkOptions<TRoot extends AnyClientTypes> =
+  HTTPBatchLinkOptions<TRoot> & {
+    /**
+     * Which header to use to signal the server that the client wants a streaming response.
+     * - `'trpc-accept'` (default): sends `trpc-accept: application/jsonl` header
+     * - `'accept'`: sends `Accept: application/jsonl` header, which can avoid CORS preflight for cross-origin streaming queries. Be aware that `application/jsonl` is not an official MIME type and so this is not completely spec-compliant - you should test that your infrastructure supports this value.
+     * @default 'trpc-accept'
+     */
+    streamHeader?: 'trpc-accept' | 'accept';
+  };
+
 /**
  * @see https://trpc.io/docs/client/links/httpBatchStreamLink
  */
 export function httpBatchStreamLink<TRouter extends AnyRouter>(
-  opts: HTTPBatchLinkOptions<TRouter['_def']['_config']['$types']>,
+  opts: HTTPBatchStreamLinkOptions<TRouter['_def']['_config']['$types']>,
 ): TRPCLink<TRouter> {
   const resolvedOpts = resolveHTTPLinkOptions(opts);
   const maxURLLength = opts.maxURLLength ?? Infinity;
@@ -68,6 +80,7 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
             type,
             contentTypeHeader: 'application/json',
             trpcAcceptHeader: 'application/jsonl',
+            trpcAcceptHeaderKey: opts.streamHeader ?? 'trpc-accept',
             getUrl,
             getBody,
             inputs,
@@ -86,12 +99,36 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
           });
 
           const res = await responsePromise;
+
+          if (!res.ok) {
+            // Server returned a non-2xx response (e.g. batching disabled).
+            // The body is plain JSON, not JSONL, so parse it directly and
+            // propagate the same error to every operation in the batch.
+            const json = (await res.json()) as TRPCResponse;
+            if ('error' in json) {
+              json.error = resolvedOpts.transformer.output.deserialize(
+                json.error,
+              );
+            }
+
+            return batchOps.map(
+              (): Promise<HTTPResult> =>
+                Promise.resolve({
+                  json,
+                  meta: {
+                    response: res,
+                  },
+                }),
+            );
+          }
+
           const [head] = await jsonlStreamConsumer<
             Record<string, Promise<any>>
           >({
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             from: res.body!,
-            deserialize: resolvedOpts.transformer.output.deserialize,
+            deserialize: (data) =>
+              resolvedOpts.transformer.output.deserialize(data),
             // onError: console.error,
             formatError(opts) {
               const error = opts.error as TRPCErrorShape;

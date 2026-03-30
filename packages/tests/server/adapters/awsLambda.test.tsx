@@ -50,8 +50,8 @@ const router = t.router({
         })
         .nullish(),
     )
-    .query(({ input, ctx }) => ({
-      text: `hello ${input?.who ?? ctx?.user ?? 'world'}`,
+    .query((opts) => ({
+      text: `hello ${opts.input?.who ?? opts.ctx?.user ?? 'world'}`,
     })),
   echo: t.procedure
     .input(
@@ -75,7 +75,7 @@ const router = t.router({
       };
     }),
   request: t.router({
-    info: t.procedure.query(({ ctx }) => ctx.info),
+    info: t.procedure.query((opts) => opts.ctx.info),
   }),
   iterable: t.procedure.query(async function* () {
     for (let i = 0; i < 3; i++) {
@@ -227,7 +227,7 @@ test('basic test', async () => {
     Object {
       "headers": Object {
         "content-type": "application/json",
-        "vary": "trpc-accept",
+        "vary": "trpc-accept, accept",
       },
       "statusCode": 200,
     }
@@ -259,7 +259,7 @@ test('v1 request info', async () => {
     Object {
       "headers": Object {
         "content-type": "application/json",
-        "vary": "trpc-accept",
+        "vary": "trpc-accept, accept",
       },
       "statusCode": 200,
     }
@@ -271,6 +271,7 @@ test('v1 request info', async () => {
           "accept": null,
           "calls": Array [
             Object {
+              "batchIndex": 0,
               "path": "request.info",
             },
           ],
@@ -302,7 +303,7 @@ test('test v1 with leading prefix', async () => {
     Object {
       "headers": Object {
         "content-type": "application/json",
-        "vary": "trpc-accept",
+        "vary": "trpc-accept, accept",
       },
       "statusCode": 200,
     }
@@ -335,7 +336,7 @@ test('test v1 can find procedure even if resource is not proxied', async () => {
     Object {
       "headers": Object {
         "content-type": "application/json",
-        "vary": "trpc-accept",
+        "vary": "trpc-accept, accept",
       },
       "statusCode": 200,
     }
@@ -369,7 +370,7 @@ test('bad type', async () => {
     Object {
       "headers": Object {
         "content-type": "application/json",
-        "vary": "trpc-accept",
+        "vary": "trpc-accept, accept",
       },
       "statusCode": 400,
     }
@@ -388,13 +389,12 @@ test('bad type', async () => {
         },
         "message": "[
       {
-        "code": "invalid_type",
         "expected": "object",
-        "received": "array",
+        "code": "invalid_type",
         "path": [
           "who"
         ],
-        "message": "Expected object, received array"
+        "message": "Invalid input: expected object, received array"
       }
     ]",
       },
@@ -431,7 +431,7 @@ test('test v2 format', async () => {
       "cookies": Array [],
       "headers": Object {
         "content-type": "application/json",
-        "vary": "trpc-accept",
+        "vary": "trpc-accept, accept",
       },
       "statusCode": 200,
     }
@@ -477,7 +477,7 @@ test('test v2 format with multiple / in query key', async () => {
       "cookies": Array [],
       "headers": Object {
         "content-type": "application/json",
-        "vary": "trpc-accept",
+        "vary": "trpc-accept, accept",
       },
       "statusCode": 200,
     }
@@ -524,7 +524,7 @@ test('test v2 format with non default routeKey', async () => {
       "cookies": Array [],
       "headers": Object {
         "content-type": "application/json",
-        "vary": "trpc-accept",
+        "vary": "trpc-accept, accept",
       },
       "statusCode": 200,
     }
@@ -570,7 +570,7 @@ test('test v2 format with non default routeKey and nested router', async () => {
       "cookies": Array [],
       "headers": Object {
         "content-type": "application/json",
-        "vary": "trpc-accept",
+        "vary": "trpc-accept, accept",
       },
       "statusCode": 200,
     }
@@ -616,7 +616,7 @@ test('router with no context', async () => {
     Object {
       "headers": Object {
         "content-type": "application/json",
-        "vary": "trpc-accept",
+        "vary": "trpc-accept, accept",
       },
       "statusCode": 200,
     }
@@ -642,7 +642,7 @@ test('test base64 encoded apigateway proxy integration', async () => {
     Object {
       "headers": Object {
         "content-type": "application/json",
-        "vary": "trpc-accept",
+        "vary": "trpc-accept, accept",
       },
       "statusCode": 200,
     }
@@ -689,7 +689,7 @@ test('v1 cookies', async () => {
     Object {
       "headers": Object {
         "content-type": "application/json",
-        "vary": "trpc-accept",
+        "vary": "trpc-accept, accept",
       },
       "multiValueHeaders": Object {
         "set-cookie": Array [
@@ -759,7 +759,7 @@ test('v2 cookies', async () => {
       ],
       "headers": Object {
         "content-type": "application/json",
-        "vary": "trpc-accept",
+        "vary": "trpc-accept, accept",
       },
       "statusCode": 200,
     }

@@ -294,22 +294,6 @@ test('adapter with pre-parsed body - undefined', async () => {
   expect(body).toBe('');
 });
 
-// regression test for https://github.com/trpc/trpc/issues/6193
-test('aborts request when socket ends', async () => {
-  const mockReq = createMockReq({
-    method: 'POST',
-  });
-
-  const request = incomingMessageToRequest(mockReq, createMockRes(), {
-    maxBodySize: null,
-  });
-
-  expect(request.signal.aborted).toBe(false);
-  mockReq.socket.emit('close');
-
-  expect(request.signal.aborted).toBe(true);
-});
-
 test('aborts request when response closes', async () => {
   const mockReq = createMockReq({
     method: 'POST',

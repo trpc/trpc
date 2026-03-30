@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'http';
-import { routerToServerAndClientNew } from './___testHelpers';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { initTRPC } from '@trpc/server';
 import fetch from 'node-fetch';
 
@@ -21,7 +21,7 @@ test('set custom headers in beforeEnd', async () => {
     }),
   });
 
-  const { close, httpUrl } = routerToServerAndClientNew(appRouter, {
+  await using ctx = testServerAndClientResource(appRouter, {
     server: {
       onError,
       responseMeta({ ctx, paths, type, errors }) {
@@ -49,7 +49,7 @@ test('set custom headers in beforeEnd', async () => {
     },
   });
   {
-    const res = await fetch(`${httpUrl}/public.q`);
+    const res = await fetch(`${ctx.httpUrl}/public.q`);
 
     expect(await res.json()).toMatchInlineSnapshot(`
 Object {
@@ -64,7 +64,7 @@ Object {
     );
   }
   {
-    const res = await fetch(`${httpUrl}/nonCachedEndpoint`);
+    const res = await fetch(`${ctx.httpUrl}/nonCachedEndpoint`);
 
     expect(await res.json()).toMatchInlineSnapshot(`
 Object {
@@ -76,8 +76,6 @@ Object {
 
     expect(res.headers.get('cache-control')).toBeNull();
   }
-
-  await close();
 });
 
 test('cookie headers', async () => {
@@ -95,7 +93,7 @@ test('cookie headers', async () => {
     }),
   });
 
-  const { close, httpUrl } = routerToServerAndClientNew(appRouter, {
+  await using ctx = testServerAndClientResource(appRouter, {
     server: {
       onError,
       responseMeta() {
@@ -110,7 +108,7 @@ test('cookie headers', async () => {
   });
 
   {
-    const res = await fetch(`${httpUrl}/cookieEndpoint`);
+    const res = await fetch(`${ctx.httpUrl}/cookieEndpoint`);
 
     expect(res.headers.get('set-cookie')).toMatchInlineSnapshot(`
 "a=b, b=c"
@@ -124,8 +122,6 @@ Object {
 }
 `);
   }
-
-  await close();
 });
 
 describe('deprecated headers object', () => {
@@ -147,7 +143,7 @@ describe('deprecated headers object', () => {
       }),
     });
 
-    const { close, httpUrl } = routerToServerAndClientNew(appRouter, {
+    await using ctx = testServerAndClientResource(appRouter, {
       server: {
         onError,
         responseMeta({ ctx, paths, type, errors }) {
@@ -172,7 +168,7 @@ describe('deprecated headers object', () => {
       },
     });
     {
-      const res = await fetch(`${httpUrl}/public.q`);
+      const res = await fetch(`${ctx.httpUrl}/public.q`);
 
       expect(await res.json()).toMatchInlineSnapshot(`
 Object {
@@ -187,7 +183,7 @@ Object {
       );
     }
     {
-      const res = await fetch(`${httpUrl}/nonCachedEndpoint`);
+      const res = await fetch(`${ctx.httpUrl}/nonCachedEndpoint`);
 
       expect(await res.json()).toMatchInlineSnapshot(`
 Object {
@@ -199,8 +195,6 @@ Object {
 
       expect(res.headers.get('cache-control')).toBeNull();
     }
-
-    await close();
   });
 
   test('cookie headers', async () => {
@@ -218,7 +212,7 @@ Object {
       }),
     });
 
-    const { close, httpUrl } = routerToServerAndClientNew(appRouter, {
+    await using ctx = testServerAndClientResource(appRouter, {
       server: {
         onError,
         responseMeta() {
@@ -232,7 +226,7 @@ Object {
     });
 
     {
-      const res = await fetch(`${httpUrl}/cookieEndpoint`);
+      const res = await fetch(`${ctx.httpUrl}/cookieEndpoint`);
 
       expect(res.headers.get('set-cookie')).toMatchInlineSnapshot(`
 "a=b, b=c"
@@ -246,7 +240,5 @@ Object {
 }
 `);
     }
-
-    await close();
   });
 });

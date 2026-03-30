@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { EventEmitter } from 'events';
 import ws from '@fastify/websocket';
 import '@testing-library/react';
@@ -7,6 +8,7 @@ import {
   createWSClient,
   httpBatchLink,
   httpBatchStreamLink,
+  httpLink,
   splitLink,
   wsLink,
 } from '@trpc/client';
@@ -52,8 +54,8 @@ function createAppRouter() {
     ping: publicProcedure.query(() => {
       return 'pong';
     }),
-    echo: publicProcedure.input(z.string()).query(({ input }) => {
-      return input;
+    echo: publicProcedure.input(z.string()).query((opts) => {
+      return opts.input;
     }),
     hello: publicProcedure
       .input(
@@ -63,12 +65,12 @@ function createAppRouter() {
           })
           .nullish(),
       )
-      .query(({ input, ctx }) => ({
-        text: `hello ${input?.username ?? ctx.user?.name ?? 'world'}`,
+      .query((opts) => ({
+        text: `hello ${opts.input?.username ?? opts.ctx.user?.name ?? 'world'}`,
       })),
     helloMutation: publicProcedure
       .input(z.string())
-      .mutation(({ input }) => `hello ${input}`),
+      .mutation((opts) => `hello ${opts.input}`),
     editPost: publicProcedure
       .input(
         z.object({
@@ -79,11 +81,11 @@ function createAppRouter() {
           }),
         }),
       )
-      .mutation(async ({ input, ctx }) => {
-        if (ctx.user.name === 'anonymous') {
+      .mutation(async (opts) => {
+        if (opts.ctx.user.name === 'anonymous') {
           return { error: 'Unauthorized user' };
         }
-        const { id, data } = input;
+        const { id, data } = opts.input;
         return { id, ...data };
       }),
     onMessage: publicProcedure.input(z.string()).subscription(() => {
@@ -102,10 +104,10 @@ function createAppRouter() {
       return sub;
     }),
     request: router({
-      info: publicProcedure.query(({ ctx }) => {
+      info: publicProcedure.query((opts) => {
         return {
-          ...ctx.info,
-          url: ctx.info.url?.href ?? null,
+          ...opts.ctx.info,
+          url: opts.ctx.info.url?.href ?? null,
         };
       }),
     }),
@@ -120,6 +122,20 @@ function createAppRouter() {
           setTimeout(resolve, opts.input.wait * 10),
         );
         return opts.input.wait;
+      }),
+    multipartForm: publicProcedure
+      .input(
+        z.custom<FormData>((input) => {
+          // input instanceof FormData return false but is a FormData type
+          // maybe undici version
+          // eslint-disable-next-line @typescript-eslint/no-base-to-string
+          return (input as object).toString() === '[object FormData]';
+        }),
+      )
+      .mutation(async ({ input }) => {
+        const result = {} as Record<string, any>;
+        result['id'] = (input as any).get('id');
+        return result;
       }),
   });
 
@@ -229,10 +245,18 @@ function createClient(opts: ClientOptions) {
           return op.type === 'subscription';
         },
         true: wsLink({ client: wsClient }),
-        false: httpBatchStreamLink({
-          url: `http://${host}`,
-          headers: opts.headers,
-          fetch: fetch as any,
+        false: splitLink({
+          condition(op) {
+            return op.input instanceof FormData;
+          },
+          true: httpLink({
+            url: `http://${host}`,
+            headers: opts.headers,
+          }),
+          false: httpBatchStreamLink({
+            url: `http://${host}`,
+            headers: opts.headers,
+          }),
         }),
       }),
     ],
@@ -449,6 +473,16 @@ describe('anonymous user', () => {
     expect(results).toEqual([3, 1, 2]);
     expect(orderedResults).toEqual([1, 2, 3]);
   });
+  test('multipart/formdata', async () => {
+    const fd = new FormData();
+    fd.set('id', 'bar');
+
+    expect(await app.client.multipartForm.mutate(fd)).toMatchInlineSnapshot(`
+    Object {
+      "id": "bar",
+    }
+  `);
+  });
 });
 
 describe('authorized user', () => {
@@ -480,6 +514,7 @@ describe('authorized user', () => {
         "accept": "application/jsonl",
         "calls": Array [
           Object {
+            "batchIndex": 0,
             "path": "request.info",
           },
         ],

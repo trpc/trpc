@@ -10,6 +10,8 @@ slug: /client/vanilla/infer-types
 ```twoslash include server
 // @module: esnext
 // @filename: server.ts
+// ---cut---
+
 import { initTRPC } from '@trpc/server';
 import { z } from "zod";
 
@@ -34,6 +36,16 @@ const appRouter = t.router({
         // imaginary db call
         return { id: 1, ...opts.input };
     }),
+    onPostAdd: t.procedure
+      .input(z.object({ authorId: z.string() }))
+      .subscription(async function* ({ input }) {
+        // imaginary event source
+        yield {
+          id: 1,
+          title: 'tRPC is the best!',
+          authorId: input.authorId,
+        };
+    }),
   }),
 });
 
@@ -46,6 +58,10 @@ It is often useful to access the types of your API within your clients. For this
 
 - `inferRouterInputs<TRouter>`
 - `inferRouterOutputs<TRouter>`
+- `inferProcedureInput<TProcedure>`
+- `inferProcedureOutput<TProcedure>`
+- `inferSubscriptionInput<TProcedure>`
+- `inferSubscriptionOutput<TProcedure>`
 
 ## Inferring Input & Output Types
 
@@ -60,8 +76,8 @@ Using the helpers, we can infer the types of our router. The following example s
 ```ts twoslash title="client.ts"
 // @module: esnext
 // @include: server
-// ---cut---
 // @filename: client.ts
+// ---cut---
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from './server';
 
@@ -71,6 +87,46 @@ type RouterOutput = inferRouterOutputs<AppRouter>;
 type PostCreateInput = RouterInput['post']['create'];
 //   ^?
 type PostCreateOutput = RouterOutput['post']['create'];
+//   ^?
+```
+
+## Inferring Individual Procedure Types
+
+If you already have access to a specific procedure on your router, you can infer its input or output directly:
+
+```ts twoslash title="client.ts"
+// @module: esnext
+// @include: server
+// @filename: client.ts
+// ---cut---
+import type {
+  inferProcedureInput,
+  inferProcedureOutput,
+} from '@trpc/server';
+import type { AppRouter } from './server';
+
+type PostByIdInput = inferProcedureInput<AppRouter['post']['byId']>;
+//   ^?
+type PostByIdOutput = inferProcedureOutput<AppRouter['post']['byId']>;
+//   ^?
+```
+
+For subscriptions, you can infer the subscription input and the emitted data type:
+
+```ts twoslash title="client.ts"
+// @module: esnext
+// @include: server
+// @filename: client.ts
+// ---cut---
+import type {
+  inferSubscriptionInput,
+  inferSubscriptionOutput,
+} from '@trpc/server';
+import type { AppRouter } from './server';
+
+type OnPostAddInput = inferSubscriptionInput<AppRouter['post']['onPostAdd']>;
+//   ^?
+type OnPostAddOutput = inferSubscriptionOutput<AppRouter['post']['onPostAdd']>;
 //   ^?
 ```
 
@@ -94,8 +150,8 @@ export const trpc = createTRPCClient<AppRouter>({
   ],
 });
 
-// ---cut---
 // @filename: client.ts
+// ---cut---
 import { TRPCClientError } from '@trpc/client';
 import type { AppRouter } from './server';
 import { trpc } from './trpc';

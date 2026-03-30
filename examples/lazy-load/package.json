@@ -13,15 +13,15 @@
   "dependencies": {
     "@trpc/client": "npm:@trpc/client",
     "@trpc/server": "npm:@trpc/server",
-    "zod": "^3.25.51"
+    "zod": "^4.2.1"
   },
   "devDependencies": {
     "@types/node": "^22.13.5",
     "npm-run-all": "^4.1.5",
     "start-server-and-test": "^1.12.0",
     "tsx": "^4.19.3",
-    "typescript": "^5.8.2",
+    "typescript": "^5.9.2",
     "wait-port": "^1.0.1"
   },
-  "version": "11.4.2"
+  "version": "11.16.0"
 }

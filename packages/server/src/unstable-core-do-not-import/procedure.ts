@@ -1,6 +1,7 @@
 import type { TRPCError } from './error/TRPCError';
 import type { Parser } from './parser';
 import type { ProcedureCallOptions } from './procedureBuilder';
+import type { inferAsyncIterableYield } from './types';
 
 export const procedureTypes = ['query', 'mutation', 'subscription'] as const;
 /**
@@ -90,6 +91,17 @@ export type inferProcedureParams<TProcedure> = TProcedure extends AnyProcedure
   : never;
 export type inferProcedureOutput<TProcedure> =
   inferProcedureParams<TProcedure>['$types']['output'];
+
+export type inferSubscriptionInput<
+  TProcedure extends AnySubscriptionProcedure,
+> = inferProcedureInput<TProcedure>;
+
+export type inferSubscriptionOutput<
+  TProcedure extends AnySubscriptionProcedure,
+> =
+  TProcedure extends LegacyObservableSubscriptionProcedure<any>
+    ? inferProcedureOutput<TProcedure>
+    : inferAsyncIterableYield<inferProcedureOutput<TProcedure>>;
 
 /**
  * @internal

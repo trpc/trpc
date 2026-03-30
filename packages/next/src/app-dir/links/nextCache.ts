@@ -56,6 +56,7 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
                 ctx: ctx,
                 type,
                 signal: undefined,
+                batchIndex: 0,
               });
 
               // We need to serialize cause the cache only accepts JSON

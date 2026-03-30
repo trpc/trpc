@@ -7,7 +7,7 @@
     "lint": "eslint --cache src",
     "start": "next start",
     "postinstall": "tsx scripts/codegen",
-    "tsc": "tsc"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.80.3",
@@ -15,10 +15,10 @@
     "@trpc/next": "npm:@trpc/next",
     "@trpc/react-query": "npm:@trpc/react-query",
     "@trpc/server": "npm:@trpc/server",
-    "next": "^15.3.1",
+    "next": "^15.3.8",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "zod": "^3.25.51"
+    "zod": "^4.2.1"
   },
   "devDependencies": {
     "@types/node": "^22.13.5",
@@ -26,7 +26,7 @@
     "@types/react-dom": "^19.1.1",
     "eslint": "^9.26.0",
     "tsx": "^4.19.3",
-    "typescript": "^5.8.2"
+    "typescript": "^5.9.2"
   },
-  "version": "11.4.2"
+  "version": "11.16.0"
 }

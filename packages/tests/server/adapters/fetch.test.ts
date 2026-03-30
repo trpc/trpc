@@ -43,11 +43,11 @@ function createAppRouter() {
           })
           .nullish(),
       )
-      .query(({ input, ctx }) => ({
-        text: `hello ${input?.who ?? ctx.user?.name ?? 'world'}`,
+      .query((opts) => ({
+        text: `hello ${opts.input?.who ?? opts.ctx.user?.name ?? 'world'}`,
       })),
-    foo: publicProcedure.query(({ ctx }) => {
-      ctx.resHeaders.set('x-foo', 'bar');
+    foo: publicProcedure.query((opts) => {
+      opts.ctx.resHeaders.set('x-foo', 'bar');
       return 'foo';
     }),
     deferred: publicProcedure

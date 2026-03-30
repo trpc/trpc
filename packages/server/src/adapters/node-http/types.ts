@@ -54,7 +54,7 @@ export type NodeHTTPResponse = DistributiveOmit<
    *
    * Added by compression middleware
    * (depending on the environment,
-   * e.g. Next <= 12,
+   * e.g. Next 12 and below,
    * e.g. Express w/ `compression()`)
    */
   flush?: () => void;
@@ -93,7 +93,7 @@ export type NodeHTTPHandlerOptions<
      * import cors from 'cors'
      *
      * nodeHTTPRequestHandler({
-     *   cors: cors()
+     *   middleware: cors()
      * })
      * ```
      *

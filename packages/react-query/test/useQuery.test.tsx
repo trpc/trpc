@@ -44,7 +44,8 @@ const ctx = konn()
               cursor: z.number().default(0),
             }),
           )
-          .query(({ input }) => {
+          .query((opts) => {
+            const { input } = opts;
             return {
               items: fixtureData.slice(input.cursor, input.cursor + 1),
               next:

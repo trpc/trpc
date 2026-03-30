@@ -550,4 +550,44 @@ describe('http', () => {
 
     utils.unmount();
   });
+
+  test('sub - tracked key', async () => {
+    await using ctx = getCtx('http');
+    const { useTRPC } = ctx;
+
+    function MyComponent() {
+      const trpc = useTRPC();
+      const result1 = useSubscription(
+        trpc.onEventIterable.subscriptionOptions(10),
+      );
+      const result2 = useSubscription(
+        trpc.onEventIterable.subscriptionOptions(10),
+      );
+
+      return (
+        <>
+          <>status1:{result1.status}</>
+          <>status2:{result2.status}</>
+          {/* Delay access to result2.data until status1 is resolved */}
+          <>data:{result1.data ? result2.data : null}</>
+        </>
+      );
+    }
+
+    const utils = ctx.renderApp(<MyComponent />);
+
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent(`status1:pending`);
+      expect(utils.container).toHaveTextContent(`status2:pending`);
+      expect(utils.container).toHaveTextContent(`data:`);
+    });
+    // emit
+    ctx.ee.emit('data', 20);
+
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent(`data:30`);
+    });
+
+    utils.unmount();
+  });
 });

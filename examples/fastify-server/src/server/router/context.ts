@@ -4,10 +4,10 @@ export interface User {
   name: string[] | string;
 }
 
-export function createContext({ req, res }: CreateFastifyContextOptions) {
-  const user: User = { name: req.headers.username ?? 'anonymous' };
+export function createContext(opts: CreateFastifyContextOptions) {
+  const user: User = { name: opts.req.headers.username ?? 'anonymous' };
 
-  return { req, res, user };
+  return { req: opts.req, res: opts.res, user };
 }
 
 export type Context = Awaited<ReturnType<typeof createContext>>;

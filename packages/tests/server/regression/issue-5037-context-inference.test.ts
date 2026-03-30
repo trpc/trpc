@@ -53,7 +53,7 @@ describe('context inference w/ middlewares', () => {
     const bazQuxProcedure = baseProcedure.use(someMiddleware);
 
     const appRouter = t.router({
-      foo: bazQuxProcedure.input(z.string()).query(({ ctx }) => ctx),
+      foo: bazQuxProcedure.input(z.string()).query((opts) => opts.ctx),
     });
     type Output = inferRouterOutputs<typeof appRouter>['foo'];
 
@@ -146,15 +146,15 @@ describe('context inference w/ middlewares', () => {
     }
 
     const t = makeTRPC<{ mything: string }>();
-    t.publicProcedure.query(({ ctx }) => {
-      expectTypeOf(ctx).toEqualTypeOf<{
+    t.publicProcedure.query((opts) => {
+      expectTypeOf(opts.ctx).toEqualTypeOf<{
         mything: string;
         req: any;
         res: any;
       }>();
     });
-    t.createProtectedProcedure().query(({ ctx }) => {
-      expectTypeOf(ctx).toEqualTypeOf<{
+    t.createProtectedProcedure().query((opts) => {
+      expectTypeOf(opts.ctx).toEqualTypeOf<{
         mything: string;
         auth: {
           stuff: string;

@@ -74,12 +74,12 @@ const possibleReferences = findTRPCImportReferences(program);
 const trpcFile = possibleReferences.mostUsed.file;
 const trpcImportName = possibleReferences.importName;
 
-const commitedFiles = await filterIgnored(sourceFiles);
+const committedFiles = await filterIgnored(sourceFiles);
 
 for (const transform of sortedTransforms) {
   log.step(`Running transform: ${basename(transform, extname(transform))}`);
   const { run } = await import('jscodeshift/src/Runner.js');
-  await run(transform, commitedFiles, {
+  await run(transform, committedFiles, {
     ...args,
     trpcFile,
     trpcImportName,

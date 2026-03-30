@@ -7,11 +7,7 @@
  * import type { HTTPBaseHandlerOptions } from '@trpc/server/http'
  * ```
  */
-import type {
-  APIGatewayProxyEventV2,
-  Context as APIGWContext,
-  StreamifyHandler,
-} from 'aws-lambda';
+import type { Context as APIGWContext, StreamifyHandler } from 'aws-lambda';
 // @trpc/server
 import type {
   AnyRouter,
@@ -89,14 +85,10 @@ export function awsLambdaRequestHandler<
 
 export function awsLambdaStreamingRequestHandler<
   TRouter extends AnyRouter,
-  TEvent extends APIGatewayProxyEventV2,
+  TEvent extends LambdaEvent,
 >(opts: AWSLambdaOptions<TRouter, TEvent>): StreamifyHandler<TEvent> {
   return async (event, responseStream, context) => {
     const planner = getPlanner(event);
-
-    if (!planner.toStream) {
-      throw new Error('Streaming is not supported for this event version');
-    }
 
     const createContext: ResolveHTTPRequestOptionsContextFn<TRouter> = async (
       innerOpts,

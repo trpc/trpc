@@ -174,7 +174,7 @@ export const createPost = protectedAction
       title: z.string(),
     }),
   )
-  .mutation(async ({ ctx, input }) => {
+  .mutation(async (opts) => {
     // Do something with the input
   });
 
@@ -189,7 +189,7 @@ Wow, it's that easy to define a server action that's protected from unauthentica
 ```tsx title="app/post-form.tsx"
 'use client';
 
-import { createPost } from '~/_actions';
+import { createPost } from './_actions';
 
 export function PostForm() {
   return (
@@ -200,7 +200,7 @@ export function PostForm() {
       // forms once JavaScript has loaded
       onSubmit={async (e) => {
         e.preventDefault();
-        const title = new FormData(e.target).get('title');
+        const title = new FormData(e.currentTarget).get('title') as string;
         // Maybe show loading toast, etc etc. Endless possibilities
         await createPost({ title });
       }}
@@ -247,7 +247,7 @@ You can use `@baselime/node-opentelemtry`'s trpc plugin to add observability in 
         title: z.string(),
       }),
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async (opts) => {
       // Do something with the input
     });
 ```
@@ -311,9 +311,9 @@ export const commentOnPost = rateLimitedAction
       content: z.string(),
     }),
   )
-  .mutation(async ({ ctx, input }) => {
+  .mutation(async (opts) => {
     console.log(
-      `${ctx.user.name} commented on ${input.postId} saying ${input.content}`,
+      `${opts.ctx.user.name} commented on ${opts.input.postId} saying ${opts.input.content}`,
     );
   });
 ```

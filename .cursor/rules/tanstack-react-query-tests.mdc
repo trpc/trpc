@@ -1,0 +1,126 @@
+---
+description: tRPC TanStack React Query testing patterns using testReactResource
+globs: ['packages/tanstack-react-query/**/*.test.tsx']
+alwaysApply: false
+---
+
+# tRPC TanStack React Query Testing Patterns
+
+## TanStack React Query Specific Testing
+
+### ALWAYS use testReactResource from local \_\_helpers
+
+- **ALWAYS** use `await using ctx = testReactResource()` for TanStack React Query tests
+- Import `testReactResource` from `./__helpers` (not from other packages)
+- This provides TanStack-specific context creation and provider setup
+
+### Test Resource Management
+
+```typescript
+// ✅ CORRECT: Use await using for automatic cleanup
+await using ctx = testReactResource(appRouter, {
+  server: {
+    // server configuration
+  },
+  client(opts) {
+    return {
+      links: [
+        httpLink({
+          url: opts.httpUrl,
+          // client configuration
+        }),
+      ],
+    };
+  },
+});
+```
+
+### TanStack React Query Specific APIs
+
+- Use `ctx.useTRPC()` for the TanStack React Query hooks
+- Use `ctx.useTRPCClient()` for vanilla client access
+- Use `ctx.optionsProxyClient` for options proxy functionality
+- Use `ctx.optionsProxyServer` for server-side options proxy
+
+### Test Structure for TanStack React Query
+
+```typescript
+test('tanstack react query test', async () => {
+  await using ctx = testReactResource(appRouter);
+
+  function MyComponent() {
+    const query = ctx.useTRPC().post.byId.useQuery({ id: '1' });
+
+    return (
+      <div>
+        {query.data ? `Result: ${query.data}` : 'Loading...'}
+      </div>
+    );
+  }
+
+  const utils = ctx.renderApp(<MyComponent />);
+
+  await vi.waitFor(() => {
+    expect(utils.container).toHaveTextContent('Result:');
+  });
+});
+```
+
+### Provider Setup
+
+- Uses `TRPCProvider` from `createTRPCContext()`
+- Wraps with `QueryClientProvider` from `@tanstack/react-query`
+- Access via `ctx.renderApp()` and `ctx.rerenderApp()`
+
+### Testing Helper Context Pattern
+
+```typescript
+const testContext = () => {
+  const t = initTRPC.create({});
+
+  const appRouter = t.router({
+    // router definition
+  });
+
+  return {
+    ...testReactResource(appRouter),
+    // additional TanStack-specific utilities
+  };
+};
+```
+
+### Import Requirements for TanStack React Query
+
+#### Test Helper Imports
+
+- **ALWAYS** import `testReactResource` from `./__helpers` (local to tanstack-react-query package)
+- **NEVER** import from other packages' helpers - each package has its own implementation
+- Path: `import { testReactResource } from './__helpers';`
+
+#### Other Required Imports
+
+- Import `@testing-library/react` for rendering utilities
+- Import `@testing-library/user-event` for user interactions
+- Import React Query types from `@tanstack/react-query`
+- Import TanStack React Query utilities from `../src`
+- Import React testing utilities: `import * as React from 'react';`
+
+### Key Differences from Legacy React Query
+
+- Uses newer TanStack React Query provider pattern
+- Has `optionsProxyClient` and `optionsProxyServer` for options proxy testing
+- Uses `createTRPCContext()` instead of older React Query patterns
+- More streamlined context creation and provider setup
+
+### Helper Import Comparison
+
+```typescript
+// ✅ TanStack React Query (this package)
+import { testReactResource } from './__helpers';
+
+// ❌ DON'T use legacy React Query pattern
+import { createAppRouter } from './__testHelpers'; // Wrong package
+
+// ❌ DON'T use upgrade package pattern
+import { testReactResource } from './test/__helpers'; // Wrong path
+```

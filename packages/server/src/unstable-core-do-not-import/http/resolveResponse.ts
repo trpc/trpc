@@ -15,8 +15,13 @@ import type { TRPCResponse } from '../rpc';
 import { isPromise, jsonlStreamProducer } from '../stream/jsonl';
 import { sseHeaders, sseStreamProducer } from '../stream/sse';
 import { transformTRPCResponse } from '../transformer';
-import { isAsyncIterable, isObject, run } from '../utils';
-import { getRequestInfo } from './contentType';
+import {
+  abortSignalsAnyPonyfill,
+  isAsyncIterable,
+  isObject,
+  run,
+} from '../utils';
+import { getAcceptHeader, getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
   HTTPBaseHandlerOptions,
@@ -37,6 +42,15 @@ type HTTPMethods =
   | 'PUT'
   | 'DELETE'
   | 'PATCH';
+
+function combinedAbortController(signal: AbortSignal) {
+  const controller = new AbortController();
+  const combinedSignal = abortSignalsAnyPonyfill([signal, controller.signal]);
+  return {
+    signal: combinedSignal,
+    controller,
+  };
+}
 
 const TYPE_ACCEPTED_METHOD_MAP: Record<ProcedureType, HTTPMethods[]> = {
   mutation: ['POST'],
@@ -205,7 +219,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   opts: ResolveHTTPRequestOptions<TRouter>,
 ): Promise<Response> {
   const { router, req } = opts;
-  const headers = new Headers([['vary', 'trpc-accept']]);
+  const headers = new Headers([['vary', 'trpc-accept, accept']]);
   const config = router._def._config;
 
   const url = new URL(req.url);
@@ -234,6 +248,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           searchParams: url.searchParams,
           headers: opts.req.headers,
           url,
+          maxBatchSize: opts.maxBatchSize,
         }),
       ];
     } catch (cause) {
@@ -287,7 +302,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   /**
    * @deprecated
    */
-  const isStreamCall = req.headers.get('trpc-accept') === 'application/jsonl';
+  const isStreamCall = getAcceptHeader(req.headers) === 'application/jsonl';
 
   const experimentalSSE = config.sse?.enabled ?? true;
   try {
@@ -312,10 +327,12 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
     interface RPCResultOk {
       data: unknown;
+      signal?: AbortSignal;
     }
     type RPCResult = ResultTuple<RPCResultOk>;
     const rpcCalls = info.calls.map(async (call): Promise<RPCResult> => {
       const proc = call.procedure;
+      const combinedAbort = combinedAbortController(opts.req.signal);
       try {
         if (opts.error) {
           throw opts.error;
@@ -343,15 +360,36 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               message: `Cannot batch subscription calls`,
             });
           }
+
+          if (config.sse?.maxDurationMs) {
+            function cleanup() {
+              clearTimeout(timer);
+              combinedAbort.signal.removeEventListener('abort', cleanup);
+
+              combinedAbort.controller.abort();
+            }
+            const timer = setTimeout(cleanup, config.sse.maxDurationMs);
+            combinedAbort.signal.addEventListener('abort', cleanup);
+          }
         }
         const data: unknown = await proc({
           path: call.path,
           getRawInput: call.getRawInput,
           ctx: ctxManager.value(),
           type: proc._def.type,
-          signal: opts.req.signal,
+          signal: combinedAbort.signal,
+          batchIndex: call.batchIndex,
         });
-        return [undefined, { data }];
+        return [
+          undefined,
+          {
+            data,
+            signal:
+              proc._def.type === 'subscription'
+                ? combinedAbort.signal
+                : undefined,
+          },
+        ];
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
         const input = call.result();
@@ -493,7 +531,37 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             untransformedJSON: null,
           });
 
-          return new Response(stream, {
+          const abortSignal = result?.signal;
+          let responseBody: ReadableStream<Uint8Array> = stream;
+
+          // Fixes: https://github.com/trpc/trpc/issues/7094
+          if (abortSignal) {
+            const reader = stream.getReader();
+            const onAbort = () => void reader.cancel();
+            if (abortSignal.aborted) {
+              onAbort();
+            } else {
+              abortSignal.addEventListener('abort', onAbort, { once: true });
+            }
+
+            responseBody = new ReadableStream({
+              async pull(controller) {
+                const chunk = await reader.read();
+                if (chunk.done) {
+                  abortSignal.removeEventListener('abort', onAbort);
+                  controller.close();
+                } else {
+                  controller.enqueue(chunk.value);
+                }
+              },
+              cancel() {
+                abortSignal.removeEventListener('abort', onAbort);
+                return reader.cancel();
+              },
+            });
+          }
+
+          return new Response(responseBody, {
             headers,
             status: headResponse.status,
           });
@@ -530,10 +598,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
          * }
          */
         maxDepth: Infinity,
-        data: rpcCalls.map(async (res) => {
+        data: rpcCalls.map(async (res, index) => {
           const [error, result] = await res;
 
-          const call = info.calls[0];
+          const call = info.calls[index];
 
           if (error) {
             return {
@@ -561,10 +629,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             }),
           };
         }),
-        serialize: config.transformer.output.serialize,
+        serialize: (data) => config.transformer.output.serialize(data),
         onError: (cause) => {
           opts.onError?.({
-            error: getTRPCErrorFromUnknown(cause),
+            error: getTRPCErrorFromUnknown(cause.error),
             path: undefined,
             input: undefined,
             ctx: ctxManager.valueOrUndefined(),

@@ -11,7 +11,7 @@ export function mergeWithoutOverrides<TType extends Record<string, unknown>>(
   obj1: TType,
   ...objs: Partial<TType>[]
 ): TType {
-  const newObj: TType = Object.assign(Object.create(null), obj1);
+  const newObj: TType = Object.assign(emptyObject(), obj1);
 
   for (const overrides of objs) {
     for (const key in overrides) {
@@ -41,10 +41,8 @@ export function isFunction(fn: unknown): fn is AnyFn {
  * Create an object without inheriting anything from `Object.prototype`
  * @internal
  */
-export function omitPrototype<TObj extends Record<string, unknown>>(
-  obj: TObj,
-): TObj {
-  return Object.assign(Object.create(null), obj);
+export function emptyObject<TObj extends Record<string, unknown>>(): TObj {
+  return Object.create(null);
 }
 
 const asyncIteratorsSupported =

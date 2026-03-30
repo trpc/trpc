@@ -1,4 +1,11 @@
-import { isAsyncIterable, isFunction, isObject, run } from '../utils';
+import { isPlainObject } from '@trpc/server/vendor/is-plain-object';
+import {
+  emptyObject,
+  isAsyncIterable,
+  isFunction,
+  isObject,
+  run,
+} from '../utils';
 import { iteratorResource } from './utils/asyncIterable';
 import type { Deferred } from './utils/createDeferred';
 import { createDeferred } from './utils/createDeferred';
@@ -21,10 +28,6 @@ export type NodeJSReadableStreamEsque = {
     listener: (...args: any[]) => void,
   ): NodeJSReadableStreamEsque;
 };
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return Object.prototype.toString.call(value) === '[object Object]';
-}
 
 // ---------- types
 const CHUNK_VALUE_TYPE_PROMISE = 0;
@@ -241,7 +244,7 @@ async function* createBatchStreamProducer(
       return [[value]];
     }
 
-    const newObj: Record<string, unknown> = {};
+    const newObj: Record<string, unknown> = emptyObject();
     const asyncValues: ChunkDefinition[] = [];
     for (const [key, item] of Object.entries(value)) {
       const transformed = encodeAsync(item, [...path, key]);
@@ -255,7 +258,7 @@ async function* createBatchStreamProducer(
     return [[newObj], ...asyncValues];
   }
 
-  const newHead: Head = {};
+  const newHead: Head = emptyObject();
   for (const [key, item] of Object.entries(data)) {
     newHead[key] = encode(item, [key]);
   }
@@ -440,12 +443,13 @@ function createStreamsManager(abortController: AbortController) {
         const reader = stream.getReader();
 
         return makeResource(reader, () => {
-          reader.releaseLock();
           streamController.close();
+          reader.releaseLock();
         });
       },
       error: (reason: unknown) => {
         originalController.error(reason);
+
         clear();
       },
     };
@@ -489,10 +493,19 @@ function createStreamsManager(abortController: AbortController) {
     }
   }
 
+  /**
+   * Closes all pending controllers to preserve buffered data
+   */
+  function closeAll() {
+    for (const controller of controllerMap.values()) {
+      controller.close();
+    }
+  }
+
   return {
     getOrCreate,
-    isEmpty,
     cancelAll,
+    closeAll,
   };
 }
 
@@ -588,10 +601,24 @@ export async function jsonlStreamConsumer<THead>(opts: {
     return data;
   }
 
-  const closeOrAbort = (reason: unknown) => {
+  const handleClose = () => {
+    // If the stream closes before emitting any head data,
+    // we need to reject the headDeferred to prevent hanging
+    if (headDeferred) {
+      headDeferred.reject(new Error('Stream closed before head was received'));
+      headDeferred = null;
+    }
+    // Close stream controllers (not error them)
+    // to preserve any buffered chunks
+    streamManager.closeAll();
+  };
+
+  const handleAbort = (reason?: unknown) => {
     headDeferred?.reject(reason);
+    headDeferred = null;
     streamManager.cancelAll(reason);
   };
+
   source
     .pipeTo(
       new WritableStream({
@@ -614,17 +641,14 @@ export async function jsonlStreamConsumer<THead>(opts: {
           const controller = streamManager.getOrCreate(idx);
           controller.enqueue(chunk);
         },
-        close: () => closeOrAbort(new Error('Stream closed')),
-        abort: closeOrAbort,
+        close: handleClose,
+        abort: handleAbort,
       }),
-      {
-        signal: opts.abortController.signal,
-      },
     )
     .catch((error) => {
       opts.onError?.({ error });
-      closeOrAbort(error);
+      handleAbort(error);
     });
 
-  return [await headDeferred.promise, streamManager] as const;
+  return [await headDeferred.promise] as const;
 }

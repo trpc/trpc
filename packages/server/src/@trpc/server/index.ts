@@ -13,6 +13,8 @@ export {
   createRecursiveProxy as createTRPCRecursiveProxy,
   type inferProcedureInput,
   type inferProcedureOutput,
+  type inferSubscriptionInput,
+  type inferSubscriptionOutput,
   type inferProcedureBuilderResolverOptions,
   type inferRouterError,
   type inferRouterInputs,
@@ -33,6 +35,7 @@ export {
   type MiddlewareBuilder as TRPCMiddlewareBuilder,
   type AnyMiddlewareFunction as AnyTRPCMiddlewareFunction,
   type CombinedDataTransformer as TRPCCombinedDataTransformer,
+  type DataTransformer as TRPCDataTransformer,
   type ProcedureType as TRPCProcedureType,
   type AnyMutationProcedure as AnyTRPCMutationProcedure,
   type AnyQueryProcedure as AnyTRPCQueryProcedure,
@@ -56,6 +59,7 @@ export {
   type TRPC_ERROR_CODE_NUMBER,
   type DecorateCreateRouterOptions as TRPCDecorateCreateRouterOptions,
   type CreateRouterOptions as TRPCCreateRouterOptions,
+  type RouterCaller as TRPCRouterCaller,
   StandardSchemaV1Error,
   /**
    * @deprecated use `tracked(id, data)` instead
@@ -94,6 +98,10 @@ export type {
    * @deprecated use `TRPCCombinedDataTransformer` instead
    */
   CombinedDataTransformer,
+  /**
+   * @deprecated use `TRPCDataTransformer` instead
+   */
+  DataTransformer,
 
   /**
    * @deprecated This is a utility type will be removed in v12

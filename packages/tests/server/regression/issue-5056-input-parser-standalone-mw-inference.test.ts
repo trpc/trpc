@@ -43,8 +43,8 @@ describe('input/context proper narrowing in procedure chain', () => {
     });
 
     t.router({
-      createProject: t.procedure.use(organizationCtx).mutation(({ ctx }) => {
-        expectTypeOf(ctx).toEqualTypeOf<{ organizationId: string }>();
+      createProject: t.procedure.use(organizationCtx).mutation((opts) => {
+        expectTypeOf(opts.ctx).toEqualTypeOf<{ organizationId: string }>();
       }),
     });
   });

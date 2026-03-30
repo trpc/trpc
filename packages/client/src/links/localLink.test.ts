@@ -406,6 +406,43 @@ test('subscription reconnects on errors with the last event id', async () => {
   `);
 });
 
+test('forwards origin error as cause when using localLink', async () => {
+  const t = initTRPC.create();
+
+  const appRouter = t.router({
+    throwError: t.procedure.query(() => {
+      throw new Error('original error');
+    }),
+    throwTRPCError: t.procedure.query(() => {
+      throw new TRPCError({ code: 'UNAUTHORIZED', message: 'not allowed' });
+    }),
+  });
+
+  const client = createTRPCClient<typeof appRouter>({
+    links: [
+      localLink({
+        router: appRouter,
+        createContext: async () => ({}),
+      }),
+    ],
+  });
+
+  {
+    const err = await waitError(client.throwError.query());
+    assert(isTRPCClientError<typeof appRouter>(err));
+    expect(err.cause).toBeInstanceOf(Error);
+    expect(err.cause?.message).toBe('original error');
+  }
+
+  {
+    const err = await waitError(client.throwTRPCError.query());
+    assert(isTRPCClientError<typeof appRouter>(err));
+    expect(err.cause).toBeInstanceOf(TRPCError);
+    expect((err.cause as TRPCError).code).toBe('UNAUTHORIZED');
+    expect(err.cause?.message).toBe('not allowed');
+  }
+});
+
 test('error formatting', async () => {
   const t = initTRPC.create({
     errorFormatter: (opts) => {

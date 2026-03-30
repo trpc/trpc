@@ -21,15 +21,19 @@ yalc.lock
 tests-results/
 coverage/
 __generated__/
+packages/openapi/test/.cache/
 
 
 # Ignore all folders except `src/` and `tests/` in every published package
 packages/*/*/
 !packages/*/src/
 !packages/*/test/
+!packages/*/skills/
+!packages/*/bin/
 !packages/*/__tests__/
 # and all folders inside `tests` package, which is handled separately
 !packages/tests/*/
 packages/tests/node_modules
 
 examples/next-big-router/src/server/routers
+.claude/

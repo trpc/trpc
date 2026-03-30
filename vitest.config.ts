@@ -2,11 +2,14 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import path, { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
 const aliases: Record<string, string> = {};
-const packagesDir = new URL('./packages', import.meta.url).pathname;
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const packagesDir = path.resolve(__dirname, 'packages');
 
 const dirs = readdirSync(packagesDir)
   .filter((it) => it !== 'tests' && !it.startsWith('.'))
@@ -38,9 +41,11 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    setupFiles: [__dirname + '/packages/tests/suppressActWarnings.ts'],
     snapshotFormat: {
       printBasicPrototype: true,
     },
+    projects: ['./packages/*'],
     coverage: {
       provider: 'istanbul',
       include: ['**/src/**'],
@@ -53,16 +58,11 @@ export default defineConfig({
         '**/server/src/adapters/next-app-dir/**',
         // Skip codecov for codemod package
         '**/upgrade/src/**',
+        '**/vendor/**',
       ],
     },
-    poolOptions: {
-      threads: {
-        useAtomics: !!process.env['CI'],
-      },
-      forks: {
-        execArgv: ['--expose-gc'],
-      },
-    },
+    execArgv: ['--expose-gc'],
+    restoreMocks: true,
     retry: process.env['CI'] ? 2 : 0,
   },
   resolve: {

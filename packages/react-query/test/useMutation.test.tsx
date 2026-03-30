@@ -34,11 +34,14 @@ const ctx = konn()
               text: z.string(),
             }),
           )
-          .mutation(({ input }) => ({
-            id: 1,
-            text: input.text,
-            date: new Date(),
-          })),
+          .mutation((opts) => {
+            const { input } = opts;
+            return {
+              id: 1,
+              text: input.text,
+              date: new Date(),
+            };
+          }),
       }),
     });
 

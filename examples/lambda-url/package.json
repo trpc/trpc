@@ -6,7 +6,7 @@
   "license": "MIT",
   "scripts": {
     "lint": "eslint --cache src",
-    "type-check": "tsc",
+    "typecheck": "tsc",
     "start": "tsx watch src/client.ts",
     "deploy": "serverless deploy"
   },
@@ -14,7 +14,7 @@
     "@trpc/client": "workspace:*",
     "@trpc/server": "workspace:*",
     "tsx": "^4.19.3",
-    "zod": "^3.25.51"
+    "zod": "^4.2.1"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.149",
@@ -23,7 +23,7 @@
     "eslint": "^9.26.0",
     "serverless": "^3.38.0",
     "serverless-esbuild": "^1.55.0",
-    "typescript": "^5.8.2"
+    "typescript": "^5.9.2"
   },
-  "version": "11.4.2"
+  "version": "11.16.0"
 }

@@ -85,16 +85,16 @@ const appRouter = router({
   post: postRouter,
   message: messageRouter,
   // or individual procedures
-  hello: publicProcedure.input(z.string().nullish()).query(({ input, ctx }) => {
-    return `hello ${input ?? ctx.user?.name ?? 'world'}`;
+  hello: publicProcedure.input(z.string().nullish()).query((opts) => {
+    return `hello ${opts.input ?? opts.ctx.user?.name ?? 'world'}`;
   }),
   // or inline a router
   admin: router({
-    secret: publicProcedure.query(({ ctx }) => {
-      if (!ctx.user) {
+    secret: publicProcedure.query((opts) => {
+      if (!opts.ctx.user) {
         throw new TRPCError({ code: 'UNAUTHORIZED' });
       }
-      if (ctx.user?.name !== 'alex') {
+      if (opts.ctx.user?.name !== 'alex') {
         throw new TRPCError({ code: 'FORBIDDEN' });
       }
       return {

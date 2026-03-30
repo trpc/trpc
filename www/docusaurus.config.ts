@@ -50,14 +50,6 @@ export default {
       // contextualSearch: true,
       // searchParameters: {},
     },
-    announcementBar: {
-      id: 'v11',
-      content:
-        "🎉 tRPC v11 is now released! Check out <a href='/blog/announcing-trpc-11'><strong>the blog post now</strong></a>.",
-      backgroundColor: 'var(--ifm-color-primary-dark)',
-      textColor: '#ffffff',
-      isCloseable: true,
-    },
     navbar: {
       title: 'tRPC',
       logo: {
@@ -172,6 +164,7 @@ export default {
           'server',
           'client',
           'react-query',
+          'tanstack-react-query',
           'next',
         ])
       : []),

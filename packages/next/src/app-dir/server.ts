@@ -152,6 +152,7 @@ export function experimental_createServerActionHandler<
               type: proc._def.type,
               // is it possible to get the AbortSignal from the request?
               signal: undefined,
+              batchIndex: 0,
             });
 
         const transformedJSON = transformTRPCResponse(config, {

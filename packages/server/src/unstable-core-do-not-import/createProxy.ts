@@ -1,3 +1,5 @@
+import { emptyObject } from './utils';
+
 interface ProxyCallbackOptions {
   path: readonly string[];
   args: readonly unknown[];
@@ -62,7 +64,7 @@ function createInnerProxy(
  */
 export const createRecursiveProxy = <TFaux = unknown>(
   callback: ProxyCallback,
-): TFaux => createInnerProxy(callback, [], Object.create(null)) as TFaux;
+): TFaux => createInnerProxy(callback, [], emptyObject()) as TFaux;
 
 /**
  * Used in place of `new Proxy` where each handler will map 1 level deep to another value.

@@ -1,0 +1,98 @@
+---
+description: tRPC testing patterns using testServerAndClientResource
+globs: ['**/*.test.ts']
+alwaysApply: false
+---
+
+# tRPC Testing Patterns
+
+## Server and Client Testing
+
+### ALWAYS use testServerAndClientResource
+
+- **ALWAYS** use `await using ctx = testServerAndClientResource()` for tests that need both server and client setup
+- **NEVER** use the deprecated `routerToServerAndClientNew()` function - it's marked as deprecated
+- Use the `testServerAndClientResource` import from `@trpc/client/__tests__/testClientResource`
+
+### Test Resource Management
+
+```typescript
+// ✅ CORRECT: Use await using for automatic cleanup
+await using ctx = testServerAndClientResource(router, {
+  client(opts) {
+    return {
+      links: [
+        httpLink({
+          url: opts.httpUrl,
+          fetch: mockFetch,
+        }),
+      ],
+    };
+  },
+});
+
+// ❌ INCORRECT: Don't use deprecated helper
+const { httpUrl, close } = routerToServerAndClientNew(router);
+// ... test code
+await close(); // Manual cleanup required
+```
+
+### Mock Setup
+
+- Create fresh mock instances per test using a factory function like `getMockFetch()`
+- Don't use global mocks that persist across tests
+- Configure mocks through the `client` callback in `testServerAndClientResource` options
+
+### Test Structure
+
+- Use the `ctx.client` directly from the test resource
+- Access server URLs via `ctx.httpUrl` and `ctx.wssUrl`
+- Configure server options via the `server` property in options
+- Configure client options via the `client` callback in options
+
+### Example Pattern
+
+```typescript
+test('my test', async () => {
+  const mockFetch = getMockFetch();
+  const t = initTRPC.create();
+
+  const router = t.router({
+    // router definition
+  });
+
+  await using ctx = testServerAndClientResource(router, {
+    server: {
+      // server configuration
+    },
+    client(opts) {
+      return {
+        links: [
+          httpLink({
+            url: opts.httpUrl,
+            fetch: mockFetch,
+            // other client options
+          }),
+        ],
+      };
+    },
+  });
+
+  // Use ctx.client for tests
+  const result = await ctx.client.myProcedure.query();
+
+  // Assert on mock calls
+  expect(mockFetch).toHaveBeenCalledTimes(1);
+});
+```
+
+### Test Naming
+
+- Use descriptive test names that explain the behavior being tested
+- Focus on what the test validates, not just what it does
+
+### Mock Best Practices
+
+- Use proper TypeScript typing for mocks
+- Clear mocks between tests when needed
+- Use factory functions for mock creation to ensure isolation

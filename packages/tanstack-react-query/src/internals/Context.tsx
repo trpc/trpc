@@ -4,16 +4,32 @@ import type { AnyTRPCRouter } from '@trpc/server';
 import * as React from 'react';
 import type { TRPCOptionsProxy } from './createOptionsProxy';
 import { createTRPCOptionsProxy } from './createOptionsProxy';
+import type {
+  DefaultFeatureFlags,
+  FeatureFlags,
+  KeyPrefixOptions,
+} from './types';
 
-export interface CreateTRPCContextResult<TRouter extends AnyTRPCRouter> {
-  TRPCProvider: React.FC<{
+type TRPCProviderType<
+  TRouter extends AnyTRPCRouter,
+  TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
+> = React.FC<
+  {
     children: React.ReactNode;
     queryClient: QueryClient;
     trpcClient: TRPCClient<TRouter>;
-  }>;
-  useTRPC: () => TRPCOptionsProxy<TRouter>;
+  } & KeyPrefixOptions<TFeatureFlags>
+>;
+
+export interface CreateTRPCContextResult<
+  TRouter extends AnyTRPCRouter,
+  TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
+> {
+  TRPCProvider: TRPCProviderType<TRouter, TFeatureFlags>;
+  useTRPC: () => TRPCOptionsProxy<TRouter, TFeatureFlags>;
   useTRPCClient: () => TRPCClient<TRouter>;
 }
+
 /**
  * Create a set of type-safe provider-consumers
  *
@@ -21,28 +37,25 @@ export interface CreateTRPCContextResult<TRouter extends AnyTRPCRouter> {
  */
 export function createTRPCContext<
   TRouter extends AnyTRPCRouter,
->(): CreateTRPCContextResult<TRouter> {
+  TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
+>(): CreateTRPCContextResult<TRouter, TFeatureFlags> {
   const TRPCClientContext = React.createContext<TRPCClient<TRouter> | null>(
     null,
   );
-  const TRPCContext = React.createContext<TRPCOptionsProxy<TRouter> | null>(
-    null,
-  );
+  const TRPCContext = React.createContext<TRPCOptionsProxy<
+    TRouter,
+    TFeatureFlags
+  > | null>(null);
 
-  function TRPCProvider(
-    props: Readonly<{
-      children: React.ReactNode;
-      queryClient: QueryClient;
-      trpcClient: TRPCClient<TRouter>;
-    }>,
-  ) {
+  const TRPCProvider: TRPCProviderType<TRouter, TFeatureFlags> = (props) => {
     const value = React.useMemo(
       () =>
-        createTRPCOptionsProxy({
+        createTRPCOptionsProxy<TRouter, TFeatureFlags>({
           client: props.trpcClient,
           queryClient: props.queryClient,
+          keyPrefix: props.keyPrefix as any,
         }),
-      [props.trpcClient, props.queryClient],
+      [props.trpcClient, props.queryClient, props.keyPrefix],
     );
     return (
       <TRPCClientContext.Provider value={props.trpcClient}>
@@ -51,7 +64,8 @@ export function createTRPCContext<
         </TRPCContext.Provider>
       </TRPCClientContext.Provider>
     );
-  }
+  };
+  TRPCProvider.displayName = 'TRPCProvider';
 
   function useTRPC() {
     const utils = React.useContext(TRPCContext);
@@ -71,5 +85,8 @@ export function createTRPCContext<
     return client;
   }
 
-  return { TRPCProvider, useTRPC, useTRPCClient };
+  return { TRPCProvider, useTRPC, useTRPCClient } as CreateTRPCContextResult<
+    TRouter,
+    TFeatureFlags
+  >;
 }

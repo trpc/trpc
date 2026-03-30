@@ -5,15 +5,23 @@ sidebar_label: WebSocket Link
 slug: /client/links/wsLink
 ---
 
-`wsLink` is a [**terminating link**](./overview.md#the-terminating-link) that's used when using tRPC's WebSockets Client and Subscriptions, which you can learn more about [here](../../server/subscriptions.md)).
+`wsLink` is a [**terminating link**](./overview.md#the-terminating-link) that's used when using tRPC's WebSockets Client and Subscriptions, which you can learn more about [here](../../server/subscriptions.md).
 
 ## Usage
 
 To use `wsLink`, you need to pass it a `TRPCWebSocketClient`, which you can create with `createWSClient`:
 
-```ts title="client/index.ts"
+```ts twoslash title="client/index.ts"
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
 import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
-import type { AppRouter } from '../server';
+import type { AppRouter } from './server';
 
 const wsClient = createWSClient({
   url: 'ws://localhost:3000',
@@ -32,7 +40,13 @@ const trpcClient = createTRPCClient<AppRouter>({
 
 The `wsLink` function requires a `TRPCWebSocketClient` to be passed, which can be configured with the fields defined in `WebSocketClientOptions`:
 
-```ts
+```ts twoslash
+type TRPCWebSocketClient = any;
+type DataTransformerOptions = any;
+type MaybePromise<T> = T | Promise<T>;
+type Encoder = any;
+declare function exponentialBackoff(attemptIndex: number): number;
+// ---cut---
 export interface WebSocketLinkOptions {
   client: TRPCWebSocketClient;
   /**
@@ -42,7 +56,7 @@ export interface WebSocketLinkOptions {
   transformer?: DataTransformerOptions;
 }
 
-function createWSClient(opts: WebSocketClientOptions) => TRPCWebSocketClient
+declare function createWSClient(opts: WebSocketClientOptions): TRPCWebSocketClient;
 
 
 export interface WebSocketClientOptions {
@@ -54,7 +68,7 @@ export interface WebSocketClientOptions {
    * Connection params that are available in `createContext()`
    * These are sent as the first message
    */
-  connectionParams: string | (() => MaybePromise<string>);
+  connectionParams?: Record<string, string> | null | (() => MaybePromise<Record<string, string> | null>);
   /**
    * Ponyfill which WebSocket implementation to use
    */
@@ -110,6 +124,11 @@ export interface WebSocketClientOptions {
      */
     pongTimeoutMs?: number;
   };
+  /**
+   * Custom encoder for wire encoding (e.g. custom binary formats)
+   * @default jsonEncoder
+   */
+  experimental_encoder?: Encoder;
 }
 ```
 

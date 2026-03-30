@@ -98,7 +98,7 @@ export const authedProcedure = t.procedure.use(async function isAuthed(opts) {
   });
 });
 
-// procedure that a user is a member of a specific organization
+// procedure that asserts a user is a member of a specific organization
 export const organizationProcedure = authedProcedure
   .input(z.object({ organizationId: z.string() }))
   .use(function isMemberOfOrganization(opts) {
@@ -135,7 +135,7 @@ export const appRouter = t.router({
       const { ctx } = opts;
       //       ^?
 
-      // input includes the validate email of the user being invited & the validated organizationId
+      // input includes the validated email of the user being invited & the validated organizationId
       const { input } = opts;
       //       ^?
 
@@ -202,7 +202,7 @@ export const authedProcedure = t.procedure.use(async function isAuthed(opts) {
 // mock prisma
 let prisma = {} as any;
 
-// procedure that a user is a member of a specific organization
+// procedure that asserts a user is a member of a specific organization
 export const organizationProcedure = authedProcedure
   .input(z.object({ organizationId: z.string() }))
   .use(function isMemberOfOrganization(opts) {

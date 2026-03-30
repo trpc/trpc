@@ -14,27 +14,25 @@ You can compose links together into an array that you can provide to the tRPC cl
   <small>tRPC Link Diagram. Based on <a href="https://www.apollographql.com/docs/react/api/link/introduction/" target="_blank">Apollo's</a>.</small>
 </div>
 
-:::note
-The below examples are assuming you use Next.js, but the same as below can be added if you use the vanilla tRPC client
-:::
+```ts twoslash title='utils/trpc.ts'
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
 
-```tsx title='utils/trpc.ts'
-import { httpBatchLink, loggerLink } from '@trpc/client';
-import { createTRPCNext } from '@trpc/next';
+// @filename: client.ts
+// ---cut---
+import { createTRPCClient, httpBatchLink, loggerLink } from '@trpc/client';
+import type { AppRouter } from './server';
 
-export default createTRPCNext<AppRouter>({
-  config() {
-    const url = `http://localhost:3000`;
-
-    return {
-      links: [
-        loggerLink(),
-        httpBatchLink({
-          url,
-        }),
-      ],
-    };
-  },
+export const trpc = createTRPCClient<AppRouter>({
+  links: [
+    loggerLink(),
+    httpBatchLink({
+      url: 'http://localhost:3000',
+    }),
+  ],
 });
 ```
 
@@ -42,16 +40,24 @@ export default createTRPCNext<AppRouter>({
 
 A link is a function that follows the `TRPCLink` type. Each link is composed of three parts:
 
-1. The link returns a function that has a parameter with the `TRPCClientRuntime` type. This argument is passed by tRPC and it is used when creating a [**terminating link**](#the-terminating-link). If you're not creating a terminating link, you can just create a function that has no parameters. In such case, the link should be added to the `links` array without invoking (`links: [..., myLink, httpBatchLink(...)]`).
+1. The link returns a function that has no parameters. This is the setup phase where the link is initialized — it happens once per app and is useful for storing caches or other state.
 2. The function in step 1 returns another function that receives an object with two properties: `op` which is the `Operation` that is being executed by the client, and `next` which is the function we use to call the next link down the chain.
 3. The function in step 2 returns a final function that returns the `observable` function provided by `@trpc/server`. The `observable` accepts a function that receives an `observer` which helps our link notify the next link up the chain how they should handle the operation result. In this function, we can just return `next(op)` and leave it as is, or we can subscribe to `next`, which enables our link to handle the operation result.
 
 ### Example
 
-```tsx title='utils/customLink.ts'
+```tsx twoslash title='utils/customLink.ts'
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: customLink.ts
+// ---cut---
 import { TRPCLink } from '@trpc/client';
 import { observable } from '@trpc/server/observable';
-import type { AppRouter } from '~/server/routers/_app';
+import type { AppRouter } from './server';
 
 export const customLink: TRPCLink<AppRouter> = () => {
   // here we just got initialized in the app - this happens once per app
@@ -94,7 +100,7 @@ The `links` array that you add to the tRPC client config should have at least on
 
 [`httpBatchLink`](./httpBatchLink.md) is the recommended terminating link by tRPC.
 
-[`httpLink`](./httpLink.md), [`wsLink`](./wsLink.md), and [`localLink`](./localLink.mdx) are other examples of terminating links.
+[`httpLink`](./httpLink.md), [`httpBatchStreamLink`](./httpBatchStreamLink.md), [`httpSubscriptionLink`](./httpSubscriptionLink.md), [`wsLink`](./wsLink.md), and [`localLink`](./localLink.mdx) are other examples of terminating links depending on your needs.
 
 ## Managing context
 

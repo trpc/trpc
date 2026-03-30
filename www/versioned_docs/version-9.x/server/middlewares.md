@@ -23,11 +23,11 @@ trpc
     'admin.',
     trpc
       .router<Context>()
-      .middleware(async ({ ctx, next }) => {
-        if (!ctx.user?.isAdmin) {
+      .middleware(async (opts) => {
+        if (!opts.ctx.user?.isAdmin) {
           throw new TRPCError({ code: 'UNAUTHORIZED' });
         }
-        return next();
+        return opts.next();
       })
       .query('secretPlace', {
         resolve() {
@@ -84,15 +84,15 @@ interface Context {
 
 trpc
   .router<Context>()
-  .middleware(({ ctx, next }) => {
-    if (!ctx.user) {
+  .middleware((opts) => {
+    if (!opts.ctx.user) {
       throw new TRPCError({ code: 'UNAUTHORIZED' });
     }
 
-    return next({
+    return opts.next({
       ctx: {
-        ...ctx,
-        user: ctx.user, // user value is known to be non-null now
+        ...opts.ctx,
+        user: opts.ctx.user, // user value is known to be non-null now
       },
     });
   })
@@ -112,15 +112,15 @@ import * as trpc from '@trpc/server';
 import { Context } from './context';
 
 export function createProtectedRouter() {
-  return trpc.router<Context>().middleware(({ ctx, next }) => {
-    if (!ctx.user) {
+  return trpc.router<Context>().middleware((opts) => {
+    if (!opts.ctx.user) {
       throw new trpc.TRPCError({ code: 'UNAUTHORIZED' });
     }
-    return next({
+    return opts.next({
       ctx: {
-        ...ctx,
+        ...opts.ctx,
         // infers that `user` is non-nullable to downstream procedures
-        user: ctx.user,
+        user: opts.ctx.user,
       },
     });
   });

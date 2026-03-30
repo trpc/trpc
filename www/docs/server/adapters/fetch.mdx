@@ -10,13 +10,13 @@ import Tabs from '@theme/Tabs';
 
 You can create a tRPC server within any edge runtime that follow the [WinterCG](https://wintercg.org/), specifically the [Minimum Common Web Platform API](https://common-min-api.proposal.wintercg.org/) specification.
 
-Some of these runtimes includes, but not limited to:
+Some of these runtimes include, but are not limited to:
 
 - Cloudflare Workers
 - Deno Deploy
 - Vercel Edge Runtime (& Next.js Edge Runtime)
 
-This also makes it easy to integrate into frameworks that uses the web platform APIs to represent requests and responses, such as:
+This also makes it easy to integrate into frameworks that use the web platform APIs to represent requests and responses, such as:
 
 - Astro (SSR mode)
 - Remix
@@ -102,6 +102,15 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 
 > [Zod](https://github.com/colinhacks/zod) isn't a required dependency, but it's used in the sample router below.
 
+:::tip AI Agents
+If you use an AI coding agent, install tRPC skills for better code generation:
+
+```bash
+npx @tanstack/intent@latest install
+```
+
+:::
+
 ### Create the router
 
 First of all you need a [router](/docs/server/routers) to handle your queries, mutations and subscriptions.
@@ -111,10 +120,20 @@ A sample router is given below, save it in a file named `router.ts`.
 <details>
   <summary>router.ts</summary>
 
-```ts title='router.ts'
+```ts twoslash title='router.ts'
+// @filename: context.ts
+import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
+export function createContext({ req, resHeaders }: FetchCreateContextFnOptions) {
+  const user = { name: req.headers.get('username') ?? 'anonymous' };
+  return { req, resHeaders, user };
+}
+export type Context = Awaited<ReturnType<typeof createContext>>;
+
+// @filename: router.ts
+// ---cut---
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
-import { Context } from './context';
+import type { Context } from './context';
 
 type User = {
   id: string;
@@ -163,8 +182,8 @@ A sample context is given below, save it in a file named `context.ts`:
 <details>
   <summary>context.ts</summary>
 
-```ts title='context.ts'
-import { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
+```ts twoslash title='context.ts'
+import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 
 export function createContext({
   req,
@@ -179,11 +198,29 @@ export type Context = Awaited<ReturnType<typeof createContext>>;
 
 </details>
 
-## Runtimes-specific setup
+## Runtime-specific setup
 
 ### Astro
 
-```ts title='src/pages/trpc/[trpc].ts'
+```ts twoslash title='src/pages/trpc/[trpc].ts'
+// @filename: astro.d.ts
+declare module 'astro' {
+  export type APIRoute = (context: { request: Request }) => Response | Promise<Response>;
+}
+
+// @filename: src/server/context.ts
+import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
+export function createContext(opts: FetchCreateContextFnOptions) {
+  return { user: { name: opts.req.headers.get('username') ?? 'anonymous' } };
+}
+
+// @filename: src/server/router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: src/pages/trpc/[trpc].ts
+// ---cut---
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import type { APIRoute } from 'astro';
 import { createContext } from '../../server/context';
@@ -207,7 +244,20 @@ You need the [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/)
 
 #### Create Cloudflare Worker
 
-```ts title='server.ts'
+```ts twoslash title='server.ts'
+// @filename: context.ts
+import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
+export function createContext(opts: FetchCreateContextFnOptions) {
+  return { user: { name: opts.req.headers.get('username') ?? 'anonymous' } };
+}
+
+// @filename: router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: server.ts
+// ---cut---
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { createContext } from './context';
 import { appRouter } from './router';
@@ -344,7 +394,23 @@ See a full example [here](https://github.com/trpc/trpc/tree/main/examples/next-e
 
 ### Remix
 
-```ts title='app/routes/trpc.$trpc.ts'
+```ts twoslash title='app/routes/trpc.$trpc.ts'
+// @filename: remix.d.ts
+declare module '@remix-run/node' {
+  export type ActionFunctionArgs = { request: Request };
+  export type LoaderFunctionArgs = { request: Request };
+}
+declare module '~/server/context' {
+  import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
+  export function createContext(opts: FetchCreateContextFnOptions): any;
+}
+declare module '~/server/router' {
+  import type { AnyTRPCRouter } from '@trpc/server';
+  export const appRouter: AnyTRPCRouter;
+}
+
+// @filename: app/routes/trpc.$trpc.ts
+// ---cut---
 import type { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { createContext } from '~/server/context';
@@ -368,9 +434,27 @@ function handleRequest(args: LoaderFunctionArgs | ActionFunctionArgs) {
 
 ### SolidStart
 
-```ts title='src/routes/api/trpc/[trpc].ts'
+```ts twoslash title='src/routes/api/trpc/[trpc].ts'
+// @filename: solidstart.d.ts
+declare module '@solidjs/start/server' {
+  export type APIEvent = { request: Request };
+}
+
+// @filename: src/routes/server/context.ts
+import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
+export function createContext(opts: FetchCreateContextFnOptions) {
+  return { user: { name: opts.req.headers.get('username') ?? 'anonymous' } };
+}
+
+// @filename: src/routes/server/router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: src/routes/api/trpc/[trpc].ts
+// ---cut---
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
-import type { APIEvent } from 'solid-start';
+import type { APIEvent } from '@solidjs/start/server';
 import { createContext } from '../../server/context';
 import { appRouter } from '../../server/router';
 
@@ -429,12 +513,27 @@ bun add -g edge-runtime
 
 #### Create Edge Runtime Function
 
-```ts title='server.ts'
+```ts twoslash title='server.ts'
+
+// @filename: context.ts
+import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
+export function createContext(opts: FetchCreateContextFnOptions) {
+  return { user: { name: opts.req.headers.get('username') ?? 'anonymous' } };
+}
+
+// @filename: router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: server.ts
+// ---cut---
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { createContext } from './context';
 import { appRouter } from './router';
 
-addEventListener('fetch', (event) => {
+// Vercel Edge Runtime uses Service Worker-style addEventListener
+addEventListener('fetch', (event: any) => {
   return event.respondWith(
     fetchRequestHandler({
       endpoint: '/trpc',

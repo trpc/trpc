@@ -1,9 +1,21 @@
 import { TRPCError } from '../error/TRPCError';
 import type { ProcedureType } from '../procedure';
 import { getProcedureAtPath, type AnyRouter } from '../router';
-import { isObject } from '../utils';
+import { emptyObject, isObject } from '../utils';
 import { parseConnectionParamsFromString } from './parseConnectionParams';
 import type { TRPCAcceptHeader, TRPCRequestInfo } from './types';
+
+export function getAcceptHeader(headers: Headers): TRPCAcceptHeader | null {
+  return (
+    (headers.get('trpc-accept') as TRPCAcceptHeader | null) ??
+    (headers
+      .get('accept')
+      ?.split(',')
+      .some((t) => t.trim() === 'application/jsonl')
+      ? ('application/jsonl' as TRPCAcceptHeader)
+      : null)
+  );
+}
 
 type GetRequestInfoOptions = {
   path: string;
@@ -12,6 +24,7 @@ type GetRequestInfoOptions = {
   searchParams: URLSearchParams;
   headers: Headers;
   router: AnyRouter;
+  maxBatchSize?: number;
 };
 
 type ContentTypeHandler = {
@@ -69,7 +82,19 @@ const jsonContentTypeHandler: ContentTypeHandler = {
   async parse(opts) {
     const { req } = opts;
     const isBatchCall = opts.searchParams.get('batch') === '1';
+    const maxBatchSize = opts.maxBatchSize;
+
     const paths = isBatchCall ? opts.path.split(',') : [opts.path];
+    if (
+      isBatchCall &&
+      typeof maxBatchSize === 'number' &&
+      paths.length > maxBatchSize
+    ) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: `Batch call exceeds maximum size`,
+      });
+    }
 
     type InputRecord = Record<number, unknown>;
     const getInputs = memo(async (): Promise<InputRecord> => {
@@ -83,13 +108,14 @@ const jsonContentTypeHandler: ContentTypeHandler = {
         inputs = await req.json();
       }
       if (inputs === undefined) {
-        return {};
+        return emptyObject();
       }
 
       if (!isBatchCall) {
-        return {
-          0: opts.router._def._config.transformer.input.deserialize(inputs),
-        };
+        const result: InputRecord = emptyObject();
+        result[0] =
+          opts.router._def._config.transformer.input.deserialize(inputs);
+        return result;
       }
 
       if (!isObject(inputs)) {
@@ -98,7 +124,7 @@ const jsonContentTypeHandler: ContentTypeHandler = {
           message: '"input" needs to be an object when doing a batch call',
         });
       }
-      const acc: InputRecord = {};
+      const acc: InputRecord = emptyObject();
       for (const index of paths.keys()) {
         const input = inputs[index];
         if (input !== undefined) {
@@ -115,6 +141,7 @@ const jsonContentTypeHandler: ContentTypeHandler = {
         async (path, index): Promise<TRPCRequestInfo['calls'][number]> => {
           const procedure = await getProcedureAtPath(opts.router, path);
           return {
+            batchIndex: index,
             path,
             procedure,
             getRawInput: async () => {
@@ -170,7 +197,7 @@ const jsonContentTypeHandler: ContentTypeHandler = {
 
     const info: TRPCRequestInfo = {
       isBatchCall,
-      accept: req.headers.get('trpc-accept') as TRPCAcceptHeader | null,
+      accept: getAcceptHeader(req.headers),
       calls,
       type,
       connectionParams:
@@ -206,6 +233,7 @@ const formDataContentTypeHandler: ContentTypeHandler = {
       accept: null,
       calls: [
         {
+          batchIndex: 0,
           path: opts.path,
           getRawInput: getInputs.read,
           result: getInputs.result,
@@ -242,6 +270,7 @@ const octetStreamContentTypeHandler: ContentTypeHandler = {
     return {
       calls: [
         {
+          batchIndex: 0,
           path: opts.path,
           getRawInput: getInputs.read,
           result: getInputs.result,
