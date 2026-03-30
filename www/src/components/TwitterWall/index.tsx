@@ -60,6 +60,7 @@ export const TwitterWall = () => {
           viewport={{ once: true }}
           href={tweet.url}
           key={tweet.id}
+          aria-label={`Tweet by ${tweet.user.name}: ${tweet.text.slice(0, 100)}${tweet.text.length > 100 ? '...' : ''}`}
           className="rounded-lg bg-zinc-100 p-6 transition-colors hover:bg-zinc-200 hover:no-underline dark:bg-zinc-800/50 hover:dark:bg-zinc-700/50"
         >
           <figure>
