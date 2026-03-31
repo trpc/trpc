@@ -1,10 +1,7 @@
 import { EventEmitter, on } from 'node:events';
 /// <reference types="vitest" />
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
-import {
-  createTRPCClient,
-  httpFetchSubscriptionLink,
-} from '@trpc/client';
+import { createTRPCClient, httpFetchSubscriptionLink } from '@trpc/client';
 import { FetchEventSource } from '@trpc/client/unstable-internals';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
