@@ -9,6 +9,8 @@ slug: /client/links/httpSubscriptionLink
 
 SSE is a good option for real-time as it's a bit easier than setting up a WebSockets-server.
 
+If you need dynamic headers, `credentials`, or a custom fetch implementation, use [`httpFetchSubscriptionLink`](./httpFetchSubscriptionLink.md) instead.
+
 ## Setup {#setup}
 
 :::info
@@ -95,54 +97,6 @@ httpSubscriptionLink({
 });
 ```
 
-### Custom headers with the built-in fetch transport
-
-If you need custom headers or `credentials: 'include'`, `httpSubscriptionLink` can use a built-in fetch-based SSE transport. The `headers()` and `credentials` options are re-evaluated whenever the subscription reconnects, so refreshed auth state is picked up automatically.
-
-```tsx twoslash
-// @filename: server.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-export type AppRouter = typeof appRouter;
-
-// @filename: client.ts
-declare function getSignature(op: any): Promise<string>;
-declare function getToken(): Promise<string>;
-
-// ---cut---
-import {
-  createTRPCClient,
-  httpBatchLink,
-  httpSubscriptionLink,
-  splitLink,
-} from '@trpc/client';
-import type { AppRouter } from './server';
-
-const trpc = createTRPCClient<AppRouter>({
-  links: [
-    splitLink({
-      condition: (op) => op.type === 'subscription',
-      true: httpSubscriptionLink({
-        url: 'http://localhost:3000',
-        headers: async ({ op }) => {
-          const token = await getToken();
-          const signature = await getSignature(op);
-          return {
-            authorization: `Bearer ${token}`,
-            'x-signature': signature,
-          };
-        },
-        credentials: 'include',
-      }),
-      false: httpBatchLink({
-        url: 'http://localhost:3000',
-      }),
-    }),
-  ],
-});
-```
-
 ### Custom headers through ponyfill
 
 **Recommended for environments that already depend on an EventSource ponyfill**
@@ -201,7 +155,7 @@ const trpc = createTRPCClient<AppRouter>({
 
 ### Updating configuration on an active connection {#updatingConfig}
 
-`httpSubscriptionLink` leverages SSE through `EventSource` by default. When you use the built-in fetch transport (`headers`, `credentials`, or `fetch`), reconnects recreate the request with fresh configuration. For custom `EventSource` implementations, `eventSourceOptions()` is still bound to the lifetime of that EventSource instance.
+`httpSubscriptionLink` leverages SSE through `EventSource`, so `eventSourceOptions()` stays bound to the lifetime of that `EventSource` instance.
 
 To address this limitation, you can use a [`retryLink`](./retryLink.md) in conjunction with `httpSubscriptionLink`. This approach ensures that the connection is re-established with the latest configuration, including any updated authentication details.
 

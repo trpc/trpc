@@ -1,12 +1,15 @@
 import { EventEmitter, on } from 'node:events';
 /// <reference types="vitest" />
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
-import { createTRPCClient, httpSubscriptionLink } from '@trpc/client';
+import {
+  createTRPCClient,
+  httpFetchSubscriptionLink,
+} from '@trpc/client';
 import { FetchEventSource } from '@trpc/client/unstable-internals';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 
-describe('httpSubscriptionLink fetch transport', () => {
+describe('httpFetchSubscriptionLink', () => {
   const noop = vi.fn();
 
   describe('headers', () => {
@@ -82,7 +85,7 @@ describe('httpSubscriptionLink fetch transport', () => {
     test('sends auth headers without an EventSource ponyfill', async () => {
       const client = createTRPCClient<AppRouter>({
         links: [
-          httpSubscriptionLink({
+          httpFetchSubscriptionLink({
             url: ctx.httpUrl,
             headers: async ({ op }) => {
               return {
@@ -138,7 +141,7 @@ describe('httpSubscriptionLink fetch transport', () => {
 
       const client = createTRPCClient<AppRouter>({
         links: [
-          httpSubscriptionLink({
+          httpFetchSubscriptionLink({
             url: ctx.httpUrl,
             fetch: fetchSpy,
             credentials: 'include',
