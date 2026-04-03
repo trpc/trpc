@@ -130,7 +130,7 @@
     "tsdown": "0.12.7",
     "tslib": "^2.8.1",
     "typescript": "^5.9.2",
-    "undici": "^7.0.0",
+    "undici": "^8.0.0",
     "ws": "^8.0.0"
   },
   "publishConfig": {
