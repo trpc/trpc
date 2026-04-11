@@ -78,6 +78,22 @@ describe('withTRPC()', () => {
       Component: <div />,
     } as any);
 
+    const dehydratedError = (
+      props as {
+        pageProps: {
+          trpcState: DehydratedState;
+        };
+      }
+    ).pageProps.trpcState.queries[0]!.state.error as unknown as {
+      message: string;
+      data: { code: string };
+      shape: { message: string; data: { code: string } };
+    };
+
+    expect(dehydratedError.message).toBe('NOT_FOUND');
+    expect(dehydratedError.shape.message).toBe('NOT_FOUND');
+    expect(dehydratedError.data).toEqual(dehydratedError.shape.data);
+
     queryErrorCallback.mockClear();
     // @ts-ignore
     globalThis.window = window;
@@ -92,6 +108,9 @@ describe('withTRPC()', () => {
 
     expect(error).toBeInstanceOf(TRPCClientError);
     expect(error.isFormattedError()).toBe(true);
+    expect(error.shape?.message).toBe('NOT_FOUND');
+    expect(error.data).toEqual(dehydratedError.data);
+    expect(error.data?.code).toBe('NOT_FOUND');
     expect(utils.container).toHaveTextContent('NOT_FOUND');
   });
 

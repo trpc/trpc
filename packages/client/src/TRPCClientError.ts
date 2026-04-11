@@ -87,7 +87,7 @@ function getMessageFromUnknownError(err: unknown, fallback: string): string {
   return fallback;
 }
 
-class TRPCClientErrorImpl<
+export class TRPCClientError<
     TInferrable extends InferrableClientTypes,
     TShape extends
       ClientErrorShape<TInferrable> = ClientErrorShape<TInferrable>,
@@ -110,7 +110,7 @@ class TRPCClientErrorImpl<
     message: string,
     opts?: {
       result?: Maybe<TRPCErrorResponse<ErrorShape<TInferrable>>>;
-      cause?: unknown;
+      cause?: Error;
       meta?: Record<string, unknown>;
     },
   ) {
@@ -125,7 +125,7 @@ class TRPCClientErrorImpl<
     this.shape = (opts?.result?.error ?? undefined) as TShape;
     this.name = 'TRPCClientError';
 
-    Object.setPrototypeOf(this, TRPCClientErrorImpl.prototype);
+    Object.setPrototypeOf(this, TRPCClientError.prototype);
   }
 
   public get data(): ErrorData<TShape> {
@@ -157,14 +157,14 @@ class TRPCClientErrorImpl<
     } as ErrorDiscriminator<TShape>;
   }
 
-  public isFormattedError(): this is TRPCClientErrorImpl<
+  public isFormattedError(): this is TRPCClientError<
     TInferrable,
     Extract<TShape, { '~': { kind: 'formatted' } }>
   > {
     return this.shape?.['~']?.kind === 'formatted';
   }
 
-  public isDeclaredError(): this is TRPCClientErrorImpl<
+  public isDeclaredError(): this is TRPCClientError<
     TInferrable,
     Extract<
       TShape,
@@ -180,7 +180,7 @@ class TRPCClientErrorImpl<
     const TDeclaredErrorKey extends DeclaredErrorKeyFromShape<TShape>,
   >(
     declaredErrorKey: TDeclaredErrorKey,
-  ): this is TRPCClientErrorImpl<
+  ): this is TRPCClientError<
     TInferrable,
     Extract<
       TShape,
@@ -211,7 +211,7 @@ class TRPCClientErrorImpl<
         return cause;
       }
 
-      return new TRPCClientErrorImpl<TInferrable>(cause.message, {
+      return new TRPCClientError<TInferrable>(cause.message, {
         result: cause.shape ? { error: cause.shape } : undefined,
         cause: cause.cause instanceof Error ? cause.cause : undefined,
         meta: {
@@ -222,30 +222,25 @@ class TRPCClientErrorImpl<
     }
 
     if (isTRPCErrorResponse(cause)) {
-      return new TRPCClientErrorImpl<TInferrable>(cause.error.message, {
+      return new TRPCClientError<TInferrable>(cause.error.message, {
         ...opts,
         result: cause,
         cause: opts.cause,
       });
     }
 
-    return new TRPCClientErrorImpl<TInferrable>(
+    return new TRPCClientError<TInferrable>(
       getMessageFromUnknownError(cause, 'Unknown error'),
       {
         ...opts,
-        cause: cause,
+        cause: cause as any,
       },
     );
   }
 }
 
-export type TRPCClientError<TInferrable extends InferrableClientTypes> =
-  TRPCClientErrorImpl<TInferrable, ClientErrorShape<TInferrable>>;
-
-export const TRPCClientError = TRPCClientErrorImpl;
-
 export function isTRPCClientError<TInferrable extends InferrableClientTypes>(
   cause: unknown,
 ): cause is TRPCClientError<TInferrable> & TRPCClientErrorLike<TInferrable> {
-  return cause instanceof TRPCClientErrorImpl;
+  return cause instanceof TRPCClientError;
 }

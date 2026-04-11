@@ -4,14 +4,13 @@
  */
 import type { DehydratedState, QueryClient } from '@tanstack/react-query';
 import { HydrationBoundary, QueryClientProvider } from '@tanstack/react-query';
-import type {
-  CreateTRPCClientOptions,
-  TRPCClient,
+import {
   TRPCClientError,
-  TRPCClientErrorLike,
-  TRPCUntypedClient,
+  type CreateTRPCClientOptions,
+  type TRPCClient,
+  type TRPCClientErrorLike,
+  type TRPCUntypedClient,
 } from '@trpc/client';
-import { TRPCClientError as TRPCClientErrorClass } from '@trpc/client';
 import type { CoercedTransformerParameters } from '@trpc/client/unstable-internals';
 import {
   getTransformer,
@@ -110,18 +109,13 @@ function isDehydratedTRPCError(
 function rehydrateTRPCClientError(
   error: TRPCClientErrorLike<any>,
 ): TRPCClientError<any> {
-  const clientError = new TRPCClientErrorClass(error.message, {
+  return new TRPCClientError(error.message, {
     result: error.shape
       ? {
           error: error.shape,
         }
       : undefined,
   });
-
-  (clientError as { shape: typeof error.shape }).shape = error.shape;
-  (clientError as { data: typeof error.data }).data = error.data;
-
-  return clientError;
 }
 
 function rehydrateDehydratedStateErrors(
