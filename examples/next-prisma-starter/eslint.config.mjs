@@ -1,9 +1,9 @@
 import tseslint from 'typescript-eslint';
 import reactPlugin from 'eslint-plugin-react';
-import * as reactHooks from 'eslint-plugin-react-hooks';
+import reactHooks from 'eslint-plugin-react-hooks';
 
 export default tseslint.config(
-  reactHooks.configs.recommended,
+  ...reactHooks.configs.recommended,
   {
     files: ['**/*.js', '**/*.ts', '**/*.tsx'],
     plugins: {
@@ -16,7 +16,6 @@ export default tseslint.config(
     ],
     rules: {
       ...reactPlugin.configs['jsx-runtime'].rules,
-      'react-hooks/react-compiler': 'error',
 
       // Place to specify ESLint rules. Can be used to overwrite rules specified from the extended configs
       '@typescript-eslint/consistent-type-definitions': 'off',
