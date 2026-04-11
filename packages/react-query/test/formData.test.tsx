@@ -19,7 +19,7 @@ import { konn } from 'konn';
 import type { ReactNode } from 'react';
 import React from 'react';
 import transformer from 'superjson';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { zfd } from 'zod-form-data';
 
 function formDataOrObject<T extends z.ZodRawShape>(input: T) {
