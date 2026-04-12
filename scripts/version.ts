@@ -3,6 +3,10 @@ import path from 'path';
 
 console.log('ℹ️ Running custom script to pin versions to each other');
 
+const repoVersion = JSON.parse(
+  fs.readFileSync(path.join(import.meta.dirname, '..', 'lerna.json'), 'utf8'),
+).version as string;
+
 // Packages that should have a prerelease suffix (alpha or beta)
 const PRERELEASE_PACKAGES = new Map<string, 'alpha' | 'beta'>([
   ['openapi', 'alpha'],
@@ -31,7 +35,7 @@ for (const name of packages) {
   let content = fs.readFileSync(packageJSON).toString();
 
   const parsed = JSON.parse(content);
-  let version = parsed.version;
+  let version = parsed.version ?? repoVersion;
 
   // Ensure designated packages always have their prerelease suffix
   const prereleaseTag = PRERELEASE_PACKAGES.get(name);
