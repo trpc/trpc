@@ -1,6 +1,5 @@
 {
   "name": "@monotest/api",
-  "version": "11.16.0",
   "private": true,
   "type": "module",
   "exports": {
