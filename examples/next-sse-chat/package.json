@@ -23,7 +23,7 @@
     "@trpc/server": "npm:@trpc/server",
     "class-variance-authority": "^0.7.0",
     "date-fns": "^3.6.0",
-    "drizzle-orm": "^0.31.2",
+    "drizzle-orm": "^0.45.2",
     "next": "^15.3.8",
     "next-auth": "5.0.0-beta.25",
     "postgres": "^3.4.4",
