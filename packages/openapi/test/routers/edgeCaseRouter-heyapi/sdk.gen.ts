@@ -4,7 +4,7 @@ import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
 import type { AsyncReturnData, AsyncReturnErrors, AsyncReturnResponses, BigintData, BigintErrors, BigintResponses, BinaryData, BinaryErrors, BinaryResponses, BoolNullableData, BoolNullableErrors, BoolNullableResponses, BoolUnionData, BoolUnionErrors, BoolUnionResponses, ComplexNullableData, ComplexNullableErrors, ComplexNullableResponses, ConflictingIntersectionData, ConflictingIntersectionErrors, ConflictingIntersectionResponses, DisjointIntersectionData, DisjointIntersectionErrors, DisjointIntersectionResponses, Level1Level2Level3DeepData, Level1Level2Level3DeepErrors, Level1Level2Level3DeepResponses, LiteralComputedKeyData, LiteralComputedKeyErrors, LiteralComputedKeyResponses, NeverFieldData, NeverFieldErrors, NeverFieldResponses, NoInputMutationData, NoInputMutationErrors, NoInputMutationResponses, NullableObjectData, NullableObjectErrors, NullableObjectResponses, NullOnlyData, NullOnlyErrors, NullOnlyResponses, SimpleQueryData, SimpleQueryErrors, SimpleQueryResponses, UndefinedInputData, UndefinedInputErrors, UndefinedInputResponses, VoidExplicitData, VoidExplicitErrors, VoidExplicitResponses, VoidInputData, VoidInputErrors, VoidInputResponses } from './types.gen';
 
-export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
+export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
      * You can provide a client instance returned by `createClient()` instead of
      * individual options. This might be also useful if you want to implement a
