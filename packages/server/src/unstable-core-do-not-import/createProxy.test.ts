@@ -41,3 +41,23 @@ test('createRecursiveProxy() - prevent mutation of args', () => {
     `[TypeError: Cannot add property 3, object is not extensible]`,
   );
 });
+
+test('createRecursiveProxy() - handles React 19 proxy coercion keys', () => {
+  // React 19 can call valueOf / toString / toJSON on a proxy when coercing
+  // it to a primitive. These calls must return a plain function (not another
+  // proxy) so downstream code can obtain a string representation without
+  // crashing or infinite-recursing.
+  const proxy: any = createRecursiveProxy((opts) => opts);
+
+  expect(typeof proxy.foo.bar.valueOf).toBe('function');
+  expect(typeof proxy.foo.bar.toString).toBe('function');
+  expect(typeof proxy.foo.bar.toJSON).toBe('function');
+
+  // The returned function must yield a debug string, not another proxy
+  expect(proxy.foo.valueOf()).toBe('tRPC.proxy(foo)');
+  expect(proxy.foo.bar.toString()).toBe('tRPC.proxy(foo.bar)');
+  expect(proxy.foo.bar.baz.toJSON()).toBe('tRPC.proxy(foo.bar.baz)');
+
+  // Normal proxy chaining still works after these keys
+  expect(proxy.foo.bar.query()).toEqual({ path: ['foo', 'bar', 'query'], args: [] });
+});

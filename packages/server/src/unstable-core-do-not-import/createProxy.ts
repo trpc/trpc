@@ -30,6 +30,14 @@ function createInnerProxy(
         // like a PromiseLike (like in `Promise.resolve(proxy)`)
         return undefined;
       }
+      // React 19 may call valueOf / toString / toJSON when coercing a proxy
+      // to a primitive (e.g. during rendering or logging). Return a plain
+      // function that yields a debug string so the coercion does not recurse
+      // into the proxy and does not break the caller.
+      if (key === 'valueOf' || key === 'toString' || key === 'toJSON') {
+        const debugPath = path.join('.');
+        return () => `tRPC.proxy(${debugPath})`;
+      }
       return createInnerProxy(callback, [...path, key], memo);
     },
     apply(_1, _2, args) {
