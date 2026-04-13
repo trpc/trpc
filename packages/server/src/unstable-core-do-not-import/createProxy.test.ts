@@ -59,5 +59,8 @@ test('createRecursiveProxy() - handles React 19 proxy coercion keys', () => {
   expect(proxy.foo.bar.baz.toJSON()).toBe('tRPC.proxy(foo.bar.baz)');
 
   // Normal proxy chaining still works after these keys
-  expect(proxy.foo.bar.query()).toEqual({ path: ['foo', 'bar', 'query'], args: [] });
+  expect(proxy.foo.bar.query()).toEqual({
+    path: ['foo', 'bar', 'query'],
+    args: [],
+  });
 });
