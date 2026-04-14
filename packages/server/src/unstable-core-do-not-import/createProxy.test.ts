@@ -44,30 +44,31 @@ test('createRecursiveProxy() - prevent mutation of args', () => {
 
 test('createRecursiveProxy() - handles React 19 proxy coercion keys', () => {
   // React 19 can call valueOf / toString / toJSON on a proxy when coercing
-  // it to a primitive. These calls must return a plain function (not another
-  // proxy) so downstream code can obtain a string representation without
-  // crashing or infinite-recursing.
+  // it to a primitive. The apply trap intercepts these calls and returns a
+  // debug string instead of forwarding to the callback, while still allowing
+  // further proxy chaining (e.g. proxy.toString.query()) for routes that
+  // happen to share a name with a coercion method.
   const proxy: any = createRecursiveProxy((opts) => opts);
 
-  // Root path (empty path) coercion
-  expect(typeof proxy.valueOf).toBe('function');
-  expect(typeof proxy.toString).toBe('function');
-  expect(typeof proxy.toJSON).toBe('function');
+  // Root path coercion — calling valueOf/toString/toJSON directly returns
+  // a debug string instead of triggering the callback
   expect(proxy.valueOf()).toBe('tRPC.proxy()');
   expect(proxy.toString()).toBe('tRPC.proxy()');
   expect(proxy.toJSON()).toBe('tRPC.proxy()');
 
   // Nested path coercion
-  expect(typeof proxy.foo.bar.valueOf).toBe('function');
-  expect(typeof proxy.foo.bar.toString).toBe('function');
-  expect(typeof proxy.foo.bar.toJSON).toBe('function');
-
-  // The returned function must yield a debug string, not another proxy
   expect(proxy.foo.valueOf()).toBe('tRPC.proxy(foo)');
   expect(proxy.foo.bar.toString()).toBe('tRPC.proxy(foo.bar)');
   expect(proxy.foo.bar.baz.toJSON()).toBe('tRPC.proxy(foo.bar.baz)');
 
-  // Normal proxy chaining still works after these keys
+  // Coercion keys are still chainable — proxy.toString.query() should
+  // continue through the proxy as a normal path, not short-circuit
+  expect(proxy.toString.query()).toEqual({
+    path: ['toString', 'query'],
+    args: [],
+  });
+
+  // Normal proxy chaining is unaffected
   expect(proxy.foo.bar.query()).toEqual({
     path: ['foo', 'bar', 'query'],
     args: [],
