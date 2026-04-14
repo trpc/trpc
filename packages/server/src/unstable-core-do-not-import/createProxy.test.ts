@@ -49,6 +49,15 @@ test('createRecursiveProxy() - handles React 19 proxy coercion keys', () => {
   // crashing or infinite-recursing.
   const proxy: any = createRecursiveProxy((opts) => opts);
 
+  // Root path (empty path) coercion
+  expect(typeof proxy.valueOf).toBe('function');
+  expect(typeof proxy.toString).toBe('function');
+  expect(typeof proxy.toJSON).toBe('function');
+  expect(proxy.valueOf()).toBe('tRPC.proxy()');
+  expect(proxy.toString()).toBe('tRPC.proxy()');
+  expect(proxy.toJSON()).toBe('tRPC.proxy()');
+
+  // Nested path coercion
   expect(typeof proxy.foo.bar.valueOf).toBe('function');
   expect(typeof proxy.foo.bar.toString).toBe('function');
   expect(typeof proxy.foo.bar.toJSON).toBe('function');
