@@ -35,6 +35,20 @@ function createInnerProxy(
     apply(_1, _2, args) {
       const lastOfPath = path[path.length - 1];
 
+      // React 19 may call valueOf / toString / toJSON when coercing a proxy
+      // to a primitive (e.g. during rendering or logging). Return a debug
+      // string so the coercion does not recurse into the proxy. This only
+      // triggers for direct calls (proxy.toString()), not for chained access
+      // (proxy.toString.query()), preserving route naming freedom.
+      if (
+        lastOfPath === 'valueOf' ||
+        lastOfPath === 'toString' ||
+        lastOfPath === 'toJSON'
+      ) {
+        const debugPath = path.slice(0, -1).join('.');
+        return `tRPC.proxy(${debugPath})`;
+      }
+
       let opts = { args, path };
       // special handling for e.g. `trpc.hello.call(this, 'there')` and `trpc.hello.apply(this, ['there'])
       if (lastOfPath === 'call') {

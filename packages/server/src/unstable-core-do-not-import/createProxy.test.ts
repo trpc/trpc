@@ -41,3 +41,36 @@ test('createRecursiveProxy() - prevent mutation of args', () => {
     `[TypeError: Cannot add property 3, object is not extensible]`,
   );
 });
+
+test('createRecursiveProxy() - handles React 19 proxy coercion keys', () => {
+  // React 19 can call valueOf / toString / toJSON on a proxy when coercing
+  // it to a primitive. The apply trap intercepts these calls and returns a
+  // debug string instead of forwarding to the callback, while still allowing
+  // further proxy chaining (e.g. proxy.toString.query()) for routes that
+  // happen to share a name with a coercion method.
+  const proxy: any = createRecursiveProxy((opts) => opts);
+
+  // Root path coercion — calling valueOf/toString/toJSON directly returns
+  // a debug string instead of triggering the callback
+  expect(proxy.valueOf()).toBe('tRPC.proxy()');
+  expect(proxy.toString()).toBe('tRPC.proxy()');
+  expect(proxy.toJSON()).toBe('tRPC.proxy()');
+
+  // Nested path coercion
+  expect(proxy.foo.valueOf()).toBe('tRPC.proxy(foo)');
+  expect(proxy.foo.bar.toString()).toBe('tRPC.proxy(foo.bar)');
+  expect(proxy.foo.bar.baz.toJSON()).toBe('tRPC.proxy(foo.bar.baz)');
+
+  // Coercion keys are still chainable — proxy.toString.query() should
+  // continue through the proxy as a normal path, not short-circuit
+  expect(proxy.toString.query()).toEqual({
+    path: ['toString', 'query'],
+    args: [],
+  });
+
+  // Normal proxy chaining is unaffected
+  expect(proxy.foo.bar.query()).toEqual({
+    path: ['foo', 'bar', 'query'],
+    args: [],
+  });
+});
