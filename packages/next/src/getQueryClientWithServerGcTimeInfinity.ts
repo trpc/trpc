@@ -19,7 +19,7 @@ let didWarnPatchFailure = false;
  * We deliberately avoid throwing here to keep request handling resilient.
  */
 function warnPatchFailure() {
-  if (process.env['NODE_ENV'] === 'production' || didWarnPatchFailure) {
+  if (process.env.NODE_ENV === 'production' || didWarnPatchFailure) {
     return;
   }
   didWarnPatchFailure = true;
