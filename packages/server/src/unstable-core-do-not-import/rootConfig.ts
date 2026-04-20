@@ -14,14 +14,22 @@ export interface RootTypes {
   transformer: boolean;
 }
 
+/**
+ * Recommended content types for batch stream responses.
+ *
+ * `application/json` remains the default for backwards compatibility, while
+ * other string values are allowed for tooling or infrastructure compatibility.
+ */
 export type JSONLContentType =
   | 'application/json'
   | 'application/jsonl'
-  | 'application/x-ndjson';
+  | 'application/x-ndjson'
+  | (string & {});
 
 export interface JSONLConfig extends Pick<JSONLProducerOptions, 'pingMs'> {
   /**
    * The `content-type` header to use for batch stream responses.
+   * Supports any valid content type string.
    * Defaults to `application/json` for backwards compatibility.
    * @default 'application/json'
    */

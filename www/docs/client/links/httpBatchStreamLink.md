@@ -101,7 +101,7 @@ const client = createTRPCClient<AppRouter>({
 Compared to a regular `httpBatchLink`, a `httpBatchStreamLink` will:
 
 - Cause the requests to be sent with a `trpc-accept: application/jsonl` header (or `Accept: application/jsonl` when using `streamHeader: 'accept'`)
-- Cause the response to be sent with `transfer-encoding: chunked` and `content-type: application/json` by default. You can opt into `application/jsonl` or `application/x-ndjson` on the server via `initTRPC.create({ jsonl: { contentType: ... } })`
+- Cause the response to be sent with `transfer-encoding: chunked` and `content-type: application/json` by default. You can set the streamed response `content-type` to `application/jsonl`, `application/x-ndjson`, or another value on the server via `initTRPC.create({ jsonl: { contentType: ... } })`.
 - Remove the `data` key from the argument object passed to `responseMeta` (because with a streamed response, the headers are sent before the data is available)
 
 ## Async generators and deferred promises {#generators}
@@ -219,3 +219,5 @@ const t = initTRPC.create({
   },
 });
 ```
+
+The default `contentType` remains `application/json` for backwards compatibility. Use `application/jsonl` if you want the response header to match the `trpc-accept` / `Accept` header sent by `httpBatchStreamLink`, or choose another value that works better with your tooling.
