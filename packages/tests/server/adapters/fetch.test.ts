@@ -142,6 +142,7 @@ describe('with default server', () => {
 
   test('streaming', async () => {
     const orderedResults: number[] = [];
+    const responseContentTypes: string[] = [];
     const linkSpy: TRPCLink<AppRouter> = () => {
       // here we just got initialized in the app - this happens once per app
       // useful for storing cache for instance
@@ -152,6 +153,13 @@ describe('with default server', () => {
           const unsubscribe = next(op).subscribe({
             next(value) {
               orderedResults.push(value.result.data as number);
+              responseContentTypes.push(
+                (
+                  (value.context as { response: Response }).response.headers.get(
+                    'content-type',
+                  ) ?? ''
+                ).split(';')[0]!,
+              );
               observer.next(value);
             },
             error: observer.error,
@@ -179,6 +187,7 @@ describe('with default server', () => {
 
     expect(results).toEqual([3, 1, 2]);
     expect(orderedResults).toEqual([1, 2, 3]);
+    expect([...new Set(responseContentTypes)]).toEqual(['application/jsonl']);
   });
 
   test('query with headers', async () => {
