@@ -29,8 +29,17 @@ const createContext = ({ req, resHeaders }: FetchCreateContextFnOptions) => {
 
 type Context = Awaited<ReturnType<typeof createContext>>;
 
-function createAppRouter() {
-  const t = initTRPC.context<Context>().create();
+type AppRouterServerOptions = {
+  jsonl?: {
+    contentType?:
+      | 'application/json'
+      | 'application/jsonl'
+      | 'application/x-ndjson';
+  };
+};
+
+function createAppRouter(opts?: AppRouterServerOptions) {
+  const t = initTRPC.context<Context>().create(opts);
   const router = t.router;
   const publicProcedure = t.procedure;
 
@@ -72,8 +81,11 @@ function createAppRouter() {
 
 type AppRouter = ReturnType<typeof createAppRouter>;
 
-async function startServer(endpoint = '') {
-  const router = createAppRouter();
+async function startServer(
+  endpoint = '',
+  routerOptions?: AppRouterServerOptions,
+) {
+  const router = createAppRouter(routerOptions);
 
   const server = serve({
     port: 0,
@@ -187,8 +199,62 @@ describe('with default server', () => {
 
     expect(results).toEqual([3, 1, 2]);
     expect(orderedResults).toEqual([1, 2, 3]);
-    expect([...new Set(responseContentTypes)]).toEqual(['application/jsonl']);
+    expect([...new Set(responseContentTypes)]).toEqual(['application/json']);
   });
+
+  test.each(['application/jsonl', 'application/x-ndjson'] as const)(
+    'streaming can opt into %s content-type',
+    async (contentType) => {
+      const custom = await startServer('', {
+        jsonl: {
+          contentType,
+        },
+      });
+
+      const responseContentTypes: string[] = [];
+      const linkSpy: TRPCLink<AppRouter> = () => {
+        return ({ next, op }) => {
+          return observable((observer) => {
+            const unsubscribe = next(op).subscribe({
+              next(value) {
+                responseContentTypes.push(
+                  (
+                    (
+                      value.context as { response: Response }
+                    ).response.headers.get('content-type') ?? ''
+                  ).split(';')[0]!,
+                );
+                observer.next(value);
+              },
+              error: observer.error,
+            });
+            return unsubscribe;
+          });
+        };
+      };
+
+      const client = createTRPCClient<AppRouter>({
+        links: [
+          linkSpy,
+          httpBatchStreamLink({
+            url: custom.url,
+            fetch: fetch as any,
+          }),
+        ],
+      });
+
+      const results = await Promise.all([
+        client.deferred.query({ wait: 3 }),
+        client.deferred.query({ wait: 1 }),
+        client.deferred.query({ wait: 2 }),
+      ]);
+
+      expect(results).toEqual([3, 1, 2]);
+      expect([...new Set(responseContentTypes)]).toEqual([contentType]);
+
+      await custom.close();
+    },
+  );
 
   test('query with headers', async () => {
     const client = createTRPCClient<AppRouter>({
