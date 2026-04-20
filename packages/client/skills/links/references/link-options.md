@@ -73,7 +73,7 @@ httpBatchStreamLink({
 | All `httpBatchLink` options |                             |                 | Inherits all httpBatchLink options                                                                |
 | `streamHeader`              | `'trpc-accept' \| 'accept'` | `'trpc-accept'` | Header used to signal streaming. Use `'accept'` to avoid CORS preflight on cross-origin requests. |
 
-Sends `trpc-accept: application/jsonl` (or `Accept: application/jsonl`). Response arrives as `transfer-encoding: chunked` with `content-type: application/json` by default. Servers can opt into `application/jsonl` or `application/x-ndjson` via `initTRPC.create({ jsonl: { contentType: ... } })`. Cannot set response headers (including cookies) after stream begins.
+Sends `trpc-accept: application/jsonl` (or `Accept: application/jsonl`). Response arrives as `transfer-encoding: chunked` with `content-type: application/json` by default. Servers can set the streamed response `content-type` to `application/jsonl`, `application/x-ndjson`, or another value via `initTRPC.create({ jsonl: { contentType: ... } })`. Cannot set response headers (including cookies) after stream begins.
 
 ## splitLink
 
