@@ -100,6 +100,9 @@ function createContentTypeSpy(onData?: (value: number) => void): {
             observer.next(value);
           },
           error: observer.error,
+          complete() {
+            observer.complete();
+          },
         });
         return unsubscribe;
       });
