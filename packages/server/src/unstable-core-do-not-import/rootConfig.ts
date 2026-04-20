@@ -14,6 +14,20 @@ export interface RootTypes {
   transformer: boolean;
 }
 
+export type JSONLContentType =
+  | 'application/json'
+  | 'application/jsonl'
+  | 'application/x-ndjson';
+
+export interface JSONLConfig extends Pick<JSONLProducerOptions, 'pingMs'> {
+  /**
+   * The `content-type` header to use for batch stream responses.
+   * Defaults to `application/json` for backwards compatibility.
+   * @default 'application/json'
+   */
+  contentType?: JSONLContentType;
+}
+
 /**
  * The default check to see if we're in a server
  */
@@ -85,7 +99,7 @@ export interface RootConfig<TTypes extends RootTypes> {
    * Options for batch stream
    * @see https://trpc.io/docs/client/links/httpBatchStreamLink
    */
-  jsonl?: Pick<JSONLProducerOptions, 'pingMs'>;
+  jsonl?: JSONLConfig;
   experimental?: {};
 }
 
