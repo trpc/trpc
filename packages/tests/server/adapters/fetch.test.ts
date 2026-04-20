@@ -155,9 +155,9 @@ describe('with default server', () => {
               orderedResults.push(value.result.data as number);
               responseContentTypes.push(
                 (
-                  (value.context as { response: Response }).response.headers.get(
-                    'content-type',
-                  ) ?? ''
+                  (
+                    value.context as { response: Response }
+                  ).response.headers.get('content-type') ?? ''
                 ).split(';')[0]!,
               );
               observer.next(value);
