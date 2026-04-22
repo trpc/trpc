@@ -1,49 +1,33 @@
-/**
- *
- * This is an example router, you can delete this file and then update `../pages/api/trpc/[trpc].tsx`
- */
-import { router, publicProcedure } from '../trpc';
-import type { Prisma } from '@prisma/client';
+import { byIdInput, createResolver, withConnection } from '@nkzw/fate/server';
+import type { Post as PrismaPost } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { prisma } from '~/server/prisma';
+import { postDataView } from '~/server/views';
+import { publicProcedure, router } from '../trpc';
 
-/**
- * Default selector for Post.
- * It's important to always explicitly say which fields you want to return in order to not leak extra information
- * @see https://github.com/prisma/prisma/issues/9353
- */
-const defaultPostSelect = {
-  id: true,
-  title: true,
-  text: true,
-  createdAt: true,
-  updatedAt: true,
-} satisfies Prisma.PostSelect;
+const publicConnection = withConnection(publicProcedure);
 
 export const postRouter = router({
-  list: publicProcedure
-    .input(
-      z.object({
-        limit: z.number().min(1).max(100).nullish(),
-        cursor: z.string().nullish(),
-      }),
-    )
-    .query(async ({ input }) => {
-      /**
-       * For pagination docs you can have a look here
-       * @see https://trpc.io/docs/v11/useInfiniteQuery
-       * @see https://www.prisma.io/docs/concepts/components/prisma-client/pagination
-       */
+  list: publicConnection({
+    defaultSize: 5,
+    async map({ input, items }) {
+      const { resolveMany } = createResolver({
+        args: input.args,
+        select: input.select,
+        view: postDataView,
+      });
 
-      const limit = input.limit ?? 50;
-      const { cursor } = input;
+      return await resolveMany(items as Array<Record<string, unknown>>);
+    },
+    async query({ cursor, input, skip, take }) {
+      const { select } = createResolver({
+        args: input.args,
+        select: input.select,
+        view: postDataView,
+      });
 
-      const items = await prisma.post.findMany({
-        select: defaultPostSelect,
-        // get an extra item at the end which we'll use as next cursor
-        take: limit + 1,
-        where: {},
+      return await prisma.post.findMany({
         cursor: cursor
           ? {
               id: cursor,
@@ -52,53 +36,72 @@ export const postRouter = router({
         orderBy: {
           createdAt: 'desc',
         },
+        select,
+        skip,
+        take,
       });
-      let nextCursor: typeof cursor | undefined = undefined;
-      if (items.length > limit) {
-        // Remove the last item and use it as next cursor
-
-        const nextItem = items.pop()!;
-        nextCursor = nextItem.id;
-      }
-
-      return {
-        items: items.reverse(),
-        nextCursor,
-      };
-    }),
+    },
+  }),
   byId: publicProcedure
-    .input(
-      z.object({
-        id: z.string(),
-      }),
-    )
+    .input(byIdInput)
     .query(async ({ input }) => {
-      const { id } = input;
-      const post = await prisma.post.findUnique({
-        where: { id },
-        select: defaultPostSelect,
+      const { resolveMany, select } = createResolver({
+        args: input.args,
+        select: input.select,
+        view: postDataView,
       });
-      if (!post) {
+
+      const posts = await prisma.post.findMany({
+        select,
+        where: {
+          id: {
+            in: input.ids,
+          },
+        },
+      });
+
+      if (input.ids.length === 1 && posts.length === 0) {
         throw new TRPCError({
           code: 'NOT_FOUND',
-          message: `No post with id '${id}'`,
+          message: `No post with id '${input.ids[0]}'`,
         });
       }
-      return post;
+
+      const postsById = new Map<string, (typeof posts)[number]>(
+        posts.map((post) => [post.id, post]),
+      );
+
+      return await resolveMany(
+        input.ids
+          .map((id) => postsById.get(id))
+          .filter((post): post is (typeof posts)[number] => Boolean(post)),
+      );
     }),
   add: publicProcedure
     .input(
       z.object({
         id: z.string().uuid().optional(),
+        select: z.array(z.string()),
         title: z.string().min(1).max(32),
         text: z.string().min(1),
       }),
     )
     .mutation(async ({ input }) => {
-      const post = await prisma.post.create({
-        data: input,
-        select: defaultPostSelect,
+      const { id, select, text, title } = input;
+      const { resolve, select: prismaSelect } = createResolver({
+        select,
+        view: postDataView,
       });
-      return post;
+
+      const post = await prisma.post.create({
+        data: {
+          id,
+          text,
+          title,
+        },
+        select: prismaSelect,
+      });
+
+      return await resolve(post as unknown as PrismaPost);
     }),
 });

@@ -11,12 +11,17 @@ test('add and get post', async () => {
   const caller = createCaller(ctx);
 
   const input: inferProcedureInput<AppRouter['post']['add']> = {
+    select: ['id', 'text', 'title'],
     text: 'hello test',
     title: 'hello test',
   };
 
   const post = await caller.post.add(input);
-  const byId = await caller.post.byId({ id: post.id });
+  const postId = post.id as string;
+  const [byId] = await caller.post.byId({
+    ids: [postId],
+    select: ['id', 'text', 'title'],
+  });
 
   expect(byId).toMatchObject(input);
 });

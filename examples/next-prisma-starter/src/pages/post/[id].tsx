@@ -1,15 +1,23 @@
 import NextError from 'next/error';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-
+import { Suspense } from 'react';
+import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
+import { useRequest, useView, view } from 'react-fate';
 import type { NextPageWithLayout } from '~/pages/_app';
-import type { RouterOutput } from '~/utils/trpc';
-import { trpc } from '~/utils/trpc';
+import type { Post } from '~/server/routers/_app';
+import type { ViewRef } from 'react-fate';
 
-type PostByIdOutput = RouterOutput['post']['byId'];
+const PostDetailView = view<Post>()({
+  createdAt: true,
+  id: true,
+  text: true,
+  title: true,
+  updatedAt: true,
+});
 
-function PostItem(props: { post: PostByIdOutput }) {
-  const { post } = props;
+function PostItem(props: { postRef: ViewRef<'Post'> }) {
+  const post = useView(PostDetailView, props.postRef);
   return (
     <div className="flex flex-col justify-center h-full px-8 ">
       <Link className="text-gray-300 underline mb-4" href="/">
@@ -17,7 +25,7 @@ function PostItem(props: { post: PostByIdOutput }) {
       </Link>
       <h1 className="text-4xl font-bold">{post.title}</h1>
       <em className="text-gray-400">
-        Created {post.createdAt.toLocaleDateString('en-us')}
+        Created {new Date(post.createdAt).toLocaleDateString('en-us')}
       </em>
 
       <p className="py-4 break-all">{post.text}</p>
@@ -30,31 +38,64 @@ function PostItem(props: { post: PostByIdOutput }) {
   );
 }
 
+function PostDetailContent({ id }: { id: string }) {
+  const { post } = useRequest(
+    {
+      post: {
+        id,
+        view: PostDetailView,
+      },
+    },
+    {
+      mode: 'stale-while-revalidate',
+    },
+  );
+
+  return <PostItem postRef={post} />;
+}
+
+function PostLoadingState() {
+  return (
+    <div className="flex flex-col justify-center h-full px-8 ">
+      <div className="w-full bg-zinc-900/70 rounded-md h-10 animate-pulse mb-2"></div>
+      <div className="w-2/6 bg-zinc-900/70 rounded-md h-5 animate-pulse mb-8"></div>
+
+      <div className="w-full bg-zinc-900/70 rounded-md h-40 animate-pulse"></div>
+    </div>
+  );
+}
+
+function PostErrorBoundary({ error }: FallbackProps) {
+  const message = error instanceof Error ? error.message : 'Something went wrong';
+  const maybeStatus =
+    typeof error === 'object' &&
+    error !== null &&
+    'data' in error &&
+    typeof error.data === 'object' &&
+    error.data !== null &&
+    'httpStatus' in error.data &&
+    typeof error.data.httpStatus === 'number'
+      ? error.data.httpStatus
+      : 500;
+
+  return <NextError statusCode={maybeStatus} title={message} />;
+}
+
 const PostViewPage: NextPageWithLayout = () => {
-  const id = useRouter().query.id as string;
-  const postQuery = trpc.post.byId.useQuery({ id });
+  const rawId = useRouter().query.id;
+  const id = typeof rawId === 'string' ? rawId : '';
 
-  if (postQuery.error) {
-    return (
-      <NextError
-        title={postQuery.error.message}
-        statusCode={postQuery.error.data?.httpStatus ?? 500}
-      />
-    );
+  if (!id) {
+    return <PostLoadingState />;
   }
 
-  if (postQuery.status !== 'success') {
-    return (
-      <div className="flex flex-col justify-center h-full px-8 ">
-        <div className="w-full bg-zinc-900/70 rounded-md h-10 animate-pulse mb-2"></div>
-        <div className="w-2/6 bg-zinc-900/70 rounded-md h-5 animate-pulse mb-8"></div>
-
-        <div className="w-full bg-zinc-900/70 rounded-md h-40 animate-pulse"></div>
-      </div>
-    );
-  }
-  const { data } = postQuery;
-  return <PostItem post={data} />;
+  return (
+    <ErrorBoundary FallbackComponent={PostErrorBoundary}>
+      <Suspense fallback={<PostLoadingState />}>
+        <PostDetailContent id={id} />
+      </Suspense>
+    </ErrorBoundary>
+  );
 };
 
 export default PostViewPage;
