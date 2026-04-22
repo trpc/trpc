@@ -1,17 +1,12 @@
 import type http from 'http';
 import { waitError } from '@trpc/server/__tests__/waitError';
 import { createTRPCClient, httpBatchLink, TRPCClientError } from '@trpc/client';
-import type { AnyRouter } from '@trpc/server';
 import { initTRPC, TRPCError } from '@trpc/server';
 import * as trpcExpress from '@trpc/server/adapters/express';
-import type { NodeHTTPHandlerOptions } from '@trpc/server/adapters/node-http';
 import type { TRPCRequestInfo } from '@trpc/server/http';
 import express from 'express';
 import fetch from 'node-fetch';
 import { z } from 'zod';
-
-type CreateExpressContextOptions<TRouter extends AnyRouter> =
-  NodeHTTPHandlerOptions<TRouter, express.Request, express.Response>;
 
 export type Context = {
   user: {
@@ -57,7 +52,7 @@ export const router = t.router({
 });
 
 async function startServer(
-  opts?: Partial<CreateExpressContextOptions<typeof router>>,
+  opts?: Partial<Parameters<typeof trpcExpress.createExpressMiddleware<typeof router>>[0]>,
 ) {
   const createContext = (
     _opts: trpcExpress.CreateExpressContextOptions,
@@ -80,14 +75,12 @@ async function startServer(
   // express implementation
   const app = express();
 
-  app.use(
-    '/',
-    trpcExpress.createExpressMiddleware({
-      router,
-      createContext,
-      ...opts,
-    }),
-  );
+  const middleware = trpcExpress.createExpressMiddleware({
+    router,
+    createContext,
+    ...opts,
+  }) as unknown as express.Handler;
+  app.use('/', middleware);
   // not found middleware
   app.use((_req, res, _next) => {
     res.status(404).send({ error: 'Not found' });
