@@ -1,4 +1,4 @@
-import { RedirectType as NextRedirectType } from 'next/navigation';
+import type { RedirectType as NextRedirectType } from 'next/navigation';
 import { TRPCError } from '../../@trpc/server';
 
 type RedirectType = (typeof NextRedirectType)[keyof typeof NextRedirectType];
