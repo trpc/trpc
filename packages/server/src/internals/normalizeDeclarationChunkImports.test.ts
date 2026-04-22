@@ -1,4 +1,4 @@
-import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, expect, test } from 'vitest';
@@ -116,10 +116,14 @@ test('normalizeServerDeclarationChunkImports rewrites public declaration outputs
   await expect(readDistFile(distDir, 'index.d.cts')).resolves.toBe(
     "export type { RootConfig } from './unstable-core-do-not-import.d.cts';",
   );
-  await expect(readDistFile(distDir, 'adapters/fetch/index.d.mts')).resolves.toBe(
+  await expect(
+    readDistFile(distDir, 'adapters/fetch/index.d.mts'),
+  ).resolves.toBe(
     "export type { RootConfig } from '../../unstable-core-do-not-import.d.mts';",
   );
-  await expect(readDistFile(distDir, 'adapters/fetch/index.d.cts')).resolves.toBe(
+  await expect(
+    readDistFile(distDir, 'adapters/fetch/index.d.cts'),
+  ).resolves.toBe(
     "export type { RootConfig } from '../../unstable-core-do-not-import.d.cts';",
   );
   await expect(
