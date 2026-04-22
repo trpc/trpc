@@ -1,21 +1,17 @@
 /**
- * Adds seed data to your db
- *
- * @see https://www.prisma.io/docs/guides/database/seed-database
+ * Seeds the TodoMVC example database.
  */
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 
 const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL ?? '',
+  connectionString: process.env.DATABASE_URL!,
 });
 
 const prisma = new PrismaClient({ adapter });
 
-async function main() {
-  // Add stuff
-}
+async function main() {}
 
 main()
   .catch((e) => {
