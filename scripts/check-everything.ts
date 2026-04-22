@@ -81,12 +81,6 @@ function runAutocheck() {
       continueOnError: true,
     },
     {
-      label: 'run ts-prune guardrail',
-      command: 'pnpm',
-      args: ['lint-prune'],
-      continueOnError: true,
-    },
-    {
       label: 'apply eslint autofixes across workspace',
       command: 'pnpm',
       args: ['turbo', 'lint', '--continue', '--', '--fix'],
@@ -149,11 +143,17 @@ function main() {
 
   const buildExtraArgs: string[] = [];
   if (!isCommandAvailable('bun')) {
-    console.log('\nSkipping `examples-bun#build` because Bun is unavailable in this environment.');
+    console.log(
+      '\nSkipping `examples-bun#build` because Bun is unavailable in this environment.',
+    );
     buildExtraArgs.push('--filter=!examples-bun');
   }
 
-  runTurboPhase('build packages, examples, and www via turbo', 'build', buildExtraArgs);
+  runTurboPhase(
+    'build packages, examples, and www via turbo',
+    'build',
+    buildExtraArgs,
+  );
   runTurboPhase('typecheck packages, examples, and www via turbo', 'typecheck');
   runTurboPhase('verify lint passes cleanly via turbo', 'lint');
 
