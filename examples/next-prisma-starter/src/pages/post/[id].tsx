@@ -66,7 +66,8 @@ function PostLoadingState() {
 }
 
 function PostErrorBoundary({ error }: FallbackProps) {
-  const message = error instanceof Error ? error.message : 'Something went wrong';
+  const message =
+    error instanceof Error ? error.message : 'Something went wrong';
   const maybeStatus =
     typeof error === 'object' &&
     error !== null &&

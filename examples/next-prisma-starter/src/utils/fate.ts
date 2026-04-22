@@ -64,18 +64,22 @@ export const createFateClient = (options: {
     roots,
     transport: createTRPCTransport<AppRouter, typeof trpcMutations>({
       byId: {
-        Feed: (client: TRPCClientType) => ({ args, ids, select }) =>
-          client.feed.byId.query({
-            args,
-            ids: ids.map(String),
-            select,
-          }),
-        Post: (client: TRPCClientType) => ({ args, ids, select }) =>
-          client.post.byId.query({
-            args,
-            ids: ids.map(String),
-            select,
-          }),
+        Feed:
+          (client: TRPCClientType) =>
+          ({ args, ids, select }) =>
+            client.feed.byId.query({
+              args,
+              ids: ids.map(String),
+              select,
+            }),
+        Post:
+          (client: TRPCClientType) =>
+          ({ args, ids, select }) =>
+            client.post.byId.query({
+              args,
+              ids: ids.map(String),
+              select,
+            }),
       },
       client: trpcClient,
       lists: {

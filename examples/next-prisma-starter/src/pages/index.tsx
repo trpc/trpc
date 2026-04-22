@@ -197,7 +197,9 @@ function IndexContent() {
 function IndexFallback() {
   return (
     <div className="flex flex-col bg-gray-800 py-8">
-      <h1 className="text-4xl font-bold">Welcome to your tRPC with Prisma starter!</h1>
+      <h1 className="text-4xl font-bold">
+        Welcome to your tRPC with Prisma starter!
+      </h1>
       <div className="flex flex-col py-8 items-start gap-y-4">
         <div className="h-10 w-48 rounded-md bg-zinc-900/70 animate-pulse"></div>
         <div className="h-20 w-full rounded-md bg-zinc-900/70 animate-pulse"></div>

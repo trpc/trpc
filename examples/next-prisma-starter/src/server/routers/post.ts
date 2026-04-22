@@ -18,7 +18,7 @@ export const postRouter = router({
         view: postDataView,
       });
 
-      return await resolveMany(items as Array<Record<string, unknown>>);
+      return await resolveMany(items as Record<string, unknown>[]);
     },
     async query({ cursor, input, skip, take }) {
       const { select } = createResolver({
@@ -42,41 +42,39 @@ export const postRouter = router({
       });
     },
   }),
-  byId: publicProcedure
-    .input(byIdInput)
-    .query(async ({ input }) => {
-      const { resolveMany, select } = createResolver({
-        args: input.args,
-        select: input.select,
-        view: postDataView,
-      });
+  byId: publicProcedure.input(byIdInput).query(async ({ input }) => {
+    const { resolveMany, select } = createResolver({
+      args: input.args,
+      select: input.select,
+      view: postDataView,
+    });
 
-      const posts = await prisma.post.findMany({
-        select,
-        where: {
-          id: {
-            in: input.ids,
-          },
+    const posts = await prisma.post.findMany({
+      select,
+      where: {
+        id: {
+          in: input.ids,
         },
+      },
+    });
+
+    if (input.ids.length === 1 && posts.length === 0) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: `No post with id '${input.ids[0]}'`,
       });
+    }
 
-      if (input.ids.length === 1 && posts.length === 0) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: `No post with id '${input.ids[0]}'`,
-        });
-      }
+    const postsById = new Map<string, (typeof posts)[number]>(
+      posts.map((post) => [post.id, post]),
+    );
 
-      const postsById = new Map<string, (typeof posts)[number]>(
-        posts.map((post) => [post.id, post]),
-      );
-
-      return await resolveMany(
-        input.ids
-          .map((id) => postsById.get(id))
-          .filter((post): post is (typeof posts)[number] => Boolean(post)),
-      );
-    }),
+    return await resolveMany(
+      input.ids
+        .map((id) => postsById.get(id))
+        .filter((post): post is (typeof posts)[number] => Boolean(post)),
+    );
+  }),
   add: publicProcedure
     .input(
       z.object({
