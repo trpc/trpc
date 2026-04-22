@@ -101,7 +101,7 @@
     "effect": "3.21.0",
     "eslint": "^9.26.0",
     "fastify": "^5.0.0",
-    "next": "^15.3.8",
+    "next": "^16.2.4",
     "next-auth": "npm:next-auth@^4.24.11",
     "npm-run-all2": "^8.0.0",
     "oauth": "^0.10.0",
