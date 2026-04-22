@@ -1083,7 +1083,7 @@ describe('with transformer', () => {
     const iterable = await ctx.client.iterable.query();
 
     expectTypeOf(iterable).toEqualTypeOf<
-      AsyncIterable<number, string, unknown>
+      AsyncIterable<1 | 2 | 3, string, unknown>
     >();
 
     const aggregated: unknown[] = [];

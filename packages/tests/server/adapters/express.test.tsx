@@ -81,7 +81,7 @@ async function startServer(
     router,
     createContext,
     ...opts,
-  });
+  }) as unknown as express.Handler;
   app.use('/', middleware);
   // not found middleware
   app.use((_req, res, _next) => {
