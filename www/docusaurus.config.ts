@@ -37,7 +37,7 @@ export default {
   organizationName: 'trpc', // Usually your GitHub org/user name.
   projectName: 'trpc', // Usually your repo name.
   future: {
-    experimental_faster: true,
+    faster: true,
   },
   themeConfig: {
     disableSwitch: false,

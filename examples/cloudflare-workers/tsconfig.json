@@ -2,14 +2,13 @@
   "compilerOptions": {
     "target": "esnext",
     "module": "esnext",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": ["dom", "esnext"],
     "skipLibCheck": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
-    "esModuleInterop": true,
     "isolatedModules": true,
     "types": ["@cloudflare/workers-types"]
   },

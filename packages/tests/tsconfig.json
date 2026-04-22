@@ -2,6 +2,7 @@
   "extends": "../../tsconfig.json",
   "include": ["server", "showcase", "vitest.config.ts"],
   "compilerOptions": {
+    "rootDir": "../..",
     "skipLibCheck": true,
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "target": "ES2023",

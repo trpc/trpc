@@ -140,7 +140,7 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "tsdown": "0.12.7",
-    "typescript": "^5.9.2",
+    "typescript": "^6.0.3",
     "zod": "^4.2.1"
   },
   "publishConfig": {

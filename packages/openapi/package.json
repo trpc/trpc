@@ -87,7 +87,7 @@
     "ion-js": "^5.2.1",
     "superjson": "^1.12.4",
     "tsdown": "0.12.7",
-    "typescript": "^5.9.2",
+    "typescript": "^6.0.3",
     "vscode-languageserver-textdocument": "^1.0.12",
     "vscode-languageserver-types": "^3.17.5",
     "zod": "^4.2.1"

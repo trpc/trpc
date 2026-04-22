@@ -2,6 +2,7 @@
   "extends": "../../tsconfig.json",
   "include": ["src", "test"],
   "compilerOptions": {
-    "noErrorTruncation": true
+    "noErrorTruncation": true,
+    "rootDir": ".."
   }
 }

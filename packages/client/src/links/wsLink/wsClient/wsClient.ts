@@ -17,7 +17,7 @@ import { TRPCClientError } from '../../../TRPCClientError';
 import type { TRPCConnectionState } from '../../internals/subscriptions';
 import type { Operation, OperationResultEnvelope } from '../../types';
 import type { Encoder } from './encoder';
-import { jsonEncoder } from './encoder';
+import { jsonEncoder, toWebSocketSendPayload } from './encoder';
 import type { WebSocketClientOptions } from './options';
 import { exponentialBackoff, keepAliveDefaults, lazyDefaults } from './options';
 import type { TCallbacks } from './requestManager';
@@ -409,7 +409,9 @@ export class WsClient {
         ? messageOrMessages
         : [messageOrMessages];
     this.activeConnection.ws.send(
-      this.encoder.encode(messages.length === 1 ? messages[0] : messages),
+      toWebSocketSendPayload(
+        this.encoder.encode(messages.length === 1 ? messages[0] : messages),
+      ),
     );
   }
 

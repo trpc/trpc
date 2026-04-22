@@ -2,9 +2,9 @@
   "compilerOptions": {
     "lib": ["esnext", "dom"],
     "target": "esnext",
-    "esModuleInterop": true,
     "strict": true,
-    "moduleResolution": "node",
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "noEmit": true,
     "skipLibCheck": true
   },
