@@ -1278,8 +1278,8 @@ importers:
         specifier: ^10.4.7
         version: 10.4.13(postcss@8.4.39)
       dotenv:
-        specifier: ^16.0.1
-        version: 16.0.3
+        specifier: ^17.2.3
+        version: 17.3.1
       eslint:
         specifier: ^9.26.0
         version: 9.26.0(jiti@2.6.1)
@@ -2552,8 +2552,8 @@ importers:
         specifier: 1.4.2
         version: 1.4.2(typedoc-plugin-markdown@4.4.2(typedoc@0.27.9(typescript@5.9.2)))
       dotenv:
-        specifier: ^16.0.1
-        version: 16.0.3
+        specifier: ^17.2.3
+        version: 17.3.1
       effect:
         specifier: 3.21.0
         version: 3.21.0
@@ -11535,10 +11535,6 @@ packages:
 
   dotenv-expand@11.0.7:
     resolution: {integrity: sha512-zIHwmZPRshsCdpMDyVsqGmgyP0yT8GAgXUnkdAoJisxvf33k7yO6OuoKmcTGuXPWSsm8Oh88nZicRLA9Y0rUeA==}
-    engines: {node: '>=12'}
-
-  dotenv@16.0.3:
-    resolution: {integrity: sha512-7GO6HghkA5fYG9TYnNxi14/7K9f5occMlp3zXAuSxn7CKCxt9xbNWG7yF8hTCSUchlfWSe3uLmlPfigevRItzQ==}
     engines: {node: '>=12'}
 
   dotenv@16.4.7:
@@ -31615,8 +31611,6 @@ snapshots:
   dotenv-expand@11.0.7:
     dependencies:
       dotenv: 16.6.1
-
-  dotenv@16.0.3: {}
 
   dotenv@16.4.7: {}
 
