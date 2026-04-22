@@ -32,7 +32,7 @@ function useZodForm<TInput extends FieldValues>(
         };
       }
       const values = new FormData(form.formRef.current);
-      return _resolver(values as any, ctx, opts) as any;
+      return _resolver(values as any, ctx, opts);
     },
   }) as ZodFormData<TInput>;
 

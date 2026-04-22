@@ -438,11 +438,7 @@ function detectDiscriminatorProperty(schemas: SchemaObject[]): string | null {
   for (const prop of firstProps) {
     const allHaveConst = schemas.every((s) => {
       const propSchema = s.properties?.[prop];
-      return (
-        propSchema !== undefined &&
-        propSchema.const !== undefined &&
-        s.required?.includes(prop)
-      );
+      return propSchema?.const !== undefined && s.required?.includes(prop);
     });
     if (allHaveConst) {
       return prop;
@@ -1254,7 +1250,9 @@ function loadCompilerOptions(startDir: string): ts.CompilerOptions {
     ) {
       options.moduleResolution = ts.ModuleResolutionKind.Bundler;
     } else {
-      options.moduleResolution = ts.ModuleResolutionKind.Node10;
+      // TS 6 deprecates the legacy Node10 resolver; bundler is the closest
+      // modern fallback for the remaining non-NodeNext module kinds here.
+      options.moduleResolution = ts.ModuleResolutionKind.Bundler;
     }
   }
 

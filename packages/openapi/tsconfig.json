@@ -2,6 +2,7 @@
   "extends": "../../tsconfig.json",
   "include": ["src", "test"],
   "compilerOptions": {
+    "rootDir": "..",
     "lib": ["es2023", "DOM", "DOM.Iterable", "DOM.AsyncIterable"],
     "target": "es2022",
     "esModuleInterop": true

@@ -136,9 +136,6 @@ export function experimental_createActionHook<
     ? TypeError<'Generic parameter missing in `experimental_createActionHook<HERE>()`'>
     : CreateTRPCClientOptions<TInferrable>,
 ) {
-  type ActionContext = {
-    _action: (...args: any[]) => Promise<any>;
-  };
   const client = createTRPCUntypedClient(
     opts as Exclude<typeof opts, TypeError<any>>,
   );
@@ -170,10 +167,10 @@ export function experimental_createActionHook<
         const idx = ++count.current;
         const context = {
           ...requestOptions?.context,
-          _action(innerInput) {
+          _action(innerInput: unknown) {
             return handler(innerInput);
           },
-        } as ActionContext;
+        };
 
         setState({
           status: 'loading',
@@ -184,13 +181,13 @@ export function experimental_createActionHook<
             context,
           })
           .then(async (data) => {
-            await actionOptsRef.current?.onSuccess?.(data as any);
+            await actionOptsRef.current?.onSuccess?.(data);
             if (idx !== count.current) {
               return;
             }
             setState({
               status: 'success',
-              data: data as any,
+              data: data,
             });
           })
           .catch(async (error) => {

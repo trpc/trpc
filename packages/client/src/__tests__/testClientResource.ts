@@ -162,7 +162,7 @@ export function testServerAndClientResource<TRouter extends AnyTRPCRouter>(
             httpUrl: serverResource.httpUrl,
             wssUrl: serverResource.wssUrl,
             wsClient,
-            transformer: router._def._config.transformer as any,
+            transformer: router._def._config.transformer,
           })
         : opts.client
       : {}),

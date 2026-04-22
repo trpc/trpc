@@ -724,7 +724,7 @@ test('recipe: get json schemas for procedure', async () => {
       .query(async (opts) => {
         const proc = await getProcedureAtPath(
           // Needs to be type-casted to AnyRouter to avoid circular references
-          appRouter as AnyRouter,
+          appRouter,
           opts.input.path,
         );
 

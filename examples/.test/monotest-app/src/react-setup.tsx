@@ -6,7 +6,9 @@ import { httpBatchLink } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
 import { useState } from 'react';
 
-export const trpcReact = createTRPCReact<AppRouter>();
+type AppTRPCReact = ReturnType<typeof createTRPCReact<AppRouter>>;
+
+export const trpcReact: AppTRPCReact = createTRPCReact<AppRouter>();
 
 export function TRPCReactProvider(props: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());

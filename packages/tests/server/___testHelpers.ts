@@ -61,7 +61,7 @@ export function routerToServerAndClientNew<TRouter extends AnyTRPCRouter>(
           })
         : opts.client
       : {}),
-  } as WithTRPCConfig<typeof router>;
+  };
 
   const client = createTRPCClient<typeof router>(trpcClientOptions);
 

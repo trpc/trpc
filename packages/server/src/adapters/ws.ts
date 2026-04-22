@@ -578,20 +578,20 @@ export function handleKeepAlive(
   pingMs = 30_000,
   pongWaitMs = 5_000,
 ) {
-  let timeout: NodeJS.Timeout | undefined = undefined;
-  let ping: NodeJS.Timeout | undefined = undefined;
+  let timeout: ReturnType<typeof setTimeout> | undefined = undefined;
+  let ping: ReturnType<typeof setTimeout> | undefined = undefined;
 
   const schedulePing = () => {
     const scheduleTimeout = () => {
       timeout = setTimeout(() => {
         client.terminate();
-      }, pongWaitMs) as any;
+      }, pongWaitMs);
     };
     ping = setTimeout(() => {
       client.send('PING');
 
       scheduleTimeout();
-    }, pingMs) as any;
+    }, pingMs);
   };
 
   const onMessage = () => {

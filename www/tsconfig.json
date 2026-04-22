@@ -5,6 +5,7 @@
     "strictNullChecks": true,
     "noUncheckedIndexedAccess": true,
     "noEmit": true,
+    "ignoreDeprecations": "6.0",
     "types": [
       "node",
       "@docusaurus/module-type-aliases",
