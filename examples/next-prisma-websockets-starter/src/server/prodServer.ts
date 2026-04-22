@@ -1,7 +1,6 @@
 import next from 'next';
 import { createServer } from 'node:http';
 import { parse } from 'node:url';
-import type { Socket } from 'net';
 
 import { WebSocketServer } from 'ws';
 import { applyWSSHandler } from '@trpc/server/adapters/ws';

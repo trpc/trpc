@@ -1,4 +1,3 @@
-import type { Socket } from 'net';
 import { createServer } from 'node:http';
 import { parse } from 'node:url';
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
