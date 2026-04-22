@@ -5,6 +5,7 @@ __generated__/
 **/www/build/
 **/www/typedoc/
 dist/
+build/
 examples/next-big-router/src/server/routers/*.ts
 examples/.test/diagnostics-big-router/**/*
 packages/tests/vendor/
