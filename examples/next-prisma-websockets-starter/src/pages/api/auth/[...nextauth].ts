@@ -1,5 +1,5 @@
 import NextAuth from 'next-auth';
-import type { AppProviders } from 'next-auth/providers';
+import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GithubProvider from 'next-auth/providers/github';
 
@@ -15,7 +15,7 @@ if (
   console.log('⚠️ Using mocked GitHub auth correct credentials were not added');
   useMockProvider = true;
 }
-const providers: AppProviders = [];
+const providers: NextAuthOptions['providers'] = [];
 if (useMockProvider) {
   providers.push(
     CredentialsProvider({
