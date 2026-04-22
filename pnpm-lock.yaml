@@ -952,18 +952,12 @@ importers:
 
   examples/minimal-react/client:
     dependencies:
-      '@tanstack/react-query':
-        specifier: ^5.80.3
-        version: 5.80.3(react@19.2.5)
       '@trpc/client':
         specifier: npm:@trpc/client
         version: link:../../../packages/client
       '@trpc/server':
         specifier: npm:@trpc/server
         version: link:../../../packages/server
-      '@trpc/tanstack-react-query':
-        specifier: npm:@trpc/tanstack-react-query
-        version: link:../../../packages/tanstack-react-query
       react:
         specifier: ^19.2.5
         version: 19.2.5
@@ -28004,11 +27998,6 @@ snapshots:
     dependencies:
       '@tanstack/query-core': 5.80.2
       react: 19.1.0
-
-  '@tanstack/react-query@5.80.3(react@19.2.5)':
-    dependencies:
-      '@tanstack/query-core': 5.80.2
-      react: 19.2.5
 
   '@tanstack/react-virtual@3.10.8(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
     dependencies:
