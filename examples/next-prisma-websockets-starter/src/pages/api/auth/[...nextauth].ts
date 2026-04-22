@@ -3,6 +3,10 @@ import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GithubProvider from 'next-auth/providers/github';
 
+export const authOptions: NextAuthOptions = {
+  providers: [],
+};
+
 let useMockProvider =
   process.env.NODE_ENV === 'test' ||
   process.env.RAILWAY_ENVIRONMENT_NAME?.includes('-pr-'); // example: 'trpc-pr-5821'
@@ -15,9 +19,8 @@ if (
   console.log('⚠️ Using mocked GitHub auth correct credentials were not added');
   useMockProvider = true;
 }
-const providers: NextAuthOptions['providers'] = [];
 if (useMockProvider) {
-  providers.push(
+  authOptions.providers.push(
     CredentialsProvider({
       id: 'github',
       name: 'Mocked GitHub',
@@ -41,7 +44,7 @@ if (useMockProvider) {
   if (!GITHUB_CLIENT_ID || !GITHUB_SECRET) {
     throw new Error('GITHUB_CLIENT_ID and GITHUB_SECRET must be set');
   }
-  providers.push(
+  authOptions.providers.push(
     GithubProvider({
       clientId: GITHUB_CLIENT_ID,
       clientSecret: GITHUB_SECRET,
@@ -56,7 +59,4 @@ if (useMockProvider) {
     }),
   );
 }
-export default NextAuth({
-  // Configure one or more authentication providers
-  providers,
-});
+export default NextAuth(authOptions);
