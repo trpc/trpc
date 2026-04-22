@@ -8,8 +8,10 @@
   },
   "packageManager": "pnpm@10.33.1",
   "scripts": {
+    "autocheck": "tsx scripts/check-everything.ts --autocheck-only",
     "clean-dev": "pnpm clean && pnpm install && pnpm build && pnpm dev",
     "clean-i": "pnpm clean && pnpm install",
+    "check-everything": "tsx scripts/check-everything.ts",
     "build": "turbo --filter=./packages/* build",
     "monotest-build": "turbo --filter='@monotest/*' build",
     "build-www": "turbo --filter www build",
