@@ -194,11 +194,9 @@ async function main() {
     );
   }
 
-  runTurboPhase(
-    'build published packages via turbo',
-    'build',
-    ['--filter=./packages/*'],
-  );
+  runTurboPhase('build published packages via turbo', 'build', [
+    '--filter=./packages/*',
+  ]);
   runTurboPhase(
     'build examples and www via turbo',
     'build',
