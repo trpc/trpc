@@ -25,7 +25,7 @@ import {
   transformTRPCResponse,
   TRPCError,
 } from '@trpc/server/unstable-core-do-not-import';
-import { revalidateTag } from 'next/cache';
+import { revalidateTag, updateTag } from 'next/cache';
 import { cache } from 'react';
 import type {
   ActionHandlerDef,
@@ -63,7 +63,7 @@ export function experimental_createTRPCNextAppDirServer<
     const cacheTag = generateCacheTag(procedurePath, callOpts.args[0]);
 
     if (action === 'revalidate') {
-      revalidateTag(cacheTag);
+      updateTag(cacheTag);
       return;
     }
 
@@ -209,7 +209,7 @@ export async function experimental_revalidateEndpoint(req: Request) {
     );
   }
 
-  revalidateTag(cacheTag);
+  revalidateTag(cacheTag, 'max');
   return new Response(JSON.stringify({ revalidated: true, now: Date.now() }), {
     status: 200,
   });
