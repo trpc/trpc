@@ -263,7 +263,8 @@ jobs:
             next-prisma-websockets-starter,
             next-prisma-todomvc,
           ]
-        node-start: ['18.x', '20.x']
+        # Prisma ORM v7 requires Node.js >=20.19.0.
+        node-start: ['20.x']
     steps:
       - uses: actions/checkout@v6
         with:
