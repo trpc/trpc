@@ -39,17 +39,23 @@ function getWsUrl() {
     return process.env.WS_URL;
   }
 
+  const isDevelopment = process.env.NODE_ENV === 'development';
+
   if (typeof window !== 'undefined') {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const isLocalhost =
       window.location.hostname === 'localhost' ||
       window.location.hostname === '127.0.0.1';
-    const port = isLocalhost ? '3001' : window.location.port;
+    const port = isDevelopment && isLocalhost ? '3001' : window.location.port;
 
     return `${protocol}//${window.location.hostname}${port ? `:${port}` : ''}`;
   }
 
-  return `ws://localhost:${process.env.PORT === '3000' ? '3001' : (process.env.PORT ?? '3001')}`;
+  if (isDevelopment) {
+    return `ws://localhost:${process.env.PORT === '3000' ? '3001' : (process.env.PORT ?? '3001')}`;
+  }
+
+  return `ws://localhost:${process.env.PORT ?? '3000'}`;
 }
 
 function getEndingLink(ctx: NextPageContext | undefined): TRPCLink<AppRouter> {
