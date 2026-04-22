@@ -6,7 +6,7 @@ import {
   wsLink,
 } from '@trpc/client';
 import { WebSocket } from 'ws';
-import type { AppRouter } from './server';
+import type { AppRouter } from './server.js';
 
 globalThis.WebSocket = WebSocket as any;
 
@@ -46,7 +46,7 @@ async function main() {
   let count = 0;
   await new Promise<void>((resolve) => {
     const subscription = trpc.post.randomNumber.subscribe(undefined, {
-      onData(data) {
+      onData(data: { randomNumber: number }) {
         // ^ note that `data` here is inferred
         console.log('received', data);
         count++;
@@ -56,7 +56,7 @@ async function main() {
           resolve();
         }
       },
-      onError(err) {
+      onError(err: Error) {
         console.error('error', err);
       },
     });

@@ -22,19 +22,12 @@ function useZodForm<TInput extends FieldValues>(
     ...props,
     resolver: (_values, ctx, opts) => {
       if (!form.formRef.current) {
-        return {
-          values: {},
-          errors: {
-            root: {
-              message: 'Form not mounted',
-            },
-          },
-        };
+        return _resolver(new FormData(), ctx, opts);
       }
       const values = new FormData(form.formRef.current);
       return _resolver(values as any, ctx, opts);
     },
-  }) as ZodFormData<TInput>;
+  }) as unknown as ZodFormData<TInput>;
 
   form.formRef = useRef<HTMLFormElement>(null);
 
