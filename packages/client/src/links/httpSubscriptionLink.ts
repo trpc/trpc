@@ -106,9 +106,7 @@ export function httpSubscriptionLink<
           init: () => resultOf(opts.eventSourceOptions, { op }),
           signal,
           deserialize: (data) => transformer.output.deserialize(data),
-          EventSource:
-            opts.EventSource ??
-            (globalThis.EventSource as never as TEventSource),
+          EventSource: opts.EventSource ?? globalThis.EventSource,
         });
 
         const connectionState = behaviorSubject<

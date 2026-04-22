@@ -438,11 +438,7 @@ function detectDiscriminatorProperty(schemas: SchemaObject[]): string | null {
   for (const prop of firstProps) {
     const allHaveConst = schemas.every((s) => {
       const propSchema = s.properties?.[prop];
-      return (
-        propSchema !== undefined &&
-        propSchema.const !== undefined &&
-        s.required?.includes(prop)
-      );
+      return propSchema?.const !== undefined && s.required?.includes(prop);
     });
     if (allHaveConst) {
       return prop;

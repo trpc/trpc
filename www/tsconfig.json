@@ -1,10 +1,20 @@
 {
-  "extends": "@docusaurus/tsconfig",
   "compilerOptions": {
+    "allowJs": true,
+    "esModuleInterop": true,
+    "jsx": "preserve",
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "moduleResolution": "bundler",
+    "module": "esnext",
     "strict": true,
     "strictNullChecks": true,
     "noUncheckedIndexedAccess": true,
     "noEmit": true,
+    "paths": {
+      "@site/*": ["./*"]
+    },
+    "skipLibCheck": true,
     "types": [
       "node",
       "@docusaurus/module-type-aliases",

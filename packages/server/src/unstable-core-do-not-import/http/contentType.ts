@@ -7,12 +7,12 @@ import type { TRPCAcceptHeader, TRPCRequestInfo } from './types';
 
 export function getAcceptHeader(headers: Headers): TRPCAcceptHeader | null {
   return (
-    (headers.get('trpc-accept') as TRPCAcceptHeader | null) ??
+    headers.get('trpc-accept') ??
     (headers
       .get('accept')
       ?.split(',')
       .some((t) => t.trim() === 'application/jsonl')
-      ? ('application/jsonl' as TRPCAcceptHeader)
+      ? 'application/jsonl'
       : null)
   );
 }
