@@ -3,9 +3,12 @@
  *
  * @see https://www.prisma.io/docs/guides/database/seed-database
  */
+import 'dotenv/config';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
   const firstPostId = '5c03994c-fc16-47e0-bd02-d218a370a078';
