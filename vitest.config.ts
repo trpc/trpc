@@ -50,6 +50,7 @@ export default defineConfig({
       provider: 'istanbul',
       include: ['**/src/**'],
       exclude: [
+        '**/coverage/**',
         '**/www/**',
         '**/examples/**',
         // skip codecov for experimental features
