@@ -26,9 +26,9 @@
     "@types/node": "^22.13.5",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.1",
+    "@typescript/native-preview": "7.0.0-dev.20260421.2",
     "eslint": "^9.26.0",
     "start-server-and-test": "^1.12.0",
-    "typescript": "^5.9.2",
-    "@typescript/native-preview": "7.0.0-dev.20260421.2"
+    "typescript": "^5.9.2"
   }
 }

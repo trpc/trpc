@@ -123,6 +123,7 @@
     "@trpc/server": "11.16.0",
     "@types/isomorphic-fetch": "^0.0.39",
     "@types/node": "^22.13.5",
+    "@typescript/native-preview": "7.0.0-dev.20260421.2",
     "dataloader": "^2.2.2",
     "eslint": "^9.26.0",
     "isomorphic-fetch": "^3.0.0",
@@ -130,7 +131,6 @@
     "tsdown": "0.12.7",
     "tslib": "^2.8.1",
     "typescript": "^5.9.2",
-    "@typescript/native-preview": "7.0.0-dev.20260421.2",
     "undici": "^8.0.0",
     "ws": "^8.0.0"
   },

@@ -133,6 +133,7 @@
     "@types/node": "^22.13.5",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.1",
+    "@typescript/native-preview": "7.0.0-dev.20260421.2",
     "devalue": "^5.0.0",
     "eslint": "^9.26.0",
     "express": "^5.0.0",
@@ -141,7 +142,6 @@
     "react-dom": "^19.1.0",
     "tsdown": "0.12.7",
     "typescript": "^5.9.2",
-    "@typescript/native-preview": "7.0.0-dev.20260421.2",
     "zod": "^4.2.1"
   },
   "publishConfig": {

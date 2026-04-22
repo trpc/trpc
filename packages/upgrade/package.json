@@ -34,9 +34,9 @@
   "dependencies": {
     "@bomb.sh/args": "0.3.1",
     "@clack/prompts": "1.2.0",
+    "@typescript/native-preview": "7.0.0-dev.20260421.2",
     "jscodeshift": "17.3.0",
-    "typescript": "^5.9.2",
-    "@typescript/native-preview": "7.0.0-dev.20260421.2"
+    "typescript": "^5.9.2"
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.80.3",

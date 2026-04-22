@@ -10,9 +10,9 @@
     "@tsconfig/node-lts": "^18.12.2",
     "@tsconfig/strictest": "^2.0.1",
     "@types/node": "^22.13.5",
+    "@typescript/native-preview": "7.0.0-dev.20260421.2",
     "tsdown": "0.12.7",
-    "typescript": "^5.9.2",
-    "@typescript/native-preview": "7.0.0-dev.20260421.2"
+    "typescript": "^5.9.2"
   },
   "dependencies": {
     "@trpc/client": "npm:@trpc/client",
