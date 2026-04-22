@@ -9,16 +9,48 @@ import { createTRPCNext } from '@trpc/next';
 import { ssrPrepass } from '@trpc/next/ssrPrepass';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { NextPageContext } from 'next';
-import getConfig from 'next/config';
 import type { AppRouter } from '~/server/routers/_app';
 import superjson from 'superjson';
 
 // ℹ️ Type-only import:
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
 
-const { publicRuntimeConfig } = getConfig();
+function getHttpBaseUrl(ctx: NextPageContext | undefined) {
+  if (typeof window !== 'undefined') {
+    return '';
+  }
 
-const { APP_URL, WS_URL } = publicRuntimeConfig;
+  if (process.env.APP_URL) {
+    return process.env.APP_URL;
+  }
+
+  const host =
+    ctx?.req?.headers.host ?? `localhost:${process.env.PORT ?? '3000'}`;
+  const protocol =
+    host.startsWith('localhost') || host.startsWith('127.0.0.1')
+      ? 'http'
+      : 'https';
+
+  return `${protocol}://${host}`;
+}
+
+function getWsUrl() {
+  if (process.env.WS_URL) {
+    return process.env.WS_URL;
+  }
+
+  if (typeof window !== 'undefined') {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const isLocalhost =
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1';
+    const port = isLocalhost ? '3001' : window.location.port;
+
+    return `${protocol}//${window.location.hostname}${port ? `:${port}` : ''}`;
+  }
+
+  return `ws://localhost:${process.env.PORT === '3000' ? '3001' : (process.env.PORT ?? '3001')}`;
+}
 
 function getEndingLink(ctx: NextPageContext | undefined): TRPCLink<AppRouter> {
   if (typeof window === 'undefined') {
@@ -27,7 +59,7 @@ function getEndingLink(ctx: NextPageContext | undefined): TRPCLink<AppRouter> {
        * @see https://trpc.io/docs/v11/data-transformers
        */
       transformer: superjson,
-      url: `${APP_URL}/api/trpc`,
+      url: `${getHttpBaseUrl(ctx)}/api/trpc`,
       headers() {
         if (!ctx?.req?.headers) {
           return {};
@@ -41,7 +73,7 @@ function getEndingLink(ctx: NextPageContext | undefined): TRPCLink<AppRouter> {
     });
   }
   const client = createWSClient({
-    url: WS_URL,
+    url: getWsUrl(),
   });
   return wsLink({
     client,
