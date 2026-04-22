@@ -78,7 +78,7 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - run: MUTE_REACT_ACT_WARNINGS=1 pnpm test -- --coverage
+      - run: MUTE_REACT_ACT_WARNINGS=1 pnpm test --coverage
 
       - name: Verify committed openapi test fixtures
         run: |

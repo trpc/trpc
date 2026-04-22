@@ -126,6 +126,7 @@ async function main(): Promise<void> {
   }
 
   const outputPath = path.resolve(args.output);
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   fs.writeFileSync(outputPath, JSON.stringify(doc, null, 2) + '\n', 'utf8');
   console.log(`OpenAPI document written to: ${outputPath}`);
 }
