@@ -40,6 +40,8 @@ export default defineConfig({
     await generateEntrypoints(input);
     await normalizeServerDeclarationChunkImports(input);
     // eslint-disable-next-line no-console
-    console.log(`Generated entrypoints in ${Date.now() - start}ms`);
+    console.log(
+      `Generated entrypoints and normalized declaration imports in ${Date.now() - start}ms`,
+    );
   },
 });
