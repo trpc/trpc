@@ -257,14 +257,9 @@ jobs:
     continue-on-error: true
     strategy:
       matrix:
-        dir:
-          [
-            next-prisma-starter,
-            next-prisma-websockets-starter,
-            next-prisma-todomvc,
-          ]
-        # Prisma ORM v7 requires Node.js >=20.19.0.
-        node-start: ['20.x']
+        # Keep a real legacy-Node smoke matrix on non-Prisma examples.
+        dir: [.test/ssg, express-minimal, fastify-server]
+        node-start: ['18.x', '20.x']
     steps:
       - uses: actions/checkout@v6
         with:
