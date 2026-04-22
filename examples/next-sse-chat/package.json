@@ -7,7 +7,7 @@
     "build": "next build",
     "predev": "run-s generate migrate",
     "dev": "next dev",
-    "lint": "next lint",
+    "lint": "eslint --cache .",
     "start": "next start",
     "migrate": "drizzle-kit migrate",
     "generate": "drizzle-kit generate"
@@ -39,6 +39,7 @@
     "@types/react-dom": "^19.1.1",
     "cross-env": "^7.0.3",
     "drizzle-kit": "^0.22.6",
+    "eslint-config-next": "^16.2.4",
     "npm-run-all": "^4.1.5",
     "postcss": "^8.4.39",
     "tailwindcss": "^3.4.6",

@@ -5,7 +5,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint --cache .",
     "test:e2e": "playwright test",
     "test-dev": "start-server-and-test dev 3000 test:e2e",
     "test-start": "start-server-and-test start 3000 test:e2e"
@@ -36,6 +36,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.50.1",
+    "eslint-config-next": "^16.2.4",
     "start-server-and-test": "^1.12.0",
     "wait-port": "^1.0.1"
   }
