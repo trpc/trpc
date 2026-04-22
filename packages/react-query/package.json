@@ -100,7 +100,7 @@
     "@testing-library/user-event": "^14.4.3",
     "@trpc/client": "11.16.0",
     "@trpc/server": "11.16.0",
-    "@types/express": "^5.0.0",
+    "@types/express": "^5.0.6",
     "@types/node": "^22.13.5",
     "@types/react": "^19.1.0",
     "eslint": "^9.26.0",
