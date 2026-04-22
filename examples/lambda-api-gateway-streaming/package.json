@@ -6,7 +6,7 @@
   "license": "MIT",
   "scripts": {
     "lint": "eslint --cache src",
-    "typecheck": "tsc",
+    "typecheck": "tsgo",
     "start": "tsx watch src/client.ts",
     "deploy": "pnpx serverless@4.28.0 deploy"
   },
@@ -20,6 +20,7 @@
     "@types/aws-lambda": "^8.10.149",
     "@types/node": "^22.13.5",
     "eslint": "^9.26.0",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "@typescript/native-preview": "7.0.0-dev.20260421.2"
   }
 }

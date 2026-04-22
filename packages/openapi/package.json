@@ -29,7 +29,7 @@
     "dev": "tsdown --watch",
     "lint": "eslint --cache src",
     "codegen": "tsx test/scripts/codegen.run.ts",
-    "typecheck": "tsc --noEmit --preserveWatchOutput --pretty"
+    "typecheck": "tsgo --noEmit --preserveWatchOutput --pretty"
   },
   "exports": {
     "./package.json": "./package.json",
@@ -88,6 +88,7 @@
     "superjson": "^1.12.4",
     "tsdown": "0.12.7",
     "typescript": "^5.9.2",
+    "@typescript/native-preview": "7.0.0-dev.20260421.2",
     "vscode-languageserver-textdocument": "^1.0.12",
     "vscode-languageserver-types": "^3.17.5",
     "zod": "^4.2.1"

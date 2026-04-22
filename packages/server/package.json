@@ -18,9 +18,9 @@
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
-    "benchmark": "tsc --project tsconfig.benchmark.json",
+    "benchmark": "tsgo --project tsconfig.benchmark.json",
     "lint": "eslint --cache src",
-    "typecheck": "tsc --noEmit --preserveWatchOutput --pretty"
+    "typecheck": "tsgo --noEmit --preserveWatchOutput --pretty"
   },
   "exports": {
     "./package.json": "./package.json",
@@ -221,6 +221,7 @@
     "superstruct": "^2.0.0",
     "tsdown": "0.12.7",
     "typescript": "^5.9.2",
+    "@typescript/native-preview": "7.0.0-dev.20260421.2",
     "valibot": "1.3.1",
     "ws": "^8.0.0",
     "yup": "^1.0.0",

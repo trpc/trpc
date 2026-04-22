@@ -50,7 +50,7 @@ jobs:
       - run: pnpm test-e2e
 
       - name: Check types
-        run: pnpm tsc
+        run: pnpm typecheck
 
       - name: Upload test results
         if: ${{ always() }}
@@ -103,4 +103,4 @@ jobs:
         run: pnpm prebuild
 
       - run: pnpm test-unit
-      - run: pnpm tsc
+      - run: pnpm typecheck

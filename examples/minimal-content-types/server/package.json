@@ -2,7 +2,7 @@
   "name": "examples-minimal-content-types-react-server",
   "private": true,
   "scripts": {
-    "build": "tsc",
+    "build": "tsgo",
     "dev": "tsx watch index.ts",
     "lint": "eslint --cache index.ts",
     "start": "node dist/index.js"
@@ -17,6 +17,7 @@
     "@types/node": "^22.13.5",
     "eslint": "^9.26.0",
     "tsx": "^4.19.3",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "@typescript/native-preview": "7.0.0-dev.20260421.2"
   }
 }

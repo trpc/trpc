@@ -7,14 +7,14 @@
   "packageManager": "pnpm@9.12.2",
   "scripts": {
     "build:1-next": "cross-env NODE_ENV=production next build",
-    "build:2-server": "tsc --project tsconfig.server.json",
+    "build:2-server": "tsgo --project tsconfig.server.json",
     "build": "run-s build:*",
     "dev:wss": "cross-env PORT=3001 tsx watch src/server/wssDevServer.ts --tsconfig tsconfig.server.json",
     "dev:next": "next dev",
     "dev": "run-p dev:*",
     "start": "cross-env NODE_ENV=production node dist/server/prodServer.js",
     "lint": "eslint --cache src",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
     "@msgpack/msgpack": "^3.1.3",
@@ -45,7 +45,8 @@
     "postcss": "^8.4.39",
     "tailwindcss": "^3.4.6",
     "typescript": "^5.9.2",
-    "typescript-eslint": "^8.31.1"
+    "@typescript/native-preview": "7.0.0-dev.20260421.2",
+    "typescript-eslint": "^8.59.0"
   },
   "publishConfig": {
     "access": "restricted"

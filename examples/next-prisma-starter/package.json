@@ -21,7 +21,7 @@
     "test-e2e": "playwright test",
     "test-start": "run-s test-unit test-e2e",
     "postinstall": "pnpm generate",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsgo --noEmit"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -63,7 +63,8 @@
     "tailwindcss": "^3.4.6",
     "tsx": "^4.19.3",
     "typescript": "^5.9.2",
-    "typescript-eslint": "^8.31.1",
+    "@typescript/native-preview": "7.0.0-dev.20260421.2",
+    "typescript-eslint": "^8.59.0",
     "vite": "^6.1.1",
     "vitest": "^4.0.18"
   },

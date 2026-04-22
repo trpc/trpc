@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsx src/scripts/codegen.ts && esbuild src/server/index.ts src/client/index.ts --bundle --packages=external --platform=node --format=esm --outdir=dist --sourcemap",
     "codegen": "tsx src/scripts/codegen.ts",
-    "typecheck": "tsx src/scripts/codegen.ts && tsc",
+    "typecheck": "tsx src/scripts/codegen.ts && tsgo",
     "dev:server": "tsx watch src/server",
     "dev:client": "wait-port 3000 && tsx watch src/client",
     "dev": "run-p dev:* --print-label",
@@ -27,6 +27,7 @@
     "start-server-and-test": "^1.12.0",
     "tsx": "^4.19.3",
     "typescript": "^5.9.2",
+    "@typescript/native-preview": "7.0.0-dev.20260421.2",
     "wait-port": "^1.0.1"
   }
 }

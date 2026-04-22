@@ -6,7 +6,7 @@
     "dev:server": "tsx watch src/server",
     "dev:client": "wait-port 2021 && tsx watch src/client",
     "dev": "run-p dev:* --print-label",
-    "typecheck": "tsc",
+    "typecheck": "tsgo",
     "build": "esbuild src/server.ts src/client.ts --bundle --packages=external --platform=node --format=esm --outdir=dist --sourcemap",
     "lint": "eslint --cache src",
     "start": "pnpm dev",
@@ -33,6 +33,7 @@
     "start-server-and-test": "^1.12.0",
     "tsx": "^4.19.3",
     "typescript": "^5.9.2",
+    "@typescript/native-preview": "7.0.0-dev.20260421.2",
     "wait-port": "^1.0.1"
   },
   "publishConfig": {

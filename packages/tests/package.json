@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "lint": "eslint --cache .",
-    "typecheck": "tsc --noEmit --preserveWatchOutput --pretty"
+    "typecheck": "tsgo --noEmit --preserveWatchOutput --pretty"
   },
   "dependencies": {
     "@fastify/busboy": "^3.0.0",
@@ -31,6 +31,7 @@
     "tsx": "^4.19.3",
     "tupleson": "0.23.1",
     "typescript": "^5.9.2",
+    "@typescript/native-preview": "7.0.0-dev.20260421.2",
     "undici": "^8.0.0",
     "valibot": "1.3.1",
     "ws": "^8.0.0",

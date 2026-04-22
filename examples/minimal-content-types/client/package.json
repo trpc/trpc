@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsgo && vite build",
     "lint": "eslint --cache src",
     "start": "vite preview"
   },
@@ -22,6 +22,7 @@
     "@vitejs/plugin-react": "^4.3.4",
     "eslint": "^9.26.0",
     "typescript": "^5.9.2",
+    "@typescript/native-preview": "7.0.0-dev.20260421.2",
     "vite": "^6.1.1"
   }
 }

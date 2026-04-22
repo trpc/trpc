@@ -6,7 +6,7 @@
   "license": "MIT",
   "scripts": {
     "lint": "eslint --cache src",
-    "typecheck": "tsc",
+    "typecheck": "tsgo",
     "start-server": "serverless offline --httpPort 4050",
     "start-client": "tsx src/client.ts",
     "http-rest-client": "tsx src/payloadFormatVersionClient.ts"
@@ -24,6 +24,7 @@
     "serverless": "^3.38.0",
     "serverless-esbuild": "^1.55.0",
     "serverless-offline": "^12.0.4",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "@typescript/native-preview": "7.0.0-dev.20260421.2"
   }
 }
