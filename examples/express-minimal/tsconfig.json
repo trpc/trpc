@@ -1,13 +1,21 @@
 {
   "compilerOptions": {
-    "lib": ["esnext", "dom"],
+    "lib": [
+      "esnext",
+      "dom"
+    ],
     "target": "esnext",
     "esModuleInterop": true,
     "strict": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "noEmit": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "module": "Preserve"
   },
-  "include": ["src"],
-  "exclude": ["node_modules"]
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

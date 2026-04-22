@@ -94,3 +94,17 @@ export async function buildConnectionMessage(
 
   return encoder.encode(message);
 }
+
+export function toWebSocketSendData(
+  data: ReturnType<Encoder['encode']>,
+): string | ArrayBuffer | ArrayBufferView<ArrayBuffer> {
+  if (typeof data === 'string') {
+    return data;
+  }
+
+  if (data.buffer instanceof ArrayBuffer) {
+    return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+  }
+
+  return new Uint8Array(data);
+}

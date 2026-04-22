@@ -22,7 +22,11 @@ import type { WebSocketClientOptions } from './options';
 import { exponentialBackoff, keepAliveDefaults, lazyDefaults } from './options';
 import type { TCallbacks } from './requestManager';
 import { RequestManager } from './requestManager';
-import { ResettableTimeout, TRPCWebSocketClosedError } from './utils';
+import {
+  ResettableTimeout,
+  TRPCWebSocketClosedError,
+  toWebSocketSendData,
+} from './utils';
 import { backwardCompatibility, WsConnection } from './wsConnection';
 
 /**
@@ -409,7 +413,9 @@ export class WsClient {
         ? messageOrMessages
         : [messageOrMessages];
     this.activeConnection.ws.send(
-      this.encoder.encode(messages.length === 1 ? messages[0] : messages),
+      toWebSocketSendData(
+        this.encoder.encode(messages.length === 1 ? messages[0] : messages),
+      ),
     );
   }
 

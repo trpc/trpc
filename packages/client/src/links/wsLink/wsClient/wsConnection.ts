@@ -1,7 +1,12 @@
 import { behaviorSubject } from '@trpc/server/observable';
 import type { UrlOptionsWithConnectionParams } from '../../internals/urlWithConnectionParams';
 import type { Encoder } from './encoder';
-import { buildConnectionMessage, prepareUrl, withResolvers } from './utils';
+import {
+  buildConnectionMessage,
+  prepareUrl,
+  toWebSocketSendData,
+  withResolvers,
+} from './utils';
 
 /**
  * Opens a WebSocket connection asynchronously and returns a promise
@@ -195,9 +200,11 @@ export class WsConnection {
 
       if (this.urlOptions.connectionParams) {
         ws.send(
-          await buildConnectionMessage(
-            this.urlOptions.connectionParams,
-            this.encoder,
+          toWebSocketSendData(
+            await buildConnectionMessage(
+              this.urlOptions.connectionParams,
+              this.encoder,
+            ),
           ),
         );
       }

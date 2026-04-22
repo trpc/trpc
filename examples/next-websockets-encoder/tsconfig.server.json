@@ -1,12 +1,21 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "node16",
     "outDir": "dist",
     "target": "ES2019",
-    "lib": ["ES2019", "DOM"],
+    "lib": [
+      "ES2019",
+      "DOM"
+    ],
     "isolatedModules": false,
-    "noEmit": false
+    "noEmit": false,
+    "rootDir": ".",
+    "moduleResolution": "node16"
   },
-  "include": ["next-env.d.ts", "src/**/*.ts", "src/**/*.tsx"]
+  "include": [
+    "next-env.d.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ]
 }

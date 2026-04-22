@@ -1,9 +1,11 @@
 {
   "compilerOptions": {
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
     "target": "ESNext",
     "strict": true,
-    "outDir": "dist"
+    "outDir": "dist",
+    "rootDir": ".",
+    "module": "Preserve"
   }
 }
