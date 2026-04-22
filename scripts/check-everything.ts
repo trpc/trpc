@@ -173,12 +173,12 @@ async function main() {
     return;
   }
 
-  const buildExtraArgs: string[] = [];
+  const nonPackageBuildExtraArgs: string[] = ['--filter=!./packages/*'];
   if (!isCommandAvailable('bun')) {
     console.log(
       '\nSkipping `examples-bun#build` because Bun is unavailable in this environment.',
     );
-    buildExtraArgs.push('--filter=!examples-bun');
+    nonPackageBuildExtraArgs.push('--filter=!examples-bun');
   }
 
   const hasDatabaseEnv = hasEnv('DATABASE_URL') || hasEnv('POSTGRES_URL');
@@ -186,7 +186,7 @@ async function main() {
     console.log(
       '\nSkipping database-backed example builds because no database is configured and nothing is reachable on localhost:5432.',
     );
-    buildExtraArgs.push(
+    nonPackageBuildExtraArgs.push(
       '--filter=!examples-next-sse-chat',
       '--filter=!examples-trpc-next-prisma-starter',
       '--filter=!examples-trpc-next-prisma-todomvc',
@@ -195,9 +195,14 @@ async function main() {
   }
 
   runTurboPhase(
-    'build packages, examples, and www via turbo',
+    'build published packages via turbo',
     'build',
-    buildExtraArgs,
+    ['--filter=./packages/*'],
+  );
+  runTurboPhase(
+    'build examples and www via turbo',
+    'build',
+    nonPackageBuildExtraArgs,
   );
   runTurboPhase('typecheck packages, examples, and www via turbo', 'typecheck');
   runTurboPhase('verify lint passes cleanly via turbo', 'lint');
