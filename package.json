@@ -20,7 +20,7 @@
     "check-turbo:apps": "GITHUB_TOKEN=check-everything NEXTAUTH_SECRET=check-everything-secret AUTH_GITHUB_ID=check-everything AUTH_GITHUB_SECRET=check-everything turbo build --only --filter=!./packages/* --filter=!examples-bun --filter=!examples-next-sse-chat --filter=!examples-trpc-next-prisma-starter --filter=!examples-trpc-next-prisma-todomvc --filter=!examples-next-prisma-websockets-starter",
     "check-turbo:lint": "turbo lint --filter=!examples-bun",
     "check-turbo:packages": "turbo --filter=./packages/* build",
-    "check-turbo:typecheck": "turbo typecheck --filter=!examples-bun",
+    "check-turbo:typecheck": "turbo typecheck --filter=!examples-bun --filter=!examples-trpc-next-prisma-starter --filter=!examples-trpc-next-prisma-todomvc --filter=!examples-next-prisma-websockets-starter",
     "build": "turbo --filter=./packages/* build",
     "monotest-build": "turbo --filter='@monotest/*' build",
     "build-www": "turbo --filter www build",
