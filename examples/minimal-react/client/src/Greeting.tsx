@@ -37,8 +37,8 @@ function GreetingCard({ greetingRef }: { greetingRef: ViewRef<'Greeting'> }) {
       </p>
       <h1 style={{ fontSize: 32, margin: 0 }}>{greeting.message}</h1>
       <p style={{ color: '#52525b', margin: 0 }}>
-        Fate resolves a typed `viewer` root and masks the component to the
-        exact fields selected here for {greeting.recipient}.
+        Fate resolves a typed `viewer` root and masks the component to the exact
+        fields selected here for {greeting.recipient}.
       </p>
     </section>
   );

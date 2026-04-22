@@ -1,10 +1,6 @@
-import type { AppRouter } from '../../../server';
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
-import {
-  clientRoot,
-  createClient,
-  createTRPCTransport,
-} from 'react-fate';
+import { clientRoot, createClient, createTRPCTransport } from 'react-fate';
+import type { AppRouter } from '../../../server';
 
 type TRPCClientType = ReturnType<typeof createTRPCProxyClient<AppRouter>>;
 
@@ -25,24 +21,26 @@ const trpcClient = createTRPCProxyClient<AppRouter>({
 
 export const createFateClient = () =>
   createClient<[GeneratedClientRoots, Record<never, never>]>({
-  roots,
-  transport: createTRPCTransport<AppRouter>({
-    byId: {
-      Greeting: (client: TRPCClientType) => ({ args, ids, select }) =>
-        client.greetingById.query({
-          args,
-          ids: ids.map(String),
-          select,
-        }),
-    },
-    client: trpcClient,
-    queries: {
-      viewer: (client: TRPCClientType) => client.viewer.query,
-    },
-  }),
-  types: [
-    {
-      type: 'Greeting',
-    },
-  ],
-});
+    roots,
+    transport: createTRPCTransport<AppRouter>({
+      byId: {
+        Greeting:
+          (client: TRPCClientType) =>
+          ({ args, ids, select }) =>
+            client.greetingById.query({
+              args,
+              ids: ids.map(String),
+              select,
+            }),
+      },
+      client: trpcClient,
+      queries: {
+        viewer: (client: TRPCClientType) => client.viewer.query,
+      },
+    }),
+    types: [
+      {
+        type: 'Greeting',
+      },
+    ],
+  });

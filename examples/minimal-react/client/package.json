@@ -11,8 +11,8 @@
   "dependencies": {
     "@trpc/client": "npm:@trpc/client",
     "@trpc/server": "npm:@trpc/server",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
     "react-fate": "^0.1.3"
   },
   "devDependencies": {
