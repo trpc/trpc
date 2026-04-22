@@ -12,11 +12,11 @@ export function getFetch(
   }
 
   if (typeof window !== 'undefined' && isFunction(window.fetch)) {
-    return window.fetch as FetchEsque;
+    return window.fetch;
   }
 
   if (typeof globalThis !== 'undefined' && isFunction(globalThis.fetch)) {
-    return globalThis.fetch as FetchEsque;
+    return globalThis.fetch;
   }
 
   throw new Error('No fetch implementation found');

@@ -173,7 +173,7 @@ export function experimental_createActionHook<
           _action(innerInput) {
             return handler(innerInput);
           },
-        } as ActionContext;
+        };
 
         setState({
           status: 'loading',
@@ -184,13 +184,13 @@ export function experimental_createActionHook<
             context,
           })
           .then(async (data) => {
-            await actionOptsRef.current?.onSuccess?.(data as any);
+            await actionOptsRef.current?.onSuccess?.(data);
             if (idx !== count.current) {
               return;
             }
             setState({
               status: 'success',
-              data: data as any,
+              data: data,
             });
           })
           .catch(async (error) => {

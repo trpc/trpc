@@ -213,7 +213,7 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
     },
 
     setQueryData: (queryKey, updater, options) => {
-      return queryClient.setQueryData(queryKey, updater as any, options);
+      return queryClient.setQueryData(queryKey, updater, options);
     },
 
     // eslint-disable-next-line max-params
@@ -233,7 +233,7 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
     },
 
     setInfiniteQueryData: (queryKey, updater, options) => {
-      return queryClient.setQueryData(queryKey, updater as any, options);
+      return queryClient.setQueryData(queryKey, updater, options);
     },
 
     getInfiniteQueryData: (queryKey) => {
