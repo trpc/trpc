@@ -2220,7 +2220,7 @@ importers:
         specifier: 11.16.0
         version: link:../server
       '@types/express':
-        specifier: ^5.0.0
+        specifier: ^5.0.6
         version: 5.0.6
       '@types/node':
         specifier: ^22.13.5
