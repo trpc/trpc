@@ -1,6 +1,6 @@
 import { behaviorSubject } from '@trpc/server/observable';
 import type { UrlOptionsWithConnectionParams } from '../../internals/urlWithConnectionParams';
-import { type Encoder, toWebSocketSendPayload } from './encoder';
+import { toWebSocketSendPayload, type Encoder } from './encoder';
 import { buildConnectionMessage, prepareUrl, withResolvers } from './utils';
 
 /**

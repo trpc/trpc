@@ -585,13 +585,13 @@ export function handleKeepAlive(
     const scheduleTimeout = () => {
       timeout = setTimeout(() => {
         client.terminate();
-      }, pongWaitMs) as any;
+      }, pongWaitMs);
     };
     ping = setTimeout(() => {
       client.send('PING');
 
       scheduleTimeout();
-    }, pingMs) as any;
+    }, pingMs);
   };
 
   const onMessage = () => {
