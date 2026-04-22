@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import net from 'node:net';
 
 const args = new Set(process.argv.slice(2));
 const autocheckOnly = args.has('--autocheck-only');
@@ -50,6 +51,16 @@ function isCommandAvailable(command: string) {
   });
 
   return result.status === 0;
+}
+
+function hasEnv(name: string) {
+  return Boolean(process.env[name]?.trim());
+}
+
+function ensureDefaultEnv(name: string, value: string) {
+  if (!hasEnv(name)) {
+    process.env[name] = value;
+  }
 }
 
 function getWorkingTreeStatus() {
@@ -132,8 +143,29 @@ function runTurboPhase(label: string, task: string, extraArgs: string[] = []) {
   });
 }
 
-function main() {
+async function canConnectToPostgres(port = 5432) {
+  return await new Promise<boolean>((resolve) => {
+    const socket = net.connect({ host: '127.0.0.1', port });
+
+    const finish = (result: boolean) => {
+      socket.destroy();
+      resolve(result);
+    };
+
+    socket.on('connect', () => finish(true));
+    socket.on('error', () => finish(false));
+    socket.setTimeout(750, () => finish(false));
+  });
+}
+
+async function main() {
   ensureCleanWorkingTree();
+
+  ensureDefaultEnv('AUTH_GITHUB_ID', 'check-everything');
+  ensureDefaultEnv('AUTH_GITHUB_SECRET', 'check-everything');
+  ensureDefaultEnv('GITHUB_TOKEN', 'check-everything');
+  ensureDefaultEnv('NEXTAUTH_SECRET', 'check-everything-secret');
+
   runAutocheck();
 
   if (autocheckOnly) {
@@ -147,6 +179,19 @@ function main() {
       '\nSkipping `examples-bun#build` because Bun is unavailable in this environment.',
     );
     buildExtraArgs.push('--filter=!examples-bun');
+  }
+
+  const hasDatabaseEnv = hasEnv('DATABASE_URL') || hasEnv('POSTGRES_URL');
+  if (!hasDatabaseEnv && !(await canConnectToPostgres())) {
+    console.log(
+      '\nSkipping database-backed example builds because no database is configured and nothing is reachable on localhost:5432.',
+    );
+    buildExtraArgs.push(
+      '--filter=!examples-next-sse-chat',
+      '--filter=!examples-trpc-next-prisma-starter',
+      '--filter=!examples-trpc-next-prisma-todomvc',
+      '--filter=!examples-next-prisma-websockets-starter',
+    );
   }
 
   runTurboPhase(
@@ -166,4 +211,4 @@ function main() {
   console.log('\ncheck-everything completed successfully.');
 }
 
-main();
+void main();
