@@ -9,11 +9,6 @@ const config = {
       },
     ];
   },
-
-  /** We run eslint as a separate task in CI */
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     ignoreBuildErrors: true,
   },

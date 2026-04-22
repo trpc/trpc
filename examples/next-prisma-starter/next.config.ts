@@ -15,10 +15,6 @@ export default {
   publicRuntimeConfig: {
     NODE_ENV: env.NODE_ENV,
   },
-  /** We run eslint as a separate task in CI */
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   /** We run typechecking as a separate task in CI */
   typescript: {
     ignoreBuildErrors: true,

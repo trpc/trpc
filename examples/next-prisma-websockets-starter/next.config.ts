@@ -12,6 +12,4 @@ export default {
     APP_URL: process.env.APP_URL,
     WS_URL: process.env.WS_URL,
   },
-  /** We run eslint as a separate task in CI */
-  eslint: { ignoreDuringBuilds: !!process.env.CI },
 } satisfies NextConfig;
