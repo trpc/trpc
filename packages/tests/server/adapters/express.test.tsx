@@ -52,7 +52,9 @@ export const router = t.router({
 });
 
 async function startServer(
-  opts?: Partial<Parameters<typeof trpcExpress.createExpressMiddleware<typeof router>>[0]>,
+  opts?: Partial<
+    Parameters<typeof trpcExpress.createExpressMiddleware<typeof router>>[0]
+  >,
 ) {
   const createContext = (
     _opts: trpcExpress.CreateExpressContextOptions,
