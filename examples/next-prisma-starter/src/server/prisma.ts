@@ -18,8 +18,7 @@ const createPrismaClient = () =>
       env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   });
 
-export const prisma: PrismaClient =
-  prismaGlobal.prisma ?? createPrismaClient();
+export const prisma: PrismaClient = prismaGlobal.prisma ?? createPrismaClient();
 
 if (env.NODE_ENV !== 'production') {
   prismaGlobal.prisma = prisma;
