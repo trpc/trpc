@@ -9,7 +9,5 @@
     "skipLibCheck": true,
     "rootDir": "."
   },
-  "include": [
-    "**/*.ts"
-  ]
+  "include": ["**/*.ts"]
 }

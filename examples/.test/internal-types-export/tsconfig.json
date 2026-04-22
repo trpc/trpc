@@ -1,9 +1,5 @@
 {
-  "extends": [
-    "@tsconfig/node-lts",
-    "@tsconfig/strictest",
-    "@tsconfig/esm"
-  ],
+  "extends": ["@tsconfig/node-lts", "@tsconfig/strictest", "@tsconfig/esm"],
   "compilerOptions": {
     "declaration": true,
     "declarationMap": true,
@@ -14,7 +10,5 @@
     "outDir": "build",
     "rootDir": "."
   },
-  "include": [
-    "**/*.ts"
-  ]
+  "include": ["**/*.ts"]
 }

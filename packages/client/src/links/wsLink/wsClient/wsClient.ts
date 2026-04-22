@@ -24,8 +24,8 @@ import type { TCallbacks } from './requestManager';
 import { RequestManager } from './requestManager';
 import {
   ResettableTimeout,
-  TRPCWebSocketClosedError,
   toWebSocketSendData,
+  TRPCWebSocketClosedError,
 } from './utils';
 import { backwardCompatibility, WsConnection } from './wsConnection';
 
