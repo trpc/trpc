@@ -1041,7 +1041,7 @@ describe('with transformer', () => {
 
     const router = t.router({
       iterable: t.procedure.query(async function* () {
-        yield 1 as number;
+        yield 1;
         yield 2;
         yield 3;
 
@@ -1106,7 +1106,7 @@ describe('with transformer', () => {
 
     const router = t.router({
       iterable: t.procedure.query(async function* () {
-        yield 1 as number;
+        yield 1;
         yield 2;
         yield 3;
 
@@ -1168,7 +1168,7 @@ describe('with transformer', () => {
 
     const router = t.router({
       iterable: t.procedure.query(async function* () {
-        yield 1 as number;
+        yield 1;
         yield 2;
         yield 3;
 
