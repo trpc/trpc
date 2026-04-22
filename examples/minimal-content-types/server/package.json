@@ -18,8 +18,7 @@
     "@typescript/native-preview": "7.0.0-dev.20260421.2",
     "eslint": "^9.26.0",
     "tsx": "^4.19.3",
-    "typescript": "^5.9.2",
+    "typescript": "^5.9.2"
   },
   "type": "module"
-}
 }
