@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=18.15.0"
   },
-  "packageManager": "pnpm@9.12.2",
+  "packageManager": "pnpm@10.33.1",
   "scripts": {
     "build:1-next": "cross-env NODE_ENV=production next build",
     "build:2-server": "tsc --project tsconfig.server.json",
@@ -49,6 +49,5 @@
   },
   "publishConfig": {
     "access": "restricted"
-  },
-  "version": "11.16.0"
+  }
 }
