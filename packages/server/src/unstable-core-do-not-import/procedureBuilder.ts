@@ -695,10 +695,9 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
     return result.data;
   }
 
-  procedure._def = _def;
-  procedure.procedure = true;
-  procedure.meta = _def.meta;
-
-  // FIXME typecast shouldn't be needed - fixittt
-  return procedure as unknown as AnyProcedure;
+  return Object.assign(procedure, {
+    _def,
+    procedure: true as const,
+    meta: _def.meta,
+  }) as unknown as AnyProcedure;
 }
