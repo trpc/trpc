@@ -14,7 +14,7 @@ import userEvent from '@testing-library/user-event';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import type { inferRouterError } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
-import { useState, Suspense } from 'react';
+import { Suspense, useState } from 'react';
 import { describe, expect, expectTypeOf, test } from 'vitest';
 import { z } from 'zod';
 

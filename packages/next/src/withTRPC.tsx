@@ -33,7 +33,7 @@ import type {
   NextPageContext,
 } from 'next/dist/shared/lib/utils';
 import type { NextRouter } from 'next/router';
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 export type WithTRPCConfig<TRouter extends AnyRouter> =
   CreateTRPCClientOptions<TRouter> &
