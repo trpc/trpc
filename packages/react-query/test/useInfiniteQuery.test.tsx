@@ -4,7 +4,7 @@ import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createServerSideHelpers } from '@trpc/react-query/server';
 import type { inferProcedureInput } from '@trpc/server';
-import React, { Fragment } from 'react';
+import { Fragment } from 'react';
 
 let factory: ReturnType<typeof createAppRouter>;
 beforeEach(() => {

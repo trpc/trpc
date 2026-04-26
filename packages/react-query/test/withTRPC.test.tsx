@@ -6,7 +6,6 @@ import { withTRPC } from '@trpc/next';
 import { ssrPrepass } from '@trpc/next/ssrPrepass';
 import { konn } from 'konn';
 import type { AppType, NextPageContext } from 'next/dist/shared/lib/utils';
-import React from 'react';
 import { expect, vitest } from 'vitest';
 
 const ctx = konn()

@@ -14,7 +14,7 @@ import userEvent from '@testing-library/user-event';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import type { inferRouterError } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
-import * as React from 'react';
+import { useState, Suspense } from 'react';
 import { describe, expect, expectTypeOf, test } from 'vitest';
 import { z } from 'zod';
 
@@ -61,7 +61,7 @@ describe('infiniteQueryOptions', () => {
     function MyComponent() {
       const trpc = useTRPC();
       const queryClient = useQueryClient();
-      const [invalidated, setInvalidated] = React.useState(false);
+      const [invalidated, setInvalidated] = useState(false);
 
       const queryOptions = trpc.post.list.infiniteQueryOptions(
         {},
@@ -207,7 +207,7 @@ describe('infiniteQueryOptions', () => {
     function MyComponent() {
       const trpc = useTRPC();
       const queryClient = useQueryClient();
-      const [invalidated, setInvalidated] = React.useState(false);
+      const [invalidated, setInvalidated] = useState(false);
 
       const queryOptions = trpc.post.list.infiniteQueryOptions(
         {},
@@ -307,9 +307,9 @@ describe('infiniteQueryOptions', () => {
     }
 
     const utils = ctx.renderApp(
-      <React.Suspense fallback="loading">
+      <Suspense fallback="loading">
         <MyComponent />
-      </React.Suspense>,
+      </Suspense>,
     );
 
     await vi.waitFor(() => {

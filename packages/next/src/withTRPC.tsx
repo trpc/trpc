@@ -33,7 +33,7 @@ import type {
   NextPageContext,
 } from 'next/dist/shared/lib/utils';
 import type { NextRouter } from 'next/router';
-import React, { useState } from 'react';
+import { useState, useMemo } from 'react';
 
 export type WithTRPCConfig<TRouter extends AnyRouter> =
   CreateTRPCClientOptions<TRouter> &
@@ -128,7 +128,7 @@ export function withTRPC<
       // allow normal components to be wrapped, not just app/pages
       const trpcState = props.pageProps?.trpcState;
 
-      const hydratedState: DehydratedState | undefined = React.useMemo(() => {
+      const hydratedState: DehydratedState | undefined = useMemo(() => {
         if (!trpcState) {
           return trpcState;
         }

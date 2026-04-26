@@ -13,7 +13,6 @@ import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import/stream/utils/createDeferred';
 import { konn } from 'konn';
-import React from 'react';
 import { z } from 'zod';
 
 const fixtureData = ['1', '2', '3', '4'];

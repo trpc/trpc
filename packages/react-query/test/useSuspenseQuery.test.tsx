@@ -4,7 +4,6 @@ import { skipToken } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
-import React from 'react';
 import { z } from 'zod';
 
 const ctx = konn()

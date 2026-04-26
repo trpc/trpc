@@ -26,7 +26,7 @@ import type {
   AnyRouter,
   DistributiveOmit,
 } from '@trpc/server/unstable-core-do-not-import';
-import * as React from 'react';
+import { createContext } from 'react';
 import type {
   DefinedTRPCInfiniteQueryOptionsIn,
   DefinedTRPCInfiniteQueryOptionsOut,
@@ -347,4 +347,4 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
    */
   isMutating: (filters: { mutationKey: TRPCMutationKey }) => number;
 }
-export const TRPCContext = React.createContext?.(null as any);
+export const TRPCContext = createContext?.(null as any);
