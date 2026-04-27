@@ -1,7 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import type { TRPCClient } from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
-import { createContext, useContext, useMemo } from 'react';
+import * as React from 'react';
 import type { FC, ReactNode } from 'react';
 import type { TRPCOptionsProxy } from './createOptionsProxy';
 import { createTRPCOptionsProxy } from './createOptionsProxy';
@@ -40,14 +40,16 @@ export function createTRPCContext<
   TRouter extends AnyTRPCRouter,
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
 >(): CreateTRPCContextResult<TRouter, TFeatureFlags> {
-  const TRPCClientContext = createContext<TRPCClient<TRouter> | null>(null);
-  const TRPCContext = createContext<TRPCOptionsProxy<
+  const TRPCClientContext = React.createContext<TRPCClient<TRouter> | null>(
+    null,
+  );
+  const TRPCContext = React.createContext<TRPCOptionsProxy<
     TRouter,
     TFeatureFlags
   > | null>(null);
 
   const TRPCProvider: TRPCProviderType<TRouter, TFeatureFlags> = (props) => {
-    const value = useMemo(
+    const value = React.useMemo(
       () =>
         createTRPCOptionsProxy<TRouter, TFeatureFlags>({
           client: props.trpcClient,
@@ -67,7 +69,7 @@ export function createTRPCContext<
   TRPCProvider.displayName = 'TRPCProvider';
 
   function useTRPC() {
-    const utils = useContext(TRPCContext);
+    const utils = React.useContext(TRPCContext);
     if (!utils) {
       throw new Error('useTRPC() can only be used inside of a <TRPCProvider>');
     }
@@ -75,7 +77,7 @@ export function createTRPCContext<
   }
 
   function useTRPCClient() {
-    const client = useContext(TRPCClientContext);
+    const client = React.useContext(TRPCClientContext);
     if (!client) {
       throw new Error(
         'useTRPCClient() can only be used inside of a <TRPCProvider>',
