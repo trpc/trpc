@@ -1,4 +1,5 @@
 import { defineConfig } from 'tsdown';
+import { normalizeServerDeclarationChunkImports } from './src/internals/normalizeDeclarationChunkImports.ts';
 
 export const input = [
   'src/adapters/aws-lambda/index.ts',
@@ -37,7 +38,10 @@ export default defineConfig({
       '../../scripts/entrypoints.js'
     );
     await generateEntrypoints(input);
+    await normalizeServerDeclarationChunkImports(input);
     // eslint-disable-next-line no-console
-    console.log(`Generated entrypoints in ${Date.now() - start}ms`);
+    console.log(
+      `Generated entrypoints and normalized declaration imports in ${Date.now() - start}ms`,
+    );
   },
 });
