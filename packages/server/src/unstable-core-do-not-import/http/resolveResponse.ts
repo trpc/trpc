@@ -572,7 +572,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     // batch response handlers
     if (info.accept === 'application/jsonl') {
       // httpBatchStreamLink
-      headers.set('content-type', 'application/json');
+      headers.set(
+        'content-type',
+        config.jsonl?.contentType ?? 'application/json',
+      );
       headers.set('transfer-encoding', 'chunked');
       const headResponse = initResponse({
         ctx: ctxManager.valueOrUndefined(),
