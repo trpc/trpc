@@ -9,6 +9,8 @@ slug: /client/links/httpSubscriptionLink
 
 SSE is a good option for real-time as it's a bit easier than setting up a WebSockets-server.
 
+If you need dynamic headers, `credentials`, or a custom fetch implementation, use [`httpFetchSubscriptionLink`](./httpFetchSubscriptionLink.md) instead.
+
 ## Setup {#setup}
 
 :::info
@@ -97,9 +99,9 @@ httpSubscriptionLink({
 
 ### Custom headers through ponyfill
 
-**Recommended for non-web environments**
+**Recommended for environments that already depend on an EventSource ponyfill**
 
-You can ponyfill `EventSource` and use the `eventSourceOptions` -callback to populate headers.
+You can still ponyfill `EventSource` and use the `eventSourceOptions` callback to populate headers.
 
 ```tsx twoslash
 // @filename: server.ts
@@ -153,7 +155,7 @@ const trpc = createTRPCClient<AppRouter>({
 
 ### Updating configuration on an active connection {#updatingConfig}
 
-`httpSubscriptionLink` leverages SSE through `EventSource`, ensuring that connections encountering errors like network failures or bad response codes are automatically retried. However, `EventSource` does not allow re-execution of the `eventSourceOptions()` or `url()` options to update its configuration, which is particularly important in scenarios where authentication has expired since the last connection.
+`httpSubscriptionLink` leverages SSE through `EventSource`, so `eventSourceOptions()` stays bound to the lifetime of that `EventSource` instance.
 
 To address this limitation, you can use a [`retryLink`](./retryLink.md) in conjunction with `httpSubscriptionLink`. This approach ensures that the connection is re-established with the latest configuration, including any updated authentication details.
 
@@ -399,6 +401,24 @@ type HTTPSubscriptionLinkOptions<
    * @see https://trpc.io/docs/v11/data-transformers
    */
   transformer?: DataTransformerOptions;
+  /**
+   * Fetch ponyfill used by the built-in fetch-based SSE transport
+   */
+  fetch?: typeof fetch;
+  /**
+   * Request headers for the built-in fetch-based SSE transport
+   */
+  headers?:
+    | Record<string, string>
+    | ((opts: { op: Operation }) =>
+        | Record<string, string>
+        | Promise<Record<string, string>>);
+  /**
+   * Credentials mode for the built-in fetch-based SSE transport
+   */
+  credentials?:
+    | RequestCredentials
+    | ((opts: { op: Operation }) => RequestCredentials | Promise<RequestCredentials>);
   /**
    * EventSource ponyfill
    */

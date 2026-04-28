@@ -5,7 +5,7 @@ sidebar_label: Headers
 slug: /client/headers
 ---
 
-The headers option may be used with any of our HTTP links: [`httpBatchLink`](./links/httpBatchLink.md), [`httpBatchStreamLink`](./links/httpBatchStreamLink.md), [`httpLink`](./links/httpLink.md), or [`httpSubscriptionLink`](./links/httpSubscriptionLink.md).
+The headers option may be used with any of our HTTP links: [`httpBatchLink`](./links/httpBatchLink.md), [`httpBatchStreamLink`](./links/httpBatchStreamLink.md), [`httpLink`](./links/httpLink.md), or [`httpFetchSubscriptionLink`](./links/httpFetchSubscriptionLink.md).
 
 `headers` can be both an object or a function. If it's a function it will get called dynamically for every HTTP request.
 

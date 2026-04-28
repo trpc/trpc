@@ -13,15 +13,17 @@ import {
 } from '@trpc/server/unstable-core-do-not-import';
 import { inputWithTrackedEventId } from '../internals/inputWithTrackedEventId';
 import { raceAbortSignals } from '../internals/signals';
+import type { FetchEsque } from '../internals/types';
 import { TRPCClientError } from '../TRPCClientError';
 import type { TRPCConnectionState } from '../unstable-internals';
 import { getTransformer, type TransformerOptions } from '../unstable-internals';
+import { FetchEventSource } from './internals/fetchEventSource';
 import { getUrl } from './internals/httpUtils';
 import {
   resultOf,
   type UrlOptionsWithConnectionParams,
 } from './internals/urlWithConnectionParams';
-import type { Operation, TRPCLink } from './types';
+import type { HTTPHeaders, Operation, TRPCLink } from './types';
 
 async function urlWithConnectionParams(
   opts: UrlOptionsWithConnectionParams,
@@ -38,16 +40,30 @@ async function urlWithConnectionParams(
   return url;
 }
 
-export type HTTPSubscriptionLinkOptions<
+export type HTTPFetchSubscriptionLinkOptions<
   TRoot extends AnyClientTypes,
-  TEventSource extends EventSourceLike.AnyConstructor = typeof EventSource,
+  TEventSource extends EventSourceLike.AnyConstructor = typeof FetchEventSource,
 > = {
   /**
-   * EventSource ponyfill
+   * Fetch ponyfill used by the built-in fetch-based SSE transport.
    */
-  EventSource?: TEventSource;
+  fetch?: FetchEsque;
   /**
-   * EventSource options or a callback that returns them
+   * Request headers for the built-in fetch-based SSE transport.
+   */
+  headers?:
+    | HTTPHeaders
+    | ((opts: { op: Operation }) => HTTPHeaders | Promise<HTTPHeaders>);
+  /**
+   * Credentials mode for the built-in fetch-based SSE transport.
+   */
+  credentials?:
+    | RequestCredentials
+    | ((opts: {
+        op: Operation;
+      }) => RequestCredentials | Promise<RequestCredentials>);
+  /**
+   * FetchEventSource options or a callback that returns them.
    */
   eventSourceOptions?:
     | EventSourceLike.InitDictOf<TEventSource>
@@ -60,13 +76,13 @@ export type HTTPSubscriptionLinkOptions<
   UrlOptionsWithConnectionParams;
 
 /**
- * @see https://trpc.io/docs/client/links/httpSubscriptionLink
+ * @see https://trpc.io/docs/client/links/httpFetchSubscriptionLink
  */
-export function httpSubscriptionLink<
+export function httpFetchSubscriptionLink<
   TInferrable extends InferrableClientTypes,
-  TEventSource extends EventSourceLike.AnyConstructor,
+  TEventSource extends EventSourceLike.AnyConstructor = typeof FetchEventSource,
 >(
-  opts: HTTPSubscriptionLinkOptions<
+  opts: HTTPFetchSubscriptionLinkOptions<
     inferClientTypes<TInferrable>,
     TEventSource
   >,
@@ -80,7 +96,9 @@ export function httpSubscriptionLink<
 
         /* istanbul ignore if -- @preserve */
         if (type !== 'subscription') {
-          throw new Error('httpSubscriptionLink only supports subscriptions');
+          throw new Error(
+            'httpFetchSubscriptionLink only supports subscriptions',
+          );
         }
 
         let lastEventId: string | undefined = undefined;
@@ -103,12 +121,24 @@ export function httpSubscriptionLink<
               type,
               signal: null,
             }),
-          init: () => resultOf(opts.eventSourceOptions, { op }),
+          init: async () => {
+            const [eventSourceOptions, headers, credentials] =
+              await Promise.all([
+                resultOf(opts.eventSourceOptions, { op }),
+                resultOf(opts.headers, { op }),
+                resultOf(opts.credentials, { op }),
+              ]);
+
+            return {
+              ...eventSourceOptions,
+              fetch: opts.fetch,
+              headers,
+              credentials,
+            } as EventSourceLike.InitDictOf<TEventSource>;
+          },
           signal,
           deserialize: (data) => transformer.output.deserialize(data),
-          EventSource:
-            opts.EventSource ??
-            (globalThis.EventSource as never as TEventSource),
+          EventSource: FetchEventSource as never as TEventSource,
         });
 
         const connectionState = behaviorSubject<
@@ -130,14 +160,12 @@ export function httpSubscriptionLink<
           for await (const chunk of eventSourceStream) {
             switch (chunk.type) {
               case 'ping':
-                // do nothing
                 break;
               case 'data':
                 const chunkData = chunk.data;
 
                 let result: TRPCResult<unknown>;
                 if (chunkData.id) {
-                  // if the `tracked()`-helper is used, we always have an `id` field
                   lastEventId = chunkData.id;
                   result = {
                     id: chunkData.id,
@@ -176,7 +204,6 @@ export function httpSubscriptionLink<
                 const error = TRPCClientError.from({ error: chunk.error });
 
                 if (retryableRpcCodes.includes(chunk.error.code)) {
-                  //
                   connectionState.next({
                     type: 'state',
                     state: 'connecting',
@@ -184,8 +211,7 @@ export function httpSubscriptionLink<
                   });
                   break;
                 }
-                //
-                // non-retryable error, cancel the subscription
+
                 throw error;
               }
               case 'connecting': {
@@ -238,8 +264,3 @@ export function httpSubscriptionLink<
     };
   };
 }
-
-/**
- * @deprecated use {@link httpSubscriptionLink} instead
- */
-export const unstable_httpSubscriptionLink = httpSubscriptionLink;
