@@ -8,9 +8,18 @@
  * @see https://trpc.io/docs/v11/procedures
  */
 import { initTRPC } from '@trpc/server';
-import { transformer } from '../utils/transformer';
+import { transformer } from '../transformer';
 
-const t = initTRPC.create({
+export const createContext = async () => {
+  /**
+   * @see: https://trpc.io/docs/server/context
+   */
+  return {};
+};
+
+export type Context = Awaited<ReturnType<typeof createContext>>;
+
+const t = initTRPC.context<Context>().create({
   transformer,
 });
 
