@@ -1,6 +1,6 @@
 import { defineConfig } from 'tsdown';
 
-export const input = ['src/index.ts'];
+export const input = ['src/index.ts', 'src/createOptionsProxy.ts'];
 
 export default defineConfig({
   target: ['node18', 'es2017'],
@@ -9,7 +9,7 @@ export default defineConfig({
     sourcemap: true,
     tsconfig: './tsconfig.build.json',
   },
-  // unbundle: true,
+  unbundle: true,
   format: ['cjs', 'esm'],
   outExtensions: (ctx) => ({
     dts: ctx.format === 'cjs' ? '.d.cts' : '.d.mts',
