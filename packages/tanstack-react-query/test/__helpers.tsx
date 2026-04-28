@@ -7,7 +7,7 @@ import type { RenderResult } from '@testing-library/react';
 import { render } from '@testing-library/react';
 import { getUntypedClient } from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
-import * as React from 'react';
+import type { ReactNode } from 'react';
 import type { ofFeatureFlags } from '../src';
 import { createTRPCContext, createTRPCOptionsProxy } from '../src';
 
@@ -48,7 +48,7 @@ export function testReactResource<
     $Flags
   >();
 
-  function renderApp(ui: React.ReactNode) {
+  function renderApp(ui: ReactNode) {
     return render(
       <QueryClientProvider client={queryClient}>
         <TRPCProvider
@@ -62,7 +62,7 @@ export function testReactResource<
     );
   }
 
-  function rerenderApp(render: RenderResult, ui: React.ReactNode) {
+  function rerenderApp(render: RenderResult, ui: ReactNode) {
     return render.rerender(
       <QueryClientProvider client={queryClient}>
         <TRPCProvider

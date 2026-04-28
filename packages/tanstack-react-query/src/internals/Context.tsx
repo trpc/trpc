@@ -2,6 +2,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import type { TRPCClient } from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
 import * as React from 'react';
+import type { FC, ReactNode } from 'react';
 import type { TRPCOptionsProxy } from './createOptionsProxy';
 import { createTRPCOptionsProxy } from './createOptionsProxy';
 import type {
@@ -13,9 +14,9 @@ import type {
 type TRPCProviderType<
   TRouter extends AnyTRPCRouter,
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
-> = React.FC<
+> = FC<
   {
-    children: React.ReactNode;
+    children: ReactNode;
     queryClient: QueryClient;
     trpcClient: TRPCClient<TRouter>;
   } & KeyPrefixOptions<TFeatureFlags>

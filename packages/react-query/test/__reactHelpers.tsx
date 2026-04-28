@@ -16,7 +16,6 @@ import { createTRPCReact } from '@trpc/react-query';
 import type { CreateTRPCReactBase } from '@trpc/react-query/createTRPCReact';
 import type { AnyRouter } from '@trpc/server';
 import type { ReactNode } from 'react';
-import React from 'react';
 
 export function getServerAndReactClient<TRouter extends AnyRouter>(
   appRouter: TRouter,

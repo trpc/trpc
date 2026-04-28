@@ -5,7 +5,6 @@ import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
-import React from 'react';
 import { z } from 'zod';
 
 const fixtureData = ['1', '2'];

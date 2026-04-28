@@ -22,7 +22,7 @@ import type {
   RouterCaller,
   TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
-import * as React from 'react';
+import type { ReactNode } from 'react';
 import { getQueryKeyInternal } from './internals/getQueryKey';
 import type {
   TRPCFetchInfiniteQueryOptions,
@@ -143,7 +143,7 @@ export function createHydrationHelpers<TRouter extends AnyRouter>(
     return promise;
   });
 
-  function HydrateClient(props: { children: React.ReactNode }) {
+  function HydrateClient(props: { children: ReactNode }) {
     const dehydratedState = dehydrate(getQueryClient());
 
     return (

@@ -4,7 +4,7 @@ import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
-import React from 'react';
+import { useEffect } from 'react';
 import { z } from 'zod';
 
 const post = { id: 1, text: 'foo' };
@@ -50,10 +50,10 @@ test('invalidate with filter', async () => {
       structuralSharing: false,
     });
 
-    React.useEffect(() => {
+    useEffect(() => {
       if (allPosts.data) postSpy();
     }, [allPosts.data]);
-    React.useEffect(() => {
+    useEffect(() => {
       if (greeting.data) greetingSpy();
     }, [greeting.data]);
 
