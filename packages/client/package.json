@@ -1,7 +1,7 @@
 {
   "name": "@trpc/client",
   "type": "module",
-  "version": "11.16.0",
+  "version": "11.17.0",
   "description": "The tRPC client library",
   "author": "KATT",
   "license": "MIT",
@@ -115,12 +115,12 @@
     "bin"
   ],
   "peerDependencies": {
-    "@trpc/server": "11.16.0",
+    "@trpc/server": "11.17.0",
     "typescript": ">=5.7.2"
   },
   "devDependencies": {
     "@tanstack/intent": "^0.0.27",
-    "@trpc/server": "11.16.0",
+    "@trpc/server": "11.17.0",
     "@types/isomorphic-fetch": "^0.0.39",
     "@types/node": "^22.13.5",
     "dataloader": "^2.2.2",
