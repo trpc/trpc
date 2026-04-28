@@ -19,7 +19,7 @@ import type {
   CreateTRPCReactOptions,
   CreateTRPCReactQueryClientConfig,
 } from '@trpc/react-query/shared';
-import { createRootHooks, getQueryClient } from '@trpc/react-query/shared';
+import { createRootHooks } from '@trpc/react-query/shared';
 import type {
   AnyRouter,
   Dict,
@@ -34,6 +34,7 @@ import type {
 } from 'next/dist/shared/lib/utils';
 import type { NextRouter } from 'next/router';
 import React, { useState } from 'react';
+import { getQueryClientWithServerGcTimeInfinity } from './getQueryClientWithServerGcTimeInfinity';
 
 export type WithTRPCConfig<TRouter extends AnyRouter> =
   CreateTRPCClientOptions<TRouter> &
@@ -44,6 +45,7 @@ export type WithTRPCConfig<TRouter extends AnyRouter> =
 type WithTRPCOptions<TRouter extends AnyRouter> =
   CreateTRPCReactOptions<TRouter> & {
     config: (info: { ctx?: NextPageContext }) => WithTRPCConfig<TRouter>;
+    forceServerGcTimeInfinity?: boolean;
   } & TransformerOptions<inferClientTypes<TRouter>>;
 
 export type TRPCPrepassHelper = (opts: {
@@ -111,7 +113,10 @@ export function withTRPC<
         }
 
         const config = getClientConfig({});
-        const queryClient = getQueryClient(config);
+        const queryClient = getQueryClientWithServerGcTimeInfinity(
+          config,
+          opts.forceServerGcTimeInfinity,
+        );
         const trpcClient = trpc.createClient(config);
 
         return {
