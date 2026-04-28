@@ -10,7 +10,7 @@ import {
   httpLink,
   TRPCClientError,
 } from '@trpc/client';
-import { initTRPC, TRPCError } from '@trpc/server';
+import { createTRPCDeclaredError, initTRPC, TRPCError } from '@trpc/server';
 import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 import type { HTTPErrorHandler } from '@trpc/server/http';
 import { observable } from '@trpc/server/observable';
@@ -133,6 +133,105 @@ test('getMessageFromUnknownError()', () => {
   expect(getMessageFromUnknownError(1, 'test')).toBe('test');
   expect(getMessageFromUnknownError({}, 'test')).toBe('test');
 });
+
+describe('declared errors over http links', () => {
+  const BadPhoneError = createTRPCDeclaredError({
+    code: 'UNAUTHORIZED',
+    key: 'BAD_PHONE',
+  })
+    .data<{
+      reason: 'BAD_PHONE';
+    }>()
+    .create({
+      constants: {
+        reason: 'BAD_PHONE' as const,
+      },
+    });
+
+  const t = initTRPC.create({
+    errorFormatter({ shape }) {
+      return {
+        ...shape,
+        data: {
+          ...shape.data,
+          foo: 'bar' as const,
+        },
+      };
+    },
+  });
+
+  const router = t.router({
+    registered: t.procedure.errors([BadPhoneError]).query(() => {
+      throw new BadPhoneError();
+    }),
+    unregistered: t.procedure.query(() => {
+      throw new BadPhoneError();
+    }),
+  });
+
+  test.each(['httpLink', 'httpBatchLink'] as const)(
+    '%s propagates registered declared errors',
+    async (clientLink) => {
+      await using ctx = testServerAndClientResource(router, {
+        clientLink,
+      });
+
+      const registeredError = await waitError(
+        ctx.client.registered.query(),
+        TRPCClientError<typeof router>,
+      );
+
+      assert(registeredError.isDeclaredError('BAD_PHONE'));
+      expect(registeredError.shape).toEqual({
+        code: -32001,
+        message: 'UNAUTHORIZED',
+        '~': {
+          kind: 'declared',
+          declaredErrorKey: 'BAD_PHONE',
+        },
+        data: {
+          reason: 'BAD_PHONE',
+        },
+      });
+      expect(registeredError.data).toEqual({
+        reason: 'BAD_PHONE',
+      });
+    },
+  );
+
+  test.each(['httpLink', 'httpBatchLink'] as const)(
+    '%s downgrades unregistered declared errors',
+    async (clientLink) => {
+      await using ctx = testServerAndClientResource(router, {
+        clientLink,
+      });
+
+      const unregisteredError = await waitError(
+        ctx.client.unregistered.query(),
+        TRPCClientError,
+      );
+
+      expect(unregisteredError.shape).toMatchObject({
+        code: -32603,
+        message: 'An unrecognized error occurred',
+        data: {
+          code: 'INTERNAL_SERVER_ERROR',
+          foo: 'bar',
+          httpStatus: 500,
+          path: 'unregistered',
+        },
+      });
+      expect(unregisteredError.data).toMatchObject({
+        code: 'INTERNAL_SERVER_ERROR',
+        foo: 'bar',
+        httpStatus: 500,
+        path: 'unregistered',
+      });
+      expect(unregisteredError.data).not.toHaveProperty('reason');
+    },
+  );
+});
+
 describe('formatError()', () => {
   test('simple', async () => {
     const onError = vi.fn();
@@ -209,6 +308,9 @@ describe('formatError()', () => {
           "message": "Invalid input: expected string, received number"
         }
       ]",
+        "~": Object {
+          "kind": "formatted",
+        },
       }
     `);
     expect(onError).toHaveBeenCalledTimes(1);

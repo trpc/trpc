@@ -8,7 +8,7 @@ import type {
   UnusedSkipTokenOptions,
 } from '@tanstack/react-query';
 import { queryOptions, skipToken } from '@tanstack/react-query';
-import type { TRPCClientErrorLike, TRPCUntypedClient } from '@trpc/client';
+import type { TRPCClientError, TRPCUntypedClient } from '@trpc/client';
 import type {
   coerceAsyncIterableToArray,
   DistributiveOmit,
@@ -17,6 +17,7 @@ import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
 import type {
   DefaultFeatureFlags,
   FeatureFlags,
+  ResolverClientTypes,
   ResolverDef,
   TRPCQueryBaseOptions,
   TRPCQueryKey,
@@ -145,19 +146,13 @@ export interface TRPCQueryOptions<
     opts: DefinedTRPCQueryOptionsIn<
       TQueryFnData,
       TData,
-      TRPCClientErrorLike<{
-        transformer: TDef['transformer'];
-        errorShape: TDef['errorShape'];
-      }>,
+      TRPCClientError<ResolverClientTypes<TDef>>,
       TFeatureFlags
     >,
   ): DefinedTRPCQueryOptionsOut<
     TQueryFnData,
     TData,
-    TRPCClientErrorLike<{
-      transformer: TDef['transformer'];
-      errorShape: TDef['errorShape'];
-    }>,
+    TRPCClientError<ResolverClientTypes<TDef>>,
     TFeatureFlags
   >;
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
@@ -165,19 +160,13 @@ export interface TRPCQueryOptions<
     opts?: UnusedSkipTokenTRPCQueryOptionsIn<
       TQueryFnData,
       TData,
-      TRPCClientErrorLike<{
-        transformer: TDef['transformer'];
-        errorShape: TDef['errorShape'];
-      }>,
+      TRPCClientError<ResolverClientTypes<TDef>>,
       TFeatureFlags
     >,
   ): UnusedSkipTokenTRPCQueryOptionsOut<
     TQueryFnData,
     TData,
-    TRPCClientErrorLike<{
-      transformer: TDef['transformer'];
-      errorShape: TDef['errorShape'];
-    }>,
+    TRPCClientError<ResolverClientTypes<TDef>>,
     TFeatureFlags
   >;
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
@@ -185,19 +174,13 @@ export interface TRPCQueryOptions<
     opts?: UndefinedTRPCQueryOptionsIn<
       TQueryFnData,
       TData,
-      TRPCClientErrorLike<{
-        transformer: TDef['transformer'];
-        errorShape: TDef['errorShape'];
-      }>,
+      TRPCClientError<ResolverClientTypes<TDef>>,
       TFeatureFlags
     >,
   ): UndefinedTRPCQueryOptionsOut<
     TQueryFnData,
     TData,
-    TRPCClientErrorLike<{
-      transformer: TDef['transformer'];
-      errorShape: TDef['errorShape'];
-    }>,
+    TRPCClientError<ResolverClientTypes<TDef>>,
     TFeatureFlags
   >;
 }

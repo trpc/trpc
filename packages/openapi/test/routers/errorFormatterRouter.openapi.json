@@ -71,6 +71,22 @@
     }
   },
   "components": {
+    "schemas": {
+      "TRPCFormattedErrorMeta": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "formatted"
+          },
+          "declaredErrorKey": {}
+        },
+        "required": [
+          "kind"
+        ],
+        "additionalProperties": false
+      }
+    },
     "responses": {
       "Error": {
         "description": "Error response",
@@ -186,12 +202,16 @@
                         -32029,
                         -32099
                       ]
+                    },
+                    "~": {
+                      "$ref": "#/components/schemas/TRPCFormattedErrorMeta"
                     }
                   },
                   "required": [
                     "data",
                     "message",
-                    "code"
+                    "code",
+                    "~"
                   ],
                   "additionalProperties": false
                 }

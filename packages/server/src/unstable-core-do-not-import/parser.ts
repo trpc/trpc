@@ -60,6 +60,9 @@ export type ParserWithInputOutput<TInput, TParsedInput> =
   | ParserStandardSchemaEsque<TInput, TParsedInput>;
 
 export type Parser = ParserWithInputOutput<any, any> | ParserWithoutInput<any>;
+export type ParserLike<TShape extends Record<string, unknown>> =
+  | ParserWithInputOutput<any, TShape>
+  | ParserWithoutInput<TShape>;
 
 export type inferParser<TParser extends Parser> =
   TParser extends ParserStandardSchemaEsque<infer $TIn, infer $TOut>

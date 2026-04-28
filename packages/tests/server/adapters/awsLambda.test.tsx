@@ -397,6 +397,9 @@ test('bad type', async () => {
         "message": "Invalid input: expected object, received array"
       }
     ]",
+        "~": Object {
+          "kind": "formatted",
+        },
       },
     }
   `);

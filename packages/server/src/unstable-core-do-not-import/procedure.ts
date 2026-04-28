@@ -1,3 +1,4 @@
+import type { AnyTRPCDeclaredErrorClass } from './error/TRPCDeclaredError';
 import type { TRPCError } from './error/TRPCError';
 import type { Parser } from './parser';
 import type { ProcedureCallOptions } from './procedureBuilder';
@@ -9,10 +10,11 @@ export const procedureTypes = ['query', 'mutation', 'subscription'] as const;
  */
 export type ProcedureType = (typeof procedureTypes)[number];
 
-interface BuiltProcedureDef {
+export interface BuiltProcedureDef {
   meta: unknown;
   input: unknown;
   output: unknown;
+  errorShape: unknown;
 }
 
 /**
@@ -31,6 +33,7 @@ export interface Procedure<
     $types: {
       input: TDef['input'];
       output: TDef['output'];
+      errorShape: TDef['errorShape'];
     };
     procedure: true;
     type: TType;
@@ -44,6 +47,10 @@ export interface Procedure<
      * The input parsers for the procedure
      */
     inputs: Parser[];
+    /**
+     * Declared error classes for this procedure
+     */
+    declaredErrors: AnyTRPCDeclaredErrorClass[];
   };
   meta: TDef['meta'];
   /**

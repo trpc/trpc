@@ -4,11 +4,21 @@ import '@testing-library/react';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import type { TRPCServerResourceOpts } from '@trpc/server/__tests__/trpcServerResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
-import type { TRPCClientError, WebSocketClientOptions } from '@trpc/client';
-import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
+import type { WebSocketClientOptions } from '@trpc/client';
+import {
+  createTRPCClient,
+  createWSClient,
+  TRPCClientError,
+  wsLink,
+} from '@trpc/client';
 import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
 import type { AnyRouter } from '@trpc/server';
-import { initTRPC, tracked, TRPCError } from '@trpc/server';
+import {
+  createTRPCDeclaredError,
+  initTRPC,
+  tracked,
+  TRPCError,
+} from '@trpc/server';
 import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
 import type { Observable, Observer } from '@trpc/server/observable';
 import { observable, observableToAsyncIterable } from '@trpc/server/observable';
@@ -35,6 +45,21 @@ import { z } from 'zod';
  */
 async function waitMs(ms: number) {
   await new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
+
+function waitForWsSubscriptionError<TError>(
+  subscribe: (handlers: { onError: (error: TError) => void }) => {
+    unsubscribe: () => void;
+  },
+) {
+  return new Promise<TError>((resolve) => {
+    const subscription = subscribe({
+      onError(error) {
+        resolve(error);
+        subscription.unsubscribe();
+      },
+    });
+  });
 }
 
 type Message = {
@@ -898,6 +923,9 @@ describe('regression test - slow createContext', () => {
               "stack": "[redacted]",
             },
             "message": "test",
+            "~": Object {
+              "kind": "formatted",
+            },
           },
           "id": null,
         },
@@ -911,6 +939,9 @@ describe('regression test - slow createContext', () => {
               "stack": "[redacted]",
             },
             "message": "test",
+            "~": Object {
+              "kind": "formatted",
+            },
           },
           "id": 1,
         },
@@ -962,6 +993,9 @@ test('malformatted JSON', async () => {
           "stack": "[redacted]",
         },
         "message": "Unexpected token [... redacted b/c it is different in node 20]",
+        "~": Object {
+          "kind": "formatted",
+        },
       },
       "id": null,
     }
@@ -1002,6 +1036,9 @@ test('regression - badly shaped request', async () => {
           "stack": "[redacted]",
         },
         "message": "\`id\` is required",
+        "~": Object {
+          "kind": "formatted",
+        },
       },
       "id": null,
     }
@@ -1853,6 +1890,7 @@ describe('subscriptions with createCaller', () => {
         input: string | null | undefined;
         output: AsyncIterable<Message, void, any>;
         meta: object;
+        errorShape: never;
       }>
     >();
     const abortController = new AbortController();
@@ -1911,6 +1949,7 @@ describe('subscriptions with createCaller', () => {
         input: string | null | undefined;
         output: Message;
         meta: object;
+        errorShape: never;
       }>
     >();
 
@@ -2223,4 +2262,203 @@ test('connection state should not be updated for subscriptions', async () => {
 
   // Clean up
   subscription.unsubscribe();
+});
+
+describe('declared errors over wsLink', () => {
+  const BadPhoneError = createTRPCDeclaredError({
+    code: 'UNAUTHORIZED',
+    key: 'BAD_PHONE',
+  })
+    .data<{
+      reason: 'BAD_PHONE';
+    }>()
+    .create({
+      constants: {
+        reason: 'BAD_PHONE' as const,
+      },
+    });
+
+  const t = initTRPC.create({
+    errorFormatter({ shape }) {
+      return {
+        ...shape,
+        data: {
+          ...shape.data,
+          foo: 'bar' as const,
+        },
+      };
+    },
+  });
+
+  const router = t.router({
+    registered: t.procedure.errors([BadPhoneError]).query(() => {
+      throw new BadPhoneError();
+    }),
+    unregistered: t.procedure.query(() => {
+      throw new BadPhoneError();
+    }),
+  });
+
+  test('propagates registered declared errors', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      clientLink: 'wsLink',
+    });
+
+    const registeredError = await waitError(
+      ctx.client.registered.query(),
+      TRPCClientError,
+    );
+
+    expect(registeredError.shape).toEqual({
+      code: -32001,
+      message: 'UNAUTHORIZED',
+      '~': {
+        kind: 'declared',
+        declaredErrorKey: 'BAD_PHONE',
+      },
+      data: {
+        reason: 'BAD_PHONE',
+      },
+    });
+    expect(registeredError.data).toEqual({
+      reason: 'BAD_PHONE',
+    });
+  });
+
+  test('downgrades unregistered declared errors', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      clientLink: 'wsLink',
+    });
+
+    const unregisteredError = await waitError(
+      ctx.client.unregistered.query(),
+      TRPCClientError,
+    );
+
+    expect(unregisteredError.shape).toMatchObject({
+      code: -32603,
+      message: 'An unrecognized error occurred',
+      data: {
+        code: 'INTERNAL_SERVER_ERROR',
+        foo: 'bar',
+        httpStatus: 500,
+        path: 'unregistered',
+      },
+    });
+    expect(unregisteredError.data).toMatchObject({
+      code: 'INTERNAL_SERVER_ERROR',
+      foo: 'bar',
+      httpStatus: 500,
+      path: 'unregistered',
+    });
+    expect(unregisteredError.data).not.toHaveProperty('reason');
+  });
+});
+
+describe('declared subscription errors over wsLink', () => {
+  const BadPhoneError = createTRPCDeclaredError({
+    code: 'UNAUTHORIZED',
+    key: 'BAD_PHONE',
+  })
+    .data<{
+      reason: 'BAD_PHONE';
+    }>()
+    .create({
+      constants: {
+        reason: 'BAD_PHONE' as const,
+      },
+    });
+
+  const t = initTRPC.create({
+    errorFormatter({ shape }) {
+      return {
+        ...shape,
+        data: {
+          ...shape.data,
+          foo: 'bar' as const,
+        },
+      };
+    },
+  });
+
+  const router = t.router({
+    registered: t.procedure
+      .errors([BadPhoneError])
+      .subscription(async function* () {
+        throw new BadPhoneError();
+      }),
+    unregistered: t.procedure.subscription(async function* () {
+      throw new BadPhoneError();
+    }),
+  });
+
+  test('propagates registered declared subscription errors', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      clientLink: 'wsLink',
+    });
+
+    const registeredError = await waitForWsSubscriptionError<
+      TRPCClientError<typeof router>
+    >((handlers) =>
+      ctx.client.registered.subscribe(undefined, {
+        onError: handlers.onError,
+      }),
+    );
+
+    expect(registeredError.shape).toEqual({
+      code: -32001,
+      message: 'UNAUTHORIZED',
+      '~': {
+        kind: 'declared',
+        declaredErrorKey: 'BAD_PHONE',
+      },
+      data: {
+        reason: 'BAD_PHONE',
+      },
+    });
+    expect(registeredError.data).toEqual({
+      reason: 'BAD_PHONE',
+    });
+  });
+
+  test('downgrades unregistered declared subscription errors', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {
+      // no-op
+    });
+
+    try {
+      await using ctx = testServerAndClientResource(router, {
+        clientLink: 'wsLink',
+      });
+
+      const unregisteredError = await waitForWsSubscriptionError<
+        TRPCClientError<typeof router>
+      >((handlers) =>
+        ctx.client.unregistered.subscribe(undefined, {
+          onError: handlers.onError,
+        }),
+      );
+
+      expect(unregisteredError.shape).toMatchObject({
+        code: -32603,
+        message: 'An unrecognized error occurred',
+        data: {
+          code: 'INTERNAL_SERVER_ERROR',
+          foo: 'bar',
+          httpStatus: 500,
+          path: 'unregistered',
+        },
+      });
+      expect(unregisteredError.data).toMatchObject({
+        code: 'INTERNAL_SERVER_ERROR',
+        foo: 'bar',
+        httpStatus: 500,
+        path: 'unregistered',
+      });
+      expect(unregisteredError.data).not.toHaveProperty('reason');
+      expect(warnSpy).toHaveBeenCalledOnce();
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
 });

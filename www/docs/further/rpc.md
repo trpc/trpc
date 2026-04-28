@@ -211,7 +211,7 @@ interface SuccessResponse {
 
 - When possible, we propagate HTTP status codes from the error thrown.
 - If the response has different statuses, we send back `207 Multi-Status` _(e.g., if one call errored and one succeeded)_
-- For more on errors and how to customize them see [Error Formatting](../server/error-formatting.md).
+- For more on errors and how to customize them see [Errors](../server/errors.mdx).
 
 ## Error Codes \<-> HTTP Status
 

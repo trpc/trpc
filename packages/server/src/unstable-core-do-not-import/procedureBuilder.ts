@@ -1,4 +1,12 @@
 import type { inferObservableValue, Observable } from '../observable';
+import {
+  isTRPCDeclaredError,
+  resolveRegisteredDeclaredErrorOrDowngrade,
+} from './error/TRPCDeclaredError';
+import type {
+  AnyTRPCDeclaredErrorClass,
+  InferTRPCDeclaredErrorShape,
+} from './error/TRPCDeclaredError';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
   AnyMiddlewareFunction,
@@ -17,6 +25,7 @@ import type {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
+  BuiltProcedureDef,
   LegacyObservableSubscriptionProcedure,
   MutationProcedure,
   ProcedureType,
@@ -61,6 +70,18 @@ type inferSubscriptionOutput<TOutput> =
       >
     : TypeError<'Subscription output could not be inferred'>;
 
+type CallerResultPromise<TOutput, TErrorShape> = Promise<TOutput> & {
+  readonly __errorShape?: TErrorShape;
+};
+type CallerQueryProcedure<TDef extends BuiltProcedureDef> = ((
+  input: TDef['input'],
+) => CallerResultPromise<TDef['output'], TDef['errorShape']>) &
+  QueryProcedure<TDef>;
+type CallerMutationProcedure<TDef extends BuiltProcedureDef> = ((
+  input: TDef['input'],
+) => CallerResultPromise<TDef['output'], TDef['errorShape']>) &
+  MutationProcedure<TDef>;
+
 export type CallerOverride<TContext> = (opts: {
   args: unknown[];
   invoke: (opts: ProcedureCallOptions<TContext>) => Promise<unknown>;
@@ -87,6 +108,7 @@ type ProcedureBuilderDef<TMeta> = {
   subscription?: boolean;
   type?: ProcedureType;
   caller?: CallerOverride<unknown>;
+  declaredErrors: AnyTRPCDeclaredErrorClass[];
 };
 
 type AnyProcedureBuilderDef = ProcedureBuilderDef<any>;
@@ -144,7 +166,8 @@ export type AnyProcedureBuilder = ProcedureBuilder<
   any,
   any,
   any,
-  any
+  never,
+  false
 >;
 
 /**
@@ -162,6 +185,7 @@ export type inferProcedureBuilderResolverOptions<
     infer TInputOut,
     infer _TOutputIn,
     infer _TOutputOut,
+    infer _TErrorShape,
     infer _TCaller
   >
     ? ProcedureResolverOptions<
@@ -192,6 +216,7 @@ export interface ProcedureBuilder<
   TInputOut,
   TOutputIn,
   TOutputOut,
+  TErrorShape,
   TCaller extends boolean,
 > {
   /**
@@ -218,6 +243,7 @@ export interface ProcedureBuilder<
     IntersectIfDefined<TInputOut, inferParser<$Parser>['out']>,
     TOutputIn,
     TOutputOut,
+    TErrorShape,
     TCaller
   >;
   /**
@@ -234,6 +260,25 @@ export interface ProcedureBuilder<
     TInputOut,
     IntersectIfDefined<TOutputIn, inferParser<$Parser>['in']>,
     IntersectIfDefined<TOutputOut, inferParser<$Parser>['out']>,
+    TErrorShape,
+    TCaller
+  >;
+  /**
+   * Declare error types for this procedure.
+   * Accepts an array of error classes created with `createTRPCDeclaredError`.
+   * Chaining `.errors()` calls merges error types.
+   */
+  errors<$Errors extends AnyTRPCDeclaredErrorClass[]>(
+    errors: [...$Errors],
+  ): ProcedureBuilder<
+    TContext,
+    TMeta,
+    TContextOverrides,
+    TInputIn,
+    TInputOut,
+    TOutputIn,
+    TOutputOut,
+    TErrorShape | InferTRPCDeclaredErrorShape<$Errors[number]>,
     TCaller
   >;
   /**
@@ -250,6 +295,7 @@ export interface ProcedureBuilder<
     TInputOut,
     TOutputIn,
     TOutputOut,
+    TErrorShape,
     TCaller
   >;
   /**
@@ -279,6 +325,7 @@ export interface ProcedureBuilder<
     TInputOut,
     TOutputIn,
     TOutputOut,
+    TErrorShape,
     TCaller
   >;
 
@@ -293,6 +340,7 @@ export interface ProcedureBuilder<
     $InputOut,
     $OutputIn,
     $OutputOut,
+    $ErrorShape,
   >(
     builder: Overwrite<TContext, TContextOverrides> extends $Context
       ? TMeta extends $Meta
@@ -304,6 +352,7 @@ export interface ProcedureBuilder<
             $InputOut,
             $OutputIn,
             $OutputOut,
+            $ErrorShape,
             TCaller
           >
         : TypeError<'Meta mismatch'>
@@ -316,6 +365,7 @@ export interface ProcedureBuilder<
     IntersectIfDefined<TInputOut, $InputOut>,
     IntersectIfDefined<TOutputIn, $OutputIn>,
     IntersectIfDefined<TOutputOut, $OutputOut>,
+    TErrorShape | $ErrorShape,
     TCaller
   >;
 
@@ -330,6 +380,7 @@ export interface ProcedureBuilder<
     $InputOut,
     $OutputIn,
     $OutputOut,
+    $ErrorShape,
   >(
     builder: Overwrite<TContext, TContextOverrides> extends $Context
       ? TMeta extends $Meta
@@ -341,6 +392,7 @@ export interface ProcedureBuilder<
             $InputOut,
             $OutputIn,
             $OutputOut,
+            $ErrorShape,
             TCaller
           >
         : TypeError<'Meta mismatch'>
@@ -353,6 +405,7 @@ export interface ProcedureBuilder<
     IntersectIfDefined<TInputOut, $InputOut>,
     IntersectIfDefined<TOutputIn, $OutputIn>,
     IntersectIfDefined<TOutputOut, $OutputOut>,
+    TErrorShape | $ErrorShape,
     TCaller
   >;
   /**
@@ -369,13 +422,17 @@ export interface ProcedureBuilder<
       $Output
     >,
   ): TCaller extends true
-    ? (
-        input: DefaultValue<TInputIn, void>,
-      ) => Promise<DefaultValue<TOutputOut, $Output>>
+    ? CallerQueryProcedure<{
+        input: DefaultValue<TInputIn, void>;
+        output: DefaultValue<TOutputOut, $Output>;
+        meta: TMeta;
+        errorShape: TErrorShape;
+      }>
     : QueryProcedure<{
         input: DefaultValue<TInputIn, void>;
         output: DefaultValue<TOutputOut, $Output>;
         meta: TMeta;
+        errorShape: TErrorShape;
       }>;
 
   /**
@@ -392,13 +449,17 @@ export interface ProcedureBuilder<
       $Output
     >,
   ): TCaller extends true
-    ? (
-        input: DefaultValue<TInputIn, void>,
-      ) => Promise<DefaultValue<TOutputOut, $Output>>
+    ? CallerMutationProcedure<{
+        input: DefaultValue<TInputIn, void>;
+        output: DefaultValue<TOutputOut, $Output>;
+        meta: TMeta;
+        errorShape: TErrorShape;
+      }>
     : MutationProcedure<{
         input: DefaultValue<TInputIn, void>;
         output: DefaultValue<TOutputOut, $Output>;
         meta: TMeta;
+        errorShape: TErrorShape;
       }>;
 
   /**
@@ -420,6 +481,7 @@ export interface ProcedureBuilder<
         input: DefaultValue<TInputIn, void>;
         output: inferSubscriptionOutput<DefaultValue<TOutputOut, $Output>>;
         meta: TMeta;
+        errorShape: TErrorShape;
       }>;
   /**
    * @deprecated Using subscriptions with an observable is deprecated. Use an async generator instead.
@@ -441,6 +503,7 @@ export interface ProcedureBuilder<
         input: DefaultValue<TInputIn, void>;
         output: inferObservableValue<DefaultValue<TOutputOut, $Output>>;
         meta: TMeta;
+        errorShape: TErrorShape;
       }>;
   /**
    * Overrides the way a procedure is invoked
@@ -456,6 +519,7 @@ export interface ProcedureBuilder<
     TInputOut,
     TOutputIn,
     TOutputOut,
+    TErrorShape,
     true
   >;
   /**
@@ -472,13 +536,14 @@ function createNewBuilder(
   def1: AnyProcedureBuilderDef,
   def2: Partial<AnyProcedureBuilderDef>,
 ): AnyProcedureBuilder {
-  const { middlewares = [], inputs, meta, ...rest } = def2;
+  const { middlewares = [], inputs, meta, declaredErrors, ...rest } = def2;
 
   // TODO: maybe have a fn here to warn about calls
   return createBuilder({
     ...mergeWithoutOverrides(def1, rest),
     inputs: [...def1.inputs, ...(inputs ?? [])],
     middlewares: [...def1.middlewares, ...middlewares],
+    declaredErrors: [...def1.declaredErrors, ...(declaredErrors ?? [])],
     meta: def1.meta && meta ? { ...def1.meta, ...meta } : (meta ?? def1.meta),
   });
 }
@@ -493,12 +558,14 @@ export function createBuilder<TContext, TMeta>(
   UnsetMarker,
   UnsetMarker,
   UnsetMarker,
+  never,
   false
 > {
   const _def: AnyProcedureBuilderDef = {
     procedure: true,
     inputs: [],
     middlewares: [],
+    declaredErrors: [],
     ...initDef,
   };
 
@@ -521,6 +588,11 @@ export function createBuilder<TContext, TMeta>(
     meta(meta) {
       return createNewBuilder(_def, {
         meta,
+      });
+    },
+    errors(errors: AnyTRPCDeclaredErrorClass[]) {
+      return createNewBuilder(_def, {
+        declaredErrors: errors,
       });
     },
     use(middlewareBuilderOrFn) {
@@ -663,9 +735,16 @@ async function callRecursive(
 
     return result;
   } catch (cause) {
+    const error = getTRPCErrorFromUnknown(cause);
+
     return {
       ok: false,
-      error: getTRPCErrorFromUnknown(cause),
+      error: isTRPCDeclaredError(error)
+        ? resolveRegisteredDeclaredErrorOrDowngrade(error, {
+            declaredErrors: _def.declaredErrors,
+            path: opts.path,
+          })
+        : error,
       marker: middlewareMarker,
     };
   }
