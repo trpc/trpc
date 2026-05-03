@@ -19,6 +19,13 @@ interface BaseTRPCSubscriptionOptionsIn<TOutput, TError> {
   onStarted?: () => void;
   onData?: (data: inferAsyncIterableYield<TOutput>) => void;
   onError?: (err: TError) => void;
+  /**
+   * Called when the subscription completes (e.g. server closed the subscription).
+   * When using WebSockets the connection may remain open while the subscription
+   * itself is done, so the status will transition to `idle` here rather than
+   * waiting for a connection-level `idle` event.
+   */
+  onComplete?: () => void;
   onConnectionStateChange?: (state: TRPCConnectionState<TError>) => void;
 }
 
@@ -26,6 +33,13 @@ interface UnusedSkipTokenTRPCSubscriptionOptionsIn<TOutput, TError> {
   onStarted?: () => void;
   onData?: (data: inferAsyncIterableYield<TOutput>) => void;
   onError?: (err: TError) => void;
+  /**
+   * Called when the subscription completes (e.g. server closed the subscription).
+   * When using WebSockets the connection may remain open while the subscription
+   * itself is done, so the status will transition to `idle` here rather than
+   * waiting for a connection-level `idle` event.
+   */
+  onComplete?: () => void;
   onConnectionStateChange?: (state: TRPCConnectionState<TError>) => void;
 }
 
@@ -207,6 +221,21 @@ export function useSubscription<TOutput, TError>(
           ...(prev as any),
           status: 'error',
           error,
+        }));
+      },
+      onComplete: () => {
+        optsRef.current.onComplete?.();
+
+        // When using WebSockets, the underlying connection may remain open
+        // after the server closes the subscription. The connection-level
+        // `onConnectionStateChange` won't fire `idle` until the whole
+        // WebSocket is torn down, so we must transition the subscription
+        // status to `idle` here instead.
+        updateState((prev) => ({
+          ...prev,
+          status: 'idle',
+          data: undefined,
+          error: null,
         }));
       },
       onConnectionStateChange: (result) => {
