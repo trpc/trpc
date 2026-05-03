@@ -24,8 +24,8 @@ importers:
         specifier: ^0.22.0
         version: 0.22.0
       '@tanstack/intent':
-        specifier: ^0.0.27
-        version: 0.0.27
+        specifier: ^0.0.40
+        version: 0.0.40
       '@testing-library/dom':
         specifier: ^10.0.0
         version: 10.0.0
@@ -112,10 +112,10 @@ importers:
         version: 8.32.1(eslint@9.26.0(jiti@2.6.1))(typescript@5.9.2)
       vite:
         specifier: ^6.1.1
-        version: 6.4.1(@types/node@22.17.0)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(yaml@2.8.2)
+        version: 6.4.1(@types/node@22.17.0)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(yaml@2.8.3)
       vitest:
         specifier: ^4.0.18
-        version: 4.0.18(@edge-runtime/vm@2.0.2)(@types/node@22.17.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@29.0.0)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(yaml@2.8.2)
+        version: 4.0.18(@edge-runtime/vm@2.0.2)(@types/node@22.17.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@29.0.0)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(yaml@2.8.3)
       zod:
         specifier: ^4.2.1
         version: 4.2.1
@@ -896,7 +896,7 @@ importers:
         version: 19.1.1(@types/react@19.1.0)
       '@vitejs/plugin-react':
         specifier: ^4.3.4
-        version: 4.3.4(vite@6.4.1(@types/node@22.19.17)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))
+        version: 4.3.4(vite@6.4.1(@types/node@22.19.17)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3))
       eslint:
         specifier: ^9.26.0
         version: 9.26.0(jiti@2.6.1)
@@ -905,7 +905,7 @@ importers:
         version: 5.9.2
       vite:
         specifier: ^6.1.1
-        version: 6.4.1(@types/node@22.19.17)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)
+        version: 6.4.1(@types/node@22.19.17)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3)
 
   examples/minimal-content-types/server:
     dependencies:
@@ -979,7 +979,7 @@ importers:
         version: 19.1.1(@types/react@19.1.0)
       '@vitejs/plugin-react':
         specifier: ^4.3.4
-        version: 4.3.4(vite@6.4.1(@types/node@22.19.17)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))
+        version: 4.3.4(vite@6.4.1(@types/node@22.19.17)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3))
       eslint:
         specifier: ^9.26.0
         version: 9.26.0(jiti@2.6.1)
@@ -988,7 +988,7 @@ importers:
         version: 5.9.2
       vite:
         specifier: ^6.1.1
-        version: 6.4.1(@types/node@22.19.17)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)
+        version: 6.4.1(@types/node@22.19.17)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3)
 
   examples/minimal-react/server:
     dependencies:
@@ -1315,10 +1315,10 @@ importers:
         version: 8.32.1(eslint@9.26.0(jiti@2.6.1))(typescript@5.9.2)
       vite:
         specifier: ^6.1.1
-        version: 6.4.1(@types/node@22.17.0)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(yaml@2.8.2)
+        version: 6.4.1(@types/node@22.17.0)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(yaml@2.8.3)
       vitest:
         specifier: ^4.0.18
-        version: 4.0.18(@edge-runtime/vm@2.0.2)(@types/node@22.17.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@29.0.0)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(yaml@2.8.2)
+        version: 4.0.18(@edge-runtime/vm@2.0.2)(@types/node@22.17.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@29.0.0)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(yaml@2.8.3)
 
   examples/next-prisma-todomvc:
     dependencies:
@@ -1682,7 +1682,7 @@ importers:
         version: link:../../packages/server
       nuxt:
         specifier: ^3.16.1
-        version: 3.16.1(@parcel/watcher@2.4.1)(@types/node@22.19.17)(db0@0.3.1(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20250505.0)(@prisma/client@6.8.1(prisma@6.8.1(typescript@5.9.2))(typescript@5.9.2))(@types/better-sqlite3@7.6.2)(bun-types@1.1.32)(postgres@3.4.4)(prisma@6.8.1(typescript@5.9.2))))(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20250505.0)(@prisma/client@6.8.1(prisma@6.8.1(typescript@5.9.2))(typescript@5.9.2))(@types/better-sqlite3@7.6.2)(bun-types@1.1.32)(postgres@3.4.4)(prisma@6.8.1(typescript@5.9.2)))(encoding@0.1.13)(eslint@9.26.0(jiti@2.4.2))(ioredis@5.6.0)(lightningcss@1.28.2)(magicast@0.3.5)(rollup@4.52.5)(terser@5.34.0)(tsx@4.21.0)(typescript@5.9.2)(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))(webpack-sources@3.2.3)(xml2js@0.6.2)(yaml@2.8.2)
+        version: 3.16.1(@parcel/watcher@2.4.1)(@types/node@22.19.17)(db0@0.3.1(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20250505.0)(@prisma/client@6.8.1(prisma@6.8.1(typescript@5.9.2))(typescript@5.9.2))(@types/better-sqlite3@7.6.2)(bun-types@1.1.32)(postgres@3.4.4)(prisma@6.8.1(typescript@5.9.2))))(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20250505.0)(@prisma/client@6.8.1(prisma@6.8.1(typescript@5.9.2))(typescript@5.9.2))(@types/better-sqlite3@7.6.2)(bun-types@1.1.32)(postgres@3.4.4)(prisma@6.8.1(typescript@5.9.2)))(encoding@0.1.13)(eslint@9.26.0(jiti@2.4.2))(ioredis@5.6.0)(lightningcss@1.28.2)(magicast@0.3.5)(rollup@4.52.5)(terser@5.34.0)(tsx@4.21.0)(typescript@5.9.2)(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3))(webpack-sources@3.2.3)(xml2js@0.6.2)(yaml@2.8.3)
       trpc-nuxt:
         specifier: ^1.0.2
         version: 1.0.2(@trpc/client@packages+client)(@trpc/server@packages+server)
@@ -1847,8 +1847,8 @@ importers:
   packages/client:
     devDependencies:
       '@tanstack/intent':
-        specifier: ^0.0.27
-        version: 0.0.27
+        specifier: ^0.0.40
+        version: 0.0.40
       '@trpc/server':
         specifier: 11.17.0
         version: link:../server
@@ -1889,8 +1889,8 @@ importers:
   packages/next:
     devDependencies:
       '@tanstack/intent':
-        specifier: ^0.0.27
-        version: 0.0.27
+        specifier: ^0.0.40
+        version: 0.0.40
       '@tanstack/react-query':
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
@@ -1956,8 +1956,8 @@ importers:
         specifier: ^1.6.0
         version: 1.6.0
       '@tanstack/intent':
-        specifier: ^0.0.27
-        version: 0.0.27
+        specifier: ^0.0.40
+        version: 0.0.40
       '@trpc/server':
         specifier: 11.17.0
         version: link:../server
@@ -2070,8 +2070,8 @@ importers:
         specifier: 0.123.0
         version: 0.123.0
       '@tanstack/intent':
-        specifier: ^0.0.27
-        version: 0.0.27
+        specifier: ^0.0.40
+        version: 0.0.40
       '@tanstack/react-query':
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
@@ -2154,8 +2154,8 @@ importers:
   packages/tanstack-react-query:
     devDependencies:
       '@tanstack/intent':
-        specifier: ^0.0.27
-        version: 0.0.27
+        specifier: ^0.0.40
+        version: 0.0.40
       '@tanstack/react-query':
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
@@ -2194,7 +2194,7 @@ importers:
         version: 5.9.2
       vitest:
         specifier: ^4.0.18
-        version: 4.0.18(@edge-runtime/vm@2.0.2)(@types/node@22.17.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@29.0.0)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)
+        version: 4.0.18(@edge-runtime/vm@2.0.2)(@types/node@22.17.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@29.0.0)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3)
       ws:
         specifier: ^8.0.0
         version: 8.17.1
@@ -2214,11 +2214,11 @@ importers:
         specifier: ^0.4.4
         version: 0.4.4
       '@trpc/client':
-        specifier: 11.17.0
-        version: link:../client
+        specifier: 11.16.0
+        version: 11.16.0(@trpc/server@11.16.0(typescript@5.9.2))(typescript@5.9.2)
       '@trpc/server':
-        specifier: 11.17.0
-        version: link:../server
+        specifier: 11.16.0
+        version: 11.16.0(typescript@5.9.2)
       '@types/node':
         specifier: ^22.13.5
         version: 22.17.0
@@ -8793,8 +8793,8 @@ packages:
     resolution: {integrity: sha512-+PmQX0PiAYPMeVYe237LJAYvOMYW1j2rH5YROyS3b4CTVJum34HfRvKvAzozHAQG0TnHNdUfY9nCeUyRAs//cw==}
     engines: {node: '>=14.16'}
 
-  '@tanstack/intent@0.0.27':
-    resolution: {integrity: sha512-R8U4uadLrp9uosW5G1J5s4RQtT7F0S2oqIfWX6OD7uObuM6vJLO0jZzw+Et7H3PFMnue3snjdzJYX5BmNV1RXA==}
+  '@tanstack/intent@0.0.40':
+    resolution: {integrity: sha512-ZuUTzr4QrjNuWdv+DfTv0///uONz5+Sw3mR+2xOXHpob6vWsUXnSk3Ht7X9Rpu6zZdQYZlZnJCwN50CAZ21GCw==}
     hasBin: true
 
   '@tanstack/query-core@5.80.2':
@@ -8877,6 +8877,19 @@ packages:
     peerDependenciesMeta:
       tree-sitter:
         optional: true
+
+  '@trpc/client@11.16.0':
+    resolution: {integrity: sha512-TxIzm7OoK3baKZ0XCbuMUbI3GhgjcbKHIc4nWVKaRpCRnbSh0T31BT6fTPYwtnA/Nur8pBCGqC2B4J5hEPiPFQ==}
+    hasBin: true
+    peerDependencies:
+      '@trpc/server': 11.16.0
+      typescript: '>=5.7.2'
+
+  '@trpc/server@11.16.0':
+    resolution: {integrity: sha512-XgGuUMddrUTd04+za/WE5GFuZ1/YU9XQG0t3VL5WOIu2JspkOlq6k4RYEiqS6HSJt+S0RXaPdIoE2anIP/BBRQ==}
+    hasBin: true
+    peerDependencies:
+      typescript: '>=5.7.2'
 
   '@trysound/sax@0.2.0':
     resolution: {integrity: sha512-L7z9BgrNEcYyUYtF+HaEfiS5ebkh9jXqbszz7pC0hRBPaatV0XjSD3+eHrpqFemQfgwiFF0QPIarnIihIDn7OA==}
@@ -13878,6 +13891,9 @@ packages:
 
   jsonc-parser@3.2.0:
     resolution: {integrity: sha512-gfFQZrcTc8CnKXp6Y4/CBT3fTc0OVuDofpre4aEeEpSBPV5X5v4+Vmx+8snU7RLPrNHPKSgLxGo9YuQzz20o+w==}
+
+  jsonc-parser@3.3.1:
+    resolution: {integrity: sha512-HUgH65KyejrUFPvHFPbqOY0rsFip3Bo5wb4ngvdi1EpCYWUQDC5V+Y7mZws+DLkr4M//zQJoanu1SP+87Dv1oQ==}
 
   jsonfile@6.1.0:
     resolution: {integrity: sha512-5dgndWOriYSm5cnYaJNhalLNDKOqFwyDB/rr1E9ZsGciGvKPs8R2xYGCacuf3z6K1YKDz182fd+fY3cn3pMqXQ==}
@@ -18911,18 +18927,22 @@ packages:
 
   uuid@8.0.0:
     resolution: {integrity: sha512-jOXGuXZAWdsTH7eZLtyXMqUb9EcWMGZNbL9YcGBJl4MH4nrxHmZJhEHvyLFrkxo+28uLb/NYRcStH48fnD0Vzw==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   uuid@8.3.2:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   uuid@9.0.0:
     resolution: {integrity: sha512-MXcSTerfPa4uqyzStbRoTgt5XIe3x5+42+q1sDuy3R5MDk66URdLMOZe5aPX/SQd+kuYAh0FdP/pO28IkQyTeg==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   uuid@9.0.1:
     resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   valibot@1.3.1:
@@ -19506,6 +19526,11 @@ packages:
 
   yaml@2.8.2:
     resolution: {integrity: sha512-mplynKqc1C2hTVYxd0PU2xQAc22TI1vShAYGksCCfxbn/dFwnHTNi1bvYsBTkhdUNtGIf5xNOg938rrSSYvS9A==}
+    engines: {node: '>= 14.6'}
+    hasBin: true
+
+  yaml@2.8.3:
+    resolution: {integrity: sha512-AvbaCLOO2Otw/lW5bmh9d/WEdcDFdQp2Z2ZUH3pX9U2ihyUY0nvLv7J6TrWowklRGPYbB/IuIMfYgxaCPg5Bpg==}
     engines: {node: '>= 14.6'}
     hasBin: true
 
@@ -25827,7 +25852,7 @@ snapshots:
       perfect-debounce: 1.0.0
       pkg-types: 2.1.0
       scule: 1.3.0
-      semver: 7.7.1
+      semver: 7.7.4
       std-env: 3.9.0
       tinyexec: 0.3.2
       ufo: 1.5.4
@@ -25836,12 +25861,12 @@ snapshots:
 
   '@nuxt/devalue@2.0.2': {}
 
-  '@nuxt/devtools-kit@2.3.1(magicast@0.3.5)(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))':
+  '@nuxt/devtools-kit@2.3.1(magicast@0.3.5)(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3))':
     dependencies:
       '@nuxt/kit': 3.16.1(magicast@0.3.5)
       '@nuxt/schema': 3.16.1
       execa: 8.0.1
-      vite: 6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)
+      vite: 6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3)
     transitivePeerDependencies:
       - magicast
 
@@ -25856,12 +25881,12 @@ snapshots:
       prompts: 2.4.2
       semver: 7.7.4
 
-  '@nuxt/devtools@2.3.1(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))(vue@3.5.13(typescript@5.9.2))':
+  '@nuxt/devtools@2.3.1(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3))(vue@3.5.13(typescript@5.9.2))':
     dependencies:
-      '@nuxt/devtools-kit': 2.3.1(magicast@0.3.5)(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))
+      '@nuxt/devtools-kit': 2.3.1(magicast@0.3.5)(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3))
       '@nuxt/devtools-wizard': 2.3.1
       '@nuxt/kit': 3.16.1(magicast@0.3.5)
-      '@vue/devtools-core': 7.7.2(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))(vue@3.5.13(typescript@5.9.2))
+      '@vue/devtools-core': 7.7.2(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3))(vue@3.5.13(typescript@5.9.2))
       '@vue/devtools-kit': 7.7.2
       birpc: 2.2.0
       consola: 3.4.2
@@ -25881,14 +25906,14 @@ snapshots:
       pathe: 2.0.3
       perfect-debounce: 1.0.0
       pkg-types: 2.1.0
-      semver: 7.7.1
+      semver: 7.7.4
       simple-git: 3.27.0
       sirv: 3.0.1
       structured-clone-es: 1.0.0
       tinyglobby: 0.2.15
-      vite: 6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)
-      vite-plugin-inspect: 11.0.0(@nuxt/kit@3.16.1(magicast@0.3.5))(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))
-      vite-plugin-vue-tracer: 0.1.1(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))(vue@3.5.13(typescript@5.9.2))
+      vite: 6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3)
+      vite-plugin-inspect: 11.0.0(@nuxt/kit@3.16.1(magicast@0.3.5))(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3))
+      vite-plugin-vue-tracer: 0.1.1(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3))(vue@3.5.13(typescript@5.9.2))
       which: 5.0.0
       ws: 8.18.1
     transitivePeerDependencies:
@@ -25915,7 +25940,7 @@ snapshots:
       pathe: 2.0.3
       pkg-types: 2.1.0
       scule: 1.3.0
-      semver: 7.7.1
+      semver: 7.7.4
       std-env: 3.9.0
       ufo: 1.5.4
       unctx: 2.4.1
@@ -25948,12 +25973,12 @@ snapshots:
     transitivePeerDependencies:
       - magicast
 
-  '@nuxt/vite-builder@3.16.1(@types/node@22.19.17)(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(magicast@0.3.5)(rollup@4.52.5)(terser@5.34.0)(tsx@4.21.0)(typescript@5.9.2)(vue@3.5.13(typescript@5.9.2))(yaml@2.8.2)':
+  '@nuxt/vite-builder@3.16.1(@types/node@22.19.17)(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(magicast@0.3.5)(rollup@4.52.5)(terser@5.34.0)(tsx@4.21.0)(typescript@5.9.2)(vue@3.5.13(typescript@5.9.2))(yaml@2.8.3)':
     dependencies:
       '@nuxt/kit': 3.16.1(magicast@0.3.5)
       '@rollup/plugin-replace': 6.0.2(rollup@4.52.5)
-      '@vitejs/plugin-vue': 5.2.3(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))(vue@3.5.13(typescript@5.9.2))
-      '@vitejs/plugin-vue-jsx': 4.1.2(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))(vue@3.5.13(typescript@5.9.2))
+      '@vitejs/plugin-vue': 5.2.3(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3))(vue@3.5.13(typescript@5.9.2))
+      '@vitejs/plugin-vue-jsx': 4.1.2(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3))(vue@3.5.13(typescript@5.9.2))
       autoprefixer: 10.4.21(postcss@8.5.8)
       consola: 3.4.2
       cssnano: 7.0.6(postcss@8.5.8)
@@ -25979,9 +26004,9 @@ snapshots:
       ufo: 1.5.4
       unenv: 2.0.0-rc.15
       unplugin: 2.2.2
-      vite: 6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)
-      vite-node: 3.0.9(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)
-      vite-plugin-checker: 0.9.1(eslint@9.26.0(jiti@2.4.2))(typescript@5.9.2)(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))
+      vite: 6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3)
+      vite-node: 3.0.9(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3)
+      vite-plugin-checker: 0.9.1(eslint@9.26.0(jiti@2.4.2))(typescript@5.9.2)(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3))
       vue: 3.5.13(typescript@5.9.2)
       vue-bundle-renderer: 2.1.1
     transitivePeerDependencies:
@@ -26775,7 +26800,7 @@ snapshots:
       node-dir: 0.1.17
       node-fetch: 2.7.0(encoding@0.1.13)
       open: 7.4.2
-      semver: 7.7.1
+      semver: 7.7.4
       simple-git: 3.27.0(supports-color@8.1.1)
       timers-ext: 0.1.7
       type: 2.7.2
@@ -28051,10 +28076,12 @@ snapshots:
     dependencies:
       defer-to-connect: 2.0.1
 
-  '@tanstack/intent@0.0.27':
+  '@tanstack/intent@0.0.40':
     dependencies:
       cac: 6.7.14
-      yaml: 2.8.2
+      jsonc-parser: 3.3.1
+      semver: 7.7.4
+      yaml: 2.8.3
 
   '@tanstack/query-core@5.80.2': {}
 
@@ -28138,6 +28165,15 @@ snapshots:
       node-gyp-build: 4.8.4
     optionalDependencies:
       tree-sitter: 0.22.4
+
+  '@trpc/client@11.16.0(@trpc/server@11.16.0(typescript@5.9.2))(typescript@5.9.2)':
+    dependencies:
+      '@trpc/server': 11.16.0(typescript@5.9.2)
+      typescript: 5.9.2
+
+  '@trpc/server@11.16.0(typescript@5.9.2)':
+    dependencies:
+      typescript: 5.9.2
 
   '@trysound/sax@0.2.0': {}
 
@@ -28715,30 +28751,30 @@ snapshots:
       prop-types: 15.8.1
       react: 19.1.0
 
-  '@vitejs/plugin-react@4.3.4(vite@6.4.1(@types/node@22.19.17)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))':
+  '@vitejs/plugin-react@4.3.4(vite@6.4.1(@types/node@22.19.17)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3))':
     dependencies:
       '@babel/core': 7.26.0
       '@babel/plugin-transform-react-jsx-self': 7.25.9(@babel/core@7.26.0)
       '@babel/plugin-transform-react-jsx-source': 7.25.9(@babel/core@7.26.0)
       '@types/babel__core': 7.20.5
       react-refresh: 0.14.2
-      vite: 6.4.1(@types/node@22.19.17)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)
+      vite: 6.4.1(@types/node@22.19.17)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3)
     transitivePeerDependencies:
       - supports-color
 
-  '@vitejs/plugin-vue-jsx@4.1.2(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))(vue@3.5.13(typescript@5.9.2))':
+  '@vitejs/plugin-vue-jsx@4.1.2(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3))(vue@3.5.13(typescript@5.9.2))':
     dependencies:
       '@babel/core': 7.27.4
       '@babel/plugin-transform-typescript': 7.26.8(@babel/core@7.27.4)
       '@vue/babel-plugin-jsx': 1.4.0(@babel/core@7.27.4)
-      vite: 6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)
+      vite: 6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3)
       vue: 3.5.13(typescript@5.9.2)
     transitivePeerDependencies:
       - supports-color
 
-  '@vitejs/plugin-vue@5.2.3(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))(vue@3.5.13(typescript@5.9.2))':
+  '@vitejs/plugin-vue@5.2.3(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3))(vue@3.5.13(typescript@5.9.2))':
     dependencies:
-      vite: 6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)
+      vite: 6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3)
       vue: 3.5.13(typescript@5.9.2)
 
   '@vitest/coverage-istanbul@4.0.18(vitest@4.0.18)':
@@ -28753,7 +28789,7 @@ snapshots:
       magicast: 0.5.2
       obug: 2.1.1
       tinyrainbow: 3.0.3
-      vitest: 4.0.18(@edge-runtime/vm@2.0.2)(@types/node@22.17.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@29.0.0)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(yaml@2.8.2)
+      vitest: 4.0.18(@edge-runtime/vm@2.0.2)(@types/node@22.17.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@29.0.0)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(yaml@2.8.3)
     transitivePeerDependencies:
       - supports-color
 
@@ -28766,21 +28802,21 @@ snapshots:
       chai: 6.2.2
       tinyrainbow: 3.0.3
 
-  '@vitest/mocker@4.0.18(vite@6.4.1(@types/node@22.17.0)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(yaml@2.8.2))':
+  '@vitest/mocker@4.0.18(vite@6.4.1(@types/node@22.17.0)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(yaml@2.8.3))':
     dependencies:
       '@vitest/spy': 4.0.18
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 6.4.1(@types/node@22.17.0)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(yaml@2.8.2)
+      vite: 6.4.1(@types/node@22.17.0)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(yaml@2.8.3)
 
-  '@vitest/mocker@4.0.18(vite@6.4.1(@types/node@22.17.0)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))':
+  '@vitest/mocker@4.0.18(vite@6.4.1(@types/node@22.17.0)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3))':
     dependencies:
       '@vitest/spy': 4.0.18
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 6.4.1(@types/node@22.17.0)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)
+      vite: 6.4.1(@types/node@22.17.0)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3)
 
   '@vitest/pretty-format@4.0.18':
     dependencies:
@@ -28808,7 +28844,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.0.3
-      vitest: 4.0.18(@edge-runtime/vm@2.0.2)(@types/node@22.17.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@29.0.0)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)
+      vitest: 4.0.18(@edge-runtime/vm@2.0.2)(@types/node@22.17.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@29.0.0)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3)
 
   '@vitest/utils@4.0.18':
     dependencies:
@@ -28921,14 +28957,14 @@ snapshots:
 
   '@vue/devtools-api@6.6.4': {}
 
-  '@vue/devtools-core@7.7.2(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))(vue@3.5.13(typescript@5.9.2))':
+  '@vue/devtools-core@7.7.2(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3))(vue@3.5.13(typescript@5.9.2))':
     dependencies:
       '@vue/devtools-kit': 7.7.2
       '@vue/devtools-shared': 7.7.2
       mitt: 3.0.1
       nanoid: 5.1.7
       pathe: 2.0.3
-      vite-hot-client: 0.2.4(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))
+      vite-hot-client: 0.2.4(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3))
       vue: 3.5.13(typescript@5.9.2)
     transitivePeerDependencies:
       - vite
@@ -34354,6 +34390,8 @@ snapshots:
 
   jsonc-parser@3.2.0: {}
 
+  jsonc-parser@3.3.1: {}
+
   jsonfile@6.1.0:
     dependencies:
       universalify: 2.0.0
@@ -35894,7 +35932,7 @@ snapshots:
       rollup: 4.52.5
       rollup-plugin-visualizer: 5.14.0(rollup@4.52.5)
       scule: 1.3.0
-      semver: 7.7.1
+      semver: 7.7.4
       serve-placeholder: 2.0.2
       serve-static: 1.16.2
       source-map: 0.7.4
@@ -36127,7 +36165,7 @@ snapshots:
       fs2: 0.3.9
       memoizee: 0.4.15
       node-fetch: 2.6.9(encoding@0.1.13)
-      semver: 7.7.1
+      semver: 7.7.4
       type: 2.7.2
       validate-npm-package-name: 3.0.0
     transitivePeerDependencies:
@@ -36181,15 +36219,15 @@ snapshots:
       schema-utils: 3.3.0
       webpack: 5.95.0(@swc/core@1.9.1(@swc/helpers@0.5.20))
 
-  nuxt@3.16.1(@parcel/watcher@2.4.1)(@types/node@22.19.17)(db0@0.3.1(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20250505.0)(@prisma/client@6.8.1(prisma@6.8.1(typescript@5.9.2))(typescript@5.9.2))(@types/better-sqlite3@7.6.2)(bun-types@1.1.32)(postgres@3.4.4)(prisma@6.8.1(typescript@5.9.2))))(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20250505.0)(@prisma/client@6.8.1(prisma@6.8.1(typescript@5.9.2))(typescript@5.9.2))(@types/better-sqlite3@7.6.2)(bun-types@1.1.32)(postgres@3.4.4)(prisma@6.8.1(typescript@5.9.2)))(encoding@0.1.13)(eslint@9.26.0(jiti@2.4.2))(ioredis@5.6.0)(lightningcss@1.28.2)(magicast@0.3.5)(rollup@4.52.5)(terser@5.34.0)(tsx@4.21.0)(typescript@5.9.2)(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))(webpack-sources@3.2.3)(xml2js@0.6.2)(yaml@2.8.2):
+  nuxt@3.16.1(@parcel/watcher@2.4.1)(@types/node@22.19.17)(db0@0.3.1(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20250505.0)(@prisma/client@6.8.1(prisma@6.8.1(typescript@5.9.2))(typescript@5.9.2))(@types/better-sqlite3@7.6.2)(bun-types@1.1.32)(postgres@3.4.4)(prisma@6.8.1(typescript@5.9.2))))(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20250505.0)(@prisma/client@6.8.1(prisma@6.8.1(typescript@5.9.2))(typescript@5.9.2))(@types/better-sqlite3@7.6.2)(bun-types@1.1.32)(postgres@3.4.4)(prisma@6.8.1(typescript@5.9.2)))(encoding@0.1.13)(eslint@9.26.0(jiti@2.4.2))(ioredis@5.6.0)(lightningcss@1.28.2)(magicast@0.3.5)(rollup@4.52.5)(terser@5.34.0)(tsx@4.21.0)(typescript@5.9.2)(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3))(webpack-sources@3.2.3)(xml2js@0.6.2)(yaml@2.8.3):
     dependencies:
       '@nuxt/cli': 3.23.1(magicast@0.3.5)
       '@nuxt/devalue': 2.0.2
-      '@nuxt/devtools': 2.3.1(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))(vue@3.5.13(typescript@5.9.2))
+      '@nuxt/devtools': 2.3.1(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3))(vue@3.5.13(typescript@5.9.2))
       '@nuxt/kit': 3.16.1(magicast@0.3.5)
       '@nuxt/schema': 3.16.1
       '@nuxt/telemetry': 2.6.6(magicast@0.3.5)
-      '@nuxt/vite-builder': 3.16.1(@types/node@22.19.17)(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(magicast@0.3.5)(rollup@4.52.5)(terser@5.34.0)(tsx@4.21.0)(typescript@5.9.2)(vue@3.5.13(typescript@5.9.2))(yaml@2.8.2)
+      '@nuxt/vite-builder': 3.16.1(@types/node@22.19.17)(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(magicast@0.3.5)(rollup@4.52.5)(terser@5.34.0)(tsx@4.21.0)(typescript@5.9.2)(vue@3.5.13(typescript@5.9.2))(yaml@2.8.3)
       '@oxc-parser/wasm': 0.60.0
       '@unhead/vue': 2.0.0(vue@3.5.13(typescript@5.9.2))
       '@vue/shared': 3.5.13
@@ -36677,7 +36715,7 @@ snapshots:
       ky: 1.7.2
       registry-auth-token: 5.0.2
       registry-url: 6.0.1
-      semver: 7.6.3
+      semver: 7.7.4
 
   package-json@8.1.1:
     dependencies:
@@ -37238,7 +37276,7 @@ snapshots:
   postcss-load-config@4.0.2(postcss@8.4.39):
     dependencies:
       lilconfig: 3.1.1
-      yaml: 2.7.0
+      yaml: 2.8.2
     optionalDependencies:
       postcss: 8.4.39
 
@@ -38765,7 +38803,7 @@ snapshots:
 
   sembear@0.7.0:
     dependencies:
-      semver: 7.6.3
+      semver: 7.7.4
 
   semver-diff@4.0.0:
     dependencies:
@@ -39059,7 +39097,7 @@ snapshots:
     dependencies:
       color: 4.2.3
       detect-libc: 2.0.3
-      semver: 7.7.3
+      semver: 7.7.4
     optionalDependencies:
       '@img/sharp-darwin-arm64': 0.33.5
       '@img/sharp-darwin-x64': 0.33.5
@@ -40544,7 +40582,7 @@ snapshots:
       scule: 1.3.0
       unplugin: 2.2.2
       unplugin-utils: 0.2.4
-      yaml: 2.7.0
+      yaml: 2.8.2
     optionalDependencies:
       vue-router: 4.5.0(vue@3.5.13(typescript@5.9.2))
     transitivePeerDependencies:
@@ -40753,27 +40791,27 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.2
 
-  vite-dev-rpc@1.0.7(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)):
+  vite-dev-rpc@1.0.7(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3)):
     dependencies:
       birpc: 2.3.0
-      vite: 6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)
-      vite-hot-client: 2.0.4(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))
+      vite: 6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3)
+      vite-hot-client: 2.0.4(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3))
 
-  vite-hot-client@0.2.4(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)):
+  vite-hot-client@0.2.4(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3)):
     dependencies:
-      vite: 6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)
+      vite: 6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3)
 
-  vite-hot-client@2.0.4(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)):
+  vite-hot-client@2.0.4(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3)):
     dependencies:
-      vite: 6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)
+      vite: 6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3)
 
-  vite-node@3.0.9(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2):
+  vite-node@3.0.9(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3):
     dependencies:
       cac: 6.7.14
       debug: 4.4.3(supports-color@9.4.0)
       es-module-lexer: 1.7.0
       pathe: 2.0.3
-      vite: 6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)
+      vite: 6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3)
     transitivePeerDependencies:
       - '@types/node'
       - jiti
@@ -40788,7 +40826,7 @@ snapshots:
       - tsx
       - yaml
 
-  vite-plugin-checker@0.9.1(eslint@9.26.0(jiti@2.4.2))(typescript@5.9.2)(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)):
+  vite-plugin-checker@0.9.1(eslint@9.26.0(jiti@2.4.2))(typescript@5.9.2)(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3)):
     dependencies:
       '@babel/code-frame': 7.26.2
       chokidar: 4.0.3
@@ -40798,13 +40836,13 @@ snapshots:
       strip-ansi: 7.1.0
       tiny-invariant: 1.3.3
       tinyglobby: 0.2.15
-      vite: 6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)
+      vite: 6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3)
       vscode-uri: 3.1.0
     optionalDependencies:
       eslint: 9.26.0(jiti@2.4.2)
       typescript: 5.9.2
 
-  vite-plugin-inspect@11.0.0(@nuxt/kit@3.16.1(magicast@0.3.5))(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)):
+  vite-plugin-inspect@11.0.0(@nuxt/kit@3.16.1(magicast@0.3.5))(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3)):
     dependencies:
       ansis: 3.17.0
       debug: 4.4.3(supports-color@9.4.0)
@@ -40814,23 +40852,23 @@ snapshots:
       perfect-debounce: 1.0.0
       sirv: 3.0.2
       unplugin-utils: 0.2.4
-      vite: 6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)
-      vite-dev-rpc: 1.0.7(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))
+      vite: 6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3)
+      vite-dev-rpc: 1.0.7(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3))
     optionalDependencies:
       '@nuxt/kit': 3.16.1(magicast@0.3.5)
     transitivePeerDependencies:
       - supports-color
 
-  vite-plugin-vue-tracer@0.1.1(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))(vue@3.5.13(typescript@5.9.2)):
+  vite-plugin-vue-tracer@0.1.1(vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3))(vue@3.5.13(typescript@5.9.2)):
     dependencies:
       estree-walker: 3.0.3
       magic-string: 0.30.21
       pathe: 2.0.3
       source-map-js: 1.2.1
-      vite: 6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)
+      vite: 6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3)
       vue: 3.5.13(typescript@5.9.2)
 
-  vite@6.4.1(@types/node@22.17.0)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(yaml@2.8.2):
+  vite@6.4.1(@types/node@22.17.0)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(yaml@2.8.3):
     dependencies:
       esbuild: 0.25.12
       fdir: 6.5.0(picomatch@4.0.3)
@@ -40845,9 +40883,9 @@ snapshots:
       lightningcss: 1.28.2
       terser: 5.34.0
       tsx: 4.19.3
-      yaml: 2.8.2
+      yaml: 2.8.3
 
-  vite@6.4.1(@types/node@22.17.0)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2):
+  vite@6.4.1(@types/node@22.17.0)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3):
     dependencies:
       esbuild: 0.25.12
       fdir: 6.5.0(picomatch@4.0.3)
@@ -40862,9 +40900,9 @@ snapshots:
       lightningcss: 1.28.2
       terser: 5.34.0
       tsx: 4.21.0
-      yaml: 2.8.2
+      yaml: 2.8.3
 
-  vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2):
+  vite@6.4.1(@types/node@22.19.17)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3):
     dependencies:
       esbuild: 0.25.12
       fdir: 6.5.0(picomatch@4.0.3)
@@ -40879,9 +40917,9 @@ snapshots:
       lightningcss: 1.28.2
       terser: 5.34.0
       tsx: 4.21.0
-      yaml: 2.8.2
+      yaml: 2.8.3
 
-  vite@6.4.1(@types/node@22.19.17)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2):
+  vite@6.4.1(@types/node@22.19.17)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3):
     dependencies:
       esbuild: 0.25.12
       fdir: 6.5.0(picomatch@4.0.3)
@@ -40896,12 +40934,12 @@ snapshots:
       lightningcss: 1.28.2
       terser: 5.34.0
       tsx: 4.21.0
-      yaml: 2.8.2
+      yaml: 2.8.3
 
-  vitest@4.0.18(@edge-runtime/vm@2.0.2)(@types/node@22.17.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@29.0.0)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(yaml@2.8.2):
+  vitest@4.0.18(@edge-runtime/vm@2.0.2)(@types/node@22.17.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@29.0.0)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(yaml@2.8.3):
     dependencies:
       '@vitest/expect': 4.0.18
-      '@vitest/mocker': 4.0.18(vite@6.4.1(@types/node@22.17.0)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(yaml@2.8.2))
+      '@vitest/mocker': 4.0.18(vite@6.4.1(@types/node@22.17.0)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(yaml@2.8.3))
       '@vitest/pretty-format': 4.0.18
       '@vitest/runner': 4.0.18
       '@vitest/snapshot': 4.0.18
@@ -40918,7 +40956,7 @@ snapshots:
       tinyexec: 1.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.0.3
-      vite: 6.4.1(@types/node@22.17.0)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(yaml@2.8.2)
+      vite: 6.4.1(@types/node@22.17.0)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(yaml@2.8.3)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@edge-runtime/vm': 2.0.2
@@ -40938,10 +40976,10 @@ snapshots:
       - tsx
       - yaml
 
-  vitest@4.0.18(@edge-runtime/vm@2.0.2)(@types/node@22.17.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@29.0.0)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2):
+  vitest@4.0.18(@edge-runtime/vm@2.0.2)(@types/node@22.17.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@29.0.0)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3):
     dependencies:
       '@vitest/expect': 4.0.18
-      '@vitest/mocker': 4.0.18(vite@6.4.1(@types/node@22.17.0)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2))
+      '@vitest/mocker': 4.0.18(vite@6.4.1(@types/node@22.17.0)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3))
       '@vitest/pretty-format': 4.0.18
       '@vitest/runner': 4.0.18
       '@vitest/snapshot': 4.0.18
@@ -40958,7 +40996,7 @@ snapshots:
       tinyexec: 1.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.0.3
-      vite: 6.4.1(@types/node@22.17.0)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.2)
+      vite: 6.4.1(@types/node@22.17.0)(jiti@2.6.1)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.21.0)(yaml@2.8.3)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@edge-runtime/vm': 2.0.2
@@ -41450,6 +41488,8 @@ snapshots:
   yaml@2.7.0: {}
 
   yaml@2.8.2: {}
+
+  yaml@2.8.3: {}
 
   yamljs@0.3.0:
     dependencies:
