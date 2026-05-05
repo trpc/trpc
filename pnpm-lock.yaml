@@ -2067,8 +2067,8 @@ importers:
         specifier: ^11.0.0
         version: 11.1.0
       '@oxc-project/runtime':
-        specifier: 0.123.0
-        version: 0.123.0
+        specifier: 0.129.0
+        version: 0.129.0
       '@tanstack/intent':
         specifier: ^0.0.27
         version: 0.0.27
@@ -2214,11 +2214,11 @@ importers:
         specifier: ^0.4.4
         version: 0.4.4
       '@trpc/client':
-        specifier: 11.17.0
-        version: link:../client
+        specifier: 11.16.0
+        version: 11.16.0(@trpc/server@11.16.0(typescript@5.9.2))(typescript@5.9.2)
       '@trpc/server':
-        specifier: 11.17.0
-        version: link:../server
+        specifier: 11.16.0
+        version: 11.16.0(typescript@5.9.2)
       '@types/node':
         specifier: ^22.13.5
         version: 22.17.0
@@ -7387,8 +7387,8 @@ packages:
     resolution: {integrity: sha512-Dkf9/D87WGBCW3L0+1DtpAfL4SrNsgeRvxwjpKCtbH7Kf6K+pxrT0IridaJfmWKu1Ml+fDvj+7HEyBcfUC/TXQ==}
     deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
 
-  '@oxc-project/runtime@0.123.0':
-    resolution: {integrity: sha512-wRf0z8saz9tHLcK3YeTeBmwISrpy4bBimvKxUmryiIhbt+ZJb0nwwJNL3D8xpeWbNfZlGSlzRBZbfcbApIGZJw==}
+  '@oxc-project/runtime@0.129.0':
+    resolution: {integrity: sha512-0+S67blQakgeNqoKGozOUp5rQBrz2ynXZ2QIINXZPiafsD0YL0UogB9hAWc1S7k6VSNwKYC/N7MqT0V6IzpHkQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
 
   '@oxc-project/runtime@0.72.2':
@@ -8877,6 +8877,19 @@ packages:
     peerDependenciesMeta:
       tree-sitter:
         optional: true
+
+  '@trpc/client@11.16.0':
+    resolution: {integrity: sha512-TxIzm7OoK3baKZ0XCbuMUbI3GhgjcbKHIc4nWVKaRpCRnbSh0T31BT6fTPYwtnA/Nur8pBCGqC2B4J5hEPiPFQ==}
+    hasBin: true
+    peerDependencies:
+      '@trpc/server': 11.16.0
+      typescript: '>=5.7.2'
+
+  '@trpc/server@11.16.0':
+    resolution: {integrity: sha512-XgGuUMddrUTd04+za/WE5GFuZ1/YU9XQG0t3VL5WOIu2JspkOlq6k4RYEiqS6HSJt+S0RXaPdIoE2anIP/BBRQ==}
+    hasBin: true
+    peerDependencies:
+      typescript: '>=5.7.2'
 
   '@trysound/sax@0.2.0':
     resolution: {integrity: sha512-L7z9BgrNEcYyUYtF+HaEfiS5ebkh9jXqbszz7pC0hRBPaatV0XjSD3+eHrpqFemQfgwiFF0QPIarnIihIDn7OA==}
@@ -18911,18 +18924,22 @@ packages:
 
   uuid@8.0.0:
     resolution: {integrity: sha512-jOXGuXZAWdsTH7eZLtyXMqUb9EcWMGZNbL9YcGBJl4MH4nrxHmZJhEHvyLFrkxo+28uLb/NYRcStH48fnD0Vzw==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   uuid@8.3.2:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   uuid@9.0.0:
     resolution: {integrity: sha512-MXcSTerfPa4uqyzStbRoTgt5XIe3x5+42+q1sDuy3R5MDk66URdLMOZe5aPX/SQd+kuYAh0FdP/pO28IkQyTeg==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   uuid@9.0.1:
     resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   valibot@1.3.1:
@@ -26248,7 +26265,7 @@ snapshots:
     dependencies:
       '@oxc-project/types': 0.60.0
 
-  '@oxc-project/runtime@0.123.0': {}
+  '@oxc-project/runtime@0.129.0': {}
 
   '@oxc-project/runtime@0.72.2': {}
 
@@ -28138,6 +28155,15 @@ snapshots:
       node-gyp-build: 4.8.4
     optionalDependencies:
       tree-sitter: 0.22.4
+
+  '@trpc/client@11.16.0(@trpc/server@11.16.0(typescript@5.9.2))(typescript@5.9.2)':
+    dependencies:
+      '@trpc/server': 11.16.0(typescript@5.9.2)
+      typescript: 5.9.2
+
+  '@trpc/server@11.16.0(typescript@5.9.2)':
+    dependencies:
+      typescript: 5.9.2
 
   '@trysound/sax@0.2.0': {}
 
