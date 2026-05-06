@@ -59,6 +59,7 @@
     "event-source-polyfill": "^1.0.31",
     "express": "^5.0.0",
     "fast-glob": "^3.2.12",
+    "form-data": "4.0.4",
     "hash-sum": "^2.0.0",
     "konn": "^0.7.0",
     "lerna": "^9.0.0",
