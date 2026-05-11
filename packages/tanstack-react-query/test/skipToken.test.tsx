@@ -31,6 +31,9 @@ const testContext = () => {
           }),
         )
         .query(() => ['__result'] as const),
+      onUpdated: t.procedure.subscription(async function* () {
+        yield 'hello';
+      }),
     }),
   });
 
@@ -57,6 +60,9 @@ describe('skipToken', () => {
         },
       });
       expect(options2.queryFn).toBe(skipToken);
+
+      const options3 = trpc.post.onUpdated.subscriptionOptions(skipToken);
+      expect(options3.enabled).toBe(false);
 
       return <pre>OK</pre>;
     }
