@@ -28,6 +28,10 @@ If you are unsure which one to use, we recommend using SSE for subscriptions as 
 | SSE        | Full-stack SSE implementation           | [github.com/trpc/examples-next-sse-chat](https://github.com/trpc/examples-next-sse-chat)                                   |
 | WebSockets | Full-stack WebSockets implementation    | [github.com/trpc/examples-next-prisma-websockets-starter](https://github.com/trpc/examples-next-prisma-starter-websockets) |
 
+:::note
+The `observable` API from `@trpc/server/observable` is deprecated and will be removed in tRPC v12. Some reference projects may still use the deprecated `observable` pattern. Use async generators with `t.procedure.subscription()` as shown in the examples above.
+:::
+
 ## Basic example
 
 :::tip
