@@ -525,11 +525,6 @@ export async function jsonlStreamConsumer<THead>(opts: {
 }) {
   const { deserialize = (v) => v } = opts;
 
-  function disposeResource(resource: Disposable) {
-    // eslint-disable-next-line no-restricted-syntax
-    resource[Symbol.dispose]();
-  }
-
   let source = createConsumerStream<Head>(opts.from);
   if (deserialize) {
     source = source.pipeThrough(
@@ -552,48 +547,38 @@ export async function jsonlStreamConsumer<THead>(opts: {
     switch (type) {
       case CHUNK_VALUE_TYPE_PROMISE: {
         return run(async () => {
-          const reader = controller.getReaderResource();
+          using reader = controller.getReaderResource();
 
-          try {
-            const { value } = await reader.read();
-            const [_chunkId, status, data] = value as PromiseChunk;
-            switch (status) {
-              case PROMISE_STATUS_FULFILLED:
-                return decode(data);
-              case PROMISE_STATUS_REJECTED:
-                throw (
-                  opts.formatError?.({ error: data }) ?? new AsyncError(data)
-                );
-            }
-          } finally {
-            disposeResource(reader);
+          const { value } = await reader.read();
+          const [_chunkId, status, data] = value as PromiseChunk;
+          switch (status) {
+            case PROMISE_STATUS_FULFILLED:
+              return decode(data);
+            case PROMISE_STATUS_REJECTED:
+              throw opts.formatError?.({ error: data }) ?? new AsyncError(data);
           }
         });
       }
       case CHUNK_VALUE_TYPE_ASYNC_ITERABLE: {
         return run(async function* () {
-          const reader = controller.getReaderResource();
+          using reader = controller.getReaderResource();
 
-          try {
-            while (true) {
-              const { value } = await reader.read();
+          while (true) {
+            const { value } = await reader.read();
 
-              const [_chunkId, status, data] = value as IterableChunk;
+            const [_chunkId, status, data] = value as IterableChunk;
 
-              switch (status) {
-                case ASYNC_ITERABLE_STATUS_YIELD:
-                  yield decode(data);
-                  break;
-                case ASYNC_ITERABLE_STATUS_RETURN:
-                  return decode(data);
-                case ASYNC_ITERABLE_STATUS_ERROR:
-                  throw (
-                    opts.formatError?.({ error: data }) ?? new AsyncError(data)
-                  );
-              }
+            switch (status) {
+              case ASYNC_ITERABLE_STATUS_YIELD:
+                yield decode(data);
+                break;
+              case ASYNC_ITERABLE_STATUS_RETURN:
+                return decode(data);
+              case ASYNC_ITERABLE_STATUS_ERROR:
+                throw (
+                  opts.formatError?.({ error: data }) ?? new AsyncError(data)
+                );
             }
-          } finally {
-            disposeResource(reader);
           }
         });
       }
