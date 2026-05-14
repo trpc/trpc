@@ -20,7 +20,7 @@ type inferBuiltProcedureContext<TDef extends BuiltProcedureDef> = TDef extends {
   ctx: infer TContext;
 }
   ? TContext
-  : object;
+  : unknown;
 
 /**
  *

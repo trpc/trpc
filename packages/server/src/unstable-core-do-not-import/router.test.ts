@@ -10,18 +10,18 @@ describe('router', () => {
     const tab = initTRPC.context<{ a: string; b: string }>().create();
 
     ta.router({
-      a: ta.procedure.query(({ ctx }) => ctx.a.slice()),
+      a: ta.procedure.query((opts) => opts.ctx.a.slice()),
     });
 
     tab.router({
-      a: ta.procedure.query(({ ctx }) => ctx.a.slice()),
-      b: tb.procedure.query(({ ctx }) => ctx.b.slice()),
+      a: ta.procedure.query((opts) => opts.ctx.a.slice()),
+      b: tb.procedure.query((opts) => opts.ctx.b.slice()),
     });
 
     ta.router({
-      a: ta.procedure.query(({ ctx }) => ctx.a.slice()),
+      a: ta.procedure.query((opts) => opts.ctx.a.slice()),
       // @ts-expect-error context requires "b", which is missing from this router
-      b: tb.procedure.query(({ ctx }) => ctx.b.slice()),
+      b: tb.procedure.query((opts) => opts.ctx.b.slice()),
     });
   });
 
