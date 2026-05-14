@@ -12,7 +12,7 @@ import type {
 import type { ProcedureCallOptions } from './procedureBuilder';
 import type { AnyRootTypes, RootConfig } from './rootConfig';
 import { defaultTransformer } from './transformer';
-import type { MaybePromise, ValueOf } from './types';
+import type { MaybePromise, TypeError, ValueOf } from './types';
 import {
   emptyObject,
   isFunction,
@@ -171,7 +171,7 @@ export type BuiltRouter<
 
 export interface RouterBuilder<TRoot extends AnyRootTypes> {
   <TIn extends CreateRouterOptions>(
-    _: TIn,
+    _: TIn & ValidateCreateRouterOptions<TRoot, TIn>,
   ): BuiltRouter<TRoot, DecorateCreateRouterOptions<TIn>>;
 }
 
@@ -229,6 +229,29 @@ export type CreateRouterOptions = {
     | Lazy<AnyRouter>;
 };
 
+type ValidateCreateRouterOptions<
+  TRoot extends AnyRootTypes,
+  TRouterOptions extends CreateRouterOptions,
+> = {
+  [K in keyof TRouterOptions]: TRouterOptions[K] extends infer $Value
+    ? $Value extends AnyProcedure
+      ? TRoot['ctx'] extends $Value['_def']['$types']['ctx']
+        ? $Value
+        : TypeError<'Procedure context is not compatible with router context'>
+      : $Value extends Router<infer TChildRoot, any>
+        ? TRoot['ctx'] extends TChildRoot['ctx']
+          ? $Value
+          : TypeError<'Router context is not compatible with parent router context'>
+        : $Value extends Lazy<Router<infer TChildRoot, any>>
+          ? TRoot['ctx'] extends TChildRoot['ctx']
+            ? $Value
+            : TypeError<'Lazy router context is not compatible with parent router context'>
+          : $Value extends CreateRouterOptions
+            ? ValidateCreateRouterOptions<TRoot, $Value>
+            : never
+    : never;
+};
+
 /** @internal */
 export type DecorateCreateRouterOptions<
   TRouterOptions extends CreateRouterOptions,
@@ -253,7 +276,7 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
   config: RootConfig<TRoot>,
 ) {
   function createRouterInner<TInput extends CreateRouterOptions>(
-    input: TInput,
+    input: TInput & ValidateCreateRouterOptions<TRoot, TInput>,
   ): BuiltRouter<TRoot, DecorateCreateRouterOptions<TInput>> {
     const reservedWordsUsed = new Set(
       Object.keys(input).filter((v) => reservedWords.includes(v)),
