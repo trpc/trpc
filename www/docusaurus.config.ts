@@ -162,6 +162,7 @@ export default {
     },
   } satisfies Preset.ThemeConfig,
   plugins: [
+    'docusaurus-plugin-copy-page-button',
     // Sidebar order is decided by the position in the array below
     ...(env.TYPEDOC
       ? generateTypedocDocusaurusPlugins([
