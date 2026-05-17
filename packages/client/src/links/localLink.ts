@@ -140,7 +140,7 @@ export function unstable_localLink<TRouter extends AnyRouter>(
 
         const handleSubscription = async () => {
           const connectionState = behaviorSubject<
-            TRPCConnectionState<TRPCClientError<any>>
+            TRPCConnectionState<TRPCClientError<TRouter>>
           >({
             type: 'state',
             state: 'connecting',
