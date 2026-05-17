@@ -33,6 +33,65 @@ const bilbo = await client.getUser.query('id_bilbo');
 // => { id: 'id_bilbo', name: 'Bilbo' };
 ```
 
+## Subscriptions
+
+The vanilla client also exposes subscription procedures through
+`procedure.subscribe()`. Subscriptions need a subscription-capable link, such as
+[`httpSubscriptionLink`](../links/httpSubscriptionLink.md) for Server-sent
+Events or [`wsLink`](../links/wsLink.md) for WebSockets. Use
+[`splitLink`](../links/splitLink.mdx) when the same client should send queries
+and mutations over HTTP while routing subscriptions over the subscription link.
+
+```ts twoslash
+// @target: esnext
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({
+  onPostAdd: t.procedure.subscription(async function* () {
+    yield { id: 'post_1', title: 'Hello tRPC' };
+  }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
+import {
+  createTRPCClient,
+  httpBatchLink,
+  httpSubscriptionLink,
+  splitLink,
+} from '@trpc/client';
+import type { AppRouter } from './server';
+
+const client = createTRPCClient<AppRouter>({
+  links: [
+    splitLink({
+      condition: (op) => op.type === 'subscription',
+      true: httpSubscriptionLink({
+        url: 'http://localhost:3000/trpc',
+      }),
+      false: httpBatchLink({
+        url: 'http://localhost:3000/trpc',
+      }),
+    }),
+  ],
+});
+
+const subscription = client.onPostAdd.subscribe(undefined, {
+  onData(post) {
+    // `post` is inferred from the subscription procedure output
+    console.log('new post', post.title);
+  },
+  onError(error) {
+    console.error('subscription error', error);
+  },
+});
+
+// Later, stop receiving events.
+subscription.unsubscribe();
+```
+
 ### When to use the Vanilla Client?
 
 You are likely to use this client in two scenarios:
