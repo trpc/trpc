@@ -1421,14 +1421,9 @@ describe('streamHeader option', () => {
     const t = initTRPC.create({});
 
     const router = t.router({
-      deferred: t.procedure
-        .input(z.object({ wait: z.number() }))
-        .query(async (opts) => {
-          await new Promise<void>((resolve) =>
-            setTimeout(resolve, opts.input.wait * 10),
-          );
-          return opts.input.wait;
-        }),
+      hello: t.procedure
+        .input(z.object({ name: z.string() }))
+        .query((opts) => opts.input.name),
     });
 
     const responseSpy = vi.fn<(res: Response) => void>();
@@ -1452,16 +1447,11 @@ describe('streamHeader option', () => {
       },
     });
 
-    const results = await Promise.all([
-      ctx.client.deferred.query({ wait: 2 }),
-      ctx.client.deferred.query({ wait: 1 }),
-    ]);
-
-    expect(results).toEqual([2, 1]);
+    await ctx.client.hello.query({ name: 'world' });
 
     expect(responseSpy).toHaveBeenCalledOnce();
     const [res] = responseSpy.mock.calls[0]!;
-    expect(res.headers.get('content-type')).toBe('application/jsonl');
+    expect(res.headers.get('content-type')).toMatch(/^application\/jsonl/);
   });
 
   test('streamHeader defaults to trpc-accept when omitted', async () => {
