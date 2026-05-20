@@ -1417,6 +1417,53 @@ describe('streamHeader option', () => {
     expect(init.headers).not.toHaveProperty('accept');
   });
 
+  test('response uses application/jsonl content-type', async () => {
+    const t = initTRPC.create({});
+
+    const router = t.router({
+      deferred: t.procedure
+        .input(z.object({ wait: z.number() }))
+        .query(async (opts) => {
+          await new Promise<void>((resolve) =>
+            setTimeout(resolve, opts.input.wait * 10),
+          );
+          return opts.input.wait;
+        }),
+    });
+
+    const responseSpy = vi.fn<(res: Response) => void>();
+
+    await using ctx = testServerAndClientResource(router, {
+      server: {},
+      client(opts) {
+        const nativeFetch = globalThis.fetch;
+        return {
+          links: [
+            httpBatchStreamLink({
+              url: opts.httpUrl,
+              async fetch(url, init) {
+                const res = await nativeFetch(url, init);
+                responseSpy(res.clone());
+                return res;
+              },
+            }),
+          ],
+        };
+      },
+    });
+
+    const results = await Promise.all([
+      ctx.client.deferred.query({ wait: 2 }),
+      ctx.client.deferred.query({ wait: 1 }),
+    ]);
+
+    expect(results).toEqual([2, 1]);
+
+    expect(responseSpy).toHaveBeenCalledOnce();
+    const [res] = responseSpy.mock.calls[0]!;
+    expect(res.headers.get('content-type')).toBe('application/jsonl');
+  });
+
   test('streamHeader defaults to trpc-accept when omitted', async () => {
     const t = initTRPC.create({});
 
