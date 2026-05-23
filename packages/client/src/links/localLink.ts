@@ -119,6 +119,132 @@ export function unstable_localLink<TRouter extends AnyRouter>(
           );
         }
 
+        async function* transformAsyncIterableResult(
+          result: AsyncIterable<unknown>,
+        ) {
+          await using iterator = iteratorResource(result);
+          try {
+            while (true) {
+              const res = await Promise.race([iterator.next(), signalPromise]);
+              if (res.done) {
+                observer.complete();
+                return transformChunk(res.value);
+              }
+              yield transformChunk(res.value);
+            }
+          } catch (cause) {
+            onErrorCallback(cause);
+            throw coerceToTRPCClientError(cause);
+          }
+        }
+
+        async function runSubscription() {
+          const connectionState = behaviorSubject<
+            TRPCConnectionState<TRPCClientError<any>>
+          >({
+            type: 'state',
+            state: 'connecting',
+            error: null,
+          });
+
+          const connectionSub = connectionState.subscribe({
+            next(state) {
+              observer.next({
+                result: state,
+              });
+            },
+          });
+          let lastEventId: string | undefined = undefined;
+
+          using _finally = makeResource({}, async () => {
+            observer.complete();
+
+            connectionState.next({
+              type: 'state',
+              state: 'idle',
+              error: null,
+            });
+            connectionSub.unsubscribe();
+          });
+          while (true) {
+            const result = await runProcedure(
+              inputWithTrackedEventId(op.input, lastEventId),
+            );
+            if (!isAsyncIterable(result)) {
+              throw new Error('Expected an async iterable');
+            }
+            await using iterator = iteratorResource(result);
+
+            observer.next({
+              result: {
+                type: 'started',
+              },
+            });
+            connectionState.next({
+              type: 'state',
+              state: 'pending',
+              error: null,
+            });
+
+            // Use a while loop to handle errors and reconnects
+            while (true) {
+              let res;
+              try {
+                res = await Promise.race([iterator.next(), signalPromise]);
+              } catch (cause) {
+                if (isAbortError(cause)) {
+                  return;
+                }
+                const error = getTRPCErrorFromUnknown(cause);
+
+                if (
+                  !retryableRpcCodes.includes(
+                    TRPC_ERROR_CODES_BY_KEY[error.code],
+                  )
+                ) {
+                  throw coerceToTRPCClientError(error);
+                }
+
+                onErrorCallback(error);
+                connectionState.next({
+                  type: 'state',
+                  state: 'connecting',
+                  error: coerceToTRPCClientError(error),
+                });
+
+                break;
+              }
+
+              if (res.done) {
+                return;
+              }
+              let chunk: TRPCResult<unknown>;
+              if (isTrackedEnvelope(res.value)) {
+                lastEventId = res.value[0];
+
+                chunk = {
+                  id: res.value[0],
+                  data: {
+                    id: res.value[0],
+                    data: res.value[1],
+                  },
+                };
+              } else {
+                chunk = {
+                  data: res.value,
+                };
+              }
+
+              observer.next({
+                result: {
+                  ...chunk,
+                  data: transformChunk(chunk.data),
+                },
+              });
+            }
+          }
+        }
+
         run(async () => {
           switch (op.type) {
             case 'query':
@@ -134,136 +260,13 @@ export function unstable_localLink<TRouter extends AnyRouter>(
 
               observer.next({
                 result: {
-                  data: (async function* () {
-                    await using iterator = iteratorResource(result);
-                    using _finally = makeResource({}, () => {
-                      observer.complete();
-                    });
-                    try {
-                      while (true) {
-                        const res = await Promise.race([
-                          iterator.next(),
-                          signalPromise,
-                        ]);
-                        if (res.done) {
-                          return transformChunk(res.value);
-                        }
-                        yield transformChunk(res.value);
-                      }
-                    } catch (cause) {
-                      onErrorCallback(cause);
-                      throw coerceToTRPCClientError(cause);
-                    }
-                  })(),
+                  data: transformAsyncIterableResult(result),
                 },
               });
               break;
             }
             case 'subscription': {
-              const connectionState = behaviorSubject<
-                TRPCConnectionState<TRPCClientError<any>>
-              >({
-                type: 'state',
-                state: 'connecting',
-                error: null,
-              });
-
-              const connectionSub = connectionState.subscribe({
-                next(state) {
-                  observer.next({
-                    result: state,
-                  });
-                },
-              });
-              let lastEventId: string | undefined = undefined;
-
-              using _finally = makeResource({}, async () => {
-                observer.complete();
-
-                connectionState.next({
-                  type: 'state',
-                  state: 'idle',
-                  error: null,
-                });
-                connectionSub.unsubscribe();
-              });
-              while (true) {
-                const result = await runProcedure(
-                  inputWithTrackedEventId(op.input, lastEventId),
-                );
-                if (!isAsyncIterable(result)) {
-                  throw new Error('Expected an async iterable');
-                }
-                await using iterator = iteratorResource(result);
-
-                observer.next({
-                  result: {
-                    type: 'started',
-                  },
-                });
-                connectionState.next({
-                  type: 'state',
-                  state: 'pending',
-                  error: null,
-                });
-
-                // Use a while loop to handle errors and reconnects
-                while (true) {
-                  let res;
-                  try {
-                    res = await Promise.race([iterator.next(), signalPromise]);
-                  } catch (cause) {
-                    if (isAbortError(cause)) {
-                      return;
-                    }
-                    const error = getTRPCErrorFromUnknown(cause);
-
-                    if (
-                      !retryableRpcCodes.includes(
-                        TRPC_ERROR_CODES_BY_KEY[error.code],
-                      )
-                    ) {
-                      throw coerceToTRPCClientError(error);
-                    }
-
-                    onErrorCallback(error);
-                    connectionState.next({
-                      type: 'state',
-                      state: 'connecting',
-                      error: coerceToTRPCClientError(error),
-                    });
-
-                    break;
-                  }
-
-                  if (res.done) {
-                    return;
-                  }
-                  let chunk: TRPCResult<unknown>;
-                  if (isTrackedEnvelope(res.value)) {
-                    lastEventId = res.value[0];
-
-                    chunk = {
-                      id: res.value[0],
-                      data: {
-                        id: res.value[0],
-                        data: res.value[1],
-                      },
-                    };
-                  } else {
-                    chunk = {
-                      data: res.value,
-                    };
-                  }
-
-                  observer.next({
-                    result: {
-                      ...chunk,
-                      data: transformChunk(chunk.data),
-                    },
-                  });
-                }
-              }
+              await runSubscription();
               break;
             }
           }

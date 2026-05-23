@@ -10,7 +10,7 @@ describe('basic', () => {
       validateFn();
       return true;
     },
-    fetch: (keys) => {
+    fetch: (keys, _opts) => {
       fetchFn(keys);
       return new Promise((resolve) => {
         resolve(keys.map((v) => v + 1));
@@ -24,7 +24,10 @@ describe('basic', () => {
   });
 
   test('no time between calls', async () => {
-    const $result = await Promise.all([loader.load(1), loader.load(2)]);
+    const $result = await Promise.all([
+      loader.load(1).promise,
+      loader.load(2).promise,
+    ]);
     expect($result).toEqual([2, 3]);
     expect(validateFn.mock.calls.length).toMatchInlineSnapshot(`2`);
     expect(fetchFn).toHaveBeenCalledTimes(1);
@@ -39,7 +42,7 @@ describe('basic', () => {
     const res2 = loader.load(4);
     await fakeTimers.advanceTimersByTimeAsync(0);
 
-    const $result = await Promise.all([res1, res2]);
+    const $result = await Promise.all([res1.promise, res2.promise]);
 
     expect($result).toEqual([4, 5]);
     expect(validateFn.mock.calls.length).toMatchInlineSnapshot(`2`);
@@ -52,7 +55,7 @@ describe('basic', () => {
 test('errors', async () => {
   const loader = dataLoader<number, number>({
     validate: () => true,
-    fetch: () => {
+    fetch: (_keys, _opts) => {
       return new Promise((_resolve, reject) => {
         reject(new Error('Some error'));
       });
@@ -62,8 +65,12 @@ test('errors', async () => {
   const result1 = loader.load(1);
   const result2 = loader.load(2);
 
-  await expect(result1).rejects.toMatchInlineSnapshot(`[Error: Some error]`);
-  await expect(result2).rejects.toMatchInlineSnapshot(`[Error: Some error]`);
+  await expect(result1.promise).rejects.toMatchInlineSnapshot(
+    `[Error: Some error]`,
+  );
+  await expect(result2.promise).rejects.toMatchInlineSnapshot(
+    `[Error: Some error]`,
+  );
 });
 
 describe('validation', () => {
@@ -75,7 +82,7 @@ describe('validation', () => {
       const sum = keys.reduce((acc, key) => acc + key, 0);
       return sum < 10;
     },
-    fetch: (keys) => {
+    fetch: (keys, _opts) => {
       fetchFn(keys);
       return new Promise((resolve) => {
         resolve(keys.map((v) => v + 1));
@@ -90,9 +97,9 @@ describe('validation', () => {
 
   test('1', async () => {
     const $result = await Promise.all([
-      loader.load(1),
-      loader.load(9),
-      loader.load(0),
+      loader.load(1).promise,
+      loader.load(9).promise,
+      loader.load(0).promise,
     ]);
     expect($result).toEqual([2, 10, 1]);
     expect(validateFn.mock.calls.length).toMatchInlineSnapshot(`4`);
@@ -100,12 +107,12 @@ describe('validation', () => {
 
   test('2', async () => {
     const $result = await Promise.all([
-      loader.load(2),
-      loader.load(9),
-      loader.load(3),
-      loader.load(4),
-      loader.load(5),
-      loader.load(1),
+      loader.load(2).promise,
+      loader.load(9).promise,
+      loader.load(3).promise,
+      loader.load(4).promise,
+      loader.load(5).promise,
+      loader.load(1).promise,
     ]);
     expect($result).toMatchInlineSnapshot(`
       Array [
@@ -122,7 +129,7 @@ describe('validation', () => {
   });
 
   test('too large', async () => {
-    const $result = await waitError(loader.load(13));
+    const $result = await waitError(loader.load(13).promise);
     expect($result).toMatchInlineSnapshot(
       `[Error: Input is too big for a single dispatch]`,
     );

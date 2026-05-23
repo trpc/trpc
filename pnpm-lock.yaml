@@ -2214,10 +2214,10 @@ importers:
         specifier: ^0.4.4
         version: 0.4.4
       '@trpc/client':
-        specifier: 11.17.0
+        specifier: 11.16.0
         version: link:../client
       '@trpc/server':
-        specifier: 11.17.0
+        specifier: 11.16.0
         version: link:../server
       '@types/node':
         specifier: ^22.13.5

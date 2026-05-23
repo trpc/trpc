@@ -3,7 +3,7 @@ import { observable } from '@trpc/server/observable';
 import { transformResult } from '@trpc/server/unstable-core-do-not-import';
 import type { BatchLoader } from '../internals/dataLoader';
 import { dataLoader } from '../internals/dataLoader';
-import { allAbortSignals } from '../internals/signals';
+import { allAbortSignals, raceAbortSignals } from '../internals/signals';
 import type { NonEmptyArray } from '../internals/types';
 import { TRPCClientError } from '../TRPCClientError';
 import type { HTTPBatchLinkOptions } from './HTTPBatchLinkOptions';
@@ -51,10 +51,14 @@ export function httpBatchLink<TRouter extends AnyRouter>(
 
           return url.length <= maxURLLength;
         },
-        async fetch(batchOps) {
+        async fetch(batchOps, batchOptions) {
+          const batchSignal = batchOptions.signal;
           const path = batchOps.map((op) => op.path).join(',');
           const inputs = batchOps.map((op) => op.input);
-          const signal = allAbortSignals(...batchOps.map((op) => op.signal));
+          const signal = raceAbortSignals(
+            allAbortSignals(...batchOps.map((op) => op.signal)),
+            batchSignal,
+          );
 
           const res = await jsonHttpRequester({
             ...resolvedOpts,
@@ -99,11 +103,15 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           );
         }
         const loader = loaders[op.type];
-        const promise = loader.load(op);
+        const request = loader.load(op);
 
+        let unsubscribed = false;
         let _res = undefined as HTTPResult | undefined;
-        promise
+        request.promise
           .then((res) => {
+            if (unsubscribed) {
+              return;
+            }
             _res = res;
             const transformed = transformResult(
               res.json,
@@ -125,6 +133,9 @@ export function httpBatchLink<TRouter extends AnyRouter>(
             observer.complete();
           })
           .catch((err) => {
+            if (unsubscribed) {
+              return;
+            }
             observer.error(
               TRPCClientError.from(err, {
                 meta: _res?.meta,
@@ -133,7 +144,8 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           });
 
         return () => {
-          // noop
+          unsubscribed = true;
+          request.cancel();
         };
       });
     };

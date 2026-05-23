@@ -8,11 +8,19 @@ type BatchItem<TKey, TValue> = {
   batch: Batch<TKey, TValue> | null;
 };
 type Batch<TKey, TValue> = {
+  abortController: AbortController;
   items: BatchItem<TKey, TValue>[];
 };
 export type BatchLoader<TKey, TValue> = {
   validate: (keys: TKey[]) => boolean;
-  fetch: (keys: TKey[]) => Promise<TValue[] | Promise<TValue>[]>;
+  fetch: (
+    keys: TKey[],
+    opts: { signal: AbortSignal },
+  ) => Promise<TValue[] | Promise<TValue>[]>;
+};
+export type PendingRequest<TValue> = {
+  cancel: () => void;
+  promise: Promise<TValue>;
 };
 
 /**
@@ -40,6 +48,25 @@ export function dataLoader<TKey, TValue>(
     dispatchTimer = null;
     pendingItems = null;
   };
+
+  function cancelItem(item: BatchItem<TKey, TValue>) {
+    if (item.aborted) {
+      return;
+    }
+
+    item.aborted = true;
+    item.reject?.(new Error('Aborted'));
+    item.reject = null;
+    item.resolve = null;
+
+    const batch = item.batch;
+    if (batch?.items.every((_item) => _item.aborted || _item.batch === null)) {
+      batch.abortController.abort();
+    }
+    if (pendingItems?.every((_item) => _item.aborted)) {
+      destroyTimerAndPendingItems();
+    }
+  }
 
   /**
    * Iterate through the items and split them into groups based on the `batchLoader`'s validate function
@@ -93,18 +120,28 @@ export function dataLoader<TKey, TValue>(
         continue;
       }
       const batch: Batch<TKey, TValue> = {
+        abortController: new AbortController(),
         items,
       };
       for (const item of items) {
         item.batch = batch;
       }
-      const promise = batchLoader.fetch(batch.items.map((_item) => _item.key));
+      const promise = batchLoader.fetch(
+        batch.items.map((_item) => _item.key),
+        {
+          signal: batch.abortController.signal,
+        },
+      );
 
       promise
         .then(async (result) => {
           await Promise.all(
             result.map(async (valueOrPromise, index) => {
               const item = batch.items[index]!;
+              if (item.aborted) {
+                item.batch = null;
+                return;
+              }
               try {
                 const value = await Promise.resolve(valueOrPromise);
 
@@ -122,17 +159,21 @@ export function dataLoader<TKey, TValue>(
           for (const item of batch.items) {
             item.reject?.(new Error('Missing result'));
             item.batch = null;
+            item.reject = null;
+            item.resolve = null;
           }
         })
         .catch((cause) => {
           for (const item of batch.items) {
             item.reject?.(cause);
             item.batch = null;
+            item.reject = null;
+            item.resolve = null;
           }
         });
     }
   }
-  function load(key: TKey): Promise<TValue> {
+  function load(key: TKey): PendingRequest<TValue> {
     const item: BatchItem<TKey, TValue> = {
       aborted: false,
       key,
@@ -151,7 +192,12 @@ export function dataLoader<TKey, TValue>(
 
     dispatchTimer ??= setTimeout(dispatch);
 
-    return promise;
+    return {
+      cancel() {
+        cancelItem(item);
+      },
+      promise,
+    };
   }
 
   return {

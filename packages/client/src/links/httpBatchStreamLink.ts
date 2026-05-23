@@ -65,7 +65,8 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
 
           return url.length <= maxURLLength;
         },
-        async fetch(batchOps) {
+        async fetch(batchOps, batchOptions) {
+          const batchSignal = batchOptions.signal;
           const path = batchOps.map((op) => op.path).join(',');
           const inputs = batchOps.map((op) => op.input);
 
@@ -76,7 +77,11 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
 
           const responsePromise = fetchHTTPResponse({
             ...resolvedOpts,
-            signal: raceAbortSignals(batchSignals, abortController.signal),
+            signal: raceAbortSignals(
+              batchSignals,
+              batchSignal,
+              abortController.signal,
+            ),
             type,
             contentTypeHeader: 'application/json',
             trpcAcceptHeader: 'application/jsonl',
@@ -181,11 +186,15 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
           );
         }
         const loader = loaders[op.type];
-        const promise = loader.load(op);
+        const request = loader.load(op);
 
+        let unsubscribed = false;
         let _res = undefined as HTTPResult | undefined;
-        promise
+        request.promise
           .then((res) => {
+            if (unsubscribed) {
+              return;
+            }
             _res = res;
             if ('error' in res.json) {
               observer.error(
@@ -206,6 +215,9 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
             observer.complete();
           })
           .catch((err) => {
+            if (unsubscribed) {
+              return;
+            }
             observer.error(
               TRPCClientError.from(err, {
                 meta: _res?.meta,
@@ -214,7 +226,8 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
           });
 
         return () => {
-          // noop
+          unsubscribed = true;
+          request.cancel();
         };
       });
     };
