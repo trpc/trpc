@@ -69,7 +69,9 @@ const universalRequester: Requester = (opts) => {
     const serializedInput = opts.transformer.input.serialize(input);
     if (isFormData(serializedInput)) {
       if (opts.type !== 'mutation' && opts.methodOverride !== 'POST') {
-        throw new Error('FormData from serializer is only supported for mutations');
+        throw new Error(
+          'FormData from serializer is only supported for mutations',
+        );
       }
 
       return httpRequest({
