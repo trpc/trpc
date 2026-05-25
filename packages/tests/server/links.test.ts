@@ -994,3 +994,51 @@ test('retryLink - unsubscribe during delay', async () => {
 
   expect(endingLink).toHaveBeenCalledTimes(1);
 });
+
+test('httpBatchStreamLink - unsubscribe aborts fetch', async () => {
+  let fetchSignal: AbortSignal | undefined;
+  const fetchCalled = new Promise<void>((resolve) => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
+      fetchSignal = init?.signal ?? undefined;
+      resolve();
+      return new Response(
+        new ReadableStream({
+          start() {
+            // never enqueue or close - keeps the stream open
+          },
+        }),
+        { status: 200 },
+      );
+    });
+  });
+
+  const links = [
+    httpBatchStreamLink({
+      url: 'http://localhost:9999',
+    })(mockRuntime),
+  ];
+
+  const chain = createChain({
+    links,
+    op: {
+      id: 1,
+      type: 'query',
+      path: 'hello',
+      input: null,
+      context: {},
+      signal: null,
+    },
+  });
+
+  const sub = chain.subscribe({});
+
+  await fetchCalled;
+
+  expect(fetchSignal!.aborted).toBe(false);
+
+  sub.unsubscribe();
+
+  expect(fetchSignal!.aborted).toBe(true);
+
+  vi.restoreAllMocks();
+});
