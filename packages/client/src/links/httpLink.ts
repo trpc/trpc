@@ -64,6 +64,21 @@ const universalRequester: Requester = (opts) => {
         getBody: () => input,
       });
     }
+
+    // Check if a custom transformer serializes the input to FormData
+    const serializedInput = opts.transformer.input.serialize(input);
+    if (isFormData(serializedInput)) {
+      if (opts.type !== 'mutation' && opts.methodOverride !== 'POST') {
+        throw new Error('FormData from serializer is only supported for mutations');
+      }
+
+      return httpRequest({
+        ...opts,
+        contentTypeHeader: undefined,
+        getUrl,
+        getBody: () => serializedInput,
+      });
+    }
   }
 
   return jsonHttpRequester(opts);
