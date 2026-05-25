@@ -1012,34 +1012,36 @@ test('httpBatchStreamLink - unsubscribe aborts fetch', async () => {
     });
   });
 
-  const links = [
-    httpBatchStreamLink({
-      url: 'http://localhost:9999',
-    })(mockRuntime),
-  ];
+  try {
+    const links = [
+      httpBatchStreamLink({
+        url: 'http://localhost:9999',
+      })(mockRuntime),
+    ];
 
-  const chain = createChain({
-    links,
-    op: {
-      id: 1,
-      type: 'query',
-      path: 'hello',
-      input: null,
-      context: {},
-      signal: null,
-    },
-  });
+    const chain = createChain({
+      links,
+      op: {
+        id: 1,
+        type: 'query',
+        path: 'hello',
+        input: null,
+        context: {},
+        signal: null,
+      },
+    });
 
-  const sub = chain.subscribe({});
+    const sub = chain.subscribe({});
 
-  await fetchCalled;
+    await fetchCalled;
 
-  expect(fetchSignal!.aborted).toBe(false);
+    expect(fetchSignal!.aborted).toBe(false);
 
-  sub.unsubscribe();
+    sub.unsubscribe();
 
-  expect(fetchSignal!.aborted).toBe(true);
-  expect(fetchSignal!.reason?.name).toBe('AbortError');
-
-  vi.restoreAllMocks();
+    expect(fetchSignal!.aborted).toBe(true);
+    expect(fetchSignal!.reason?.name).toBe('AbortError');
+  } finally {
+    vi.restoreAllMocks();
+  }
 });
