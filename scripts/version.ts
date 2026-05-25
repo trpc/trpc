@@ -1,10 +1,12 @@
+import { execFileSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
 console.log('ℹ️ Running custom script to pin versions to each other');
 
+const repoRoot = path.join(import.meta.dirname, '..');
 const repoVersion = JSON.parse(
-  fs.readFileSync(path.join(import.meta.dirname, '..', 'lerna.json'), 'utf8'),
+  fs.readFileSync(path.join(repoRoot, 'lerna.json'), 'utf8'),
 ).version as string;
 
 // Packages that should have a prerelease suffix (alpha or beta)
@@ -13,26 +15,23 @@ const PRERELEASE_PACKAGES = new Map<string, 'alpha' | 'beta'>([
 ]);
 
 const packages = fs
-  .readdirSync(path.join(import.meta.dirname, '..', 'packages'), {
+  .readdirSync(path.join(repoRoot, 'packages'), {
     withFileTypes: true,
   })
   .filter((file) => file.isDirectory())
   .map((dir) => dir.name)
   .filter((dir) => !dir.startsWith('.'));
 
+const changedPackageJSONs: string[] = [];
+
 for (const name of packages) {
-  const packageJSON = path.join(
-    import.meta.dirname,
-    '..',
-    'packages',
-    name,
-    'package.json',
-  );
+  const packageJSON = path.join(repoRoot, 'packages', name, 'package.json');
   if (!fs.existsSync(packageJSON)) {
     continue;
   }
 
   let content = fs.readFileSync(packageJSON).toString();
+  const originalContent = content;
 
   const parsed = JSON.parse(content);
   let version = parsed.version ?? repoVersion;
@@ -60,6 +59,23 @@ for (const name of packages) {
     /\"@trpc\/((\w|-)+)\": "([^"]|\\")*"/g,
     `"@trpc/$1": "${depVersion}"`,
   );
-  fs.writeFileSync(packageJSON, newContent);
-  console.log(`  📍 Pinned ${name} @trpc/* dependencies`);
+
+  if (newContent !== originalContent) {
+    fs.writeFileSync(packageJSON, newContent);
+    changedPackageJSONs.push(path.relative(repoRoot, packageJSON));
+    console.log(`  📍 Pinned ${name} @trpc/* dependencies`);
+  }
+}
+
+if (
+  process.env['npm_lifecycle_event'] === 'version' &&
+  changedPackageJSONs.length > 0
+) {
+  // Lerna stages its own version files, but this hook also updates private
+  // workspace package manifests. Stage those changes so the release commit and
+  // lockfile stay in sync.
+  execFileSync('git', ['add', '--', ...changedPackageJSONs], {
+    cwd: repoRoot,
+    stdio: 'inherit',
+  });
 }
