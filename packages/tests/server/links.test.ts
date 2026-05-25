@@ -1039,6 +1039,7 @@ test('httpBatchStreamLink - unsubscribe aborts fetch', async () => {
   sub.unsubscribe();
 
   expect(fetchSignal!.aborted).toBe(true);
+  expect(fetchSignal!.reason?.name).toBe('AbortError');
 
   vi.restoreAllMocks();
 });
