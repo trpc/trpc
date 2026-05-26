@@ -227,7 +227,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: 1.3.9
 
       - run: bun --version
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
