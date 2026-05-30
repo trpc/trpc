@@ -8,7 +8,7 @@ slug: /server/data-transformers
 You are able to serialize the response data & input args. The transformers need to be added both to the server and the client.
 
 :::info
-A transformer is optional. Without one, tRPC serializes data with `JSON.stringify`, so values that JSON can't represent don't round-trip: a `Date` arrives on the client as a string, and a `Map` or `Set` is lost. Add a transformer like superjson (below) if you need those types preserved on the client.
+A transformer is optional. Without one, tRPC serializes data with `JSON.stringify`, so values that JSON can't represent don't round-trip: a `Date` arrives on the client as a string, and a `Map` or `Set` are always converted to an empty object (`{}`). Add a transformer like superjson (below) if you need those types preserved on the client.
 :::
 
 ## Using [superjson](https://github.com/blitz-js/superjson)
