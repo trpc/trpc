@@ -2290,9 +2290,7 @@ describe('subscription cleanup on failed teardown (#7400)', () => {
     rawClient.send(JSON.stringify(stop));
 
     await vi.waitFor(() => {
-      expect(
-        responses.find((r) => r.id === 1 && 'error' in r),
-      ).toBeDefined();
+      expect(responses.find((r) => r.id === 1 && 'error' in r)).toBeDefined();
     });
 
     responses.length = 0;
@@ -2304,9 +2302,7 @@ describe('subscription cleanup on failed teardown (#7400)', () => {
       expect(responses.length).toBeGreaterThan(0);
     });
 
-    const reuse = responses.find(
-      (r) => r.id === 1 && !('error' in r),
-    );
+    const reuse = responses.find((r) => r.id === 1 && !('error' in r));
     expect(reuse).toBeDefined();
     expect((reuse as any).result.type).toBe('started');
 
