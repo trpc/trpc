@@ -404,7 +404,6 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
               type: 'stopped',
             },
           });
-          clientSubscriptions.delete(id);
         }).catch((cause) => {
           const error = getTRPCErrorFromUnknown(cause);
           opts.onError?.({ error, path, type, ctx, req, input });
@@ -421,6 +420,8 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             }),
           });
           abortController.abort();
+        }).finally(() => {
+          clientSubscriptions.delete(id);
         });
         clientSubscriptions.set(id, abortController);
 
