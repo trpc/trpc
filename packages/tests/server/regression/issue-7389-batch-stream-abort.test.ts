@@ -112,7 +112,9 @@ test('unsubscribing does not abort when the observable already completed', async
   let completed = false;
   await new Promise<void>((resolve) => {
     chain.subscribe({
-      next() {},
+      next() {
+        // noop
+      },
       complete() {
         completed = true;
         resolve();
@@ -191,7 +193,9 @@ test('signal is aborted after unsubscribe in a batched scenario', async () => {
 
   // Subscribe to the slow operation and unsubscribe quickly
   const slowSub = slowChain.subscribe({
-    error() {},
+    error() {
+      // noop
+    },
   });
 
   // Subscribe to the fast operation and wait for it to complete
