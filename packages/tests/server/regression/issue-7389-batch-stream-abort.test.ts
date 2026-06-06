@@ -105,10 +105,7 @@ test('unsubscribing does not abort when the observable already completed', async
     },
   });
 
-  // Wait for completion — the response has arrived and the observable completed
-  // naturally. The teardown should NOT abort at this point.
-  const abortSpy = vi.spyOn(AbortController.prototype, 'abort');
-
+  // Wait for the observable to complete naturally (the response has arrived).
   let completed = false;
   await new Promise<void>((resolve) => {
     chain.subscribe({
@@ -125,19 +122,9 @@ test('unsubscribing does not abort when the observable already completed', async
     });
   });
 
+  // Natural completion still delivers the result — the teardown's abort only
+  // fires on unsubscribe (isDone guard), so the happy path is unaffected.
   expect(completed).toBe(true);
-
-  // After natural completion, abort should not have been called by our teardown
-  // (the JSONL stream consumer self-cleans when all chunks are delivered, which
-  // internally triggers abortController.abort() via createStreamsManager — but
-  // our observable-level ac.abort() should NOT fire because isDone is true).
-  const observableAbortCalls = abortSpy.mock.calls.length;
-
-  // Just ensure the result was delivered correctly (no regression on happy path)
-  expect(completed).toBe(true);
-  // The spy count is informational — what matters is no error was thrown and
-  // the chain completed successfully.
-  expect(observableAbortCalls).toBeGreaterThanOrEqual(0);
 });
 
 test('signal is aborted after unsubscribe in a batched scenario', async () => {
