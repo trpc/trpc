@@ -2235,7 +2235,9 @@ describe('subscription cleanup on failed teardown (#7400)', () => {
           [Symbol.asyncIterator]() {
             return {
               next(): Promise<IteratorResult<number>> {
-                return new Promise((_resolve) => {});
+                return new Promise((_resolve) => {
+                  // never resolves - keeps subscription active
+                });
               },
               async return(): Promise<IteratorResult<number>> {
                 throw new Error('teardown failed');
