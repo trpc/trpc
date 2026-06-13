@@ -51,12 +51,12 @@ The generator works with your existing router — no annotations or decorators r
 pnpm exec trpc-openapi ./src/server/router.ts
 ```
 
-| Option                | Default        | Description                                        |
-| --------------------- | -------------- | -------------------------------------------------- |
-| `-e, --export <name>` | `AppRouter`    | Name of the exported router type                   |
-| `-o, --output <file>` | `openapi.json` | Output file path                                   |
-| `--title <text>`      | `tRPC API`     | OpenAPI `info.title`                               |
-| `--version <ver>`     | `0.0.0`        | OpenAPI `info.version`                             |
+| Option                | Default        | Description                                                          |
+| --------------------- | -------------- | -------------------------------------------------------------------- |
+| `-e, --export <name>` | `AppRouter`    | Name of the exported router type                                     |
+| `-o, --output <file>` | `openapi.json` | Output file path                                                     |
+| `--title <text>`      | `tRPC API`     | OpenAPI `info.title`                                                 |
+| `--version <ver>`     | `0.0.0`        | OpenAPI `info.version`                                               |
 | `--server-url <url>`  |                | Base URL (including any prefix), e.g. `https://api.example.com/trpc` |
 
 ```bash
