@@ -57,7 +57,7 @@ pnpm exec trpc-openapi ./src/server/router.ts
 | `-o, --output <file>` | `openapi.json` | Output file path                                   |
 | `--title <text>`      | `tRPC API`     | OpenAPI `info.title`                               |
 | `--version <ver>`     | `0.0.0`        | OpenAPI `info.version`                             |
-| `--server-url <url>`  |                | Base URL (including any prefix) ie. `https://api.example.com/trpc` |
+| `--server-url <url>`  |                | Base URL (including any prefix), e.g. `https://api.example.com/trpc` |
 
 ```bash
 pnpm exec trpc-openapi ./src/server/router.ts -o api.json --title "My API" --version 1.0.0 --server-url https://api.example.com/trpc
@@ -68,7 +68,7 @@ pnpm exec trpc-openapi ./src/server/router.ts -o api.json --title "My API" --ver
 ```ts title='scripts/generate-openapi.ts'
 import { generateOpenAPIDocument } from '@trpc/openapi';
 
-const doc = generateOpenAPIDocument('./src/server/router.ts', {
+const doc = await generateOpenAPIDocument('./src/server/router.ts', {
   exportName: 'AppRouter',
   title: 'My API',
   version: '1.0.0',
