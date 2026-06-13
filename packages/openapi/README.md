@@ -29,6 +29,7 @@ const doc = generateOpenAPIDocument('./src/server/router.ts', {
   exportName: 'AppRouter',
   title: 'My API',
   version: '1.0.0',
+  servers: [{ url: 'https://api.example.com/trpc' }],
 });
 ```
 
