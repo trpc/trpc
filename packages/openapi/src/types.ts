@@ -23,6 +23,7 @@ export type ExternalDocumentationObject =
 export type XMLObject = BaseOpenAPIV3_1.XMLObject;
 export type LinkObject = BaseOpenAPIV3_1.LinkObject;
 export type SecuritySchemeObject = BaseOpenAPIV3_1.SecuritySchemeObject;
+export type ServerObject = BaseOpenAPIV3_1.ServerObject;
 
 export type SchemaObject = Replace<
   BaseOpenAPIV3_1.BaseSchemaObject,

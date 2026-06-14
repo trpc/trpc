@@ -13,6 +13,7 @@ import type {
   PathItemObject,
   PathsObject,
   SchemaObject,
+  ServerObject,
 } from './types';
 
 interface ProcedureInfo {
@@ -39,6 +40,13 @@ export interface GenerateOptions {
   title?: string;
   /** Version string for the generated OpenAPI `info` object. */
   version?: string;
+  /**
+   * OpenAPI `servers` array, passed through to the generated document. Each
+   * `url` should include any tRPC mount prefix, since the generated paths
+   * (`/user.create`, …) are relative to it — e.g.
+   * `https://api.example.com/trpc`. When omitted, no `servers` entry is added.
+   */
+  servers?: ServerObject[];
 }
 
 // ---------------------------------------------------------------------------
@@ -1429,6 +1437,7 @@ function buildOpenAPIDocument(
       title: options.title ?? 'tRPC API',
       version: options.version ?? '0.0.0',
     },
+    ...(options.servers?.length ? { servers: options.servers } : {}),
     paths,
     components: {
       ...(hasNamedSchemas && meta.schemas ? { schemas: meta.schemas } : {}),
