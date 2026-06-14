@@ -117,7 +117,7 @@ jobs:
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     continue-on-error: true
     strategy:
       matrix:
@@ -176,7 +176,7 @@ jobs:
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
       # TURBO_REMOTE_ONLY: true
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     continue-on-error: true
 
     strategy:
@@ -211,7 +211,7 @@ jobs:
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
       # TURBO_REMOTE_ONLY: true
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 10
+    timeout-minutes: 20
     continue-on-error: true
     strategy:
       matrix:
@@ -253,7 +253,7 @@ jobs:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     continue-on-error: true
     strategy:
       matrix:
