@@ -1,8 +1,8 @@
 /**
  * This a minimal tRPC server
  */
-import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import { fileURLToPath } from 'node:url';
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import { z } from 'zod';
 import { db } from './db.js';
 import { publicProcedure, router } from './trpc.js';
