@@ -485,6 +485,7 @@ export function createTRPCOptionsProxy<
         return trpcSubscriptionOptions({
           opts: arg2,
           path,
+          input: arg1,
           queryKey: getQueryKeyInternal({
             path,
             input: arg1,
