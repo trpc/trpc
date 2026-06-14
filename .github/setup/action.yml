@@ -1,19 +1,31 @@
 name: Setup Workflow
 description: Composite action that sets up pnpm
+inputs:
+  use-cache:
+    description: Whether to restore and save package-manager caches
+    default: 'true'
 runs:
   using: 'composite'
   steps:
     - uses: pnpm/action-setup@v5
     - uses: actions/setup-node@v6
+      if: ${{ inputs.use-cache == 'true' }}
       with:
         node-version: 24.x
+    - uses: actions/setup-node@v6
+      if: ${{ inputs.use-cache != 'true' }}
+      with:
+        node-version: 24.x
+        package-manager-cache: false
 
     - name: Get pnpm store directory
+      if: ${{ inputs.use-cache == 'true' }}
       shell: bash
       id: pnpm-cache
       run: |
         echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
     - uses: actions/cache@v5
+      if: ${{ inputs.use-cache == 'true' }}
       name: Setup pnpm cache
       with:
         path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
