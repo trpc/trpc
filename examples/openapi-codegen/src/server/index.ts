@@ -2,6 +2,7 @@
  * This a minimal tRPC server
  */
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 import { db } from './db.js';
 import { publicProcedure, router } from './trpc.js';
@@ -30,10 +31,29 @@ export const appRouter = router({
 // Export type router type signature, this is used by the client.
 export type AppRouter = typeof appRouter;
 
-const server = createHTTPServer({
-  router: appRouter,
-});
+export function startServer(port = 3000) {
+  const server = createHTTPServer({
+    router: appRouter,
+  });
 
-server.listen(3000).addListener('listening', () => {
-  console.log('Listening on port 3000');
-});
+  server.listen(port).addListener('listening', () => {
+    console.log(`Listening on port ${port}`);
+  });
+
+  return server;
+}
+
+const scriptPath = (process.argv[1] ?? '').replaceAll('\\', '/');
+const modulePath = fileURLToPath(import.meta.url).replaceAll('\\', '/');
+const entrypoint =
+  scriptPath === modulePath ||
+  scriptPath.endsWith('/src/server') ||
+  scriptPath.endsWith('/src/server.ts') ||
+  scriptPath.endsWith('/src/server/index.ts') ||
+  scriptPath.endsWith('/dist/server') ||
+  scriptPath.endsWith('/dist/server.js') ||
+  scriptPath.endsWith('/dist/server/index.js');
+
+if (entrypoint) {
+  startServer();
+}
