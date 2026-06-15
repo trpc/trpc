@@ -5,6 +5,12 @@
  * `jsonlStreamConsumer` to cancel the response body stream, but the
  * observable teardown was a noop — so unsubscribing before the response
  * arrived left the stream consumer reading indefinitely.
+ *
+ * The fix aborts that `AbortController` when the batch's combined abort signal
+ * fires. The combined signal can already be aborted by the time the batch is
+ * dispatched (every subscriber unsubscribed first), in which case
+ * `addEventListener('abort', ...)` never fires — so the abort is now also
+ * forwarded eagerly, carrying the abort reason through to the stream consumer.
  */
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { httpBatchStreamLink } from '@trpc/client';
@@ -212,4 +218,87 @@ test('signal is aborted after unsubscribe in a batched scenario', async () => {
   // The fast operation should still complete successfully
   await fastDone;
   expect(fastResult).toBe('fast');
+});
+
+test('aborts the stream consumer when the batch signal is already aborted before dispatch', async () => {
+  // Gate that keeps the server procedure pending until we release it. If the
+  // request is (incorrectly) sent, the procedure hangs and the test below times
+  // out instead of settling.
+  const responseDeferred = createDeferred<void>();
+
+  const t = initTRPC.create();
+  const router = t.router({
+    slow: t.procedure.query(async () => {
+      await responseDeferred.promise;
+      return 'done';
+    }),
+  });
+
+  await using ctx = testServerAndClientResource(router, {
+    server: {},
+    clientLink: 'httpBatchStreamLink',
+  });
+
+  // Spy on `AbortController.prototype.abort` so we can inspect the reason passed
+  // to every instance (the spy still calls through, so aborts behave normally).
+  // We deliberately use a non-`AbortError` reason for the operation signal below
+  // so the only forwarded `AbortError` can come from the batch signal.
+  const abortSpy = vi.spyOn(AbortController.prototype, 'abort');
+
+  const links = [
+    httpBatchStreamLink({
+      url: ctx.httpUrl,
+    })(mockRuntime),
+  ];
+
+  // The operation's signal is aborted *before* the chain runs, so the batch's
+  // combined signal is already aborted when `fetch` builds the request.
+  const opAbortController = new AbortController();
+  opAbortController.abort(new Error('aborted before dispatch'));
+
+  const chain = createChain({
+    links,
+    op: {
+      id: 1,
+      type: 'query',
+      path: 'slow',
+      input: undefined,
+      context: {},
+      signal: opAbortController.signal,
+    },
+  });
+
+  // The observable must settle (it errors with the abort) rather than hang. A
+  // hang here is the bug: the stream consumer would keep reading forever.
+  const settled = await Promise.race([
+    new Promise<'settled'>((resolve) => {
+      chain.subscribe({
+        next() {
+          // noop
+        },
+        complete() {
+          resolve('settled');
+        },
+        error() {
+          resolve('settled');
+        },
+      });
+    }),
+    new Promise<'timeout'>((resolve) =>
+      setTimeout(() => resolve('timeout'), 2000),
+    ),
+  ]);
+  expect(settled).toBe('settled');
+
+  // The stream consumer's `AbortController` must have been aborted with the
+  // batch's abort reason (an `AbortError`). Without the eager-forward fix the
+  // `addEventListener('abort', ...)` never fires for an already-aborted signal,
+  // so no `AbortError` reason is ever forwarded.
+  const forwardedAbortError = abortSpy.mock.calls.some(
+    ([reason]) => reason instanceof Error && reason.name === 'AbortError',
+  );
+  expect(forwardedAbortError).toBe(true);
+
+  // Clean up — resolve the deferred so the server-side promise doesn't leak
+  responseDeferred.resolve();
 });

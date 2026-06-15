@@ -73,15 +73,24 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
             ...batchOps.map((op) => op.signal),
           );
           const abortController = new AbortController();
-          // When all subscribers have unsubscribed (batchSignals fires), abort
+          // When every subscriber has unsubscribed (`batchSignals` fires) abort
           // the JSONL stream consumer so the response body is no longer read.
-          batchSignals.addEventListener(
-            'abort',
-            () => abortController.abort(),
-            {
+          //
+          // `batchSignals` may already be aborted by the time we get here (e.g.
+          // all subscribers unsubscribed before the batch was dispatched). In
+          // that case `addEventListener('abort', ...)` would never fire, so we
+          // forward the abort eagerly. We also forward `batchSignals.reason` so
+          // the stream consumer rejects with the original cause rather than a
+          // generic `AbortError`.
+          const abortStreamConsumer = () =>
+            abortController.abort(batchSignals.reason);
+          if (batchSignals.aborted) {
+            abortStreamConsumer();
+          } else {
+            batchSignals.addEventListener('abort', abortStreamConsumer, {
               once: true,
-            },
-          );
+            });
+          }
 
           const responsePromise = fetchHTTPResponse({
             ...resolvedOpts,
