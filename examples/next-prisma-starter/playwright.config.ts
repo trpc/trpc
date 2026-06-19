@@ -15,6 +15,7 @@ const config: PlaywrightTestConfig = {
   use: {
     ...devices['Desktop Chrome'],
     headless: opts.headless,
+    channel: process.env.CI ? 'chrome' : undefined,
     video: 'on',
   },
   retries: process.env.CI ? 3 : 0,

@@ -151,14 +151,6 @@ jobs:
 
       - run: pnpm build
 
-      - name: Install playwright ???
-        # Seems like some of playwright's system deps aren't being cached, so we're making sure they are installed
-        run: |
-          cat ./examples/${{ matrix.dir }}/package.json |
-          if grep --silent '"@playwright/test"';
-            then cd ./examples/${{ matrix.dir }} && pnpm exec playwright install chromium;
-          fi
-
       - run: cp ./examples/${{ matrix.dir }}/.env.example ./examples/${{ matrix.dir }}/.env || true
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build
@@ -277,13 +269,6 @@ jobs:
           node-version: ${{ matrix.node-start }}
           cache: 'pnpm'
       - run: node -v
-      - name: Install playwright ???
-        # Seems like some of playwright's system deps aren't being cached, so we're making sure they are installed
-        run: |
-          cat ./examples/${{ matrix.dir }}/package.json |
-          if grep --silent '"@playwright/test"';
-            then cd ./examples/${{ matrix.dir }} && pnpm exec playwright install chromium;
-          fi
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} typecheck
