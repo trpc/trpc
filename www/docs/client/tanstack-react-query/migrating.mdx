@@ -205,3 +205,17 @@ function Users() {
   createUserMutation.mutate({ name: 'Jerry' });
 }
 ```
+
+## abortOnUnmount
+
+In the classic client you could enable request aborting globally:
+
+```ts
+export const trpc = createTRPCReact<AppRouter>({ abortOnUnmount: true });
+```
+
+`createTRPCContext` does not accept this option. In the new integration,
+TanStack Query v5 automatically passes an `AbortSignal` to the query function
+and cancels in-flight requests when a component unmounts with no remaining
+observers — the behaviour you expected from `abortOnUnmount: true` is now
+the default.
