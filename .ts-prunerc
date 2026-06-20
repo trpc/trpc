@@ -1,4 +1,4 @@
 {
   "error": true,
-  "ignore": ".d.ts|config.ts|examples|index.ts|packages/server/src/adapters/*"
+  "ignore": ".d.ts|config.ts|examples|index.ts|createOptionsProxy.ts|packages/server/src/adapters/*"
 }

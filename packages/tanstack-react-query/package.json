@@ -31,6 +31,16 @@
         "types": "./dist/index.d.cts",
         "default": "./dist/index.cjs"
       }
+    },
+    "./createOptionsProxy": {
+      "import": {
+        "types": "./dist/createOptionsProxy.d.mts",
+        "default": "./dist/createOptionsProxy.mjs"
+      },
+      "require": {
+        "types": "./dist/createOptionsProxy.d.cts",
+        "default": "./dist/createOptionsProxy.cjs"
+      }
     }
   },
   "files": [
@@ -38,6 +48,7 @@
     "src",
     "README.md",
     "package.json",
+    "createOptionsProxy",
     "!**/*.test.*",
     "!**/__tests__",
     "skills",
