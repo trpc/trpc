@@ -1,3 +1,4 @@
+import type { AsyncLocalStorage } from 'async_hooks';
 import {
   defaultFormatter,
   type DefaultErrorShape,
@@ -47,6 +48,11 @@ export interface RuntimeConfigOptions<
    * @see https://trpc.io/docs/v11/data-transformers
    */
   transformer?: DataTransformerOptions;
+
+  /**
+   * option to enable async storage for all procedures
+   */
+  asyncStorage?: AsyncLocalStorage<any>;
 }
 
 type ContextCallback = (...args: any[]) => object | Promise<object>;
@@ -165,6 +171,10 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
        * @internal
        */
       $types: null as any,
+      /**
+       * pass asyncStorage as runtime configuration
+       */
+      asyncStorage: opts?.asyncStorage,
     };
 
     {
@@ -177,6 +187,7 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
         );
       }
     }
+
     return {
       /**
        * Your router config
@@ -189,6 +200,7 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
        */
       procedure: createBuilder<$Root['ctx'], $Root['meta']>({
         meta: opts?.defaultMeta,
+        asyncStorage: opts?.asyncStorage,
       }),
       /**
        * Create reusable middlewares
