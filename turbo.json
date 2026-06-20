@@ -11,6 +11,7 @@
     "NODE_ENV",
     "DATABASE_URL",
     "NEXTAUTH_SECRET",
+    "GITHUB_TOKEN",
     "AUTH_GITHUB_ID",
     "AUTH_GITHUB_SECRET"
   ],

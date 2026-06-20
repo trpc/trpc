@@ -30,7 +30,7 @@ export const appRouter = router({
           limit: z.number().default(3),
           cursor: z.number().nullish(),
         })
-        .default({}),
+        .default({ limit: 3 }),
     )
     .query(({ input }) => {
       const start = input.cursor ?? 0;
