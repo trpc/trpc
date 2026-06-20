@@ -1,5 +1,6 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { render } from '@testing-library/react';
+import type { inferReactQueryProcedureOptions } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import React, { useEffect } from 'react';
@@ -126,4 +127,30 @@ test('useMutation()', async () => {
       "type": "mutation",
     }
   `);
+});
+
+test('inferReactQueryProcedureOptions includes select for query procedures', () => {
+  // Regression: https://github.com/trpc/trpc/issues/7183
+  // ReactQueryOptions should expose the `select` option so callers can
+  // narrow/transform the output type when using the inferred helper types.
+  const t = initTRPC.create();
+  const appRouter = t.router({
+    greet: t.procedure.query(() => ({ name: 'Alice', age: 30 })),
+  });
+
+  type AppRouter = typeof appRouter;
+  type Options = inferReactQueryProcedureOptions<AppRouter>;
+  type GreetOptions = Options['greet'];
+
+  // `select` must exist on GreetOptions – this would be a compile error before the fix
+  type SelectFn = GreetOptions['select'];
+
+  // The select callback's argument should be typed as the procedure output
+  type InputOfSelect = SelectFn extends ((data: infer D) => unknown) | undefined
+    ? D
+    : never;
+  const _assertInput: InputOfSelect = { name: '', age: 0 };
+  void _assertInput;
+
+  expect(true).toBe(true); // type-level assertions above; runtime is trivial
 });
