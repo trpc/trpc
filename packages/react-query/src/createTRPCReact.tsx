@@ -10,7 +10,7 @@ import type {
   UseSuspenseInfiniteQueryResult,
   UseSuspenseQueryResult,
 } from '@tanstack/react-query';
-import type { createTRPCClient, TRPCClientErrorLike } from '@trpc/client';
+import type { createTRPCClient, TRPCClientError } from '@trpc/client';
 import type {
   AnyProcedure,
   AnyRootTypes,
@@ -68,7 +68,7 @@ export interface ProcedureUseQuery<TDef extends ResolverDef> {
     opts: DefinedUseTRPCQueryOptions<
       TQueryFnData,
       TData,
-      TRPCClientErrorLike<{
+      TRPCClientError<{
         errorShape: TDef['errorShape'];
         transformer: TDef['transformer'];
       }>,
@@ -76,7 +76,7 @@ export interface ProcedureUseQuery<TDef extends ResolverDef> {
     >,
   ): DefinedUseTRPCQueryResult<
     TData,
-    TRPCClientErrorLike<{
+    TRPCClientError<{
       errorShape: TDef['errorShape'];
       transformer: TDef['transformer'];
     }>
@@ -87,10 +87,10 @@ export interface ProcedureUseQuery<TDef extends ResolverDef> {
     opts?: UseTRPCQueryOptions<
       TQueryFnData,
       TData,
-      TRPCClientErrorLike<TDef>,
+      TRPCClientError<TDef>,
       TDef['output']
     >,
-  ): UseTRPCQueryResult<TData, TRPCClientErrorLike<TDef>>;
+  ): UseTRPCQueryResult<TData, TRPCClientError<TDef>>;
 }
 
 /**
@@ -98,7 +98,7 @@ export interface ProcedureUseQuery<TDef extends ResolverDef> {
  */
 export type ProcedureUsePrefetchQuery<TDef extends ResolverDef> = (
   input: TDef['input'] | SkipToken,
-  opts?: TRPCFetchQueryOptions<TDef['output'], TRPCClientErrorLike<TDef>>,
+  opts?: TRPCFetchQueryOptions<TDef['output'], TRPCClientError<TDef>>,
 ) => void;
 
 /**
@@ -192,7 +192,7 @@ export interface useTRPCInfiniteQuery<TDef extends ResolverDef> {
         //     TQueryFnData,
         TDef['output'],
         //     TError,
-        TRPCClientErrorLike<TDef>,
+        TRPCClientError<TDef>,
         //     TData,
         TData,
         //     TQueryKey,
@@ -202,7 +202,7 @@ export interface useTRPCInfiniteQuery<TDef extends ResolverDef> {
       >
     >,
   ): TRPCHookResult &
-    DefinedUseInfiniteQueryResult<TData, TRPCClientErrorLike<TDef>>;
+    DefinedUseInfiniteQueryResult<TData, TRPCClientError<TDef>>;
 
   // 2nd
   <TData = trpcInfiniteData<TDef>>(
@@ -213,7 +213,7 @@ export interface useTRPCInfiniteQuery<TDef extends ResolverDef> {
         //     TQueryFnData,
         TDef['output'],
         //     TError,
-        TRPCClientErrorLike<TDef>,
+        TRPCClientError<TDef>,
         //     TData,
         TData,
         //     TQueryKey,
@@ -222,7 +222,7 @@ export interface useTRPCInfiniteQuery<TDef extends ResolverDef> {
         inferCursorType<TDef['input']>
       >
     >,
-  ): TRPCHookResult & UseInfiniteQueryResult<TData, TRPCClientErrorLike<TDef>>;
+  ): TRPCHookResult & UseInfiniteQueryResult<TData, TRPCClientError<TDef>>;
 
   // 3rd:
   <TData = trpcInfiniteData<TDef>>(
@@ -233,7 +233,7 @@ export interface useTRPCInfiniteQuery<TDef extends ResolverDef> {
         //     TQueryFnData,
         TDef['output'],
         //     TError,
-        TRPCClientErrorLike<TDef>,
+        TRPCClientError<TDef>,
         //     TData,
         TData,
         //     TQueryKey,
@@ -242,7 +242,7 @@ export interface useTRPCInfiniteQuery<TDef extends ResolverDef> {
         inferCursorType<TDef['input']>
       >
     >,
-  ): TRPCHookResult & UseInfiniteQueryResult<TData, TRPCClientErrorLike<TDef>>;
+  ): TRPCHookResult & UseInfiniteQueryResult<TData, TRPCClientError<TDef>>;
 }
 
 // references from react-query
@@ -272,7 +272,7 @@ export type useTRPCSuspenseInfiniteQuery<TDef extends ResolverDef> = (
       //     TQueryFnData,
       TDef['output'],
       //     TError,
-      TRPCClientErrorLike<TDef>,
+      TRPCClientError<TDef>,
       //     TData,
       trpcInfiniteData<TDef>,
       //     TQueryKey,
@@ -286,7 +286,7 @@ export type useTRPCSuspenseInfiniteQuery<TDef extends ResolverDef> = (
   TRPCHookResult &
     UseSuspenseInfiniteQueryResult<
       trpcInfiniteData<TDef>,
-      TRPCClientErrorLike<TDef>
+      TRPCClientError<TDef>
     >,
 ];
 
@@ -310,7 +310,7 @@ export type MaybeDecoratedInfiniteQuery<TDef extends ResolverDef> =
           opts: TRPCFetchInfiniteQueryOptions<
             TDef['input'],
             TDef['output'],
-            TRPCClientErrorLike<TDef>
+            TRPCClientError<TDef>
           >,
         ) => void;
       }
@@ -336,11 +336,11 @@ export type DecoratedQueryMethods<TDef extends ResolverDef> = {
     opts?: UseTRPCSuspenseQueryOptions<
       TQueryFnData,
       TData,
-      TRPCClientErrorLike<TDef>
+      TRPCClientError<TDef>
     >,
   ) => [
     TData,
-    UseSuspenseQueryResult<TData, TRPCClientErrorLike<TDef>> & TRPCHookResult,
+    UseSuspenseQueryResult<TData, TRPCClientError<TDef>> & TRPCHookResult,
   ];
 };
 
@@ -357,13 +357,13 @@ export type DecoratedMutation<TDef extends ResolverDef> = {
   useMutation: <TContext = unknown>(
     opts?: UseTRPCMutationOptions<
       TDef['input'],
-      TRPCClientErrorLike<TDef>,
+      TRPCClientError<TDef>,
       TDef['output'],
       TContext
     >,
   ) => UseTRPCMutationResult<
     TDef['output'],
-    TRPCClientErrorLike<TDef>,
+    TRPCClientError<TDef>,
     TDef['input'],
     TContext
   >;
@@ -375,11 +375,11 @@ interface ProcedureUseSubscription<TDef extends ResolverDef> {
     input: TDef['input'],
     opts?: UseTRPCSubscriptionOptions<
       inferAsyncIterableYield<TDef['output']>,
-      TRPCClientErrorLike<TDef>
+      TRPCClientError<TDef>
     >,
   ): TRPCSubscriptionResult<
     inferAsyncIterableYield<TDef['output']>,
-    TRPCClientErrorLike<TDef>
+    TRPCClientError<TDef>
   >;
 
   // With skip token
@@ -388,13 +388,13 @@ interface ProcedureUseSubscription<TDef extends ResolverDef> {
     opts?: Omit<
       UseTRPCSubscriptionOptions<
         inferAsyncIterableYield<TDef['output']>,
-        TRPCClientErrorLike<TDef>
+        TRPCClientError<TDef>
       >,
       'enabled'
     >,
   ): TRPCSubscriptionResult<
     inferAsyncIterableYield<TDef['output']>,
-    TRPCClientErrorLike<TDef>
+    TRPCClientError<TDef>
   >;
 }
 /**
@@ -431,7 +431,9 @@ export type DecorateRouterRecord<
             input: inferProcedureInput<$Value>;
             output: inferTransformedProcedureOutput<TRoot, $Value>;
             transformer: TRoot['transformer'];
-            errorShape: TRoot['errorShape'];
+            errorShape:
+              | TRoot['errorShape']
+              | $Value['_def']['$types']['errorShape'];
           }
         >
       : $Value extends RouterRecord

@@ -2,7 +2,7 @@ import { getServerAndReactClient } from './__reactHelpers';
 import { render } from '@testing-library/react';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import { TRPCClientError } from '@trpc/client';
-import { initTRPC } from '@trpc/server';
+import { createTRPCDeclaredError, initTRPC } from '@trpc/server';
 import type {
   DefaultErrorData,
   Maybe,
@@ -62,7 +62,7 @@ describe('custom error formatter', () => {
           TRPCClientErrorLike<typeof appRouter>
         >();
         expectTypeOf(query1.error).toEqualTypeOf<
-          TRPCClientErrorLike<typeof appRouter>
+          TRPCClientError<typeof appRouter>
         >();
         queryErrorCallback(query1.error);
         return (
@@ -145,7 +145,7 @@ describe('no custom formatter', () => {
           TRPCClientErrorLike<typeof appRouter>
         >();
         expectTypeOf(query1.error).toEqualTypeOf<
-          TRPCClientErrorLike<typeof appRouter>
+          TRPCClientError<typeof appRouter>
         >();
         queryErrorCallback(query1.error);
         return (
@@ -189,6 +189,103 @@ describe('no custom formatter', () => {
   });
 });
 
+describe('declared errors', () => {
+  const ctx = konn()
+    .beforeEach(() => {
+      const BadPhoneError = createTRPCDeclaredError({
+        code: 'UNAUTHORIZED',
+        key: 'BAD_PHONE',
+      })
+        .data<{
+          reason: 'BAD_PHONE';
+        }>()
+        .create({
+          constants: {
+            reason: 'BAD_PHONE' as const,
+          },
+        });
+
+      const t = initTRPC.create({
+        errorFormatter(opts) {
+          return {
+            ...opts.shape,
+            data: {
+              ...opts.shape.data,
+              foo: 'bar' as const,
+            },
+          };
+        },
+      });
+
+      const appRouter = t.router({
+        registered: t.procedure.errors([BadPhoneError]).query(() => {
+          throw new BadPhoneError();
+        }),
+        unregistered: t.procedure.query(() => {
+          throw new BadPhoneError();
+        }),
+      });
+
+      return getServerAndReactClient(appRouter);
+    })
+    .afterEach(async (ctx) => {
+      await ctx?.close?.();
+    })
+    .done();
+
+  test('query errors are inferred and can be discriminated', async () => {
+    const { client, App, appRouter } = ctx;
+    const queryErrorCallback = vi.fn();
+    type AppError = TRPCClientError<typeof appRouter>;
+    type RegisteredShape = Extract<
+      NonNullable<AppError['shape']>,
+      { '~': { declaredErrorKey: 'BAD_PHONE' } }
+    >;
+    type FormattedShape = Extract<
+      NonNullable<AppError['shape']>,
+      { '~': { kind: 'formatted' } }
+    >;
+
+    expectTypeOf<
+      RegisteredShape['data']['reason']
+    >().toEqualTypeOf<'BAD_PHONE'>();
+    expectTypeOf<FormattedShape['data']['foo']>().toEqualTypeOf<'bar'>();
+
+    function MyComponent() {
+      const registered = client.registered.useQuery();
+      const unregistered = client.unregistered.useQuery();
+
+      if (!registered.error || !unregistered.error) {
+        return <>...</>;
+      }
+
+      if (registered.error.isDeclaredError()) {
+        expect(registered.error.isDeclaredError()).toBe(true);
+      }
+
+      if (unregistered.error.isFormattedError()) {
+        expect(unregistered.error.isFormattedError()).toBe(true);
+      }
+
+      queryErrorCallback({
+        registered: registered.error,
+        unregistered: unregistered.error,
+      });
+      return <>done</>;
+    }
+
+    render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+
+    await vi.waitFor(() => {
+      expect(queryErrorCallback).toHaveBeenCalledOnce();
+    });
+  });
+});
+
 test('types', async () => {
   const t = initTRPC.create();
   const appRouter = t.router({
@@ -206,7 +303,7 @@ test('types', async () => {
     }),
   });
 
-  type TRouterError = TRPCClientErrorLike<typeof appRouter>;
+  type TRouterError = TRPCClientError<typeof appRouter>;
 
   type TRouterError__data = TRouterError['data'];
   //      ^?

@@ -13,17 +13,40 @@ import '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import type { inferRouterError } from '@trpc/server';
-import { initTRPC } from '@trpc/server';
+import { createTRPCDeclaredError, initTRPC } from '@trpc/server';
 import * as React from 'react';
 import { describe, expect, expectTypeOf, test } from 'vitest';
 import { z } from 'zod';
 
 const fixtureData = ['1', '2', '3', '4'];
 
+const BadPhoneError = createTRPCDeclaredError({
+  code: 'UNAUTHORIZED',
+  key: 'BAD_PHONE',
+})
+  .data<{
+    reason: 'BAD_PHONE';
+  }>()
+  .create({
+    constants: {
+      reason: 'BAD_PHONE' as const,
+    },
+  });
+
 const testContext = () => {
   const t = initTRPC.create({});
 
   const appRouter = t.router({
+    registered: t.procedure
+      .errors([BadPhoneError])
+      .input(
+        z.object({
+          cursor: z.number().default(0),
+        }),
+      )
+      .query(() => {
+        throw new BadPhoneError();
+      }),
     post: t.router({
       byId: t.procedure
         .input(
@@ -197,6 +220,53 @@ describe('infiniteQueryOptions', () => {
     await userEvent.click(utils.getByTestId('invalidate'));
     await vi.waitFor(() => {
       expect(utils.getByTestId('invalidate')).toBeDisabled();
+    });
+  });
+
+  test('registered declared errors', async () => {
+    await using ctx = testContext();
+    const queryErrorCallback = vi.fn();
+    const { useTRPC } = ctx;
+
+    function MyComponent() {
+      const trpc = useTRPC();
+      const registered = useInfiniteQuery(
+        trpc.registered.infiniteQueryOptions(
+          {},
+          {
+            getNextPageParam() {
+              return undefined;
+            },
+            retry: false,
+          },
+        ),
+      );
+
+      if (!registered.error) {
+        return <>...</>;
+      }
+
+      if (registered.error.isDeclaredError('BAD_PHONE')) {
+        expectTypeOf(registered.error.data.reason).toEqualTypeOf<'BAD_PHONE'>();
+      }
+
+      queryErrorCallback(registered.error);
+      return <>done</>;
+    }
+
+    const utils = ctx.renderApp(<MyComponent />);
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('done');
+      expect(queryErrorCallback).toHaveBeenCalledOnce();
+    });
+
+    const error = queryErrorCallback.mock.calls[0]?.[0];
+    expect(error?.shape?.['~']).toEqual({
+      kind: 'declared',
+      declaredErrorKey: 'BAD_PHONE',
+    });
+    expect(error?.data).toEqual({
+      reason: 'BAD_PHONE',
     });
   });
 

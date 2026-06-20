@@ -1,10 +1,23 @@
 import { testReactResource } from './__helpers';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import '@testing-library/react';
-import { initTRPC } from '@trpc/server';
+import { createTRPCDeclaredError, initTRPC } from '@trpc/server';
 import * as React from 'react';
 import { describe, expect, expectTypeOf, test } from 'vitest';
 import { z } from 'zod';
+
+const BadPhoneError = createTRPCDeclaredError({
+  code: 'UNAUTHORIZED',
+  key: 'BAD_PHONE',
+})
+  .data<{
+    reason: 'BAD_PHONE';
+  }>()
+  .create({
+    constants: {
+      reason: 'BAD_PHONE' as const,
+    },
+  });
 
 const testContext = (keyPrefix?: string) => {
   const t = initTRPC.create({});
@@ -12,6 +25,9 @@ const testContext = (keyPrefix?: string) => {
   const posts = ['initial'];
 
   const appRouter = t.router({
+    registered: t.procedure.errors([BadPhoneError]).mutation(() => {
+      throw new BadPhoneError();
+    }),
     post: t.router({
       list: t.procedure.query(() => {
         return posts;
@@ -154,6 +170,56 @@ describe.each(['userid-123', undefined])(
       });
 
       expect(calls).toEqual(['onMutate', 'onSuccess', 'onSettled']);
+    });
+
+    test('registered declared errors', async () => {
+      await using ctx = testContext(keyPrefix);
+      const mutationErrorCallback = vi.fn();
+      const { useTRPC } = ctx;
+
+      function MyComponent() {
+        const trpc = useTRPC();
+        const registered = useMutation(
+          trpc.registered.mutationOptions({
+            onError: () => {
+              //
+            },
+          }),
+        );
+
+        React.useEffect(() => {
+          registered.mutate(undefined);
+          // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, []);
+
+        if (!registered.error) {
+          return <>...</>;
+        }
+
+        if (registered.error.isDeclaredError('BAD_PHONE')) {
+          expectTypeOf(
+            registered.error.data.reason,
+          ).toEqualTypeOf<'BAD_PHONE'>();
+        }
+
+        mutationErrorCallback(registered.error);
+        return <>done</>;
+      }
+
+      const utils = ctx.renderApp(<MyComponent />);
+      await vi.waitFor(() => {
+        expect(utils.container).toHaveTextContent('done');
+        expect(mutationErrorCallback).toHaveBeenCalledOnce();
+      });
+
+      const error = mutationErrorCallback.mock.calls[0]?.[0];
+      expect(error?.shape?.['~']).toEqual({
+        kind: 'declared',
+        declaredErrorKey: 'BAD_PHONE',
+      });
+      expect(error?.data).toEqual({
+        reason: 'BAD_PHONE',
+      });
     });
 
     test('optimistic update', async () => {

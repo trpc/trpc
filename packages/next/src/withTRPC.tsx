@@ -4,11 +4,12 @@
  */
 import type { DehydratedState, QueryClient } from '@tanstack/react-query';
 import { HydrationBoundary, QueryClientProvider } from '@tanstack/react-query';
-import type {
-  CreateTRPCClientOptions,
-  TRPCClient,
+import {
   TRPCClientError,
-  TRPCUntypedClient,
+  type CreateTRPCClientOptions,
+  type TRPCClient,
+  type TRPCClientErrorLike,
+  type TRPCUntypedClient,
 } from '@trpc/client';
 import type { CoercedTransformerParameters } from '@trpc/client/unstable-internals';
 import {
@@ -87,6 +88,66 @@ export type TRPCPrepassProps<
   ssrContext: TSSRContext;
 };
 
+function isDehydratedTRPCError(
+  error: unknown,
+): error is TRPCClientErrorLike<any> {
+  if (typeof error !== 'object' || error === null) {
+    return false;
+  }
+
+  const shape = (error as TRPCClientErrorLike<any>).shape;
+
+  return (
+    typeof (error as TRPCClientErrorLike<any>).message === 'string' &&
+    typeof shape === 'object' &&
+    shape !== null &&
+    typeof shape.code === 'number' &&
+    typeof shape.message === 'string'
+  );
+}
+
+function rehydrateTRPCClientError(
+  error: TRPCClientErrorLike<any>,
+): TRPCClientError<any> {
+  return new TRPCClientError(error.message, {
+    result: error.shape
+      ? {
+          error: error.shape,
+        }
+      : undefined,
+  });
+}
+
+function rehydrateDehydratedStateErrors(
+  dehydratedState: DehydratedState | undefined,
+): DehydratedState | undefined {
+  if (!dehydratedState) {
+    return dehydratedState;
+  }
+
+  return {
+    ...dehydratedState,
+    queries: dehydratedState.queries.map((query) => ({
+      ...query,
+      state: {
+        ...query.state,
+        error: isDehydratedTRPCError(query.state.error)
+          ? rehydrateTRPCClientError(query.state.error)
+          : query.state.error,
+      },
+    })),
+    mutations: dehydratedState.mutations.map((mutation) => ({
+      ...mutation,
+      state: {
+        ...mutation.state,
+        error: isDehydratedTRPCError(mutation.state.error)
+          ? rehydrateTRPCClientError(mutation.state.error)
+          : mutation.state.error,
+      },
+    })),
+  };
+}
+
 export function withTRPC<
   TRouter extends AnyRouter,
   TSSRContext extends NextPageContext = NextPageContext,
@@ -133,7 +194,9 @@ export function withTRPC<
           return trpcState;
         }
 
-        return transformer.input.deserialize(trpcState);
+        return rehydrateDehydratedStateErrors(
+          transformer.input.deserialize(trpcState),
+        );
       }, [trpcState]);
 
       return (

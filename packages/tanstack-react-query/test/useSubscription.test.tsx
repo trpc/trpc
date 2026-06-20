@@ -2,7 +2,7 @@ import { EventEmitter, on } from 'node:events';
 import { testReactResource } from './__helpers';
 import { fireEvent } from '@testing-library/react';
 import { httpSubscriptionLink, wsLink } from '@trpc/client';
-import { initTRPC } from '@trpc/server';
+import { createTRPCDeclaredError, initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { makeResource } from '@trpc/server/unstable-core-do-not-import';
 import { isAbortError } from '@trpc/server/unstable-core-do-not-import/http/abortError';
@@ -11,6 +11,19 @@ import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
 import type { TRPCSubscriptionResult } from '../src';
 import { useSubscription } from '../src';
+
+const BadPhoneError = createTRPCDeclaredError({
+  code: 'BAD_REQUEST',
+  key: 'BAD_PHONE',
+})
+  .data<{
+    reason: 'BAD_PHONE';
+  }>()
+  .create({
+    constants: {
+      reason: 'BAD_PHONE' as const,
+    },
+  });
 
 /* eslint-disable no-console */
 export const suppressLogs = () => {
@@ -73,6 +86,11 @@ const getCtx = (protocol: 'http' | 'ws') => {
     },
   });
   const appRouter = t.router({
+    registered: t.procedure
+      .errors([BadPhoneError])
+      .subscription(async function* () {
+        throw new BadPhoneError();
+      }),
     onEventIterable: t.procedure
       .input(z.number())
       .subscription(async function* (opts) {
@@ -589,5 +607,49 @@ describe('http', () => {
     });
 
     utils.unmount();
+  });
+});
+
+test('subscriptionOptions exposes registered declared errors over ws', async () => {
+  await using ctx = getCtx('ws');
+  const subscriptionErrorCallback = vi.fn();
+  const { useTRPC } = ctx;
+
+  function MyComponent() {
+    const trpc = useTRPC();
+    const registered = useSubscription(
+      trpc.registered.subscriptionOptions(undefined),
+    );
+
+    if (!registered.error) {
+      return <>...</>;
+    }
+
+    if (registered.error.isDeclaredError('BAD_PHONE')) {
+      expectTypeOf(registered.error.data.reason).toEqualTypeOf<'BAD_PHONE'>();
+    }
+
+    subscriptionErrorCallback({
+      error: registered.error,
+      status: registered.status,
+    });
+    return <>done</>;
+  }
+
+  const utils = ctx.renderApp(<MyComponent />);
+  await vi.waitFor(() => {
+    expect(utils.container).toHaveTextContent('done');
+    expect(subscriptionErrorCallback).toHaveBeenCalledOnce();
+  });
+
+  const result = subscriptionErrorCallback.mock.calls[0]?.[0];
+
+  expect(result?.status).toBe('error');
+  expect(result?.error.shape?.['~']).toEqual({
+    kind: 'declared',
+    declaredErrorKey: 'BAD_PHONE',
+  });
+  expect(result?.error.data).toEqual({
+    reason: 'BAD_PHONE',
   });
 });

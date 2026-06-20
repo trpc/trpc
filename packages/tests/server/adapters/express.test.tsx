@@ -264,6 +264,9 @@ test('bad url does not crash server', async () => {
           "stack": "[redacted]",
         },
         "message": "Invalid URL",
+        "~": Object {
+          "kind": "formatted",
+        },
       },
     }
   `);

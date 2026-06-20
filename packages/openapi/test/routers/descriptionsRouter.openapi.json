@@ -628,6 +628,20 @@
           "date"
         ],
         "additionalProperties": false
+      },
+      "TRPCFormattedErrorMeta": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "formatted"
+          },
+          "declaredErrorKey": {}
+        },
+        "required": [
+          "kind"
+        ],
+        "additionalProperties": false
       }
     },
     "responses": {
@@ -745,12 +759,16 @@
                         -32029,
                         -32099
                       ]
+                    },
+                    "~": {
+                      "$ref": "#/components/schemas/TRPCFormattedErrorMeta"
                     }
                   },
                   "required": [
                     "data",
                     "message",
-                    "code"
+                    "code",
+                    "~"
                   ],
                   "additionalProperties": false
                 }

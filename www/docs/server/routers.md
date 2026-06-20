@@ -93,7 +93,7 @@ When initializing your router, tRPC allows you to:
 
 - Setup [request contexts](/docs/server/context)
 - Assign [metadata](/docs/server/metadata) to procedures
-- [Format](/docs/server/error-formatting) and [handle](/docs/server/error-handling) errors
+- [Format and handle](/docs/server/errors) errors
 - [Transform data](/docs/server/data-transformers) as needed
 - Customize the [runtime configuration](#runtime-configuration)
 

@@ -63,6 +63,11 @@ It is often useful to access the types of your API within your clients. For this
 - `inferSubscriptionInput<TProcedure>`
 - `inferSubscriptionOutput<TProcedure>`
 
+`@trpc/client` also exports:
+
+- `inferProcedureClientError<TProcedure>`
+- `inferSubscriptionClientError<TProcedure>`
+
 ## Inferring Input & Output Types
 
 Let's assume we have this example router:
@@ -177,4 +182,24 @@ async function main() {
 }
 
 main();
+```
+
+You can also infer the client error type for any specific query/mutation/subscription procedure, which is useful for [declared errors](./todo-add-page-link.md)
+
+```ts twoslash title='client.ts'
+// @module: esnext
+// @include: server
+// @filename: client.ts
+// ---cut---
+import type {
+  inferProcedureClientError,
+  inferSubscriptionClientError,
+} from '@trpc/client';
+import type { AppRouter } from './server';
+
+type PostByIdError = inferProcedureClientError<AppRouter['post']['byId']>;
+//   ^?
+type OnPostAddError =
+  inferSubscriptionClientError<AppRouter['post']['onPostAdd']>;
+//   ^?
 ```

@@ -70,6 +70,7 @@ export type AnyQueryProcedure = {
         $types: {
             input: unknown;
             output: unknown;
+            errorShape: unknown;
         };
         procedure: true;
         type: 'query';
@@ -81,6 +82,10 @@ export type AnyQueryProcedure = {
         inputs: Array<ParserZodEsque | ParserValibotEsque | ParserArkTypeEsque | ParserStandardSchemaEsque | {
             [key: string]: unknown;
         } | ParserMyZodEsque | ParserScaleEsque | ParserSuperstructEsque | ParserYupEsque>;
+        /**
+         * Declared error classes for this procedure
+         */
+        declaredErrors: Array<AnyTrpcDeclaredErrorClass>;
     };
     meta: unknown;
 };
@@ -161,6 +166,27 @@ export type ParserYupEsque = {
     };
 };
 
+export type AnyTrpcDeclaredErrorClass = {
+    __trpcDeclaredErrorShape: TrpcErrorShape;
+};
+
+export type TrpcErrorShape = {
+    code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
+    message: string;
+    data: unknown;
+    '~': TrpcFormattedErrorMeta | TrpcDeclaredErrorMeta;
+};
+
+export type TrpcFormattedErrorMeta = {
+    kind: 'formatted';
+    declaredErrorKey?: unknown;
+};
+
+export type TrpcDeclaredErrorMeta = {
+    kind: 'declared';
+    declaredErrorKey: string;
+};
+
 export type AnyMutationProcedure = {
     _def: {
         /**
@@ -169,6 +195,7 @@ export type AnyMutationProcedure = {
         $types: {
             input: unknown;
             output: unknown;
+            errorShape: unknown;
         };
         procedure: true;
         type: 'mutation';
@@ -180,6 +207,10 @@ export type AnyMutationProcedure = {
         inputs: Array<ParserZodEsque | ParserValibotEsque | ParserArkTypeEsque | ParserStandardSchemaEsque | {
             [key: string]: unknown;
         } | ParserMyZodEsque | ParserScaleEsque | ParserSuperstructEsque | ParserYupEsque>;
+        /**
+         * Declared error classes for this procedure
+         */
+        declaredErrors: Array<AnyTrpcDeclaredErrorClass>;
     };
     meta: unknown;
 };
@@ -192,6 +223,7 @@ export type SubscriptionProcedure = {
         $types: {
             input: unknown;
             output: unknown;
+            errorShape: unknown;
         };
         procedure: true;
         type: 'subscription';
@@ -203,6 +235,10 @@ export type SubscriptionProcedure = {
         inputs: Array<ParserZodEsque | ParserValibotEsque | ParserArkTypeEsque | ParserStandardSchemaEsque | {
             [key: string]: unknown;
         } | ParserMyZodEsque | ParserScaleEsque | ParserSuperstructEsque | ParserYupEsque>;
+        /**
+         * Declared error classes for this procedure
+         */
+        declaredErrors: Array<AnyTrpcDeclaredErrorClass>;
     };
     meta: unknown;
 };
@@ -216,6 +252,7 @@ export type LegacyObservableSubscriptionProcedure = {
         $types: {
             input: unknown;
             output: unknown;
+            errorShape: unknown;
         };
         procedure: true;
         type: 'subscription';
@@ -227,6 +264,10 @@ export type LegacyObservableSubscriptionProcedure = {
         inputs: Array<ParserZodEsque | ParserValibotEsque | ParserArkTypeEsque | ParserStandardSchemaEsque | {
             [key: string]: unknown;
         } | ParserMyZodEsque | ParserScaleEsque | ParserSuperstructEsque | ParserYupEsque>;
+        /**
+         * Declared error classes for this procedure
+         */
+        declaredErrors: Array<AnyTrpcDeclaredErrorClass>;
     };
     meta: unknown;
 };
@@ -407,6 +448,7 @@ export type DefaultErrorShape = {
     message: string;
     code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
     data: DefaultErrorData;
+    '~': TrpcFormattedErrorMeta;
 };
 
 export type DefaultErrorData = {

@@ -1,7 +1,7 @@
 import type { DataTag, QueryClient, QueryFilters } from '@tanstack/react-query';
 import type {
   TRPCClient,
-  TRPCClientErrorLike,
+  TRPCClientError,
   TRPCRequestOptions,
 } from '@trpc/client';
 import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
@@ -36,6 +36,7 @@ import type {
   FeatureFlags,
   KeyPrefixOptions,
   OptionalCursorInput,
+  ResolverClientTypes,
   ResolverDef,
   TRPCInfiniteData,
   TRPCMutationKey,
@@ -112,13 +113,12 @@ export interface DecorateInfiniteQueryProcedure<TDef extends ResolverDef>
    * @see https://tanstack.com/query/latest/docs/framework/react/guides/query-keys
    * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryKey
    */
-  infiniteQueryKey: (input?: Partial<TDef['input']>) => DataTag<
+  infiniteQueryKey: (
+    input?: Partial<TDef['input']>,
+  ) => DataTag<
     TRPCQueryKey<TDef['featureFlags']['keyPrefix']>,
     TRPCInfiniteData<TDef['input'], TDef['output']>,
-    TRPCClientErrorLike<{
-      transformer: TDef['transformer'];
-      errorShape: TDef['errorShape'];
-    }>
+    TRPCClientError<ResolverClientTypes<TDef>>
   >;
 
   /**
@@ -133,10 +133,7 @@ export interface DecorateInfiniteQueryProcedure<TDef extends ResolverDef>
       DataTag<
         TRPCQueryKey<TDef['featureFlags']['keyPrefix']>,
         TRPCInfiniteData<TDef['input'], TDef['output']>,
-        TRPCClientErrorLike<{
-          transformer: TDef['transformer'];
-          errorShape: TDef['errorShape'];
-        }>
+        TRPCClientError<ResolverClientTypes<TDef>>
       >
     >,
   ) => WithRequired<
@@ -144,10 +141,7 @@ export interface DecorateInfiniteQueryProcedure<TDef extends ResolverDef>
       DataTag<
         TRPCQueryKey<TDef['featureFlags']['keyPrefix']>,
         TRPCInfiniteData<TDef['input'], TDef['output']>,
-        TRPCClientErrorLike<{
-          transformer: TDef['transformer'];
-          errorShape: TDef['errorShape'];
-        }>
+        TRPCClientError<ResolverClientTypes<TDef>>
       >
     >,
     'queryKey'
@@ -170,13 +164,12 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef>
    * @see https://tanstack.com/query/latest/docs/framework/react/guides/query-keys
    * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryKey
    */
-  queryKey: (input?: Partial<TDef['input']>) => DataTag<
+  queryKey: (
+    input?: Partial<TDef['input']>,
+  ) => DataTag<
     TRPCQueryKey<TDef['featureFlags']['keyPrefix']>,
     TDef['output'],
-    TRPCClientErrorLike<{
-      transformer: TDef['transformer'];
-      errorShape: TDef['errorShape'];
-    }>
+    TRPCClientError<ResolverClientTypes<TDef>>
   >;
 
   /**
@@ -191,10 +184,7 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef>
       DataTag<
         TRPCQueryKey<TDef['featureFlags']['keyPrefix']>,
         TDef['output'],
-        TRPCClientErrorLike<{
-          transformer: TDef['transformer'];
-          errorShape: TDef['errorShape'];
-        }>
+        TRPCClientError<ResolverClientTypes<TDef>>
       >
     >,
   ) => WithRequired<
@@ -202,10 +192,7 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef>
       DataTag<
         TRPCQueryKey<TDef['featureFlags']['keyPrefix']>,
         TDef['output'],
-        TRPCClientErrorLike<{
-          transformer: TDef['transformer'];
-          errorShape: TDef['errorShape'];
-        }>
+        TRPCClientError<ResolverClientTypes<TDef>>
       >
     >,
     'queryKey'
@@ -272,7 +259,9 @@ export type DecoratedRouterRecord<
               input: inferProcedureInput<$Value>;
               output: inferTransformedProcedureOutput<TRoot, $Value>;
               transformer: TRoot['transformer'];
-              errorShape: TRoot['errorShape'];
+              errorShape:
+                | TRoot['errorShape']
+                | $Value['_def']['$types']['errorShape'];
               featureFlags: TFeatureFlags;
             }
           >

@@ -2,6 +2,7 @@
 import { createAppRouter } from './__testHelpers';
 import type { DehydratedState } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
+import { TRPCClientError } from '@trpc/client';
 import { withTRPC } from '@trpc/next';
 import { ssrPrepass } from '@trpc/next/ssrPrepass';
 import { konn } from 'konn';
@@ -42,6 +43,75 @@ describe('withTRPC()', () => {
     globalThis.window = window;
     const utils = render(<Wrapped {...props} />);
     expect(utils.container).toHaveTextContent('first post');
+  });
+
+  test('rehydrates TRPCClientError instances for SSR query errors', async () => {
+    // @ts-ignore
+    const { window } = global;
+
+    // @ts-ignore
+    delete globalThis.window;
+    const { trpc, trpcClientOptions } = ctx;
+    const queryErrorCallback = vi.fn();
+
+    const App: AppType = () => {
+      const query = trpc.postById.useQuery('missing', {
+        retry: false,
+      });
+
+      if (!query.error) {
+        return <>loading</>;
+      }
+
+      queryErrorCallback(query.error);
+      return <>{query.error.message}</>;
+    };
+
+    const Wrapped = withTRPC({
+      config: () => trpcClientOptions,
+      ssr: true,
+      ssrPrepass,
+    })(App);
+
+    const props = await Wrapped.getInitialProps!({
+      AppTree: Wrapped,
+      Component: <div />,
+    } as any);
+
+    const dehydratedError = (
+      props as {
+        pageProps: {
+          trpcState: DehydratedState;
+        };
+      }
+    ).pageProps.trpcState.queries[0]!.state.error as unknown as {
+      message: string;
+      data: { code: string };
+      shape: { message: string; data: { code: string } };
+    };
+
+    expect(dehydratedError.message).toBe('NOT_FOUND');
+    expect(dehydratedError.shape.message).toBe('NOT_FOUND');
+    expect(dehydratedError.data).toEqual(dehydratedError.shape.data);
+
+    queryErrorCallback.mockClear();
+    // @ts-ignore
+    globalThis.window = window;
+
+    const utils = render(<Wrapped {...props} />);
+
+    await vi.waitFor(() => {
+      expect(queryErrorCallback).toHaveBeenCalled();
+    });
+
+    const error = queryErrorCallback.mock.lastCall?.[0];
+
+    expect(error).toBeInstanceOf(TRPCClientError);
+    expect(error.isFormattedError()).toBe(true);
+    expect(error.shape?.message).toBe('NOT_FOUND');
+    expect(error.data).toEqual(dehydratedError.data);
+    expect(error.data?.code).toBe('NOT_FOUND');
+    expect(utils.container).toHaveTextContent('NOT_FOUND');
   });
 
   describe('NextPageContext conditional ssr', async () => {

@@ -3,7 +3,7 @@ import type {
   QueryClient,
   UseMutationOptions,
 } from '@tanstack/react-query';
-import type { TRPCClientErrorLike, TRPCUntypedClient } from '@trpc/client';
+import type { TRPCClientError, TRPCUntypedClient } from '@trpc/client';
 import type {
   DistributiveOmit,
   MaybePromise,
@@ -12,6 +12,7 @@ import type {
   DefaultFeatureFlags,
   FeatureFlags,
   KeyPrefixOptions,
+  ResolverClientTypes,
   ResolverDef,
   TRPCMutationKey,
   TRPCQueryBaseOptions,
@@ -57,14 +58,14 @@ export interface TRPCMutationOptions<
   <TContext = unknown>(
     opts?: TRPCMutationOptionsIn<
       TDef['input'],
-      TRPCClientErrorLike<TDef>,
+      TRPCClientError<ResolverClientTypes<TDef>>,
       TDef['output'],
       TContext,
       TFeatureFlags
     >,
   ): TRPCMutationOptionsOut<
     TDef['input'],
-    TRPCClientErrorLike<TDef>,
+    TRPCClientError<ResolverClientTypes<TDef>>,
     TDef['output'],
     TContext,
     TFeatureFlags

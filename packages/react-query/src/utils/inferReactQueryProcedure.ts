@@ -1,4 +1,4 @@
-import type { TRPCClientErrorLike } from '@trpc/client';
+import type { TRPCClientError } from '@trpc/client';
 import type {
   AnyMutationProcedure,
   AnyProcedure,
@@ -27,7 +27,7 @@ export type InferQueryOptions<
   UseTRPCQueryOptions<
     inferTransformedProcedureOutput<TRoot, TProcedure>,
     inferTransformedProcedureOutput<TRoot, TProcedure>,
-    TRPCClientErrorLike<TRoot>,
+    TRPCClientError<TRoot>,
     TData
   >,
   'select' | 'queryFn'
@@ -42,7 +42,7 @@ export type InferMutationOptions<
   TMeta = unknown,
 > = UseTRPCMutationOptions<
   inferProcedureInput<TProcedure>,
-  TRPCClientErrorLike<TRoot>,
+  TRPCClientError<TRoot>,
   inferTransformedProcedureOutput<TRoot, TProcedure>,
   TMeta
 >;
@@ -55,7 +55,7 @@ export type InferQueryResult<
   TProcedure extends AnyProcedure,
 > = UseTRPCQueryResult<
   inferTransformedProcedureOutput<TRoot, TProcedure>,
-  TRPCClientErrorLike<TRoot>
+  TRPCClientError<TRoot>
 >;
 
 /**
@@ -67,7 +67,7 @@ export type InferMutationResult<
   TContext = unknown,
 > = UseTRPCMutationResult<
   inferTransformedProcedureOutput<TRoot, TProcedure>,
-  TRPCClientErrorLike<TRoot>,
+  TRPCClientError<TRoot>,
   inferProcedureInput<TProcedure>,
   TContext
 >;

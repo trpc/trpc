@@ -4,6 +4,7 @@ export * from './createTRPCUntypedClient';
 export * from './createTRPCClient';
 export * from './getFetch';
 export * from './TRPCClientError';
+export { safe } from './safe';
 export * from './links';
 
 export {

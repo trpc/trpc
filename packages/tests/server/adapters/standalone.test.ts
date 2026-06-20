@@ -227,6 +227,9 @@ test('force content-type on mutations', async () => {
             "stack": "[redacted]",
           },
           "message": "Missing content-type header",
+          "~": Object {
+            "kind": "formatted",
+          },
         },
       }
     `);
@@ -262,6 +265,9 @@ test('bad url does not crash server', async () => {
           "stack": "[redacted]",
         },
         "message": "Invalid URL",
+        "~": Object {
+          "kind": "formatted",
+        },
       },
     }
   `);

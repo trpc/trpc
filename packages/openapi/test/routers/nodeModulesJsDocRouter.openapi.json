@@ -272,11 +272,13 @@
                 "type": "object",
                 "properties": {
                   "input": {},
-                  "output": {}
+                  "output": {},
+                  "errorShape": {}
                 },
                 "required": [
                   "input",
-                  "output"
+                  "output",
+                  "errorShape"
                 ],
                 "additionalProperties": false,
                 "description": "These are just types, they can't be used at runtime"
@@ -327,6 +329,13 @@
                   ]
                 },
                 "description": "The input parsers for the procedure"
+              },
+              "declaredErrors": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AnyTRPCDeclaredErrorClass"
+                },
+                "description": "Declared error classes for this procedure"
               }
             },
             "required": [
@@ -335,7 +344,8 @@
               "type",
               "meta",
               "experimental_caller",
-              "inputs"
+              "inputs",
+              "declaredErrors"
             ],
             "additionalProperties": false
           },
@@ -501,6 +511,97 @@
         ],
         "additionalProperties": false
       },
+      "AnyTRPCDeclaredErrorClass": {
+        "type": "object",
+        "properties": {
+          "__trpcDeclaredErrorShape": {
+            "$ref": "#/components/schemas/TRPCErrorShape"
+          }
+        },
+        "required": [
+          "__trpcDeclaredErrorShape"
+        ],
+        "additionalProperties": false
+      },
+      "TRPCErrorShape": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "number",
+            "enum": [
+              -32700,
+              -32600,
+              -32603,
+              -32001,
+              -32002,
+              -32003,
+              -32004,
+              -32005,
+              -32008,
+              -32009,
+              -32012,
+              -32013,
+              -32015,
+              -32022,
+              -32028,
+              -32029,
+              -32099
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {},
+          "~": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/TRPCFormattedErrorMeta"
+              },
+              {
+                "$ref": "#/components/schemas/TRPCDeclaredErrorMeta"
+              }
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data",
+          "~"
+        ],
+        "additionalProperties": false
+      },
+      "TRPCFormattedErrorMeta": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "formatted"
+          },
+          "declaredErrorKey": {}
+        },
+        "required": [
+          "kind"
+        ],
+        "additionalProperties": false
+      },
+      "TRPCDeclaredErrorMeta": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "declared"
+          },
+          "declaredErrorKey": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "declaredErrorKey"
+        ],
+        "additionalProperties": false
+      },
       "AnyMutationProcedure": {
         "type": "object",
         "properties": {
@@ -511,11 +612,13 @@
                 "type": "object",
                 "properties": {
                   "input": {},
-                  "output": {}
+                  "output": {},
+                  "errorShape": {}
                 },
                 "required": [
                   "input",
-                  "output"
+                  "output",
+                  "errorShape"
                 ],
                 "additionalProperties": false,
                 "description": "These are just types, they can't be used at runtime"
@@ -566,6 +669,13 @@
                   ]
                 },
                 "description": "The input parsers for the procedure"
+              },
+              "declaredErrors": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AnyTRPCDeclaredErrorClass"
+                },
+                "description": "Declared error classes for this procedure"
               }
             },
             "required": [
@@ -574,7 +684,8 @@
               "type",
               "meta",
               "experimental_caller",
-              "inputs"
+              "inputs",
+              "declaredErrors"
             ],
             "additionalProperties": false
           },
@@ -596,11 +707,13 @@
                 "type": "object",
                 "properties": {
                   "input": {},
-                  "output": {}
+                  "output": {},
+                  "errorShape": {}
                 },
                 "required": [
                   "input",
-                  "output"
+                  "output",
+                  "errorShape"
                 ],
                 "additionalProperties": false,
                 "description": "These are just types, they can't be used at runtime"
@@ -651,6 +764,13 @@
                   ]
                 },
                 "description": "The input parsers for the procedure"
+              },
+              "declaredErrors": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AnyTRPCDeclaredErrorClass"
+                },
+                "description": "Declared error classes for this procedure"
               }
             },
             "required": [
@@ -659,7 +779,8 @@
               "type",
               "meta",
               "experimental_caller",
-              "inputs"
+              "inputs",
+              "declaredErrors"
             ],
             "additionalProperties": false
           },
@@ -685,11 +806,13 @@
                 "type": "object",
                 "properties": {
                   "input": {},
-                  "output": {}
+                  "output": {},
+                  "errorShape": {}
                 },
                 "required": [
                   "input",
-                  "output"
+                  "output",
+                  "errorShape"
                 ],
                 "additionalProperties": false,
                 "description": "These are just types, they can't be used at runtime"
@@ -740,6 +863,13 @@
                   ]
                 },
                 "description": "The input parsers for the procedure"
+              },
+              "declaredErrors": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AnyTRPCDeclaredErrorClass"
+                },
+                "description": "Declared error classes for this procedure"
               }
             },
             "required": [
@@ -748,7 +878,8 @@
               "type",
               "meta",
               "experimental_caller",
-              "inputs"
+              "inputs",
+              "declaredErrors"
             ],
             "additionalProperties": false
           },
@@ -1259,12 +1390,16 @@
           },
           "data": {
             "$ref": "#/components/schemas/DefaultErrorData"
+          },
+          "~": {
+            "$ref": "#/components/schemas/TRPCFormattedErrorMeta"
           }
         },
         "required": [
           "message",
           "code",
-          "data"
+          "data",
+          "~"
         ],
         "additionalProperties": false
       },

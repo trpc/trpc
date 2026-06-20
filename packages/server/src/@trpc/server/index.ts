@@ -1,5 +1,9 @@
 export {
   TRPCError,
+  TRPCProcedureError,
+  createTRPCDeclaredError,
+  type AnyTRPCDeclaredErrorClass,
+  type InferTRPCDeclaredErrorShape,
   /**
    * @deprecated use `experimental_trpcMiddleware` instead
    */

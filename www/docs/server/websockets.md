@@ -307,7 +307,7 @@ interface ConnectionParamsMessage {
 
 ## Errors
 
-See [https://www.jsonrpc.org/specification#error_object](https://www.jsonrpc.org/specification#error_object) or [Error Formatting](../server/error-formatting.md).
+See [https://www.jsonrpc.org/specification#error_object](https://www.jsonrpc.org/specification#error_object) or [Errors](./errors.mdx).
 
 ## Notifications from Server to Client
 

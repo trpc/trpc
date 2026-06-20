@@ -21,6 +21,14 @@ export type ResolverDef = {
 };
 
 /**
+ * @internal
+ */
+export type ResolverClientTypes<TDef extends ResolverDef> = {
+  transformer: TDef['transformer'];
+  errorShape: TDef['errorShape'];
+};
+
+/**
  * @remark `void` is here due to https://github.com/trpc/trpc/pull/4374
  */
 type CursorInput = { cursor?: any };

@@ -1,3 +1,4 @@
+import assert from 'node:assert';
 import { experimental_trpcMiddleware, initTRPC } from '../@trpc/server';
 import { nextAppDirCaller } from './next-app-dir/nextAppDirCaller';
 
@@ -24,7 +25,7 @@ test('experimental caller', async () => {
     const result = await proc();
     expect(result).toBe('hello');
 
-    expect((proc as any)._def.type).toBe('query');
+    expect(proc._def.type).toBe('query');
   }
 });
 
