@@ -2224,3 +2224,98 @@ test('connection state should not be updated for subscriptions', async () => {
   // Clean up
   subscription.unsubscribe();
 });
+
+describe('subscription cleanup on failed teardown (#7400)', () => {
+  function throwingFactory() {
+    const t = initTRPC.create();
+
+    const appRouter = t.router({
+      brokenTeardown: t.procedure.subscription(() => {
+        return {
+          [Symbol.asyncIterator]() {
+            return {
+              next(): Promise<IteratorResult<number>> {
+                return new Promise((_resolve) => {
+                  // never resolves - keeps subscription active
+                });
+              },
+              async return(): Promise<IteratorResult<number>> {
+                throw new Error('teardown failed');
+              },
+            };
+          },
+        };
+      }),
+    });
+
+    return testServerAndClientResource(appRouter, {
+      wssServer: { router: appRouter },
+    });
+  }
+
+  test('reusing a subscription id after a failed teardown does not throw "Duplicate id"', async () => {
+    await using ctx = throwingFactory();
+    const rawClient = new WebSocket(ctx.wssUrl);
+
+    const responses: TRPCResponse[] = [];
+    rawClient.addEventListener('message', (msg) => {
+      responses.push(JSON.parse(msg.data as string));
+    });
+
+    await new Promise<void>((resolve) => {
+      rawClient.onopen = () => resolve();
+    });
+
+    const start: TRPCClientOutgoingMessage = {
+      id: 1,
+      jsonrpc: '2.0',
+      method: 'subscription',
+      params: { path: 'brokenTeardown', input: null },
+    };
+    rawClient.send(JSON.stringify(start));
+
+    await vi.waitFor(() => {
+      expect(
+        responses.find(
+          (r) => r.id === 1 && (r as any).result?.type === 'started',
+        ),
+      ).toBeDefined();
+    });
+
+    // stopping triggers the throwing teardown, whose rejection lands in the
+    // ws adapter's run().catch() and (before the fix) leaves a stale entry.
+    const stop: TRPCClientOutgoingMessage = {
+      id: 1,
+      jsonrpc: '2.0',
+      method: 'subscription.stop',
+    };
+    rawClient.send(JSON.stringify(stop));
+
+    await vi.waitFor(() => {
+      expect(responses.find((r) => r.id === 1 && 'error' in r)).toBeDefined();
+    });
+
+    responses.length = 0;
+
+    // a stale entry makes the server reject the reused id with "Duplicate id 1".
+    rawClient.send(JSON.stringify(start));
+
+    await vi.waitFor(() => {
+      expect(responses.length).toBeGreaterThan(0);
+    });
+
+    const reuse = responses.find((r) => r.id === 1 && !('error' in r));
+    expect(reuse).toBeDefined();
+    expect((reuse as any).result.type).toBe('started');
+
+    const duplicateError = responses.find(
+      (r) =>
+        r.id === 1 &&
+        'error' in r &&
+        (r as any).error?.message?.includes('Duplicate id'),
+    );
+    expect(duplicateError).toBeUndefined();
+
+    rawClient.close();
+  });
+});
