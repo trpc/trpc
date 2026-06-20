@@ -8,7 +8,6 @@ import { createTRPCUntypedClient } from '@trpc/client';
 import type { TRPCClientError, TRPCClientErrorLike } from '@trpc/client';
 import type { CoercedTransformerParameters } from '@trpc/client/unstable-internals';
 import { getTransformer } from '@trpc/client/unstable-internals';
-import { getQueryClient } from '@trpc/react-query/shared';
 import type {
   AnyRouter,
   Dict,
@@ -19,6 +18,8 @@ import type {
   NextPageContext,
 } from 'next/dist/shared/lib/utils';
 import { createElement } from 'react';
+import { getQueryClientWithServerGcTimeInfinity } from './getQueryClientWithServerGcTimeInfinity';
+import { isServer } from './runtime';
 import type { TRPCPrepassHelper, TRPCPrepassProps } from './withTRPC';
 
 function transformQueryOrMutationCacheErrors<
@@ -53,7 +54,7 @@ export const ssrPrepass: TRPCPrepassHelper = (opts) => {
   );
   WithTRPC.getInitialProps = async (appOrPageCtx: AppContextType) => {
     const shouldSsr = async () => {
-      if (typeof window !== 'undefined') {
+      if (!isServer()) {
         return false;
       }
       if (typeof parent.ssr === 'function') {
@@ -92,13 +93,16 @@ export const ssrPrepass: TRPCPrepassHelper = (opts) => {
     const getAppTreeProps = (props: Record<string, unknown>) =>
       isApp ? { pageProps: props } : props;
 
-    if (typeof window !== 'undefined' || !ssrEnabled) {
+    if (!isServer() || !ssrEnabled) {
       return getAppTreeProps(pageProps);
     }
 
     const config = parent.config({ ctx });
     const trpcClient = createTRPCUntypedClient(config);
-    const queryClient = getQueryClient(config);
+    const queryClient = getQueryClientWithServerGcTimeInfinity(
+      config,
+      parent.forceServerGcTimeInfinity,
+    );
 
     const trpcProp: $PrepassProps = {
       config,
