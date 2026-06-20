@@ -4,7 +4,7 @@ import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
 import type { DirectArrayData, DirectArrayErrors, DirectArrayInlineData, DirectArrayInlineErrors, DirectArrayInlineResponses, DirectArrayResponses, HelloData, HelloErrors, HelloInlineData, HelloInlineErrors, HelloInlineResponses, HelloResponses, ReferencedChildLeafOutputData, ReferencedChildLeafOutputErrors, ReferencedChildLeafOutputResponses, ReferencedChildrenData, ReferencedChildrenErrors, ReferencedChildrenResponses, SubrouterHelloData, SubrouterHelloErrors, SubrouterHelloResponses, SubrouterInlineHelloData, SubrouterInlineHelloErrors, SubrouterInlineHelloResponses } from './types.gen';
 
-export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
+export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
      * You can provide a client instance returned by `createClient()` instead of
      * individual options. This might be also useful if you want to implement a
