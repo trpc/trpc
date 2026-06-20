@@ -16,7 +16,7 @@ const config: PlaywrightTestConfig = {
     baseURL: baseUrl,
     headless: opts.headless,
     channel: process.env.CI ? 'chrome' : undefined,
-    video: process.env['CI'] ? 'retain-on-failure' : 'off',
+    video: 'off',
     screenshot: process.env['CI'] ? 'only-on-failure' : 'off',
   },
   retries: process.env['CI'] ? 3 : 0,
