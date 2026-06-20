@@ -73,6 +73,24 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
             ...batchOps.map((op) => op.signal),
           );
           const abortController = new AbortController();
+          // When every subscriber has unsubscribed (`batchSignals` fires) abort
+          // the JSONL stream consumer so the response body is no longer read.
+          //
+          // `batchSignals` may already be aborted by the time we get here (e.g.
+          // all subscribers unsubscribed before the batch was dispatched). In
+          // that case `addEventListener('abort', ...)` would never fire, so we
+          // forward the abort eagerly. We also forward `batchSignals.reason` so
+          // the stream consumer rejects with the original cause rather than a
+          // generic `AbortError`.
+          const abortStreamConsumer = () =>
+            abortController.abort(batchSignals.reason);
+          if (batchSignals.aborted) {
+            abortStreamConsumer();
+          } else {
+            batchSignals.addEventListener('abort', abortStreamConsumer, {
+              once: true,
+            });
+          }
 
           const responsePromise = fetchHTTPResponse({
             ...resolvedOpts,
@@ -180,14 +198,20 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
             'Subscriptions are unsupported by `httpBatchStreamLink` - use `httpSubscriptionLink` or `wsLink`',
           );
         }
+        const ac = new AbortController();
         const loader = loaders[op.type];
-        const promise = loader.load(op);
+        const promise = loader.load({
+          ...op,
+          signal: raceAbortSignals(op.signal, ac.signal),
+        });
 
+        let isDone = false;
         let _res = undefined as HTTPResult | undefined;
         promise
           .then((res) => {
             _res = res;
             if ('error' in res.json) {
+              isDone = true;
               observer.error(
                 TRPCClientError.from(res.json, {
                   meta: res.meta,
@@ -195,6 +219,7 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
               );
               return;
             } else if ('result' in res.json) {
+              isDone = true;
               observer.next({
                 context: res.meta,
                 result: res.json.result,
@@ -203,9 +228,11 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
               return;
             }
 
+            isDone = true;
             observer.complete();
           })
           .catch((err) => {
+            isDone = true;
             observer.error(
               TRPCClientError.from(err, {
                 meta: _res?.meta,
@@ -214,7 +241,12 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
           });
 
         return () => {
-          // noop
+          if (!isDone) {
+            // Only abort when the subscriber explicitly unsubscribes before
+            // the operation completes. This stops the JSONL stream consumer
+            // from continuing to read after no one is listening.
+            ac.abort();
+          }
         };
       });
     };
