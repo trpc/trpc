@@ -79,9 +79,13 @@ export type inferParser<TParser extends Parser> =
           }
         : never;
 
-export type ParseFn<TType> = (value: unknown) => Promise<TType> | TType;
+export type ParseFn<TOutput, TInput = unknown> = (
+  value: TInput,
+) => Promise<TOutput> | TOutput;
 
-export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
+export function getParseFn<TOutput, TInput = unknown>(
+  procedureParser: Parser,
+): ParseFn<TOutput, TInput> {
   const parser = procedureParser as any;
   const isStandardSchema = '~standard' in parser;
 
@@ -121,7 +125,7 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
     // ParserScaleEsque
     return (value) => {
       parser.assert(value);
-      return value as TType;
+      return value as unknown as TOutput;
     };
   }
 
@@ -137,4 +141,40 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
   }
 
   throw new Error('Could not find a validator fn');
+}
+
+/**
+ * Gets a function for encoding output values.
+ * Uses `.encode()` when available (Zod v4 codecs), falls back to `.parse()`.
+ */
+export function getEncodeFn<TOutput, TInput = unknown>(
+  procedureParser: Parser,
+): ParseFn<TOutput, TInput> {
+  const parser = procedureParser as any;
+  const parseFn = getParseFn<TOutput, TInput>(procedureParser);
+
+  const hasEncodeAsync = typeof parser.encodeAsync === 'function';
+  const hasEncode = typeof parser.encode === 'function';
+
+  if (!hasEncodeAsync && !hasEncode) {
+    return parseFn;
+  }
+
+  return async (value) => {
+    try {
+      if (hasEncodeAsync) {
+        return await parser.encodeAsync(value);
+      }
+      return parser.encode(value);
+    } catch (error) {
+      // Fall back to parse for unidirectional transforms
+      if (
+        error instanceof Error &&
+        error.message.includes('unidirectional transform')
+      ) {
+        return parseFn(value);
+      }
+      throw error;
+    }
+  };
 }
