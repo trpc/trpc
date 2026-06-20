@@ -140,7 +140,7 @@ interface RootConfig {
   /**
    * Is this a server environment?
    * @warning **Use with caution**, this should likely mainly be used within testing.
-   * @default typeof window === 'undefined' || 'Deno' in window || process.env.NODE_ENV === 'test'
+   * @default typeof window === 'undefined' || 'Deno' in window || process.env.NODE_ENV === 'test' || !!process.env.JEST_WORKER_ID || !!process.env.VITEST_WORKER_ID
    */
   isServer: boolean;
 
