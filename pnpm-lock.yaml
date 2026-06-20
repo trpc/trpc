@@ -1176,18 +1176,21 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
+      '@tanstack/react-query-devtools':
+        specifier: ^5.80.3
+        version: 5.80.3(@tanstack/react-query@5.80.3(react@19.1.0))(react@19.1.0)
       '@trpc/client':
         specifier: npm:@trpc/client
         version: link:../../packages/client
       '@trpc/next':
         specifier: npm:@trpc/next
         version: link:../../packages/next
-      '@trpc/react-query':
-        specifier: npm:@trpc/react-query
-        version: link:../../packages/react-query
       '@trpc/server':
         specifier: npm:@trpc/server
         version: link:../../packages/server
+      '@trpc/tanstack-react-query':
+        specifier: npm:@trpc/tanstack-react-query
+        version: link:../../packages/tanstack-react-query
       next:
         specifier: ^15.3.8
         version: 15.5.14(@babel/core@7.23.2)(@playwright/test@1.51.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)

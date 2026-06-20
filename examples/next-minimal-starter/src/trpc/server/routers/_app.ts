@@ -3,20 +3,21 @@
  * On a bigger app, you will probably want to split this file up into multiple files.
  */
 import { tracked } from '@trpc/server';
-import * as trpcNext from '@trpc/server/adapters/next';
-import { publicProcedure, router } from '~/server/trpc';
 import { z } from 'zod';
+import { publicProcedure, router } from '../init';
 
 let subscriptionIdx = 0;
 
-const appRouter = router({
+export const appRouter = router({
   greeting: publicProcedure
     // This is the input schema of your procedure
     // 💡 Tip: Try changing this and see type errors on the client straight away
     .input(
-      z.object({
-        name: z.string().nullish(),
-      }),
+      z
+        .object({
+          name: z.string().optional(),
+        })
+        .optional(),
     )
     .query(({ input }) => {
       // This is what you're returning to your client
@@ -65,9 +66,3 @@ const appRouter = router({
 // export only the type definition of the API
 // None of the actual implementation is exposed to the client
 export type AppRouter = typeof appRouter;
-
-// export API handler
-export default trpcNext.createNextApiHandler({
-  router: appRouter,
-  createContext: () => ({}),
-});
