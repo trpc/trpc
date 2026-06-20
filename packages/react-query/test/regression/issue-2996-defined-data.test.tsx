@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
-import React from 'react';
 
 const posts = [
   { id: 1, title: 'foo' },

@@ -4,7 +4,6 @@ import { render } from '@testing-library/react';
 import { getQueryKey } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
-import React from 'react';
 import { z } from 'zod';
 
 type Post = {

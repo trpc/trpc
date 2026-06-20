@@ -3,7 +3,6 @@ import { render } from '@testing-library/react';
 import { createServerSideHelpers } from '@trpc/react-query/server';
 import { initTRPC } from '@trpc/server';
 import type { IntersectionError } from '@trpc/server/unstable-core-do-not-import';
-import React from 'react';
 import { z } from 'zod';
 
 test('utils client', async () => {

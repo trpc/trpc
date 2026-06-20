@@ -13,7 +13,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { describe, expect, test } from 'vitest';
 import { z } from 'zod';
 import type { inferOutput } from '../src';

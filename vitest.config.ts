@@ -38,6 +38,9 @@ for (const pkg of dirs.sort()) {
 
 export default defineConfig({
   clearScreen: true,
+  esbuild: {
+    jsx: 'automatic',
+  },
   test: {
     environment: 'jsdom',
     globals: true,

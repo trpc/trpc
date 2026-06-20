@@ -7,7 +7,7 @@ import { render } from '@testing-library/react';
 import { createHydrationHelpers } from '@trpc/react-query/rsc';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
-import * as React from 'react';
+import { useEffect } from 'react';
 import { z } from 'zod';
 
 describe('original regression', () => {
@@ -43,7 +43,7 @@ describe('original regression', () => {
       });
       const utils = client.useUtils();
 
-      React.useEffect(() => {
+      useEffect(() => {
         utils.deeply.nested.greeting.setData(undefined, nonce);
         effectCount++;
       }, [utils.deeply.nested.greeting]);

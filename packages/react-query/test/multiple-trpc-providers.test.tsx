@@ -6,7 +6,7 @@ import { getUntypedClient } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
-import React, { createContext } from 'react';
+import { createContext } from 'react';
 
 const ctx = konn()
   .beforeEach(() => {

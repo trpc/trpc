@@ -22,7 +22,7 @@ import { createTRPCReact } from '@trpc/react-query';
 import type { InferQueryLikeData } from '@trpc/react-query/shared';
 import { konn } from 'konn';
 import type { ReactNode } from 'react';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { z } from 'zod';
 import { t } from './polymorphism.common';
 /**

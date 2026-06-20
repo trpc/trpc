@@ -3,7 +3,7 @@ import '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
-import * as React from 'react';
+import { useState } from 'react';
 import { describe, expect, test } from 'vitest';
 import { z } from 'zod';
 
@@ -40,7 +40,7 @@ describe('useTRPCClient', () => {
     const { useTRPCClient } = ctx;
     function MyComponent() {
       const vanillaClient = useTRPCClient();
-      const [fetchedState, setFetchedState] = React.useState('');
+      const [fetchedState, setFetchedState] = useState('');
 
       async function fetch() {
         const state = await vanillaClient.post.byId.query({ id: '1' });

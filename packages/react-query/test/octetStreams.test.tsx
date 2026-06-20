@@ -17,7 +17,6 @@ import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone'
 import { octetInputParser } from '@trpc/server/http';
 import { konn } from 'konn';
 import type { ReactNode } from 'react';
-import React from 'react';
 
 const ctx = konn()
   .beforeEach(() => {

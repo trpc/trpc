@@ -16,7 +16,6 @@ import {
   type TRPCQueryKeyWithoutPrefix,
   type TRPCQueryKeyWithPrefix,
 } from '@trpc/tanstack-react-query';
-import * as React from 'react';
 import { useState } from 'react';
 import { describe, expect, test } from 'vitest';
 import { z } from 'zod';

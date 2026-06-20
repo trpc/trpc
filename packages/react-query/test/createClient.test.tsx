@@ -7,7 +7,7 @@ import { createTRPCReact } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import type { ReactNode } from 'react';
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 const ctx = konn()
   .beforeEach(() => {

@@ -7,7 +7,6 @@ import { createTRPCReact } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import type { ReactNode } from 'react';
-import React from 'react';
 import { z } from 'zod';
 
 describe('query client defaults', () => {

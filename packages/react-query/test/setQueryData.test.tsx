@@ -1,7 +1,6 @@
 import { createAppRouter } from './__testHelpers';
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import React from 'react';
 
 let factory: ReturnType<typeof createAppRouter>;
 beforeEach(() => {
