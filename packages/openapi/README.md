@@ -25,10 +25,11 @@ pnpm exec trpc-openapi ./src/server/router.ts
 ```ts
 import { generateOpenAPIDocument } from '@trpc/openapi';
 
-const doc = generateOpenAPIDocument('./src/server/router.ts', {
+const doc = await generateOpenAPIDocument('./src/server/router.ts', {
   exportName: 'AppRouter',
   title: 'My API',
   version: '1.0.0',
+  servers: [{ url: 'https://api.example.com/trpc' }],
 });
 ```
 

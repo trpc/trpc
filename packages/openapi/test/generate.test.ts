@@ -394,6 +394,44 @@ describe('generateOpenAPIDocument', () => {
     });
   });
 
+  describe('servers', () => {
+    it('passes the servers array through to the document', async () => {
+      const doc = await generateOpenAPIDocument(appRouterPath, {
+        title: 'Test API',
+        version: '1.0.0',
+        servers: [
+          { url: 'https://api.example.com/trpc', description: 'production' },
+          { url: 'http://localhost:3000/trpc' },
+        ],
+      });
+
+      expect(doc.servers).toEqual([
+        { url: 'https://api.example.com/trpc', description: 'production' },
+        { url: 'http://localhost:3000/trpc' },
+      ]);
+    });
+
+    it('produces a valid spec with a servers entry', async () => {
+      const doc = await generateOpenAPIDocument(appRouterPath, {
+        title: 'Test API',
+        version: '1.0.0',
+        servers: [{ url: 'https://api.example.com/trpc' }],
+      });
+      const problems = await validateOpenApi(JSON.stringify(doc, null, 2));
+
+      expect(JSON.stringify(problems, null, 2)).toEqual('[]');
+    });
+
+    it('omits servers when none are provided', async () => {
+      const doc = await generateOpenAPIDocument(appRouterPath, {
+        title: 'Test API',
+        version: '1.0.0',
+      });
+
+      expect(doc.servers).toBeUndefined();
+    });
+  });
+
   describe('hey-api client generation', () => {
     const genDir = path.resolve(routersDir, 'appRouter-heyapi');
 
