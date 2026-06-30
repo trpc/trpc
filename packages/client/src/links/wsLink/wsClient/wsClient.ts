@@ -277,6 +277,7 @@ export class WsClient {
     };
 
     this.reconnecting = tryReconnect(0);
+    this.reconnecting.catch(() => null);
   }
 
   private setupWebSocketListeners(ws: WebSocket) {
