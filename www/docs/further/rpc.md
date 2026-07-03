@@ -10,6 +10,7 @@ slug: /rpc
 | HTTP Method | Mapping           | Notes                                                                                                                                                                                    |
 | ----------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GET`       | `.query()`        | Input JSON-stringified in query param.<br/>_e.g._ `myQuery?input=${encodeURIComponent(JSON.stringify(input))}`                                                                           |
+| `QUERY`     | `.query()`        | Input as request body. Safe, cacheable, no URL length limits. See [QUERY method](#using-the-http-query-method) below.                                                                    |
 | `POST`      | `.mutation()`     | Input as POST body.                                                                                                                                                                      |
 | `GET`       | `.subscription()` | Subscriptions are supported via [Server-sent Events](/docs/client/links/httpSubscriptionLink) using `httpSubscriptionLink`, or via [WebSockets](/docs/server/websockets) using `wsLink`. |
 
@@ -330,6 +331,43 @@ const client = createTRPCClient<AppRouter>({
   ],
 });
 ```
+
+### Using the HTTP QUERY method
+
+The HTTP `QUERY` method ([RFC 9110 extension](https://www.ietf.org/archive/id/draft-ietf-httpbis-safe-method-w-body-05.html)) is a safe, cacheable HTTP method that supports a request body. This solves the URL length limitation of `GET` requests while maintaining cache semantics that `POST` lacks.
+
+Use `queryMethod: 'QUERY'` when you need to:
+- Send large query inputs that would exceed URL length limits
+- Maintain HTTP cacheability (unlike `methodOverride: 'POST'`)
+- Keep safe/idempotent semantics for read operations
+
+```tsx twoslash title = 'client/trpc.ts'
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
+import { createTRPCClient, httpLink } from '@trpc/client';
+import type { AppRouter } from './server';
+
+const client = createTRPCClient<AppRouter>({
+  links: [
+    httpLink({
+      url: `http://localhost:3000`,
+      queryMethod: 'QUERY', // queries use HTTP QUERY method with input in body
+    }),
+  ],
+});
+```
+
+The server automatically accepts `QUERY` requests for query procedures - no additional configuration is required.
+
+:::note
+The HTTP `QUERY` method is a relatively new addition to the HTTP specification. Ensure your infrastructure (proxies, CDNs, load balancers) supports this method before using it in production.
+:::
 
 ## Dig deeper
 

@@ -41,7 +41,8 @@ type HTTPMethods =
   | 'OPTIONS'
   | 'PUT'
   | 'DELETE'
-  | 'PATCH';
+  | 'PATCH'
+  | 'QUERY';
 
 function combinedAbortController(signal: AbortSignal) {
   const controller = new AbortController();
@@ -54,7 +55,7 @@ function combinedAbortController(signal: AbortSignal) {
 
 const TYPE_ACCEPTED_METHOD_MAP: Record<ProcedureType, HTTPMethods[]> = {
   mutation: ['POST'],
-  query: ['GET'],
+  query: ['GET', 'QUERY'],
   subscription: ['GET'],
 };
 const TYPE_ACCEPTED_METHOD_MAP_WITH_METHOD_OVERRIDE: Record<
@@ -63,7 +64,7 @@ const TYPE_ACCEPTED_METHOD_MAP_WITH_METHOD_OVERRIDE: Record<
 > = {
   // never allow GET to do a mutation
   mutation: ['POST'],
-  query: ['GET', 'POST'],
+  query: ['GET', 'POST', 'QUERY'],
   subscription: ['GET', 'POST'],
 };
 

@@ -33,6 +33,14 @@ export type HTTPLinkBaseOptions<
    * @see https://trpc.io/docs/rpc
    */
   methodOverride?: 'POST';
+  /**
+   * Use HTTP QUERY method for query procedures.
+   * This allows sending input in the request body while maintaining safe/cacheable semantics.
+   * The HTTP QUERY method (RFC 9110 extension) solves URL length limitations of GET
+   * while preserving cacheability that POST lacks.
+   * @see https://www.ietf.org/archive/id/draft-ietf-httpbis-safe-method-w-body-05.html
+   */
+  queryMethod?: 'GET' | 'QUERY';
 } & TransformerOptions<TRoot>;
 
 export interface ResolvedHTTPLinkOptions {
@@ -40,6 +48,7 @@ export interface ResolvedHTTPLinkOptions {
   fetch?: FetchEsque;
   transformer: CombinedDataTransformer;
   methodOverride?: 'POST';
+  queryMethod?: 'GET' | 'QUERY';
 }
 
 export function resolveHTTPLinkOptions(
@@ -50,6 +59,7 @@ export function resolveHTTPLinkOptions(
     fetch: opts.fetch,
     transformer: getTransformer(opts.transformer),
     methodOverride: opts.methodOverride,
+    queryMethod: opts.queryMethod,
   };
 }
 
@@ -122,7 +132,11 @@ export const getUrl: GetUrl = (opts) => {
   }
   if (opts.type === 'query' || opts.type === 'subscription') {
     const input = getInput(opts);
-    if (input !== undefined && opts.methodOverride !== 'POST') {
+    // Don't add input to query params if using methodOverride or queryMethod: 'QUERY'
+    // (input goes in body instead)
+    const inputInBody =
+      opts.methodOverride === 'POST' || opts.queryMethod === 'QUERY';
+    if (input !== undefined && !inputInBody) {
       queryParts.push(`input=${encodeURIComponent(JSON.stringify(input))}`);
     }
   }
@@ -133,8 +147,13 @@ export const getUrl: GetUrl = (opts) => {
 };
 
 export const getBody: GetBody = (opts) => {
-  if (opts.type === 'query' && opts.methodOverride !== 'POST') {
-    return undefined;
+  // For queries, only include body if using methodOverride or queryMethod: 'QUERY'
+  if (opts.type === 'query') {
+    const inputInBody =
+      opts.methodOverride === 'POST' || opts.queryMethod === 'QUERY';
+    if (!inputInBody) {
+      return undefined;
+    }
   }
   const input = getInput(opts);
   return input !== undefined ? JSON.stringify(input) : undefined;
@@ -198,7 +217,12 @@ export async function fetchHTTPResponse(opts: HTTPRequestOptions) {
 
   const url = opts.getUrl(opts);
   const body = opts.getBody(opts);
-  const method = opts.methodOverride ?? METHOD[opts.type];
+  // Determine HTTP method: methodOverride takes precedence, then queryMethod for queries
+  const method =
+    opts.methodOverride ??
+    (opts.type === 'query' && opts.queryMethod === 'QUERY'
+      ? 'QUERY'
+      : METHOD[opts.type]);
   const resolvedHeaders = await (async () => {
     const heads = await opts.headers();
     if (Symbol.iterator in heads) {
@@ -207,6 +231,7 @@ export async function fetchHTTPResponse(opts: HTTPRequestOptions) {
     return heads;
   })();
   const headers = {
+    // Include content-type for methods that have a body (not GET)
     ...(opts.contentTypeHeader && method !== 'GET'
       ? { 'content-type': opts.contentTypeHeader }
       : {}),

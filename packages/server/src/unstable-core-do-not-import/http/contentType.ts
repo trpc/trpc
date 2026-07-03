@@ -100,11 +100,13 @@ const jsonContentTypeHandler: ContentTypeHandler = {
     const getInputs = memo(async (): Promise<InputRecord> => {
       let inputs: unknown = undefined;
       if (req.method === 'GET') {
+        // GET: input from query params
         const queryInput = opts.searchParams.get('input');
         if (queryInput) {
           inputs = JSON.parse(queryInput);
         }
       } else {
+        // POST, QUERY, and other methods: input from body
         inputs = await req.json();
       }
       if (inputs === undefined) {
@@ -299,8 +301,8 @@ function getContentTypeHandler(req: Request): ContentTypeHandler {
     return handler;
   }
 
-  if (!handler && req.method === 'GET') {
-    // fallback to JSON for get requests so GET-requests can be opened in browser easily
+  if (!handler && (req.method === 'GET' || req.method === 'QUERY')) {
+    // fallback to JSON for GET/QUERY requests so they can be opened in browser easily
     return jsonContentTypeHandler;
   }
 
