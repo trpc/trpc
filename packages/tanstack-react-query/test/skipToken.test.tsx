@@ -31,6 +31,11 @@ const testContext = () => {
           }),
         )
         .query(() => ['__result'] as const),
+      onUpdate: t.procedure
+        .input(z.string().optional())
+        .subscription(async function* () {
+          yield '__result' as const;
+        }),
     }),
   });
 
@@ -57,6 +62,24 @@ describe('skipToken', () => {
         },
       });
       expect(options2.queryFn).toBe(skipToken);
+
+      const options3 = trpc.post.onUpdate.subscriptionOptions(skipToken);
+      expect(options3.enabled).toBe(false);
+
+      const options4 = trpc.post.onUpdate.subscriptionOptions('hello');
+      expect(options4.enabled).toBe(true);
+
+      // an explicit `enabled: false` still disables a real-input subscription
+      const options5 = trpc.post.onUpdate.subscriptionOptions('hello', {
+        enabled: false,
+      });
+      expect(options5.enabled).toBe(false);
+
+      // skipToken always disables, even against an explicit `enabled: true`
+      const options6 = trpc.post.onUpdate.subscriptionOptions(skipToken, {
+        enabled: true,
+      });
+      expect(options6.enabled).toBe(false);
 
       return <pre>OK</pre>;
     }

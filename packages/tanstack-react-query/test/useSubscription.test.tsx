@@ -1,5 +1,6 @@
 import { EventEmitter, on } from 'node:events';
 import { testReactResource } from './__helpers';
+import { skipToken } from '@tanstack/react-query';
 import { fireEvent } from '@testing-library/react';
 import { httpSubscriptionLink, wsLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
@@ -276,6 +277,59 @@ describe.each([
       // no event listeners
       expect(ctx.ee.listenerCount('data')).toBe(0);
     });
+  });
+
+  test('skipToken', async () => {
+    await using ctx = getCtx(protocol);
+
+    const { useTRPC } = ctx;
+
+    function MyComponent() {
+      const [input, setInput] = React.useState<number | typeof skipToken>(
+        skipToken,
+      );
+
+      const trpc = useTRPC();
+      const result = useSubscription(
+        trpc.onEventIterable.subscriptionOptions(input),
+      );
+
+      return (
+        <>
+          <button
+            onClick={() => {
+              setInput(10);
+            }}
+            data-testid="set-input"
+          >
+            set input
+          </button>
+          <div>status:{result.status}</div>
+          <div>data:{result.data ?? 'NO_DATA'}</div>
+        </>
+      );
+    }
+
+    const utils = ctx.renderApp(<MyComponent />);
+
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent(`status:idle`);
+    });
+    // the subscription should not have started while the input is skipToken
+    expect(ctx.ee.listenerCount('data')).toBe(0);
+
+    fireEvent.click(utils.getByTestId('set-input'));
+
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent(`status:pending`);
+    });
+    ctx.ee.emit('data', 20);
+
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent(`data:30`);
+    });
+
+    utils.unmount();
   });
 });
 
