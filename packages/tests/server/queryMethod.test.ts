@@ -5,8 +5,8 @@ import type { HTTPLinkBaseOptions } from '@trpc/client/links/internals/httpUtils
 import { initTRPC } from '@trpc/server';
 import type { inferRouterRootTypes } from '@trpc/server/unstable-core-do-not-import';
 import fetch from 'node-fetch';
-import { expect, test } from 'vitest';
-import { z } from 'zod';
+import { expect, test, vi } from 'vitest';
+import * as z from 'zod';
 
 const t = initTRPC.create();
 const router = t.router({
@@ -33,11 +33,21 @@ const router = t.router({
     .mutation((opts) => `hello ${opts.input?.who ?? 'world'}`),
 });
 
+function createFetchSpy() {
+  const calls: { url: string; method: string }[] = [];
+  const spy = vi.fn((url: string, init?: { method?: string }) => {
+    calls.push({ url, method: init?.method ?? 'GET' });
+    return (fetch as any)(url, init);
+  });
+  return { spy, calls };
+}
+
 async function startServer(opts: {
   linkOptions: Partial<
     HTTPLinkBaseOptions<inferRouterRootTypes<typeof router>>
   >;
   batch?: boolean;
+  fetchSpy?: ReturnType<typeof vi.fn>;
 }) {
   return testServerAndClientResource(router, {
     server: {},
@@ -47,12 +57,12 @@ async function startServer(opts: {
           opts.batch
             ? httpBatchLink({
                 url: clientOpts.httpUrl,
-                fetch: fetch as any,
+                fetch: (opts.fetchSpy ?? fetch) as any,
                 ...opts.linkOptions,
               })
             : httpLink({
                 url: clientOpts.httpUrl,
-                fetch: fetch as any,
+                fetch: (opts.fetchSpy ?? fetch) as any,
                 ...opts.linkOptions,
               }),
         ],
@@ -62,10 +72,12 @@ async function startServer(opts: {
 }
 
 test('client: sends query as QUERY method when queryMethod=QUERY', async () => {
+  const { spy, calls } = createFetchSpy();
   await using t = await startServer({
     linkOptions: {
       queryMethod: 'QUERY',
     },
+    fetchSpy: spy,
   });
 
   expect(
@@ -73,13 +85,19 @@ test('client: sends query as QUERY method when queryMethod=QUERY', async () => {
       who: 'test1',
     }),
   ).toBe('hello test1');
+
+  expect(calls).toHaveLength(1);
+  expect(calls[0]!.method).toBe('QUERY');
+  expect(calls[0]!.url).not.toContain('input=');
 });
 
 test('client: QUERY method handles large inputs in body', async () => {
+  const { spy, calls } = createFetchSpy();
   await using t = await startServer({
     linkOptions: {
       queryMethod: 'QUERY',
     },
+    fetchSpy: spy,
   });
 
   const largeData = 'x'.repeat(10000);
@@ -88,11 +106,17 @@ test('client: QUERY method handles large inputs in body', async () => {
       data: largeData,
     }),
   ).toBe('received 10000 chars');
+
+  expect(calls).toHaveLength(1);
+  expect(calls[0]!.method).toBe('QUERY');
+  expect(calls[0]!.url).not.toContain('input=');
 });
 
 test('client: GET method still works by default', async () => {
+  const { spy, calls } = createFetchSpy();
   await using t = await startServer({
     linkOptions: {},
+    fetchSpy: spy,
   });
 
   expect(
@@ -100,13 +124,19 @@ test('client: GET method still works by default', async () => {
       who: 'test-default',
     }),
   ).toBe('hello test-default');
+
+  expect(calls).toHaveLength(1);
+  expect(calls[0]!.method).toBe('GET');
+  expect(calls[0]!.url).toContain('input=');
 });
 
 test('client: queryMethod=GET explicitly uses GET', async () => {
+  const { spy, calls } = createFetchSpy();
   await using t = await startServer({
     linkOptions: {
       queryMethod: 'GET',
     },
+    fetchSpy: spy,
   });
 
   expect(
@@ -114,14 +144,20 @@ test('client: queryMethod=GET explicitly uses GET', async () => {
       who: 'test-explicit-get',
     }),
   ).toBe('hello test-explicit-get');
+
+  expect(calls).toHaveLength(1);
+  expect(calls[0]!.method).toBe('GET');
+  expect(calls[0]!.url).toContain('input=');
 });
 
 test('client/server: e2e batched query as QUERY', async () => {
+  const { spy, calls } = createFetchSpy();
   await using t = await startServer({
     linkOptions: {
       queryMethod: 'QUERY',
     },
     batch: true,
+    fetchSpy: spy,
   });
 
   expect(
@@ -139,13 +175,19 @@ test('client/server: e2e batched query as QUERY', async () => {
       "hello test2",
     ]
   `);
+
+  expect(calls).toHaveLength(1);
+  expect(calls[0]!.method).toBe('QUERY');
+  expect(calls[0]!.url).not.toContain('input=');
 });
 
 test('mutations still use POST when queryMethod=QUERY', async () => {
+  const { spy, calls } = createFetchSpy();
   await using t = await startServer({
     linkOptions: {
       queryMethod: 'QUERY',
     },
+    fetchSpy: spy,
   });
 
   expect(
@@ -153,19 +195,23 @@ test('mutations still use POST when queryMethod=QUERY', async () => {
       who: 'mutation-test',
     }),
   ).toBe('hello mutation-test');
+
+  expect(calls).toHaveLength(1);
+  expect(calls[0]!.method).toBe('POST');
 });
 
 test('methodOverride takes precedence over queryMethod', async () => {
-  // When both are set, methodOverride should win
+  const { spy, calls } = createFetchSpy();
   await using t = await startServer({
     linkOptions: {
       methodOverride: 'POST',
       queryMethod: 'QUERY',
     },
+    fetchSpy: spy,
   });
 
-  // This should work because methodOverride: 'POST' is used
-  // However, the server needs allowMethodOverride: true for POST queries
+  // methodOverride: 'POST' takes precedence over queryMethod: 'QUERY'
+  // Server needs allowMethodOverride: true for POST queries
   // Since we didn't set it, this should fail
   const err = await waitError(() =>
     t.client.q.query({
@@ -176,4 +222,8 @@ test('methodOverride takes precedence over queryMethod', async () => {
   expect(err).toMatchInlineSnapshot(
     `[TRPCClientError: Unsupported POST-request to query procedure at path "q"]`,
   );
+
+  // Verify POST was used, not QUERY
+  expect(calls).toHaveLength(1);
+  expect(calls[0]!.method).toBe('POST');
 });
