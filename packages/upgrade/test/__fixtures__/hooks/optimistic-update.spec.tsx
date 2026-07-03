@@ -8,6 +8,9 @@ import { ctx, resetFixtureState } from './optimistic-update.trpc';
 export const run: SpecRun = async (Component) => {
   expect(Component).toBeDefined();
 
+  // Reset state at START to handle vitest retries where cleanup may not have run
+  resetFixtureState();
+
   using _finally = makeResource({}, () => {
     resetFixtureState();
     utils.unmount();
