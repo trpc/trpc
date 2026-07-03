@@ -337,6 +337,7 @@ const client = createTRPCClient<AppRouter>({
 The HTTP `QUERY` method ([RFC 9110 extension](https://www.ietf.org/archive/id/draft-ietf-httpbis-safe-method-w-body-05.html)) is a safe, cacheable HTTP method that supports a request body. This solves the URL length limitation of `GET` requests while maintaining cache semantics that `POST` lacks.
 
 Use `queryMethod: 'QUERY'` when you need to:
+
 - Send large query inputs that would exceed URL length limits
 - Maintain HTTP cacheability (unlike `methodOverride: 'POST'`)
 - Keep safe/idempotent semantics for read operations
