@@ -49,7 +49,7 @@ const postRouter = router({
     while (!signal?.aborted) {
       // Yield the random number instead of using emit.next()
       yield { randomNumber: Math.random() };
-      
+
       // Wait for 200ms before the next loop instead of using setInterval
       await new Promise((resolve) => setTimeout(resolve, 200));
     }

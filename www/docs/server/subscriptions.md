@@ -23,8 +23,8 @@ If you are unsure which one to use, we recommend using SSE for subscriptions as 
 ## Reference projects
 
 :::caution Deprecation Notice
-The `@trpc/server/observable` API is deprecated and will be removed in tRPC v12. 
-Please migrate your subscriptions to use `async function*` generators instead. 
+The `@trpc/server/observable` API is deprecated and will be removed in tRPC v12.
+Please migrate your subscriptions to use `async function*` generators instead.
 You can view the standalone server reference project for an updated example.
 :::
 
