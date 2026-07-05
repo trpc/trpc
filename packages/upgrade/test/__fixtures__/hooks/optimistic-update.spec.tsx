@@ -8,8 +8,15 @@ import { ctx, resetFixtureState } from './optimistic-update.trpc';
 export const run: SpecRun = async (Component) => {
   expect(Component).toBeDefined();
 
+  // The query client and server data are shared across every run in this file.
+  // Start each run from a clean slate so the initial-render assertion below
+  // can't observe stale data left behind by a previous run (which made the
+  // first `waitFor` flakily read "Posts: 2initialFoo").
+  await ctx.queryClient.cancelQueries();
+  ctx.queryClient.clear();
+  resetFixtureState();
+
   using _finally = makeResource({}, () => {
-    resetFixtureState();
     utils.unmount();
   });
 

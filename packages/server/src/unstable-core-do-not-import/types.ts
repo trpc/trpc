@@ -156,10 +156,16 @@ export type IntersectionError<TKey extends string> =
 /**
  * @internal
  */
-export type ProtectedIntersection<TType, TWith> = keyof TType &
-  keyof TWith extends never
-  ? TType & TWith
-  : IntersectionError<string & keyof TType & keyof TWith>;
+export type ProtectedIntersection<TType, TWith> =
+  // When `keyof TWith` is (or includes) the bare `string` index signature -
+  // e.g. `TWith` originates from `AnyTRPCRouter` (`Router<any, any>`) - every
+  // key of `TType` trivially overlaps with it. Skip collision detection in
+  // that case instead of reporting a false-positive collision for every key.
+  string extends keyof TWith
+    ? TType & TWith
+    : keyof TType & keyof TWith extends never
+      ? TType & TWith
+      : IntersectionError<string & keyof TType & keyof TWith>;
 
 /**
  * @internal
