@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "include": ["server", "showcase", "vitest.config.ts"],
+  "compilerOptions": {
+    "skipLibCheck": true,
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "target": "ES2023",
+    "types": ["node", "vitest/globals"],
+    "noUnusedLocals": false,
+    "noEmit": true
+  }
+}

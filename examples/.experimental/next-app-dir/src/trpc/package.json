@@ -1,0 +1,11 @@
+{
+  "name": "trpc-api",
+  "typings": "client.ts",
+  "exports": {
+    ".": {
+      "types": "./client.ts",
+      "react-server": "./server-invoker.ts",
+      "default": "./client.ts"
+    }
+  }
+}

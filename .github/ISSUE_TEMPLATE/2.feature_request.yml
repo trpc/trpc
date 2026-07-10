@@ -1,0 +1,42 @@
+# This template is heavily inspired by the Next.js's template:
+# See here: https://github.com/vercel/next.js/blob/canary/.github/ISSUE_TEMPLATE/3.feature_request.yml
+
+name: 🛠 Feature Request
+description: Create a feature request for the core packages
+title: 'feat: '
+labels: ['✨ enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to file a feature request. Please fill out this form as completely as possible.
+  - type: textarea
+    attributes:
+      label: Describe the feature you'd like to request
+      description: Please describe the feature as clear and concise as possible. Remember to add context as to why you believe this feature is needed.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Describe the solution you'd like to see
+      description: Please describe the solution you would like to see. Adding example usage is a good way to provide context.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Describe alternate solutions
+      description: |
+        Please describe alternate solutions you have considered. What makes your suggested feature better?
+        If you currently have a workaround to get a similar experience, add that here.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Additional information
+      description: Add any other information related to the feature here. If your feature request is related to any issues or discussions, link them here.
+  - type: checkboxes
+    attributes:
+      label: 👨‍👧‍👦 Contributing
+      description: We love contributors in any shape or form. Would you be willing to implement this feature?
+      options:
+        - label: 🙋‍♂️ Yes, I'd be down to file a PR implementing this feature!

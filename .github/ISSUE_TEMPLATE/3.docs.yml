@@ -1,0 +1,32 @@
+name: 📚 Documentation
+description: Request changes related to the documentation
+title: 'docs: '
+labels: ['📚 documentation / examples']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Our documentation is far from perfect and needs improvements.
+        Do you see possible enhancements you'd like to share? Please file them here!
+        **Note:** For simple typos etc, please directly file a PR fixing them instead.
+  - type: textarea
+    attributes:
+      label: Area of Improvement
+      placeholder: I would like to see more in-depth API documentation for how to use batch-links.
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Link to related docs
+      description: Does documentation already exist? Please link that here.
+      placeholder: https://trpc.io/docs/client/links
+  - type: textarea
+    attributes:
+      label: Additional information
+      description: Add any other information that may help us understand here.
+  - type: checkboxes
+    attributes:
+      label: 👨‍👧‍👦 Contributing
+      description: We love contributors in any shape or form. Would you be willing to improve the documentation yourself?
+      options:
+        - label: 🙋‍♂️ Yes, I'd be down to file a PR implementing the suggested changes!

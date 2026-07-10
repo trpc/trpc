@@ -1,0 +1,94 @@
+{
+  "name": "@trpc/tanstack-react-query",
+  "type": "module",
+  "version": "11.18.0",
+  "description": "TanStack React Query Integration for tRPC",
+  "author": "juliusmarminge",
+  "license": "MIT",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "homepage": "https://trpc.io/docs/client/tanstack-react-query/setup",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trpc/trpc.git",
+    "directory": "packages/tanstack-react-query"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "lint": "eslint --cache src",
+    "typecheck": "tsc --noEmit --preserveWatchOutput --pretty"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "package.json",
+    "!**/*.test.*",
+    "!**/__tests__",
+    "skills",
+    "!skills/_artifacts",
+    "bin"
+  ],
+  "eslintConfig": {
+    "rules": {
+      "react-hooks/exhaustive-deps": "error",
+      "no-restricted-imports": [
+        "error",
+        "@trpc/tanstack-react-query"
+      ],
+      "@typescript-eslint/prefer-function-type": "off"
+    }
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.80.3",
+    "@trpc/client": "11.18.0",
+    "@trpc/server": "11.18.0",
+    "react": ">=18.2.0",
+    "typescript": ">=5.7.2"
+  },
+  "devDependencies": {
+    "@tanstack/intent": "^0.0.27",
+    "@tanstack/react-query": "^5.80.3",
+    "@trpc/client": "11.18.0",
+    "@trpc/server": "11.18.0",
+    "@types/node": "^22.13.5",
+    "@types/react": "^19.1.0",
+    "eslint": "^9.26.0",
+    "event-source-polyfill": "^1.0.31",
+    "konn": "^0.7.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "tsdown": "0.12.7",
+    "typescript": "^5.9.2",
+    "vitest": "^4.0.18",
+    "ws": "^8.0.0",
+    "zod": "^4.2.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "funding": [
+    "https://trpc.io/sponsor"
+  ],
+  "keywords": [
+    "tanstack-intent"
+  ],
+  "bin": {
+    "intent": "./bin/intent.js"
+  }
+}

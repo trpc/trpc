@@ -1,0 +1,26 @@
+{
+  "name": "examples-nuxt",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "start": "node .output/server/index.mjs",
+    "postinstall": "nuxt prepare",
+    "test-dev": "playwright test --project=dev",
+    "test-start": "playwright test --project=prod"
+  },
+  "dependencies": {
+    "@trpc/client": "npm:@trpc/client",
+    "@trpc/server": "npm:@trpc/server",
+    "nuxt": "^3.16.1",
+    "trpc-nuxt": "^1.0.2",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.50.1"
+  }
+}

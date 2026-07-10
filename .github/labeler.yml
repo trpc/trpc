@@ -1,0 +1,23 @@
+'📚 documentation / examples':
+  - any:
+      [
+        'www/docs/**',
+        '!www/docs/**/package.json',
+        'examples/**',
+        '!examples/**/package.json',
+      ]
+
+'🕸 www':
+  - any: ['www/**', '!www/**/package.json']
+
+'@trpc/server':
+  - any: ['packages/server/**', '!packages/server/package.json']
+
+'@trpc/client':
+  - any: ['packages/client/**', '!packages/client/package.json']
+
+'@trpc/next':
+  - any: ['packages/next/**', '!packages/next/package.json']
+
+'@trpc/react-query':
+  - any: ['packages/react-query/**', '!packages/react-query/package.json']

@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "module": "Preserve",
+    "lib": ["es2022", "dom", "dom.iterable"],
+    "target": "es2022",
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "./dist",
+    "strict": true,
+    "strictNullChecks": true,
+    "noUnusedLocals": false, // we have eslint for this where it's disabled in tests
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "jsx": "react",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitOverride": true
+  },
+  "exclude": ["test", "**/*.test.ts", "**/*.test.tsx", "__tests__"]
+}

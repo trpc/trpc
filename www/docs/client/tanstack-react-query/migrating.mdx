@@ -1,0 +1,207 @@
+---
+id: migrating
+title: Migrating from the classic React Client
+sidebar_label: Migrating
+description: Migrating from the classic React Client
+slug: /client/tanstack-react-query/migrating
+---
+
+There are a few approaches to migrate over, and this library is a significant departure from the classic client, so we're not expecting anybody to do it in one shot. But you will probably want to try a combination of...
+
+## Codemod migration
+
+:::info
+The codemod is a work in progress and we're looking for help to make it better. If you're interested in contributing to the codemod, please see [Julius' comment here](https://github.com/trpc/trpc/pull/6262#issuecomment-2651959435).
+:::
+
+We're working on a codemod to help you migrate your existing codebase over to the new client. This is already available to try but we need your feedback and contributions to improve it. Codemods are very tricky to get right so we're looking for your help to make it as effective as possible.
+
+Run our upgrade CLI:
+
+```sh
+npx @trpc/upgrade
+```
+
+When prompted, select the transforms `Migrate Hooks to xxxOptions API` and `Migrate context provider setup`.
+
+## Gradual migration
+
+The new and classic clients are compatible with each other and [can live together in the same application](https://github.com/juliusmarminge/trpc-interop/blob/main/src/client.tsx).
+This means you can start migrating by using the new client in new parts of your application, and gradually migrate over existing usage as you see fit. Most importantly,
+Query Keys are identical, which means you can use the new client and classic client together and still rely on TanStack Query's caching.
+
+### Migrating Queries
+
+A classic query would look like this
+
+```tsx twoslash
+// @filename: trpc.ts
+import type { UseQueryResult } from '@tanstack/react-query';
+declare const trpc: {
+  greeting: {
+    useQuery: (input: { name: string }) => UseQueryResult<`Hello ${string}`>;
+  };
+};
+export { trpc };
+
+// @filename: component.tsx
+// ---cut---
+import { trpc } from './trpc';
+
+function Users() {
+  const greetingQuery = trpc.greeting.useQuery({ name: 'Jerry' });
+
+  // greetingQuery.data === 'Hello Jerry'
+}
+```
+
+and changes to
+
+```tsx twoslash
+// @filename: server/router.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+const appRouter = t.router({
+  greeting: t.procedure.input(z.object({ name: z.string() })).query(({ input }) => `Hello ${input.name}` as const),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: trpc.ts
+import { createTRPCContext } from '@trpc/tanstack-react-query';
+import type { AppRouter } from './server/router';
+export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+
+// @filename: component.tsx
+// ---cut---
+import { useQuery } from '@tanstack/react-query';
+import { useTRPC } from './trpc';
+
+function Users() {
+  const trpc = useTRPC();
+
+  const greetingQuery = useQuery(trpc.greeting.queryOptions({ name: 'Jerry' }));
+
+  // greetingQuery.data === 'Hello Jerry'
+}
+```
+
+### Migrating Invalidations and other QueryClient usages
+
+A classic invalidation pattern would look like this
+
+```tsx twoslash
+// @filename: trpc.ts
+declare const trpc: {
+  useUtils: () => {
+    greeting: {
+      invalidate: (input: { name: string }) => Promise<void>;
+    };
+  };
+};
+export { trpc };
+
+// @filename: component.tsx
+// ---cut---
+import { trpc } from './trpc';
+
+function Users() {
+  const utils = trpc.useUtils();
+
+  async function invalidateGreeting() {
+    await utils.greeting.invalidate({ name: 'Jerry' });
+  }
+}
+```
+
+and changes to
+
+```tsx twoslash
+// @filename: server/router.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+const appRouter = t.router({
+  greeting: t.procedure.input(z.object({ name: z.string() })).query(({ input }) => `Hello ${input.name}` as const),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: trpc.ts
+import { createTRPCContext } from '@trpc/tanstack-react-query';
+import type { AppRouter } from './server/router';
+export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+
+// @filename: component.tsx
+// ---cut---
+import { useQueryClient } from '@tanstack/react-query';
+import { useTRPC } from './trpc';
+
+function Users() {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  async function invalidateGreeting() {
+    await queryClient.invalidateQueries(
+      trpc.greeting.queryFilter({ name: 'Jerry' }),
+    );
+  }
+}
+```
+
+This is the same for any QueryClient usage, instead of using tRPC's `useUtils` you can now follow the TanStack documentation directly
+
+### Migrating Mutations
+
+A classic mutation might look like this
+
+```tsx twoslash
+// @filename: trpc.ts
+import type { UseMutationResult } from '@tanstack/react-query';
+declare const trpc: {
+  createUser: {
+    useMutation: () => UseMutationResult<string, unknown, { name: string }>;
+  };
+};
+export { trpc };
+
+// @filename: component.tsx
+// ---cut---
+import { trpc } from './trpc';
+
+function Users() {
+  const createUserMutation = trpc.createUser.useMutation();
+
+  createUserMutation.mutate({ name: 'Jerry' });
+}
+```
+
+and changes to
+
+```tsx twoslash
+// @filename: server/router.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+const appRouter = t.router({
+  createUser: t.procedure.input(z.object({ name: z.string() })).mutation(() => 'created'),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: trpc.ts
+import { createTRPCContext } from '@trpc/tanstack-react-query';
+import type { AppRouter } from './server/router';
+export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+
+// @filename: component.tsx
+// ---cut---
+import { useMutation } from '@tanstack/react-query';
+import { useTRPC } from './trpc';
+
+function Users() {
+  const trpc = useTRPC();
+
+  const createUserMutation = useMutation(trpc.createUser.mutationOptions());
+
+  createUserMutation.mutate({ name: 'Jerry' });
+}
+```

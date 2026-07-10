@@ -1,0 +1,102 @@
+name: Testing
+on: [push]
+jobs:
+  e2e:
+    name: 'Build + E2E tests'
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_DATABASE: trpcdb
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+    env:
+      NODE_ENV: test
+      NEXTAUTH_SECRET: supersecret
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v5
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 22.x
+          cache: 'pnpm' # You can active this cache when your repo has a lockfile
+
+      - name: Install deps (with cache)
+        run: pnpm install
+
+      - name: Install playwright
+        run: pnpm exec playwright install chromium
+
+      - name: Next.js cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ github.workspace }}/.next/cache
+          key: ${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}-nextjs
+
+      - name: Setup Prisma
+        run: pnpm prebuild
+
+      - run: pnpm build
+      - run: pnpm test-e2e
+
+      - name: Check types
+        run: pnpm tsc
+
+      - name: Upload test results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: test results
+          path: |
+            playwright/test-results
+
+  unit:
+    name: 'Unit tests + typecheck'
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_DATABASE: trpcdb
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+    env:
+      NODE_ENV: test
+      NEXTAUTH_SECRET: supersecret
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v5
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 22.x
+          cache: 'pnpm' # You can active this cache when your repo has a lockfile
+
+      - name: Install deps (with cache)
+        run: pnpm install
+
+      - name: Next.js cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ github.workspace }}/.next/cache
+          key: ${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}-nextjs
+
+      - name: Setup Prisma
+        run: pnpm prebuild
+
+      - run: pnpm test-unit
+      - run: pnpm tsc

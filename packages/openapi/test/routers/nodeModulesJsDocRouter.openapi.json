@@ -1,0 +1,1340 @@
+{
+  "openapi": "3.1.1",
+  "jsonSchemaDialect": "https://spec.openapis.org/oas/3.1/dialect/base",
+  "info": {
+    "title": "tRPC API",
+    "version": "0.0.0"
+  },
+  "paths": {
+    "/monorepoImport": {
+      "get": {
+        "operationId": "monorepoImport",
+        "tags": [
+          "monorepoImport"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/MonorepoImportOutput"
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/localNodeModulesImport": {
+      "get": {
+        "operationId": "localNodeModulesImport",
+        "tags": [
+          "localNodeModulesImport"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/LocalNodeModulesImportOutput"
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/rootNodeModulesImport": {
+      "get": {
+        "operationId": "rootNodeModulesImport",
+        "tags": [
+          "rootNodeModulesImport"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/RootNodeModulesImportOutput"
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "MonorepoImportOutput": {
+        "type": "object",
+        "properties": {
+          "requestInfo": {
+            "$ref": "#/components/schemas/TRPCRequestInfo"
+          }
+        },
+        "required": [
+          "requestInfo"
+        ],
+        "additionalProperties": false
+      },
+      "TRPCRequestInfo": {
+        "type": "object",
+        "properties": {
+          "accept": {
+            "oneOf": [
+              {
+                "type": "string",
+                "const": "application/jsonl"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The `trpc-accept` header"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "query",
+              "mutation",
+              "subscription",
+              "unknown"
+            ],
+            "description": "The type of the request"
+          },
+          "isBatchCall": {
+            "type": "boolean",
+            "description": "If the content type handler has detected that this is a batch call"
+          },
+          "calls": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TRPCRequestInfoProcedureCall"
+            },
+            "description": "The calls being made"
+          },
+          "connectionParams": {
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Connection params when using `httpSubscriptionLink` or `createWSClient`"
+          },
+          "signal": {
+            "$ref": "#/components/schemas/AbortSignal"
+          },
+          "url": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/URL"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The URL of the request if available"
+          }
+        },
+        "required": [
+          "accept",
+          "type",
+          "isBatchCall",
+          "calls",
+          "connectionParams",
+          "signal",
+          "url"
+        ],
+        "additionalProperties": false
+      },
+      "TRPCRequestInfoProcedureCall": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "getRawInput": {
+            "type": "object",
+            "description": "Read the raw input (deduped and memoized)"
+          },
+          "result": {
+            "type": "object",
+            "description": "Get already parsed inputs - won't trigger reading the body or parsing the inputs"
+          },
+          "procedure": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/AnyQueryProcedure"
+              },
+              {
+                "$ref": "#/components/schemas/AnyMutationProcedure"
+              },
+              {
+                "$ref": "#/components/schemas/SubscriptionProcedure"
+              },
+              {
+                "$ref": "#/components/schemas/LegacyObservableSubscriptionProcedure"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The procedure being called, `null` if not found"
+          },
+          "batchIndex": {
+            "type": "number",
+            "description": "The index of this call in a batch request."
+          }
+        },
+        "required": [
+          "path",
+          "getRawInput",
+          "result",
+          "procedure",
+          "batchIndex"
+        ],
+        "additionalProperties": false
+      },
+      "AnyQueryProcedure": {
+        "type": "object",
+        "properties": {
+          "_def": {
+            "type": "object",
+            "properties": {
+              "$types": {
+                "type": "object",
+                "properties": {
+                  "input": {},
+                  "output": {}
+                },
+                "required": [
+                  "input",
+                  "output"
+                ],
+                "additionalProperties": false,
+                "description": "These are just types, they can't be used at runtime"
+              },
+              "procedure": {
+                "type": "boolean",
+                "const": true
+              },
+              "type": {
+                "type": "string",
+                "const": "query"
+              },
+              "meta": {},
+              "experimental_caller": {
+                "type": "boolean"
+              },
+              "inputs": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ParserZodEsque"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ParserValibotEsque"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ParserArkTypeEsque"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ParserStandardSchemaEsque"
+                    },
+                    {
+                      "type": "object"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ParserMyZodEsque"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ParserScaleEsque"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ParserSuperstructEsque"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ParserYupEsque"
+                    }
+                  ]
+                },
+                "description": "The input parsers for the procedure"
+              }
+            },
+            "required": [
+              "$types",
+              "procedure",
+              "type",
+              "meta",
+              "experimental_caller",
+              "inputs"
+            ],
+            "additionalProperties": false
+          },
+          "meta": {}
+        },
+        "required": [
+          "_def",
+          "meta"
+        ],
+        "additionalProperties": false
+      },
+      "ParserZodEsque": {
+        "type": "object",
+        "properties": {
+          "_input": {},
+          "_output": {}
+        },
+        "required": [
+          "_input",
+          "_output"
+        ],
+        "additionalProperties": false
+      },
+      "ParserValibotEsque": {
+        "type": "object",
+        "properties": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "_types": {
+                "type": "object",
+                "properties": {
+                  "input": {},
+                  "output": {}
+                },
+                "required": [
+                  "input",
+                  "output"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "schema"
+        ],
+        "additionalProperties": false
+      },
+      "ParserArkTypeEsque": {
+        "type": "object",
+        "properties": {
+          "inferIn": {},
+          "infer": {}
+        },
+        "required": [
+          "inferIn",
+          "infer"
+        ],
+        "additionalProperties": false
+      },
+      "ParserStandardSchemaEsque": {
+        "type": "object",
+        "properties": {
+          "~standard": {
+            "$ref": "#/components/schemas/Props"
+          }
+        },
+        "required": [
+          "~standard"
+        ],
+        "additionalProperties": false
+      },
+      "Props": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "const": 1,
+            "description": "The version number of the standard."
+          },
+          "vendor": {
+            "type": "string",
+            "description": "The vendor name of the schema library."
+          },
+          "validate": {
+            "type": "object",
+            "description": "Validates unknown input values."
+          },
+          "types": {
+            "$ref": "#/components/schemas/Types"
+          }
+        },
+        "required": [
+          "version",
+          "vendor",
+          "validate"
+        ],
+        "additionalProperties": false
+      },
+      "Types": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "description": "The input type of the schema."
+          },
+          "output": {
+            "description": "The output type of the schema."
+          }
+        },
+        "required": [
+          "input",
+          "output"
+        ],
+        "additionalProperties": false
+      },
+      "ParserMyZodEsque": {
+        "type": "object",
+        "properties": {
+          "parse": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "parse"
+        ],
+        "additionalProperties": false
+      },
+      "ParserScaleEsque": {
+        "type": "object",
+        "properties": {
+          "assert": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "assert"
+        ],
+        "additionalProperties": false
+      },
+      "ParserSuperstructEsque": {
+        "type": "object",
+        "properties": {
+          "create": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "create"
+        ],
+        "additionalProperties": false
+      },
+      "ParserYupEsque": {
+        "type": "object",
+        "properties": {
+          "validateSync": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "validateSync"
+        ],
+        "additionalProperties": false
+      },
+      "AnyMutationProcedure": {
+        "type": "object",
+        "properties": {
+          "_def": {
+            "type": "object",
+            "properties": {
+              "$types": {
+                "type": "object",
+                "properties": {
+                  "input": {},
+                  "output": {}
+                },
+                "required": [
+                  "input",
+                  "output"
+                ],
+                "additionalProperties": false,
+                "description": "These are just types, they can't be used at runtime"
+              },
+              "procedure": {
+                "type": "boolean",
+                "const": true
+              },
+              "type": {
+                "type": "string",
+                "const": "mutation"
+              },
+              "meta": {},
+              "experimental_caller": {
+                "type": "boolean"
+              },
+              "inputs": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ParserZodEsque"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ParserValibotEsque"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ParserArkTypeEsque"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ParserStandardSchemaEsque"
+                    },
+                    {
+                      "type": "object"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ParserMyZodEsque"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ParserScaleEsque"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ParserSuperstructEsque"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ParserYupEsque"
+                    }
+                  ]
+                },
+                "description": "The input parsers for the procedure"
+              }
+            },
+            "required": [
+              "$types",
+              "procedure",
+              "type",
+              "meta",
+              "experimental_caller",
+              "inputs"
+            ],
+            "additionalProperties": false
+          },
+          "meta": {}
+        },
+        "required": [
+          "_def",
+          "meta"
+        ],
+        "additionalProperties": false
+      },
+      "SubscriptionProcedure": {
+        "type": "object",
+        "properties": {
+          "_def": {
+            "type": "object",
+            "properties": {
+              "$types": {
+                "type": "object",
+                "properties": {
+                  "input": {},
+                  "output": {}
+                },
+                "required": [
+                  "input",
+                  "output"
+                ],
+                "additionalProperties": false,
+                "description": "These are just types, they can't be used at runtime"
+              },
+              "procedure": {
+                "type": "boolean",
+                "const": true
+              },
+              "type": {
+                "type": "string",
+                "const": "subscription"
+              },
+              "meta": {},
+              "experimental_caller": {
+                "type": "boolean"
+              },
+              "inputs": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ParserZodEsque"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ParserValibotEsque"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ParserArkTypeEsque"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ParserStandardSchemaEsque"
+                    },
+                    {
+                      "type": "object"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ParserMyZodEsque"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ParserScaleEsque"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ParserSuperstructEsque"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ParserYupEsque"
+                    }
+                  ]
+                },
+                "description": "The input parsers for the procedure"
+              }
+            },
+            "required": [
+              "$types",
+              "procedure",
+              "type",
+              "meta",
+              "experimental_caller",
+              "inputs"
+            ],
+            "additionalProperties": false
+          },
+          "meta": {}
+        },
+        "required": [
+          "_def",
+          "meta"
+        ],
+        "additionalProperties": false
+      },
+      "LegacyObservableSubscriptionProcedure": {
+        "type": "object",
+        "properties": {
+          "_observable": {
+            "type": "boolean",
+            "const": true
+          },
+          "_def": {
+            "type": "object",
+            "properties": {
+              "$types": {
+                "type": "object",
+                "properties": {
+                  "input": {},
+                  "output": {}
+                },
+                "required": [
+                  "input",
+                  "output"
+                ],
+                "additionalProperties": false,
+                "description": "These are just types, they can't be used at runtime"
+              },
+              "procedure": {
+                "type": "boolean",
+                "const": true
+              },
+              "type": {
+                "type": "string",
+                "const": "subscription"
+              },
+              "meta": {},
+              "experimental_caller": {
+                "type": "boolean"
+              },
+              "inputs": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ParserZodEsque"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ParserValibotEsque"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ParserArkTypeEsque"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ParserStandardSchemaEsque"
+                    },
+                    {
+                      "type": "object"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ParserMyZodEsque"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ParserScaleEsque"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ParserSuperstructEsque"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ParserYupEsque"
+                    }
+                  ]
+                },
+                "description": "The input parsers for the procedure"
+              }
+            },
+            "required": [
+              "$types",
+              "procedure",
+              "type",
+              "meta",
+              "experimental_caller",
+              "inputs"
+            ],
+            "additionalProperties": false
+          },
+          "meta": {}
+        },
+        "required": [
+          "_observable",
+          "_def",
+          "meta"
+        ],
+        "additionalProperties": false
+      },
+      "AbortSignal": {
+        "type": "object",
+        "properties": {
+          "aborted": {
+            "type": "boolean"
+          },
+          "onabort": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "reason": {},
+          "throwIfAborted": {
+            "type": "object"
+          },
+          "addEventListener": {
+            "type": "object"
+          },
+          "removeEventListener": {
+            "type": "object"
+          },
+          "dispatchEvent": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "aborted",
+          "onabort",
+          "reason",
+          "throwIfAborted",
+          "addEventListener",
+          "removeEventListener",
+          "dispatchEvent"
+        ],
+        "additionalProperties": false
+      },
+      "URL": {
+        "type": "object",
+        "properties": {
+          "hash": {
+            "type": "string"
+          },
+          "host": {
+            "type": "string"
+          },
+          "hostname": {
+            "type": "string"
+          },
+          "href": {
+            "type": "string"
+          },
+          "toString": {
+            "type": "object"
+          },
+          "origin": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "pathname": {
+            "type": "string"
+          },
+          "port": {
+            "type": "string"
+          },
+          "protocol": {
+            "type": "string"
+          },
+          "search": {
+            "type": "string"
+          },
+          "searchParams": {
+            "$ref": "#/components/schemas/URLSearchParams"
+          },
+          "username": {
+            "type": "string"
+          },
+          "toJSON": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "hash",
+          "host",
+          "hostname",
+          "href",
+          "toString",
+          "origin",
+          "password",
+          "pathname",
+          "port",
+          "protocol",
+          "search",
+          "searchParams",
+          "username",
+          "toJSON"
+        ],
+        "additionalProperties": false
+      },
+      "URLSearchParams": {
+        "type": "object",
+        "properties": {
+          "size": {
+            "type": "number"
+          },
+          "append": {
+            "type": "object"
+          },
+          "delete": {
+            "type": "object"
+          },
+          "get": {
+            "type": "object"
+          },
+          "getAll": {
+            "type": "object"
+          },
+          "has": {
+            "type": "object"
+          },
+          "set": {
+            "type": "object"
+          },
+          "sort": {
+            "type": "object"
+          },
+          "toString": {
+            "type": "object"
+          },
+          "forEach": {
+            "type": "object"
+          },
+          "entries": {
+            "type": "object"
+          },
+          "keys": {
+            "type": "object"
+          },
+          "values": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "size",
+          "append",
+          "delete",
+          "get",
+          "getAll",
+          "has",
+          "set",
+          "sort",
+          "toString",
+          "forEach",
+          "entries",
+          "keys",
+          "values"
+        ],
+        "additionalProperties": false
+      },
+      "LocalNodeModulesImportOutput": {
+        "type": "object",
+        "properties": {
+          "diagnostic": {
+            "$ref": "#/components/schemas/Diagnostic"
+          }
+        },
+        "required": [
+          "diagnostic"
+        ],
+        "additionalProperties": false
+      },
+      "Diagnostic": {
+        "type": "object",
+        "properties": {
+          "range": {
+            "$ref": "#/components/schemas/Range"
+          },
+          "severity": {
+            "type": "number",
+            "enum": [
+              3,
+              1,
+              2,
+              4
+            ]
+          },
+          "code": {
+            "type": [
+              "string",
+              "number"
+            ]
+          },
+          "codeDescription": {
+            "$ref": "#/components/schemas/CodeDescription"
+          },
+          "source": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "enum": [
+                1,
+                2
+              ]
+            }
+          },
+          "relatedInformation": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiagnosticRelatedInformation"
+            }
+          },
+          "data": {}
+        },
+        "required": [
+          "range",
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "Range": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "$ref": "#/components/schemas/Position"
+          },
+          "end": {
+            "$ref": "#/components/schemas/Position"
+          }
+        },
+        "required": [
+          "start",
+          "end"
+        ],
+        "additionalProperties": false
+      },
+      "Position": {
+        "type": "object",
+        "properties": {
+          "line": {
+            "type": "number"
+          },
+          "character": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "line",
+          "character"
+        ],
+        "additionalProperties": false
+      },
+      "CodeDescription": {
+        "type": "object",
+        "properties": {
+          "href": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "href"
+        ],
+        "additionalProperties": false
+      },
+      "DiagnosticRelatedInformation": {
+        "type": "object",
+        "properties": {
+          "location": {
+            "$ref": "#/components/schemas/Location"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "location",
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "Location": {
+        "type": "object",
+        "properties": {
+          "uri": {
+            "type": "string"
+          },
+          "range": {
+            "$ref": "#/components/schemas/Range"
+          }
+        },
+        "required": [
+          "uri",
+          "range"
+        ],
+        "additionalProperties": false
+      },
+      "RootNodeModulesImportOutput": {
+        "type": "object",
+        "properties": {
+          "aliasOptions": {
+            "oneOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Alias"
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            ]
+          }
+        },
+        "required": [
+          "aliasOptions"
+        ],
+        "additionalProperties": false
+      },
+      "Alias": {
+        "type": "object",
+        "properties": {
+          "find": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "$ref": "#/components/schemas/RegExp"
+              }
+            ]
+          },
+          "replacement": {
+            "type": "string"
+          },
+          "customResolver": {
+            "oneOf": [
+              {
+                "type": "object"
+              },
+              {
+                "$ref": "#/components/schemas/ResolverObject"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "find",
+          "replacement"
+        ],
+        "additionalProperties": false
+      },
+      "RegExp": {
+        "type": "object",
+        "properties": {
+          "exec": {
+            "type": "object"
+          },
+          "test": {
+            "type": "object"
+          },
+          "source": {
+            "type": "string"
+          },
+          "global": {
+            "type": "boolean"
+          },
+          "ignoreCase": {
+            "type": "boolean"
+          },
+          "multiline": {
+            "type": "boolean"
+          },
+          "lastIndex": {
+            "type": "number"
+          },
+          "compile": {
+            "type": "object"
+          },
+          "flags": {
+            "type": "string"
+          },
+          "sticky": {
+            "type": "boolean"
+          },
+          "unicode": {
+            "type": "boolean"
+          },
+          "dotAll": {
+            "type": "boolean"
+          },
+          "hasIndices": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "exec",
+          "test",
+          "source",
+          "global",
+          "ignoreCase",
+          "multiline",
+          "lastIndex",
+          "compile",
+          "flags",
+          "sticky",
+          "unicode",
+          "dotAll",
+          "hasIndices"
+        ],
+        "additionalProperties": false
+      },
+      "ResolverObject": {
+        "type": "object",
+        "properties": {
+          "buildStart": {
+            "oneOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "handler": {
+                    "type": "object"
+                  },
+                  "order": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "pre",
+                      "post"
+                    ]
+                  },
+                  "sequential": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "handler"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "resolveId": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "resolveId"
+        ],
+        "additionalProperties": false
+      },
+      "DefaultErrorShape": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "code": {
+            "type": "number",
+            "enum": [
+              -32700,
+              -32600,
+              -32603,
+              -32001,
+              -32002,
+              -32003,
+              -32004,
+              -32005,
+              -32008,
+              -32009,
+              -32012,
+              -32013,
+              -32015,
+              -32022,
+              -32028,
+              -32029,
+              -32099
+            ]
+          },
+          "data": {
+            "$ref": "#/components/schemas/DefaultErrorData"
+          }
+        },
+        "required": [
+          "message",
+          "code",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "DefaultErrorData": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "PARSE_ERROR",
+              "BAD_REQUEST",
+              "INTERNAL_SERVER_ERROR",
+              "NOT_IMPLEMENTED",
+              "BAD_GATEWAY",
+              "SERVICE_UNAVAILABLE",
+              "GATEWAY_TIMEOUT",
+              "UNAUTHORIZED",
+              "PAYMENT_REQUIRED",
+              "FORBIDDEN",
+              "NOT_FOUND",
+              "METHOD_NOT_SUPPORTED",
+              "TIMEOUT",
+              "CONFLICT",
+              "PRECONDITION_FAILED",
+              "PAYLOAD_TOO_LARGE",
+              "UNSUPPORTED_MEDIA_TYPE",
+              "UNPROCESSABLE_CONTENT",
+              "PRECONDITION_REQUIRED",
+              "TOO_MANY_REQUESTS",
+              "CLIENT_CLOSED_REQUEST"
+            ]
+          },
+          "httpStatus": {
+            "type": "number"
+          },
+          "path": {
+            "type": "string",
+            "description": "Path to the procedure that threw the error"
+          },
+          "stack": {
+            "type": "string",
+            "description": "Stack trace of the error (only in development)"
+          }
+        },
+        "required": [
+          "code",
+          "httpStatus"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "responses": {
+      "Error": {
+        "description": "Error response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "$ref": "#/components/schemas/DefaultErrorShape"
+                }
+              },
+              "required": [
+                "error"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

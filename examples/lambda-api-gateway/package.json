@@ -1,0 +1,29 @@
+{
+  "name": "examples-lambda-api-gateway",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint --cache src",
+    "typecheck": "tsc",
+    "start-server": "serverless offline --httpPort 4050",
+    "start-client": "tsx src/client.ts",
+    "http-rest-client": "tsx src/payloadFormatVersionClient.ts"
+  },
+  "dependencies": {
+    "@trpc/client": "npm:@trpc/client",
+    "@trpc/server": "npm:@trpc/server",
+    "tsx": "^4.19.3",
+    "zod": "^4.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.5",
+    "esbuild": "^0.17.10",
+    "eslint": "^9.26.0",
+    "serverless": "^3.38.0",
+    "serverless-esbuild": "^1.55.0",
+    "serverless-offline": "^12.0.4",
+    "typescript": "^5.9.2"
+  }
+}

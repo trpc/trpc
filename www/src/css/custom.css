@@ -1,0 +1,482 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* stylelint-disable docusaurus/copyright-header */
+/**
+ * Any CSS included here will be global. The classic template
+ * bundles Infima by default. Infima is a CSS framework designed to
+ * work well for content-centric websites.
+ */
+
+/* You can override the default Infima variables here. */
+:root {
+  --ifm-color-primary: #398ccb;
+  --ifm-color-primary-dark: #317eb9;
+  --ifm-color-primary-darker: #2e77af;
+  --ifm-color-primary-darkest: #266290;
+  --ifm-color-primary-light: #4e98d0;
+  --ifm-color-primary-lighter: #589ed3;
+  --ifm-color-primary-lightest: #77b0db;
+  --ifm-code-font-size: 95%;
+  --ifm-container-width: 1140px;
+  --ifm-container-width-xl: 1320px;
+  --ifm-navbar-shadow: none;
+  --docsearch-key-shadow: none !important;
+  --docsearch-footer-shadow: none !important;
+  --docsearch-key-gradient: #f4f4f5 !important;
+
+  --tweet-border: 1px solid var(--ifm-color-emphasis-300);
+}
+
+:root[data-theme='dark'] {
+  --ifm-footer-background-color: #171717;
+  --ifm-navbar-background-color: #111111;
+  --ifm-background-color: #111111;
+  --ifm-toc-border-color: rgb(39, 39, 42);
+  --docsearch-modal-background: #18181b;
+  --docsearch-footer-background: #18181b;
+  --docsearch-searchbox-focus-background: #18181b;
+  --docsearch-key-gradient: #27272a;
+  --docsearch-key-shadow: none;
+  --docsearch-key-gradient: #27272a !important;
+  --docsearch-footer-shadow: none;
+  --docsearch-hit-background: #27272a;
+}
+
+html {
+  @apply selection:bg-sky-500/75 selection:text-white;
+}
+
+div[class^='announcementBar_'] {
+  z-index: var(--ifm-z-index-fixed);
+}
+
+.navbar {
+  border-bottom: 1px solid var(--ifm-toc-border-color);
+}
+
+/* FIXME: Revert later. Blocked by https://github.com/facebook/docusaurus/pull/8079 */
+/*
+.navbar__link--active,
+.menu__list:not(.theme-doc-sidebar-menu)
+  li:not(.theme-doc-sidebar-item-link):not(.theme-doc-sidebar-item-category)
+  .menu__link--active {
+  color: var(--ifm-navbar-link-color);
+}
+*/
+
+.homepage .navbar__inner {
+  @apply container;
+}
+
+.homepage .main-wrapper {
+  background:
+    linear-gradient(180deg, hsla(0, 0%, 100%, 0) 0, #fff 300px),
+    fixed 0 0 /20px 20px radial-gradient(#d1d1d1 1px, transparent 0),
+    fixed 10px 10px /20px 20px radial-gradient(#d1d1d1 1px, transparent 0);
+}
+
+[data-theme='dark'] .homepage .main-wrapper {
+  background:
+    linear-gradient(180deg, transparent 0, #111 300px),
+    fixed 0 0 /20px 20px radial-gradient(#313131 1px, transparent 0),
+    fixed 10px 10px /20px 20px radial-gradient(#313131 1px, transparent 0);
+}
+
+.navbar-external-link svg {
+  display: none;
+}
+
+.markdown a {
+  @apply text-primary hover:text-primary-dark;
+}
+
+.markdown hr {
+  height: var(--ifm-hr-height);
+  margin-top: 0.5rem;
+  margin-bottom: 1.5rem;
+  background-color: var(--ifm-toc-border-color);
+}
+
+.docusaurus-highlight-code-line {
+  background-color: rgb(72, 77, 91);
+  display: block;
+  margin: 0 calc(-1 * var(--ifm-pre-padding));
+  padding: 0 var(--ifm-pre-padding);
+}
+
+a {
+  color: var(--ifm-link-color);
+  text-decoration: var(--ifm-link-decoration);
+}
+/**
+ * Initializing a `footnotes` counter on the wrapper
+ */
+article {
+  counter-reset: footnotes;
+}
+
+/**
+ * Inline footnotes references
+ * 1. Increment the counter at each new reference
+ * 2. Reset link styles to make it appear like regular text
+ */
+[aria-describedby='footnote-label'] {
+  counter-increment: footnotes; /* 1 */
+  text-decoration: none; /* 2 */
+  color: inherit; /* 2 */
+  cursor: default; /* 2 */
+  outline: none; /* 2 */
+}
+
+/**
+ * Actual numbered references
+ * 1. Display the current state of the counter (e.g. `[1]`)
+ * 2. Align text as superscript
+ * 3. Make the number smaller (since it's superscript)
+ * 4. Slightly offset the number from the text
+ * 5. Reset link styles on the number to show it's usable
+ */
+[aria-describedby='footnote-label']::after {
+  content: '[' counter(footnotes) ']'; /* 1 */
+  vertical-align: super; /* 2 */
+  font-size: 0.5em; /* 3 */
+  margin-left: 2px; /* 4 */
+  color: blue; /* 5 */
+  text-decoration: underline; /* 5 */
+  cursor: pointer; /* 5 */
+}
+
+/**
+ * Resetting the default focused styles on the number
+ */
+[aria-describedby='footnote-label']:focus::after {
+  outline: thin dotted;
+  outline-offset: 2px;
+}
+
+[aria-label='Back to content'] {
+  font-size: 0.8em;
+}
+
+.footnotes {
+  font-size: 0.9em;
+  max-width: 605px;
+  margin: auto;
+  padding: 10px 0px 60px 0px;
+}
+
+/**
+ * Highlight target note
+ */
+.footnotes :target {
+  background: yellow;
+}
+
+.docs-wrapper main > .container > .row {
+  justify-content: center;
+}
+.docs-wrapper main > .container > .row > .col:first-child {
+  /* max-width: 650px !important; */
+}
+@media only screen and (min-width: 997px) {
+  .docs-wrapper main > .container > .row > .col:first-child {
+    /* max-width: min(75%, 650px) !important; */
+  }
+}
+
+@media only screen and (min-width: 1496px) {
+  .docs-wrapper main > .container > .row > .col:first-child {
+    /* max-width: min(75%, 850px) !important; */
+  }
+}
+
+.theme-doc-markdown.markdown table {
+  display: table;
+  /* width: 100%; */
+}
+
+.theme-edit-this-page {
+  @apply text-primary hover:text-primary-dark;
+}
+
+.navbar-external-link,
+.theme-edit-this-page {
+  @apply hidden items-center xl:flex;
+}
+.footer__item {
+  @apply h-8;
+}
+
+.container {
+  @apply mx-auto w-full max-w-[var(--ifm-container-width-xl)];
+}
+
+.markdown h1,
+h2,
+h3,
+h4,
+h5 {
+  @apply mb-1 font-bold leading-normal;
+}
+
+.markdown h1 {
+  @apply text-5xl;
+}
+
+.markdown h2 {
+  @apply text-[2rem];
+}
+
+.markdown h3 {
+  @apply text-2xl;
+}
+
+.markdown h4 {
+  @apply text-xl;
+}
+
+.markdown h5 {
+  @apply text-lg;
+}
+
+.markdown ul {
+  @apply list-disc pl-8;
+}
+
+.markdown blockquote,
+.markdown .shiki {
+  margin: 0 0 var(--ifm-spacing-vertical);
+}
+
+.pagination-nav__label {
+  @apply text-primary;
+}
+
+.admonition-heading h5 {
+  @apply flex items-center text-lg;
+}
+
+.theme-admonition a {
+  @apply font-semibold;
+}
+
+.theme-admonition-note a {
+  @apply dark:text-sky-300 dark:hover:text-sky-400;
+}
+
+/**
+ * Disable underline for some links
+ **/
+#tweet,
+#sponsor-button {
+  --ifm-link-hover-decoration: none;
+}
+
+/* https://github.com/shikijs/twoslash/tree/main/packages/docusaurus-preset-shiki-twoslash */
+[data-theme='light'] .shiki.github-dark {
+  display: none;
+}
+
+[data-theme='dark'] .shiki.min-light-with-diff {
+  display: none;
+}
+
+[data-theme='dark'] .shiki.github-dark {
+  background-color: rgba(39, 39, 42, 0.5) !important;
+  @apply border-zinc-700;
+}
+
+[data-theme='dark'] .shiki.github-dark .popover {
+  @apply border-[1px] border-zinc-700 bg-zinc-800 elevation-4;
+}
+
+[data-theme='dark'] .shiki.github-dark .popover .arrow {
+  @apply border-zinc-700 bg-zinc-800;
+}
+
+[data-theme='dark'] .shiki .code-title {
+  @apply border-zinc-700;
+}
+
+[data-theme='dark'] .shiki.min-light {
+  display: none;
+}
+
+[data-theme='light'] .shiki.min-light-with-diff .popover {
+  @apply border-[1px] border-zinc-300 bg-zinc-100;
+}
+
+[data-theme='light'] .shiki.min-light-with-diff .popover .arrow {
+  @apply border-zinc-300 bg-zinc-100;
+}
+
+.markdown ul {
+  @apply list-inside list-disc;
+}
+
+.markdown ol {
+  @apply list-inside list-decimal;
+}
+
+.markdown ol li {
+  @apply my-4;
+}
+
+.markdown li > p {
+  display: inline;
+}
+
+/** Hide noisy shiki stuff */
+
+.shiki data-lsp {
+  border-bottom: 0 !important;
+}
+
+.shiki data-lsp::before {
+  display: none;
+}
+
+/* Would be nice to have these displayed but they are veeerry long and noisy... */
+.shiki .error,
+.shiki .error-behind {
+  display: none;
+}
+
+.theme-doc-version-badge {
+  margin-bottom: 1rem;
+}
+
+/* Hide announcement bar for v9 */
+/* html:not(.v10) [role='banner'] {
+  display: none !important;
+} */
+
+/* Toggle different gifs depending on version */
+/* .trpcgif {
+  display: none;
+}
+
+html.v10 .trpcgif--v10.trpcgif--portrait {
+  @apply block md:hidden;
+}
+
+html.v10 .trpcgif--v10.trpcgif--landscape {
+  @apply hidden md:block;
+}
+
+html.v9 .trpcgif--v9 {
+  display: block;
+}
+*/
+
+/* Breadcrumbs */
+.breadcrumbs {
+  @apply flex items-center;
+}
+
+.breadcrumbs__item {
+  @apply flex items-center;
+}
+
+.header-social-link:hover {
+  @apply opacity-60 transition-colors;
+}
+
+.header-github-link::before {
+  @apply flex h-6 w-6 bg-center bg-no-repeat content-[''];
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 496 512'%3E%3C!--! Font Awesome Pro 6.2.0 by %40fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2022 Fonticons  Inc. --%3E%3Cpath d='M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z'/%3E%3C/svg%3E");
+}
+
+[data-theme='dark'] .header-github-link::before {
+  @apply bg-center bg-no-repeat;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='white' viewBox='0 0 496 512'%3E%3C!--! Font Awesome Pro 6.2.0 by %40fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2022 Fonticons  Inc. --%3E%3Cpath d='M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z'/%3E%3C/svg%3E");
+}
+
+.header-twitter-link::before {
+  @apply flex h-6 w-6 bg-center bg-no-repeat content-[''];
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3C!--! Font Awesome Pro 6.2.0 by %40fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2022 Fonticons  Inc. --%3E%3Cpath d='M389.2 48h70.6L305.6 224.2 487 464H345L233.7 318.6 106.5 464H35.8L200.7 275.5 26.8 48H172.4L272.9 180.9 389.2 48zM364.4 421.8h39.1L151.1 88h-42L364.4 421.8z'/%3E%3C/svg%3E");
+}
+
+[data-theme='dark'] .header-twitter-link::before {
+  @apply bg-center bg-no-repeat;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='white' viewBox='0 0 512 512'%3E%3C!--! Font Awesome Pro 6.2.0 by %40fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2022 Fonticons  Inc. --%3E%3Cpath d='M389.2 48h70.6L305.6 224.2 487 464H345L233.7 318.6 106.5 464H35.8L200.7 275.5 26.8 48H172.4L272.9 180.9 389.2 48zM364.4 421.8h39.1L151.1 88h-42L364.4 421.8z'/%3E%3C/svg%3E");
+}
+
+.header-discord-link::before {
+  @apply flex h-6 w-6 bg-center bg-no-repeat content-[''];
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 512'%3E%3C!--! Font Awesome Pro 6.2.0 by %40fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2022 Fonticons  Inc. --%3E%3Cpath d='M524.531 69.836a1.5 1.5 0 0 0-.764-.7A485.065 485.065 0 0 0 404.081 32.03a1.816 1.816 0 0 0-1.923.91 337.461 337.461 0 0 0-14.9 30.6 447.848 447.848 0 0 0-134.426 0 309.541 309.541 0 0 0-15.135-30.6 1.89 1.89 0 0 0-1.924-.91A483.689 483.689 0 0 0 116.085 69.137a1.712 1.712 0 0 0-.788.676C39.068 183.651 18.186 294.69 28.43 404.354a2.016 2.016 0 0 0 .765 1.375A487.666 487.666 0 0 0 176.02 479.918a1.9 1.9 0 0 0 2.063-.676A348.2 348.2 0 0 0 208.12 430.4a1.86 1.86 0 0 0-1.019-2.588 321.173 321.173 0 0 1-45.868-21.853 1.885 1.885 0 0 1-.185-3.126c3.082-2.309 6.166-4.711 9.109-7.137a1.819 1.819 0 0 1 1.9-.256c96.229 43.917 200.41 43.917 295.5 0a1.812 1.812 0 0 1 1.924.233c2.944 2.426 6.027 4.851 9.132 7.16a1.884 1.884 0 0 1-.162 3.126 301.407 301.407 0 0 1-45.89 21.83 1.875 1.875 0 0 0-1 2.611 391.055 391.055 0 0 0 30.014 48.815 1.864 1.864 0 0 0 2.063.7A486.048 486.048 0 0 0 610.7 405.729a1.882 1.882 0 0 0 .765-1.352C623.729 277.594 590.933 167.465 524.531 69.836ZM222.491 337.58c-28.972 0-52.844-26.587-52.844-59.239S193.056 219.1 222.491 219.1c29.665 0 53.306 26.82 52.843 59.239C275.334 310.993 251.924 337.58 222.491 337.58Zm195.38 0c-28.971 0-52.843-26.587-52.843-59.239S388.437 219.1 417.871 219.1c29.667 0 53.307 26.82 52.844 59.239C470.715 310.993 447.538 337.58 417.871 337.58Z'/%3E%3C/svg%3E");
+}
+
+[data-theme='dark'] .header-discord-link::before {
+  @apply bg-center bg-no-repeat;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='white' viewBox='0 0 640 512'%3E%3C!--! Font Awesome Pro 6.2.0 by %40fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2022 Fonticons  Inc. --%3E%3Cpath d='M524.531 69.836a1.5 1.5 0 0 0-.764-.7A485.065 485.065 0 0 0 404.081 32.03a1.816 1.816 0 0 0-1.923.91 337.461 337.461 0 0 0-14.9 30.6 447.848 447.848 0 0 0-134.426 0 309.541 309.541 0 0 0-15.135-30.6 1.89 1.89 0 0 0-1.924-.91A483.689 483.689 0 0 0 116.085 69.137a1.712 1.712 0 0 0-.788.676C39.068 183.651 18.186 294.69 28.43 404.354a2.016 2.016 0 0 0 .765 1.375A487.666 487.666 0 0 0 176.02 479.918a1.9 1.9 0 0 0 2.063-.676A348.2 348.2 0 0 0 208.12 430.4a1.86 1.86 0 0 0-1.019-2.588 321.173 321.173 0 0 1-45.868-21.853 1.885 1.885 0 0 1-.185-3.126c3.082-2.309 6.166-4.711 9.109-7.137a1.819 1.819 0 0 1 1.9-.256c96.229 43.917 200.41 43.917 295.5 0a1.812 1.812 0 0 1 1.924.233c2.944 2.426 6.027 4.851 9.132 7.16a1.884 1.884 0 0 1-.162 3.126 301.407 301.407 0 0 1-45.89 21.83 1.875 1.875 0 0 0-1 2.611 391.055 391.055 0 0 0 30.014 48.815 1.864 1.864 0 0 0 2.063.7A486.048 486.048 0 0 0 610.7 405.729a1.882 1.882 0 0 0 .765-1.352C623.729 277.594 590.933 167.465 524.531 69.836ZM222.491 337.58c-28.972 0-52.844-26.587-52.844-59.239S193.056 219.1 222.491 219.1c29.665 0 53.306 26.82 52.843 59.239C275.334 310.993 251.924 337.58 222.491 337.58Zm195.38 0c-28.971 0-52.843-26.587-52.843-59.239S388.437 219.1 417.871 219.1c29.667 0 53.307 26.82 52.844 59.239C470.715 310.993 447.538 337.58 417.871 337.58Z'/%3E%3C/svg%3E");
+}
+
+details p {
+  margin-bottom: var(--ifm-leading);
+}
+
+#from-github {
+  /* to keep equal space here as the twitter title */
+  margin-top: 50px;
+}
+
+.markdown .github-comment {
+  margin-bottom: 2rem;
+}
+
+.navbar__link {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.footer__item svg {
+  display: none;
+}
+
+.pagination-nav__link {
+  @apply border-none;
+}
+
+.shiki .code-container {
+  @apply text-xs lg:text-base;
+}
+
+.DocSearch.DocSearch-Button {
+  @apply rounded-md bg-zinc-100 dark:bg-zinc-800 sm:min-w-[139px];
+}
+
+.DocSearch-Button-Keys {
+  @apply mr-1 min-w-[auto] gap-1 rounded-sm border-[1px] px-1 dark:border-zinc-600/50 dark:bg-zinc-700/50 !important;
+}
+.DocSearch-Button-Key {
+  background: transparent !important;
+  @apply top-0 mr-0 h-auto w-auto border-none p-0 text-sm shadow-none !important;
+}
+
+.DocSearch-Button-Container svg {
+  @apply ml-1 mr-1 h-4 w-4;
+}
+
+.DocSearch-Button-Container span {
+  @apply text-sm;
+}
+
+.DocSearch-Logo a {
+  @apply items-center text-xs;
+}
+.DocSearch-Logo a svg {
+  @apply w-16;
+}
+
+.InstallationSnippet__CodeBlock {
+  @apply relative;
+}
+.InstallationSnippet__CodeBlock .copy-button {
+  /* @apply absolute right-0 top-0 rounded bg-zinc-400 bg-opacity-50 text-sm dark:bg-zinc-800 dark:bg-opacity-50; */
+  /* I'd enable the above but the copy button doesn't actually work */
+  @apply hidden;
+}

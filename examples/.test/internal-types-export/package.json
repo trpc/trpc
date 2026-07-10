@@ -1,0 +1,23 @@
+{
+  "name": "examples-internal-types-export",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "rm -rf build && tsc && tsdown"
+  },
+  "devDependencies": {
+    "@tsconfig/esm": "^1.0.3",
+    "@tsconfig/node-lts": "^18.12.2",
+    "@tsconfig/strictest": "^2.0.1",
+    "@types/node": "^22.13.5",
+    "tsdown": "0.12.7",
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "@trpc/client": "npm:@trpc/client",
+    "@trpc/next": "npm:@trpc/next",
+    "@trpc/react-query": "npm:@trpc/react-query",
+    "@trpc/server": "npm:@trpc/server",
+    "next": "^15.3.8"
+  }
+}

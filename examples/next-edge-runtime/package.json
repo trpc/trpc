@@ -1,0 +1,28 @@
+{
+  "name": "examples-next-edge-runtime",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "lint": "eslint --cache src",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.80.3",
+    "@trpc/client": "npm:@trpc/client",
+    "@trpc/next": "npm:@trpc/next",
+    "@trpc/react-query": "npm:@trpc/react-query",
+    "@trpc/server": "npm:@trpc/server",
+    "next": "^15.3.8",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "zod": "^4.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.5",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.1",
+    "eslint": "^9.26.0",
+    "typescript": "^5.9.2"
+  }
+}

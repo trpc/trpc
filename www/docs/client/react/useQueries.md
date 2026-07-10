@@ -1,0 +1,157 @@
+---
+id: useQueries
+title: useQueries()
+sidebar_label: useQueries()
+slug: /client/react/useQueries
+---
+
+The `useQueries` hook can be used to fetch a variable number of queries at the same time using only one hook call.
+
+The main use case for such a hook is to be able to fetch a number of queries, usually of the same type. For example if you fetch a list of todo ids, you can then map over them in a useQueries hook calling a byId endpoint that would fetch the details of each todo.
+
+:::note
+While fetching multiple types in a `useQueries` hook is possible, there is not much of an advantage compared to using multiple `useQuery` calls unless you use the `suspense` option as that `useQueries` can trigger suspense in parallel while multiple `useQuery` calls would waterfall.
+:::
+
+## Usage
+
+The useQueries hook is the same as that of [@tanstack/query useQueries](https://tanstack.com/query/v5/docs/framework/react/reference/useQueries). The only difference is that instead of passing an object with a `queries` array, you pass a callback function that receives a `t` proxy and returns an array of queries.
+
+:::tip
+When you're using the [`httpBatchLink`](/docs/client/links/httpBatchLink) or [`wsLink`](/docs/client/links/wsLink), the below will end up being only 1 HTTP call to your server. Additionally, if the underlying procedure is using something like Prisma's `findUnique()` it will [automatically batch](https://www.prisma.io/docs/guides/performance-and-optimization/query-optimization-performance#solving-n1-in-graphql-with-findunique-and-prismas-dataloader) & do exactly 1 database query as a well.
+:::
+
+```tsx twoslash
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+const appRouter = t.router({
+  post: t.router({
+    byId: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query(({ input }) => {
+        return { id: input.id, title: 'Example Post' };
+      }),
+  }),
+  greeting: t.procedure
+    .input(z.object({ text: z.string() }))
+    .query(({ input }) => {
+      return { message: `Hello ${input.text}` };
+    }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: component.tsx
+import React from 'react';
+// ---cut---
+import { trpc } from './utils/trpc';
+
+const Component = (props: { postIds: string[] }) => {
+  const postQueries = trpc.useQueries((t) =>
+    props.postIds.map((id) => t.post.byId({ id })),
+  );
+
+  return <>{/* [...] */}</>;
+};
+```
+
+### Providing options to individual queries
+
+You can also pass in any normal query options to the second parameter of any of the query calls in the array such as `enabled`, `suspense`, `refetchOnWindowFocus`...etc. For a complete overview of all the available options, see the [tanstack useQuery](https://tanstack.com/query/v5/docs/framework/react/reference/useQuery) documentation.
+
+```tsx twoslash
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+const appRouter = t.router({
+  post: t.router({
+    byId: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query(({ input }) => {
+        return { id: input.id, title: 'Example Post' };
+      }),
+  }),
+  greeting: t.procedure
+    .input(z.object({ text: z.string() }))
+    .query(({ input }) => {
+      return { message: `Hello ${input.text}` };
+    }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: component.tsx
+import React from 'react';
+// ---cut---
+import { trpc } from './utils/trpc';
+
+const Component = () => {
+  const [post, greeting] = trpc.useQueries((t) => [
+    t.post.byId({ id: '1' }, { enabled: false }),
+    t.greeting({ text: 'world' }),
+  ]);
+
+  const onButtonClick = () => {
+    post.refetch();
+  };
+
+  return (
+    <div>
+      <h1>{post.data && post.data.title}</h1>
+      <p>{greeting.data?.message}</p>
+      <button onClick={onButtonClick}>Click to fetch</button>
+    </div>
+  );
+};
+```
+
+### Context
+
+You can also pass in an optional React Query context to override the default.
+
+```tsx twoslash
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+const appRouter = t.router({
+  post: t.router({
+    byId: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query(({ input }) => {
+        return { id: input.id, title: 'Example Post' };
+      }),
+  }),
+  greeting: t.procedure
+    .input(z.object({ text: z.string() }))
+    .query(({ input }) => {
+      return { message: `Hello ${input.text}` };
+    }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: component.tsx
+import { trpc } from './utils/trpc';
+declare const myCustomContext: any;
+// ---cut---
+const [post, greeting] = trpc.useQueries(
+  (t) => [t.post.byId({ id: '1' }), t.greeting({ text: 'world' })],
+  myCustomContext,
+);
+```

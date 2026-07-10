@@ -1,0 +1,13 @@
+{
+  "extends": ["@tsconfig/node-lts", "@tsconfig/strictest", "@tsconfig/esm"],
+  "compilerOptions": {
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": true,
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "noEmitOnError": true,
+    "outDir": "build"
+  },
+  "include": ["**/*.ts"]
+}

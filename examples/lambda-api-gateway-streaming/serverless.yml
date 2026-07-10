@@ -1,0 +1,16 @@
+service: trpc-hello-world
+frameworkVersion: '4'
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+
+functions:
+  hello:
+    handler: src/server.handler
+    events:
+      - http:
+          path: /{proxy+}
+          method: any
+          response:
+            transferMode: STREAM

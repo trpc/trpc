@@ -1,0 +1,9 @@
+packages:
+  - 'packages/*'
+  - 'examples/*'
+  - 'examples/.*/*'
+  - 'examples/minimal/*'
+  - 'examples/minimal-react/*'
+  - 'examples/minimal-content-types/*'
+  - 'www'
+  - 'www/og-image'

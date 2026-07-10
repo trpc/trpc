@@ -1,0 +1,30 @@
+Import your `AppRouter` type into the client application. This type holds the shape of your entire API.
+
+```twoslash include router
+// @filename: server/router.ts
+import { initTRPC } from '@trpc/server';
+import { z } from "zod";
+const t = initTRPC.create();
+
+const appRouter = t.router({
+  post: t.router({
+    byId: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query(async ({input}) => {
+        return { id: input.id, title: 'Hello' };
+      }),
+  })
+});
+export type AppRouter = typeof appRouter;
+```
+
+```ts twoslash
+// @include: router
+// @filename: utils/trpc.ts
+// ---cut---
+import type { AppRouter } from '../server/router';
+```
+
+:::tip
+By using `import type` you ensure that the reference will be stripped at compile-time, meaning you don't inadvertently import server-side code into your client. For more information, [see the Typescript docs](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export).
+:::

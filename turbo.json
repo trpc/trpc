@@ -1,0 +1,56 @@
+{
+  "$schema": "https://turborepo.org/schema.json",
+  "globalDependencies": [
+    ".eslintrc.config.js",
+    "tsconfig.json",
+    "tsconfig.build.json",
+    "scripts/**"
+  ],
+  "globalEnv": [
+    "CI",
+    "NODE_ENV",
+    "DATABASE_URL",
+    "NEXTAUTH_SECRET",
+    "AUTH_GITHUB_ID",
+    "AUTH_GITHUB_SECRET"
+  ],
+  "tasks": {
+    "prebuild": {
+      "cache": false
+    },
+    "build": {
+      "dependsOn": ["^build", "prebuild"],
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**",
+        "dist/**",
+        "build/**",
+        "docs/typedoc/**"
+      ]
+    },
+    "examples-minimal-react#build": {
+      "outputs": ["client/dist/**", "server/dist/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "cache": true
+    },
+    "lint-fix": {
+      "cache": false
+    },
+    "test-dev": {
+      "dependsOn": ["^build"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"]
+    },
+    "test-start": {
+      "dependsOn": ["^build", "build"]
+    }
+  }
+}

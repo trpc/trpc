@@ -1,0 +1,37 @@
+KATT:
+  name: Alex / KATT 🐱
+  title: Creator of tRPC
+  image_url: https://github.com/KATT.png
+  url: https://x.com/alexdotjs
+  socials:
+    x: alexdotjs
+    bluesky: katt.dev
+    github: KATT
+    linkedin: https://www.linkedin.com/in/johanssonalexander
+
+sachinraja:
+  name: Sachin Raja
+  title: tRPC Core Team Member (alumni)
+  image_url: https://github.com/sachinraja.png
+  socials:
+    x: s4chinraja
+    github: sachinraja
+
+juliusmarminge:
+  name: Julius Marminge
+  title: tRPC Core Team Member
+  url: https://www.jumr.dev/
+  image_url: https://github.com/juliusmarminge.png
+  socials:
+    x: jullerino
+    bluesky: jumr.dev
+    github: juliusmarminge
+
+nicklucas:
+  name: Nick Lucas
+  title: tRPC Core Team Member
+  url: https://bsky.app/profile/nicklucas.dev
+  image_url: https://github.com/nick-lucas.png
+  socials:
+    bluesky: nicklucas.dev
+    github: nick-lucas

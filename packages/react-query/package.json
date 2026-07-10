@@ -1,0 +1,123 @@
+{
+  "name": "@trpc/react-query",
+  "type": "module",
+  "version": "11.18.0",
+  "description": "The tRPC React library",
+  "author": "KATT",
+  "license": "MIT",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "homepage": "https://trpc.io",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trpc/trpc.git",
+    "directory": "packages/react"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "lint": "eslint --cache src",
+    "typecheck": "tsc --noEmit --preserveWatchOutput --pretty"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./rsc": {
+      "import": {
+        "types": "./dist/rsc.d.mts",
+        "default": "./dist/rsc.mjs"
+      },
+      "require": {
+        "types": "./dist/rsc.d.cts",
+        "default": "./dist/rsc.cjs"
+      }
+    },
+    "./server": {
+      "import": {
+        "types": "./dist/server/index.d.mts",
+        "default": "./dist/server/index.mjs"
+      },
+      "require": {
+        "types": "./dist/server/index.d.cts",
+        "default": "./dist/server/index.cjs"
+      }
+    },
+    "./shared": {
+      "import": {
+        "types": "./dist/shared/index.d.mts",
+        "default": "./dist/shared/index.mjs"
+      },
+      "require": {
+        "types": "./dist/shared/index.d.cts",
+        "default": "./dist/shared/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "package.json",
+    "rsc",
+    "server",
+    "shared",
+    "!**/*.test.*",
+    "!**/__tests__"
+  ],
+  "eslintConfig": {
+    "rules": {
+      "react-hooks/exhaustive-deps": "error",
+      "no-restricted-imports": [
+        "error",
+        "@trpc/react-query"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.80.3",
+    "@trpc/client": "11.18.0",
+    "@trpc/server": "11.18.0",
+    "react": ">=18.2.0",
+    "typescript": ">=5.7.2"
+  },
+  "devDependencies": {
+    "@tanstack/query-sync-storage-persister": "^5.80.2",
+    "@tanstack/react-query": "^5.80.3",
+    "@tanstack/react-query-persist-client": "^5.80.3",
+    "@testing-library/dom": "^10.0.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.1.0",
+    "@testing-library/user-event": "^14.4.3",
+    "@trpc/client": "11.18.0",
+    "@trpc/server": "11.18.0",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.13.5",
+    "@types/react": "^19.1.0",
+    "eslint": "^9.26.0",
+    "express": "^5.0.0",
+    "next": "^15.3.8",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "tsdown": "0.12.7",
+    "tslib": "^2.8.1",
+    "typescript": "^5.9.2",
+    "zod": "npm:zod@^3.0.0",
+    "zod-form-data": "npm:zod-form-data@^2.0.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "funding": [
+    "https://trpc.io/sponsor"
+  ]
+}

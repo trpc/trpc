@@ -1,0 +1,26 @@
+service: trpc-hello-world
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+
+functions:
+  http-api:
+    handler: src/server.handler
+    events:
+      - httpApi: '*'
+  rest-api:
+    handler: src/server.handler
+    events:
+      - http:
+          path: /{proxy+}
+          method: any
+
+plugins:
+  - serverless-esbuild
+  - serverless-offline
+
+custom:
+  esbuild:
+    platform: neutral

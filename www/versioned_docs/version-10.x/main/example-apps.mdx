@@ -1,0 +1,206 @@
+---
+id: example-apps
+title: Example Apps
+sidebar_label: Example Apps
+slug: /example-apps
+description: Example apps built with tRPC
+---
+
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
+:::note
+Although it is possible to install the examples using any of listed package managers, the examples are all configured
+to use [pnpm](https://pnpm.io) as the script runner, so make sure to [install](https://pnpm.io/installation) it first.
+
+If you wish to use `npm` or `yarn`, make sure to update the relevant `package.json` `scripts` entries in generated example.
+:::
+
+---
+
+### Next.js starter with Prisma, E2E testing, and ESLint (Recommended)
+
+<Tabs>
+  <TabItem value="npm" label="npm" default>
+
+```bash
+npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
+```
+
+  </TabItem>
+  <TabItem value="yarn" label="yarn">
+
+```sh
+yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
+```
+
+  </TabItem>
+  <TabItem value="pnpm" label="pnpm">
+
+```sh
+pnpx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
+```
+
+  </TabItem>
+  <TabItem value="bun" label="bun">
+
+```sh
+bunx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
+```
+
+  </TabItem>
+</Tabs>
+
+- Example deploy: [nextjs.trpc.io](https://nextjs.trpc.io)
+- [Source code](https://github.com/trpc/examples-next-prisma-starter)
+
+---
+
+### create-t3-turbo - T3 Stack with Expo and Turborepo
+
+<Tabs>
+  <TabItem value="git" label="git">
+
+```bash
+git clone git@github.com:t3-oss/create-t3-turbo.git
+```
+
+  </TabItem>
+</Tabs>
+
+- [Source code](https://github.com/t3-oss/create-t3-turbo)
+
+---
+
+### Next.js starter with Prisma, E2E testing, ESLint, next-auth, WebSockets, and subscriptions
+
+<Tabs>
+  <TabItem value="npm" label="npm" default>
+
+```bash
+npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-websockets-starter trpc-prisma-websockets-starter
+```
+
+  </TabItem>
+  <TabItem value="yarn" label="yarn">
+
+```sh
+yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-websockets-starter trpc-prisma-websockets-starter
+```
+
+  </TabItem>
+  <TabItem value="pnpm" label="pnpm">
+
+```sh
+pnpx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-websockets-starter trpc-prisma-websockets-starter
+```
+
+  </TabItem>
+  <TabItem value="bun" label="bun">
+
+```sh
+bunx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-websockets-starter trpc-prisma-websockets-starter
+```
+
+  </TabItem>
+</Tabs>
+
+- Example deploy: [websockets.trpc.io](https://websockets.trpc.io)
+- [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-websockets-starter?file=/src/pages/index.tsx)
+- [Source code](https://github.com/trpc/examples-next-prisma-websockets-starter)
+
+---
+
+### Next.js Todo MVC example with SSG and Prisma
+
+<Tabs>
+  <TabItem value="npm" label="npm" default>
+
+```bash
+npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc trpc-todo
+```
+
+  </TabItem>
+  <TabItem value="yarn" label="yarn">
+
+```sh
+yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc trpc-todo
+```
+
+  </TabItem>
+  <TabItem value="pnpm" label="pnpm">
+
+```sh
+pnpx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc trpc-todo
+```
+
+  </TabItem>
+  <TabItem value="bun" label="bun">
+
+```sh
+bunx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc trpc-todo
+```
+
+  </TabItem>
+</Tabs>
+
+- Example deploy: [todomvc.trpc.io](https://todomvc.trpc.io)
+- [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-todomvc?file=/pages/%5Bfilter%5D.tsx)
+- [Source code](https://github.com/trpc/examples-next-prisma-todomvc)
+
+---
+
+### Minimal (Hello world) server and client in Node.js
+
+- [Source code](https://github.com/trpc/trpc/tree/main/examples/minimal)
+
+---
+
+### Vanilla standalone server and Node.js procedure calls
+
+- [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/standalone-server)
+- [Source code](https://github.com/trpc/trpc/tree/main/examples/standalone-server)
+
+---
+
+### Express server and Node.js procedure calls
+
+- [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/express-server)
+- [Source code](https://github.com/trpc/trpc/tree/main/examples/express-server)
+
+---
+
+### Fastify server with WebSockets and Node.js procedure calls
+
+- [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/fastify-server)
+- [Source code](https://github.com/trpc/trpc/tree/main/examples/fastify-server)
+
+---
+
+### SvelteKit with Prisma
+
+- [CodeSandbox](https://codesandbox.io/s/github/icflorescu/trpc-sveltekit-example)
+- [Source code](https://github.com/icflorescu/trpc-sveltekit-example)
+
+---
+
+### Sign-In With Ethereum Authentication With Express
+
+<Tabs>
+  <TabItem value="git" label="git">
+
+```bash
+git clone git@github.com:codingwithmanny/trpc-siwe-monorepo.git
+```
+
+  </TabItem>
+</Tabs>
+
+- [Source code](https://github.com/codingwithmanny/trpc-siwe-monorepo)
+
+---
+
+### Separate backend & frontend repositories
+
+- [Source code - BE repo](https://github.com/mkosir/trpc-api-boilerplate)
+- [Source code - FE repo](https://github.com/mkosir/trpc-fe-boilerplate)

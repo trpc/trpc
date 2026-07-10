@@ -1,0 +1,17 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "pnpm turbo --filter=./examples/next-prisma-websockets-starter build"
+  },
+  "deploy": {
+    "runtime": "V2",
+    "numReplicas": 1,
+    "healthcheckPath": "/api/trpc/healthcheck",
+    "healthcheckTimeout": 100,
+    "sleepApplication": true,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10,
+    "startCommand": "pnpm --filter ./examples/next-prisma-websockets-starter start"
+  }
+}

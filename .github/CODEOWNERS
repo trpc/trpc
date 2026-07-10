@@ -1,0 +1,7 @@
+# https://help.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners
+
+
+* @trpc/trpc-core
+
+www/**/* @trpc/trpc-website-docs
+
