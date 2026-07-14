@@ -222,6 +222,16 @@ export class WsClient {
         },
       );
 
+      // Wire the operation's AbortSignal: aborting must tear the request down
+      // (and send `subscription.stop` for subscriptions). Completing the
+      // observer runs the teardown below, which does exactly that.
+      const onAbort = () => observer.complete();
+      if (signal?.aborted) {
+        onAbort();
+      } else {
+        signal?.addEventListener('abort', onAbort, { once: true });
+      }
+
       return () => {
         abort();
 
@@ -232,7 +242,7 @@ export class WsClient {
           });
         }
 
-        signal?.removeEventListener('abort', abort);
+        signal?.removeEventListener('abort', onAbort);
       };
     });
   }
