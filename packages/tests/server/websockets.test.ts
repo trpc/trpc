@@ -294,13 +294,11 @@ test('subscription is aborted when its signal aborts', async () => {
   await using ctx = factory();
 
   const ac = new AbortController();
-  const onStartedMock = vi.fn();
+  const onStartedMock = vi.fn<() => void>();
 
   ctx.client.onMessageObservable.subscribe(undefined, {
     signal: ac.signal,
-    onStarted() {
-      onStartedMock();
-    },
+    onStarted: onStartedMock,
   });
 
   await vi.waitFor(() => {
