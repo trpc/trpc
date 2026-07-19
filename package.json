@@ -65,6 +65,7 @@
     "npm-run-all2": "^8.0.0",
     "prettier": "^3.3.3",
     "prettier-plugin-tailwindcss": "^0.7.0",
+    "simple-git": "3.32.3",
     "superjson": "^1.12.4",
     "ts-prune": "^0.10.3",
     "tsx": "^4.19.3",
