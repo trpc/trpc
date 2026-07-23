@@ -26,6 +26,8 @@ interface UnusedSkipTokenTRPCSubscriptionOptionsIn<TOutput, TError> {
   onStarted?: () => void;
   onData?: (data: inferAsyncIterableYield<TOutput>) => void;
   onError?: (err: TError) => void;
+  onStopped?: () => void;
+  onComplete?: () => void;
   onConnectionStateChange?: (state: TRPCConnectionState<TError>) => void;
 }
 
@@ -207,6 +209,24 @@ export function useSubscription<TOutput, TError>(
           ...(prev as any),
           status: 'error',
           error,
+        }));
+      },
+      onStopped: () => {
+        optsRef.current.onStopped?.();
+        updateState((prev) => ({
+          ...(prev as any),
+          status: 'idle',
+          data: undefined,
+          error: null,
+        }));
+      },
+      onComplete: () => {
+        optsRef.current.onComplete?.();
+        updateState((prev) => ({
+          ...(prev as any),
+          status: 'idle',
+          data: undefined,
+          error: null,
         }));
       },
       onConnectionStateChange: (result) => {
