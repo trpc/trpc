@@ -25,6 +25,12 @@ import { RequestManager } from './requestManager';
 import { ResettableTimeout, TRPCWebSocketClosedError } from './utils';
 import { backwardCompatibility, WsConnection } from './wsConnection';
 
+function toAbortError(signal?: AbortSignal): Error {
+  const reason = signal?.reason;
+  if (reason instanceof Error) return reason;
+  return new Error(typeof reason === 'string' ? reason : 'Operation aborted');
+}
+
 /**
  * A WebSocket client for managing TRPC operations, supporting lazy initialization,
  * reconnection, keep-alive, and request management.
@@ -195,7 +201,14 @@ export class WsClient {
       OperationResultEnvelope<unknown, TRPCClientError<AnyTRPCRouter>>,
       TRPCClientError<AnyTRPCRouter>
     >((observer) => {
-      const abort = this.batchSend(
+      let isDone = false;
+
+      if (signal?.aborted) {
+        observer.error(TRPCClientError.from(toAbortError(signal)));
+        return;
+      }
+
+      const batchSendAbort = this.batchSend(
         {
           id,
           method: type,
@@ -219,11 +232,22 @@ export class WsClient {
               result: transformed.result,
             });
           },
+          error(err) {
+            isDone = true;
+            observer.error(err);
+          },
+          complete() {
+            isDone = true;
+            observer.complete();
+          },
         },
       );
 
-      return () => {
-        abort();
+      const stop = () => {
+        if (isDone) return;
+        isDone = true;
+
+        batchSendAbort();
 
         if (type === 'subscription' && this.activeConnection.isOpen()) {
           this.send({
@@ -231,8 +255,19 @@ export class WsClient {
             method: 'subscription.stop',
           });
         }
+      };
 
-        signal?.removeEventListener('abort', abort);
+      const onAbort = () => {
+        if (isDone) return;
+        observer.error(TRPCClientError.from(toAbortError(signal)));
+        stop();
+      };
+
+      signal?.addEventListener('abort', onAbort, { once: true });
+
+      return () => {
+        signal?.removeEventListener('abort', onAbort);
+        stop();
       };
     });
   }

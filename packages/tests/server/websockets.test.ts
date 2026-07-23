@@ -2224,3 +2224,31 @@ test('connection state should not be updated for subscriptions', async () => {
   // Clean up
   subscription.unsubscribe();
 });
+
+describe('wsLink AbortSignal support', () => {
+  test('aborts in-flight query when AbortSignal is triggered', async () => {
+    await using ctx = factory();
+
+    const ac = new AbortController();
+    const queryPromise = ctx.client.greeting.query('world', {
+      signal: ac.signal,
+    });
+
+    ac.abort();
+
+    await expect(queryPromise).rejects.toThrow(/aborted/i);
+  });
+
+  test('rejects immediately if signal is already aborted', async () => {
+    await using ctx = factory();
+
+    const ac = new AbortController();
+    ac.abort();
+
+    const queryPromise = ctx.client.greeting.query('world', {
+      signal: ac.signal,
+    });
+
+    await expect(queryPromise).rejects.toThrow(/aborted/i);
+  });
+});
