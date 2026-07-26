@@ -102,8 +102,9 @@ test('multipart/form-data body reaches the procedure', async () => {
   });
 
   expect(res.status).toBe(200);
-  const json: TRPCSuccessResponse<inferRouterOutputs<typeof router>['multipartForm']> =
-    await res.json();
+  const json: TRPCSuccessResponse<
+    inferRouterOutputs<typeof router>['multipartForm']
+  > = await res.json();
   expect(json.result.data).toEqual({ id: 'bar' });
 });
 
