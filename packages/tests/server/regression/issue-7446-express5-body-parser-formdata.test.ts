@@ -14,12 +14,12 @@ const router = t.router({
       z.custom<FormData>((input) => {
         // input instanceof FormData return false but is a FormData type
         // maybe undici version
-         
+
         return input.toString() === '[object FormData]';
       }),
     )
     .mutation(({ input }) => {
-      return { id: (input).get('id') };
+      return { id: input.get('id') };
     }),
   helloMutation: t.procedure
     .input(z.string())
