@@ -189,7 +189,7 @@ export type TRPCUseQueries<TRouter extends AnyRouter> = <
       TRouter['_def']['_config']['$types'],
       TRouter['_def']['record']
     >,
-  ) => readonly [...QueriesOptions<TQueryOptions>],
+  ) => readonly [...QueriesOptions<TQueryOptions>] | readonly [],
   options?: {
     combine?: (results: QueriesResults<TQueryOptions>) => TCombinedResult;
   },
@@ -211,5 +211,5 @@ export type TRPCUseSuspenseQueries<TRouter extends AnyRouter> = <
       TRouter['_def']['_config']['$types'],
       TRouter['_def']['record']
     >,
-  ) => readonly [...SuspenseQueriesOptions<TQueryOptions>],
+  ) => readonly [...SuspenseQueriesOptions<TQueryOptions>] | readonly [],
 ) => SuspenseQueriesResults<TQueryOptions>;
