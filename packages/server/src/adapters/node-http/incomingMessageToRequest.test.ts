@@ -277,13 +277,14 @@ test('adapter with pre-parsed body - object', async () => {
   expect(body).toBe('{"hello":"world"}');
 });
 
-test('adapter with pre-parsed body - undefined', async () => {
+test('adapter with pre-parsed body - undefined after consuming the stream', async () => {
   const mockReq = createMockReq({
     headers: {},
     url: '/test',
     method: 'POST',
     // @ts-expect-error - test
     body: undefined,
+    readableEnded: true,
   });
 
   const request = incomingMessageToRequest(mockReq, createMockRes(), {
