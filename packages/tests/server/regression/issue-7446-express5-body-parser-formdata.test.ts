@@ -1,9 +1,9 @@
 import type http from 'http';
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
-import { initTRPC } from '@trpc/server';
+import { initTRPC, type inferRouterOutputs } from '@trpc/server';
 import * as trpcExpress from '@trpc/server/adapters/express';
+import type { TRPCSuccessResponse } from '@trpc/server/rpc';
 import express from 'express';
-import fetch from 'node-fetch';
 import { z } from 'zod';
 
 const t = initTRPC.create();
@@ -39,21 +39,23 @@ async function startServer() {
   const { server, port } = await new Promise<{
     server: http.Server;
     port: number;
-  }>((resolve) => {
+  }>((resolve, reject) => {
     const server = app.listen(0, () => {
-      resolve({
-        server,
-        port: (server.address() as any).port,
-      });
+      const address = server.address();
+      if (!address || typeof address === 'string') {
+        reject(new Error('expected the server to listen on a TCP address'));
+        return;
+      }
+      resolve({ server, port: address.port });
     });
   });
 
   const url = `http://localhost:${port}`;
   const client = createTRPCClient<typeof router>({
     links: [
+      // no fetch override: httpBatchLink defaults to the global fetch
       httpBatchLink({
         url,
-        fetch: fetch as any,
       }),
     ],
   });
@@ -100,7 +102,8 @@ test('multipart/form-data body reaches the procedure', async () => {
   });
 
   expect(res.status).toBe(200);
-  const json: any = await res.json();
+  const json: TRPCSuccessResponse<inferRouterOutputs<typeof router>['multipartForm']> =
+    await res.json();
   expect(json.result.data).toEqual({ id: 'bar' });
 });
 
