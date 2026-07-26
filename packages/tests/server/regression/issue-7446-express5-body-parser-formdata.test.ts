@@ -12,10 +12,9 @@ const router = t.router({
   multipartForm: t.procedure
     .input(
       z.custom<FormData>((input) => {
-        // input instanceof FormData return false but is a FormData type
-        // maybe undici version
-
-        return input.toString() === '[object FormData]';
+        // instanceof FormData is unreliable across realms (the server-side
+        // instance comes from undici), so check the toString tag instead
+        return Object.prototype.toString.call(input) === '[object FormData]';
       }),
     )
     .mutation(({ input }) => {
