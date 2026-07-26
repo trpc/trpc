@@ -163,6 +163,7 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
               };
             },
           );
+
           return promises;
         },
       };
@@ -181,11 +182,28 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
           );
         }
         const loader = loaders[op.type];
-        const promise = loader.load(op);
+
+        // Track whether this op's loader promise has settled. We use this to
+        // decide whether to cancel the underlying batch when the observer is
+        // torn down: if the promise hasn't resolved yet, there is no reason to
+        // keep the HTTP stream open, so we abort it. Once the promise resolves
+        // we leave the stream alone — for streaming (iterable) responses the
+        // consumer is still reading body chunks after the promise resolves, and
+        // jsonlStreamConsumer automatically aborts the body once all listeners
+        // are done.
+        let settled = false;
+        let selfAborted = false;
+        const ac = new AbortController();
+
+        const promise = loader.load({
+          ...op,
+          signal: raceAbortSignals(op.signal, ac.signal),
+        });
 
         let _res = undefined as HTTPResult | undefined;
         promise
           .then((res) => {
+            settled = true;
             _res = res;
             if ('error' in res.json) {
               observer.error(
@@ -206,6 +224,11 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
             observer.complete();
           })
           .catch((err) => {
+            if (selfAborted) {
+              // We triggered this abort via cleanup; the observer is already
+              // being torn down so there is nothing to propagate.
+              return;
+            }
             observer.error(
               TRPCClientError.from(err, {
                 meta: _res?.meta,
@@ -214,7 +237,12 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
           });
 
         return () => {
-          // noop
+          if (!settled) {
+            // The promise hasn't resolved yet — cancel the underlying request
+            // so the server stops sending and the response body is released.
+            selfAborted = true;
+            ac.abort();
+          }
         };
       });
     };
