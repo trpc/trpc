@@ -39,6 +39,123 @@ const t = initTRPC.create({ isDev: false });
 
 If you need stricter control over which error fields are returned, use [error formatting](error-formatting).
 
+## Secure Error Reporting in Production
+
+While verbose error messages are helpful during development, they can pose security risks in production environments. According to [OWASP](https://owasp.org/www-community/Improper_Error_Handling), exposing detailed error information can aid attackers in understanding your system's internals and potential vulnerabilities.
+
+### Handling Unknown Exceptions
+
+For unexpected errors that occur in your procedures, return a generic error message to the client while logging the actual error details for debugging purposes.
+
+```ts twoslash title='server.ts'
+import { initTRPC, TRPCError } from '@trpc/server';
+
+const t = initTRPC.create({ isDev: false });
+
+const appRouter = t.router({
+  createUser: t.procedure.mutation(async ({ input }) => {
+    try {
+      // Your logic here
+      return { success: true };
+    } catch (error) {
+      // Only handle unknown exceptions - let TRPCError instances pass through
+      if (error instanceof TRPCError) {
+        throw error;
+      }
+
+      // Log the actual error for debugging
+      console.error('Unexpected error in createUser:', error);
+
+      // Send to error tracking service
+      // Example: Sentry.captureException(error);
+
+      // Return generic error to client
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'An unexpected error occurred. Please try again later.',
+      });
+    }
+  }),
+});
+```
+
+### Handling Request-Related Errors
+
+Validation errors and other request-related errors can expose implementation details such as field names, validation rules, or library-specific information. While these details are helpful during development, they should be sanitized in production to prevent information leakage.
+
+For example, a default validation error might reveal that you're using Zod for validation or expose internal field structures. To handle this securely, use the [error formatting](error-formatting) feature to transform error responses before they reach the client.
+
+### Using errorFormatter for Production Safety
+
+For stricter control over error responses, use the `errorFormatter` option to strip sensitive information and normalize error messages.
+
+```ts twoslash title='server.ts'
+import { initTRPC } from '@trpc/server';
+
+export const t = initTRPC.create({
+  isDev: false,
+  errorFormatter(opts) {
+    const { shape, error } = opts;
+
+    return {
+      ...shape,
+      data: {
+        code: shape.data.code,
+        httpStatus: shape.data.httpStatus,
+        // Always remove stack traces in production
+        stack: undefined,
+        // For request-related errors, use generic messages
+        message: error.code === 'BAD_REQUEST'
+          ? 'Invalid input. Please check your request and try again.'
+          : shape.message,
+      },
+    };
+  },
+});
+```
+
+### Integrating with onError Callback
+
+Use the `onError` callback to log errors and send them to external monitoring services without exposing details to the client.
+
+```ts twoslash title='server.ts'
+// @filename: router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: server.ts
+// ---cut---
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { appRouter } from './router';
+
+const server = createHTTPServer({
+  router: appRouter,
+  onError(opts) {
+    const { error, type, path, input, ctx, req } = opts;
+
+    // Log error details for debugging
+    console.error('Error:', {
+      type,
+      path,
+      code: error.code,
+      message: error.message,
+    });
+
+    // Send to error tracking service
+    if (error.code === 'INTERNAL_SERVER_ERROR') {
+      // Example: Sentry.captureException(error);
+    }
+  },
+});
+```
+
+:::tip
+
+For comprehensive error tracking, consider integrating with error monitoring services. These services provide error aggregation, alerting, and detailed debugging information while keeping your production responses secure.
+
+:::
+
 ## Error codes
 
 tRPC defines a list of error codes that each represent a different type of error and response with a different HTTP code.
