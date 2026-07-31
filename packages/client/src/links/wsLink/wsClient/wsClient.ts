@@ -195,6 +195,23 @@ export class WsClient {
       OperationResultEnvelope<unknown, TRPCClientError<AnyTRPCRouter>>,
       TRPCClientError<AnyTRPCRouter>
     >((observer) => {
+      const abortError = () =>
+        TRPCClientError.from(
+          signal?.reason ??
+            new DOMException('This operation was aborted', 'AbortError'),
+        );
+
+      if (signal?.aborted) {
+        observer.error(abortError());
+        return;
+      }
+
+      const onAbort = () => {
+        observer.error(abortError());
+      };
+
+      signal?.addEventListener('abort', onAbort, { once: true });
+
       const abort = this.batchSend(
         {
           id,
@@ -232,7 +249,7 @@ export class WsClient {
           });
         }
 
-        signal?.removeEventListener('abort', abort);
+        signal?.removeEventListener('abort', onAbort);
       };
     });
   }

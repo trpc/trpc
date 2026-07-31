@@ -613,6 +613,57 @@ test('requests get aborted if called before connection is established and reques
   });
 });
 
+test('pre-aborted signal rejects with AbortError', async () => {
+  await using ctx = factory();
+
+  await vi.waitFor(() => {
+    expect(ctx.wsClient.connection?.state === 'open').toBe(true);
+  });
+
+  const ac = new AbortController();
+  ac.abort();
+
+  await expect(
+    ctx.client.greeting.query('alexdotjs', { signal: ac.signal }),
+  ).rejects.toMatchObject({
+    cause: { name: 'AbortError' },
+  });
+});
+
+test('in-flight operation aborts with AbortError when signal fires', async () => {
+  await using ctx = factory();
+
+  const ac = new AbortController();
+  const onStarted = vi.fn();
+  const onError = vi.fn();
+
+  const unsub = ctx.client.onMessageObservable.subscribe(undefined, {
+    signal: ac.signal,
+    onStarted,
+    onError,
+  });
+
+  await vi.waitFor(() => {
+    expect(onStarted).toHaveBeenCalledTimes(1);
+  });
+
+  ac.abort();
+
+  await vi.waitFor(() => {
+    expect(onError).toHaveBeenCalledTimes(1);
+  });
+
+  expect(onError.mock.calls[0]![0]).toMatchObject({
+    cause: { name: 'AbortError' },
+  });
+
+  await vi.waitFor(() => {
+    expect(ctx.ee.listenerCount('server:msg')).toBe(0);
+  });
+
+  unsub.unsubscribe();
+});
+
 test('subscriptions are automatically resumed upon explicit reconnect request', async () => {
   await using ctx = factory();
   ctx.ee.once('subscription:created', () => {
