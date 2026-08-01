@@ -98,25 +98,25 @@ export const t = initTRPC.create({
     const { shape, error } = opts;
 
     return {
-      ...shape,
+      // Keep only explicitly safe top-level fields
+      message:
+        error.code === 'BAD_REQUEST'
+          ? 'Invalid input. Please check your request and try again.'
+          : shape.message,
+      code: shape.code,
+      // Build an allowlisted data object without validation internals
       data: {
         code: shape.data.code,
         httpStatus: shape.data.httpStatus,
-        // Always remove stack traces in production
-        stack: undefined,
-        // For request-related errors, use generic messages
-        message: error.code === 'BAD_REQUEST'
-          ? 'Invalid input. Please check your request and try again.'
-          : shape.message,
       },
     };
   },
 });
 ```
 
-### Integrating with onError Callback
+### Integrating with onError as an Adapter Callback
 
-Use the `onError` callback to log errors and send them to external monitoring services without exposing details to the client.
+Use the `onError` adapter-level callback, configured through `createHTTPServer`, to log errors and send them to external monitoring services without exposing details to the client.
 
 ```ts twoslash title='server.ts'
 // @filename: router.ts
