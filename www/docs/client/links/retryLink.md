@@ -11,6 +11,22 @@ slug: /client/links/retryLink
 If you use `@trpc/react-query` you will generally **not** need this link as it's built into the `useQuery()` and the `useMutation()` hooks from `@tanstack/react-query`.
 :::
 
+:::note
+If you use `retryLink` alongside `@trpc/react-query`, you should disable React Query's default retry behavior on your `QueryClient` to avoid duplicate retries:
+
+```ts
+import { QueryClient } from '@tanstack/react-query';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    },
+  },
+});
+```
+:::
+
 ## Usage
 
 You can import and add the `retryLink` to the `links` array when creating your tRPC client. This link can be placed before or after other links in your setup, depending on your requirements.
