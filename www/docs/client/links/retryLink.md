@@ -25,6 +25,7 @@ const queryClient = new QueryClient({
   },
 });
 ```
+
 :::
 
 ## Usage
