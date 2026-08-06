@@ -344,3 +344,28 @@ test('sse()', () => {
     extras: {},
   });
 });
+
+describe('tracked() id validation', () => {
+  test('rejects empty string', () => {
+    expect(() => tracked('', 1)).toThrow('empty string');
+  });
+
+  test('rejects ids that would break the SSE wire format', () => {
+    // The id is written verbatim as `id: <value>\n`, so a newline/carriage
+    // return/null character could inject additional SSE lines into the stream.
+    expect(() => tracked('123\nevent: message', 1)).toThrow(
+      'Server-Sent Events',
+    );
+    expect(() => tracked('123\r\ndata: injected', 1)).toThrow(
+      'Server-Sent Events',
+    );
+    expect(() => tracked('123\rfoo', 1)).toThrow('Server-Sent Events');
+    expect(() => tracked('123\0foo', 1)).toThrow('Server-Sent Events');
+  });
+
+  test('allows ordinary ids', () => {
+    expect(isTrackedEnvelope(tracked('valid-id_123', 1))).toBe(true);
+    // spaces are valid inside an SSE field value
+    expect(isTrackedEnvelope(tracked('with space', 1))).toBe(true);
+  });
+});
