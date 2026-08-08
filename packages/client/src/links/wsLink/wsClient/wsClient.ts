@@ -222,6 +222,16 @@ export class WsClient {
         },
       );
 
+      // Wire AbortSignal so callers can cancel in-flight WS ops (#7439).
+      // removeEventListener was already present in cleanup without a matching add.
+      if (signal) {
+        if (signal.aborted) {
+          abort();
+        } else {
+          signal.addEventListener('abort', abort, { once: true });
+        }
+      }
+
       return () => {
         abort();
 
