@@ -88,6 +88,10 @@ export function createRootHooks<
     config?.overrides?.useMutation?.onSuccess ??
     ((options) => options.originalFn());
 
+  const mutationErrorOverride: UseMutationOverride['onError'] =
+    config?.overrides?.useMutation?.onError ??
+    ((options) => options.originalFn());
+
   type TError = TRPCClientErrorLike<TRouter>;
 
   type ProviderContext = TRPCContextState<TRouter, TSSRContext>;
@@ -341,6 +345,18 @@ export function createRootHooks<
             opts?.onSuccess?.(...args) ?? defaultOpts?.onSuccess?.(...args);
 
           return mutationSuccessOverride({
+            originalFn,
+            queryClient,
+            meta: opts?.meta ?? defaultOpts?.meta ?? {},
+          });
+        },
+        onError(...args) {
+          const originalFn = () => {
+            const fn = opts?.onError ?? defaultOpts?.onError;
+            return fn?.(...args);
+          };
+
+          return mutationErrorOverride({
             originalFn,
             queryClient,
             meta: opts?.meta ?? defaultOpts?.meta ?? {},

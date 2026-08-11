@@ -18,6 +18,8 @@ describe('mutation override', () => {
         title: string;
       }
       const onSuccessSpy = vi.fn();
+      const onErrorSpy = vi.fn();
+      const defaultOnErrorSpy = vi.fn();
 
       const posts: Post[] = [];
 
@@ -27,6 +29,9 @@ describe('mutation override', () => {
           posts.push({
             title: input,
           });
+        }),
+        fail: t.procedure.input(z.string()).mutation(({ input }) => {
+          throw new Error(input);
         }),
       });
       const opts = testServerAndClientResource(appRouter);
@@ -40,11 +45,21 @@ describe('mutation override', () => {
               }
               onSuccessSpy(opts);
             },
+            async onError(opts) {
+              await opts.originalFn();
+              onErrorSpy(opts);
+            },
           },
         },
       });
 
-      const queryClient = new QueryClient();
+      const queryClient = new QueryClient({
+        defaultOptions: {
+          mutations: {
+            onError: defaultOnErrorSpy,
+          },
+        },
+      });
 
       function App(props: { children: ReactNode }) {
         return (
@@ -62,6 +77,8 @@ describe('mutation override', () => {
         App,
         trpc,
         onSuccessSpy,
+        onErrorSpy,
+        defaultOnErrorSpy,
       };
     })
     .afterEach(async (opts) => {
@@ -151,5 +168,118 @@ describe('mutation override', () => {
     await vi.waitFor(() => {
       expect($.container).not.toHaveTextContent(nonce);
     });
+  });
+
+  test('local onError runs before the tRPC onError override', async () => {
+    const { trpc } = ctx;
+    const localOnErrorSpy = vi.fn();
+
+    function MyComp() {
+      const mutation = trpc.fail.useMutation({
+        onError: (error) => {
+          localOnErrorSpy(error);
+        },
+      });
+
+      return (
+        <button
+          onClick={() => {
+            mutation.mutate('boom');
+          }}
+          data-testid="fail"
+        >
+          fail
+        </button>
+      );
+    }
+
+    const $ = render(
+      <ctx.App>
+        <MyComp />
+      </ctx.App>,
+    );
+
+    await userEvent.click($.getByTestId('fail'));
+
+    await vi.waitFor(() => {
+      expect(ctx.onErrorSpy).toHaveBeenCalledTimes(1);
+    });
+
+    expect(localOnErrorSpy).toHaveBeenCalledTimes(1);
+    expect(localOnErrorSpy).toHaveBeenCalledBefore(ctx.onErrorSpy);
+  });
+
+  test('local onError takes precedence over QueryClient default onError', async () => {
+    const { trpc } = ctx;
+    const localOnErrorSpy = vi.fn();
+
+    function MyComp() {
+      const mutation = trpc.fail.useMutation({
+        onError: (error) => {
+          localOnErrorSpy(error);
+        },
+      });
+
+      return (
+        <button
+          onClick={() => {
+            mutation.mutate('boom');
+          }}
+          data-testid="fail"
+        >
+          fail
+        </button>
+      );
+    }
+
+    const $ = render(
+      <ctx.App>
+        <MyComp />
+      </ctx.App>,
+    );
+
+    await userEvent.click($.getByTestId('fail'));
+
+    await vi.waitFor(() => {
+      expect(ctx.onErrorSpy).toHaveBeenCalledTimes(1);
+    });
+
+    expect(localOnErrorSpy).toHaveBeenCalledTimes(1);
+    expect(ctx.defaultOnErrorSpy).not.toHaveBeenCalled();
+    expect(localOnErrorSpy).toHaveBeenCalledBefore(ctx.onErrorSpy);
+  });
+
+  test('QueryClient default onError runs when no local onError is provided', async () => {
+    const { trpc } = ctx;
+
+    function MyComp() {
+      const mutation = trpc.fail.useMutation();
+
+      return (
+        <button
+          onClick={() => {
+            mutation.mutate('boom');
+          }}
+          data-testid="fail"
+        >
+          fail
+        </button>
+      );
+    }
+
+    const $ = render(
+      <ctx.App>
+        <MyComp />
+      </ctx.App>,
+    );
+
+    await userEvent.click($.getByTestId('fail'));
+
+    await vi.waitFor(() => {
+      expect(ctx.onErrorSpy).toHaveBeenCalledTimes(1);
+    });
+
+    expect(ctx.defaultOnErrorSpy).toHaveBeenCalledTimes(1);
+    expect(ctx.defaultOnErrorSpy).toHaveBeenCalledBefore(ctx.onErrorSpy);
   });
 });
