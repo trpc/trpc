@@ -112,6 +112,7 @@
     "runtypes": "^7.0.0",
     "scale-codec": "^0.13.0",
     "superstruct": "^2.0.0",
+    "sury": "11.0.0-rc.1",
     "tailwindcss": "^3.4.6",
     "tailwindcss-elevation": "^2.0.0",
     "tsx": "^4.19.3",
