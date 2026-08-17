@@ -32,6 +32,12 @@ const testContext = () => {
         )
         .query(() => ['__result'] as const),
     }),
+    events: t.procedure
+      .input(z.number())
+      .subscription(async function* () {
+        // stub — never called in these tests
+        yield 0 as never;
+      }),
   });
 
   return {
@@ -57,6 +63,38 @@ describe('skipToken', () => {
         },
       });
       expect(options2.queryFn).toBe(skipToken);
+
+      return <pre>OK</pre>;
+    }
+
+    const utils = ctx.renderApp(<MyComponent />);
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent(`OK`);
+    });
+  });
+
+  test('subscriptionOptions(skipToken).enabled is false; normal input is enabled', async () => {
+    // Regression test for https://github.com/trpc/trpc/issues/7373.
+    // getQueryKeyInternal strips skipToken from the serialized queryKey args,
+    // so reading `enabled` back from the queryKey was returning undefined (→ true).
+    // The fix passes the raw `input` directly to trpcSubscriptionOptions instead.
+    await using ctx = testContext();
+
+    const { useTRPC } = ctx;
+    function MyComponent() {
+      const trpc = useTRPC();
+
+      // skipToken case: must disable the subscription.
+      const skipped = trpc.events.subscriptionOptions(skipToken, {});
+      expect(skipped.enabled).toBe(false);
+
+      // normal input case: must remain enabled (no explicit `enabled` override).
+      const active = trpc.events.subscriptionOptions(42, {});
+      expect(active.enabled).toBe(true);
+
+      // explicit `enabled: false` override must still be respected.
+      const forcedOff = trpc.events.subscriptionOptions(42, { enabled: false });
+      expect(forcedOff.enabled).toBe(false);
 
       return <pre>OK</pre>;
     }
