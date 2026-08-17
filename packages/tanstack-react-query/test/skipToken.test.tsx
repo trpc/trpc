@@ -32,12 +32,10 @@ const testContext = () => {
         )
         .query(() => ['__result'] as const),
     }),
-    events: t.procedure
-      .input(z.number())
-      .subscription(async function* () {
-        // stub — never called in these tests
-        yield 0 as never;
-      }),
+    events: t.procedure.input(z.number()).subscription(async function* () {
+      // stub — never called in these tests
+      yield 0 as never;
+    }),
   });
 
   return {
