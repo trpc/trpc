@@ -23,6 +23,20 @@ const asString = (value: unknown): string | undefined =>
 const isXUrl = (value: string): boolean =>
   /^(?:https?:\/\/)?(?:www\.)?(?:pic\.)?(?:twitter\.com|x\.com)\//i.test(value);
 
+const htmlEntities: Readonly<Record<string, string>> = {
+  '#39': "'",
+  amp: '&',
+  gt: '>',
+  lt: '<',
+  quot: '"',
+};
+
+const decodeHtmlEntities = (value: string): string =>
+  value.replace(
+    /&(amp|lt|gt|quot|#39);/g,
+    (entity, name: string) => htmlEntities[name] ?? entity,
+  );
+
 const formatText = (
   text: string,
   entities: XTwitterScraper.SearchTweet['entities'],
@@ -48,13 +62,7 @@ const formatText = (
     }
   }
 
-  return formatted
-    .replaceAll('&amp;', '&')
-    .replaceAll('&lt;', '<')
-    .replaceAll('&gt;', '>')
-    .replaceAll('&quot;', '"')
-    .replaceAll('&#39;', "'")
-    .trim();
+  return decodeHtmlEntities(formatted).trim();
 };
 
 const normalizeTweet = (

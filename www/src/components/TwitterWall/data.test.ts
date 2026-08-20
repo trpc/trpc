@@ -59,13 +59,15 @@ describe('prepareTweets', () => {
               },
             ],
           },
-          text: 'Docs &amp; examples https://t.co/docs https://t.co/media',
+          text: 'Docs &amp; examples &amp;lt;safe&amp;gt; https://t.co/docs https://t.co/media',
         }),
       ],
       ['1'],
     );
 
-    expect(result[0]?.text).toBe('Docs & examples example.com/docs');
+    expect(result[0]?.text).toBe(
+      'Docs & examples &lt;safe&gt; example.com/docs',
+    );
   });
 
   it('uses the maintained GitHub profile image for Theo', () => {
