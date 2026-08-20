@@ -105,6 +105,30 @@ describe('prepareTweets', () => {
     expect(() =>
       prepareTweets([tweet('1', { likeCount: Number.NaN })], ['1']),
     ).toThrow('Tweet 1 has no valid like count');
+    expect(() =>
+      prepareTweets(
+        [tweet('1', { author: { id: '1', name: ' ', username: ' ' } })],
+        ['1'],
+      ),
+    ).toThrow('Tweet 1 author has no valid name or username');
+    expect(() =>
+      prepareTweets(
+        [
+          tweet('1', {
+            author: {
+              id: '1',
+              name: 'Author',
+              profilePicture: ' ',
+              username: 'author',
+            },
+          }),
+        ],
+        ['1'],
+      ),
+    ).toThrow('Tweet 1 author has no profile picture');
+    expect(() => prepareTweets([tweet('1', { text: ' ' })], ['1'])).toThrow(
+      'Tweet 1 has no testimonial text',
+    );
   });
 
   it('rejects duplicate curated and response IDs', () => {

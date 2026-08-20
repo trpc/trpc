@@ -18,7 +18,7 @@ const knownGithubProfiles: Readonly<Record<string, string>> = {
 };
 
 const asString = (value: unknown): string | undefined =>
-  typeof value === 'string' && value.length > 0 ? value : undefined;
+  typeof value === 'string' && value.trim() ? value.trim() : undefined;
 
 const isXUrl = (value: string): boolean =>
   /^(?:https?:\/\/)?(?:www\.)?(?:pic\.)?(?:twitter\.com|x\.com)\//i.test(value);
@@ -73,14 +73,19 @@ const normalizeTweet = (
   if (!author) {
     throw new Error(`Tweet ${tweet.id} has no author.`);
   }
+  const authorName = asString(author.name);
+  const username = asString(author.username);
+  if (!authorName || !username) {
+    throw new Error(`Tweet ${tweet.id} author has no valid name or username.`);
+  }
   if (!createdAt || Number.isNaN(Date.parse(createdAt))) {
     throw new Error(`Tweet ${tweet.id} has no valid creation date.`);
   }
 
-  const githubProfile = knownGithubProfiles[author.username];
+  const githubProfile = knownGithubProfiles[username];
   const profilePicture = githubProfile
     ? `https://github.com/${githubProfile}.png`
-    : author.profilePicture;
+    : asString(author.profilePicture);
 
   if (!profilePicture) {
     throw new Error(`Tweet ${tweet.id} author has no profile picture.`);
@@ -88,18 +93,22 @@ const normalizeTweet = (
   if (!Number.isSafeInteger(tweet.likeCount) || tweet.likeCount < 0) {
     throw new Error(`Tweet ${tweet.id} has no valid like count.`);
   }
+  const text = formatText(tweet.text, tweet.entities);
+  if (!text) {
+    throw new Error(`Tweet ${tweet.id} has no testimonial text.`);
+  }
 
   return {
     author: {
-      name: author.name,
+      name: authorName,
       profilePicture,
-      username: author.username,
+      username,
     },
     createdAt: new Date(createdAt).toISOString(),
     id: tweet.id,
     likeCount: tweet.likeCount,
-    text: formatText(tweet.text, tweet.entities),
-    url: `https://x.com/${author.username}/status/${tweet.id}`,
+    text,
+    url: `https://x.com/${username}/status/${tweet.id}`,
   };
 };
 
