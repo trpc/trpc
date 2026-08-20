@@ -33,3 +33,22 @@ To play with them locally go the `og-image` folder and run `pnpm dev`.
 ## Company logos
 
 We store a list of company logos in the `www/static/logos/*` folder to show on the landing page. To add future logos, simply add the png/svg to the folder. Be sure to normalize your logos, and consider running them though an optimizer tool like [SVGOMG](https://jakearchibald.github.io/svgomg/). Finally, ensure that they have a set width and height.
+
+## Testimonial Wall
+
+The homepage displays curated X posts from
+[`src/components/TwitterWall`](./src/components/TwitterWall). Refresh their
+public data with one Xquik API key:
+
+```console
+export X_TWITTER_SCRAPER_API_KEY="xq_YOUR_KEY_HERE"
+pnpm --filter www tweetwall-pull
+```
+
+Create the key in the
+[Xquik API Keys dashboard](https://dashboard.xquik.com/en/account?tab=api-keys).
+The bulk lookup is metered. It runs only when you invoke the command.
+
+The script rejects partial or unexpected results. Review the generated diff
+before committing it. Edit `testimonialTweetIds` in `script.ts` only when the
+editorial selection changes.

@@ -2503,9 +2503,6 @@ importers:
       '@types/node':
         specifier: ^22.13.5
         version: 22.17.0
-      '@types/oauth':
-        specifier: ^0.9.1
-        version: 0.9.1
       '@types/react':
         specifier: ^19.1.0
         version: 19.1.0
@@ -2545,9 +2542,6 @@ importers:
       npm-run-all2:
         specifier: ^8.0.0
         version: 8.0.4
-      oauth:
-        specifier: ^0.10.0
-        version: 0.10.0
       postcss:
         specifier: ^8.4.39
         version: 8.4.39
@@ -2596,6 +2590,9 @@ importers:
       ws:
         specifier: ^8.0.0
         version: 8.18.1
+      x-twitter-scraper:
+        specifier: ^0.12.3
+        version: 0.12.3
       yup:
         specifier: ^1.0.0
         version: 1.0.0
@@ -9086,9 +9083,6 @@ packages:
   '@types/normalize-package-data@2.4.4':
     resolution: {integrity: sha512-37i+OaWTh9qeK4LSHPsyRC7NahnGotNuZvjLSgcPzblpHB3rrCJxAOgI5gCdKm7coonsaX1Of0ILiTcnZjbfxA==}
 
-  '@types/oauth@0.9.1':
-    resolution: {integrity: sha512-a1iY62/a3yhZ7qH7cNUsxoI3U/0Fe9+RnuFrpTKr+0WVOzbKlSLojShCKe20aOD1Sppv+i8Zlq0pLDuTJnwS4A==}
-
   '@types/parse-json@4.0.0':
     resolution: {integrity: sha512-//oorEZjL6sbPcKUaCdIGlIUeH26mgzimjBB77G6XRgnDl/L5wOnpyBGRe/Mmf5CVW3PwEBE1NjiMZ/ssFh4wA==}
 
@@ -15159,9 +15153,6 @@ packages:
   oauth4webapi@3.1.2:
     resolution: {integrity: sha512-KQZkNU+xn02lWrFu5Vjqg9E81yPtDSxUZorRHlLWVoojD+H/0GFbH59kcnz5Thdjj7c4/mYMBPj/mhvGe/kKXA==}
 
-  oauth@0.10.0:
-    resolution: {integrity: sha512-1orQ9MT1vHFGQxhuy7E/0gECD3fd2fCC+PIX+/jgmU/gI3EpRocXtmtvxCO5x3WZ443FLTLFWNDjl5MPJf9u+Q==}
-
   oauth@0.9.15:
     resolution: {integrity: sha512-a5ERWK1kh38ExDEfoO6qUHJb32rd7aYmPHuyCu3Fta/cnICvYmgd2uhuKXvPD+PXB+gCEYYEaQdIRAjCOwAKNA==}
 
@@ -19453,6 +19444,10 @@ packages:
   wsl-utils@0.3.1:
     resolution: {integrity: sha512-g/eziiSUNBSsdDJtCLB8bdYEUMj4jR7AGeUo96p/3dTafgjHhpF4RiCFPiRILwjQoDXx5MqkBr4fwWtR3Ky4Wg==}
     engines: {node: '>=20'}
+
+  x-twitter-scraper@0.12.3:
+    resolution: {integrity: sha512-uWcZDiS+0vexxaLeX7hmFR0MWAFi/Advh4JcP2AYEzfB5XkGyirk6D9UnVwg7E+02w/irW+A2MIa//leZICkZg==}
+    engines: {node: '>=20.0.0'}
 
   xdg-basedir@5.1.0:
     resolution: {integrity: sha512-GCPAHLvrIH13+c0SuacwvRYj2SxJXQ4kaVTT5xgL3kPrz56XxkF21IGhjSE1+W0aw7gpBWRGXLCPnPby6lSpmQ==}
@@ -28384,10 +28379,6 @@ snapshots:
 
   '@types/normalize-package-data@2.4.4': {}
 
-  '@types/oauth@0.9.1':
-    dependencies:
-      '@types/node': 22.19.11
-
   '@types/parse-json@4.0.0': {}
 
   '@types/parse-path@7.0.3': {}
@@ -36372,8 +36363,6 @@ snapshots:
 
   oauth4webapi@3.1.2: {}
 
-  oauth@0.10.0: {}
-
   oauth@0.9.15: {}
 
   object-assign@4.1.1: {}
@@ -41419,6 +41408,8 @@ snapshots:
     dependencies:
       is-wsl: 3.1.0
       powershell-utils: 0.1.0
+
+  x-twitter-scraper@0.12.3: {}
 
   xdg-basedir@5.1.0: {}
 
