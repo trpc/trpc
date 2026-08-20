@@ -45,7 +45,7 @@ export default defineConfig({
     snapshotFormat: {
       printBasicPrototype: true,
     },
-    projects: ['./packages/*'],
+    projects: ['./packages/*', './www'],
     coverage: {
       provider: 'istanbul',
       include: ['**/src/**'],
