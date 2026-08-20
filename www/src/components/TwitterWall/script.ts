@@ -59,5 +59,7 @@ const main = async (): Promise<void> => {
 };
 
 main().catch((error: unknown) => {
-  throw error;
+  const message = error instanceof Error ? error.stack : String(error);
+  process.stderr.write(`${message}\n`);
+  process.exitCode = 1;
 });
