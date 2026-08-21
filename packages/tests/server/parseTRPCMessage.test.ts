@@ -29,11 +29,15 @@ describe('parseTRPCMessage - assertIsRequestId', () => {
     });
 
     test('string id', () => {
-      expect(() => parseTRPCMessage(makeMsg('abc'), noopTransformer)).not.toThrow();
+      expect(() =>
+        parseTRPCMessage(makeMsg('abc'), noopTransformer),
+      ).not.toThrow();
     });
 
     test('null id', () => {
-      expect(() => parseTRPCMessage(makeMsg(null), noopTransformer)).not.toThrow();
+      expect(() =>
+        parseTRPCMessage(makeMsg(null), noopTransformer),
+      ).not.toThrow();
     });
 
     test('zero id', () => {
@@ -41,33 +45,47 @@ describe('parseTRPCMessage - assertIsRequestId', () => {
     });
 
     test('empty string id', () => {
-      expect(() => parseTRPCMessage(makeMsg(''), noopTransformer)).not.toThrow();
+      expect(() =>
+        parseTRPCMessage(makeMsg(''), noopTransformer),
+      ).not.toThrow();
     });
   });
 
   describe('invalid ids - should throw (regression: previously accepted silently)', () => {
     test('NaN id throws', () => {
-      expect(() => parseTRPCMessage(makeMsg(NaN), noopTransformer)).toThrow('Invalid request id');
+      expect(() => parseTRPCMessage(makeMsg(NaN), noopTransformer)).toThrow(
+        'Invalid request id',
+      );
     });
 
     test('boolean true id throws', () => {
-      expect(() => parseTRPCMessage(makeMsg(true), noopTransformer)).toThrow('Invalid request id');
+      expect(() => parseTRPCMessage(makeMsg(true), noopTransformer)).toThrow(
+        'Invalid request id',
+      );
     });
 
     test('boolean false id throws', () => {
-      expect(() => parseTRPCMessage(makeMsg(false), noopTransformer)).toThrow('Invalid request id');
+      expect(() => parseTRPCMessage(makeMsg(false), noopTransformer)).toThrow(
+        'Invalid request id',
+      );
     });
 
     test('object id throws', () => {
-      expect(() => parseTRPCMessage(makeMsg({}), noopTransformer)).toThrow('Invalid request id');
+      expect(() => parseTRPCMessage(makeMsg({}), noopTransformer)).toThrow(
+        'Invalid request id',
+      );
     });
 
     test('array id throws', () => {
-      expect(() => parseTRPCMessage(makeMsg([]), noopTransformer)).toThrow('Invalid request id');
+      expect(() => parseTRPCMessage(makeMsg([]), noopTransformer)).toThrow(
+        'Invalid request id',
+      );
     });
 
     test('undefined id throws', () => {
-      expect(() => parseTRPCMessage(makeMsg(undefined), noopTransformer)).toThrow('Invalid request id');
+      expect(() =>
+        parseTRPCMessage(makeMsg(undefined), noopTransformer),
+      ).toThrow('Invalid request id');
     });
   });
 });
