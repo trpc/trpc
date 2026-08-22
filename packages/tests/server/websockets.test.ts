@@ -2225,7 +2225,6 @@ test('connection state should not be updated for subscriptions', async () => {
   subscription.unsubscribe();
 });
 
-
 describe('wsLink - AbortSignal honored on operations', () => {
   test('pre-aborted signal tears down subscription immediately', async () => {
     await using ctx = factory();
