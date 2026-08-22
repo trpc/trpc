@@ -406,6 +406,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           });
           clientSubscriptions.delete(id);
         }).catch((cause) => {
+          clientSubscriptions.delete(id);
           const error = getTRPCErrorFromUnknown(cause);
           opts.onError?.({ error, path, type, ctx, req, input });
           respond({
