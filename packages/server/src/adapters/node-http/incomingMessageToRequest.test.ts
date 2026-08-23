@@ -277,7 +277,7 @@ test('adapter with pre-parsed body - object', async () => {
   expect(body).toBe('{"hello":"world"}');
 });
 
-test('adapter with pre-parsed body - undefined', async () => {
+test('adapter with pre-parsed body - undefined body streams the raw body instead', async () => {
   const mockReq = createMockReq({
     headers: {},
     url: '/test',
@@ -290,8 +290,38 @@ test('adapter with pre-parsed body - undefined', async () => {
     maxBodySize: null,
   });
 
+  // req.body is undefined, so we fall through to the streaming path.
+  // Emit 'end' with no data chunks — the resulting body should be empty.
+  mockReq.emit('end');
+
   const body = await request.text();
   expect(body).toBe('');
+});
+
+test('streams raw body when body property is undefined - Express 5 body parser compat', async () => {
+  // Reproduces: body-parser middleware (express.json() / express.urlencoded())
+  // defines req.body = undefined for content types it skips (multipart/form-data).
+  // Without this fix, createBody returned undefined and discarded the stream.
+  const mockReq = createMockReq({
+    headers: {
+      'content-type': 'multipart/form-data; boundary=----boundary',
+    },
+    url: '/upload',
+    method: 'POST',
+    // @ts-expect-error - test
+    body: undefined,
+  });
+
+  const request = incomingMessageToRequest(mockReq, createMockRes(), {
+    maxBodySize: null,
+  });
+
+  // Simulate a body-parser-skipped multipart stream: emit data then end.
+  mockReq.emit('data', Buffer.from('--boundary'));
+  mockReq.emit('end');
+
+  const text = await request.text();
+  expect(text).toBe('--boundary');
 });
 
 test('aborts request when response closes', async () => {
