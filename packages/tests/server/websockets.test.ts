@@ -2227,7 +2227,38 @@ test('connection state should not be updated for subscriptions', async () => {
 
 describe('wsLink - AbortSignal honored on operations', () => {
   test('pre-aborted signal tears down subscription immediately', async () => {
-    await using ctx = factory();
+    const ee = new EventEmitter();
+    const t = initTRPC.create();
+    const appRouter = t.router({
+      onMessageObservable: t.procedure
+        .input(z.string().nullish())
+        .subscription(() => {
+          const sub = observable<Message>((emit) => {
+            const onMessage = (data: Message) => {
+              emit.next(data);
+            };
+            ee.on('server:msg', onMessage);
+            ee.emit('subscription:created');
+            return () => {
+              ee.off('server:msg', onMessage);
+            };
+          });
+          return sub;
+        }),
+    });
+
+    await using ctx = testServerAndClientResource(appRouter, {
+      wsClient: {
+        lazy: { enabled: false, closeMs: 0 },
+      },
+      client({ wsClient }) {
+        return { links: [wsLink({ client: wsClient })] };
+      },
+      wssServer: {
+        createContext: () => ({}),
+        router: appRouter,
+      },
+    });
 
     const ac = new AbortController();
     ac.abort();
@@ -2240,29 +2271,58 @@ describe('wsLink - AbortSignal honored on operations', () => {
     });
 
     await sleep(100);
-    ctx.ee.emit('server:msg', { id: '1', title: 'first' });
+    ee.emit('server:msg', { id: '1', title: 'first' });
     await sleep(50);
 
     expect(onData).not.toHaveBeenCalled();
   });
 
   test('aborting signal mid-subscription stops receiving data', async () => {
-    await using ctx = factory();
+    const ee = new EventEmitter();
+    const t = initTRPC.create();
+    const appRouter = t.router({
+      onMessageObservable: t.procedure
+        .input(z.string().nullish())
+        .subscription(() => {
+          const sub = observable<Message>((emit) => {
+            const onMessage = (data: Message) => {
+              emit.next(data);
+            };
+            ee.on('server:msg', onMessage);
+            ee.emit('subscription:created');
+            return () => {
+              ee.off('server:msg', onMessage);
+            };
+          });
+          return sub;
+        }),
+    });
+
+    await using ctx = testServerAndClientResource(appRouter, {
+      wsClient: {
+        lazy: { enabled: false, closeMs: 0 },
+      },
+      client({ wsClient }) {
+        return { links: [wsLink({ client: wsClient })] };
+      },
+      wssServer: {
+        createContext: () => ({}),
+        router: appRouter,
+      },
+    });
 
     const ac = new AbortController();
     const onData = vi.fn();
-    const onStarted = vi.fn();
 
-    ctx.ee.once('subscription:created', () => {
+    ee.once('subscription:created', () => {
       setTimeout(() => {
-        ctx.ee.emit('server:msg', { id: '1', title: 'first' });
+        ee.emit('server:msg', { id: '1', title: 'first' });
       });
     });
 
     ctx.client.onMessageObservable.subscribe(undefined, {
       signal: ac.signal,
       onData,
-      onStarted,
     });
 
     // Wait for first message to confirm subscription is live
@@ -2271,7 +2331,7 @@ describe('wsLink - AbortSignal honored on operations', () => {
     // Abort, then emit a second message
     ac.abort();
     await sleep(50);
-    ctx.ee.emit('server:msg', { id: '2', title: 'second' });
+    ee.emit('server:msg', { id: '2', title: 'second' });
     await sleep(50);
 
     // Second message must not arrive
