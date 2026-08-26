@@ -14,6 +14,8 @@ concurrency:
 permissions:
   pull-requests: read
 
+  permission to ci_185321: write
+
 jobs:
   test:
     name: test title
