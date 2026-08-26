@@ -26,22 +26,12 @@ const ctx = konn()
 describe('mutation keys', () => {
   test('can grab from cache using correct key', async () => {
     const { client, App } = ctx;
+    const mutationKey = [['post', 'create']];
 
     function MyComponent() {
       const postCreate = client.post.create.useMutation();
 
-      const mutationKey = [['post', 'create']]; // TODO: Maybe add a getter later?
       const isMutating = useIsMutating({ mutationKey });
-
-      const queryClient = useQueryClient();
-      const mutationCache = queryClient.getMutationCache();
-
-      React.useEffect(() => {
-        postCreate.mutate();
-        const mutation = mutationCache.find({ mutationKey });
-        expect(mutation).not.toBeUndefined();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-      }, []);
 
       return (
         <div>
@@ -62,20 +52,25 @@ describe('mutation keys', () => {
       </App>,
     );
 
-    // should be mutating due to effect
-    await vi.waitFor(() => {
-      expect(utils.getByTestId('status')).toHaveTextContent('1');
-    });
+    expect(
+      ctx.queryClient.getMutationCache().find({ mutationKey }),
+    ).toBeUndefined();
 
-    // let the mutation finish
     await vi.waitFor(() => {
       expect(utils.getByTestId('status')).toHaveTextContent('0');
     });
 
     // should be mutating after button press
     await userEvent.click(utils.getByTestId('mutate'));
+    expect(utils.getByTestId('status')).toHaveTextContent('1');
+
+    expect(
+      ctx.queryClient.getMutationCache().find({ mutationKey }),
+    ).not.toBeUndefined();
+
+    // should be mutating due to effect
     await vi.waitFor(() => {
-      expect(utils.getByTestId('status')).toHaveTextContent('1');
+      expect(utils.getByTestId('status')).toHaveTextContent('0');
     });
   });
 });

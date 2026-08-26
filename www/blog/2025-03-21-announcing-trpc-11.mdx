@@ -40,7 +40,7 @@ When [TanStack Query v5](https://tanstack.com/blog/announcing-tanstack-query-v5)
 
 ### FormData / Non-JSON Content Types support
 
-One of our most requested features is the ability to send and receive more than simply JSON data. With tRPC v11, you can now send and receive data in a variety of [non-json content types](/docs/server/validators#non-json-content-types), `FormData`, and binary types such as `Blob`, `File` and `Uint8Array`. You can find an example of how to use these content types [here](https://github.com/trpc/trpc/tree/next/examples/minimal-content-types)
+One of our most requested features is the ability to send and receive more than simply JSON data. With tRPC v11, you can now send and receive data in a variety of [non-json content types](/docs/server/non-json-content-types), `FormData`, and binary types such as `Blob`, `File` and `Uint8Array`. You can find an example of how to use these content types [here](https://github.com/trpc/trpc/tree/next/examples/minimal-content-types)
 
 ```ts twoslash
 // @target: esnext
@@ -143,9 +143,15 @@ for await (const value of iterable) {
 
 ### Shorthand Router Definitions
 
-We've introduced a new shorthand syntax for defining your router to simplify the process of defining your routes. [Docs](/docs/server/merging-routers#inline-sub-router)
+We've introduced a new shorthand syntax for defining your router to simplify the process of defining your routes. [Docs](/docs/server/routers#inline-sub-router)
 
-```ts twosloash
+```ts twoslash
+import { initTRPC } from '@trpc/server';
+
+const t = initTRPC.create();
+const publicProcedure = t.procedure;
+const router = t.router;
+// ---cut---
 const appRouter = router({
   // Shorthand plain object for creating a sub-router
   nested1: {

@@ -1,4 +1,5 @@
 import type { UrlOptionsWithConnectionParams } from '../../internals/urlWithConnectionParams';
+import type { Encoder } from './encoder';
 
 export interface WebSocketClientOptions extends UrlOptionsWithConnectionParams {
   /**
@@ -56,6 +57,11 @@ export interface WebSocketClientOptions extends UrlOptionsWithConnectionParams {
      */
     pongTimeoutMs?: number;
   };
+  /**
+   * Custom encoder for wire encoding (e.g. custom binary formats)
+   * @default jsonEncoder
+   */
+  experimental_encoder?: Encoder;
 }
 
 /**

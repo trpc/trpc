@@ -1,6 +1,6 @@
-import { routerToServerAndClientNew } from './___testHelpers';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
-import { TRPCClientError } from '@trpc/client';
+import { isTRPCClientError, TRPCClientError } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server';
 import { initTRPC, StandardSchemaV1Error, TRPCError } from '@trpc/server';
 import type {
@@ -8,14 +8,8 @@ import type {
   DefaultErrorShape,
 } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
-import * as v1 from 'valibot1';
+import * as v from 'valibot';
 import { z, ZodError } from 'zod';
-
-function isTRPCClientError<TRouter extends AnyRouter>(
-  cause: unknown,
-): cause is TRPCClientError<TRouter> {
-  return cause instanceof TRPCClientError;
-}
 
 describe('no custom error formatter', () => {
   const t = initTRPC.create();
@@ -29,18 +23,9 @@ describe('no custom error formatter', () => {
       return 'never';
     }),
   });
-  const ctx = konn()
-    .beforeEach(() => {
-      const opts = routerToServerAndClientNew(appRouter);
-
-      return opts;
-    })
-    .afterEach(async (ctx) => {
-      await ctx?.close?.();
-    })
-    .done();
 
   test('infer errors with type guard', async () => {
+    await using ctx = testServerAndClientResource(appRouter);
     const err = await waitError(ctx.client.greeting.query());
 
     if (!isTRPCClientError<typeof appRouter>(err)) {
@@ -75,18 +60,9 @@ describe('with custom error formatter', () => {
       return 'never';
     }),
   });
-  const ctx = konn()
-    .beforeEach(() => {
-      const opts = routerToServerAndClientNew(appRouter);
-
-      return opts;
-    })
-    .afterEach(async (ctx) => {
-      await ctx?.close?.();
-    })
-    .done();
 
   test('infer errors with type guard', async () => {
+    await using ctx = testServerAndClientResource(appRouter);
     const err = await waitError(ctx.client.greeting.query());
 
     if (!isTRPCClientError<typeof appRouter>(err)) {
@@ -144,10 +120,10 @@ test('custom error formatter with standard schema v1 (valibot)', async () => {
   });
 
   const appRouter = t.router({
-    greeting: t.procedure.input(v1.number()).query((opts) => opts.input),
+    greeting: t.procedure.input(v.number()).query((opts) => opts.input),
   });
 
-  const ctx = routerToServerAndClientNew(appRouter);
+  await using ctx = testServerAndClientResource(appRouter);
 
   const err = await waitError(
     ctx.client.greeting.query(
@@ -215,18 +191,8 @@ describe('custom error sub-classes', () => {
       return 'never';
     }),
   });
-  const ctx = konn()
-    .beforeEach(() => {
-      const opts = routerToServerAndClientNew(appRouter);
-
-      return opts;
-    })
-    .afterEach(async (ctx) => {
-      await ctx?.close?.();
-    })
-    .done();
-
   test('infer errors with type guard', async () => {
+    await using ctx = testServerAndClientResource(appRouter);
     const err = await waitError(ctx.client.greeting.query());
 
     if (!isTRPCClientError<typeof appRouter>(err)) {
@@ -281,18 +247,8 @@ describe('zod errors according to docs', () => {
   const appRouter = t.router({
     greeting: t.procedure.input(z.number().min(10)).query((opts) => opts.input),
   });
-  const ctx = konn()
-    .beforeEach(() => {
-      const opts = routerToServerAndClientNew(appRouter);
-
-      return opts;
-    })
-    .afterEach(async (ctx) => {
-      await ctx?.close?.();
-    })
-    .done();
-
   test('zod errors according to docs', async () => {
+    await using ctx = testServerAndClientResource(appRouter);
     // bad query
     const err = await waitError(ctx.client.greeting.query(5));
     assert(isTRPCClientError<typeof appRouter>(err));
@@ -300,13 +256,13 @@ describe('zod errors according to docs', () => {
     assert(err.data.zodError);
 
     expectTypeOf(err.data.zodError).toMatchTypeOf<
-      z.typeToFlattenedError<any>
+      z.core.$ZodFlattenedError<any>
     >();
     expect(err.data?.zodError).toMatchInlineSnapshot(`
       Object {
         "fieldErrors": Object {},
         "formErrors": Array [
-          "Number must be greater than or equal to 10",
+          "Too small: expected number to be >=10",
         ],
       }
     `);

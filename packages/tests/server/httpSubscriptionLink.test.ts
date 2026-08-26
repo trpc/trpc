@@ -1,6 +1,7 @@
 import { EventEmitter, on } from 'node:events';
-import { routerToServerAndClientNew } from './___testHelpers';
 import { IterableEventEmitter } from './../../server/src/__tests__/iterableEventEmitter';
+/// <reference types="vitest" />
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { fakeTimersResource } from '@trpc/server/__tests__/fakeTimersResource';
 import {
   suppressLogs,
@@ -21,10 +22,18 @@ import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
 import type { TRPCCombinedDataTransformer } from '@trpc/server';
 import { initTRPC, tracked } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import';
-import type { RootConfig } from '@trpc/server/unstable-core-do-not-import/rootConfig';
-import type { Deferred } from '@trpc/server/unstable-core-do-not-import/stream/utils/createDeferred';
-import { createDeferred } from '@trpc/server/unstable-core-do-not-import/stream/utils/createDeferred';
+import type {
+  Deferred,
+  RootConfig,
+  Serialize,
+  TrackedData,
+} from '@trpc/server/unstable-core-do-not-import';
+import {
+  createDeferred,
+  makeAsyncResource,
+  run,
+} from '@trpc/server/unstable-core-do-not-import';
+import { makeResource } from '@trpc/server/unstable-core-do-not-import/stream/utils/disposable';
 import { uneval } from 'devalue';
 import { konn } from 'konn';
 import superjson from 'superjson';
@@ -117,7 +126,7 @@ const ctx = konn()
         });
       };
     };
-    const opts = routerToServerAndClientNew(router, {
+    const opts = testServerAndClientResource(router, {
       server: {},
       client(opts) {
         return {
@@ -319,11 +328,10 @@ test('iterable event with bad yield', async () => {
   expect(serverError.message).toMatchInlineSnapshot(`
     "[
       {
-        "code": "invalid_type",
         "expected": "number",
-        "received": "string",
+        "code": "invalid_type",
         "path": [],
-        "message": "Expected number, received string"
+        "message": "Invalid input: expected number, received string"
       }
     ]"
   `);
@@ -452,7 +460,7 @@ describe('auth / connectionParams', async () => {
         }),
       });
 
-      const opts = routerToServerAndClientNew(appRouter, {
+      const opts = testServerAndClientResource(appRouter, {
         server: {
           async createContext(opts) {
             let user: User | null = null;
@@ -590,7 +598,7 @@ describe('headers / eventSourceOptions', async () => {
         }),
       });
 
-      const opts = routerToServerAndClientNew(appRouter, {
+      const opts = testServerAndClientResource(appRouter, {
         server: {
           async createContext(opts) {
             let user: User | null = null;
@@ -735,7 +743,7 @@ describe('transformers / different serialize-deserialize', async () => {
         }),
       });
 
-      const opts = routerToServerAndClientNew(appRouter, {});
+      const opts = testServerAndClientResource(appRouter, {});
 
       return { ...opts, eeEmit };
     })
@@ -853,7 +861,7 @@ describe('timeouts', async () => {
         });
       };
     };
-    const opts = routerToServerAndClientNew(router, {
+    const opts = testServerAndClientResource(router, {
       server: {},
       client(opts) {
         return {
@@ -1083,11 +1091,9 @@ test('tracked() without transformer', async () => {
     const router = t.router({
       iterableInfinite: t.procedure
         .input(
-          z
-            .object({
-              lastEventId: z.coerce.number().min(0).optional(),
-            })
-            .optional(),
+          z.object({
+            lastEventId: z.coerce.number().min(0).optional(),
+          }),
         )
         .subscription(async function* (opts) {
           opts.signal?.addEventListener(
@@ -1099,8 +1105,8 @@ test('tracked() without transformer', async () => {
             { once: true },
           );
           try {
-            let idx = opts.input?.lastEventId ?? 0;
-            while (true) {
+            let idx = opts.input.lastEventId ?? 0;
+            while (!opts.signal!.aborted) {
               idx++;
               yield tracked(String(idx), idx);
               await puller;
@@ -1111,7 +1117,7 @@ test('tracked() without transformer', async () => {
         }),
     });
 
-    const opts = routerToServerAndClientNew(router, {
+    const opts = testServerAndClientResource(router, {
       server: {},
       client(opts) {
         return {
@@ -1140,13 +1146,16 @@ test('tracked() without transformer', async () => {
 
   const results: number[] = [];
 
-  const sub = ctx.client.iterableInfinite.subscribe(undefined, {
-    onData: (envelope) => {
-      expectTypeOf(envelope.data).toBeNumber();
+  const sub = ctx.client.iterableInfinite.subscribe(
+    {},
+    {
+      onData: (envelope) => {
+        expectTypeOf(envelope.data).toBeNumber();
 
-      results.push(envelope.data);
+        results.push(envelope.data);
+      },
     },
-  });
+  );
 
   await vi.waitFor(() => {
     expect(results).toHaveLength(1);
@@ -1170,3 +1179,461 @@ test('tracked() without transformer', async () => {
     expect(ctx.finallySpy).toHaveBeenCalledTimes(1);
   });
 });
+
+// regression test for https://github.com/trpc/trpc/issues/6193
+test('server should not hang when client cancels subscription', async () => {
+  await using ctx = run(() => {
+    const t = initTRPC.create();
+
+    const onFinally = vi.fn();
+    const onError = vi.fn();
+    const router = t.router({
+      sub: t.procedure.subscription(async function* (opts) {
+        assert(opts.signal, 'no signal received');
+        try {
+          let idx = 0;
+          while (!opts.signal.aborted) {
+            yield `hi ${idx++}`;
+            // We must yield to the event loop to allow I/O events to be processed.
+            // `await sleep(0)` uses `setTimeout(..., 0)`, which schedules a "macrotask".
+            // This allows the event loop to complete its current work, process I/O (like a client disconnect),
+            // and then resume the generator.
+            //
+            // Using `await new Promise(resolve => process.nextTick(resolve))` or `await Promise.resolve()` would not work.
+            // They schedule "microtasks" which would execute before the next event loop phase,
+            // creating a "hot loop" that starves I/O and prevents the disconnect event from being processed.
+            await sleep(0);
+          }
+        } catch (err) {
+          onError(err);
+        } finally {
+          expect(opts.signal.aborted).toBe(true);
+          onFinally();
+        }
+      }),
+    });
+
+    const opts = testServerAndClientResource(router);
+    return {
+      ...opts,
+      onFinally,
+      onError,
+    };
+  });
+
+  const results = await new Promise<string[]>((resolve) => {
+    const results: string[] = [];
+
+    const sub = ctx.client.sub.subscribe(undefined, {
+      onData: (data) => {
+        results.push(data);
+        if (results.length === 3) {
+          sub.unsubscribe();
+          resolve(results);
+        }
+      },
+    });
+  });
+
+  await vi.waitFor(() => {
+    expect(ctx.onFinally).toHaveBeenCalledTimes(1);
+  });
+  expect(ctx.onError).not.toHaveBeenCalled();
+
+  expect(results).toMatchInlineSnapshot(`
+    Array [
+      "hi 0",
+      "hi 1",
+      "hi 2",
+    ]
+  `);
+});
+
+test('recipe: pull data in a loop', async () => {
+  type Post = {
+    id: string;
+    title: string;
+    createdAt: Date;
+  };
+  await using ctx = run(() => {
+    const t = initTRPC.create();
+
+    const posts: Post[] = [
+      {
+        id: '1',
+        title: 'Post 1',
+        createdAt: new Date('2021-01-01'),
+      },
+    ];
+
+    function addPost(post: Post) {
+      posts.push(post);
+    }
+
+    async function getPosts(lastEventId: Date | null): Promise<Post[]> {
+      if (!lastEventId) {
+        return posts;
+      }
+      return posts.filter((post) => post.createdAt > lastEventId);
+    }
+
+    const onFinally = vi.fn();
+    const onError = vi.fn();
+    const router = t.router({
+      sub: t.procedure
+        .input(
+          z.object({
+            lastEventId: z.coerce.date().nullish(),
+          }),
+        )
+        .subscription(async function* (opts) {
+          assert(opts.signal, 'no signal received');
+          try {
+            let lastEventId = opts.input.lastEventId ?? null;
+            while (!opts.signal.aborted) {
+              const posts = await getPosts(lastEventId);
+              for (const post of posts) {
+                yield tracked(post.createdAt.toJSON(), post);
+                lastEventId = post.createdAt;
+              }
+              // Sleep to allow I/O events to be processed.
+              // In a real app, it'd prob be `sleep(1000)` or similar
+              await sleep(0);
+            }
+          } catch (err) {
+            onError(err);
+          } finally {
+            expect(opts.signal.aborted).toBe(true);
+            onFinally();
+          }
+        }),
+    });
+
+    const opts = testServerAndClientResource(router);
+    return {
+      ...opts,
+      onFinally,
+      onError,
+      addPost,
+    };
+  });
+
+  const receivedPosts: TrackedData<Serialize<Post>>[] = [];
+
+  const sub = ctx.client.sub.subscribe(
+    {} /* initial input */,
+    {
+      onData: (data) => {
+        receivedPosts.push(data);
+      },
+    },
+  );
+
+  // wait for initial post
+  await vi.waitFor(() => {
+    expect(receivedPosts).toHaveLength(1);
+  });
+
+  // add a new post and wait for it to be received
+  ctx.addPost({
+    id: '2',
+    title: 'Post 2',
+    createdAt: new Date('2021-01-02'),
+  });
+
+  await vi.waitFor(() => {
+    expect(receivedPosts).toHaveLength(2);
+  });
+
+  sub.unsubscribe();
+
+  await vi.waitFor(() => {
+    expect(ctx.onFinally).toHaveBeenCalledTimes(1);
+  });
+  expect(ctx.onError).not.toHaveBeenCalled();
+
+  expect(receivedPosts.map((p) => p.data.title)).toMatchInlineSnapshot(`
+    Array [
+      "Post 1",
+      "Post 2",
+    ]
+  `);
+});
+
+// regression test for https://github.com/trpc/trpc/issues/6991
+test('maxDurationMs should abort subscription even when not yielding', async () => {
+  const MAX_DURATION_MS = 100;
+
+  using fakeTimers = fakeTimersResource();
+  await using ctx = run(() => {
+    const t = initTRPC.create({
+      sse: {
+        maxDurationMs: MAX_DURATION_MS,
+      },
+    });
+
+    const onSignalAborted = vi.fn();
+    const onFinally = vi.fn();
+
+    const router = t.router({
+      // biome-ignore lint/correctness/useYield: intentionally non-yielding to test maxDurationMs abort behavior
+      sub: t.procedure.subscription(async function* (opts) {
+        assert(opts.signal, 'no signal received');
+        try {
+          // Listen for abort signal
+          opts.signal.addEventListener('abort', onSignalAborted);
+
+          // Simulate a subscription that never yields - just waits forever
+          // This should be interrupted by maxDurationMs via the abort signal
+          while (!opts.signal.aborted) {
+            await sleep(10);
+          }
+        } finally {
+          onFinally();
+        }
+      }),
+    });
+
+    const opts = testServerAndClientResource(router);
+    return {
+      ...opts,
+      onSignalAborted,
+      onFinally,
+    };
+  });
+
+  const onError = vi.fn();
+  const onStarted = vi.fn();
+  const sub = ctx.client.sub.subscribe(undefined, {
+    onError,
+    onStarted,
+  });
+  await vi.waitFor(() => {
+    expect(onStarted).toHaveBeenCalledTimes(1);
+  });
+
+  await fakeTimers.advanceTimersByTimeAsync(MAX_DURATION_MS);
+
+  expect(ctx.onSignalAborted).toHaveBeenCalledTimes(1);
+
+  // Verify the subscription handler completed
+  await vi.waitFor(() => {
+    expect(ctx.onFinally).toHaveBeenCalledTimes(1);
+  });
+  expect(onError).not.toHaveBeenCalled();
+
+  sub.unsubscribe();
+});
+
+test('timer does not leak after subscription ends', async () => {
+  const nonce = Math.floor(Math.random() * 1000);
+  const MAX_DURATION_MS = 60_000 * 60 * 24 + nonce; // 1 day + nonce
+
+  using timeoutSpies = run(() => {
+    const setTimeoutSpy = vi.spyOn(global, 'setTimeout');
+    const clearTimeoutSpy = vi.spyOn(global, 'clearTimeout');
+    return makeResource(
+      {
+        setTimeoutSpy,
+        clearTimeoutSpy,
+      },
+      () => {
+        setTimeoutSpy.mockReset();
+        clearTimeoutSpy.mockReset();
+      },
+    );
+  });
+
+  await using ctx = run(() => {
+    const t = initTRPC.create({
+      sse: {
+        maxDurationMs: MAX_DURATION_MS,
+      },
+    });
+
+    const onSignalAborted = vi.fn();
+    const onFinally = vi.fn();
+
+    const router = t.router({
+      // biome-ignore lint/correctness/useYield: intentionally non-yielding to test maxDurationMs abort behavior
+      sub: t.procedure.subscription(async function* (opts) {
+        assert(opts.signal, 'no signal received');
+        try {
+          // Listen for abort signal
+          opts.signal.addEventListener('abort', onSignalAborted);
+
+          // Simulate a subscription that never yields - just waits forever
+          // This should be interrupted by maxDurationMs via the abort signal
+          while (!opts.signal.aborted) {
+            await sleep(10);
+          }
+        } finally {
+          onFinally();
+        }
+      }),
+    });
+
+    const opts = testServerAndClientResource(router);
+    return {
+      ...opts,
+      onSignalAborted,
+      onFinally,
+    };
+  });
+
+  const onError = vi.fn();
+  const onStarted = vi.fn();
+  const sub = ctx.client.sub.subscribe(undefined, {
+    onError,
+    onStarted,
+  });
+  await vi.waitFor(() => {
+    expect(onStarted).toHaveBeenCalledTimes(1);
+  });
+  // calls to setTimeout:
+  const maxDurationTimerIndex = timeoutSpies.setTimeoutSpy.mock.calls.findIndex(
+    (args) => args[1] === MAX_DURATION_MS,
+  );
+  expect(maxDurationTimerIndex).not.toBe(-1);
+  const maxDurationTimerResult =
+    timeoutSpies.setTimeoutSpy.mock.results[maxDurationTimerIndex];
+  assert(maxDurationTimerResult?.type === 'return');
+
+  expect(timeoutSpies.clearTimeoutSpy).not.toHaveBeenCalledWith(
+    maxDurationTimerResult.value,
+  );
+
+  sub.unsubscribe();
+
+  // Verify the subscription handler completed
+  await vi.waitFor(() => {
+    expect(ctx.onFinally).toHaveBeenCalledTimes(1);
+  });
+
+  expect(timeoutSpies.clearTimeoutSpy).toHaveBeenCalledWith(
+    maxDurationTimerResult.value,
+  );
+});
+
+// regression test for https://github.com/trpc/trpc/issues/7094
+// Tests that the client reconnects after maxDurationMs causes
+// the server to end the SSE connection, and continues receiving
+// data via tracked() event ID resumption.
+test(
+  'regression #7094: maxDurationMs should reconnect and continue receiving data',
+  { timeout: 10_000 },
+  async () => {
+    const MAX_DURATION_MS = 500;
+
+    const onConnection = vi.fn<() => void>();
+    const results: number[] = [];
+    let deferred: Deferred<void> = createDeferred();
+
+    const t = initTRPC.create({
+      transformer: superjson,
+      sse: {
+        maxDurationMs: MAX_DURATION_MS,
+      },
+    });
+
+    const router = t.router({
+      sub: t.procedure
+        .input(
+          z
+            .object({
+              lastEventId: z.coerce.number().min(0).optional(),
+            })
+            .optional(),
+        )
+        .subscription(async function* (opts) {
+          onConnection();
+          let idx = opts.input?.lastEventId ?? 0;
+          while (!opts.signal?.aborted) {
+            idx++;
+            await deferred.promise;
+            deferred = createDeferred();
+            yield tracked(String(idx), idx);
+          }
+        }),
+    });
+
+    const linkSpy: TRPCLink<typeof router> = () => {
+      return ({ next, op }) => {
+        return observable((observer) => {
+          const unsubscribe = next(op).subscribe({
+            next(envelope) {
+              if (!envelope.result.type || envelope.result.type === 'data') {
+                results.push((envelope.result.data as any).data);
+              }
+              observer.next(envelope);
+            },
+            error: observer.error,
+            complete: observer.complete,
+          });
+          return unsubscribe;
+        });
+      };
+    };
+
+    await using ctx = testServerAndClientResource(router, {
+      server: {},
+      client(opts) {
+        return {
+          links: [
+            linkSpy,
+            httpSubscriptionLink({
+              url: opts.httpUrl,
+              transformer: superjson,
+            }),
+          ],
+        };
+      },
+    });
+
+    const onError = vi.fn();
+    const onComplete = vi.fn();
+    const sub = ctx.client.sub.subscribe(undefined, {
+      onError,
+      onComplete,
+    });
+
+    // Wait for initial connection
+    await vi.waitFor(() => {
+      expect(onConnection).toHaveBeenCalledTimes(1);
+    });
+
+    // Send some data before maxDurationMs fires
+    deferred.resolve();
+
+    await vi.waitFor(() => {
+      expect(results).toHaveLength(1);
+    });
+    expect(results).toEqual([1]);
+
+    // Wait for maxDurationMs to fire (500ms), then the polyfill's
+    // retry delay (min 1000ms), then the reconnection to complete.
+    await suppressLogsUntil(async () => {
+      await vi.waitFor(
+        () => {
+          expect(onConnection).toHaveBeenCalledTimes(2);
+        },
+        { timeout: 5_000 },
+      );
+    });
+
+    // Send more data on the new connection
+    deferred.resolve();
+
+    await vi.waitFor(() => {
+      expect(results).toHaveLength(2);
+    });
+    // tracked() ensures the second connection resumes from lastEventId
+    expect(results).toEqual([1, 2]);
+
+    // Subscription should NOT have errored or completed
+    expect(onError).not.toHaveBeenCalled();
+    expect(onComplete).not.toHaveBeenCalled();
+
+    sub.unsubscribe();
+  },
+);

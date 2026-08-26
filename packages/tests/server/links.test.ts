@@ -1,4 +1,4 @@
-import { routerToServerAndClientNew } from './___testHelpers';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { fakeTimersResource } from '@trpc/server/__tests__/fakeTimersResource';
 import type { OperationLink, TRPCClientRuntime, TRPCLink } from '@trpc/client';
 import {
@@ -35,13 +35,14 @@ test('chainer', async () => {
     }),
   });
 
-  const { httpUrl, close } = routerToServerAndClientNew(router);
+  await using ctx = testServerAndClientResource(router);
+  const { httpUrl } = ctx;
 
   const chain = createChain({
     links: [
       retryLink({ retry: (opts) => opts.attempts <= 3 })(mockRuntime),
       httpLink({
-        url: httpUrl,
+        url: ctx.httpUrl,
       })(mockRuntime),
     ],
     op: {
@@ -75,8 +76,6 @@ test('chainer', async () => {
   `);
 
   expect(serverCall).toHaveBeenCalledTimes(3);
-
-  await close();
 });
 
 test('cancel request', async () => {
@@ -118,7 +117,7 @@ describe('batching', () => {
       }),
     });
 
-    const { httpUrl, close } = routerToServerAndClientNew(router, {
+    await using ctx = testServerAndClientResource(router, {
       server: {
         createContext() {
           metaCall();
@@ -128,7 +127,7 @@ describe('batching', () => {
     });
     const links = [
       httpBatchLink({
-        url: httpUrl,
+        url: ctx.httpUrl,
       })(mockRuntime),
     ];
     const chain1 = createChain({
@@ -211,8 +210,6 @@ describe('batching', () => {
     `);
 
     expect(metaCall).toHaveBeenCalledTimes(1);
-
-    await close();
   });
 
   test('query streaming', async () => {
@@ -235,7 +232,7 @@ describe('batching', () => {
         }),
     });
 
-    const { httpUrl, close } = routerToServerAndClientNew(router, {
+    await using ctx = testServerAndClientResource(router, {
       server: {
         createContext() {
           metaCall();
@@ -245,7 +242,7 @@ describe('batching', () => {
     });
     const links = [
       httpBatchStreamLink({
-        url: httpUrl,
+        url: ctx.httpUrl,
       })(mockRuntime),
     ];
     const chain1 = createChain({
@@ -302,8 +299,6 @@ describe('batching', () => {
     `);
 
     expect(metaCall).toHaveBeenCalledTimes(1);
-
-    await close();
   });
 
   test('batching on maxURLLength', async () => {
@@ -317,32 +312,29 @@ describe('batching', () => {
       }),
     });
 
-    const { client, httpUrl, close, router } = routerToServerAndClientNew(
-      appRouter,
-      {
-        server: {
-          createContext() {
-            createContextFn();
-            return {};
-          },
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: {
+        createContext() {
+          createContextFn();
+          return {};
         },
-        client: (opts) => ({
-          links: [
-            httpBatchLink({
-              url: opts.httpUrl,
-              maxURLLength: 2083,
-            }),
-          ],
-        }),
       },
-    );
+      client: (opts) => ({
+        links: [
+          httpBatchLink({
+            url: opts.httpUrl,
+            maxURLLength: 2083,
+          }),
+        ],
+      }),
+    });
 
     {
       // queries should be batched into a single request
       // url length: 118 < 2083
       const res = await Promise.all([
-        client['big-input'].query('*'.repeat(10)),
-        client['big-input'].query('*'.repeat(10)),
+        ctx.client['big-input'].query('*'.repeat(10)),
+        ctx.client['big-input'].query('*'.repeat(10)),
       ]);
 
       expect(res).toEqual([10, 10]);
@@ -353,8 +345,8 @@ describe('batching', () => {
       // queries should be sent and individual requests
       // url length: 2146 > 2083
       const res = await Promise.all([
-        client['big-input'].query('*'.repeat(1024)),
-        client['big-input'].query('*'.repeat(1024)),
+        ctx.client['big-input'].query('*'.repeat(1024)),
+        ctx.client['big-input'].query('*'.repeat(1024)),
       ]);
 
       expect(res).toEqual([1024, 1024]);
@@ -364,8 +356,8 @@ describe('batching', () => {
     {
       // queries should be batched into a single request
       // url length: 2146 < 9999
-      const clientWithBigMaxURLLength = createTRPCClient<typeof router>({
-        links: [httpBatchLink({ url: httpUrl, maxURLLength: 9999 })],
+      const clientWithBigMaxURLLength = createTRPCClient<typeof appRouter>({
+        links: [httpBatchLink({ url: ctx.httpUrl, maxURLLength: 9999 })],
       });
 
       const res = await Promise.all([
@@ -376,8 +368,6 @@ describe('batching', () => {
       expect(res).toEqual([1024, 1024]);
       expect(createContextFn).toBeCalledTimes(1);
     }
-
-    await close();
   });
 
   test('server not configured for batching', async () => {
@@ -392,27 +382,16 @@ describe('batching', () => {
       }),
     });
 
-    const { close, router, httpUrl, trpcClientOptions } =
-      routerToServerAndClientNew(appRouter, {
-        server: {
-          allowBatching: false,
-        },
-      });
-    const client = createTRPCClient<typeof router>({
-      ...trpcClientOptions,
-      links: [
-        httpBatchLink({
-          url: httpUrl,
-          headers: {},
-        }),
-      ],
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: {
+        allowBatching: false,
+      },
+      clientLink: 'httpBatchLink',
     });
 
-    await expect(client.hello.query()).rejects.toMatchInlineSnapshot(
+    await expect(ctx.client.hello.query()).rejects.toMatchInlineSnapshot(
       `[TRPCClientError: Batching is not enabled on the server]`,
     );
-
-    await close();
   });
 });
 test('create client with links', async () => {
@@ -432,15 +411,15 @@ test('create client with links', async () => {
     }),
   });
 
-  const { close, router, httpUrl, trpcClientOptions } =
-    routerToServerAndClientNew(appRouter);
+  await using ctx = testServerAndClientResource(appRouter);
+  const { httpUrl, trpcClientOptions } = ctx;
 
-  const client = createTRPCClient<typeof router>({
+  const client = createTRPCClient<typeof appRouter>({
     ...trpcClientOptions,
     links: [
       retryLink({ retry: (opts) => opts.attempts < 3 }),
       httpLink({
-        url: httpUrl,
+        url: ctx.httpUrl,
         headers: {},
       }),
     ],
@@ -448,8 +427,6 @@ test('create client with links', async () => {
 
   const result = await client.hello.query();
   expect(result).toBe('world');
-
-  await close();
 });
 
 describe('loggerLink', () => {
@@ -760,7 +737,7 @@ test('chain makes unsub', async () => {
     }),
   });
 
-  const { client, close } = routerToServerAndClientNew(appRouter, {
+  await using ctx = testServerAndClientResource(appRouter, {
     client() {
       return {
         links: [
@@ -801,11 +778,10 @@ test('chain makes unsub', async () => {
       };
     },
   });
-  expect(await client.hello.query()).toBe('world');
+  expect(await ctx.client.hello.query()).toBe('world');
   expect(firstLinkCompleteSpy).toHaveBeenCalledTimes(1);
   expect(firstLinkUnsubscribeSpy).toHaveBeenCalledTimes(1);
   expect(secondLinkUnsubscribeSpy).toHaveBeenCalledTimes(1);
-  await close();
 });
 
 test('init with URL object', async () => {
@@ -819,7 +795,8 @@ test('init with URL object', async () => {
     }),
   });
 
-  const { httpUrl, close } = routerToServerAndClientNew(router);
+  await using ctx = testServerAndClientResource(router);
+  const { httpUrl } = ctx;
   const url = new URL(httpUrl);
 
   const chain = createChain({
@@ -855,8 +832,6 @@ test('init with URL object', async () => {
   `);
 
   expect(serverCall).toHaveBeenCalledTimes(1);
-
-  await close();
 });
 
 function createEndingLink<T extends InferrableClientTypes>(config: {

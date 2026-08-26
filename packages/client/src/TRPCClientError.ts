@@ -19,15 +19,10 @@ export interface TRPCClientErrorBase<TShape extends DefaultErrorShape> {
 export type TRPCClientErrorLike<TInferrable extends InferrableClientTypes> =
   TRPCClientErrorBase<inferErrorShape<TInferrable>>;
 
-function isTRPCClientError(cause: unknown): cause is TRPCClientError<any> {
-  return (
-    cause instanceof TRPCClientError ||
-    /**
-     * @deprecated
-     * Delete in next major
-     */
-    (cause instanceof Error && cause.name === 'TRPCClientError')
-  );
+export function isTRPCClientError<TInferrable extends InferrableClientTypes>(
+  cause: unknown,
+): cause is TRPCClientError<TInferrable> {
+  return cause instanceof TRPCClientError;
 }
 
 function isTRPCErrorResponse(obj: unknown): obj is TRPCErrorResponse<any> {
@@ -91,7 +86,7 @@ export class TRPCClientError<TRouterOrProcedure extends InferrableClientTypes>
 
   public static from<TRouterOrProcedure extends InferrableClientTypes>(
     _cause: Error | TRPCErrorResponse<any> | object,
-    opts: { meta?: Record<string, unknown> } = {},
+    opts: { meta?: Record<string, unknown>; cause?: Error } = {},
   ): TRPCClientError<TRouterOrProcedure> {
     const cause = _cause as unknown;
 
@@ -109,6 +104,7 @@ export class TRPCClientError<TRouterOrProcedure extends InferrableClientTypes>
       return new TRPCClientError(cause.error.message, {
         ...opts,
         result: cause,
+        cause: opts.cause,
       });
     }
     return new TRPCClientError(

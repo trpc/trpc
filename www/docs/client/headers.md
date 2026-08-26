@@ -1,19 +1,25 @@
 ---
 id: headers
-title: Custom header
-sidebar_label: Create Custom Header
+title: Headers
+sidebar_label: Headers
 slug: /client/headers
 ---
 
-The headers option can be customized in the config when using the [`httpBatchLink`](./links/httpBatchLink.md) or the [`httpLink`](./links/httpLink.md).
+The headers option may be used with any of our HTTP links: [`httpBatchLink`](./links/httpBatchLink.md), [`httpBatchStreamLink`](./links/httpBatchStreamLink.md), [`httpLink`](./links/httpLink.md), or [`httpSubscriptionLink`](./links/httpSubscriptionLink.md).
 
 `headers` can be both an object or a function. If it's a function it will get called dynamically for every HTTP request.
 
-```ts title='utils/trpc.ts'
-// Import the router type from your server file
-import type { AppRouter } from '@/server/routers/app';
-import { httpBatchLink } from '@trpc/client';
-import { createTRPCNext } from '@trpc/next';
+```ts twoslash title='utils/trpc.ts'
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import type { AppRouter } from './server';
 
 let token: string;
 
@@ -25,35 +31,51 @@ export function setToken(newToken: string) {
   token = newToken;
 }
 
-export const trpc = createTRPCNext<AppRouter>({
-  config(opts) {
-    return {
-      links: [
-        httpBatchLink({
-          url: 'http://localhost:3000/api/trpc',
-          /**
-           * Headers will be called on each request.
-           */
-          headers() {
-            return {
-              Authorization: token,
-            };
-          },
-        }),
-      ],
-    };
-  },
+export const trpc = createTRPCClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000',
+      /**
+       * Headers will be called on each request.
+       */
+      headers() {
+        return {
+          Authorization: token,
+        };
+      },
+    }),
+  ],
 });
 ```
 
 ### Example with auth login
 
-```ts title='pages/auth.tsx'
-const loginMut = trpc.auth.login.useMutation({
-  onSuccess(opts) {
-    token = opts.accessToken;
-  },
+```ts twoslash title='auth.ts'
+// @target: esnext
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+export const appRouter = t.router({
+  auth: t.router({
+    login: t.procedure
+      .input(z.object({ username: z.string(), password: z.string() }))
+      .mutation(() => ({ accessToken: 'token' })),
+  }),
 });
+export type AppRouter = typeof appRouter;
+
+// @filename: utils.ts
+export function setToken(token: string) {}
+
+// @filename: auth.ts
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import type { AppRouter } from './server';
+const trpc = createTRPCClient<AppRouter>({ links: [httpBatchLink({ url: 'http://localhost:3000' })] });
+import { setToken } from './utils';
+// ---cut---
+const result = await trpc.auth.login.mutate({ username: 'user', password: 'pass' });
+setToken(result.accessToken);
 ```
 
 The `token` can be whatever you want it to be. It's entirely up to you whether that's just a client-side

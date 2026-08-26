@@ -5,17 +5,25 @@ sidebar_label: Aborting Procedure Calls
 slug: /client/vanilla/aborting-procedure-calls
 ---
 
-tRPC adheres to the industry standard when it comes to aborting procedures. All you have to do is pass an `AbortSignal` to the query or mutation options, and call the `AbortController` instance's `abort` method if you need to cancel the request.
+tRPC supports the standard `AbortController`/`AbortSignal` API for aborting procedures. All you have to do is pass an `AbortSignal` to the query or mutation options, and call the `AbortController` instance's `abort` method if you need to cancel the request.
 
 ```ts twoslash title="utils.ts"
 // @target: esnext
-// ---cut---
 // @filename: server.ts
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
-// @noErrors
-import type { AppRouter } from './server.ts';
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+const appRouter = t.router({
+  userById: t.procedure.input(z.string()).query(({ input }) => ({ id: input, name: 'Bilbo' })),
+});
+export type AppRouter = typeof appRouter;
 
-const proxy = createTRPCClient<AppRouter>({
+// @filename: client.ts
+// ---cut---
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import type { AppRouter } from './server';
+
+const client = createTRPCClient<AppRouter>({
   links: [
     httpBatchLink({
       url: 'http://localhost:3000/trpc',
@@ -27,7 +35,7 @@ const proxy = createTRPCClient<AppRouter>({
 const ac = new AbortController();
 
 // 2. Pass the signal to a query or mutation
-const query = proxy.userById.query('id_bilbo', { signal: ac.signal });
+const query = client.userById.query('id_bilbo', { signal: ac.signal });
 
 // 3. Cancel the request if needed
 ac.abort();

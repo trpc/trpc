@@ -1,0 +1,137 @@
+---
+description: tRPC Upgrade package testing patterns with dual provider support
+globs: ['packages/upgrade/**/*.test.tsx']
+alwaysApply: false
+---
+
+# tRPC Upgrade Package Testing Patterns
+
+## Upgrade Package Specific Testing
+
+### ALWAYS use testReactResource from local \_\_helpers
+
+- **ALWAYS** use `testReactResource()` from `./test/__helpers`
+- Supports both legacy React Query and TanStack React Query patterns
+- Provides dual provider setup for migration testing
+
+### Test Resource Management
+
+```typescript
+// ✅ CORRECT: Upgrade package pattern
+await using ctx = testReactResource(appRouter, {
+  server: {
+    // server configuration
+  },
+  client(opts) {
+    return {
+      links: [
+        httpLink({
+          url: opts.httpUrl,
+          // client configuration
+        }),
+      ],
+    };
+  },
+});
+```
+
+### Dual Provider Support
+
+- Has both `ctx.rq` (legacy React Query) and `ctx.trq` (TanStack React Query)
+- Supports testing component migrations between versions
+- Provides `optionsProxyClient` and `optionsProxyServer` for options testing
+
+### Test Structure for Upgrade Testing
+
+```typescript
+test('upgrade package test', async () => {
+  await using ctx = testReactResource(appRouter);
+
+  function MyComponent() {
+    // Can test both old and new patterns
+    const query = ctx.trq.useTRPC().post.byId.useQuery({ id: '1' });
+
+    return (
+      <div>
+        {query.data ? `Result: ${query.data}` : 'Loading...'}
+      </div>
+    );
+  }
+
+  const utils = ctx.renderApp(<MyComponent />);
+
+  await vi.waitFor(() => {
+    expect(utils.container).toHaveTextContent('Result:');
+  });
+});
+```
+
+### Provider Setup for Upgrade Package
+
+- Combines both legacy and modern provider patterns
+- Uses nested providers: `QueryClientProvider` > `baseProxy.Provider` > `TRPCProvider`
+- Includes `React.Suspense` wrapper for testing suspense behavior
+
+### Available APIs for Upgrade Testing
+
+- `ctx.rq` - Legacy React Query utilities (`createTRPCReact`)
+- `ctx.trq` - TanStack React Query utilities (`createTRPCContext`)
+- `ctx.optionsProxyClient` - Options proxy for client-side testing
+- `ctx.optionsProxyServer` - Options proxy for server-side testing
+
+### Migration Testing Pattern
+
+```typescript
+test('migration from legacy to modern', async () => {
+  await using ctx = testReactResource(appRouter);
+
+  // Test legacy component
+  function LegacyComponent() {
+    const baseProxy = ctx.rq as rq.CreateTRPCReactBase<typeof appRouter, unknown>;
+    // legacy pattern testing
+  }
+
+  // Test modern component
+  function ModernComponent() {
+    const query = ctx.trq.useTRPC().post.byId.useQuery({ id: '1' });
+    // modern pattern testing
+  }
+
+  // Both can be tested with same context
+});
+```
+
+### Import Requirements for Upgrade Package
+
+#### Test Helper Imports
+
+- **ALWAYS** import `testReactResource` from `./test/__helpers` (note the `test/` prefix)
+- **UNIQUE**: Upgrade package has different path structure than other packages
+- Path: `import { testReactResource } from './test/__helpers';` (from package root)
+- Alternative path from test files: `import { testReactResource } from './__helpers';`
+
+#### Dual Package Imports for Migration Testing
+
+- Import both legacy and modern patterns:
+  - `import * as rq from '@trpc/react-query'` (legacy)
+  - `import * as trq from '@trpc/tanstack-react-query'` (modern)
+- Import `@testing-library/react` for rendering
+- Import testing utilities for component transformation testing
+
+### Fixture Testing Support
+
+- Supports `.tsx`, `.snap.tsx`, `.trpc.tsx`, and `.spec.tsx` file patterns
+- Can test component transformations and upgrades
+- Provides utilities for testing codemod transformations
+
+### Helper Import Comparison
+
+```typescript
+// ✅ Upgrade Package (this package)
+import { testReactResource } from './__helpers';     // From test files
+import { testReactResource } from './test/__helpers'; // From package root
+
+// ❌ DON'T use other package patterns
+import { createAppRouter } from './__testHelpers';    // Legacy React Query only
+import { testReactResource } from './__helpers';      // TanStack only (different impl)
+```

@@ -7,6 +7,7 @@ import type {
   UrlOptionsWithConnectionParams,
 } from '../../internals/urlWithConnectionParams';
 import { resultOf } from '../../internals/urlWithConnectionParams';
+import type { Encoder } from './encoder';
 
 export class TRPCWebSocketClosedError extends Error {
   constructor(opts: { message: string; cause?: unknown }) {
@@ -84,11 +85,12 @@ export async function prepareUrl(urlOptions: UrlOptionsWithConnectionParams) {
 
 export async function buildConnectionMessage(
   connectionParams: CallbackOrValue<TRPCRequestInfo['connectionParams']>,
+  encoder: Encoder,
 ) {
   const message: TRPCConnectionParamsMessage = {
     method: 'connectionParams',
     data: await resultOf(connectionParams),
   };
 
-  return JSON.stringify(message);
+  return encoder.encode(message);
 }

@@ -5,7 +5,7 @@ sidebar_label: Middlewares
 slug: /server/middlewares
 ---
 
-You are able to add middleware(s) to a procedure with the `t.procedure.use()` method. The middleware(s) will wrap the invocation of the procedure and must pass through its return value.
+You can add middleware(s) to a procedure with the `t.procedure.use()` method. The middleware(s) will wrap the invocation of the procedure and must call `opts.next()` and return its result.
 
 ## Authorization
 
@@ -152,8 +152,11 @@ const protectedProcedure = publicProcedure.use(async function isAuthed(opts) {
   });
 });
 
-protectedProcedure.query(({ ctx }) => ctx.user);
-//                                        ^?
+protectedProcedure.query((opts) => {
+  const { ctx } = opts;
+  return ctx.user;
+  //     ^?
+});
 ```
 
 ## Using `.concat()` to create reusable middlewares and plugins {#concat}
@@ -283,8 +286,11 @@ const barMiddleware = fooMiddleware.unstable_pipe((opts) => {
 });
 
 const barProcedure = publicProcedure.use(barMiddleware);
-barProcedure.query(({ ctx }) => ctx.bar);
-//                              ^?
+barProcedure.query((opts) => {
+  const { ctx } = opts;
+  return ctx.bar;
+  //     ^?
+});
 ```
 
 Beware that the order in which you pipe your middlewares matter and that the context must overlap. An example of a forbidden pipe is shown below. Here, the `fooMiddleware` overrides the `ctx.a` while `barMiddleware` still expects the root context from the initialization in `initTRPC` - so piping `fooMiddleware` with `barMiddleware` would not work, while piping `barMiddleware` with `fooMiddleware` does work.
@@ -332,8 +338,8 @@ barMiddleware.unstable_pipe(fooMiddleware);
 
 ## Experimental: standalone middlewares
 
-:::info
-This has been deprecated in favor of `.concat()`
+:::warning Deprecated
+This has been deprecated in favor of [`.concat()`](#concat). Use `.concat()` for new code.
 :::
 
 tRPC has an experimental API called `experimental_standaloneMiddleware` which allows you to independently define a middleware that can be used with any tRPC instance. Creating middlewares using `t.middleware` has the limitation that

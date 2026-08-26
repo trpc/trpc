@@ -1,14 +1,27 @@
 import { testReactResource } from './__helpers';
-import { useQueryClient } from '@tanstack/react-query';
-import type { TRPCClientErrorLike } from '@trpc/client';
+import { QueryClient, useQueryClient } from '@tanstack/react-query';
+import {
+  createTRPCClient,
+  httpBatchLink,
+  type TRPCClientErrorLike,
+} from '@trpc/client';
 import type { inferRouterError } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
-import type { TRPCQueryKey } from '@trpc/tanstack-react-query';
+import {
+  createTRPCContext,
+  type AnyTRPCQueryKey,
+  type TRPCMutationKeyWithoutPrefix,
+  type TRPCMutationKeyWithPrefix,
+  type TRPCQueryKey,
+  type TRPCQueryKeyWithoutPrefix,
+  type TRPCQueryKeyWithPrefix,
+} from '@trpc/tanstack-react-query';
 import * as React from 'react';
+import { useState } from 'react';
 import { describe, expect, test } from 'vitest';
 import { z } from 'zod';
 
-const testContext = () => {
+const testContext = (opts?: { keyPrefix?: string }) => {
   const t = initTRPC.create({
     errorFormatter(opts) {
       return { foo: 1, ...opts.shape };
@@ -30,7 +43,7 @@ const testContext = () => {
     },
   });
 
-  return testReactResource(appRouter);
+  return testReactResource(appRouter, opts);
 };
 
 const testContextWithErrorShape = () => {
@@ -148,7 +161,7 @@ describe('get queryFilter', () => {
           },
         },
       );
-      assertType<TRPCQueryKey>(a.queryKey);
+      assertType<AnyTRPCQueryKey>(a.queryKey);
 
       const b = query.getQueryData(a.queryKey);
       assertType<'__result' | undefined>(b);
@@ -319,6 +332,91 @@ describe('get queryKey', () => {
   });
 });
 
+describe('get queryKey with a prefix', () => {
+  test('gets various query keys', async () => {
+    await using ctx = testContext({
+      keyPrefix: 'user-123',
+    });
+
+    const { useTRPC } = ctx;
+
+    function Component() {
+      const trpc = useTRPC();
+      const query = useQueryClient();
+
+      query.setQueryData(
+        trpc.bluesky.post.byId.queryKey({ id: '1' }),
+        '__result',
+      );
+
+      expect(trpc.pathKey()).toMatchInlineSnapshot(`
+        Array [
+          Array [
+            "user-123",
+          ],
+        ]
+      `);
+
+      expect(trpc.bluesky.pathKey()).toMatchInlineSnapshot(`
+        Array [
+          Array [
+            "user-123",
+          ],
+          Array [
+            "bluesky",
+          ],
+        ]
+      `);
+      expect(trpc.bluesky.post.pathKey()).toMatchInlineSnapshot(`
+        Array [
+          Array [
+            "user-123",
+          ],
+          Array [
+            "bluesky",
+            "post",
+          ],
+        ]
+      `);
+      expect(trpc.bluesky.post.byId.pathKey()).toMatchInlineSnapshot(`
+        Array [
+          Array [
+            "user-123",
+          ],
+          Array [
+            "bluesky",
+            "post",
+            "byId",
+          ],
+        ]
+      `);
+      expect(trpc.bluesky.post.byId.queryKey({ id: '1' }))
+        .toMatchInlineSnapshot(`
+          Array [
+            Array [
+              "user-123",
+            ],
+            Array [
+              "bluesky",
+              "post",
+              "byId",
+            ],
+            Object {
+              "input": Object {
+                "id": "1",
+              },
+              "type": "query",
+            },
+          ]
+        `);
+
+      return 'some text';
+    }
+
+    ctx.renderApp(<Component />);
+  });
+});
+
 describe('get mutationKey', () => {
   test('gets various mutation keys', async () => {
     await using ctx = testContext();
@@ -348,4 +446,186 @@ describe('get mutationKey', () => {
 
     ctx.renderApp(<Component />);
   });
+});
+
+describe('get mutationKey with prefix', () => {
+  test('gets various mutation keys', async () => {
+    await using ctx = testContext({
+      keyPrefix: 'user-123',
+    });
+
+    const { useTRPC } = ctx;
+
+    function Component() {
+      const trpc = useTRPC();
+
+      // @ts-expect-error - not a mutation
+      trpc.bluesky.post.byId.mutationKey;
+      // @ts-expect-error - not a mutation
+      trpc.bluesky.mutationKey;
+
+      expect(trpc.bluesky.post.create.mutationKey()).toMatchInlineSnapshot(`
+        Array [
+          Array [
+            "user-123",
+          ],
+          Array [
+            "bluesky",
+            "post",
+            "create",
+          ],
+        ]
+      `);
+
+      return 'some text';
+    }
+
+    ctx.renderApp(<Component />);
+  });
+});
+
+test('types of testReactResource', async () => {
+  const t = initTRPC.create();
+  const appRouter = t.router({
+    q: t.procedure.query(() => 'query'),
+    m: t.procedure.mutation(() => 'mutation'),
+  });
+
+  {
+    const prefix = 'user-123';
+    await using ctx = testReactResource(appRouter, {
+      keyPrefix: prefix,
+    });
+
+    const { useTRPC } = ctx;
+
+    function Component() {
+      const trpc = useTRPC();
+      {
+        const key = trpc.q.pathKey();
+
+        expectTypeOf<typeof key>().toEqualTypeOf<TRPCQueryKeyWithPrefix>();
+        expect(key).toEqual([[prefix], ['q']]);
+      }
+
+      {
+        const key = trpc.m.mutationKey();
+        expectTypeOf<typeof key>().toEqualTypeOf<TRPCMutationKeyWithPrefix>();
+        expect(key).toEqual([[prefix], ['m']]);
+      }
+      return null;
+    }
+    ctx.renderApp(<Component />);
+  }
+  {
+    await using ctx = testReactResource(appRouter);
+
+    const { useTRPC } = ctx;
+
+    function Component() {
+      const trpc = useTRPC();
+      {
+        const key = trpc.q.pathKey();
+
+        expectTypeOf<typeof key>().toEqualTypeOf<TRPCQueryKeyWithoutPrefix>();
+        expect(key).toEqual([['q']]);
+      }
+      {
+        const key = trpc.m.mutationKey();
+        expectTypeOf<
+          typeof key
+        >().toEqualTypeOf<TRPCMutationKeyWithoutPrefix>();
+        expect(key).toEqual([['m']]);
+      }
+      return null;
+    }
+    ctx.renderApp(<Component />);
+  }
+});
+
+test('types of normal usage', async () => {
+  const t = initTRPC.create();
+  const appRouter = t.router({
+    q: t.procedure.query(() => 'query'),
+    m: t.procedure.mutation(() => 'mutation'),
+  });
+
+  {
+    const { TRPCProvider } = createTRPCContext<typeof appRouter>();
+    function Component() {
+      const [queryClient] = useState(() => new QueryClient());
+      const [trpcClient] = useState(() =>
+        createTRPCClient<typeof appRouter>({
+          links: [
+            httpBatchLink({
+              url: 'http://localhost:3000',
+            }),
+          ],
+        }),
+      );
+
+      return (
+        <>
+          <TRPCProvider
+            //
+            queryClient={queryClient}
+            trpcClient={trpcClient}
+          >
+            {null}
+          </TRPCProvider>
+
+          <TRPCProvider
+            //
+            queryClient={queryClient}
+            trpcClient={trpcClient}
+            // @ts-expect-error - test
+            keyPrefix="test"
+          >
+            {null}
+          </TRPCProvider>
+        </>
+      );
+    }
+  }
+
+  {
+    const { TRPCProvider } = createTRPCContext<
+      typeof appRouter,
+      { keyPrefix: true }
+    >();
+    function Component() {
+      const [queryClient] = useState(() => new QueryClient());
+      const [trpcClient] = useState(() =>
+        createTRPCClient<typeof appRouter>({
+          links: [
+            httpBatchLink({
+              url: 'http://localhost:3000',
+            }),
+          ],
+        }),
+      );
+
+      return (
+        <>
+          {/* @ts-expect-error - test keyPrefix */}
+          <TRPCProvider
+            //
+            queryClient={queryClient}
+            trpcClient={trpcClient}
+          >
+            {null}
+          </TRPCProvider>
+
+          <TRPCProvider
+            //
+            queryClient={queryClient}
+            trpcClient={trpcClient}
+            keyPrefix="test"
+          >
+            {null}
+          </TRPCProvider>
+        </>
+      );
+    }
+  }
 });

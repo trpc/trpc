@@ -1,3 +1,5 @@
+import { Readable, type Writable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 import type {
   APIGatewayProxyEvent,
   APIGatewayProxyEventV2,
@@ -39,6 +41,7 @@ interface Processor<TEvent extends LambdaEvent> {
   getHeaders: (event: TEvent) => Headers;
   getMethod: (event: TEvent) => string;
   toResult: (response: Response) => Promise<inferAPIGWReturn<TEvent>>;
+  toStream: (response: Response, stream: Writable) => Promise<void>;
 }
 
 function getHeadersAndCookiesFromResponse(response: Response) {
@@ -95,15 +98,20 @@ const v1Processor: Processor<APIGatewayProxyEvent> = {
   },
   getHeaders: (event) => {
     const headers = new Headers();
-    for (const [key, value] of Object.entries(event.headers ?? {})) {
-      if (value !== undefined) {
-        headers.append(key, value);
-      }
-    }
 
+    // Process multiValueHeaders first (takes precedence per AWS docs)
+    // This handles headers that can have multiple values
     for (const [k, values] of Object.entries(event.multiValueHeaders ?? {})) {
       if (values) {
         values.forEach((v) => headers.append(k, v));
+      }
+    }
+
+    // Then process single-value headers, but skip any that were already
+    // added from multiValueHeaders to avoid duplication
+    for (const [key, value] of Object.entries(event.headers ?? {})) {
+      if (value !== undefined && !headers.has(key)) {
+        headers.append(key, value);
       }
     }
 
@@ -121,6 +129,23 @@ const v1Processor: Processor<APIGatewayProxyEvent> = {
     };
 
     return result;
+  },
+  toStream: async (response, stream) => {
+    const { headers, cookies } = getHeadersAndCookiesFromResponse(response);
+
+    const metadata = {
+      statusCode: response.status,
+      headers,
+      cookies,
+    };
+
+    const responseStream = awslambda.HttpResponseStream.from(stream, metadata);
+
+    if (response.body) {
+      await pipeline(Readable.fromWeb(response.body as any), responseStream);
+    } else {
+      responseStream.end();
+    }
   },
 };
 
@@ -169,6 +194,24 @@ const v2Processor: Processor<APIGatewayProxyEventV2> = {
 
     return result;
   },
+
+  toStream: async (response, stream) => {
+    const { headers, cookies } = getHeadersAndCookiesFromResponse(response);
+
+    const metadata = {
+      statusCode: response.status,
+      headers,
+      cookies,
+    };
+
+    const responseStream = awslambda.HttpResponseStream.from(stream, metadata);
+
+    if (response.body) {
+      await pipeline(Readable.fromWeb(response.body as any), responseStream);
+    } else {
+      responseStream.end();
+    }
+  },
 };
 
 export function getPlanner<TEvent extends LambdaEvent>(event: TEvent) {
@@ -206,5 +249,6 @@ export function getPlanner<TEvent extends LambdaEvent>(event: TEvent) {
     path: processor.getTRPCPath(event),
     request,
     toResult: processor.toResult,
+    toStream: processor.toStream,
   };
 }

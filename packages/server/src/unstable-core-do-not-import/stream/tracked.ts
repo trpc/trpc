@@ -5,16 +5,16 @@ type TrackedId = string & {
 };
 export type TrackedEnvelope<TData> = [TrackedId, TData, typeof trackedSymbol];
 
-type TrackedData<TData> = {
+export interface TrackedData<TData> {
   /**
    * The id of the message to keep track of in case the connection gets lost
    */
   id: string;
   /**
-   * The data field of the message - this can be anything
+   * The data field of the message
    */
   data: TData;
-};
+}
 /**
  * Produce a typed server-sent event message
  * @deprecated use `tracked(id, data)` instead

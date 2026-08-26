@@ -112,7 +112,6 @@ export interface UseTRPCInfiniteQueryOptions<TInput, TOutput, TError>
         TOutput,
         TError,
         TOutput,
-        TOutput,
         any,
         ExtractCursorType<TInput>
       >,
@@ -142,7 +141,6 @@ export interface UseTRPCSuspenseInfiniteQueryOptions<TInput, TOutput, TError>
       UseSuspenseInfiniteQueryOptions<
         TOutput,
         TError,
-        TOutput,
         TOutput,
         any,
         ExtractCursorType<TInput>

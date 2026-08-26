@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRef } from 'react';
-import type { UseFormProps } from 'react-hook-form';
+import type { FieldValues, UseFormProps } from 'react-hook-form';
 import { FormProvider, useForm } from 'react-hook-form';
 import { useAction } from 'trpc-api';
 import type { z } from 'zod';
@@ -12,14 +12,16 @@ import { rhfActionSchema } from './ReactHookFormExample.schema';
 /**
  * Reusable hook for zod + react-hook-form
  */
-function useZodForm<TSchema extends z.ZodType>(
-  props: Omit<UseFormProps<TSchema['_input']>, 'resolver'> & {
-    schema: TSchema;
+function useZodForm<TInput extends FieldValues>(
+  props: Omit<UseFormProps<TInput>, 'resolver'> & {
+    schema: z.ZodType<any, TInput>;
   },
 ) {
-  const form = useForm<TSchema['_input']>({
+  const form = useForm<TInput>({
     ...props,
-    resolver: zodResolver(props.schema, undefined),
+    resolver: zodResolver(props.schema, undefined, {
+      raw: true,
+    }),
   });
 
   return form;

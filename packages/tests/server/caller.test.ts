@@ -30,6 +30,7 @@ test('experimental caller', async () => {
             path: '',
             input,
             signal: undefined,
+            batchIndex: 0,
           });
         }
         case 'query': {
@@ -41,6 +42,7 @@ test('experimental caller', async () => {
             path: '',
             input,
             signal: undefined,
+            batchIndex: 0,
           });
         }
         case 'subscription':

@@ -1,0 +1,298 @@
+---
+description: tRPC coding style guidelines and conventions
+globs: ['**/*.ts', '**/*.tsx', '**/*.mdx', '**/*.md']
+alwaysApply: false
+---
+
+# tRPC Coding Guidelines
+
+## Context & Expertise Level
+
+You are working on **tRPC** - a TypeScript-first RPC library that provides end-to-end type safety between client and server. As a TypeScript expert contributing to this library, you should:
+
+- Understand advanced TypeScript concepts including conditional types, mapped types, and template literal types
+- Leverage TypeScript's inference system to its fullest potential
+- Write code that maintains tRPC's core principle: **type safety without runtime overhead**
+- Consider the developer experience of library consumers who rely on tRPC's type inference magic
+- Think about how your code affects the library's public API and type signatures
+
+This codebase pushes TypeScript to its limits to provide seamless type safety across network boundaries. Every type decision impacts thousands of developers using tRPC in production.
+
+## TypeScript & Code Style
+
+### Type Imports
+
+- **ALWAYS** use `import type` for type-only imports: `@typescript-eslint/consistent-type-imports`
+- Separate type imports from value imports
+
+```typescript
+// ✅ CORRECT
+import type { AnyRouter } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
+
+// ❌ INCORRECT
+import { AnyRouter, initTRPC } from '@trpc/server';
+```
+
+### Variable Declarations
+
+- **AVOID** overzealous destructuring and use accessors instead
+- **EXCEPTION**: Object destructuring is acceptable when a variable is used 3+ times
+- **PREFER** array destructuring, but avoid sparse array destructuring
+- **NEVER** use destructuring in function parameter declarations
+- **AVOID** destructuring potentially nullish nested properties
+- Use destructuring sparingly - prefer direct property access
+
+```typescript
+// ✅ BEST - access directly without extracting
+function createClient(opts: ClientOptions) {
+  // Use opts.url and opts.transformer directly
+  return new Client(opts.url, opts.transformer);
+}
+
+// ✅ ACCEPTABLE - object destructuring when variable used 3+ times
+const { client } = ctx;
+const result1 = client.query();
+const result2 = client.mutate();
+const result3 = client.subscribe();
+
+// ✅ PREFERRED - array destructuring (but use judiciously)
+const [text, setText] = useState('');
+const [first, second] = tuple;
+
+// ❌ AVOID object destructuring for variables used 1-2 times
+const { client, httpUrl } = ctx;
+
+// ❌ AVOID sparse array destructuring
+const [first, , , fourth] = someArray; // Don't skip unless needed
+
+// ❌ NEVER destructure in function parameters
+function createClient({ url, transformer }: ClientOptions) {
+  // Don't do this
+}
+```
+
+### Function Parameters
+
+- **MAXIMUM 3 parameters** per function (`max-params: 3`)
+- Use options objects for functions with many parameters
+
+```typescript
+// ✅ CORRECT
+function createClient(router: AnyRouter, opts: ClientOptions) {
+  // implementation
+}
+
+// ❌ INCORRECT - too many parameters
+function createClient(router: AnyRouter, url: string, transformer: any, links: any) {
+  // implementation
+}
+```
+
+### Naming Conventions
+
+#### Type Parameters
+
+- Use PascalCase with specific patterns: `^(T|\\$)([A-Z]([a-zA-Z]+))?[0-9]*$`
+
+```typescript
+// ✅ CORRECT
+type MyType<TRouter extends AnyRouter> = {};
+type MyType<$Router> = {};
+
+// ❌ INCORRECT
+type MyType<Router> = {};
+type MyType<router> = {};
+```
+
+#### File Names
+
+- Use camelCase for most files (`unicorn/filename-case`)
+- Exceptions: `TRPC`, `RPC`, `HTTP`, `JSON`, `.config.js`, `.d.ts`, test files, etc.
+
+#### Unused Variables
+
+- Prefix with `_` for unused variables, args, and caught errors
+
+```typescript
+// ✅ CORRECT
+function handler(_req: Request, res: Response) {
+  // _req is intentionally unused
+}
+
+try {
+  // code
+} catch (_error) {
+  // _error is intentionally unused
+}
+```
+
+### Import Patterns
+
+#### Namespace Imports
+
+- Use namespace imports for validation libraries and large modules
+
+```typescript
+// ✅ PREFERRED pattern
+import * as z from 'zod';
+import * as React from 'react';
+
+// ✅ ALSO ACCEPTABLE
+import { z } from 'zod';
+```
+
+#### Import Order (via Prettier)
+
+- Test helpers first (`___`, `__`)
+- tRPC test imports
+- Third-party modules
+- Relative imports
+
+#### Restricted Imports
+
+- **NEVER** import from `@trpc/*/src` - remove the `/src` part
+- **NEVER** use `waitFor` from Testing Library - use `vi.waitFor` instead
+- **NEVER** use `Symbol.dispose` or `Symbol.asyncDispose` - use `makeResource()` or `makeAsyncResource()`
+
+### Code Patterns
+
+#### Resource Management
+
+- **ALWAYS** use `await using` for resource cleanup
+- Use `makeResource()` and `makeAsyncResource()` instead of manual disposal
+
+```typescript
+// ✅ CORRECT
+await using ctx = testServerAndClientResource(router);
+
+// ❌ INCORRECT
+const { close } = createServer();
+try {
+  // code
+} finally {
+  await close();
+}
+```
+
+#### Error Handling
+
+- **AVOID** non-null assertions (`@typescript-eslint/no-non-null-assertion`)
+- Use proper type guards and optional chaining
+
+```typescript
+// ✅ CORRECT
+if (options && options.method) {
+  // use options.method
+}
+
+// ❌ INCORRECT
+const method = options!.method;
+```
+
+#### Console Usage
+
+- **NO** `console.log` in packages (`no-console: error` for packages)
+- Use proper logging mechanisms in package code
+- Console allowed in examples and tests
+
+### React Specific Guidelines
+
+#### Hooks
+
+- Follow React Hooks rules (`react-hooks/react-compiler`)
+- Use React Compiler compatible patterns
+
+#### Components
+
+- Use JSX runtime (no need to import React for JSX)
+- Prefer function components
+
+### Switch Statements
+
+- **ALWAYS** handle all cases (`@typescript-eslint/switch-exhaustiveness-check`)
+- Use exhaustive checking for union types
+
+### Type Safety & Inference
+
+#### Rely on TypeScript Inference
+
+- **HEAVILY RELY** on TypeScript inference rather than declaring explicit output types
+- Let TypeScript infer return types from implementation
+- Only declare types when inference is insufficient or for public APIs
+
+```typescript
+// ✅ CORRECT - Let TypeScript infer the return type
+const myProcedure = t.procedure
+  .input(z.string())
+  .query(({ input }) => {
+    return { message: `Hello ${input}` }; // Type inferred as { message: string }
+  });
+
+// ❌ AVOID - Unnecessary explicit typing
+const myProcedure = t.procedure
+  .input(z.string())
+  .query(({ input }): { message: string } => {
+    return { message: `Hello ${input}` };
+  });
+```
+
+#### When to Use Explicit Types
+
+- Public API boundaries
+- Complex generic constraints
+- When inference fails or is ambiguous
+- For documentation purposes in critical interfaces
+
+#### Inference Best Practices
+
+- Trust TypeScript's inference engine
+- Use `satisfies` operator when you need both inference and type checking
+- Leverage `as const` for literal type inference when needed
+
+```typescript
+// ✅ GOOD - Using satisfies for both inference and validation
+const config = {
+  apiVersion: 'v1',
+  timeout: 5000,
+} satisfies ApiConfig;
+
+// ✅ GOOD - Using as const for literal types
+const routes = ['users', 'posts', 'comments'] as const;
+```
+
+#### General Type Safety
+
+- Prefer explicit typing over `any` (though `any` is allowed when needed)
+- Use type assertions sparingly
+- Leverage TypeScript's strict mode features
+
+## Package-Specific Rules
+
+### Server Adapters
+
+- **AVOID** importing from `@trpc/server` in adapter code
+- Use relative imports to maintain adapter independence
+
+### Testing Files
+
+- More relaxed rules for test files
+- Non-null assertions allowed in tests
+- Unused variables allowed
+- Floating promises allowed
+
+## Code Organization
+
+### Monorepo Structure
+
+- Each package has well-defined purposes
+- Share common functionality through `@trpc/server`
+- Keep client and server concerns separate
+
+### File Structure
+
+- Use camelCase for file names
+- Group related functionality in directories
+- Use index files for clean exports
+
+This follows the established patterns in the tRPC codebase and helps maintain consistency across the monorepo.

@@ -1,9 +1,10 @@
 import { z } from 'zod';
+import { prisma } from '../prisma';
 import { baseProcedure, router } from '../trpc';
 
 export const todoRouter = router({
-  all: baseProcedure.query(({ ctx }) => {
-    return ctx.task.findMany({
+  all: baseProcedure.query(() => {
+    return prisma.task.findMany({
       orderBy: {
         createdAt: 'asc',
       },
@@ -16,8 +17,8 @@ export const todoRouter = router({
         text: z.string().min(1),
       }),
     )
-    .mutation(async ({ ctx, input }) => {
-      const todo = await ctx.task.create({
+    .mutation(async ({ input }) => {
+      const todo = await prisma.task.create({
         data: input,
       });
       return todo;
@@ -32,9 +33,9 @@ export const todoRouter = router({
         }),
       }),
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ input }) => {
       const { id, data } = input;
-      const todo = await ctx.task.update({
+      const todo = await prisma.task.update({
         where: { id },
         data,
       });
@@ -42,20 +43,20 @@ export const todoRouter = router({
     }),
   toggleAll: baseProcedure
     .input(z.object({ completed: z.boolean() }))
-    .mutation(async ({ ctx, input }) => {
-      await ctx.task.updateMany({
+    .mutation(async ({ input }) => {
+      await prisma.task.updateMany({
         data: { completed: input.completed },
       });
     }),
   delete: baseProcedure
     .input(z.string().uuid())
-    .mutation(async ({ ctx, input: id }) => {
-      await ctx.task.delete({ where: { id } });
+    .mutation(async ({ input: id }) => {
+      await prisma.task.delete({ where: { id } });
       return id;
     }),
-  clearCompleted: baseProcedure.mutation(async ({ ctx }) => {
-    await ctx.task.deleteMany({ where: { completed: true } });
+  clearCompleted: baseProcedure.mutation(async () => {
+    await prisma.task.deleteMany({ where: { completed: true } });
 
-    return ctx.task.findMany();
+    return prisma.task.findMany();
   }),
 });

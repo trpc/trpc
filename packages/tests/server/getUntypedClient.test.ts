@@ -1,4 +1,4 @@
-import { routerToServerAndClientNew } from './___testHelpers';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import type { TRPCUntypedClient } from '@trpc/client';
 import { getUntypedClient } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
@@ -21,17 +21,15 @@ test('getUntypedClient()', async () => {
     foo: t.procedure.query(() => 'bar'),
   });
 
-  const ctx = routerToServerAndClientNew(appRouter);
+  await using ctx = testServerAndClientResource(appRouter);
   const untyped = getUntypedClient(ctx.client);
 
   type UntypedInferrable =
     typeof untyped extends TRPCUntypedClient<infer T>
       ? inferClientTypes<T>
       : never;
-  type RouterInferrable = inferClientTypes<typeof ctx.router>;
+  type RouterInferrable = inferClientTypes<typeof appRouter>;
 
   expectTypeOf<RouterInferrable>().toEqualTypeOf<UntypedInferrable>();
   expect(await untyped.query('foo')).toBe('bar');
-
-  await ctx.close();
 });

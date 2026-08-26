@@ -24,7 +24,7 @@ export interface TRPCServerResourceOpts<TRouter extends AnyTRPCRouter> {
 export const __getSpy = <T extends (...args: any[]) => void>(): Mock<T> => {
   return vi.fn(() => {
     // noop
-  });
+  }) as Mock<T>;
 };
 
 export function trpcServerResource<TRouter extends AnyTRPCRouter>(

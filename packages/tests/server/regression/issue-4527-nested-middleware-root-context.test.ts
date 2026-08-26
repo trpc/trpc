@@ -9,16 +9,16 @@ test('root context override on nested middlewares', () => {
     }>()
     .create();
 
-  const enforceApiKey = t.middleware(async ({ ctx, next }) => {
-    if (!ctx.apiKey) {
+  const enforceApiKey = t.middleware(async (opts) => {
+    if (!opts.ctx.apiKey) {
       throw new TRPCError({ code: 'UNAUTHORIZED' });
     }
 
-    return next({ ctx: { apiKey: ctx.apiKey } });
+    return opts.next({ ctx: { apiKey: opts.ctx.apiKey } });
   });
 
-  const formDataMiddleware = t.middleware(async ({ next }) => {
-    return next({ getRawInput: async () => new FormData() });
+  const formDataMiddleware = t.middleware(async (opts) => {
+    return opts.next({ getRawInput: async () => new FormData() });
   });
 
   // root context -> enforceApiKey -> formDataMiddleware

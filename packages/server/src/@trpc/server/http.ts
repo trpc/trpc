@@ -15,6 +15,9 @@ export type {
   ResponseMeta,
   ResponseMetaFn,
   TRPCRequestInfo,
+  OctetInput,
+  FileLike,
+  UtilityParser,
 } from '../../unstable-core-do-not-import';
 
 export {

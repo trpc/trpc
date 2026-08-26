@@ -13,9 +13,17 @@ slug: /client/links/httpLink
 
 You can import and add the `httpLink` to the `links` array as such:
 
-```ts title="client/index.ts"
+```ts twoslash title="client/index.ts"
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
 import { createTRPCClient, httpLink } from '@trpc/client';
-import type { AppRouter } from '../server';
+import type { AppRouter } from './server';
 
 const client = createTRPCClient<AppRouter>({
   links: [
@@ -31,25 +39,25 @@ const client = createTRPCClient<AppRouter>({
 
 The `httpLink` function takes an options object that has the `HTTPLinkOptions` shape.
 
-```ts
+```ts twoslash
+type DataTransformerOptions = any;
+type HTTPHeaders = Record<string, string[] | string | undefined>;
+type Operation = { id: number; type: string; input: unknown; path: string };
+// ---cut---
 export interface HTTPLinkOptions {
-  url: string;
+  url: string | URL;
   /**
    * Add ponyfill for fetch
    */
   fetch?: typeof fetch;
   /**
-   * Add ponyfill for AbortController
-   */
-  AbortController?: typeof AbortController | null;
-  /**
    * Data transformer
-   * @see https://trpc.io/docs/v11/data-transformers
+   * @see https://trpc.io/docs/server/data-transformers
    **/
   transformer?: DataTransformerOptions;
   /**
    * Headers to be set on outgoing requests or a callback that of said headers
-   * @see http://trpc.io/docs/v10/header
+   * @see https://trpc.io/docs/client/headers
    */
   headers?:
     | HTTPHeaders

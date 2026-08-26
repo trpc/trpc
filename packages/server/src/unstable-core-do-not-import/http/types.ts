@@ -72,6 +72,10 @@ export interface TRPCRequestInfoProcedureCall {
    * @internal
    */
   procedure: AnyProcedure | null;
+  /**
+   * The index of this call in a batch request.
+   */
+  batchIndex: number;
 }
 
 /**

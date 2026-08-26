@@ -117,10 +117,12 @@ test('with input', async () => {
     for (const value of before) {
       value.state.dataUpdateCount = -1;
       value.state.dataUpdatedAt = -1;
+      value.dehydratedAt = -1;
     }
     for (const value of after) {
       value.state.dataUpdateCount = -1;
       value.state.dataUpdatedAt = -1;
+      value.dehydratedAt = -1;
     }
   }
   expect(before).toEqual(after);
@@ -190,10 +192,12 @@ test('w/o input', async () => {
   before.forEach((value) => {
     value.state.dataUpdateCount = -1;
     value.state.dataUpdatedAt = -1;
+    value.dehydratedAt = -1;
   });
   after.forEach((value) => {
     value.state.dataUpdateCount = -1;
     value.state.dataUpdatedAt = -1;
+    value.dehydratedAt = -1;
   });
 
   expect(before).toEqual(after);

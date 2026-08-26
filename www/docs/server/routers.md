@@ -46,12 +46,45 @@ import * as trpc from '@trpc/server';
 import { publicProcedure, router } from './trpc';
 
 const appRouter = router({
-  greeting: publicProcedure.query(() => 'hello tRPC v10!'),
+  greeting: publicProcedure.query(() => 'hello tRPC v11!'),
 });
 
 // Export only the type of a router!
 // This prevents us from importing server code on the client.
 export type AppRouter = typeof appRouter;
+```
+
+## Defining an inline sub-router {#inline-sub-router}
+
+When you define an inline sub-router, you can represent your router as a plain object.
+
+In the below example, `nested1` and `nested2` are equal:
+
+```ts twoslash title="server/_app.ts"
+// @filename: trpc.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+
+
+export const middleware = t.middleware;
+export const publicProcedure = t.procedure;
+export const router = t.router;
+
+// @filename: _app.ts
+// ---cut---
+import * as trpc from '@trpc/server';
+import { publicProcedure, router } from './trpc';
+
+const appRouter = router({
+  // Using the router() method
+  nested1: router({
+    proc: publicProcedure.query(() => '...'),
+  }),
+  // Using an inline sub-router
+  nested2: {
+    proc: publicProcedure.query(() => '...'),
+  },
+});
 ```
 
 ## Advanced usage
@@ -66,7 +99,13 @@ When initializing your router, tRPC allows you to:
 
 You can use method chaining to customize your `t`-object on initialization. For example:
 
-```ts
+```ts twoslash
+import { initTRPC } from '@trpc/server';
+
+type Context = { userId: string };
+type Meta = { description: string };
+
+// ---cut---
 const t = initTRPC.context<Context>().meta<Meta>().create({
   /* [...] */
 });
@@ -74,19 +113,22 @@ const t = initTRPC.context<Context>().meta<Meta>().create({
 
 ### Runtime Configuration
 
-```ts
-export interface RootConfig<TTypes extends RootTypes> {
+```ts twoslash
+type DataTransformerOptions = any;
+type ErrorFormatter = any;
+// ---cut---
+interface RootConfig {
   /**
    * Use a data transformer
    * @see https://trpc.io/docs/v11/data-transformers
    */
-  transformer: TTypes['transformer'];
+  transformer: DataTransformerOptions;
 
   /**
    * Use custom error formatting
    * @see https://trpc.io/docs/v11/error-formatting
    */
-  errorFormatter: ErrorFormatter<TTypes['ctx'], any>;
+  errorFormatter: ErrorFormatter;
 
   /**
    * Allow `@trpc/server` to run in non-server environments

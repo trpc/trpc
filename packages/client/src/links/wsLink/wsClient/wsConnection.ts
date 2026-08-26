@@ -1,5 +1,6 @@
 import { behaviorSubject } from '@trpc/server/observable';
 import type { UrlOptionsWithConnectionParams } from '../../internals/urlWithConnectionParams';
+import type { Encoder } from './encoder';
 import { buildConnectionMessage, prepareUrl, withResolvers } from './utils';
 
 /**
@@ -90,6 +91,7 @@ export interface WebSocketConnectionOptions {
   keepAlive: PingPongOptions & {
     enabled: boolean;
   };
+  encoder: Encoder;
 }
 
 /**
@@ -103,6 +105,7 @@ export class WsConnection {
   private readonly WebSocketPonyfill: typeof WebSocket;
   private readonly urlOptions: UrlOptionsWithConnectionParams;
   private readonly keepAliveOpts: WebSocketConnectionOptions['keepAlive'];
+  private readonly encoder: Encoder;
   public readonly wsObservable = behaviorSubject<WebSocket | null>(null);
 
   constructor(opts: WebSocketConnectionOptions) {
@@ -115,6 +118,7 @@ export class WsConnection {
 
     this.urlOptions = opts.urlOptions;
     this.keepAliveOpts = opts.keepAlive;
+    this.encoder = opts.encoder;
   }
 
   public get ws() {
@@ -167,6 +171,9 @@ export class WsConnection {
     this.openPromise = wsPromise.then(async (ws) => {
       this.ws = ws;
 
+      // Set binaryType to handle both text and binary messages consistently
+      ws.binaryType = 'arraybuffer';
+
       // Setup ping listener
       ws.addEventListener('message', function ({ data }) {
         if (data === 'PING') {
@@ -187,7 +194,12 @@ export class WsConnection {
       await asyncWsOpen(ws);
 
       if (this.urlOptions.connectionParams) {
-        ws.send(await buildConnectionMessage(this.urlOptions.connectionParams));
+        ws.send(
+          await buildConnectionMessage(
+            this.urlOptions.connectionParams,
+            this.encoder,
+          ),
+        );
       }
     });
 

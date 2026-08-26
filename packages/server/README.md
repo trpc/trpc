@@ -38,6 +38,14 @@ bun add @trpc/server
 
 We also recommend installing `zod` to validate procedure inputs.
 
+## AI Agents
+
+If you use an AI coding agent, install tRPC skills for better code generation:
+
+```bash
+npx @tanstack/intent@latest install
+```
+
 ## Basic Example
 
 ```ts

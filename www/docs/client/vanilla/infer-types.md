@@ -10,6 +10,8 @@ slug: /client/vanilla/infer-types
 ```twoslash include server
 // @module: esnext
 // @filename: server.ts
+// ---cut---
+
 import { initTRPC } from '@trpc/server';
 import { z } from "zod";
 
@@ -60,8 +62,8 @@ Using the helpers, we can infer the types of our router. The following example s
 ```ts twoslash title="client.ts"
 // @module: esnext
 // @include: server
-// ---cut---
 // @filename: client.ts
+// ---cut---
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from './server';
 
@@ -94,8 +96,8 @@ export const trpc = createTRPCClient<AppRouter>({
   ],
 });
 
-// ---cut---
 // @filename: client.ts
+// ---cut---
 import { TRPCClientError } from '@trpc/client';
 import type { AppRouter } from './server';
 import { trpc } from './trpc';

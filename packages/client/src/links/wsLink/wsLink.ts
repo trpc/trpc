@@ -7,10 +7,11 @@ import type { TransformerOptions } from '../../unstable-internals';
 import { getTransformer } from '../../unstable-internals';
 import type { TRPCLink } from '../types';
 import type {
+  Encoder,
   TRPCWebSocketClient,
   WebSocketClientOptions,
 } from './createWsClient';
-import { createWSClient } from './createWsClient';
+import { createWSClient, jsonEncoder } from './createWsClient';
 
 export type WebSocketLinkOptions<TRouter extends AnyRouter> = {
   client: TRPCWebSocketClient;
@@ -52,4 +53,10 @@ export function wsLink<TRouter extends AnyRouter>(
   };
 }
 
-export { TRPCWebSocketClient, WebSocketClientOptions, createWSClient };
+export {
+  createWSClient,
+  jsonEncoder,
+  type Encoder,
+  type TRPCWebSocketClient,
+  type WebSocketClientOptions,
+};

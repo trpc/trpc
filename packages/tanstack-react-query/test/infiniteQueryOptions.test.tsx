@@ -1,9 +1,12 @@
 import { testReactResource } from './__helpers';
 import {
   infiniteQueryOptions,
+  skipToken,
   useInfiniteQuery,
+  useQuery,
   useQueryClient,
   useSuspenseInfiniteQuery,
+  useSuspenseQuery,
   type InfiniteData,
 } from '@tanstack/react-query';
 import '@testing-library/react';
@@ -322,11 +325,74 @@ describe('infiniteQueryOptions', () => {
     });
   });
 
+  test('regression #6701: infinite suspense has non-optional getNextPageParam and returns a skipToken related error', async () => {
+    await using ctx = testContext();
+    const { useTRPC } = ctx;
+
+    function MyComponent() {
+      const trpc = useTRPC();
+
+      // Correct usage
+      const queryOptions = trpc.post.list.infiniteQueryOptions(
+        {},
+        {
+          getNextPageParam(lastPage) {
+            return lastPage.next;
+          },
+        },
+      );
+      useSuspenseInfiniteQuery(queryOptions);
+
+      // @ts-expect-error getNextPageParam is mandatory
+      trpc.post.list.infiniteQueryOptions({}, {});
+
+      // @ts-expect-error second param is mandatory because it contains keys which are mandatory
+      trpc.post.list.infiniteQueryOptions({});
+
+      // @ts-expect-error getNextPageParam is mandatory in Tanstack Query
+      infiniteQueryOptions({
+        queryFn: skipToken,
+        queryKey: [1],
+        initialPageParam: 0,
+        initialData: { pages: [], pageParams: [] },
+        // This is a must!
+        // getNextPageParam() {
+        //   return 2
+        // }
+      });
+
+      //
+      // skip token is not supported by suspense queries
+      //
+
+      // skipToken is supported for the general method
+      const skipQueryOptions = trpc.post.list.infiniteQueryOptions(skipToken, {
+        initialData: { pages: [], pageParams: [] },
+        getNextPageParam: () => 1,
+      });
+
+      // @ts-expect-error skipToken is not supported directly by useSuspenseQuery
+      useSuspenseQuery({ queryFn: skipToken, queryKey: [] });
+
+      // @ts-expect-error skipToken is not supported by useSuspenseQuery
+      useSuspenseQuery(skipQueryOptions);
+
+      // @ts-expect-error skipToken is not supported directly by useSuspenseInfiniteQuery
+      useSuspenseInfiniteQuery({ queryFn: skipToken, queryKey: [] });
+
+      // @ts-expect-error skipToken is not supported by useSuspenseInfiniteQuery
+      useSuspenseInfiniteQuery(skipQueryOptions);
+    }
+
+    // This test just checks for type errors in useSuspenseInfiniteQuery
+    expect(MyComponent).toBeDefined();
+  });
+
   test('no infinite on non cursor types', async () => {
     await using ctx = testContext();
     const { useTRPC } = ctx;
 
-    // @ts-expect-error - unused, it's fine
+    // intended to be unused
     function Component() {
       const trpc = useTRPC();
 

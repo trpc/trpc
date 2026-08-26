@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 
+import { emptyObject } from '../utils';
+
 const isNumberString = (str: string) => /^\d+$/.test(str);
 
 function set(
@@ -12,8 +14,8 @@ function set(
     const key = newPath.shift()!;
     const nextKey = newPath[0]!;
 
-    if (!obj[key]) {
-      obj[key] = isNumberString(nextKey) ? [] : {};
+    if (!Object.hasOwn(obj, key)) {
+      obj[key] = isNumberString(nextKey) ? [] : emptyObject();
     } else if (Array.isArray(obj[key]) && !isNumberString(nextKey)) {
       obj[key] = Object.fromEntries(Object.entries(obj[key]));
     }
@@ -23,6 +25,7 @@ function set(
     return;
   }
   const p = path[0]!;
+
   if (obj[p] === undefined) {
     obj[p] = value;
   } else if (Array.isArray(obj[p])) {
@@ -33,7 +36,7 @@ function set(
 }
 
 export function formDataToObject(formData: FormData) {
-  const obj: Record<string, unknown> = {};
+  const obj: Record<string, unknown> = emptyObject();
 
   for (const [key, value] of formData.entries()) {
     const parts = key.split(/[\.\[\]]/).filter(Boolean);

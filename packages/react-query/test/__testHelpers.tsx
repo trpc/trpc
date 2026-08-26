@@ -1,4 +1,4 @@
-import { createQueryClient, createQueryClientConfig } from './__queryClient';
+import { createQueryClient } from './__queryClient';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { QueryClientProvider } from '@tanstack/react-query';
 import type { TRPCWebSocketClient } from '@trpc/client';
@@ -17,6 +17,7 @@ import { observable } from '@trpc/server/observable';
 import hash from 'hash-sum';
 import type { ReactNode } from 'react';
 import React from 'react';
+import type { Mock } from 'vitest';
 import { z, ZodError } from 'zod';
 
 export type Post = {
@@ -72,10 +73,10 @@ export function createAppRouter() {
     ],
   };
   const postLiveInputs: unknown[] = [];
-  const createContext = vi.fn(() => ({}));
-  const allPosts = vi.fn();
-  const postById = vi.fn();
-  const paginatedPosts = vi.fn();
+  const createContext: Mock = vi.fn(() => ({}));
+  const allPosts: Mock = vi.fn();
+  const postById: Mock = vi.fn();
+  const paginatedPosts: Mock = vi.fn();
   let wsClient: TRPCWebSocketClient = null as any;
 
   const t = initTRPC.create({
@@ -264,7 +265,7 @@ export function createAppRouter() {
       }),
   });
 
-  const linkSpy = {
+  const linkSpy: { up: Mock; down: Mock } = {
     up: vi.fn(),
     down: vi.fn(),
   };

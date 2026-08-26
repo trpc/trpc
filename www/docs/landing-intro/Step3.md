@@ -1,6 +1,7 @@
 ```twoslash include server
 // @target: esnext
 // @filename: server.ts
+// ---cut---
 import { initTRPC } from '@trpc/server';
 import z from 'zod';
 

@@ -23,16 +23,30 @@ const cert = run(() => {
   const nonce = () => Math.random().toString(36).substring(2, 15);
   const name = `${__dirname}/localhost-${nonce()}`;
 
-  childProcess.execSync(
-    `
-    openssl req -x509 -newkey rsa:4096 \
-        -keyout ${name}.key \
-        -out ${name}.crt \
-        -days 365 -nodes \
-        -subj '/CN=localhost' \
-        -addext "subjectAltName=DNS:localhost,IP:127.0.0.1"`.trim(),
-    { stdio: 'ignore' },
-  );
+  // cross platform
+  const args = [
+    'req',
+    '-x509',
+    '-newkey',
+    'rsa:4096',
+    '-keyout',
+    `${name}.key`,
+    '-out',
+    `${name}.crt`,
+    '-days',
+    '365',
+    '-nodes',
+    '-subj',
+    '/CN=localhost',
+    '-addext',
+    'subjectAltName=DNS:localhost,IP:127.0.0.1',
+  ];
+
+  // Execute with proper argument handling
+  childProcess.execFileSync('openssl', args, {
+    stdio: 'ignore',
+    windowsHide: true,
+  });
 
   const key = fs.readFileSync(`${name}.key`);
   const cert = fs.readFileSync(`${name}.crt`);

@@ -286,13 +286,12 @@ describe('concat()', () => {
     expect(err.message).toMatchInlineSnapshot(`
       "[
         {
-          "code": "invalid_type",
           "expected": "string",
-          "received": "undefined",
+          "code": "invalid_type",
           "path": [
             "foo"
           ],
-          "message": "Required"
+          "message": "Invalid input: expected string, received undefined"
         }
       ]"
     `);

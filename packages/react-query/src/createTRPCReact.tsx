@@ -236,8 +236,6 @@ export interface useTRPCInfiniteQuery<TDef extends ResolverDef> {
         TRPCClientErrorLike<TDef>,
         //     TData,
         TData,
-        //     TQueryFnData,
-        TDef['output'],
         //     TQueryKey,
         any,
         //     TPageParam
@@ -277,8 +275,6 @@ export type useTRPCSuspenseInfiniteQuery<TDef extends ResolverDef> = (
       TRPCClientErrorLike<TDef>,
       //     TData,
       trpcInfiniteData<TDef>,
-      //     TQueryFnData,
-      TDef['output'],
       //     TQueryKey,
       any,
       //     TPageParam

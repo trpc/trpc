@@ -101,6 +101,7 @@ type GetBody = (opts: HTTPBaseRequestOptions) => RequestInitEsque['body'];
 
 export type ContentOptions = {
   trpcAcceptHeader?: TRPCAcceptHeader;
+  trpcAcceptHeaderKey?: 'trpc-accept' | 'accept';
   contentTypeHeader?: string;
   getUrl: GetUrl;
   getBody: GetBody;
@@ -197,7 +198,7 @@ export async function fetchHTTPResponse(opts: HTTPRequestOptions) {
 
   const url = opts.getUrl(opts);
   const body = opts.getBody(opts);
-  const { type } = opts;
+  const method = opts.methodOverride ?? METHOD[opts.type];
   const resolvedHeaders = await (async () => {
     const heads = await opts.headers();
     if (Symbol.iterator in heads) {
@@ -206,17 +207,17 @@ export async function fetchHTTPResponse(opts: HTTPRequestOptions) {
     return heads;
   })();
   const headers = {
-    ...(opts.contentTypeHeader
+    ...(opts.contentTypeHeader && method !== 'GET'
       ? { 'content-type': opts.contentTypeHeader }
       : {}),
     ...(opts.trpcAcceptHeader
-      ? { 'trpc-accept': opts.trpcAcceptHeader }
+      ? { [opts.trpcAcceptHeaderKey ?? 'trpc-accept']: opts.trpcAcceptHeader }
       : undefined),
     ...resolvedHeaders,
   };
 
   return getFetch(opts.fetch)(url, {
-    method: opts.methodOverride ?? METHOD[type],
+    method,
     signal: opts.signal,
     body,
     headers,

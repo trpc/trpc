@@ -1,9 +1,21 @@
 import { TRPCError } from '../error/TRPCError';
 import type { ProcedureType } from '../procedure';
 import { getProcedureAtPath, type AnyRouter } from '../router';
-import { isObject, unsetMarker } from '../utils';
+import { emptyObject, isObject } from '../utils';
 import { parseConnectionParamsFromString } from './parseConnectionParams';
 import type { TRPCAcceptHeader, TRPCRequestInfo } from './types';
+
+export function getAcceptHeader(headers: Headers): TRPCAcceptHeader | null {
+  return (
+    (headers.get('trpc-accept') as TRPCAcceptHeader | null) ??
+    (headers
+      .get('accept')
+      ?.split(',')
+      .some((t) => t.trim() === 'application/jsonl')
+      ? ('application/jsonl' as TRPCAcceptHeader)
+      : null)
+  );
+}
 
 type GetRequestInfoOptions = {
   path: string;
@@ -25,13 +37,14 @@ type ContentTypeHandler = {
  */
 function memo<TReturn>(fn: () => Promise<TReturn>) {
   let promise: Promise<TReturn> | null = null;
-  let value: TReturn | typeof unsetMarker = unsetMarker;
+  const sym = Symbol.for('@trpc/server/http/memo');
+  let value: TReturn | typeof sym = sym;
   return {
     /**
      * Lazily read the value
      */
     read: async (): Promise<TReturn> => {
-      if (value !== unsetMarker) {
+      if (value !== sym) {
         return value;
       }
 
@@ -56,7 +69,7 @@ function memo<TReturn>(fn: () => Promise<TReturn>) {
      * Get an already stored result
      */
     result: (): TReturn | undefined => {
-      return value !== unsetMarker ? value : undefined;
+      return value !== sym ? value : undefined;
     },
   };
 }
@@ -82,13 +95,14 @@ const jsonContentTypeHandler: ContentTypeHandler = {
         inputs = await req.json();
       }
       if (inputs === undefined) {
-        return {};
+        return emptyObject();
       }
 
       if (!isBatchCall) {
-        return {
-          0: opts.router._def._config.transformer.input.deserialize(inputs),
-        };
+        const result: InputRecord = emptyObject();
+        result[0] =
+          opts.router._def._config.transformer.input.deserialize(inputs);
+        return result;
       }
 
       if (!isObject(inputs)) {
@@ -97,7 +111,7 @@ const jsonContentTypeHandler: ContentTypeHandler = {
           message: '"input" needs to be an object when doing a batch call',
         });
       }
-      const acc: InputRecord = {};
+      const acc: InputRecord = emptyObject();
       for (const index of paths.keys()) {
         const input = inputs[index];
         if (input !== undefined) {
@@ -114,6 +128,7 @@ const jsonContentTypeHandler: ContentTypeHandler = {
         async (path, index): Promise<TRPCRequestInfo['calls'][number]> => {
           const procedure = await getProcedureAtPath(opts.router, path);
           return {
+            batchIndex: index,
             path,
             procedure,
             getRawInput: async () => {
@@ -169,7 +184,7 @@ const jsonContentTypeHandler: ContentTypeHandler = {
 
     const info: TRPCRequestInfo = {
       isBatchCall,
-      accept: req.headers.get('trpc-accept') as TRPCAcceptHeader | null,
+      accept: getAcceptHeader(req.headers),
       calls,
       type,
       connectionParams:
@@ -205,6 +220,7 @@ const formDataContentTypeHandler: ContentTypeHandler = {
       accept: null,
       calls: [
         {
+          batchIndex: 0,
           path: opts.path,
           getRawInput: getInputs.read,
           result: getInputs.result,
@@ -241,6 +257,7 @@ const octetStreamContentTypeHandler: ContentTypeHandler = {
     return {
       calls: [
         {
+          batchIndex: 0,
           path: opts.path,
           getRawInput: getInputs.read,
           result: getInputs.result,

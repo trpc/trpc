@@ -26,7 +26,7 @@ tRPC (TypeScript Remote Procedure Call) is one implementation of RPC, designed f
 
 ### Don't think about HTTP/REST implementation details
 
-If you inspect the network traffic of a tRPC app, you'll see that it's fairly standard HTTP requests and responses, but you don't need to think about the implementation details while writing your application code. You call functions, and tRPC takes care of everything else. You should ignore details like HTTP Verbs, since they carry meaning in REST APIs, but in RPC form part of your function names instead, for instance: `getUser(id)` instead of `GET /users/:id`.
+If you inspect the network traffic of a tRPC app, you'll see that it's fairly standard HTTP requests and responses, but you don't need to think about the implementation details while writing your application code. You call functions, and tRPC takes care of everything else. You should ignore details like HTTP Verbs, since they carry meaning in REST APIs but, in RPC, form part of your function names instead, for instance: `getUser(id)` instead of `GET /users/:id`.
 
 ## Vocabulary
 

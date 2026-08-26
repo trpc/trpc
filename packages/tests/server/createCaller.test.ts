@@ -222,7 +222,7 @@ test('context with middleware', async () => {
   const protectedProcedure = t.procedure.use(isAuthed);
 
   const router = t.router({
-    secret: protectedProcedure.query(({ ctx }) => ctx.foo),
+    secret: protectedProcedure.query((opts) => opts.ctx.foo),
   });
 
   const caller = router.createCaller({});

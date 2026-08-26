@@ -175,6 +175,7 @@ const yearlySponsors = [
   'pingdotgg',
   'nihinihi01',
   'newfront-insurance',
+  'SerpApi',
 ];
 
 async function main() {
@@ -184,7 +185,9 @@ async function main() {
   ]).then((parts) => {
     const rawList = parts
       .flat()
-      .filter((it) => it.privacyLevel === 'PUBLIC')
+      .filter(
+        (it) => it.privacyLevel === 'PUBLIC' || it.login === 'madisonredtfeldt',
+      )
       .sort((a, b) => a.createdAt - b.createdAt);
 
     fs.writeFileSync(
@@ -193,17 +196,16 @@ async function main() {
     );
 
     // add manual sponsors
-    // rawList.push({
-    //   __typename: 'Organization',
-    //   name: 'Tola',
-    //   imgSrc: 'https://github.com/tolahq.png',
-    //   monthlyPriceInDollars: 1110,
-    //   link: 'https://tolahq.com/?ref=trpc',
-    //   privacyLevel: 'PUBLIC',
-    //   login: 'tolahq',
-    //   // 8 months between 1st of sept and 1st of april
-    //   createdAt: Date.now() - 8 * 30 * 24 * 60 * 60 * 1000,
-    // });
+    rawList.push({
+      __typename: 'Organization',
+      name: 'SerpApi',
+      imgSrc: 'https://github.com/serpapi.png',
+      monthlyPriceInDollars: 500,
+      link: ensureHttpAndAddRef('https://serpapi.com/'),
+      privacyLevel: 'PUBLIC',
+      login: 'SerpApi',
+      createdAt: Date.parse('2026-02-11'),
+    });
     const list = rawList
       .map((sponsor) => {
         // calculate total value
@@ -216,7 +218,10 @@ async function main() {
         );
 
         const base = yearly ? 12 : 1;
-        const githubComission = sponsor.__typename === 'Organization' ? 0.1 : 0;
+        const githubComission =
+          sponsor.__typename === 'Organization' && sponsor.login !== 'SerpApi'
+            ? 0.1
+            : 0;
         let value =
           base * cycles * sponsor.monthlyPriceInDollars * (1 - githubComission);
 
@@ -225,6 +230,7 @@ async function main() {
           // sponsored from private account for 3 months
           value += 500 * 3;
         }
+
         return {
           ...sponsor,
           value,

@@ -18,6 +18,14 @@ export default {
   ],
   importOrderParserPlugins: ['typescript', 'jsx', 'explicitResourceManagement'],
   tailwindConfig: './www/tailwind.config.ts',
+  overrides: [
+    {
+      files: ['www/docs/**/*.md', 'www/docs/**/*.mdx'],
+      options: {
+        embeddedLanguageFormatting: 'off',
+      },
+    },
+  ],
   plugins: [
     '@ianvs/prettier-plugin-sort-imports',
     /**

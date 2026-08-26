@@ -54,14 +54,14 @@ export const appRouter = createRouter()
   // open for anyone
   .query('hello', {
     input: z.string().nullish(),
-    resolve: ({ input, ctx }) => {
-      return `hello ${input ?? ctx.user?.name ?? 'world'}`;
+    resolve: (opts) => {
+      return `hello ${opts.input ?? opts.ctx.user?.name ?? 'world'}`;
     },
   })
   // checked in resolver
   .query('secret', {
-    resolve: ({ ctx }) => {
-      if (!ctx.user) {
+    resolve: (opts) => {
+      if (!opts.ctx.user) {
         throw new TRPCError({ code: 'UNAUTHORIZED' });
       }
       return {
@@ -82,8 +82,8 @@ export const appRouter = createRouter()
   // this is accessible for everyone
   .query('hello', {
     input: z.string().nullish(),
-    resolve: ({ input, ctx }) => {
-      return `hello ${input ?? ctx.user?.name ?? 'world'}`;
+    resolve: (opts) => {
+      return `hello ${opts.input ?? opts.ctx.user?.name ?? 'world'}`;
     },
   })
   .merge(
@@ -97,7 +97,7 @@ export const appRouter = createRouter()
         return next();
       })
       .query('secret', {
-        resolve: ({ ctx }) => {
+        resolve: (opts) => {
           return {
             secret: 'sauce',
           };

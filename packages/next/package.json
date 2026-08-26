@@ -1,12 +1,13 @@
 {
+  "type": "module",
   "name": "@trpc/next",
-  "version": "11.1.3",
+  "version": "11.14.1",
   "description": "The tRPC Next.js library",
   "author": "KATT",
   "license": "MIT",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "typings": "dist/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "homepage": "https://trpc.io",
   "repository": {
     "type": "git",
@@ -23,43 +24,72 @@
     }
   },
   "scripts": {
-    "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
-    "dev": "pnpm build --watch",
-    "codegen-entrypoints": "tsx entrypoints.script.ts",
-    "ts-watch": "tsc --project tsconfig.watch.json --watch",
-    "lint": "eslint --cache src"
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "lint": "eslint --cache src",
+    "typecheck": "tsc --noEmit --preserveWatchOutput --pretty"
   },
   "exports": {
     "./package.json": "./package.json",
     ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "default": "./dist/index.js"
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     },
     "./app-dir/client": {
-      "import": "./dist/app-dir/client.mjs",
-      "require": "./dist/app-dir/client.js",
-      "default": "./dist/app-dir/client.js"
+      "import": {
+        "types": "./dist/app-dir/client.d.mts",
+        "default": "./dist/app-dir/client.mjs"
+      },
+      "require": {
+        "types": "./dist/app-dir/client.d.cts",
+        "default": "./dist/app-dir/client.cjs"
+      }
     },
     "./app-dir/links/nextCache": {
-      "import": "./dist/app-dir/links/nextCache.mjs",
-      "require": "./dist/app-dir/links/nextCache.js",
-      "default": "./dist/app-dir/links/nextCache.js"
+      "import": {
+        "types": "./dist/app-dir/links/nextCache.d.mts",
+        "default": "./dist/app-dir/links/nextCache.mjs"
+      },
+      "require": {
+        "types": "./dist/app-dir/links/nextCache.d.cts",
+        "default": "./dist/app-dir/links/nextCache.cjs"
+      }
     },
     "./app-dir/links/nextHttp": {
-      "import": "./dist/app-dir/links/nextHttp.mjs",
-      "require": "./dist/app-dir/links/nextHttp.js",
-      "default": "./dist/app-dir/links/nextHttp.js"
+      "import": {
+        "types": "./dist/app-dir/links/nextHttp.d.mts",
+        "default": "./dist/app-dir/links/nextHttp.mjs"
+      },
+      "require": {
+        "types": "./dist/app-dir/links/nextHttp.d.cts",
+        "default": "./dist/app-dir/links/nextHttp.cjs"
+      }
     },
     "./app-dir/server": {
-      "import": "./dist/app-dir/server.mjs",
-      "require": "./dist/app-dir/server.js",
-      "default": "./dist/app-dir/server.js"
+      "import": {
+        "types": "./dist/app-dir/server.d.mts",
+        "default": "./dist/app-dir/server.mjs"
+      },
+      "require": {
+        "types": "./dist/app-dir/server.d.cts",
+        "default": "./dist/app-dir/server.cjs"
+      }
     },
     "./ssrPrepass": {
-      "import": "./dist/ssrPrepass.mjs",
-      "require": "./dist/ssrPrepass.js",
-      "default": "./dist/ssrPrepass.js"
+      "import": {
+        "types": "./dist/ssrPrepass.d.mts",
+        "default": "./dist/ssrPrepass.mjs"
+      },
+      "require": {
+        "types": "./dist/ssrPrepass.d.cts",
+        "default": "./dist/ssrPrepass.cjs"
+      }
     }
   },
   "files": [
@@ -70,13 +100,16 @@
     "app-dir",
     "ssrPrepass",
     "!**/*.test.*",
-    "!**/__tests__"
+    "!**/__tests__",
+    "skills",
+    "!skills/_artifacts",
+    "bin"
   ],
   "peerDependencies": {
     "@tanstack/react-query": "^5.59.15",
-    "@trpc/client": "11.1.3",
-    "@trpc/react-query": "11.1.3",
-    "@trpc/server": "11.1.3",
+    "@trpc/client": "11.14.1",
+    "@trpc/react-query": "11.14.1",
+    "@trpc/server": "11.14.1",
     "next": "*",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0",
@@ -91,10 +124,11 @@
     }
   },
   "devDependencies": {
-    "@tanstack/react-query": "^5.74.7",
-    "@trpc/client": "11.1.3",
-    "@trpc/react-query": "11.1.3",
-    "@trpc/server": "11.1.3",
+    "@tanstack/intent": "^0.0.23",
+    "@tanstack/react-query": "^5.80.3",
+    "@trpc/client": "11.14.1",
+    "@trpc/react-query": "11.14.1",
+    "@trpc/server": "11.14.1",
     "@types/express": "^5.0.0",
     "@types/node": "^22.13.5",
     "@types/react": "^19.1.0",
@@ -102,18 +136,23 @@
     "devalue": "^5.0.0",
     "eslint": "^9.26.0",
     "express": "^5.0.0",
-    "next": "^15.3.1",
+    "next": "^15.3.8",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "rollup": "^4.34.8",
-    "tsx": "^4.19.3",
-    "typescript": "^5.8.2",
-    "zod": "^3.24.4"
+    "tsdown": "0.12.7",
+    "typescript": "^5.9.2",
+    "zod": "^4.2.1"
   },
   "publishConfig": {
     "access": "public"
   },
   "funding": [
     "https://trpc.io/sponsor"
-  ]
+  ],
+  "keywords": [
+    "tanstack-intent"
+  ],
+  "bin": {
+    "intent": "./bin/intent.js"
+  }
 }

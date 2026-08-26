@@ -14,7 +14,8 @@ const handleSmoothScrollToSection = (
 
     const id = href.split('#')[1];
 
-    const section = document.getElementById(id);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const section = document.getElementById(id!);
     section?.scrollIntoView({ behavior: 'smooth' });
 
     window.history.pushState(null, '', href);

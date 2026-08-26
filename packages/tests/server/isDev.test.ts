@@ -1,40 +1,27 @@
-import { routerToServerAndClientNew } from './___testHelpers';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
 import { TRPCClientError } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
-import { konn } from 'konn';
-
-const createTestContext = (opts: { isDev: boolean }) =>
-  konn()
-    .beforeEach(() => {
-      const t = initTRPC.create({ isDev: opts.isDev });
-
-      const appRouter = t.router({
-        failingMutation: t.procedure.mutation(() => {
-          if (Math.random() < 2) {
-            throw new Error('Always fails');
-          }
-          return 'hello';
-        }),
-      });
-
-      const res = routerToServerAndClientNew(appRouter);
-
-      return res;
-    })
-    .afterEach(async (ctx) => {
-      await ctx?.close?.();
-    })
-    .done();
 
 describe('isDev:true', () => {
-  const ctx = createTestContext({ isDev: true });
-
   test('prints stacks', async () => {
+    const t = initTRPC.create({ isDev: true });
+
+    const appRouter = t.router({
+      failingMutation: t.procedure.mutation(() => {
+        if (Math.random() < 2) {
+          throw new Error('Always fails');
+        }
+        return 'hello';
+      }),
+    });
+
+    await using ctx = testServerAndClientResource(appRouter);
+
     const error = (await waitError(
       () => ctx.client.failingMutation.mutate(),
       TRPCClientError,
-    )) as TRPCClientError<typeof ctx.router>;
+    )) as TRPCClientError<typeof appRouter>;
 
     expect(error.data?.stack?.split('\n')[0]).toMatchInlineSnapshot(
       `"Error: Always fails"`,
@@ -43,13 +30,24 @@ describe('isDev:true', () => {
 });
 
 describe('isDev:false', () => {
-  const ctx = createTestContext({ isDev: false });
-
   test('does not print stack', async () => {
+    const t = initTRPC.create({ isDev: false });
+
+    const appRouter = t.router({
+      failingMutation: t.procedure.mutation(() => {
+        if (Math.random() < 2) {
+          throw new Error('Always fails');
+        }
+        return 'hello';
+      }),
+    });
+
+    await using ctx = testServerAndClientResource(appRouter);
+
     const error = (await waitError(
       () => ctx.client.failingMutation.mutate(),
       TRPCClientError,
-    )) as TRPCClientError<typeof ctx.router>;
+    )) as TRPCClientError<typeof appRouter>;
 
     expect(error.data?.stack).toBeUndefined();
   });

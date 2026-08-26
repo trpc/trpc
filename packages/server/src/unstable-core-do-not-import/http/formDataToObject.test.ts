@@ -74,3 +74,44 @@ test('array-like index in an object', () => {
     },
   });
 });
+
+describe('prototype pollution', () => {
+  test('__proto__ key creates regular property', () => {
+    const formData = new FormData();
+
+    formData.append('__proto__.pollution', 'yes');
+    const result: any = formDataToObject(formData);
+
+    expect(result.__proto__.pollution).toBe('yes');
+  });
+
+  test('global prototype chain is not polluted', () => {
+    const formData = new FormData();
+
+    formData.append(`__proto__.pollution`, 'yes');
+
+    formDataToObject(formData);
+    expect((Object.prototype as any).pollution).toBeUndefined();
+  });
+
+  test('deep prototype pollution', () => {
+    const formData = new FormData();
+
+    formData.append(`one.__proto__.pollution`, 'yes');
+    const result: any = formDataToObject(formData);
+
+    expect(result.one.__proto__.pollution).toBe('yes');
+    expect((Object.prototype as any).pollution).toBeUndefined();
+  });
+
+  test('deep array pollution', () => {
+    const formData = new FormData();
+
+    formData.append(`0.__proto__.pollution`, 'yes');
+    const result: any = formDataToObject(formData);
+
+    expect(result[0].__proto__.pollution).toBe('yes');
+    expect((Object.prototype as any).pollution).toBeUndefined();
+    expect((Array.prototype as any).pollution).toBeUndefined();
+  });
+});

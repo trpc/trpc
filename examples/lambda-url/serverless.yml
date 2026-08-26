@@ -1,0 +1,23 @@
+service: trpc-hello-world
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+
+functions:
+  hello:
+    handler: src/server.handler
+    url:
+      invokeMode: RESPONSE_STREAM
+
+plugins:
+  - serverless-esbuild
+
+custom:
+  esbuild:
+    platform: node
+    format: esm
+    target: node20
+    outExtension:
+      '.js': '.mjs'
