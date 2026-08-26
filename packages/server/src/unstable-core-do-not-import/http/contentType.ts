@@ -24,6 +24,7 @@ type GetRequestInfoOptions = {
   searchParams: URLSearchParams;
   headers: Headers;
   router: AnyRouter;
+  maxBatchSize?: number;
 };
 
 type ContentTypeHandler = {
@@ -81,7 +82,19 @@ const jsonContentTypeHandler: ContentTypeHandler = {
   async parse(opts) {
     const { req } = opts;
     const isBatchCall = opts.searchParams.get('batch') === '1';
+    const maxBatchSize = opts.maxBatchSize;
+
     const paths = isBatchCall ? opts.path.split(',') : [opts.path];
+    if (
+      isBatchCall &&
+      typeof maxBatchSize === 'number' &&
+      paths.length > maxBatchSize
+    ) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: `Batch call exceeds maximum size`,
+      });
+    }
 
     type InputRecord = Record<number, unknown>;
     const getInputs = memo(async (): Promise<InputRecord> => {

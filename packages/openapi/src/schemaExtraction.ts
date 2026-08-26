@@ -13,7 +13,7 @@ import type {
   $ZodTypeDef,
   GlobalMeta,
 } from 'zod/v4/core';
-import type { JsonSchema } from './generate';
+import type { SchemaObject } from './types';
 
 /** Description strings extracted from Zod `.describe()` calls, keyed by dot-delimited property path. */
 export interface DescriptionMap {
@@ -81,7 +81,6 @@ const wrapperDefTypes: ReadonlySet<$ZodTypeDef['type']> = new Set([
   'pipe',
   'transform',
   'promise',
-  'lazy',
 ]);
 
 /**
@@ -129,7 +128,7 @@ export function extractZodDescriptions(schema: unknown): DescriptionMap | null {
   }
 
   // Walk object shape
-  walkZodShape(schema, '', { registry, map });
+  walkZodShape(schema, '', { registry, map, seenLazy: new Set() });
   if (map.properties.size > 0) hasAny = true;
 
   return hasAny ? map : null;
@@ -138,9 +137,26 @@ export function extractZodDescriptions(schema: unknown): DescriptionMap | null {
 function walkZodShape(
   schema: $ZodType,
   prefix: string,
-  ctx: { registry: $ZodRegistry<GlobalMeta>; map: DescriptionMap },
+  ctx: {
+    registry: $ZodRegistry<GlobalMeta>;
+    map: DescriptionMap;
+    seenLazy: Set<$ZodType>;
+  },
 ): void {
   const unwrapped = unwrapZodSchema(schema);
+  const def = unwrapped._zod.def;
+
+  if (def.type === 'lazy' && 'getter' in def) {
+    if (ctx.seenLazy.has(unwrapped)) {
+      return;
+    }
+    ctx.seenLazy.add(unwrapped);
+    const inner = (def as { getter: () => unknown }).getter();
+    if (isZodSchema(inner)) {
+      walkZodShape(inner, prefix, ctx);
+    }
+    return;
+  }
 
   // If this is an array, check for a description on the element schema itself
   // (stored as `[]` in the path) and recurse into the element's shape.
@@ -325,23 +341,75 @@ function isProcedure(
  * JSON schema produced by the TypeScript type checker.  Mutates in place.
  */
 export function applyDescriptions(
-  schema: JsonSchema,
+  schema: SchemaObject,
   descs: DescriptionMap,
+  schemas?: Record<string, SchemaObject>,
 ): void {
   if (descs.self) {
     schema.description = descs.self;
   }
 
   for (const [propPath, description] of descs.properties) {
-    setNestedDescription(schema, propPath.split('.'), description);
+    setNestedDescription({
+      schema,
+      pathParts: propPath.split('.'),
+      description,
+      schemas,
+    });
   }
 }
 
-function setNestedDescription(
-  schema: JsonSchema,
-  pathParts: string[],
-  description: string,
-): void {
+function resolveSchemaRef(
+  schema: SchemaObject,
+  schemas?: Record<string, SchemaObject>,
+): SchemaObject | null {
+  const ref = schema.$ref;
+  if (!ref) {
+    return schema;
+  }
+  if (!schemas || !ref.startsWith('#/components/schemas/')) {
+    return null;
+  }
+
+  const refName = ref.slice('#/components/schemas/'.length);
+  return refName ? (schemas[refName] ?? null) : null;
+}
+
+function getArrayItemsSchema(schema: SchemaObject): SchemaObject | null {
+  const items = schema.items;
+  if (schema.type !== 'array' || items == null || items === false) {
+    return null;
+  }
+  return items;
+}
+
+function getPropertySchema(
+  schema: SchemaObject,
+  propertyName: string,
+): SchemaObject | null {
+  return schema.properties?.[propertyName] ?? null;
+}
+
+function setLeafDescription(schema: SchemaObject, description: string): void {
+  if (schema.$ref) {
+    const ref = schema.$ref;
+    delete schema.$ref;
+    schema.allOf = [{ $ref: ref }, ...(schema.allOf ?? [])];
+  }
+  schema.description = description;
+}
+
+function setNestedDescription({
+  schema,
+  pathParts,
+  description,
+  schemas,
+}: {
+  schema: SchemaObject;
+  pathParts: string[];
+  description: string;
+  schemas?: Record<string, SchemaObject>;
+}): void {
   if (pathParts.length === 0) return;
 
   const [head, ...rest] = pathParts;
@@ -349,35 +417,37 @@ function setNestedDescription(
 
   // `[]` means "array items" — navigate to the `items` sub-schema
   if (head === '[]') {
-    const items =
-      schema.type === 'array' &&
-      schema.items &&
-      typeof schema.items === 'object'
-        ? schema.items
-        : null;
+    const items = getArrayItemsSchema(schema);
     if (!items) return;
     if (rest.length === 0) {
-      items.description = description;
+      setLeafDescription(items, description);
     } else {
-      setNestedDescription(items, rest, description);
+      const target = resolveSchemaRef(items, schemas) ?? items;
+      setNestedDescription({
+        schema: target,
+        pathParts: rest,
+        description,
+        schemas,
+      });
     }
     return;
   }
 
-  const propSchema = schema.properties?.[head];
-  if (!propSchema || typeof propSchema !== 'object') return;
+  const propSchema = getPropertySchema(schema, head);
+  if (!propSchema) return;
 
   if (rest.length === 0) {
     // Leaf — Zod .describe() takes priority over JSDoc
-    propSchema.description = description;
+    setLeafDescription(propSchema, description);
   } else {
     // For arrays, step through `items` transparently
-    const target =
-      propSchema.type === 'array' &&
-      propSchema.items &&
-      typeof propSchema.items === 'object'
-        ? propSchema.items
-        : propSchema;
-    setNestedDescription(target, rest, description);
+    const target = getArrayItemsSchema(propSchema) ?? propSchema;
+    const resolvedTarget = resolveSchemaRef(target, schemas) ?? target;
+    setNestedDescription({
+      schema: resolvedTarget,
+      pathParts: rest,
+      description,
+      schemas,
+    });
   }
 }

@@ -13,12 +13,6 @@ export type NeverField = {
     impossible?: unknown;
 };
 
-export type AsyncIterable = {
-    '__@asyncIterator@5456': {
-        [key: string]: unknown;
-    };
-};
-
 export type DefaultErrorShape = {
     message: string;
     code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
@@ -588,3 +582,36 @@ export type ComplexNullableResponses = {
 };
 
 export type ComplexNullableResponse = ComplexNullableResponses[keyof ComplexNullableResponses];
+
+export type LiteralComputedKeyData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/literalComputedKey';
+};
+
+export type LiteralComputedKeyErrors = {
+    /**
+     * Error response
+     */
+    default: {
+        error: DefaultErrorShape;
+    };
+};
+
+export type LiteralComputedKeyError = LiteralComputedKeyErrors[keyof LiteralComputedKeyErrors];
+
+export type LiteralComputedKeyResponses = {
+    /**
+     * Successful response
+     */
+    200: {
+        result: {
+            data: {
+                'x-trace-id': string;
+            };
+        };
+    };
+};
+
+export type LiteralComputedKeyResponse = LiteralComputedKeyResponses[keyof LiteralComputedKeyResponses];

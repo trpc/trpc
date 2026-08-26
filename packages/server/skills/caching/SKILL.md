@@ -7,7 +7,7 @@ description: >
   Avoid caching mutations, errors, and authenticated responses.
 type: core
 library: trpc
-library_version: '11.14.0'
+library_version: '11.16.0'
 requires:
   - server-setup
 sources:

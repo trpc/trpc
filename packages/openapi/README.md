@@ -25,10 +25,11 @@ pnpm exec trpc-openapi ./src/server/router.ts
 ```ts
 import { generateOpenAPIDocument } from '@trpc/openapi';
 
-const doc = generateOpenAPIDocument('./src/server/router.ts', {
+const doc = await generateOpenAPIDocument('./src/server/router.ts', {
   exportName: 'AppRouter',
   title: 'My API',
   version: '1.0.0',
+  servers: [{ url: 'https://api.example.com/trpc' }],
 });
 ```
 
@@ -50,10 +51,9 @@ npx @tanstack/intent@latest install
 
 - [ ] SSE subscriptions
 - [ ] non-json content types (might already work, needs tests)
-- [ ] Improved handling of recursive/self-referencing types like trees/graphs - may be limited to 20 depth currently
 - [ ] non-nodejs example
 - [ ] an ai/mcp example
-- [ ] Document breaking change detection via [oasdiff](https://github.com/oasdiff/oasdiff/blob/main/docs/BREAKING-CHANGES.md)
+- [ ] investigate async generators support (types generate... poorly)
 
 ## Maybes
 

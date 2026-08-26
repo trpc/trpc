@@ -1,9 +1,8 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { describe } from 'node:test';
 import { applyTransform } from 'jscodeshift/src/testUtils';
 import { format, resolveConfig } from 'prettier';
-import { expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import * as hooksTransform from '../src/transforms/hooksToOptions';
 import * as providerTransform from '../src/transforms/provider';
 import type { ComponentFile, SpecDefFile } from './specDef';

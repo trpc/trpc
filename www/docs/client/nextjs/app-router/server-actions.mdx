@@ -31,7 +31,7 @@ export const t = initTRPC.meta<Meta>().create();
 
 export const serverActionProcedure = t.procedure.experimental_caller(
   experimental_nextAppDirCaller({
-    pathExtractor: ({ meta }) => (meta as Meta).span,
+    pathExtractor: ({ meta }) => (meta as Meta)?.span ?? '',
   }),
 );
 ```
@@ -59,7 +59,7 @@ export const t = initTRPC.meta<Meta>().create();
 export const serverActionProcedure = t.procedure
   .experimental_caller(
     experimental_nextAppDirCaller({
-      pathExtractor: ({ meta }) => (meta as Meta).span,
+      pathExtractor: ({ meta }) => (meta as Meta)?.span ?? '',
     }),
   )
   .use(async (opts) => {
@@ -84,7 +84,7 @@ interface Meta { span: string; }
 const t = initTRPC.meta<Meta>().create();
 const serverActionProcedure = t.procedure
   .experimental_caller(
-    experimental_nextAppDirCaller({ pathExtractor: ({ meta }) => (meta as Meta).span }),
+    experimental_nextAppDirCaller({ pathExtractor: ({ meta }) => (meta as Meta)?.span ?? '' }),
   )
   .use(async (opts) => {
     const user = await currentUser();
@@ -187,7 +187,7 @@ import { experimental_nextAppDirCaller } from '@trpc/server/adapters/next-app-di
 interface Meta { span: string; }
 const t = initTRPC.meta<Meta>().create();
 const serverActionProcedure = t.procedure.experimental_caller(
-  experimental_nextAppDirCaller({ pathExtractor: ({ meta }) => (meta as Meta).span }),
+  experimental_nextAppDirCaller({ pathExtractor: ({ meta }) => (meta as Meta)?.span ?? '' }),
 );
 export const protectedAction = serverActionProcedure;
 

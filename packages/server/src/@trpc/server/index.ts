@@ -13,6 +13,8 @@ export {
   createRecursiveProxy as createTRPCRecursiveProxy,
   type inferProcedureInput,
   type inferProcedureOutput,
+  type inferSubscriptionInput,
+  type inferSubscriptionOutput,
   type inferProcedureBuilderResolverOptions,
   type inferRouterError,
   type inferRouterInputs,

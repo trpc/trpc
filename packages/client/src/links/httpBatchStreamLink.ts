@@ -180,12 +180,18 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
             'Subscriptions are unsupported by `httpBatchStreamLink` - use `httpSubscriptionLink` or `wsLink`',
           );
         }
+        const ac = new AbortController();
         const loader = loaders[op.type];
-        const promise = loader.load(op);
+        const promise = loader.load({
+          ...op,
+          signal: raceAbortSignals(op.signal, ac.signal),
+        });
 
+        let isDone = false;
         let _res = undefined as HTTPResult | undefined;
         promise
           .then((res) => {
+            isDone = true;
             _res = res;
             if ('error' in res.json) {
               observer.error(
@@ -206,6 +212,7 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
             observer.complete();
           })
           .catch((err) => {
+            isDone = true;
             observer.error(
               TRPCClientError.from(err, {
                 meta: _res?.meta,
@@ -214,7 +221,9 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
           });
 
         return () => {
-          // noop
+          if (!isDone) {
+            ac.abort();
+          }
         };
       });
     };

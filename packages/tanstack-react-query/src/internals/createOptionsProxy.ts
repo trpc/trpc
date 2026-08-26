@@ -468,6 +468,7 @@ export function createTRPCOptionsProxy<
         return trpcMutationOptions({
           opts: arg1,
           path,
+          prefix,
           queryClient: opts.queryClient,
           mutate: callIt('mutation'),
           overrides: opts.overrides?.mutations,

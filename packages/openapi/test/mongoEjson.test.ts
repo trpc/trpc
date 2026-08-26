@@ -3,12 +3,12 @@ import { createHTTPHandler } from '@trpc/server/adapters/standalone';
 import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import/stream/utils/disposable';
 import { describe, expect, it } from 'vitest';
 import { configureTRPCHeyApiClient } from '../src/heyapi';
+import { Sdk } from './routers/mongoEjsonRouter-heyapi';
+import { client } from './routers/mongoEjsonRouter-heyapi/client.gen';
 import {
   MongoEjsonRouter,
   mongoEjsonTransformer,
-} from './routers/mongoEjsonRouter';
-import { Sdk } from './routers/mongoEjsonRouter-heyapi';
-import { client } from './routers/mongoEjsonRouter-heyapi/client.gen';
+} from './routers/mongoEjsonRouter.router';
 
 const richInput = {
   name: 'Alice',

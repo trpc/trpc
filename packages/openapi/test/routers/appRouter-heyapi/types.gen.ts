@@ -568,15 +568,9 @@ export type ComplexTypesRecordData = {
     path?: never;
     query: {
         input: {
-            /**
-             * Construct a type with a set of properties K of type T
-             */
             metadata: {
                 [key: string]: string;
             };
-            /**
-             * Construct a type with a set of properties K of type T
-             */
             scores: {
                 [key: string]: number;
             };
@@ -603,15 +597,9 @@ export type ComplexTypesRecordResponses = {
     200: {
         result: {
             data: {
-                /**
-                 * Construct a type with a set of properties K of type T
-                 */
                 metadata: {
                     [key: string]: string;
                 };
-                /**
-                 * Construct a type with a set of properties K of type T
-                 */
                 scores: {
                     [key: string]: number;
                 };
@@ -1109,9 +1097,6 @@ export type ComplexTypesCreateContentData = {
         title: string;
         body: string;
         tags?: Array<string>;
-        /**
-         * Construct a type with a set of properties K of type T
-         */
         metadata?: {
             [key: string]: unknown;
         };
@@ -1470,9 +1455,6 @@ export type InferredReturnsRecordReturnResponses = {
      */
     200: {
         result: {
-            /**
-             * Construct a type with a set of properties K of type T
-             */
             data: {
                 [key: string]: number;
             };
@@ -1749,9 +1731,6 @@ export type InferredReturnsMixedObjectResponses = {
                 id: number;
                 name: string;
                 tags: Array<string>;
-                /**
-                 * Construct a type with a set of properties K of type T
-                 */
                 metadata: {
                     [key: string]: string;
                 };
@@ -2499,7 +2478,7 @@ export type RecursiveTypesCategoryData = {
     body?: never;
     path?: never;
     query: {
-        input: unknown;
+        input: Category;
     };
     url: '/recursiveTypes.category';
 };

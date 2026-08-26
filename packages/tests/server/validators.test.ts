@@ -857,3 +857,51 @@ test('zod4 branded types', () => {
   expectTypeOf<AccountIdInput>().toEqualTypeOf<Types['input']>();
   expectTypeOf<AccountIdOutput>().toEqualTypeOf<Types['output']>();
 });
+
+test('zod4 deep lazy schema inference', () => {
+  const t = initTRPC.create();
+
+  type Category = {
+    name: string;
+    children: Array<{
+      foo: {
+        label: string;
+        category: Category;
+      };
+    }>;
+  };
+
+  const categorySchema: zod4.ZodType<Category> = zod4.lazy(() =>
+    zod4.object({
+      name: zod4.string(),
+      children: zod4.array(
+        zod4.object({
+          foo: zod4.object({
+            label: zod4.string(),
+            category: categorySchema,
+          }),
+        }),
+      ),
+    }),
+  );
+
+  const router = t.router({
+    roundTrip: t.procedure
+      .input(categorySchema)
+      .output(categorySchema)
+      .query((opts) => {
+        // Procedures should see the parser output type, even for deep lazy schemas.
+        expectTypeOf(opts.input).toEqualTypeOf<Category>();
+        expectTypeOf(opts.input.children).toEqualTypeOf<Category['children']>();
+        return opts.input;
+      }),
+  });
+
+  type RouterInput = inferRouterInputs<typeof router>['roundTrip'];
+  type RouterOutput = inferRouterOutputs<typeof router>['roundTrip'];
+
+  // `ZodType<T>` defaults its raw accepted input to `unknown`, so public router
+  // input types stay `unknown` even though the resolver sees the parsed output.
+  expectTypeOf<RouterInput>().toBeUnknown();
+  expectTypeOf<RouterOutput>().toEqualTypeOf<Category>();
+});

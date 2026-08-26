@@ -7,7 +7,7 @@ description: >
   getHTTPStatusCodeFromError(). Error handling via onError option.
 type: core
 library: trpc
-library_version: '11.14.0'
+library_version: '11.16.0'
 requires:
   - server-setup
 sources:

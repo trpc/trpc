@@ -543,3 +543,40 @@ describe('links have meta data about http failures', async () => {
     expect(error).toBeInstanceOf(MyCustomError);
   });
 });
+
+describe('onError', () => {
+  test('streaming onError should unwrap { error, path } and preserve error message and path', async () => {
+    const t = initTRPC.create();
+
+    const router = t.router({
+      failingIterable: t.procedure.query(async function* () {
+        yield 1;
+        throw new Error('stream broke');
+      }),
+    });
+
+    await using ctx = testServerAndClientResource(router);
+
+    // Act
+    const iterable = await ctx.client.failingIterable.query();
+    const aggregated: Array<unknown> = [];
+    const error = await waitError(
+      async () => {
+        for await (const value of iterable) {
+          aggregated.push(value);
+        }
+      },
+      TRPCClientError<typeof router>,
+    );
+
+    expect(aggregated).toEqual([1]);
+    expect(error.message).toBe('stream broke');
+    expect(ctx.onErrorSpy.mock.calls.length).toBe(1);
+
+    const serverErrorOpts = ctx.onErrorSpy.mock.calls[0]![0];
+    expect(serverErrorOpts.error).toBeInstanceOf(TRPCError);
+    expect(serverErrorOpts.error.message).toBe('stream broke');
+    expect(serverErrorOpts.error.cause).toBeInstanceOf(Error);
+    expect(serverErrorOpts.error.cause!.message).toBe('stream broke');
+  });
+});

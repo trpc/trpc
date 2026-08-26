@@ -158,4 +158,11 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter, TRequest> {
    * @default true
    */
   allowBatching?: boolean;
+  /**
+   * Restrict the maximum size of a batch call, invalid requests will be rejected with a 400 error
+   *
+   * @important Ensure you set the same or lower limit on your client batch link
+   * @default unlimited
+   */
+  maxBatchSize?: number;
 }

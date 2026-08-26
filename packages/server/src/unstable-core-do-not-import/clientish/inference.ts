@@ -15,15 +15,14 @@ import type { Serialize } from './serialize';
 /**
  * @internal
  */
-
 export type inferTransformedProcedureOutput<
   TInferrable extends InferrableClientTypes,
   TProcedure extends AnyProcedure,
 > = inferClientTypes<TInferrable>['transformer'] extends false
   ? Serialize<inferProcedureOutput<TProcedure>>
   : inferProcedureOutput<TProcedure>;
-/** @internal */
 
+/** @internal */
 export type inferTransformedSubscriptionOutput<
   TInferrable extends InferrableClientTypes,
   TProcedure extends AnyProcedure,

@@ -715,7 +715,16 @@ describe('no transformer', () => {
 
     const serverError = ctx.onErrorSpy.mock.calls[0]![0].error;
     expect(serverError.code).toBe('INTERNAL_SERVER_ERROR');
-    expect(serverError.message).toMatchInlineSnapshot(`""`);
+    expect(serverError.message).toMatchInlineSnapshot(`
+      "[
+        {
+          "expected": "number",
+          "code": "invalid_type",
+          "path": [],
+          "message": "Invalid input: expected number, received string"
+        }
+      ]"
+    `);
   });
 
   test('output validation iterable return error', async () => {
@@ -815,7 +824,16 @@ describe('no transformer', () => {
 
     const serverError = ctx.onErrorSpy.mock.calls[0]![0].error;
     expect(serverError.code).toBe('INTERNAL_SERVER_ERROR');
-    expect(serverError.message).toMatchInlineSnapshot(`""`);
+    expect(serverError.message).toMatchInlineSnapshot(`
+      "[
+        {
+          "expected": "string",
+          "code": "invalid_type",
+          "path": [],
+          "message": "Invalid input: expected string, received number"
+        }
+      ]"
+    `);
   });
 
   test('embed promise', async () => {

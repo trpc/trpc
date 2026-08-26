@@ -4,6 +4,10 @@ export type ClientOptions = {
     baseUrl: `${string}://${string}` | (string & {});
 };
 
+export type RecursiveLeafNode = {
+    child: RecursiveLeafNode;
+};
+
 export type HelloInlineResponse = {
     /**
      * Name of the user
@@ -203,6 +207,127 @@ export type DirectArrayResponses = {
 };
 
 export type DirectArrayResponse = DirectArrayResponses[keyof DirectArrayResponses];
+
+export type ReferencedChildrenData = {
+    body?: never;
+    path?: never;
+    query: {
+        input: {
+            /**
+             * Child collection
+             */
+            children: Array<{
+                /**
+                 * Child name
+                 */
+                name: string;
+            }>;
+        };
+    };
+    url: '/referencedChildren';
+};
+
+export type ReferencedChildrenErrors = {
+    /**
+     * Error response
+     */
+    default: {
+        error: {
+            data: {
+                zodError: Array<{
+                    message: string;
+                    path: Array<string | number>;
+                }> | null;
+                code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
+                httpStatus: number;
+                /**
+                 * Path to the procedure that threw the error
+                 */
+                path?: string;
+                /**
+                 * Stack trace of the error (only in development)
+                 */
+                stack?: string;
+            };
+            message: string;
+            code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
+        };
+    };
+};
+
+export type ReferencedChildrenError = ReferencedChildrenErrors[keyof ReferencedChildrenErrors];
+
+export type ReferencedChildrenResponses = {
+    /**
+     * Successful response
+     */
+    200: {
+        result: {
+            data: {
+                children: Array<{
+                    name: string;
+                }>;
+            };
+        };
+    };
+};
+
+export type ReferencedChildrenResponse = ReferencedChildrenResponses[keyof ReferencedChildrenResponses];
+
+export type ReferencedChildLeafOutputData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/referencedChildLeafOutput';
+};
+
+export type ReferencedChildLeafOutputErrors = {
+    /**
+     * Error response
+     */
+    default: {
+        error: {
+            data: {
+                zodError: Array<{
+                    message: string;
+                    path: Array<string | number>;
+                }> | null;
+                code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
+                httpStatus: number;
+                /**
+                 * Path to the procedure that threw the error
+                 */
+                path?: string;
+                /**
+                 * Stack trace of the error (only in development)
+                 */
+                stack?: string;
+            };
+            message: string;
+            code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
+        };
+    };
+};
+
+export type ReferencedChildLeafOutputError = ReferencedChildLeafOutputErrors[keyof ReferencedChildLeafOutputErrors];
+
+export type ReferencedChildLeafOutputResponses = {
+    /**
+     * Successful response
+     */
+    200: {
+        result: {
+            data: {
+                /**
+                 * Recursive child
+                 */
+                child: RecursiveLeafNode;
+            };
+        };
+    };
+};
+
+export type ReferencedChildLeafOutputResponse = ReferencedChildLeafOutputResponses[keyof ReferencedChildLeafOutputResponses];
 
 export type HelloInlineData = {
     body?: never;

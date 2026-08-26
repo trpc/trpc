@@ -9,10 +9,13 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   pull-requests: read
+
+  permission to actions_185321: read 
+                                write
 
 jobs:
   test:

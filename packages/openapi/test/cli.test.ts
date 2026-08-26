@@ -6,10 +6,10 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 const cliPath = path.resolve(__dirname, '../src/cli.ts');
 const tsxPath = path.resolve(__dirname, '../../../node_modules/.bin/tsx');
 const routersDir = path.resolve(__dirname, 'routers');
-const appRouterPath = path.resolve(routersDir, 'appRouter.ts');
+const appRouterPath = path.resolve(routersDir, 'appRouter.router.ts');
 const errorFormatterRouterPath = path.resolve(
   routersDir,
-  'errorFormatterRouter.ts',
+  'errorFormatterRouter.router.ts',
 );
 
 /** Isolated output directory for CLI tests — gitignored via __generated__ prefix. */
@@ -113,6 +113,32 @@ describe('CLI', () => {
     expect(doc.info.title).toBe('CLI Test');
     expect(doc.info.version).toBe('2.0.0');
     expect(doc.paths).toHaveProperty('/greeting');
+  });
+
+  it('emits a servers entry with --server-url', () => {
+    const outputPath = path.join(outDir, 'cli-server-url.json');
+
+    const result = runCli([
+      appRouterPath,
+      '-o',
+      outputPath,
+      '--server-url',
+      'https://api.example.com/trpc',
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    const doc = JSON.parse(fs.readFileSync(outputPath, 'utf8'));
+    expect(doc.servers).toEqual([{ url: 'https://api.example.com/trpc' }]);
+  });
+
+  it('omits servers when --server-url is not provided', () => {
+    const outputPath = path.join(outDir, 'cli-no-server-url.json');
+
+    const result = runCli([appRouterPath, '-o', outputPath]);
+
+    expect(result.exitCode).toBe(0);
+    const doc = JSON.parse(fs.readFileSync(outputPath, 'utf8'));
+    expect(doc.servers).toBeUndefined();
   });
 
   it('uses -e shorthand for --export', () => {
