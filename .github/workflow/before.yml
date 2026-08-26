@@ -3,11 +3,11 @@ on:
   pull_request:
     types: [synchronize, opened, reopened]
   push:
-    branches: [main, next, canary]
+    branches: [main, before, next, canary]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
