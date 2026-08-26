@@ -26,11 +26,15 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       actions: read
+               write
       contents: read
-      security-events: write
+                write
+      security-events: read 
+                       write
+      
 
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         language: ['typescript']
         # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python' ]
