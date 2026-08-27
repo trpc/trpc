@@ -671,7 +671,8 @@ describe('regression #7502 - keepAlive does not attach duplicate ping handlers',
     const pings: string[] = [];
     const rawWs = new WebSocket(`ws://127.0.0.1:${port}/trpc`);
     rawWs.on('message', (data) => {
-      const msg = typeof data === 'string' ? data : Buffer.from(data as any).toString();
+      const msg =
+        typeof data === 'string' ? data : Buffer.from(data as any).toString();
       if (msg === 'PING') {
         pings.push('PING');
       }
