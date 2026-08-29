@@ -173,20 +173,27 @@ function createServer(opts: ServerOptions) {
 
   const router = opts.appRouter;
 
+  const trpcOptions = {
+    router,
+    createContext,
+    onError(data) {
+      // report to error monitoring
+      data;
+      // ^?
+    },
+  } satisfies FastifyTRPCPluginOptions<AppRouter>['trpcOptions'];
+
   instance.register(ws);
   instance.register(plugin, {
     useWSS: true,
     prefix: config.prefix,
+    // the plugin casts trpcOptions to WSSHandlerOptions internally, so
+    // keepAlive reaches the websocket handler at runtime even though the
+    // public type for trpcOptions does not declare it
     trpcOptions: {
-      router,
-      createContext,
-      keepAlive: opts.keepAlive,
-      onError(data) {
-        // report to error monitoring
-        data;
-        // ^?
-      },
-    } satisfies FastifyTRPCPluginOptions<AppRouter>['trpcOptions'],
+      ...trpcOptions,
+      ...(opts.keepAlive ? { keepAlive: opts.keepAlive } : {}),
+    } as FastifyTRPCPluginOptions<AppRouter>['trpcOptions'],
   });
 
   instance.register(async function (fastify) {
@@ -659,7 +666,7 @@ describe('issue #7502 - keepAlive must register a single ping interval', () => {
     // keepalive is sent as a "PING" text message, not a protocol ping frame
     let pings = 0;
     socket.on('message', (data) => {
-      if (data.toString() === 'PING') {
+      if (Buffer.isBuffer(data) && data.toString('utf8') === 'PING') {
         pings++;
       }
     });
