@@ -47,6 +47,10 @@ export function tracked<TData>(
     // A line break (LF/CR) would terminate the field early and let the
     // remainder be parsed as additional SSE lines, and U+0000 is disallowed
     // for the id field by the SSE spec, so reject them up front.
+    // Deliberate scope: only LF/CR/NUL are rejected because they are the
+    // characters that break the wire format or are spec-disallowed for the id
+    // field. Other control characters cannot inject new SSE lines, so they are
+    // passed through rather than silently altering user-provided ids.
     throw new Error(
       '`id` must not contain line breaks or null characters as they are not allowed in Server-Sent Events',
     );
