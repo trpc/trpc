@@ -7,7 +7,7 @@ slug: /client/links/httpLink
 
 `httpLink` is a [**terminating link**](./overview.md#the-terminating-link) that sends a tRPC operation to a tRPC procedure over HTTP.
 
-`httpLink` supports both POST and GET requests.
+`httpLink` supports both POST and GET requests. It is also the terminating link that can send non-JSON inputs (`FormData`, `Blob`, `File`, `Uint8Array`). Batch links cannot — see [Content Types](../../server/non-json-content-types.md).
 
 ## Usage
 

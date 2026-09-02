@@ -7,6 +7,29 @@ slug: /server/non-json-content-types
 
 tRPC supports multiple content types as procedure inputs: JSON-serializable data, FormData, File, Blob, and other binary types.
 
+The HTTP handler chooses a parser from the request `Content-Type` header. Procedure **responses** are still JSON-RPC envelopes — only the **request body** changes. See the [HTTP RPC Specification](/docs/rpc#content-types) for the wire format.
+
+## Request `Content-Type` mapping
+
+| `Content-Type` | Client input | Server input | HTTP method | Batching |
+| -------------- | ------------ | ------------ | ----------- | -------- |
+| `application/json` (default) | JSON-serializable values | deserialized JSON (after any [transformer](/docs/server/data-transformers)) | `GET` for queries, `POST` for mutations | yes |
+| `multipart/form-data` | `FormData` | `FormData` | `POST` only | no |
+| `application/octet-stream` | `Blob`, `File`, or `Uint8Array` | `ReadableStream` (via [`octetInputParser`](#file-and-other-binary-type-inputs)) | `POST` only | no |
+
+Matching is prefix-based (`content-type` `startsWith`), so values like `application/json; charset=utf-8` or `multipart/form-data; boundary=…` are accepted.
+
+- `GET` requests with no matching content type fall back to the JSON handler so query URLs can be opened in a browser.
+- `POST` requests with a missing or unsupported `Content-Type` throw `UNSUPPORTED_MEDIA_TYPE` (`415`).
+- FormData and octet-stream requests always map to a single `.mutation()` call. They cannot be combined with `?batch=1`.
+
+On the client, `httpLink` sends:
+
+- `FormData` as `multipart/form-data` (the runtime sets `Content-Type`, including the multipart boundary — do not set this header yourself)
+- `Blob` / `File` / `Uint8Array` as `application/octet-stream`
+
+Use [`isNonJsonSerializable()`](#client-setup) from `@trpc/client` to detect those inputs when splitting links.
+
 ## JSON (Default)
 
 By default, tRPC sends and receives JSON-serializable data. No extra configuration is needed — any input that can be serialized to JSON works out of the box with all links (`httpLink`, `httpBatchLink`, `httpBatchStreamLink`).
@@ -98,6 +121,8 @@ createTRPCClient<AppRouter>({
 });
 ```
 
+`isNonJsonSerializable(input)` is `true` when `input` is `FormData`, a `Uint8Array`, or a `Blob` (including `File`). Those values cannot go through `httpBatchLink` / `httpBatchStreamLink`.
+
 If you are using `transformer` in your tRPC server, TypeScript requires that your tRPC client link defines `transformer` as well.
 Use this example as a base:
 
@@ -144,6 +169,10 @@ createTRPCClient<AppRouter>({
   ],
 });
 ```
+
+The non-JSON `httpLink` must skip serializing the request body (`serialize: (data) => data`). FormData and binary bodies cannot be run through JSON transformers; the JSON response can still be deserialized.
+
+Passing `FormData` or a binary value to `.query()` throws (`FormData` / octet inputs are mutations / `POST` only), unless the link uses `methodOverride: 'POST'` and the server sets `allowMethodOverride: true`.
 
 ### Server Setup
 
@@ -208,7 +237,7 @@ For a more advanced code sample you can see our [example project here](https://g
 
 #### `File` and other Binary Type Inputs
 
-tRPC converts many octet content types to a `ReadableStream` which can be consumed in a procedure. Currently these are `Blob` `Uint8Array` and `File`.
+Import `octetInputParser` from `@trpc/server/http`. tRPC converts octet content types to a `ReadableStream` which can be consumed in a procedure. Currently these are `Blob`, `Uint8Array`, and `File`.
 
 ```ts twoslash
 // @target: esnext
@@ -230,3 +259,21 @@ export const appRouter = t.router({
   }),
 });
 ```
+
+A full server + client example lives in [`examples/minimal-content-types`](https://github.com/trpc/trpc/tree/main/examples/minimal-content-types).
+
+## Adapter compatibility
+
+HTTP adapters convert the host request into a Fetch [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) and then run the same content-type handlers. After that conversion, JSON, `multipart/form-data`, and `application/octet-stream` work the same way.
+
+| Adapter | JSON | `multipart/form-data` | `application/octet-stream` | Notes |
+| ------- | ---- | --------------------- | -------------------------- | ----- |
+| [Standalone](/docs/server/adapters/standalone) | Yes | Yes | Yes | Node HTTP server |
+| [Express](/docs/server/adapters/express) | Yes | Yes | Yes | Do not mount a global body parser (`express.json()`, `multer`, …) in front of tRPC |
+| [Fastify](/docs/server/adapters/fastify) | Yes | Yes | Yes | Do not pre-parse the tRPC route body (e.g. `@fastify/multipart`) before tRPC reads it |
+| [Next.js (Pages)](/docs/server/adapters/nextjs) | Yes | Yes | Yes | Same Node HTTP conversion as Express |
+| [Fetch](/docs/server/adapters/fetch) (edge, Next.js App Router, …) | Yes | Yes | Yes | Uses the platform `Request` directly |
+| [AWS Lambda](/docs/server/adapters/aws-lambda) | Yes | Yes | Yes | Adapter copies `event.body` (including base64) onto a Fetch `Request` |
+| [WebSockets](/docs/server/websockets) | Yes (JSON messages) | No | No | WS is not HTTP; there is no `Content-Type` body |
+
+Community adapters that wrap `resolveResponse` with a Fetch `Request` inherit the same content types. Adapters that still parse JSON themselves will not.

@@ -13,6 +13,24 @@ slug: /rpc
 | `POST`      | `.mutation()`     | Input as POST body.                                                                                                                                                                      |
 | `GET`       | `.subscription()` | Subscriptions are supported via [Server-sent Events](/docs/client/links/httpSubscriptionLink) using `httpSubscriptionLink`, or via [WebSockets](/docs/server/websockets) using `wsLink`. |
 
+## Content types
+
+The handler is selected from the request `Content-Type` header (prefix match). **Responses** still use the JSON-RPC envelope in [HTTP Response Specification](#http-response-specification). Only the request body encoding changes.
+
+| `Content-Type` | Request body | Procedure type | Batching (`?batch=1`) |
+| -------------- | ------------ | -------------- | --------------------- |
+| `application/json` | JSON (transformed if configured) | query (`GET`) or mutation (`POST`) | yes |
+| omitted / other, on `GET` | JSON from `?input=` | query | yes |
+| `multipart/form-data` | `FormData` (`await request.formData()`) | mutation | no |
+| `application/octet-stream` | raw body (`request.body` as `ReadableStream`) | mutation | no |
+
+- FormData and octet-stream requests **must** use `POST`. Other methods return `METHOD_NOT_SUPPORTED` (`405`).
+- `POST` with a missing or unknown `Content-Type` returns `UNSUPPORTED_MEDIA_TYPE` (`415`).
+- JSON batching is unchanged: comma-separated procedure paths, `batch=1`, and `input` as `Record<number, unknown>` (query string on `GET`, JSON body on `POST`).
+- Non-JSON content types are a single call: one path, no `batch=1`, no comma-separated path list.
+
+Client helpers and adapter notes: [Content Types](/docs/server/non-json-content-types).
+
 ## Accessing nested procedures
 
 Nested procedures are separated by dots, so a request to `byId` below would end up being a request to `/api/trpc/post.byId`.
@@ -337,3 +355,4 @@ You can read more details by drilling into the TypeScript definitions in
 
 - [/packages/server/src/unstable-core-do-not-import/rpc/envelopes.ts](https://github.com/trpc/trpc/tree/main/packages/server/src/unstable-core-do-not-import/rpc/envelopes.ts)
 - [/packages/server/src/unstable-core-do-not-import/rpc/codes.ts](https://github.com/trpc/trpc/tree/main/packages/server/src/unstable-core-do-not-import/rpc/codes.ts)
+- [/packages/server/src/unstable-core-do-not-import/http/contentType.ts](https://github.com/trpc/trpc/tree/main/packages/server/src/unstable-core-do-not-import/http/contentType.ts)
