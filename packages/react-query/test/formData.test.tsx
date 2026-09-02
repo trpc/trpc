@@ -220,7 +220,7 @@ test('GET requests are not supported', async () => {
   form.set('foo', 'bar');
 
   await expect(ctx.client.q.query(form)).rejects.toMatchInlineSnapshot(
-    `[TRPCClientError: FormData is only supported for mutations]`,
+    `[TRPCClientError: FormData is only supported for mutations. See https://trpc.io/docs/server/non-json-content-types]`,
   );
 });
 
