@@ -23,6 +23,12 @@ export interface FileLike extends Blob {
  */
 export type OctetInput = Blob | Uint8Array | FileLike;
 
+/**
+ * Input parser for `application/octet-stream` procedure inputs.
+ * The client may send a `Blob`, `File`, or `Uint8Array`; the procedure receives a `ReadableStream`.
+ *
+ * @see https://trpc.io/docs/server/non-json-content-types
+ */
 export const octetInputParser: UtilityParser<OctetInput, ReadableStream> = {
   _input: null as any as OctetInput,
   _output: null as any as ReadableStream,
@@ -32,7 +38,7 @@ export const octetInputParser: UtilityParser<OctetInput, ReadableStream> = {
     }
 
     throw new Error(
-      `Parsed input was expected to be a ReadableStream but was: ${typeof input}`,
+      `Parsed input was expected to be a ReadableStream but was: ${typeof input}. See https://trpc.io/docs/server/non-json-content-types`,
     );
   },
 };

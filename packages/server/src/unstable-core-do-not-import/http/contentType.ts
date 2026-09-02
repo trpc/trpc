@@ -5,6 +5,10 @@ import { emptyObject, isObject } from '../utils';
 import { parseConnectionParamsFromString } from './parseConnectionParams';
 import type { TRPCAcceptHeader, TRPCRequestInfo } from './types';
 
+/** @see https://trpc.io/docs/server/non-json-content-types */
+const CONTENT_TYPES_DOCS =
+  'https://trpc.io/docs/server/non-json-content-types';
+
 export function getAcceptHeader(headers: Headers): TRPCAcceptHeader | null {
   return (
     (headers.get('trpc-accept') as TRPCAcceptHeader | null) ??
@@ -211,6 +215,11 @@ const jsonContentTypeHandler: ContentTypeHandler = {
   },
 };
 
+/**
+ * `multipart/form-data` — procedure input is `FormData`. POST only; not batchable.
+ * @see https://trpc.io/docs/server/non-json-content-types
+ * @see https://trpc.io/docs/rpc
+ */
 const formDataContentTypeHandler: ContentTypeHandler = {
   isMatch(req) {
     return !!req.headers.get('content-type')?.startsWith('multipart/form-data');
@@ -221,7 +230,8 @@ const formDataContentTypeHandler: ContentTypeHandler = {
       throw new TRPCError({
         code: 'METHOD_NOT_SUPPORTED',
         message:
-          'Only POST requests are supported for multipart/form-data requests',
+          'Only POST requests are supported for multipart/form-data requests. See ' +
+          CONTENT_TYPES_DOCS,
       });
     }
     const getInputs = memo(async () => {
@@ -249,6 +259,11 @@ const formDataContentTypeHandler: ContentTypeHandler = {
   },
 };
 
+/**
+ * `application/octet-stream` — procedure input is the request body (`ReadableStream`). POST only; not batchable.
+ * @see https://trpc.io/docs/server/non-json-content-types
+ * @see https://trpc.io/docs/rpc
+ */
 const octetStreamContentTypeHandler: ContentTypeHandler = {
   isMatch(req) {
     return !!req.headers
@@ -261,7 +276,8 @@ const octetStreamContentTypeHandler: ContentTypeHandler = {
       throw new TRPCError({
         code: 'METHOD_NOT_SUPPORTED',
         message:
-          'Only POST requests are supported for application/octet-stream requests',
+          'Only POST requests are supported for application/octet-stream requests. See ' +
+          CONTENT_TYPES_DOCS,
       });
     }
     const getInputs = memo(async () => {
@@ -307,8 +323,8 @@ function getContentTypeHandler(req: Request): ContentTypeHandler {
   throw new TRPCError({
     code: 'UNSUPPORTED_MEDIA_TYPE',
     message: req.headers.has('content-type')
-      ? `Unsupported content-type "${req.headers.get('content-type')}`
-      : 'Missing content-type header',
+      ? `Unsupported content-type "${req.headers.get('content-type')}". See ${CONTENT_TYPES_DOCS}`
+      : `Missing content-type header. See ${CONTENT_TYPES_DOCS}`,
   });
 }
 

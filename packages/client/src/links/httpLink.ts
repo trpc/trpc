@@ -24,6 +24,10 @@ import {
   type TRPCLink,
 } from './types';
 
+/** @see https://trpc.io/docs/server/non-json-content-types */
+const CONTENT_TYPES_DOCS =
+  'https://trpc.io/docs/server/non-json-content-types';
+
 export type HTTPLinkOptions<TRoot extends AnyClientTypes> =
   HTTPLinkBaseOptions<TRoot> & {
     /**
@@ -40,7 +44,9 @@ const universalRequester: Requester = (opts) => {
     const { input } = opts;
     if (isFormData(input)) {
       if (opts.type !== 'mutation' && opts.methodOverride !== 'POST') {
-        throw new Error('FormData is only supported for mutations');
+        throw new Error(
+          `FormData is only supported for mutations. See ${CONTENT_TYPES_DOCS}`,
+        );
       }
 
       return httpRequest({
@@ -54,7 +60,9 @@ const universalRequester: Requester = (opts) => {
 
     if (isOctetType(input)) {
       if (opts.type !== 'mutation' && opts.methodOverride !== 'POST') {
-        throw new Error('Octet type input is only supported for mutations');
+        throw new Error(
+          `Octet type input is only supported for mutations. See ${CONTENT_TYPES_DOCS}`,
+        );
       }
 
       return httpRequest({
@@ -71,6 +79,7 @@ const universalRequester: Requester = (opts) => {
 
 /**
  * @see https://trpc.io/docs/client/links/httpLink
+ * @see https://trpc.io/docs/server/non-json-content-types
  */
 export function httpLink<TRouter extends AnyRouter = AnyRouter>(
   opts: HTTPLinkOptions<TRouter['_def']['_config']['$types']>,
