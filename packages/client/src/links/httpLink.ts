@@ -25,8 +25,7 @@ import {
 } from './types';
 
 /** @see https://trpc.io/docs/server/non-json-content-types */
-const CONTENT_TYPES_DOCS =
-  'https://trpc.io/docs/server/non-json-content-types';
+const CONTENT_TYPES_DOCS = 'https://trpc.io/docs/server/non-json-content-types';
 
 export type HTTPLinkOptions<TRoot extends AnyClientTypes> =
   HTTPLinkBaseOptions<TRoot> & {

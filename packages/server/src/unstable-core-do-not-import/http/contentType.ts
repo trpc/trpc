@@ -6,8 +6,7 @@ import { parseConnectionParamsFromString } from './parseConnectionParams';
 import type { TRPCAcceptHeader, TRPCRequestInfo } from './types';
 
 /** @see https://trpc.io/docs/server/non-json-content-types */
-const CONTENT_TYPES_DOCS =
-  'https://trpc.io/docs/server/non-json-content-types';
+const CONTENT_TYPES_DOCS = 'https://trpc.io/docs/server/non-json-content-types';
 
 export function getAcceptHeader(headers: Headers): TRPCAcceptHeader | null {
   return (

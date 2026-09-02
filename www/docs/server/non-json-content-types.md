@@ -11,11 +11,11 @@ The HTTP handler chooses a parser from the request `Content-Type` header. Proced
 
 ## Request `Content-Type` mapping
 
-| `Content-Type` | Client input | Server input | HTTP method | Batching |
-| -------------- | ------------ | ------------ | ----------- | -------- |
-| `application/json` (default) | JSON-serializable values | deserialized JSON (after any [transformer](/docs/server/data-transformers)) | `GET` for queries, `POST` for mutations | yes |
-| `multipart/form-data` | `FormData` | `FormData` | `POST` only | no |
-| `application/octet-stream` | `Blob`, `File`, or `Uint8Array` | `ReadableStream` (via [`octetInputParser`](#file-and-other-binary-type-inputs)) | `POST` only | no |
+| `Content-Type`               | Client input                    | Server input                                                                    | HTTP method                             | Batching |
+| ---------------------------- | ------------------------------- | ------------------------------------------------------------------------------- | --------------------------------------- | -------- |
+| `application/json` (default) | JSON-serializable values        | deserialized JSON (after any [transformer](/docs/server/data-transformers))     | `GET` for queries, `POST` for mutations | yes      |
+| `multipart/form-data`        | `FormData`                      | `FormData`                                                                      | `POST` only                             | no       |
+| `application/octet-stream`   | `Blob`, `File`, or `Uint8Array` | `ReadableStream` (via [`octetInputParser`](#file-and-other-binary-type-inputs)) | `POST` only                             | no       |
 
 Matching is prefix-based (`content-type` `startsWith`), so values like `application/json; charset=utf-8` or `multipart/form-data; boundary=…` are accepted.
 
@@ -266,14 +266,14 @@ A full server + client example lives in [`examples/minimal-content-types`](https
 
 HTTP adapters convert the host request into a Fetch [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) and then run the same content-type handlers. After that conversion, JSON, `multipart/form-data`, and `application/octet-stream` work the same way.
 
-| Adapter | JSON | `multipart/form-data` | `application/octet-stream` | Notes |
-| ------- | ---- | --------------------- | -------------------------- | ----- |
-| [Standalone](/docs/server/adapters/standalone) | Yes | Yes | Yes | Node HTTP server |
-| [Express](/docs/server/adapters/express) | Yes | Yes | Yes | Do not mount a global body parser (`express.json()`, `multer`, …) in front of tRPC |
-| [Fastify](/docs/server/adapters/fastify) | Yes | Yes | Yes | Do not pre-parse the tRPC route body (e.g. `@fastify/multipart`) before tRPC reads it |
-| [Next.js (Pages)](/docs/server/adapters/nextjs) | Yes | Yes | Yes | Same Node HTTP conversion as Express |
-| [Fetch](/docs/server/adapters/fetch) (edge, Next.js App Router, …) | Yes | Yes | Yes | Uses the platform `Request` directly |
-| [AWS Lambda](/docs/server/adapters/aws-lambda) | Yes | Yes | Yes | Adapter copies `event.body` (including base64) onto a Fetch `Request` |
-| [WebSockets](/docs/server/websockets) | Yes (JSON messages) | No | No | WS is not HTTP; there is no `Content-Type` body |
+| Adapter                                                            | JSON                | `multipart/form-data` | `application/octet-stream` | Notes                                                                                 |
+| ------------------------------------------------------------------ | ------------------- | --------------------- | -------------------------- | ------------------------------------------------------------------------------------- |
+| [Standalone](/docs/server/adapters/standalone)                     | Yes                 | Yes                   | Yes                        | Node HTTP server                                                                      |
+| [Express](/docs/server/adapters/express)                           | Yes                 | Yes                   | Yes                        | Do not mount a global body parser (`express.json()`, `multer`, …) in front of tRPC    |
+| [Fastify](/docs/server/adapters/fastify)                           | Yes                 | Yes                   | Yes                        | Do not pre-parse the tRPC route body (e.g. `@fastify/multipart`) before tRPC reads it |
+| [Next.js (Pages)](/docs/server/adapters/nextjs)                    | Yes                 | Yes                   | Yes                        | Same Node HTTP conversion as Express                                                  |
+| [Fetch](/docs/server/adapters/fetch) (edge, Next.js App Router, …) | Yes                 | Yes                   | Yes                        | Uses the platform `Request` directly                                                  |
+| [AWS Lambda](/docs/server/adapters/aws-lambda)                     | Yes                 | Yes                   | Yes                        | Adapter copies `event.body` (including base64) onto a Fetch `Request`                 |
+| [WebSockets](/docs/server/websockets)                              | Yes (JSON messages) | No                    | No                         | WS is not HTTP; there is no `Content-Type` body                                       |
 
 Community adapters that wrap `resolveResponse` with a Fetch `Request` inherit the same content types. Adapters that still parse JSON themselves will not.
