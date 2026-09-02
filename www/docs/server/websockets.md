@@ -389,10 +389,10 @@ export const trpc = createTRPCClient<AppRouter>({
 
 `createContext` is typed **per adapter**. You cannot pass an Express `createContext` into `applyWSSHandler` — the option objects are different types:
 
-| Adapter | Options type | `req` | `res` |
-| --- | --- | --- | --- |
-| Express | `CreateExpressContextOptions` from `@trpc/server/adapters/express` | `express.Request` | `express.Response` |
-| WebSockets | `CreateWSSContextFnOptions` from `@trpc/server/adapters/ws` | Node `IncomingMessage` | `ws.WebSocket` |
+| Adapter         | Options type                                                       | `req`                  | `res`                 |
+| --------------- | ------------------------------------------------------------------ | ---------------------- | --------------------- |
+| Express         | `CreateExpressContextOptions` from `@trpc/server/adapters/express` | `express.Request`      | `express.Response`    |
+| WebSockets      | `CreateWSSContextFnOptions` from `@trpc/server/adapters/ws`        | Node `IncomingMessage` | `ws.WebSocket`        |
 | Standalone HTTP | `CreateHTTPContextOptions` from `@trpc/server/adapters/standalone` | Node `IncomingMessage` | `http.ServerResponse` |
 
 Each function is passed to the matching handler. Both must return the **same context shape** so `initTRPC.context<Context>()` stays a single type for every procedure.
