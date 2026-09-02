@@ -226,7 +226,7 @@ test('force content-type on mutations', async () => {
             "httpStatus": 415,
             "stack": "[redacted]",
           },
-          "message": "Missing content-type header",
+          "message": "Missing content-type header. See https://trpc.io/docs/server/non-json-content-types",
         },
       }
     `);
