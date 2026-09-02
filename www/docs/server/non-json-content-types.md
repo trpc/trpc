@@ -21,7 +21,7 @@ Matching is prefix-based (`content-type` `startsWith`), so values like `applicat
 
 - `GET` requests with no matching content type fall back to the JSON handler so query URLs can be opened in a browser.
 - `POST` requests with a missing or unsupported `Content-Type` throw `UNSUPPORTED_MEDIA_TYPE` (`415`).
-- FormData and octet-stream requests always map to a single `.mutation()` call. They cannot be combined with `?batch=1`.
+- FormData and octet-stream requests map to a single `.mutation()` call by default. `.query()` is supported with `methodOverride: 'POST'` when `allowMethodOverride: true`. They cannot be combined with `?batch=1`.
 
 On the client, `httpLink` sends:
 
