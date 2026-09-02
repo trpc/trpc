@@ -15,7 +15,7 @@ With tRPC's subscriptions, the client establishes and maintains a persistent con
 
 You can either use WebSockets or [Server-sent Events](https://en.wikipedia.org/wiki/Server-sent_events) (SSE) to setup real-time subscriptions in tRPC.
 
-- For WebSockets, see [the WebSockets page](./websockets.md)
+- For WebSockets, see [the WebSockets page](./websockets.md) (including [HTTP + WebSockets together](./websockets.md#http-and-websockets) and [nested routers](./websockets.md#nested-routers))
 - For SSE, see the [httpSubscriptionLink](../client/links/httpSubscriptionLink.md)
 
 If you are unsure which one to use, we recommend using SSE for subscriptions as it's easier to setup and doesn't require setting up a WebSocket server.

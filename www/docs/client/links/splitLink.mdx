@@ -17,6 +17,47 @@ It's important to note that when you provide links for `splitLink` to execute, `
 
 ## Usage Example
 
+### Route subscriptions over WebSockets
+
+Use `splitLink` so queries and mutations stay on HTTP while subscriptions use [`wsLink`](./wsLink.md). See [Using HTTP and WebSockets together](../../server/websockets.md#http-and-websockets) for the matching server setup.
+
+```ts twoslash title="client.ts"
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
+import {
+  createTRPCClient,
+  createWSClient,
+  httpBatchLink,
+  splitLink,
+  wsLink,
+} from '@trpc/client';
+import type { AppRouter } from './server';
+
+const wsClient = createWSClient({
+  url: 'ws://localhost:3000',
+});
+
+const client = createTRPCClient<AppRouter>({
+  links: [
+    splitLink({
+      condition: (op) => op.type === 'subscription',
+      true: wsLink({
+        client: wsClient,
+      }),
+      false: httpBatchLink({
+        url: 'http://localhost:3000',
+      }),
+    }),
+  ],
+});
+```
+
 ### Disable batching for certain requests
 
 Let's say you're using `httpBatchLink` as the terminating link in your tRPC client config. This means request batching is enabled in every request. However, if you need to disable batching only for certain requests, you would need to change the terminating link in your tRPC client config dynamically between `httpLink` and `httpBatchLink`. This is a perfect opportunity for `splitLink` to be used:

@@ -7,6 +7,8 @@ slug: /client/links/wsLink
 
 `wsLink` is a [**terminating link**](./overview.md#the-terminating-link) that's used when using tRPC's WebSockets Client and Subscriptions, which you can learn more about [here](../../server/subscriptions.md).
 
+To use `wsLink` for subscriptions while keeping queries and mutations on HTTP, see [Using HTTP and WebSockets together](../../server/websockets.md#http-and-websockets).
+
 ## Usage
 
 To use `wsLink`, you need to pass it a `TRPCWebSocketClient`, which you can create with `createWSClient`:

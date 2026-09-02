@@ -115,3 +115,7 @@ Your endpoints are now available via HTTP!
 | ------------ | ---------------------------------------------------------------------------------------------------------- |
 | `getUser`    | `GET http://localhost:4000/trpc/getUser?input=INPUT` <br/><br/>where `INPUT` is a URI-encoded JSON string. |
 | `createUser` | `POST http://localhost:4000/trpc/createUser` <br/><br/>with `req.body` of type `{name: string}`            |
+
+## WebSockets
+
+To serve subscriptions over WebSockets next to this HTTP middleware, attach `applyWSSHandler` to the same Node HTTP server (or a second port) and use a separate `createContext` typed as `CreateWSSContextFnOptions`. See [Using HTTP and WebSockets together](../websockets.md#http-and-websockets) and [`createContext` typing](../websockets.md#createContext).
