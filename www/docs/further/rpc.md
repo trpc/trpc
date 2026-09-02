@@ -17,12 +17,12 @@ slug: /rpc
 
 The handler is selected from the request `Content-Type` header (prefix match). **Responses** still use the JSON-RPC envelope in [HTTP Response Specification](#http-response-specification). Only the request body encoding changes.
 
-| `Content-Type`             | Request body                                  | Procedure type                                                                                      | Batching (`?batch=1`) |
-| -------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------- | --------------------- |
-| `application/json`         | JSON (transformed if configured)              | query (`GET`) or mutation (`POST`)                                                                  | yes                   |
-| omitted / other, on `GET`  | JSON from `?input=`                           | query                                                                                               | yes                   |
-| `multipart/form-data`      | `FormData` (`await request.formData()`)       | mutation (default); `.query()` with `methodOverride: 'POST'` when `allowMethodOverride: true`       | no                    |
-| `application/octet-stream` | raw body (`request.body` as `ReadableStream`) | mutation (default); `.query()` with `methodOverride: 'POST'` when `allowMethodOverride: true`       | no                    |
+| `Content-Type`             | Request body                                  | Procedure type                                                                                | Batching (`?batch=1`) |
+| -------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------- | --------------------- |
+| `application/json`         | JSON (transformed if configured)              | query (`GET`) or mutation (`POST`)                                                            | yes                   |
+| omitted / other, on `GET`  | JSON from `?input=`                           | query                                                                                         | yes                   |
+| `multipart/form-data`      | `FormData` (`await request.formData()`)       | mutation (default); `.query()` with `methodOverride: 'POST'` when `allowMethodOverride: true` | no                    |
+| `application/octet-stream` | raw body (`request.body` as `ReadableStream`) | mutation (default); `.query()` with `methodOverride: 'POST'` when `allowMethodOverride: true` | no                    |
 
 - FormData and octet-stream requests **must** use `POST`. Other methods return `METHOD_NOT_SUPPORTED` (`405`).
 - `POST` with a missing or unknown `Content-Type` returns `UNSUPPORTED_MEDIA_TYPE` (`415`).
