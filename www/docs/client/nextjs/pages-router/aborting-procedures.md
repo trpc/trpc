@@ -7,6 +7,8 @@ slug: /client/nextjs/pages-router/aborting-procedure-calls
 
 By default, tRPC does not cancel requests on unmount. If you want to opt into this behavior, you can provide `abortOnUnmount` in your configuration callback.
 
+This option only applies to queries. `@trpc/react-query` mutation options do not accept an `AbortSignal`. To cancel a mutation request explicitly, use the [vanilla client API](/docs/client/vanilla/aborting-procedure-calls) and pass `signal` as the second argument to `.mutate()`.
+
 ### Globally
 
 ```ts twoslash title="client.ts"

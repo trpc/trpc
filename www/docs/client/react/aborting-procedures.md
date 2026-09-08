@@ -8,7 +8,7 @@ slug: /client/react/aborting-procedure-calls
 By default, tRPC does not cancel requests via React Query. If you want to opt into this behavior, you can provide `abortOnUnmount` in your configuration.
 
 :::note
-@tanstack/react-query only supports aborting queries.
+TanStack React Query only provides automatic request abortion for queries. `@trpc/react-query` mutation options do not accept an `AbortSignal`. To cancel a mutation request explicitly, use the [vanilla client API](/docs/client/vanilla/aborting-procedure-calls) and pass `signal` as the second argument to `.mutate()`.
 :::
 
 ```twoslash include router
