@@ -31,6 +31,20 @@ type AsyncResult = Promise<{ data: string }>;
 // Subscription (should be skipped in OpenAPI)
 // Empty object input
 
+// Function-valued properties (nothing callable is serialisable, so these
+// should be dropped from the schema rather than emitted as `{}` objects)
+type WithFunctions = {
+  id: string;
+  onEvent: (value: string) => void;
+  optionalHook?: (value: number) => number;
+  ctor: new () => { x: number };
+};
+
+// An object whose every property is callable collapses to a bare object
+type OnlyFunctions = {
+  run: () => void;
+};
+
 export const EdgeCaseRouter = t.router({
   // --- BigInt type ---
   bigint: t.procedure.query((): WithBigInt => ({
@@ -130,6 +144,12 @@ export const EdgeCaseRouter = t.router({
   literalComputedKey: t.procedure.query((): { ['x-trace-id']: string } => ({
     ['x-trace-id']: 'trace-123',
   })),
+
+  // --- Function-valued properties (dropped) ---
+  withFunctions: t.procedure.query(() => ({}) as WithFunctions),
+
+  // --- Every property callable ---
+  onlyFunctions: t.procedure.query(() => ({}) as OnlyFunctions),
 });
 
 export type EdgeCaseRouter = typeof EdgeCaseRouter;

@@ -73,6 +73,40 @@ function isObjectType(type: ts.Type): boolean {
   return hasFlag(type, ts.TypeFlags.Object);
 }
 
+/**
+ * Functions carry `TypeFlags.Object`, so they would otherwise be emitted as
+ * `{ type: 'object' }`.  Nothing callable survives JSON serialisation, so
+ * these are dropped from the schema entirely.
+ */
+function isFunctionType(type: ts.Type): boolean {
+  return (
+    type.getCallSignatures().length > 0 ||
+    type.getConstructSignatures().length > 0
+  );
+}
+
+/**
+ * True when nothing in `type` can be serialised - either it is callable, or it
+ * is a union whose every member is callable once `undefined` / `void` / `null`
+ * are stripped (an optional method is `fn | undefined`, for example).
+ */
+function isUnserialisableType(type: ts.Type): boolean {
+  if (isFunctionType(type)) {
+    return true;
+  }
+  if (!type.isUnion()) {
+    return false;
+  }
+  const defined = type.types.filter(
+    (m) =>
+      !hasFlag(
+        m,
+        ts.TypeFlags.Undefined | ts.TypeFlags.Void | ts.TypeFlags.Null,
+      ),
+  );
+  return defined.length > 0 && defined.every(isFunctionType);
+}
+
 function isOptionalSymbol(sym: ts.Symbol): boolean {
   return (sym.flags & ts.SymbolFlags.Optional) !== 0;
 }
@@ -338,8 +372,11 @@ function convertUnionType(
   const members = type.types;
 
   // Strip undefined / void members (they make the field optional, not typed)
+  // and anything callable, which cannot be serialised.
   const defined = members.filter(
-    (m) => !hasFlag(m, ts.TypeFlags.Undefined | ts.TypeFlags.Void),
+    (m) =>
+      !hasFlag(m, ts.TypeFlags.Undefined | ts.TypeFlags.Void) &&
+      !isFunctionType(m),
   );
   if (defined.length === 0) {
     return {};
@@ -693,6 +730,9 @@ function convertPlainObject(
     }
 
     const propType = checker.getTypeOfSymbol(prop);
+    if (isUnserialisableType(propType)) {
+      continue;
+    }
     const propSchema = typeToJsonSchema(propType, ctx, depth + 1);
 
     // Extract JSDoc comment from the property symbol as a description
@@ -790,6 +830,9 @@ function convertTypeToSchema(
     const result = convertIntersectionType(type, ctx, depth);
     ctx.visited.delete(type);
     return result;
+  }
+  if (isFunctionType(type)) {
+    return {};
   }
   if (isObjectType(type)) {
     return convertObjectType(type, ctx, depth);
