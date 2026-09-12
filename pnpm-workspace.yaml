@@ -69,6 +69,7 @@ catalog:
   '@fastify/websocket': ^11.3.0
   fastify-plugin: ^6.0.0
   next: ^15.5.25
+  lerna: ^10.0.1
 
 catalogs:
   ts-api:
