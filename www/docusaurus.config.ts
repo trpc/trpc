@@ -398,8 +398,20 @@ export default {
                 return true;
               })
               .map((docItem) => {
-                let link = `${versionSpec.routePath}/${docItem.id}`;
-                link = link.replace(new RegExp('([^:])//', 'g'), '$1/');
+                // Prefer the doc's own permalink (which honours custom `slug`
+                // frontmatter) over the file-path-based id. Fall back to
+                // constructing from the id only when permalink is unavailable.
+                const docPath: string =
+                  (docItem.permalink as string | undefined) ??
+                  `${versionSpec.routePath}/${docItem.id}`;
+                // Make the URL absolute so llms.txt consumers don't need to
+                // know the site's base URL.
+                const link = docPath.startsWith('http')
+                  ? docPath
+                  : `${siteConfig.url}${docPath}`.replace(
+                      new RegExp('([^:])//', 'g'),
+                      '$1/',
+                    );
                 return `- [${docItem.title}](${link}): ${docItem.description ?? 'No description available'}`;
               });
 
@@ -473,7 +485,8 @@ export default {
                 otherVersionsLinksContent += '\n';
               }
 
-              const tocFileContent = `${tocTitle}\n\n${otherVersionsLinksContent}## Documentation Pages\n\n${tocRecords.join('\n')}`;
+              // llms.txt spec requires an H1 as the very first line.
+              const tocFileContent = `# ${tocTitle}\n\n${otherVersionsLinksContent}## Documentation Pages\n\n${tocRecords.join('\n')}`;
               const tocFilePath = path.join(outDir, tocOutputFilename);
               try {
                 fs.writeFileSync(tocFilePath, tocFileContent);
