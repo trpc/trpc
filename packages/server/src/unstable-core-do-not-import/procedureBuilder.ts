@@ -50,9 +50,24 @@ type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
   ? TFallback
   : TValue;
 
-type AccumulateErrorShape<TFallback, $Shape> = [$Shape] extends [TRPCErrorShape]
-  ? $Shape
-  : Extract<$Shape, TRPCErrorShape> | TFallback;
+/**
+ * Fold a handler's return type into the shapes gathered so far.
+ *
+ * `undefined` is kept in the accumulation to mean "this chain can still
+ * decline", which is what tells {@link ResolveErrorShape} whether the global
+ * `errorFormatter` is reachable, and what lets {@link concat} know whether the
+ * builder it's folding into can ever run.
+ */
+type FoldErrorShape<TFallback, $Shape> = [$Shape] extends [never]
+  ? TFallback
+  : undefined extends $Shape
+    ? Extract<$Shape, TRPCErrorShape> | TFallback
+    : $Shape;
+
+type ResolveErrorShape<TRootErrorShape, TErrorShape> =
+  undefined extends TErrorShape
+    ? Exclude<TErrorShape, undefined> | TRootErrorShape
+    : TErrorShape;
 
 type inferAsyncIterable<TOutput> =
   TOutput extends AsyncIterable<infer $Yield, infer $Return, infer $Next>
@@ -156,6 +171,7 @@ export type AnyProcedureBuilder = ProcedureBuilder<
   any,
   any,
   any,
+  any,
   any
 >;
 
@@ -175,6 +191,7 @@ export type inferProcedureBuilderResolverOptions<
     infer _TOutputIn,
     infer _TOutputOut,
     infer _TCaller,
+    infer _TRootErrorShape,
     infer _TErrorShape
   >
     ? ProcedureResolverOptions<
@@ -206,7 +223,8 @@ export interface ProcedureBuilder<
   TOutputIn,
   TOutputOut,
   TCaller extends boolean,
-  TErrorShape = DefaultErrorShape,
+  TRootErrorShape = DefaultErrorShape,
+  TErrorShape = undefined,
 > {
   /**
    * Add an input parser to the procedure.
@@ -233,6 +251,7 @@ export interface ProcedureBuilder<
     TOutputIn,
     TOutputOut,
     TCaller,
+    TRootErrorShape,
     TErrorShape
   >;
   /**
@@ -250,6 +269,7 @@ export interface ProcedureBuilder<
     IntersectIfDefined<TOutputIn, inferParser<$Parser>['in']>,
     IntersectIfDefined<TOutputOut, inferParser<$Parser>['out']>,
     TCaller,
+    TRootErrorShape,
     TErrorShape
   >;
   /**
@@ -267,6 +287,7 @@ export interface ProcedureBuilder<
     TOutputIn,
     TOutputOut,
     TCaller,
+    TRootErrorShape,
     TErrorShape
   >;
   /**
@@ -288,7 +309,8 @@ export interface ProcedureBuilder<
     TOutputIn,
     TOutputOut,
     TCaller,
-    AccumulateErrorShape<TErrorShape, $Shape>
+    TRootErrorShape,
+    FoldErrorShape<TErrorShape, $Shape>
   >;
   /**
    * Add a middleware to the procedure.
@@ -318,6 +340,7 @@ export interface ProcedureBuilder<
     TOutputIn,
     TOutputOut,
     TCaller,
+    TRootErrorShape,
     TErrorShape
   >;
 
@@ -332,6 +355,7 @@ export interface ProcedureBuilder<
     $InputOut,
     $OutputIn,
     $OutputOut,
+    $RootErrorShape,
     $ErrorShape,
   >(
     builder: Overwrite<TContext, TContextOverrides> extends $Context
@@ -345,6 +369,7 @@ export interface ProcedureBuilder<
             $OutputIn,
             $OutputOut,
             TCaller,
+            $RootErrorShape,
             $ErrorShape
           >
         : TypeError<'Meta mismatch'>
@@ -358,7 +383,8 @@ export interface ProcedureBuilder<
     IntersectIfDefined<TOutputIn, $OutputIn>,
     IntersectIfDefined<TOutputOut, $OutputOut>,
     TCaller,
-    TErrorShape | $ErrorShape
+    TRootErrorShape,
+    FoldErrorShape<TErrorShape, $ErrorShape>
   >;
 
   /**
@@ -372,6 +398,7 @@ export interface ProcedureBuilder<
     $InputOut,
     $OutputIn,
     $OutputOut,
+    $RootErrorShape,
     $ErrorShape,
   >(
     builder: Overwrite<TContext, TContextOverrides> extends $Context
@@ -385,6 +412,7 @@ export interface ProcedureBuilder<
             $OutputIn,
             $OutputOut,
             TCaller,
+            $RootErrorShape,
             $ErrorShape
           >
         : TypeError<'Meta mismatch'>
@@ -398,7 +426,8 @@ export interface ProcedureBuilder<
     IntersectIfDefined<TOutputIn, $OutputIn>,
     IntersectIfDefined<TOutputOut, $OutputOut>,
     TCaller,
-    TErrorShape | $ErrorShape
+    TRootErrorShape,
+    FoldErrorShape<TErrorShape, $ErrorShape>
   >;
   /**
    * Query procedure
@@ -421,7 +450,7 @@ export interface ProcedureBuilder<
         input: DefaultValue<TInputIn, void>;
         output: DefaultValue<TOutputOut, $Output>;
         meta: TMeta;
-        errorShape: TErrorShape;
+        errorShape: ResolveErrorShape<TRootErrorShape, TErrorShape>;
       }>;
 
   /**
@@ -445,7 +474,7 @@ export interface ProcedureBuilder<
         input: DefaultValue<TInputIn, void>;
         output: DefaultValue<TOutputOut, $Output>;
         meta: TMeta;
-        errorShape: TErrorShape;
+        errorShape: ResolveErrorShape<TRootErrorShape, TErrorShape>;
       }>;
 
   /**
@@ -467,7 +496,7 @@ export interface ProcedureBuilder<
         input: DefaultValue<TInputIn, void>;
         output: inferSubscriptionOutput<DefaultValue<TOutputOut, $Output>>;
         meta: TMeta;
-        errorShape: TErrorShape;
+        errorShape: ResolveErrorShape<TRootErrorShape, TErrorShape>;
       }>;
   /**
    * @deprecated Using subscriptions with an observable is deprecated. Use an async generator instead.
@@ -489,7 +518,7 @@ export interface ProcedureBuilder<
         input: DefaultValue<TInputIn, void>;
         output: inferObservableValue<DefaultValue<TOutputOut, $Output>>;
         meta: TMeta;
-        errorShape: TErrorShape;
+        errorShape: ResolveErrorShape<TRootErrorShape, TErrorShape>;
       }>;
   /**
    * Overrides the way a procedure is invoked
@@ -506,6 +535,7 @@ export interface ProcedureBuilder<
     TOutputIn,
     TOutputOut,
     true,
+    TRootErrorShape,
     TErrorShape
   >;
   /**
@@ -540,7 +570,11 @@ function createNewBuilder(
   });
 }
 
-export function createBuilder<TContext, TMeta, TErrorShape = DefaultErrorShape>(
+export function createBuilder<
+  TContext,
+  TMeta,
+  TRootErrorShape = DefaultErrorShape,
+>(
   initDef: Partial<AnyProcedureBuilderDef> = {},
 ): ProcedureBuilder<
   TContext,
@@ -551,7 +585,7 @@ export function createBuilder<TContext, TMeta, TErrorShape = DefaultErrorShape>(
   UnsetMarker,
   UnsetMarker,
   false,
-  TErrorShape
+  TRootErrorShape
 > {
   const _def: AnyProcedureBuilderDef = {
     procedure: true,

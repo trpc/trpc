@@ -94,6 +94,8 @@ Errors can be formatted on a per-procedure basis using the `.errors()` method, w
 
 When a middleware or procedure throws an error, it bubbles upward through all `.errors()` handlers until one returns a shape or the global errorFormatter is reached.
 
+Bubbling starts at the **tail** of the chain, so the handler you chained last gets first refusal - the reverse of `.use()` middleware order. A handler that always returns a shape makes everything before it unreachable, including the global `errorFormatter`, and the procedure's error type narrows to just that shape.
+
 ```ts twoslash title='server.ts'
 import { initTRPC } from '@trpc/server';
 
@@ -157,6 +159,10 @@ const addPostProcedure = billedProcedure.mutation(opts => {
   };
 });
 ```
+
+:::info
+`.errors()` handlers only see errors that reach a resolved procedure, which includes errors from its own middlewares and input/output parsing. Request-level failures - a malformed body, a failing `createContext()`, an unknown path - aren't attributable to a single procedure (a batched request may hold several), so those always go to the global `errorFormatter`.
+:::
 
 ## All properties sent to `errorFormatter()`
 
