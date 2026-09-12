@@ -12,12 +12,13 @@ function createBody(
     maxBodySize: number | null;
   },
 ): RequestInit['body'] {
-  // Some adapters will pre-parse the body and add it to the request object
-  if ('body' in req) {
-    if (req.body === undefined) {
-      // If body property exists but is undefined, return undefined
-      return undefined;
-    }
+  // Some adapters will pre-parse the body and add it to the request object.
+  // We only treat the body as pre-parsed when req.body is a concrete value.
+  // When req.body is undefined we fall through to streaming — this handles the
+  // case where a body-parser middleware (e.g. express.json() in Express 5)
+  // defines the `body` property as undefined for content types it skips, such
+  // as multipart/form-data, so we don't discard the unread multipart stream.
+  if ('body' in req && req.body !== undefined) {
     // If the body is already a string, return it directly
     if (typeof req.body === 'string') {
       return req.body;

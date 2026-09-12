@@ -222,7 +222,7 @@ export class WsClient {
         },
       );
 
-      return () => {
+      const teardown = () => {
         abort();
 
         if (type === 'subscription' && this.activeConnection.isOpen()) {
@@ -231,8 +231,19 @@ export class WsClient {
             method: 'subscription.stop',
           });
         }
+      };
 
-        signal?.removeEventListener('abort', abort);
+      // Honor the caller's AbortSignal: if already aborted tear down immediately,
+      // otherwise register a one-shot listener so abort() cancels the operation.
+      if (signal?.aborted) {
+        teardown();
+      } else {
+        signal?.addEventListener('abort', teardown, { once: true });
+      }
+
+      return () => {
+        signal?.removeEventListener('abort', teardown);
+        teardown();
       };
     });
   }

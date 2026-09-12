@@ -2224,3 +2224,57 @@ test('connection state should not be updated for subscriptions', async () => {
   // Clean up
   subscription.unsubscribe();
 });
+
+describe('wsLink - AbortSignal honored on operations', () => {
+  test('pre-aborted signal tears down subscription immediately', async () => {
+    await using ctx = factory();
+
+    const ac = new AbortController();
+    ac.abort();
+
+    const onData = vi.fn();
+
+    ctx.client.onMessageObservable.subscribe(undefined, {
+      signal: ac.signal,
+      onData,
+    });
+
+    await sleep(100);
+    ctx.ee.emit('server:msg', { id: '1', title: 'first' });
+    await sleep(50);
+
+    expect(onData).not.toHaveBeenCalled();
+  });
+
+  test('aborting signal mid-subscription stops receiving data', async () => {
+    await using ctx = factory();
+
+    const ac = new AbortController();
+    const onData = vi.fn();
+    const onStarted = vi.fn();
+
+    ctx.ee.once('subscription:created', () => {
+      setTimeout(() => {
+        ctx.ee.emit('server:msg', { id: '1', title: 'first' });
+      });
+    });
+
+    ctx.client.onMessageObservable.subscribe(undefined, {
+      signal: ac.signal,
+      onData,
+      onStarted,
+    });
+
+    // Wait for first message to confirm subscription is live
+    await vi.waitFor(() => expect(onData).toHaveBeenCalledTimes(1));
+
+    // Abort, then emit a second message
+    ac.abort();
+    await sleep(50);
+    ctx.ee.emit('server:msg', { id: '2', title: 'second' });
+    await sleep(50);
+
+    // Second message must not arrive
+    expect(onData).toHaveBeenCalledTimes(1);
+  });
+});
