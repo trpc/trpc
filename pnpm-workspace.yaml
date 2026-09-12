@@ -7,8 +7,39 @@ packages:
   - 'examples/minimal-content-types/*'
   - 'www'
   - 'www/og-image'
+publicHoistPattern:
+  - '@types/*'
+  - 'playwright-core'
+  - 'zod'
+  - '!@prisma/*'
+  - '!prisma'
+sideEffectsCache: false
+strictPeerDependencies: false
+preferWorkspacePackages: true
+linkWorkspacePackages: true
+nodeOptions: --no-warnings
+
+minimumReleaseAgeExclude:
+  - sury@11.0.0
+
 allowBuilds:
+  '@prisma/client': true
+  '@prisma/engines': true
+  '@swc/core': true
+  '@tree-sitter-grammars/tree-sitter-yaml': true
+  aws-sdk: true
+  core-js: true
+  core-js-pure: true
+  es5-ext: true
   esbuild: true
+  nx: true
+  playwright: true
+  prisma: true
+  serverless: true
+  sharp: true
+  tree-sitter: true
+  tree-sitter-json: true
+  workerd: true
 
 catalog:
   '@types/node': ^24.13.4
