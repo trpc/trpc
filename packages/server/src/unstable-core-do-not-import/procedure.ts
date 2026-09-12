@@ -1,3 +1,4 @@
+import type { AnyErrorFormatter } from './error/formatter';
 import type { TRPCError } from './error/TRPCError';
 import type { Parser } from './parser';
 import type { ProcedureCallOptions } from './procedureBuilder';
@@ -13,6 +14,12 @@ interface BuiltProcedureDef {
   meta: unknown;
   input: unknown;
   output: unknown;
+  /**
+   * The error shape(s) this procedure can produce.
+   * Only set when the procedure has procedure-level error formatters,
+   * otherwise the router's error shape is used.
+   */
+  errorShape?: unknown;
 }
 
 /**
@@ -31,6 +38,7 @@ export interface Procedure<
     $types: {
       input: TDef['input'];
       output: TDef['output'];
+      errorShape: TDef['errorShape'];
     };
     procedure: true;
     type: TType;
@@ -44,6 +52,10 @@ export interface Procedure<
      * The input parsers for the procedure
      */
     inputs: Parser[];
+    /**
+     * Procedure-level error formatters, applied in order after the global one
+     */
+    errorFormatters: AnyErrorFormatter[];
   };
   meta: TDef['meta'];
   /**
