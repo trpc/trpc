@@ -222,6 +222,13 @@ export class WsClient {
         },
       );
 
+      const onAbort = () => observer.complete();
+      if (signal?.aborted) {
+        onAbort();
+      } else {
+        signal?.addEventListener('abort', onAbort, { once: true });
+      }
+
       return () => {
         abort();
 
@@ -232,7 +239,7 @@ export class WsClient {
           });
         }
 
-        signal?.removeEventListener('abort', abort);
+        signal?.removeEventListener('abort', onAbort);
       };
     });
   }
