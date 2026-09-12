@@ -25,8 +25,8 @@ export type inferTransformedProcedureOutput<
 /**
  * Infer the error shape(s) a procedure can produce.
  *
- * Procedures that add their own `.errorFormatter()`s narrow/widen the router's
- * error shape, everything else falls back to the router-wide shape.
+ * Procedures that declare their own errors with `.errors()` narrow/widen the
+ * router's error shape, everything else falls back to the router-wide shape.
  * @internal
  */
 export type inferProcedureErrorShape<

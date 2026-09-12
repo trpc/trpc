@@ -19,7 +19,7 @@ const testContext = () => {
     }),
   });
 
-  const rateLimited = t.procedure.errorFormatter((opts) => {
+  const rateLimited = t.procedure.errors((opts) => {
     if (opts.error.cause instanceof RateLimitError) {
       return {
         ...opts.shape,
@@ -54,7 +54,7 @@ const testContext = () => {
   return testReactResource(appRouter);
 };
 
-describe('procedure-level errorFormatter', () => {
+describe('procedure-level .errors()', () => {
   test('queryOptions surfaces the procedure error union', async () => {
     await using ctx = testContext();
     const { useTRPC } = ctx;

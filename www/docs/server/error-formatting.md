@@ -90,9 +90,9 @@ export function MyComponent() {
 
 ## Per-procedure error formatting
 
-`.errorFormatter()` is also available on the procedure builder, which lets a
-procedure describe the errors _it_ can throw without every other procedure
-having to know about them.
+The procedure builder has an `.errors()` method, which lets a procedure describe
+the errors _it_ can throw without every other procedure having to know about
+them.
 
 A procedure-level formatter runs **after** the global one and receives the shape
 the global formatter returned, so anything you add globally is still there.
@@ -111,7 +111,7 @@ class RateLimitError extends Error {
 const t = initTRPC.create();
 
 // ---cut---
-const rateLimitedProcedure = t.procedure.errorFormatter((opts) => {
+const rateLimitedProcedure = t.procedure.errors((opts) => {
   if (opts.error.cause instanceof RateLimitError) {
     return {
       ...opts.shape,
@@ -153,7 +153,7 @@ class RateLimitError extends Error {
 
 const t = initTRPC.create();
 
-const rateLimitedProcedure = t.procedure.errorFormatter((opts) => {
+const rateLimitedProcedure = t.procedure.errors((opts) => {
   if (opts.error.cause instanceof RateLimitError) {
     return {
       ...opts.shape,
@@ -201,7 +201,7 @@ export function SendMessage() {
 
 ### Chaining
 
-`.errorFormatter()` is chainable, and formatters added to a base procedure are
+`.errors()` is chainable, and formatters added to a base procedure are
 inherited by every procedure built from it. Each call adds its return type to
 the union, so the client has to handle every error the chain can produce:
 
@@ -217,7 +217,7 @@ class PaymentRequiredError extends Error {
 
 const t = initTRPC.create();
 
-const rateLimitedProcedure = t.procedure.errorFormatter((opts) => {
+const rateLimitedProcedure = t.procedure.errors((opts) => {
   if (opts.error.cause instanceof RateLimitError) {
     return {
       ...opts.shape,
@@ -230,7 +230,7 @@ const rateLimitedProcedure = t.procedure.errorFormatter((opts) => {
 // ---cut---
 // procedures built from this can error with
 // `RATE_LIMIT | PAYMENT_REQUIRED | <the global shape>`
-const billedProcedure = rateLimitedProcedure.errorFormatter((opts) => {
+const billedProcedure = rateLimitedProcedure.errors((opts) => {
   if (opts.error.cause instanceof PaymentRequiredError) {
     return {
       ...opts.shape,
