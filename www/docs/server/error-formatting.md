@@ -122,7 +122,6 @@ const rateLimitedProcedure = t.procedure.errors((opts) => {
       },
     };
   }
-  // not our error - leave it alone
   return opts.shape;
 });
 
@@ -191,7 +190,6 @@ export function SendMessage() {
 
   const data = mutation.error?.data;
   if (data && 'kind' in data) {
-    // `data` is narrowed to the rate-limit variant here
     return <p>Rate limited - retry in {data.retryAfterMs}ms</p>;
   }
 
@@ -228,8 +226,6 @@ const rateLimitedProcedure = t.procedure.errors((opts) => {
 });
 
 // ---cut---
-// procedures built from this can error with
-// `RATE_LIMIT | PAYMENT_REQUIRED | <the global shape>`
 const billedProcedure = rateLimitedProcedure.errors((opts) => {
   if (opts.error.cause instanceof PaymentRequiredError) {
     return {

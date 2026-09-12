@@ -101,7 +101,6 @@ describe('types', () => {
   test('a procedure-level formatter unions its shape with the global one', () => {
     type Shape = inferProcedureErrorShape<Root, Record['rateLimited']>;
 
-    // the global shape is still part of the union, so `kind` needs narrowing
     expectTypeOf<Shape['data']['fromGlobalFormatter']>().toEqualTypeOf<true>();
 
     const data = {} as Shape['data'];
@@ -201,7 +200,6 @@ describe.each([
       amountDue: 42,
     });
 
-    // the formatter inherited from the base procedure still applies
     const rateLimitError = await waitError(
       ctx.client.billedButRateLimited.mutate(),
       TRPCClientError,
