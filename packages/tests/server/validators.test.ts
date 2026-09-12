@@ -620,6 +620,43 @@ test('sury error type', async () => {
   `);
 });
 
+test('sury async', async () => {
+  const t = initTRPC.create();
+  const input = S.string.with(S.to, S.string, {
+    decode: {
+      async: async (value) => {
+        if (value !== 'foo') {
+          throw new Error(`Invalid input: Received "${value}"`);
+        }
+        return value;
+      },
+    },
+    encode: 'auto',
+  });
+
+  const router = t.router({
+    q: t.procedure.input(input).query((opts) => {
+      const { input } = opts;
+      expectTypeOf(input).toBeString();
+      return {
+        input,
+      };
+    }),
+  });
+
+  await using ctx = testServerAndClientResource(router);
+
+  await expect(ctx.client.q.query('bar')).rejects.toMatchInlineSnapshot(
+    `[TRPCClientError: Invalid input: Received "bar"]`,
+  );
+  const res = await ctx.client.q.query('foo');
+  expect(res).toMatchInlineSnapshot(`
+    Object {
+      "input": "foo",
+    }
+  `);
+});
+
 test('sury transform mixed input/output', async () => {
   const t = initTRPC.create();
   // Sury derives the `string` -> `number` coercion from the pipeline, so the

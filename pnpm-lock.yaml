@@ -2271,8 +2271,8 @@ importers:
         specifier: ^7.0.0
         version: 7.0.0
       sury:
-        specifier: 11.0.0-rc.1
-        version: 11.0.0-rc.1
+        specifier: 11.0.0
+        version: 11.0.0
       tsx:
         specifier: ^4.19.3
         version: 4.19.3
@@ -2573,8 +2573,8 @@ importers:
         specifier: ^2.0.0
         version: 2.0.0
       sury:
-        specifier: 11.0.0-rc.1
-        version: 11.0.0-rc.1
+        specifier: 11.0.0
+        version: 11.0.0
       tailwindcss:
         specifier: ^3.4.6
         version: 3.4.6
@@ -18013,8 +18013,8 @@ packages:
     resolution: {integrity: sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==}
     engines: {node: '>= 0.4'}
 
-  sury@11.0.0-rc.1:
-    resolution: {integrity: sha512-UzxKHMmL2iNdKmbckYDYgaQOnv1l6I+r6orv03P29oAEC9CpzljkpYeIcJ/oAoBc63VSFaCnmoL6gfuhPDTimA==}
+  sury@11.0.0:
+    resolution: {integrity: sha512-ixo9P04kr1VB15m+9OX1llkGYityBl5z79XBZqU4hIUjixbdoaoK92wO25DsPqVH8UjyB1rbotf8Gqj0K/uRwA==}
     peerDependencies:
       rescript: 12.x
     peerDependenciesMeta:
@@ -39753,7 +39753,7 @@ snapshots:
 
   supports-preserve-symlinks-flag@1.0.0: {}
 
-  sury@11.0.0-rc.1: {}
+  sury@11.0.0: {}
 
   svg-parser@2.0.4: {}
 
