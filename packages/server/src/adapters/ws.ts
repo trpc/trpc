@@ -404,24 +404,27 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
               type: 'stopped',
             },
           });
-          clientSubscriptions.delete(id);
-        }).catch((cause) => {
-          const error = getTRPCErrorFromUnknown(cause);
-          opts.onError?.({ error, path, type, ctx, req, input });
-          respond({
-            id,
-            jsonrpc,
-            error: getErrorShape({
-              config: router._def._config,
-              error,
-              type,
-              path,
-              input,
-              ctx,
-            }),
+        })
+          .catch((cause) => {
+            const error = getTRPCErrorFromUnknown(cause);
+            opts.onError?.({ error, path, type, ctx, req, input });
+            respond({
+              id,
+              jsonrpc,
+              error: getErrorShape({
+                config: router._def._config,
+                error,
+                type,
+                path,
+                input,
+                ctx,
+              }),
+            });
+            abortController.abort();
+          })
+          .finally(() => {
+            clientSubscriptions.delete(id);
           });
-          abortController.abort();
-        });
         clientSubscriptions.set(id, abortController);
 
         respond({
