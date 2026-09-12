@@ -122,7 +122,7 @@
     "@tanstack/intent": "^0.0.27",
     "@trpc/server": "11.18.0",
     "@types/isomorphic-fetch": "^0.0.39",
-    "@types/node": "^22.13.5",
+    "@types/node": "catalog:",
     "dataloader": "^2.2.2",
     "eslint": "^9.26.0",
     "isomorphic-fetch": "^3.0.0",

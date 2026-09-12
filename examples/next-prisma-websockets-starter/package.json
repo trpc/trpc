@@ -59,7 +59,7 @@
   "devDependencies": {
     "@playwright/test": "^1.50.1",
     "@tanstack/react-query-devtools": "^5.80.3",
-    "@types/node": "^22.13.5",
+    "@types/node": "^24.13.4",
     "@types/react": "^19.1.0",
     "@types/ws": "^8.2.0",
     "autoprefixer": "^10.4.7",

@@ -6,7 +6,7 @@ runs:
     - uses: pnpm/action-setup@v5
     - uses: actions/setup-node@v6
       with:
-        node-version: 24.x
+        node-version-file: '.nvmrc'
 
     - name: Get pnpm store directory
       shell: bash

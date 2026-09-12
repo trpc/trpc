@@ -89,7 +89,7 @@
     "@octokit/graphql": "^9.0.0",
     "@octokit/graphql-schema": "^15.0.0",
     "@types/aws-lambda": "^8.10.149",
-    "@types/node": "^22.13.5",
+    "@types/node": "^24.13.4",
     "@types/oauth": "^0.9.1",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.1",
