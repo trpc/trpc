@@ -1,6 +1,7 @@
 import type { IncomingMessage } from 'http';
 import type ws from 'ws';
 import type {
+  AnyProcedure,
   AnyRouter,
   CreateContextCallback,
   inferRouterContext,
@@ -27,6 +28,7 @@ import { parseConnectionParamsFromUnknown } from '../http';
 import { isObservable, observableToAsyncIterable } from '../observable';
 // eslint-disable-next-line no-restricted-imports
 import {
+  getProcedureAtPath,
   isAsyncIterable,
   isObject,
   isTrackedEnvelope,
@@ -243,7 +245,11 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       const { path, lastEventId } = msg.params;
       let { input } = msg.params;
       const type = msg.method;
-      const procedure = router._def.procedures[path];
+      /**
+       * Resolved inside the async block below so lazy routers get a chance to
+       * load - a sync `_def.procedures` lookup misses them on the first call.
+       */
+      let procedure: AnyProcedure | null = null;
 
       if (lastEventId !== undefined) {
         if (isObject(input)) {
@@ -263,6 +269,8 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         if (!res.ok) {
           throw res.error;
         }
+
+        procedure = await getProcedureAtPath(router, path);
 
         const abortController = new AbortController();
         const result = await callTRPCProcedure({

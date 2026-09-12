@@ -3,6 +3,7 @@ import { waitError } from '@trpc/server/__tests__/waitError';
 import { TRPCClientError } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import type { inferProcedureErrorShape } from '@trpc/server/unstable-core-do-not-import';
+import { lazy } from '@trpc/server/unstable-core-do-not-import';
 
 class RateLimitError extends Error {
   constructor(public readonly retryAfterMs: number) {
@@ -146,6 +147,60 @@ describe('types', () => {
     expectTypeOf<Shape['data']['kind']>().toEqualTypeOf<'ALWAYS'>();
     // @ts-expect-error - the global formatter can never run for this procedure
     type _ = Shape['data']['fromGlobalFormatter'];
+  });
+
+  test('a handler that always throws falls back instead of collapsing to never', () => {
+    const throws = t.procedure.errors((): never => {
+      throw new Error('boom');
+    });
+    const router = t.router({ proc: throws.query((): string => 'never') });
+
+    type Shape = inferProcedureErrorShape<
+      Root,
+      (typeof router)['_def']['record']['proc']
+    >;
+
+    expectTypeOf<Shape['data']['fromGlobalFormatter']>().toEqualTypeOf<true>();
+    const data = {} as Shape['data'];
+    // @ts-expect-error - `never` would silently allow any property access
+    data.anythingAtAll;
+  });
+
+  test('`concat()` drops unreachable variants when a chain always handles', () => {
+    const declines = t.procedure.errors((opts) => {
+      if (opts.error.code === 'BAD_REQUEST') {
+        return { ...opts.shape, data: { ...opts.shape.data, k: 'D' as const } };
+      }
+      return undefined;
+    });
+    const total = t.procedure.errors((opts) => ({
+      ...opts.shape,
+      data: { ...opts.shape.data, k: 'T' as const },
+    }));
+
+    const router = t.router({
+      declinesThenTotal: declines.concat(total).query((): string => 'never'),
+      totalThenDeclines: total.concat(declines).query((): string => 'never'),
+    });
+    type Rec = (typeof router)['_def']['record'];
+
+    // the concatenated handler always returns, so it's the only outcome
+    const a = {} as inferProcedureErrorShape<
+      Root,
+      Rec['declinesThenTotal']
+    >['data'];
+    a.k satisfies 'T';
+    // @ts-expect-error - the global formatter can't be reached
+    a.fromGlobalFormatter;
+
+    // declining falls through to the base, which always returns
+    const b = {} as inferProcedureErrorShape<
+      Root,
+      Rec['totalThenDeclines']
+    >['data'];
+    b.k satisfies 'D' | 'T';
+    // @ts-expect-error - the global formatter can't be reached
+    b.fromGlobalFormatter;
   });
 
   test('the router-wide error shape is unaffected', () => {
@@ -368,6 +423,33 @@ test('`concat()` runs the concatenated formatters first', async () => {
 
   expect(err.data).toMatchObject({ from: 'b' });
 });
+
+test.each(['httpLink', 'wsLink'] as const)(
+  'handlers inside a lazy router still run over %s',
+  async (clientLink) => {
+    const router = t.router({
+      sub: lazy(async () =>
+        t.router({
+          boom: rateLimitedProcedure.query((): string => {
+            throw new TRPCError({
+              code: 'TOO_MANY_REQUESTS',
+              cause: new RateLimitError(9_000),
+            });
+          }),
+        }),
+      ),
+    });
+
+    await using ctx = testServerAndClientResource(router, { clientLink });
+
+    const err = await waitError(ctx.client.sub.boom.query(), TRPCClientError);
+
+    expect(err.data).toMatchObject({
+      kind: 'RATE_LIMIT',
+      retryAfterMs: 9_000,
+    });
+  },
+);
 
 describe.each(['httpSubscriptionLink', 'wsLink'] as const)(
   'subscriptions (%s)',
