@@ -245,10 +245,6 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       const { path, lastEventId } = msg.params;
       let { input } = msg.params;
       const type = msg.method;
-      /**
-       * Resolved inside the async block below so lazy routers get a chance to
-       * load - a sync `_def.procedures` lookup misses them on the first call.
-       */
       let procedure: AnyProcedure | null = null;
 
       if (lastEventId !== undefined) {

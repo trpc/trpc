@@ -50,14 +50,7 @@ type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
   ? TFallback
   : TValue;
 
-/**
- * Fold a handler's return type into the shapes gathered so far.
- *
- * `undefined` is kept in the accumulation to mean "this chain can still
- * decline", which is what tells {@link ResolveErrorShape} whether the global
- * `errorFormatter` is reachable, and what lets {@link concat} know whether the
- * builder it's folding into can ever run.
- */
+/** `undefined` in the accumulation means the chain can still decline. */
 type FoldErrorShape<TFallback, $Shape> = [$Shape] extends [never]
   ? TFallback
   : undefined extends $Shape
