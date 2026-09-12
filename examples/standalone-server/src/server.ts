@@ -3,7 +3,6 @@ import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone'
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import type { CreateWSSContextFnOptions } from '@trpc/server/adapters/ws';
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
-import { observable } from '@trpc/server/observable';
 import { WebSocketServer } from 'ws';
 import { z } from 'zod';
 
@@ -45,17 +44,11 @@ const postRouter = router({
         ...input,
       };
     }),
-  randomNumber: publicProcedure.subscription(() => {
-    return observable<{ randomNumber: number }>((emit) => {
-      const timer = setInterval(() => {
-        // emits a number every second
-        emit.next({ randomNumber: Math.random() });
-      }, 200);
-
-      return () => {
-        clearInterval(timer);
-      };
-    });
+  randomNumber: publicProcedure.subscription(async function* (opts) {
+    while (!opts.signal?.aborted) {
+      yield { randomNumber: Math.random() };
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    }
   }),
 });
 
