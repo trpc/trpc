@@ -14,11 +14,7 @@ import type { AnyRouter } from '../../@trpc/server';
 // @trpc/server/http
 import type { NodeHTTPCreateContextFnOptions } from '../node-http';
 // @trpc/server/ws
-import {
-  getWSConnectionHandler,
-  handleKeepAlive,
-  type WSSHandlerOptions,
-} from '../ws';
+import { getWSConnectionHandler, type WSSHandlerOptions } from '../ws';
 import type { FastifyHandlerOptions } from './fastifyRequestHandler';
 import { fastifyRequestHandler } from './fastifyRequestHandler';
 
@@ -77,11 +73,10 @@ export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
     });
 
     fastify.get(prefix ?? '/', { websocket: true }, (socket, req) => {
+      // keepalive is registered by getWSConnectionHandler, which every
+      // adapter goes through — registering it here as well gave each socket
+      // two ping intervals and two pong-wait timers
       onConnection(socket, req.raw);
-      if (trpcOptions?.keepAlive?.enabled) {
-        const { pingMs, pongWaitMs } = trpcOptions.keepAlive;
-        handleKeepAlive(socket, pingMs, pongWaitMs);
-      }
     });
   }
 
