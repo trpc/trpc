@@ -330,13 +330,19 @@ test('errors thrown from middlewares go through the chain', async () => {
 test('`concat()` runs the concatenated formatters first', async () => {
   const a = t.procedure.errors((opts) => {
     if (opts.error.code === 'BAD_REQUEST') {
-      return { ...opts.shape, data: { ...opts.shape.data, from: 'a' as const } };
+      return {
+        ...opts.shape,
+        data: { ...opts.shape.data, from: 'a' as const },
+      };
     }
     return undefined;
   });
   const b = t.procedure.errors((opts) => {
     if (opts.error.code === 'BAD_REQUEST') {
-      return { ...opts.shape, data: { ...opts.shape.data, from: 'b' as const } };
+      return {
+        ...opts.shape,
+        data: { ...opts.shape.data, from: 'b' as const },
+      };
     }
     return undefined;
   });

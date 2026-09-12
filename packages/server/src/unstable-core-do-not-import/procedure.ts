@@ -14,11 +14,6 @@ interface BuiltProcedureDef {
   meta: unknown;
   input: unknown;
   output: unknown;
-  /**
-   * The error shape(s) this procedure can produce.
-   * Only set when the procedure has procedure-level error formatters,
-   * otherwise the router's error shape is used.
-   */
   errorShape?: unknown;
 }
 

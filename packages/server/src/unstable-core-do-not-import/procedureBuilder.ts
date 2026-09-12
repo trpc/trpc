@@ -50,15 +50,6 @@ type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
   ? TFallback
   : TValue;
 
-/**
- * Fold a `.errors()` return type into the error shape accumulated so far.
- *
- * `.errors()` formatters run from the tail of the chain backwards, so the shape
- * accumulated up to this point is what the new formatter falls back to. A
- * formatter that can't return `undefined` always handles the error, which makes
- * everything before it - including the router-wide `errorFormatter` -
- * unreachable.
- */
 type AccumulateErrorShape<TFallback, $Shape> = [$Shape] extends [TRPCErrorShape]
   ? $Shape
   : Extract<$Shape, TRPCErrorShape> | TFallback;
@@ -279,14 +270,10 @@ export interface ProcedureBuilder<
     TErrorShape
   >;
   /**
-   * Declare the errors this procedure can produce.
+   * Add per procedure error formatters.
    *
-   * Formatters get first refusal on an error from the tail of the chain
-   * backwards, so the most recently added one runs first. Returning a shape
-   * ends the chain and that shape goes straight to the client; returning
-   * `undefined` declines the error and hands it to the next formatter towards
-   * the head, falling back to the router-wide `errorFormatter` if none of them
-   * take it.
+   * An error will bubble until a `.errors()` handler returns a shape
+   * or it reaches the global errorFormatter
    *
    * @see https://trpc.io/docs/v11/server/error-formatting
    */
@@ -597,7 +584,7 @@ export function createBuilder<TContext, TMeta, TErrorShape = DefaultErrorShape>(
     },
     errors(formatter) {
       return createNewBuilder(_def, {
-        errorFormatters: [formatter as AnyProcedureErrorFormatter],
+        errorFormatters: [formatter],
       });
     },
     use(middlewareBuilderOrFn) {
