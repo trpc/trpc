@@ -13,6 +13,14 @@ export type NeverField = {
     impossible?: unknown;
 };
 
+export type WithFunctions = {
+    id: string;
+};
+
+export type OnlyFunctions = {
+    [key: string]: unknown;
+};
+
 export type DefaultErrorShape = {
     message: string;
     code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
@@ -615,3 +623,65 @@ export type LiteralComputedKeyResponses = {
 };
 
 export type LiteralComputedKeyResponse = LiteralComputedKeyResponses[keyof LiteralComputedKeyResponses];
+
+export type WithFunctionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/withFunctions';
+};
+
+export type WithFunctionsErrors = {
+    /**
+     * Error response
+     */
+    default: {
+        error: DefaultErrorShape;
+    };
+};
+
+export type WithFunctionsError = WithFunctionsErrors[keyof WithFunctionsErrors];
+
+export type WithFunctionsResponses = {
+    /**
+     * Successful response
+     */
+    200: {
+        result: {
+            data: WithFunctions;
+        };
+    };
+};
+
+export type WithFunctionsResponse = WithFunctionsResponses[keyof WithFunctionsResponses];
+
+export type OnlyFunctionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/onlyFunctions';
+};
+
+export type OnlyFunctionsErrors = {
+    /**
+     * Error response
+     */
+    default: {
+        error: DefaultErrorShape;
+    };
+};
+
+export type OnlyFunctionsError = OnlyFunctionsErrors[keyof OnlyFunctionsErrors];
+
+export type OnlyFunctionsResponses = {
+    /**
+     * Successful response
+     */
+    200: {
+        result: {
+            data: OnlyFunctions;
+        };
+    };
+};
+
+export type OnlyFunctionsResponse = OnlyFunctionsResponses[keyof OnlyFunctionsResponses];

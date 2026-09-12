@@ -57,6 +57,30 @@ describe('generateOpenAPIDocument edge cases', () => {
     expect(schema.properties).toHaveProperty('impossible');
   });
 
+  it('drops function-valued properties from the schema', () => {
+    const schema = requireOutputData({ doc, procPath: 'withFunctions' });
+
+    // Serialisable sibling survives
+    expect(requireProperty(schema, 'id')).toEqual({ type: 'string' });
+
+    // Functions carry TypeFlags.Object, so without an explicit check these
+    // would be emitted as `{ type: 'object' }` (or `{}` when optional).
+    expect(schema.properties).not.toHaveProperty('onEvent');
+    expect(schema.properties).not.toHaveProperty('optionalHook');
+    expect(schema.properties).not.toHaveProperty('ctor');
+
+    // ...and they must not be advertised as required either
+    expect(schema.required ?? []).not.toContain('onEvent');
+    expect(schema.required ?? []).not.toContain('ctor');
+  });
+
+  it('collapses an object whose properties are all callable', () => {
+    const schema = requireOutputData({ doc, procPath: 'onlyFunctions' });
+
+    expect(schema.type).toBe('object');
+    expect(schema.properties ?? {}).toEqual({});
+  });
+
   it('unwraps Promise<T> return types', () => {
     const schema = requireOutputData({ doc, procPath: 'asyncReturn' });
     expect(requireProperty(schema, 'data')).toEqual({ type: 'string' });
