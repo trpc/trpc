@@ -378,7 +378,9 @@ export async function getProcedureAtPath(
   let procedure = _def.procedures[path];
 
   while (!procedure) {
-    const key = Object.keys(_def.lazy).find((key) => path.startsWith(key));
+    const key = Object.keys(_def.lazy).find(
+      (key) => path === key || path.startsWith(key + '.'),
+    );
     // console.log(`found lazy: ${key ?? 'NOPE'} (fullPath: ${fullPath})`);
 
     if (!key) {
