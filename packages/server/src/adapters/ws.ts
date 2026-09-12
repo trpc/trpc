@@ -243,11 +243,6 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       const { path, lastEventId } = msg.params;
       let { input } = msg.params;
       const type = msg.method;
-      /**
-       * Used to apply procedure-level error formatters - `undefined` for
-       * unknown paths or not-yet-loaded lazy routers, which is fine since
-       * those can't have thrown a procedure-level error either.
-       */
       const procedure = router._def.procedures[path];
 
       if (lastEventId !== undefined) {
