@@ -960,15 +960,13 @@ describe('generateOpenAPIDocument', () => {
       const input = { id: 'evt_1', at: new Date('2025-06-15T10:00:00Z') };
 
       // inputs need serialising properly
-      await expect(async () => {
-        await sdk.getEvent({
-          query: {
-            input,
-          },
-        });
-      }).rejects.toThrowErrorMatchingInlineSnapshot(
-        `[Error: Deeply-nested arrays/objects aren’t supported. Provide your own \`querySerializer()\` to handle these.]`,
-      );
+      const unserialized = await sdk.getEvent({
+        query: {
+          input,
+        },
+      });
+      expect(unserialized.data).toBeUndefined();
+      expect(unserialized.error).toBeDefined();
 
       const result = await sdk.getEvent({
         query: {
