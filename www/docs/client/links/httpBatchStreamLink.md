@@ -101,7 +101,7 @@ const client = createTRPCClient<AppRouter>({
 Compared to a regular `httpBatchLink`, a `httpBatchStreamLink` will:
 
 - Cause the requests to be sent with a `trpc-accept: application/jsonl` header (or `Accept: application/jsonl` when using `streamHeader: 'accept'`)
-- Cause the response to be sent with a `transfer-encoding: chunked` and `content-type: application/jsonl`
+- Cause the response to be sent with `transfer-encoding: chunked` and `content-type: application/json` by default. You can set the streamed response `content-type` to `application/jsonl`, `application/x-ndjson`, or another value on the server via `initTRPC.create({ jsonl: { contentType: ... } })`.
 - Remove the `data` key from the argument object passed to `responseMeta` (because with a streamed response, the headers are sent before the data is available)
 
 ## Async generators and deferred promises {#generators}
@@ -205,9 +205,9 @@ You need to enable the `ReadableStream` API through a feature flag: [`streams_en
 
 You can check out the source code for this link on [GitHub.](https://github.com/trpc/trpc/blob/main/packages/client/src/links/httpBatchStreamLink.ts)
 
-## Configure a ping option to keep the connection alive
+## Configure JSONL streaming options
 
-When setting up your root config, you can pass in a `jsonl` option to configure a ping option to keep the connection alive.
+When setting up your root config, you can pass in a `jsonl` option to configure ping behavior and the response `content-type` for streamed batch responses.
 
 ```ts twoslash
 import { initTRPC } from '@trpc/server';
@@ -215,6 +215,9 @@ import { initTRPC } from '@trpc/server';
 const t = initTRPC.create({
   jsonl: {
     pingMs: 1000,
+    contentType: 'application/jsonl',
   },
 });
 ```
+
+The default `contentType` remains `application/json` for backwards compatibility. Use `application/jsonl` if you want the response header to match the `trpc-accept` / `Accept` header sent by `httpBatchStreamLink`, or choose another value that works better with your tooling.
