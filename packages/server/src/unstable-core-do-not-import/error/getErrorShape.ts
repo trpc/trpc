@@ -2,7 +2,10 @@ import { getHTTPStatusCodeFromError } from '../http/getHTTPStatusCode';
 import type { ProcedureType } from '../procedure';
 import type { AnyRootTypes, RootConfig } from '../rootConfig';
 import { TRPC_ERROR_CODES_BY_KEY } from '../rpc';
-import { getProcedureErrorFormatters, type DefaultErrorShape } from './formatter';
+import {
+  getProcedureErrorFormatters,
+  type DefaultErrorShape,
+} from './formatter';
 import type { TRPCError } from './TRPCError';
 
 /**
