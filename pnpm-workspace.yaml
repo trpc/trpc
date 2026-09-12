@@ -7,3 +7,5 @@ packages:
   - 'examples/minimal-content-types/*'
   - 'www'
   - 'www/og-image'
+allowBuilds:
+  esbuild: true
