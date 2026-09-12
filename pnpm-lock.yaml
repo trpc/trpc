@@ -2270,6 +2270,9 @@ importers:
       supertest:
         specifier: ^7.0.0
         version: 7.0.0
+      sury:
+        specifier: 11.0.0-rc.1
+        version: 11.0.0-rc.1
       tsx:
         specifier: ^4.19.3
         version: 4.19.3

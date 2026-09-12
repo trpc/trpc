@@ -15,6 +15,7 @@ import myzod from 'myzod';
 import * as T from 'runtypes';
 import * as $ from 'scale-codec';
 import * as st from 'superstruct';
+import * as S from 'sury';
 import * as v from 'valibot';
 import * as yup from 'yup';
 import { z as zod3 } from 'zod/v3';
@@ -554,6 +555,106 @@ test('runtypes', async () => {
   await expect(ctx.client.num.query('13')).rejects.toMatchInlineSnapshot(`
     [TRPCClientError: Expected { text: string; }, but was string]
   `);
+});
+
+test('sury', async () => {
+  const t = initTRPC.create();
+
+  const router = t.router({
+    num: t.procedure.input(S.schema({ text: S.string })).query((opts) => {
+      const { input } = opts;
+      expectTypeOf(input).toEqualTypeOf<{ text: string }>();
+      return {
+        input,
+      };
+    }),
+  });
+
+  await using ctx = testServerAndClientResource(router);
+  const res = await ctx.client.num.query({ text: '123' });
+  expect(res.input).toMatchObject({ text: '123' });
+
+  await expect(
+    // @ts-expect-error this only accepts {text: string}
+    ctx.client.num.query({ text: 123 }),
+  ).rejects.toMatchInlineSnapshot(
+    `[TRPCClientError: Expected string, received 123]`,
+  );
+});
+
+test('sury error type', async () => {
+  const t = initTRPC.create();
+
+  const router = t.router({
+    num: t.procedure.input(S.schema({ text: S.string })).query((opts) => {
+      const { input } = opts;
+      expectTypeOf(input).toEqualTypeOf<{ text: string }>();
+      return {
+        input,
+      };
+    }),
+  });
+
+  const caller = router.createCaller({});
+  const err = await waitError(
+    caller.num(
+      // @ts-expect-error this only accepts {text: string}
+      { text: 123 },
+    ),
+    TRPCError,
+  );
+  expect(err).toMatchInlineSnapshot(
+    `[TRPCError: Expected string, received 123]`,
+  );
+
+  assert(err.cause instanceof StandardSchemaV1Error);
+  expect(err.cause.issues).toMatchInlineSnapshot(`
+    Array [
+      Object {
+        "message": "Expected string, received 123",
+        "path": Array [
+          "text",
+        ],
+      },
+    ]
+  `);
+});
+
+test('sury transform mixed input/output', async () => {
+  const t = initTRPC.create();
+  // Sury derives the `string` -> `number` coercion from the pipeline, so the
+  // client sends a string and the resolver receives a number.
+  const input = S.schema({ length: S.string.with(S.to, S.number) });
+
+  const router = t.router({
+    num: t.procedure.input(input).query((opts) => {
+      const { input } = opts;
+      expectTypeOf(input.length).toBeNumber();
+      return {
+        input,
+      };
+    }),
+  });
+
+  await using ctx = testServerAndClientResource(router);
+
+  await expect(ctx.client.num.query({ length: '123' })).resolves
+    .toMatchInlineSnapshot(`
+    Object {
+      "input": Object {
+        "length": 123,
+      },
+    }
+  `);
+
+  await expect(
+    ctx.client.num.query({
+      // @ts-expect-error this should only accept a string
+      length: 123,
+    }),
+  ).rejects.toMatchInlineSnapshot(
+    `[TRPCClientError: Expected string, received 123]`,
+  );
 });
 
 test('validator fn', async () => {
