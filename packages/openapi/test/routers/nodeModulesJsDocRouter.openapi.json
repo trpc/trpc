@@ -1189,36 +1189,7 @@
         "type": "object",
         "properties": {
           "buildStart": {
-            "oneOf": [
-              {
-                "type": "object"
-              },
-              {
-                "type": "object",
-                "properties": {
-                  "handler": {
-                    "type": "object"
-                  },
-                  "order": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "enum": [
-                      "pre",
-                      "post"
-                    ]
-                  },
-                  "sequential": {
-                    "type": "boolean"
-                  }
-                },
-                "required": [
-                  "handler"
-                ],
-                "additionalProperties": false
-              }
-            ]
+            "type": "object"
           },
           "resolveId": {
             "type": "object"

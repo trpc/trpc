@@ -391,12 +391,6 @@ export type RegExp = {
 export type ResolverObject = {
     buildStart?: {
         [key: string]: unknown;
-    } | {
-        handler: {
-            [key: string]: unknown;
-        };
-        order?: 'pre' | 'post';
-        sequential?: boolean;
     };
     resolveId: {
         [key: string]: unknown;
