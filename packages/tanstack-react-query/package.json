@@ -75,7 +75,7 @@
     "react-dom": "^19.1.0",
     "tsdown": "catalog:",
     "typescript": "catalog:",
-    "vitest": "^4.0.18",
+    "vitest": "catalog:",
     "ws": "^8.0.0",
     "zod": "^4.2.1"
   },

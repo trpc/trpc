@@ -49,8 +49,8 @@
     "@testing-library/user-event": "^14.4.3",
     "@types/event-source-polyfill": "^1.0.5",
     "@types/node": "catalog:",
-    "@vitest/coverage-istanbul": "^4.0.18",
-    "@vitest/ui": "^4.0.18",
+    "@vitest/coverage-istanbul": "catalog:",
+    "@vitest/ui": "catalog:",
     "concurrently": "^9.0.0",
     "eslint": "catalog:",
     "eslint-plugin-react": "catalog:",
@@ -71,8 +71,8 @@
     "turbo": "^2.5.4",
     "typescript": "catalog:ts-api",
     "typescript-eslint": "catalog:",
-    "vite": "^6.1.1",
-    "vitest": "^4.0.18",
+    "vite": "catalog:",
+    "vitest": "catalog:",
     "zod": "^4.2.1"
   }
 }
