@@ -18,6 +18,7 @@ import type {
   FastifyTRPCPluginOptions,
 } from '@trpc/server/adapters/fastify';
 import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
+import * as wsAdapter from '@trpc/server/adapters/ws';
 import { observable } from '@trpc/server/observable';
 import fastify from 'fastify';
 import fp from 'fastify-plugin';
@@ -631,5 +632,57 @@ describe('issue #5530 - cannot receive new WebSocket messages after receiving 16
     for (let i = 0; i < 4; i++) {
       expect(await app.client.echo.query(data)).toBe(data);
     }
+  });
+});
+
+// https://github.com/trpc/trpc/issues/7502
+describe('regression #7502 - keepAlive does not attach duplicate ping handlers', () => {
+  let serverInstance: any;
+
+  afterEach(async () => {
+    await serverInstance?.close();
+  });
+
+  test('sends only one PING when keepAlive is enabled', async () => {
+    const t = initTRPC.create();
+    const appRouter = t.router({
+      ping: t.procedure.query(() => 'pong'),
+    });
+
+    const instance = fastify();
+    serverInstance = instance;
+    instance.register(ws);
+    instance.register(fastifyTRPCPlugin, {
+      useWSS: true,
+      prefix: '/trpc',
+      trpcOptions: {
+        router: appRouter,
+        keepAlive: {
+          enabled: true,
+          pingMs: 20,
+          pongWaitMs: 1000,
+        },
+      } as any,
+    });
+
+    await instance.listen({ port: 0, host: '127.0.0.1' });
+    const port = (instance.server.address() as any).port;
+
+    const pings: string[] = [];
+    const rawWs = new WebSocket(`ws://127.0.0.1:${port}/trpc`);
+    rawWs.on('message', (data) => {
+      const msg =
+        typeof data === 'string' ? data : Buffer.from(data as any).toString();
+      if (msg === 'PING') {
+        pings.push('PING');
+      }
+    });
+
+    await new Promise((resolve) => rawWs.on('open', resolve));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(pings.length).toBe(1);
+
+    rawWs.close();
   });
 });
