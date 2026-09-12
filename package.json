@@ -68,7 +68,7 @@
     "superjson": "^1.12.4",
     "ts-prune": "^0.10.3",
     "tsx": "^4.19.3",
-    "turbo": "^2.5.4",
+    "turbo": "catalog:",
     "typescript": "catalog:ts-api",
     "typescript-eslint": "catalog:",
     "vite": "catalog:",
