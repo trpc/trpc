@@ -88,12 +88,13 @@ export function httpLink<TRouter extends AnyRouter = AnyRouter>(
           );
         }
 
+        const ac = new AbortController();
         const request = universalRequester({
           ...resolvedOpts,
           type,
           path,
           input,
-          signal: op.signal,
+          signal: ac.signal,
           headers() {
             if (!opts.headers) {
               return {};
@@ -134,7 +135,7 @@ export function httpLink<TRouter extends AnyRouter = AnyRouter>(
           });
 
         return () => {
-          // noop
+          ac.abort();
         };
       });
     };

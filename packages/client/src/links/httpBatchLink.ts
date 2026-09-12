@@ -3,7 +3,7 @@ import { observable } from '@trpc/server/observable';
 import { transformResult } from '@trpc/server/unstable-core-do-not-import';
 import type { BatchLoader } from '../internals/dataLoader';
 import { dataLoader } from '../internals/dataLoader';
-import { allAbortSignals } from '../internals/signals';
+import { allAbortSignals, raceAbortSignals } from '../internals/signals';
 import type { NonEmptyArray } from '../internals/types';
 import { TRPCClientError } from '../TRPCClientError';
 import type { HTTPBatchLinkOptions } from './HTTPBatchLinkOptions';
@@ -98,8 +98,12 @@ export function httpBatchLink<TRouter extends AnyRouter>(
             'Subscriptions are unsupported by `httpLink` - use `httpSubscriptionLink` or `wsLink`',
           );
         }
+        const ac = new AbortController();
         const loader = loaders[op.type];
-        const promise = loader.load(op);
+        const promise = loader.load({
+          ...op,
+          signal: raceAbortSignals(op.signal, ac.signal),
+        });
 
         let _res = undefined as HTTPResult | undefined;
         promise
@@ -133,7 +137,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           });
 
         return () => {
-          // noop
+          ac.abort();
         };
       });
     };
