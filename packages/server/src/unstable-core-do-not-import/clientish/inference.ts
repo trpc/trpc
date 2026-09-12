@@ -22,6 +22,22 @@ export type inferTransformedProcedureOutput<
   ? Serialize<inferProcedureOutput<TProcedure>>
   : inferProcedureOutput<TProcedure>;
 
+/**
+ * Infer the error shape(s) a procedure can produce.
+ *
+ * Procedures that add their own `.errorFormatter()`s narrow/widen the router's
+ * error shape, everything else falls back to the router-wide shape.
+ * @internal
+ */
+export type inferProcedureErrorShape<
+  TInferrable extends InferrableClientTypes,
+  TProcedure extends AnyProcedure,
+> = TProcedure['_def']['$types']['errorShape'] extends infer $Shape
+  ? unknown extends $Shape
+    ? inferClientTypes<TInferrable>['errorShape']
+    : $Shape
+  : never;
+
 /** @internal */
 export type inferTransformedSubscriptionOutput<
   TInferrable extends InferrableClientTypes,

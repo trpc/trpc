@@ -2,6 +2,7 @@ import type { Resolver } from '@trpc/client';
 import type {
   AnyProcedure,
   AnyRootTypes,
+  inferProcedureErrorShape,
   inferProcedureInput,
   inferTransformedProcedureOutput,
   ProcedureType,
@@ -48,7 +49,7 @@ export type NextAppDirDecorateRouterRecord<
           {
             input: inferProcedureInput<$Value>;
             output: inferTransformedProcedureOutput<TRoot, $Value>;
-            errorShape: TRoot['errorShape'];
+            errorShape: inferProcedureErrorShape<TRoot, $Value>;
             transformer: TRoot['transformer'];
           }
         >

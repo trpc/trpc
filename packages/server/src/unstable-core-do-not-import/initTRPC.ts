@@ -82,7 +82,8 @@ export interface TRPCRootObject<
     UnsetMarker,
     UnsetMarker,
     UnsetMarker,
-    false
+    false,
+    $Root['errorShape']
   >;
 
   /**
@@ -187,7 +188,11 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
        * Builder object for creating procedures
        * @see https://trpc.io/docs/v11/server/procedures
        */
-      procedure: createBuilder<$Root['ctx'], $Root['meta']>({
+      procedure: createBuilder<
+        $Root['ctx'],
+        $Root['meta'],
+        $Root['errorShape']
+      >({
         meta: opts?.defaultMeta,
       }),
       /**

@@ -4,6 +4,7 @@ import type {
   AnyProcedure,
   AnyRouter,
   inferClientTypes,
+  inferProcedureErrorShape,
   inferProcedureInput,
   InferrableClientTypes,
   inferTransformedProcedureOutput,
@@ -109,7 +110,7 @@ type DecoratedProcedureRecord<
               inferClientTypes<TRoot>,
               $Value
             >;
-            errorShape: inferClientTypes<TRoot>['errorShape'];
+            errorShape: inferProcedureErrorShape<TRoot, $Value>;
             transformer: inferClientTypes<TRoot>['transformer'];
           }
         >

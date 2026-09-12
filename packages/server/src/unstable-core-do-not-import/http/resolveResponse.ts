@@ -430,6 +430,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                   input: call!.result(),
                   path: call!.path,
                   type: info.type,
+                  procedure: call!.procedure,
                 }),
               }
             : { result: { data: result.data } };
@@ -508,6 +509,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                 input,
                 path,
                 type,
+                procedure: call?.procedure,
               });
 
               return shape;
@@ -607,6 +609,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                 input: call!.result(),
                 path: call!.path,
                 type: call!.procedure?._def.type ?? 'unknown',
+                procedure: call!.procedure,
               }),
             };
           }
@@ -653,6 +656,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             input,
             path,
             type,
+            procedure: call?.procedure,
           });
 
           return shape;
@@ -708,6 +712,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               input: call.result(),
               path: call.path,
               type: call.procedure?._def.type ?? 'unknown',
+              procedure: call.procedure,
             }),
           };
         }

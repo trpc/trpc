@@ -9,14 +9,28 @@ import type { TRPCError } from './TRPCError';
 /**
  * @internal
  */
-export type ErrorFormatter<TContext, TShape extends TRPCErrorShape> = (opts: {
+export type ErrorFormatter<
+  TContext,
+  TShape extends TRPCErrorShape,
+  /**
+   * The shape that is passed *into* the formatter.
+   * For the global formatter this is always the {@link DefaultErrorShape},
+   * for procedure-level formatters it's whatever the previous formatter returned.
+   */
+  TShapeIn = DefaultErrorShape,
+> = (opts: {
   error: TRPCError;
   type: ProcedureType | 'unknown';
   path: string | undefined;
   input: unknown;
   ctx: TContext | undefined;
-  shape: DefaultErrorShape;
+  shape: TShapeIn;
 }) => TShape;
+
+/**
+ * @internal
+ */
+export type AnyErrorFormatter = ErrorFormatter<any, any, any>;
 
 /**
  * @internal

@@ -183,6 +183,7 @@ export function experimental_createServerActionHandler<
           input: rawInput,
           path: '',
           type: proc._def.type,
+          procedure: proc,
         });
 
         return transformTRPCResponse(t._config, {
