@@ -44,3 +44,8 @@ allowBuilds:
 catalog:
   '@types/node': ^24.13.4
   tsdown: 0.23.0
+  typescript: ^7.0.2
+
+catalogs:
+  ts-api:
+    typescript: ^6.0.3

@@ -129,7 +129,7 @@
     "node-fetch": "^3.3.0",
     "tsdown": "catalog:",
     "tslib": "^2.8.1",
-    "typescript": "^5.9.2",
+    "typescript": "catalog:",
     "undici": "^8.0.0",
     "ws": "^8.0.0"
   },
