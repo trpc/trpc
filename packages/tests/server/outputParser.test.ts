@@ -2,6 +2,7 @@ import { testServerAndClientResource } from '@trpc/client/__tests__/testClientRe
 import { initTRPC } from '@trpc/server';
 import myzod from 'myzod';
 import * as t from 'superstruct';
+import * as S from 'sury';
 import * as v from 'valibot';
 import * as yup from 'yup';
 import { z } from 'zod';
@@ -300,6 +301,91 @@ test('myzod', async () => {
   expect(output).toMatchInlineSnapshot(`
     Object {
       "input": "foobar",
+    }
+  `);
+
+  await expect(ctx.client.q.query(1234)).rejects.toMatchInlineSnapshot(
+    `[TRPCClientError: Output validation failed]`,
+  );
+});
+
+test('sury', async () => {
+  const trpc = initTRPC.create();
+  const router = trpc.router({
+    q: trpc.procedure
+      .input(S.union([S.string, S.number]))
+      .output(S.schema({ input: S.string }))
+      .query(({ input }) => {
+        return { input: input as string };
+      }),
+  });
+
+  await using ctx = testServerAndClientResource(router);
+
+  const output = await ctx.client.q.query('foobar');
+  expectTypeOf(output.input).toBeString();
+  expect(output).toMatchInlineSnapshot(`
+    Object {
+      "input": "foobar",
+    }
+  `);
+
+  await expect(ctx.client.q.query(1234)).rejects.toMatchInlineSnapshot(
+    `[TRPCClientError: Output validation failed]`,
+  );
+});
+
+test('sury async', async () => {
+  const trpc = initTRPC.create();
+  const router = trpc.router({
+    q: trpc.procedure
+      .input(S.union([S.string, S.number]))
+      .output(
+        S.schema({
+          input: S.string.with(S.to, S.string, {
+            decode: { async: async (value) => value },
+            encode: 'auto',
+          }),
+        }),
+      )
+      .query(({ input }) => {
+        return { input: input as string };
+      }),
+  });
+
+  await using ctx = testServerAndClientResource(router);
+
+  const output = await ctx.client.q.query('foobar');
+  expectTypeOf(output.input).toBeString();
+  expect(output).toMatchInlineSnapshot(`
+    Object {
+      "input": "foobar",
+    }
+  `);
+
+  await expect(ctx.client.q.query(1234)).rejects.toMatchInlineSnapshot(
+    `[TRPCClientError: Output validation failed]`,
+  );
+});
+
+test('sury transform', async () => {
+  const trpc = initTRPC.create();
+  const router = trpc.router({
+    q: trpc.procedure
+      .input(S.union([S.string, S.number]))
+      .output(S.schema({ input: S.string.with(S.to, S.number) }))
+      .query(({ input }) => {
+        return { input: input as string };
+      }),
+  });
+
+  await using ctx = testServerAndClientResource(router);
+
+  const output = await ctx.client.q.query('1234');
+  expectTypeOf(output.input).toBeNumber();
+  expect(output).toMatchInlineSnapshot(`
+    Object {
+      "input": 1234,
     }
   `);
 
