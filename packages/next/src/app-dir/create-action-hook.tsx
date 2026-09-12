@@ -33,29 +33,33 @@ interface UseTRPCActionBaseResult<TDef extends ActionHandlerDef> {
   mutateAsync: (...args: MutationArgs<TDef>) => Promise<TDef['output']>;
 }
 
-interface UseTRPCActionSuccessResult<TDef extends ActionHandlerDef>
-  extends UseTRPCActionBaseResult<TDef> {
+interface UseTRPCActionSuccessResult<
+  TDef extends ActionHandlerDef,
+> extends UseTRPCActionBaseResult<TDef> {
   data: TDef['output'];
   error?: never;
   status: 'success';
 }
 
-interface UseTRPCActionErrorResult<TDef extends ActionHandlerDef>
-  extends UseTRPCActionBaseResult<TDef> {
+interface UseTRPCActionErrorResult<
+  TDef extends ActionHandlerDef,
+> extends UseTRPCActionBaseResult<TDef> {
   data?: never;
   error: TRPCClientError<TDef['errorShape']>;
   status: 'error';
 }
 
-interface UseTRPCActionIdleResult<TDef extends ActionHandlerDef>
-  extends UseTRPCActionBaseResult<TDef> {
+interface UseTRPCActionIdleResult<
+  TDef extends ActionHandlerDef,
+> extends UseTRPCActionBaseResult<TDef> {
   data?: never;
   error?: never;
   status: 'idle';
 }
 
-interface UseTRPCActionLoadingResult<TDef extends ActionHandlerDef>
-  extends UseTRPCActionBaseResult<TDef> {
+interface UseTRPCActionLoadingResult<
+  TDef extends ActionHandlerDef,
+> extends UseTRPCActionBaseResult<TDef> {
   data?: never;
   error?: never;
   status: 'loading';

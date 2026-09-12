@@ -359,15 +359,13 @@ export default {
 
             const versionProp = versionSpecificDocsRoute?.props?.version;
 
-            if (
-              !(
-                typeof versionProp === 'object' &&
-                versionProp !== null &&
-                'docs' in versionProp &&
-                typeof (versionProp as any).docs === 'object' &&
-                (versionProp as any).docs !== null
-              )
-            ) {
+            if (!(
+              typeof versionProp === 'object' &&
+              versionProp !== null &&
+              'docs' in versionProp &&
+              typeof (versionProp as any).docs === 'object' &&
+              (versionProp as any).docs !== null
+            )) {
               console.warn(
                 `[llms-txt-plugin] No docs data structure found in versionProp for version '${versionLabel}' (route path: ${versionSpec.routePath}). Skipping TOC file llms${versionSpec.fileSuffix}.txt.`,
               );

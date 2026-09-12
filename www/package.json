@@ -106,7 +106,7 @@
     "npm-run-all2": "^8.0.0",
     "oauth": "^0.10.0",
     "postcss": "^8.4.39",
-    "prettier": "^3.3.3",
+    "prettier": "^3.9.6",
     "remark-parse": "^11.0.0",
     "remark-stringify": "^11.0.0",
     "runtypes": "^7.0.0",

@@ -30,10 +30,8 @@ export const appRouter = router({
 
 export type AppRouter = typeof appRouter;
 
-const createCallerContext = cache(
-  async (): Promise<Context> => ({
-    session: await auth(),
-  }),
-);
+const createCallerContext = cache(async (): Promise<Context> => ({
+  session: await auth(),
+}));
 
 export const caller = createCallerFactory()(appRouter)(createCallerContext);

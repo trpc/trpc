@@ -111,14 +111,13 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
               );
             }
 
-            return batchOps.map(
-              (): Promise<HTTPResult> =>
-                Promise.resolve({
-                  json,
-                  meta: {
-                    response: res,
-                  },
-                }),
+            return batchOps.map((): Promise<HTTPResult> =>
+              Promise.resolve({
+                json,
+                meta: {
+                  response: res,
+                },
+              }),
             );
           }
 

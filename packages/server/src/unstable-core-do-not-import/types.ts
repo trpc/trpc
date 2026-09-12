@@ -35,8 +35,7 @@ export type FilterKeys<TObj extends object, TFilter> = {
  * @internal
  */
 export type Result<TType, TErr = unknown> =
-  | { ok: true; value: TType }
-  | { ok: false; error: TErr };
+  { ok: true; value: TType } | { ok: false; error: TErr };
 
 /**
  * @internal
@@ -80,11 +79,9 @@ export type DistributiveOmit<TObj, TKey extends keyof any> = TObj extends any
  * @internal
  */
 export type WithoutIndexSignature<TObj> = {
-  [K in keyof TObj as string extends K
-    ? never
-    : number extends K
-      ? never
-      : K]: TObj[K];
+  [
+    K in keyof TObj as string extends K ? never : number extends K ? never : K
+  ]: TObj[K];
 };
 
 /**
@@ -96,9 +93,11 @@ export type WithoutIndexSignature<TObj> = {
 export type Overwrite<TType, TWith> = TWith extends any
   ? TType extends object
     ? {
-        [K in  // Exclude index signature from keys
-          | keyof WithoutIndexSignature<TType>
-          | keyof WithoutIndexSignature<TWith>]: K extends keyof TWith
+        [
+          K in  // Exclude index signature from keys
+            | keyof WithoutIndexSignature<TType>
+            | keyof WithoutIndexSignature<TWith>
+        ]: K extends keyof TWith
           ? TWith[K]
           : K extends keyof TType
             ? TType[K]
