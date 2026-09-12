@@ -78,6 +78,23 @@ const doc = await generateOpenAPIDocument('./src/server/router.ts', {
 
 The generator statically analyses your router's TypeScript types — it never executes your code.
 
+### Error responses
+
+Every operation gets a `default` response describing the error envelope. Procedures using the router-wide `errorFormatter` share a single `#/components/responses/Error` component.
+
+A procedure that declares its own shapes with [`.errors()`](/docs/server/error-formatting#per-procedure-error-formatting) gets an inline `default` response instead, holding the union of everything that procedure can return. Generators turn that into a per-operation error type, so callers only see the errors that procedure can actually produce:
+
+```ts
+import type { LimitedError, PlainError } from './client/types.gen';
+
+// only the router-wide shape
+type A = PlainError['error']['data'];
+
+// the router-wide shape, plus this procedure's own
+type B = LimitedError['error']['data'];
+//   ^ { requestId: string, ... } | { kind: 'RATE_LIMIT'; retryAfterMs: number, ... }
+```
+
 ## Generate a client from the spec
 
 Any OpenAPI client generator should work, but the most tested integration is with [Hey API](https://heyapi.dev/openapi-ts/get-started).
