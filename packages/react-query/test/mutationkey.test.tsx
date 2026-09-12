@@ -4,7 +4,6 @@ import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
-import React from 'react';
 
 const ctx = konn()
   .beforeEach(() => {

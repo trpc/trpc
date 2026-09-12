@@ -10,7 +10,6 @@ import { createTRPCClient } from '@trpc/client';
 import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { initTRPC } from '@trpc/server';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
-import * as React from 'react';
 import { useState } from 'react';
 import { expect, test, vi } from 'vitest';
 

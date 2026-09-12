@@ -24,7 +24,7 @@ import type {
   Simplify,
 } from '@trpc/server/unstable-core-do-not-import';
 import { createFlatProxy } from '@trpc/server/unstable-core-do-not-import';
-import * as React from 'react';
+import { useMemo } from 'react';
 import type {
   TRPCUseQueries,
   TRPCUseSuspenseQueries,
@@ -491,7 +491,7 @@ export function createHooksInternal<
       return () => {
         const context = trpc.useUtils();
         // create a stable reference of the utils context
-        return React.useMemo(() => {
+        return useMemo(() => {
           return (createReactQueryUtils as any)(context);
         }, [context]);
       };

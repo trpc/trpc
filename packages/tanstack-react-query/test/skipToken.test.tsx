@@ -3,7 +3,6 @@ import { skipToken } from '@tanstack/react-query';
 import '@testing-library/react';
 import { initTRPC } from '@trpc/server';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
-import * as React from 'react';
 import { describe, expect, test } from 'vitest';
 import { z } from 'zod';
 

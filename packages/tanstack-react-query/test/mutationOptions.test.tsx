@@ -2,7 +2,7 @@ import { testReactResource } from './__helpers';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import '@testing-library/react';
 import { initTRPC } from '@trpc/server';
-import * as React from 'react';
+import { useEffect } from 'react';
 import { describe, expect, expectTypeOf, test } from 'vitest';
 import { z } from 'zod';
 
@@ -78,7 +78,7 @@ describe.each(['userid-123', undefined])(
 
         const mutation = useMutation(options);
 
-        React.useEffect(() => {
+        useEffect(() => {
           mutation.mutate({
             text: 'hello',
           });
@@ -116,7 +116,7 @@ describe.each(['userid-123', undefined])(
 
         const mutation = useMutation(options);
 
-        React.useEffect(() => {
+        useEffect(() => {
           calls.push('onMutate');
           mutation.mutate(
             {
@@ -197,7 +197,7 @@ describe.each(['userid-123', undefined])(
           }),
         );
 
-        React.useEffect(() => {
+        useEffect(() => {
           mutation.mutate({
             text: 'optimistic',
           });

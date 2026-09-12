@@ -1,7 +1,7 @@
 import { createAppRouter } from './__testHelpers';
 import { dehydrate, useQueryClient } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 let factory: ReturnType<typeof createAppRouter>;
 beforeEach(() => {

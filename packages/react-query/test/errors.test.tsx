@@ -8,7 +8,6 @@ import type {
   Maybe,
 } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
-import React from 'react';
 import { z, ZodError } from 'zod';
 
 describe('custom error formatter', () => {

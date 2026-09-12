@@ -9,7 +9,6 @@ import type { CombinedDataTransformer } from '@trpc/server/unstable-core-do-not-
 import { uneval } from 'devalue';
 import { konn } from 'konn';
 import type { AppType } from 'next/dist/shared/lib/utils';
-import React from 'react';
 import superjson from 'superjson';
 
 // [...]

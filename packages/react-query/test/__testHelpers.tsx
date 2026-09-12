@@ -16,7 +16,6 @@ import type { Observable, Observer } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
 import hash from 'hash-sum';
 import type { ReactNode } from 'react';
-import React from 'react';
 import type { Mock } from 'vitest';
 import { z, ZodError } from 'zod';
 

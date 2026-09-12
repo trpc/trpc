@@ -6,7 +6,7 @@ import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { makeResource } from '@trpc/server/unstable-core-do-not-import';
 import { isAbortError } from '@trpc/server/unstable-core-do-not-import/http/abortError';
-import * as React from 'react';
+import { useState } from 'react';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
 import type { TRPCSubscriptionResult } from '../src';
@@ -144,7 +144,7 @@ describe.each([
     const { useTRPC } = ctx;
 
     function MyComponent() {
-      const [enabled, setEnabled] = React.useState(true);
+      const [enabled, setEnabled] = useState(true);
 
       const trpc = useTRPC();
       const result = useSubscription(
@@ -226,8 +226,8 @@ describe.each([
     const { useTRPC } = ctx;
 
     function MyComponent() {
-      const [data, setData] = React.useState<number>();
-      const [enabled, setEnabled] = React.useState(true);
+      const [data, setData] = useState<number>();
+      const [enabled, setEnabled] = useState(true);
 
       const trpc = useTRPC();
       const result = useSubscription(

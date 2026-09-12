@@ -7,7 +7,6 @@ import { render } from '@testing-library/react';
 import { createHydrationHelpers } from '@trpc/react-query/rsc';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
-import React from 'react';
 import { z } from 'zod';
 
 const ctx = konn()

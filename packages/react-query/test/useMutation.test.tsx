@@ -3,7 +3,7 @@ import { render } from '@testing-library/react';
 import type { inferReactQueryProcedureOptions } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { z } from 'zod';
 
 const ctx = konn()

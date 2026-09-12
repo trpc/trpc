@@ -17,7 +17,6 @@ import { initTRPC } from '@trpc/server';
 import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 import { konn } from 'konn';
 import type { ReactNode } from 'react';
-import React from 'react';
 import transformer from 'superjson';
 import { z } from 'zod';
 import { zfd } from 'zod-form-data';

@@ -4,7 +4,7 @@ import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
-import React, { Suspense } from 'react';
+import { Suspense } from 'react';
 import { z } from 'zod';
 
 const fixtureData = ['1', '2', '3', '4'];
