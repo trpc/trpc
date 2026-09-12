@@ -68,6 +68,7 @@ catalog:
   '@hey-api/openapi-ts': ^0.99.0
   '@fastify/websocket': ^11.3.0
   fastify-plugin: ^6.0.0
+  next: ^15.5.25
 
 catalogs:
   ts-api:
