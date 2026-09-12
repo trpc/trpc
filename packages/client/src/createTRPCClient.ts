@@ -1,8 +1,8 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import type { Unsubscribable } from '@trpc/server/observable';
 import type {
   AnyProcedure,
   AnyRouter,
+  inferAsyncIterableYield,
   inferClientTypes,
   inferProcedureInput,
   InferrableClientTypes,
@@ -75,6 +75,12 @@ export type SubscriptionResolver<TDef extends TRPCResolverDef> = (
     TRPCProcedureOptions,
 ) => Unsubscribable;
 
+/** @internal */
+export type SubscriptionIterableResolver<TDef extends TRPCResolverDef> = (
+  input: TDef['input'],
+  opts?: TRPCProcedureOptions,
+) => AsyncIterable<inferAsyncIterableYield<TDef['output']>>;
+
 type DecorateProcedure<
   TType extends ProcedureType,
   TDef extends TRPCResolverDef,
@@ -89,6 +95,16 @@ type DecorateProcedure<
     : TType extends 'subscription'
       ? {
           subscribe: SubscriptionResolver<TDef>;
+          /**
+           * Get an `AsyncIterable` that yields the data of this subscription.
+           *
+           * The iterable is cold: every new iterator starts a new
+           * subscription, which is torn down when iteration stops early
+           * (e.g. `break`/`return`). Aborting `opts.signal` ends the
+           * iteration - values that are already buffered are still yielded
+           * before it finishes.
+           */
+          iterate: SubscriptionIterableResolver<TDef>;
         }
       : never;
 
@@ -126,6 +142,7 @@ const clientCallTypeMap: Record<
   query: 'query',
   mutate: 'mutation',
   subscribe: 'subscription',
+  iterate: 'subscription',
 };
 
 /** @internal */
@@ -143,9 +160,18 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
 ): TRPCClient<TRouter> {
   const proxy = createRecursiveProxy<TRPCClient<TRouter>>(({ path, args }) => {
     const pathCopy = [...path];
-    const procedureType = clientCallTypeToProcedureType(pathCopy.pop()!);
+    const clientCallType = pathCopy.pop();
+    if (!clientCallType) {
+      throw new Error('Missing client call type');
+    }
 
     const fullPath = pathCopy.join('.');
+
+    if (clientCallType === 'iterate') {
+      return (client.subscriptionAsIterable as any)(fullPath, ...(args as any));
+    }
+
+    const procedureType = clientCallTypeToProcedureType(clientCallType);
 
     return (client[procedureType] as any)(fullPath, ...(args as any));
   });

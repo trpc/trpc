@@ -426,6 +426,101 @@ test('basic subscription test (iterator)', async () => {
   });
 });
 
+test('iterate() - basic subscription', async () => {
+  await using ctx = factory();
+  ctx.ee.once('subscription:created', () => {
+    setTimeout(() => {
+      ctx.ee.emit('server:msg', {
+        id: '1',
+      });
+      ctx.ee.emit('server:msg', {
+        id: '2',
+      });
+    });
+  });
+
+  const aggregate: Message[] = [];
+  for await (const value of ctx.client.onMessageIterable.iterate(undefined)) {
+    expectTypeOf(value).not.toBeAny();
+    expectTypeOf(value).toMatchTypeOf<Message>();
+    aggregate.push(value);
+    if (aggregate.length === 2) {
+      break;
+    }
+  }
+
+  expect(aggregate).toEqual([{ id: '1' }, { id: '2' }]);
+
+  await vi.waitFor(() => {
+    expect(ctx.ee.listenerCount('server:msg')).toBe(0);
+  });
+});
+
+test('iterate() - propagates errors', async () => {
+  await using ctx = factory();
+  ctx.ee.once('subscription:created', () => {
+    setTimeout(() => {
+      ctx.ee.emit('server:msg', {
+        id: '1',
+      });
+      ctx.ee.emit('observable:error', new Error('MyError'));
+    });
+  });
+
+  const aggregate: Message[] = [];
+  await expect(async () => {
+    for await (const value of ctx.client.onMessageObservable.iterate(
+      undefined,
+    )) {
+      expectTypeOf(value).not.toBeAny();
+      expectTypeOf(value).toMatchTypeOf<Message>();
+      aggregate.push(value);
+    }
+  }).rejects.toThrowError('MyError');
+
+  expect(aggregate).toEqual([{ id: '1' }]);
+
+  // the subscription is torn down after the error without needing `cancel`
+  await vi.waitFor(() => {
+    expect(ctx.ee.listenerCount('server:msg')).toBe(0);
+  });
+});
+
+test('iterate() - abort signal ends iteration', async () => {
+  await using ctx = factory();
+
+  const ac = new AbortController();
+  const aggregate: Message[] = [];
+  const done = (async () => {
+    for await (const value of ctx.client.onMessageIterable.iterate(undefined, {
+      signal: ac.signal,
+    })) {
+      aggregate.push(value);
+    }
+  })();
+
+  await vi.waitFor(() => {
+    expect(ctx.ee.listenerCount('server:msg')).toBe(1);
+  });
+
+  ctx.ee.emit('server:msg', {
+    id: '1',
+  });
+
+  await vi.waitFor(() => {
+    expect(aggregate).toEqual([{ id: '1' }]);
+  });
+
+  ac.abort();
+
+  // aborting ends the iteration instead of leaving it hanging
+  await done;
+
+  await vi.waitFor(() => {
+    expect(ctx.ee.listenerCount('server:msg')).toBe(0);
+  });
+});
+
 test('$subscription() - client resumes subscriptions after reconnecting', async () => {
   await using ctx = factory();
   ctx.ee.once('subscription:created', () => {
