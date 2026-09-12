@@ -94,10 +94,11 @@ The procedure builder has an `.errors()` method, which lets a procedure describe
 the errors _it_ can throw without every other procedure having to know about
 them.
 
-A procedure-level formatter runs **after** the global one and receives the shape
-the global formatter returned, so anything you add globally is still there.
-Returning `shape` untouched leaves the error as-is - which is what makes the
-resulting type a _union_ of "the normal error" and "this procedure's error".
+Formatters get first refusal on an error from the tail of the chain backwards -
+the most recently added one runs first. Returning a shape ends the chain and
+that shape goes straight to the client. Returning `undefined` declines the
+error, handing it to the next formatter towards the head, and finally to the
+router-wide `errorFormatter` if none of them take it.
 
 ```ts twoslash title='server.ts'
 import { initTRPC, TRPCError } from '@trpc/server';
@@ -122,7 +123,7 @@ const rateLimitedProcedure = t.procedure.errors((opts) => {
       },
     };
   }
-  return opts.shape;
+  return undefined;
 });
 
 export const appRouter = t.router({
@@ -135,9 +136,13 @@ export const appRouter = t.router({
 });
 ```
 
-On the client, the error for `sendMessage` is now a union that you narrow like
-any other discriminated union, while procedures built from `t.procedure` keep
-the router-wide shape:
+`opts.shape` is always the `DefaultErrorShape` - the global `errorFormatter`
+hasn't run at this point, and won't run at all if this formatter returns
+something.
+
+On the client, the error for `sendMessage` is a union of everything the chain
+can return plus the global shape, which you narrow like any other discriminated
+union. Procedures built from a plain `t.procedure` keep the router-wide shape:
 
 ```tsx twoslash title='components/SendMessage.tsx'
 // @jsx: react-jsx
@@ -163,7 +168,7 @@ const rateLimitedProcedure = t.procedure.errors((opts) => {
       },
     };
   }
-  return opts.shape;
+  return undefined;
 });
 
 export const appRouter = t.router({
@@ -199,9 +204,9 @@ export function SendMessage() {
 
 ### Chaining
 
-`.errors()` is chainable, and formatters added to a base procedure are
-inherited by every procedure built from it. Each call adds its return type to
-the union, so the client has to handle every error the chain can produce:
+`.errors()` is chainable, and formatters added to a base procedure are inherited
+by every procedure built from it. Because the tail runs first, a procedure can
+add a formatter that takes precedence over the ones it inherited:
 
 ```ts twoslash title='server.ts'
 import { initTRPC } from '@trpc/server';
@@ -222,7 +227,7 @@ const rateLimitedProcedure = t.procedure.errors((opts) => {
       data: { ...opts.shape.data, kind: 'RATE_LIMIT' as const },
     };
   }
-  return opts.shape;
+  return undefined;
 });
 
 // ---cut---
@@ -237,9 +242,21 @@ const billedProcedure = rateLimitedProcedure.errors((opts) => {
       },
     };
   }
-  return opts.shape;
+  return undefined;
 });
 ```
+
+A `PAYMENT_REQUIRED` error is handled by the new formatter, a `RATE_LIMIT` one
+falls through to the inherited formatter, and anything else reaches the global
+`errorFormatter`. The client-side error type for `billedProcedure` is the union
+of all three.
+
+### Formatters that always return
+
+A formatter that can't return `undefined` handles every error, which makes
+everything before it - including the router-wide `errorFormatter` - unreachable.
+The types reflect that: the error union for such a procedure is exactly what
+that formatter returns, with no global shape to narrow against.
 
 :::info
 Procedure-level formatters only run for errors that reach a resolved procedure -

@@ -1,4 +1,4 @@
-import type { AnyErrorFormatter } from './error/formatter';
+import type { AnyProcedureErrorFormatter } from './error/formatter';
 import type { TRPCError } from './error/TRPCError';
 import type { Parser } from './parser';
 import type { ProcedureCallOptions } from './procedureBuilder';
@@ -53,9 +53,9 @@ export interface Procedure<
      */
     inputs: Parser[];
     /**
-     * Procedure-level error formatters, applied in order after the global one
+     * Procedure-level error formatters, applied from the tail backwards
      */
-    errorFormatters: AnyErrorFormatter[];
+    errorFormatters: AnyProcedureErrorFormatter[];
   };
   meta: TDef['meta'];
   /**

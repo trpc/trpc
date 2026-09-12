@@ -9,28 +9,40 @@ import type { TRPCError } from './TRPCError';
 /**
  * @internal
  */
-export type ErrorFormatter<
-  TContext,
-  TShape extends TRPCErrorShape,
-  /**
-   * The shape that is passed *into* the formatter.
-   * For the global formatter this is always the {@link DefaultErrorShape},
-   * for procedure-level formatters it's whatever the previous formatter returned.
-   */
-  TShapeIn = DefaultErrorShape,
-> = (opts: {
+export interface ErrorFormatterOptions<TContext> {
   error: TRPCError;
   type: ProcedureType | 'unknown';
   path: string | undefined;
   input: unknown;
   ctx: TContext | undefined;
-  shape: TShapeIn;
-}) => TShape;
+  shape: DefaultErrorShape;
+}
+
+/**
+ * The router-wide error formatter.
+ * @internal
+ */
+export type ErrorFormatter<TContext, TShape extends TRPCErrorShape> = (
+  opts: ErrorFormatterOptions<TContext>,
+) => TShape;
+
+/**
+ * A procedure-level error formatter, added with `.errors()`.
+ *
+ * Returning `undefined` (or nothing) declines the error, handing it to the next
+ * formatter towards the head of the chain and ultimately to the router-wide
+ * `errorFormatter`.
+ * @internal
+ */
+export type ProcedureErrorFormatter<
+  TContext,
+  TShape extends TRPCErrorShape | undefined | void,
+> = (opts: ErrorFormatterOptions<TContext>) => TShape;
 
 /**
  * @internal
  */
-export type AnyErrorFormatter = ErrorFormatter<any, any, any>;
+export type AnyProcedureErrorFormatter = ProcedureErrorFormatter<any, any>;
 
 /**
  * @internal

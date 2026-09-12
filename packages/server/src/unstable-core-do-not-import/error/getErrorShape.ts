@@ -17,7 +17,8 @@ export function getErrorShape<TRoot extends AnyRootTypes>(opts: {
   ctx: TRoot['ctx'] | undefined;
   /**
    * The procedure the error originated from, when known.
-   * Its `.errors()` formatters are applied on top of the global one.
+   * Its `.errors()` formatters get first refusal on the error, from the tail of
+   * the chain backwards.
    */
   procedure?: AnyProcedure | null;
 }): TRoot['errorShape'] {
@@ -37,14 +38,13 @@ export function getErrorShape<TRoot extends AnyRootTypes>(opts: {
   if (typeof path === 'string') {
     shape.data.path = path;
   }
-  let formatted: TRoot['errorShape'] = config.errorFormatter({
-    ...opts,
-    shape,
-  });
-
-  for (const errorFormatter of opts.procedure?._def.errorFormatters ?? []) {
-    formatted = errorFormatter({ ...opts, shape: formatted });
+  const errorFormatters = opts.procedure?._def.errorFormatters ?? [];
+  for (let i = errorFormatters.length - 1; i >= 0; i--) {
+    const formatted = errorFormatters[i]?.({ ...opts, shape });
+    if (formatted !== undefined) {
+      return formatted;
+    }
   }
 
-  return formatted;
+  return config.errorFormatter({ ...opts, shape });
 }
