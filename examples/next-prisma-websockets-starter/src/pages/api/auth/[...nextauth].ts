@@ -51,7 +51,7 @@ if (useMockProvider) {
           name: profile.login,
           email: profile.email,
           image: profile.avatar_url,
-        } as any;
+        };
       },
     }),
   );

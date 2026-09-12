@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
+/* eslint-disable @typescript-eslint/unbound-method */
 import type { FetchEsque, NativeFetchEsque } from './internals/types';
 
 type AnyFn = (...args: any[]) => unknown;
