@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
-/* eslint-disable @typescript-eslint/unbound-method */
 import type { FetchEsque, NativeFetchEsque } from './internals/types';
 
 type AnyFn = (...args: any[]) => unknown;
@@ -13,12 +11,13 @@ export function getFetch(
     return customFetchImpl as FetchEsque;
   }
 
+  // eslint-disable-next-line @typescript-eslint/unbound-method
   if (typeof window !== 'undefined' && isFunction(window.fetch)) {
-    return window.fetch as FetchEsque;
+    return window.fetch.bind(window);
   }
 
   if (typeof globalThis !== 'undefined' && isFunction(globalThis.fetch)) {
-    return globalThis.fetch as FetchEsque;
+    return globalThis.fetch;
   }
 
   throw new Error('No fetch implementation found');
