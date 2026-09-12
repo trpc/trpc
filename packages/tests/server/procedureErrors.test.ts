@@ -145,8 +145,9 @@ describe('types', () => {
       (typeof router)['_def']['record']['proc']
     >;
 
-    // routing, parsing and context errors never reach the chain, so the
-    // router-wide shape is always possible
+    // errors raised before the procedure runs - routing, a malformed request
+    // body, context creation - never reach the chain, so the router-wide shape
+    // is always possible
     const data = {} as Shape['data'];
     if ('kind' in data) {
       expectTypeOf(data.kind).toEqualTypeOf<'ALWAYS'>();
