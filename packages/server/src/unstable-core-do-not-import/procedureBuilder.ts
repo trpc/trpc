@@ -52,11 +52,6 @@ type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
   ? TFallback
   : TValue;
 
-/**
- * The router-wide shape stays in the union no matter what the handlers do -
- * errors raised outside the middleware chain (routing, parsing, context
- * creation) never reach them.
- */
 type FoldErrorShape<TErrorShape, $Shape> =
   | Extract<$Shape, TRPCErrorShape>
   | TErrorShape;
