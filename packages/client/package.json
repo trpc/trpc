@@ -130,8 +130,8 @@
     "tsdown": "catalog:",
     "tslib": "^2.8.1",
     "typescript": "catalog:",
-    "undici": "^8.0.0",
-    "ws": "^8.0.0"
+    "undici": "catalog:",
+    "ws": "catalog:"
   },
   "publishConfig": {
     "access": "public"
