@@ -30,7 +30,7 @@ const testContext = () => {
         },
       };
     }
-    return opts.shape;
+    return undefined;
   });
 
   const appRouter = t.router({
@@ -74,9 +74,7 @@ describe('procedure-level .errors()', () => {
       if (data && 'kind' in data) {
         expectTypeOf(data.kind).toEqualTypeOf<'RATE_LIMIT'>();
         expectTypeOf(data.retryAfterMs).toEqualTypeOf<number>();
-        return (
-          <pre>{`${data.kind}:${data.retryAfterMs}:${data.fromGlobalFormatter}`}</pre>
-        );
+        return <pre>{`${data.kind}:${data.retryAfterMs}`}</pre>;
       }
 
       return <pre>no-kind</pre>;
@@ -84,7 +82,7 @@ describe('procedure-level .errors()', () => {
 
     const utils = ctx.renderApp(<MyComponent />);
     await vi.waitFor(() => {
-      expect(utils.container).toHaveTextContent('RATE_LIMIT:1234:true');
+      expect(utils.container).toHaveTextContent('RATE_LIMIT:1234');
     });
   });
 

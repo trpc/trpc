@@ -1,8 +1,8 @@
 import type { inferObservableValue, Observable } from '../observable';
 import type {
-  AnyErrorFormatter,
+  AnyProcedureErrorFormatter,
   DefaultErrorShape,
-  ErrorFormatter,
+  ProcedureErrorFormatter,
 } from './error/formatter';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
@@ -50,6 +50,19 @@ type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
   ? TFallback
   : TValue;
 
+/**
+ * Fold a `.errors()` return type into the error shape accumulated so far.
+ *
+ * `.errors()` formatters run from the tail of the chain backwards, so the shape
+ * accumulated up to this point is what the new formatter falls back to. A
+ * formatter that can't return `undefined` always handles the error, which makes
+ * everything before it - including the router-wide `errorFormatter` -
+ * unreachable.
+ */
+type AccumulateErrorShape<TFallback, $Shape> = [$Shape] extends [TRPCErrorShape]
+  ? $Shape
+  : Extract<$Shape, TRPCErrorShape> | TFallback;
+
 type inferAsyncIterable<TOutput> =
   TOutput extends AsyncIterable<infer $Yield, infer $Return, infer $Next>
     ? {
@@ -79,7 +92,7 @@ type ProcedureBuilderDef<TMeta> = {
   meta?: TMeta;
   resolver?: ProcedureBuilderResolver;
   middlewares: AnyMiddlewareFunction[];
-  errorFormatters: AnyErrorFormatter[];
+  errorFormatters: AnyProcedureErrorFormatter[];
   /**
    * @deprecated use `type` instead
    */
@@ -268,16 +281,17 @@ export interface ProcedureBuilder<
   /**
    * Declare the errors this procedure can produce.
    *
-   * The formatter runs after the global `errorFormatter` (and after any
-   * `.errors()` added earlier in the chain), receiving the shape produced by
-   * the previous formatter. Returning `shape` unchanged in a branch keeps the
-   * incoming shape(s) in the error union, so chaining `.errors()` widens the
-   * union of errors a client has to handle for this procedure.
+   * Formatters get first refusal on an error from the tail of the chain
+   * backwards, so the most recently added one runs first. Returning a shape
+   * ends the chain and that shape goes straight to the client; returning
+   * `undefined` declines the error and hands it to the next formatter towards
+   * the head, falling back to the router-wide `errorFormatter` if none of them
+   * take it.
    *
    * @see https://trpc.io/docs/v11/server/error-formatting
    */
-  errors<$Shape extends TRPCErrorShape>(
-    formatter: ErrorFormatter<TContext, $Shape, TErrorShape>,
+  errors<$Shape extends TRPCErrorShape | undefined | void>(
+    formatter: ProcedureErrorFormatter<TContext, $Shape>,
   ): ProcedureBuilder<
     TContext,
     TMeta,
@@ -287,7 +301,7 @@ export interface ProcedureBuilder<
     TOutputIn,
     TOutputOut,
     TCaller,
-    $Shape
+    AccumulateErrorShape<TErrorShape, $Shape>
   >;
   /**
    * Add a middleware to the procedure.
@@ -583,7 +597,7 @@ export function createBuilder<TContext, TMeta, TErrorShape = DefaultErrorShape>(
     },
     errors(formatter) {
       return createNewBuilder(_def, {
-        errorFormatters: [formatter as AnyErrorFormatter],
+        errorFormatters: [formatter as AnyProcedureErrorFormatter],
       });
     },
     use(middlewareBuilderOrFn) {

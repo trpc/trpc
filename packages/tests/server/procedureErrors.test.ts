@@ -2,10 +2,7 @@ import { testServerAndClientResource } from '@trpc/client/__tests__/testClientRe
 import { waitError } from '@trpc/server/__tests__/waitError';
 import { TRPCClientError } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
-import type {
-  DefaultErrorShape,
-  inferProcedureErrorShape,
-} from '@trpc/server/unstable-core-do-not-import';
+import type { inferProcedureErrorShape } from '@trpc/server/unstable-core-do-not-import';
 
 class RateLimitError extends Error {
   constructor(public readonly retryAfterMs: number) {
@@ -42,7 +39,7 @@ const rateLimitedProcedure = t.procedure.errors((opts) => {
       },
     };
   }
-  return opts.shape;
+  return undefined;
 });
 
 const billedProcedure = rateLimitedProcedure.errors((opts) => {
@@ -56,7 +53,7 @@ const billedProcedure = rateLimitedProcedure.errors((opts) => {
       },
     };
   }
-  return opts.shape;
+  return undefined;
 });
 
 const appRouter = t.router({
@@ -84,6 +81,9 @@ const appRouter = t.router({
       cause: new RateLimitError(1_000),
     });
   }),
+  billedButUnrelatedError: billedProcedure.mutation((): string => {
+    throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Fails' });
+  }),
 });
 
 type Root = (typeof appRouter)['_def']['_config']['$types'];
@@ -98,15 +98,15 @@ describe('types', () => {
     type _ = Shape['data']['kind'];
   });
 
-  test('a procedure-level formatter unions its shape with the global one', () => {
+  test('a declining formatter unions its shape with the global fallback', () => {
     type Shape = inferProcedureErrorShape<Root, Record['rateLimited']>;
-
-    expectTypeOf<Shape['data']['fromGlobalFormatter']>().toEqualTypeOf<true>();
 
     const data = {} as Shape['data'];
     if ('kind' in data) {
       expectTypeOf(data.kind).toEqualTypeOf<'RATE_LIMIT'>();
       expectTypeOf(data.retryAfterMs).toEqualTypeOf<number>();
+    } else {
+      expectTypeOf(data.fromGlobalFormatter).toEqualTypeOf<true>();
     }
   });
 
@@ -124,11 +124,31 @@ describe('types', () => {
         // @ts-expect-error - only on the rate limit variant
         data.retryAfterMs;
       }
+    } else {
+      expectTypeOf(data.fromGlobalFormatter).toEqualTypeOf<true>();
     }
   });
 
+  test('a formatter that always returns makes everything before it unreachable', () => {
+    const alwaysHandles = rateLimitedProcedure.errors((opts) => ({
+      ...opts.shape,
+      data: { ...opts.shape.data, kind: 'ALWAYS' as const },
+    }));
+    const router = t.router({
+      proc: alwaysHandles.query((): string => 'never'),
+    });
+
+    type Shape = inferProcedureErrorShape<
+      Root,
+      (typeof router)['_def']['record']['proc']
+    >;
+
+    expectTypeOf<Shape['data']['kind']>().toEqualTypeOf<'ALWAYS'>();
+    // @ts-expect-error - the global formatter can never run for this procedure
+    type _ = Shape['data']['fromGlobalFormatter'];
+  });
+
   test('the router-wide error shape is unaffected', () => {
-    expectTypeOf<Root['errorShape']>().toMatchTypeOf<DefaultErrorShape>();
     expectTypeOf<
       Root['errorShape']['data']['fromGlobalFormatter']
     >().toEqualTypeOf<true>();
@@ -143,7 +163,7 @@ describe.each([
   'httpBatchStreamLink',
   'wsLink',
 ] as const)('runtime (%s)', (clientLink) => {
-  test('procedure without a formatter gets the global shape only', async () => {
+  test('procedure without a formatter falls back to the global one', async () => {
     await using ctx = testServerAndClientResource(appRouter, { clientLink });
 
     const err = await waitError(ctx.client.plain.query(), TRPCClientError);
@@ -155,7 +175,7 @@ describe.each([
     expect(err.data).not.toHaveProperty('kind');
   });
 
-  test('procedure-level formatter runs on top of the global one', async () => {
+  test('a formatter that handles the error replaces the global shape', async () => {
     await using ctx = testServerAndClientResource(appRouter, { clientLink });
 
     const err = await waitError(
@@ -165,13 +185,13 @@ describe.each([
 
     expect(err.data).toMatchObject({
       code: 'TOO_MANY_REQUESTS',
-      fromGlobalFormatter: true,
       kind: 'RATE_LIMIT',
       retryAfterMs: 5_000,
     });
+    expect(err.data).not.toHaveProperty('fromGlobalFormatter');
   });
 
-  test('a formatter that passes the shape through is a no-op', async () => {
+  test('declining hands the error to the global formatter', async () => {
     await using ctx = testServerAndClientResource(appRouter, { clientLink });
 
     const err = await waitError(
@@ -186,34 +206,97 @@ describe.each([
     expect(err.data).not.toHaveProperty('kind');
   });
 
-  test('chained formatters all run, in order', async () => {
+  test('the tail of the chain handles the error first', async () => {
     await using ctx = testServerAndClientResource(appRouter, { clientLink });
 
-    const paymentError = await waitError(
-      ctx.client.billed.mutate(),
-      TRPCClientError,
-    );
-    expect(paymentError.data).toMatchObject({
+    const err = await waitError(ctx.client.billed.mutate(), TRPCClientError);
+
+    expect(err.data).toMatchObject({
       code: 'PAYMENT_REQUIRED',
-      fromGlobalFormatter: true,
       kind: 'PAYMENT_REQUIRED',
       amountDue: 42,
     });
+  });
 
-    const rateLimitError = await waitError(
+  test('declining falls back towards the head of the chain', async () => {
+    await using ctx = testServerAndClientResource(appRouter, { clientLink });
+
+    const err = await waitError(
       ctx.client.billedButRateLimited.mutate(),
       TRPCClientError,
     );
-    expect(rateLimitError.data).toMatchObject({
+
+    expect(err.data).toMatchObject({
       code: 'TOO_MANY_REQUESTS',
-      fromGlobalFormatter: true,
       kind: 'RATE_LIMIT',
       retryAfterMs: 1_000,
     });
   });
+
+  test('the global formatter runs when the whole chain declines', async () => {
+    await using ctx = testServerAndClientResource(appRouter, { clientLink });
+
+    const err = await waitError(
+      ctx.client.billedButUnrelatedError.mutate(),
+      TRPCClientError,
+    );
+
+    expect(err.data).toMatchObject({
+      code: 'INTERNAL_SERVER_ERROR',
+      fromGlobalFormatter: true,
+    });
+    expect(err.data).not.toHaveProperty('kind');
+  });
 });
 
-test('errors thrown from middlewares are formatted too', async () => {
+test('formatters run from the tail backwards and stop at the first handler', async () => {
+  const calls: string[] = [];
+
+  const globalFormatter = vi.fn();
+  const local = initTRPC.create({
+    errorFormatter(opts) {
+      globalFormatter();
+      return opts.shape;
+    },
+  });
+
+  const procedure = local.procedure
+    .errors(() => {
+      calls.push('first');
+      return undefined;
+    })
+    .errors(() => {
+      calls.push('second');
+      return undefined;
+    })
+    .errors((opts) => {
+      calls.push('third');
+      return {
+        ...opts.shape,
+        data: { ...opts.shape.data, handledBy: 'third' as const },
+      };
+    })
+    .errors(() => {
+      calls.push('fourth');
+      return undefined;
+    });
+
+  const router = local.router({
+    proc: procedure.query((): string => {
+      throw new TRPCError({ code: 'BAD_REQUEST' });
+    }),
+  });
+
+  await using ctx = testServerAndClientResource(router);
+
+  const err = await waitError(ctx.client.proc.query(), TRPCClientError);
+
+  expect(err.data).toMatchObject({ handledBy: 'third' });
+  expect(calls).toEqual(['fourth', 'third']);
+  expect(globalFormatter).not.toHaveBeenCalled();
+});
+
+test('errors thrown from middlewares go through the chain', async () => {
   const procedure = t.procedure
     .use((opts) => {
       throw new TRPCError({
@@ -240,20 +323,23 @@ test('errors thrown from middlewares are formatted too', async () => {
 
   expect(err.data).toMatchObject({
     code: 'UNAUTHORIZED',
-    fromGlobalFormatter: true,
     kind: 'FROM_MIDDLEWARE',
   });
 });
 
-test('`concat()` combines the error unions of both builders', async () => {
-  const a = t.procedure.errors((opts) => ({
-    ...opts.shape,
-    data: { ...opts.shape.data, a: true as const },
-  }));
-  const b = t.procedure.errors((opts) => ({
-    ...opts.shape,
-    data: { ...opts.shape.data, b: true as const },
-  }));
+test('`concat()` runs the concatenated formatters first', async () => {
+  const a = t.procedure.errors((opts) => {
+    if (opts.error.code === 'BAD_REQUEST') {
+      return { ...opts.shape, data: { ...opts.shape.data, from: 'a' as const } };
+    }
+    return undefined;
+  });
+  const b = t.procedure.errors((opts) => {
+    if (opts.error.code === 'BAD_REQUEST') {
+      return { ...opts.shape, data: { ...opts.shape.data, from: 'b' as const } };
+    }
+    return undefined;
+  });
 
   const router = t.router({
     combined: a.concat(b).query((): string => {
@@ -266,21 +352,15 @@ test('`concat()` combines the error unions of both builders', async () => {
     (typeof router)['_def']['record']['combined']
   >;
   const data = {} as Shape['data'];
-  if ('a' in data) {
-    expectTypeOf(data.a).toEqualTypeOf<true>();
-  }
-  if ('b' in data) {
-    expectTypeOf(data.b).toEqualTypeOf<true>();
+  if ('from' in data) {
+    data.from satisfies 'a' | 'b';
   }
 
   await using ctx = testServerAndClientResource(router);
 
   const err = await waitError(ctx.client.combined.query(), TRPCClientError);
 
-  expect(err.data).toMatchObject({
-    a: true,
-    b: true,
-  });
+  expect(err.data).toMatchObject({ from: 'b' });
 });
 
 describe.each(['httpSubscriptionLink', 'wsLink'] as const)(
@@ -303,7 +383,7 @@ describe.each(['httpSubscriptionLink', 'wsLink'] as const)(
       }),
     });
 
-    test('errors thrown before the first value are formatted', async () => {
+    test('errors thrown before the first value go through the chain', async () => {
       await using ctx = testServerAndClientResource(subRouter, { clientLink });
 
       const onError = vi.fn<(err: TRPCClientError<typeof subRouter>) => void>();
@@ -317,13 +397,12 @@ describe.each(['httpSubscriptionLink', 'wsLink'] as const)(
       sub.unsubscribe();
 
       expect(onError.mock.calls[0]![0].data).toMatchObject({
-        fromGlobalFormatter: true,
         kind: 'RATE_LIMIT',
         retryAfterMs: 3_000,
       });
     });
 
-    test('errors thrown mid-stream are formatted', async () => {
+    test('errors thrown mid-stream go through the chain', async () => {
       await using ctx = testServerAndClientResource(subRouter, { clientLink });
 
       const onData = vi.fn();
@@ -340,7 +419,6 @@ describe.each(['httpSubscriptionLink', 'wsLink'] as const)(
       sub.unsubscribe();
 
       expect(onError.mock.calls[0]![0].data).toMatchObject({
-        fromGlobalFormatter: true,
         kind: 'RATE_LIMIT',
         retryAfterMs: 7_000,
       });
