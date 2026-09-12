@@ -92,7 +92,7 @@ export function MyComponent() {
 
 Errors can be formatted on a per-procedure basis using the `.errors()` method, which can be chained to produce a union of possible error shapes for each procedure.
 
-When a procedure throws an error, it bubbles upward through all `.errors()` handlers until one returns a shape or the global errorFormatter is reached.
+When a middleware or procedure throws an error, it bubbles upward through all `.errors()` handlers until one returns a shape or the global errorFormatter is reached.
 
 ```ts twoslash title='server.ts'
 import { initTRPC } from '@trpc/server';
@@ -105,30 +105,56 @@ class PaymentRequiredError extends Error {
 }
 
 const t = initTRPC.create();
+function isRateLimited(opts: any) {
+  return true
+}
+function isPaymentRequired(opts: any) {
+  return true
+}
 
 // ---cut---
-const rateLimitedProcedure = t.procedure.errors((opts) => {
-  if (opts.error.cause instanceof RateLimitError) {
-    return {
-      ...opts.shape,
-      data: { ...opts.shape.data, kind: 'RATE_LIMIT' as const },
-    };
-  }
-  return undefined;
-});
+const rateLimitedProcedure = t.procedure
+  .errors((opts) => {
+    if (opts.error.cause instanceof RateLimitError) {
+      return {
+        ...opts.shape,
+        data: { ...opts.shape.data, kind: 'RATE_LIMIT' as const },
+      };
+    }
+    return undefined;
+  })
+  .use(opts => {
+    // Important: errors bubble up so a throwing middleware must come after the .errors() handler
+    if (isRateLimited(opts)) {
+      throw new RateLimitError();
+    }
 
-const billedProcedure = rateLimitedProcedure.errors((opts) => {
-  if (opts.error.cause instanceof PaymentRequiredError) {
-    return {
-      ...opts.shape,
-      data: {
-        ...opts.shape.data,
-        kind: 'PAYMENT_REQUIRED' as const,
-        amountDue: opts.error.cause.amountDue,
-      },
-    };
+    return opts.next();
+  });
+
+const billedProcedure = rateLimitedProcedure
+  .errors((opts) => {
+    if (opts.error.cause instanceof PaymentRequiredError) {
+      return {
+        ...opts.shape,
+        data: {
+          ...opts.shape.data,
+          kind: 'PAYMENT_REQUIRED' as const,
+          amountDue: opts.error.cause.amountDue,
+        },
+      };
+    }
+    return undefined;
+  });
+
+const addPostProcedure = billedProcedure.mutation(opts => {
+  if (isPaymentRequired(opts)) {
+    throw new PaymentRequiredError(100);
   }
-  return undefined;
+
+  return {
+    success: true,
+  };
 });
 ```
 
