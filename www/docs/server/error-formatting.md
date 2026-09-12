@@ -90,123 +90,9 @@ export function MyComponent() {
 
 ## Per-procedure error formatting
 
-The procedure builder has an `.errors()` method, which lets a procedure describe
-the errors _it_ can throw without every other procedure having to know about
-them.
+Errors can be formatted on a per-procedure basis using the `.errors()` method, which can be chained to produce a union of possible error shapes for each procedure.
 
-Formatters get first refusal on an error from the tail of the chain backwards -
-the most recently added one runs first. Returning a shape ends the chain and
-that shape goes straight to the client. Returning `undefined` declines the
-error, handing it to the next formatter towards the head, and finally to the
-router-wide `errorFormatter` if none of them take it.
-
-```ts twoslash title='server.ts'
-import { initTRPC, TRPCError } from '@trpc/server';
-
-class RateLimitError extends Error {
-  constructor(public readonly retryAfterMs: number) {
-    super('Too many requests');
-  }
-}
-
-const t = initTRPC.create();
-
-// ---cut---
-const rateLimitedProcedure = t.procedure.errors((opts) => {
-  if (opts.error.cause instanceof RateLimitError) {
-    return {
-      ...opts.shape,
-      data: {
-        ...opts.shape.data,
-        kind: 'RATE_LIMIT' as const,
-        retryAfterMs: opts.error.cause.retryAfterMs,
-      },
-    };
-  }
-  return undefined;
-});
-
-export const appRouter = t.router({
-  sendMessage: rateLimitedProcedure.mutation(() => {
-    throw new TRPCError({
-      code: 'TOO_MANY_REQUESTS',
-      cause: new RateLimitError(5_000),
-    });
-  }),
-});
-```
-
-`opts.shape` is always the `DefaultErrorShape` - the global `errorFormatter`
-hasn't run at this point, and won't run at all if this formatter returns
-something.
-
-On the client, the error for `sendMessage` is a union of everything the chain
-can return plus the global shape, which you narrow like any other discriminated
-union. Procedures built from a plain `t.procedure` keep the router-wide shape:
-
-```tsx twoslash title='components/SendMessage.tsx'
-// @jsx: react-jsx
-// @filename: server.ts
-import { initTRPC, TRPCError } from '@trpc/server';
-
-class RateLimitError extends Error {
-  constructor(public readonly retryAfterMs: number) {
-    super('Too many requests');
-  }
-}
-
-const t = initTRPC.create();
-
-const rateLimitedProcedure = t.procedure.errors((opts) => {
-  if (opts.error.cause instanceof RateLimitError) {
-    return {
-      ...opts.shape,
-      data: {
-        ...opts.shape.data,
-        kind: 'RATE_LIMIT' as const,
-        retryAfterMs: opts.error.cause.retryAfterMs,
-      },
-    };
-  }
-  return undefined;
-});
-
-export const appRouter = t.router({
-  sendMessage: rateLimitedProcedure.mutation(() => {
-    throw new TRPCError({
-      code: 'TOO_MANY_REQUESTS',
-      cause: new RateLimitError(5_000),
-    });
-  }),
-});
-export type AppRouter = typeof appRouter;
-
-// @filename: utils/trpc.tsx
-import { createTRPCReact } from '@trpc/react-query';
-import type { AppRouter } from '../server';
-export const trpc = createTRPCReact<AppRouter>();
-
-// @filename: components/SendMessage.tsx
-// ---cut---
-import { trpc } from '../utils/trpc';
-
-export function SendMessage() {
-  const mutation = trpc.sendMessage.useMutation();
-
-  const data = mutation.error?.data;
-  if (data && 'kind' in data) {
-    return <p>Rate limited - retry in {data.retryAfterMs}ms</p>;
-  }
-
-  return <button onClick={() => mutation.mutate()}>Send</button>;
-}
-```
-
-### Chaining
-
-`.errors()` is chainable, and formatters added to a base procedure are inherited
-by every procedure built from it. Because the tail runs first, a procedure can
-add a formatter that takes precedence over the ones it inherited:
+When a procedure throws an error, it bubbles upward through all `.errors()` handlers until one returns a shape or the global errorFormatter is reached.
 
 ```ts twoslash title='server.ts'
 import { initTRPC } from '@trpc/server';
@@ -220,6 +106,7 @@ class PaymentRequiredError extends Error {
 
 const t = initTRPC.create();
 
+// ---cut---
 const rateLimitedProcedure = t.procedure.errors((opts) => {
   if (opts.error.cause instanceof RateLimitError) {
     return {
@@ -230,7 +117,6 @@ const rateLimitedProcedure = t.procedure.errors((opts) => {
   return undefined;
 });
 
-// ---cut---
 const billedProcedure = rateLimitedProcedure.errors((opts) => {
   if (opts.error.cause instanceof PaymentRequiredError) {
     return {
@@ -245,26 +131,6 @@ const billedProcedure = rateLimitedProcedure.errors((opts) => {
   return undefined;
 });
 ```
-
-A `PAYMENT_REQUIRED` error is handled by the new formatter, a `RATE_LIMIT` one
-falls through to the inherited formatter, and anything else reaches the global
-`errorFormatter`. The client-side error type for `billedProcedure` is the union
-of all three.
-
-### Formatters that always return
-
-A formatter that can't return `undefined` handles every error, which makes
-everything before it - including the router-wide `errorFormatter` - unreachable.
-The types reflect that: the error union for such a procedure is exactly what
-that formatter returns, with no global shape to narrow against.
-
-:::info
-Procedure-level formatters only run for errors that reach a resolved procedure -
-that includes errors thrown by the procedure's own middlewares, input parsing and
-output parsing. Request-level failures (a malformed body, a failing
-`createContext()`, an unknown path) can't be attributed to a procedure, so only
-the global `errorFormatter` applies to those.
-:::
 
 ## All properties sent to `errorFormatter()`
 

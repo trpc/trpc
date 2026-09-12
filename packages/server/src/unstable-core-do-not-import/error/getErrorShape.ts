@@ -15,11 +15,6 @@ export function getErrorShape<TRoot extends AnyRootTypes>(opts: {
   path: string | undefined;
   input: unknown;
   ctx: TRoot['ctx'] | undefined;
-  /**
-   * The procedure the error originated from, when known.
-   * Its `.errors()` formatters get first refusal on the error, from the tail of
-   * the chain backwards.
-   */
   procedure?: AnyProcedure | null;
 }): TRoot['errorShape'] {
   const { path, error, config } = opts;

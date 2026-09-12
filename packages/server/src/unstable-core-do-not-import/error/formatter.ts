@@ -19,7 +19,6 @@ export interface ErrorFormatterOptions<TContext> {
 }
 
 /**
- * The router-wide error formatter.
  * @internal
  */
 export type ErrorFormatter<TContext, TShape extends TRPCErrorShape> = (
@@ -27,11 +26,6 @@ export type ErrorFormatter<TContext, TShape extends TRPCErrorShape> = (
 ) => TShape;
 
 /**
- * A procedure-level error formatter, added with `.errors()`.
- *
- * Returning `undefined` (or nothing) declines the error, handing it to the next
- * formatter towards the head of the chain and ultimately to the router-wide
- * `errorFormatter`.
  * @internal
  */
 export type ProcedureErrorFormatter<
