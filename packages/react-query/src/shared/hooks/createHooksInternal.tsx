@@ -1,5 +1,4 @@
 // TODO: Look into fixing react-compiler support
-/* eslint-disable react-hooks/react-compiler */
 import {
   useInfiniteQuery as __useInfiniteQuery,
   useMutation as __useMutation,

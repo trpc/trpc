@@ -68,7 +68,7 @@
     "@trpc/server": "11.18.0",
     "@types/node": "catalog:",
     "@types/react": "^19.1.0",
-    "eslint": "^9.26.0",
+    "eslint": "catalog:",
     "event-source-polyfill": "^1.0.31",
     "konn": "^0.7.0",
     "react": "^19.1.0",

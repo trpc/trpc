@@ -83,7 +83,7 @@
     "@trpc/server": "11.18.0",
     "@types/node": "catalog:",
     "bson": "^7.2.0",
-    "eslint": "^9.26.0",
+    "eslint": "catalog:",
     "ion-js": "^5.2.1",
     "superjson": "^1.12.4",
     "tsdown": "catalog:",

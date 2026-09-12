@@ -12,7 +12,7 @@ export function getAcceptHeader(headers: Headers): TRPCAcceptHeader | null {
       .get('accept')
       ?.split(',')
       .some((t) => t.trim() === 'application/jsonl')
-      ? ('application/jsonl' as TRPCAcceptHeader)
+      ? 'application/jsonl'
       : null)
   );
 }

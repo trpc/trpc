@@ -124,7 +124,7 @@
     "@types/isomorphic-fetch": "^0.0.39",
     "@types/node": "catalog:",
     "dataloader": "^2.2.2",
-    "eslint": "^9.26.0",
+    "eslint": "catalog:",
     "isomorphic-fetch": "^3.0.0",
     "node-fetch": "^3.3.0",
     "tsdown": "catalog:",

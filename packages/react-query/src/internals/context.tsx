@@ -292,6 +292,7 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
   /**
    * @see https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientsetqueriesdata
    */
+  // eslint-disable-next-line max-params -- mirrors TanStack Query's own signature
   setQueriesData: (
     queryKey: TRPCQueryKey,
     filters: QueryFilters,

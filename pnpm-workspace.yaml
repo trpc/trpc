@@ -45,6 +45,12 @@ catalog:
   '@types/node': ^24.13.4
   tsdown: 0.23.0
   typescript: ^7.0.2
+  eslint: ^10.10.0
+  typescript-eslint: ^8.70.0
+  eslint-plugin-react: ^7.37.5
+  eslint-plugin-react-hooks: ^7.1.1
+  eslint-plugin-unicorn: ^74.0.0
+  '@eslint/compat': ^2.1.1
 
 catalogs:
   ts-api:
