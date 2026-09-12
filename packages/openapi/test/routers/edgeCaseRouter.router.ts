@@ -33,25 +33,19 @@ type AsyncResult = Promise<{ data: string }>;
 
 export const EdgeCaseRouter = t.router({
   // --- BigInt type ---
-  bigint: t.procedure.query(
-    (): WithBigInt => ({
-      id: BigInt(123),
-    }),
-  ),
+  bigint: t.procedure.query((): WithBigInt => ({
+    id: BigInt(123),
+  })),
 
   // --- Never field ---
-  neverField: t.procedure.query(
-    (): NeverField => ({
-      valid: 'hello',
-    }),
-  ),
+  neverField: t.procedure.query((): NeverField => ({
+    valid: 'hello',
+  })),
 
   // --- Promise return (should unwrap) ---
-  asyncReturn: t.procedure.query(
-    async (): AsyncResult => ({
-      data: 'async result',
-    }),
-  ),
+  asyncReturn: t.procedure.query(async (): AsyncResult => ({
+    data: 'async result',
+  })),
 
   // --- Empty input (void-like) ---
   voidInput: t.procedure.query(() => 'no input needed'),
@@ -111,9 +105,10 @@ export const EdgeCaseRouter = t.router({
   noInputMutation: t.procedure.mutation(() => ({ success: true })),
 
   // --- Intersection with disjoint properties (merged into single object) ---
-  disjointIntersection: t.procedure.query(
-    (): DisjointIntersection => ({ name: 'Alice', age: 30 }),
-  ),
+  disjointIntersection: t.procedure.query((): DisjointIntersection => ({
+    name: 'Alice',
+    age: 30,
+  })),
 
   // --- Intersection with conflicting property types (allOf) ---
   conflictingIntersection: t.procedure.query(

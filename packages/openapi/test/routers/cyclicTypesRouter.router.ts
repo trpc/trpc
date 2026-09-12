@@ -37,12 +37,7 @@ interface Pet {
 
 /** JSON-like recursive type (union of primitives, arrays, and objects) */
 type JsonValue =
-  | string
-  | number
-  | boolean
-  | null
-  | JsonValue[]
-  | { [key: string]: JsonValue };
+  string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 
 /** Recursive type with optional self-reference */
 interface Comment {
@@ -155,20 +150,16 @@ export const CyclicTypesRouter = t.router({
   // --- Plain TS recursive types ---
   tsTypes: t.router({
     /** Tree: children is array of self */
-    tree: t.procedure.query(
-      (): TreeNode => ({
-        value: 'root',
-        children: [{ value: 'child', children: [] }],
-      }),
-    ),
+    tree: t.procedure.query((): TreeNode => ({
+      value: 'root',
+      children: [{ value: 'child', children: [] }],
+    })),
 
     /** Linked list: nullable self-reference */
-    linkedList: t.procedure.query(
-      (): LinkedListNode => ({
-        value: 1,
-        next: { value: 2, next: null },
-      }),
-    ),
+    linkedList: t.procedure.query((): LinkedListNode => ({
+      value: 1,
+      next: { value: 2, next: null },
+    })),
 
     /** Graph: array of self (cyclic) */
     graph: t.procedure.query((): GraphNode => {
@@ -177,12 +168,10 @@ export const CyclicTypesRouter = t.router({
     }),
 
     /** Mutual recursion: Person <-> Pet */
-    mutualRecursion: t.procedure.query(
-      (): Person => ({
-        name: 'Alice',
-        pets: [{ name: 'Rex', owner: { name: 'Alice', pets: [] } }],
-      }),
-    ),
+    mutualRecursion: t.procedure.query((): Person => ({
+      name: 'Alice',
+      pets: [{ name: 'Rex', owner: { name: 'Alice', pets: [] } }],
+    })),
 
     /** JSON-like recursive union type */
     jsonValue: t.procedure.query((): { data: JsonValue } => ({
@@ -190,57 +179,47 @@ export const CyclicTypesRouter = t.router({
     })),
 
     /** Optional self-reference */
-    comment: t.procedure.query(
-      (): Comment => ({
-        text: 'Hello',
-        replies: [{ text: 'Reply' }],
-      }),
-    ),
+    comment: t.procedure.query((): Comment => ({
+      text: 'Hello',
+      replies: [{ text: 'Reply' }],
+    })),
 
     /** Recursive type nested inside a non-recursive wrapper */
-    organization: t.procedure.query(
-      (): Organization => ({
-        name: 'Acme',
-        rootDepartment: {
-          name: 'Engineering',
-          manager: 'Alice',
-          subdepartments: [],
-        },
-      }),
-    ),
+    organization: t.procedure.query((): Organization => ({
+      name: 'Acme',
+      rootDepartment: {
+        name: 'Engineering',
+        manager: 'Alice',
+        subdepartments: [],
+      },
+    })),
 
     /** FileSystem with both array and nullable self-reference */
-    fileSystem: t.procedure.query(
-      (): FileSystemEntry => ({
-        name: 'root',
-        entries: [{ name: 'file.txt', entries: [], parent: null }],
-        parent: null,
-      }),
-    ),
+    fileSystem: t.procedure.query((): FileSystemEntry => ({
+      name: 'root',
+      entries: [{ name: 'file.txt', entries: [], parent: null }],
+      parent: null,
+    })),
 
     /** Recursive type through Record */
-    categoryMap: t.procedure.query(
-      (): CategoryMap => ({
-        name: 'root',
-        children: {
-          child1: { name: 'child1', children: {} },
-        },
-      }),
-    ),
+    categoryMap: t.procedure.query((): CategoryMap => ({
+      name: 'root',
+      children: {
+        child1: { name: 'child1', children: {} },
+      },
+    })),
 
     /** Triple mutual recursion: A -> B -> C -> A */
-    tripleRecursion: t.procedure.query(
-      (): NodeA => ({
-        value: 'a',
-        toB: {
-          value: 1,
-          toC: {
-            value: true,
-            toA: null,
-          },
+    tripleRecursion: t.procedure.query((): NodeA => ({
+      value: 'a',
+      toB: {
+        value: 1,
+        toC: {
+          value: true,
+          toA: null,
         },
-      }),
-    ),
+      },
+    })),
   }),
 
   // --- Zod z.lazy() recursive inputs ---

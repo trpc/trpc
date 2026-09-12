@@ -16,9 +16,7 @@ export async function* withPing<TValue>(
 
   // declaration outside the loop for garbage collection reasons
   let result:
-    | null
-    | IteratorResult<TValue>
-    | typeof disposablePromiseTimerResult;
+    null | IteratorResult<TValue> | typeof disposablePromiseTimerResult;
 
   let nextPromise = iterator.next();
 

@@ -33,7 +33,9 @@ interface TRPCSubscriptionOptionsOut<
   TOutput,
   TError,
   TFeatureFlags extends FeatureFlags,
-> extends UnusedSkipTokenTRPCSubscriptionOptionsIn<TOutput, TError>,
+>
+  extends
+    UnusedSkipTokenTRPCSubscriptionOptionsIn<TOutput, TError>,
     TRPCQueryOptionsResult {
   enabled: boolean;
   queryKey: TRPCQueryKey<TFeatureFlags['keyPrefix']>;
@@ -70,10 +72,7 @@ export interface TRPCSubscriptionOptions<
   >;
 }
 export type TRPCSubscriptionStatus =
-  | 'idle'
-  | 'connecting'
-  | 'pending'
-  | 'error';
+  'idle' | 'connecting' | 'pending' | 'error';
 
 export interface TRPCSubscriptionBaseResult<TOutput, TError> {
   status: TRPCSubscriptionStatus;
@@ -85,29 +84,35 @@ export interface TRPCSubscriptionBaseResult<TOutput, TError> {
   reset: () => void;
 }
 
-export interface TRPCSubscriptionIdleResult<TOutput>
-  extends TRPCSubscriptionBaseResult<TOutput, null> {
+export interface TRPCSubscriptionIdleResult<
+  TOutput,
+> extends TRPCSubscriptionBaseResult<TOutput, null> {
   status: 'idle';
   data: undefined;
   error: null;
 }
 
-export interface TRPCSubscriptionConnectingResult<TOutput, TError>
-  extends TRPCSubscriptionBaseResult<TOutput, TError> {
+export interface TRPCSubscriptionConnectingResult<
+  TOutput,
+  TError,
+> extends TRPCSubscriptionBaseResult<TOutput, TError> {
   status: 'connecting';
   data: undefined | TOutput;
   error: TError | null;
 }
 
-export interface TRPCSubscriptionPendingResult<TOutput>
-  extends TRPCSubscriptionBaseResult<TOutput, undefined> {
+export interface TRPCSubscriptionPendingResult<
+  TOutput,
+> extends TRPCSubscriptionBaseResult<TOutput, undefined> {
   status: 'pending';
   data: TOutput | undefined;
   error: null;
 }
 
-export interface TRPCSubscriptionErrorResult<TOutput, TError>
-  extends TRPCSubscriptionBaseResult<TOutput, TError> {
+export interface TRPCSubscriptionErrorResult<
+  TOutput,
+  TError,
+> extends TRPCSubscriptionBaseResult<TOutput, TError> {
   status: 'error';
   data: TOutput | undefined;
   error: TError;
