@@ -13,6 +13,32 @@ export type NeverField = {
     impossible?: unknown;
 };
 
+export type WithFunctions = {
+    id: string;
+};
+
+export type OnlyFunctions = {
+    [key: string]: never;
+};
+
+export type StandardFunctionInterfaces = {
+    id: string;
+};
+
+export type FunctionUnion = {
+    id: string;
+    value?: FunctionUnionTarget | null;
+    inline?: FunctionUnionTarget;
+};
+
+export type FunctionUnionTarget = {
+    label: string;
+};
+
+export type NullableFunction = {
+    id: string;
+};
+
 export type DefaultErrorShape = {
     message: string;
     code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
@@ -615,3 +641,189 @@ export type LiteralComputedKeyResponses = {
 };
 
 export type LiteralComputedKeyResponse = LiteralComputedKeyResponses[keyof LiteralComputedKeyResponses];
+
+export type WithFunctionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/withFunctions';
+};
+
+export type WithFunctionsErrors = {
+    /**
+     * Error response
+     */
+    default: {
+        error: DefaultErrorShape;
+    };
+};
+
+export type WithFunctionsError = WithFunctionsErrors[keyof WithFunctionsErrors];
+
+export type WithFunctionsResponses = {
+    /**
+     * Successful response
+     */
+    200: {
+        result: {
+            data: WithFunctions;
+        };
+    };
+};
+
+export type WithFunctionsResponse = WithFunctionsResponses[keyof WithFunctionsResponses];
+
+export type OnlyFunctionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/onlyFunctions';
+};
+
+export type OnlyFunctionsErrors = {
+    /**
+     * Error response
+     */
+    default: {
+        error: DefaultErrorShape;
+    };
+};
+
+export type OnlyFunctionsError = OnlyFunctionsErrors[keyof OnlyFunctionsErrors];
+
+export type OnlyFunctionsResponses = {
+    /**
+     * Successful response
+     */
+    200: {
+        result: {
+            data: OnlyFunctions;
+        };
+    };
+};
+
+export type OnlyFunctionsResponse = OnlyFunctionsResponses[keyof OnlyFunctionsResponses];
+
+export type StandardFunctionInterfacesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/standardFunctionInterfaces';
+};
+
+export type StandardFunctionInterfacesErrors = {
+    /**
+     * Error response
+     */
+    default: {
+        error: DefaultErrorShape;
+    };
+};
+
+export type StandardFunctionInterfacesError = StandardFunctionInterfacesErrors[keyof StandardFunctionInterfacesErrors];
+
+export type StandardFunctionInterfacesResponses = {
+    /**
+     * Successful response
+     */
+    200: {
+        result: {
+            data: StandardFunctionInterfaces;
+        };
+    };
+};
+
+export type StandardFunctionInterfacesResponse = StandardFunctionInterfacesResponses[keyof StandardFunctionInterfacesResponses];
+
+export type TopLevelFunctionData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/topLevelFunction';
+};
+
+export type TopLevelFunctionErrors = {
+    /**
+     * Error response
+     */
+    default: {
+        error: DefaultErrorShape;
+    };
+};
+
+export type TopLevelFunctionError = TopLevelFunctionErrors[keyof TopLevelFunctionErrors];
+
+export type TopLevelFunctionResponses = {
+    /**
+     * Successful response
+     */
+    200: {
+        result: {
+            [key: string]: unknown;
+        };
+    };
+};
+
+export type TopLevelFunctionResponse = TopLevelFunctionResponses[keyof TopLevelFunctionResponses];
+
+export type FunctionUnionData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/functionUnion';
+};
+
+export type FunctionUnionErrors = {
+    /**
+     * Error response
+     */
+    default: {
+        error: DefaultErrorShape;
+    };
+};
+
+export type FunctionUnionError = FunctionUnionErrors[keyof FunctionUnionErrors];
+
+export type FunctionUnionResponses = {
+    /**
+     * Successful response
+     */
+    200: {
+        result: {
+            data: FunctionUnion;
+        };
+    };
+};
+
+export type FunctionUnionResponse = FunctionUnionResponses[keyof FunctionUnionResponses];
+
+export type NullableFunctionData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/nullableFunction';
+};
+
+export type NullableFunctionErrors = {
+    /**
+     * Error response
+     */
+    default: {
+        error: DefaultErrorShape;
+    };
+};
+
+export type NullableFunctionError = NullableFunctionErrors[keyof NullableFunctionErrors];
+
+export type NullableFunctionResponses = {
+    /**
+     * Successful response
+     */
+    200: {
+        result: {
+            data: NullableFunction;
+        };
+    };
+};
+
+export type NullableFunctionResponse = NullableFunctionResponses[keyof NullableFunctionResponses];

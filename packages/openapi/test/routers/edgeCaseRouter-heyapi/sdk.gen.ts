@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AsyncReturnData, AsyncReturnErrors, AsyncReturnResponses, BigintData, BigintErrors, BigintResponses, BinaryData, BinaryErrors, BinaryResponses, BoolNullableData, BoolNullableErrors, BoolNullableResponses, BoolUnionData, BoolUnionErrors, BoolUnionResponses, ComplexNullableData, ComplexNullableErrors, ComplexNullableResponses, ConflictingIntersectionData, ConflictingIntersectionErrors, ConflictingIntersectionResponses, DisjointIntersectionData, DisjointIntersectionErrors, DisjointIntersectionResponses, Level1Level2Level3DeepData, Level1Level2Level3DeepErrors, Level1Level2Level3DeepResponses, LiteralComputedKeyData, LiteralComputedKeyErrors, LiteralComputedKeyResponses, NeverFieldData, NeverFieldErrors, NeverFieldResponses, NoInputMutationData, NoInputMutationErrors, NoInputMutationResponses, NullableObjectData, NullableObjectErrors, NullableObjectResponses, NullOnlyData, NullOnlyErrors, NullOnlyResponses, SimpleQueryData, SimpleQueryErrors, SimpleQueryResponses, UndefinedInputData, UndefinedInputErrors, UndefinedInputResponses, VoidExplicitData, VoidExplicitErrors, VoidExplicitResponses, VoidInputData, VoidInputErrors, VoidInputResponses } from './types.gen';
+import type { AsyncReturnData, AsyncReturnErrors, AsyncReturnResponses, BigintData, BigintErrors, BigintResponses, BinaryData, BinaryErrors, BinaryResponses, BoolNullableData, BoolNullableErrors, BoolNullableResponses, BoolUnionData, BoolUnionErrors, BoolUnionResponses, ComplexNullableData, ComplexNullableErrors, ComplexNullableResponses, ConflictingIntersectionData, ConflictingIntersectionErrors, ConflictingIntersectionResponses, DisjointIntersectionData, DisjointIntersectionErrors, DisjointIntersectionResponses, FunctionUnionData, FunctionUnionErrors, FunctionUnionResponses, Level1Level2Level3DeepData, Level1Level2Level3DeepErrors, Level1Level2Level3DeepResponses, LiteralComputedKeyData, LiteralComputedKeyErrors, LiteralComputedKeyResponses, NeverFieldData, NeverFieldErrors, NeverFieldResponses, NoInputMutationData, NoInputMutationErrors, NoInputMutationResponses, NullableFunctionData, NullableFunctionErrors, NullableFunctionResponses, NullableObjectData, NullableObjectErrors, NullableObjectResponses, NullOnlyData, NullOnlyErrors, NullOnlyResponses, OnlyFunctionsData, OnlyFunctionsErrors, OnlyFunctionsResponses, SimpleQueryData, SimpleQueryErrors, SimpleQueryResponses, StandardFunctionInterfacesData, StandardFunctionInterfacesErrors, StandardFunctionInterfacesResponses, TopLevelFunctionData, TopLevelFunctionErrors, TopLevelFunctionResponses, UndefinedInputData, UndefinedInputErrors, UndefinedInputResponses, VoidExplicitData, VoidExplicitErrors, VoidExplicitResponses, VoidInputData, VoidInputErrors, VoidInputResponses, WithFunctionsData, WithFunctionsErrors, WithFunctionsResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -143,6 +143,30 @@ export class Sdk extends HeyApiClient {
     
     public literalComputedKey<ThrowOnError extends boolean = false>(options?: Options<LiteralComputedKeyData, ThrowOnError>): RequestResult<LiteralComputedKeyResponses, LiteralComputedKeyErrors, ThrowOnError> {
         return (options?.client ?? this.client).get<LiteralComputedKeyResponses, LiteralComputedKeyErrors, ThrowOnError>({ url: '/literalComputedKey', ...options });
+    }
+    
+    public withFunctions<ThrowOnError extends boolean = false>(options?: Options<WithFunctionsData, ThrowOnError>): RequestResult<WithFunctionsResponses, WithFunctionsErrors, ThrowOnError> {
+        return (options?.client ?? this.client).get<WithFunctionsResponses, WithFunctionsErrors, ThrowOnError>({ url: '/withFunctions', ...options });
+    }
+    
+    public onlyFunctions<ThrowOnError extends boolean = false>(options?: Options<OnlyFunctionsData, ThrowOnError>): RequestResult<OnlyFunctionsResponses, OnlyFunctionsErrors, ThrowOnError> {
+        return (options?.client ?? this.client).get<OnlyFunctionsResponses, OnlyFunctionsErrors, ThrowOnError>({ url: '/onlyFunctions', ...options });
+    }
+    
+    public standardFunctionInterfaces<ThrowOnError extends boolean = false>(options?: Options<StandardFunctionInterfacesData, ThrowOnError>): RequestResult<StandardFunctionInterfacesResponses, StandardFunctionInterfacesErrors, ThrowOnError> {
+        return (options?.client ?? this.client).get<StandardFunctionInterfacesResponses, StandardFunctionInterfacesErrors, ThrowOnError>({ url: '/standardFunctionInterfaces', ...options });
+    }
+    
+    public topLevelFunction<ThrowOnError extends boolean = false>(options?: Options<TopLevelFunctionData, ThrowOnError>): RequestResult<TopLevelFunctionResponses, TopLevelFunctionErrors, ThrowOnError> {
+        return (options?.client ?? this.client).get<TopLevelFunctionResponses, TopLevelFunctionErrors, ThrowOnError>({ url: '/topLevelFunction', ...options });
+    }
+    
+    public functionUnion<ThrowOnError extends boolean = false>(options?: Options<FunctionUnionData, ThrowOnError>): RequestResult<FunctionUnionResponses, FunctionUnionErrors, ThrowOnError> {
+        return (options?.client ?? this.client).get<FunctionUnionResponses, FunctionUnionErrors, ThrowOnError>({ url: '/functionUnion', ...options });
+    }
+    
+    public nullableFunction<ThrowOnError extends boolean = false>(options?: Options<NullableFunctionData, ThrowOnError>): RequestResult<NullableFunctionResponses, NullableFunctionErrors, ThrowOnError> {
+        return (options?.client ?? this.client).get<NullableFunctionResponses, NullableFunctionErrors, ThrowOnError>({ url: '/nullableFunction', ...options });
     }
     
     private _level1?: Level1;

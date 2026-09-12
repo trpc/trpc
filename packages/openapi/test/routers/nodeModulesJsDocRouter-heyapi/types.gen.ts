@@ -41,214 +41,14 @@ export type TrpcRequestInfo = {
 export type TrpcRequestInfoProcedureCall = {
     path: string;
     /**
-     * Read the raw input (deduped and memoized)
-     */
-    getRawInput: {
-        [key: string]: unknown;
-    };
-    /**
-     * Get already parsed inputs - won't trigger reading the body or parsing the inputs
-     */
-    result: {
-        [key: string]: unknown;
-    };
-    /**
-     * The procedure being called, `null` if not found
-     */
-    procedure: AnyQueryProcedure | AnyMutationProcedure | SubscriptionProcedure | LegacyObservableSubscriptionProcedure | null;
-    /**
      * The index of this call in a batch request.
      */
     batchIndex: number;
 };
 
-export type AnyQueryProcedure = {
-    _def: {
-        /**
-         * These are just types, they can't be used at runtime
-         */
-        $types: {
-            input: unknown;
-            output: unknown;
-        };
-        procedure: true;
-        type: 'query';
-        meta: unknown;
-        experimental_caller: boolean;
-        /**
-         * The input parsers for the procedure
-         */
-        inputs: Array<ParserZodEsque | ParserValibotEsque | ParserArkTypeEsque | ParserStandardSchemaEsque | {
-            [key: string]: unknown;
-        } | ParserMyZodEsque | ParserScaleEsque | ParserSuperstructEsque | ParserYupEsque>;
-    };
-    meta: unknown;
-};
-
-export type ParserZodEsque = {
-    _input: unknown;
-    _output: unknown;
-};
-
-export type ParserValibotEsque = {
-    schema: {
-        _types?: {
-            input: unknown;
-            output: unknown;
-        };
-    };
-};
-
-export type ParserArkTypeEsque = {
-    inferIn: unknown;
-    infer: unknown;
-};
-
-export type ParserStandardSchemaEsque = {
-    '~standard': Props;
-};
-
-export type Props = {
-    /**
-     * The version number of the standard.
-     */
-    version: 1;
-    /**
-     * The vendor name of the schema library.
-     */
-    vendor: string;
-    /**
-     * Validates unknown input values.
-     */
-    validate: {
-        [key: string]: unknown;
-    };
-    types?: Types;
-};
-
-export type Types = {
-    /**
-     * The input type of the schema.
-     */
-    input: unknown;
-    /**
-     * The output type of the schema.
-     */
-    output: unknown;
-};
-
-export type ParserMyZodEsque = {
-    parse: {
-        [key: string]: unknown;
-    };
-};
-
-export type ParserScaleEsque = {
-    assert: {
-        [key: string]: unknown;
-    };
-};
-
-export type ParserSuperstructEsque = {
-    create: {
-        [key: string]: unknown;
-    };
-};
-
-export type ParserYupEsque = {
-    validateSync: {
-        [key: string]: unknown;
-    };
-};
-
-export type AnyMutationProcedure = {
-    _def: {
-        /**
-         * These are just types, they can't be used at runtime
-         */
-        $types: {
-            input: unknown;
-            output: unknown;
-        };
-        procedure: true;
-        type: 'mutation';
-        meta: unknown;
-        experimental_caller: boolean;
-        /**
-         * The input parsers for the procedure
-         */
-        inputs: Array<ParserZodEsque | ParserValibotEsque | ParserArkTypeEsque | ParserStandardSchemaEsque | {
-            [key: string]: unknown;
-        } | ParserMyZodEsque | ParserScaleEsque | ParserSuperstructEsque | ParserYupEsque>;
-    };
-    meta: unknown;
-};
-
-export type SubscriptionProcedure = {
-    _def: {
-        /**
-         * These are just types, they can't be used at runtime
-         */
-        $types: {
-            input: unknown;
-            output: unknown;
-        };
-        procedure: true;
-        type: 'subscription';
-        meta: unknown;
-        experimental_caller: boolean;
-        /**
-         * The input parsers for the procedure
-         */
-        inputs: Array<ParserZodEsque | ParserValibotEsque | ParserArkTypeEsque | ParserStandardSchemaEsque | {
-            [key: string]: unknown;
-        } | ParserMyZodEsque | ParserScaleEsque | ParserSuperstructEsque | ParserYupEsque>;
-    };
-    meta: unknown;
-};
-
-export type LegacyObservableSubscriptionProcedure = {
-    _observable: true;
-    _def: {
-        /**
-         * These are just types, they can't be used at runtime
-         */
-        $types: {
-            input: unknown;
-            output: unknown;
-        };
-        procedure: true;
-        type: 'subscription';
-        meta: unknown;
-        experimental_caller: boolean;
-        /**
-         * The input parsers for the procedure
-         */
-        inputs: Array<ParserZodEsque | ParserValibotEsque | ParserArkTypeEsque | ParserStandardSchemaEsque | {
-            [key: string]: unknown;
-        } | ParserMyZodEsque | ParserScaleEsque | ParserSuperstructEsque | ParserYupEsque>;
-    };
-    meta: unknown;
-};
-
 export type AbortSignal = {
     aborted: boolean;
-    onabort: {
-        [key: string]: unknown;
-    } | null;
     reason: unknown;
-    throwIfAborted: {
-        [key: string]: unknown;
-    };
-    addEventListener: {
-        [key: string]: unknown;
-    };
-    removeEventListener: {
-        [key: string]: unknown;
-    };
-    dispatchEvent: {
-        [key: string]: unknown;
-    };
 };
 
 export type Url = {
@@ -256,9 +56,6 @@ export type Url = {
     host: string;
     hostname: string;
     href: string;
-    toString: {
-        [key: string]: unknown;
-    };
     origin: string;
     password: string;
     pathname: string;
@@ -267,49 +64,10 @@ export type Url = {
     search: string;
     searchParams: UrlSearchParams;
     username: string;
-    toJSON: {
-        [key: string]: unknown;
-    };
 };
 
 export type UrlSearchParams = {
     size: number;
-    append: {
-        [key: string]: unknown;
-    };
-    delete: {
-        [key: string]: unknown;
-    };
-    get: {
-        [key: string]: unknown;
-    };
-    getAll: {
-        [key: string]: unknown;
-    };
-    has: {
-        [key: string]: unknown;
-    };
-    set: {
-        [key: string]: unknown;
-    };
-    sort: {
-        [key: string]: unknown;
-    };
-    toString: {
-        [key: string]: unknown;
-    };
-    forEach: {
-        [key: string]: unknown;
-    };
-    entries: {
-        [key: string]: unknown;
-    };
-    keys: {
-        [key: string]: unknown;
-    };
-    values: {
-        [key: string]: unknown;
-    };
 };
 
 export type LocalNodeModulesImportOutput = {
@@ -361,26 +119,15 @@ export type RootNodeModulesImportOutput = {
 export type Alias = {
     find: string | RegExp;
     replacement: string;
-    customResolver?: {
-        [key: string]: unknown;
-    } | ResolverObject | null;
+    customResolver?: ResolverObject | null;
 };
 
 export type RegExp = {
-    exec: {
-        [key: string]: unknown;
-    };
-    test: {
-        [key: string]: unknown;
-    };
     source: string;
     global: boolean;
     ignoreCase: boolean;
     multiline: boolean;
     lastIndex: number;
-    compile: {
-        [key: string]: unknown;
-    };
     flags: string;
     sticky: boolean;
     unicode: boolean;
@@ -389,12 +136,7 @@ export type RegExp = {
 };
 
 export type ResolverObject = {
-    buildStart?: {
-        [key: string]: unknown;
-    };
-    resolveId: {
-        [key: string]: unknown;
-    };
+    [key: string]: never;
 };
 
 export type DefaultErrorShape = {

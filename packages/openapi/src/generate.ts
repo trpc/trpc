@@ -73,6 +73,59 @@ function isObjectType(type: ts.Type): boolean {
   return hasFlag(type, ts.TypeFlags.Object);
 }
 
+const STANDARD_FUNCTION_INTERFACES = new Set([
+  'Function',
+  'CallableFunction',
+  'NewableFunction',
+]);
+
+function isStandardFunctionInterface(type: ts.Type): boolean {
+  const symbol = type.getSymbol();
+  const name = symbol?.getName();
+  if (!name || !STANDARD_FUNCTION_INTERFACES.has(name)) {
+    return false;
+  }
+  return (
+    symbol?.declarations?.some((d) =>
+      /(^|[\\/])lib\.[^\\/]*\.d\.ts$/.test(d.getSourceFile().fileName),
+    ) ?? false
+  );
+}
+
+function isFunctionType(type: ts.Type): boolean {
+  return (
+    type.getCallSignatures().length > 0 ||
+    type.getConstructSignatures().length > 0 ||
+    isStandardFunctionInterface(type)
+  );
+}
+
+function hasFunctionMember(type: ts.Type): boolean {
+  if (isFunctionType(type)) {
+    return true;
+  }
+  return type.isUnion() && type.types.some(isFunctionType);
+}
+
+function isUnserialisableType(type: ts.Type): boolean {
+  if (isFunctionType(type)) {
+    return true;
+  }
+  if (!type.isUnion() || !type.types.some(isFunctionType)) {
+    return false;
+  }
+  // Once callables are dropped, a union of nothing but `null` / `undefined`
+  // describes no value worth emitting.
+  return !type.types.some(
+    (m) =>
+      !isFunctionType(m) &&
+      !hasFlag(
+        m,
+        ts.TypeFlags.Undefined | ts.TypeFlags.Void | ts.TypeFlags.Null,
+      ),
+  );
+}
+
 function isOptionalSymbol(sym: ts.Symbol): boolean {
   return (sym.flags & ts.SymbolFlags.Optional) !== 0;
 }
@@ -339,7 +392,9 @@ function convertUnionType(
 
   // Strip undefined / void members (they make the field optional, not typed)
   const defined = members.filter(
-    (m) => !hasFlag(m, ts.TypeFlags.Undefined | ts.TypeFlags.Void),
+    (m) =>
+      !hasFlag(m, ts.TypeFlags.Undefined | ts.TypeFlags.Void) &&
+      !isFunctionType(m),
   );
   if (defined.length === 0) {
     return {};
@@ -693,6 +748,9 @@ function convertPlainObject(
     }
 
     const propType = checker.getTypeOfSymbol(prop);
+    if (isUnserialisableType(propType)) {
+      continue;
+    }
     const propSchema = typeToJsonSchema(propType, ctx, depth + 1);
 
     // Extract JSDoc comment from the property symbol as a description
@@ -702,7 +760,7 @@ function convertPlainObject(
     }
 
     properties[prop.name] = propSchema;
-    if (!isOptionalSymbol(prop)) {
+    if (!isOptionalSymbol(prop) && !hasFunctionMember(propType)) {
       required.push(prop.name);
     }
   }
@@ -722,7 +780,9 @@ function convertPlainObject(
       ctx,
       depth + 1,
     );
-  } else if (Object.keys(properties).length > 0) {
+  } else if (typeProps.length > 0) {
+    // Closed shape.  Stays closed even when every property was filtered out,
+    // so the result reads as "no keys" rather than "any keys".
     result.additionalProperties = false;
   }
 
@@ -790,6 +850,9 @@ function convertTypeToSchema(
     const result = convertIntersectionType(type, ctx, depth);
     ctx.visited.delete(type);
     return result;
+  }
+  if (isFunctionType(type)) {
+    return {};
   }
   if (isObjectType(type)) {
     return convertObjectType(type, ctx, depth);

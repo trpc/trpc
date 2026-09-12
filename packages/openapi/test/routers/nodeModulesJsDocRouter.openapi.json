@@ -220,34 +220,6 @@
           "path": {
             "type": "string"
           },
-          "getRawInput": {
-            "type": "object",
-            "description": "Read the raw input (deduped and memoized)"
-          },
-          "result": {
-            "type": "object",
-            "description": "Get already parsed inputs - won't trigger reading the body or parsing the inputs"
-          },
-          "procedure": {
-            "oneOf": [
-              {
-                "$ref": "#/components/schemas/AnyQueryProcedure"
-              },
-              {
-                "$ref": "#/components/schemas/AnyMutationProcedure"
-              },
-              {
-                "$ref": "#/components/schemas/SubscriptionProcedure"
-              },
-              {
-                "$ref": "#/components/schemas/LegacyObservableSubscriptionProcedure"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "The procedure being called, `null` if not found"
-          },
           "batchIndex": {
             "type": "number",
             "description": "The index of this call in a batch request."
@@ -255,509 +227,7 @@
         },
         "required": [
           "path",
-          "getRawInput",
-          "result",
-          "procedure",
           "batchIndex"
-        ],
-        "additionalProperties": false
-      },
-      "AnyQueryProcedure": {
-        "type": "object",
-        "properties": {
-          "_def": {
-            "type": "object",
-            "properties": {
-              "$types": {
-                "type": "object",
-                "properties": {
-                  "input": {},
-                  "output": {}
-                },
-                "required": [
-                  "input",
-                  "output"
-                ],
-                "additionalProperties": false,
-                "description": "These are just types, they can't be used at runtime"
-              },
-              "procedure": {
-                "type": "boolean",
-                "const": true
-              },
-              "type": {
-                "type": "string",
-                "const": "query"
-              },
-              "meta": {},
-              "experimental_caller": {
-                "type": "boolean"
-              },
-              "inputs": {
-                "type": "array",
-                "items": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/ParserZodEsque"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ParserValibotEsque"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ParserArkTypeEsque"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ParserStandardSchemaEsque"
-                    },
-                    {
-                      "type": "object"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ParserMyZodEsque"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ParserScaleEsque"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ParserSuperstructEsque"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ParserYupEsque"
-                    }
-                  ]
-                },
-                "description": "The input parsers for the procedure"
-              }
-            },
-            "required": [
-              "$types",
-              "procedure",
-              "type",
-              "meta",
-              "experimental_caller",
-              "inputs"
-            ],
-            "additionalProperties": false
-          },
-          "meta": {}
-        },
-        "required": [
-          "_def",
-          "meta"
-        ],
-        "additionalProperties": false
-      },
-      "ParserZodEsque": {
-        "type": "object",
-        "properties": {
-          "_input": {},
-          "_output": {}
-        },
-        "required": [
-          "_input",
-          "_output"
-        ],
-        "additionalProperties": false
-      },
-      "ParserValibotEsque": {
-        "type": "object",
-        "properties": {
-          "schema": {
-            "type": "object",
-            "properties": {
-              "_types": {
-                "type": "object",
-                "properties": {
-                  "input": {},
-                  "output": {}
-                },
-                "required": [
-                  "input",
-                  "output"
-                ],
-                "additionalProperties": false
-              }
-            },
-            "additionalProperties": false
-          }
-        },
-        "required": [
-          "schema"
-        ],
-        "additionalProperties": false
-      },
-      "ParserArkTypeEsque": {
-        "type": "object",
-        "properties": {
-          "inferIn": {},
-          "infer": {}
-        },
-        "required": [
-          "inferIn",
-          "infer"
-        ],
-        "additionalProperties": false
-      },
-      "ParserStandardSchemaEsque": {
-        "type": "object",
-        "properties": {
-          "~standard": {
-            "$ref": "#/components/schemas/Props"
-          }
-        },
-        "required": [
-          "~standard"
-        ],
-        "additionalProperties": false
-      },
-      "Props": {
-        "type": "object",
-        "properties": {
-          "version": {
-            "type": "number",
-            "const": 1,
-            "description": "The version number of the standard."
-          },
-          "vendor": {
-            "type": "string",
-            "description": "The vendor name of the schema library."
-          },
-          "validate": {
-            "type": "object",
-            "description": "Validates unknown input values."
-          },
-          "types": {
-            "$ref": "#/components/schemas/Types"
-          }
-        },
-        "required": [
-          "version",
-          "vendor",
-          "validate"
-        ],
-        "additionalProperties": false
-      },
-      "Types": {
-        "type": "object",
-        "properties": {
-          "input": {
-            "description": "The input type of the schema."
-          },
-          "output": {
-            "description": "The output type of the schema."
-          }
-        },
-        "required": [
-          "input",
-          "output"
-        ],
-        "additionalProperties": false
-      },
-      "ParserMyZodEsque": {
-        "type": "object",
-        "properties": {
-          "parse": {
-            "type": "object"
-          }
-        },
-        "required": [
-          "parse"
-        ],
-        "additionalProperties": false
-      },
-      "ParserScaleEsque": {
-        "type": "object",
-        "properties": {
-          "assert": {
-            "type": "object"
-          }
-        },
-        "required": [
-          "assert"
-        ],
-        "additionalProperties": false
-      },
-      "ParserSuperstructEsque": {
-        "type": "object",
-        "properties": {
-          "create": {
-            "type": "object"
-          }
-        },
-        "required": [
-          "create"
-        ],
-        "additionalProperties": false
-      },
-      "ParserYupEsque": {
-        "type": "object",
-        "properties": {
-          "validateSync": {
-            "type": "object"
-          }
-        },
-        "required": [
-          "validateSync"
-        ],
-        "additionalProperties": false
-      },
-      "AnyMutationProcedure": {
-        "type": "object",
-        "properties": {
-          "_def": {
-            "type": "object",
-            "properties": {
-              "$types": {
-                "type": "object",
-                "properties": {
-                  "input": {},
-                  "output": {}
-                },
-                "required": [
-                  "input",
-                  "output"
-                ],
-                "additionalProperties": false,
-                "description": "These are just types, they can't be used at runtime"
-              },
-              "procedure": {
-                "type": "boolean",
-                "const": true
-              },
-              "type": {
-                "type": "string",
-                "const": "mutation"
-              },
-              "meta": {},
-              "experimental_caller": {
-                "type": "boolean"
-              },
-              "inputs": {
-                "type": "array",
-                "items": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/ParserZodEsque"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ParserValibotEsque"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ParserArkTypeEsque"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ParserStandardSchemaEsque"
-                    },
-                    {
-                      "type": "object"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ParserMyZodEsque"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ParserScaleEsque"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ParserSuperstructEsque"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ParserYupEsque"
-                    }
-                  ]
-                },
-                "description": "The input parsers for the procedure"
-              }
-            },
-            "required": [
-              "$types",
-              "procedure",
-              "type",
-              "meta",
-              "experimental_caller",
-              "inputs"
-            ],
-            "additionalProperties": false
-          },
-          "meta": {}
-        },
-        "required": [
-          "_def",
-          "meta"
-        ],
-        "additionalProperties": false
-      },
-      "SubscriptionProcedure": {
-        "type": "object",
-        "properties": {
-          "_def": {
-            "type": "object",
-            "properties": {
-              "$types": {
-                "type": "object",
-                "properties": {
-                  "input": {},
-                  "output": {}
-                },
-                "required": [
-                  "input",
-                  "output"
-                ],
-                "additionalProperties": false,
-                "description": "These are just types, they can't be used at runtime"
-              },
-              "procedure": {
-                "type": "boolean",
-                "const": true
-              },
-              "type": {
-                "type": "string",
-                "const": "subscription"
-              },
-              "meta": {},
-              "experimental_caller": {
-                "type": "boolean"
-              },
-              "inputs": {
-                "type": "array",
-                "items": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/ParserZodEsque"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ParserValibotEsque"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ParserArkTypeEsque"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ParserStandardSchemaEsque"
-                    },
-                    {
-                      "type": "object"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ParserMyZodEsque"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ParserScaleEsque"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ParserSuperstructEsque"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ParserYupEsque"
-                    }
-                  ]
-                },
-                "description": "The input parsers for the procedure"
-              }
-            },
-            "required": [
-              "$types",
-              "procedure",
-              "type",
-              "meta",
-              "experimental_caller",
-              "inputs"
-            ],
-            "additionalProperties": false
-          },
-          "meta": {}
-        },
-        "required": [
-          "_def",
-          "meta"
-        ],
-        "additionalProperties": false
-      },
-      "LegacyObservableSubscriptionProcedure": {
-        "type": "object",
-        "properties": {
-          "_observable": {
-            "type": "boolean",
-            "const": true
-          },
-          "_def": {
-            "type": "object",
-            "properties": {
-              "$types": {
-                "type": "object",
-                "properties": {
-                  "input": {},
-                  "output": {}
-                },
-                "required": [
-                  "input",
-                  "output"
-                ],
-                "additionalProperties": false,
-                "description": "These are just types, they can't be used at runtime"
-              },
-              "procedure": {
-                "type": "boolean",
-                "const": true
-              },
-              "type": {
-                "type": "string",
-                "const": "subscription"
-              },
-              "meta": {},
-              "experimental_caller": {
-                "type": "boolean"
-              },
-              "inputs": {
-                "type": "array",
-                "items": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/ParserZodEsque"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ParserValibotEsque"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ParserArkTypeEsque"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ParserStandardSchemaEsque"
-                    },
-                    {
-                      "type": "object"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ParserMyZodEsque"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ParserScaleEsque"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ParserSuperstructEsque"
-                    },
-                    {
-                      "$ref": "#/components/schemas/ParserYupEsque"
-                    }
-                  ]
-                },
-                "description": "The input parsers for the procedure"
-              }
-            },
-            "required": [
-              "$types",
-              "procedure",
-              "type",
-              "meta",
-              "experimental_caller",
-              "inputs"
-            ],
-            "additionalProperties": false
-          },
-          "meta": {}
-        },
-        "required": [
-          "_observable",
-          "_def",
-          "meta"
         ],
         "additionalProperties": false
       },
@@ -767,34 +237,11 @@
           "aborted": {
             "type": "boolean"
           },
-          "onabort": {
-            "type": [
-              "object",
-              "null"
-            ]
-          },
-          "reason": {},
-          "throwIfAborted": {
-            "type": "object"
-          },
-          "addEventListener": {
-            "type": "object"
-          },
-          "removeEventListener": {
-            "type": "object"
-          },
-          "dispatchEvent": {
-            "type": "object"
-          }
+          "reason": {}
         },
         "required": [
           "aborted",
-          "onabort",
-          "reason",
-          "throwIfAborted",
-          "addEventListener",
-          "removeEventListener",
-          "dispatchEvent"
+          "reason"
         ],
         "additionalProperties": false
       },
@@ -812,9 +259,6 @@
           },
           "href": {
             "type": "string"
-          },
-          "toString": {
-            "type": "object"
           },
           "origin": {
             "type": "string"
@@ -839,9 +283,6 @@
           },
           "username": {
             "type": "string"
-          },
-          "toJSON": {
-            "type": "object"
           }
         },
         "required": [
@@ -849,7 +290,6 @@
           "host",
           "hostname",
           "href",
-          "toString",
           "origin",
           "password",
           "pathname",
@@ -857,8 +297,7 @@
           "protocol",
           "search",
           "searchParams",
-          "username",
-          "toJSON"
+          "username"
         ],
         "additionalProperties": false
       },
@@ -867,58 +306,10 @@
         "properties": {
           "size": {
             "type": "number"
-          },
-          "append": {
-            "type": "object"
-          },
-          "delete": {
-            "type": "object"
-          },
-          "get": {
-            "type": "object"
-          },
-          "getAll": {
-            "type": "object"
-          },
-          "has": {
-            "type": "object"
-          },
-          "set": {
-            "type": "object"
-          },
-          "sort": {
-            "type": "object"
-          },
-          "toString": {
-            "type": "object"
-          },
-          "forEach": {
-            "type": "object"
-          },
-          "entries": {
-            "type": "object"
-          },
-          "keys": {
-            "type": "object"
-          },
-          "values": {
-            "type": "object"
           }
         },
         "required": [
-          "size",
-          "append",
-          "delete",
-          "get",
-          "getAll",
-          "has",
-          "set",
-          "sort",
-          "toString",
-          "forEach",
-          "entries",
-          "keys",
-          "values"
+          "size"
         ],
         "additionalProperties": false
       },
@@ -1108,9 +499,6 @@
           "customResolver": {
             "oneOf": [
               {
-                "type": "object"
-              },
-              {
                 "$ref": "#/components/schemas/ResolverObject"
               },
               {
@@ -1128,12 +516,6 @@
       "RegExp": {
         "type": "object",
         "properties": {
-          "exec": {
-            "type": "object"
-          },
-          "test": {
-            "type": "object"
-          },
           "source": {
             "type": "string"
           },
@@ -1148,9 +530,6 @@
           },
           "lastIndex": {
             "type": "number"
-          },
-          "compile": {
-            "type": "object"
           },
           "flags": {
             "type": "string"
@@ -1169,14 +548,11 @@
           }
         },
         "required": [
-          "exec",
-          "test",
           "source",
           "global",
           "ignoreCase",
           "multiline",
           "lastIndex",
-          "compile",
           "flags",
           "sticky",
           "unicode",
@@ -1187,17 +563,6 @@
       },
       "ResolverObject": {
         "type": "object",
-        "properties": {
-          "buildStart": {
-            "type": "object"
-          },
-          "resolveId": {
-            "type": "object"
-          }
-        },
-        "required": [
-          "resolveId"
-        ],
         "additionalProperties": false
       },
       "DefaultErrorShape": {
