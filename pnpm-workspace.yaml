@@ -8,4 +8,4 @@ packages:
   - 'www'
   - 'www/og-image'
 allowBuilds:
-  esbuild: false
+  esbuild: true
