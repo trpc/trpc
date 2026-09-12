@@ -61,7 +61,7 @@
     "fast-glob": "^3.2.12",
     "hash-sum": "^2.0.0",
     "konn": "^0.7.0",
-    "lerna": "^9.0.0",
+    "lerna": "catalog:",
     "npm-run-all2": "^8.0.0",
     "prettier": "catalog:",
     "prettier-plugin-tailwindcss": "catalog:",
