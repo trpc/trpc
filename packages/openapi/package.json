@@ -86,7 +86,7 @@
     "eslint": "^9.26.0",
     "ion-js": "^5.2.1",
     "superjson": "^1.12.4",
-    "tsdown": "0.12.7",
+    "tsdown": "catalog:",
     "typescript": "^5.9.2",
     "vscode-languageserver-textdocument": "^1.0.12",
     "vscode-languageserver-types": "^3.17.5",

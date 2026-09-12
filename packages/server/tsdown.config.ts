@@ -21,6 +21,16 @@ export const input = [
 export default defineConfig({
   target: ['node18', 'es2017'],
   entry: input,
+  deps: {
+    neverBundle: [
+      /^aws-lambda$/,
+      /^express$/,
+      /^fastify$/,
+      /^@fastify\//,
+      /^next(\/|$)/,
+      /^ws$/,
+    ],
+  },
   dts: {
     sourcemap: true,
     tsconfig: './tsconfig.build.json',

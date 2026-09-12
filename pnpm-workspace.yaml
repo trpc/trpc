@@ -43,3 +43,4 @@ allowBuilds:
 
 catalog:
   '@types/node': ^24.13.4
+  tsdown: 0.23.0
