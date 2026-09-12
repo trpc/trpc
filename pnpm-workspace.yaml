@@ -60,6 +60,13 @@ catalog:
   vite: ^8.3.0
   jsdom: ^30.0.1
   turbo: ^2.10.12
+  undici: ^8.10.2
+  ws: ^8.21.3
+  devalue: ^5.9.2
+  valibot: ^1.5.0
+  fastify: ^5.12.4
+  '@fastify/websocket': ^11.3.0
+  fastify-plugin: ^6.0.0
 
 catalogs:
   ts-api:

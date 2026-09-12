@@ -100,7 +100,7 @@
     "dotenv": "^16.0.1",
     "effect": "3.21.0",
     "eslint": "^10.10.0",
-    "fastify": "^5.0.0",
+    "fastify": "^5.12.4",
     "next": "^15.3.8",
     "next-auth": "npm:next-auth@^4.24.11",
     "npm-run-all2": "^8.0.0",
@@ -120,8 +120,8 @@
     "typedoc-plugin-markdown": "4.4.2",
     "typescript": "^5.9.2",
     "unified": "^11.0.0",
-    "valibot": "1.3.1",
-    "ws": "^8.0.0",
+    "valibot": "^1.5.0",
+    "ws": "^8.21.3",
     "yup": "^1.0.0"
   }
 }

@@ -76,7 +76,7 @@
     "tsdown": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",
-    "ws": "^8.0.0",
+    "ws": "catalog:",
     "zod": "^4.2.1"
   },
   "publishConfig": {
