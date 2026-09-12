@@ -4,6 +4,7 @@ import { TRPCClientError } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import type { inferProcedureErrorShape } from '@trpc/server/unstable-core-do-not-import';
 import { lazy } from '@trpc/server/unstable-core-do-not-import';
+import { z } from 'zod';
 
 class RateLimitError extends Error {
   constructor(public readonly retryAfterMs: number) {
@@ -130,8 +131,8 @@ describe('types', () => {
     }
   });
 
-  test('a formatter that always returns makes everything before it unreachable', () => {
-    const alwaysHandles = rateLimitedProcedure.errors((opts) => ({
+  test('the router shape stays in the union even for an always-returning handler', () => {
+    const alwaysHandles = t.procedure.errors((opts) => ({
       ...opts.shape,
       data: { ...opts.shape.data, kind: 'ALWAYS' as const },
     }));
@@ -144,9 +145,14 @@ describe('types', () => {
       (typeof router)['_def']['record']['proc']
     >;
 
-    expectTypeOf<Shape['data']['kind']>().toEqualTypeOf<'ALWAYS'>();
-    // @ts-expect-error - the global formatter can never run for this procedure
-    type _ = Shape['data']['fromGlobalFormatter'];
+    // routing, parsing and context errors never reach the chain, so the
+    // router-wide shape is always possible
+    const data = {} as Shape['data'];
+    if ('kind' in data) {
+      expectTypeOf(data.kind).toEqualTypeOf<'ALWAYS'>();
+    } else {
+      expectTypeOf(data.fromGlobalFormatter).toEqualTypeOf<true>();
+    }
   });
 
   test('a handler that always throws falls back instead of collapsing to never', () => {
@@ -166,41 +172,33 @@ describe('types', () => {
     data.anythingAtAll;
   });
 
-  test('`concat()` drops unreachable variants when a chain always handles', () => {
-    const declines = t.procedure.errors((opts) => {
+  test('`concat()` unions both sides of the chain', () => {
+    const a = t.procedure.errors((opts) => {
       if (opts.error.code === 'BAD_REQUEST') {
-        return { ...opts.shape, data: { ...opts.shape.data, k: 'D' as const } };
+        return { ...opts.shape, data: { ...opts.shape.data, k: 'A' as const } };
       }
       return undefined;
     });
-    const total = t.procedure.errors((opts) => ({
-      ...opts.shape,
-      data: { ...opts.shape.data, k: 'T' as const },
-    }));
+    const b = t.procedure.errors((opts) => {
+      if (opts.error.code === 'CONFLICT') {
+        return { ...opts.shape, data: { ...opts.shape.data, k: 'B' as const } };
+      }
+      return undefined;
+    });
 
     const router = t.router({
-      declinesThenTotal: declines.concat(total).query((): string => 'never'),
-      totalThenDeclines: total.concat(declines).query((): string => 'never'),
+      combined: a.concat(b).query((): string => 'never'),
     });
-    type Rec = (typeof router)['_def']['record'];
 
-    // the concatenated handler always returns, so it's the only outcome
-    const a = {} as inferProcedureErrorShape<
+    const data = {} as inferProcedureErrorShape<
       Root,
-      Rec['declinesThenTotal']
+      (typeof router)['_def']['record']['combined']
     >['data'];
-    a.k satisfies 'T';
-    // @ts-expect-error - the global formatter can't be reached
-    a.fromGlobalFormatter;
-
-    // declining falls through to the base, which always returns
-    const b = {} as inferProcedureErrorShape<
-      Root,
-      Rec['totalThenDeclines']
-    >['data'];
-    b.k satisfies 'D' | 'T';
-    // @ts-expect-error - the global formatter can't be reached
-    b.fromGlobalFormatter;
+    if ('k' in data) {
+      data.k satisfies 'A' | 'B';
+    } else {
+      expectTypeOf(data.fromGlobalFormatter).toEqualTypeOf<true>();
+    }
   });
 
   test('the router-wide error shape is unaffected', () => {
@@ -351,35 +349,69 @@ test('formatters run from the tail backwards and stop at the first handler', asy
   expect(globalFormatter).not.toHaveBeenCalled();
 });
 
-test('errors thrown from middlewares go through the chain', async () => {
-  const procedure = t.procedure
+test('handlers only catch errors thrown further down the chain', async () => {
+  const caught = t.procedure
+    .errors((opts) => ({
+      ...opts.shape,
+      data: { ...opts.shape.data, kind: 'CAUGHT' as const },
+    }))
     .use((opts) => {
-      throw new TRPCError({
-        code: 'UNAUTHORIZED',
-        cause: new RateLimitError(10),
-      });
+      throw new TRPCError({ code: 'UNAUTHORIZED' });
+      return opts.next();
+    });
+
+  // the middleware throws before the handler is ever reached
+  const missed = t.procedure
+    .use((opts) => {
+      throw new TRPCError({ code: 'UNAUTHORIZED' });
       return opts.next();
     })
     .errors((opts) => ({
       ...opts.shape,
-      data: {
-        ...opts.shape.data,
-        kind: 'FROM_MIDDLEWARE' as const,
-      },
+      data: { ...opts.shape.data, kind: 'MISSED' as const },
     }));
 
   const router = t.router({
-    guarded: procedure.query(() => 'never'),
+    caught: caught.query(() => 'never'),
+    missed: missed.query(() => 'never'),
   });
 
   await using ctx = testServerAndClientResource(router);
 
-  const err = await waitError(ctx.client.guarded.query(), TRPCClientError);
+  const caughtErr = await waitError(ctx.client.caught.query(), TRPCClientError);
+  expect(caughtErr.data).toMatchObject({ kind: 'CAUGHT' });
 
-  expect(err.data).toMatchObject({
-    code: 'UNAUTHORIZED',
-    kind: 'FROM_MIDDLEWARE',
+  const missedErr = await waitError(ctx.client.missed.query(), TRPCClientError);
+  expect(missedErr.data).toMatchObject({ fromGlobalFormatter: true });
+  expect(missedErr.data).not.toHaveProperty('kind');
+});
+
+test('handlers catch errors from input parsing', async () => {
+  const procedure = t.procedure
+    .errors((opts) => {
+      if (opts.error.code === 'BAD_REQUEST') {
+        return {
+          ...opts.shape,
+          data: { ...opts.shape.data, kind: 'BAD_INPUT' as const },
+        };
+      }
+      return undefined;
+    })
+    .input(z.object({ name: z.string() }));
+
+  const router = t.router({
+    greet: procedure.query(({ input }) => input.name),
   });
+
+  await using ctx = testServerAndClientResource(router);
+
+  const err = await waitError(
+    // @ts-expect-error - deliberately wrong input
+    ctx.client.greet.query({ name: 42 }),
+    TRPCClientError,
+  );
+
+  expect(err.data).toMatchObject({ kind: 'BAD_INPUT' });
 });
 
 test('`concat()` runs the concatenated formatters first', async () => {

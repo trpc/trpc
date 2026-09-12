@@ -94,10 +94,6 @@ Errors can be formatted on a per-procedure basis using the `.errors()` method, w
 
 When a middleware or procedure throws an error, it bubbles upward through all `.errors()` handlers until one returns a shape or the global errorFormatter is reached.
 
-Bubbling starts at the **tail** of the chain, so the handler you chained last gets first refusal. A handler that always returns a shape makes everything before it unreachable, including the global `errorFormatter`, and the procedure's error type narrows to just that shape.
-
-Only the order of `.errors()` handlers relative to each other matters. Where you chain them relative to `.use()` doesn't - a handler catches anything the procedure throws, including from middlewares added before it.
-
 ```ts twoslash title='server.ts'
 import { initTRPC } from '@trpc/server';
 
@@ -109,8 +105,12 @@ class PaymentRequiredError extends Error {
 }
 
 const t = initTRPC.create();
-declare function isRateLimited(opts: any): boolean;
-declare function isPaymentRequired(opts: any): boolean;
+function isRateLimited(opts: any) {
+  return true
+}
+function isPaymentRequired(opts: any) {
+  return true
+}
 
 // ---cut---
 const rateLimitedProcedure = t.procedure
@@ -124,6 +124,7 @@ const rateLimitedProcedure = t.procedure
     return undefined;
   })
   .use(opts => {
+    // Important: errors bubble up so a throwing middleware must come after the .errors() handler
     if (isRateLimited(opts)) {
       throw new RateLimitError();
     }
@@ -156,10 +157,6 @@ const addPostProcedure = billedProcedure.mutation(opts => {
   };
 });
 ```
-
-:::info
-`.errors()` handlers only see errors that reach a resolved procedure, which includes errors from its own middlewares and input/output parsing. Request-level failures - a malformed body, a failing `createContext()`, an unknown path - aren't attributable to a single procedure (a batched request may hold several), so those always go to the global `errorFormatter`.
-:::
 
 ## All properties sent to `errorFormatter()`
 

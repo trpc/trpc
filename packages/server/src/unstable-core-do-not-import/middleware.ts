@@ -1,8 +1,10 @@
-import { TRPCError } from './error/TRPCError';
+import type { AnyProcedureErrorFormatter } from './error/formatter';
+import { addProcedureErrorFormatter } from './error/formatter';
+import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type { ParseFn } from './parser';
 import type { ProcedureType } from './procedure';
 import type { GetRawInputFn, Overwrite, Simplify } from './types';
-import { isObject } from './utils';
+import { isAsyncIterable, isObject } from './utils';
 
 /** @internal */
 export const middlewareMarker = 'middlewareMarker' as 'middlewareMarker' & {
@@ -29,6 +31,10 @@ interface MiddlewareErrorResult<
 > extends MiddlewareResultBase {
   ok: false;
   error: TRPCError;
+  /**
+   * `.errors()` handlers the error has bubbled through, innermost first.
+   */
+  errorFormatters?: AnyProcedureErrorFormatter[];
 }
 
 /**
@@ -212,6 +218,42 @@ export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
     };
   inputMiddleware._type = 'input';
   return inputMiddleware;
+}
+
+/**
+ * @internal
+ */
+export function createErrorFormatterMiddleware(
+  formatter: AnyProcedureErrorFormatter,
+) {
+  async function* withFormatter(iterable: AsyncIterable<unknown>) {
+    try {
+      yield* iterable;
+    } catch (cause) {
+      const error = getTRPCErrorFromUnknown(cause);
+      addProcedureErrorFormatter(error, formatter);
+      throw error;
+    }
+  }
+
+  const errorMiddleware: AnyMiddlewareFunction =
+    async function errorFormatterMiddleware({ next }) {
+      const result = await next();
+      if (!result.ok) {
+        return {
+          ...result,
+          errorFormatters: [...(result.errorFormatters ?? []), formatter],
+        };
+      }
+      // a subscription only fails once it's iterated, which is after this
+      // middleware has returned
+      if (isAsyncIterable(result.data)) {
+        return { ...result, data: withFormatter(result.data) };
+      }
+      return result;
+    };
+  errorMiddleware._type = 'errors';
+  return errorMiddleware;
 }
 
 /**

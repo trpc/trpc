@@ -1,7 +1,6 @@
 import type { IncomingMessage } from 'http';
 import type ws from 'ws';
 import type {
-  AnyProcedure,
   AnyRouter,
   CreateContextCallback,
   inferRouterContext,
@@ -28,7 +27,6 @@ import { parseConnectionParamsFromUnknown } from '../http';
 import { isObservable, observableToAsyncIterable } from '../observable';
 // eslint-disable-next-line no-restricted-imports
 import {
-  getProcedureAtPath,
   isAsyncIterable,
   isObject,
   isTrackedEnvelope,
@@ -245,7 +243,6 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       const { path, lastEventId } = msg.params;
       let { input } = msg.params;
       const type = msg.method;
-      let procedure: AnyProcedure | null = null;
 
       if (lastEventId !== undefined) {
         if (isObject(input)) {
@@ -265,8 +262,6 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         if (!res.ok) {
           throw res.error;
         }
-
-        procedure = await getProcedureAtPath(router, path);
 
         const abortController = new AbortController();
         const result = await callTRPCProcedure({
@@ -369,7 +364,6 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
                   path,
                   input,
                   ctx,
-                  procedure,
                 }),
               });
               break;
@@ -425,7 +419,6 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
               path,
               input,
               ctx,
-              procedure,
             }),
           });
           abortController.abort();
@@ -453,7 +446,6 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             path,
             input,
             ctx,
-            procedure,
           }),
         });
       });
