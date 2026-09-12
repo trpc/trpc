@@ -4,6 +4,7 @@
   "exclude": [],
   "compilerOptions": {
     "allowJs": false,
+    "rootDir": ".",
     "paths": {
       "@trpc/client": ["./packages/client/src"],
       "@trpc/client/*": ["./packages/client/src/*"],

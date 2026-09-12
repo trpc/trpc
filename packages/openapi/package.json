@@ -87,7 +87,7 @@
     "ion-js": "^5.2.1",
     "superjson": "^1.12.4",
     "tsdown": "catalog:",
-    "typescript": "^5.9.2",
+    "typescript": "catalog:ts-api",
     "vscode-languageserver-textdocument": "^1.0.12",
     "vscode-languageserver-types": "^3.17.5",
     "zod": "^4.2.1"
@@ -95,7 +95,7 @@
   "peerDependencies": {
     "@hey-api/openapi-ts": ">=0.94.5",
     "@trpc/server": "11.18.0",
-    "typescript": ">=5.7.2",
+    "typescript": ">=5.7.2 <7",
     "zod": ">=4.0.0"
   },
   "peerDependenciesMeta": {
