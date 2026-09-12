@@ -70,7 +70,7 @@ process.on('SIGTERM', () => {
 ### Setting `TRPCClient` to use WebSockets
 
 :::tip
-You can use [Links](../client/links/overview.md) to route queries and/or mutations to HTTP transport and subscriptions over WebSockets.
+You can use [Links](../client/links/overview.md) to route queries and/or mutations to HTTP transport and subscriptions over WebSockets. See [Using WebSockets alongside HTTP](#using-websockets-alongside-http).
 :::
 
 ```tsx twoslash title='client.ts'
@@ -98,6 +98,185 @@ const client = createTRPCClient<AppRouter>({
     }),
   ],
 });
+```
+
+## Using WebSockets alongside HTTP
+
+You can serve the same router over both transports: mount the HTTP adapter as usual and attach `applyWSSHandler` to the same Node.js server.
+
+### Server
+
+```ts twoslash title='server.ts'
+// @filename: routers/app.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({
+  post: t.router({}),
+});
+
+// @filename: server.ts
+// @types: node
+// ---cut---
+import { createServer } from 'http';
+import * as trpcExpress from '@trpc/server/adapters/express';
+import { applyWSSHandler } from '@trpc/server/adapters/ws';
+import express from 'express';
+import { WebSocketServer } from 'ws';
+import { appRouter } from './routers/app';
+
+const app = express();
+
+app.use(
+  '/trpc',
+  trpcExpress.createExpressMiddleware({
+    router: appRouter,
+  }),
+);
+
+const server = createServer(app);
+const wss = new WebSocketServer({ server });
+
+applyWSSHandler({
+  wss,
+  router: appRouter,
+});
+
+server.listen(3000);
+```
+
+`applyWSSHandler` takes your root router, just like the HTTP adapter, so nested routers need no extra setup: a subscription defined at `appRouter.post.onAdd` is called as `post.onAdd`. The `prefix` option only makes the handler skip connections whose URL does not start with it, checked after `ws` has already accepted the upgrade. It does not namespace the router.
+
+### Client
+
+Use [`splitLink`](../client/links/splitLink.mdx) to send subscriptions over the WebSocket connection and everything else over HTTP.
+
+```ts twoslash title='client.ts'
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
+import {
+  createTRPCClient,
+  createWSClient,
+  httpBatchLink,
+  splitLink,
+  wsLink,
+} from '@trpc/client';
+import type { AppRouter } from './server';
+
+const wsClient = createWSClient({
+  url: 'ws://localhost:3000',
+});
+
+const client = createTRPCClient<AppRouter>({
+  links: [
+    splitLink({
+      condition: (op) => op.type === 'subscription',
+      true: wsLink({ client: wsClient }),
+      false: httpBatchLink({ url: 'http://localhost:3000/trpc' }),
+    }),
+  ],
+});
+```
+
+### Typing `createContext` for both adapters
+
+Each adapter passes its own `req`/`res` pair, so a function typed as a union of both option types can only read the properties the two have in common. Express-specific ones like `req.cookies` are not on the union:
+
+```ts twoslash title='server/context.ts'
+// @errors: 2339
+import type { CreateExpressContextOptions } from '@trpc/server/adapters/express';
+import type { CreateWSSContextFnOptions } from '@trpc/server/adapters/ws';
+
+const createContext = (
+  opts: CreateExpressContextOptions | CreateWSSContextFnOptions,
+) => {
+  return { token: opts.req.cookies['token'] };
+};
+```
+
+Narrowing with `'res' in opts` does not help: both adapters have a `res`, an `express.Response` on HTTP and a `ws.WebSocket` on WebSockets.
+
+Write one function per adapter and give them a shared return type. Both adapters expose the raw `cookie` header on `req.headers`, so one helper can serve both without a cookie-parsing middleware:
+
+```ts twoslash title='server/context.ts'
+import type { CreateExpressContextOptions } from '@trpc/server/adapters/express';
+import type { CreateWSSContextFnOptions } from '@trpc/server/adapters/ws';
+
+interface Context {
+  token: string | undefined;
+}
+
+const readToken = (cookie: string | undefined): string | undefined =>
+  /(?:^|;\s*)token=([^;]*)/.exec(cookie ?? '')?.[1];
+
+export const createExpressContext = (
+  opts: CreateExpressContextOptions,
+): Context => ({
+  token: readToken(opts.req.headers.cookie),
+});
+
+export const createWSSContext = (opts: CreateWSSContextFnOptions): Context => ({
+  token: readToken(opts.req.headers.cookie),
+});
+```
+
+Initialize tRPC with `Context` and pass each function to its own adapter:
+
+```ts twoslash title='server.ts'
+// @filename: context.ts
+import type { CreateExpressContextOptions } from '@trpc/server/adapters/express';
+import type { CreateWSSContextFnOptions } from '@trpc/server/adapters/ws';
+export interface Context {
+  token: string | undefined;
+}
+export declare const createExpressContext: (
+  opts: CreateExpressContextOptions,
+) => Context;
+export declare const createWSSContext: (
+  opts: CreateWSSContextFnOptions,
+) => Context;
+
+// @filename: routers/app.ts
+import { initTRPC } from '@trpc/server';
+import type { Context } from '../context';
+const t = initTRPC.context<Context>().create();
+export const appRouter = t.router({});
+
+// @filename: server.ts
+// @types: node
+// ---cut---
+import { createServer } from 'http';
+import * as trpcExpress from '@trpc/server/adapters/express';
+import { applyWSSHandler } from '@trpc/server/adapters/ws';
+import express from 'express';
+import { WebSocketServer } from 'ws';
+import { createExpressContext, createWSSContext } from './context';
+import { appRouter } from './routers/app';
+
+const app = express();
+
+app.use(
+  '/trpc',
+  trpcExpress.createExpressMiddleware({
+    router: appRouter,
+    createContext: createExpressContext,
+  }),
+);
+
+const server = createServer(app);
+
+applyWSSHandler({
+  wss: new WebSocketServer({ server }),
+  router: appRouter,
+  createContext: createWSSContext,
+});
+
+server.listen(3000);
 ```
 
 ## Authentication / connection params {#connectionParams}
