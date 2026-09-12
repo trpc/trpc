@@ -12,7 +12,7 @@ import type {
   TRPCQueryKey,
   TRPCQueryOptionsResult,
 } from './types';
-import { createTRPCOptionsResult, readQueryKey } from './utils';
+import { createTRPCOptionsResult } from './utils';
 
 interface BaseTRPCSubscriptionOptionsIn<TOutput, TError> {
   enabled?: boolean;
@@ -135,16 +135,24 @@ export const trpcSubscriptionOptions = <
   subscribe: typeof TRPCUntypedClient.prototype.subscription;
   path: string[];
   queryKey: TRPCQueryKey<TFeatureFlags['keyPrefix']>;
+  /**
+   * The raw input before queryKey serialization. Required to correctly detect
+   * `skipToken` because `getQueryKeyInternal` strips it from the queryKey args.
+   */
+  input: unknown;
   opts?: AnyTRPCSubscriptionOptionsIn;
 }): AnyTRPCSubscriptionOptionsOut<TFeatureFlags> => {
-  const { subscribe, path, queryKey, opts = {} } = args;
-  const input = readQueryKey(queryKey)?.args?.input;
+  const { subscribe, path, queryKey, input, opts = {} } = args;
   const enabled = 'enabled' in opts ? !!opts.enabled : input !== skipToken;
 
   const _subscribe: ReturnType<
     TRPCSubscriptionOptions<any, TFeatureFlags>
   >['subscribe'] = (innerOpts) => {
-    return subscribe(path.join('.'), input ?? undefined, innerOpts);
+    return subscribe(
+      path.join('.'),
+      input === skipToken ? undefined : (input as any),
+      innerOpts,
+    );
   };
 
   return {
