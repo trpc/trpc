@@ -65,3 +65,50 @@ export interface DefaultErrorShape extends TRPCErrorShape<DefaultErrorData> {
 export const defaultFormatter: ErrorFormatter<any, any> = ({ shape }) => {
   return shape;
 };
+
+const errorFormattersSymbol = Symbol('trpc_errorFormatters');
+
+/**
+ * Carry the `.errors()` handlers an error bubbled through across the `throw`
+ * that leaves the middleware chain, so {@link getErrorShape} can run them.
+ * @internal
+ */
+export function setProcedureErrorFormatters(
+  error: TRPCError,
+  formatters: AnyProcedureErrorFormatter[],
+): void {
+  Object.defineProperty(error, errorFormattersSymbol, {
+    value: formatters,
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  });
+}
+
+/**
+ * Subscriptions fail during iteration, once the middleware chain has already
+ * unwound, so those handlers are collected onto the error one at a time.
+ * @internal
+ */
+export function addProcedureErrorFormatter(
+  error: TRPCError,
+  formatter: AnyProcedureErrorFormatter,
+): void {
+  setProcedureErrorFormatters(error, [
+    ...getProcedureErrorFormatters(error),
+    formatter,
+  ]);
+}
+
+/**
+ * @internal
+ */
+export function getProcedureErrorFormatters(
+  error: TRPCError,
+): AnyProcedureErrorFormatter[] {
+  return (
+    (error as { [errorFormattersSymbol]?: AnyProcedureErrorFormatter[] })[
+      errorFormattersSymbol
+    ] ?? []
+  );
+}
