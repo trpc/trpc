@@ -266,17 +266,17 @@ export interface ProcedureBuilder<
     TErrorShape
   >;
   /**
-   * Add an error formatter to the procedure.
+   * Declare the errors this procedure can produce.
    *
-   * It runs after the global `errorFormatter` (and after any error formatter
-   * added earlier in the chain), receiving the shape produced by the previous
-   * formatter. Returning `shape` unchanged in a branch keeps the incoming
-   * shape(s) in the error union, so chaining `.errorFormatter()` widens the
+   * The formatter runs after the global `errorFormatter` (and after any
+   * `.errors()` added earlier in the chain), receiving the shape produced by
+   * the previous formatter. Returning `shape` unchanged in a branch keeps the
+   * incoming shape(s) in the error union, so chaining `.errors()` widens the
    * union of errors a client has to handle for this procedure.
    *
    * @see https://trpc.io/docs/v11/server/error-formatting
    */
-  errorFormatter<$Shape extends TRPCErrorShape>(
+  errors<$Shape extends TRPCErrorShape>(
     formatter: ErrorFormatter<TContext, $Shape, TErrorShape>,
   ): ProcedureBuilder<
     TContext,
@@ -581,7 +581,7 @@ export function createBuilder<TContext, TMeta, TErrorShape = DefaultErrorShape>(
         meta,
       });
     },
-    errorFormatter(formatter) {
+    errors(formatter) {
       return createNewBuilder(_def, {
         errorFormatters: [formatter as AnyErrorFormatter],
       });

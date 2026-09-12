@@ -31,7 +31,7 @@ const t = initTRPC.create({
   },
 });
 
-const rateLimitedProcedure = t.procedure.errorFormatter((opts) => {
+const rateLimitedProcedure = t.procedure.errors((opts) => {
   if (opts.error.cause instanceof RateLimitError) {
     return {
       ...opts.shape,
@@ -45,7 +45,7 @@ const rateLimitedProcedure = t.procedure.errorFormatter((opts) => {
   return opts.shape;
 });
 
-const billedProcedure = rateLimitedProcedure.errorFormatter((opts) => {
+const billedProcedure = rateLimitedProcedure.errors((opts) => {
   if (opts.error.cause instanceof PaymentRequiredError) {
     return {
       ...opts.shape,
@@ -224,7 +224,7 @@ test('errors thrown from middlewares are formatted too', async () => {
       });
       return opts.next();
     })
-    .errorFormatter((opts) => ({
+    .errors((opts) => ({
       ...opts.shape,
       data: {
         ...opts.shape.data,
@@ -248,11 +248,11 @@ test('errors thrown from middlewares are formatted too', async () => {
 });
 
 test('`concat()` combines the error unions of both builders', async () => {
-  const a = t.procedure.errorFormatter((opts) => ({
+  const a = t.procedure.errors((opts) => ({
     ...opts.shape,
     data: { ...opts.shape.data, a: true as const },
   }));
-  const b = t.procedure.errorFormatter((opts) => ({
+  const b = t.procedure.errors((opts) => ({
     ...opts.shape,
     data: { ...opts.shape.data, b: true as const },
   }));

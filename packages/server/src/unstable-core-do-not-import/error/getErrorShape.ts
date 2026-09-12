@@ -17,7 +17,7 @@ export function getErrorShape<TRoot extends AnyRootTypes>(opts: {
   ctx: TRoot['ctx'] | undefined;
   /**
    * The procedure the error originated from, when known.
-   * Its `.errorFormatter()`s are applied on top of the global one.
+   * Its `.errors()` formatters are applied on top of the global one.
    */
   procedure?: AnyProcedure | null;
 }): TRoot['errorShape'] {
