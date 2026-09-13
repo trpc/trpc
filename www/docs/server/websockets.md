@@ -144,7 +144,7 @@ applyWSSHandler({
 server.listen(3000);
 ```
 
-`applyWSSHandler` takes your root router, just like the HTTP adapter, so nested routers need no extra setup: a subscription defined at `appRouter.post.onAdd` is called as `post.onAdd`. The `prefix` option only makes the handler skip connections whose URL does not start with it, checked after `ws` has already accepted the upgrade. It does not namespace the router.
+`applyWSSHandler` takes your root router, just like the HTTP adapter, so nested routers need no extra setup: a subscription defined at `appRouter.post.onAdd` is called as `post.onAdd`. The `prefix` option only makes the handler skip connections whose URL does not start with it, checked after `ws` has already accepted the upgrade. Those sockets stay open and unmanaged, so if you share the `WebSocketServer` with other handlers, one of them has to close the ones nobody claims. It does not namespace the router.
 
 ### Client
 
@@ -224,6 +224,8 @@ export const createWSSContext = (opts: CreateWSSContextFnOptions): Context => ({
   token: readToken(opts.req.headers.cookie),
 });
 ```
+
+Browsers send cookies on cross-origin WebSocket handshakes, so a cookie-authenticated `createWSSContext` needs an origin check that the HTTP adapter gets from the browser's same-origin policy. Compare `req.headers.origin` against your allowed origins before accepting the upgrade, in the `WebSocketServer` `verifyClient` option or your own `upgrade` handler, and set the token cookie with `SameSite=Lax` or `Strict`.
 
 Initialize tRPC with `Context` and pass each function to its own adapter:
 
