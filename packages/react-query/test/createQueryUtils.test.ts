@@ -1,6 +1,7 @@
 import { createQueryClient } from './__queryClient';
 import type { Post } from './__testHelpers';
 import { createAppRouter } from './__testHelpers';
+import { skipToken } from '@tanstack/react-query';
 import { createTRPCQueryUtils } from '@trpc/react-query';
 
 let factory: ReturnType<typeof createAppRouter>;
@@ -320,5 +321,18 @@ describe('createTRPCQueryUtils()', () => {
     }));
     clientUtils.addPost.getMutationDefaults()?.mutationFn?.({ title: '' });
     expect(fn.mock.calls.length).toBe(1);
+  });
+
+  test('queryOptions() and infiniteQueryOptions() with skipToken', async () => {
+    const { client } = factory;
+    const queryClient = createQueryClient();
+    const clientUtils = createTRPCQueryUtils({ queryClient, client });
+
+    const queryOptions = clientUtils.postById.queryOptions(skipToken);
+    expect(queryOptions.queryFn).toBe(skipToken);
+
+    const infiniteQueryOptions =
+      clientUtils.paginatedPosts.infiniteQueryOptions(skipToken);
+    expect(infiniteQueryOptions.queryFn).toBe(skipToken);
   });
 });
