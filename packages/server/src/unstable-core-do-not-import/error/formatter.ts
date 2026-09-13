@@ -28,8 +28,6 @@ export type ErrorFormatter<TContext, TShape extends TRPCErrorShape> = (
 ) => TShape;
 
 /**
- * Runs inside the middleware chain, so `ctx` is always set and carries whatever
- * middlewares chained before it added.
  * @internal
  */
 export type ProcedureErrorFormatter<
@@ -100,15 +98,12 @@ export function getDefaultErrorShape(opts: {
 const formattedShapeSymbol = Symbol('trpc_formattedErrorShape');
 
 /**
- * The first `.errors()` handler to return a shape wins. Storing it on the error
- * makes handlers further up the chain skip, and carries the shape across the
- * `throw` that leaves the middleware chain.
  * @internal
  */
 export function setFormattedErrorShape(
   error: TRPCError,
   shape: TRPCErrorShape,
-): void {
+): asserts error is TRPCError & { [formattedShapeSymbol]: TRPCErrorShape } {
   Object.defineProperty(error, formattedShapeSymbol, {
     value: shape,
     enumerable: false,
@@ -123,7 +118,15 @@ export function setFormattedErrorShape(
 export function getFormattedErrorShape(
   error: TRPCError,
 ): TRPCErrorShape | undefined {
-  return (error as { [formattedShapeSymbol]?: TRPCErrorShape })[
-    formattedShapeSymbol
-  ];
+  if (isFormattedErrorShape(error)) {
+    return error[formattedShapeSymbol];
+  }
+
+  return undefined;
+}
+
+export function isFormattedErrorShape(
+  error: TRPCError,
+): error is TRPCError & { [formattedShapeSymbol]: TRPCErrorShape } {
+  return formattedShapeSymbol in error;
 }

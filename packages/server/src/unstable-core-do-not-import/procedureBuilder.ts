@@ -53,7 +53,8 @@ type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
   : TValue;
 
 type FoldErrorShape<TErrorShape, $Shape> =
-  Extract<$Shape, TRPCErrorShape> | TErrorShape;
+  | Extract<$Shape, TRPCErrorShape>
+  | TErrorShape;
 
 type inferAsyncIterable<TOutput> =
   TOutput extends AsyncIterable<infer $Yield, infer $Return, infer $Next>
@@ -98,9 +99,6 @@ type ProcedureBuilderDef<TMeta> = {
   subscription?: boolean;
   type?: ProcedureType;
   caller?: CallerOverride<unknown>;
-  /**
-   * Set by `initTRPC` - `.errors()` needs `isDev` to build the default shape
-   */
   config?: RootConfig<AnyRootTypes>;
 };
 
@@ -586,8 +584,8 @@ export function createBuilder<TContext, TMeta, TErrorShape = DefaultErrorShape>(
       return createNewBuilder(_def, {
         middlewares: [
           createErrorFormatterMiddleware(
-            formatter as AnyProcedureErrorFormatter,
-            () => _def.config?.isDev ?? false,
+            formatter,
+            _def.config?.isDev ?? false,
           ),
         ],
       });
