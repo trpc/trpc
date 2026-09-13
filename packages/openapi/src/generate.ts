@@ -21,7 +21,6 @@ interface ProcedureInfo {
   type: 'query' | 'mutation' | 'subscription';
   inputSchema: SchemaObject | null;
   outputSchema: SchemaObject | null;
-  /** Set only when `.errors()` gives this procedure a shape of its own. */
   errorSchema: SchemaObject | null;
   description?: string;
 }
@@ -1151,10 +1150,6 @@ function extractProcedure(def: ProcedureDef, ctx: WalkCtx): void {
   });
 }
 
-/**
- * Convert a procedure's own `$types.errorShape` to a JSON Schema, or `null`
- * when it's just the router-wide shape and the shared `Error` response will do.
- */
 function extractProcedureErrorSchema(
   $typesType: ts.Type,
   ctx: WalkCtx,
@@ -1179,11 +1174,6 @@ function extractProcedureErrorSchema(
   return isNonEmptySchema(schema) ? schema : null;
 }
 
-/**
- * Compare without building schemas - doing that here would register named
- * components mid-walk and reshuffle specs for routers that don't use
- * `.errors()` at all.
- */
 function isSameType(
   a: ts.Type,
   b: ts.Type | null,
