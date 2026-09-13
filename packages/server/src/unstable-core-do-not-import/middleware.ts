@@ -1,7 +1,6 @@
 import type { AnyProcedureErrorFormatter } from './error/formatter';
 import {
   getDefaultErrorShape,
-  getFormattedErrorShape,
   isFormattedErrorShape,
   setFormattedErrorShape,
 } from './error/formatter';
@@ -31,9 +30,8 @@ interface MiddlewareOKResult<_TContextOverride> extends MiddlewareResultBase {
   // this could be extended with `input`/`rawInput` later
 }
 
-interface MiddlewareErrorResult<
-  _TContextOverride,
-> extends MiddlewareResultBase {
+interface MiddlewareErrorResult<_TContextOverride>
+  extends MiddlewareResultBase {
   ok: false;
   error: TRPCError;
 }
