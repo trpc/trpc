@@ -4,7 +4,6 @@ import type {
   DefaultErrorShape,
   ProcedureErrorFormatter,
 } from './error/formatter';
-import { setProcedureErrorFormatters } from './error/formatter';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
   AnyMiddlewareFunction,
@@ -30,6 +29,7 @@ import type {
   QueryProcedure,
   SubscriptionProcedure,
 } from './procedure';
+import type { AnyRootTypes, RootConfig } from './rootConfig';
 import type { TRPCErrorShape } from './rpc';
 import type { inferTrackedOutput } from './stream/tracked';
 import type {
@@ -98,6 +98,10 @@ type ProcedureBuilderDef<TMeta> = {
   subscription?: boolean;
   type?: ProcedureType;
   caller?: CallerOverride<unknown>;
+  /**
+   * Set by `initTRPC` - `.errors()` needs `isDev` to build the default shape
+   */
+  config?: RootConfig<AnyRootTypes>;
 };
 
 type AnyProcedureBuilderDef = ProcedureBuilderDef<any>;
@@ -278,7 +282,10 @@ export interface ProcedureBuilder<
    * @see https://trpc.io/docs/v11/server/error-formatting
    */
   errors<$Shape extends TRPCErrorShape | undefined | void>(
-    formatter: ProcedureErrorFormatter<TContext, $Shape>,
+    formatter: ProcedureErrorFormatter<
+      Simplify<Overwrite<TContext, TContextOverrides>>,
+      $Shape
+    >,
   ): ProcedureBuilder<
     TContext,
     TMeta,
@@ -522,11 +529,12 @@ function createNewBuilder(
   def1: AnyProcedureBuilderDef,
   def2: Partial<AnyProcedureBuilderDef>,
 ): AnyProcedureBuilder {
-  const { middlewares = [], inputs, meta, ...rest } = def2;
+  const { middlewares = [], inputs, meta, config, ...rest } = def2;
 
   // TODO: maybe have a fn here to warn about calls
   return createBuilder({
     ...mergeWithoutOverrides(def1, rest),
+    config: def1.config ?? config,
     inputs: [...def1.inputs, ...(inputs ?? [])],
     middlewares: [...def1.middlewares, ...middlewares],
     meta: def1.meta && meta ? { ...def1.meta, ...meta } : (meta ?? def1.meta),
@@ -579,6 +587,7 @@ export function createBuilder<TContext, TMeta, TErrorShape = DefaultErrorShape>(
         middlewares: [
           createErrorFormatterMiddleware(
             formatter as AnyProcedureErrorFormatter,
+            () => _def.config?.isDev ?? false,
           ),
         ],
       });
@@ -749,9 +758,6 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
       });
     }
     if (!result.ok) {
-      if (result.errorFormatters) {
-        setProcedureErrorFormatters(result.error, result.errorFormatters);
-      }
       // re-throw original error
       throw result.error;
     }

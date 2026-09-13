@@ -1,9 +1,11 @@
+import { getHTTPStatusCodeFromError } from '../http/getHTTPStatusCode';
 import type { ProcedureType } from '../procedure';
 import type {
   TRPC_ERROR_CODE_KEY,
   TRPC_ERROR_CODE_NUMBER,
   TRPCErrorShape,
 } from '../rpc';
+import { TRPC_ERROR_CODES_BY_KEY } from '../rpc';
 import type { TRPCError } from './TRPCError';
 
 /**
@@ -26,12 +28,16 @@ export type ErrorFormatter<TContext, TShape extends TRPCErrorShape> = (
 ) => TShape;
 
 /**
+ * Runs inside the middleware chain, so `ctx` is always set and carries whatever
+ * middlewares chained before it added.
  * @internal
  */
 export type ProcedureErrorFormatter<
   TContext,
   TShape extends TRPCErrorShape | undefined | void,
-> = (opts: ErrorFormatterOptions<TContext>) => TShape;
+> = (
+  opts: Omit<ErrorFormatterOptions<TContext>, 'ctx'> & { ctx: TContext },
+) => TShape;
 
 /**
  * @internal
@@ -66,19 +72,45 @@ export const defaultFormatter: ErrorFormatter<any, any> = ({ shape }) => {
   return shape;
 };
 
-const errorFormattersSymbol = Symbol('trpc_errorFormatters');
-
 /**
- * Carry the `.errors()` handlers an error bubbled through across the `throw`
- * that leaves the middleware chain, so {@link getErrorShape} can run them.
  * @internal
  */
-export function setProcedureErrorFormatters(
+export function getDefaultErrorShape(opts: {
+  error: TRPCError;
+  path: string | undefined;
+  isDev: boolean;
+}): DefaultErrorShape {
+  const shape: DefaultErrorShape = {
+    message: opts.error.message,
+    code: TRPC_ERROR_CODES_BY_KEY[opts.error.code],
+    data: {
+      code: opts.error.code,
+      httpStatus: getHTTPStatusCodeFromError(opts.error),
+    },
+  };
+  if (opts.isDev && typeof opts.error.stack === 'string') {
+    shape.data.stack = opts.error.stack;
+  }
+  if (typeof opts.path === 'string') {
+    shape.data.path = opts.path;
+  }
+  return shape;
+}
+
+const formattedShapeSymbol = Symbol('trpc_formattedErrorShape');
+
+/**
+ * The first `.errors()` handler to return a shape wins. Storing it on the error
+ * makes handlers further up the chain skip, and carries the shape across the
+ * `throw` that leaves the middleware chain.
+ * @internal
+ */
+export function setFormattedErrorShape(
   error: TRPCError,
-  formatters: AnyProcedureErrorFormatter[],
+  shape: TRPCErrorShape,
 ): void {
-  Object.defineProperty(error, errorFormattersSymbol, {
-    value: formatters,
+  Object.defineProperty(error, formattedShapeSymbol, {
+    value: shape,
     enumerable: false,
     configurable: true,
     writable: true,
@@ -86,29 +118,12 @@ export function setProcedureErrorFormatters(
 }
 
 /**
- * Subscriptions fail during iteration, once the middleware chain has already
- * unwound, so those handlers are collected onto the error one at a time.
  * @internal
  */
-export function addProcedureErrorFormatter(
+export function getFormattedErrorShape(
   error: TRPCError,
-  formatter: AnyProcedureErrorFormatter,
-): void {
-  setProcedureErrorFormatters(error, [
-    ...getProcedureErrorFormatters(error),
-    formatter,
-  ]);
-}
-
-/**
- * @internal
- */
-export function getProcedureErrorFormatters(
-  error: TRPCError,
-): AnyProcedureErrorFormatter[] {
-  return (
-    (error as { [errorFormattersSymbol]?: AnyProcedureErrorFormatter[] })[
-      errorFormattersSymbol
-    ] ?? []
-  );
+): TRPCErrorShape | undefined {
+  return (error as { [formattedShapeSymbol]?: TRPCErrorShape })[
+    formattedShapeSymbol
+  ];
 }
