@@ -53,8 +53,7 @@ type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
   : TValue;
 
 type FoldErrorShape<TErrorShape, $Shape> =
-  | Extract<$Shape, TRPCErrorShape>
-  | TErrorShape;
+  Extract<$Shape, TRPCErrorShape> | TErrorShape;
 
 type inferAsyncIterable<TOutput> =
   TOutput extends AsyncIterable<infer $Yield, infer $Return, infer $Next>
