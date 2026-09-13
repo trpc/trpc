@@ -29,10 +29,7 @@ type RootConfigLike = {
  * Anything that can be inferred to the root config types needed for a TRPC client
  */
 export type InferrableClientTypes =
-  | RouterLike
-  | InitLike
-  | RootConfigLike
-  | AnyClientTypes;
+  RouterLike | InitLike | RootConfigLike | AnyClientTypes;
 
 type PickTypes<T extends AnyClientTypes> = {
   transformer: T['transformer'];

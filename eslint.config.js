@@ -7,7 +7,7 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   includeIgnoreFile(path.join(import.meta.dirname, '.gitignore')),
-  reactHooks.configs.recommended,
+  reactHooks.configs.flat.recommended,
   { ignores: ['**/vendor/**', '**/generated/**'] },
   {
     files: ['**/*.ts', '**/*.tsx'],
@@ -22,7 +22,6 @@ export default tseslint.config(
     ],
     rules: {
       ...reactPlugin.configs['jsx-runtime'].rules,
-      'react-hooks/react-compiler': 'error',
 
       // These rules aren't enabled in typescript-eslint's basic recommended config, but we like them
       '@typescript-eslint/no-non-null-assertion': 'error',
@@ -45,6 +44,7 @@ export default tseslint.config(
         'error',
         {
           case: 'camelCase',
+          checkDirectories: false,
           ignore: [
             'TRPC',
             'RPC',
@@ -119,6 +119,16 @@ export default tseslint.config(
         },
       ],
       '@typescript-eslint/switch-exhaustiveness-check': 'error',
+    },
+  },
+  {
+    // Todo: fix these and drop this block. 💪
+    rules: {
+      'react-hooks/refs': 'off',
+      'react-hooks/immutability': 'off',
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/use-memo': 'off',
+      'react-hooks/preserve-manual-memoization': 'off',
     },
   },
   {

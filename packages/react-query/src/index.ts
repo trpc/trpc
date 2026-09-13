@@ -7,4 +7,5 @@ export {
   type CreateTRPCReactBase,
 } from './createTRPCReact';
 export type { inferReactQueryProcedureOptions } from './utils/inferReactQueryProcedure';
+export type { DecorateRouterRecord } from './shared';
 export { createTRPCQueryUtils } from './createTRPCQueryUtils';

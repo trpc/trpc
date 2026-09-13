@@ -223,10 +223,7 @@ const reservedWords = [
 /** @internal */
 export type CreateRouterOptions = {
   [key: string]:
-    | AnyProcedure
-    | AnyRouter
-    | CreateRouterOptions
-    | Lazy<AnyRouter>;
+    AnyProcedure | AnyRouter | CreateRouterOptions | Lazy<AnyRouter>;
 };
 
 /** @internal */

@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { cleanup } from '@testing-library/react';
 import { applyTransform } from 'jscodeshift/src/testUtils';
 import { format, resolveConfig } from 'prettier';
 import { describe, expect, it } from 'vitest';
@@ -40,7 +41,24 @@ function isFixture(file: string) {
   );
 }
 
+type FixtureLoaders = Record<string, () => Promise<unknown>>;
+
+const fixtureModules: FixtureLoaders = {
+  ...import.meta.glob('./__fixtures__/hooks/*.tsx'),
+  ...import.meta.glob('./__fixtures__/provider/*.tsx'),
+};
+
+function importFixture<T>(globDir: string, name: string): Promise<T> {
+  const key = `${globDir}/${name}`;
+  const load = fixtureModules[key];
+  if (!load) {
+    throw new Error(`No fixture module registered for ${key}`);
+  }
+  return load() as Promise<T>;
+}
+
 async function executeTests(
+  globDir: string,
   fixturesDir: string,
   file: string,
   transform: Transformer,
@@ -48,34 +66,39 @@ async function executeTests(
   const fixtureFile = join(fixturesDir, file);
 
   // Load the spec which can be used to test both input and transformed components
-  const specFile = fixtureFile.replace('.tsx', '.spec.tsx');
-  const hasSpec = existsSync(specFile);
+  const specName = file.replace('.tsx', '.spec.tsx');
+  const hasSpec = existsSync(join(fixturesDir, specName));
 
   // Check the input component runs if a spec is provided
   if (hasSpec) {
-    const spec = (await import(specFile)) as SpecDefFile;
+    const spec = await importFixture<SpecDefFile>(globDir, specName);
 
-    const fixture = (await import(fixtureFile)) as ComponentFile;
+    const fixture = await importFixture<ComponentFile>(globDir, file);
     const fixtureComponents = Object.keys(fixture)
       .filter((key) => key.startsWith('Component'))
       .map((key) => [key, fixture[key]!] as const);
     for (const [name, Component] of fixtureComponents) {
       // eslint-disable-next-line no-console
       console.log(`Running spec on input for ${name}`);
-      await spec.run(Component);
+      try {
+        await spec.run(Component);
+      } finally {
+        cleanup();
+      }
     }
   }
 
   await snapshotTestTransform(fixtureFile, transform);
 
   if (hasSpec) {
-    const spec = (await import(specFile)) as SpecDefFile;
+    const spec = await importFixture<SpecDefFile>(globDir, specName);
 
-    const snapshotFile = join(fixturesDir, file.replace('.tsx', '.snap.tsx'));
-    const snapshot = (await import(snapshotFile)) as ComponentFile;
+    const snapName = file.replace('.tsx', '.snap.tsx');
+    const snapshotFile = join(fixturesDir, snapName);
+    const snapshot = await importFixture<ComponentFile>(globDir, snapName);
 
     // We get the original fixture components because we expect them to be 1-1 and if not we'll throw
-    const fixture = (await import(fixtureFile)) as ComponentFile;
+    const fixture = await importFixture<ComponentFile>(globDir, file);
     const fixtureComponents = Object.keys(fixture)
       .filter((key) => key.startsWith('Component'))
       .map((key) => [key, snapshot[key]] as const);
@@ -89,29 +112,33 @@ async function executeTests(
 
       // eslint-disable-next-line no-console
       console.log(`Running spec on output for ${name}`);
-      await spec.run(Component);
+      try {
+        await spec.run(Component);
+      } finally {
+        cleanup();
+      }
     }
   }
 }
 
 describe('hooks', () => {
-  const literal = './__fixtures__/hooks'; // idk why but Vite seems to do some shit when the string is in-lined to URL
-  const fixturesDir = new URL(literal, import.meta.url).pathname;
+  const globDir = './__fixtures__/hooks';
+  const fixturesDir = new URL(globDir, import.meta.url).pathname;
 
   const fixtures = readdirSync(fixturesDir).filter(isFixture);
 
   it.each(fixtures)('hooks %s', async (file) => {
-    await executeTests(fixturesDir, file, hooksTransform);
+    await executeTests(globDir, fixturesDir, file, hooksTransform);
   });
 });
 
 describe('provider', () => {
-  const literal = './__fixtures__/provider'; // idk why but Vite seems to do some shit when the string is in-lined to URL
-  const fixturesDir = new URL(literal, import.meta.url).pathname;
+  const globDir = './__fixtures__/provider';
+  const fixturesDir = new URL(globDir, import.meta.url).pathname;
 
   const fixtures = readdirSync(fixturesDir).filter(isFixture);
 
   it.each(fixtures)('provider %s', async (file) => {
-    await executeTests(fixturesDir, file, providerTransform);
+    await executeTests(globDir, fixturesDir, file, providerTransform);
   });
 });

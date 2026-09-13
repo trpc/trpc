@@ -207,7 +207,7 @@ test('custom path', async () => {
   });
 
   {
-    const result = await fetch(`${server.url}/some-other-path`);
+    const result = await undici.fetch(`${server.url}/some-other-path`);
     expect(result.status).toBe(404);
     expect(await result.text()).toMatchInlineSnapshot(`"Not Found"`);
   }

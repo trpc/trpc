@@ -35,7 +35,7 @@
     "@bomb.sh/args": "0.3.1",
     "@clack/prompts": "1.2.0",
     "jscodeshift": "17.3.0",
-    "typescript": "^5.9.2"
+    "typescript": "catalog:ts-api"
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.80.3",
@@ -44,10 +44,10 @@
     "@trpc/server": "11.18.0",
     "@trpc/tanstack-react-query": "11.18.0",
     "@types/jscodeshift": "17.3.0",
-    "@types/node": "^22.13.5",
+    "@types/node": "catalog:",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "tsdown": "0.12.7",
+    "tsdown": "catalog:",
     "zod": "^4.2.1"
   },
   "publishConfig": {

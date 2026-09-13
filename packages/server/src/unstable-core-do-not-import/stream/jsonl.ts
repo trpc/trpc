@@ -57,8 +57,7 @@ type ChunkDefinitionKey =
 
 type ChunkIndex = number & { __chunkIndex: true };
 type ChunkValueType =
-  | CHUNK_VALUE_TYPE_PROMISE
-  | CHUNK_VALUE_TYPE_ASYNC_ITERABLE;
+  CHUNK_VALUE_TYPE_PROMISE | CHUNK_VALUE_TYPE_ASYNC_ITERABLE;
 type ChunkDefinition = [
   key: ChunkDefinitionKey,
   type: ChunkValueType,
