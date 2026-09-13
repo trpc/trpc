@@ -1194,7 +1194,7 @@ function extractProcedureErrorSchema(
   if (
     hasFlag(errorType, ts.TypeFlags.Any) ||
     isUnknownLikeType(errorType) ||
-    isSameType(errorType, ctx.routerErrorType, checker)
+    addsNothingToRouterErrorType(errorType, ctx.routerErrorType, checker)
   ) {
     return null;
   }
@@ -1203,18 +1203,33 @@ function extractProcedureErrorSchema(
   return isNonEmptySchema(schema) ? schema : null;
 }
 
-function isSameType(
-  a: ts.Type,
-  b: ts.Type | null,
+function addsNothingToRouterErrorType(
+  errorType: ts.Type,
+  routerErrorType: ts.Type | null,
   checker: ts.TypeChecker,
 ): boolean {
-  if (!b) {
+  if (!routerErrorType) {
     return false;
   }
-  if (a === b) {
+  if (errorType === routerErrorType) {
     return true;
   }
-  return checker.isTypeAssignableTo(a, b) && checker.isTypeAssignableTo(b, a);
+
+  const describe = (type: ts.Type) =>
+    checker.typeToString(
+      type,
+      undefined,
+      ts.TypeFormatFlags.NoTruncation |
+        ts.TypeFormatFlags.UseFullyQualifiedType,
+    );
+  const unionMembers = (type: ts.Type) =>
+    type.isUnion() ? type.types : [type];
+
+  const routerMembers = new Set(unionMembers(routerErrorType).map(describe));
+
+  return unionMembers(errorType).every((member) =>
+    routerMembers.has(describe(member)),
+  );
 }
 
 /** Extract the JSDoc comment text from a symbol, if any. */

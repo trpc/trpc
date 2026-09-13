@@ -3,6 +3,10 @@ import { beforeAll, describe, expect, expectTypeOf, it } from 'vitest';
 import { generateOpenAPIDocument } from '../src/generate';
 import type { Document, SchemaObject } from '../src/types';
 import type {
+  LimitedError as DefaultFormatterLimitedError,
+  PlainError as DefaultFormatterPlainError,
+} from './routers/defaultErrorFormatterRouter-heyapi/types.gen';
+import type {
   ChainedDuplicateError,
   ChainedError,
   LimitedError,
@@ -22,6 +26,11 @@ const routerPath = path.resolve(
   __dirname,
   'routers',
   'procedureErrorsRouter.router.ts',
+);
+const defaultFormatterRouterPath = path.resolve(
+  __dirname,
+  'routers',
+  'defaultErrorFormatterRouter.router.ts',
 );
 
 /** Keys every error `data` carries, whatever the shape */
@@ -223,5 +232,79 @@ describe('per-procedure error shapes', () => {
     expectTypeOf<ChainedDuplicateError>().toEqualTypeOf<LimitedError>();
     expectTypeOf<NeverClaimsError>().toEqualTypeOf<PlainError>();
     expectTypeOf<MultiShapeError>().toEqualTypeOf<ChainedError>();
+  });
+});
+
+describe('with the default error formatter', () => {
+  // the router-wide shape is `DefaultErrorShape`, which a `.errors()` shape
+  // built from `opts.shape` is structurally assignable to - so a shape
+  // comparison by assignability alone would drop the per-procedure schema
+  let defaultDoc: Document;
+
+  beforeAll(async () => {
+    defaultDoc = await generateOpenAPIDocument(defaultFormatterRouterPath, {
+      exportName: 'DefaultErrorFormatterRouter',
+    });
+  });
+
+  it('keeps the shared Error response for procedures without `.errors()`', () => {
+    const operation = requireOperation(defaultDoc, 'plain', 'get');
+    expect(operation.responses?.['default']).toEqual({
+      $ref: '#/components/responses/Error',
+    });
+  });
+
+  it('still inlines a union for procedures with their own `.errors()`', () => {
+    const operation = requireOperation(defaultDoc, 'limited', 'post');
+    const response = operation.responses?.['default'];
+    expect(response).not.toEqual({ $ref: '#/components/responses/Error' });
+
+    if (!response || isRef(response)) {
+      throw new Error('Expected an inline response on POST limited');
+    }
+    const envelope = requireSchemaObject(
+      response.content?.['application/json']?.schema ?? {},
+      defaultDoc,
+      'error envelope',
+    );
+    const error = requireSchemaObject(
+      envelope.properties?.['error'] ?? {},
+      defaultDoc,
+      'error shape',
+    );
+
+    const variants = (error.oneOf ?? [error]).map((variant) =>
+      requireSchemaObject(variant, defaultDoc, 'error variant'),
+    );
+    const extraKeys = variants.map((variant) => {
+      const data = requireSchemaObject(
+        variant.properties?.['data'] ?? {},
+        defaultDoc,
+        'error data',
+      );
+      return Object.keys(data.properties ?? {}).filter(
+        (key) => !BASE_DATA_KEYS.includes(key),
+      );
+    });
+
+    // the router-wide shape plus the handler's own
+    expect(extraKeys).toContainEqual([]);
+    expect(extraKeys).toContainEqual(['kind', 'retryAfterMs']);
+  });
+
+  it('generates a valid document', async () => {
+    const problems = await validateOpenApi(JSON.stringify(defaultDoc, null, 2));
+    expect(problems).toEqual([]);
+  });
+
+  it('flows through to the generated client types', () => {
+    // @ts-expect-error - `kind` is only added by the procedure-level handler
+    type _ = DefaultFormatterPlainError['error']['data']['kind'];
+
+    const limited = {} as DefaultFormatterLimitedError['error']['data'];
+    if ('kind' in limited) {
+      expectTypeOf(limited.kind).toEqualTypeOf<'RATE_LIMIT'>();
+      expectTypeOf(limited.retryAfterMs).toEqualTypeOf<number>();
+    }
   });
 });
