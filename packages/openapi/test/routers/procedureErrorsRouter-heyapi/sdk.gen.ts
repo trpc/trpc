@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { LimitedData, LimitedErrors, LimitedResponses, PlainData, PlainErrors, PlainResponses } from './types.gen';
+import type { ChainedData, ChainedDuplicateData, ChainedDuplicateErrors, ChainedDuplicateResponses, ChainedErrors, ChainedResponses, LimitedData, LimitedErrors, LimitedResponses, MultiShapeData, MultiShapeErrors, MultiShapeResponses, NeverClaimsData, NeverClaimsErrors, NeverClaimsResponses, PlainData, PlainErrors, PlainResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -70,6 +70,62 @@ export class Sdk extends HeyApiClient {
     public limited<ThrowOnError extends boolean = false>(options: Options<LimitedData, ThrowOnError>): RequestResult<LimitedResponses, LimitedErrors, ThrowOnError> {
         return (options.client ?? this.client).post<LimitedResponses, LimitedErrors, ThrowOnError>({
             url: '/limited',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Two chained `.errors()` handlers, each with their own shape
+     */
+    public chained<ThrowOnError extends boolean = false>(options: Options<ChainedData, ThrowOnError>): RequestResult<ChainedResponses, ChainedErrors, ThrowOnError> {
+        return (options.client ?? this.client).post<ChainedResponses, ChainedErrors, ThrowOnError>({
+            url: '/chained',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Chained handlers that declare the *same* shape
+     */
+    public chainedDuplicate<ThrowOnError extends boolean = false>(options: Options<ChainedDuplicateData, ThrowOnError>): RequestResult<ChainedDuplicateResponses, ChainedDuplicateErrors, ThrowOnError> {
+        return (options.client ?? this.client).post<ChainedDuplicateResponses, ChainedDuplicateErrors, ThrowOnError>({
+            url: '/chainedDuplicate',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * A handler that never claims an error - stays on the router-wide shape
+     */
+    public neverClaims<ThrowOnError extends boolean = false>(options: Options<NeverClaimsData, ThrowOnError>): RequestResult<NeverClaimsResponses, NeverClaimsErrors, ThrowOnError> {
+        return (options.client ?? this.client).post<NeverClaimsResponses, NeverClaimsErrors, ThrowOnError>({
+            url: '/neverClaims',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * A single handler that can return either of two shapes
+     */
+    public multiShape<ThrowOnError extends boolean = false>(options: Options<MultiShapeData, ThrowOnError>): RequestResult<MultiShapeResponses, MultiShapeErrors, ThrowOnError> {
+        return (options.client ?? this.client).post<MultiShapeResponses, MultiShapeErrors, ThrowOnError>({
+            url: '/multiShape',
             ...options,
             headers: {
                 'Content-Type': 'application/json',
