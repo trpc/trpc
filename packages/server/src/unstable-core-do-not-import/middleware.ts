@@ -1,3 +1,5 @@
+import type { Observable } from '../observable';
+import { isObservable, observable } from '../observable';
 import type { AnyProcedureErrorFormatter } from './error/formatter';
 import {
   getDefaultErrorShape,
@@ -229,9 +231,7 @@ export function createErrorFormatterMiddleware(
 ) {
   const errorMiddleware: AnyMiddlewareFunction =
     async function errorFormatterMiddleware(opts) {
-      const tryAddFormattedErrorShape = (cause: unknown): TRPCError => {
-        const error = getTRPCErrorFromUnknown(cause);
-
+      const tryFormat = (error: TRPCError): TRPCError => {
         // a handler further down the chain already claimed this error
         if (isFormattedErrorShape(error)) {
           return error;
@@ -257,25 +257,44 @@ export function createErrorFormatterMiddleware(
         return error;
       };
 
-      async function* wrapWithFormatter(iterable: AsyncIterable<unknown>) {
+      const tryFormatThrown = (cause: unknown): unknown => {
+        const formatted = tryFormat(getTRPCErrorFromUnknown(cause));
+
+        return isFormattedErrorShape(formatted) ? formatted : cause;
+      };
+
+      async function* wrapIterable(iterable: AsyncIterable<unknown>) {
         try {
           yield* iterable;
         } catch (cause) {
-          throw tryAddFormattedErrorShape(cause);
+          throw tryFormatThrown(cause);
         }
+      }
+
+      function wrapObservable(source: Observable<unknown, unknown>) {
+        return observable((observer) =>
+          source.subscribe({
+            next: (value) => observer.next(value),
+            error: (cause) => observer.error(tryFormatThrown(cause)),
+            complete: () => observer.complete(),
+          }),
+        );
       }
 
       const result = await opts.next();
 
       // normal procedures return errors immediately
       if (!result.ok) {
-        tryAddFormattedErrorShape(result.error);
+        tryFormat(result.error);
         return result;
       }
 
       // subscription/streaming procedures need to be enumerated to find errors
       if (isAsyncIterable(result.data)) {
-        return { ...result, data: wrapWithFormatter(result.data) };
+        return { ...result, data: wrapIterable(result.data) };
+      }
+      if (opts.type === 'subscription' && isObservable(result.data)) {
+        return { ...result, data: wrapObservable(result.data) };
       }
 
       return result;

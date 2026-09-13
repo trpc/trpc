@@ -16,7 +16,7 @@ export function getErrorShape<TRoot extends AnyRootTypes>(opts: {
 }): TRoot['errorShape'] {
   const { path, error, config } = opts;
 
-  // a `.errors()` handler already claimed this one
+  // a `.errors()` handler already created the final shape
   const formatted = getFormattedErrorShape(error);
   if (formatted !== undefined) {
     return formatted;

@@ -29,6 +29,7 @@ import type {
   SubscriptionProcedure,
 } from './procedure';
 import type { AnyRootTypes, RootConfig } from './rootConfig';
+import { isDevDefault } from './rootConfig';
 import type { TRPCErrorShape } from './rpc';
 import type { inferTrackedOutput } from './stream/tracked';
 import type {
@@ -580,7 +581,7 @@ export function createBuilder<TContext, TMeta, TErrorShape = DefaultErrorShape>(
         middlewares: [
           createErrorFormatterMiddleware(
             formatter,
-            _def.config?.isDev ?? false,
+            _def.config?.isDev ?? isDevDefault(),
           ),
         ],
       });
