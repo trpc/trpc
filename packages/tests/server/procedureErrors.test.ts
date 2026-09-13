@@ -546,3 +546,57 @@ describe.each(['httpSubscriptionLink', 'wsLink'] as const)(
     });
   },
 );
+
+test('the handler sees the context added by earlier middlewares', async () => {
+  const local = initTRPC.create();
+
+  const procedure = local.procedure
+    .use((opts) => opts.next({ ctx: { userId: 'user_1' } }))
+    .errors((opts) => {
+      expectTypeOf(opts.ctx).toMatchTypeOf<{ userId: string }>();
+      return {
+        ...opts.shape,
+        data: { ...opts.shape.data, userId: opts.ctx.userId },
+      };
+    })
+    .use((opts) => {
+      throw new TRPCError({ code: 'FORBIDDEN' });
+      return opts.next();
+    });
+
+  const router = local.router({ proc: procedure.query(() => 'never') });
+
+  await using ctx = testServerAndClientResource(router);
+
+  const err = await waitError(ctx.client.proc.query(), TRPCClientError);
+
+  expect(err.data).toMatchObject({ userId: 'user_1' });
+});
+
+test('the handler receives the default shape, including the dev stack', async () => {
+  const local = initTRPC.create({ isDev: true });
+
+  const seen: unknown[] = [];
+  const router = local.router({
+    proc: local.procedure
+      .errors((opts) => {
+        seen.push(opts.shape);
+        return undefined;
+      })
+      .query((): string => {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'nope' });
+      }),
+  });
+
+  await using ctx = testServerAndClientResource(router);
+  await waitError(ctx.client.proc.query(), TRPCClientError);
+
+  expect(seen).toHaveLength(1);
+  expect(seen[0]).toMatchObject({
+    message: 'nope',
+    data: { code: 'BAD_REQUEST', httpStatus: 400, path: 'proc' },
+  });
+  expect((seen[0] as { data: { stack?: string } }).data.stack).toEqual(
+    expect.any(String),
+  );
+});

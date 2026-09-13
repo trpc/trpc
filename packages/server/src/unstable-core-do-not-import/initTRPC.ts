@@ -194,6 +194,7 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
         $Root['errorShape']
       >({
         meta: opts?.defaultMeta,
+        config,
       }),
       /**
        * Create reusable middlewares

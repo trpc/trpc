@@ -1,5 +1,9 @@
 import type { AnyProcedureErrorFormatter } from './error/formatter';
-import { addProcedureErrorFormatter } from './error/formatter';
+import {
+  getDefaultErrorShape,
+  getFormattedErrorShape,
+  setFormattedErrorShape,
+} from './error/formatter';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type { ParseFn } from './parser';
 import type { ProcedureType } from './procedure';
@@ -31,10 +35,6 @@ interface MiddlewareErrorResult<
 > extends MiddlewareResultBase {
   ok: false;
   error: TRPCError;
-  /**
-   * `.errors()` handlers the error has bubbled through, innermost first.
-   */
-  errorFormatters?: AnyProcedureErrorFormatter[];
 }
 
 /**
@@ -225,25 +225,46 @@ export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
  */
 export function createErrorFormatterMiddleware(
   formatter: AnyProcedureErrorFormatter,
+  getIsDev: () => boolean,
 ) {
-  async function* withFormatter(iterable: AsyncIterable<unknown>) {
-    try {
-      yield* iterable;
-    } catch (cause) {
-      const error = getTRPCErrorFromUnknown(cause);
-      addProcedureErrorFormatter(error, formatter);
-      throw error;
-    }
-  }
-
   const errorMiddleware: AnyMiddlewareFunction =
-    async function errorFormatterMiddleware({ next }) {
-      const result = await next();
+    async function errorFormatterMiddleware(opts) {
+      const format = (cause: unknown): TRPCError => {
+        const error = getTRPCErrorFromUnknown(cause);
+        // a handler further down the chain already claimed this error
+        if (getFormattedErrorShape(error) !== undefined) {
+          return error;
+        }
+        const shape = formatter({
+          error,
+          type: opts.type,
+          path: opts.path,
+          input: opts.input,
+          ctx: opts.ctx,
+          shape: getDefaultErrorShape({
+            error,
+            path: opts.path,
+            isDev: getIsDev(),
+          }),
+        });
+        if (shape !== undefined) {
+          setFormattedErrorShape(error, shape);
+        }
+        return error;
+      };
+
+      async function* withFormatter(iterable: AsyncIterable<unknown>) {
+        try {
+          yield* iterable;
+        } catch (cause) {
+          throw format(cause);
+        }
+      }
+
+      const result = await opts.next();
       if (!result.ok) {
-        return {
-          ...result,
-          errorFormatters: [...(result.errorFormatters ?? []), formatter],
-        };
+        format(result.error);
+        return result;
       }
       // a subscription only fails once it's iterated, which is after this
       // middleware has returned
