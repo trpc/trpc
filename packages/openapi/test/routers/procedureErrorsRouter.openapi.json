@@ -332,6 +332,1047 @@
           }
         }
       }
+    },
+    "/chained": {
+      "post": {
+        "operationId": "chained",
+        "description": "Two chained `.errors()` handlers, each with their own shape",
+        "tags": [
+          "chained"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "ok"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "requestId": {
+                                  "type": "string"
+                                },
+                                "code": {
+                                  "type": "string",
+                                  "enum": [
+                                    "PARSE_ERROR",
+                                    "BAD_REQUEST",
+                                    "INTERNAL_SERVER_ERROR",
+                                    "NOT_IMPLEMENTED",
+                                    "BAD_GATEWAY",
+                                    "SERVICE_UNAVAILABLE",
+                                    "GATEWAY_TIMEOUT",
+                                    "UNAUTHORIZED",
+                                    "PAYMENT_REQUIRED",
+                                    "FORBIDDEN",
+                                    "NOT_FOUND",
+                                    "METHOD_NOT_SUPPORTED",
+                                    "TIMEOUT",
+                                    "CONFLICT",
+                                    "PRECONDITION_FAILED",
+                                    "PAYLOAD_TOO_LARGE",
+                                    "UNSUPPORTED_MEDIA_TYPE",
+                                    "UNPROCESSABLE_CONTENT",
+                                    "PRECONDITION_REQUIRED",
+                                    "TOO_MANY_REQUESTS",
+                                    "CLIENT_CLOSED_REQUEST"
+                                  ]
+                                },
+                                "httpStatus": {
+                                  "type": "number"
+                                },
+                                "path": {
+                                  "type": "string",
+                                  "description": "Path to the procedure that threw the error"
+                                },
+                                "stack": {
+                                  "type": "string",
+                                  "description": "Stack trace of the error (only in development)"
+                                }
+                              },
+                              "required": [
+                                "requestId",
+                                "code",
+                                "httpStatus"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "message": {
+                              "type": "string"
+                            },
+                            "code": {
+                              "type": "number",
+                              "enum": [
+                                -32700,
+                                -32600,
+                                -32603,
+                                -32001,
+                                -32002,
+                                -32003,
+                                -32004,
+                                -32005,
+                                -32008,
+                                -32009,
+                                -32012,
+                                -32013,
+                                -32015,
+                                -32022,
+                                -32028,
+                                -32029,
+                                -32099
+                              ]
+                            }
+                          },
+                          "required": [
+                            "data",
+                            "message",
+                            "code"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "RATE_LIMIT"
+                                },
+                                "retryAfterMs": {
+                                  "type": "number"
+                                },
+                                "code": {
+                                  "type": "string",
+                                  "enum": [
+                                    "PARSE_ERROR",
+                                    "BAD_REQUEST",
+                                    "INTERNAL_SERVER_ERROR",
+                                    "NOT_IMPLEMENTED",
+                                    "BAD_GATEWAY",
+                                    "SERVICE_UNAVAILABLE",
+                                    "GATEWAY_TIMEOUT",
+                                    "UNAUTHORIZED",
+                                    "PAYMENT_REQUIRED",
+                                    "FORBIDDEN",
+                                    "NOT_FOUND",
+                                    "METHOD_NOT_SUPPORTED",
+                                    "TIMEOUT",
+                                    "CONFLICT",
+                                    "PRECONDITION_FAILED",
+                                    "PAYLOAD_TOO_LARGE",
+                                    "UNSUPPORTED_MEDIA_TYPE",
+                                    "UNPROCESSABLE_CONTENT",
+                                    "PRECONDITION_REQUIRED",
+                                    "TOO_MANY_REQUESTS",
+                                    "CLIENT_CLOSED_REQUEST"
+                                  ]
+                                },
+                                "httpStatus": {
+                                  "type": "number"
+                                },
+                                "path": {
+                                  "type": "string",
+                                  "description": "Path to the procedure that threw the error"
+                                },
+                                "stack": {
+                                  "type": "string",
+                                  "description": "Stack trace of the error (only in development)"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "retryAfterMs",
+                                "code",
+                                "httpStatus"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "message": {
+                              "type": "string"
+                            },
+                            "code": {
+                              "type": "number",
+                              "enum": [
+                                -32700,
+                                -32600,
+                                -32603,
+                                -32001,
+                                -32002,
+                                -32003,
+                                -32004,
+                                -32005,
+                                -32008,
+                                -32009,
+                                -32012,
+                                -32013,
+                                -32015,
+                                -32022,
+                                -32028,
+                                -32029,
+                                -32099
+                              ]
+                            }
+                          },
+                          "required": [
+                            "data",
+                            "message",
+                            "code"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "CONFLICT"
+                                },
+                                "conflictsWith": {
+                                  "type": "string"
+                                },
+                                "code": {
+                                  "type": "string",
+                                  "enum": [
+                                    "PARSE_ERROR",
+                                    "BAD_REQUEST",
+                                    "INTERNAL_SERVER_ERROR",
+                                    "NOT_IMPLEMENTED",
+                                    "BAD_GATEWAY",
+                                    "SERVICE_UNAVAILABLE",
+                                    "GATEWAY_TIMEOUT",
+                                    "UNAUTHORIZED",
+                                    "PAYMENT_REQUIRED",
+                                    "FORBIDDEN",
+                                    "NOT_FOUND",
+                                    "METHOD_NOT_SUPPORTED",
+                                    "TIMEOUT",
+                                    "CONFLICT",
+                                    "PRECONDITION_FAILED",
+                                    "PAYLOAD_TOO_LARGE",
+                                    "UNSUPPORTED_MEDIA_TYPE",
+                                    "UNPROCESSABLE_CONTENT",
+                                    "PRECONDITION_REQUIRED",
+                                    "TOO_MANY_REQUESTS",
+                                    "CLIENT_CLOSED_REQUEST"
+                                  ]
+                                },
+                                "httpStatus": {
+                                  "type": "number"
+                                },
+                                "path": {
+                                  "type": "string",
+                                  "description": "Path to the procedure that threw the error"
+                                },
+                                "stack": {
+                                  "type": "string",
+                                  "description": "Stack trace of the error (only in development)"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "conflictsWith",
+                                "code",
+                                "httpStatus"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "message": {
+                              "type": "string"
+                            },
+                            "code": {
+                              "type": "number",
+                              "enum": [
+                                -32700,
+                                -32600,
+                                -32603,
+                                -32001,
+                                -32002,
+                                -32003,
+                                -32004,
+                                -32005,
+                                -32008,
+                                -32009,
+                                -32012,
+                                -32013,
+                                -32015,
+                                -32022,
+                                -32028,
+                                -32029,
+                                -32099
+                              ]
+                            }
+                          },
+                          "required": [
+                            "data",
+                            "message",
+                            "code"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "message"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chainedDuplicate": {
+      "post": {
+        "operationId": "chainedDuplicate",
+        "description": "Chained handlers that declare the *same* shape",
+        "tags": [
+          "chainedDuplicate"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "ok"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "requestId": {
+                                  "type": "string"
+                                },
+                                "code": {
+                                  "type": "string",
+                                  "enum": [
+                                    "PARSE_ERROR",
+                                    "BAD_REQUEST",
+                                    "INTERNAL_SERVER_ERROR",
+                                    "NOT_IMPLEMENTED",
+                                    "BAD_GATEWAY",
+                                    "SERVICE_UNAVAILABLE",
+                                    "GATEWAY_TIMEOUT",
+                                    "UNAUTHORIZED",
+                                    "PAYMENT_REQUIRED",
+                                    "FORBIDDEN",
+                                    "NOT_FOUND",
+                                    "METHOD_NOT_SUPPORTED",
+                                    "TIMEOUT",
+                                    "CONFLICT",
+                                    "PRECONDITION_FAILED",
+                                    "PAYLOAD_TOO_LARGE",
+                                    "UNSUPPORTED_MEDIA_TYPE",
+                                    "UNPROCESSABLE_CONTENT",
+                                    "PRECONDITION_REQUIRED",
+                                    "TOO_MANY_REQUESTS",
+                                    "CLIENT_CLOSED_REQUEST"
+                                  ]
+                                },
+                                "httpStatus": {
+                                  "type": "number"
+                                },
+                                "path": {
+                                  "type": "string",
+                                  "description": "Path to the procedure that threw the error"
+                                },
+                                "stack": {
+                                  "type": "string",
+                                  "description": "Stack trace of the error (only in development)"
+                                }
+                              },
+                              "required": [
+                                "requestId",
+                                "code",
+                                "httpStatus"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "message": {
+                              "type": "string"
+                            },
+                            "code": {
+                              "type": "number",
+                              "enum": [
+                                -32700,
+                                -32600,
+                                -32603,
+                                -32001,
+                                -32002,
+                                -32003,
+                                -32004,
+                                -32005,
+                                -32008,
+                                -32009,
+                                -32012,
+                                -32013,
+                                -32015,
+                                -32022,
+                                -32028,
+                                -32029,
+                                -32099
+                              ]
+                            }
+                          },
+                          "required": [
+                            "data",
+                            "message",
+                            "code"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "RATE_LIMIT"
+                                },
+                                "retryAfterMs": {
+                                  "type": "number"
+                                },
+                                "code": {
+                                  "type": "string",
+                                  "enum": [
+                                    "PARSE_ERROR",
+                                    "BAD_REQUEST",
+                                    "INTERNAL_SERVER_ERROR",
+                                    "NOT_IMPLEMENTED",
+                                    "BAD_GATEWAY",
+                                    "SERVICE_UNAVAILABLE",
+                                    "GATEWAY_TIMEOUT",
+                                    "UNAUTHORIZED",
+                                    "PAYMENT_REQUIRED",
+                                    "FORBIDDEN",
+                                    "NOT_FOUND",
+                                    "METHOD_NOT_SUPPORTED",
+                                    "TIMEOUT",
+                                    "CONFLICT",
+                                    "PRECONDITION_FAILED",
+                                    "PAYLOAD_TOO_LARGE",
+                                    "UNSUPPORTED_MEDIA_TYPE",
+                                    "UNPROCESSABLE_CONTENT",
+                                    "PRECONDITION_REQUIRED",
+                                    "TOO_MANY_REQUESTS",
+                                    "CLIENT_CLOSED_REQUEST"
+                                  ]
+                                },
+                                "httpStatus": {
+                                  "type": "number"
+                                },
+                                "path": {
+                                  "type": "string",
+                                  "description": "Path to the procedure that threw the error"
+                                },
+                                "stack": {
+                                  "type": "string",
+                                  "description": "Stack trace of the error (only in development)"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "retryAfterMs",
+                                "code",
+                                "httpStatus"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "message": {
+                              "type": "string"
+                            },
+                            "code": {
+                              "type": "number",
+                              "enum": [
+                                -32700,
+                                -32600,
+                                -32603,
+                                -32001,
+                                -32002,
+                                -32003,
+                                -32004,
+                                -32005,
+                                -32008,
+                                -32009,
+                                -32012,
+                                -32013,
+                                -32015,
+                                -32022,
+                                -32028,
+                                -32029,
+                                -32099
+                              ]
+                            }
+                          },
+                          "required": [
+                            "data",
+                            "message",
+                            "code"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "message"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/neverClaims": {
+      "post": {
+        "operationId": "neverClaims",
+        "description": "A handler that never claims an error - stays on the router-wide shape",
+        "tags": [
+          "neverClaims"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "ok"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "message"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/multiShape": {
+      "post": {
+        "operationId": "multiShape",
+        "description": "A single handler that can return either of two shapes",
+        "tags": [
+          "multiShape"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "ok"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "requestId": {
+                                  "type": "string"
+                                },
+                                "code": {
+                                  "type": "string",
+                                  "enum": [
+                                    "PARSE_ERROR",
+                                    "BAD_REQUEST",
+                                    "INTERNAL_SERVER_ERROR",
+                                    "NOT_IMPLEMENTED",
+                                    "BAD_GATEWAY",
+                                    "SERVICE_UNAVAILABLE",
+                                    "GATEWAY_TIMEOUT",
+                                    "UNAUTHORIZED",
+                                    "PAYMENT_REQUIRED",
+                                    "FORBIDDEN",
+                                    "NOT_FOUND",
+                                    "METHOD_NOT_SUPPORTED",
+                                    "TIMEOUT",
+                                    "CONFLICT",
+                                    "PRECONDITION_FAILED",
+                                    "PAYLOAD_TOO_LARGE",
+                                    "UNSUPPORTED_MEDIA_TYPE",
+                                    "UNPROCESSABLE_CONTENT",
+                                    "PRECONDITION_REQUIRED",
+                                    "TOO_MANY_REQUESTS",
+                                    "CLIENT_CLOSED_REQUEST"
+                                  ]
+                                },
+                                "httpStatus": {
+                                  "type": "number"
+                                },
+                                "path": {
+                                  "type": "string",
+                                  "description": "Path to the procedure that threw the error"
+                                },
+                                "stack": {
+                                  "type": "string",
+                                  "description": "Stack trace of the error (only in development)"
+                                }
+                              },
+                              "required": [
+                                "requestId",
+                                "code",
+                                "httpStatus"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "message": {
+                              "type": "string"
+                            },
+                            "code": {
+                              "type": "number",
+                              "enum": [
+                                -32700,
+                                -32600,
+                                -32603,
+                                -32001,
+                                -32002,
+                                -32003,
+                                -32004,
+                                -32005,
+                                -32008,
+                                -32009,
+                                -32012,
+                                -32013,
+                                -32015,
+                                -32022,
+                                -32028,
+                                -32029,
+                                -32099
+                              ]
+                            }
+                          },
+                          "required": [
+                            "data",
+                            "message",
+                            "code"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "RATE_LIMIT"
+                                },
+                                "retryAfterMs": {
+                                  "type": "number"
+                                },
+                                "code": {
+                                  "type": "string",
+                                  "enum": [
+                                    "PARSE_ERROR",
+                                    "BAD_REQUEST",
+                                    "INTERNAL_SERVER_ERROR",
+                                    "NOT_IMPLEMENTED",
+                                    "BAD_GATEWAY",
+                                    "SERVICE_UNAVAILABLE",
+                                    "GATEWAY_TIMEOUT",
+                                    "UNAUTHORIZED",
+                                    "PAYMENT_REQUIRED",
+                                    "FORBIDDEN",
+                                    "NOT_FOUND",
+                                    "METHOD_NOT_SUPPORTED",
+                                    "TIMEOUT",
+                                    "CONFLICT",
+                                    "PRECONDITION_FAILED",
+                                    "PAYLOAD_TOO_LARGE",
+                                    "UNSUPPORTED_MEDIA_TYPE",
+                                    "UNPROCESSABLE_CONTENT",
+                                    "PRECONDITION_REQUIRED",
+                                    "TOO_MANY_REQUESTS",
+                                    "CLIENT_CLOSED_REQUEST"
+                                  ]
+                                },
+                                "httpStatus": {
+                                  "type": "number"
+                                },
+                                "path": {
+                                  "type": "string",
+                                  "description": "Path to the procedure that threw the error"
+                                },
+                                "stack": {
+                                  "type": "string",
+                                  "description": "Stack trace of the error (only in development)"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "retryAfterMs",
+                                "code",
+                                "httpStatus"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "message": {
+                              "type": "string"
+                            },
+                            "code": {
+                              "type": "number",
+                              "enum": [
+                                -32700,
+                                -32600,
+                                -32603,
+                                -32001,
+                                -32002,
+                                -32003,
+                                -32004,
+                                -32005,
+                                -32008,
+                                -32009,
+                                -32012,
+                                -32013,
+                                -32015,
+                                -32022,
+                                -32028,
+                                -32029,
+                                -32099
+                              ]
+                            }
+                          },
+                          "required": [
+                            "data",
+                            "message",
+                            "code"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "CONFLICT"
+                                },
+                                "conflictsWith": {
+                                  "type": "string"
+                                },
+                                "code": {
+                                  "type": "string",
+                                  "enum": [
+                                    "PARSE_ERROR",
+                                    "BAD_REQUEST",
+                                    "INTERNAL_SERVER_ERROR",
+                                    "NOT_IMPLEMENTED",
+                                    "BAD_GATEWAY",
+                                    "SERVICE_UNAVAILABLE",
+                                    "GATEWAY_TIMEOUT",
+                                    "UNAUTHORIZED",
+                                    "PAYMENT_REQUIRED",
+                                    "FORBIDDEN",
+                                    "NOT_FOUND",
+                                    "METHOD_NOT_SUPPORTED",
+                                    "TIMEOUT",
+                                    "CONFLICT",
+                                    "PRECONDITION_FAILED",
+                                    "PAYLOAD_TOO_LARGE",
+                                    "UNSUPPORTED_MEDIA_TYPE",
+                                    "UNPROCESSABLE_CONTENT",
+                                    "PRECONDITION_REQUIRED",
+                                    "TOO_MANY_REQUESTS",
+                                    "CLIENT_CLOSED_REQUEST"
+                                  ]
+                                },
+                                "httpStatus": {
+                                  "type": "number"
+                                },
+                                "path": {
+                                  "type": "string",
+                                  "description": "Path to the procedure that threw the error"
+                                },
+                                "stack": {
+                                  "type": "string",
+                                  "description": "Stack trace of the error (only in development)"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "conflictsWith",
+                                "code",
+                                "httpStatus"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "message": {
+                              "type": "string"
+                            },
+                            "code": {
+                              "type": "number",
+                              "enum": [
+                                -32700,
+                                -32600,
+                                -32603,
+                                -32001,
+                                -32002,
+                                -32003,
+                                -32004,
+                                -32005,
+                                -32008,
+                                -32009,
+                                -32012,
+                                -32013,
+                                -32015,
+                                -32022,
+                                -32028,
+                                -32029,
+                                -32099
+                              ]
+                            }
+                          },
+                          "required": [
+                            "data",
+                            "message",
+                            "code"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "message"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {

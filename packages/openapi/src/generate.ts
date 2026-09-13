@@ -451,32 +451,61 @@ function convertUnionType(
     schemas.push({ type: 'null' });
   }
 
-  if (schemas.length === 0) {
+  const distinctSchemas = dedupeSchemas(schemas);
+  if (distinctSchemas.length === 0) {
     return {};
   }
 
-  const [firstSchema] = schemas;
-  if (schemas.length === 1 && firstSchema !== undefined) {
+  const [firstSchema] = distinctSchemas;
+  if (distinctSchemas.length === 1 && firstSchema !== undefined) {
     return firstSchema;
   }
 
   // When all schemas are simple type-only schemas (no other properties),
   // collapse into a single `type` array. e.g. string | null → type: ["string", "null"]
-  if (schemas.every(isSimpleTypeSchema)) {
-    return { type: schemas.map((s) => s.type as string) };
+  if (distinctSchemas.every(isSimpleTypeSchema)) {
+    return { type: distinctSchemas.map((s) => s.type as string) };
   }
 
   // Detect discriminated unions: all oneOf members are objects sharing a common
   // required property whose value is a `const`.  If found, add a `discriminator`.
-  const discriminatorProp = detectDiscriminatorProperty(schemas);
+  const discriminatorProp = detectDiscriminatorProperty(distinctSchemas);
   if (discriminatorProp) {
     return {
-      oneOf: schemas,
+      oneOf: distinctSchemas,
       discriminator: { propertyName: discriminatorProp },
     };
   }
 
-  return { oneOf: schemas };
+  return { oneOf: distinctSchemas };
+}
+
+function dedupeSchemas(schemas: SchemaObject[]): SchemaObject[] {
+  const seen = new Set<string>();
+
+  return schemas.filter((schema) => {
+    const key = canonicalize(schema);
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+}
+
+function canonicalize(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map(canonicalize).join(',')}]`;
+  }
+
+  if (value && typeof value === 'object') {
+    const entries = Object.entries(value)
+      .filter(([, v]) => v !== undefined)
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .map(([k, v]) => `${JSON.stringify(k)}:${canonicalize(v)}`);
+    return `{${entries.join(',')}}`;
+  }
+  return JSON.stringify(value) ?? 'undefined';
 }
 
 /**
