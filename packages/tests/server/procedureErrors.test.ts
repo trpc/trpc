@@ -2,8 +2,9 @@ import { testServerAndClientResource } from '@trpc/client/__tests__/testClientRe
 import { waitError } from '@trpc/server/__tests__/waitError';
 import { TRPCClientError } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
+import { observable } from '@trpc/server/observable';
 import type { inferProcedureErrorShape } from '@trpc/server/unstable-core-do-not-import';
-import { lazy } from '@trpc/server/unstable-core-do-not-import';
+import { createBuilder, lazy } from '@trpc/server/unstable-core-do-not-import';
 import { z } from 'zod';
 
 class RateLimitError extends Error {
@@ -387,32 +388,41 @@ test('handlers only catch errors thrown further down the chain', async () => {
   expect(missedErr.data).not.toHaveProperty('kind');
 });
 
-test('handlers catch errors from input parsing', async () => {
-  const procedure = t.procedure
-    .errors((opts) => {
-      if (opts.error.code === 'BAD_REQUEST') {
-        return {
-          ...opts.shape,
-          data: { ...opts.shape.data, kind: 'BAD_INPUT' as const },
-        };
-      }
-      return undefined;
-    })
-    .input(z.object({ name: z.string() }));
+test('handlers catch errors from input and output parsing', async () => {
+  const procedure = t.procedure.errors((opts) => ({
+    ...opts.shape,
+    data: { ...opts.shape.data, kind: 'CAUGHT' as const },
+  }));
 
   const router = t.router({
-    greet: procedure.query(({ input }) => input.name),
+    badInput: procedure
+      .input(z.object({ name: z.string() }))
+      .query(({ input }) => input.name),
+    badOutput: procedure
+      .output(z.object({ name: z.string() }))
+      .query(() => ({ name: 42 }) as unknown as { name: string }),
   });
 
   await using ctx = testServerAndClientResource(router);
 
-  const err = await waitError(
+  const inputErr = await waitError(
     // @ts-expect-error - deliberately wrong input
-    ctx.client.greet.query({ name: 42 }),
+    ctx.client.badInput.query({ name: 42 }),
     TRPCClientError,
   );
+  expect(inputErr.data).toMatchObject({
+    code: 'BAD_REQUEST',
+    kind: 'CAUGHT',
+  });
 
-  expect(err.data).toMatchObject({ kind: 'BAD_INPUT' });
+  const outputErr = await waitError(
+    ctx.client.badOutput.query(),
+    TRPCClientError,
+  );
+  expect(outputErr.data).toMatchObject({
+    code: 'INTERNAL_SERVER_ERROR',
+    kind: 'CAUGHT',
+  });
 });
 
 test('`concat()` runs the concatenated formatters first', async () => {
@@ -502,6 +512,17 @@ describe.each(['httpSubscriptionLink', 'wsLink'] as const)(
           cause: new RateLimitError(7_000),
         });
       }),
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      legacyObservable: rateLimitedProcedure.subscription(() =>
+        observable<string>((emit) => {
+          emit.error(
+            new TRPCError({
+              code: 'TOO_MANY_REQUESTS',
+              cause: new RateLimitError(8_000),
+            }),
+          );
+        }),
+      ),
     });
 
     test('errors thrown before the first value go through the chain', async () => {
@@ -542,6 +563,25 @@ describe.each(['httpSubscriptionLink', 'wsLink'] as const)(
       expect(onError.mock.calls[0]![0].data).toMatchObject({
         kind: 'RATE_LIMIT',
         retryAfterMs: 7_000,
+      });
+    });
+
+    test('errors from a deprecated observable go through the chain', async () => {
+      await using ctx = testServerAndClientResource(subRouter, { clientLink });
+
+      const onError = vi.fn<(err: TRPCClientError<typeof subRouter>) => void>();
+      const sub = ctx.client.legacyObservable.subscribe(undefined, {
+        onError,
+      });
+
+      await vi.waitFor(() => {
+        expect(onError).toHaveBeenCalledTimes(1);
+      });
+      sub.unsubscribe();
+
+      expect(onError.mock.calls[0]![0].data).toMatchObject({
+        kind: 'RATE_LIMIT',
+        retryAfterMs: 8_000,
       });
     });
   },
@@ -599,4 +639,85 @@ test('the handler receives the default shape, including the dev stack', async ()
   expect((seen[0] as { data: { stack?: string } }).data.stack).toEqual(
     expect.any(String),
   );
+});
+
+test('an abort thrown inside a subscription is rethrown untouched', async () => {
+  const local = initTRPC.create();
+
+  const router = local.router({
+    sub: local.procedure
+      // declining, so the abort should come out exactly as it went in
+      .errors(() => undefined)
+      .subscription(async function* () {
+        yield 'first';
+        throw new DOMException('The operation was aborted', 'AbortError');
+      }),
+  });
+
+  const caller = local.createCallerFactory(router)({});
+  const iterable = await caller.sub();
+
+  const err = await waitError(async () => {
+    for await (const _ of iterable) {
+      // drain until it throws
+    }
+  });
+
+  expect(err).toBeInstanceOf(DOMException);
+  expect(err.name).toBe('AbortError');
+  expect(err).not.toBeInstanceOf(TRPCError);
+});
+
+test('a handler that throws bubbles its own error', async () => {
+  const local = initTRPC.create({
+    errorFormatter(opts) {
+      return {
+        ...opts.shape,
+        data: { ...opts.shape.data, fromGlobalFormatter: true as const },
+      };
+    },
+  });
+
+  const router = local.router({
+    proc: local.procedure
+      .errors((): undefined => {
+        throw new Error('the handler itself is broken');
+      })
+      .query((): string => {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'nope' });
+      }),
+  });
+
+  await using ctx = testServerAndClientResource(router);
+
+  const err = await waitError(ctx.client.proc.query(), TRPCClientError);
+
+  // the handler's own failure takes over, rather than being swallowed
+  expect(err.message).toBe('the handler itself is broken');
+  expect(err.data).toMatchObject({
+    code: 'INTERNAL_SERVER_ERROR',
+    httpStatus: 500,
+    fromGlobalFormatter: true,
+  });
+});
+
+test('a builder created outside `initTRPC` still gets the dev stack', async () => {
+  const seen: { stack?: string }[] = [];
+
+  const procedure = createBuilder<object, object>()
+    .errors((opts) => {
+      seen.push(opts.shape.data);
+      return undefined;
+    })
+    .query((): string => {
+      throw new TRPCError({ code: 'BAD_REQUEST', message: 'nope' });
+    });
+
+  const router = t.router({ proc: procedure });
+
+  await using ctx = testServerAndClientResource(router);
+  await waitError(ctx.client.proc.query(), TRPCClientError);
+
+  expect(seen).toHaveLength(1);
+  expect(seen[0]!.stack).toEqual(expect.any(String));
 });

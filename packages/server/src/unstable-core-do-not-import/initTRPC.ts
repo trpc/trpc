@@ -8,7 +8,7 @@ import { createMiddlewareFactory } from './middleware';
 import type { ProcedureBuilder } from './procedureBuilder';
 import { createBuilder } from './procedureBuilder';
 import type { AnyRootTypes, CreateRootTypes } from './rootConfig';
-import { isServerDefault, type RootConfig } from './rootConfig';
+import { isDevDefault, isServerDefault, type RootConfig } from './rootConfig';
 import type {
   AnyRouter,
   MergeRouters,
@@ -154,10 +154,7 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
     const config: RootConfig<$Root> = {
       ...opts,
       transformer: getDataTransformer(opts?.transformer ?? defaultTransformer),
-      isDev:
-        opts?.isDev ??
-        // eslint-disable-next-line @typescript-eslint/dot-notation
-        globalThis.process?.env['NODE_ENV'] !== 'production',
+      isDev: opts?.isDev ?? isDevDefault(),
       allowOutsideOfServer: opts?.allowOutsideOfServer ?? false,
       errorFormatter: opts?.errorFormatter ?? defaultFormatter,
       isServer: opts?.isServer ?? isServerDefault,
