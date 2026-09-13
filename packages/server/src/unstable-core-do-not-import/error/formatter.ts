@@ -6,6 +6,7 @@ import type {
   TRPCErrorShape,
 } from '../rpc';
 import { TRPC_ERROR_CODES_BY_KEY } from '../rpc';
+import type { Overwrite, Simplify } from '../types';
 import type { TRPCError } from './TRPCError';
 
 /**
@@ -16,7 +17,7 @@ export interface ErrorFormatterOptions<TContext> {
   type: ProcedureType | 'unknown';
   path: string | undefined;
   input: unknown;
-  ctx: TContext | undefined;
+  ctx: TContext;
   shape: DefaultErrorShape;
 }
 
@@ -24,7 +25,7 @@ export interface ErrorFormatterOptions<TContext> {
  * @internal
  */
 export type ErrorFormatter<TContext, TShape extends TRPCErrorShape> = (
-  opts: ErrorFormatterOptions<TContext>,
+  opts: ErrorFormatterOptions<TContext | undefined>,
 ) => TShape;
 
 /**
@@ -32,15 +33,16 @@ export type ErrorFormatter<TContext, TShape extends TRPCErrorShape> = (
  */
 export type ProcedureErrorFormatter<
   TContext,
+  TContextOverrides,
   TShape extends TRPCErrorShape | undefined | void,
 > = (
-  opts: Omit<ErrorFormatterOptions<TContext>, 'ctx'> & { ctx: TContext },
+  opts: ErrorFormatterOptions<Simplify<Overwrite<TContext, TContextOverrides>>>,
 ) => TShape;
 
 /**
  * @internal
  */
-export type AnyProcedureErrorFormatter = ProcedureErrorFormatter<any, any>;
+export type AnyProcedureErrorFormatter = ProcedureErrorFormatter<any, any, any>;
 
 /**
  * @internal
