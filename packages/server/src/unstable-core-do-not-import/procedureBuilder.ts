@@ -1,6 +1,5 @@
 import type { inferObservableValue, Observable } from '../observable';
 import type {
-  AnyProcedureErrorFormatter,
   DefaultErrorShape,
   ProcedureErrorFormatter,
 } from './error/formatter';
@@ -53,7 +52,8 @@ type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
   : TValue;
 
 type FoldErrorShape<TErrorShape, $Shape> =
-  Extract<$Shape, TRPCErrorShape> | TErrorShape;
+  | Extract<$Shape, TRPCErrorShape>
+  | TErrorShape;
 
 type inferAsyncIterable<TOutput> =
   TOutput extends AsyncIterable<infer $Yield, infer $Return, infer $Next>
