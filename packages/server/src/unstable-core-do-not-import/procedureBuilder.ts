@@ -279,10 +279,7 @@ export interface ProcedureBuilder<
    * @see https://trpc.io/docs/v11/server/error-formatting
    */
   errors<$Shape extends TRPCErrorShape | undefined | void>(
-    formatter: ProcedureErrorFormatter<
-      Simplify<Overwrite<TContext, TContextOverrides>>,
-      $Shape
-    >,
+    formatter: ProcedureErrorFormatter<TContext, TContextOverrides, $Shape>,
   ): ProcedureBuilder<
     TContext,
     TMeta,
