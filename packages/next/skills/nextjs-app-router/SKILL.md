@@ -227,18 +227,18 @@ export function HydrateClient(props: { children: React.ReactNode }) {
   );
 }
 
-export function prefetch(
-  queryOptions:
-    | ReturnType<TRPCQueryOptions<any>>
-    | ReturnType<TRPCInfiniteQueryOptions<any>>,
-) {
+type AnyQueryOptions =
+  ReturnType<TRPCQueryOptions<any>> | ReturnType<TRPCInfiniteQueryOptions<any>>;
+
+export function prefetch<T extends AnyQueryOptions>(queryOptions: T) {
   const queryClient = getQueryClient();
-  // `initialPageParam` is only present on infinite query options, so it
-  // discriminates the union for us
-  if ('initialPageParam' in queryOptions) {
-    void queryClient.prefetchInfiniteQuery(queryOptions);
+  // widening to the union lets TS discriminate on `initialPageParam`,
+  // which only infinite query options have
+  const options: AnyQueryOptions = queryOptions;
+  if ('initialPageParam' in options) {
+    void queryClient.prefetchInfiniteQuery(options);
   } else {
-    void queryClient.prefetchQuery(queryOptions);
+    void queryClient.prefetchQuery(options);
   }
 }
 ```
