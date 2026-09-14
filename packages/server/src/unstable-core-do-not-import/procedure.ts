@@ -13,6 +13,7 @@ interface BuiltProcedureDef {
   meta: unknown;
   input: unknown;
   output: unknown;
+  errorShape?: unknown;
 }
 
 /**
@@ -31,6 +32,7 @@ export interface Procedure<
     $types: {
       input: TDef['input'];
       output: TDef['output'];
+      errorShape: TDef['errorShape'];
     };
     procedure: true;
     type: TType;
