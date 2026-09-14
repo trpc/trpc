@@ -19,6 +19,7 @@ import type { CreateTRPCClientOptions } from './createTRPCUntypedClient';
 import type { TRPCSubscriptionObserver } from './internals/TRPCUntypedClient';
 import { TRPCUntypedClient } from './internals/TRPCUntypedClient';
 import type { TRPCProcedureOptions } from './internals/types';
+import type { TRPCTaggedPromise } from './safe';
 import type { TRPCClientError } from './TRPCClientError';
 
 /**
@@ -65,7 +66,10 @@ type coerceAsyncGeneratorToIterable<T> =
 export type Resolver<TDef extends TRPCResolverDef> = (
   input: TDef['input'],
   opts?: TRPCProcedureOptions,
-) => Promise<coerceAsyncGeneratorToIterable<TDef['output']>>;
+) => TRPCTaggedPromise<
+  coerceAsyncGeneratorToIterable<TDef['output']>,
+  TDef['errorShape']
+>;
 
 /** @internal */
 export type SubscriptionResolver<TDef extends TRPCResolverDef> = (
