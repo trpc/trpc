@@ -512,7 +512,7 @@ describe.each(['httpSubscriptionLink', 'wsLink'] as const)(
           cause: new RateLimitError(7_000),
         });
       }),
-      // eslint-disable-next-line @typescript-eslint/no-deprecated
+
       legacyObservable: rateLimitedProcedure.subscription(() =>
         observable<string>((emit) => {
           emit.error(
