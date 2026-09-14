@@ -197,7 +197,10 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
 import 'server-only';
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
-import type { TRPCQueryOptions } from '@trpc/tanstack-react-query';
+import type {
+  TRPCInfiniteQueryOptions,
+  TRPCQueryOptions,
+} from '@trpc/tanstack-react-query';
 import { headers } from 'next/headers';
 import { cache } from 'react';
 import { createTRPCContext } from './init';
@@ -224,12 +227,16 @@ export function HydrateClient(props: { children: React.ReactNode }) {
   );
 }
 
-export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(
-  queryOptions: T,
+export function prefetch(
+  queryOptions:
+    | ReturnType<TRPCQueryOptions<any>>
+    | ReturnType<TRPCInfiniteQueryOptions<any>>,
 ) {
   const queryClient = getQueryClient();
-  if (queryOptions.queryKey[1]?.type === 'infinite') {
-    void queryClient.prefetchInfiniteQuery(queryOptions as any);
+  // `initialPageParam` is only present on infinite query options, so it
+  // discriminates the union for us
+  if ('initialPageParam' in queryOptions) {
+    void queryClient.prefetchInfiniteQuery(queryOptions);
   } else {
     void queryClient.prefetchQuery(queryOptions);
   }
