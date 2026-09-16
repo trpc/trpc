@@ -88,6 +88,76 @@ export function MyComponent() {
 }
 ```
 
+## Per-procedure error formatting
+
+Errors can be formatted on a per-procedure basis using the `.errors()` method, which can be chained to produce a union of possible error shapes for each procedure.
+
+When a middleware or procedure throws an error, it bubbles upward through all `.errors()` handlers until one returns a shape or the global errorFormatter is reached.
+
+```ts twoslash title='server.ts'
+import { initTRPC } from '@trpc/server';
+
+class RateLimitError extends Error {}
+class PaymentRequiredError extends Error {
+  constructor(public readonly amountDue: number) {
+    super('Payment required');
+  }
+}
+
+const t = initTRPC.create();
+function isRateLimited(opts: any) {
+  return true
+}
+function isPaymentRequired(opts: any) {
+  return true
+}
+
+// ---cut---
+const rateLimitedProcedure = t.procedure
+  .errors((opts) => {
+    if (opts.error.cause instanceof RateLimitError) {
+      return {
+        ...opts.shape,
+        data: { ...opts.shape.data, kind: 'RATE_LIMIT' as const },
+      };
+    }
+    return undefined;
+  })
+  .use(opts => {
+    // Important: errors bubble up so a throwing middleware must come after the .errors() handler
+    if (isRateLimited(opts)) {
+      throw new RateLimitError();
+    }
+
+    return opts.next();
+  });
+
+const billedProcedure = rateLimitedProcedure
+  .errors((opts) => {
+    if (opts.error.cause instanceof PaymentRequiredError) {
+      return {
+        ...opts.shape,
+        data: {
+          ...opts.shape.data,
+          kind: 'PAYMENT_REQUIRED' as const,
+          amountDue: opts.error.cause.amountDue,
+        },
+      };
+    }
+    return undefined;
+  });
+
+const addPostProcedure = billedProcedure.mutation(opts => {
+  if (isPaymentRequired(opts)) {
+    throw new PaymentRequiredError(100);
+  }
+
+  return {
+    success: true,
+  };
+});
+```
+
 ## All properties sent to `errorFormatter()`
 
 > tRPC is compliant with [JSON-RPC 2.0](https://www.jsonrpc.org/specification)

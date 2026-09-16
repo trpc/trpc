@@ -22,6 +22,7 @@ export {
   type inferRouterContext,
   type inferClientTypes as inferTRPCClientTypes,
   type AnyClientTypes as AnyTRPCClientTypes,
+  type inferProcedureErrorShape,
   type inferTransformedProcedureOutput,
   type inferTransformedSubscriptionOutput,
   type AnyProcedure as AnyTRPCProcedure,

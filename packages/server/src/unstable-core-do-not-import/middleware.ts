@@ -1,8 +1,16 @@
-import { TRPCError } from './error/TRPCError';
+import type { Observable } from '../observable';
+import { isObservable, observable } from '../observable';
+import type { AnyProcedureErrorFormatter } from './error/formatter';
+import {
+  getDefaultErrorShape,
+  isFormattedErrorShape,
+  setFormattedErrorShape,
+} from './error/formatter';
+import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type { ParseFn } from './parser';
 import type { ProcedureType } from './procedure';
 import type { GetRawInputFn, Overwrite, Simplify } from './types';
-import { isObject } from './utils';
+import { isAsyncIterable, isObject } from './utils';
 
 /** @internal */
 export const middlewareMarker = 'middlewareMarker' as 'middlewareMarker' & {
@@ -212,6 +220,89 @@ export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
     };
   inputMiddleware._type = 'input';
   return inputMiddleware;
+}
+
+/**
+ * @internal
+ */
+export function createErrorFormatterMiddleware(
+  formatter: AnyProcedureErrorFormatter,
+  isDev: boolean,
+) {
+  const errorMiddleware: AnyMiddlewareFunction =
+    async function errorFormatterMiddleware(opts) {
+      const tryFormat = (error: TRPCError): TRPCError => {
+        // a handler further down the chain already claimed this error
+        if (isFormattedErrorShape(error)) {
+          return error;
+        }
+
+        const shape = formatter({
+          error,
+          type: opts.type,
+          path: opts.path,
+          input: opts.input,
+          ctx: opts.ctx,
+          shape: getDefaultErrorShape({
+            error,
+            path: opts.path,
+            isDev,
+          }),
+        });
+
+        if (shape !== undefined) {
+          setFormattedErrorShape(error, shape);
+        }
+
+        return error;
+      };
+
+      const tryFormatThrown = (cause: unknown): unknown => {
+        const formatted = tryFormat(getTRPCErrorFromUnknown(cause));
+
+        return isFormattedErrorShape(formatted) ? formatted : cause;
+      };
+
+      async function* wrapIterable(iterable: AsyncIterable<unknown>) {
+        try {
+          yield* iterable;
+        } catch (cause) {
+          throw tryFormatThrown(cause);
+        }
+      }
+
+      function wrapObservable(source: Observable<unknown, unknown>) {
+        return observable((observer) =>
+          source.subscribe({
+            next: (value) => observer.next(value),
+            error: (cause) => observer.error(tryFormatThrown(cause)),
+            complete: () => observer.complete(),
+          }),
+        );
+      }
+
+      const result = await opts.next();
+
+      // normal procedures return errors immediately
+      if (!result.ok) {
+        tryFormat(result.error);
+        return result;
+      }
+
+      // subscription/streaming procedures need to be enumerated to find errors
+      if (isAsyncIterable(result.data)) {
+        return { ...result, data: wrapIterable(result.data) };
+      }
+      if (opts.type === 'subscription' && isObservable(result.data)) {
+        return { ...result, data: wrapObservable(result.data) };
+      }
+
+      return result;
+    };
+
+  errorMiddleware._type = 'errors';
+
+  return errorMiddleware;
 }
 
 /**
