@@ -2,7 +2,12 @@ import type {
   inferObservableValue,
   Unsubscribable,
 } from '@trpc/server/observable';
-import { observableToPromise, share } from '@trpc/server/observable';
+import {
+  observable,
+  observableToAsyncIterable,
+  observableToPromise,
+  share,
+} from '@trpc/server/observable';
 import type {
   AnyRouter,
   inferAsyncIterableYield,
@@ -158,5 +163,56 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
         opts.onComplete?.();
       },
     });
+  }
+  public subscriptionAsIterable(
+    path: string,
+    input: unknown,
+    opts?: TRPCRequestOptions,
+  ): AsyncIterable<unknown> {
+    return {
+      [Symbol.asyncIterator]: () => {
+        const signal =
+          opts?.signal ??
+          // teardown is driven by the consumer stopping iteration, so a
+          // never-aborted signal is fine when none is provided
+          new AbortController().signal;
+
+        const observable$ = this.$request({
+          type: 'subscription',
+          path,
+          input,
+          context: opts?.context,
+          signal,
+        });
+        const iterable$ = observable<unknown, unknown>((observer) => {
+          return observable$.subscribe({
+            next(envelope) {
+              switch (envelope.result.type) {
+                case 'state':
+                case 'started':
+                case 'stopped': {
+                  // ignore connection state envelopes
+                  break;
+                }
+                case 'data':
+                case undefined: {
+                  observer.next?.(envelope.result.data);
+                  break;
+                }
+              }
+            },
+            error(err) {
+              observer.error?.(err);
+            },
+            complete() {
+              observer.complete?.();
+            },
+          });
+        });
+        return observableToAsyncIterable(iterable$, signal)[
+          Symbol.asyncIterator
+        ]();
+      },
+    };
   }
 }

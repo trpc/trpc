@@ -94,4 +94,42 @@ const frodo = await client.createUser.mutate({ name: 'Frodo' });
 // => { id: 'id_frodo', name: 'Frodo' };
 ```
 
+### 5. Use subscriptions
+
+Given a [subscription procedure](../../server/subscriptions.md), you can subscribe with callbacks, or consume the subscription as an `AsyncIterable` - both require a link that supports subscriptions, e.g. [`wsLink`](../links/wsLink.md) or [`httpSubscriptionLink`](../links/httpSubscriptionLink.md):
+
+```ts twoslash title='client.ts'
+// @target: esnext
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+const appRouter = t.router({
+  onUserAdd: t.procedure.subscription(async function* () {
+    yield { name: 'Frodo' };
+  }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+import { createTRPCClient, httpSubscriptionLink } from '@trpc/client';
+import type { AppRouter } from './server';
+const client = createTRPCClient<AppRouter>({
+  links: [httpSubscriptionLink({ url: 'http://localhost:3000/trpc' })],
+});
+// ---cut---
+// subscribe with callbacks:
+const sub = client.onUserAdd.subscribe(undefined, {
+  onData(user) {
+    console.log(user);
+  },
+});
+// stop listening:
+sub.unsubscribe();
+
+// or, as an AsyncIterable - the subscription ends once you stop iterating:
+for await (const user of client.onUserAdd.iterate(undefined)) {
+  console.log(user);
+}
+```
+
 You're all set!
