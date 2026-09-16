@@ -21,6 +21,7 @@ interface ProcedureInfo {
   type: 'query' | 'mutation' | 'subscription';
   inputSchema: SchemaObject | null;
   outputSchema: SchemaObject | null;
+  errorSchema: SchemaObject | null;
   description?: string;
 }
 
@@ -450,32 +451,61 @@ function convertUnionType(
     schemas.push({ type: 'null' });
   }
 
-  if (schemas.length === 0) {
+  const distinctSchemas = dedupeSchemas(schemas);
+  if (distinctSchemas.length === 0) {
     return {};
   }
 
-  const [firstSchema] = schemas;
-  if (schemas.length === 1 && firstSchema !== undefined) {
+  const [firstSchema] = distinctSchemas;
+  if (distinctSchemas.length === 1 && firstSchema !== undefined) {
     return firstSchema;
   }
 
   // When all schemas are simple type-only schemas (no other properties),
   // collapse into a single `type` array. e.g. string | null → type: ["string", "null"]
-  if (schemas.every(isSimpleTypeSchema)) {
-    return { type: schemas.map((s) => s.type as string) };
+  if (distinctSchemas.every(isSimpleTypeSchema)) {
+    return { type: distinctSchemas.map((s) => s.type as string) };
   }
 
   // Detect discriminated unions: all oneOf members are objects sharing a common
   // required property whose value is a `const`.  If found, add a `discriminator`.
-  const discriminatorProp = detectDiscriminatorProperty(schemas);
+  const discriminatorProp = detectDiscriminatorProperty(distinctSchemas);
   if (discriminatorProp) {
     return {
-      oneOf: schemas,
+      oneOf: distinctSchemas,
       discriminator: { propertyName: discriminatorProp },
     };
   }
 
-  return { oneOf: schemas };
+  return { oneOf: distinctSchemas };
+}
+
+function dedupeSchemas(schemas: SchemaObject[]): SchemaObject[] {
+  const seen = new Set<string>();
+
+  return schemas.filter((schema) => {
+    const key = canonicalize(schema);
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+}
+
+function canonicalize(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map(canonicalize).join(',')}]`;
+  }
+
+  if (value && typeof value === 'object') {
+    const entries = Object.entries(value)
+      .filter(([, v]) => v !== undefined)
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .map(([k, v]) => `${JSON.stringify(k)}:${canonicalize(v)}`);
+    return `{${entries.join(',')}}`;
+  }
+  return JSON.stringify(value) ?? 'undefined';
 }
 
 /**
@@ -872,6 +902,8 @@ interface WalkCtx {
   schemaCtx: SchemaCtx;
   /** Runtime descriptions keyed by procedure path (when a router instance is available). */
   runtimeDescriptions: Map<string, RuntimeDescriptions>;
+  /** The router-wide error shape, used to spot procedures that differ from it. */
+  routerErrorType: ts.Type | null;
 }
 
 /**
@@ -1142,8 +1174,62 @@ function extractProcedure(def: ProcedureDef, ctx: WalkCtx): void {
     type: def.typeName as 'query' | 'mutation' | 'subscription',
     inputSchema,
     outputSchema,
+    errorSchema: extractProcedureErrorSchema($typesType, ctx),
     description: def.description,
   });
+}
+
+function extractProcedureErrorSchema(
+  $typesType: ts.Type,
+  ctx: WalkCtx,
+): SchemaObject | null {
+  const { schemaCtx } = ctx;
+  const errorSym = $typesType.getProperty('errorShape');
+  if (!errorSym) {
+    return null;
+  }
+
+  const { checker } = schemaCtx;
+  const errorType = checker.getTypeOfSymbol(errorSym);
+  if (
+    hasFlag(errorType, ts.TypeFlags.Any) ||
+    isUnknownLikeType(errorType) ||
+    addsNothingToRouterErrorType(errorType, ctx.routerErrorType, checker)
+  ) {
+    return null;
+  }
+
+  const schema = typeToJsonSchema(errorType, schemaCtx);
+  return isNonEmptySchema(schema) ? schema : null;
+}
+
+function addsNothingToRouterErrorType(
+  errorType: ts.Type,
+  routerErrorType: ts.Type | null,
+  checker: ts.TypeChecker,
+): boolean {
+  if (!routerErrorType) {
+    return false;
+  }
+  if (errorType === routerErrorType) {
+    return true;
+  }
+
+  const describe = (type: ts.Type) =>
+    checker.typeToString(
+      type,
+      undefined,
+      ts.TypeFormatFlags.NoTruncation |
+        ts.TypeFormatFlags.UseFullyQualifiedType,
+    );
+  const unionMembers = (type: ts.Type) =>
+    type.isUnion() ? type.types : [type];
+
+  const routerMembers = new Set(unionMembers(routerErrorType).map(describe));
+
+  return unionMembers(errorType).every((member) =>
+    routerMembers.has(describe(member)),
+  );
 }
 
 /** Extract the JSDoc comment text from a symbol, if any. */
@@ -1337,11 +1423,10 @@ function loadCompilerOptions(startDir: string): ts.CompilerOptions {
  * it to a JSON Schema.  Returns `null` when the path cannot be resolved
  * (e.g. older tRPC versions or missing type info).
  */
-function extractErrorSchema(
+function getRouterErrorType(
   routerType: ts.Type,
   checker: ts.TypeChecker,
-  schemaCtx: SchemaCtx,
-): SchemaObject | null {
+): ts.Type | null {
   const walk = (type: ts.Type, keys: string[]): ts.Type | null => {
     const [head, ...rest] = keys;
     if (!head) {
@@ -1360,11 +1445,20 @@ function extractErrorSchema(
     '$types',
     'errorShape',
   ]);
-  if (!errorShapeType) {
+  if (!errorShapeType || hasFlag(errorShapeType, ts.TypeFlags.Any)) {
     return null;
   }
 
-  if (hasFlag(errorShapeType, ts.TypeFlags.Any)) {
+  return errorShapeType;
+}
+
+function extractErrorSchema(
+  routerType: ts.Type,
+  checker: ts.TypeChecker,
+  schemaCtx: SchemaCtx,
+): SchemaObject | null {
+  const errorShapeType = getRouterErrorType(routerType, checker);
+  if (!errorShapeType) {
     return null;
   }
 
@@ -1374,6 +1468,14 @@ function extractErrorSchema(
 // ---------------------------------------------------------------------------
 // OpenAPI document builder
 // ---------------------------------------------------------------------------
+
+function wrapInErrorEnvelope(errorSchema: SchemaObject): SchemaObject {
+  return {
+    type: 'object',
+    properties: { error: errorSchema },
+    required: ['error'],
+  };
+}
 
 /** Fallback error schema when the router type doesn't expose an error shape. */
 const DEFAULT_ERROR_SCHEMA: SchemaObject = {
@@ -1433,7 +1535,16 @@ function buildProcedureOperation(
           },
         },
       },
-      default: { $ref: '#/components/responses/Error' },
+      default: proc.errorSchema
+        ? {
+            description: 'Error response',
+            content: {
+              'application/json': {
+                schema: wrapInErrorEnvelope(proc.errorSchema),
+              },
+            },
+          }
+        : { $ref: '#/components/responses/Error' },
     },
   };
 
@@ -1505,13 +1616,9 @@ function buildOpenAPIDocument(
           description: 'Error response',
           content: {
             'application/json': {
-              schema: {
-                type: 'object',
-                properties: {
-                  error: meta.errorSchema ?? DEFAULT_ERROR_SCHEMA,
-                },
-                required: ['error'],
-              },
+              schema: wrapInErrorEnvelope(
+                meta.errorSchema ?? DEFAULT_ERROR_SCHEMA,
+              ),
             },
           },
         },
@@ -1595,6 +1702,7 @@ export async function generateOpenAPIDocument(
     seen: new Set(),
     schemaCtx,
     runtimeDescriptions,
+    routerErrorType: getRouterErrorType(routerType, checker),
   };
   walkType({ type: routerType, ctx: walkCtx, currentPath: '' });
 
