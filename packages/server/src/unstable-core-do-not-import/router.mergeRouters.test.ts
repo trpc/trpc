@@ -76,7 +76,7 @@ test('good merge: one has default transformer', async () => {
     foo: t1.procedure.query(() => 'foo'),
   });
   const router2 = t2.router({
-    bar: t1.procedure.query(() => 'bar'),
+    bar: t2.procedure.query(() => 'bar'),
   });
 
   const merged = t1.mergeRouters(router1, router2);
