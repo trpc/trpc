@@ -324,9 +324,11 @@ describe('createTRPCQueryUtils()', () => {
   });
 
   test('queryOptions() and infiniteQueryOptions() with skipToken', async () => {
-    const { client } = factory;
     const queryClient = createQueryClient();
-    const clientUtils = createTRPCQueryUtils({ queryClient, client });
+    const clientUtils = createTRPCQueryUtils({
+      queryClient,
+      client: factory.client,
+    });
 
     const queryOptions = clientUtils.postById.queryOptions(skipToken);
     expect(queryOptions.queryFn).toBe(skipToken);
