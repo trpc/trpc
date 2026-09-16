@@ -37,6 +37,33 @@ describe('router', () => {
 });
 
 describe('lazy loading routers', () => {
+  // regression: sibling lazy routers where one key is a string prefix of another
+  test('prefix sibling routers do not load the wrong lazy router', async () => {
+    const t = initTRPC.create();
+
+    const postLoader = vi.fn(async () =>
+      t.router({
+        byId: t.procedure.query(() => 'post.byId'),
+      }),
+    );
+
+    const router = t.router({
+      // `post` is declared first, so it is enumerated before `posts`
+      post: lazy(postLoader),
+      posts: lazy(async () =>
+        t.router({
+          list: t.procedure.query(() => 'posts.list'),
+        }),
+      ),
+    });
+
+    const caller = router.createCaller({});
+
+    expect(await caller.posts.list()).toBe('posts.list');
+    // the unrelated `post` loader must never run for a `posts.*` path
+    expect(postLoader).not.toHaveBeenCalled();
+  });
+
   test('smoke test', async () => {
     const t = initTRPC.create();
 

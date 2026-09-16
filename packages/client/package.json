@@ -122,16 +122,16 @@
     "@tanstack/intent": "^0.0.27",
     "@trpc/server": "11.18.0",
     "@types/isomorphic-fetch": "^0.0.39",
-    "@types/node": "^22.13.5",
+    "@types/node": "catalog:",
     "dataloader": "^2.2.2",
-    "eslint": "^9.26.0",
+    "eslint": "catalog:",
     "isomorphic-fetch": "^3.0.0",
     "node-fetch": "^3.3.0",
-    "tsdown": "0.12.7",
+    "tsdown": "catalog:",
     "tslib": "^2.8.1",
-    "typescript": "^5.9.2",
-    "undici": "^8.0.0",
-    "ws": "^8.0.0"
+    "typescript": "catalog:",
+    "undici": "catalog:",
+    "ws": "catalog:"
   },
   "publishConfig": {
     "access": "public"

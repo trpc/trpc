@@ -4,6 +4,7 @@ import type {
   AnyRouter,
 } from '@trpc/server/unstable-core-do-not-import';
 import { transformResult } from '@trpc/server/unstable-core-do-not-import';
+import { raceAbortSignals } from '../internals/signals';
 import { TRPCClientError } from '../TRPCClientError';
 import type {
   HTTPLinkBaseOptions,
@@ -88,12 +89,13 @@ export function httpLink<TRouter extends AnyRouter = AnyRouter>(
           );
         }
 
+        const ac = new AbortController();
         const request = universalRequester({
           ...resolvedOpts,
           type,
           path,
           input,
-          signal: op.signal,
+          signal: raceAbortSignals(op.signal, ac.signal),
           headers() {
             if (!opts.headers) {
               return {};
@@ -106,9 +108,11 @@ export function httpLink<TRouter extends AnyRouter = AnyRouter>(
             return opts.headers;
           },
         });
+        let isDone = false;
         let meta: HTTPResult['meta'] | undefined = undefined;
         request
           .then((res) => {
+            isDone = true;
             meta = res.meta;
             const transformed = transformResult(
               res.json,
@@ -130,11 +134,14 @@ export function httpLink<TRouter extends AnyRouter = AnyRouter>(
             observer.complete();
           })
           .catch((cause) => {
+            isDone = true;
             observer.error(TRPCClientError.from(cause, { meta }));
           });
 
         return () => {
-          // noop
+          if (!isDone) {
+            ac.abort();
+          }
         };
       });
     };

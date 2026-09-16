@@ -406,6 +406,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           });
           clientSubscriptions.delete(id);
         }).catch((cause) => {
+          clientSubscriptions.delete(id);
           const error = getTRPCErrorFromUnknown(cause);
           opts.onError?.({ error, path, type, ctx, req, input });
           respond({
@@ -585,13 +586,13 @@ export function handleKeepAlive(
     const scheduleTimeout = () => {
       timeout = setTimeout(() => {
         client.terminate();
-      }, pongWaitMs) as any;
+      }, pongWaitMs);
     };
     ping = setTimeout(() => {
       client.send('PING');
 
       scheduleTimeout();
-    }, pingMs) as any;
+    }, pingMs);
   };
 
   const onMessage = () => {

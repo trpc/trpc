@@ -23,29 +23,29 @@
     "@trpc/next": "npm:@trpc/next",
     "@trpc/react-query": "npm:@trpc/react-query",
     "@trpc/server": "npm:@trpc/server",
-    "next": "^15.3.8",
+    "next": "^15.5.25",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "tsx": "^4.19.3",
-    "ws": "^8.0.0",
+    "ws": "^8.21.3",
     "zod": "^4.2.1"
   },
   "devDependencies": {
     "@tanstack/react-query-devtools": "^5.80.3",
-    "@types/node": "^22.13.5",
+    "@types/node": "^24.13.4",
     "@types/react": "^19.1.0",
     "@types/ws": "^8.2.0",
     "autoprefixer": "^10.4.7",
     "cross-env": "^7.0.3",
-    "eslint": "^9.26.0",
+    "eslint": "^10.10.0",
     "eslint-config-next": "^15.3.1",
     "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "6.0.0-rc.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "npm-run-all": "^4.1.5",
-    "postcss": "^8.4.39",
+    "postcss": "^8.5.28",
     "tailwindcss": "^3.4.6",
     "typescript": "^5.9.2",
-    "typescript-eslint": "^8.31.1"
+    "typescript-eslint": "^8.70.0"
   },
   "publishConfig": {
     "access": "restricted"

@@ -64,8 +64,7 @@ describe('context inference w/ middlewares', () => {
   });
 
   test('using generically constructed tRPC instance should have correctly inferred context', () => {
-    interface CreateInnerContextOptions
-      extends Partial<CreateFastifyContextOptions> {}
+    interface CreateInnerContextOptions extends Partial<CreateFastifyContextOptions> {}
 
     async function createInternalContext<T>(
       createContextInner: (opts?: CreateInnerContextOptions) => T,

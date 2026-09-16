@@ -85,8 +85,5 @@ export function createTRPCContext<
     return client;
   }
 
-  return { TRPCProvider, useTRPC, useTRPCClient } as CreateTRPCContextResult<
-    TRouter,
-    TFeatureFlags
-  >;
+  return { TRPCProvider, useTRPC, useTRPCClient };
 }

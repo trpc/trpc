@@ -70,8 +70,7 @@ export const auth = cache(uncachedAuth);
 
 export async function SignedIn(props: {
   children:
-    | React.ReactNode
-    | ((props: { user: Session['user'] }) => React.ReactNode);
+    React.ReactNode | ((props: { user: Session['user'] }) => React.ReactNode);
 }) {
   const sesh = await auth();
   return sesh?.user ? (

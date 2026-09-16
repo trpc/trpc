@@ -250,7 +250,9 @@ export default function TodosPage(props: PageProps) {
                     ? !completed
                     : true,
               )
-              .map((task) => <ListItem key={task.id} task={task} />)}
+              .map((task) => (
+                <ListItem key={task.id} task={task} />
+              ))}
           </ul>
         </section>
 

@@ -16,9 +16,7 @@ export type TRPCQueryKey = [
 export type TRPCMutationKey = [readonly string[]]; // = [TRPCQueryKey[0]]
 
 type ProcedureOrRouter =
-  | DecoratedMutation<any>
-  | DecoratedQuery<any>
-  | DecorateRouterRecord<any, any>;
+  DecoratedMutation<any> | DecoratedQuery<any> | DecorateRouterRecord<any, any>;
 
 /**
  * To allow easy interactions with groups of related queries, such as

@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "build/server-only"
+  },
+  "include": ["src/middleware-factory.ts"]
+}

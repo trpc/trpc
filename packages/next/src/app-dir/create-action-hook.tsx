@@ -33,29 +33,33 @@ interface UseTRPCActionBaseResult<TDef extends ActionHandlerDef> {
   mutateAsync: (...args: MutationArgs<TDef>) => Promise<TDef['output']>;
 }
 
-interface UseTRPCActionSuccessResult<TDef extends ActionHandlerDef>
-  extends UseTRPCActionBaseResult<TDef> {
+interface UseTRPCActionSuccessResult<
+  TDef extends ActionHandlerDef,
+> extends UseTRPCActionBaseResult<TDef> {
   data: TDef['output'];
   error?: never;
   status: 'success';
 }
 
-interface UseTRPCActionErrorResult<TDef extends ActionHandlerDef>
-  extends UseTRPCActionBaseResult<TDef> {
+interface UseTRPCActionErrorResult<
+  TDef extends ActionHandlerDef,
+> extends UseTRPCActionBaseResult<TDef> {
   data?: never;
   error: TRPCClientError<TDef['errorShape']>;
   status: 'error';
 }
 
-interface UseTRPCActionIdleResult<TDef extends ActionHandlerDef>
-  extends UseTRPCActionBaseResult<TDef> {
+interface UseTRPCActionIdleResult<
+  TDef extends ActionHandlerDef,
+> extends UseTRPCActionBaseResult<TDef> {
   data?: never;
   error?: never;
   status: 'idle';
 }
 
-interface UseTRPCActionLoadingResult<TDef extends ActionHandlerDef>
-  extends UseTRPCActionBaseResult<TDef> {
+interface UseTRPCActionLoadingResult<
+  TDef extends ActionHandlerDef,
+> extends UseTRPCActionBaseResult<TDef> {
   data?: never;
   error?: never;
   status: 'loading';
@@ -168,12 +172,12 @@ export function experimental_createActionHook<
     const mutateAsync = useCallback(
       (input: any, requestOptions?: TRPCRequestOptions) => {
         const idx = ++count.current;
-        const context = {
+        const context: ActionContext = {
           ...requestOptions?.context,
           _action(innerInput) {
             return handler(innerInput);
           },
-        } as ActionContext;
+        };
 
         setState({
           status: 'loading',
@@ -184,13 +188,13 @@ export function experimental_createActionHook<
             context,
           })
           .then(async (data) => {
-            await actionOptsRef.current?.onSuccess?.(data as any);
+            await actionOptsRef.current?.onSuccess?.(data);
             if (idx !== count.current) {
               return;
             }
             setState({
               status: 'success',
-              data: data as any,
+              data,
             });
           })
           .catch(async (error) => {
