@@ -41,6 +41,30 @@ t.procedure.use((opts) => {
 });
 ```
 
+### Next.js App Router
+
+When using the Next.js App Router with the [fetch adapter](adapters/fetch), your context function receives a `FetchCreateContextFnOptions` object instead of `CreateHTTPContextOptions`. You can access request headers using the Web standard `Headers` API:
+
+```ts twoslash
+import { initTRPC } from '@trpc/server';
+import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
+
+export const createContext = async (opts: FetchCreateContextFnOptions) => {
+  const token = opts.req.headers.get('authorization');
+
+  return {
+    token,
+  };
+};
+
+export type Context = Awaited<ReturnType<typeof createContext>>;
+const t = initTRPC.context<Context>().create();
+```
+
+:::tip
+`CreateHTTPContextOptions` and `CreateNextContextOptions` are designed for Node.js HTTP servers and the Next.js Pages Router respectively. If you're using the App Router, use `FetchCreateContextFnOptions` instead. See the [App Router setup guide](/docs/client/nextjs/app-router-setup) for a complete walkthrough.
+:::
+
 ## Creating the context
 
 The `createContext()` function must be passed to the handler mounting your appRouter. The handler may use HTTP or a [server-side call](server-side-calls).
