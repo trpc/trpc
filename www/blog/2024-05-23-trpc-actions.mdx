@@ -6,7 +6,6 @@ commentDiscussionId: 5737
 ---
 
 import { InstallSnippet } from '@site/src/components/InstallSnippet';
-import { Tweet } from 'react-tweet';
 
 The builder-pattern for creating procedures which was introduced in tRPC v10 has been massively appreciated by the community, and many libraries have adopted similar patterns.
 There's even been coined a term `tRPC like XYZ` as evidence of the growing popularity of this pattern. In fact, the other day I saw [someone
@@ -19,11 +18,7 @@ we're going to talk about how to use tRPC with server actions from Next.js.
 ## What's a server action?
 
 In case you live under a rock and haven't kept up with the latest [React](https://react.dev/reference/rsc/server-actions) and [Next.js](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations) features, server actions allows you to write regular functions that are executed on the server, import them on the client and call them just as if they were regular functions.
-You may think that this sounds similar to tRPC which is true. According to [Dan Abramov](https://x.com/dan_abramov2), server actions are tRPC as a bundler feature:
-
-<div className="mb-4 flex w-full justify-center">
-  <Tweet id="1756120297529368801" />
-</div>
+You may think that this sounds similar to tRPC which is true. According to [Dan Abramov](https://bsky.app/profile/danabra.mov), server actions are tRPC as a bundler feature:
 
 And this is totally accurate, server actions are similar to tRPC, at the end of the day they're both [RPCs](https://en.wikipedia.org/wiki/Remote_procedure_call). Both allow you to write functions on the backend and call them with full typesafety on the frontend with the network layer abstracted away.
 
