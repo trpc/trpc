@@ -102,6 +102,7 @@ const config: SidebarsConfig = {
             'client/vanilla/overview',
             'client/vanilla/setup',
             'client/vanilla/infer-types',
+            'client/vanilla/error-handling',
             'client/vanilla/aborting-procedure-calls',
           ],
         },
