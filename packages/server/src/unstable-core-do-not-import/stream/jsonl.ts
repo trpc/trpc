@@ -548,7 +548,12 @@ export async function jsonlStreamConsumer<THead>(opts: {
         return run(async () => {
           using reader = controller.getReaderResource();
 
-          const { value } = await reader.read();
+          const { done, value } = await reader.read();
+
+          if (done) {
+            throw new Error('Stream closed unexpectedly');
+          }
+
           const [_chunkId, status, data] = value as PromiseChunk;
           switch (status) {
             case PROMISE_STATUS_FULFILLED:
@@ -563,7 +568,11 @@ export async function jsonlStreamConsumer<THead>(opts: {
           using reader = controller.getReaderResource();
 
           while (true) {
-            const { value } = await reader.read();
+            const { done, value } = await reader.read();
+
+            if (done) {
+              throw new Error('Stream closed unexpectedly');
+            }
 
             const [_chunkId, status, data] = value as IterableChunk;
 
