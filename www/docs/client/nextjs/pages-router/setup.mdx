@@ -325,6 +325,17 @@ Configure [overrides for React Query's hooks](/docs/client/react/useUtils#invali
 
 Whether tRPC should await queries when server-side rendering a page. Defaults to `false`.
 
+### `forceServerGcTimeInfinity`-boolean (default: `false`)
+
+Opt-in safety guard for server-side renders.  
+When enabled, `@trpc/next` forces query `gcTime/cacheTime` to `Infinity` on the server-side request-scoped `QueryCache`.
+
+This helps prevent delayed server memory reclamation when component-level queries set finite `gcTime`/`cacheTime` during SSR render paths.
+
+- Only affects server-side behavior.
+- Client-side React Query behavior is unchanged.
+- Works for both internally created `QueryClient` and user-provided `queryClient`.
+
 ### `responseMeta`-callback
 
 Ability to set request headers and HTTP status when server-side rendering.
@@ -351,6 +362,8 @@ export const trpc = createTRPCNext<AppRouter>({
       ],
     };
   },
+  // Optional server-side guard against finite gcTime/cacheTime retention.
+  forceServerGcTimeInfinity: true,
 });
 ```
 
