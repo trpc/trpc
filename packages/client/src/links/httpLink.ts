@@ -4,7 +4,7 @@ import type {
   AnyRouter,
 } from '@trpc/server/unstable-core-do-not-import';
 import { transformResult } from '@trpc/server/unstable-core-do-not-import';
-import { raceAbortSignals } from '../internals/signals';
+import { raceAbortSignalsWithCleanup } from '../internals/signals';
 import { TRPCClientError } from '../TRPCClientError';
 import type {
   HTTPLinkBaseOptions,
@@ -90,12 +90,16 @@ export function httpLink<TRouter extends AnyRouter = AnyRouter>(
         }
 
         const ac = new AbortController();
+        const { signal, cleanup } = raceAbortSignalsWithCleanup(
+          op.signal,
+          ac.signal,
+        );
         const request = universalRequester({
           ...resolvedOpts,
           type,
           path,
           input,
-          signal: raceAbortSignals(op.signal, ac.signal),
+          signal,
           headers() {
             if (!opts.headers) {
               return {};
@@ -142,6 +146,7 @@ export function httpLink<TRouter extends AnyRouter = AnyRouter>(
           if (!isDone) {
             ac.abort();
           }
+          cleanup();
         };
       });
     };
