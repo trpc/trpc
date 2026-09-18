@@ -46,6 +46,8 @@ export function retryLink<TInferrable extends InferrableClientTypes>(
       // initialized for request
       return observable((observer) => {
         let next$: Unsubscribable;
+        let currentAttempt = 0;
+        let disposed = false;
         let callNextTimeout: ReturnType<typeof setTimeout> | undefined =
           undefined;
 
@@ -66,20 +68,30 @@ export function retryLink<TInferrable extends InferrableClientTypes>(
         }
 
         function attempt(attempts: number) {
+          if (disposed) {
+            return;
+          }
+          currentAttempt = attempts;
           const op = opWithLastEventId();
 
-          next$ = callOpts.next(op).subscribe({
+          const subscription = callOpts.next(op).subscribe({
             error(error) {
               const shouldRetry = opts.retry({
                 op,
                 attempts,
                 error,
               });
+              if (disposed) {
+                return;
+              }
               if (!shouldRetry) {
                 observer.error(error);
                 return;
               }
               const delayMs = opts.retryDelayMs?.(attempts) ?? 0;
+              if (disposed) {
+                return;
+              }
 
               if (delayMs <= 0) {
                 attempt(attempts + 1);
@@ -106,8 +118,16 @@ export function retryLink<TInferrable extends InferrableClientTypes>(
               observer.complete();
             },
           });
+
+          // A synchronous error may have already subscribed the next attempt.
+          if (disposed) {
+            subscription.unsubscribe();
+          } else if (currentAttempt === attempts) {
+            next$ = subscription;
+          }
         }
         return () => {
+          disposed = true;
           next$.unsubscribe();
           clearTimeout(callNextTimeout);
         };
