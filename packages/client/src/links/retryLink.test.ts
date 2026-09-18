@@ -16,7 +16,9 @@ describe.each([1, 3])('after %i retries', (failures) => {
       let attempts = 0;
       const client = createTRPCUntypedClient({
         links: [
-          retryLink({ retry: ({ attempts }) => attempts <= failures }),
+          retryLink({
+            retry: (retryOptions) => retryOptions.attempts <= failures,
+          }),
           () => () =>
             observable((observer) => {
               const attempt = ++attempts;
@@ -77,7 +79,9 @@ describe.each([1, 3])('after %i retries', (failures) => {
       let attempts = 0;
       const client = createTRPCUntypedClient({
         links: [
-          retryLink({ retry: ({ attempts }) => attempts <= failures }),
+          retryLink({
+            retry: (retryOptions) => retryOptions.attempts <= failures,
+          }),
           () => () =>
             observable((observer) => {
               const attempt = ++attempts;
