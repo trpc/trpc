@@ -124,11 +124,21 @@ test('content-type header should be matched case-insensitively', async () => {
   const res = await fetch(`${ctx.httpUrl}/hello`, {
     method: 'POST',
     headers: {
-      'content-type': 'Application/JSON',
+      'content-type': 'Application/JSON; charset=UTF-8',
     },
     body: JSON.stringify('test'),
   });
 
   expect(res.status).toBe(200);
   expect(await res.json()).toEqual({ result: { data: 'Hello test' } });
+
+  const seqRes = await fetch(`${ctx.httpUrl}/hello`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'Application/JSON-seq',
+    },
+    body: JSON.stringify('test'),
+  });
+
+  expect(seqRes.status).toBe(415);
 });

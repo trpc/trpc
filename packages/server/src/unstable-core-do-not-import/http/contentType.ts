@@ -80,7 +80,8 @@ function memo<TReturn>(fn: () => Promise<TReturn>) {
  * @see https://www.rfc-editor.org/rfc/rfc9110#section-8.3.1
  */
 function hasContentType(req: Request, type: string) {
-  return !!req.headers.get('content-type')?.toLowerCase().startsWith(type);
+  const contentType = req.headers.get('content-type')?.toLowerCase();
+  return contentType?.split(';', 1)[0]?.trim() === type;
 }
 
 const jsonContentTypeHandler: ContentTypeHandler = {
