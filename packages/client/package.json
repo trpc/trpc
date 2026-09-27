@@ -1,6 +1,7 @@
 {
   "name": "@trpc/client",
   "type": "module",
+  "sideEffects": false,
   "version": "11.19.0",
   "description": "The tRPC client library",
   "author": "KATT",
