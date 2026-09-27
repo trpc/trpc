@@ -5,7 +5,7 @@ sidebar_label: Error Handling
 slug: /client/vanilla/error-handling
 ---
 
-```ts twoslash include server
+```twoslash include server
 // @module: esnext
 // @filename: server.ts
 // ---cut---
