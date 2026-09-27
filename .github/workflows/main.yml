@@ -131,6 +131,7 @@ jobs:
             express-server,
             fastify-server,
             minimal-react,
+            minimal-per-procedure-errors,
             next-formdata,
             next-minimal-starter,
             next-prisma-starter,
