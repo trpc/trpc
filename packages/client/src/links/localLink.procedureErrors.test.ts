@@ -61,6 +61,10 @@ const appRouter = t.router({
     });
     yield 'never';
   }),
+  limitedIterable: rateLimited.query(async function* () {
+    yield 'first';
+    return 'the-return-value' as const;
+  }),
 });
 
 type Root = (typeof appRouter)['_def']['_config']['$types'];
@@ -155,6 +159,21 @@ describe('runtime', () => {
         "path": "plain",
       }
     `);
+  });
+
+  test("an iterable's return value survives the handler chain", async () => {
+    const iterator = (await localClient().limitedIterable.query())[
+      Symbol.asyncIterator
+    ]();
+
+    const yielded: unknown[] = [];
+    let next;
+    while (!(next = await iterator.next()).done) {
+      yielded.push(next.value);
+    }
+
+    expect(yielded).toEqual(['first']);
+    expect(next.value).toBe('the-return-value');
   });
 
   test('a subscription error carries the handler shape', async () => {

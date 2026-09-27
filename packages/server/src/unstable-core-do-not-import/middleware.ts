@@ -265,7 +265,7 @@ export function createErrorFormatterMiddleware(
 
       async function* wrapIterable(iterable: AsyncIterable<unknown>) {
         try {
-          yield* iterable;
+          return yield* iterable;
         } catch (cause) {
           throw tryFormatThrown(cause);
         }

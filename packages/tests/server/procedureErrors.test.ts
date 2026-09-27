@@ -3,7 +3,12 @@ import { waitError } from '@trpc/server/__tests__/waitError';
 import { TRPCClientError } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import type { inferProcedureErrorShape } from '@trpc/server/unstable-core-do-not-import';
+import type {
+  DefaultErrorShape,
+  inferProcedureErrorShape,
+  ProcedureBuilder,
+  UnsetMarker,
+} from '@trpc/server/unstable-core-do-not-import';
 import { createBuilder, lazy } from '@trpc/server/unstable-core-do-not-import';
 import { z } from 'zod';
 
@@ -201,6 +206,54 @@ describe('types', () => {
     } else {
       expectTypeOf(data.fromGlobalFormatter).toEqualTypeOf<true>();
     }
+  });
+
+  test('an annotation that omits the error shape keeps the router one', () => {
+    // the error shape is the last, optional type argument - leaving it off
+    // must not pin the procedure to the default shape
+    const annotated: ProcedureBuilder<
+      Root['ctx'],
+      Root['meta'],
+      object,
+      UnsetMarker,
+      UnsetMarker,
+      UnsetMarker,
+      UnsetMarker,
+      false
+    > = t.procedure;
+
+    const router = t.router({ proc: annotated.query((): string => 'ok') });
+
+    type Shape = inferProcedureErrorShape<
+      Root,
+      (typeof router)['_def']['record']['proc']
+    >;
+
+    expectTypeOf<Shape['data']['fromGlobalFormatter']>().toEqualTypeOf<true>();
+  });
+
+  test('...and on a router without an `errorFormatter`, the default one', () => {
+    const plain = initTRPC.create();
+
+    const annotated: ProcedureBuilder<
+      object,
+      object,
+      object,
+      UnsetMarker,
+      UnsetMarker,
+      UnsetMarker,
+      UnsetMarker,
+      false
+    > = plain.procedure;
+
+    const router = plain.router({ proc: annotated.query((): string => 'ok') });
+
+    type Shape = inferProcedureErrorShape<
+      (typeof router)['_def']['_config']['$types'],
+      (typeof router)['_def']['record']['proc']
+    >;
+
+    expectTypeOf<Shape>().toEqualTypeOf<DefaultErrorShape>();
   });
 
   test('the router-wide error shape is unaffected', () => {
@@ -720,4 +773,52 @@ test('a builder created outside `initTRPC` still gets the dev stack', async () =
 
   expect(seen).toHaveLength(1);
   expect(seen[0]!.stack).toEqual(expect.any(String));
+});
+
+describe("an async generator's return value", () => {
+  const local = initTRPC.create();
+
+  const genRouter = local.router({
+    iterable: local.procedure
+      // declining, but the wrapper is in place either way
+      .errors(() => undefined)
+      .query(async function* () {
+        yield 'first';
+        return 'the-return-value' as const;
+      }),
+  });
+
+  test('survives the chain on a server-side caller', async () => {
+    const caller = local.createCallerFactory(genRouter)({});
+
+    const iterator = (await caller.iterable())[Symbol.asyncIterator]();
+
+    await expect(iterator.next()).resolves.toEqual({
+      done: false,
+      value: 'first',
+    });
+    await expect(iterator.next()).resolves.toEqual({
+      done: true,
+      value: 'the-return-value',
+    });
+  });
+
+  test('survives the chain over the wire', async () => {
+    await using ctx = testServerAndClientResource(genRouter, {
+      clientLink: 'httpBatchStreamLink',
+    });
+
+    const iterator = (await ctx.client.iterable.query())[
+      Symbol.asyncIterator
+    ]();
+
+    const yielded: unknown[] = [];
+    let next;
+    while (!(next = await iterator.next()).done) {
+      yielded.push(next.value);
+    }
+
+    expect(yielded).toEqual(['first']);
+    expect(next.value).toBe('the-return-value');
+  });
 });

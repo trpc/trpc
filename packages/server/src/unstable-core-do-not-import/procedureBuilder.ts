@@ -1,8 +1,5 @@
 import type { inferObservableValue, Observable } from '../observable';
-import type {
-  DefaultErrorShape,
-  ProcedureErrorFormatter,
-} from './error/formatter';
+import type { ProcedureErrorFormatter } from './error/formatter';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
   AnyMiddlewareFunction,
@@ -207,7 +204,13 @@ export interface ProcedureBuilder<
   TOutputIn,
   TOutputOut,
   TCaller extends boolean,
-  TErrorShape = DefaultErrorShape,
+  /**
+   * Defaults to `unknown` so that an annotation written without it falls back
+   * to the router-wide error shape rather than pinning the procedure to the
+   * default one.
+   * @see inferProcedureErrorShape
+   */
+  TErrorShape = unknown,
 > {
   /**
    * Add an input parser to the procedure.
@@ -535,7 +538,7 @@ function createNewBuilder(
   });
 }
 
-export function createBuilder<TContext, TMeta, TErrorShape = DefaultErrorShape>(
+export function createBuilder<TContext, TMeta, TErrorShape = unknown>(
   initDef: Partial<AnyProcedureBuilderDef> = {},
 ): ProcedureBuilder<
   TContext,
