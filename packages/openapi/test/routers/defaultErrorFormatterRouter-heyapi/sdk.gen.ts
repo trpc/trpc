@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { LimitedData, LimitedErrors, LimitedResponses, PlainData, PlainErrors, PlainResponses } from './types.gen';
+import type { LimitedData, LimitedErrors, LimitedResponses, PlainData, PlainErrors, PlainResponses, SanitizedData, SanitizedErrors, SanitizedResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -70,6 +70,20 @@ export class Sdk extends HeyApiClient {
     public limited<ThrowOnError extends boolean = false>(options: Options<LimitedData, ThrowOnError>): RequestResult<LimitedResponses, LimitedErrors, ThrowOnError> {
         return (options.client ?? this.client).post<LimitedResponses, LimitedErrors, ThrowOnError>({
             url: '/limited',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Its handler's shape is the router-wide one with a different message
+     */
+    public sanitized<ThrowOnError extends boolean = false>(options: Options<SanitizedData, ThrowOnError>): RequestResult<SanitizedResponses, SanitizedErrors, ThrowOnError> {
+        return (options.client ?? this.client).post<SanitizedResponses, SanitizedErrors, ThrowOnError>({
+            url: '/sanitized',
             ...options,
             headers: {
                 'Content-Type': 'application/json',

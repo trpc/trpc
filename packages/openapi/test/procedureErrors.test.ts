@@ -10,11 +10,13 @@ import type {
   ChainedDuplicateError,
   ChainedError,
   LimitedError,
+  LimitedErrorShape,
   MultiShapeError,
   NeverClaimsError,
   PlainError,
 } from './routers/procedureErrorsRouter-heyapi/types.gen';
 import {
+  getResponseComponent,
   isRef,
   requireOperation,
   requireResponseComponentSchema,
@@ -44,8 +46,12 @@ beforeAll(async () => {
   });
 });
 
-function getDefaultResponse(opPath: string, method: 'get' | 'post') {
-  const operation = requireOperation(doc, opPath, method);
+function getDefaultResponse(
+  from: Document,
+  opPath: string,
+  method: 'get' | 'post',
+) {
+  const operation = requireOperation(from, opPath, method);
   const response = operation.responses?.['default'];
   if (!response) {
     throw new Error(`No default response on ${method} ${opPath}`);
@@ -53,44 +59,71 @@ function getDefaultResponse(opPath: string, method: 'get' | 'post') {
   return response;
 }
 
-function getErrorSchema(opPath: string, method: 'get' | 'post'): SchemaObject {
-  const response = getDefaultResponse(opPath, method);
-  if (isRef(response)) {
-    throw new Error(`Expected an inline response on ${method} ${opPath}`);
+function getErrorResponseName(
+  from: Document,
+  opPath: string,
+  method: 'get' | 'post',
+): string {
+  const response = getDefaultResponse(from, opPath, method);
+  if (!isRef(response)) {
+    throw new Error(`Expected a $ref response on ${method} ${opPath}`);
+  }
+  return response.$ref.replace('#/components/responses/', '');
+}
+
+function getErrorSchema(
+  from: Document,
+  opPath: string,
+  method: 'get' | 'post',
+): SchemaObject {
+  const responseName = getErrorResponseName(from, opPath, method);
+  const response = getResponseComponent(from, responseName);
+  if (!response) {
+    throw new Error(`No response component "${responseName}"`);
   }
   const schema = response.content?.['application/json']?.schema;
   if (!schema) {
     throw new Error(`No schema on ${method} ${opPath}`);
   }
-  const envelope = requireSchemaObject(schema, doc, 'error envelope');
+  const envelope = requireSchemaObject(schema, from, 'error envelope');
   const error = envelope.properties?.['error'];
   if (!error) {
     throw new Error('Error envelope has no `error` property');
   }
-  return requireSchemaObject(error, doc, 'error shape');
+  return requireSchemaObject(error, from, 'error shape');
 }
 
-/** The `oneOf` members of a procedure's error shape */
+/** The `oneOf` members of a procedure's error shape, with `$ref`s resolved */
 function getErrorVariants(
+  from: Document,
   opPath: string,
   method: 'get' | 'post',
 ): SchemaObject[] {
-  const error = getErrorSchema(opPath, method);
+  const error = getErrorSchema(from, opPath, method);
   return (error.oneOf ?? [error]).map((variant) =>
-    requireSchemaObject(variant, doc, 'error variant'),
+    requireSchemaObject(variant, from, 'error variant'),
   );
 }
 
 /** The keys a variant's `data` adds on top of the ones every shape has */
-function getExtraDataKeys(variant: SchemaObject): string[] {
+function getExtraDataKeys(from: Document, variant: SchemaObject): string[] {
   const data = requireSchemaObject(
     variant.properties?.['data'] ?? {},
-    doc,
+    from,
     'error data',
   );
   return Object.keys(data.properties ?? {}).filter(
     (key) => !BASE_DATA_KEYS.includes(key),
   );
+}
+
+/**
+ * A payload matching two branches of a `oneOf` satisfies none of them, so no
+ * two branches may describe the same shape.
+ */
+function expectDistinctVariants(variants: SchemaObject[], label: string) {
+  const seen = new Set(variants.map((variant) => JSON.stringify(variant)));
+  expect(seen.size, `${label} has a repeated variant`).toBe(variants.length);
 }
 
 describe('per-procedure error shapes', () => {
@@ -100,7 +133,7 @@ describe('per-procedure error shapes', () => {
   });
 
   it('keeps the shared Error response for procedures without `.errors()`', () => {
-    const response = getDefaultResponse('plain', 'get');
+    const response = getDefaultResponse(doc, 'plain', 'get');
     expect(response).toEqual({ $ref: '#/components/responses/Error' });
 
     // ...and that shared response is the router-wide shape
@@ -123,22 +156,22 @@ describe('per-procedure error shapes', () => {
     expect(Object.keys(data.properties ?? {})).not.toContain('kind');
   });
 
-  it('inlines a union for procedures with their own `.errors()`', () => {
-    const variants = getErrorVariants('limited', 'post');
+  it('unions the router-wide shape in for procedures with their own `.errors()`', () => {
+    const variants = getErrorVariants(doc, 'limited', 'post');
     expect(variants).toHaveLength(2);
 
     // one variant is the router-wide shape (the handler declined), the other
     // is the handler's own - built from the default shape, so no `requestId`
-    const keys = variants.map(getExtraDataKeys);
+    const keys = variants.map((variant) => getExtraDataKeys(doc, variant));
     expect(keys).toContainEqual(['kind', 'retryAfterMs']);
     expect(keys).toContainEqual(['requestId']);
   });
 
   it('unions every shape in a chain of `.errors()` handlers', () => {
-    const variants = getErrorVariants('chained', 'post');
+    const variants = getErrorVariants(doc, 'chained', 'post');
 
     // rate-limit + conflict + the router-wide shape both handlers can decline to
-    expect(variants.map(getExtraDataKeys)).toEqual([
+    expect(variants.map((variant) => getExtraDataKeys(doc, variant))).toEqual([
       ['requestId'],
       ['kind', 'retryAfterMs'],
       ['kind', 'conflictsWith'],
@@ -146,25 +179,75 @@ describe('per-procedure error shapes', () => {
   });
 
   it('collapses chained handlers that declare the same shape', () => {
-    const variants = getErrorVariants('chainedDuplicate', 'post');
+    const variants = getErrorVariants(doc, 'chainedDuplicate', 'post');
 
     // the two handlers are identical, so the union is the same as a single one
-    expect(variants.map(getExtraDataKeys)).toEqual([
+    expect(variants.map((variant) => getExtraDataKeys(doc, variant))).toEqual([
       ['requestId'],
       ['kind', 'retryAfterMs'],
     ]);
-    expect(variants).toEqual(getErrorVariants('limited', 'post'));
+    expect(variants).toEqual(getErrorVariants(doc, 'limited', 'post'));
   });
 
   it('treats one handler returning several shapes like a chain of handlers', () => {
-    expect(getErrorVariants('multiShape', 'post')).toEqual(
-      getErrorVariants('chained', 'post'),
+    expect(getErrorVariants(doc, 'multiShape', 'post')).toEqual(
+      getErrorVariants(doc, 'chained', 'post'),
     );
+  });
+
+  it('gives each distinct error shape one response component', () => {
+    // procedures raising the same shapes point at the same component instead
+    // of each carrying their own copy of the union
+    expect(getErrorResponseName(doc, 'chainedDuplicate', 'post')).toBe(
+      getErrorResponseName(doc, 'limited', 'post'),
+    );
+    expect(getErrorResponseName(doc, 'multiShape', 'post')).toBe(
+      getErrorResponseName(doc, 'chained', 'post'),
+    );
+    expect(getErrorResponseName(doc, 'limited', 'post')).not.toBe(
+      getErrorResponseName(doc, 'chained', 'post'),
+    );
+  });
+
+  it('names the shape a component so a client can import it once', () => {
+    const envelope = requireSchemaObject(
+      requireResponseComponentSchema(doc, 'LimitedError'),
+      doc,
+      'error envelope',
+    );
+    expect(envelope.properties?.['error']).toEqual({
+      $ref: '#/components/schemas/LimitedErrorShape',
+    });
+  });
+
+  it('describes each error shape in one place', () => {
+    // no operation carries its own copy of a union...
+    const operations: [string, 'get' | 'post'][] = [
+      ['plain', 'get'],
+      ['limited', 'post'],
+      ['chained', 'post'],
+      ['chainedDuplicate', 'post'],
+      ['multiShape', 'post'],
+      ['neverClaims', 'post'],
+    ];
+    for (const [opPath, method] of operations) {
+      const response = getDefaultResponse(doc, opPath, method);
+      expect(isRef(response), `${opPath} inlines its error response`).toBe(
+        true,
+      );
+    }
+
+    // ...and six procedures raise three shapes between them
+    expect(Object.keys(doc.components?.responses ?? {})).toEqual([
+      'Error',
+      'LimitedError',
+      'ChainedError',
+    ]);
   });
 
   it('keeps the shared Error response when a handler never claims an error', () => {
     // the handler only ever returns `undefined`, so the shape never widens
-    const response = getDefaultResponse('neverClaims', 'post');
+    const response = getDefaultResponse(doc, 'neverClaims', 'post');
     expect(response).toEqual({ $ref: '#/components/responses/Error' });
   });
 
@@ -175,13 +258,8 @@ describe('per-procedure error shapes', () => {
       'chainedDuplicate',
       'multiShape',
     ]) {
-      const variants = getErrorVariants(opPath, 'post');
-
-      // a repeated branch would let one payload match more than one of them
-      const seen = new Set(variants.map((v) => JSON.stringify(v)));
-      expect(seen.size, `${opPath} has a repeated variant`).toBe(
-        variants.length,
-      );
+      const variants = getErrorVariants(doc, opPath, 'post');
+      expectDistinctVariants(variants, opPath);
 
       for (const variant of variants) {
         // ...and closed shapes keep a payload from matching a sibling branch
@@ -227,6 +305,10 @@ describe('per-procedure error shapes', () => {
       expectTypeOf(chained.conflictsWith).toEqualTypeOf<string>();
     }
 
+    // the shape is a named component, so a client can import it once instead
+    // of reaching into each operation's error type
+    expectTypeOf<LimitedError['error']>().toEqualTypeOf<LimitedErrorShape>();
+
     // the collapsed and never-claiming cases are indistinguishable from the
     // single-handler and no-handler ones
     expectTypeOf<ChainedDuplicateError>().toEqualTypeOf<LimitedError>();
@@ -254,42 +336,39 @@ describe('with the default error formatter', () => {
     });
   });
 
-  it('still inlines a union for procedures with their own `.errors()`', () => {
-    const operation = requireOperation(defaultDoc, 'limited', 'post');
-    const response = operation.responses?.['default'];
+  it('still gives procedures with their own `.errors()` their own response', () => {
+    const response = getDefaultResponse(defaultDoc, 'limited', 'post');
     expect(response).not.toEqual({ $ref: '#/components/responses/Error' });
 
-    if (!response || isRef(response)) {
-      throw new Error('Expected an inline response on POST limited');
-    }
-    const envelope = requireSchemaObject(
-      response.content?.['application/json']?.schema ?? {},
-      defaultDoc,
-      'error envelope',
+    const variants = getErrorVariants(defaultDoc, 'limited', 'post');
+    const extraKeys = variants.map((variant) =>
+      getExtraDataKeys(defaultDoc, variant),
     );
-    const error = requireSchemaObject(
-      envelope.properties?.['error'] ?? {},
-      defaultDoc,
-      'error shape',
-    );
-
-    const variants = (error.oneOf ?? [error]).map((variant) =>
-      requireSchemaObject(variant, defaultDoc, 'error variant'),
-    );
-    const extraKeys = variants.map((variant) => {
-      const data = requireSchemaObject(
-        variant.properties?.['data'] ?? {},
-        defaultDoc,
-        'error data',
-      );
-      return Object.keys(data.properties ?? {}).filter(
-        (key) => !BASE_DATA_KEYS.includes(key),
-      );
-    });
 
     // the router-wide shape plus the handler's own
     expect(extraKeys).toContainEqual([]);
     expect(extraKeys).toContainEqual(['kind', 'retryAfterMs']);
+  });
+
+  it('emits mutually exclusive `oneOf` variants', () => {
+    // the router-wide shape is a named component here, so a handler shape that
+    // renders to the same schema reaches the union as a `$ref` alongside the
+    // inline copy - one payload would then match both branches and satisfy
+    // neither
+    for (const opPath of ['limited', 'sanitized']) {
+      expectDistinctVariants(
+        getErrorVariants(defaultDoc, opPath, 'post'),
+        opPath,
+      );
+    }
+  });
+
+  it('collapses a handler shape that renders like the router-wide one', () => {
+    // the handler only rewrites `message`, so its shape carries the same keys
+    // and the procedure adds nothing to the shared response
+    expect(getDefaultResponse(defaultDoc, 'sanitized', 'post')).toEqual({
+      $ref: '#/components/responses/Error',
+    });
   });
 
   it('generates a valid document', async () => {

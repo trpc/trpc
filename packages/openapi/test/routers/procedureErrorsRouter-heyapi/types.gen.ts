@@ -4,6 +4,93 @@ export type ClientOptions = {
     baseUrl: `${string}://${string}` | (string & {});
 };
 
+export type LimitedErrorShape = {
+    data: {
+        requestId: string;
+        code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
+        httpStatus: number;
+        /**
+         * Path to the procedure that threw the error
+         */
+        path?: string;
+        /**
+         * Stack trace of the error (only in development)
+         */
+        stack?: string;
+    };
+    message: string;
+    code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
+} | {
+    data: {
+        kind: 'RATE_LIMIT';
+        retryAfterMs: number;
+        code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
+        httpStatus: number;
+        /**
+         * Path to the procedure that threw the error
+         */
+        path?: string;
+        /**
+         * Stack trace of the error (only in development)
+         */
+        stack?: string;
+    };
+    message: string;
+    code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
+};
+
+export type ChainedErrorShape = {
+    data: {
+        requestId: string;
+        code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
+        httpStatus: number;
+        /**
+         * Path to the procedure that threw the error
+         */
+        path?: string;
+        /**
+         * Stack trace of the error (only in development)
+         */
+        stack?: string;
+    };
+    message: string;
+    code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
+} | {
+    data: {
+        kind: 'RATE_LIMIT';
+        retryAfterMs: number;
+        code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
+        httpStatus: number;
+        /**
+         * Path to the procedure that threw the error
+         */
+        path?: string;
+        /**
+         * Stack trace of the error (only in development)
+         */
+        stack?: string;
+    };
+    message: string;
+    code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
+} | {
+    data: {
+        kind: 'CONFLICT';
+        conflictsWith: string;
+        code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
+        httpStatus: number;
+        /**
+         * Path to the procedure that threw the error
+         */
+        path?: string;
+        /**
+         * Stack trace of the error (only in development)
+         */
+        stack?: string;
+    };
+    message: string;
+    code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
+};
+
 export type PlainData = {
     body?: never;
     path?: never;
@@ -69,40 +156,7 @@ export type LimitedErrors = {
      * Error response
      */
     default: {
-        error: {
-            data: {
-                requestId: string;
-                code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
-                httpStatus: number;
-                /**
-                 * Path to the procedure that threw the error
-                 */
-                path?: string;
-                /**
-                 * Stack trace of the error (only in development)
-                 */
-                stack?: string;
-            };
-            message: string;
-            code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
-        } | {
-            data: {
-                kind: 'RATE_LIMIT';
-                retryAfterMs: number;
-                code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
-                httpStatus: number;
-                /**
-                 * Path to the procedure that threw the error
-                 */
-                path?: string;
-                /**
-                 * Stack trace of the error (only in development)
-                 */
-                stack?: string;
-            };
-            message: string;
-            code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
-        };
+        error: LimitedErrorShape;
     };
 };
 
@@ -137,57 +191,7 @@ export type ChainedErrors = {
      * Error response
      */
     default: {
-        error: {
-            data: {
-                requestId: string;
-                code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
-                httpStatus: number;
-                /**
-                 * Path to the procedure that threw the error
-                 */
-                path?: string;
-                /**
-                 * Stack trace of the error (only in development)
-                 */
-                stack?: string;
-            };
-            message: string;
-            code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
-        } | {
-            data: {
-                kind: 'RATE_LIMIT';
-                retryAfterMs: number;
-                code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
-                httpStatus: number;
-                /**
-                 * Path to the procedure that threw the error
-                 */
-                path?: string;
-                /**
-                 * Stack trace of the error (only in development)
-                 */
-                stack?: string;
-            };
-            message: string;
-            code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
-        } | {
-            data: {
-                kind: 'CONFLICT';
-                conflictsWith: string;
-                code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
-                httpStatus: number;
-                /**
-                 * Path to the procedure that threw the error
-                 */
-                path?: string;
-                /**
-                 * Stack trace of the error (only in development)
-                 */
-                stack?: string;
-            };
-            message: string;
-            code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
-        };
+        error: ChainedErrorShape;
     };
 };
 
@@ -222,40 +226,7 @@ export type ChainedDuplicateErrors = {
      * Error response
      */
     default: {
-        error: {
-            data: {
-                requestId: string;
-                code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
-                httpStatus: number;
-                /**
-                 * Path to the procedure that threw the error
-                 */
-                path?: string;
-                /**
-                 * Stack trace of the error (only in development)
-                 */
-                stack?: string;
-            };
-            message: string;
-            code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
-        } | {
-            data: {
-                kind: 'RATE_LIMIT';
-                retryAfterMs: number;
-                code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
-                httpStatus: number;
-                /**
-                 * Path to the procedure that threw the error
-                 */
-                path?: string;
-                /**
-                 * Stack trace of the error (only in development)
-                 */
-                stack?: string;
-            };
-            message: string;
-            code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
-        };
+        error: LimitedErrorShape;
     };
 };
 
@@ -341,57 +312,7 @@ export type MultiShapeErrors = {
      * Error response
      */
     default: {
-        error: {
-            data: {
-                requestId: string;
-                code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
-                httpStatus: number;
-                /**
-                 * Path to the procedure that threw the error
-                 */
-                path?: string;
-                /**
-                 * Stack trace of the error (only in development)
-                 */
-                stack?: string;
-            };
-            message: string;
-            code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
-        } | {
-            data: {
-                kind: 'RATE_LIMIT';
-                retryAfterMs: number;
-                code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
-                httpStatus: number;
-                /**
-                 * Path to the procedure that threw the error
-                 */
-                path?: string;
-                /**
-                 * Stack trace of the error (only in development)
-                 */
-                stack?: string;
-            };
-            message: string;
-            code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
-        } | {
-            data: {
-                kind: 'CONFLICT';
-                conflictsWith: string;
-                code: 'PARSE_ERROR' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR' | 'NOT_IMPLEMENTED' | 'BAD_GATEWAY' | 'SERVICE_UNAVAILABLE' | 'GATEWAY_TIMEOUT' | 'UNAUTHORIZED' | 'PAYMENT_REQUIRED' | 'FORBIDDEN' | 'NOT_FOUND' | 'METHOD_NOT_SUPPORTED' | 'TIMEOUT' | 'CONFLICT' | 'PRECONDITION_FAILED' | 'PAYLOAD_TOO_LARGE' | 'UNSUPPORTED_MEDIA_TYPE' | 'UNPROCESSABLE_CONTENT' | 'PRECONDITION_REQUIRED' | 'TOO_MANY_REQUESTS' | 'CLIENT_CLOSED_REQUEST';
-                httpStatus: number;
-                /**
-                 * Path to the procedure that threw the error
-                 */
-                path?: string;
-                /**
-                 * Stack trace of the error (only in development)
-                 */
-                stack?: string;
-            };
-            message: string;
-            code: -32700 | -32600 | -32603 | -32001 | -32002 | -32003 | -32004 | -32005 | -32008 | -32009 | -32012 | -32013 | -32015 | -32022 | -32028 | -32029 | -32099;
-        };
+        error: ChainedErrorShape;
     };
 };
 

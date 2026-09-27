@@ -114,118 +114,7 @@
             }
           },
           "default": {
-            "description": "Error response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "oneOf": [
-                        {
-                          "$ref": "#/components/schemas/DefaultErrorShape"
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "data": {
-                              "type": "object",
-                              "properties": {
-                                "kind": {
-                                  "type": "string",
-                                  "const": "RATE_LIMIT"
-                                },
-                                "retryAfterMs": {
-                                  "type": "number"
-                                },
-                                "code": {
-                                  "type": "string",
-                                  "enum": [
-                                    "PARSE_ERROR",
-                                    "BAD_REQUEST",
-                                    "INTERNAL_SERVER_ERROR",
-                                    "NOT_IMPLEMENTED",
-                                    "BAD_GATEWAY",
-                                    "SERVICE_UNAVAILABLE",
-                                    "GATEWAY_TIMEOUT",
-                                    "UNAUTHORIZED",
-                                    "PAYMENT_REQUIRED",
-                                    "FORBIDDEN",
-                                    "NOT_FOUND",
-                                    "METHOD_NOT_SUPPORTED",
-                                    "TIMEOUT",
-                                    "CONFLICT",
-                                    "PRECONDITION_FAILED",
-                                    "PAYLOAD_TOO_LARGE",
-                                    "UNSUPPORTED_MEDIA_TYPE",
-                                    "UNPROCESSABLE_CONTENT",
-                                    "PRECONDITION_REQUIRED",
-                                    "TOO_MANY_REQUESTS",
-                                    "CLIENT_CLOSED_REQUEST"
-                                  ]
-                                },
-                                "httpStatus": {
-                                  "type": "number"
-                                },
-                                "path": {
-                                  "type": "string",
-                                  "description": "Path to the procedure that threw the error"
-                                },
-                                "stack": {
-                                  "type": "string",
-                                  "description": "Stack trace of the error (only in development)"
-                                }
-                              },
-                              "required": [
-                                "kind",
-                                "retryAfterMs",
-                                "code",
-                                "httpStatus"
-                              ],
-                              "additionalProperties": false
-                            },
-                            "message": {
-                              "type": "string"
-                            },
-                            "code": {
-                              "type": "number",
-                              "enum": [
-                                -32700,
-                                -32600,
-                                -32603,
-                                -32001,
-                                -32002,
-                                -32003,
-                                -32004,
-                                -32005,
-                                -32008,
-                                -32009,
-                                -32012,
-                                -32013,
-                                -32015,
-                                -32022,
-                                -32028,
-                                -32029,
-                                -32099
-                              ]
-                            }
-                          },
-                          "required": [
-                            "data",
-                            "message",
-                            "code"
-                          ],
-                          "additionalProperties": false
-                        }
-                      ]
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ]
-                }
-              }
-            }
+            "$ref": "#/components/responses/LimitedError"
           }
         },
         "requestBody": {
@@ -241,6 +130,74 @@
                 },
                 "required": [
                   "message"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sanitized": {
+      "post": {
+        "operationId": "sanitized",
+        "description": "Its handler's shape is the router-wide one with a different message",
+        "tags": [
+          "sanitized"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "ok"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id"
                 ],
                 "additionalProperties": false
               }
@@ -337,6 +294,105 @@
           "httpStatus"
         ],
         "additionalProperties": false
+      },
+      "LimitedErrorShape": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/DefaultErrorShape"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "RATE_LIMIT"
+                  },
+                  "retryAfterMs": {
+                    "type": "number"
+                  },
+                  "code": {
+                    "type": "string",
+                    "enum": [
+                      "PARSE_ERROR",
+                      "BAD_REQUEST",
+                      "INTERNAL_SERVER_ERROR",
+                      "NOT_IMPLEMENTED",
+                      "BAD_GATEWAY",
+                      "SERVICE_UNAVAILABLE",
+                      "GATEWAY_TIMEOUT",
+                      "UNAUTHORIZED",
+                      "PAYMENT_REQUIRED",
+                      "FORBIDDEN",
+                      "NOT_FOUND",
+                      "METHOD_NOT_SUPPORTED",
+                      "TIMEOUT",
+                      "CONFLICT",
+                      "PRECONDITION_FAILED",
+                      "PAYLOAD_TOO_LARGE",
+                      "UNSUPPORTED_MEDIA_TYPE",
+                      "UNPROCESSABLE_CONTENT",
+                      "PRECONDITION_REQUIRED",
+                      "TOO_MANY_REQUESTS",
+                      "CLIENT_CLOSED_REQUEST"
+                    ]
+                  },
+                  "httpStatus": {
+                    "type": "number"
+                  },
+                  "path": {
+                    "type": "string",
+                    "description": "Path to the procedure that threw the error"
+                  },
+                  "stack": {
+                    "type": "string",
+                    "description": "Stack trace of the error (only in development)"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "retryAfterMs",
+                  "code",
+                  "httpStatus"
+                ],
+                "additionalProperties": false
+              },
+              "message": {
+                "type": "string"
+              },
+              "code": {
+                "type": "number",
+                "enum": [
+                  -32700,
+                  -32600,
+                  -32603,
+                  -32001,
+                  -32002,
+                  -32003,
+                  -32004,
+                  -32005,
+                  -32008,
+                  -32009,
+                  -32012,
+                  -32013,
+                  -32015,
+                  -32022,
+                  -32028,
+                  -32029,
+                  -32099
+                ]
+              }
+            },
+            "required": [
+              "data",
+              "message",
+              "code"
+            ],
+            "additionalProperties": false
+          }
+        ]
       }
     },
     "responses": {
@@ -349,6 +405,24 @@
               "properties": {
                 "error": {
                   "$ref": "#/components/schemas/DefaultErrorShape"
+                }
+              },
+              "required": [
+                "error"
+              ]
+            }
+          }
+        }
+      },
+      "LimitedError": {
+        "description": "Error response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "$ref": "#/components/schemas/LimitedErrorShape"
                 }
               },
               "required": [

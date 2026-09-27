@@ -24,6 +24,14 @@ const rateLimited = t.procedure.errors((opts) => {
   return undefined;
 });
 
+/** Rewrites the message but keeps the router-wide shape's keys */
+const sanitized = t.procedure.errors((opts) => {
+  if (opts.error.code === 'INTERNAL_SERVER_ERROR') {
+    return { ...opts.shape, message: 'Internal error' };
+  }
+  return undefined;
+});
+
 export const DefaultErrorFormatterRouter = t.router({
   /** Uses the router-wide error shape only */
   plain: t.procedure
@@ -32,6 +40,10 @@ export const DefaultErrorFormatterRouter = t.router({
   /** Can additionally fail with a rate-limit error */
   limited: rateLimited
     .input(z.object({ message: z.string() }))
+    .mutation(() => ({ ok: true })),
+  /** Its handler's shape is the router-wide one with a different message */
+  sanitized: sanitized
+    .input(z.object({ id: z.string() }))
     .mutation(() => ({ ok: true })),
 });
 

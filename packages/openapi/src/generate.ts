@@ -12,6 +12,7 @@ import type {
   OperationObject,
   PathItemObject,
   PathsObject,
+  ResponseObject,
   SchemaObject,
   ServerObject,
 } from './types';
@@ -451,7 +452,7 @@ function convertUnionType(
     schemas.push({ type: 'null' });
   }
 
-  const distinctSchemas = dedupeSchemas(schemas);
+  const distinctSchemas = dedupeSchemas(schemas, ctx.schemas);
   if (distinctSchemas.length === 0) {
     return {};
   }
@@ -480,17 +481,43 @@ function convertUnionType(
   return { oneOf: distinctSchemas };
 }
 
-function dedupeSchemas(schemas: SchemaObject[]): SchemaObject[] {
+function dedupeSchemas(
+  schemas: SchemaObject[],
+  components: Record<string, SchemaObject>,
+): SchemaObject[] {
   const seen = new Set<string>();
 
   return schemas.filter((schema) => {
-    const key = canonicalize(schema);
+    const key = canonicalize(resolveBareRef(schema, components));
     if (seen.has(key)) {
       return false;
     }
     seen.add(key);
     return true;
   });
+}
+
+/**
+ * A `$ref` on its own describes exactly the component it points at, so compare
+ * through the component - otherwise the same shape reached both by reference
+ * and inline looks like two distinct schemas.
+ */
+function resolveBareRef(
+  schema: SchemaObject,
+  components: Record<string, SchemaObject>,
+): SchemaObject {
+  if (!isBareRef(schema)) {
+    return schema;
+  }
+  const target = getReferencedSchema(schema, components);
+  // A component mid-conversion is still an empty placeholder (cyclic types);
+  // compare those by their `$ref` so distinct ones stay distinct.
+  return target && isNonEmptySchema(target) ? target : schema;
+}
+
+/** A `$ref` with no sibling keys, i.e. one that stands for its component. */
+function isBareRef(schema: SchemaObject): boolean {
+  return schema.$ref !== undefined && Object.keys(schema).length === 1;
 }
 
 function canonicalize(value: unknown): string {
@@ -980,7 +1007,12 @@ function getProcedureInputTypeName(type: ts.Type, path: string): string {
     }
   }
 
-  const fallbackName = path
+  return `${pascalCasePath(path) || 'Procedure'}Input`;
+}
+
+/** `user.getById` → `UserGetById`, for naming components after a procedure. */
+function pascalCasePath(path: string): string {
+  return path
     .split('.')
     .filter(Boolean)
     .map((segment) =>
@@ -991,8 +1023,6 @@ function getProcedureInputTypeName(type: ts.Type, path: string): string {
         .join(''),
     )
     .join('');
-
-  return `${fallbackName || 'Procedure'}Input`;
 }
 
 function isUnknownLikeType(type: ts.Type): boolean {
@@ -1520,6 +1550,7 @@ function wrapInSuccessEnvelope(
 function buildProcedureOperation(
   proc: ProcedureInfo,
   method: 'get' | 'post',
+  errorResponseRef: string,
 ): OperationObject {
   const [tag = proc.path] = proc.path.split('.');
   const operation: OperationObject = {
@@ -1535,16 +1566,7 @@ function buildProcedureOperation(
           },
         },
       },
-      default: proc.errorSchema
-        ? {
-            description: 'Error response',
-            content: {
-              'application/json': {
-                schema: wrapInErrorEnvelope(proc.errorSchema),
-              },
-            },
-          }
-        : { $ref: '#/components/responses/Error' },
+      default: { $ref: errorResponseRef },
     },
   };
 
@@ -1574,18 +1596,85 @@ function buildProcedureOperation(
   return operation;
 }
 
+function buildErrorResponse(schema: SchemaObject): ResponseObject {
+  return {
+    description: 'Error response',
+    content: {
+      'application/json': { schema: wrapInErrorEnvelope(schema) },
+    },
+  };
+}
+
+function buildErrorResponses(
+  procedures: ProcedureInfo[],
+  routerErrorSchema: SchemaObject,
+  schemas: Record<string, SchemaObject>,
+): {
+  responses: Record<string, ResponseObject>;
+  refByProcedurePath: Map<string, string>;
+} {
+  const responses: Record<string, ResponseObject> = {
+    Error: buildErrorResponse(routerErrorSchema),
+  };
+  const shapeKey = (schema: SchemaObject) =>
+    canonicalize(resolveBareRef(schema, schemas));
+  const refByShape = new Map<string, string>([
+    [shapeKey(routerErrorSchema), '#/components/responses/Error'],
+  ]);
+  const refByProcedurePath = new Map<string, string>();
+
+  for (const proc of procedures) {
+    if (!proc.errorSchema) {
+      continue;
+    }
+
+    const key = shapeKey(proc.errorSchema);
+    let ref = refByShape.get(key);
+    if (!ref) {
+      // A shape that already is a component needs no second name for it.
+      const name = `${pascalCasePath(proc.path) || 'Procedure'}Error`;
+      const shape = isBareRef(proc.errorSchema)
+        ? proc.errorSchema
+        : registerSchema(`${name}Shape`, proc.errorSchema, schemas);
+      const responseName = ensureUniqueName(name, responses);
+      responses[responseName] = buildErrorResponse(shape);
+      ref = `#/components/responses/${responseName}`;
+      refByShape.set(key, ref);
+    }
+    refByProcedurePath.set(proc.path, ref);
+  }
+
+  return { responses, refByProcedurePath };
+}
+
+function registerSchema(
+  name: string,
+  schema: SchemaObject,
+  schemas: Record<string, SchemaObject>,
+): SchemaObject {
+  const refName = ensureUniqueName(name, schemas);
+  schemas[refName] = schema;
+  return { $ref: `#/components/schemas/${refName}` };
+}
+
 function buildOpenAPIDocument(
   procedures: ProcedureInfo[],
   options: GenerateOptions,
   meta: RouterMeta = { errorSchema: null },
 ): Document {
   const paths: PathsObject = {};
+  const included = procedures.filter((proc) =>
+    shouldIncludeProcedureInOpenAPI(proc.type),
+  );
 
-  for (const proc of procedures) {
-    if (!shouldIncludeProcedureInOpenAPI(proc.type)) {
-      continue;
-    }
+  const schemas = meta.schemas ?? {};
+  const { responses: errorResponses, refByProcedurePath } = buildErrorResponses(
+    included,
+    meta.errorSchema ?? DEFAULT_ERROR_SCHEMA,
+    schemas,
+  );
 
+  for (const proc of included) {
     const opPath = `/${proc.path}`;
     const method = proc.type === 'query' ? 'get' : 'post';
 
@@ -1594,11 +1683,11 @@ function buildOpenAPIDocument(
     pathItem[method] = buildProcedureOperation(
       proc,
       method,
+      refByProcedurePath.get(proc.path) ?? '#/components/responses/Error',
     ) as PathItemObject[typeof method];
   }
 
-  const hasNamedSchemas =
-    meta.schemas !== undefined && Object.keys(meta.schemas).length > 0;
+  const hasNamedSchemas = Object.keys(schemas).length > 0;
 
   return {
     openapi: '3.1.1',
@@ -1610,19 +1699,8 @@ function buildOpenAPIDocument(
     ...(options.servers?.length ? { servers: options.servers } : {}),
     paths,
     components: {
-      ...(hasNamedSchemas && meta.schemas ? { schemas: meta.schemas } : {}),
-      responses: {
-        Error: {
-          description: 'Error response',
-          content: {
-            'application/json': {
-              schema: wrapInErrorEnvelope(
-                meta.errorSchema ?? DEFAULT_ERROR_SCHEMA,
-              ),
-            },
-          },
-        },
-      },
+      ...(hasNamedSchemas ? { schemas } : {}),
+      responses: errorResponses,
     },
   };
 }
