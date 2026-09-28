@@ -14,29 +14,29 @@ on:
   workflow_dispatch:
     inputs:
       dist_tag:
-        description: 'NPM distribution tag'
+        description: "NPM distribution tag"
         required: true
         type: choice
-        default: 'latest'
+        default: "latest"
         options:
-          - 'latest'
-          - 'canary'
+          - "latest"
+          - "canary"
       version_bump:
-        description: 'Version bump type'
+        description: "Version bump type"
         required: true
         type: choice
         options:
-          - 'patch'
-          - 'minor'
+          - "patch"
+          - "minor"
   push:
     branches:
-      - 'main'
+      - "main"
     paths:
-      - '.github/setup/*'
-      - '.github/workflows/release-manual.yml'
-      - 'packages/**'
-      - '!packages/**/package.json'
-      - '!packages/test/**'
+      - ".github/setup/*"
+      - ".github/workflows/release.yml"
+      - "packages/**"
+      - "!packages/**/package.json"
+      - "!packages/test/**"
 
 jobs:
   publish:
