@@ -17,12 +17,12 @@ slug: /rpc
 
 The request's `Content-Type` header determines how tRPC parses the input. tRPC picks a handler by matching the header against the following, in order ([source](https://github.com/trpc/trpc/tree/main/packages/server/src/unstable-core-do-not-import/http/contentType.ts)):
 
-| `Content-Type`                                     | Allowed methods | Notes                                                                                                                                      |
-| ---------------------------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `application/json`                                  | `GET`, `POST`    | Default. `GET` requests always use this handler (even with no `Content-Type` header) so a query URL can be opened directly in a browser. |
-| `multipart/form-data`                               | `POST` only      | Other methods respond with `METHOD_NOT_SUPPORTED` (`405`).                                                                                |
-| `application/octet-stream`                          | `POST` only      | Other methods respond with `METHOD_NOT_SUPPORTED` (`405`).                                                                                |
-| anything else (or missing, on a non-`GET` request)  | —                | Responds with `UNSUPPORTED_MEDIA_TYPE` (`415`).                                                                                           |
+| `Content-Type`                                     | Allowed methods | Notes                                                                                                                                    |
+| -------------------------------------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `application/json`                                 | `GET`, `POST`   | Default. `GET` requests always use this handler (even with no `Content-Type` header) so a query URL can be opened directly in a browser. |
+| `multipart/form-data`                              | `POST` only     | Other methods respond with `METHOD_NOT_SUPPORTED` (`405`).                                                                               |
+| `application/octet-stream`                         | `POST` only     | Other methods respond with `METHOD_NOT_SUPPORTED` (`405`).                                                                               |
+| anything else (or missing, on a non-`GET` request) | —               | Responds with `UNSUPPORTED_MEDIA_TYPE` (`415`).                                                                                          |
 
 See [Content Types](/docs/server/non-json-content-types) for how to send `FormData` and binary (`File`/`Blob`/`Uint8Array`) inputs, and which client links support them.
 

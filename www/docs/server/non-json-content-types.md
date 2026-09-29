@@ -36,12 +36,12 @@ In addition to JSON, tRPC can use FormData, File, and other binary types as proc
 
 Not every client link supports every content type — batching requires a single JSON request body, so only `httpLink` can send `FormData` or binary input directly:
 
-| Link                                                              | `application/json` | `FormData`                | `File` / `Blob` / `Uint8Array` |
-| -------------------------------------------------------------------- | :------------------: | :--------------------------: | :--------------------------------: |
-| [`httpLink`](/docs/client/links/httpLink)                          | ✅                    | ✅ (mutations only)          | ✅ (mutations only)                |
-| [`httpBatchLink`](/docs/client/links/httpBatchLink)                 | ✅                    | ❌                            | ❌                                  |
-| [`httpBatchStreamLink`](/docs/client/links/httpBatchStreamLink)     | ✅                    | ❌                            | ❌                                  |
-| [`wsLink`](/docs/server/websockets)                                 | ✅                    | ❌                            | ❌                                  |
+| Link                                                            | `application/json` |     `FormData`      | `File` / `Blob` / `Uint8Array` |
+| --------------------------------------------------------------- | :----------------: | :-----------------: | :----------------------------: |
+| [`httpLink`](/docs/client/links/httpLink)                       |         ✅         | ✅ (mutations only) |      ✅ (mutations only)       |
+| [`httpBatchLink`](/docs/client/links/httpBatchLink)             |         ✅         |         ❌          |               ❌               |
+| [`httpBatchStreamLink`](/docs/client/links/httpBatchStreamLink) |         ✅         |         ❌          |               ❌               |
+| [`wsLink`](/docs/server/websockets)                             |         ✅         |         ❌          |               ❌               |
 
 If you use `httpBatchLink` or `httpBatchStreamLink` alongside non-JSON inputs, route those calls to `httpLink` with `splitLink` as shown below.
 
