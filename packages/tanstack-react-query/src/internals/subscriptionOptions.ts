@@ -212,13 +212,13 @@ export function useSubscription<TOutput, TError>(
         }));
       },
       onStopped: () => {
-        optsRef.current.onStopped?.();
         updateState((prev) => ({
           ...prev,
           status: 'idle',
           data: undefined,
           error: null,
         }));
+        optsRef.current.onStopped?.();
       },
       onConnectionStateChange: (result) => {
         optsRef.current.onConnectionStateChange?.(result);
