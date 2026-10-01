@@ -8,6 +8,7 @@ import { initTRPC } from '@trpc/server';
 import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { observable, tap } from '@trpc/server/observable';
+import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import/stream/utils/disposable';
 import { serve } from 'srvx';
 import { z } from 'zod';
 
@@ -29,8 +30,14 @@ const createContext = ({ req, resHeaders }: FetchCreateContextFnOptions) => {
 
 type Context = Awaited<ReturnType<typeof createContext>>;
 
-function createAppRouter() {
-  const t = initTRPC.context<Context>().create();
+type AppRouterServerOptions = {
+  jsonl?: {
+    contentType?: string;
+  };
+};
+
+function createAppRouter(opts?: AppRouterServerOptions) {
+  const t = initTRPC.context<Context>().create(opts);
   const router = t.router;
   const publicProcedure = t.procedure;
 
@@ -72,8 +79,44 @@ function createAppRouter() {
 
 type AppRouter = ReturnType<typeof createAppRouter>;
 
-async function startServer(endpoint = '') {
-  const router = createAppRouter();
+function createContentTypeSpy(onData?: (value: number) => void): {
+  contentTypes: string[];
+  link: TRPCLink<AppRouter>;
+} {
+  const contentTypes: string[] = [];
+  const link: TRPCLink<AppRouter> = () => {
+    return ({ next, op }) => {
+      return observable((observer) => {
+        const unsubscribe = next(op).subscribe({
+          next(value) {
+            onData?.(value.result.data as number);
+            contentTypes.push(
+              (
+                (value.context as { response: Response }).response.headers.get(
+                  'content-type',
+                ) ?? ''
+              ).split(';')[0]!,
+            );
+            observer.next(value);
+          },
+          error: observer.error,
+          complete() {
+            observer.complete();
+          },
+        });
+        return unsubscribe;
+      });
+    };
+  };
+
+  return { contentTypes, link };
+}
+
+async function startServer(
+  endpoint = '',
+  routerOptions?: AppRouterServerOptions,
+) {
+  const router = createAppRouter(routerOptions);
 
   const server = serve({
     port: 0,
@@ -142,28 +185,13 @@ describe('with default server', () => {
 
   test('streaming', async () => {
     const orderedResults: number[] = [];
-    const linkSpy: TRPCLink<AppRouter> = () => {
-      // here we just got initialized in the app - this happens once per app
-      // useful for storing cache for instance
-      return ({ next, op }) => {
-        // this is when passing the result to the next link
-        // each link needs to return an observable which propagates results
-        return observable((observer) => {
-          const unsubscribe = next(op).subscribe({
-            next(value) {
-              orderedResults.push(value.result.data as number);
-              observer.next(value);
-            },
-            error: observer.error,
-          });
-          return unsubscribe;
-        });
-      };
-    };
+    const { contentTypes, link } = createContentTypeSpy((value) => {
+      orderedResults.push(value);
+    });
 
     const client = createTRPCClient<AppRouter>({
       links: [
-        linkSpy,
+        link,
         httpBatchStreamLink({
           url: t.url,
           fetch: fetch as any,
@@ -179,6 +207,40 @@ describe('with default server', () => {
 
     expect(results).toEqual([3, 1, 2]);
     expect(orderedResults).toEqual([1, 2, 3]);
+    expect([...new Set(contentTypes)]).toEqual(['application/json']);
+  });
+
+  test.each([
+    'application/jsonl',
+    'application/x-ndjson',
+    'text/plain',
+  ] as const)('streaming can opt into %s content-type', async (contentType) => {
+    const server = await startServer('', {
+      jsonl: {
+        contentType,
+      },
+    });
+    await using custom = makeAsyncResource(server, server.close);
+    const { contentTypes, link } = createContentTypeSpy();
+
+    const client = createTRPCClient<AppRouter>({
+      links: [
+        link,
+        httpBatchStreamLink({
+          url: custom.url,
+          fetch: fetch as any,
+        }),
+      ],
+    });
+
+    const results = await Promise.all([
+      client.deferred.query({ wait: 3 }),
+      client.deferred.query({ wait: 1 }),
+      client.deferred.query({ wait: 2 }),
+    ]);
+
+    expect(results).toEqual([3, 1, 2]);
+    expect([...new Set(contentTypes)]).toEqual([contentType]);
   });
 
   test('query with headers', async () => {
