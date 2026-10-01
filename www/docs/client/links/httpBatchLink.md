@@ -125,7 +125,7 @@ const client = createTRPCClient<AppRouter>({
     httpBatchLink({
       url: 'http://localhost:3000',
       maxURLLength: 2083, // a suitable size
-      // alternatively, you can make all RPC-calls to be called with POST
+      // alternatively, you can make all RPC-calls to be called with POST (also requires `allowMethodOverride: true` on the server)
       // methodOverride: 'POST',
     }),
   ],
