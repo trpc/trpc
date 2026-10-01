@@ -46,7 +46,38 @@ import { jsonEncoder } from './wsEncoder';
  * Importing ws causes a build error
  * @see https://github.com/trpc/trpc/pull/5279
  */
-const WEBSOCKET_OPEN = 1; /* ws.WebSocket.OPEN */
+export const WEBSOCKET_OPEN = 1; /* ws.WebSocket.OPEN */
+
+/**
+ * A connected socket that can receive a reconnect notification.
+ * @internal
+ */
+export type ReconnectNotificationTarget = {
+  readyState: number;
+  send(data: Parameters<ws.WebSocket['send']>[0]): void;
+};
+
+/**
+ * Asks every open socket to reconnect, e.g. before the server goes down.
+ *
+ * Shared by the WebSocket and Fastify adapters so they emit the same payload.
+ * @internal
+ */
+export function broadcastReconnectNotificationToClients(
+  clients: Iterable<ReconnectNotificationTarget>,
+  encoder: Encoder = jsonEncoder,
+): void {
+  const response: TRPCReconnectNotification = {
+    id: null,
+    method: 'reconnect',
+  };
+  const data = encoder.encode(response);
+  for (const client of clients) {
+    if (client.readyState === WEBSOCKET_OPEN) {
+      client.send(data);
+    }
+  }
+}
 
 /**
  * @public
@@ -627,16 +658,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
 
   return {
     broadcastReconnectNotification: () => {
-      const response: TRPCReconnectNotification = {
-        id: null,
-        method: 'reconnect',
-      };
-      const data = encoder.encode(response);
-      for (const client of opts.wss.clients) {
-        if (client.readyState === WEBSOCKET_OPEN) {
-          client.send(data);
-        }
-      }
+      broadcastReconnectNotificationToClients(opts.wss.clients, encoder);
     },
   };
 }

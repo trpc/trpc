@@ -15,12 +15,25 @@ import type { AnyRouter } from '../../@trpc/server';
 import type { NodeHTTPCreateContextFnOptions } from '../node-http';
 // @trpc/server/ws
 import {
+  broadcastReconnectNotificationToClients,
   getWSConnectionHandler,
   handleKeepAlive,
-  type WSSHandlerOptions,
+  jsonEncoder,
 } from '../ws';
+import type { ReconnectNotificationTarget, WSSHandlerOptions } from '../ws';
 import type { FastifyHandlerOptions } from './fastifyRequestHandler';
 import { fastifyRequestHandler } from './fastifyRequestHandler';
+
+declare module 'fastify' {
+  interface FastifyInstance {
+    /**
+     * Ask every connected WebSocket client to reconnect, e.g. before shutting
+     * down the server. Only sends to clients when the plugin was registered
+     * with `useWSS: true`.
+     */
+    broadcastReconnectNotification: () => void;
+  }
+}
 
 export interface FastifyTRPCPluginOptions<TRouter extends AnyRouter> {
   prefix?: string;
@@ -68,15 +81,22 @@ export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
     await fastifyRequestHandler({ ...opts.trpcOptions, req, res, path });
   });
 
-  if (opts.useWSS) {
-    const trpcOptions =
-      opts.trpcOptions as unknown as WSSHandlerOptions<TRouter>;
+  const connectedClients = new Set<ReconnectNotificationTarget>();
+  const wssOptions = opts.trpcOptions as unknown as WSSHandlerOptions<TRouter>;
+  const encoder = wssOptions.experimental_encoder ?? jsonEncoder;
 
+  if (opts.useWSS) {
+    const trpcOptions = wssOptions;
     const onConnection = getWSConnectionHandler<TRouter>({
       ...trpcOptions,
     });
 
     fastify.get(prefix ?? '/', { websocket: true }, (socket, req) => {
+      connectedClients.add(socket);
+      socket.once('close', () => {
+        connectedClients.delete(socket);
+      });
+
       onConnection(socket, req.raw);
       if (trpcOptions?.keepAlive?.enabled) {
         const { pingMs, pongWaitMs } = trpcOptions.keepAlive;
@@ -84,6 +104,10 @@ export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
       }
     });
   }
+
+  fastify.decorate('broadcastReconnectNotification', () => {
+    broadcastReconnectNotificationToClients(connectedClients, encoder);
+  });
 
   done();
 }
