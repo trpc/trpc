@@ -205,3 +205,62 @@ function Users() {
   createUserMutation.mutate({ name: 'Jerry' });
 }
 ```
+
+### Migrating `abortOnUnmount`
+
+The classic integration takes `abortOnUnmount` when you create the client, which sets the default for every query — an individual query can still override it through its own `trpc` option
+
+```ts twoslash title="trpc.ts"
+// @filename: server/router.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+const appRouter = t.router({
+  greeting: t.procedure.input(z.object({ name: z.string() })).query(({ input }) => `Hello ${input.name}` as const),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: trpc.ts
+// ---cut---
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from './server/router';
+
+export const trpc = createTRPCReact<AppRouter>({
+  abortOnUnmount: true,
+});
+```
+
+`createTRPCContext()` takes no options, so there is no global equivalent. Set `abortOnUnmount` per query instead, in the same `trpc` option the classic integration uses per request
+
+```tsx twoslash
+// @filename: server/router.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+const appRouter = t.router({
+  greeting: t.procedure.input(z.object({ name: z.string() })).query(({ input }) => `Hello ${input.name}` as const),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: trpc.ts
+import { createTRPCContext } from '@trpc/tanstack-react-query';
+import type { AppRouter } from './server/router';
+export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+
+// @filename: component.tsx
+// ---cut---
+import { useQuery } from '@tanstack/react-query';
+import { useTRPC } from './trpc';
+
+function Users() {
+  const trpc = useTRPC();
+
+  const greetingQuery = useQuery(
+    trpc.greeting.queryOptions({ name: 'Jerry' }, { trpc: { abortOnUnmount: true } }),
+  );
+}
+```
+
+:::note
+@tanstack/react-query only supports aborting queries, so this applies to `queryOptions` and `infiniteQueryOptions`.
+:::
