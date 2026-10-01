@@ -25,7 +25,7 @@ export const GithubStarsButton = ({ className }: Props) => {
   return (
     <Button
       variant="secondary"
-      href="https://github.com/trpc/trpc/stargazers"
+      href="https://github.com/trpc/trpc"
       target="_blank"
       className={className}
     >
