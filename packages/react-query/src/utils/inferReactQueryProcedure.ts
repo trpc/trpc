@@ -26,11 +26,11 @@ export type InferQueryOptions<
 > = Omit<
   UseTRPCQueryOptions<
     inferTransformedProcedureOutput<TRoot, TProcedure>,
-    inferTransformedProcedureOutput<TRoot, TProcedure>,
+    TData,
     TRPCClientErrorLike<TRoot>,
     TData
   >,
-  'select' | 'queryFn'
+  'queryFn'
 >;
 
 /**
