@@ -63,7 +63,7 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
         const result = await untypedClient.query(
           ...getClientArgs(queryKey, actualOpts, {
             direction: queryFnContext.direction,
-            pageParam: queryFnContext.pageParam,
+            pageParam: queryFnContext.pageParam ?? opts?.initialCursor,
           }),
         );
 
@@ -138,7 +138,10 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
         queryKey,
         queryFn: ({ pageParam, direction }) => {
           return untypedClient.query(
-            ...getClientArgs(queryKey, opts, { pageParam, direction }),
+            ...getClientArgs(queryKey, opts, {
+              pageParam: pageParam ?? opts?.initialCursor,
+              direction,
+            }),
           );
         },
         initialPageParam: opts?.initialCursor ?? null,
@@ -159,7 +162,10 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
         queryKey,
         queryFn: ({ pageParam, direction }) => {
           return untypedClient.query(
-            ...getClientArgs(queryKey, opts, { pageParam, direction }),
+            ...getClientArgs(queryKey, opts, {
+              pageParam: pageParam ?? opts?.initialCursor,
+              direction,
+            }),
           );
         },
         initialPageParam: opts?.initialCursor ?? null,
