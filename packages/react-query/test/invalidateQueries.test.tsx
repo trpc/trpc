@@ -299,6 +299,46 @@ describe('invalidateQueries()', () => {
       expect(utils.container).toHaveTextContent(`mockPostQuery3:not-stale`);
     });
   });
+
+  test('invalidate() with a falsy input only matches that input', async () => {
+    const { trpc, App, queryClient } = factory;
+    function MyComponent() {
+      const emptyQuery = trpc.count.useQuery('', { staleTime: Infinity });
+      const testQuery = trpc.count.useQuery('test', { staleTime: Infinity });
+      const utils = trpc.useUtils();
+      return (
+        <>
+          <pre>emptyQuery:{emptyQuery.status}</pre>
+          <pre>testQuery:{testQuery.status}</pre>
+          <button
+            data-testid="invalidate-empty"
+            onClick={() => {
+              utils.count.invalidate('', { refetchType: 'none' });
+            }}
+          />
+        </>
+      );
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('emptyQuery:success');
+      expect(utils.container).toHaveTextContent('testQuery:success');
+    });
+
+    await userEvent.click(utils.getByTestId('invalidate-empty'));
+
+    const isInvalidated = (input: string) =>
+      queryClient.getQueryState([['count'], { input, type: 'query' }])
+        ?.isInvalidated;
+    expect(isInvalidated('')).toBe(true);
+    expect(isInvalidated('test')).toBe(false);
+  });
 });
 
 test('predicate type should be narrowed', () => {
