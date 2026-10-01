@@ -35,7 +35,7 @@ export function getQueryKeyInternal(
   // some parts of the path may be dot-separated, split them up
   const splitPath = path.flatMap((part) => part.split('.'));
 
-  if (!input && (!type || type === 'any')) {
+  if (typeof input === 'undefined' && (!type || type === 'any')) {
     // this matches also all mutations (see `getMutationKeyInternal`)
 
     // for `utils.invalidate()` to match all queries (including vanilla react-query)
