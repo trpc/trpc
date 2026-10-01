@@ -40,17 +40,31 @@ export function allAbortSignals(...signals: Maybe<AbortSignal>[]): AbortSignal {
 export function raceAbortSignals(
   ...signals: Maybe<AbortSignal>[]
 ): AbortSignal {
+  return raceAbortSignalsWithCleanup(...signals).signal;
+}
+
+// Completion can release input listeners without aborting a consumed response.
+export function raceAbortSignalsWithCleanup(...signals: Maybe<AbortSignal>[]) {
   const ac = new AbortController();
+  const cleanup = () => {
+    for (const signal of signals) {
+      signal?.removeEventListener('abort', onAbort);
+    }
+  };
+  const onAbort = () => {
+    cleanup();
+    ac.abort();
+  };
 
   for (const signal of signals) {
     if (signal?.aborted) {
-      ac.abort();
-    } else {
-      signal?.addEventListener('abort', () => ac.abort(), { once: true });
+      onAbort();
+      break;
     }
+    signal?.addEventListener('abort', onAbort, { once: true });
   }
 
-  return ac.signal;
+  return { signal: ac.signal, cleanup };
 }
 
 export function abortSignalToPromise(signal: AbortSignal): Promise<never> {
