@@ -128,6 +128,7 @@ export function sseStreamProducer<TValue = unknown>(
     // declared inside, they would not be freed until the next value is present.
     let value: null | TIteratorValue;
     let chunk: null | SSEvent;
+    let hasSentId = false;
 
     for await (value of iterable) {
       if (value === PING_SYM) {
@@ -135,9 +136,16 @@ export function sseStreamProducer<TValue = unknown>(
         continue;
       }
 
-      chunk = isTrackedEnvelope(value)
-        ? { id: value[0], data: value[1] }
-        : { data: value };
+      if (isTrackedEnvelope(value)) {
+        chunk = { id: value[0], data: value[1] };
+        hasSentId = true;
+      } else if (hasSentId) {
+        // EventSource keeps the last `id` for every following event until it is reset
+        chunk = { id: '', data: value };
+        hasSentId = false;
+      } else {
+        chunk = { data: value };
+      }
 
       chunk.data = JSON.stringify(serialize(chunk.data));
 
