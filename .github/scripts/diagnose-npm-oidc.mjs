@@ -113,7 +113,8 @@ async function main() {
   for (const [label, path] of [
     ['whoami', '/-/whoami'],
     ['package visibility', `/-/package/${ESCAPED}/visibility`],
-    ['stage listing', `/-/stage/package/${ESCAPED}`],
+    ['collaborators', `/-/package/${ESCAPED}/collaborators`],
+    ['staged versions', '/-/stage'],
   ]) {
     console.log(`\n-- ${label}: GET ${path}`);
     try {
