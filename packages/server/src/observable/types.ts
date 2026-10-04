@@ -5,8 +5,10 @@ export type UnsubscribeFn = () => void;
 interface Subscribable<TValue, TError> {
   subscribe(observer: Partial<Observer<TValue, TError>>): Unsubscribable;
 }
-export interface Observable<TValue, TError>
-  extends Subscribable<TValue, TError> {
+export interface Observable<TValue, TError> extends Subscribable<
+  TValue,
+  TError
+> {
   pipe(): Observable<TValue, TError>;
   pipe<TValue1, TError1>(
     op1: OperatorFunction<TValue, TError, TValue1, TError1>,

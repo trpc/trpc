@@ -58,8 +58,7 @@ export type WithTRPCSSROptions<TRouter extends AnyRouter> =
      * @see https://trpc.io/docs/client/nextjs/ssr
      */
     ssr:
-      | true
-      | ((opts: { ctx: NextPageContext }) => boolean | Promise<boolean>);
+      true | ((opts: { ctx: NextPageContext }) => boolean | Promise<boolean>);
     responseMeta?: (opts: {
       ctx: NextPageContext;
       clientErrors: TRPCClientError<TRouter>[];

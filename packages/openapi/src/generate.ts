@@ -12,6 +12,7 @@ import type {
   OperationObject,
   PathItemObject,
   PathsObject,
+  ResponseObject,
   SchemaObject,
   ServerObject,
 } from './types';
@@ -21,6 +22,7 @@ interface ProcedureInfo {
   type: 'query' | 'mutation' | 'subscription';
   inputSchema: SchemaObject | null;
   outputSchema: SchemaObject | null;
+  errorSchema: SchemaObject | null;
   description?: string;
 }
 
@@ -71,6 +73,59 @@ function isPrimitive(type: ts.Type): boolean {
 
 function isObjectType(type: ts.Type): boolean {
   return hasFlag(type, ts.TypeFlags.Object);
+}
+
+const STANDARD_FUNCTION_INTERFACES = new Set([
+  'Function',
+  'CallableFunction',
+  'NewableFunction',
+]);
+
+function isStandardFunctionInterface(type: ts.Type): boolean {
+  const symbol = type.getSymbol();
+  const name = symbol?.getName();
+  if (!name || !STANDARD_FUNCTION_INTERFACES.has(name)) {
+    return false;
+  }
+  return (
+    symbol?.declarations?.some((d) =>
+      /(^|[\\/])lib\.[^\\/]*\.d\.ts$/.test(d.getSourceFile().fileName),
+    ) ?? false
+  );
+}
+
+function isFunctionType(type: ts.Type): boolean {
+  return (
+    type.getCallSignatures().length > 0 ||
+    type.getConstructSignatures().length > 0 ||
+    isStandardFunctionInterface(type)
+  );
+}
+
+function hasFunctionMember(type: ts.Type): boolean {
+  if (isFunctionType(type)) {
+    return true;
+  }
+  return type.isUnion() && type.types.some(isFunctionType);
+}
+
+function isUnserialisableType(type: ts.Type): boolean {
+  if (isFunctionType(type)) {
+    return true;
+  }
+  if (!type.isUnion() || !type.types.some(isFunctionType)) {
+    return false;
+  }
+  // Once callables are dropped, a union of nothing but `null` / `undefined`
+  // describes no value worth emitting.
+  return !type.types.some(
+    (m) =>
+      !isFunctionType(m) &&
+      !hasFlag(
+        m,
+        ts.TypeFlags.Undefined | ts.TypeFlags.Void | ts.TypeFlags.Null,
+      ),
+  );
 }
 
 function isOptionalSymbol(sym: ts.Symbol): boolean {
@@ -339,7 +394,9 @@ function convertUnionType(
 
   // Strip undefined / void members (they make the field optional, not typed)
   const defined = members.filter(
-    (m) => !hasFlag(m, ts.TypeFlags.Undefined | ts.TypeFlags.Void),
+    (m) =>
+      !hasFlag(m, ts.TypeFlags.Undefined | ts.TypeFlags.Void) &&
+      !isFunctionType(m),
   );
   if (defined.length === 0) {
     return {};
@@ -395,32 +452,87 @@ function convertUnionType(
     schemas.push({ type: 'null' });
   }
 
-  if (schemas.length === 0) {
+  const distinctSchemas = dedupeSchemas(schemas, ctx.schemas);
+  if (distinctSchemas.length === 0) {
     return {};
   }
 
-  const [firstSchema] = schemas;
-  if (schemas.length === 1 && firstSchema !== undefined) {
+  const [firstSchema] = distinctSchemas;
+  if (distinctSchemas.length === 1 && firstSchema !== undefined) {
     return firstSchema;
   }
 
   // When all schemas are simple type-only schemas (no other properties),
   // collapse into a single `type` array. e.g. string | null → type: ["string", "null"]
-  if (schemas.every(isSimpleTypeSchema)) {
-    return { type: schemas.map((s) => s.type as string) };
+  if (distinctSchemas.every(isSimpleTypeSchema)) {
+    return { type: distinctSchemas.map((s) => s.type as string) };
   }
 
   // Detect discriminated unions: all oneOf members are objects sharing a common
   // required property whose value is a `const`.  If found, add a `discriminator`.
-  const discriminatorProp = detectDiscriminatorProperty(schemas);
+  const discriminatorProp = detectDiscriminatorProperty(distinctSchemas);
   if (discriminatorProp) {
     return {
-      oneOf: schemas,
+      oneOf: distinctSchemas,
       discriminator: { propertyName: discriminatorProp },
     };
   }
 
-  return { oneOf: schemas };
+  return { oneOf: distinctSchemas };
+}
+
+function dedupeSchemas(
+  schemas: SchemaObject[],
+  components: Record<string, SchemaObject>,
+): SchemaObject[] {
+  const seen = new Set<string>();
+
+  return schemas.filter((schema) => {
+    const key = canonicalize(resolveBareRef(schema, components));
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+}
+
+/**
+ * A `$ref` on its own describes exactly the component it points at, so compare
+ * through the component - otherwise the same shape reached both by reference
+ * and inline looks like two distinct schemas.
+ */
+function resolveBareRef(
+  schema: SchemaObject,
+  components: Record<string, SchemaObject>,
+): SchemaObject {
+  if (!isBareRef(schema)) {
+    return schema;
+  }
+  const target = getReferencedSchema(schema, components);
+  // A component mid-conversion is still an empty placeholder (cyclic types);
+  // compare those by their `$ref` so distinct ones stay distinct.
+  return target && isNonEmptySchema(target) ? target : schema;
+}
+
+/** A `$ref` with no sibling keys, i.e. one that stands for its component. */
+function isBareRef(schema: SchemaObject): boolean {
+  return schema.$ref !== undefined && Object.keys(schema).length === 1;
+}
+
+function canonicalize(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map(canonicalize).join(',')}]`;
+  }
+
+  if (value && typeof value === 'object') {
+    const entries = Object.entries(value)
+      .filter(([, v]) => v !== undefined)
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .map(([k, v]) => `${JSON.stringify(k)}:${canonicalize(v)}`);
+    return `{${entries.join(',')}}`;
+  }
+  return JSON.stringify(value) ?? 'undefined';
 }
 
 /**
@@ -446,11 +558,7 @@ function detectDiscriminatorProperty(schemas: SchemaObject[]): string | null {
   for (const prop of firstProps) {
     const allHaveConst = schemas.every((s) => {
       const propSchema = s.properties?.[prop];
-      return (
-        propSchema !== undefined &&
-        propSchema.const !== undefined &&
-        s.required?.includes(prop)
-      );
+      return propSchema?.const !== undefined && s.required?.includes(prop);
     });
     if (allHaveConst) {
       return prop;
@@ -697,6 +805,9 @@ function convertPlainObject(
     }
 
     const propType = checker.getTypeOfSymbol(prop);
+    if (isUnserialisableType(propType)) {
+      continue;
+    }
     const propSchema = typeToJsonSchema(propType, ctx, depth + 1);
 
     // Extract JSDoc comment from the property symbol as a description
@@ -706,7 +817,7 @@ function convertPlainObject(
     }
 
     properties[prop.name] = propSchema;
-    if (!isOptionalSymbol(prop)) {
+    if (!isOptionalSymbol(prop) && !hasFunctionMember(propType)) {
       required.push(prop.name);
     }
   }
@@ -726,7 +837,9 @@ function convertPlainObject(
       ctx,
       depth + 1,
     );
-  } else if (Object.keys(properties).length > 0) {
+  } else if (typeProps.length > 0) {
+    // Closed shape.  Stays closed even when every property was filtered out,
+    // so the result reads as "no keys" rather than "any keys".
     result.additionalProperties = false;
   }
 
@@ -795,6 +908,9 @@ function convertTypeToSchema(
     ctx.visited.delete(type);
     return result;
   }
+  if (isFunctionType(type)) {
+    return {};
+  }
   if (isObjectType(type)) {
     return convertObjectType(type, ctx, depth);
   }
@@ -813,6 +929,8 @@ interface WalkCtx {
   schemaCtx: SchemaCtx;
   /** Runtime descriptions keyed by procedure path (when a router instance is available). */
   runtimeDescriptions: Map<string, RuntimeDescriptions>;
+  /** The router-wide error shape, used to spot procedures that differ from it. */
+  routerErrorType: ts.Type | null;
 }
 
 /**
@@ -889,7 +1007,12 @@ function getProcedureInputTypeName(type: ts.Type, path: string): string {
     }
   }
 
-  const fallbackName = path
+  return `${pascalCasePath(path) || 'Procedure'}Input`;
+}
+
+/** `user.getById` → `UserGetById`, for naming components after a procedure. */
+function pascalCasePath(path: string): string {
+  return path
     .split('.')
     .filter(Boolean)
     .map((segment) =>
@@ -900,8 +1023,6 @@ function getProcedureInputTypeName(type: ts.Type, path: string): string {
         .join(''),
     )
     .join('');
-
-  return `${fallbackName || 'Procedure'}Input`;
 }
 
 function isUnknownLikeType(type: ts.Type): boolean {
@@ -1083,8 +1204,62 @@ function extractProcedure(def: ProcedureDef, ctx: WalkCtx): void {
     type: def.typeName as 'query' | 'mutation' | 'subscription',
     inputSchema,
     outputSchema,
+    errorSchema: extractProcedureErrorSchema($typesType, ctx),
     description: def.description,
   });
+}
+
+function extractProcedureErrorSchema(
+  $typesType: ts.Type,
+  ctx: WalkCtx,
+): SchemaObject | null {
+  const { schemaCtx } = ctx;
+  const errorSym = $typesType.getProperty('errorShape');
+  if (!errorSym) {
+    return null;
+  }
+
+  const { checker } = schemaCtx;
+  const errorType = checker.getTypeOfSymbol(errorSym);
+  if (
+    hasFlag(errorType, ts.TypeFlags.Any) ||
+    isUnknownLikeType(errorType) ||
+    addsNothingToRouterErrorType(errorType, ctx.routerErrorType, checker)
+  ) {
+    return null;
+  }
+
+  const schema = typeToJsonSchema(errorType, schemaCtx);
+  return isNonEmptySchema(schema) ? schema : null;
+}
+
+function addsNothingToRouterErrorType(
+  errorType: ts.Type,
+  routerErrorType: ts.Type | null,
+  checker: ts.TypeChecker,
+): boolean {
+  if (!routerErrorType) {
+    return false;
+  }
+  if (errorType === routerErrorType) {
+    return true;
+  }
+
+  const describe = (type: ts.Type) =>
+    checker.typeToString(
+      type,
+      undefined,
+      ts.TypeFormatFlags.NoTruncation |
+        ts.TypeFormatFlags.UseFullyQualifiedType,
+    );
+  const unionMembers = (type: ts.Type) =>
+    type.isUnion() ? type.types : [type];
+
+  const routerMembers = new Set(unionMembers(routerErrorType).map(describe));
+
+  return unionMembers(errorType).every((member) =>
+    routerMembers.has(describe(member)),
+  );
 }
 
 /** Extract the JSDoc comment text from a symbol, if any. */
@@ -1278,11 +1453,10 @@ function loadCompilerOptions(startDir: string): ts.CompilerOptions {
  * it to a JSON Schema.  Returns `null` when the path cannot be resolved
  * (e.g. older tRPC versions or missing type info).
  */
-function extractErrorSchema(
+function getRouterErrorType(
   routerType: ts.Type,
   checker: ts.TypeChecker,
-  schemaCtx: SchemaCtx,
-): SchemaObject | null {
+): ts.Type | null {
   const walk = (type: ts.Type, keys: string[]): ts.Type | null => {
     const [head, ...rest] = keys;
     if (!head) {
@@ -1301,11 +1475,20 @@ function extractErrorSchema(
     '$types',
     'errorShape',
   ]);
-  if (!errorShapeType) {
+  if (!errorShapeType || hasFlag(errorShapeType, ts.TypeFlags.Any)) {
     return null;
   }
 
-  if (hasFlag(errorShapeType, ts.TypeFlags.Any)) {
+  return errorShapeType;
+}
+
+function extractErrorSchema(
+  routerType: ts.Type,
+  checker: ts.TypeChecker,
+  schemaCtx: SchemaCtx,
+): SchemaObject | null {
+  const errorShapeType = getRouterErrorType(routerType, checker);
+  if (!errorShapeType) {
     return null;
   }
 
@@ -1315,6 +1498,14 @@ function extractErrorSchema(
 // ---------------------------------------------------------------------------
 // OpenAPI document builder
 // ---------------------------------------------------------------------------
+
+function wrapInErrorEnvelope(errorSchema: SchemaObject): SchemaObject {
+  return {
+    type: 'object',
+    properties: { error: errorSchema },
+    required: ['error'],
+  };
+}
 
 /** Fallback error schema when the router type doesn't expose an error shape. */
 const DEFAULT_ERROR_SCHEMA: SchemaObject = {
@@ -1359,6 +1550,7 @@ function wrapInSuccessEnvelope(
 function buildProcedureOperation(
   proc: ProcedureInfo,
   method: 'get' | 'post',
+  errorResponseRef: string,
 ): OperationObject {
   const [tag = proc.path] = proc.path.split('.');
   const operation: OperationObject = {
@@ -1374,7 +1566,7 @@ function buildProcedureOperation(
           },
         },
       },
-      default: { $ref: '#/components/responses/Error' },
+      default: { $ref: errorResponseRef },
     },
   };
 
@@ -1404,18 +1596,85 @@ function buildProcedureOperation(
   return operation;
 }
 
+function buildErrorResponse(schema: SchemaObject): ResponseObject {
+  return {
+    description: 'Error response',
+    content: {
+      'application/json': { schema: wrapInErrorEnvelope(schema) },
+    },
+  };
+}
+
+function buildErrorResponses(
+  procedures: ProcedureInfo[],
+  routerErrorSchema: SchemaObject,
+  schemas: Record<string, SchemaObject>,
+): {
+  responses: Record<string, ResponseObject>;
+  refByProcedurePath: Map<string, string>;
+} {
+  const responses: Record<string, ResponseObject> = {
+    Error: buildErrorResponse(routerErrorSchema),
+  };
+  const shapeKey = (schema: SchemaObject) =>
+    canonicalize(resolveBareRef(schema, schemas));
+  const refByShape = new Map<string, string>([
+    [shapeKey(routerErrorSchema), '#/components/responses/Error'],
+  ]);
+  const refByProcedurePath = new Map<string, string>();
+
+  for (const proc of procedures) {
+    if (!proc.errorSchema) {
+      continue;
+    }
+
+    const key = shapeKey(proc.errorSchema);
+    let ref = refByShape.get(key);
+    if (!ref) {
+      // A shape that already is a component needs no second name for it.
+      const name = `${pascalCasePath(proc.path) || 'Procedure'}Error`;
+      const shape = isBareRef(proc.errorSchema)
+        ? proc.errorSchema
+        : registerSchema(`${name}Shape`, proc.errorSchema, schemas);
+      const responseName = ensureUniqueName(name, responses);
+      responses[responseName] = buildErrorResponse(shape);
+      ref = `#/components/responses/${responseName}`;
+      refByShape.set(key, ref);
+    }
+    refByProcedurePath.set(proc.path, ref);
+  }
+
+  return { responses, refByProcedurePath };
+}
+
+function registerSchema(
+  name: string,
+  schema: SchemaObject,
+  schemas: Record<string, SchemaObject>,
+): SchemaObject {
+  const refName = ensureUniqueName(name, schemas);
+  schemas[refName] = schema;
+  return { $ref: `#/components/schemas/${refName}` };
+}
+
 function buildOpenAPIDocument(
   procedures: ProcedureInfo[],
   options: GenerateOptions,
   meta: RouterMeta = { errorSchema: null },
 ): Document {
   const paths: PathsObject = {};
+  const included = procedures.filter((proc) =>
+    shouldIncludeProcedureInOpenAPI(proc.type),
+  );
 
-  for (const proc of procedures) {
-    if (!shouldIncludeProcedureInOpenAPI(proc.type)) {
-      continue;
-    }
+  const schemas = meta.schemas ?? {};
+  const { responses: errorResponses, refByProcedurePath } = buildErrorResponses(
+    included,
+    meta.errorSchema ?? DEFAULT_ERROR_SCHEMA,
+    schemas,
+  );
 
+  for (const proc of included) {
     const opPath = `/${proc.path}`;
     const method = proc.type === 'query' ? 'get' : 'post';
 
@@ -1424,11 +1683,11 @@ function buildOpenAPIDocument(
     pathItem[method] = buildProcedureOperation(
       proc,
       method,
+      refByProcedurePath.get(proc.path) ?? '#/components/responses/Error',
     ) as PathItemObject[typeof method];
   }
 
-  const hasNamedSchemas =
-    meta.schemas !== undefined && Object.keys(meta.schemas).length > 0;
+  const hasNamedSchemas = Object.keys(schemas).length > 0;
 
   return {
     openapi: '3.1.1',
@@ -1440,23 +1699,8 @@ function buildOpenAPIDocument(
     ...(options.servers?.length ? { servers: options.servers } : {}),
     paths,
     components: {
-      ...(hasNamedSchemas && meta.schemas ? { schemas: meta.schemas } : {}),
-      responses: {
-        Error: {
-          description: 'Error response',
-          content: {
-            'application/json': {
-              schema: {
-                type: 'object',
-                properties: {
-                  error: meta.errorSchema ?? DEFAULT_ERROR_SCHEMA,
-                },
-                required: ['error'],
-              },
-            },
-          },
-        },
-      },
+      ...(hasNamedSchemas ? { schemas } : {}),
+      responses: errorResponses,
     },
   };
 }
@@ -1536,6 +1780,7 @@ export async function generateOpenAPIDocument(
     seen: new Set(),
     schemaCtx,
     runtimeDescriptions,
+    routerErrorType: getRouterErrorType(routerType, checker),
   };
   walkType({ type: routerType, ctx: walkCtx, currentPath: '' });
 

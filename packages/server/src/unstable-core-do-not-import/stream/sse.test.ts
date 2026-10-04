@@ -111,9 +111,9 @@ test('e2e, server-sent events (SSE)', async () => {
 
         await Promise.all([
           // Restart the server
-          await server.restart(),
+          server.restart(),
           // Wait for the EventSource to detect the error and reconnect
-          await new Promise<void>((resolve) => {
+          new Promise<void>((resolve) => {
             es!.addEventListener(
               'error',
               () => {

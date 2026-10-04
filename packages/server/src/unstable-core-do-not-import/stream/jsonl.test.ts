@@ -6,6 +6,7 @@ import type { ConsumerOnError, ProducerOnError } from './jsonl';
 import { jsonlStreamConsumer, jsonlStreamProducer } from './jsonl';
 import { createDeferred } from './utils/createDeferred';
 import { makeResource } from './utils/disposable';
+import { readableStreamFrom } from './utils/readableStreamFrom';
 
 test('encode/decode with superjson', async () => {
   const abortController = new AbortController();
@@ -709,6 +710,107 @@ test('regression: buffered chunks preserved on normal stream completion', async 
   // All buffered chunks should be delivered on normal completion
   expect(values).toEqual([0, 1, 2, 3, 4]);
   expect(abortController.signal.aborted).toBe(true);
+});
+
+async function collectLines(stream: ReadableStream<Uint8Array>) {
+  const decoder = new TextDecoder();
+  let text = '';
+  for await (const chunk of stream) {
+    text += decoder.decode(chunk, { stream: true });
+  }
+  text += decoder.decode();
+  return text.split('\n').filter((line) => line.length > 0);
+}
+
+function streamFromLines(lines: string[]): ReadableStream<Uint8Array> {
+  return readableStreamFrom(
+    run(async function* () {
+      yield new TextEncoder().encode(lines.map((line) => line + '\n').join(''));
+    }),
+  );
+}
+
+test('regression: iterable errors when stream ends cleanly mid-iteration', async () => {
+  const data = {
+    0: Promise.resolve({
+      [Symbol.asyncIterator]: async function* () {
+        yield 1;
+        yield 2;
+        yield 3;
+      },
+    }),
+  } as const;
+  const stream = jsonlStreamProducer({
+    data,
+    serialize: (v) => SuperJSON.serialize(v),
+  });
+
+  // head + promise resolution + 3 yields + return
+  const lines = await collectLines(stream);
+  expect(lines).toHaveLength(6);
+
+  // Simulate a proxy/gateway/deploy closing the response with a clean EOF
+  // after the second yield, before the iterable's return chunk arrives.
+  const [head] = await jsonlStreamConsumer<typeof data>({
+    from: streamFromLines(lines.slice(0, 4)),
+    deserialize: (v) => SuperJSON.deserialize(v),
+    abortController: new AbortController(),
+  });
+
+  const iterable = await head[0];
+  const received: number[] = [];
+  const error: unknown = await run(async () => {
+    for await (const item of iterable) {
+      received.push(item);
+    }
+  }).then(
+    () => {
+      throw new Error('expected iteration to error');
+    },
+    (cause: unknown) => cause,
+  );
+
+  expect(received).toEqual([1, 2]);
+  // Without the done-check this is `TypeError: value is not iterable` from
+  // destructuring `undefined` after reading past the end of the stream.
+  expect(error).not.toBeInstanceOf(TypeError);
+  expect(error).toBeInstanceOf(Error);
+  expect(error).toHaveProperty('message', 'Stream closed unexpectedly');
+});
+
+test('regression: promise rejects when stream ends cleanly before resolution', async () => {
+  const data = {
+    0: Promise.resolve({
+      deferred: Promise.resolve(42),
+    }),
+  } as const;
+  const stream = jsonlStreamProducer({
+    data,
+    serialize: (v) => SuperJSON.serialize(v),
+  });
+
+  // head + promise resolution + deferred resolution
+  const lines = await collectLines(stream);
+  expect(lines).toHaveLength(3);
+
+  // Clean EOF before the deferred promise's chunk arrives.
+  const [head] = await jsonlStreamConsumer<typeof data>({
+    from: streamFromLines(lines.slice(0, 2)),
+    deserialize: (v) => SuperJSON.deserialize(v),
+    abortController: new AbortController(),
+  });
+
+  const value = await head[0];
+  const error: unknown = await value.deferred.then(
+    () => {
+      throw new Error('expected rejection');
+    },
+    (cause: unknown) => cause,
+  );
+
+  expect(error).not.toBeInstanceOf(TypeError);
+  expect(error).toBeInstanceOf(Error);
+  expect(error).toHaveProperty('message', 'Stream closed unexpectedly');
 });
 
 // https://github.com/trpc/trpc/issues/7209

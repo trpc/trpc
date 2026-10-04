@@ -1,6 +1,6 @@
 {
   "name": "@trpc/upgrade",
-  "version": "11.18.0",
+  "version": "11.21.0",
   "description": "Upgrade scripts for tRPC",
   "author": "juliusmarminge",
   "license": "MIT",
@@ -33,21 +33,21 @@
   ],
   "dependencies": {
     "@bomb.sh/args": "0.3.1",
-    "@clack/prompts": "1.2.0",
-    "jscodeshift": "17.3.0",
-    "typescript": "^5.9.2"
+    "@clack/prompts": "1.8.1",
+    "jscodeshift": "17.4.0",
+    "typescript": "catalog:ts-api"
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.80.3",
-    "@trpc/client": "11.18.0",
-    "@trpc/react-query": "11.18.0",
-    "@trpc/server": "11.18.0",
-    "@trpc/tanstack-react-query": "11.18.0",
+    "@trpc/client": "11.21.0",
+    "@trpc/react-query": "11.21.0",
+    "@trpc/server": "11.21.0",
+    "@trpc/tanstack-react-query": "11.21.0",
     "@types/jscodeshift": "17.3.0",
-    "@types/node": "^22.13.5",
+    "@types/node": "catalog:",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "tsdown": "0.12.7",
+    "tsdown": "catalog:",
     "zod": "^4.2.1"
   },
   "publishConfig": {

@@ -11,8 +11,7 @@ import { splitSetCookieString } from '../../vendor/cookie-es/set-cookie/split';
 export type LambdaEvent = APIGatewayProxyEvent | APIGatewayProxyEventV2;
 
 export type APIGatewayResult =
-  | APIGatewayProxyResult
-  | APIGatewayProxyStructuredResultV2;
+  APIGatewayProxyResult | APIGatewayProxyStructuredResultV2;
 
 function determinePayloadFormat(event: LambdaEvent): string {
   // https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html

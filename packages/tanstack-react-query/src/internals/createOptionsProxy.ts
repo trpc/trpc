@@ -9,6 +9,7 @@ import type {
   AnyTRPCProcedure,
   AnyTRPCRootTypes,
   AnyTRPCRouter,
+  inferProcedureErrorShape,
   inferProcedureInput,
   inferRouterContext,
   inferTransformedProcedureOutput,
@@ -96,8 +97,9 @@ export type inferOutput<
     | DecorateMutationProcedure<any>,
 > = TProcedure['~types']['output'];
 
-export interface DecorateInfiniteQueryProcedure<TDef extends ResolverDef>
-  extends TypeHelper<TDef> {
+export interface DecorateInfiniteQueryProcedure<
+  TDef extends ResolverDef,
+> extends TypeHelper<TDef> {
   /**
    * Create a set of type-safe infinite query options that can be passed to `useInfiniteQuery`, `prefetchInfiniteQuery` etc.
    *
@@ -154,8 +156,7 @@ export interface DecorateInfiniteQueryProcedure<TDef extends ResolverDef>
   >;
 }
 export interface DecorateQueryProcedure<TDef extends ResolverDef>
-  extends TypeHelper<TDef>,
-    DecorateRouterKeyable<TDef['featureFlags']> {
+  extends TypeHelper<TDef>, DecorateRouterKeyable<TDef['featureFlags']> {
   /**
    * Create a set of type-safe query options that can be passed to `useQuery`, `prefetchQuery` etc.
    *
@@ -212,8 +213,9 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef>
   >;
 }
 
-export interface DecorateMutationProcedure<TDef extends ResolverDef>
-  extends TypeHelper<TDef> {
+export interface DecorateMutationProcedure<
+  TDef extends ResolverDef,
+> extends TypeHelper<TDef> {
   /**
    * Create a set of type-safe mutation options that can be passed to `useMutation`
    *
@@ -229,8 +231,9 @@ export interface DecorateMutationProcedure<TDef extends ResolverDef>
   mutationKey: () => TRPCMutationKey<TDef['featureFlags']['keyPrefix']>;
 }
 
-export interface DecorateSubscriptionProcedure<TDef extends ResolverDef>
-  extends TypeHelper<TDef> {
+export interface DecorateSubscriptionProcedure<
+  TDef extends ResolverDef,
+> extends TypeHelper<TDef> {
   /**
    * Create a set of type-safe subscription options that can be passed to `useSubscription`
    *
@@ -272,7 +275,7 @@ export type DecoratedRouterRecord<
               input: inferProcedureInput<$Value>;
               output: inferTransformedProcedureOutput<TRoot, $Value>;
               transformer: TRoot['transformer'];
-              errorShape: TRoot['errorShape'];
+              errorShape: inferProcedureErrorShape<TRoot, $Value>;
               featureFlags: TFeatureFlags;
             }
           >

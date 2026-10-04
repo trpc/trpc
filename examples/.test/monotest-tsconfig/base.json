@@ -41,7 +41,6 @@
     "preserveWatchOutput": true,
     "emitDeclarationOnly": false,
     "tsBuildInfoFile": "${configDir}/tsconfig.tsbuildinfo",
-    "baseUrl": "${configDir}",
     "outDir": "${configDir}/dist",
     "rootDir": "${configDir}",
     "composite": false,
