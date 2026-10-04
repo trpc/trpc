@@ -96,7 +96,7 @@
     "@types/ws": "^8.2.0",
     "arktype": "^2.0.1",
     "autoprefixer": "^10.4.7",
-    "docusaurus-plugin-typedoc": "1.4.2",
+    "docusaurus-plugin-typedoc": "1.4.3",
     "dotenv": "^16.0.1",
     "effect": "3.21.0",
     "eslint": "catalog:",
