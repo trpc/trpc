@@ -1,0 +1,23 @@
+name: npm WAF probe
+
+on:
+  pull_request:
+    paths:
+      - '.github/scripts/npm-waf-probe.sh'
+      - '.github/workflows/npm-waf-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Probe registry.npmjs.org with unauthenticated PUTs
+        run: bash .github/scripts/npm-waf-probe.sh
