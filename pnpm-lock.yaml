@@ -2567,8 +2567,8 @@ importers:
         specifier: 'catalog:'
         version: 5.9.2
       effect:
-        specifier: 3.21.0
-        version: 3.21.0
+        specifier: 3.22.2
+        version: 3.22.2
       eslint:
         specifier: 'catalog:'
         version: 10.10.0(jiti@2.6.1)(supports-color@10.0.0)
@@ -2863,8 +2863,8 @@ importers:
         specifier: ^16.0.1
         version: 16.4.7
       effect:
-        specifier: 3.21.0
-        version: 3.21.0
+        specifier: 3.22.2
+        version: 3.22.2
       eslint:
         specifier: 'catalog:'
         version: 10.10.0(jiti@2.6.1)(supports-color@10.0.0)
@@ -12329,8 +12329,8 @@ packages:
   effect@3.19.19:
     resolution: {integrity: sha512-Yc8U/SVXo2dHnaP7zNBlAo83h/nzSJpi7vph6Hzyl4ulgMBIgPmz3UzOjb9sBgpFE00gC0iETR244sfXDNLHRg==}
 
-  effect@3.21.0:
-    resolution: {integrity: sha512-PPN80qRokCd1f015IANNhrwOnLO7GrrMQfk4/lnZRE/8j7UPWrNNjPV0uBrZutI/nHzernbW+J0hdqQysHiSnQ==}
+  effect@3.22.2:
+    resolution: {integrity: sha512-fm1CQXCs7GTMwpadZxwU5rnAb2bN6mbQpknq/pXBGCzSKkosNYb9k0wsoL0TfB10rSa5xOEZJjo77u/KLXSANg==}
 
   ejs@5.0.1:
     resolution: {integrity: sha512-COqBPFMxuPTPspXl2DkVYaDS3HtrD1GpzOGkNTJ1IYkifq/r9h8SVEFrjA3D9/VJGOEoMQcrlhpntcSUrM8k6A==}
@@ -32774,7 +32774,7 @@ snapshots:
       '@standard-schema/spec': 1.0.0
       fast-check: 3.23.2
 
-  effect@3.21.0:
+  effect@3.22.2:
     dependencies:
       '@standard-schema/spec': 1.0.0
       fast-check: 3.23.2
