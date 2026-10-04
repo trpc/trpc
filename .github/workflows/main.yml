@@ -183,7 +183,7 @@ jobs:
 
       - run: pnpm build
 
-      - uses: denoland/setup-deno@v1
+      - uses: denoland/setup-deno@v2.0.5
         with:
           deno-version: 2.x
 
