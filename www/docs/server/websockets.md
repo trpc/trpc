@@ -207,7 +207,7 @@ Write one function per adapter and give them a shared return type. Both adapters
 import type { CreateExpressContextOptions } from '@trpc/server/adapters/express';
 import type { CreateWSSContextFnOptions } from '@trpc/server/adapters/ws';
 
-interface Context {
+export interface Context {
   token: string | undefined;
 }
 
@@ -225,7 +225,7 @@ export const createWSSContext = (opts: CreateWSSContextFnOptions): Context => ({
 });
 ```
 
-Browsers send cookies on cross-origin WebSocket handshakes, so a cookie-authenticated `createWSSContext` needs an origin check that the HTTP adapter gets from the browser's same-origin policy. Compare `req.headers.origin` against your allowed origins before accepting the upgrade, in the `WebSocketServer` `verifyClient` option or your own `upgrade` handler, and set the token cookie with `SameSite=Lax` or `Strict`.
+Browsers send cookies on cross-origin WebSocket handshakes, so a cookie-authenticated `createWSSContext` needs an explicit origin check. Compare `req.headers.origin` against a strict allowlist before accepting the upgrade, in the `WebSocketServer` `verifyClient` option or your own `upgrade` handler. `SameSite=Lax` or `Strict` on the token cookie helps, but it does not replace that check, and your HTTP routes need their own CSRF protection as before.
 
 Initialize tRPC with `Context` and pass each function to its own adapter:
 
