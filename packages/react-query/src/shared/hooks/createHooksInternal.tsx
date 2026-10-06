@@ -430,6 +430,7 @@ export function createRootHooks<
         path.join('.'),
         input ?? undefined,
         {
+          context: opts?.trpc?.context,
           onStarted: () => {
             optsRef.current.onStarted?.();
             updateState((prev) => ({
