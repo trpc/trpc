@@ -191,6 +191,28 @@ describe.each([
     });
   });
 
+  test('passes context to links', async () => {
+    const context = { foo: 'bar' };
+
+    function MyComponent() {
+      ctx.client.onEventIterable.useSubscription(10, {
+        trpc: { context },
+      });
+      return null;
+    }
+
+    render(
+      <ctx.App>
+        <MyComponent />
+      </ctx.App>,
+    );
+
+    await vi.waitFor(() => {
+      expect(ctx.spyLink).toHaveBeenCalledTimes(1);
+    });
+    expect(ctx.spyLink.mock.calls[0]![0].context).toMatchObject(context);
+  });
+
   test('iterable - return from server', async () => {
     const onDataMock = vi.fn();
     const onErrorMock = vi.fn();
