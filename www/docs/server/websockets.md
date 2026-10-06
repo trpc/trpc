@@ -271,9 +271,13 @@ app.use(
 );
 
 const server = createServer(app);
+const allowedOrigins = new Set(['https://app.example.com']);
 
 applyWSSHandler({
-  wss: new WebSocketServer({ server }),
+  wss: new WebSocketServer({
+    server,
+    verifyClient: ({ origin }: { origin: string }) => allowedOrigins.has(origin),
+  }),
   router: appRouter,
   createContext: createWSSContext,
 });
