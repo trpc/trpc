@@ -27,6 +27,7 @@
 - Assume we're starting from scratch and that everything should be deleted
 - Take no shortcuts to getting the best APIs
 - We want to have a design that allows for OpenAPI support like oRPC does (orpc.dev)
+- For now, we can publish everything under the `@trpcdev` scope rather than `@trpc` on npm
 
 The only dev deps I can think of that should be:
 
