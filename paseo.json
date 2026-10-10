@@ -1,0 +1,5 @@
+{
+  "worktree": {
+    "setup": "pnpm install"
+  }
+}

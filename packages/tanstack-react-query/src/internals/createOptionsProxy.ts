@@ -9,6 +9,7 @@ import type {
   AnyTRPCProcedure,
   AnyTRPCRootTypes,
   AnyTRPCRouter,
+  inferProcedureErrorShape,
   inferProcedureInput,
   inferRouterContext,
   inferTransformedProcedureOutput,
@@ -274,7 +275,7 @@ export type DecoratedRouterRecord<
               input: inferProcedureInput<$Value>;
               output: inferTransformedProcedureOutput<TRoot, $Value>;
               transformer: TRoot['transformer'];
-              errorShape: TRoot['errorShape'];
+              errorShape: inferProcedureErrorShape<TRoot, $Value>;
               featureFlags: TFeatureFlags;
             }
           >
