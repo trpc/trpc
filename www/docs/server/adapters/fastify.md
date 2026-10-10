@@ -290,6 +290,39 @@ server.register(fastifyTRPCPlugin, {
 
 You can now subscribe to the `randomNumber` topic and should receive a random number every second 🚀.
 
+### Telling clients to reconnect
+
+tRPC can ask every connected client to reconnect. This is useful before shutting a server down, because clients reconnect and resume their subscriptions instead of losing them.
+
+The plugin decorates the Fastify instance with `broadcastReconnectNotification`. Fastify encapsulates decorations, so register the plugin with [`fastify-plugin`](https://github.com/fastify/fastify-plugin) to reach it from your root instance:
+
+```ts title='server.ts'
+import ws from '@fastify/websocket';
+import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
+import fastify from 'fastify';
+import fp from 'fastify-plugin';
+import { createContext } from './context';
+import { appRouter } from './router';
+
+const server = fastify();
+
+server.register(ws);
+server.register(fp(fastifyTRPCPlugin), {
+  prefix: '/trpc',
+  useWSS: true,
+  trpcOptions: { router: appRouter, createContext },
+});
+
+// Tell everyone to reconnect before the server goes away.
+server.broadcastReconnectNotification();
+
+await server.close();
+```
+
+> ⚠️ Without `fastify-plugin`, the decoration belongs to the plugin's encapsulated scope and is not visible on your root instance.
+
+The `broadcastReconnectNotification` returned by [`applyWSSHandler`](../websockets.md) sends the same payload, so clients behave identically for a standalone server and a Fastify one.
+
 ## Fastify plugin options
 
 | name        | type                                               | optional | default   | description                                                    |

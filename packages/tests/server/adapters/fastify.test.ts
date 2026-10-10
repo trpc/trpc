@@ -19,6 +19,7 @@ import type {
 } from '@trpc/server/adapters/fastify';
 import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
 import { observable } from '@trpc/server/observable';
+import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import/stream/utils/disposable';
 import fastify from 'fastify';
 import fp from 'fastify-plugin';
 import fetch from 'node-fetch';
@@ -592,6 +593,49 @@ describe('anonymous user with fastify-plugin', () => {
             "text": "hello test",
           }
       `);
+  });
+
+  test('broadcastReconnectNotification asks connected clients to reconnect', async () => {
+    const socket = new WebSocket(
+      `ws://localhost:${app.url.port}${config.prefix}`,
+    );
+    // `await using` closes the socket even when an assertion below throws
+    await using _socket = makeAsyncResource(socket, () => {
+      return new Promise<void>((resolve) => {
+        if (socket.readyState === WebSocket.CLOSED) {
+          resolve();
+          return;
+        }
+        socket.once('close', resolve);
+        socket.close();
+      });
+    });
+
+    const received: string[] = [];
+
+    await new Promise<void>((resolve, reject) => {
+      socket.once('open', () => resolve());
+      socket.once('error', reject);
+    });
+    socket.on('message', (data) => {
+      // eslint-disable-next-line @typescript-eslint/no-base-to-string
+      received.push(data.toString());
+    });
+
+    // The server only tracks a client once its connection handler has run, so
+    // keep notifying until the socket is registered.
+    await vi.waitFor(
+      () => {
+        app.server.broadcastReconnectNotification();
+        expect(received.length).toBeGreaterThan(0);
+      },
+      { timeout: 5_000, interval: 50 },
+    );
+
+    expect(JSON.parse(received[0]!)).toEqual({
+      id: null,
+      method: 'reconnect',
+    });
   });
 });
 
