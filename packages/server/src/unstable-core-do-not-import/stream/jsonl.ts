@@ -543,54 +543,48 @@ export async function jsonlStreamConsumer<THead>(opts: {
 
     const controller = streamManager.getOrCreate(chunkId);
 
-    switch (type) {
-      case CHUNK_VALUE_TYPE_PROMISE: {
-        return run(async () => {
-          using reader = controller.getReaderResource();
+    if (type === CHUNK_VALUE_TYPE_PROMISE) {
+      return run(async () => {
+        using reader = controller.getReaderResource();
 
-          const { done, value } = await reader.read();
+        const { done, value } = await reader.read();
 
-          if (done) {
-            throw new Error('Stream closed unexpectedly');
-          }
+        if (done) {
+          throw new Error('Stream closed unexpectedly');
+        }
 
-          const [_chunkId, status, data] = value as PromiseChunk;
-          switch (status) {
-            case PROMISE_STATUS_FULFILLED:
-              return decode(data);
-            case PROMISE_STATUS_REJECTED:
-              throw opts.formatError?.({ error: data }) ?? new AsyncError(data);
-          }
-        });
-      }
-      case CHUNK_VALUE_TYPE_ASYNC_ITERABLE: {
-        return run(async function* () {
-          using reader = controller.getReaderResource();
-
-          while (true) {
-            const { done, value } = await reader.read();
-
-            if (done) {
-              throw new Error('Stream closed unexpectedly');
-            }
-
-            const [_chunkId, status, data] = value as IterableChunk;
-
-            switch (status) {
-              case ASYNC_ITERABLE_STATUS_YIELD:
-                yield decode(data);
-                break;
-              case ASYNC_ITERABLE_STATUS_RETURN:
-                return decode(data);
-              case ASYNC_ITERABLE_STATUS_ERROR:
-                throw (
-                  opts.formatError?.({ error: data }) ?? new AsyncError(data)
-                );
-            }
-          }
-        });
-      }
+        const [_chunkId, status, data] = value as PromiseChunk;
+        switch (status) {
+          case PROMISE_STATUS_FULFILLED:
+            return decode(data);
+          case PROMISE_STATUS_REJECTED:
+            throw opts.formatError?.({ error: data }) ?? new AsyncError(data);
+        }
+      });
     }
+    return run(async function* () {
+      using reader = controller.getReaderResource();
+
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) {
+          throw new Error('Stream closed unexpectedly');
+        }
+
+        const [_chunkId, status, data] = value as IterableChunk;
+
+        switch (status) {
+          case ASYNC_ITERABLE_STATUS_YIELD:
+            yield decode(data);
+            break;
+          case ASYNC_ITERABLE_STATUS_RETURN:
+            return decode(data);
+          case ASYNC_ITERABLE_STATUS_ERROR:
+            throw opts.formatError?.({ error: data }) ?? new AsyncError(data);
+        }
+      }
+    });
   }
 
   function decode(value: EncodedValue): unknown {
