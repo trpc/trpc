@@ -1,5 +1,6 @@
 import { isPlainObject } from '@trpc/server/vendor/is-plain-object';
 import {
+  assertNever,
   emptyObject,
   isAsyncIterable,
   isFunction,
@@ -562,29 +563,33 @@ export async function jsonlStreamConsumer<THead>(opts: {
         }
       });
     }
-    return run(async function* () {
-      using reader = controller.getReaderResource();
+    if (type === CHUNK_VALUE_TYPE_ASYNC_ITERABLE) {
+      return run(async function* () {
+        using reader = controller.getReaderResource();
 
-      while (true) {
-        const { done, value } = await reader.read();
+        while (true) {
+          const { done, value } = await reader.read();
 
-        if (done) {
-          throw new Error('Stream closed unexpectedly');
+          if (done) {
+            throw new Error('Stream closed unexpectedly');
+          }
+
+          const [_chunkId, status, data] = value as IterableChunk;
+
+          switch (status) {
+            case ASYNC_ITERABLE_STATUS_YIELD:
+              yield decode(data);
+              break;
+            case ASYNC_ITERABLE_STATUS_RETURN:
+              return decode(data);
+            case ASYNC_ITERABLE_STATUS_ERROR:
+              throw opts.formatError?.({ error: data }) ?? new AsyncError(data);
+          }
         }
+      });
+    }
 
-        const [_chunkId, status, data] = value as IterableChunk;
-
-        switch (status) {
-          case ASYNC_ITERABLE_STATUS_YIELD:
-            yield decode(data);
-            break;
-          case ASYNC_ITERABLE_STATUS_RETURN:
-            return decode(data);
-          case ASYNC_ITERABLE_STATUS_ERROR:
-            throw opts.formatError?.({ error: data }) ?? new AsyncError(data);
-        }
-      }
-    });
+    assertNever(type);
   }
 
   function decode(value: EncodedValue): unknown {
