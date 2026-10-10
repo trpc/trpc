@@ -178,8 +178,6 @@ export function unstable_localLink<TRouter extends AnyRouter>(
               let lastEventId: string | undefined = undefined;
 
               using _finally = makeResource({}, async () => {
-                observer.complete();
-
                 connectionState.next({
                   type: 'state',
                   state: 'idle',
@@ -187,83 +185,94 @@ export function unstable_localLink<TRouter extends AnyRouter>(
                 });
                 connectionSub.unsubscribe();
               });
-              while (true) {
-                const result = await runProcedure(
-                  inputWithTrackedEventId(op.input, lastEventId),
-                );
-                if (!isAsyncIterable(result)) {
-                  throw new Error('Expected an async iterable');
-                }
-                await using iterator = iteratorResource(result);
 
-                observer.next({
-                  result: {
-                    type: 'started',
-                  },
-                });
-                connectionState.next({
-                  type: 'state',
-                  state: 'pending',
-                  error: null,
-                });
-
-                // Use a while loop to handle errors and reconnects
+              // returning from here means the stream ended, so this completes
+              // below - a throw is left to the `.catch()`, which needs the
+              // observer to still be open by the time it runs
+              await run(async () => {
                 while (true) {
-                  let res;
-                  try {
-                    res = await Promise.race([iterator.next(), signalPromise]);
-                  } catch (cause) {
-                    if (isAbortError(cause)) {
-                      return;
-                    }
-                    const error = getTRPCErrorFromUnknown(cause);
-
-                    if (
-                      !retryableRpcCodes.includes(
-                        TRPC_ERROR_CODES_BY_KEY[error.code],
-                      )
-                    ) {
-                      throw coerceToTRPCClientError(error);
-                    }
-
-                    onErrorCallback(error);
-                    connectionState.next({
-                      type: 'state',
-                      state: 'connecting',
-                      error: coerceToTRPCClientError(error),
-                    });
-
-                    break;
+                  const result = await runProcedure(
+                    inputWithTrackedEventId(op.input, lastEventId),
+                  );
+                  if (!isAsyncIterable(result)) {
+                    throw new Error('Expected an async iterable');
                   }
-
-                  if (res.done) {
-                    return;
-                  }
-                  let chunk: TRPCResult<unknown>;
-                  if (isTrackedEnvelope(res.value)) {
-                    lastEventId = res.value[0];
-
-                    chunk = {
-                      id: res.value[0],
-                      data: {
-                        id: res.value[0],
-                        data: res.value[1],
-                      },
-                    };
-                  } else {
-                    chunk = {
-                      data: res.value,
-                    };
-                  }
+                  await using iterator = iteratorResource(result);
 
                   observer.next({
                     result: {
-                      ...chunk,
-                      data: transformChunk(chunk.data),
+                      type: 'started',
                     },
                   });
+                  connectionState.next({
+                    type: 'state',
+                    state: 'pending',
+                    error: null,
+                  });
+
+                  // Use a while loop to handle errors and reconnects
+                  while (true) {
+                    let res;
+                    try {
+                      res = await Promise.race([
+                        iterator.next(),
+                        signalPromise,
+                      ]);
+                    } catch (cause) {
+                      if (isAbortError(cause)) {
+                        return;
+                      }
+                      const error = getTRPCErrorFromUnknown(cause);
+
+                      if (
+                        !retryableRpcCodes.includes(
+                          TRPC_ERROR_CODES_BY_KEY[error.code],
+                        )
+                      ) {
+                        throw coerceToTRPCClientError(error);
+                      }
+
+                      onErrorCallback(error);
+                      connectionState.next({
+                        type: 'state',
+                        state: 'connecting',
+                        error: coerceToTRPCClientError(error),
+                      });
+
+                      break;
+                    }
+
+                    if (res.done) {
+                      return;
+                    }
+                    let chunk: TRPCResult<unknown>;
+                    if (isTrackedEnvelope(res.value)) {
+                      lastEventId = res.value[0];
+
+                      chunk = {
+                        id: res.value[0],
+                        data: {
+                          id: res.value[0],
+                          data: res.value[1],
+                        },
+                      };
+                    } else {
+                      chunk = {
+                        data: res.value,
+                      };
+                    }
+
+                    observer.next({
+                      result: {
+                        ...chunk,
+                        data: transformChunk(chunk.data),
+                      },
+                    });
+                  }
                 }
-              }
+              });
+
+              observer.complete();
               break;
             }
           }

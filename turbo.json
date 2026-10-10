@@ -31,6 +31,9 @@
     "examples-minimal-react#build": {
       "outputs": ["client/dist/**", "server/dist/**"]
     },
+    "examples-minimal-per-procedure-errors#build": {
+      "outputs": ["client/dist/**", "server/dist/**"]
+    },
     "dev": {
       "cache": false,
       "persistent": true

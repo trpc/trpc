@@ -26,6 +26,14 @@ export const isServerDefault: boolean =
   !!globalThis.process?.env?.['VITEST_WORKER_ID'];
 
 /**
+ * The default check to see if we're in development
+ */
+export function isDevDefault(): boolean {
+  // eslint-disable-next-line @typescript-eslint/dot-notation
+  return globalThis.process?.env['NODE_ENV'] !== 'production';
+}
+
+/**
  * The tRPC root config
  * @internal
  */

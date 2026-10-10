@@ -82,8 +82,8 @@
     ]
   },
   "devDependencies": {
-    "@babel/core": "^7.23.2",
-    "@babel/preset-env": "^7.23.2",
+    "@babel/core": "^8.0.0",
+    "@babel/preset-env": "^8.0.0",
     "@docusaurus/tsconfig": "^3.10.2",
     "@fastify/websocket": "catalog:",
     "@octokit/graphql": "^9.0.0",
@@ -96,9 +96,9 @@
     "@types/ws": "^8.2.0",
     "arktype": "^2.0.1",
     "autoprefixer": "^10.4.7",
-    "docusaurus-plugin-typedoc": "1.4.2",
+    "docusaurus-plugin-typedoc": "1.4.3",
     "dotenv": "^16.0.1",
-    "effect": "3.21.0",
+    "effect": "3.22.2",
     "eslint": "catalog:",
     "fastify": "catalog:",
     "next": "catalog:",

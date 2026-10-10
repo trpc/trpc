@@ -16,6 +16,7 @@ import type {
   AnyRootTypes,
   AnyRouter,
   inferAsyncIterableYield,
+  inferProcedureErrorShape,
   inferProcedureInput,
   inferTransformedProcedureOutput,
   ProcedureType,
@@ -430,7 +431,7 @@ export type DecorateRouterRecord<
             input: inferProcedureInput<$Value>;
             output: inferTransformedProcedureOutput<TRoot, $Value>;
             transformer: TRoot['transformer'];
-            errorShape: TRoot['errorShape'];
+            errorShape: inferProcedureErrorShape<TRoot, $Value>;
           }
         >
       : $Value extends RouterRecord

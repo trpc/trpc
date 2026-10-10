@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: ./.github/setup
@@ -39,7 +39,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: ./.github/setup
@@ -56,7 +56,7 @@ jobs:
     needs: [build]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: ./.github/setup
@@ -73,7 +73,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: ./.github/setup
@@ -92,7 +92,7 @@ jobs:
             exit 1
           fi
 
-      - uses: codecov/codecov-action@v6
+      - uses: codecov/codecov-action@v7
         with:
           fail_ci_if_error: true
           # only use token if not a fork PR
@@ -131,6 +131,7 @@ jobs:
             express-server,
             fastify-server,
             minimal-react,
+            minimal-per-procedure-errors,
             next-formdata,
             next-minimal-starter,
             next-prisma-starter,
@@ -144,7 +145,7 @@ jobs:
             nuxt,
           ]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: ./.github/setup
@@ -175,14 +176,14 @@ jobs:
       matrix:
         dir: [deno-deploy]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: ./.github/setup
 
       - run: pnpm build
 
-      - uses: denoland/setup-deno@v1
+      - uses: denoland/setup-deno@v2.0.5
         with:
           deno-version: 2.x
 
@@ -210,7 +211,7 @@ jobs:
         dir: [bun]
         os: [ubuntu-latest]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: ./.github/setup
@@ -219,7 +220,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.3.9
+          bun-version: 1.4.3
 
       - run: bun --version
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
@@ -257,14 +258,14 @@ jobs:
           ]
         node-start: ['20.x', '22.x']
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: ./.github/setup
 
       - run: pnpm build
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-start }}
           cache: 'pnpm'
@@ -283,7 +284,7 @@ jobs:
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: ./.github/setup
@@ -296,7 +297,7 @@ jobs:
     needs: [build]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: ./.github/setup

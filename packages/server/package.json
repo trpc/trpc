@@ -2,7 +2,7 @@
   "name": "@trpc/server",
   "type": "module",
   "sideEffects": false,
-  "version": "11.19.0",
+  "version": "11.21.0",
   "description": "The tRPC server library",
   "author": "KATT",
   "license": "MIT",
@@ -197,7 +197,7 @@
   },
   "devDependencies": {
     "@fastify/websocket": "catalog:",
-    "@oxc-project/runtime": "0.123.0",
+    "@oxc-project/runtime": "0.152.0",
     "@tanstack/intent": "^0.0.27",
     "@tanstack/react-query": "^5.80.3",
     "@types/aws-lambda": "^8.10.149",
