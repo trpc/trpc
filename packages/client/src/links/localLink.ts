@@ -35,7 +35,7 @@ export type LocalLinkOptions<TRouter extends AnyRouter> = {
 /**
  * localLink is a terminating link that allows you to make tRPC procedure calls directly in your application without going through HTTP.
  *
- * @see https://trpc.io/docs/links/localLink
+ * @see https://trpc.io/docs/client/links/localLink
  */
 export function unstable_localLink<TRouter extends AnyRouter>(
   opts: LocalLinkOptions<TRouter>,

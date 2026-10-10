@@ -380,7 +380,7 @@ type DecorateMutationProcedure<
 type DecorateRouter = {
   /**
    * Invalidate the full router
-   * @see https://trpc.io/docs/v10/useContext#query-invalidation
+   * @see https://trpc.io/docs/client/react/useUtils#invalidating-across-whole-routers
    * @see https://tanstack.com/query/v5/docs/framework/react/guides/query-invalidation
    */
   invalidate(
