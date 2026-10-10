@@ -2858,7 +2858,7 @@ importers:
         version: 10.5.6(postcss@8.5.28)
       docusaurus-plugin-typedoc:
         specifier: 1.4.3
-        version: 1.4.3(typedoc-plugin-markdown@4.4.2(typedoc@0.27.9(typescript@5.9.2)))(typedoc@0.27.9(typescript@5.9.2))
+        version: 1.4.3(typedoc-plugin-markdown@4.13.1(typedoc@0.27.9(typescript@5.9.2)))(typedoc@0.27.9(typescript@5.9.2))
       dotenv:
         specifier: ^16.0.1
         version: 16.4.7
@@ -2920,8 +2920,8 @@ importers:
         specifier: 0.27.9
         version: 0.27.9(typescript@5.9.2)
       typedoc-plugin-markdown:
-        specifier: 4.4.2
-        version: 4.4.2(typedoc@0.27.9(typescript@5.9.2))
+        specifier: 4.13.1
+        version: 4.13.1(typedoc@0.27.9(typescript@5.9.2))
       typescript:
         specifier: ^5.9.2
         version: 5.9.2
@@ -19478,11 +19478,11 @@ packages:
       typedoc: 0.28.x
       typedoc-plugin-markdown: '>=4.11.0'
 
-  typedoc-plugin-markdown@4.4.2:
-    resolution: {integrity: sha512-kJVkU2Wd+AXQpyL6DlYXXRrfNrHrEIUgiABWH8Z+2Lz5Sq6an4dQ/hfvP75bbokjNDUskOdFlEEm/0fSVyC7eg==}
+  typedoc-plugin-markdown@4.13.1:
+    resolution: {integrity: sha512-d3jchJ4CyIrV9w9uozTSkfMYG8IEM1RvvGOaybJ/3rRporzoX7p0lprffo95GOGUviQqP0phjHJE3bY8PQbilA==}
     engines: {node: '>= 18'}
     peerDependencies:
-      typedoc: 0.27.x
+      typedoc: 0.28.x
 
   typedoc@0.27.9:
     resolution: {integrity: sha512-/z585740YHURLl9DN2jCWe6OW7zKYm6VoQ93H0sxZ1cwHQEQrUn5BJrEnkWhfzUdyO+BLGjnKUZ9iz9hKloFDw==}
@@ -32953,11 +32953,11 @@ snapshots:
     dependencies:
       esutils: 2.0.3
 
-  docusaurus-plugin-typedoc@1.4.3(typedoc-plugin-markdown@4.4.2(typedoc@0.27.9(typescript@5.9.2)))(typedoc@0.27.9(typescript@5.9.2)):
+  docusaurus-plugin-typedoc@1.4.3(typedoc-plugin-markdown@4.13.1(typedoc@0.27.9(typescript@5.9.2)))(typedoc@0.27.9(typescript@5.9.2)):
     dependencies:
       typedoc: 0.27.9(typescript@5.9.2)
-      typedoc-docusaurus-theme: 1.4.3(typedoc-plugin-markdown@4.4.2(typedoc@0.27.9(typescript@5.9.2)))(typedoc@0.27.9(typescript@5.9.2))
-      typedoc-plugin-markdown: 4.4.2(typedoc@0.27.9(typescript@5.9.2))
+      typedoc-docusaurus-theme: 1.4.3(typedoc-plugin-markdown@4.13.1(typedoc@0.27.9(typescript@5.9.2)))(typedoc@0.27.9(typescript@5.9.2))
+      typedoc-plugin-markdown: 4.13.1(typedoc@0.27.9(typescript@5.9.2))
 
   docusaurus-preset-shiki-twoslash@1.1.41(supports-color@10.0.0):
     dependencies:
@@ -42241,12 +42241,12 @@ snapshots:
     dependencies:
       is-typedarray: 1.0.0
 
-  typedoc-docusaurus-theme@1.4.3(typedoc-plugin-markdown@4.4.2(typedoc@0.27.9(typescript@5.9.2)))(typedoc@0.27.9(typescript@5.9.2)):
+  typedoc-docusaurus-theme@1.4.3(typedoc-plugin-markdown@4.13.1(typedoc@0.27.9(typescript@5.9.2)))(typedoc@0.27.9(typescript@5.9.2)):
     dependencies:
       typedoc: 0.27.9(typescript@5.9.2)
-      typedoc-plugin-markdown: 4.4.2(typedoc@0.27.9(typescript@5.9.2))
+      typedoc-plugin-markdown: 4.13.1(typedoc@0.27.9(typescript@5.9.2))
 
-  typedoc-plugin-markdown@4.4.2(typedoc@0.27.9(typescript@5.9.2)):
+  typedoc-plugin-markdown@4.13.1(typedoc@0.27.9(typescript@5.9.2)):
     dependencies:
       typedoc: 0.27.9(typescript@5.9.2)
 
