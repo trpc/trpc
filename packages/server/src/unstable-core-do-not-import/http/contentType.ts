@@ -75,9 +75,18 @@ function memo<TReturn>(fn: () => Promise<TReturn>) {
   };
 }
 
+/**
+ * Media types are case-insensitive
+ * @see https://www.rfc-editor.org/rfc/rfc9110#section-8.3.1
+ */
+function hasContentType(req: Request, type: string) {
+  const contentType = req.headers.get('content-type')?.toLowerCase();
+  return contentType?.split(';', 1)[0]?.trim() === type;
+}
+
 const jsonContentTypeHandler: ContentTypeHandler = {
   isMatch(req) {
-    return !!req.headers.get('content-type')?.startsWith('application/json');
+    return hasContentType(req, 'application/json');
   },
   async parse(opts) {
     const { req } = opts;
@@ -213,7 +222,7 @@ const jsonContentTypeHandler: ContentTypeHandler = {
 
 const formDataContentTypeHandler: ContentTypeHandler = {
   isMatch(req) {
-    return !!req.headers.get('content-type')?.startsWith('multipart/form-data');
+    return hasContentType(req, 'multipart/form-data');
   },
   async parse(opts) {
     const { req } = opts;
@@ -251,9 +260,7 @@ const formDataContentTypeHandler: ContentTypeHandler = {
 
 const octetStreamContentTypeHandler: ContentTypeHandler = {
   isMatch(req) {
-    return !!req.headers
-      .get('content-type')
-      ?.startsWith('application/octet-stream');
+    return hasContentType(req, 'application/octet-stream');
   },
   async parse(opts) {
     const { req } = opts;
