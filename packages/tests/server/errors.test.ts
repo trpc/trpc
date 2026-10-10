@@ -128,6 +128,28 @@ test('unauthorized()', async () => {
   expect(serverError).toBeInstanceOf(TRPCError);
 });
 
+test('malformed url-encoding in the path', async () => {
+  const onError = vi.fn();
+  const t = initTRPC.create();
+
+  const router = t.router({
+    hello: t.procedure.query(() => 'world'),
+  });
+  await using ctx = testServerAndClientResource(router, {
+    server: {
+      onError,
+    },
+  });
+  const res = await fetch(`${ctx.httpUrl}/%`);
+
+  expect(res.status).toBe(400);
+  expect(onError).toHaveBeenCalledTimes(1);
+  const serverError = onError.mock.calls[0]![0]!.error;
+
+  expect(serverError).toBeInstanceOf(TRPCError);
+  expect(serverError.code).toBe('BAD_REQUEST');
+});
+
 test('getMessageFromUnknownError()', () => {
   expect(getMessageFromUnknownError('test', 'nope')).toBe('test');
   expect(getMessageFromUnknownError(1, 'test')).toBe('test');
