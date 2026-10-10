@@ -152,10 +152,10 @@ export interface TRPCQueryOptions<
   TDef extends ResolverDef,
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
 > {
-  <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
+  <TData = TDef['output']>(
     input: TDef['input'] | SkipToken,
     opts: DefinedTRPCQueryOptionsIn<
-      TQueryFnData,
+      TDef['output'],
       TData,
       TRPCClientErrorLike<{
         transformer: TDef['transformer'];
@@ -164,7 +164,7 @@ export interface TRPCQueryOptions<
       TFeatureFlags
     >,
   ): DefinedTRPCQueryOptionsOut<
-    TQueryFnData,
+    TDef['output'],
     TData,
     TRPCClientErrorLike<{
       transformer: TDef['transformer'];
