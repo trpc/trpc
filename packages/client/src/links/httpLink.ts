@@ -94,24 +94,30 @@ export function httpLink<TRouter extends AnyRouter = AnyRouter>(
           op.signal,
           ac.signal,
         );
-        const request = universalRequester({
-          ...resolvedOpts,
-          type,
-          path,
-          input,
-          signal,
-          headers() {
-            if (!opts.headers) {
-              return {};
-            }
-            if (typeof opts.headers === 'function') {
-              return opts.headers({
-                op,
-              });
-            }
-            return opts.headers;
-          },
-        });
+        let request: Promise<HTTPResult>;
+        try {
+          request = universalRequester({
+            ...resolvedOpts,
+            type,
+            path,
+            input,
+            signal,
+            headers() {
+              if (!opts.headers) {
+                return {};
+              }
+              if (typeof opts.headers === 'function') {
+                return opts.headers({
+                  op,
+                });
+              }
+              return opts.headers;
+            },
+          });
+        } catch (cause) {
+          cleanup();
+          throw cause;
+        }
         let isDone = false;
         let meta: HTTPResult['meta'] | undefined = undefined;
         request
