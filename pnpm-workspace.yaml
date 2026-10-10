@@ -63,7 +63,7 @@ catalog:
   turbo: ^2.10.12
   undici: ^8.10.2
   ws: ^8.21.3
-  devalue: ^5.9.2
+  devalue: ^6.0.0
   valibot: ^1.5.0
   fastify: ^5.12.4
   '@hey-api/openapi-ts': ^0.99.0
