@@ -13,6 +13,7 @@ import type {
   SkipToken,
   Updater,
 } from '@tanstack/react-query';
+import { skipToken } from '@tanstack/react-query';
 import type { TRPCClientError } from '@trpc/client';
 import { createTRPCClientProxy } from '@trpc/client';
 import type {
@@ -475,10 +476,16 @@ function createRecursiveUtilsProxy<TRouter extends AnyRouter>(
     const queryType = getQueryType(utilName);
     const queryKey = getQueryKeyInternal(path, input, queryType);
 
+    // `getQueryKeyInternal` strips `skipToken` from the query key, so the
+    // options helpers can't detect it and would return a real `queryFn`
+    const withSkipToken = <TOptions extends object>(options: TOptions) =>
+      input === skipToken ? { ...options, queryFn: skipToken } : options;
+
     const contextMap: Record<keyof AnyDecoratedProcedure, () => unknown> = {
       infiniteQueryOptions: () =>
-        context.infiniteQueryOptions(path, queryKey, args[0]),
-      queryOptions: () => context.queryOptions(path, queryKey, ...args),
+        withSkipToken(context.infiniteQueryOptions(path, queryKey, args[0])),
+      queryOptions: () =>
+        withSkipToken(context.queryOptions(path, queryKey, ...args)),
       /**
        * DecorateQueryProcedure
        */
