@@ -149,6 +149,38 @@ describe.each([httpLink, httpBatchLink])(
   },
 );
 
+test.each([
+  [
+    'FormData',
+    () => new FormData(),
+    'FormData is only supported for mutations',
+  ],
+  [
+    'octet',
+    () => new Uint8Array([1]),
+    'Octet type input is only supported for mutations',
+  ],
+] as const)(
+  'cleans caller abort listeners when %s request construction throws',
+  async (_type, createInput, errorMessage) => {
+    const controller = new AbortController();
+    const originalListener = () => {
+      // This caller-owned listener must survive request cleanup.
+    };
+    controller.signal.addEventListener('abort', originalListener);
+    const client = createTRPCUntypedClient({
+      links: [httpLink({ url: 'http://localhost' })],
+    });
+
+    await expect(
+      client.query('value', createInput(), { signal: controller.signal }),
+    ).rejects.toThrow(errorMessage);
+    expect(getEventListeners(controller.signal, 'abort')).toEqual([
+      originalListener,
+    ]);
+  },
+);
+
 test.each([false, true])(
   'batch cancellation: cancel remaining operation = %s',
   async (cancelRemaining) => {
