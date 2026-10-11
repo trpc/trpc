@@ -4,7 +4,7 @@ import type {
   AnyRouter,
 } from '@trpc/server/unstable-core-do-not-import';
 import { transformResult } from '@trpc/server/unstable-core-do-not-import';
-import { raceAbortSignals } from '../internals/signals';
+import { raceAbortSignalsWithCleanup } from '../internals/signals';
 import { TRPCClientError } from '../TRPCClientError';
 import type {
   HTTPLinkBaseOptions,
@@ -90,24 +90,34 @@ export function httpLink<TRouter extends AnyRouter = AnyRouter>(
         }
 
         const ac = new AbortController();
-        const request = universalRequester({
-          ...resolvedOpts,
-          type,
-          path,
-          input,
-          signal: raceAbortSignals(op.signal, ac.signal),
-          headers() {
-            if (!opts.headers) {
-              return {};
-            }
-            if (typeof opts.headers === 'function') {
-              return opts.headers({
-                op,
-              });
-            }
-            return opts.headers;
-          },
-        });
+        const { signal, cleanup } = raceAbortSignalsWithCleanup(
+          op.signal,
+          ac.signal,
+        );
+        let request: Promise<HTTPResult>;
+        try {
+          request = universalRequester({
+            ...resolvedOpts,
+            type,
+            path,
+            input,
+            signal,
+            headers() {
+              if (!opts.headers) {
+                return {};
+              }
+              if (typeof opts.headers === 'function') {
+                return opts.headers({
+                  op,
+                });
+              }
+              return opts.headers;
+            },
+          });
+        } catch (cause) {
+          cleanup();
+          throw cause;
+        }
         let isDone = false;
         let meta: HTTPResult['meta'] | undefined = undefined;
         request
@@ -142,6 +152,7 @@ export function httpLink<TRouter extends AnyRouter = AnyRouter>(
           if (!isDone) {
             ac.abort();
           }
+          cleanup();
         };
       });
     };

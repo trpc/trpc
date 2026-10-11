@@ -3,7 +3,10 @@ import { observable } from '@trpc/server/observable';
 import { transformResult } from '@trpc/server/unstable-core-do-not-import';
 import type { BatchLoader } from '../internals/dataLoader';
 import { dataLoader } from '../internals/dataLoader';
-import { allAbortSignals, raceAbortSignals } from '../internals/signals';
+import {
+  allAbortSignals,
+  raceAbortSignalsWithCleanup,
+} from '../internals/signals';
 import type { NonEmptyArray } from '../internals/types';
 import { TRPCClientError } from '../TRPCClientError';
 import type { HTTPBatchLinkOptions } from './HTTPBatchLinkOptions';
@@ -99,10 +102,14 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           );
         }
         const ac = new AbortController();
+        const { signal, cleanup } = raceAbortSignalsWithCleanup(
+          op.signal,
+          ac.signal,
+        );
         const loader = loaders[op.type];
         const promise = loader.load({
           ...op,
-          signal: raceAbortSignals(op.signal, ac.signal),
+          signal,
         });
 
         let isDone = false;
@@ -143,6 +150,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           if (!isDone) {
             ac.abort();
           }
+          cleanup();
         };
       });
     };
