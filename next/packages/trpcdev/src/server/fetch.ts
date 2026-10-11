@@ -197,8 +197,8 @@ interface CallResult {
 
 /**
  * Serves a router over the web-standard `fetch` interface (12 P-A). Works on
- * any runtime with `Request`/`Response`; `trpcdev/node` adapts it to
- * `node:http`.
+ * any runtime with `Request`/`Response`; `trpcdev/http` serves it with
+ * Effect's `HttpServer` on Node, Bun and the rest.
  *
  * @example
  * ```ts

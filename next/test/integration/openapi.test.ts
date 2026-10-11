@@ -1,9 +1,10 @@
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { Context, Effect, Layer, Schema } from 'effect';
+import { NodeHttpServer } from '@effect/platform-node';
+import { Context, Effect, Exit, Layer, Schema, Scope } from 'effect';
 import { createTRPCClient, httpLink, routerType, safe } from 'trpcdev/client';
 import { toContract } from 'trpcdev/contract';
-import { toNodeListener } from 'trpcdev/node';
+import { serve as serveHttp } from 'trpcdev/http';
 import {
   createOpenAPIHandler,
   generateOpenAPI,
@@ -164,15 +165,23 @@ async function serve(opts: { expose?: boolean } = {}) {
       }),
     ],
   });
-  const server = createServer(
-    toNodeListener({
-      fetch: (request) =>
-        new URL(request.url).pathname.startsWith('/trpc')
-          ? rpc.fetch(request)
-          : openapi.fetch(request),
-    }),
+  const server = createServer();
+  const scope = Scope.makeUnsafe();
+  await Effect.runPromise(
+    Layer.buildWithScope(
+      serveHttp({
+        fetch: (request) =>
+          new URL(request.url).pathname.startsWith('/trpc')
+            ? rpc.fetch(request)
+            : openapi.fetch(request),
+      }).pipe(
+        Layer.provideMerge(
+          NodeHttpServer.layer(() => server, { port: 0, host: '127.0.0.1' }),
+        ),
+      ),
+      scope,
+    ),
   );
-  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   const origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   return {
     origin,
@@ -180,7 +189,7 @@ async function serve(opts: { expose?: boolean } = {}) {
       fetch(`${origin}/api${path}`, init),
     async [Symbol.asyncDispose]() {
       server.closeAllConnections();
-      await new Promise((resolve) => server.close(resolve));
+      await Effect.runPromise(Scope.close(scope, Exit.void));
       await Promise.all([rpc.dispose(), openapi.dispose()]);
     },
   };

@@ -1,3 +1,5 @@
+import { createServer } from 'node:http';
+import { NodeHttpServer } from '@effect/platform-node';
 import { createTRPCQueryUtils } from '@trpcdev/tanstack-query';
 import {
   createTRPCClient,
@@ -133,6 +135,7 @@ export async function createApp(opts: { posts?: number } = {}) {
 
   const server = await createTestServer({
     router: appRouter,
+    http: NodeHttpServer.layer(createServer, { port: 0, host: '127.0.0.1' }),
     createContext: ({ request }) => ({
       locale: request.headers.get('x-locale'),
     }),

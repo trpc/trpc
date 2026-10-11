@@ -1,7 +1,10 @@
 import { Schedule, Stream } from 'effect';
 import { createTRPCClient, httpLink, type TRPCClient } from 'trpcdev/client';
 import { error, initTRPC, tracked, type TrackedEnvelope } from 'trpcdev/server';
-import { createTestServer, type TestServer } from 'trpcdev/testing';
+import {
+  createTestServer,
+  type NodeTestServer as TestServer,
+} from './fixtures/server.ts';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 

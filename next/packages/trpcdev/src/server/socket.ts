@@ -25,7 +25,7 @@ import { getProcedure, type AnyRouter } from './router.ts';
 /**
  * The parts of a standard `WebSocket` the handler uses: the server-side
  * socket of Deno, Bun, Cloudflare (`WebSocketPair`, after `accept()`) or
- * `trpcdev/node`'s upgrade.
+ * `trpcdev/http`'s upgrade.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */

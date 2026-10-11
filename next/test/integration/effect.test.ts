@@ -2,7 +2,7 @@ import { Context, Effect, Exit, Layer, Stream } from 'effect';
 import { httpLink, type ClientError } from 'trpcdev/client';
 import { createEffectClient } from 'trpcdev/effect';
 import { error, initTRPC, type TRPCError } from 'trpcdev/server';
-import { createTestServer } from 'trpcdev/testing';
+import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 

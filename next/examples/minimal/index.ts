@@ -1,11 +1,13 @@
 /**
- * Minimal example: a router served over `node:http`, called with the typed
- * client. Run with `pnpm example`.
+ * Minimal example: a router served with Effect's Node `HttpServer`, called
+ * with the typed client. Run with `pnpm example`.
  */
 import { createServer } from 'node:http';
-import type { AddressInfo } from 'node:net';
+import { NodeHttpServer } from '@effect/platform-node';
+import { Effect, Layer, ManagedRuntime } from 'effect';
+import { HttpServer } from 'effect/http';
 import { createTRPCClient, httpLink, safe } from 'trpcdev/client';
-import { toNodeListener } from 'trpcdev/node';
+import { serve } from 'trpcdev/http';
 import { createFetchHandler, error, initTRPC, tracked } from 'trpcdev/server';
 import { z } from 'zod';
 
@@ -55,16 +57,23 @@ const handler = createFetchHandler({
     user: request.headers.get('authorization'),
   }),
 });
-const server = createServer(toNodeListener(handler));
-await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
-const { port } = server.address() as AddressInfo;
+const runtime = ManagedRuntime.make(
+  serve(handler).pipe(
+    Layer.provideMerge(
+      NodeHttpServer.layer(createServer, { port: 0, host: '127.0.0.1' }),
+    ),
+  ),
+);
+const url = await runtime.runPromise(
+  HttpServer.addressFormattedWith((address) => Effect.succeed(address)),
+);
 
 // --- client --------------------------------------------------------------------------
 
 const client = createTRPCClient<AppRouter>({
   links: [
     httpLink({
-      url: `http://127.0.0.1:${port}/trpc`,
+      url: `${url}/trpc`,
       batch: true,
       headers: { authorization: 'alex' },
     }),
@@ -86,5 +95,5 @@ for await (const event of client.post.all.subscribe()) {
   console.log('post.all event', event.id, event.data.title);
 }
 
-server.close();
+await runtime.dispose();
 await handler.dispose();

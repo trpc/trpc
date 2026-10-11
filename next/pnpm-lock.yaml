@@ -188,6 +188,12 @@ importers:
 
   examples/minimal:
     dependencies:
+      '@effect/platform-node':
+        specifier: 4.0.2
+        version: 4.0.2(effect@4.0.2)(redis@6.3.0)
+      effect:
+        specifier: 4.0.2
+        version: 4.0.2
       trpcdev:
         specifier: workspace:*
         version: link:../../packages/trpcdev
@@ -386,9 +392,6 @@ importers:
         specifier: ^4.0.0
         version: 4.0.2
     devDependencies:
-      '@types/node':
-        specifier: ^24.0.0
-        version: 24.19.1
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
@@ -445,6 +448,9 @@ importers:
         specifier: workspace:*
         version: link:../../packages/trpcdev
     devDependencies:
+      '@effect/platform-node':
+        specifier: 4.0.2
+        version: 4.0.2(effect@4.0.2)(redis@6.3.0)
       '@types/node':
         specifier: ^24.0.0
         version: 24.19.1
@@ -579,6 +585,9 @@ importers:
       '@angular/platform-browser':
         specifier: 22.2.2
         version: 22.2.2(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))
+      '@effect/platform-node':
+        specifier: 4.0.2
+        version: 4.0.2(effect@4.0.2)(redis@6.3.0)
       '@lit/context':
         specifier: 1.1.6
         version: 1.1.6
@@ -615,6 +624,9 @@ importers:
       '@types/react-dom':
         specifier: 19.3.0
         version: 19.3.0(@types/react@19.3.0)
+      effect:
+        specifier: 4.0.2
+        version: 4.0.2
       happy-dom:
         specifier: 20.14.6
         version: 20.14.6
@@ -739,6 +751,13 @@ packages:
     engines: {node: '>=18.0.0'}
     peerDependencies:
       effect: ^4.0.1
+      redis: '>=5.0.0 <7.0.0'
+
+  '@effect/platform-node@4.0.2':
+    resolution: {integrity: sha512-RWesXBQStnFHdD465gR5thFKgXO7FSyCKRZ56nWXB7PedNVzr8vV0nb/3MULLdri493sMz/b/pmGBTb6K8cBjQ==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      effect: ^4.0.2
       redis: '>=5.0.0 <7.0.0'
 
   '@floating-ui/core@1.8.0':
@@ -2495,10 +2514,29 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
+  '@effect/platform-node-shared@4.0.2(effect@4.0.2)':
+    dependencies:
+      '@types/ws': 8.18.2
+      effect: 4.0.2
+      ws: 8.22.0
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
   '@effect/platform-node@4.0.1(effect@4.0.1)(redis@6.3.0)':
     dependencies:
       '@effect/platform-node-shared': 4.0.2(effect@4.0.1)
       effect: 4.0.1
+      redis: 6.3.0
+      undici: 8.11.2
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
+  '@effect/platform-node@4.0.2(effect@4.0.2)(redis@6.3.0)':
+    dependencies:
+      '@effect/platform-node-shared': 4.0.2(effect@4.0.2)
+      effect: 4.0.2
       redis: 6.3.0
       undici: 8.11.2
     transitivePeerDependencies:

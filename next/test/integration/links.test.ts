@@ -12,7 +12,7 @@ import {
   type LoggerEvent,
 } from 'trpcdev/client';
 import { call, createRouterClient, error, initTRPC } from 'trpcdev/server';
-import { createTestServer } from 'trpcdev/testing';
+import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 

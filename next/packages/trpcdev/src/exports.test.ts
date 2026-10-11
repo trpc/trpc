@@ -7,6 +7,7 @@ const entries = {
   serializer: () => import('trpcdev/serializer'),
   openapi: () => import('trpcdev/openapi'),
   effect: () => import('trpcdev/effect'),
+  http: () => import('trpcdev/http'),
   testing: () => import('trpcdev/testing'),
   internal: () => import('trpcdev/internal'),
 };

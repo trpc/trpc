@@ -9,6 +9,7 @@
     "trpcdev": "workspace:*"
   },
   "devDependencies": {
+    "@effect/platform-node": "4.0.2",
     "@types/node": "^24.0.0",
     "effect": "4.0.2",
     "typescript": "^7.0.2",

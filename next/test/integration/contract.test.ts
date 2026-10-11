@@ -7,7 +7,7 @@ import {
 } from 'trpcdev/client';
 import { toContract, type inferContract } from 'trpcdev/contract';
 import { error, initTRPC, tracked, type TrackedEnvelope } from 'trpcdev/server';
-import { createTestServer } from 'trpcdev/testing';
+import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { appContract, type AppContract } from './fixtures/contract.ts';
 

@@ -1,5 +1,4 @@
-import { request as httpRequest, createServer } from 'node:http';
-import type { AddressInfo } from 'node:net';
+import { request as httpRequest } from 'node:http';
 import { Stream } from 'effect';
 import {
   createTRPCClient,
@@ -9,15 +8,16 @@ import {
   splitLink,
   wsLink,
 } from 'trpcdev/client';
-import { toNodeListener, toNodeUpgradeListener } from 'trpcdev/node';
 import {
-  createFetchHandler,
   error,
   initTRPC,
   tracked,
   type CreateContextOpts,
 } from 'trpcdev/server';
-import { createTestServer, type TestServer } from 'trpcdev/testing';
+import {
+  createTestServer,
+  type NodeTestServer as TestServer,
+} from './fixtures/server.ts';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 
@@ -335,45 +335,26 @@ test('the Node upgrade handles large messages and enforces maxPayload', async ()
   const echoRouter = {
     length: t.procedure.input(z.string()).query(({ input }) => input.length),
   };
-  const handler = createFetchHandler({
+  await using server = await createTestServer({
     router: echoRouter,
     createContext: () => ({ user: null, transport: 'x' }),
+    maxPayload: 200_000,
   });
-  const server = createServer(toNodeListener(handler)).on(
-    'upgrade',
-    toNodeUpgradeListener(handler, { maxPayload: 200_000 }),
-  );
-  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
-  const { port } = server.address() as AddressInfo;
-  await using link = wsLink({
-    url: `ws://127.0.0.1:${port}/trpc`,
-    reconnect: { attempts: 0 },
-  });
+  await using link = wsLink({ url: server.wsUrl, reconnect: { attempts: 0 } });
   const client = createTRPCClient<typeof echoRouter>({ links: [link] });
-  try {
-    expect(await client.length.query('x'.repeat(100_000))).toBe(100_000);
-    await expect(
-      client.length.query('x'.repeat(300_000)),
-    ).rejects.toMatchObject({ code: 'NETWORK_ERROR' });
-  } finally {
-    server.closeAllConnections();
-    await new Promise((resolve) => server.close(resolve));
-  }
+  expect(await client.length.query('x'.repeat(100_000))).toBe(100_000);
+  await expect(client.length.query('x'.repeat(300_000))).rejects.toMatchObject({
+    code: 'NETWORK_ERROR',
+  });
 });
 
-test('the Node upgrade checks the path and allowOrigin', async () => {
-  const handler = createFetchHandler({
+test('the upgrade checks the path and allowOrigin', async () => {
+  await using server = await createTestServer({
     router,
     createContext: () => ({ user: null, transport: 'x' }),
+    allowOrigin: (origin) => origin === 'https://app.example.com',
   });
-  const server = createServer(toNodeListener(handler)).on(
-    'upgrade',
-    toNodeUpgradeListener(handler, {
-      allowOrigin: (origin) => origin === 'https://app.example.com',
-    }),
-  );
-  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
-  const { port } = server.address() as AddressInfo;
+  const { port } = new URL(server.url);
   const upgrade = (path: string, origin: string) =>
     new Promise<number>((resolve) => {
       const req = httpRequest({
@@ -395,12 +376,7 @@ test('the Node upgrade checks the path and allowOrigin', async () => {
       req.on('response', (res) => resolve(res.statusCode ?? 0));
       req.end();
     });
-  try {
-    expect(await upgrade('/trpc', 'https://app.example.com')).toBe(101);
-    expect(await upgrade('/trpc', 'https://evil.example.com')).toBe(403);
-    expect(await upgrade('/elsewhere', 'https://app.example.com')).toBe(404);
-  } finally {
-    server.closeAllConnections();
-    await new Promise((resolve) => server.close(resolve));
-  }
+  expect(await upgrade('/trpc', 'https://app.example.com')).toBe(101);
+  expect(await upgrade('/trpc', 'https://evil.example.com')).toBe(403);
+  expect(await upgrade('/elsewhere', 'https://app.example.com')).toBe(404);
 });
