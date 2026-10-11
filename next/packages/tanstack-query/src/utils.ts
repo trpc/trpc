@@ -101,9 +101,9 @@ export type QueryOptionsIn<TQueryFnData, TError, TData> = Omit<
  */
 export type QueryOptionsOut<TQueryFnData, TError, TData> = Omit<
   QueryOptionsIn<TQueryFnData, TError, TData>,
-  'enabled'
+  'enabled' | 'initialData'
 > & {
-  /** Typed as a boolean so the options fit every adapter (Vue has no `(query) => boolean`). */
+  /** A boolean, so the options fit every adapter (Vue has no `(query) => boolean`). */
   enabled?: boolean;
   queryKey: TRPCQueryKeyFor<TQueryFnData, TError>;
   queryFn: QueryFunction<TQueryFnData, TRPCQueryKeyFor<TQueryFnData, TError>>;
@@ -142,7 +142,7 @@ export type InfiniteOptionsIn<TOutput, TError, TData, TPageParam> = Omit<
  */
 export type InfiniteOptionsOut<TOutput, TError, TData, TPageParam> = Omit<
   InfiniteOptionsIn<TOutput, TError, TData, TPageParam>,
-  'enabled'
+  'enabled' | 'initialData'
 > & {
   enabled?: boolean;
   queryKey: InfiniteKey<TOutput, TError, TPageParam>;
