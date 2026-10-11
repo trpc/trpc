@@ -515,6 +515,9 @@ export function createFetchHandler<TRouter extends AnyRouter>(
     };
     return linesResponse(
       async (write) => {
+        // Servers that buffer headers until the first body chunk (Node) would
+        // otherwise hold them back until the first event.
+        write(': open\n\n');
         const done = await Effect.runPromiseExit(
           emitEvents(events, serializer, coerceError, (frame) => {
             if (frame.kind === 'event') {

@@ -84,6 +84,12 @@ const router = {
   secret: authed.subscription(async function* ({ ctx }) {
     yield `hi ${ctx.user}`;
   }),
+  quiet: t.procedure.subscription(async function* ({ signal }) {
+    await new Promise((resolve) =>
+      signal.addEventListener('abort', resolve, { once: true }),
+    );
+    yield 'late';
+  }),
 };
 type AppRouter = typeof router;
 
@@ -216,6 +222,17 @@ test('the wire format is plain SSE', async () => {
   const text = await res.text();
   expect(text).toContain('id: 3\ndata: ');
   expect(text.trimEnd().endsWith('event: done\ndata:')).toBe(true);
+});
+
+test('the response opens before the first event', async () => {
+  await using ctx = await setup();
+  const controller = new AbortController();
+  const res = await fetch(`${ctx.server.url}/quiet`, {
+    signal: controller.signal,
+  });
+  expect(res.status).toBe(200);
+  expect(res.headers.get('content-type')).toBe('text/event-stream');
+  controller.abort();
 });
 
 test('events can hold deferred values; their chunks stream after the event', async () => {

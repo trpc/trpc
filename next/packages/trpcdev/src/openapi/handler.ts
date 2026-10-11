@@ -343,6 +343,8 @@ export function createOpenAPIHandler<TRouter extends AnyRouter>(
         const write = (text: string) => {
           if (!controller.signal.aborted) sink.enqueue(encoder.encode(text));
         };
+        // Flushes headers on servers that hold them until the first chunk.
+        write(': open\n\n');
         const exit = await Effect.runPromiseExit(
           Stream.runForEach(stream, (event) =>
             Effect.sync(() => {
