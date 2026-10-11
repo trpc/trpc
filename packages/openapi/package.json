@@ -95,7 +95,7 @@
   "peerDependencies": {
     "@hey-api/openapi-ts": ">=0.94.5",
     "@trpc/server": "11.21.0",
-    "typescript": ">=5.7.2 <7",
+    "typescript": "<8",
     "zod": ">=4.0.0"
   },
   "peerDependenciesMeta": {
