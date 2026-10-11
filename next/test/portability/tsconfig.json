@@ -5,7 +5,12 @@
     "emitDeclarationOnly": true,
     "noEmit": false,
     "outDir": "dist",
-    "types": ["node"]
+    "types": [
+      "node"
+    ]
   },
-  "include": ["index.ts"]
+  "include": [
+    "index.ts",
+    "tanstack-query.ts"
+  ]
 }

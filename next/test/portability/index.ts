@@ -38,7 +38,7 @@ import {
 import { createSerializer } from 'trpcdev/serializer';
 import { z } from 'zod';
 
-interface User {
+export interface User {
   id: string;
   name: string;
 }
