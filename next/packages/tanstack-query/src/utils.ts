@@ -11,6 +11,7 @@ import {
   type QueryObserverOptions,
   type SkipToken,
 } from '@tanstack/query-core';
+import type { RouterOf, TRPCClient } from 'trpcdev/client';
 import {
   pathKey,
   procedureKey,
@@ -429,6 +430,17 @@ export type TRPCQueryUtils<TClient> = PathUtils & {
           >
         : TRPCQueryUtils<TClient[K]>;
 };
+
+/**
+ * The helpers for a router type, `routerType()` value or contract, for
+ * when there is no client value to infer them from (context helpers).
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export type TRPCQueryUtilsFor<
+  TRouter,
+  TContext extends object = {},
+> = TRPCQueryUtils<TRPCClient<RouterOf<TRouter>, TContext>>;
 
 /**
  * Options for {@link createTRPCQueryUtils}.

@@ -32,6 +32,7 @@ export {
   type StreamedOptions,
   type SubscriptionProcedureUtils,
   type TRPCQueryKeyFor,
+  type TRPCQueryUtilsFor,
   type TRPCQueryUtils,
 } from './utils.ts';
 export type {
