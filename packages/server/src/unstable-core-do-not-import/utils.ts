@@ -83,6 +83,10 @@ export function assert(
   }
 }
 
+export function assertNever(value: never): never {
+  throw new Error(`AssertionError: unexpected value ${String(value)}`);
+}
+
 export function sleep(ms = 0): Promise<void> {
   return new Promise<void>((res) => setTimeout(res, ms));
 }
