@@ -14,3 +14,6 @@ overrides:
 peerDependencyRules:
   allowedVersions:
     vite: '1.1.0'
+
+allowBuilds:
+  vue-demi: true
