@@ -31,8 +31,14 @@ export default defineConfig({
     include: [
       'packages/*/src/**/*.test.ts',
       'test/**/*.test.ts',
+      'test/**/*.test.tsx',
       'spikes/**/*.test.ts',
     ],
+    environmentOptions: {
+      // Framework tests render in happy-dom and call a test server on
+      // another origin.
+      happyDOM: { settings: { fetch: { disableSameOriginPolicy: true } } },
+    },
     typecheck: {
       enabled: true,
       tsconfig: './tsconfig.vitest.json',
