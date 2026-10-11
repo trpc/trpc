@@ -44,6 +44,7 @@
   },
   "devDependencies": {
     "@angular/core": "22.2.2",
+    "@lit/context": "1.1.6",
     "@tanstack/query-core": "5.104.1",
     "@types/node": "^24.0.0",
     "@types/react": "19.3.0",
@@ -60,6 +61,7 @@
   },
   "peerDependencies": {
     "@angular/core": ">=19",
+    "@lit/context": "^1.1",
     "@tanstack/query-core": "^5.104.0",
     "lit": "^3",
     "preact": "^10",
@@ -71,6 +73,9 @@
   },
   "peerDependenciesMeta": {
     "@angular/core": {
+      "optional": true
+    },
+    "@lit/context": {
       "optional": true
     },
     "lit": {
