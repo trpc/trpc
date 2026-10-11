@@ -11,7 +11,8 @@ next/
   .agent-docs/          proposals, decisions, reference, spike notes (design only)
   .repos/               vendored dependency source (vendor-src, read-only)
   packages/trpcdev/     core package (ideas.md: single `trpcdev` package)
-  packages/tanstack-query/  `@trpcdev/tanstack-query`: framework-agnostic TanStack Query helpers + adapters
+  packages/tanstack-query/  `@trpcdev/tanstack-query`: framework-agnostic TanStack Query helpers
+  packages/tanstack-*-query/  `@trpcdev/tanstack-{react,preact,vue,solid,svelte,angular,lit}-query`: one package per TanStack adapter
   examples/             workspace-linked examples
   test/integration/     integration tests: real clients against real HTTP servers
   test/tanstack-query/  TanStack Query tests: real components per adapter (happy-dom) against real servers
@@ -44,9 +45,9 @@ pnpm example
 | `pnpm test`      | `vp test run`: Vitest, including `*.test-d.ts` type tests     |
 | `pnpm example`   | Runs `examples/minimal` on Node (workspace-linked `trpcdev`)  |
 
-`trpcdev` entry points: `/server` (builder, routers, `t.implement`, the fetch handler with `.websocket()` and `.messagePort()`, callers), `/client` (typed client and links, including `wsLink`, `messagePortLink` and `dedupeLink`), `/contract` (`contract.create`, `toContract`), `/openapi` (REST handler, `generateOpenAPI`, reference UI, `openAPILink`), `/effect` (Effect client), `/serializer` (danSON), `/node` (`node:http` adapter and WebSocket upgrade), `/testing` (`createTestServer`) and `/internal` (unstable). Run one test file with `pnpm vp test run test/integration/<name>`.
+`trpcdev` entry points: `/server` (builder, routers, `t.implement`, the fetch handler with `.websocket()` and `.messagePort()`, callers), `/client` (typed client and links, including `wsLink`, `messagePortLink` and `dedupeLink`), `/contract` (`contract.create`, `toContract`), `/openapi` (REST handler, `generateOpenAPI`, reference UI, `openAPILink`), `/effect` (Effect client), `/serializer` (danSON), `/http` (`serve`/`toHttpEffect`: the handler and WebSocket upgrades on Effect's `HttpServer`), `/testing` (`createTestServer({ http })`) and `/internal` (unstable). `trpcdev` imports no `node:*`: Node comes from `NodeHttpServer.layer` in `@effect/platform-node` ([0018](./.agent-docs/decisions/0018-platforms-through-effect-layers.md)). Run one test file with `pnpm vp test run test/integration/<name>`.
 
-`@trpcdev/tanstack-query` entry points: `.` (`createTRPCQueryUtils({ client })` for query, infinite, mutation, streamed and live options, keys and filters; `SubscriptionObserver`; `hydrationOptions`) and one subpath per official TanStack adapter with context helpers and a subscription primitive: `/react`, `/preact`, `/vue`, `/solid`, `/svelte`, `/angular`, `/lit`. Solid and Svelte tests run as their own Vitest projects with browser conditions (`--project solid`, `--project svelte`).
+`@trpcdev/tanstack-query` (`createTRPCQueryUtils({ client })` for query, infinite, mutation, streamed and live options, keys and filters; `SubscriptionObserver`; `hydrationOptions`) plus one package per official TanStack adapter, re-exporting it with context helpers and a subscription primitive: `@trpcdev/tanstack-react-query`, `-preact-query`, `-vue-query`, `-solid-query`, `-svelte-query`, `-angular-query` and `-lit-query` ([0017](./.agent-docs/decisions/0017-integration-packages-per-dependency.md)). Solid and Svelte tests run as their own Vitest projects with browser conditions (`--project solid`, `--project svelte`).
 
 **Pre-commit:** `.vite-hooks/pre-commit` runs `vp staged` (see `staged` in `vite.config.ts`): `vp check --fix` on staged files under `next/`, plus `vp test related` for staged `.ts` files. `pnpm install` enables it via `vp config` unless `core.hooksPath` is already set to something else. Skip once with `VP_GIT_HOOKS=0 git commit …`.
 

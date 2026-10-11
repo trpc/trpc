@@ -24,6 +24,8 @@ Decisions are never edited after the fact except to add a "Superseded by" link. 
 | [0014](./0014-keep-t-object.md)                           | Keep `t`; plugin packages must work through `.concat()` (Q3.5)                | [03](../proposals/03-builder-and-init.md)              | 2026-10-10 | accepted    |
 | [0015](./0015-agent-judgement-calls-v12-build.md)         | Agent judgement calls for the first v12 build                                 | several                                                | 2026-10-10 | provisional |
 | [0016](./0016-agent-judgement-calls-tanstack-query.md)    | Agent judgement calls for the TanStack Query integration                      | [19](../proposals/19-tanstack-query.md)                | 2026-10-11 | provisional |
+| [0017](./0017-integration-packages-per-dependency.md)     | Integrations that add dependencies are their own packages                     | [01](../proposals/01-packages-and-type-portability.md) | 2026-10-11 | accepted    |
+| [0018](./0018-platforms-through-effect-layers.md)         | `trpcdev` imports no Node; platforms come from Effect layers                  | [12](../proposals/12-handlers-adapters-platforms.md)   | 2026-10-11 | accepted    |
 
 ## Template
 

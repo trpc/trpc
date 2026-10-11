@@ -1,8 +1,8 @@
 # 0015 — Agent judgement calls for the first v12 build
 
-| Proposal  | Date       | Status      | Supersedes | Superseded by |
-| --------- | ---------- | ----------- | ---------- | ------------- |
-| (several) | 2026-10-10 | provisional | —          | —             |
+| Proposal  | Date       | Status      | Supersedes | Superseded by                                                                      |
+| --------- | ---------- | ----------- | ---------- | ---------------------------------------------------------------------------------- |
+| (several) | 2026-10-10 | provisional | —          | [0018](./0018-platforms-through-effect-layers.md) (`trpcdev/node`, "no `ws`" rows) |
 
 Alex asked for a first build of v12 "following what we've said in ideas.md. For decisions where you're waiting for human, make a judgement call — refactoring is cheap and we can do that later." Every call below is the agent's, not Alex's. Each one is cheap to revisit. Where a call departs from a proposal's recommendation, the reason is given.
 

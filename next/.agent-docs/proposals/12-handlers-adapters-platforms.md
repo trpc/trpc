@@ -182,6 +182,8 @@ const client = createTRPCClient<AppRouter>({
 });
 ```
 
+> **Build (2026-10-11):** `trpcdev` no longer imports `node:*`. `trpcdev/http` serves the fetch handler (and WebSocket upgrades) on Effect's `HttpServer`, and the app provides the platform layer, e.g. `NodeHttpServer.layer` from `@effect/platform-node`: [`decisions/0018`](../decisions/0018-platforms-through-effect-layers.md). Q12.1 is still Alex's to answer.
+
 ## Recommendation
 
 **P-A**, with **P-C**'s `effect/http` interop as an optional extra in `./effect`. Create the handler once, then call `fetch`/`handle`. The WebSocket handler takes a standard `WebSocket`-shaped object, so `ws` is not a dependency.

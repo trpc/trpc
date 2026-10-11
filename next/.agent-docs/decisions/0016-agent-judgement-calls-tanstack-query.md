@@ -1,8 +1,8 @@
 # 0016 — Agent judgement calls for the TanStack Query integration
 
-| Proposal                                | Date       | Status      | Supersedes | Superseded by |
-| --------------------------------------- | ---------- | ----------- | ---------- | ------------- |
-| [19](../proposals/19-tanstack-query.md) | 2026-10-11 | provisional | —          | —             |
+| Proposal                                | Date       | Status      | Supersedes | Superseded by                                                        |
+| --------------------------------------- | ---------- | ----------- | ---------- | -------------------------------------------------------------------- |
+| [19](../proposals/19-tanstack-query.md) | 2026-10-11 | provisional | —          | [0017](./0017-integration-packages-per-dependency.md) (Q19.1 layout) |
 
 Alex asked to "build the tanstack query package, make some sort of core foundation in a lib and add support for every lib tanstack query has support for. Make decisions independently, we can always challenge and refactor later". Every call below is the agent's, not Alex's. Q19.2 was already decided ([0008](./0008-tanstack-option-bag.md)) and is followed.
 
