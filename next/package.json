@@ -17,6 +17,8 @@
     "vendor:sync": "vendor-src sync"
   },
   "dependencies": {
+    "@sveltejs/vite-plugin-svelte": "7.3.1",
+    "svelte": "5.57.2",
     "typescript": "^7.0.2",
     "vendor-src": "0.15.4",
     "vite-plus": "1.1.0"

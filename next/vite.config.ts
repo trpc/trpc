@@ -1,4 +1,17 @@
+import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { defineConfig } from 'vite-plus';
+
+// Solid and Svelte ship server builds under Node's conditions; their tests
+// need the browser builds, resolved (and so inlined) by Vite.
+const browserBuild = (name: string, deps: string[]) => ({
+  extends: true as const,
+  resolve: { conditions: ['browser', 'development'] },
+  test: {
+    name,
+    include: [`test/tanstack-query/${name}.test.ts`],
+    server: { deps: { inline: deps } },
+  },
+});
 
 export default defineConfig({
   fmt: {
@@ -28,22 +41,44 @@ export default defineConfig({
     ],
   },
   test: {
-    include: [
-      'packages/*/src/**/*.test.ts',
-      'test/**/*.test.ts',
-      'test/**/*.test.tsx',
-      'spikes/**/*.test.ts',
-    ],
     environmentOptions: {
       // Framework tests render in happy-dom and call a test server on
       // another origin.
       happyDOM: { settings: { fetch: { disableSameOriginPolicy: true } } },
     },
-    typecheck: {
-      enabled: true,
-      tsconfig: './tsconfig.vitest.json',
-      include: ['packages/*/src/**/*.test-d.ts', 'spikes/**/*.test-d.ts'],
-    },
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: 'node',
+          include: [
+            'packages/*/src/**/*.test.ts',
+            'test/**/*.test.ts',
+            'test/**/*.test.tsx',
+            'spikes/**/*.test.ts',
+          ],
+          exclude: [
+            '**/node_modules/**',
+            'test/tanstack-query/solid.test.ts',
+            'test/tanstack-query/svelte.test.ts',
+          ],
+          typecheck: {
+            enabled: true,
+            tsconfig: './tsconfig.vitest.json',
+            include: ['packages/*/src/**/*.test-d.ts', 'spikes/**/*.test-d.ts'],
+          },
+        },
+      },
+      browserBuild('solid', ['solid-js', '@tanstack/solid-query']),
+      {
+        ...browserBuild('svelte', [
+          'svelte',
+          '@tanstack/svelte-query',
+          '@trpcdev/tanstack-query',
+        ]),
+        plugins: [svelte({ configFile: false })],
+      },
+    ],
   },
   staged: {
     '*': 'vp check --fix',
