@@ -1,0 +1,42 @@
+{
+  "name": "@test/tanstack-query",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@trpcdev/tanstack-query": "workspace:*",
+    "trpcdev": "workspace:*"
+  },
+  "devDependencies": {
+    "@angular/common": "22.2.2",
+    "@angular/compiler": "22.2.2",
+    "@angular/core": "22.2.2",
+    "@angular/platform-browser": "22.2.2",
+    "@sveltejs/vite-plugin-svelte": "7.3.1",
+    "@tanstack/angular-query-experimental": "5.104.1",
+    "@tanstack/lit-query": "0.2.26",
+    "@tanstack/preact-query": "5.104.1",
+    "@tanstack/query-core": "5.104.1",
+    "@tanstack/react-query": "5.104.1",
+    "@tanstack/solid-query": "5.104.1",
+    "@tanstack/svelte-query": "6.3.1",
+    "@tanstack/vue-query": "5.104.1",
+    "@types/node": "^24.0.0",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "happy-dom": "20.14.6",
+    "lit": "3.3.3",
+    "preact": "10.29.8",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "rxjs": "7.8.2",
+    "solid-js": "1.9.17",
+    "svelte": "5.57.2",
+    "typescript": "^7.0.2",
+    "vite-plus": "1.1.0",
+    "vue": "3.5.43",
+    "zod": "4.6.5"
+  }
+}

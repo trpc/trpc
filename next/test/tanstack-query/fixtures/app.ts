@@ -1,0 +1,152 @@
+import { createTRPCQueryUtils } from '@trpcdev/tanstack-query';
+import {
+  createTRPCClient,
+  dedupeLink,
+  httpLink,
+  routerType,
+} from 'trpcdev/client';
+import { error, initTRPC } from 'trpcdev/server';
+import { createTestServer } from 'trpcdev/testing';
+import { z } from 'zod';
+
+export interface Post {
+  id: string;
+  title: string;
+  createdAt: Date;
+}
+
+export const sleep = (ms: number) =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Server-side state, reset by {@link createApp}. */
+export const db = {
+  posts: new Map<string, Post>(),
+  listeners: new Set<(post: Post) => void>(),
+  calls: [] as string[],
+  openTickers: 0,
+  /** Values of `ctx.locale` the server saw. */
+  locales: [] as (string | null)[],
+};
+
+function addPost(title: string): Post {
+  const id = String(db.posts.size + 1);
+  const post = { id, title, createdAt: new Date(Date.UTC(2026, 0, 1 + +id)) };
+  db.posts.set(id, post);
+  for (const listener of db.listeners) listener(post);
+  return post;
+}
+
+const t = initTRPC<{ ctx: { locale: string | null } }>();
+
+export const appRouter = {
+  greeting: t.procedure.query(({ ctx }) => {
+    db.locales.push(ctx.locale);
+    return 'hello' as const;
+  }),
+  post: {
+    byId: t.procedure.input(z.object({ id: z.string() })).query(({ input }) => {
+      db.calls.push(`post.byId:${input.id}`);
+      const post = db.posts.get(input.id);
+      return post ?? error({ code: 'NOT_FOUND', data: { id: input.id } });
+    }),
+    list: t.procedure
+      .input(z.object({ limit: z.number(), cursor: z.number().optional() }))
+      .query(({ input }) => {
+        const all = [...db.posts.values()];
+        const start = input.cursor ?? 0;
+        const items = all.slice(start, start + input.limit);
+        const next = start + input.limit;
+        return { items, nextCursor: next < all.length ? next : undefined };
+      }),
+    create: t.procedure
+      .input(z.object({ title: z.string().min(1) }))
+      .mutation(({ input }) => addPost(input.title)),
+    onAdd: t.procedure.subscription(async function* ({ signal }) {
+      const queue: Post[] = [];
+      let wake: (() => void) | undefined;
+      const listener = (post: Post) => {
+        queue.push(post);
+        wake?.();
+      };
+      db.listeners.add(listener);
+      try {
+        while (!signal.aborted) {
+          const next = queue.shift();
+          if (next) {
+            yield next;
+            continue;
+          }
+          await new Promise<void>((resolve) => {
+            wake = resolve;
+            signal.addEventListener('abort', () => resolve(), { once: true });
+          });
+        }
+      } finally {
+        db.listeners.delete(listener);
+      }
+    }),
+  },
+  chat: {
+    reply: t.procedure
+      .input(z.object({ prompt: z.string() }))
+      .query(async function* ({ input }) {
+        for (const word of `you said ${input.prompt}`.split(' ')) {
+          await sleep(5);
+          yield word;
+        }
+      }),
+  },
+  clock: {
+    ticks: t.procedure
+      .input(z.object({ from: z.number() }))
+      .subscription(async function* ({ input, signal }) {
+        db.openTickers++;
+        try {
+          for (let n = input.from; !signal.aborted; n++) {
+            yield n;
+            await sleep(10);
+          }
+        } finally {
+          db.openTickers--;
+        }
+      }),
+    countdown: t.procedure
+      .input(z.object({ from: z.number() }))
+      .subscription(async function* ({ input }) {
+        for (let n = input.from; n > 0; n--) yield n;
+        if (input.from === 0) throw error({ code: 'CONFLICT' });
+      }),
+  },
+};
+export type AppRouter = typeof appRouter;
+
+/**
+ * Starts the app on a real HTTP server with fresh state, and returns a
+ * typed client and its TanStack helpers.
+ */
+export async function createApp(opts: { posts?: number } = {}) {
+  db.posts.clear();
+  db.listeners.clear();
+  db.calls.length = 0;
+  db.locales.length = 0;
+  for (let i = 1; i <= (opts.posts ?? 3); i++) addPost(`Post ${i}`);
+
+  const server = await createTestServer({
+    router: appRouter,
+    createContext: ({ request }) => ({
+      locale: request.headers.get('x-locale'),
+    }),
+  });
+  const client = createTRPCClient({
+    router: routerType<AppRouter>(),
+    links: [dedupeLink(), httpLink({ url: server.url })],
+  });
+  const trpc = createTRPCQueryUtils({ client });
+  return {
+    server,
+    client,
+    trpc,
+    addPost,
+    [Symbol.asyncDispose]: () => server.close(),
+  };
+}
