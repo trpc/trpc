@@ -99,11 +99,12 @@ export type QueryOptionsIn<TQueryFnData, TError, TData> = Omit<
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type QueryOptionsOut<TQueryFnData, TError, TData> = QueryOptionsIn<
-  TQueryFnData,
-  TError,
-  TData
+export type QueryOptionsOut<TQueryFnData, TError, TData> = Omit<
+  QueryOptionsIn<TQueryFnData, TError, TData>,
+  'enabled'
 > & {
+  /** Typed as a boolean so the options fit every adapter (Vue has no `(query) => boolean`). */
+  enabled?: boolean;
   queryKey: TRPCQueryKeyFor<TQueryFnData, TError>;
   queryFn: QueryFunction<TQueryFnData, TRPCQueryKeyFor<TQueryFnData, TError>>;
 };
@@ -139,15 +140,18 @@ export type InfiniteOptionsIn<TOutput, TError, TData, TPageParam> = Omit<
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type InfiniteOptionsOut<TOutput, TError, TData, TPageParam> =
-  InfiniteOptionsIn<TOutput, TError, TData, TPageParam> & {
-    queryKey: InfiniteKey<TOutput, TError, TPageParam>;
-    queryFn: QueryFunction<
-      TOutput,
-      InfiniteKey<TOutput, TError, TPageParam>,
-      TPageParam
-    >;
-  };
+export type InfiniteOptionsOut<TOutput, TError, TData, TPageParam> = Omit<
+  InfiniteOptionsIn<TOutput, TError, TData, TPageParam>,
+  'enabled'
+> & {
+  enabled?: boolean;
+  queryKey: InfiniteKey<TOutput, TError, TPageParam>;
+  queryFn: QueryFunction<
+    TOutput,
+    InfiniteKey<TOutput, TError, TPageParam>,
+    TPageParam
+  >;
+};
 
 /**
  * A mutation's variables: optional when the input is.
