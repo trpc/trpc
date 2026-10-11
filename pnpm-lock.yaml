@@ -2860,8 +2860,8 @@ importers:
         specifier: 1.4.3
         version: 1.4.3(typedoc-plugin-markdown@4.4.2(typedoc@0.27.9(typescript@5.9.2)))(typedoc@0.27.9(typescript@5.9.2))
       dotenv:
-        specifier: ^16.0.1
-        version: 16.4.7
+        specifier: ^18.0.0
+        version: 18.0.6
       effect:
         specifier: 3.22.2
         version: 3.22.2
@@ -12632,6 +12632,11 @@ packages:
   dotenv@17.3.1:
     resolution: {integrity: sha512-IO8C/dzEb6O3F9/twg6ZLXz164a2fhTnEWb95H23Dm4OuN+92NmEAlTrupP9VW6Jm3sO26tQlqyvyi4CsnY9GA==}
     engines: {node: '>=12'}
+
+  dotenv@18.0.6:
+    resolution: {integrity: sha512-ZMVmohV6CvAJtj++pZNyggluUt6hbRdQAxc2+Z635RL6/AG/ruXv5lHnybUFoxMPL/yrTL/tsF4paZu2l7RA6Q==}
+    engines: {node: '>=12'}
+    hasBin: true
 
   drizzle-kit@0.31.10:
     resolution: {integrity: sha512-7OZcmQUrdGI+DUNNsKBn1aW8qSoKuTH7d0mYgSP8bAzdFzKoovxEFnoGQp2dVs82EOJeYycqRtciopszwUf8bw==}
@@ -33031,6 +33036,8 @@ snapshots:
   dotenv@16.4.7: {}
 
   dotenv@17.3.1: {}
+
+  dotenv@18.0.6: {}
 
   drizzle-kit@0.31.10:
     dependencies:
