@@ -9,7 +9,7 @@
  *
  * @example
  * ```ts
- * import { createTRPCContext } from '@trpcdev/tanstack-query/lit';
+ * import { createTRPCContext } from '@trpcdev/tanstack-lit-query';
  *
  * export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
  * customElements.define('trpc-provider', TRPCProvider);
@@ -49,7 +49,9 @@ import {
   type SubscriptionResult,
   type TRPCQueryUtilsFor,
   type TRPCSubscriptionOptions,
-} from '../index.ts';
+} from '@trpcdev/tanstack-query';
+
+export * from '@trpcdev/tanstack-query';
 
 /**
  * The provider element class from {@link createTRPCContext}. Set `.client`

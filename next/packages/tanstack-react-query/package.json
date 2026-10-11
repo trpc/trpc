@@ -1,0 +1,32 @@
+{
+  "name": "@trpcdev/tanstack-react-query",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build": "echo \"build not wired yet\""
+  },
+  "dependencies": {
+    "@trpcdev/tanstack-query": "workspace:*"
+  },
+  "devDependencies": {
+    "@tanstack/query-core": "5.104.1",
+    "@tanstack/react-query": "5.104.1",
+    "@types/react": "19.3.0",
+    "react": "19.3.0",
+    "trpcdev": "workspace:*",
+    "typescript": "^7.0.2"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.104.0",
+    "react": "^19",
+    "trpcdev": "workspace:*"
+  }
+}

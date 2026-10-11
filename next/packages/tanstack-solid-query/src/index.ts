@@ -6,7 +6,7 @@
  *
  * @example
  * ```tsx
- * import { createTRPCContext } from '@trpcdev/tanstack-query/solid';
+ * import { createTRPCContext } from '@trpcdev/tanstack-solid-query';
  *
  * export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
  *
@@ -37,7 +37,9 @@ import {
   type SubscriptionStatus,
   type TRPCQueryUtilsFor,
   type TRPCSubscriptionOptions,
-} from '../index.ts';
+} from '@trpcdev/tanstack-query';
+
+export * from '@trpcdev/tanstack-query';
 
 /**
  * Props of the `TRPCProvider` from {@link createTRPCContext}.

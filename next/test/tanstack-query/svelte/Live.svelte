@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createQuery } from '@tanstack/svelte-query';
-  import { createSubscription } from '@trpcdev/tanstack-query/svelte';
+  import { createSubscription } from '@trpcdev/tanstack-svelte-query';
   import { useTRPC } from './trpc.ts';
 
   let { onCountdown }: { onCountdown: (n: number) => void } = $props();

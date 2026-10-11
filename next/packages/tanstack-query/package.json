@@ -7,35 +7,6 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./src/index.ts"
-    },
-    "./react": {
-      "types": "./src/react/index.ts",
-      "default": "./src/react/index.ts"
-    },
-    "./preact": {
-      "types": "./src/preact/index.ts",
-      "default": "./src/preact/index.ts"
-    },
-    "./vue": {
-      "types": "./src/vue/index.ts",
-      "default": "./src/vue/index.ts"
-    },
-    "./solid": {
-      "types": "./src/solid/index.ts",
-      "default": "./src/solid/index.ts"
-    },
-    "./svelte": {
-      "types": "./src/svelte/index.ts",
-      "svelte": "./src/svelte/index.ts",
-      "default": "./src/svelte/index.ts"
-    },
-    "./angular": {
-      "types": "./src/angular/index.ts",
-      "default": "./src/angular/index.ts"
-    },
-    "./lit": {
-      "types": "./src/lit/index.ts",
-      "default": "./src/lit/index.ts"
     }
   },
   "scripts": {
@@ -43,58 +14,13 @@
     "build": "echo \"build not wired yet\""
   },
   "devDependencies": {
-    "@angular/core": "22.2.2",
-    "@lit/context": "1.1.6",
     "@tanstack/query-core": "5.104.1",
-    "@types/node": "^24.0.0",
-    "@types/react": "19.3.0",
-    "lit": "3.3.3",
-    "preact": "10.29.8",
-    "react": "19.3.0",
-    "rxjs": "7.8.2",
-    "solid-js": "1.9.17",
-    "svelte": "5.57.2",
     "trpcdev": "workspace:*",
     "typescript": "^7.0.2",
-    "vite-plus": "1.1.0",
-    "vue": "3.5.43"
+    "vite-plus": "1.1.0"
   },
   "peerDependencies": {
-    "@angular/core": ">=19",
-    "@lit/context": "^1.1",
     "@tanstack/query-core": "^5.104.0",
-    "lit": "^3",
-    "preact": "^10",
-    "react": "^19",
-    "solid-js": "^1.9",
-    "svelte": "^5.25",
-    "trpcdev": "workspace:*",
-    "vue": "^3.5"
-  },
-  "peerDependenciesMeta": {
-    "@angular/core": {
-      "optional": true
-    },
-    "@lit/context": {
-      "optional": true
-    },
-    "lit": {
-      "optional": true
-    },
-    "preact": {
-      "optional": true
-    },
-    "react": {
-      "optional": true
-    },
-    "solid-js": {
-      "optional": true
-    },
-    "svelte": {
-      "optional": true
-    },
-    "vue": {
-      "optional": true
-    }
+    "trpcdev": "workspace:*"
   }
 }

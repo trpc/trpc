@@ -3,7 +3,7 @@ import { QueryClient } from '@tanstack/svelte-query';
 import {
   createSubscription,
   type CreateSubscriptionResult,
-} from '@trpcdev/tanstack-query/svelte';
+} from '@trpcdev/tanstack-svelte-query';
 import { flushSync, mount, unmount, type Component } from 'svelte';
 import type { TRPCClient } from 'trpcdev/client';
 import { expect, expectTypeOf, test } from 'vite-plus/test';

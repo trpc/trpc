@@ -75,6 +75,7 @@ export default defineConfig({
           'svelte',
           '@tanstack/svelte-query',
           '@trpcdev/tanstack-query',
+          '@trpcdev/tanstack-svelte-query',
         ]),
         plugins: [svelte({ configFile: false })],
       },

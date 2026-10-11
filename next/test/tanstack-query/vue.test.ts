@@ -10,7 +10,7 @@ import {
 import {
   createTRPCContext,
   useSubscription,
-} from '@trpcdev/tanstack-query/vue';
+} from '@trpcdev/tanstack-vue-query';
 import type { TRPCClient } from 'trpcdev/client';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { createApp as createVueApp, defineComponent, h, ref } from 'vue';

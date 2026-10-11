@@ -17,7 +17,7 @@ import {
 import {
   createTRPCContext,
   useSubscription,
-} from '@trpcdev/tanstack-query/react';
+} from '@trpcdev/tanstack-react-query';
 import { Suspense, useState, type ReactNode } from 'react';
 import { createRoot, hydrateRoot } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';

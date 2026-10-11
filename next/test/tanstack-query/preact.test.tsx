@@ -11,7 +11,7 @@ import {
 import {
   createTRPCContext,
   useSubscription,
-} from '@trpcdev/tanstack-query/preact';
+} from '@trpcdev/tanstack-preact-query';
 import { render, type ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import type { TRPCClient } from 'trpcdev/client';

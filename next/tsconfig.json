@@ -3,7 +3,7 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "lib": ["ES2022", "DOM"],
+    "lib": ["ES2022", "ESNext.Disposable", "DOM"],
     "strict": true,
     "skipLibCheck": true,
     "noEmit": true,

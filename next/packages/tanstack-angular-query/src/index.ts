@@ -6,7 +6,7 @@
  *
  * @example
  * ```ts
- * import { createTRPCContext } from '@trpcdev/tanstack-query/angular';
+ * import { createTRPCContext } from '@trpcdev/tanstack-angular-query';
  *
  * export const { provideTRPC, injectTRPC } = createTRPCContext<AppRouter>();
  *
@@ -43,7 +43,9 @@ import {
   type SubscriptionStatus,
   type TRPCQueryUtilsFor,
   type TRPCSubscriptionOptions,
-} from '../index.ts';
+} from '@trpcdev/tanstack-query';
+
+export * from '@trpcdev/tanstack-query';
 
 /**
  * What {@link createTRPCContext} returns.

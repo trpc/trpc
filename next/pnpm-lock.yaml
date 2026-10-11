@@ -202,41 +202,83 @@ importers:
         specifier: ^7.0.2
         version: 7.0.2
 
-  packages/tanstack-query:
+  packages/tanstack-angular-query:
+    dependencies:
+      '@trpcdev/tanstack-query':
+        specifier: workspace:*
+        version: link:../tanstack-query
     devDependencies:
       '@angular/core':
         specifier: 22.2.2
         version: 22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2)
-      '@lit/context':
-        specifier: 1.1.6
-        version: 1.1.6
+      '@tanstack/angular-query-experimental':
+        specifier: 5.104.1
+        version: 5.104.1(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(csstype@3.2.3)
       '@tanstack/query-core':
         specifier: 5.104.1
         version: 5.104.1
-      '@types/node':
-        specifier: ^24.0.0
-        version: 24.19.1
-      '@types/react':
-        specifier: 19.3.0
-        version: 19.3.0
-      lit:
-        specifier: 3.3.3
-        version: 3.3.3
-      preact:
-        specifier: 10.29.8
-        version: 10.29.8
-      react:
-        specifier: 19.3.0
-        version: 19.3.0
       rxjs:
         specifier: 7.8.2
         version: 7.8.2
-      solid-js:
-        specifier: 1.9.17
-        version: 1.9.17
-      svelte:
-        specifier: 5.57.2
-        version: 5.57.2
+      trpcdev:
+        specifier: workspace:*
+        version: link:../trpcdev
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+
+  packages/tanstack-lit-query:
+    dependencies:
+      '@trpcdev/tanstack-query':
+        specifier: workspace:*
+        version: link:../tanstack-query
+    devDependencies:
+      '@lit/context':
+        specifier: 1.1.6
+        version: 1.1.6
+      '@tanstack/lit-query':
+        specifier: 0.2.26
+        version: 0.2.26(@tanstack/query-core@5.104.1)(lit@3.3.3)
+      '@tanstack/query-core':
+        specifier: 5.104.1
+        version: 5.104.1
+      lit:
+        specifier: 3.3.3
+        version: 3.3.3
+      trpcdev:
+        specifier: workspace:*
+        version: link:../trpcdev
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+
+  packages/tanstack-preact-query:
+    dependencies:
+      '@trpcdev/tanstack-query':
+        specifier: workspace:*
+        version: link:../tanstack-query
+    devDependencies:
+      '@tanstack/preact-query':
+        specifier: 5.104.1
+        version: 5.104.1(preact@10.29.8)
+      '@tanstack/query-core':
+        specifier: 5.104.1
+        version: 5.104.1
+      preact:
+        specifier: 10.29.8
+        version: 10.29.8
+      trpcdev:
+        specifier: workspace:*
+        version: link:../trpcdev
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+
+  packages/tanstack-query:
+    devDependencies:
+      '@tanstack/query-core':
+        specifier: 5.104.1
+        version: 5.104.1
       trpcdev:
         specifier: workspace:*
         version: link:../trpcdev
@@ -246,6 +288,94 @@ importers:
       vite-plus:
         specifier: 1.1.0
         version: 1.1.0(@types/node@24.19.1)(@vitest/ui@5.0.3)(happy-dom@20.14.6)(svelte@5.57.2)(typescript@7.0.2)
+
+  packages/tanstack-react-query:
+    dependencies:
+      '@trpcdev/tanstack-query':
+        specifier: workspace:*
+        version: link:../tanstack-query
+    devDependencies:
+      '@tanstack/query-core':
+        specifier: 5.104.1
+        version: 5.104.1
+      '@tanstack/react-query':
+        specifier: 5.104.1
+        version: 5.104.1(react@19.3.0)
+      '@types/react':
+        specifier: 19.3.0
+        version: 19.3.0
+      react:
+        specifier: 19.3.0
+        version: 19.3.0
+      trpcdev:
+        specifier: workspace:*
+        version: link:../trpcdev
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+
+  packages/tanstack-solid-query:
+    dependencies:
+      '@trpcdev/tanstack-query':
+        specifier: workspace:*
+        version: link:../tanstack-query
+    devDependencies:
+      '@tanstack/query-core':
+        specifier: 5.104.1
+        version: 5.104.1
+      '@tanstack/solid-query':
+        specifier: 5.104.1
+        version: 5.104.1(solid-js@1.9.17)
+      solid-js:
+        specifier: 1.9.17
+        version: 1.9.17
+      trpcdev:
+        specifier: workspace:*
+        version: link:../trpcdev
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+
+  packages/tanstack-svelte-query:
+    dependencies:
+      '@trpcdev/tanstack-query':
+        specifier: workspace:*
+        version: link:../tanstack-query
+    devDependencies:
+      '@tanstack/query-core':
+        specifier: 5.104.1
+        version: 5.104.1
+      '@tanstack/svelte-query':
+        specifier: 6.3.1
+        version: 6.3.1(svelte@5.57.2)
+      svelte:
+        specifier: 5.57.2
+        version: 5.57.2
+      trpcdev:
+        specifier: workspace:*
+        version: link:../trpcdev
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+
+  packages/tanstack-vue-query:
+    dependencies:
+      '@trpcdev/tanstack-query':
+        specifier: workspace:*
+        version: link:../tanstack-query
+    devDependencies:
+      '@tanstack/query-core':
+        specifier: 5.104.1
+        version: 5.104.1
+      '@tanstack/vue-query':
+        specifier: 5.104.1
+        version: 5.104.1(vue@3.5.43(typescript@7.0.2))
+      trpcdev:
+        specifier: workspace:*
+        version: link:../trpcdev
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
       vue:
         specifier: 3.5.43
         version: 3.5.43(typescript@7.0.2)
@@ -342,9 +472,30 @@ importers:
       '@tanstack/query-core':
         specifier: 5.104.1
         version: 5.104.1
+      '@trpcdev/tanstack-angular-query':
+        specifier: workspace:*
+        version: link:../../packages/tanstack-angular-query
+      '@trpcdev/tanstack-lit-query':
+        specifier: workspace:*
+        version: link:../../packages/tanstack-lit-query
+      '@trpcdev/tanstack-preact-query':
+        specifier: workspace:*
+        version: link:../../packages/tanstack-preact-query
       '@trpcdev/tanstack-query':
         specifier: workspace:*
         version: link:../../packages/tanstack-query
+      '@trpcdev/tanstack-react-query':
+        specifier: workspace:*
+        version: link:../../packages/tanstack-react-query
+      '@trpcdev/tanstack-solid-query':
+        specifier: workspace:*
+        version: link:../../packages/tanstack-solid-query
+      '@trpcdev/tanstack-svelte-query':
+        specifier: workspace:*
+        version: link:../../packages/tanstack-svelte-query
+      '@trpcdev/tanstack-vue-query':
+        specifier: workspace:*
+        version: link:../../packages/tanstack-vue-query
       effect:
         specifier: 4.0.2
         version: 4.0.2
@@ -388,9 +539,30 @@ importers:
 
   test/tanstack-query:
     dependencies:
+      '@trpcdev/tanstack-angular-query':
+        specifier: workspace:*
+        version: link:../../packages/tanstack-angular-query
+      '@trpcdev/tanstack-lit-query':
+        specifier: workspace:*
+        version: link:../../packages/tanstack-lit-query
+      '@trpcdev/tanstack-preact-query':
+        specifier: workspace:*
+        version: link:../../packages/tanstack-preact-query
       '@trpcdev/tanstack-query':
         specifier: workspace:*
         version: link:../../packages/tanstack-query
+      '@trpcdev/tanstack-react-query':
+        specifier: workspace:*
+        version: link:../../packages/tanstack-react-query
+      '@trpcdev/tanstack-solid-query':
+        specifier: workspace:*
+        version: link:../../packages/tanstack-solid-query
+      '@trpcdev/tanstack-svelte-query':
+        specifier: workspace:*
+        version: link:../../packages/tanstack-svelte-query
+      '@trpcdev/tanstack-vue-query':
+        specifier: workspace:*
+        version: link:../../packages/tanstack-vue-query
       trpcdev:
         specifier: workspace:*
         version: link:../../packages/trpcdev

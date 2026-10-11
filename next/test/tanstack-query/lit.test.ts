@@ -10,7 +10,7 @@ import {
   createSubscriptionController,
   createTRPCContext,
   type TRPCProviderElement,
-} from '@trpcdev/tanstack-query/lit';
+} from '@trpcdev/tanstack-lit-query';
 import { html, LitElement } from 'lit';
 import type { TRPCClient } from 'trpcdev/client';
 import { expect, expectTypeOf, test } from 'vite-plus/test';

@@ -1,0 +1,31 @@
+{
+  "name": "@trpcdev/tanstack-solid-query",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build": "echo \"build not wired yet\""
+  },
+  "dependencies": {
+    "@trpcdev/tanstack-query": "workspace:*"
+  },
+  "devDependencies": {
+    "@tanstack/query-core": "5.104.1",
+    "@tanstack/solid-query": "5.104.1",
+    "solid-js": "1.9.17",
+    "trpcdev": "workspace:*",
+    "typescript": "^7.0.2"
+  },
+  "peerDependencies": {
+    "@tanstack/solid-query": "^5.104.0",
+    "solid-js": "^1.9",
+    "trpcdev": "workspace:*"
+  }
+}

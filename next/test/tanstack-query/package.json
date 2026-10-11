@@ -6,7 +6,14 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@trpcdev/tanstack-angular-query": "workspace:*",
+    "@trpcdev/tanstack-lit-query": "workspace:*",
+    "@trpcdev/tanstack-preact-query": "workspace:*",
     "@trpcdev/tanstack-query": "workspace:*",
+    "@trpcdev/tanstack-react-query": "workspace:*",
+    "@trpcdev/tanstack-solid-query": "workspace:*",
+    "@trpcdev/tanstack-svelte-query": "workspace:*",
+    "@trpcdev/tanstack-vue-query": "workspace:*",
     "trpcdev": "workspace:*"
   },
   "devDependencies": {
