@@ -126,6 +126,8 @@ useInfiniteQuery(
 > - Against `@tanstack/query-core` 5.90 types, the option bag types identically to v11's positional form. That covers `select` inference, `skipToken`, `DataTag` keys for `getQueryData`, and excess-property errors on misspelled options.
 > - Explicit infinite `input: (pageParam) => …` has TanStack's usual pitfall: with `initialPageParam: undefined` and no annotation, the page param infers as `undefined`. v11's `cursor` convention avoids that.
 
+> **Build (2026-10-11):** `next/packages/tanstack-query` implements this proposal with agent judgement calls for the open questions: [`decisions/0016`](../decisions/0016-agent-judgement-calls-tanstack-query.md). It ships subpaths for every official TanStack adapter (React, Preact, Vue, Solid, Svelte, Angular, Lit), each tested in `next/test/tanstack-query/`.
+
 ## Recommendation
 
 - One framework-agnostic package with a `./react` subpath.

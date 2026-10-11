@@ -42,23 +42,30 @@ Legend: ✅ first-class · 🟡 partial / third-party · 🛑 not supported. **R
 
 ## Status in the v12 build (`next/`)
 
-What `trpcdev` ships today, each covered by integration tests with real clients. Judgement calls are in [`decisions/0015`](../decisions/0015-agent-judgement-calls-v12-build.md).
+What `trpcdev` and `@trpcdev/tanstack-query` ship today, each covered by integration tests with real clients. Judgement calls are in [`decisions/0015`](../decisions/0015-agent-judgement-calls-v12-build.md) and [`decisions/0016`](../decisions/0016-agent-judgement-calls-tanstack-query.md).
 
-| Row                                       | Status | Where                                                                                                                                           |
-| ----------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| With contract-first approach              | ✅     | `trpcdev/contract` (`contract.create`, `toContract`, `inferContract`) + `t.implement(contract)` with a completeness check; `contract.test.ts`   |
-| OpenAPI support                           | ✅     | `trpcdev/openapi`: `createOpenAPIHandler`, `generateOpenAPI` (`openapi` and `rpc` targets), `.route()`; one router served at `/trpc` and `/api` |
-| OpenAPI support for multiple schema libs  | ✅     | Standard JSON Schema (`~standard.jsonSchema`); tested with Zod 4                                                                                |
-| OpenAPI bracket notation                  | ✅     | Handler and `openAPILink` (`parseBracketNotation`, `toBracketNotation`)                                                                         |
-| WebSockets                                | ✅     | `wsLink` + `handler.websocket(ws)` over standard `WebSocket` objects; `toNodeUpgradeListener` for `node:http`                                   |
-| Cloudflare WebSocket hibernation          | 🛑     | Not built; each connection keeps its calls and `connectionParams` in memory                                                                     |
-| Message Port (Electron, browser, workers) | ✅     | `messagePortLink` + `handler.messagePort(port)`, same message model as WebSocket                                                                |
-| Nest.js integration                       | 🛑     | Not built; contracts are the base it would use                                                                                                  |
-| Leading-middleware dedupe                 | 🟡     | Client-side `dedupeLink` for identical in-flight queries; no server middleware dedupe                                                           |
-| Smart coercion for OpenAPI inputs         | ✅     | Schema-driven (`coerceBySchema`) for query strings, forms and path params; JSON bodies are not coerced                                          |
-| OpenAPI reference UI (Scalar/Swagger)     | ✅     | `openAPIReference()` handler plugin                                                                                                             |
-| OpenAPI → contract (Hey API plugin)       | 🛑     | Not built; `openAPILink` takes a `toContract()` JSON contract instead                                                                           |
-| Request/response validation on the client | 🛑     | Not built                                                                                                                                       |
+| Row                                       | Status | Where                                                                                                                                                                                |
+| ----------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| With contract-first approach              | ✅     | `trpcdev/contract` (`contract.create`, `toContract`, `inferContract`) + `t.implement(contract)` with a completeness check; `contract.test.ts`                                        |
+| OpenAPI support                           | ✅     | `trpcdev/openapi`: `createOpenAPIHandler`, `generateOpenAPI` (`openapi` and `rpc` targets), `.route()`; one router served at `/trpc` and `/api`                                      |
+| OpenAPI support for multiple schema libs  | ✅     | Standard JSON Schema (`~standard.jsonSchema`); tested with Zod 4                                                                                                                     |
+| OpenAPI bracket notation                  | ✅     | Handler and `openAPILink` (`parseBracketNotation`, `toBracketNotation`)                                                                                                              |
+| WebSockets                                | ✅     | `wsLink` + `handler.websocket(ws)` over standard `WebSocket` objects; `toNodeUpgradeListener` for `node:http`                                                                        |
+| Cloudflare WebSocket hibernation          | 🛑     | Not built; each connection keeps its calls and `connectionParams` in memory                                                                                                          |
+| Message Port (Electron, browser, workers) | ✅     | `messagePortLink` + `handler.messagePort(port)`, same message model as WebSocket                                                                                                     |
+| Nest.js integration                       | 🛑     | Not built; contracts are the base it would use                                                                                                                                       |
+| Leading-middleware dedupe                 | 🟡     | Client-side `dedupeLink` for identical in-flight queries; no server middleware dedupe                                                                                                |
+| Smart coercion for OpenAPI inputs         | ✅     | Schema-driven (`coerceBySchema`) for query strings, forms and path params; JSON bodies are not coerced                                                                               |
+| OpenAPI reference UI (Scalar/Swagger)     | ✅     | `openAPIReference()` handler plugin                                                                                                                                                  |
+| OpenAPI → contract (Hey API plugin)       | 🛑     | Not built; `openAPILink` takes a `toContract()` JSON contract instead                                                                                                                |
+| Request/response validation on the client | 🛑     | Not built                                                                                                                                                                            |
+| TanStack Query integration (React)        | ✅     | `@trpcdev/tanstack-query` (agnostic options/keys) + `/react` context and `useSubscription`; SSR hydration tested ([0016](../decisions/0016-agent-judgement-calls-tanstack-query.md)) |
+| TanStack Query integration (Vue)          | ✅     | Same options objects + `/vue` (`TRPCPlugin`, `provideTRPC`, `useSubscription`)                                                                                                       |
+| TanStack Query integration (Solid)        | ✅     | Same options objects + `/solid` (`TRPCProvider`, `useSubscription`)                                                                                                                  |
+| TanStack Query integration (Svelte)       | ✅     | Same options objects + `/svelte` (`setTRPCContext`, rune-based `createSubscription`)                                                                                                 |
+| TanStack Query integration (Angular)      | ✅     | Same options objects + `/angular` (`provideTRPC`, `injectTRPC`, `injectSubscription`)                                                                                                |
+| Vue Pinia Colada integration              | 🛑     | Not built (Q19.6: later)                                                                                                                                                             |
+| Streamed and live TanStack queries        | ✅     | `streamedOptions`, `liveOptions`, and async-generator queries through `queryOptions`                                                                                                 |
 
 ## The decisions that matter most for parity
 
