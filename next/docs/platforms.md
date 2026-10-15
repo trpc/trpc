@@ -106,6 +106,24 @@ export const GET = handler.fetch;
 export const POST = handler.fetch;
 ```
 
+On Workers, `env` and `ctx` come with each request, not with the handler. `createContext` receives the same `Request` object, so a `WeakMap` carries them across:
+
+```ts
+const platform = new WeakMap<Request, { env: Env; ctx: ExecutionContext }>();
+const handler = createFetchHandler({
+  router,
+  createContext: ({ request }) => ({ ...platform.get(request)! }),
+});
+
+export default {
+  fetch(request: Request, env: Env, ctx: ExecutionContext) {
+    platform.set(request, { env, ctx });
+    return handler.fetch(request);
+  },
+};
+// in a resolver: ctx.ctx.waitUntil(sendWelcomeEmail(user))
+```
+
 For Effect HTTP middleware in front of the handler on a fetch runtime, convert the Effect app back to a web handler:
 
 ```ts

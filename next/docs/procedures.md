@@ -108,6 +108,22 @@ const withUser = t.middleware.effect<{ provides: CurrentUser }>()(
 
 Every call runs in an Effect span named `trpc.<path>`, with `rpc.system`, `rpc.method` and `trpc.type` attributes, plus `trpc.error.code` when it fails. Spans opened in resolvers nest under it. Put an OpenTelemetry tracer in the handler's `layer` (`@effect/opentelemetry`) to export them.
 
+### Work after the response
+
+`Effect.forkDetach` starts a fiber that keeps running after the call returns, on a long-lived server:
+
+```ts
+t.procedure.mutation(({ input }) =>
+  Effect.gen(function* () {
+    const user = yield* Users.create(input);
+    yield* Effect.forkDetach(Mailer.welcome(user));
+    return user;
+  }),
+);
+```
+
+Serverless runtimes may freeze the instance once the response is sent. There, hand the promise to the platform: `ctx.waitUntil()` on Workers (see [Platforms](./platforms.md)), `after()` in Next.js, `waitUntil` from `@vercel/functions` on Vercel.
+
 ## Calling procedures on the server
 
 ```ts

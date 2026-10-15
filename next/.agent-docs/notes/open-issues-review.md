@@ -16,6 +16,7 @@ Method: `gh issue list --repo trpc/trpc --state open --limit 1000 --json number,
 - #5534, #7446, bodies already read: `toHttpEffect` rebuilds the body from `req.body` after `express.json()`, `text()` or `raw()`, and otherwise fails with a 500 that names the cause instead of a misleading validation error (`platforms.test.ts`).
 - #6996 (related): JSONL and SSE decoding no longer need `TextDecoderStream`, which Hermes lacks. The SSE parser also handled a `\r\n` split across chunks as two line ends.
 - WebSocket heartbeat: `wsLink` pings (`keepAlive`), and a connection that stops answering reconnects (`websockets.test.ts`).
+- #7436, work after the response: `docs/procedures.md` documents `Effect.forkDetach` (tested) and the platforms' `waitUntil`. `docs/platforms.md` shows how a Workers `createContext` reaches `env` and `ctx` (a `WeakMap` keyed by the request).
 - Layers that provide no services (a tracer, a logger) were rejected by the `layer` option types.
 
 ## Already answered by vNext
@@ -60,12 +61,11 @@ Ordered by demand and fit.
 3. **Invalidation declared on mutations** (#5264, #3468, #6715). For example `.meta({ invalidates: ['post'] })` read by a TanStack `MutationCache` `onSuccess` helper. It fits as an opt-in helper, not as router config.
 4. **Offline and persisted mutations** (#7021). Paused mutations resume only if `setMutationDefaults(mutationKey, { mutationFn })` is registered. A `trpc.post.create.mutationDefaults()` helper would cover it.
 5. **Middleware that reshapes input** (#6892). `next({ input })` typed like `next({ ctx })`.
-6. **Deferred work after the response** (#7436). Document `Effect.forkDaemon` and the platform's `waitUntil` (Next's `after()`), or add a `waitUntil` to the handler options.
-7. **`fetch` sees the operations** (#4184). `httpLink({ fetch })` could get `{ ops }` as a third argument for SSR cookie forwarding. `headers({ op })` covers most of it.
-8. **Dehydrating errors under Next** (#6771). Next's dynamic-rendering errors must not be redacted. Document `shouldRedactErrors` next to `createTrpcRsc`.
-9. **Publisher backends** (#5618). The `memory` layer is per process. Redis, Postgres `LISTEN` or Durable Object layers behind the same `PublisherShape` would let subscriptions run across instances.
-10. **TanStack DB** (#6891). `queryOptions()` should plug into `queryCollectionOptions` as it is; worth a test and a docs example.
-11. **Adapters, recorded as later**: Lambda API Gateway and Lambda@Edge (#4978), Cloudflare hibernation, Firebase callable (#6388), WebTransport (#6971), raw TCP (#5995). The socket core is generic over connections, so the last two are a transport each.
+6. **`fetch` sees the operations** (#4184). `httpLink({ fetch })` could get `{ ops }` as a third argument for SSR cookie forwarding. `headers({ op })` covers most of it.
+7. **Dehydrating errors under Next** (#6771). Next's dynamic-rendering errors must not be redacted. Document `shouldRedactErrors` next to `createTrpcRsc`.
+8. **Publisher backends** (#5618). The `memory` layer is per process. Redis, Postgres `LISTEN` or Durable Object layers behind the same `PublisherShape` would let subscriptions run across instances.
+9. **TanStack DB** (#6891). `queryOptions()` should plug into `queryCollectionOptions` as it is; worth a test and a docs example.
+10. **Adapters, recorded as later**: Lambda API Gateway and Lambda@Edge (#4978), Cloudflare hibernation, Firebase callable (#6388), WebTransport (#6971), raw TCP (#5995). The socket core is generic over connections, so the last two are a transport each.
 
 ## Not pursuing
 

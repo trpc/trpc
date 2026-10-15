@@ -265,3 +265,36 @@ test('every call runs in a span named after its path', async () => {
   const db = spans.find((s) => s.name === 'db.find')!;
   expect(Option.getOrUndefined(db.parent)).toBe(calls[0]);
 });
+
+test('work forked with Effect.forkDetach outlives the response (docs/procedures.md)', async () => {
+  const t0 = initTrpc();
+  let sent = false;
+  const handler = createFetchHandler({
+    router: {
+      signup: t0.procedure.mutation(() =>
+        Effect.gen(function* () {
+          yield* Effect.forkDetach(
+            Effect.sleep('20 millis').pipe(
+              Effect.andThen(
+                Effect.sync(() => {
+                  sent = true;
+                }),
+              ),
+            ),
+          );
+          return 'ok';
+        }),
+      ),
+    },
+  });
+  const res = await handler.fetch(
+    new Request('http://localhost/trpc/signup', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+    }),
+  );
+  expect(await res.json()).toEqual({ json: 'ok' });
+  expect(sent).toBe(false);
+  await vi.waitFor(() => expect(sent).toBe(true));
+  await handler.dispose();
+});
