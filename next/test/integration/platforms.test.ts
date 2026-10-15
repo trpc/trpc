@@ -4,10 +4,14 @@ import type { AddressInfo } from 'node:net';
 import { NodeHttpServer } from '@effect/platform-node';
 import { Effect, Exit, Scope } from 'effect';
 import { HttpEffect } from 'effect/http';
-import { createTrpcClient, httpLink } from 'trpcdev/client';
+import { createTrpcClient, httpLink, messagePortLink } from 'trpcdev/client';
 import { toHttpEffect } from 'trpcdev/http';
-import { createFetchHandler, initTrpc } from 'trpcdev/server';
-import { expect, test } from 'vite-plus/test';
+import {
+  createFetchHandler,
+  initTrpc,
+  type WebSocketLike,
+} from 'trpcdev/server';
+import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 
 const t = initTrpc();
@@ -90,4 +94,57 @@ test('a web handler from the Effect app, for fetch runtimes (docs/platforms.md)'
   const web = HttpEffect.toWebHandler(toHttpEffect(handler));
   const res = await web(new Request('http://localhost/trpc/hello?name=web'));
   expect(await res.json()).toEqual({ json: 'hello web' });
+});
+
+test('platform values reach createContext, typed by the handler (docs/platforms.md)', async () => {
+  interface Env {
+    GREETING: string;
+  }
+  interface Platform {
+    env: Env;
+    ctx: { waitUntil(promise: Promise<unknown>): void };
+  }
+  const wt = initTrpc<{ ctx: { greeting: string; defer: Platform['ctx'] } }>();
+  const workerRouter = {
+    greet: wt.procedure.query(({ ctx }) => {
+      ctx.defer.waitUntil(Promise.resolve());
+      return ctx.greeting;
+    }),
+  };
+  const worker = createFetchHandler<typeof workerRouter, Platform>({
+    router: workerRouter,
+    createContext: ({ platform }) => {
+      expectTypeOf(platform).toEqualTypeOf<Platform>();
+      return { greeting: platform.env.GREETING, defer: platform.ctx };
+    },
+  });
+  const waited: Promise<unknown>[] = [];
+  const platform: Platform = {
+    env: { GREETING: 'hej' },
+    ctx: { waitUntil: (p) => waited.push(p) },
+  };
+  const res = await worker.fetch(
+    new Request('http://localhost/trpc/greet'),
+    platform,
+  );
+  expect(await res.json()).toEqual({ json: 'hej' });
+  expect(waited).toHaveLength(1);
+
+  const channel = new MessageChannel();
+  worker.messagePort(channel.port1, { platform });
+  const client = createTrpcClient<typeof workerRouter>({
+    links: [messagePortLink({ port: channel.port2 })],
+  });
+  expect(await client.greet.query()).toBe('hej');
+  channel.port1.close();
+  channel.port2.close();
+
+  void (() => {
+    // @ts-expect-error -- the platform is required
+    void worker.fetch(new Request('http://localhost/'));
+    // @ts-expect-error -- and so is the upgrade's
+    worker.websocket({} as WebSocketLike, { request: new Request('http://x') });
+    // a handler without a platform type takes the request alone, as Next's route types expect
+    expectTypeOf(handler.fetch).parameters.toEqualTypeOf<[request: Request]>();
+  });
 });

@@ -25,6 +25,7 @@ import type {
   CreateContextOpts,
   LayerOption,
   OnErrorOpts,
+  PlatformArgs,
 } from '../server/fetch.ts';
 import type { AnyProcedure, Route } from '../server/procedure.ts';
 import {
@@ -115,18 +116,24 @@ export interface BaseOpenApiHandlerOptions<TRouter extends AnyRouter> {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type OpenApiHandlerOptions<TRouter extends AnyRouter> =
-  BaseOpenApiHandlerOptions<TRouter> &
-    ContextOption<inferRouterContext<TRouter>> &
-    LayerOption<inferRouterServices<TRouter>>;
+export type OpenApiHandlerOptions<
+  TRouter extends AnyRouter,
+  TPlatform = undefined,
+> = BaseOpenApiHandlerOptions<TRouter> &
+  ContextOption<inferRouterContext<TRouter>, TPlatform> &
+  LayerOption<inferRouterServices<TRouter>>;
 
 /**
  * A web-standard handler for the REST mapping of a router.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface OpenApiHandler {
-  fetch(request: Request): Promise<Response>;
+export interface OpenApiHandler<TPlatform = undefined> {
+  /** Handles one HTTP request. `platform` reaches `createContext`. */
+  readonly fetch: (
+    request: Request,
+    ...platform: PlatformArgs<TPlatform>
+  ) => Promise<Response>;
   /** Releases the `layer`'s resources. */
   dispose(): Promise<void>;
 }
@@ -187,12 +194,13 @@ const specificity = (route: ResolvedRoute) =>
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function createOpenApiHandler<TRouter extends AnyRouter>(
-  opts: OpenApiHandlerOptions<TRouter>,
-): OpenApiHandler {
+export function createOpenApiHandler<
+  TRouter extends AnyRouter,
+  TPlatform = undefined,
+>(opts: OpenApiHandlerOptions<TRouter, TPlatform>): OpenApiHandler<TPlatform> {
   const base = createHandlerCore(
     opts as typeof opts & {
-      createContext?: (o: CreateContextOpts) => MaybePromise<object>;
+      createContext?: (o: CreateContextOpts<any>) => MaybePromise<object>;
       layer?: Layer.Layer<any, any, never>;
     },
   );
@@ -522,8 +530,9 @@ export function createOpenApiHandler<TRouter extends AnyRouter>(
     );
   }
 
-  return {
-    async fetch(request) {
+  const handler: OpenApiHandler<unknown> = {
+    async fetch(request, platform) {
+      base.setPlatform(request, platform);
       const url = new URL(request.url);
       try {
         if (startup) {
@@ -570,4 +579,5 @@ export function createOpenApiHandler<TRouter extends AnyRouter>(
     },
     dispose: base.dispose,
   };
+  return handler as OpenApiHandler<TPlatform>;
 }

@@ -106,23 +106,27 @@ export const GET = handler.fetch;
 export const POST = handler.fetch;
 ```
 
-On Workers, `env` and `ctx` come with each request, not with the handler. `createContext` receives the same `Request` object, so a `WeakMap` carries them across:
+On Workers, `env` and `ctx` come with each request, not with the handler. Pass them as the platform argument, typed by the handler's second type parameter; `createContext` reads them:
 
 ```ts
-const platform = new WeakMap<Request, { env: Env; ctx: ExecutionContext }>();
-const handler = createFetchHandler({
+const handler = createFetchHandler<
+  AppRouter,
+  { env: Env; ctx: ExecutionContext }
+>({
   router,
-  createContext: ({ request }) => ({ ...platform.get(request)! }),
+  createContext: ({ platform }) => ({
+    db: platform.env.DB,
+    waitUntil: (p: Promise<unknown>) => platform.ctx.waitUntil(p),
+  }),
 });
 
 export default {
-  fetch(request: Request, env: Env, ctx: ExecutionContext) {
-    platform.set(request, { env, ctx });
-    return handler.fetch(request);
-  },
-};
-// in a resolver: ctx.ctx.waitUntil(sendWelcomeEmail(user))
+  fetch: (request, env, ctx) => handler.fetch(request, { env, ctx }),
+} satisfies ExportedHandler<Env>;
+// in a resolver: ctx.waitUntil(sendWelcomeEmail(user))
 ```
+
+With a platform type, `handler.fetch(request)` without it is a type error, and so is `handler.websocket(socket, { request })` without `platform`. Without one, `fetch` takes the request alone, which is what Next's route handler types expect. `serve()`, Node and Bun pass nothing, and `platform` is `undefined`.
 
 For Effect HTTP middleware in front of the handler on a fetch runtime, convert the Effect app back to a web handler:
 

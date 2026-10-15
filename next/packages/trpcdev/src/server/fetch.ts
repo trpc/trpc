@@ -49,13 +49,19 @@ import {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface CreateContextOpts {
+export interface CreateContextOpts<TPlatform = undefined> {
   /**
    * The HTTP request, or the upgrade request of a WebSocket. For a
    * MessagePort, the `request` passed to `handler.messagePort()`, or a
    * placeholder `http://localhost/` request.
    */
   readonly request: Request;
+  /**
+   * What the runtime passed `handler.fetch(request, platform)` or
+   * `handler.websocket(socket, { request, platform })`: Workers' `env` and
+   * `ctx`, say. `undefined` under `serve()`, Node and Bun.
+   */
+  readonly platform: TPlatform;
   readonly info: {
     /** Every call in the request: one, or several for a batch. */
     readonly calls: ReadonlyArray<{ path: string; type: ProcedureType }>;
@@ -83,15 +89,39 @@ export interface OnErrorOpts {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type ContextOption<TCtx> = {} extends TCtx
+export type ContextOption<TCtx, TPlatform = undefined> = {} extends TCtx
   ? {
       /** Runs once per request (once per batch). */
-      createContext?: (opts: CreateContextOpts) => MaybePromise<TCtx>;
+      createContext?: (
+        opts: CreateContextOpts<TPlatform>,
+      ) => MaybePromise<TCtx>;
     }
   : {
       /** Runs once per request (once per batch). */
-      createContext: (opts: CreateContextOpts) => MaybePromise<TCtx>;
+      createContext: (opts: CreateContextOpts<TPlatform>) => MaybePromise<TCtx>;
     };
+
+/**
+ * The platform argument `fetch()` takes: none without a platform type (so
+ * `handler.fetch` fits Next's route handler type), optional when the type
+ * allows `undefined`, required otherwise.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export type PlatformArgs<TPlatform> = [TPlatform] extends [undefined]
+  ? []
+  : undefined extends TPlatform
+    ? [platform?: TPlatform]
+    : [platform: TPlatform];
+
+/**
+ * The `platform` field of `websocket()` and `messagePort()` options.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export type PlatformField<TPlatform> = undefined extends TPlatform
+  ? { platform?: TPlatform }
+  : { platform: TPlatform };
 
 /**
  * `layer`, required when the router's procedures need Effect services.
@@ -151,18 +181,34 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter> {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type FetchHandlerOptions<TRouter extends AnyRouter> =
-  BaseHandlerOptions<TRouter> &
-    ContextOption<inferRouterContext<TRouter>> &
-    LayerOption<inferRouterServices<TRouter>>;
+export type FetchHandlerOptions<
+  TRouter extends AnyRouter,
+  TPlatform = undefined,
+> = BaseHandlerOptions<TRouter> &
+  ContextOption<inferRouterContext<TRouter>, TPlatform> &
+  LayerOption<inferRouterServices<TRouter>>;
 
 /**
  * A web-standard request handler.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface FetchHandler {
-  fetch(request: Request): Promise<Response>;
+export interface FetchHandler<TPlatform = undefined> {
+  /**
+   * Handles one HTTP request. `platform` reaches `createContext`.
+   *
+   * @example
+   * ```ts
+   * // Cloudflare Workers
+   * export default {
+   *   fetch: (request, env, ctx) => handler.fetch(request, { env, ctx }),
+   * } satisfies ExportedHandler<Env>;
+   * ```
+   */
+  readonly fetch: (
+    request: Request,
+    ...platform: PlatformArgs<TPlatform>
+  ) => Promise<Response>;
   /**
    * Serves calls over an accepted WebSocket (10, 12). `request` is the
    * upgrade request; `createContext` receives it.
@@ -178,7 +224,10 @@ export interface FetchHandler {
    * });
    * ```
    */
-  websocket(socket: WebSocketLike, opts: { request: Request }): void;
+  websocket(
+    socket: WebSocketLike,
+    opts: { request: Request } & PlatformField<TPlatform>,
+  ): void;
   /**
    * Serves calls over a `MessagePort`, `Worker` or `worker_threads` port.
    *
@@ -188,7 +237,12 @@ export interface FetchHandler {
    * handler.messagePort(parentPort);
    * ```
    */
-  messagePort(port: MessagePortLike, opts?: { request?: Request }): void;
+  messagePort(
+    port: MessagePortLike,
+    ...opts: undefined extends TPlatform
+      ? [opts?: { request?: Request; platform?: TPlatform }]
+      : [opts: { request?: Request; platform: TPlatform }]
+  ): void;
   /** Releases the `layer`'s resources. */
   dispose(): Promise<void>;
 }
@@ -222,13 +276,14 @@ interface CallResult {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function createFetchHandler<TRouter extends AnyRouter>(
-  opts: FetchHandlerOptions<TRouter>,
-): FetchHandler {
+export function createFetchHandler<
+  TRouter extends AnyRouter,
+  TPlatform = undefined,
+>(opts: FetchHandlerOptions<TRouter, TPlatform>): FetchHandler<TPlatform> {
   const { router } = opts;
   const base = createHandlerCore(
     opts as typeof opts & {
-      createContext?: (o: CreateContextOpts) => MaybePromise<object>;
+      createContext?: (o: CreateContextOpts<any>) => MaybePromise<object>;
       layer?: Layer.Layer<any, any, never>;
     },
   );
@@ -725,20 +780,24 @@ export function createFetchHandler<TRouter extends AnyRouter>(
     report,
   };
 
-  return {
+  const handler: FetchHandler<unknown> = {
     websocket(socket, o) {
+      base.setPlatform(o.request, o.platform);
       serveConnection(core, webSocketConnection(socket), {
         request: o.request,
         transport: 'websocket',
       });
     },
     messagePort(port, o) {
+      const request = o?.request ?? new Request('http://localhost/');
+      base.setPlatform(request, o?.platform);
       serveConnection(core, messagePortConnection(port), {
-        request: o?.request ?? new Request('http://localhost/'),
+        request,
         transport: 'messagePort',
       });
     },
-    async fetch(request) {
+    async fetch(request, platform) {
+      base.setPlatform(request, platform);
       const url = new URL(request.url);
       try {
         const version = request.headers.get(HEADER.version);
@@ -771,4 +830,5 @@ export function createFetchHandler<TRouter extends AnyRouter>(
     },
     dispose: base.dispose,
   };
+  return handler as FetchHandler<TPlatform>;
 }

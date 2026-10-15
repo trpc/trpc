@@ -127,6 +127,8 @@ export {
   type FetchHandler,
   type FetchHandlerOptions,
   type OnErrorOpts,
+  type PlatformArgs,
+  type PlatformField,
 } from './fetch.ts';
 export type { MessagePortLike, Transport, WebSocketLike } from './socket.ts';
 export {

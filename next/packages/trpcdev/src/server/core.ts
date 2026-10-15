@@ -9,7 +9,7 @@ import type { Transport } from './socket.ts';
 
 /** @internal */
 export interface CoreOptions {
-  createContext?: (opts: CreateContextOpts) => MaybePromise<object>;
+  createContext?: (opts: CreateContextOpts<any>) => MaybePromise<object>;
   layer?: Layer.Layer<any, any, never>;
   exposeUnexpectedErrors?: boolean;
   onError?: (opts: OnErrorOpts) => void;
@@ -39,6 +39,8 @@ export interface MakeContextOpts {
 export interface HandlerCore {
   readonly run: (opts: RunOpts) => Promise<Exit.Exit<unknown, AnyTrpcError>>;
   readonly makeContext: (opts: MakeContextOpts) => Promise<object>;
+  /** Records the platform value `createContext` gets for `request`. */
+  readonly setPlatform: (request: Request, platform: unknown) => void;
   /** Masks unexpected errors unless `exposeUnexpectedErrors`. */
   readonly publicError: (err: AnyTrpcError) => AnyTrpcError;
   readonly report: (
@@ -67,6 +69,7 @@ export function createHandlerCore(opts: CoreOptions): HandlerCore {
       ? runtime.context()
       : Promise.resolve(Context.empty() as Context.Context<any>));
 
+  const platforms = new WeakMap<Request, unknown>();
   return {
     run: async (o) => {
       const context = await getServices();
@@ -78,6 +81,7 @@ export function createHandlerCore(opts: CoreOptions): HandlerCore {
       if (!opts.createContext) return {};
       return await opts.createContext({
         request: o.request,
+        platform: platforms.get(o.request),
         info: {
           calls: o.calls,
           signal: o.signal ?? o.request.signal,
@@ -85,6 +89,9 @@ export function createHandlerCore(opts: CoreOptions): HandlerCore {
           connectionParams: o.connectionParams,
         },
       });
+    },
+    setPlatform: (request, platform) => {
+      if (platform !== undefined) platforms.set(request, platform);
     },
     publicError: (err) =>
       isUnexpectedError(err) && !expose
