@@ -18,7 +18,7 @@ import {
   createTrpcContext,
   useSubscription,
 } from '@trpcdev/tanstack-react-query';
-import { Suspense, useState, type ReactNode } from 'react';
+import { Suspense, useContext, useState, type ReactNode } from 'react';
 import { createRoot, hydrateRoot } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
 import type { TrpcClient } from 'trpcdev/client';
@@ -33,7 +33,12 @@ import {
 } from './fixtures/app.ts';
 import { click, container, text, waitFor } from './fixtures/dom.ts';
 
-const { TrpcProvider, useTrpc, useTrpcClient } = createTrpcContext<AppRouter>();
+const {
+  TrpcProvider,
+  useTrpc,
+  useTrpcClient,
+  context: TrpcContext,
+} = createTrpcContext<AppRouter>();
 
 function mount(ui: ReactNode, client: TrpcClient<AppRouter>) {
   const queryClient = new QueryClient({
@@ -270,4 +275,27 @@ test('server render with prefetched data, then hydrate without refetching', asyn
   expect(text(el, 'h1')).toBe('2026-01-04');
   expect(db.calls).toEqual(['post.byId:3']);
   root.unmount();
+});
+
+test('the context can be bridged into another tree', () => {
+  const client = createRouterClient(appRouter, { ctx: { locale: null } });
+  let bridged: unknown;
+  function Capture() {
+    bridged = useContext(TrpcContext);
+    return null;
+  }
+  renderToString(
+    <TrpcProvider client={client}>
+      <Capture />
+    </TrpcProvider>,
+  );
+  function Inner() {
+    return <p>{useTrpcClient() === client ? 'same' : 'other'}</p>;
+  }
+  const html = renderToString(
+    <TrpcContext value={bridged}>
+      <Inner />
+    </TrpcContext>,
+  );
+  expect(html).toBe('<p>same</p>');
 });

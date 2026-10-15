@@ -24,6 +24,7 @@ import {
   useMemo,
   useState,
   useSyncExternalStore,
+  type Context as ReactContext,
   type ReactNode,
 } from 'react';
 import type { RouterOf, TrpcClient } from 'trpcdev/client';
@@ -59,6 +60,12 @@ export interface TrpcReactContext<TRouter, TContext extends object = {}> {
   useTrpc: () => TrpcQueryUtilsFor<TRouter, TContext>;
   /** The provided client, for calls outside TanStack Query. */
   useTrpcClient: () => TrpcClient<RouterOf<TRouter>, TContext>;
+  /**
+   * The React context itself, for bridging it into another renderer
+   * (react-three-fiber, react-pdf): read it with `useContext`, then
+   * provide that value on the other side.
+   */
+  context: ReactContext<unknown>;
 }
 
 /**
@@ -103,6 +110,7 @@ export function createTrpcContext<
     },
     useTrpc: () => use().utils,
     useTrpcClient: () => use().client,
+    context: Context as ReactContext<unknown>,
   };
 }
 

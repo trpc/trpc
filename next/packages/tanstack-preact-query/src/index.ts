@@ -16,7 +16,13 @@
  * ```
  * @module
  */
-import { createContext, h, type ComponentChildren, type VNode } from 'preact';
+import {
+  createContext,
+  h,
+  type ComponentChildren,
+  type Context as PreactContext,
+  type VNode,
+} from 'preact';
 import { useContext, useEffect, useMemo, useState } from 'preact/hooks';
 import type { RouterOf, TrpcClient } from 'trpcdev/client';
 import {
@@ -51,6 +57,11 @@ export interface TrpcPreactContext<TRouter, TContext extends object = {}> {
   useTrpc: () => TrpcQueryUtilsFor<TRouter, TContext>;
   /** The provided client, for calls outside TanStack Query. */
   useTrpcClient: () => TrpcClient<RouterOf<TRouter>, TContext>;
+  /**
+   * The Preact context itself, for bridging it into another render tree:
+   * read it with `useContext`, then provide that value on the other side.
+   */
+  context: PreactContext<unknown>;
 }
 
 /**
@@ -94,6 +105,7 @@ export function createTrpcContext<
     },
     useTrpc: () => use().utils,
     useTrpcClient: () => use().client,
+    context: Context as PreactContext<unknown>,
   };
 }
 
