@@ -13,7 +13,7 @@ import type { MaybePromise } from '../../internal/types.ts';
 import { defaultSerializer, type Serializer } from '../../serializer/index.ts';
 import type { MessagePortLike } from '../../server/socket.ts';
 import type { Operation, OperationStream, TrpcLink } from '../link.ts';
-import { DeferredDecoder } from './events.ts';
+import { DeferredDecoder, serializeInput } from './events.ts';
 
 /** One open connection. @internal */
 interface SocketConnection {
@@ -189,9 +189,16 @@ function socketLink(
   }
 
   function start(call: ActiveCall) {
+    let message: ClientMessage;
+    try {
+      message = call.request();
+    } catch (cause) {
+      call.fail(cause as AnyTrpcError);
+      return;
+    }
     clearTimeout(idleTimer);
     calls.set(call.op.id, call);
-    if (current) current.send(call.request());
+    if (current) current.send(message);
     else connect();
   }
 
@@ -214,7 +221,7 @@ function socketLink(
     path: op.path,
     ...(op.input === undefined
       ? {}
-      : { input: serializer.serialize(op.input) }),
+      : { input: serializeInput(serializer, op.input) }),
     ...(lastEventId === undefined ? {} : { lastEventId }),
   });
 

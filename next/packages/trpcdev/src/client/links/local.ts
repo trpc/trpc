@@ -64,10 +64,14 @@ export function localLink<TRouter extends AnyRouter>(
     (services ??= runtime
       ? runtime.context()
       : Promise.resolve(Context.empty() as Context.Context<any>));
-  const roundtrip = (value: unknown, input?: boolean) =>
-    serializer
-      ? serializer.deserialize(serializer.serialize(value), { input })
-      : value;
+  const roundtrip = (value: unknown, input?: boolean) => {
+    if (!serializer) return value;
+    const parts: Blob[] | undefined = input ? [] : undefined;
+    return serializer.deserialize(serializer.serialize(value, { parts }), {
+      input,
+      parts,
+    });
+  };
 
   return link.effect(({ op }) =>
     Stream.unwrap(

@@ -12,7 +12,7 @@ import {
   type AnyTrpcError,
 } from '../internal/error.ts';
 import type { JsonSchema } from '../internal/json-schema.ts';
-import { isJsonContentType } from '../internal/protocol.ts';
+import { isJsonContentType, readFormData } from '../internal/protocol.ts';
 import type { MaybePromise, ProcedureType } from '../internal/types.ts';
 import { createHandlerCore } from '../server/core.ts';
 import {
@@ -300,7 +300,15 @@ export function createOpenApiHandler<TRouter extends AnyRouter>(
     }
     const type = request.headers.get('content-type');
     if (isForm(type)) {
-      const form = await request.formData();
+      const form = await readFormData(
+        request,
+        maxBodySize,
+        () =>
+          new TrpcError({
+            code: 'PAYLOAD_TOO_LARGE',
+            message: 'Request body is too large',
+          }),
+      );
       return {
         value: parseBracketNotation(
           form as unknown as Iterable<[string, string]>,

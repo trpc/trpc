@@ -65,6 +65,7 @@ type Leaf =
   | URL
   | Error
   | Uint8Array
+  | Blob
   | ReadonlyMap<unknown, unknown>
   | ReadonlySet<unknown>
   | ((...args: any[]) => unknown);

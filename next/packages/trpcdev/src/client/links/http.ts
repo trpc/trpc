@@ -19,10 +19,11 @@ import type { MaybePromise } from '../../internal/types.ts';
 import {
   defaultSerializer,
   type Frame,
+  type SerializeReturn,
   type Serializer,
 } from '../../serializer/index.ts';
 import type { Operation, OperationStream, TrpcLink } from '../link.ts';
-import { DeferredDecoder } from './events.ts';
+import { DeferredDecoder, serializeInput } from './events.ts';
 
 /**
  * Options for {@link httpLink}.
@@ -132,7 +133,8 @@ function toHttpError(cause: unknown): AnyTrpcError {
 /**
  * Sends calls over HTTP (17: one link for every HTTP transport). Queries use
  * `GET` with legible params, mutations `POST`, subscriptions SSE. Outputs
- * with nested `Promise`s or `AsyncIterable`s stream as JSONL.
+ * with nested `Promise`s or `AsyncIterable`s stream as JSONL. A call whose
+ * input holds a `File` or `Blob` is sent alone as `multipart/form-data`.
  *
  * @example
  * ```ts
@@ -174,8 +176,32 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink {
     return headers;
   }
 
-  const body = (input: unknown) =>
-    input === undefined ? '' : JSON.stringify(serializer.serialize(input));
+  interface Encoded {
+    json: SerializeReturn | undefined;
+    parts: Blob[];
+  }
+  const encodings = new WeakMap<Operation, Encoded>();
+  const encode = (op: Operation): Encoded => {
+    let encoded = encodings.get(op);
+    if (!encoded) {
+      const parts: Blob[] = [];
+      const json =
+        op.input === undefined
+          ? undefined
+          : serializeInput(serializer, op.input, { parts });
+      encoded = { json, parts };
+      encodings.set(op, encoded);
+    }
+    return encoded;
+  };
+  /** Blobs need a multipart request of their own; a bad input fails alone. */
+  const unbatchable = (op: Operation) => {
+    try {
+      return encode(op).parts.length > 0;
+    } catch {
+      return true;
+    }
+  };
 
   async function readError(res: Response): Promise<AnyTrpcError> {
     const text = await res.text();
@@ -218,6 +244,20 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink {
     signal: AbortSignal,
   ): Promise<Response> {
     const url = `${baseUrl}/${op.path}`;
+    const { json, parts } = encode(op);
+    if (parts.length > 0) {
+      const form = new FormData();
+      form.append('input', JSON.stringify(json));
+      for (const [i, blob] of parts.entries()) {
+        form.append(String(i), blob, blob instanceof File ? blob.name : 'blob');
+      }
+      return fetchFn(url, {
+        method: 'POST',
+        headers: await buildHeaders([op], { accept, ...extra }),
+        body: form,
+        signal,
+      });
+    }
     if (op.type !== 'mutation') {
       const search =
         op.input === undefined ? '' : serializer.toSearch(op.input);
@@ -237,7 +277,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink {
         'content-type': CONTENT_TYPE.json,
         ...extra,
       }),
-      body: body(op.input),
+      body: json === undefined ? '' : JSON.stringify(json),
       signal,
     });
   }
@@ -286,12 +326,13 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink {
     const frames = live.map(() => new AsyncQueue<Frame>());
     const received = new Set<number>();
     try {
-      const calls: BatchCall[] = live.map((item) => ({
-        path: item.op.path,
-        ...(item.op.input === undefined
-          ? {}
-          : { input: serializer.serialize(item.op.input) }),
-      }));
+      const calls: BatchCall[] = live.map((item) => {
+        const { json } = encode(item.op);
+        return {
+          path: item.op.path,
+          ...(json === undefined ? {} : { input: json }),
+        };
+      });
       const res = await fetchFn(baseUrl, {
         method: 'POST',
         headers: await buildHeaders(
@@ -492,6 +533,6 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink {
 
   return ({ op }) => {
     if (op.type === 'subscription') return subscription(op);
-    return maxItems > 0 ? batched(op) : single(op);
+    return maxItems > 0 && !unbatchable(op) ? batched(op) : single(op);
   };
 }

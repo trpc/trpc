@@ -32,7 +32,7 @@ import {
   type SerializeRecord,
   type SerializeReturn,
 } from './sync.ts';
-import type { DansonError } from './utils.ts';
+import { DansonError } from './utils.ts';
 
 export type { Chunk, Frame, SerializedDeferred } from './stream.ts';
 export type {
@@ -96,6 +96,20 @@ export interface DeserializeOpts {
    * client (`RegExp`, ReDoS) are rejected.
    */
   input?: boolean;
+  /** The multipart parts that `File` and `Blob` markers refer to. */
+  parts?: ReadonlyArray<Blob>;
+}
+
+/**
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export interface SerializeOpts {
+  /**
+   * Collects `File` and `Blob` values, which are replaced by references to
+   * their index. Without it, they throw.
+   */
+  parts?: Blob[];
 }
 
 /**
@@ -107,7 +121,7 @@ export interface DeserializeOpts {
  */
 export interface Serializer {
   /** Serializes a value with no deferred parts. Throws on a `Promise` or stream. */
-  serialize(value: unknown): SerializeReturn;
+  serialize(value: unknown, opts?: SerializeOpts): SerializeReturn;
   deserialize<T = unknown>(value: SerializeReturn, opts?: DeserializeOpts): T;
   /** Serializes a value that may hold deferred parts. */
   serializeDeferred(
@@ -156,10 +170,20 @@ export function createSerializer(opts: SerializerOptions = {}): Serializer {
     deserializers: { ...stdInputDeserializers, ...customInputDeserializers },
     maxDepth: opts.maxDepth,
   };
-  const de = (o?: DeserializeOpts) => (o?.input ? input : output);
+  const de = (o?: DeserializeOpts) => {
+    const base = o?.input ? input : output;
+    if (!o?.parts) return base;
+    return {
+      ...base,
+      deserializers: { ...base.deserializers, ...partDeserializers(o.parts) },
+    };
+  };
 
   return {
-    serialize: (value) => serializeSync(value, { serializers }),
+    serialize: (value, o) =>
+      serializeSync(value, {
+        serializers: { ...serializers, ...partSerializers(o?.parts) },
+      }),
     deserialize: (value, o) => deserializeSync(value, de(o)),
     serializeDeferred: (value, o) =>
       serializeDeferred(value, { serializers, coerceError: o?.coerceError }),
@@ -167,6 +191,66 @@ export function createSerializer(opts: SerializerOptions = {}): Serializer {
       deserializeStream(frames, { ...output, reviveError: o?.reviveError }),
     toSearch: (value) => toSearch(value, { serializers }),
     fromSearch: (search, o) => fromSearch(search, de(o)),
+  };
+}
+
+interface PartRef {
+  part: number;
+  name?: string;
+  type: string;
+  lastModified?: number;
+}
+
+/** `File` before `Blob`, since every `File` is a `Blob`. */
+function partSerializers(parts: Blob[] | undefined): SerializeRecord {
+  const indexes = new Map<Blob, number>();
+  const add = (blob: Blob) => {
+    if (!parts) {
+      throw new DansonError(
+        'A File or Blob can only be sent as an input over httpLink',
+      );
+    }
+    let index = indexes.get(blob);
+    if (index === undefined) {
+      index = parts.push(blob) - 1;
+      indexes.set(blob, index);
+    }
+    return index;
+  };
+  return {
+    File: (v) =>
+      typeof File !== 'undefined' && v instanceof File
+        ? ({
+            part: add(v),
+            name: v.name,
+            type: v.type,
+            lastModified: v.lastModified,
+          } satisfies PartRef)
+        : false,
+    Blob: (v) =>
+      v instanceof Blob
+        ? ({ part: add(v), type: v.type } satisfies PartRef)
+        : false,
+  };
+}
+
+function partDeserializers(parts: ReadonlyArray<Blob>): DeserializeRecord {
+  const get = (ref: PartRef) => {
+    const blob =
+      ref && typeof ref.part === 'number' ? parts[ref.part] : undefined;
+    if (!blob) throw new DansonError('Missing multipart part');
+    return blob;
+  };
+  return {
+    File: (ref: PartRef) =>
+      new File([get(ref)], String(ref.name ?? 'blob'), {
+        type: String(ref.type ?? ''),
+        lastModified: ref.lastModified,
+      }),
+    Blob: (ref: PartRef) => {
+      const blob = get(ref);
+      return blob.slice(0, blob.size, String(ref.type ?? ''));
+    },
   };
 }
 

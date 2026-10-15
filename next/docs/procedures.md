@@ -21,6 +21,20 @@ t.procedure
   .query(() => db.post.find(id));
 ```
 
+## Files
+
+`File` and `Blob` values can sit anywhere in an input. `httpLink` sends that call alone (outside a batch) as `multipart/form-data`, and the handler rebuilds them before validation. `maxBodySize` covers the whole body.
+
+```ts
+t.procedure
+  .input(z.object({ postId: z.string(), cover: z.instanceof(File) }))
+  .mutation(({ input }) => storage.put(input.postId, input.cover));
+
+await client.setCover.mutate({ postId: '1', cover: file });
+```
+
+`wsLink` and `messagePortLink` don't send files; the call fails with a `BAD_REQUEST`. File outputs aren't supported over RPC yet. Over [OpenAPI](./openapi.md), a `File` or `Blob` output is the response body. For large uploads, use presigned URLs.
+
 ## Errors
 
 There is one error class, `TrpcError`. Return or throw `error({ code })` from a resolver or a middleware. Errors a procedure declares get typed constructors, typed `data` and an OpenAPI entry:

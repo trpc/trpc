@@ -1,6 +1,32 @@
 import { Cause, Effect, Queue, Stream } from 'effect';
-import { fromWireError } from '../../internal/error.ts';
-import type { Frame, Serializer } from '../../serializer/index.ts';
+import { fromWireError, TrpcError } from '../../internal/error.ts';
+import type {
+  Frame,
+  SerializeOpts,
+  SerializeReturn,
+  Serializer,
+} from '../../serializer/index.ts';
+
+/**
+ * Serializes a call's input; a value the serializer can't send fails the call
+ * as a `BAD_REQUEST` before anything is sent.
+ * @internal
+ */
+export function serializeInput(
+  serializer: Serializer,
+  input: unknown,
+  opts?: SerializeOpts,
+): SerializeReturn {
+  try {
+    return serializer.serialize(input, opts);
+  } catch (cause) {
+    throw new TrpcError({
+      code: 'BAD_REQUEST',
+      message: cause instanceof Error ? cause.message : 'Invalid input',
+      cause,
+    });
+  }
+}
 
 type FrameQueue = Queue.Queue<Frame, Cause.Done>;
 

@@ -9,7 +9,9 @@ import {
   CONTENT_TYPE,
   HEADER,
   isJsonContentType,
+  isMultipartContentType,
   PROTOCOL_VERSION,
+  readFormData,
   SSE_EVENT,
   type BatchCall,
   type BatchLine,
@@ -288,10 +290,10 @@ export function createFetchHandler<TRouter extends AnyRouter>(
     }
   }
 
-  const deserializeInput = (value: unknown) => {
+  const deserializeInput = (value: unknown, parts?: ReadonlyArray<Blob>) => {
     if (value === undefined) return undefined;
     try {
-      return serializer.deserialize(value as never, { input: true });
+      return serializer.deserialize(value as never, { input: true, parts });
     } catch (cause) {
       throw new TrpcError({
         code: 'PARSE_ERROR',
@@ -314,7 +316,48 @@ export function createFetchHandler<TRouter extends AnyRouter>(
         });
       }
     }
+    if (isMultipartContentType(request.headers.get('content-type'))) {
+      return readMultipart(request);
+    }
     return deserializeInput(await readBody(request));
+  }
+
+  /** An `input` field with the serialized JSON, and parts `0`, `1`, … for its blobs. */
+  async function readMultipart(request: Request): Promise<unknown> {
+    const form = await readFormData(request, maxBodySize, () =>
+      protocolError('PAYLOAD_TOO_LARGE', 'Request body is too large'),
+    ).catch((cause: unknown) => {
+      if (isTrpcError(cause)) throw cause;
+      throw new TrpcError({
+        code: 'PARSE_ERROR',
+        message: 'Invalid multipart body',
+        cause,
+      });
+    });
+    const field = form.get('input');
+    if (typeof field !== 'string') {
+      throw protocolError(
+        'BAD_REQUEST',
+        'A multipart body needs an "input" field',
+      );
+    }
+    let value: unknown;
+    try {
+      value = JSON.parse(field);
+    } catch (cause) {
+      throw new TrpcError({
+        code: 'PARSE_ERROR',
+        message: 'Invalid JSON',
+        cause,
+      });
+    }
+    const parts: Blob[] = [];
+    for (;;) {
+      const part = form.get(String(parts.length));
+      if (!(part instanceof Blob)) break;
+      parts.push(part);
+    }
+    return deserializeInput(value, parts);
   }
 
   const makeContext = (

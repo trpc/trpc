@@ -101,6 +101,44 @@ export type ServerMessage =
 export const isJsonContentType = (value: string | null): boolean =>
   value !== null && /^application\/json\b/i.test(value);
 
+export const isMultipartContentType = (value: string | null): boolean =>
+  value !== null && /^multipart\/form-data\b/i.test(value);
+
+/**
+ * Reads a form body, failing with `tooLarge()` once it passes `maxBytes`,
+ * whether or not the request declares its length. Bytes past the limit are
+ * drained and dropped: cancelling the body makes some servers (Node) drop
+ * the connection before the 413 is sent.
+ */
+export async function readFormData(
+  request: Request,
+  maxBytes: number,
+  tooLarge: () => Error,
+): Promise<FormData> {
+  if (Number(request.headers.get('content-length') ?? 0) > maxBytes) {
+    throw tooLarge();
+  }
+  if (!request.body) return new FormData();
+  let size = 0;
+  const body = request.body.pipeThrough(
+    new TransformStream<Uint8Array, Uint8Array>({
+      transform(chunk, controller) {
+        size += chunk.byteLength;
+        if (size <= maxBytes) controller.enqueue(chunk);
+      },
+    }),
+  );
+  const headers = { 'content-type': request.headers.get('content-type') ?? '' };
+  const form = await new Response(body, { headers })
+    .formData()
+    .catch((cause: unknown) => {
+      if (size > maxBytes) throw tooLarge();
+      throw cause;
+    });
+  if (size > maxBytes) throw tooLarge();
+  return form;
+}
+
 const textDecoder = () =>
   new TextDecoderStream() as unknown as ReadableWritablePair<
     string,
