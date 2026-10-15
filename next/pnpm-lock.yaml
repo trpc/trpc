@@ -451,6 +451,9 @@ importers:
       '@effect/platform-node':
         specifier: 4.0.2
         version: 4.0.2(effect@4.0.2)(redis@6.3.0)
+      '@effect/sql-pg':
+        specifier: 4.0.2
+        version: 4.0.2(effect@4.0.2)
       '@types/node':
         specifier: ^24.0.0
         version: 24.19.1
@@ -774,6 +777,11 @@ packages:
     peerDependencies:
       effect: ^4.0.2
       redis: '>=5.0.0 <7.0.0'
+
+  '@effect/sql-pg@4.0.2':
+    resolution: {integrity: sha512-i2N5F0L5s1S8Nx2I8V7k+awBinP26b5xiiHL1zn5b6RALNnloiU7FK1yS4dAkmqG9B0EcOVxvJrIpoMWwrB4hw==}
+    peerDependencies:
+      effect: ^4.0.2
 
   '@floating-ui/core@1.8.0':
     resolution: {integrity: sha512-0CIZ5itps/8x7BG8dEIhs53BvCUH2PCoogtakwRTut+Arm58sJooJ0AuZhLw2HJYIR5cMLNPBSS728sPho2khQ==}
@@ -2561,6 +2569,10 @@ snapshots:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
+
+  '@effect/sql-pg@4.0.2(effect@4.0.2)':
+    dependencies:
+      effect: 4.0.2
 
   '@floating-ui/core@1.8.0':
     dependencies:

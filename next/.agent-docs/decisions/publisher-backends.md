@@ -4,4 +4,4 @@
 - No Redis, Postgres or Durable Object backends ship. `docs/subscriptions.md` shows a `Publisher` layer built on Effect's own services: `effect/persistence/Redis` with `NodeRedis.layer` from `@effect/platform-node`, and `@effect/sql-pg` `LISTEN`/`NOTIFY`.
 - Why: Effect already maintains the clients, pooling and reconnects, and a layer is a few lines.
 - Lost: a tested, versioned backend per store; the guides' code is the app's to maintain.
-- Lives in: `docs/subscriptions.md`.
+- Lives in: `docs/subscriptions.md` (with a Durable Object recipe too); the Redis recipe runs against a fake `Redis.make` client and the Postgres one is typechecked, in `test/integration/publisher-recipes.test.ts`.
