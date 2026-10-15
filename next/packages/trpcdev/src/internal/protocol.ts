@@ -16,6 +16,11 @@ export const HEADER = {
   version: 'trpc-version',
   batch: 'trpc-batch',
   lastEventId: 'last-event-id',
+  /**
+   * On a response whose body is a root `File` or `Blob` output: the
+   * URI-encoded JSON `{ type, name?, lastModified? }` the client rebuilds it from.
+   */
+  blob: 'trpc-blob',
 } as const;
 
 /**
@@ -99,6 +104,42 @@ export type ServerMessage =
   | { id: number; type: 'done' }
   | { id: number | null; type: 'error'; status: number; body: unknown }
   | { type: 'pong' };
+
+interface BlobMeta {
+  type: string;
+  name?: string;
+  lastModified?: number;
+}
+
+/** `content-disposition` for a file, with an ASCII fallback name. */
+export const contentDisposition = (name: string): string =>
+  `inline; filename="${name.replace(/[^\x20-\x7e]|["\\]/g, '_')}"; filename*=UTF-8''${encodeURIComponent(name)}`;
+
+/** The headers that let the client rebuild a `File` or `Blob` response body. */
+export function blobHeaders(blob: Blob): Record<string, string> {
+  const meta: BlobMeta =
+    typeof File !== 'undefined' && blob instanceof File
+      ? { type: blob.type, name: blob.name, lastModified: blob.lastModified }
+      : { type: blob.type };
+  return {
+    [HEADER.blob]: encodeURIComponent(JSON.stringify(meta)),
+    ...(meta.name === undefined
+      ? {}
+      : { 'content-disposition': contentDisposition(meta.name) }),
+  };
+}
+
+/** Rebuilds a `File` or `Blob` from a response that `blobHeaders()` marked. */
+export async function readBlob(res: Response, header: string): Promise<Blob> {
+  const meta = JSON.parse(decodeURIComponent(header)) as BlobMeta;
+  const body = await res.blob();
+  return meta.name === undefined
+    ? body.slice(0, body.size, meta.type)
+    : new File([body], meta.name, {
+        type: meta.type,
+        lastModified: meta.lastModified,
+      });
+}
 
 export const isJsonContentType = (value: string | null): boolean =>
   value !== null && /^application\/json\b/i.test(value);

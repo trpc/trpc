@@ -12,7 +12,11 @@ import {
   type AnyTrpcError,
 } from '../internal/error.ts';
 import type { JsonSchema } from '../internal/json-schema.ts';
-import { isJsonContentType, readFormData } from '../internal/protocol.ts';
+import {
+  contentDisposition,
+  isJsonContentType,
+  readFormData,
+} from '../internal/protocol.ts';
 import type { MaybePromise, ProcedureType } from '../internal/types.ts';
 import { createHandlerCore } from '../server/core.ts';
 import {
@@ -416,10 +420,7 @@ export function createOpenApiHandler<
     if (body instanceof Blob) {
       headers.set('content-type', body.type || 'application/octet-stream');
       if (body instanceof File) {
-        headers.set(
-          'content-disposition',
-          `inline; filename="${encodeURIComponent(body.name)}"`,
-        );
+        headers.set('content-disposition', contentDisposition(body.name));
       }
       return new Response(body, { status, headers });
     }

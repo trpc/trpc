@@ -6,6 +6,8 @@ import {
   wsLink,
 } from 'trpcdev/client';
 import { initTrpc } from 'trpcdev/server';
+import { defaultSerializer, type Frame } from 'trpcdev/serializer';
+import { Effect, Stream } from 'effect';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
@@ -34,6 +36,32 @@ const router = {
     .input(z.object({ file: z.instanceof(File) }))
     .query(({ input }) => input.file.size),
   hello: t.procedure.query(() => 'hello'),
+  download: t.procedure.input(z.object({ name: z.string() })).query(
+    ({ input }) =>
+      new File(['report bytes'], input.name, {
+        type: 'text/csv',
+        lastModified: 1_700_000_000_000,
+      }),
+  ),
+  rawBlob: t.procedure.query(() => new Blob([new Uint8Array([0, 255, 1])])),
+  gallery: t.procedure.query(async function* () {
+    for (const name of ['1.png', '2.png', '3.png']) {
+      yield new File([name], name, { type: 'image/png' });
+    }
+  }),
+  attachments: t.procedure.query(() => {
+    const big = new File([new Uint8Array(200_000).fill(7)], 'big.bin');
+    return {
+      title: 'Post',
+      cover,
+      files: [big, big],
+      icon: new Blob(['<svg/>'], { type: 'image/svg+xml' }),
+      empty: new File([], 'empty.txt'),
+      later: new Promise<File>((resolve) =>
+        setTimeout(() => resolve(new File(['late'], 'late.txt')), 5),
+      ),
+    };
+  }),
 };
 type AppRouter = typeof router;
 
@@ -155,4 +183,112 @@ test('a JSON body cannot claim to hold files', async () => {
     }),
   });
   expect(res.status).toBe(400);
+});
+
+test('a root File output of an unbatched call is the response body', async () => {
+  await using server = await createTestServer({ router, batch: true });
+  const client = createTrpcClient<AppRouter>({
+    links: [httpLink({ url: server.url, batch: false })],
+  });
+  const file = await client.download.query({ name: 'Q3 rapport – é.csv' });
+  expectTypeOf(file).toEqualTypeOf<File>();
+  expect(file).toBeInstanceOf(File);
+  expect(file.name).toBe('Q3 rapport – é.csv');
+  expect(file.type).toBe('text/csv');
+  expect(file.lastModified).toBe(1_700_000_000_000);
+  expect(await file.text()).toBe('report bytes');
+
+  const res = await fetch(`${server.url}/download?name=a.csv`);
+  expect(res.headers.get('content-type')).toBe('text/csv');
+  expect(res.headers.get('content-disposition')).toBe(
+    `inline; filename="a.csv"; filename*=UTF-8''a.csv`,
+  );
+  expect(await res.text()).toBe('report bytes');
+
+  const blob = await client.rawBlob.query();
+  expect(blob).not.toBeInstanceOf(File);
+  expect(blob.type).toBe('');
+  expect([...new Uint8Array(await blob.arrayBuffer())]).toEqual([0, 255, 1]);
+});
+
+test('a root File output in a batch streams like a nested one', async () => {
+  await using server = await createTestServer({ router, batch: true });
+  const client = createTrpcClient<AppRouter>({
+    links: [httpLink({ url: server.url, batch: true })],
+  });
+  const [file, hello] = await Promise.all([
+    client.download.query({ name: 'a.csv' }),
+    client.hello.query(),
+  ]);
+  expect(hello).toBe('hello');
+  expect(file.name).toBe('a.csv');
+  expect(await file.text()).toBe('report bytes');
+  expect(server.requests).toHaveLength(1);
+});
+
+for (const transport of ['httpLink', 'wsLink', 'localLink'] as const) {
+  test(`files anywhere in an output stream as chunks (${transport})`, async () => {
+    await using server = await createTestServer({ router });
+    await using ws = wsLink({ url: server.wsUrl });
+    const client = createTrpcClient<AppRouter>({
+      links: [
+        transport === 'httpLink'
+          ? httpLink({ url: server.url })
+          : transport === 'wsLink'
+            ? ws
+            : localLink({ router, createContext: () => ({}) }),
+      ],
+    });
+    const out = await client.attachments.query();
+    expectTypeOf(out.cover).toEqualTypeOf<File>();
+    expectTypeOf(out.icon).toEqualTypeOf<Blob>();
+    expect(out.title).toBe('Post');
+    expect(out.cover.name).toBe('a.png');
+    expect(out.cover.type).toBe('image/png');
+    expect(await out.cover.text()).toBe('<png>');
+    expect(out.files[1]).toEqual(out.files[0]);
+    expect(out.files[0]!.size).toBe(200_000);
+    expect(
+      new Uint8Array(await out.files[0]!.arrayBuffer()).every((b) => b === 7),
+    ).toBe(true);
+    expect(out.icon).not.toBeInstanceOf(File);
+    expect(out.icon.type).toBe('image/svg+xml');
+    expect(await out.icon.text()).toBe('<svg/>');
+    expect(out.empty.size).toBe(0);
+    const late = await out.later;
+    expect(late.name).toBe('late.txt');
+    expect(await late.text()).toBe('late');
+  });
+}
+
+test('files yielded by an async iterable arrive in order', async () => {
+  await using server = await createTestServer({ router });
+  const client = createTrpcClient<AppRouter>({
+    links: [httpLink({ url: server.url })],
+  });
+  const names: string[] = [];
+  for await (const file of await client.gallery.query()) {
+    names.push(`${file.name}:${await file.text()}`);
+  }
+  expect(names).toEqual(['1.png:1.png', '2.png:2.png', '3.png:3.png']);
+});
+
+test("a stream that ends before a file's bytes fails instead of hanging", async () => {
+  const { head, chunks } = defaultSerializer.serializeDeferred({
+    file: new File(['bytes'], 'a.txt'),
+  });
+  const frames: Frame[] = [head];
+  await Effect.runPromise(
+    Stream.runForEach(chunks!, (chunk) =>
+      Effect.sync(() => frames.push(chunk)),
+    ),
+  );
+  const read = (list: Frame[]) =>
+    Effect.runPromise(
+      defaultSerializer.deserializeStream<{ file: File }, never>(
+        Stream.fromIterable(list),
+      ),
+    );
+  expect(await (await read(frames)).file.text()).toBe('bytes');
+  await expect(read(frames.slice(0, -1))).rejects.toThrow(/Stream interrupted/);
 });

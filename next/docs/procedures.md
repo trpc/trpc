@@ -33,7 +33,24 @@ t.procedure
 await client.setCover.mutate({ postId: '1', cover: file });
 ```
 
-`wsLink` and `messagePortLink` don't send files; the call fails with a `BAD_REQUEST`. File outputs aren't supported over RPC yet. Over [OpenAPI](./openapi.md), a `File` or `Blob` output is the response body. For large uploads, use presigned URLs.
+`wsLink` and `messagePortLink` don't send files; the call fails with a `BAD_REQUEST`. For large uploads, use presigned URLs.
+
+Outputs can hold files too, over every link:
+
+```ts
+t.procedure
+  .input(z.object({ id: z.string() }))
+  .query(
+    ({ input }) =>
+      new File([csv(input.id)], 'report.csv', { type: 'text/csv' }),
+  );
+
+const report = await client.report.query({ id }); // File
+```
+
+- When a `File` or `Blob` is the whole output of a call that isn't batched, `httpLink` gets it as the response body, with its `content-type` and a `content-disposition` naming the file, so the URL works as a download link too.
+- Anywhere else (nested in an object, yielded by an async iterable, or in a batch), its bytes stream after the rest of the output as base64 chunks. The value holding it resolves once they've arrived, so a nested `File` is a `File`, not a promise. A file that appears twice is sent once.
+- Over [OpenAPI](./openapi.md), a `File` or `Blob` output is the response body.
 
 ## Errors
 

@@ -92,6 +92,66 @@ function sourceOf(
   );
 }
 
+const isFile = (v: unknown): v is File =>
+  typeof File !== 'undefined' && v instanceof File;
+
+/** A blob's bytes as base64 strings, one per read. */
+async function* base64Chunks(blob: Blob): AsyncGenerator<string> {
+  const reader = blob.stream().getReader();
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) return;
+      let binary = '';
+      for (let i = 0; i < value.length; i += 0x8000) {
+        binary += String.fromCharCode(...value.subarray(i, i + 0x8000));
+      }
+      yield btoa(binary);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
+
+function fromBase64(chunks: unknown[]): Uint8Array<ArrayBuffer>[] {
+  return chunks.map((chunk) => {
+    const binary = atob(String(chunk));
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+  });
+}
+
+/** How a `File` or `Blob` in a streamed value points at its bytes' chunks. */
+interface BlobRef {
+  stream: number;
+  type: string;
+  name?: string;
+  lastModified?: number;
+}
+
+const isBlobMarker = (v: Record<string, unknown>) =>
+  v['_'] === '$' &&
+  (v['type'] === 'File' || v['type'] === 'Blob') &&
+  typeof (v['value'] as BlobRef | undefined)?.stream === 'number';
+
+/** The chunk indexes of every `File` or `Blob` a frame holds. */
+function blobStreams(frame: SerializeReturn): number[] {
+  const out: number[] = [];
+  const walk = (v: unknown): void => {
+    if (Array.isArray(v)) {
+      for (const it of v) walk(it);
+    } else if (typeof v === 'object' && v !== null) {
+      const o = v as Record<string, unknown>;
+      if (isBlobMarker(o)) out.push((o['value'] as BlobRef).stream);
+      else for (const key in o) walk(o[key]);
+    }
+  };
+  walk(frame.json);
+  if (frame.refs) walk(frame.refs);
+  return out;
+}
+
 export interface SerializeStreamOptions extends SerializeOptions {
   /** Turn a failure (rejected promise, thrown iterator) into something serializable. */
   coerceError?: (cause: unknown) => unknown;
@@ -133,8 +193,34 @@ export function serializeDeferred(
         v instanceof ReadableStream ? register(v) : false,
       AsyncIterable: (v) => (isAsyncIterable(v) ? register(v) : false),
       Promise: (v) => (isPromiseLike(v) ? register(v) : false),
+      File: (v) =>
+        isFile(v)
+          ? ({
+              stream: registerBlob(v),
+              name: v.name,
+              type: v.type,
+              lastModified: v.lastModified,
+            } satisfies BlobRef)
+          : false,
+      Blob: (v) =>
+        v instanceof Blob
+          ? ({
+              stream: registerBlob(v),
+              type: v.type,
+            } satisfies BlobRef)
+          : false,
     },
   };
+  const blobs = new Map<Blob, number>();
+  /** A blob that appears twice sends its bytes once. */
+  function registerBlob(blob: Blob): number {
+    let idx = blobs.get(blob);
+    if (idx === undefined) {
+      idx = register(base64Chunks(blob));
+      blobs.set(blob, idx);
+    }
+    return idx;
+  }
   function register(v: Parameters<typeof sourceOf>[0]): number {
     if (isPromiseLike(v)) {
       // Rejections surface as ERROR chunks once the source starts.
@@ -277,35 +363,106 @@ export function deserializeStream<T, E>(
         ),
       );
 
+    // A frame holding a `File` or `Blob` waits for its bytes, which arrive
+    // as later chunks; frames for the same target keep their order.
+    const bytes = new Map<number, Promise<Uint8Array<ArrayBuffer>[]>>();
+    const collected = new Map<number, Uint8Array<ArrayBuffer>[]>();
+    const blobParts = (ref: BlobRef) => {
+      const parts = collected.get(ref.stream);
+      if (!parts) throw new DansonError('Missing file bytes');
+      return parts;
+    };
+    opts.deserializers = {
+      ...opts.deserializers,
+      File: (ref: BlobRef) =>
+        new File(blobParts(ref), String(ref.name ?? 'blob'), {
+          type: String(ref.type ?? ''),
+          lastModified: ref.lastModified,
+        }),
+      Blob: (ref: BlobRef) =>
+        new Blob(blobParts(ref), { type: String(ref.type ?? '') }),
+    };
+    const collect = (idx: number) => {
+      let p = bytes.get(idx);
+      if (!p) {
+        p = Effect.runPromise(
+          iterate(idx).pipe(
+            Stream.runCollect,
+            Effect.map((chunks) => {
+              const parts = fromBase64(Array.from(chunks));
+              collected.set(idx, parts);
+              return parts;
+            }),
+          ),
+        );
+        p.catch(() => {});
+        bytes.set(idx, p);
+      }
+      return p;
+    };
+    const HEAD = -1;
+    const tails = new Map<number, Promise<void>>();
+    const toDeserializeError = (cause: unknown) =>
+      cause instanceof DansonError
+        ? cause
+        : new DansonError('deserialize failed', { cause });
+    const apply = (target: number, frame: Frame) => {
+      if (target === HEAD) {
+        Deferred.doneUnsafe(
+          head,
+          Effect.succeed(deserializeSync<T>(frame as SerializeReturn, opts)),
+        );
+        return;
+      }
+      const [, status, json] = frame as Chunk;
+      Queue.offerUnsafe(queueFor(target), [
+        status,
+        deserializeSync(json, opts),
+      ]);
+    };
+    const fail = (target: number, error: unknown) => {
+      if (target === HEAD)
+        Deferred.doneUnsafe(head, Effect.fail(error as never));
+      else Queue.failCauseUnsafe(queueFor(target), Cause.fail(error));
+    };
+
     let first = true;
     yield* source.pipe(
       Stream.runForEach((frame) =>
         Effect.try({
           try: () => {
-            if (first) {
-              first = false;
-              Deferred.doneUnsafe(
-                head,
-                Effect.succeed(
-                  deserializeSync<T>(frame as SerializeReturn, opts),
-                ),
-              );
+            const target = first ? HEAD : (frame as Chunk)[0];
+            first = false;
+            const waits = blobStreams(
+              target === HEAD
+                ? (frame as SerializeReturn)
+                : (frame as Chunk)[2],
+            ).map(collect);
+            const tail = tails.get(target);
+            if (waits.length === 0 && !tail) {
+              apply(target, frame);
               return;
             }
-            const [idx, status, json] = frame as Chunk;
-            Queue.offerUnsafe(queueFor(idx), [
-              status,
-              deserializeSync(json, opts),
-            ]);
+            const next = Promise.all([tail, ...waits]).then(
+              () => {
+                try {
+                  apply(target, frame);
+                } catch (cause) {
+                  fail(target, toDeserializeError(cause));
+                }
+              },
+              (error: unknown) => fail(target, error),
+            );
+            tails.set(target, next);
+            void next.then(() => {
+              if (tails.get(target) === next) tails.delete(target);
+            });
           },
-          catch: (cause) =>
-            cause instanceof DansonError
-              ? cause
-              : new DansonError('deserialize failed', { cause }),
+          catch: toDeserializeError,
         }),
       ),
       Effect.onExit((exit) =>
-        Effect.sync(() => {
+        Effect.promise(async () => {
           // The source's own failure (a network error, an abort) reaches
           // open deferred values as it is; defects and interrupts don't.
           const failure = Exit.isFailure(exit)
@@ -326,6 +483,12 @@ export function deserializeStream<T, E>(
                 : Effect.fail(new DansonError('Empty stream')),
             );
           }
+          // Bytes already received still drain; then waiting frames settle.
+          for (const idx of bytes.keys()) {
+            const q = queues.get(idx);
+            if (q) Queue.failCauseUnsafe(q, Cause.fail(error));
+          }
+          if (tails.size > 0) await Promise.all(tails.values());
           for (const q of queues.values()) {
             Queue.failCauseUnsafe(q, Cause.fail(error));
           }

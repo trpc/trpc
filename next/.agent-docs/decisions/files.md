@@ -8,4 +8,5 @@
 - (agent) A call with a file input leaves the batch; batches stay JSON. The handler reads multipart bodies with a streaming `maxBodySize` check, which drains the rest instead of cancelling (Node drops the socket before the 413 otherwise). The OpenAPI handler uses the same reader for forms.
 - Why: a download is one request, so the raw body is what browsers, `<a download>` and caches expect. Batches and nested files can't share one body, so they reuse the deferred-stream machinery.
 - Lost: one wire shape for every file output.
-- Lives in: `packages/trpcdev/src/serializer/`, `src/server/fetch.ts`, `src/client/links/http.ts`, `src/openapi/handler.ts`.
+- (agent) Outputs on the wire: a raw root body carries a `trpc-blob` header (URI-encoded `{ type, name?, lastModified? }`), so the client can tell a file from JSON and rebuild a `Blob` with an empty type. A streamed file is `{ _: '$', type: 'File', value: { stream, name, type, lastModified } }`, its bytes are base64 chunks at `stream`, and the client holds back the frame that holds it until they've all arrived, so the output type stays `File` rather than `Promise<File>`. The same `File` twice in one output streams once.
+- Lives in: `packages/trpcdev/src/serializer/`, `src/server/fetch.ts`, `src/client/links/http.ts`, `src/openapi/handler.ts`, `src/internal/protocol.ts` (`blobHeaders`, `readBlob`).

@@ -6,6 +6,7 @@ import {
   type AnyTrpcError,
 } from '../internal/error.ts';
 import {
+  blobHeaders,
   CONTENT_TYPE,
   HEADER,
   isJsonContentType,
@@ -257,6 +258,8 @@ interface CallResult {
   body: unknown;
   chunks?: Stream.Stream<Chunk, unknown> | undefined;
   headers?: Headers | undefined;
+  /** A root `File` or `Blob` output, sent as the body of an unbatched call. */
+  blob?: Blob | undefined;
 }
 
 /**
@@ -438,6 +441,7 @@ export function createFetchHandler<
     ctx: object,
     input: unknown,
     signal: AbortSignal,
+    rawBlob = false,
   ): Promise<CallResult> {
     const type = procedure['~trpc'].type;
     const response = createResponseHandle();
@@ -447,6 +451,14 @@ export function createFetchHandler<
       const err = normalizeCause(exit.cause);
       report(err, request, path, type);
       return { status: err.status, body: wire(err), headers };
+    }
+    if (rawBlob && exit.value instanceof Blob) {
+      return {
+        status: response.status ?? 200,
+        body: undefined,
+        blob: exit.value,
+        headers,
+      };
     }
     try {
       const { head, chunks } = serializer.serializeDeferred(exit.value, {
@@ -558,7 +570,17 @@ export function createFetchHandler<
         ctx,
         input,
         controller.signal,
+        true,
       );
+      if (result.blob) {
+        return respond(
+          result.status,
+          result.blob,
+          result.blob.type || 'application/octet-stream',
+          blobHeaders(result.blob),
+          result.headers,
+        );
+      }
       if (!result.chunks) {
         return respond(
           result.status,

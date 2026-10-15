@@ -10,6 +10,7 @@ import {
   HEADER,
   parseSse,
   PROTOCOL_VERSION,
+  readBlob,
   readLines,
   SSE_EVENT,
   type BatchCall,
@@ -285,6 +286,8 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink {
 
   async function readResult(res: Response): Promise<unknown> {
     if (!res.ok) throw await readError(res);
+    const blob = res.headers.get(HEADER.blob);
+    if (blob !== null) return readBlob(res, blob);
     const type = res.headers.get('content-type') ?? '';
     if (type.startsWith(CONTENT_TYPE.jsonl) && res.body) {
       const frames = Stream.fromAsyncIterable(
