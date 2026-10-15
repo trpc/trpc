@@ -111,6 +111,14 @@ export type {
 } from './schema.ts';
 export { tracked, type TrackedEnvelope } from './tracked.ts';
 export {
+  makeMemoryPublisher,
+  Publisher,
+  type MemoryPublisherOptions,
+  type PublisherClass,
+  type PublisherEvents,
+  type PublisherShape,
+} from './publisher.ts';
+export {
   createFetchHandler,
   type BaseHandlerOptions,
   type ContextOption,
