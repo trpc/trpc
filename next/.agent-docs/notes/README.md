@@ -22,3 +22,4 @@ Agent-written working notes: research, spike results, benchmarks and anything wo
 | [TanStack Query option-bag typing](./tanstack-options-typing.md)     | 19         | `tanstack-options/`    |
 | [Context-aware inputs](./context-aware-inputs.md)                    | 05 (d)     | `context-aware-input/` |
 | [Plugins via `.concat()`](./concat-plugins.md)                       | 06 (e), 03 | `concat-plugins/`      |
+| [Open trpc/trpc issues](./open-issues-review.md)                     | all        |                        |
