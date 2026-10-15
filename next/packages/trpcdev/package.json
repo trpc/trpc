@@ -16,6 +16,10 @@
       "types": "./src/client/index.ts",
       "default": "./src/client/index.ts"
     },
+    "./actions": {
+      "types": "./src/actions/index.ts",
+      "default": "./src/actions/index.ts"
+    },
     "./contract": {
       "types": "./src/contract/index.ts",
       "default": "./src/contract/index.ts"

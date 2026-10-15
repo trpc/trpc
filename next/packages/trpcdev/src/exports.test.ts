@@ -4,6 +4,7 @@ const entries = {
   server: () => import('trpcdev/server'),
   middleware: () => import('trpcdev/middleware'),
   client: () => import('trpcdev/client'),
+  actions: () => import('trpcdev/actions'),
   contract: () => import('trpcdev/contract'),
   serializer: () => import('trpcdev/serializer'),
   openapi: () => import('trpcdev/openapi'),
