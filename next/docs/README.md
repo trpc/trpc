@@ -1,3 +1,31 @@
-# Docs
+# trpcdev docs
 
-Markdown user docs for vNext will live here. Design / agent docs live in [`../.agent-docs/`](../.agent-docs/).
+User docs for vNext, kept in step with the code. Design notes and decisions live in [`../.agent-docs/`](../.agent-docs/).
+
+- [Getting started](./getting-started.md): a router, a handler, a client.
+- [Procedures](./procedures.md): input and output, errors, middleware, Effect.
+- [Routers](./routers.md): plain objects, `mergeRouters`, OpenAPI groups, `lazy()`.
+- [Client](./client.md): links, call options, `safe()`, the Effect client, HTTP details.
+- [Subscriptions](./subscriptions.md): `tracked()`, resuming, `Publisher`.
+- [Server Actions and RSC](./actions-and-rsc.md): `trpcdev/actions`, `@trpcdev/tanstack-react-query/rsc`.
+- [TanStack Query](./tanstack-query.md): query helpers and hydration.
+- [OpenAPI](./openapi.md): the REST handler, the document, contracts.
+- [Platforms](./platforms.md): Node, Bun, Deno, Express, Fastify, fetch runtimes.
+
+Entry points of `trpcdev`:
+
+| Entry                | For                                                      |
+| -------------------- | -------------------------------------------------------- |
+| `trpcdev/server`     | `initTrpc`, routers, handlers, callers, `Publisher`      |
+| `trpcdev/client`     | `createTrpcClient`, links, `safe`                        |
+| `trpcdev/middleware` | `onStart`, `onSuccess`, `onError`, `onFinish`            |
+| `trpcdev/actions`    | `createAction`, `createCallable`                         |
+| `trpcdev/effect`     | `createEffectClient`                                     |
+| `trpcdev/http`       | `serve`, `toHttpEffect` on Effect's `HttpServer`         |
+| `trpcdev/openapi`    | `createOpenApiHandler`, `generateOpenApi`, `openApiLink` |
+| `trpcdev/contract`   | contract-first routers, `toContract`                     |
+| `trpcdev/serializer` | danSON, custom types                                     |
+| `trpcdev/testing`    | `createTestServer`                                       |
+| `trpcdev/extend`     | building blocks for integrations                         |
+
+`trpcdev/internal` holds types that declaration emit refers to. Don't import it; it has no semver.
