@@ -13,6 +13,7 @@ import {
   ok,
   tracked,
   TrpcError,
+  type InputValidationErrorData,
   type TrackedEnvelope,
 } from 'trpcdev/server';
 import { onError, onFinish, onStart, onSuccess } from 'trpcdev/middleware';
@@ -185,6 +186,19 @@ async function collect<T>(iterable: AsyncIterable<T>): Promise<T[]> {
   for await (const item of iterable) items.push(item);
   return items;
 }
+
+test('input validation issues reach the client with unexpected errors masked (05 Q5.4)', async () => {
+  await using ctx = await setup();
+  const res = await safe(ctx.client.post.byId.query({ id: 1 as never }));
+  expect(res.error).toMatchObject({
+    code: 'BAD_REQUEST',
+    defined: true,
+    data: { issues: [{ path: ['id'] }] },
+  });
+  if (res.error?.defined && res.error.code === 'BAD_REQUEST') {
+    expectTypeOf(res.error.data).toEqualTypeOf<InputValidationErrorData>();
+  }
+});
 
 test('.errors() gives the resolver typed constructors for defined errors', async () => {
   await using ctx = await setup();
