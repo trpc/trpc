@@ -9,14 +9,14 @@ Method: `gh issue list --repo trpc/trpc --state open --limit 1000 --json number,
 - #7626, sync validation: Standard Schema results, resolvers and `provide` values that aren't promises no longer go through a promise. A procedure with no async step runs under `Effect.runSync` (`procedures.test.ts`).
 - #6997 and #6800, "excessively deep" types: a recursive `JsonValue` output failed in vNext too. `Deserialized<T>` now returns plain data (no thenables, iterables or functions) as it is, which also keeps branded tuples identical (#6500) (`basics.test.ts`).
 - SSE keep-alives: the `fetch-sse` decision promised them but the handler sent none. Both the RPC and OpenAPI handlers now send `: ping` every 15 s (`sse.pingMs`).
-- #1937, #7180, #6670, files over RPC: `File` and `Blob` anywhere in an input, sent by `httpLink` as `multipart/form-data` (proposal 11 (f)). The output side of Q11.6 is still open (`files.test.ts`).
+- #1937, #7180, #6670, files over RPC: `File` and `Blob` anywhere in an input, sent by `httpLink` as `multipart/form-data` (proposal 11 (f)). Outputs since the second round (below).
 - #7022, tracing: every call runs in a `trpc.<path>` server span with `rpc.method`, `trpc.type` and `trpc.error.code` (`effect.test.ts`).
 - #7064, per-call reconnect: `{ reconnect: false }` on a subscription call fails with `NETWORK_ERROR` instead of rerunning it.
 - #6664, the React context: `createTrpcContext()` returns `context` for bridges (React and Preact).
 - #5534, #7446, bodies already read: `toHttpEffect` rebuilds the body from `req.body` after `express.json()`, `text()` or `raw()`, and otherwise fails with a 500 that names the cause instead of a misleading validation error (`platforms.test.ts`).
 - #6996 (related): JSONL and SSE decoding no longer need `TextDecoderStream`, which Hermes lacks. The SSE parser also handled a `\r\n` split across chunks as two line ends.
 - WebSocket heartbeat: `wsLink` pings (`keepAlive`), and a connection that stops answering reconnects (`websockets.test.ts`).
-- #7436, work after the response: `docs/procedures.md` documents `Effect.forkDetach` (tested) and the platforms' `waitUntil`. `docs/platforms.md` shows how a Workers `createContext` reaches `env` and `ctx` (a `WeakMap` keyed by the request).
+- #7436, work after the response: `docs/procedures.md` documents `Effect.forkDetach` (tested) and the platforms' `waitUntil`. Workers' `env` and `ctx` reach `createContext` as the handler's typed platform argument (`handler.fetch(request, { env, ctx })`), which replaced a `WeakMap`-keyed-by-request recipe.
 - #6771 and Next control flow: `redirect()`, `notFound()` and dynamic-API errors (a string `digest`) were wrapped as `INTERNAL_SERVER_ERROR` by actions and in-process callers, and RSC dehydration redacted them. They now pass through unchanged (`actions.test.ts`, `rsc.test.tsx`).
 - #7021, offline mutations: no helper needed. `mutationOptions()` carries `mutationKey` and `mutationFn`, so `setMutationDefaults(o.mutationKey, o)` lets a restored client resume paused mutations. Documented, and tested through dehydrate, JSON and hydrate (`core.test.ts`).
 - #6306, structural sharing: `queryOptions()` and `infiniteOptions()` keep equal `Date`, `Map`, `Set`, `URL` and typed-array values across refetches (`sharing.test.ts`, `core.test.ts`).
@@ -55,17 +55,24 @@ Method: `gh issue list --repo trpc/trpc --state open --limit 1000 --json number,
 | #5581                                    | proxies answering with non-tRPC JSON                  | a `PARSE_ERROR` that keeps the status and the cause                                                          |
 | #6895                                    | Safari and streamed uploads                           | the client never streams request bodies                                                                      |
 
-## Worth considering
+## Decided and built (second round)
 
-Ordered by demand and fit.
+Alex answered the "Worth considering" list; each answer is a `decisions/` file.
 
-1. **Query key prefix** (#6555, #5251, #4153). Two tRPC APIs sharing one `QueryClient` produce clashing keys. Something like `createTrpcQueryUtils(client, { keyPrefix })` would give `[[prefix, ...path], …]`. This changes the key shape in `tanstack-query-keys.md`, so it needs a call.
-2. **Invalidation declared on mutations** (#5264, #3468, #6715). For example `.meta({ invalidates: ['post'] })` read by a TanStack `MutationCache` `onSuccess` helper. It fits as an opt-in helper, not as router config.
-3. **Middleware that reshapes input** (#6892). `next({ input })` typed like `next({ ctx })`.
-4. **`fetch` sees the operations** (#4184). `httpLink({ fetch })` could get `{ ops }` as a third argument for SSR cookie forwarding. `headers({ op })` covers most of it.
-5. **Publisher backends** (#5618). The `memory` layer is per process. Redis, Postgres `LISTEN` or Durable Object layers behind the same `PublisherShape` would let subscriptions run across instances.
-6. **TanStack DB** (#6891). `queryOptions()` should plug into `queryCollectionOptions` as it is; worth a test and a docs example.
-7. **Adapters, recorded as later**: Lambda API Gateway and Lambda@Edge (#4978), Cloudflare hibernation, Firebase callable (#6388), WebTransport (#6971), raw TCP (#5995). The socket core is generic over connections, so the last two are a transport each.
+- Query key prefix (#6555, #5251, #4153): `keyPrefix` on `createTrpcQueryUtils`, `createTrpcContext` and `createTrpcRsc` (`query-key-prefix.md`).
+- Invalidation declared on mutations (#5264, #3468, #6715): later, maybe as a link or plugin (`declared-invalidation-later.md`).
+- Middleware that reshapes input (#6892): `next({ input })`, typed like `next({ ctx })` (`middleware-input.md`).
+- `fetch` sees the operations (#4184): no third `fetch` argument. An `init` call option merged onto `httpLink({ init })`, which can be a callback of `{ ops }`; calls with different inits batch apart (`link-init.md`). Plus a named `switchLink` whose name is a call option that forces a branch (`switch-link.md`).
+- Publisher backends (#5618): no packages; recipes on Effect's `Redis` and `@effect/sql-pg`, and a Durable Object one, in `docs/subscriptions.md` (`publisher-backends.md`).
+- Cloudflare hibernation: `createHibernatingWebSockets()` (`cloudflare-hibernation.md`).
+- Streamed mutations (#5846): `streamedMutationOptions()`; interrupting them is a spike, not built ([note](./interruptible-streamed-mutations.md), `streamed-mutations.md`).
+- File outputs (Q11.6): raw body for an unbatched root `File`, streamed chunks elsewhere (`files.md`).
+- Typed platform argument on `handler.fetch` (`handler-platform.md`).
+
+## Still worth considering
+
+1. **TanStack DB** (#6891). `queryOptions()` should plug into `queryCollectionOptions` as it is; worth a test and a docs example.
+2. **Adapters, recorded as later**: Lambda API Gateway and Lambda@Edge (#4978), Firebase callable (#6388), WebTransport (#6971), raw TCP (#5995). The socket core is generic over connections, so the last two are a transport each.
 
 ## Not pursuing
 
@@ -85,6 +92,5 @@ Ordered by demand and fit.
   - #5113: a link can rewrite `op.path`, so one client can cover routers on different servers with different contexts. The recipe is in `docs/client.md`, tested in `links.test.ts`.
   - #5455: RSC caching is per request (React `cache()`), so a ctx-dependent query can't leak between users.
 - Worth considering:
-  - #5846: a mutation whose output is an `AsyncIterable` resolves `useMutation`'s `data` to the iterable. TanStack has `streamedQuery` but no mutation counterpart. A `streamedMutationOptions()` could collect chunks into `data`.
   - #4829: there are no Next data-cache tags. With `'use cache'`, `cacheTag(...trpc.post.pathKey())` style tags (path prefixes, then path and input) would match TanStack's key hierarchy. Worth a docs recipe once `'use cache'` is stable.
   - #6996: the `TextDecoderStream` dependency is gone, but streaming hasn't been tried on a React Native device.
