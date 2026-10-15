@@ -20,7 +20,7 @@ import {
 } from './execute.ts';
 import type { ResponseHandle } from './middleware.ts';
 import type { AnyProcedure } from './procedure.ts';
-import { getProcedure, type AnyRouter } from './router.ts';
+import { resolveProcedure, type AnyRouter } from './router.ts';
 
 /**
  * The parts of a standard `WebSocket` the handler uses: the server-side
@@ -252,9 +252,10 @@ export function serveConnection(
     calls.set(id, controller);
     const { signal } = controller;
     const live = () => !signal.aborted && !closed;
-    const procedure = getProcedure(core.router, path);
-    const type = procedure?.['~trpc'].type;
+    let type: ProcedureType | undefined;
     try {
+      const procedure = await resolveProcedure(core.router, path);
+      type = procedure?.['~trpc'].type;
       if (!procedure || !type) {
         throw new TrpcError({
           code: 'NOT_FOUND',

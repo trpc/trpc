@@ -3,6 +3,7 @@ import type { AnyTrpcError } from '../internal/error.ts';
 import type { Unset } from '../internal/types.ts';
 import { createBuilder, type ProcedureBuilder } from './builder.ts';
 import { implement, type ImplementResult } from './implement.ts';
+import { router } from './router.ts';
 import {
   makeEffectMiddleware,
   type EffectMiddlewareFactory,
@@ -96,6 +97,18 @@ export interface TrpcRoot<TCtx extends object, TMeta extends object> {
   implement<TContract extends AnyContractRouter>(
     contract: TContract,
   ): ImplementResult<RootDef<TCtx, TMeta>, TContract>;
+  /**
+   * Groups routes for OpenAPI: a path prefix and tags (08 Q8.3). Types and
+   * RPC paths don't change, and it takes no middleware.
+   *
+   * @example
+   * ```ts
+   * const appRouter = {
+   *   admin: t.router({ prefix: '/admin', tags: ['admin'] }, { users, ban }),
+   * };
+   * ```
+   */
+  router: typeof router;
 }
 
 /**
@@ -164,5 +177,6 @@ export function initTrpc<TConfig extends RootConfig = {}>(
     }) as never,
     implement: (contract: AnyContractRouter) =>
       implement(procedure['~trpc'], contract) as never,
+    router,
   };
 }

@@ -26,7 +26,7 @@ export {
   normalizeCause,
   type CallOpts,
 } from '../server/execute.ts';
-export { getProcedure } from '../server/router.ts';
+export { getProcedure, resolveProcedure } from '../server/router.ts';
 export {
   fromWireError,
   toWireError,
@@ -40,7 +40,12 @@ export {
   type BatchLine,
 } from '../internal/protocol.ts';
 export {
+  assertLoaded,
   flattenRouter,
+  flattenRoutes,
+  scopedRoute,
+  type FlatRoutes,
+  type RouteScope,
   inputJsonSchema,
   outputJsonSchema,
   procedureJson,

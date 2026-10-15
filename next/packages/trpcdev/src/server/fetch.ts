@@ -27,7 +27,7 @@ import { emitEvents } from './events.ts';
 import type { ResponseHandle } from './middleware.ts';
 import type { AnyProcedure } from './procedure.ts';
 import {
-  getProcedure,
+  resolveProcedure,
   type AnyRouter,
   type inferRouterContext,
   type inferRouterServices,
@@ -414,7 +414,7 @@ export function createFetchHandler<TRouter extends AnyRouter>(
     url: URL,
     path: string,
   ): Promise<Response> {
-    const procedure = getProcedure(router, path);
+    const procedure = await resolveProcedure(router, path);
     if (!procedure) {
       throw protocolError('NOT_FOUND', `No procedure at path "${path}"`);
     }
@@ -577,14 +577,16 @@ export function createFetchHandler<TRouter extends AnyRouter>(
         `A batch can have at most ${batch.maxItems} calls`,
       );
     }
-    const calls = (body as BatchCall[]).map((call) => {
-      const path = typeof call?.path === 'string' ? call.path : '';
-      return {
-        path,
-        input: call?.input,
-        procedure: getProcedure(router, path),
-      };
-    });
+    const calls = await Promise.all(
+      (body as BatchCall[]).map(async (call) => {
+        const path = typeof call?.path === 'string' ? call.path : '';
+        return {
+          path,
+          input: call?.input,
+          procedure: await resolveProcedure(router, path),
+        };
+      }),
+    );
     const ctx = await makeContext(
       request,
       calls.flatMap((c) =>

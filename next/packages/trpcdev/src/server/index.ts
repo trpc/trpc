@@ -85,8 +85,17 @@ export {
   type Route,
 } from './procedure.ts';
 export {
+  isLazy,
+  lazy,
+  loadRouter,
   mergeRouters,
+  router,
+  type AnyLazyRouter,
   type AnyRouter,
+  type LazyOptions,
+  type LazyRouter,
+  type RouterGroup,
+  type Unlazy,
   type inferRouterContext,
   type inferRouterErrors,
   type inferRouterInputs,

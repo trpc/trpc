@@ -1,7 +1,9 @@
 import {
-  flattenRouter,
+  assertLoaded,
+  flattenRoutes,
   inputJsonSchema,
   outputJsonSchema,
+  scopedRoute,
 } from '../internal/describe.ts';
 import { ERROR_STATUS } from '../internal/error.ts';
 import { toJsonSchema, type JsonSchema } from '../internal/json-schema.ts';
@@ -305,13 +307,15 @@ export function generateOpenApi(
   };
   const paths: OpenApiDocument['paths'] = {};
 
-  for (const [path, procedure] of flattenRouter(router)) {
+  for (const { path, procedure, scope } of assertLoaded(flattenRoutes(router))
+    .procedures) {
     if (opts.filter && !opts.filter({ path, procedure })) continue;
     const def = procedure['~trpc'];
+    const scoped = scopedRoute(path, def.route, scope);
     const route =
       target === 'rpc'
         ? resolveRoute(path, def.type, { path: `/${path}` }, prefix)
-        : resolveRoute(path, def.type, def.route, prefix);
+        : resolveRoute(path, def.type, scoped, prefix);
     const input = hoist(inputJsonSchema(def), `${path}.input`, components);
     const rawOutput = outputJsonSchema(def);
     const detailedIn =
@@ -425,7 +429,7 @@ export function generateOpenApi(
             },
           };
 
-    const r = def.route;
+    const r = scoped;
     const operation: OpenApiOperation = {
       operationId: (target === 'openapi' && r?.operationId) || path,
       ...(r?.summary ? { summary: r.summary } : {}),

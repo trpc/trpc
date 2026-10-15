@@ -4,6 +4,7 @@ import {
   type OpenApiDocument,
 } from './generate.ts';
 import type { OpenApiPlugin } from './handler.ts';
+import { loadRouter } from '../server/router.ts';
 
 /**
  * The options of {@link openApiReference}.
@@ -74,11 +75,11 @@ export function openApiReference(opts: OpenApiReferenceOptions): OpenApiPlugin {
   const specPath = opts.specPath ?? '/openapi.json';
   let spec: Omit<OpenApiDocument, 'servers'> | undefined;
   return {
-    fetch(request, { router, prefix }) {
+    async fetch(request, { router, prefix }) {
       if (request.method !== 'GET') return undefined;
       const url = new URL(request.url);
       if (url.pathname === `${prefix}${specPath}`) {
-        spec ??= generateOpenApi(router, {
+        spec ??= generateOpenApi(await loadRouter(router), {
           prefix,
           ...opts.specGenerateOptions,
         });

@@ -13,7 +13,7 @@ import {
   unexpectedError,
 } from '../../server/execute.ts';
 import {
-  getProcedure,
+  resolveProcedure,
   type AnyRouter,
   type inferRouterContext,
 } from '../../server/router.ts';
@@ -71,7 +71,9 @@ export function localLink<TRouter extends AnyRouter>(
   return link.effect(({ op }) =>
     Stream.unwrap(
       Effect.gen(function* () {
-        const procedure = getProcedure(opts.router, op.path);
+        const procedure = yield* Effect.promise(async () =>
+          resolveProcedure(opts.router, op.path),
+        );
         if (!procedure) {
           return yield* Effect.fail(
             new TrpcError({

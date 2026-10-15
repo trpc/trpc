@@ -3,7 +3,9 @@ import {
   isProcedure,
   type AnyProcedure,
   type ProcedureInternals,
+  type Route,
 } from '../server/procedure.ts';
+import { groupOf, isLazy, type AnyLazyRouter } from '../server/router.ts';
 import { isSchema } from '../server/schema.ts';
 import { toJsonSchema, type JsonSchema } from './json-schema.ts';
 
@@ -46,23 +48,127 @@ export function inputJsonSchema(
 }
 
 /**
- * Every procedure of a router, by dotted path.
+ * Where a procedure sits among `t.router({ prefix, tags })` groups and
+ * prefixed `lazy()` subtrees.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export interface RouteScope {
+  /** The groups' prefixes, joined: `/admin`. */
+  readonly prefix: string;
+  readonly tags: ReadonlyArray<string>;
+  /** The dotted path where the innermost prefix starts: `admin.`. */
+  readonly base: string;
+}
+
+const ROOT_SCOPE: RouteScope = { prefix: '', tags: [], base: '' };
+
+/**
+ * A router's procedures with their {@link RouteScope}, and the lazy subtrees
+ * that haven't loaded.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export interface FlatRoutes {
+  readonly procedures: Array<{
+    path: string;
+    procedure: AnyProcedure;
+    scope: RouteScope;
+  }>;
+  readonly lazies: Array<{
+    path: string;
+    lazy: AnyLazyRouter;
+    scope: RouteScope;
+  }>;
+}
+
+const within = (
+  scope: RouteScope,
+  path: string,
+  group: { prefix?: string | undefined; tags?: ReadonlyArray<string> },
+): RouteScope => ({
+  prefix: scope.prefix + (group.prefix ?? ''),
+  tags: [...scope.tags, ...(group.tags ?? [])],
+  base: group.prefix ? `${path}.` : scope.base,
+});
+
+/**
+ * Every procedure of a router with its OpenAPI scope. Loaded lazy subtrees
+ * are walked; the others are listed in `lazies`.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export function flattenRoutes(
+  router: object,
+  scope: RouteScope = ROOT_SCOPE,
+  prefix = '',
+  out: FlatRoutes = { procedures: [], lazies: [] },
+): FlatRoutes {
+  for (const [key, value] of Object.entries(router)) {
+    const path = prefix + key;
+    if (isProcedure(value)) {
+      out.procedures.push({ path, procedure: value, scope });
+    } else if (isLazy(value)) {
+      const def = value['~lazy'];
+      const inner = within(scope, path, { prefix: def.prefix });
+      if (def.loaded) flattenRoutes(def.loaded, inner, `${path}.`, out);
+      else out.lazies.push({ path, lazy: value, scope: inner });
+    } else if (typeof value === 'object' && value !== null) {
+      const group = groupOf(value);
+      const inner = group ? within(scope, path, group) : scope;
+      flattenRoutes(value, inner, `${path}.`, out);
+    }
+  }
+  return out;
+}
+
+/**
+ * A procedure's `.route()` with its scope applied: the group prefix before
+ * its path (or before the path derived below the group), group tags first.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export function scopedRoute(
+  path: string,
+  route: Route | undefined,
+  scope: RouteScope,
+): Route | undefined {
+  if (!scope.prefix && scope.tags.length === 0) return route;
+  const relative = path.slice(scope.base.length).split('.').join('/');
+  const tags = [...scope.tags, ...(route?.tags ?? [])];
+  return {
+    ...route,
+    path: `${scope.prefix}${route?.path ?? `/${relative}`}` as `/${string}`,
+    ...(tags.length ? { tags } : {}),
+  };
+}
+
+/**
+ * Every procedure of a router, by dotted path. Throws on a lazy subtree
+ * that hasn't loaded: pass `await loadRouter(router)`.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
 export function flattenRouter(
   router: object,
-  prefix = '',
 ): Array<[path: string, procedure: AnyProcedure]> {
-  const out: Array<[string, AnyProcedure]> = [];
-  for (const [key, value] of Object.entries(router)) {
-    const path = prefix + key;
-    if (isProcedure(value)) out.push([path, value]);
-    else if (typeof value === 'object' && value !== null) {
-      out.push(...flattenRouter(value, `${path}.`));
-    }
+  const flat = assertLoaded(flattenRoutes(router));
+  return flat.procedures.map(({ path, procedure }) => [path, procedure]);
+}
+
+/**
+ * Throws if a lazy subtree hasn't loaded.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export function assertLoaded(flat: FlatRoutes): FlatRoutes {
+  const first = flat.lazies[0];
+  if (first) {
+    throw new Error(
+      `"${first.path}" is lazy and hasn't loaded: pass \`await loadRouter(router)\``,
+    );
   }
-  return out;
+  return flat;
 }
 
 /**

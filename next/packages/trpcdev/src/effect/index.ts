@@ -36,6 +36,7 @@ import type {
 } from '../client/types.ts';
 import type { Deserialized } from '../internal/types.ts';
 import type { AnyProcedure, Procedure } from '../server/procedure.ts';
+import type { Unlazy } from '../server/router.ts';
 
 export { link };
 
@@ -79,7 +80,7 @@ export type DecorateEffectProcedure<P, TContext extends object = {}> =
 export type EffectClient<TRouter, TContext extends object = {}> = {
   [K in keyof TRouter]: TRouter[K] extends AnyProcedure
     ? DecorateEffectProcedure<TRouter[K], TContext>
-    : EffectClient<TRouter[K], TContext>;
+    : EffectClient<Unlazy<TRouter[K]>, TContext>;
 };
 
 const METHODS = {

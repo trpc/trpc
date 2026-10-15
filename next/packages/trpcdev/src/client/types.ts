@@ -1,6 +1,7 @@
 import type { BuiltinErrorCode, TrpcError } from '../internal/error.ts';
 import type { Deserialized, IsAny } from '../internal/types.ts';
 import type { AnyProcedure, Procedure } from '../server/procedure.ts';
+import type { Unlazy } from '../server/router.ts';
 import type {
   AnyLink,
   DeclContext,
@@ -124,7 +125,7 @@ export type DecorateProcedure<P, TContext extends object = {}> =
 export type TrpcClient<TRouter, TContext extends object = {}> = {
   [K in keyof TRouter]: TRouter[K] extends AnyProcedure
     ? DecorateProcedure<TRouter[K], TContext>
-    : TrpcClient<TRouter[K], TContext>;
+    : TrpcClient<Unlazy<TRouter[K]>, TContext>;
 };
 
 declare const routerTypeBrand: unique symbol;
@@ -207,5 +208,5 @@ export type RouterPaths<TRouter, TPrefix extends string = ''> =
     : {
         [K in keyof TRouter & string]: TRouter[K] extends AnyProcedure
           ? `${TPrefix}${K}`
-          : RouterPaths<TRouter[K], `${TPrefix}${K}.`>;
+          : RouterPaths<Unlazy<TRouter[K]>, `${TPrefix}${K}.`>;
       }[keyof TRouter & string];

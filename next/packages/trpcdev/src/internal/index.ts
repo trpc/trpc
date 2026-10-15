@@ -34,5 +34,6 @@ export type {
   ReqMeta,
 } from '../server/middleware.ts';
 export type { Step } from '../server/procedure.ts';
+export type { LazyDef } from '../server/router.ts';
 export type { DeclContext } from '../client/link.ts';
 export type { Unset } from './types.ts';

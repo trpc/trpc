@@ -29,7 +29,12 @@
  */
 import type { RouterType } from '../client/types.ts';
 import type { AnyTrpcError } from '../internal/error.ts';
-import { flattenRouter, procedureJson } from '../internal/describe.ts';
+import {
+  assertLoaded,
+  flattenRoutes,
+  procedureJson,
+  scopedRoute,
+} from '../internal/describe.ts';
 import type { JsonSchema } from '../internal/json-schema.ts';
 import type {
   Merge,
@@ -57,6 +62,7 @@ import type {
   SchemaServices,
 } from '../server/schema.ts';
 import type { TrackedEnvelope } from '../server/tracked.ts';
+import type { Unlazy } from '../server/router.ts';
 
 export type { JsonSchema } from '../internal/json-schema.ts';
 
@@ -378,7 +384,7 @@ export type inferContract<TRouter> = TRouter extends AnyProcedure
       errors: ProcedureDefOf<TRouter>['errors'];
       services: never;
     }>
-  : { [K in keyof TRouter]: inferContract<TRouter[K]> };
+  : { [K in keyof TRouter]: inferContract<Unlazy<TRouter[K]>> };
 
 /**
  * One procedure of a {@link ContractJson}.
@@ -440,8 +446,13 @@ export function toContract<TRouter extends object>(
   router: TRouter,
 ): ContractJson<TRouter> {
   const procedures: Record<string, ProcedureJson> = {};
-  for (const [path, procedure] of flattenRouter(router)) {
-    procedures[path] = procedureJson(procedure['~trpc']);
+  for (const { path, procedure, scope } of assertLoaded(flattenRoutes(router))
+    .procedures) {
+    const def = procedure['~trpc'];
+    procedures[path] = procedureJson({
+      ...def,
+      route: scopedRoute(path, def.route, scope),
+    });
   }
   return { version: 1, procedures } as ContractJson<TRouter>;
 }

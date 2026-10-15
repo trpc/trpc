@@ -1,5 +1,11 @@
 import { Effect, Exit, Stream, type Layer } from 'effect';
-import { inputJsonSchema } from '../internal/describe.ts';
+import type { ContractJson } from '../contract/index.ts';
+import {
+  flattenRoutes,
+  inputJsonSchema,
+  scopedRoute,
+  type FlatRoutes,
+} from '../internal/describe.ts';
 import {
   isTrpcError,
   TrpcError,
@@ -7,9 +13,8 @@ import {
 } from '../internal/error.ts';
 import type { JsonSchema } from '../internal/json-schema.ts';
 import { isJsonContentType } from '../internal/protocol.ts';
-import type { MaybePromise } from '../internal/types.ts';
+import type { MaybePromise, ProcedureType } from '../internal/types.ts';
 import { createHandlerCore } from '../server/core.ts';
-import { flattenRouter } from '../internal/describe.ts';
 import {
   createResponseHandle,
   normalizeCause,
@@ -21,11 +26,12 @@ import type {
   LayerOption,
   OnErrorOpts,
 } from '../server/fetch.ts';
-import type { AnyProcedure } from '../server/procedure.ts';
-import type {
-  AnyRouter,
-  inferRouterContext,
-  inferRouterServices,
+import type { AnyProcedure, Route } from '../server/procedure.ts';
+import {
+  resolveProcedure,
+  type AnyRouter,
+  type inferRouterContext,
+  type inferRouterServices,
 } from '../server/router.ts';
 import { isTracked } from '../server/tracked.ts';
 import { parseBracketNotation } from './bracket.ts';
@@ -88,6 +94,12 @@ export interface BaseOpenApiHandlerOptions<TRouter extends AnyRouter> {
   /** Called for every error, with the original cause. */
   onError?: (opts: OnErrorOpts) => void;
   plugins?: ReadonlyArray<OpenApiPlugin>;
+  /**
+   * The routes, from `toContract(await loadRouter(appRouter))` at build
+   * time. Lazy subtrees then load on their first request, whatever their
+   * prefix (08 Q8.4).
+   */
+  contract?: ContractJson<TRouter>;
 }
 
 /**
@@ -113,7 +125,8 @@ export interface OpenApiHandler {
 
 interface Entry {
   readonly path: string;
-  readonly procedure: AnyProcedure;
+  readonly type: ProcedureType;
+  readonly resolve: () => MaybePromise<AnyProcedure | undefined>;
   readonly route: ResolvedRoute;
   readonly match: (pathname: string) => Record<string, string> | undefined;
   readonly input: JsonSchema | undefined;
@@ -179,30 +192,88 @@ export function createOpenApiHandler<TRouter extends AnyRouter>(
   const maxBodySize = opts.maxBodySize ?? 1_048_576;
   const plugins = opts.plugins ?? [];
 
-  const entries: Entry[] = flattenRouter(opts.router)
-    .map(([path, procedure]): Entry => {
-      const def = procedure['~trpc'];
-      const route = resolveRoute(path, def.type, def.route, prefix);
-      return {
-        path,
-        procedure,
-        route,
-        match: compileRoute(route.path),
-        input: inputJsonSchema(def),
-      };
-    })
-    .sort((a, b) => specificity(a.route).localeCompare(specificity(b.route)));
-  const seen = new Map<string, string>();
-  for (const entry of entries) {
-    const key = `${entry.route.method} ${entry.route.path.replace(/\{[^{}]+\}/g, '{}')}`;
-    const other = seen.get(key);
-    if (other) {
-      throw new Error(
-        `createOpenApiHandler: "${entry.path}" and "${other}" both map to ${key}`,
+  const makeEntry = (
+    path: string,
+    type: ProcedureType,
+    route: Route | undefined,
+    input: JsonSchema | undefined,
+    resolve: Entry['resolve'],
+  ): Entry => {
+    const resolved = resolveRoute(path, type, route, prefix);
+    return {
+      path,
+      type,
+      resolve,
+      route: resolved,
+      match: compileRoute(resolved.path),
+      input,
+    };
+  };
+
+  /** Lazy subtrees still to load, by their full route prefix. */
+  let pending: FlatRoutes['lazies'] = [];
+  const build = (): Entry[] => {
+    let list: Entry[];
+    if (opts.contract) {
+      list = Object.entries(opts.contract.procedures).map(([path, p]) =>
+        makeEntry(path, p.type, p.route, p.input, () =>
+          resolveProcedure(opts.router, path),
+        ),
       );
+    } else {
+      const flat = flattenRoutes(opts.router);
+      pending = flat.lazies;
+      list = flat.procedures.map(({ path, procedure, scope }) => {
+        const def = procedure['~trpc'];
+        return makeEntry(
+          path,
+          def.type,
+          scopedRoute(path, def.route, scope),
+          inputJsonSchema(def),
+          () => procedure,
+        );
+      });
     }
-    seen.set(key, entry.path);
-  }
+    list.sort((a, b) =>
+      specificity(a.route).localeCompare(specificity(b.route)),
+    );
+    const seen = new Map<string, string>();
+    for (const e of list) {
+      const key = `${e.route.method} ${e.route.path.replace(/\{[^{}]+\}/g, '{}')}`;
+      const other = seen.get(key);
+      if (other) {
+        throw new Error(
+          `createOpenApiHandler: "${e.path}" and "${other}" both map to ${key}`,
+        );
+      }
+      seen.set(key, e.path);
+    }
+    return list;
+  };
+  let entries = build();
+
+  /** Loads lazy subtrees without a prefix, until none are left. */
+  const loadUnprefixed = async (): Promise<void> => {
+    const unprefixed = pending.filter((l) => !l.scope.prefix);
+    if (unprefixed.length === 0) return;
+    await Promise.all(unprefixed.map((l) => l.lazy['~lazy'].load()));
+    entries = build();
+    await loadUnprefixed();
+  };
+  let startup: Promise<void> | undefined = loadUnprefixed();
+  startup.catch(() => {});
+
+  /** Loads the prefixed lazy subtrees `pathname` falls under. */
+  const loadFor = async (pathname: string): Promise<void> => {
+    const hits = pending.filter((l) =>
+      `${pathname}/`.startsWith(`${prefix}${l.scope.prefix}/`),
+    );
+    if (hits.length === 0) return;
+    await Promise.all(hits.map((l) => l.lazy['~lazy'].load()));
+    entries = build();
+    await loadUnprefixed();
+    await loadFor(pathname);
+  };
 
   const fail = (err: AnyTrpcError, headers?: Headers) =>
     json(err.status, toOpenApiError(base.publicError(err)), headers);
@@ -381,7 +452,14 @@ export function createOpenApiHandler<TRouter extends AnyRouter>(
     entry: Entry,
     params: Record<string, string>,
   ): Promise<Response> {
-    const type = entry.procedure['~trpc'].type;
+    const type = entry.type;
+    const procedure = await entry.resolve();
+    if (!procedure) {
+      throw new TrpcError({
+        code: 'NOT_FOUND',
+        message: `The contract's "${entry.path}" is not in the router`,
+      });
+    }
     const input = await readInput(request, url, entry, params);
     const ctx = await base.makeContext({
       request,
@@ -393,7 +471,7 @@ export function createOpenApiHandler<TRouter extends AnyRouter>(
     });
     const response = createResponseHandle();
     const exit = await base.run({
-      procedure: entry.procedure,
+      procedure,
       path: entry.path,
       ctx,
       input,
@@ -427,6 +505,11 @@ export function createOpenApiHandler<TRouter extends AnyRouter>(
     async fetch(request) {
       const url = new URL(request.url);
       try {
+        if (startup) {
+          await startup;
+          startup = undefined;
+        }
+        await loadFor(url.pathname);
         for (const plugin of plugins) {
           const answer = await plugin.fetch?.(request, {
             router: opts.router,
@@ -446,12 +529,7 @@ export function createOpenApiHandler<TRouter extends AnyRouter>(
             return await serve(request, url, entry, params);
           } catch (cause) {
             const err = isTrpcError(cause) ? cause : unexpectedError(cause);
-            base.report(
-              err,
-              request,
-              entry.path,
-              entry.procedure['~trpc'].type,
-            );
+            base.report(err, request, entry.path, entry.type);
             return fail(err);
           }
         }
