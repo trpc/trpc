@@ -43,6 +43,7 @@ import {
   type SubscriptionStatus,
   type TrpcQueryUtilsFor,
   type TrpcSubscriptionOptions,
+  type TrpcContextOptions,
 } from '@trpcdev/tanstack-query';
 
 export * from '@trpcdev/tanstack-query';
@@ -73,10 +74,9 @@ export interface TrpcAngularContext<TRouter, TContext extends object = {}> {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function createTrpcContext<
-  TRouter,
-  TContext extends object = {},
->(): TrpcAngularContext<TRouter, TContext> {
+export function createTrpcContext<TRouter, TContext extends object = {}>(
+  opts: TrpcContextOptions = {},
+): TrpcAngularContext<TRouter, TContext> {
   type Value = {
     client: TrpcClient<RouterOf<TRouter>, TContext>;
     utils: TrpcQueryUtilsFor<TRouter, TContext>;
@@ -85,7 +85,7 @@ export function createTrpcContext<
   return {
     provideTrpc: (client) => ({
       provide: token,
-      useValue: { client, utils: createTrpcQueryUtils({ client }) },
+      useValue: { client, utils: createTrpcQueryUtils({ ...opts, client }) },
     }),
     injectTrpc: () => inject(token).utils,
     injectTrpcClient: () => inject(token).client,

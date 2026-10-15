@@ -32,6 +32,7 @@ export {
   type QueryProcedureUtils,
   type StreamedOptions,
   type SubscriptionProcedureUtils,
+  type TrpcContextOptions,
   type TrpcQueryKeyFor,
   type TrpcQueryUtilsFor,
   type TrpcQueryUtils,

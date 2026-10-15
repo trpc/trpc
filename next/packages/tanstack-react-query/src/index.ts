@@ -34,6 +34,7 @@ import {
   type SubscriptionResult,
   type TrpcQueryUtilsFor,
   type TrpcSubscriptionOptions,
+  type TrpcContextOptions,
 } from '@trpcdev/tanstack-query';
 
 export * from '@trpcdev/tanstack-query';
@@ -86,10 +87,9 @@ export interface TrpcReactContext<TRouter, TContext extends object = {}> {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function createTrpcContext<
-  TRouter,
-  TContext extends object = {},
->(): TrpcReactContext<TRouter, TContext> {
+export function createTrpcContext<TRouter, TContext extends object = {}>(
+  opts: TrpcContextOptions = {},
+): TrpcReactContext<TRouter, TContext> {
   type Value = {
     client: TrpcClient<RouterOf<TRouter>, TContext>;
     utils: TrpcQueryUtilsFor<TRouter, TContext>;
@@ -103,7 +103,7 @@ export function createTrpcContext<
   return {
     TrpcProvider: ({ client, children }) => {
       const value = useMemo(
-        () => ({ client, utils: createTrpcQueryUtils({ client }) }),
+        () => ({ client, utils: createTrpcQueryUtils({ ...opts, client }) }),
         [client],
       );
       return createElement(Context, { value }, children);

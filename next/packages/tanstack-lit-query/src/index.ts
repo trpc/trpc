@@ -49,6 +49,7 @@ import {
   type SubscriptionResult,
   type TrpcQueryUtilsFor,
   type TrpcSubscriptionOptions,
+  type TrpcContextOptions,
 } from '@trpcdev/tanstack-query';
 
 export * from '@trpcdev/tanstack-query';
@@ -121,10 +122,9 @@ function lazy<T extends object>(resolve: () => T): T {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function createTrpcContext<
-  TRouter,
-  TContext extends object = {},
->(): TrpcLitContext<TRouter, TContext> {
+export function createTrpcContext<TRouter, TContext extends object = {}>(
+  opts: TrpcContextOptions = {},
+): TrpcLitContext<TRouter, TContext> {
   type Client = TrpcClient<RouterOf<TRouter>, TContext>;
   type Value = { client: Client; utils: TrpcQueryUtilsFor<TRouter, TContext> };
   const context = createContext<Value | undefined>(Symbol('trpc'));
@@ -139,7 +139,7 @@ export function createTrpcContext<
         const client = this.client;
         this.#provider.setValue({
           client,
-          utils: createTrpcQueryUtils({ client }),
+          utils: createTrpcQueryUtils({ ...opts, client }),
         });
       }
     }

@@ -299,3 +299,17 @@ test('the context can be bridged into another tree', () => {
   );
   expect(html).toBe('<p>same</p>');
 });
+
+test('createTrpcContext({ keyPrefix }) prefixes the provided helpers', () => {
+  const billing = createTrpcContext<AppRouter>({ keyPrefix: 'billing' });
+  const client = createRouterClient(appRouter, { ctx: { locale: null } });
+  function Key() {
+    return <p>{JSON.stringify(billing.useTrpc().post.pathKey())}</p>;
+  }
+  const html = renderToString(
+    <billing.TrpcProvider client={client}>
+      <Key />
+    </billing.TrpcProvider>,
+  );
+  expect(html).toBe('<p>[[&quot;billing&quot;,&quot;post&quot;]]</p>');
+});

@@ -39,6 +39,7 @@ import {
   type SubscriptionStatus,
   type TrpcQueryUtilsFor,
   type TrpcSubscriptionOptions,
+  type TrpcContextOptions,
 } from '@trpcdev/tanstack-query';
 
 export * from '@trpcdev/tanstack-query';
@@ -80,16 +81,15 @@ export interface TrpcVueContext<TRouter, TContext extends object = {}> {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function createTrpcContext<
-  TRouter,
-  TContext extends object = {},
->(): TrpcVueContext<TRouter, TContext> {
+export function createTrpcContext<TRouter, TContext extends object = {}>(
+  opts: TrpcContextOptions = {},
+): TrpcVueContext<TRouter, TContext> {
   type Client = TrpcClient<RouterOf<TRouter>, TContext>;
   type Value = { client: Client; utils: TrpcQueryUtilsFor<TRouter, TContext> };
   const key: InjectionKey<Value> = Symbol('trpc');
   const value = (client: Client): Value => ({
     client,
-    utils: createTrpcQueryUtils({ client }),
+    utils: createTrpcQueryUtils({ ...opts, client }),
   });
   const use = (): Value => {
     const injected = inject(key, null);

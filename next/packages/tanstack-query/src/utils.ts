@@ -462,7 +462,25 @@ export interface CreateTrpcQueryUtilsOptions<TClient> {
    * `createRouterClient(router, { ctx })` to prefetch on the server.
    */
   client: TClient;
+  /**
+   * Puts this string before every key's path, so two tRPC APIs can share one
+   * `QueryClient`: `[['billing', 'post', 'byId'], { input, type }]`. Applies
+   * to query and mutation keys, `pathKey()` and `pathFilter()`.
+   */
+  keyPrefix?: string | undefined;
 }
+
+/**
+ * Options for a framework's `createTrpcContext()`: everything
+ * {@link createTrpcQueryUtils} takes except the client, which the provider
+ * gets.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export type TrpcContextOptions = Omit<
+  CreateTrpcQueryUtilsOptions<unknown>,
+  'client'
+>;
 
 function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
   return (
@@ -524,7 +542,7 @@ function streamFrom(
 export function createTrpcQueryUtils<TClient extends object>(
   opts: CreateTrpcQueryUtilsOptions<TClient>,
 ): TrpcQueryUtils<TClient> {
-  const { client } = opts;
+  const { client, keyPrefix } = opts;
   const method = (path: readonly string[], name: string): ClientMethod => {
     let target: any = client;
     for (const key of path) target = target[key];
@@ -533,7 +551,8 @@ export function createTrpcQueryUtils<TClient extends object>(
 
   return createProxy((fullPath, args) => {
     const name = fullPath.at(-1);
-    const path = fullPath.slice(0, -1);
+    const callPath = fullPath.slice(0, -1);
+    const path = keyPrefix === undefined ? callPath : [keyPrefix, ...callPath];
     const { input, context, ...rest } = (args[0] ?? {}) as Bag;
 
     switch (name) {
@@ -546,7 +565,7 @@ export function createTrpcQueryUtils<TClient extends object>(
       case 'queryFilter':
         return { ...rest, queryKey: procedureKey(path, input, 'query') };
       case 'queryOptions': {
-        const query = method(path, 'query');
+        const query = method(callPath, 'query');
         return {
           structuralSharing,
           ...rest,
@@ -574,7 +593,7 @@ export function createTrpcQueryUtils<TClient extends object>(
           'infinite',
         );
         if (name === 'infiniteKey') return queryKey;
-        const query = method(path, 'query');
+        const query = method(callPath, 'query');
         return {
           structuralSharing,
           ...rest,
@@ -592,7 +611,7 @@ export function createTrpcQueryUtils<TClient extends object>(
       case 'mutationKey':
         return [path];
       case 'mutationOptions': {
-        const mutate = method(path, 'mutate');
+        const mutate = method(callPath, 'mutate');
         return {
           ...rest,
           mutationKey: [path],
@@ -605,7 +624,7 @@ export function createTrpcQueryUtils<TClient extends object>(
           ...callbacks,
           subscriptionKey: procedureKey(path, input, undefined),
           enabled: input !== skipToken && enabled !== false,
-          subscribe: streamFrom(method(path, 'subscribe'), input, context),
+          subscribe: streamFrom(method(callPath, 'subscribe'), input, context),
         };
       }
       case 'streamedKey':
@@ -613,7 +632,11 @@ export function createTrpcQueryUtils<TClient extends object>(
       case 'streamedOptions': {
         const { refetchMode, maxChunks, ...queryOpts } = rest as Bag &
           StreamedOptions;
-        const streamFn = streamFrom(method(path, 'subscribe'), input, context);
+        const streamFn = streamFrom(
+          method(callPath, 'subscribe'),
+          input,
+          context,
+        );
         return {
           ...queryOpts,
           queryKey: procedureKey(path, input, 'streamed'),
@@ -636,7 +659,11 @@ export function createTrpcQueryUtils<TClient extends object>(
       case 'liveKey':
         return procedureKey(path, input, 'live');
       case 'liveOptions': {
-        const streamFn = streamFrom(method(path, 'subscribe'), input, context);
+        const streamFn = streamFrom(
+          method(callPath, 'subscribe'),
+          input,
+          context,
+        );
         return {
           ...rest,
           queryKey: procedureKey(path, input, 'live'),

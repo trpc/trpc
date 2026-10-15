@@ -28,6 +28,7 @@ import type { RouterOf, TrpcClient } from 'trpcdev/client';
 import {
   createTrpcQueryUtils,
   type TrpcQueryUtilsFor,
+  type TrpcContextOptions,
 } from '@trpcdev/tanstack-query';
 
 export * from '@trpcdev/tanstack-query';
@@ -77,10 +78,9 @@ export interface TrpcSvelteContext<TRouter, TContext extends object = {}> {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function createTrpcContext<
-  TRouter,
-  TContext extends object = {},
->(): TrpcSvelteContext<TRouter, TContext> {
+export function createTrpcContext<TRouter, TContext extends object = {}>(
+  opts: TrpcContextOptions = {},
+): TrpcSvelteContext<TRouter, TContext> {
   type Value = {
     client: TrpcClient<RouterOf<TRouter>, TContext>;
     utils: TrpcQueryUtilsFor<TRouter, TContext>;
@@ -95,7 +95,7 @@ export function createTrpcContext<
     setTrpcContext: (client) =>
       setContext<Value>(key, {
         client,
-        utils: createTrpcQueryUtils({ client }),
+        utils: createTrpcQueryUtils({ ...opts, client }),
       }).utils,
     useTrpc: () => use().utils,
     useTrpcClient: () => use().client,

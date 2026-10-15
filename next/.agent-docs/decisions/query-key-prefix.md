@@ -4,4 +4,4 @@
 - Without `keyPrefix`, keys are unchanged ([`tanstack-query-keys.md`](./tanstack-query-keys.md)).
 - (agent) Mutation keys and `pathKey()` carry the prefix too, so `trpc.pathKey()` matches only that API's queries.
 - Lost: nothing for single-API apps; keys from two prefixes can't be matched with one filter.
-- Lives in: `packages/tanstack-query/src/keys.ts`, `src/utils.ts`.
+- Lives in: `packages/tanstack-query/src/utils.ts`, the adapters' `createTrpcContext()`, `packages/tanstack-react-query/src/rsc.ts`.

@@ -67,6 +67,8 @@ export type TrpcRscOptions<TRouter extends AnyRouter> = {
    * @default React's `cache`
    */
   cache?: <TFn extends (...args: any[]) => any>(fn: TFn) => TFn;
+  /** Must match the browser's `keyPrefix`, so prefetched queries hydrate. */
+  keyPrefix?: string | undefined;
 } & RouterClientOptions<TRouter>;
 
 /**
@@ -126,7 +128,10 @@ export function createTrpcRsc<TRouter extends AnyRouter>(
     ...opts,
     ctx: typeof ctx === 'function' ? cache(ctx as () => unknown) : ctx,
   } as never) as TrpcClient<TRouter>;
-  const trpc = createTrpcQueryUtils({ client: caller });
+  const trpc = createTrpcQueryUtils({
+    client: caller,
+    keyPrefix: opts.keyPrefix,
+  });
 
   return {
     trpc,

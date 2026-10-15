@@ -189,6 +189,47 @@ test('pathFilter and queryFilter invalidate what they match', async () => {
   expect(app.trpc.post.pathKey()).toEqual([['post']]);
 });
 
+test('keyPrefix keeps two APIs apart in one QueryClient', async () => {
+  await using app = await createApp();
+  const queryClient = new QueryClient();
+  const billing = createTrpcQueryUtils({
+    client: app.client,
+    keyPrefix: 'billing',
+  });
+
+  const options = billing.post.byId.queryOptions({ input: { id: '1' } });
+  expect(options.queryKey).toEqual([
+    ['billing', 'post', 'byId'],
+    { input: { id: '1' }, type: 'query' },
+  ]);
+  expect(billing.post.create.mutationKey()).toEqual([
+    ['billing', 'post', 'create'],
+  ]);
+  expect(billing.pathKey()).toEqual([['billing']]);
+
+  await Promise.all([
+    queryClient.fetchQuery(options),
+    queryClient.fetchQuery(
+      app.trpc.post.byId.queryOptions({ input: { id: '1' } }),
+    ),
+  ]);
+  expect(
+    queryClient.getQueryData(billing.post.byId.queryKey({ input: { id: '1' } }))
+      ?.title,
+  ).toBe('Post 1');
+
+  await queryClient.invalidateQueries({
+    ...billing.pathFilter(),
+    refetchType: 'none',
+  });
+  expect(
+    queryClient
+      .getQueryCache()
+      .findAll({ stale: true })
+      .map((q) => q.queryKey[0]),
+  ).toEqual([['billing', 'post', 'byId']]);
+});
+
 test('infiniteOptions map the page param to the input', async () => {
   await using app = await createApp({ posts: 5 });
   const queryClient = new QueryClient();

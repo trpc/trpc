@@ -35,6 +35,21 @@ export const { TrpcProvider, useTrpc } = createTrpcContext<AppRouter>();
 </QueryClientProvider>;
 ```
 
+## Two APIs, one QueryClient
+
+Keys start with the procedure path (`[['post', 'byId'], { input, type }]`), so two tRPC APIs with a `post.byId` would share cache entries. Give one a `keyPrefix`:
+
+```ts
+const billing = createTrpcQueryUtils({
+  client: billingClient,
+  keyPrefix: 'billing',
+});
+billing.post.byId.queryKey({ input: { id } }); // [['billing', 'post', 'byId'], { input: { id }, type: 'query' }]
+billing.pathFilter(); // matches only billing's queries
+```
+
+`createTrpcContext<BillingRouter>({ keyPrefix: 'billing' })` and `createTrpcRsc({ keyPrefix })` take it too; the server and browser must use the same one.
+
 ## Offline mutations
 
 A paused mutation that was persisted (with `persistQueryClient`, say) can only resume if the restored client knows its `mutationFn`. `mutationOptions()` returns the key and the function, so register them as defaults:

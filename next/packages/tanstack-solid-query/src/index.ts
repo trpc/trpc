@@ -37,6 +37,7 @@ import {
   type SubscriptionStatus,
   type TrpcQueryUtilsFor,
   type TrpcSubscriptionOptions,
+  type TrpcContextOptions,
 } from '@trpcdev/tanstack-query';
 
 export * from '@trpcdev/tanstack-query';
@@ -82,10 +83,9 @@ export interface TrpcSolidContext<TRouter, TContext extends object = {}> {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function createTrpcContext<
-  TRouter,
-  TContext extends object = {},
->(): TrpcSolidContext<TRouter, TContext> {
+export function createTrpcContext<TRouter, TContext extends object = {}>(
+  opts: TrpcContextOptions = {},
+): TrpcSolidContext<TRouter, TContext> {
   type Value = {
     client: TrpcClient<RouterOf<TRouter>, TContext>;
     utils: TrpcQueryUtilsFor<TRouter, TContext>;
@@ -100,7 +100,7 @@ export function createTrpcContext<
     TrpcProvider: (props) => {
       const client = untrack(() => props.client);
       return createComponent(Context.Provider, {
-        value: { client, utils: createTrpcQueryUtils({ client }) },
+        value: { client, utils: createTrpcQueryUtils({ ...opts, client }) },
         get children() {
           return props.children;
         },
