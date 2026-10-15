@@ -14,5 +14,5 @@
 
 - (agent) The key is declared like Effect's own `Context.Service<Self, Shape>()(key)`, so it is yieldable and `Layer.succeed(Posts, …)` swaps in another backend. `subscribe` yields `tracked()` envelopes with the publisher's ids; the memory layer keeps `buffer` events per channel and de-duplicates the replay against live events.
 - Lost: keeping the last event id in the input (v11), which mixes transport state into the schema; oRPC's Promise-facing `MemoryPublisher`.
-- Open: Q14.7, Cloudflare WebSocket hibernation in v1 or later (the agent recommends later).
+- Q14.7 is answered in [`cloudflare-hibernation.md`](./cloudflare-hibernation.md); backends are guides, in [`publisher-backends.md`](./publisher-backends.md).
 - Lives in: `packages/trpcdev/src/server/tracked.ts`, `src/server/publisher.ts`.
