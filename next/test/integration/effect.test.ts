@@ -1,7 +1,13 @@
-import { Context, Effect, Exit, Layer, Stream } from 'effect';
+import { Context, Effect, Exit, Layer, Stream, Tracer } from 'effect';
 import { httpLink, type ClientError } from 'trpcdev/client';
 import { createEffectClient } from 'trpcdev/effect';
-import { error, initTrpc, type TrpcError } from 'trpcdev/server';
+import {
+  createFetchHandler,
+  createRouterClient,
+  error,
+  initTrpc,
+  type TrpcError,
+} from 'trpcdev/server';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
@@ -201,4 +207,17 @@ test('defects are masked unexpected errors', async () => {
     message: 'Internal server error',
     defined: false,
   });
+});
+
+test('a layer that provides no services, like a tracer, is accepted', async () => {
+  const t = initTrpc();
+  const router = { ping: t.procedure.query(() => 'pong') };
+  const tracing = Layer.succeed(
+    Tracer.Tracer,
+    Tracer.make({ span: (o) => new Tracer.NativeSpan(o) }),
+  );
+  const handler = createFetchHandler({ router, layer: tracing });
+  const client = createRouterClient(router, { ctx: {}, layer: tracing });
+  expect(await client.ping.query()).toBe('pong');
+  await handler.dispose();
 });

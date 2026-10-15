@@ -97,7 +97,7 @@ export type ContextOption<TCtx> = {} extends TCtx
  * @stability experimental
  */
 export type LayerOption<TServices> = [TServices] extends [never]
-  ? { layer?: Layer.Layer<any, any, never> }
+  ? { layer?: Layer.Layer<never, any, never> }
   : {
       /** Provides the Effect services the router's procedures need (02 S1). */
       layer: Layer.Layer<TServices, any, never>;

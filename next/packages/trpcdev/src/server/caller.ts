@@ -16,7 +16,7 @@ type CtxOption<TCtx> = {} extends TCtx
   : { ctx: TCtx | (() => MaybePromise<TCtx>) };
 
 type ServicesOption<TServices> = [TServices] extends [never]
-  ? { layer?: Layer.Layer<any, any, never> }
+  ? { layer?: Layer.Layer<never, any, never> }
   : { layer: Layer.Layer<TServices, any, never> };
 
 /**
@@ -49,7 +49,7 @@ export function createRouterClient<TRouter extends AnyRouter>(
 ): TrpcClient<TRouter> {
   const o = (opts ?? {}) as {
     ctx?: object | (() => MaybePromise<object>);
-    layer?: Layer.Layer<any, any, never>;
+    layer?: Layer.Layer<never, any, never>;
   };
   const ctx = o.ctx;
   return createTrpcClient<TRouter>({
@@ -102,7 +102,7 @@ export async function call<TDef extends ProcedureDef>(
     input,
     signal: opts.signal ?? new AbortController().signal,
   });
-  const layer = (opts as { layer?: Layer.Layer<any, any, never> }).layer;
+  const layer = (opts as { layer?: Layer.Layer<never, any, never> }).layer;
   const exit = await Effect.runPromiseExit(
     (layer ? Effect.provide(effect, layer) : effect) as Effect.Effect<
       TDef['output'],

@@ -29,7 +29,7 @@ export interface LocalLinkOptions<TRouter extends AnyRouter> {
   /** Runs once per call. */
   createContext?: () => MaybePromise<inferRouterContext<TRouter>>;
   /** Provides the Effect services the router needs. */
-  layer?: Layer.Layer<any, any, never>;
+  layer?: Layer.Layer<never, any, never>;
   /**
    * Round-trip inputs and outputs through a serializer, as over the wire.
    * `false` passes values by reference.
@@ -57,7 +57,8 @@ export function localLink<TRouter extends AnyRouter>(
     opts.serializer === false
       ? undefined
       : (opts.serializer ?? defaultSerializer);
-  const runtime = opts.layer ? ManagedRuntime.make(opts.layer) : undefined;
+  const layer = opts.layer as Layer.Layer<any, any, never> | undefined;
+  const runtime = layer ? ManagedRuntime.make(layer) : undefined;
   let services: Promise<Context.Context<any>> | undefined;
   const getServices = () =>
     (services ??= runtime
