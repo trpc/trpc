@@ -361,6 +361,40 @@ test('a query that returns an AsyncIterable streams chunks into the cache', asyn
   expect(seen[0]).toEqual(['you']);
 });
 
+test('streamedMutationOptions collect chunks into data, and into a query as they arrive (#5846)', async () => {
+  await using app = await createApp();
+  const queryClient = new QueryClient();
+  const chunks = new QueryObserver(
+    queryClient,
+    app.trpc.chat.send.chunksOptions(),
+  );
+  const seen: string[][] = [];
+  const unsubscribe = chunks.subscribe((r) => {
+    if (r.data) seen.push(r.data);
+  });
+  const each: string[] = [];
+  const mutation = new MutationObserver(
+    queryClient,
+    app.trpc.chat.send.streamedMutationOptions({
+      onChunk: (chunk) => each.push(chunk),
+    }),
+  );
+  const data = await mutation.mutate({ text: 'hi' });
+  unsubscribe();
+
+  expectTypeOf(data).toEqualTypeOf<string[]>();
+  expect(data).toEqual(['ok', 'hi']);
+  expect(each).toEqual(['ok', 'hi']);
+  expect(seen).toEqual([[], ['ok'], ['ok', 'hi']]);
+  expect(
+    queryClient.getQueryData(app.trpc.chat.send.streamedMutationKey()),
+  ).toEqual(['ok', 'hi']);
+  expect(app.trpc.chat.send.streamedMutationKey()).toEqual([
+    ['chat', 'send'],
+    { type: 'mutation' },
+  ]);
+});
+
 test('streamedOptions collect subscription events; liveOptions keep the latest', async () => {
   await using app = await createApp();
   const queryClient = new QueryClient();

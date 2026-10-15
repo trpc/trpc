@@ -97,6 +97,14 @@ export const appRouter = {
           yield word;
         }
       }),
+    send: t.procedure
+      .input(z.object({ text: z.string() }))
+      .mutation(async function* ({ input }) {
+        for (const word of `ok ${input.text}`.split(' ')) {
+          await sleep(5);
+          yield word;
+        }
+      }),
   },
   clock: {
     ticks: t.procedure

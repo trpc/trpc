@@ -4,6 +4,7 @@ import {
   type DataTag,
   type InfiniteData,
   type InfiniteQueryObserverOptions,
+  type MutationFunctionContext,
   type MutationObserverOptions,
   type QueryFilters,
   type QueryFunction,
@@ -193,6 +194,19 @@ export type MutationOptionsOut<TInput, TOutput, TError, TOnMutateResult> =
     mutationFn: (input: MutationVariables<TInput>) => Promise<TOutput>;
   };
 
+type ChunkOf<TOutput> =
+  TOutput extends AsyncIterable<infer TChunk> ? TChunk : never;
+
+/**
+ * Options for `streamedMutationOptions()`, on top of TanStack's.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export interface StreamedMutationOptions<TChunk> {
+  /** Called with each chunk and every chunk so far. */
+  onChunk?: ((chunk: TChunk, chunks: TChunk[]) => void) | undefined;
+}
+
 /**
  * How `streamedOptions()` keeps events.
  * @since 12.0.0-alpha.0
@@ -338,6 +352,33 @@ export interface MutationProcedureUtils<
   ): MutationOptionsOut<TInput, TOutput, TError, TOnMutateResult>;
   /** The key `mutationOptions()` uses, for `useIsMutating` and filters. */
   mutationKey(): TrpcMutationKey;
+  /**
+   * Options for `useMutation` when the output is an `AsyncIterable`: `data`
+   * is every chunk once the stream ends. While it runs, the chunks so far
+   * are in the query cache at `streamedMutationKey()`, so a query on that
+   * key (`chunksOptions()`) re-renders as they arrive. Each `mutate` starts
+   * them over.
+   *
+   * @example
+   * ```ts
+   * const send = useMutation(trpc.chat.reply.streamedMutationOptions());
+   * const { data: chunks } = useQuery(trpc.chat.reply.chunksOptions());
+   * ```
+   */
+  streamedMutationOptions<TOnMutateResult = unknown>(
+    opts?: ContextBag<TContext> &
+      StreamedMutationOptions<ChunkOf<TOutput>> &
+      MutationOptionsIn<TInput, ChunkOf<TOutput>[], TError, TOnMutateResult>,
+  ): MutationOptionsOut<TInput, ChunkOf<TOutput>[], TError, TOnMutateResult>;
+  /** Where `streamedMutationOptions()` keeps the chunks so far. */
+  streamedMutationKey(): TrpcQueryKeyFor<ChunkOf<TOutput>[], TError>;
+  /**
+   * Query options that read the chunks `streamedMutationOptions()` writes,
+   * without fetching.
+   */
+  chunksOptions<TData = ChunkOf<TOutput>[]>(
+    opts?: Omit<QueryOptionsIn<ChunkOf<TOutput>[], TError, TData>, 'enabled'>,
+  ): QueryOptionsOut<ChunkOf<TOutput>[], TError, TData>;
 }
 
 /**
@@ -610,6 +651,44 @@ export function createTrpcQueryUtils<TClient extends object>(
       }
       case 'mutationKey':
         return [path];
+      case 'streamedMutationKey':
+        return procedureKey(path, undefined, 'mutation');
+      case 'chunksOptions':
+        return {
+          staleTime: Infinity,
+          ...(args[0] as object),
+          queryKey: procedureKey(path, undefined, 'mutation'),
+          queryFn: skipToken,
+        };
+      case 'streamedMutationOptions': {
+        const { onChunk, ...mutationOpts } = rest as Bag &
+          StreamedMutationOptions<unknown>;
+        const mutate = method(callPath, 'mutate');
+        const queryKey = procedureKey(path, undefined, 'mutation');
+        return {
+          ...mutationOpts,
+          mutationKey: [path],
+          mutationFn: async (
+            variables: unknown,
+            fnContext: MutationFunctionContext,
+          ) => {
+            const chunks: unknown[] = [];
+            fnContext.client.setQueryData(queryKey, []);
+            const output: unknown = await mutate(variables, context ?? {});
+            if (!isAsyncIterable(output)) {
+              throw new TypeError(
+                `${callPath.join('.')} did not return an AsyncIterable`,
+              );
+            }
+            for await (const chunk of output) {
+              chunks.push(chunk);
+              fnContext.client.setQueryData(queryKey, [...chunks]);
+              onChunk?.(chunk, chunks);
+            }
+            return chunks;
+          },
+        };
+      }
       case 'mutationOptions': {
         const mutate = method(callPath, 'mutate');
         return {

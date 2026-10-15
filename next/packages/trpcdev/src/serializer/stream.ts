@@ -219,7 +219,7 @@ export interface DeserializeStreamOptions extends DeserializeOptions {
   reviveError?: (value: unknown) => unknown;
 }
 
-type ChunkQueue = Queue.Queue<[Status, unknown], DansonError | Cause.Done>;
+type ChunkQueue = Queue.Queue<[Status, unknown], unknown>;
 
 export function deserializeStream<T, E>(
   source: Stream.Stream<Frame, E>,
@@ -232,9 +232,7 @@ export function deserializeStream<T, E>(
     const queueFor = (idx: number) => {
       let q = queues.get(idx);
       if (!q) {
-        q = Effect.runSync(
-          Queue.unbounded<[Status, unknown], DansonError | Cause.Done>(),
-        );
+        q = Effect.runSync(Queue.unbounded<[Status, unknown], unknown>());
         queues.set(idx, q);
       }
       return q;
@@ -308,9 +306,18 @@ export function deserializeStream<T, E>(
       ),
       Effect.onExit((exit) =>
         Effect.sync(() => {
-          const error = Exit.isFailure(exit)
-            ? Cause.squash(exit.cause)
-            : new DansonError('Stream interrupted');
+          // The source's own failure (a network error, an abort) reaches
+          // open deferred values as it is; defects and interrupts don't.
+          const failure = Exit.isFailure(exit)
+            ? exit.cause.reasons.find(Cause.isFailReason)
+            : undefined;
+          const error = failure
+            ? failure.error
+            : Exit.isFailure(exit)
+              ? new DansonError('Stream failed', {
+                  cause: Cause.squash(exit.cause),
+                })
+              : new DansonError('Stream interrupted');
           if (first) {
             Deferred.doneUnsafe(
               head,
@@ -320,14 +327,7 @@ export function deserializeStream<T, E>(
             );
           }
           for (const q of queues.values()) {
-            Queue.failCauseUnsafe(
-              q,
-              Cause.fail(
-                error instanceof DansonError
-                  ? error
-                  : new DansonError('Stream failed', { cause: error }),
-              ),
-            );
+            Queue.failCauseUnsafe(q, Cause.fail(error));
           }
         }),
       ),

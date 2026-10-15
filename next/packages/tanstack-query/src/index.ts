@@ -30,6 +30,7 @@ export {
   type QueryOptionsIn,
   type QueryOptionsOut,
   type QueryProcedureUtils,
+  type StreamedMutationOptions,
   type StreamedOptions,
   type SubscriptionProcedureUtils,
   type TrpcContextOptions,

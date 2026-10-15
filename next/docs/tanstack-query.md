@@ -50,6 +50,20 @@ billing.pathFilter(); // matches only billing's queries
 
 `createTrpcContext<BillingRouter>({ keyPrefix: 'billing' })` and `createTrpcRsc({ keyPrefix })` take it too; the server and browser must use the same one.
 
+## Streamed mutations
+
+A mutation that returns an async iterable (an AI reply, say) can fill in as it streams:
+
+```ts
+const send = useMutation(trpc.chat.send.streamedMutationOptions());
+const { data: chunks = [] } = useQuery(trpc.chat.send.chunksOptions());
+
+send.mutate({ text });
+// chunks: [] → ['ok'] → ['ok', 'hi'], then send.data is ['ok', 'hi']
+```
+
+`chunksOptions()` never fetches; it reads what the mutation writes to `streamedMutationKey()`. Each `mutate` starts the chunks over. Pass `onChunk(chunk, chunks)` to act on each one. Resetting or unmounting doesn't stop the stream on the server; to stop it, call `client.chat.send.mutate(input, { signal })` yourself and abort the signal, which rejects the stream with `CLIENT_CLOSED_REQUEST`.
+
 ## Offline mutations
 
 A paused mutation that was persisted (with `persistQueryClient`, say) can only resume if the restored client knows its `mutationFn`. `mutationOptions()` returns the key and the function, so register them as defaults:

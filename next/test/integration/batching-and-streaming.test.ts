@@ -1,7 +1,7 @@
 import { createTrpcClient, httpLink, safe } from 'trpcdev/client';
 import { error, initTrpc } from 'trpcdev/server';
 import { createTestServer } from './fixtures/server.ts';
-import { expect, expectTypeOf, test } from 'vite-plus/test';
+import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 
 const t = initTrpc();
@@ -38,7 +38,18 @@ const router = {
       throw new Error('kaboom');
     }) as Promise<number>,
   })),
+  ticks: t.procedure.mutation(async function* () {
+    try {
+      for (let n = 0; ; n++) {
+        await sleep(5);
+        yield n;
+      }
+    } finally {
+      ticksStopped++;
+    }
+  }),
 };
+let ticksStopped = 0;
 type AppRouter = typeof router;
 
 async function setup(opts: { serverBatch?: boolean; clientBatch?: boolean }) {
@@ -154,4 +165,25 @@ test('the server finishes the iterable once it is drained', async () => {
   for await (const _ of result.feed);
   await result.stats;
   expect(finished).toBe(before + 1);
+});
+
+test('aborting a streamed output rejects with CLIENT_CLOSED_REQUEST and stops the server generator', async () => {
+  await using ctx = await setup({ clientBatch: false });
+  const before = ticksStopped;
+  const controller = new AbortController();
+  const ticks = await ctx.client.ticks.mutate(undefined, {
+    signal: controller.signal,
+  });
+  const seen: number[] = [];
+  const [, err] = await safe(
+    (async () => {
+      for await (const n of ticks) {
+        seen.push(n);
+        if (n === 2) controller.abort();
+      }
+    })(),
+  );
+  expect(seen).toEqual([0, 1, 2]);
+  expect(err).toMatchObject({ code: 'CLIENT_CLOSED_REQUEST' });
+  await vi.waitFor(() => expect(ticksStopped).toBe(before + 1));
 });
