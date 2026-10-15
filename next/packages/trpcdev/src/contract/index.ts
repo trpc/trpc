@@ -186,7 +186,7 @@ export interface ContractSubscriptionOptions<TTracked extends boolean> {
 
 /**
  * Builds contract procedures with the procedure builder's definition methods
- * and resolver-less terminals (0009). Every method returns a new builder.
+ * and resolver-less terminals. Every method returns a new builder.
  *
  * @example
  * ```ts

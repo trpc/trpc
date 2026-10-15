@@ -333,7 +333,7 @@ test('subscriptions are text/event-stream and resume from Last-Event-ID', async 
   expect(body).toContain('event: done');
 });
 
-test('unexpected errors are masked unless exposed (0003)', async () => {
+test('unexpected errors are masked unless exposed', async () => {
   await using masked = await serve({ expose: false });
   const res = await masked.api('/boom');
   expect(res.status).toBe(500);

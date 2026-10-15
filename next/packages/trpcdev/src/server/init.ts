@@ -130,8 +130,8 @@ export interface RootMiddleware<TCtx extends object, TMeta extends object> {
 }
 
 /**
- * Creates the root object for a ctx and meta type (0013: one option bag, no
- * `.create()`).
+ * Creates the root object for a ctx and meta type: one option bag, no
+ * `.create()`.
  *
  * @example
  * ```ts

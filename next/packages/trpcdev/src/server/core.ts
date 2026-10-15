@@ -39,7 +39,7 @@ export interface MakeContextOpts {
 export interface HandlerCore {
   readonly run: (opts: RunOpts) => Promise<Exit.Exit<unknown, AnyTRPCError>>;
   readonly makeContext: (opts: MakeContextOpts) => Promise<object>;
-  /** Masks unexpected errors unless `exposeUnexpectedErrors` (0003). */
+  /** Masks unexpected errors unless `exposeUnexpectedErrors`. */
   readonly publicError: (err: AnyTRPCError) => AnyTRPCError;
   readonly report: (
     err: AnyTRPCError,

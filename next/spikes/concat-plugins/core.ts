@@ -1,5 +1,5 @@
 /**
- * Type-level prototype for 06 (e) `.concat()` under 0013 (`initTRPC<{ … }>()`)
+ * Type-level prototype for 06 (e) `.concat()` under `initTRPC<{ … }>()`
  * and Q3.5 (keep `t`): can a standalone package define a plugin with its own
  * `t`, so that its root ctx and meta are its requirements, and can the app's
  * `t.procedure.concat(plugin)` check them, add the plugin's ctx and merge its
@@ -161,7 +161,7 @@ export interface TRPCRoot<TCtx extends object, TMeta extends object> {
   }>;
 }
 
-/** 0013: one option bag, no `.create()`. */
+/** One option bag, no `.create()`. */
 export declare function initTRPC<
   TConfig extends { ctx?: object; meta?: object } = {},
 >(): TRPCRoot<

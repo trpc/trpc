@@ -81,7 +81,7 @@ export interface BaseOpenAPIHandlerOptions<TRouter extends AnyRouter> {
    */
   maxBodySize?: number;
   /**
-   * Send the real message of unexpected errors to the client (0003).
+   * Send the real message of unexpected errors to the client.
    * @default true only when `NODE_ENV` is `development` or `test`
    */
   exposeUnexpectedErrors?: boolean;

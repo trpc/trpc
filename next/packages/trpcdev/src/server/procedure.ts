@@ -91,7 +91,7 @@ export type Step =
     };
 
 /**
- * The runtime definition under `'~trpc'` (0001).
+ * The runtime definition under `'~trpc'`.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */

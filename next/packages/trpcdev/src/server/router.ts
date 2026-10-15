@@ -38,7 +38,7 @@ type DuplicateKeys<T extends readonly unknown[], Seen = never> = T extends [
 
 /**
  * Merges routers. A key in more than one router is a type error and a
- * runtime error (0010), unlike object spread, which silently keeps the last.
+ * runtime error, unlike object spread, which silently keeps the last.
  *
  * @example
  * ```ts
