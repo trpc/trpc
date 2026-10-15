@@ -31,7 +31,18 @@ export default defineConfig({
       typeAware: true,
       typeCheck: true,
     },
+    jsPlugins: ['./tooling/oxlint-plugin/index.ts'],
+    rules: {
+      'trpcdev/acronym-case': 'error',
+    },
     overrides: [
+      {
+        files: ['packages/*/src/**'],
+        excludeFiles: ['**/*.test.ts', '**/*.test.tsx', '**/*.test-d.ts'],
+        rules: {
+          'trpcdev/jsdoc': 'error',
+        },
+      },
       {
         files: ['spikes/**'],
         rules: {
@@ -56,6 +67,7 @@ export default defineConfig({
             'test/**/*.test.ts',
             'test/**/*.test.tsx',
             'spikes/**/*.test.ts',
+            'tooling/**/*.test.ts',
           ],
           exclude: [
             '**/node_modules/**',

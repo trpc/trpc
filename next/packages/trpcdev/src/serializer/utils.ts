@@ -1,3 +1,8 @@
+/**
+ * A value could not be serialized or deserialized.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
 export class DansonError extends Error {
   override name = 'DansonError';
 }
@@ -7,6 +12,11 @@ export type JsonArray = JsonValue[];
 export interface JsonObject {
   [key: string]: JsonValue;
 }
+/**
+ * Any JSON value.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
 export type JsonValue = JsonArray | JsonObject | JsonPrimitive;
 
 export function isJsonPrimitive(value: unknown): value is JsonPrimitive {

@@ -22,6 +22,11 @@ export interface PlaceholderTransformer<T = unknown> {
   placeholder: string;
   value: T;
 }
+/**
+ * Custom serializers by type name.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
 export type SerializeRecord = Record<
   string,
   SerializeFn | PlaceholderTransformer
@@ -32,11 +37,21 @@ export interface DeserializeRecursive {
   create: () => unknown;
   set: (target: any, value: any) => void;
 }
+/**
+ * Custom deserializers by type name.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
 export type DeserializeRecord = Record<
   string,
   DeserializeFn | DeserializeRecursive | PlaceholderTransformer
 >;
 
+/**
+ * The serialized form of a value: its JSON and the references it shares.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
 export interface SerializeReturn {
   json?: JsonValue;
   refs?: Record<string, JsonValue>;

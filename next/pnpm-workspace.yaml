@@ -3,6 +3,7 @@ packages:
   - 'examples/*'
   - 'test/*'
   - 'spikes'
+  - 'tooling/*'
 
 minimumReleaseAgeExclude:
   - vendor-src@0.15.4

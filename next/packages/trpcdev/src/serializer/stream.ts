@@ -23,7 +23,17 @@ const ERROR = 1;
 const RETURN = 2;
 type Status = typeof VALUE | typeof ERROR | typeof RETURN;
 
+/**
+ * One streamed chunk of a deferred value: its index, status and serialized value.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
 export type Chunk = [index: number, status: Status, value: SerializeReturn];
+/**
+ * A JSONL line of a deferred stream: the head or a chunk.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
 export type Frame = SerializeReturn | Chunk;
 
 const isAsyncIterable = (v: unknown): v is AsyncIterable<unknown> =>
@@ -92,7 +102,11 @@ const toDansonError = (cause: unknown) =>
     ? cause
     : new DansonError('serialize failed', { cause });
 
-/** A serialized value: the head, plus a stream of chunks when it holds deferred values. */
+/**
+ * A serialized value: the head, plus a stream of chunks when it holds deferred values.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
 export interface SerializedDeferred {
   readonly head: SerializeReturn;
   /** `undefined` when the value has no `Promise`, `AsyncIterable` or `ReadableStream` in it. */

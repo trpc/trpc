@@ -664,6 +664,21 @@ importers:
         specifier: 4.6.5
         version: 4.6.5
 
+  tooling/oxlint-plugin:
+    devDependencies:
+      '@oxlint/plugins':
+        specifier: 1.87.0
+        version: 1.87.0
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.19.1
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+      vite-plus:
+        specifier: 1.1.0
+        version: 1.1.0(@types/node@24.19.1)(@vitest/ui@5.0.3)(happy-dom@20.14.6)(svelte@5.57.2)(typescript@7.0.2)
+
 packages:
 
   '@angular/common@22.2.2':
@@ -1090,6 +1105,10 @@ packages:
 
   '@oxlint/plugins@1.79.0':
     resolution: {integrity: sha512-S0uyoxakDINJ4DPgqxGlEEvrdSMeQb7Z2lKVjxoY2gwsbZbfg2Xr8Klfeo5ZeraHmmdBCELFUHkSe6KEmBpMvg==}
+    engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
+
+  '@oxlint/plugins@1.87.0':
+    resolution: {integrity: sha512-OtSZ6NxNkS7bkVy7zk9zGnajz2hVIu0uRPP/dJvJesGRaXtimpA4lpxap7FaIJndG2UIoKhnBU4DxyDQIWv6yg==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
 
   '@polka/url@1.0.0-next.29':
@@ -2752,6 +2771,8 @@ snapshots:
     optional: true
 
   '@oxlint/plugins@1.79.0': {}
+
+  '@oxlint/plugins@1.87.0': {}
 
   '@polka/url@1.0.0-next.29': {}
 
