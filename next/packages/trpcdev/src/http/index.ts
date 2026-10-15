@@ -30,6 +30,11 @@ import {
   HttpServerResponse,
 } from 'effect/http';
 import { Socket } from 'effect/socket';
+import {
+  HEADER,
+  isJsonContentType,
+  PROTOCOL_VERSION,
+} from '../internal/protocol.ts';
 import type { WebSocketLike } from '../server/socket.ts';
 
 /**
@@ -92,7 +97,14 @@ export function toHttpEffect(
   HttpServerRequest.HttpServerRequest
 > {
   const endpoint = `/${(opts.endpoint ?? '/trpc').replace(/^\/+|\/+$/g, '')}`;
-  const fetch = HttpEffect.fromWebHandler((request) => handler.fetch(request));
+  const fetch = Effect.flatMap(HttpServerRequest.HttpServerRequest, (request) =>
+    HttpEffect.fromWebHandler((web) => {
+      const replayed = replayParsedBody(web, request.source);
+      return replayed instanceof Response
+        ? Promise.resolve(replayed)
+        : handler.fetch(replayed);
+    }),
+  );
   // HttpServer runs apps uninterruptibly; a client disconnect must abort the call.
   if (!('websocket' in handler)) return Effect.interruptible(fetch);
   return Effect.interruptible(
@@ -149,6 +161,42 @@ export function serve(
   opts: HttpOptions = {},
 ): Layer.Layer<never, never, HttpServer.HttpServer> {
   return HttpServer.serve(toHttpEffect(handler, opts));
+}
+
+/**
+ * A Node request whose body a framework middleware already read
+ * (`express.json()`, `express.text()`, `express.raw()`) is rebuilt from
+ * `req.body`; the stream itself is empty by then.
+ */
+function replayParsedBody(web: Request, source: object): Request | Response {
+  const node = source as { readableEnded?: unknown; body?: unknown };
+  if (node.readableEnded !== true || web.method === 'GET') return web;
+  const { body } = node;
+  const replay =
+    typeof body === 'string' || body instanceof Uint8Array
+      ? body
+      : body !== undefined && isJsonContentType(web.headers.get('content-type'))
+        ? JSON.stringify(body)
+        : undefined;
+  if (replay === undefined) {
+    const message =
+      'The request body was already read by another middleware. Mount tRPC before body parsers, or use one that sets req.body.';
+    return Response.json(
+      {
+        json: {
+          error: { code: 'INTERNAL_SERVER_ERROR', message, defined: false },
+        },
+      },
+      { status: 500, headers: { [HEADER.version]: PROTOCOL_VERSION } },
+    );
+  }
+  const headers = new Headers(web.headers);
+  headers.delete('content-length');
+  return new Request(web, {
+    method: web.method,
+    body: replay as BodyInit,
+    headers,
+  });
 }
 
 const OPEN = 1;

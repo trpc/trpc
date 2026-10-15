@@ -71,7 +71,7 @@ fastify.register(async (scoped) => {
 createServer((req, res) => nodeHandler(req, res)).listen(3000);
 ```
 
-Mount body parsers (`express.json()`) after the tRPC route, or not on it: the handler reads the body itself.
+The handler reads the body itself. If `express.json()`, `express.text()` or `express.raw()` ran first, it uses `req.body`. Other parsers that consume the stream (for example multipart ones) make the call fail with a 500 that says so, so mount them after the tRPC route.
 
 ## Bun
 

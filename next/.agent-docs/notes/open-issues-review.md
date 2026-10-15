@@ -13,6 +13,8 @@ Method: `gh issue list --repo trpc/trpc --state open --limit 1000 --json number,
 - #7022, tracing: every call runs in a `trpc.<path>` server span with `rpc.method`, `trpc.type` and `trpc.error.code` (`effect.test.ts`).
 - #7064, per-call reconnect: `{ reconnect: false }` on a subscription call fails with `NETWORK_ERROR` instead of rerunning it.
 - #6664, the React context: `createTrpcContext()` returns `context` for bridges (React and Preact).
+- #5534, #7446, bodies already read: `toHttpEffect` rebuilds the body from `req.body` after `express.json()`, `text()` or `raw()`, and otherwise fails with a 500 that names the cause instead of a misleading validation error (`platforms.test.ts`).
+- #6996 (related): JSONL and SSE decoding no longer need `TextDecoderStream`, which Hermes lacks. The SSE parser also handled a `\r\n` split across chunks as two line ends.
 - Layers that provide no services (a tracer, a logger) were rejected by the `layer` option types.
 
 ## Already answered by vNext
@@ -59,12 +61,11 @@ Ordered by demand and fit.
 5. **WebSocket heartbeat**. There's no ping/pong on `wsLink` or the socket server, and idle proxies drop quiet sockets. #7502 is v11's double ping on Fastify.
 6. **Middleware that reshapes input** (#6892). `next({ input })` typed like `next({ ctx })`.
 7. **Deferred work after the response** (#7436). Document `Effect.forkDaemon` and the platform's `waitUntil` (Next's `after()`), or add a `waitUntil` to the handler options.
-8. **Bodies already read** (#5534, #7446). An Express or Koa body parser that ran first leaves an empty stream. Check `request.bodyUsed` and the Node request's state, and fail with a clear `BAD_REQUEST` instead of hanging.
-9. **`fetch` sees the operations** (#4184). `httpLink({ fetch })` could get `{ ops }` as a third argument for SSR cookie forwarding. `headers({ op })` covers most of it.
-10. **Dehydrating errors under Next** (#6771). Next's dynamic-rendering errors must not be redacted. Document `shouldRedactErrors` next to `createTrpcRsc`.
-11. **Publisher backends** (#5618). The `memory` layer is per process. Redis, Postgres `LISTEN` or Durable Object layers behind the same `PublisherShape` would let subscriptions run across instances.
-12. **TanStack DB** (#6891). `queryOptions()` should plug into `queryCollectionOptions` as it is; worth a test and a docs example.
-13. **Adapters, recorded as later**: Lambda API Gateway and Lambda@Edge (#4978), Cloudflare hibernation, Firebase callable (#6388), WebTransport (#6971), raw TCP (#5995). The socket core is generic over connections, so the last two are a transport each.
+8. **`fetch` sees the operations** (#4184). `httpLink({ fetch })` could get `{ ops }` as a third argument for SSR cookie forwarding. `headers({ op })` covers most of it.
+9. **Dehydrating errors under Next** (#6771). Next's dynamic-rendering errors must not be redacted. Document `shouldRedactErrors` next to `createTrpcRsc`.
+10. **Publisher backends** (#5618). The `memory` layer is per process. Redis, Postgres `LISTEN` or Durable Object layers behind the same `PublisherShape` would let subscriptions run across instances.
+11. **TanStack DB** (#6891). `queryOptions()` should plug into `queryCollectionOptions` as it is; worth a test and a docs example.
+12. **Adapters, recorded as later**: Lambda API Gateway and Lambda@Edge (#4978), Cloudflare hibernation, Firebase callable (#6388), WebTransport (#6971), raw TCP (#5995). The socket core is generic over connections, so the last two are a transport each.
 
 ## Not pursuing
 
