@@ -6,6 +6,7 @@ import {
 import { hydrationOptions } from '@trpcdev/tanstack-query';
 import { createTrpcRsc } from '@trpcdev/tanstack-react-query/rsc';
 import { renderToString } from 'react-dom/server';
+import { initTrpc } from 'trpcdev/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { appRouter, createApp, db, type Post } from './fixtures/app.ts';
 
@@ -58,4 +59,30 @@ test('createTrpcRsc: per-request ctx and query client, and a server HydrationBou
   );
   expect(html).toContain('2026-01-03');
   expect(db.calls).toEqual(['post.byId:2']);
+});
+
+test("HydrationBoundary keeps Next's digest errors, which Next needs to see, and redacts the rest", async () => {
+  const dynamic = Object.assign(new Error('Dynamic server usage'), {
+    digest: 'DYNAMIC_SERVER_USAGE',
+  });
+  const t = initTrpc();
+  const rsc = createTrpcRsc({
+    router: {
+      dynamic: t.procedure.query(async (): Promise<string> => {
+        throw dynamic;
+      }),
+      broken: t.procedure.query(async (): Promise<string> => {
+        throw new Error('db password is hunter2');
+      }),
+    },
+    cache: requestCache(),
+  });
+  rsc.prefetch(rsc.trpc.dynamic.queryOptions({ retry: false }));
+  rsc.prefetch(rsc.trpc.broken.queryOptions({ retry: false }));
+  const element = rsc.HydrationBoundary({}) as {
+    props: { state: { queries: { promise?: Promise<unknown> }[] } };
+  };
+  const [first, second] = element.props.state.queries;
+  await expect(first!.promise).rejects.toBe(dynamic);
+  await expect(second!.promise).rejects.toThrow('redacted');
 });

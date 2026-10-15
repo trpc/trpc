@@ -17,6 +17,7 @@ Method: `gh issue list --repo trpc/trpc --state open --limit 1000 --json number,
 - #6996 (related): JSONL and SSE decoding no longer need `TextDecoderStream`, which Hermes lacks. The SSE parser also handled a `\r\n` split across chunks as two line ends.
 - WebSocket heartbeat: `wsLink` pings (`keepAlive`), and a connection that stops answering reconnects (`websockets.test.ts`).
 - #7436, work after the response: `docs/procedures.md` documents `Effect.forkDetach` (tested) and the platforms' `waitUntil`. `docs/platforms.md` shows how a Workers `createContext` reaches `env` and `ctx` (a `WeakMap` keyed by the request).
+- #6771 and Next control flow: `redirect()`, `notFound()` and dynamic-API errors (a string `digest`) were wrapped as `INTERNAL_SERVER_ERROR` by actions and in-process callers, and RSC dehydration redacted them. They now pass through unchanged (`actions.test.ts`, `rsc.test.tsx`).
 - Layers that provide no services (a tracer, a logger) were rejected by the `layer` option types.
 
 ## Already answered by vNext
@@ -62,10 +63,9 @@ Ordered by demand and fit.
 4. **Offline and persisted mutations** (#7021). Paused mutations resume only if `setMutationDefaults(mutationKey, { mutationFn })` is registered. A `trpc.post.create.mutationDefaults()` helper would cover it.
 5. **Middleware that reshapes input** (#6892). `next({ input })` typed like `next({ ctx })`.
 6. **`fetch` sees the operations** (#4184). `httpLink({ fetch })` could get `{ ops }` as a third argument for SSR cookie forwarding. `headers({ op })` covers most of it.
-7. **Dehydrating errors under Next** (#6771). Next's dynamic-rendering errors must not be redacted. Document `shouldRedactErrors` next to `createTrpcRsc`.
-8. **Publisher backends** (#5618). The `memory` layer is per process. Redis, Postgres `LISTEN` or Durable Object layers behind the same `PublisherShape` would let subscriptions run across instances.
-9. **TanStack DB** (#6891). `queryOptions()` should plug into `queryCollectionOptions` as it is; worth a test and a docs example.
-10. **Adapters, recorded as later**: Lambda API Gateway and Lambda@Edge (#4978), Cloudflare hibernation, Firebase callable (#6388), WebTransport (#6971), raw TCP (#5995). The socket core is generic over connections, so the last two are a transport each.
+7. **Publisher backends** (#5618). The `memory` layer is per process. Redis, Postgres `LISTEN` or Durable Object layers behind the same `PublisherShape` would let subscriptions run across instances.
+8. **TanStack DB** (#6891). `queryOptions()` should plug into `queryCollectionOptions` as it is; worth a test and a docs example.
+9. **Adapters, recorded as later**: Lambda API Gateway and Lambda@Edge (#4978), Cloudflare hibernation, Firebase callable (#6388), WebTransport (#6971), raw TCP (#5995). The socket core is generic over connections, so the last two are a transport each.
 
 ## Not pursuing
 

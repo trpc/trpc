@@ -20,7 +20,11 @@ import { Context, Effect, Exit, ManagedRuntime, type Layer } from 'effect';
 import type { SafeResult } from '../client/client.ts';
 import type { ClientError } from '../client/types.ts';
 import { inputJsonSchema } from '../internal/describe.ts';
-import { TrpcError, type AnyTrpcError } from '../internal/error.ts';
+import {
+  frameworkError,
+  TrpcError,
+  type AnyTrpcError,
+} from '../internal/error.ts';
 import type { JsonSchema } from '../internal/json-schema.ts';
 import type { MaybePromise } from '../internal/types.ts';
 import { parseBracketNotation } from '../openapi/bracket.ts';
@@ -196,6 +200,8 @@ function makeFactory<TMode extends ActionResultMode>(
         });
       }
       const error = normalizeCause(exit.cause);
+      const signal = frameworkError(error);
+      if (signal !== undefined) throw signal;
       opts.onError?.({ error, input });
       const masked = publicError(error);
       if (mode === 'throw') throw masked;

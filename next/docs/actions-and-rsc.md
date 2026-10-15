@@ -28,6 +28,7 @@ const [post, error] = await createPost({ title, tags: [] });
 - `result: 'safe'` (the default) returns the `[data, error]` / `{ data, error }` result of `safe()`. `result: 'throw'` returns the data and throws `TrpcError`.
 - Results reach the browser, so unexpected errors are masked outside development, as in handlers. `onError` sees them first.
 - A factory whose ctx or layer can't satisfy a procedure is a type error, and so is wrapping a subscription.
+- Next's `redirect()`, `notFound()` and dynamic-API errors thrown in a procedure or `ctx` are rethrown as they are, not returned as errors, so Next can act on them. Any error with a string `digest` counts. The same holds for `call()`, `createRouterClient()` and `localLink`.
 
 `createCallable` is the same factory for direct calls with typed input (no `FormData`), from server components, loaders or scripts:
 
@@ -67,3 +68,4 @@ export default async function Page({ params }) {
 - `ctx` and the query client are memoized per request with React's `cache()`.
 - `HydrationBoundary` dehydrates the request's queries, pending ones included, so they stream in. The browser's `QueryClient` needs `defaultOptions: hydrationOptions()` with the same serializer, so `Date`s and custom types survive.
 - `await getQueryClient().fetchQuery(…)` reads data in the server component itself. `caller` calls the router without the cache.
+- A pending query that later fails is redacted in the dehydrated state, unless its error has a `digest`: Next has to see those to detect dynamic rendering. Set `dehydrate.shouldRedactErrors` on your `makeQueryClient` to change that.

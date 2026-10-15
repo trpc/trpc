@@ -160,6 +160,23 @@ export function isTrpcError(value: unknown): value is AnyTrpcError {
   return value instanceof TrpcError;
 }
 
+/** Whether `value` carries a string `digest`, React's and Next's mark. */
+export const hasDigest = (value: unknown): boolean =>
+  typeof value === 'object' &&
+  value !== null &&
+  typeof (value as { digest?: unknown }).digest === 'string';
+
+/**
+ * The framework control-flow error an in-process call wrapped, if any:
+ * Next's `redirect()`, `notFound()` and dynamic-API bailouts carry a string
+ * `digest` and must reach the framework unchanged. Errors that crossed a
+ * wire have no such cause.
+ * @internal
+ */
+export function frameworkError(err: AnyTrpcError): unknown {
+  return hasDigest(err.cause) ? err.cause : undefined;
+}
+
 /**
  * Narrows a client error to the procedure's typed union.
  *

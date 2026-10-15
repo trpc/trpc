@@ -43,6 +43,12 @@ import {
   type RouterClientOptions,
 } from 'trpcdev/server';
 
+/** Next's `redirect()`, `notFound()` and dynamic-API errors carry a `digest`. */
+const hasDigest = (error: unknown) =>
+  typeof error === 'object' &&
+  error !== null &&
+  typeof (error as { digest?: unknown }).digest === 'string';
+
 /**
  * Options for {@link createTrpcRsc}: the router and its ctx (a function is
  * called once per request) and layer, as for `createRouterClient`.
@@ -129,11 +135,15 @@ export function createTrpcRsc<TRouter extends AnyRouter>(
     prefetch: (options) => {
       void getQueryClient().prefetchQuery(options);
     },
-    HydrationBoundary: ({ children }) =>
-      createElement(
-        ClientHydrationBoundary,
-        { state: dehydrate(getQueryClient(), dehydrateOptions) },
-        children,
-      ),
+    HydrationBoundary: ({ children }) => {
+      const client = getQueryClient();
+      const state = dehydrate(client, {
+        shouldRedactErrors:
+          client.getDefaultOptions().dehydrate?.shouldRedactErrors ??
+          ((error) => !hasDigest(error)),
+        ...dehydrateOptions,
+      });
+      return createElement(ClientHydrationBoundary, { state }, children);
+    },
   };
 }

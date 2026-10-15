@@ -2,6 +2,7 @@ import { Effect, Exit, type Layer } from 'effect';
 import { createTrpcClient } from '../client/client.ts';
 import { localLink } from '../client/links/local.ts';
 import type { TrpcClient } from '../client/types.ts';
+import { frameworkError } from '../internal/error.ts';
 import type { MaybePromise } from '../internal/types.ts';
 import { callProcedure, normalizeCause } from './execute.ts';
 import type { Procedure, ProcedureDef } from './procedure.ts';
@@ -112,5 +113,6 @@ export async function call<TDef extends ProcedureDef>(
     { signal: opts.signal },
   );
   if (Exit.isSuccess(exit)) return exit.value;
-  throw normalizeCause(exit.cause);
+  const error = normalizeCause(exit.cause);
+  throw frameworkError(error) ?? error;
 }

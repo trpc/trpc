@@ -1,4 +1,5 @@
 import { Effect, Exit, Stream } from 'effect';
+import { frameworkError } from '../internal/error.ts';
 import type { ProcedureType } from '../internal/types.ts';
 import {
   clientErrorFromCause,
@@ -180,7 +181,8 @@ export function createUntypedClient(
         },
       );
       if (Exit.isSuccess(exit)) return exit.value;
-      throw clientErrorFromCause(exit.cause);
+      const error = clientErrorFromCause(exit.cause);
+      throw frameworkError(error) ?? error;
     },
     subscribe(o) {
       return {

@@ -1,6 +1,12 @@
 import { Context, Effect, Layer } from 'effect';
 import { createAction, createCallable } from 'trpcdev/actions';
-import { error, initTrpc, TrpcError } from 'trpcdev/server';
+import {
+  call,
+  createRouterClient,
+  error,
+  initTrpc,
+  TrpcError,
+} from 'trpcdev/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 
@@ -134,4 +140,29 @@ test('the factory must satisfy what a procedure needs', () => {
     void withCtx(createPost)(new FormData());
   });
   void createAction({ ctx: { user: 'alex' } })(createPost)(new FormData());
+});
+
+test("Next's redirect() and notFound() pass through in-process calls unchanged", async () => {
+  const redirect = Object.assign(new Error('NEXT_REDIRECT'), {
+    digest: 'NEXT_REDIRECT;replace;/login;307;',
+  });
+  const guarded = t.procedure.mutation(() => {
+    throw redirect;
+  });
+  const onError: unknown[] = [];
+  const safeAction = createAction({
+    ctx: { user: null },
+    onError: ({ error }) => onError.push(error),
+  });
+  await expect(safeAction(guarded)()).rejects.toBe(redirect);
+  await expect(
+    createAction({ ctx: { user: null }, result: 'throw' })(guarded)(),
+  ).rejects.toBe(redirect);
+  expect(onError).toEqual([]);
+
+  const caller = createRouterClient({ guarded }, { ctx: { user: null } });
+  await expect(caller.guarded.mutate()).rejects.toBe(redirect);
+  await expect(call(guarded, undefined, { ctx: { user: null } })).rejects.toBe(
+    redirect,
+  );
 });
