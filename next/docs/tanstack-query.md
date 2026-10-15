@@ -33,6 +33,16 @@ export const { TrpcProvider, useTrpc } = createTrpcContext<AppRouter>();
 </QueryClientProvider>;
 ```
 
+## Offline mutations
+
+A paused mutation that was persisted (with `persistQueryClient`, say) can only resume if the restored client knows its `mutationFn`. `mutationOptions()` returns the key and the function, so register them as defaults:
+
+```ts
+const createPost = trpc.post.create.mutationOptions();
+queryClient.setMutationDefaults(createPost.mutationKey, createPost);
+// after restoring: await queryClient.resumePausedMutations();
+```
+
 ## Hydration
 
 `hydrationOptions()` returns `{ dehydrate, hydrate }` options that serialize data with danSON, so `Date`, `Map`, `Set`, `bigint` and custom types survive the trip, and that dehydrate pending queries.

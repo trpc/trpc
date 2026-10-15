@@ -3,6 +3,7 @@ import {
   hydrate,
   InfiniteQueryObserver,
   MutationObserver,
+  onlineManager,
   QueryClient,
   QueryObserver,
   skipToken,
@@ -270,6 +271,33 @@ test('mutationOptions run mutations and invalidate queries', async () => {
     // @ts-expect-error -- the variables are the procedure's input
     void failing.mutate({ name: 'x' });
   });
+});
+
+test('paused mutations resume in a new client from setMutationDefaults (docs/tanstack-query.md)', async () => {
+  await using app = await createApp();
+  const options = app.trpc.post.create.mutationOptions();
+  onlineManager.setOnline(false);
+  try {
+    const offline = new QueryClient();
+    void new MutationObserver(offline, options)
+      .mutate({ title: 'Written offline' })
+      .catch(() => {});
+    await sleep(0);
+    expect(offline.getMutationCache().getAll()[0]?.state.isPaused).toBe(true);
+    const persisted = JSON.parse(JSON.stringify(dehydrate(offline)));
+
+    const restored = new QueryClient();
+    restored.setMutationDefaults(options.mutationKey, options);
+    hydrate(restored, persisted);
+    onlineManager.setOnline(true);
+    await restored.resumePausedMutations();
+    expect(restored.getMutationCache().getAll()[0]?.state).toMatchObject({
+      status: 'success',
+      data: { title: 'Written offline' },
+    });
+  } finally {
+    onlineManager.setOnline(true);
+  }
 });
 
 test('a query that returns an AsyncIterable streams chunks into the cache', async () => {
