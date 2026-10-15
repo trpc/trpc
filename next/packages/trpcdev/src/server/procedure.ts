@@ -100,6 +100,8 @@ export interface ProcedureInternals {
   readonly meta: object;
   readonly steps: ReadonlyArray<Step>;
   readonly output: AnySchema | undefined;
+  /** `false`: `output` only types and documents the result. */
+  readonly validateOutput?: false | undefined;
   readonly errors: ErrorMap;
   readonly route: Route | undefined;
   /** Absent on contract procedures (09). */

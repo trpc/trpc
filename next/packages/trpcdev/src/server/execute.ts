@@ -8,7 +8,13 @@ import {
 import { errorConstructors, isDeclaredError } from './declared.ts';
 import type { ResponseHandle } from './middleware.ts';
 import type { AnyProcedure, ProcedureInternals } from './procedure.ts';
-import { inputError, isSchema, outputError, validate } from './schema.ts';
+import {
+  inputError,
+  isSchema,
+  outputError,
+  validate,
+  type AnySchema,
+} from './schema.ts';
 import { isTracked, tracked } from './tracked.ts';
 
 const unexpectedErrors = new WeakSet<AnyTrpcError>();
@@ -122,6 +128,10 @@ const isOkResult = (value: unknown): value is { ok: true; data: unknown } =>
   'data' in value;
 
 /** Validates declared errors' `data` (07 A). Invalid data is an unexpected error. */
+/** The output schema to run, unless it only types the result. */
+const validated = (def: ProcedureInternals): AnySchema | undefined =>
+  def.validateOutput === false ? undefined : def.output;
+
 const checkDeclared = (
   def: ProcedureInternals,
   err: AnyTrpcError,
@@ -322,7 +332,7 @@ export function callProcedure(
     services: Context.Context<never>,
   ): unknown => {
     if (type === 'subscription') {
-      return toEventStream(value, services, def.output);
+      return toEventStream(value, services, validated(def));
     }
     if (Stream.isStream(value)) {
       return Stream.toAsyncIterableWith(
@@ -339,8 +349,9 @@ export function callProcedure(
     const value = isResolved(result)
       ? result[RESOLVED]
       : finish(result, services);
-    if (type !== 'subscription' && def.output) {
-      return yield* validate(def.output, value, outputError);
+    const output = validated(def);
+    if (type !== 'subscription' && output) {
+      return yield* validate(output, value, outputError);
     }
     return value;
   }).pipe(

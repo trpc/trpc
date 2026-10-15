@@ -362,6 +362,7 @@ export function implement(
       steps: [...root.steps, ...def.steps],
       meta: { ...root.meta, ...def.meta },
       output: def.output,
+      validateOutput: def.validateOutput,
       errors: { ...root.errors, ...def.errors },
       route: def.route ? { ...root.route, ...def.route } : root.route,
     });

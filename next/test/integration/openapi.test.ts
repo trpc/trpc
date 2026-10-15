@@ -639,3 +639,23 @@ test('bracket notation round-trips', () => {
     ),
   ).toEqual({});
 });
+
+test('an unvalidated output is documented by its schema input side', () => {
+  const t = initTrpc();
+  const router = {
+    when: t.procedure
+      .route({ method: 'GET', path: '/when' })
+      .output(
+        z.string().transform((s) => s.length),
+        { validate: false },
+      )
+      .query(() => 'now'),
+  };
+  const doc = generateOpenApi(router, { info: { title: 'x', version: '1' } });
+  const ok = doc.paths['/api/when']!['get']!.responses['200'] as {
+    content: Record<string, { schema: unknown }>;
+  };
+  expect(ok.content['application/json']!.schema).toMatchObject({
+    type: 'string',
+  });
+});

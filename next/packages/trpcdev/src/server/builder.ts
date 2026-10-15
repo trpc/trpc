@@ -376,6 +376,7 @@ export interface BuilderInternals {
   readonly steps: ReadonlyArray<Step>;
   readonly meta: object;
   readonly output: AnySchema | undefined;
+  readonly validateOutput?: false | undefined;
   readonly errors: ErrorMap;
   readonly route: Route | undefined;
 }
@@ -430,6 +431,22 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
   input<$S extends AnySchema>(schema: $S): ProcedureBuilder<InputDef<TDef, $S>>;
 
   /**
+   * Types and documents the result with a schema, without running it: the
+   * resolver and the client both get the schema's input type, since no
+   * transform runs (04 Q4.4).
+   *
+   * @example
+   * ```ts
+   * t.procedure
+   *   .output(PostSchema, { validate: false })
+   *   .query(() => db.post.find(id));
+   * ```
+   */
+  output<$S extends AnySchema>(
+    schema: $S,
+    opts: { validate: false },
+  ): ProcedureBuilder<With<TDef, { outputIn: InOf<$S>; outputOut: InOf<$S> }>>;
+  /**
    * Validates the resolver's return value. The resolver returns the schema's
    * input type, and the client receives its output type. For subscriptions it
    * validates each event (the `data` of `tracked()` events).
@@ -441,6 +458,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
    */
   output<$S extends AnySchema>(
     schema: $S,
+    opts?: { validate?: true },
   ): ProcedureBuilder<
     With<
       TDef,
@@ -729,6 +747,7 @@ export function createBuilder(
         meta: internals.meta,
         steps: internals.steps,
         output: internals.output,
+        validateOutput: internals.validateOutput,
         errors: internals.errors,
         route: internals.route,
         resolver,
@@ -738,8 +757,12 @@ export function createBuilder(
     '~trpc': internals,
     input: (arg: AnySchema | ((opts: any) => AnySchema)) =>
       add({ kind: 'input', arg }),
-    output: (schema: AnySchema) =>
-      createBuilder({ ...internals, output: schema }),
+    output: (schema: AnySchema, opts?: { validate?: boolean }) =>
+      createBuilder({
+        ...internals,
+        output: schema,
+        validateOutput: opts?.validate === false ? false : undefined,
+      }),
     errors: (map: ErrorMap) =>
       createBuilder({ ...internals, errors: { ...internals.errors, ...map } }),
     route: (route: Route) =>

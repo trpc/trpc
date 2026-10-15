@@ -42,6 +42,7 @@ export {
 export {
   flattenRouter,
   inputJsonSchema,
+  outputJsonSchema,
   procedureJson,
 } from '../internal/describe.ts';
 export { toJsonSchema, type JsonSchema } from '../internal/json-schema.ts';

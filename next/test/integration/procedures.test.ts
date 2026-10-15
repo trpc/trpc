@@ -390,3 +390,25 @@ test('call() runs one procedure, with a layer for its services', async () => {
   const missing = () => call(router.timed, undefined, { ctx: { user: null } });
   expectTypeOf(missing).toBeFunction();
 });
+
+test('.output(schema, { validate: false }) types the result without running the schema (04 Q4.4)', async () => {
+  const Post = z.object({
+    id: z.string(),
+    at: z.string().transform((s) => new Date(s)),
+  });
+  const typed = t.procedure
+    .output(Post, { validate: false })
+    .query(() => ({ id: '1', at: '2026-10-15', extra: true }) as never);
+  const result = await call(typed, undefined, { ctx: { user: null } });
+  expect(result).toEqual({ id: '1', at: '2026-10-15', extra: true });
+  expectTypeOf(result).toEqualTypeOf<{ id: string; at: string }>();
+
+  // @ts-expect-error -- still typed by the schema's input
+  t.procedure.output(Post, { validate: false }).query(() => ({ id: 1 }));
+
+  const validated = t.procedure
+    .output(Post)
+    .query(() => ({ id: '1', at: '2026-10-15' }));
+  const out = await call(validated, undefined, { ctx: { user: null } });
+  expect(out.at).toBeInstanceOf(Date);
+});

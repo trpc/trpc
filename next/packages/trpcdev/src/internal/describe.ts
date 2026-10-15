@@ -8,6 +8,23 @@ import { isSchema } from '../server/schema.ts';
 import { toJsonSchema, type JsonSchema } from './json-schema.ts';
 
 /**
+ * The output JSON Schema of a procedure. An output that isn't validated is
+ * sent as the resolver returns it, so it is described by the schema's input
+ * side.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export function outputJsonSchema(
+  def: ProcedureInternals,
+): JsonSchema | undefined {
+  if (!def.output) return undefined;
+  return toJsonSchema(
+    def.output,
+    def.validateOutput === false ? 'input' : 'output',
+  );
+}
+
+/**
  * The input JSON Schema of a procedure's steps: chained inputs are `allOf`.
  * @since 12.0.0-alpha.0
  * @stability experimental
@@ -54,7 +71,7 @@ export function flattenRouter(
  */
 export function procedureJson(def: ProcedureInternals): ProcedureJson {
   const input = inputJsonSchema(def);
-  const output = def.output ? toJsonSchema(def.output, 'output') : undefined;
+  const output = outputJsonSchema(def);
   const errors = Object.entries(def.errors);
   return {
     type: def.type,

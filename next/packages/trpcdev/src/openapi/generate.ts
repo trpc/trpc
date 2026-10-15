@@ -1,4 +1,8 @@
-import { flattenRouter, inputJsonSchema } from '../internal/describe.ts';
+import {
+  flattenRouter,
+  inputJsonSchema,
+  outputJsonSchema,
+} from '../internal/describe.ts';
 import { ERROR_STATUS } from '../internal/error.ts';
 import { toJsonSchema, type JsonSchema } from '../internal/json-schema.ts';
 import type { AnyProcedure, ProcedureInternals } from '../server/procedure.ts';
@@ -309,9 +313,7 @@ export function generateOpenApi(
         ? resolveRoute(path, def.type, { path: `/${path}` }, prefix)
         : resolveRoute(path, def.type, def.route, prefix);
     const input = hoist(inputJsonSchema(def), `${path}.input`, components);
-    const rawOutput = def.output
-      ? toJsonSchema(def.output, 'output')
-      : undefined;
+    const rawOutput = outputJsonSchema(def);
     const detailedIn =
       target === 'openapi' && route.inputStructure === 'detailed';
     const detailedOut =
