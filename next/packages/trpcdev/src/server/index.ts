@@ -26,6 +26,9 @@
  * ```
  * @module
  */
+// Loads the entry point declaration emit names builder internals through.
+import type {} from 'trpcdev/internal';
+
 export {
   initTrpc,
   type RootConfig,
@@ -36,51 +39,28 @@ export {
 } from './init.ts';
 export type {
   AnyProcedureBuilder,
-  BuilderDef,
-  BuilderInternals,
-  BuildProcedure,
-  ConcatCheck,
-  CurrentCtx,
   DeclaredErrors,
   ErrorConstructorOpts,
   ErrorConstructors,
   ErrorMapInput,
-  InputDef,
   InputOpts,
   ProcedureBuilder,
   ProvideOpts,
   ResolverOpts,
-  ShortsCheck,
-  Split,
-  SplitReturn,
-  SplitStream,
-  StrictErrors,
   SubscriptionResolverOpts,
-  With,
 } from './builder.ts';
 export type {
-  ExactRouter,
-  ImplementedProcedure,
   ImplementedRouter,
   Implementer,
-  ImplementerDef,
-  ImplementerMethods,
   ImplementRouter,
   ImplementResult,
   ProcedureImplementer,
-  UndeclaredCheck,
 } from './implement.ts';
 export {
   middleware,
   ok,
-  onError,
-  onFinish,
-  onStart,
-  onSuccess,
-  type EffectBodyCheck,
   type EffectMiddleware,
   type EffectMiddlewareDecl,
-  type EffectMiddlewareFactory,
   type EffectMiddlewareOpts,
   type EffectNextFn,
   type MiddlewareFunction,
@@ -89,9 +69,6 @@ export {
   type MiddlewareResult,
   type NextFn,
   type OkResult,
-  type ReqCtx,
-  type ReqInput,
-  type ReqMeta,
   type ResponseHandle,
 } from './middleware.ts';
 export {
@@ -106,7 +83,6 @@ export {
   type ProcedureDef,
   type ProcedureInternals,
   type Route,
-  type Step,
 } from './procedure.ts';
 export {
   mergeRouters,
@@ -152,4 +128,4 @@ export {
   type BuiltinErrorCode,
   type TrpcErrorOptions,
 } from '../internal/error.ts';
-export type { ProcedureType, TypeError, Unset } from '../internal/types.ts';
+export type { ProcedureType, TypeError } from '../internal/types.ts';

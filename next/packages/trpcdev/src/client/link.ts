@@ -128,7 +128,10 @@ export function toClientError(cause: unknown): AnyTrpcError {
   });
 }
 
-/** @internal */
+/**
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
 export function clientErrorFromCause(
   cause: Cause.Cause<unknown>,
 ): AnyTrpcError {
@@ -144,7 +147,11 @@ export function clientErrorFromCause(
   });
 }
 
-/** The single value of a query or mutation. @internal */
+/**
+ * The single value of a query or mutation.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
 export const firstValue = (
   stream: OperationStream,
 ): Effect.Effect<unknown, AnyTrpcError> =>
@@ -218,7 +225,11 @@ link.effect = <TDecl extends LinkDecl = {}>(
   fn: (opts: EffectLinkOpts<DeclContext<TDecl>>) => OperationStream,
 ): TrpcLink<TDecl> => fn as TrpcLink<TDecl>;
 
-/** Runs an operation through a link chain. @internal */
+/**
+ * Runs an operation through a link chain.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
 export function runLinks(
   links: ReadonlyArray<AnyLink>,
   op: Operation,

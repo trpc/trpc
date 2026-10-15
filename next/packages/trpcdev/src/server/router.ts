@@ -65,7 +65,11 @@ export function mergeRouters<const T extends readonly AnyRouter[]>(
   return merged as never;
 }
 
-/** Finds the procedure at a dotted path, using own properties only. @internal */
+/**
+ * Finds the procedure at a dotted path, using own properties only.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
 export function getProcedure(
   router: AnyRouter,
   path: string,

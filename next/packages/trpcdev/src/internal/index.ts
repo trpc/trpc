@@ -1,25 +1,38 @@
 /**
- * Internal glue (`trpcdev/internal`) for integrations built on trpcdev. No
- * semver guarantees.
+ * Types that inferred procedure, router and client types refer to
+ * (`trpcdev/internal`). They are exported only so declaration emit can name
+ * them (TS2742, TS2883); don't build on them. No semver guarantees.
  *
- * @see ../../../../.agent-docs/proposals/21-stability-and-jsdoc.md
  * @module
  */
-export {
-  callProcedure,
-  normalizeCause,
-  type CallOpts,
-} from '../server/execute.ts';
-export { getProcedure } from '../server/router.ts';
-export { clientErrorFromCause, firstValue, runLinks } from '../client/link.ts';
-export { createRecursiveProxy, makeOperation } from '../client/client.ts';
-export { fromWireError, toWireError, type WireError } from './error.ts';
-export {
-  CONTENT_TYPE,
-  HEADER,
-  PROTOCOL_VERSION,
-  type BatchCall,
-  type BatchLine,
-} from './protocol.ts';
-export { flattenRouter, inputJsonSchema, procedureJson } from './describe.ts';
-export { toJsonSchema, type JsonSchema } from './json-schema.ts';
+export type {
+  BuilderDef,
+  BuilderInternals,
+  BuildProcedure,
+  ConcatCheck,
+  CurrentCtx,
+  InputDef,
+  ShortsCheck,
+  Split,
+  SplitReturn,
+  SplitStream,
+  StrictErrors,
+  With,
+} from '../server/builder.ts';
+export type {
+  ExactRouter,
+  ImplementedProcedure,
+  ImplementerDef,
+  ImplementerMethods,
+  UndeclaredCheck,
+} from '../server/implement.ts';
+export type {
+  EffectBodyCheck,
+  EffectMiddlewareFactory,
+  ReqCtx,
+  ReqInput,
+  ReqMeta,
+} from '../server/middleware.ts';
+export type { Step } from '../server/procedure.ts';
+export type { DeclContext } from '../client/link.ts';
+export type { Unset } from './types.ts';

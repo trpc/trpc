@@ -8,6 +8,10 @@
       "types": "./src/server/index.ts",
       "default": "./src/server/index.ts"
     },
+    "./middleware": {
+      "types": "./src/middleware/index.ts",
+      "default": "./src/middleware/index.ts"
+    },
     "./client": {
       "types": "./src/client/index.ts",
       "default": "./src/client/index.ts"
@@ -35,6 +39,10 @@
     "./testing": {
       "types": "./src/testing/index.ts",
       "default": "./src/testing/index.ts"
+    },
+    "./extend": {
+      "types": "./src/extend/index.ts",
+      "default": "./src/extend/index.ts"
     },
     "./internal": {
       "types": "./src/internal/index.ts",

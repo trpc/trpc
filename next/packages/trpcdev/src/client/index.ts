@@ -13,21 +13,21 @@
  * ```
  * @module
  */
+// Loads the entry point declaration emit names builder internals through.
+import type {} from 'trpcdev/internal';
+
 export {
   createSafeClient,
   createTrpcClient,
-  createUntypedClient,
   safe,
   type SafeClient,
   type SafeResult,
   type TrpcClientOptions,
-  type TrpcUntypedClient,
   type TypedClientOptions,
 } from './client.ts';
 export {
   link,
   type AnyLink,
-  type DeclContext,
   type EffectLinkOpts,
   type LinkDecl,
   type Operation,

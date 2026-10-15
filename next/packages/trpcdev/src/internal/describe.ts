@@ -7,7 +7,11 @@ import {
 import { isSchema } from '../server/schema.ts';
 import { toJsonSchema, type JsonSchema } from './json-schema.ts';
 
-/** The input JSON Schema of a procedure's steps: chained inputs are `allOf`. @internal */
+/**
+ * The input JSON Schema of a procedure's steps: chained inputs are `allOf`.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
 export function inputJsonSchema(
   def: Pick<ProcedureInternals, 'steps'>,
 ): JsonSchema | undefined {
@@ -24,7 +28,11 @@ export function inputJsonSchema(
   return schemas.length === 1 ? schemas[0] : { allOf: schemas };
 }
 
-/** Every procedure of a router, by dotted path. @internal */
+/**
+ * Every procedure of a router, by dotted path.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
 export function flattenRouter(
   router: object,
   prefix = '',
@@ -40,7 +48,10 @@ export function flattenRouter(
   return out;
 }
 
-/** @internal */
+/**
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
 export function procedureJson(def: ProcedureInternals): ProcedureJson {
   const input = inputJsonSchema(def);
   const output = def.output ? toJsonSchema(def.output, 'output') : undefined;

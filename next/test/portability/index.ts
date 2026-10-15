@@ -32,9 +32,9 @@ import {
   mergeRouters,
   middleware,
   ok,
-  onFinish,
   tracked,
 } from 'trpcdev/server';
+import { onFinish } from 'trpcdev/middleware';
 import { createSerializer } from 'trpcdev/serializer';
 import { z } from 'zod';
 

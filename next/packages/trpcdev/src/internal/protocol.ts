@@ -1,27 +1,49 @@
 import type { ProcedureType } from './types.ts';
 
-/** The wire protocol version this build speaks. */
+/**
+ * The wire protocol version this build speaks.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
 export const PROTOCOL_VERSION = '1';
 
+/**
+ * Header names the protocol uses.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
 export const HEADER = {
   version: 'trpc-version',
   batch: 'trpc-batch',
   lastEventId: 'last-event-id',
 } as const;
 
+/**
+ * Content types the protocol uses.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
 export const CONTENT_TYPE = {
   json: 'application/json',
   jsonl: 'application/jsonl',
   sse: 'text/event-stream',
 } as const;
 
-/** One call in a batch request body. */
+/**
+ * One call in a batch request body.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
 export interface BatchCall {
   path: string;
   input?: unknown;
 }
 
-/** One JSONL line of a batch response. */
+/**
+ * One JSONL line of a batch response.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
 export type BatchLine =
   | { i: number; status: number; body: unknown }
   | { i: number; chunk: unknown };

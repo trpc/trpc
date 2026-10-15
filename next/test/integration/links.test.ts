@@ -1,7 +1,6 @@
 import { Effect, Schema, Stream } from 'effect';
 import {
   createTrpcClient,
-  createUntypedClient,
   httpLink,
   link,
   localLink,
@@ -11,6 +10,7 @@ import {
   splitLink,
   type LoggerEvent,
 } from 'trpcdev/client';
+import { createUntypedClient } from 'trpcdev/extend';
 import { call, createRouterClient, error, initTrpc } from 'trpcdev/server';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';

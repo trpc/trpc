@@ -18,7 +18,10 @@ import type {
   TrpcPromise,
 } from './types.ts';
 
-/** @internal */
+/**
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
 export function createRecursiveProxy(
   callback: (path: readonly string[], args: unknown[]) => unknown,
   path: readonly string[] = [],
@@ -42,7 +45,10 @@ const METHODS = {
 
 let nextId = 0;
 
-/** @internal */
+/**
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
 export function makeOperation(
   type: ProcedureType,
   path: string,

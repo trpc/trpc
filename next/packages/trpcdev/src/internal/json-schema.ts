@@ -25,7 +25,8 @@ interface StandardJsonSchema {
  * Effect Schemas go through `Schema.toStandardJSONSchemaV1`. `undefined` when
  * the library can't describe the schema. Values JSON Schema can't represent
  * (a `Date`) become `{}`.
- * @internal
+ * @since 12.0.0-alpha.0
+ * @stability experimental
  */
 export function toJsonSchema(
   schema: AnySchema,

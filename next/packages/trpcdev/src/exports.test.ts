@@ -2,6 +2,7 @@ import { expect, test } from 'vite-plus/test';
 
 const entries = {
   server: () => import('trpcdev/server'),
+  middleware: () => import('trpcdev/middleware'),
   client: () => import('trpcdev/client'),
   contract: () => import('trpcdev/contract'),
   serializer: () => import('trpcdev/serializer'),
@@ -9,6 +10,7 @@ const entries = {
   effect: () => import('trpcdev/effect'),
   http: () => import('trpcdev/http'),
   testing: () => import('trpcdev/testing'),
+  extend: () => import('trpcdev/extend'),
   internal: () => import('trpcdev/internal'),
 };
 

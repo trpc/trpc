@@ -192,12 +192,19 @@ export function withDefined<E extends AnyTrpcError>(
   }) as E;
 }
 
-/** The JSON shape of an error on the wire. @internal */
+/**
+ * The JSON shape of an error on the wire.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
 export interface WireError {
   error: { code: string; message: string; data?: unknown; defined: boolean };
 }
 
-/** @internal */
+/**
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
 export function toWireError(err: AnyTrpcError): WireError {
   return {
     error: {
@@ -212,7 +219,11 @@ export function toWireError(err: AnyTrpcError): WireError {
 const isRecord = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null;
 
-/** Rebuilds a {@link TrpcError} from a deserialized error body. @internal */
+/**
+ * Rebuilds a {@link TrpcError} from a deserialized error body.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
 export function fromWireError(body: unknown, status?: number): TrpcError {
   const inner = isRecord(body) && isRecord(body['error']) ? body['error'] : {};
   const code =

@@ -11,14 +11,11 @@ import {
   initTrpc,
   middleware,
   ok,
-  onError,
-  onFinish,
-  onStart,
-  onSuccess,
   tracked,
   TrpcError,
   type TrackedEnvelope,
 } from 'trpcdev/server';
+import { onError, onFinish, onStart, onSuccess } from 'trpcdev/middleware';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
