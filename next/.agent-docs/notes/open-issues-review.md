@@ -73,6 +73,18 @@ Ordered by demand and fit.
 - v11-only bugs and docs: Next pages router (#4649, #4650), `useUtils` and legacy React typing (#6721, #6521, #6595, #6724), the v11 adapters (#7502, #4734, #6057), examples and website docs (#3548, #3847, #4109, #5430, #5602, #5625, #5643, #5826, #5882, #5883, #6135, #6138, #6313, #6551, #6586, #6741, #6864, #6935, #7596), and repo chores (#162, #2855, #4460, #5867).
 - Community threads: #1290, #1599.
 
-## Not checked yet
+## Checked later
 
-#4306 and #7378 (context conflicts and inference across middlewares), #5113 (one client for routers with different contexts), #5846 and #6407 (streamed outputs in `useMutation`), #6862 (infinite queries refetching without a cursor), #6962 (server-closed subscriptions in hook state), #6996 (streaming on React Native), #6097 (a plain loggerLink format), #4829 and #5455 (Next cache tags).
+- Already answered:
+  - #4306: a handler whose `createContext` lacks what some procedure's ctx needs is a type error. The router's context is the intersection of its procedures' contexts (checked with tsgolint).
+  - #7378: chained `.use()` middlewares merge their ctx without annotations.
+  - #6407: an async generator's output types as `AsyncIterable` of what it yields.
+  - #6862: `infiniteOptions({ input: (pageParam) => … })` maps the page param explicitly, so no `cursor: undefined` is injected into the input.
+  - #6962: a subscription the server ends sets the `SubscriptionObserver` to `idle`, whatever the link.
+  - #6097: `loggerLink({ log })` takes a custom logger, and the default logs the input and result values.
+  - #5113: a link can rewrite `op.path`, so one client can cover routers on different servers with different contexts. The recipe is in `docs/client.md`, tested in `links.test.ts`.
+  - #5455: RSC caching is per request (React `cache()`), so a ctx-dependent query can't leak between users.
+- Worth considering:
+  - #5846: a mutation whose output is an `AsyncIterable` resolves `useMutation`'s `data` to the iterable. TanStack has `streamedQuery` but no mutation counterpart. A `streamedMutationOptions()` could collect chunks into `data`.
+  - #4829: there are no Next data-cache tags. With `'use cache'`, `cacheTag(...trpc.post.pathKey())` style tags (path prefixes, then path and input) would match TanStack's key hierarchy. Worth a docs recipe once `'use cache'` is stable.
+  - #6996: the `TextDecoderStream` dependency is gone, but streaming hasn't been tried on a React Native device.
