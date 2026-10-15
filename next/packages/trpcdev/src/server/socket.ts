@@ -79,6 +79,8 @@ export interface SocketCore {
     connectionParams: Record<string, unknown> | undefined;
   }): Promise<object>;
   deserializeInput(value: unknown): unknown;
+  /** Makes `platform` what `createContext` sees for calls on `request`. */
+  setPlatform(request: Request, platform: unknown): void;
   publicError(err: AnyTrpcError): AnyTrpcError;
   report(
     err: AnyTrpcError,
@@ -87,6 +89,9 @@ export interface SocketCore {
     type?: ProcedureType,
   ): void;
 }
+
+/** The socket core behind each fetch handler, for adapters outside it. @internal */
+export const socketCores: WeakMap<object, SocketCore> = new WeakMap();
 
 /** A connection, whatever carries it. @internal */
 export interface Connection {
@@ -98,6 +103,16 @@ export interface Connection {
 
 const OPEN = 1;
 
+/** A WebSocket frame as a client message, or `undefined` if it isn't JSON text. @internal */
+export function parseSocketMessage(data: unknown): unknown {
+  if (typeof data !== 'string') return undefined;
+  try {
+    return JSON.parse(data) as unknown;
+  } catch {
+    return undefined;
+  }
+}
+
 /** @internal */
 export function webSocketConnection(socket: WebSocketLike): Connection {
   return {
@@ -106,17 +121,7 @@ export function webSocketConnection(socket: WebSocketLike): Connection {
     },
     onMessage(listener) {
       socket.addEventListener('message', (event: { data: unknown }) => {
-        if (typeof event.data !== 'string') {
-          listener(undefined);
-          return;
-        }
-        let parsed: unknown;
-        try {
-          parsed = JSON.parse(event.data);
-        } catch {
-          parsed = undefined;
-        }
-        listener(parsed);
+        listener(parseSocketMessage(event.data));
       });
     },
     onClose(listener) {
@@ -167,9 +172,37 @@ export function serveConnection(
   conn: Connection,
   opts: { request: Request; transport: Transport },
 ): void {
+  const receiver = connectionReceiver(core, conn, opts);
+  conn.onClose(receiver.close);
+  conn.onMessage(receiver.receive);
+}
+
+/** What `connectionReceiver()` returns. @internal */
+export interface ConnectionReceiver {
+  receive(message: unknown): void;
+  /** Aborts the connection's calls. */
+  close(): void;
+}
+
+/**
+ * The connection protocol, one message at a time, for transports that
+ * deliver messages themselves (a hibernating Durable Object).
+ * @internal
+ */
+export function connectionReceiver(
+  core: SocketCore,
+  conn: Pick<Connection, 'send' | 'close'>,
+  opts: {
+    request: Request;
+    transport: Transport;
+    /** Params from an earlier `init`, for a connection served before. */
+    connectionParams?: Record<string, unknown> | undefined;
+    onInit?: (connectionParams: Record<string, unknown> | undefined) => void;
+  },
+): ConnectionReceiver {
   const { request, transport } = opts;
   const calls = new Map<number, AbortController>();
-  let connectionParams: Record<string, unknown> | undefined;
+  let connectionParams = opts.connectionParams;
   let closed = false;
 
   const wire = (err: AnyTrpcError) =>
@@ -183,13 +216,13 @@ export function serveConnection(
   const sendError = (id: number | null, err: AnyTrpcError) =>
     conn.send({ id, type: 'error', status: err.status, body: wire(err) });
 
-  conn.onClose(() => {
+  const close = () => {
     closed = true;
     for (const controller of calls.values()) controller.abort();
     calls.clear();
-  });
+  };
 
-  conn.onMessage((raw) => {
+  const receive = (raw: unknown) => {
     if (closed) return;
     if (!isRecord(raw) || typeof raw['type'] !== 'string') {
       sendError(
@@ -215,6 +248,7 @@ export function serveConnection(
         connectionParams = isRecord(message.connectionParams)
           ? message.connectionParams
           : undefined;
+        opts.onInit?.(connectionParams);
         return;
       }
       case 'ping':
@@ -245,7 +279,7 @@ export function serveConnection(
           new TrpcError({ code: 'BAD_REQUEST', message: 'Unknown message' }),
         );
     }
-  });
+  };
 
   async function handle(
     message: Extract<ClientMessage, { type: 'request' }>,
@@ -365,4 +399,6 @@ export function serveConnection(
       if (calls.get(id) === controller) calls.delete(id);
     }
   }
+
+  return { receive, close };
 }

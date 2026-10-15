@@ -136,7 +136,49 @@ import { HttpEffect } from 'effect/http';
 const fetch = HttpEffect.toWebHandler(toHttpEffect(handler));
 ```
 
-Not built yet: adapters for Lambda behind API Gateway (event in, result out) and for Cloudflare's hibernating WebSockets.
+Not built yet: an adapter for Lambda behind API Gateway (event in, result out).
+
+## Cloudflare Durable Objects
+
+A Durable Object can accept WebSockets with hibernation, so idle connections don't keep it in memory (or on the bill). `createHibernatingWebSockets()` serves a handler's router that way, from the object's `fetch`, `webSocketMessage` and `webSocketClose`:
+
+```ts
+import { DurableObject } from 'cloudflare:workers';
+import {
+  createFetchHandler,
+  createHibernatingWebSockets,
+} from 'trpcdev/server';
+
+const handler = createFetchHandler<AppRouter, { env: Env }>({
+  router,
+  createContext,
+});
+
+export class Room extends DurableObject<Env> {
+  sockets = createHibernatingWebSockets(handler, { state: this.ctx });
+
+  fetch(request: Request) {
+    if (request.headers.get('upgrade') !== 'websocket') {
+      return handler.fetch(request, { env: this.env });
+    }
+    return this.sockets.upgrade(request, { env: this.env });
+  }
+  webSocketMessage(ws: WebSocket, message: string | ArrayBuffer) {
+    this.sockets.message(ws, message, { env: this.env });
+  }
+  webSocketClose(ws: WebSocket, code: number, reason: string) {
+    this.sockets.close(ws, code, reason);
+  }
+  webSocketError(ws: WebSocket) {
+    this.sockets.close(ws);
+  }
+}
+```
+
+- When the object wakes, each socket's request URL, its `cookie` and `authorization` headers (`keepHeaders` to choose others) and its `connectionParams` are rebuilt from the socket's attachment, so `createContext` sees the same connection. They must fit Cloudflare's 2 KB attachment limit.
+- `wsLink`'s keep-alive pings are answered by the runtime (`setWebSocketAutoResponse`) without waking the object.
+- A running subscription keeps the object awake until it ends; hibernation saves idle connections, not open streams. Pair it with a [publisher](./subscriptions.md#cloudflare-durable-objects) inside the object so subscribers resume with `lastEventId` after a reconnect.
+- Already created the `WebSocketPair` yourself? `sockets.accept(server, request, platform)` instead of `upgrade()`.
 
 ## Workers and message ports
 

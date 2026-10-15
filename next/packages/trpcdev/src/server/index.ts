@@ -133,6 +133,13 @@ export {
 } from './fetch.ts';
 export type { MessagePortLike, Transport, WebSocketLike } from './socket.ts';
 export {
+  createHibernatingWebSockets,
+  type HibernatableWebSocket,
+  type HibernatingWebSockets,
+  type HibernatingWebSocketsOptions,
+  type HibernationState,
+} from './hibernation.ts';
+export {
   call,
   createRouterClient,
   type CallOptions,

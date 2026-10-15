@@ -38,6 +38,7 @@ import {
 import {
   messagePortConnection,
   serveConnection,
+  socketCores,
   webSocketConnection,
   type MessagePortLike,
   type SocketCore,
@@ -798,6 +799,7 @@ export function createFetchHandler<
     run: base.run,
     makeContext: base.makeContext,
     deserializeInput,
+    setPlatform: base.setPlatform,
     publicError,
     report,
   };
@@ -852,5 +854,6 @@ export function createFetchHandler<
     },
     dispose: base.dispose,
   };
+  socketCores.set(handler, core);
   return handler as FetchHandler<TPlatform>;
 }
