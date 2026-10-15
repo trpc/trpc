@@ -126,3 +126,30 @@ test('unknown paths are NOT_FOUND', async () => {
     json: { error: { code: 'NOT_FOUND', defined: false } },
   });
 });
+
+type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+type Pair = [string, number] & { readonly __brand: 'pair' };
+
+test('recursive and branded outputs keep their types', async () => {
+  const typed = {
+    json: t.procedure.query((): JsonValue => ({ a: [1, { b: null }] })),
+    pair: t.procedure.query(() => ['a', 1] as unknown as Pair),
+  };
+  await using server = await createTestServer({
+    router: typed,
+    createContext: () => ({ user: null }),
+  });
+  const client = createTrpcClient<typeof typed>({
+    links: [httpLink({ url: server.url })],
+  });
+  const json = await client.json.query();
+  expect(json).toEqual({ a: [1, { b: null }] });
+  expectTypeOf(json).toEqualTypeOf<JsonValue>();
+  expectTypeOf(await client.pair.query()).toEqualTypeOf<Pair>();
+});

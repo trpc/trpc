@@ -69,6 +69,12 @@ type Leaf =
   | ReadonlySet<unknown>
   | ((...args: any[]) => unknown);
 
+/** Data without thenables or iterables, which arrives as it is sent. */
+type Plain =
+  | Exclude<Leaf, (...args: any[]) => unknown>
+  | readonly Plain[]
+  | { readonly [key: string]: Plain };
+
 /**
  * A value as the client receives it: generators arrive as plain
  * `AsyncIterable`s and thenables as `Promise`s, at any depth.
@@ -78,13 +84,15 @@ type Leaf =
 export type Deserialized<T> =
   IsAny<T> extends true
     ? any
-    : T extends Leaf
+    : [T] extends [Plain]
       ? T
-      : T extends AsyncIterable<infer U>
-        ? AsyncIterable<Deserialized<U>>
-        : T extends PromiseLike<infer U>
-          ? Promise<Deserialized<U>>
-          : { [K in keyof T]: Deserialized<T[K]> };
+      : T extends Leaf
+        ? T
+        : T extends AsyncIterable<infer U>
+          ? AsyncIterable<Deserialized<U>>
+          : T extends PromiseLike<infer U>
+            ? Promise<Deserialized<U>>
+            : { [K in keyof T]: Deserialized<T[K]> };
 
 /**
  * `query`, `mutation` or `subscription`.
