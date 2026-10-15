@@ -268,3 +268,43 @@ test('the untyped client takes paths as strings', async () => {
   for await (const n of client.subscribe({ path: 'ticks' })) events.push(n);
   expect(events).toEqual([1, 2]);
 });
+
+test('one client for routers on two servers with different contexts (docs/client.md)', async () => {
+  const blogT = initTrpc<{ ctx: { locale: string } }>();
+  const shopT = initTrpc<{ ctx: { cart: string[] } }>();
+  const blogRouter = {
+    hello: blogT.procedure.query(({ ctx }) => `hej (${ctx.locale})`),
+  };
+  const shopRouter = {
+    cart: shopT.procedure.query(({ ctx }) => ctx.cart),
+  };
+  await using blog = await createTestServer({
+    router: blogRouter,
+    createContext: () => ({ locale: 'sv' }),
+  });
+  await using shop = await createTestServer({
+    router: shopRouter,
+    createContext: () => ({ cart: ['apple'] }),
+  });
+
+  const unprefix = (prefix: string) =>
+    link.effect(({ op, next }) =>
+      next({ ...op, path: op.path.slice(prefix.length + 1) }),
+    );
+  const client = createTrpcClient<{
+    blog: typeof blogRouter;
+    shop: typeof shopRouter;
+  }>({
+    links: [
+      splitLink({
+        condition: (op) => op.path.startsWith('shop.'),
+        true: [unprefix('shop'), httpLink({ url: shop.url })],
+        false: [unprefix('blog'), httpLink({ url: blog.url })],
+      }),
+    ],
+  });
+  expect(await client.blog.hello.query()).toBe('hej (sv)');
+  const cart = await client.shop.cart.query();
+  expect(cart).toEqual(['apple']);
+  expectTypeOf(cart).toEqualTypeOf<string[]>();
+});

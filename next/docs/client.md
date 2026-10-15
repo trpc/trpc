@@ -50,6 +50,25 @@ Links receive the fields in `op.context`. `signal` and `lastEventId` are reserve
 
 `link(async ({ op, next }) => …)` writes a Promise link and `link.effect(({ op, next }) => stream)` an Effect one.
 
+A link can change the operation it passes on. That lets one client cover routers served by different backends, even ones with different contexts:
+
+```ts
+const unprefix = (prefix: string) =>
+  link.effect(({ op, next }) =>
+    next({ ...op, path: op.path.slice(prefix.length + 1) }),
+  );
+
+createTrpcClient<{ blog: BlogRouter; shop: ShopRouter }>({
+  links: [
+    splitLink({
+      condition: (op) => op.path.startsWith('shop.'),
+      true: [unprefix('shop'), httpLink({ url: shopUrl })],
+      false: [unprefix('blog'), httpLink({ url: blogUrl })],
+    }),
+  ],
+});
+```
+
 ## Query URLs
 
 Query inputs go in the URL as readable bracket notation: `?post[id]=1&tags[]=a`. Object keys are sorted (array order is kept), so equal inputs make the same URL and hit the same HTTP cache entry.
