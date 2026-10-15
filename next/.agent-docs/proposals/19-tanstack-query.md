@@ -126,7 +126,7 @@ useInfiniteQuery(
 > - Against `@tanstack/query-core` 5.90 types, the option bag types identically to v11's positional form. That covers `select` inference, `skipToken`, `DataTag` keys for `getQueryData`, and excess-property errors on misspelled options.
 > - Explicit infinite `input: (pageParam) => …` has TanStack's usual pitfall: with `initialPageParam: undefined` and no annotation, the page param infers as `undefined`. v11's `cursor` convention avoids that.
 
-> **Build (2026-10-11):** `next/packages/tanstack-query` implements this proposal with agent judgement calls for the open questions: [`decisions/0016`](../decisions/0016-agent-judgement-calls-tanstack-query.md). It ships a package for every official TanStack adapter (`@trpcdev/tanstack-{react,preact,vue,solid,svelte,angular,lit}-query`, [`decisions/0017`](../decisions/0017-integration-packages-per-dependency.md)) on top of the framework-agnostic `@trpcdev/tanstack-query`, each tested in `next/test/tanstack-query/`.
+> **Build (2026-10-11):** `next/packages/tanstack-query` implements this proposal with agent judgement calls for the open questions, recorded in the `decisions/tanstack-query-*.md` files ([adapters](../decisions/tanstack-query-adapters.md), [types](../decisions/tanstack-query-types.md), [keys](../decisions/tanstack-query-keys.md), [subscriptions](../decisions/tanstack-query-subscriptions.md), [hydration](../decisions/tanstack-query-hydration.md)). It ships a package for every official TanStack adapter (`@trpcdev/tanstack-{react,preact,vue,solid,svelte,angular,lit}-query`, [integration-packages](../decisions/integration-packages.md)) on top of the framework-agnostic `@trpcdev/tanstack-query`, each tested in `next/test/tanstack-query/`.
 
 ## Recommendation
 
@@ -151,7 +151,7 @@ useInfiniteQuery(
 ## Decision
 
 - **Q19.1:** [ ] agnostic + `./react` · [ ] per framework
-- **Q19.2:** [x] option bag · [ ] positional → [0008](../decisions/0008-tanstack-option-bag.md)
+- **Q19.2:** [x] option bag · [ ] positional → [tanstack-option-bag](../decisions/tanstack-option-bag.md)
 - **Q19.3:** [ ] explicit input fn · [ ] cursor convention
 - **Q19.4:** name: `__________`
 - **Q19.5:** [ ] yes · [ ] later

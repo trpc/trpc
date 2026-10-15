@@ -228,7 +228,7 @@ The WebSocket message model (10) lets a hibernated Durable Object rebuild subscr
 - **Q14.2:** [ ] yes · [ ] no
 - **Q14.3:** [ ] per-kind · [ ] always `stream()`
 - **Q14.4:** [ ] D-A · [ ] D-B · [ ] D-C
-- **Q14.5:** [x] yes · [ ] no (follow the SSE standard) → [0006](../decisions/0006-fetch-sse.md)
+- **Q14.5:** [x] yes · [ ] no (follow the SSE standard) → [fetch-sse](../decisions/fetch-sse.md)
 - **Q14.6:** [ ] yes · [ ] no
 - **Q14.7:** [ ] v1 · [ ] later
 - **Notes:**

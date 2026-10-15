@@ -13,12 +13,12 @@ Start here (paths relative to `next/`):
 - `.agent-docs/approach.md` — process, principles, phases
 - `.agent-docs/README.md` — proposal index and how to decide
 - `.agent-docs/proposals/` — API proposals (options + recommendations; Alex decides)
-- `.agent-docs/decisions/` — accepted decisions (overrides proposals)
+- `.agent-docs/decisions/` — one file per decided topic, titled `(human)` or `(agent)`; overrides proposals (`head -n 1 .agent-docs/decisions/*.md` lists them)
 - `.agent-docs/reference/` — oRPC parity, v11 inventory, prior art
 - `.agent-docs/notes/` — spike results and research
 - `spikes/` — throwaway prototypes backing the notes
 
-Search `.agent-docs/` before designing or implementing. Do not silently diverge from a recorded decision. Do not fill Decision blocks in proposals; Alex records decisions.
+Search `.agent-docs/` before designing or implementing. Do not silently diverge from a recorded decision, and don't reverse a `(human)` one without asking. A new decision is a new `decisions/<topic>.md`, not an addition to an existing file or an index; the format is in `.agent-docs/README.md#decisions`. Do not fill Decision blocks in proposals; Alex records decisions.
 
 ## Running
 

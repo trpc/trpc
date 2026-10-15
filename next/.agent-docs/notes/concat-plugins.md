@@ -1,7 +1,7 @@
 # Plugins from standalone packages via `.concat()` (06 (e), Q3.5)
 
 - **Date:** 2026-10-10
-- **Question:** With `initTRPC<{ … }>()` ([0013](../decisions/0013-root-init-option-bag.md)) and the `t` object kept ([0014](../decisions/0014-keep-t-object.md)), can a standalone package publish a plugin that declares requirements (ctx, meta) and adds things (ctx, inputs), as v11's `.concat()` allows?
+- **Question:** With `initTRPC<{ … }>()` ([root-init-option-bag](../decisions/root-init-option-bag.md)) and the `t` object kept ([keep-t-object](../decisions/keep-t-object.md)), can a standalone package publish a plugin that declares requirements (ctx, meta) and adds things (ctx, inputs), as v11's `.concat()` allows?
 - **Feeds:** [06 — Context and middleware](../proposals/06-context-and-middleware.md) (e), [03](../proposals/03-builder-and-init.md) Q3.5, [01](../proposals/01-packages-and-type-portability.md) portability rules.
 - **Code:** [`next/spikes/concat-plugins/`](../../spikes/concat-plugins/).
   - `core.ts` is a `declare`-only builder with one mapped option bag (03 G-A, still open) and `.use`, `.input`, `.meta`, `.concat`, `.query`.

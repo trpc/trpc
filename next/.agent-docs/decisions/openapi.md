@@ -1,0 +1,16 @@
+# OpenAPI: a REST handler plus a generator (agent)
+
+- Q18.1: O-C. `createOpenAPIHandler({ router, prefix = '/api', createContext?, layer?, plugins? })` serves the REST mapping and is the main feature. `generateOpenAPI(router, { info, servers?, target: 'openapi' | 'rpc', prefix?, filter? })` documents the REST mapping or, with zero configuration, the RPC endpoint (`{ json }` bodies included).
+- Q18.2: defaults. Without `.route()`, a query is `GET {prefix}/post/byId`, a mutation `POST`, a subscription `GET` with `text/event-stream`.
+- Requests:
+  - Path params are `{name}`; static segments win, so `/posts/latest` matches before `/posts/{id}`. Two procedures on one method and path throw at creation.
+  - `GET` reads the query string; other methods read a JSON, urlencoded or multipart body. Path params are merged into the input.
+  - Bracket notation (`a[b]=1&tags[]=x`, plus repeated keys) in query strings and forms. Leaves are strings, or `File`s in forms.
+  - Strings are coerced from the input's JSON Schema to numbers, integers, booleans, `null`, enum or const values, and single-item arrays; anything the schema doesn't describe is left for validation. JSON bodies aren't coerced; path params always are.
+- Responses are plain JSON, no danSON. A `Blob` or `File` output is the body. Errors are `{ defined, code, status, message, data? }` with the error's status. Deferred values aren't supported over REST.
+- The spec is built from Standard JSON Schema (`~standard.jsonSchema`, `unrepresentable: 'any'`) and Effect's `Schema.toStandardJSONSchemaV1`, so there's no per-library converter. `$defs` are hoisted into `components.schemas`. Declared errors become responses by status; procedures with an input document the 400 validation error; `default` documents the error format.
+- Q18.3: later; the static TypeScript generator isn't ported.
+- Q18.4: `openAPILink({ url, contract })` reads methods and paths from a `toContract()` value, sends `multipart/form-data` when the input contains a `Blob`, and reads SSE for subscriptions.
+- Q18.5: the `openAPIReference({ path, specPath, docsProvider: 'scalar' | 'swagger', specGenerateOptions })` plugin serves the UI from a CDN and generates the document on first request.
+- Open: errors that are only inferred (returned, not declared) aren't in the document; no `.route({ spec })` override for procedures without static schemas; no response validation in `openAPILink`; no OpenAPI-to-contract (Hey API) tool.
+- Lives in: `packages/trpcdev/src/openapi/`, `test/integration/openapi.test.ts`.

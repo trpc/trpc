@@ -182,7 +182,7 @@ const client = createTRPCClient<AppRouter>({
 });
 ```
 
-> **Build (2026-10-11):** `trpcdev` no longer imports `node:*`. `trpcdev/http` serves the fetch handler (and WebSocket upgrades) on Effect's `HttpServer`, and the app provides the platform layer, e.g. `NodeHttpServer.layer` from `@effect/platform-node`: [`decisions/0018`](../decisions/0018-platforms-through-effect-layers.md). Q12.1 is still Alex's to answer.
+> **Build (2026-10-11):** `trpcdev` no longer imports `node:*`. `trpcdev/http` serves the fetch handler (and WebSocket upgrades) on Effect's `HttpServer`, and the app provides the platform layer, e.g. `NodeHttpServer.layer` from `@effect/platform-node`: [platforms-through-effect-layers](../decisions/platforms-through-effect-layers.md). Q12.1 is still Alex's to answer.
 
 ## Recommendation
 
@@ -200,5 +200,5 @@ const client = createTRPCClient<AppRouter>({
 - **Q12.1:** [ ] P-A · [ ] P-B · [ ] P-C
 - **Q12.2:** [ ] create once · [ ] per request
 - **Q12.3:** [ ] Fastify · [ ] Lambda · [ ] CF hibernation · [ ] MessagePort · [ ] Next (dedicated) · other: `____`
-- **Q12.4:** [x] yes · [ ] no → [0005](../decisions/0005-websocket-standard-interface.md)
+- **Q12.4:** [x] yes · [ ] no → [websocket-standard-interface](../decisions/websocket-standard-interface.md)
 - **Notes:**

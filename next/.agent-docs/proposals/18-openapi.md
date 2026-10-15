@@ -127,7 +127,7 @@ const spec = await generateOpenAPI(appRouter, { info: { title: 'API', version: '
 ### (c) Spec generation
 
 - **Runtime, from schemas:** uses `~standard.jsonSchema.input()/output()` (Zod 4.2+, Effect via `Schema.toStandardJSONSchemaV1`), plus a converter fallback for other libraries (05).
-- **Procedures without static schemas** (no `.input()`, or a ctx callback, 05 (d) D-A) produce `{}` schemas, unless documented via `.route({ spec })`. `type<T>()` no longer exists ([0012](../decisions/0012-no-unvalidated-type-helper.md)).
+- **Procedures without static schemas** (no `.input()`, or a ctx callback, 05 (d) D-A) produce `{}` schemas, unless documented via `.route({ spec })`. `type<T>()` no longer exists ([validation](../decisions/validation.md)).
 - **Errors:**
   - Declared errors (07 A) produce responses with their status and `data` schema.
   - Inferred-only errors appear as `code` enums without data schemas.

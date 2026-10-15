@@ -169,7 +169,7 @@ Adopt the toolchain, hook, CI and layout above. Verify these details against Vit
 
 - **Q22.1:** [ ] Vite+ · [ ] individual tools
 - **Q22.2:** typecheck in hook: [ ] yes · [ ] no
-- **Q22.3:** [x] yes · [ ] no (root deps are `dependencies`) → [0007](../decisions/0007-vendor-src-and-root-dependencies.md)
+- **Q22.3:** [x] yes · [ ] no (root deps are `dependencies`) → [vendor-src-and-root-dependencies](../decisions/vendor-src-and-root-dependencies.md)
 - **Q22.4:** `__________`
 - **Q22.5:** [ ] delete early · [ ] keep until parity
 - **Notes:**

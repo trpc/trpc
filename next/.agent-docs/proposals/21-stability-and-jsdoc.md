@@ -145,7 +145,7 @@
 ## Decision
 
 - **Q21.1:** [ ] yes · [ ] prefixes · [ ] other
-- **Q21.2:** `@since` = the v12 prerelease version (not `12.0.0`) → [0011](../decisions/0011-since-prerelease.md)
+- **Q21.2:** `@since` = the v12 prerelease version (not `12.0.0`) → [since-prerelease](../decisions/since-prerelease.md)
 - **Q21.3:** [ ] yes · [ ] no
 - **Q21.4:** [ ] yes · [ ] no
 - **Q21.5:** [ ] yes · [ ] no · [ ] later

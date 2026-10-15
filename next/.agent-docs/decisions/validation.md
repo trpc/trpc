@@ -1,0 +1,16 @@
+# Every input is validated; no `type<T>()` (human)
+
+- Alex, 2026-10-09 (Q5.2): "I want to kill any support for that as I also want inputs to be able to have callback where we get the context etc so you can do context aware stuff in the validators." No `type<T>()` helper and no other unvalidated form: v11's plain `(input) => output` parsers are gone too.
+
+  ```ts
+  t.procedure.input(type<{ id: string }>()); // ❌ no such helper
+  t.procedure.input((raw: unknown) => raw as { id: string }); // ❌ not a parser any more
+  t.procedure.input(z.object({ id: z.string() })); // ✅
+  ```
+
+- Why: `.input()` keeps one meaning, a schema that validates, and the function form is free for a context-aware callback.
+- Lost: a zero-cost "trust me" input for internal procedures and contracts; `type<T>()` as a pass-through Standard Schema (05's recommendation); plain-function parsers (V-C).
+- (agent, Q5.1) V-A: Standard Schema and Effect Schema only.
+- (agent, Q5.3) C-A: inputs chain. Each schema sees the raw input, and object outputs are merged.
+- (agent, Q5.6) D-A: `.input(({ ctx, meta, path }) => schema)` is the context-aware form ([`../notes/context-aware-inputs.md`](../notes/context-aware-inputs.md)). D-C (Effect Schema services) works too, because inputs are decoded with the procedure's provided services.
+- Lives in: `packages/trpcdev/src/server/schema.ts`, `src/server/builder.ts`.

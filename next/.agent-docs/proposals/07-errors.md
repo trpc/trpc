@@ -308,7 +308,7 @@ The combined model:
 - **Q7.2:** [ ] resolvers + middleware · [ ] middleware only
 - **Q7.3:** [ ] `[data, error]` · [ ] `[error, data, isDefined]` · [ ] `{ data, error }`
 - **Q7.4:** [ ] yes, default status `___` · [ ] no custom codes
-- **Q7.5:** [x] yes · [ ] no → [0003](../decisions/0003-mask-unexpected-errors.md)
+- **Q7.5:** [x] yes · [ ] no → [mask-unexpected-errors](../decisions/mask-unexpected-errors.md)
 - **Q7.6:** [ ] remove · [ ] keep for shape
 - **Q7.7:** [ ] one class · [ ] two classes
 - **Notes:**

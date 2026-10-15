@@ -5,7 +5,7 @@ How vNext gets designed and built. It covers the process for proposals and decis
 ## 1. Process: proposals → decisions → code
 
 ```text
-proposal (proposed) ──► Alex decides ──► decision record ──► implementation ──► docs/examples
+proposal (proposed) ──► Alex decides ──► decision file ──► implementation ──► docs/examples
         │                     │
         └─ needs-research ◄───┘ (spike first, then re-propose)
 ```
@@ -16,9 +16,9 @@ proposal (proposed) ──► Alex decides ──► decision record ──► i
 | ---------------- | ------------------------------------------------------------ |
 | `proposed`       | Options and a recommendation are written; waiting for Alex   |
 | `needs-research` | A spike or benchmark is needed before a decision is sensible |
-| `accepted`       | Decided; a record exists in `decisions/`                     |
+| `accepted`       | Decided; a file exists in `decisions/`                       |
 | `rejected`       | Not doing it; the reason is recorded in `decisions/`         |
-| `superseded`     | Replaced by a later decision; links to it                    |
+| `superseded`     | A later decision replaced it; links to the decision's file   |
 
 ### How Alex decides
 
@@ -30,11 +30,11 @@ Use whichever is fastest:
 
 ### What the agent does with a decision
 
-1. Writes `decisions/NNNN-<slug>.md` using the template in `decisions/README.md`. It quotes the answers, records what was rejected and why, and lists follow-ups.
-2. Updates the proposal: sets **Status**, links the decision, and leaves the options in place for history.
-3. Updates `reference/orpc-parity.md` if any row's plan changed, and the index in `README.md`.
+1. Writes `decisions/<topic>.md`, or edits the topic's existing file, following [the format in `README.md`](./README.md#decisions). It quotes the answers and records what was lost and what is still open.
+2. Updates the proposal: sets **Status**, links the decision's file, and leaves the options in place for history.
+3. Updates `reference/orpc-parity.md` if any row's plan changed.
 4. Ripples the decision into dependent proposals (the **Depends on** column). If a dependent recommendation no longer holds, the agent marks it and asks.
-5. Commits: `docs(agent-docs): record decision NNNN <slug>`.
+5. Commits: `docs(agent-docs): decide <topic>`. The commit message carries the longer reasoning; the file stays short.
 
 ### Challenging decisions
 
@@ -57,7 +57,7 @@ This folder is the agents' docs folder that `ideas.md` asks for.
   - new questions become proposals (copy `proposals/_template.md`).
 - **Vendored sources:** read `.repos/effect` (effect@4.0.2) and `.repos/orpc` (v1.15.5) for how those libraries really behave. Never edit, format or import from `.repos/` (see `.repos/AGENTS.md`).
 - **Effect APIs:** verify against `.repos/effect` before using them. Many remembered v3-era APIs do not exist in v4 (see `reference/prior-art.md`).
-- **Keep it navigable:** one topic per file; link instead of repeating; update the index in `README.md`.
+- **Keep it navigable:** one topic per file; link instead of repeating. The proposal table in `README.md` is the only index; decisions have none.
 
 ## 3. Principles
 

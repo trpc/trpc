@@ -28,11 +28,11 @@ There is no Effect. The only mention is a comment in `parser.ts` about Effect fu
 
 ## The three layers
 
-| Layer               | Who sees it        | What it is                                                                                                                                                                                           |
-| ------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Internals**       | contributors       | Execution pipeline, protocol codecs, serializer, links, streaming, retries: all `Effect`/`Stream`                                                                                                    |
-| **Promise surface** | everyone (default) | Async handlers and middleware, `Promise`/`AsyncIterable` client calls, error classes. Effect is a dependency ([0004](../decisions/0004-effect-dependency-and-integration-names.md)), never imported. |
-| **Effect surface**  | opt-in             | Handlers/middleware returning `Effect`/`Stream`, Effect Schema validators, an Effect client returning `Effect`/`Stream`, Layers for services and platform                                            |
+| Layer               | Who sees it        | What it is                                                                                                                                                                             |
+| ------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Internals**       | contributors       | Execution pipeline, protocol codecs, serializer, links, streaming, retries: all `Effect`/`Stream`                                                                                      |
+| **Promise surface** | everyone (default) | Async handlers and middleware, `Promise`/`AsyncIterable` client calls, error classes. Effect is a dependency ([effect-dependency](../decisions/effect-dependency.md)), never imported. |
+| **Effect surface**  | opt-in             | Handlers/middleware returning `Effect`/`Stream`, Effect Schema validators, an Effect client returning `Effect`/`Stream`, Layers for services and platform                              |
 
 ## Decision areas
 
@@ -257,12 +257,12 @@ It lives in `trpcdev/effect`. Per `ideas.md`, anything without an external depen
 ### (h) Effect version policy
 
 - `effect` is a peer dependency, `^4` (01).
-  - **Decided ([0004](../decisions/0004-effect-dependency-and-integration-names.md)):** a regular dependency, `^4.0.0`, instead.
+  - **Decided ([effect-dependency](../decisions/effect-dependency.md)):** a regular dependency, `^4.0.0`, instead.
 - Our **public** types use only `@stability stable` Effect APIs.
 - Internal use of `@stability unstable` modules (`effect/http`, `effect/rpc`, …) is allowed only behind our own abstractions, with a CI job that tests against the latest Effect minor.
 
 ```jsonc
-// trpcdev/package.json (0004)
+// trpcdev/package.json
 { "dependencies": { "effect": "^4.0.0" } }
 ```
 

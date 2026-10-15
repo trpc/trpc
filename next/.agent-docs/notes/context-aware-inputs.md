@@ -2,7 +2,7 @@
 
 - **Date:** 2026-10-09
 - **Question:** If `.input()` accepts only Standard Schema and Effect Schema, plus a callback `({ ctx }) => schema` that returns either, what does it cost? Is there a way for a validator to read `ctx` without a callback?
-- **Feeds:** [05 — Validation](../proposals/05-validation-and-schemas.md) (Q5.1, new Q5.6), [0012](../decisions/0012-no-unvalidated-type-helper.md).
+- **Feeds:** [05 — Validation](../proposals/05-validation-and-schemas.md) (Q5.1, new Q5.6), [validation](../decisions/validation.md).
 - **Code:** [`next/spikes/context-aware-input/`](../../spikes/context-aware-input/).
   - `core.ts` is a small runtime builder that runs each call as an Effect, with a fiber hop between steps. Middleware is simplified to "return a ctx extension", and `provideService` stands in for 06 (g)'s service-providing Effect middleware. It is not an API proposal.
   - `context-aware-input.test.ts` (16 runtime tests) and `.test-d.ts` (12 type tests) run in `pnpm test`.

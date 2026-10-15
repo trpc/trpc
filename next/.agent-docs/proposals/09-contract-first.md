@@ -188,7 +188,7 @@ const client = createTRPCClient<typeof appContract>({
 
 ## Decision
 
-- **Q9.1:** [x] resolver-less terminals · [ ] options bag → [0009](../decisions/0009-contract-terminal-syntax.md)
+- **Q9.1:** [x] resolver-less terminals · [ ] options bag → [contracts](../decisions/contracts.md)
 - **Q9.2:** [ ] mirror tree · [ ] `.implements()`
 - **Q9.3:** [ ] yes · [ ] no
 - **Q9.4:** [ ] yes · [ ] later

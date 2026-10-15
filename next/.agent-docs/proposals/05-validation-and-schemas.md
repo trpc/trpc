@@ -11,7 +11,7 @@ Decide which validators vNext accepts, how input and output types are derived, a
 **Recommendation:**
 
 - Accept **Standard Schema only**, plus Effect Schema natively, and drop every legacy parser.
-- No unvalidated inputs: no `type<T>()` and no plain-function parsers (decided, [0012](../decisions/0012-no-unvalidated-type-helper.md)).
+- No unvalidated inputs: no `type<T>()` and no plain-function parsers (decided, [validation](../decisions/validation.md)).
 - Keep input chaining.
 - Ctx-aware validation through an `.input(({ ctx }) => schema)` callback, and through Effect Schema services for Effect users.
 - Use Standard JSON Schema for OpenAPI.
@@ -84,7 +84,7 @@ t.procedure.input(type<{ id: string }>()).query(…); // no runtime validation
 
 `type<T>()` returns a Standard Schema that passes the value through. This replaces v11's "plain function" parsers for the "trust me" case. It is useful with contracts and for internal procedures.
 
-- **Decided ([0012](../decisions/0012-no-unvalidated-type-helper.md)):** no `type<T>()` and no plain-function parsers. A function passed to `.input()` is reserved for the ctx callback in (d).
+- **Decided ([validation](../decisions/validation.md)):** no `type<T>()` and no plain-function parsers. A function passed to `.input()` is reserved for the ctx callback in (d).
 
 ### (c) Input chaining
 
@@ -122,7 +122,7 @@ t.procedure.input(type<{ id: string }>()).query(…); // no runtime validation
 
 ### (d) Input as a function of `ctx`
 
-[#6423](https://github.com/trpc/trpc/pull/6423) explored `.input(({ ctx }) => schema)`. Alex wants validators to be able to use `ctx` ([0012](../decisions/0012-no-unvalidated-type-helper.md)). Each option sees the `ctx` at its position in the chain: middleware before `.input()` is visible, middleware after it is not.
+[#6423](https://github.com/trpc/trpc/pull/6423) explored `.input(({ ctx }) => schema)`. Alex wants validators to be able to use `ctx` ([validation](../decisions/validation.md)). Each option sees the `ctx` at its position in the chain: middleware before `.input()` is visible, middleware after it is not.
 
 - **D-A — Callback.** The callback returns a Standard Schema or an Effect Schema.
   - ✅ Works with every library, and `ctx` is typed.
@@ -250,7 +250,7 @@ const post = await client.byId.query({ id: '1' }); // post.createdAt typed as Da
 ## Recommendation
 
 - **V-A** (Standard Schema + native Effect Schema). D-C needs it.
-- No `type<T>()` (decided, [0012](../decisions/0012-no-unvalidated-type-helper.md)).
+- No `type<T>()` (decided, [validation](../decisions/validation.md)).
 - **C-A** (keep chaining).
 - **D-A + D-C:** the callback for any library, services for Effect Schema, and one `.input()` check for both. Document that only constraints, not shapes, should depend on `ctx`, and that schemas should be built once. Not D-B: its types are unchecked and shared schemas throw at runtime.
 - `BAD_REQUEST` with `data.issues`, built in and typed.
@@ -268,7 +268,7 @@ const post = await client.byId.query({ id: '1' }); // post.createdAt typed as Da
 ## Decision
 
 - **Q5.1:** [ ] V-A · [ ] V-B
-- **Q5.2:** [ ] yes · [x] no → [0012](../decisions/0012-no-unvalidated-type-helper.md)
+- **Q5.2:** [ ] yes · [x] no → [validation](../decisions/validation.md)
 - **Q5.3:** [ ] C-A · [ ] C-B
 - **Q5.4:** [ ] yes · [ ] no · [ ] configurable, default `____`
 - **Q5.5:** [ ] yes, later · [ ] no

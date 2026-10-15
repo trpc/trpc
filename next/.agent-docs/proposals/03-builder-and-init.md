@@ -10,7 +10,7 @@ Decide what `initTRPC` looks like, how builder state is typed, and whether the "
 
 **Recommendation:**
 
-- `initTRPC<{ ctx; meta }>()` with an option-bag generic and no `.create()` (decided, [0013](../decisions/0013-root-init-option-bag.md)).
+- `initTRPC<{ ctx; meta }>()` with an option-bag generic and no `.create()` (decided, [root-init-option-bag](../decisions/root-init-option-bag.md)).
 - One options-bag type parameter for builder state.
 - A **closed** public builder built on an internal generic core.
 - Opt-in callers through wrapper functions.
@@ -69,7 +69,7 @@ t.procedure; // ProcedureBuilder<TContext, TMeta, TContextOverrides, TInputIn, T
 
 `create()` keeps only definition-time options, such as `defaultMeta` (or that moves to `.meta()` on a base procedure).
 
-- **Decided ([0013](../decisions/0013-root-init-option-bag.md)):** I-A without `.create()`: `const t = initTRPC<{ ctx: Context; meta: Meta }>()`. Definition-time runtime options, if any remain, go in the call: `initTRPC<{ … }>({ … })`. Root extensions are Q3.6.
+- **Decided ([root-init-option-bag](../decisions/root-init-option-bag.md)):** I-A without `.create()`: `const t = initTRPC<{ ctx: Context; meta: Meta }>()`. Definition-time runtime options, if any remain, go in the call: `initTRPC<{ … }>({ … })`. Root extensions are Q3.6.
 
 ```ts
 // v11
@@ -266,7 +266,7 @@ export const appRouter = {
 
 ## Recommendation
 
-- **I-A** (decided, [0013](../decisions/0013-root-init-option-bag.md)) + **G-A** (gated on the benchmark in (b)).
+- **I-A** (decided, [root-init-option-bag](../decisions/root-init-option-bag.md)) + **G-A** (gated on the benchmark in (b)).
 - **E-B**: closed builder on an internal generic core, with opt-in wrapper variants.
 - **(d)** as described, with the `'~trpc'` key.
 - If the G-A benchmark loses, keep positional generics internally but expose a `ProcedureDef<…>`-style bag in all public helper types.
@@ -282,10 +282,10 @@ export const appRouter = {
 
 ## Decision
 
-- **Q3.1:** [x] I-A, without `.create()` · [ ] I-B · [ ] I-C → [0013](../decisions/0013-root-init-option-bag.md)
+- **Q3.1:** [x] I-A, without `.create()` · [ ] I-B · [ ] I-C → [root-init-option-bag](../decisions/root-init-option-bag.md)
 - **Q3.2:** [ ] G-A · [ ] G-B
 - **Q3.3:** [ ] E-A · [ ] E-B · [ ] E-C
-- **Q3.4:** [x] yes · [ ] no → [0001](../decisions/0001-trpc-definition-key.md)
-- **Q3.5:** [x] keep `t` (standalone plugin packages must work through `.concat()`) · [ ] top-level imports · [ ] both → [0014](../decisions/0014-keep-t-object.md)
+- **Q3.4:** [x] yes · [ ] no → [trpc-definition-key](../decisions/trpc-definition-key.md)
+- **Q3.5:** [x] keep `t` (standalone plugin packages must work through `.concat()`) · [ ] top-level imports · [ ] both → [keep-t-object](../decisions/keep-t-object.md)
 - **Q3.6:** [ ] v1 · [ ] later · [ ] never
 - **Notes:**

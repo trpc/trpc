@@ -195,7 +195,7 @@ createHandler({
 ### (f) Meta
 
 - Keep `.meta(obj)` with **shallow merge** across chained calls.
-- Default meta is set by calling `.meta()` on the base procedure, so `defaultMeta` disappears (there is no `create()` any more, [0013](../decisions/0013-root-init-option-bag.md)).
+- Default meta is set by calling `.meta()` on the base procedure, so `defaultMeta` disappears (there is no `create()` any more, [root-init-option-bag](../decisions/root-init-option-bag.md)).
 - Meta is available to middleware and resolvers, and through the router definition (for codegen/OpenAPI).
 
 ```ts
@@ -247,5 +247,5 @@ t.procedure
 - **Q4.2:** [ ] R-A · [ ] R-B · [ ] R-C
 - **Q4.3:** [ ] yes · [ ] no · [ ] later
 - **Q4.4:** [ ] yes · [ ] no
-- **Q4.5:** [x] yes · [ ] no → [0002](../decisions/0002-meta-in-resolvers.md)
+- **Q4.5:** [x] yes · [ ] no → [meta-in-resolvers](../decisions/meta-in-resolvers.md)
 - **Notes:**

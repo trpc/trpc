@@ -6,7 +6,7 @@ It contains:
 
 - **[`approach.md`](./approach.md):** how we work. It covers the process, how agents use this folder, principles, the technical approach, phases and risks. Start here.
 - **[`proposals/`](./proposals):** one file per API area. Each has today's v11 behaviour, options with code sketches, a recommendation, numbered questions and a blank **Decision** block.
-- **[`decisions/`](./decisions):** the decision log.
+- **[`decisions/`](./decisions):** one file per decided topic (see [Decisions](#decisions)).
 - **[`reference/`](./reference):** shared background.
   - [`orpc-parity.md`](./reference/orpc-parity.md): the oRPC comparison table mapped to proposals, and the decisions that could block parity.
   - [`v11-inventory.md`](./reference/v11-inventory.md): what v11 ships, and whether each item is kept, changed or deleted.
@@ -16,6 +16,31 @@ It contains:
 ## How to decide
 
 Tick boxes in a proposal's **Decision** block, or reply in chat, for example `07: Q7.1 combined, Q7.3 [data, error]`. Partial answers are fine; anything unanswered stays open. The agent records each decision in `decisions/` and ripples it through dependent proposals. Full process in [`approach.md`](./approach.md#1-process-proposals--decisions--code).
+
+## Decisions
+
+Many changes land in parallel, so each decision is its own file and two changes rarely touch the same one.
+
+- **A new decision is a new file:** `decisions/<topic>.md`, kebab-case, named by topic. No dates or sequence numbers in the name (parallel changes would pick the same number), and no index file (every change would edit it).
+- **Changing a decision edits its file; reversing one rewrites or deletes it.** Superseded text doesn't pile up; git keeps it.
+- **Each file starts with `# Title (who)`:**
+  - `(human)`: Alex decided it. Don't reverse it without asking.
+  - `(human asked)`: Alex asked for the outcome; the agent chose the details. The outcome is Alex's, the details are open to revision.
+  - `(agent)`: a judgement call, open to revision with a good reason.
+
+  Within a file, a bullet starting `(agent)` is the agent's call even when the title is `(human)`.
+
+- **The body is short bullets:** what was decided (quote Alex verbatim, with the question number), **Why**, **Lost** (the alternatives given up and their cost), **Open** (what's left), and **Lives in** (the files that implement it).
+- **Find decisions** with `head -n 1 .agent-docs/decisions/*.md`, or `rg -n "<topic>" .agent-docs/decisions/`.
+
+## Digging deeper with git
+
+Decision files hold the current answer; the reasoning behind earlier versions lives in history.
+
+- `git log -p -- .agent-docs/decisions/<topic>.md`: how a decision changed, and the commit messages explaining why.
+- `git blame -C -C .agent-docs/decisions/<topic>.md`: which commit wrote each line, following text moved between files (decisions used to be numbered `NNNN-*.md` logs).
+- `git log -S '<phrase>' -- .agent-docs/`: when a phrase or option name appeared or disappeared.
+- `git blame -L <start>,<end> -- <file>`: who last changed a block of code a decision points to.
 
 ## Already decided in `ideas.md`
 
@@ -31,30 +56,30 @@ These are treated as given:
 
 ## Proposals
 
-| #   | Proposal                                                                           | Recommendation in one line                                                                                                                                     | Parity-critical | Qs  |
-| --- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------: | --- |
-| 01  | [Packages and type portability](./proposals/01-packages-and-type-portability.md)   | `trpcdev` with subpaths, `@trpcdev/*` integrations, `effect` as a dependency (0004), TS2742 rules + CI fixture                                                 |                 | 5   |
-| 02  | [Effect integration](./proposals/02-effect-integration.md)                         | Effect internals, Promise surface by default; same builder accepts Effect handlers; services declared at the root; strict `E` mapping                          |                 | 4   |
-| 03  | [Builder and init](./proposals/03-builder-and-init.md)                             | `initTRPC<{ ctx; meta }>()` (0013), options-bag builder generic (benchmark first), closed builder over an internal generic core, contract/implementation split |       ⚠️        | 6   |
-| 04  | [Procedures](./proposals/04-procedures.md)                                         | Keep query/mutation/subscription; resolver options bag; mutable `response` handle; first-class `.route()`                                                      |       ⚠️        | 5   |
-| 05  | [Validation and schemas](./proposals/05-validation-and-schemas.md)                 | Standard Schema + native Effect Schema only; no `type<T>()` (0012); keep input chaining; ctx callback + Effect services; Standard JSON Schema                  |                 | 6   |
-| 06  | [Context and middleware](./proposals/06-context-and-middleware.md)                 | Keep `next({ ctx })`; `ok()` short-circuit; standalone dependency-declaring middleware; lifecycle helpers; no router-level middleware                          |                 | 6   |
-| 07  | [Errors](./proposals/07-errors.md)                                                 | Returned/inferred errors (incl. Effect `E`) + optional declared map + mapping middleware; one isomorphic `TRPCError` with `defined`                            |       ⚠️        | 7   |
-| 08  | [Routers](./proposals/08-routers.md)                                               | Plain objects; optional `t.router()` for prefix/tags; keep `lazy()`; drop `mergeRouters`                                                                       |                 | 4   |
-| 09  | [Contract-first](./proposals/09-contract-first.md)                                 | Contract builder with resolver-less terminals + `t.implement(contract)`; `inferContract` + `toContract()`                                                      |       ⚠️        | 4   |
-| 10  | [Wire protocol](./proposals/10-wire-protocol.md)                                   | New path-based protocol, no envelopes, HTTP status errors, opt-in streamed batching, one message model for WebSocket/MessagePort, version header               |       ⚠️        | 6   |
-| 11  | [Serialization, query params and files](./proposals/11-serialization-and-files.md) | Port **danSON** into `trpcdev/serializer` (rich types + streaming at any depth); legible bracket-notation GET params; files as multipart-backed types          |       ⚠️        | 6   |
-| 12  | [Handlers, adapters and platforms](./proposals/12-handlers-adapters-platforms.md)  | Create-once web-standard handler; platform services via Effect Layers; thin adapters; no third-party dependencies                                              |       ⚠️        | 4   |
-| 13  | [Plugins](./proposals/13-plugins.md)                                               | One plugin interface (`onRequest`/`onCall`); body limit, strict methods and CSRF on by default                                                                 |                 | 4   |
-| 14  | [Subscriptions and streaming](./proposals/14-subscriptions-and-streaming.md)       | Async iterables/Streams; `tracked()` with `lastEventId` in options; fetch-based SSE; hibernation-ready                                                         |                 | 7   |
-| 15  | [Server-side calls and actions](./proposals/15-server-side-calls-and-actions.md)   | `createRouterClient` (direct calls), `call()`, opt-in `callable()`/`action()` wrappers with typed results                                                      |                 | 4   |
-| 16  | [Client](./proposals/16-client.md)                                                 | Keep verbs; positional input + options bag; typed context; AsyncIterable subscriptions; `safe()`                                                               |                 | 6   |
-| 17  | [Links](./proposals/17-links.md)                                                   | Effect link chain with Promise authoring; links declare typed call options (`router: type<AppRouter>()`); one `httpLink`                                       |                 | 5   |
-| 18  | [OpenAPI](./proposals/18-openapi.md)                                               | OpenAPI handler + Standard JSON Schema generator, `.route()`, bracket notation, coercion, Scalar; `openAPILink`                                                |       ⚠️        | 5   |
-| 19  | [TanStack Query](./proposals/19-tanstack-query.md)                                 | Framework-agnostic `@trpcdev/tanstack-query` with option bags, explicit infinite input, streamed/live options                                                  |       ⚠️        | 6   |
-| 20  | [React `use()` package](./proposals/20-react-use-package.md)                       | Defer; keep link-based caching possible                                                                                                                        |                 | 3   |
-| 21  | [Stability and JSDoc](./proposals/21-stability-and-jsdoc.md)                       | `@since`/`@stability` JSDoc + experimental entry points, no name prefixes, CI-enforced                                                                         |                 | 5   |
-| 22  | [Tooling, CI and repo](./proposals/22-tooling-ci-and-repo.md)                      | Vite+ (`vp`) toolchain, TS 7, `vp staged` precommit hook, one CI workflow, fresh layout                                                                        |                 | 5   |
+| #   | Proposal                                                                           | Recommendation in one line                                                                                                                              | Parity-critical | Qs  |
+| --- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------: | --- |
+| 01  | [Packages and type portability](./proposals/01-packages-and-type-portability.md)   | `trpcdev` with subpaths, `@trpcdev/*` integrations, `effect` as a dependency, TS2742 rules + CI fixture                                                 |                 | 5   |
+| 02  | [Effect integration](./proposals/02-effect-integration.md)                         | Effect internals, Promise surface by default; same builder accepts Effect handlers; services declared at the root; strict `E` mapping                   |                 | 4   |
+| 03  | [Builder and init](./proposals/03-builder-and-init.md)                             | `initTRPC<{ ctx; meta }>()`, options-bag builder generic (benchmark first), closed builder over an internal generic core, contract/implementation split |       ⚠️        | 6   |
+| 04  | [Procedures](./proposals/04-procedures.md)                                         | Keep query/mutation/subscription; resolver options bag; mutable `response` handle; first-class `.route()`                                               |       ⚠️        | 5   |
+| 05  | [Validation and schemas](./proposals/05-validation-and-schemas.md)                 | Standard Schema + native Effect Schema only; no `type<T>()`; keep input chaining; ctx callback + Effect services; Standard JSON Schema                  |                 | 6   |
+| 06  | [Context and middleware](./proposals/06-context-and-middleware.md)                 | Keep `next({ ctx })`; `ok()` short-circuit; standalone dependency-declaring middleware; lifecycle helpers; no router-level middleware                   |                 | 6   |
+| 07  | [Errors](./proposals/07-errors.md)                                                 | Returned/inferred errors (incl. Effect `E`) + optional declared map + mapping middleware; one isomorphic `TRPCError` with `defined`                     |       ⚠️        | 7   |
+| 08  | [Routers](./proposals/08-routers.md)                                               | Plain objects; optional `t.router()` for prefix/tags; keep `lazy()`; drop `mergeRouters`                                                                |                 | 4   |
+| 09  | [Contract-first](./proposals/09-contract-first.md)                                 | Contract builder with resolver-less terminals + `t.implement(contract)`; `inferContract` + `toContract()`                                               |       ⚠️        | 4   |
+| 10  | [Wire protocol](./proposals/10-wire-protocol.md)                                   | New path-based protocol, no envelopes, HTTP status errors, opt-in streamed batching, one message model for WebSocket/MessagePort, version header        |       ⚠️        | 6   |
+| 11  | [Serialization, query params and files](./proposals/11-serialization-and-files.md) | Port **danSON** into `trpcdev/serializer` (rich types + streaming at any depth); legible bracket-notation GET params; files as multipart-backed types   |       ⚠️        | 6   |
+| 12  | [Handlers, adapters and platforms](./proposals/12-handlers-adapters-platforms.md)  | Create-once web-standard handler; platform services via Effect Layers; thin adapters; no third-party dependencies                                       |       ⚠️        | 4   |
+| 13  | [Plugins](./proposals/13-plugins.md)                                               | One plugin interface (`onRequest`/`onCall`); body limit, strict methods and CSRF on by default                                                          |                 | 4   |
+| 14  | [Subscriptions and streaming](./proposals/14-subscriptions-and-streaming.md)       | Async iterables/Streams; `tracked()` with `lastEventId` in options; fetch-based SSE; hibernation-ready                                                  |                 | 7   |
+| 15  | [Server-side calls and actions](./proposals/15-server-side-calls-and-actions.md)   | `createRouterClient` (direct calls), `call()`, opt-in `callable()`/`action()` wrappers with typed results                                               |                 | 4   |
+| 16  | [Client](./proposals/16-client.md)                                                 | Keep verbs; positional input + options bag; typed context; AsyncIterable subscriptions; `safe()`                                                        |                 | 6   |
+| 17  | [Links](./proposals/17-links.md)                                                   | Effect link chain with Promise authoring; links declare typed call options (`router: type<AppRouter>()`); one `httpLink`                                |                 | 5   |
+| 18  | [OpenAPI](./proposals/18-openapi.md)                                               | OpenAPI handler + Standard JSON Schema generator, `.route()`, bracket notation, coercion, Scalar; `openAPILink`                                         |       ⚠️        | 5   |
+| 19  | [TanStack Query](./proposals/19-tanstack-query.md)                                 | Framework-agnostic `@trpcdev/tanstack-query` with option bags, explicit infinite input, streamed/live options                                           |       ⚠️        | 6   |
+| 20  | [React `use()` package](./proposals/20-react-use-package.md)                       | Defer; keep link-based caching possible                                                                                                                 |                 | 3   |
+| 21  | [Stability and JSDoc](./proposals/21-stability-and-jsdoc.md)                       | `@since`/`@stability` JSDoc + experimental entry points, no name prefixes, CI-enforced                                                                  |                 | 5   |
+| 22  | [Tooling, CI and repo](./proposals/22-tooling-ci-and-repo.md)                      | Vite+ (`vp`) toolchain, TS 7, `vp staged` precommit hook, one CI workflow, fresh layout                                                                 |                 | 5   |
 
 ⚠️ marks proposals where some options would block a row in the [oRPC parity matrix](./reference/orpc-parity.md).
 

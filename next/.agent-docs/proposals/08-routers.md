@@ -66,7 +66,7 @@ export type AppRouter = typeof appRouter;
 ## Details
 
 - **Merging:** use object spread (`{ ...a, ...b }`). Duplicate keys are a type error through a `Router` constraint helper and are checked at runtime.
-  - **Decided ([0010](../decisions/0010-router-merge-helper.md)):** keep a merge helper that rejects duplicate keys; spread can't detect them.
+  - **Decided ([routers](../decisions/routers.md)):** keep a merge helper that rejects duplicate keys; spread can't detect them.
 
   ```ts
   // v11: t.mergeRouters(postRouter, userRouter)
@@ -115,7 +115,7 @@ export type AppRouter = typeof appRouter;
 ## Decision
 
 - **Q8.1:** [ ] A · [ ] B
-- **Q8.2:** [ ] yes · [x] no (keep a merge helper) → [0010](../decisions/0010-router-merge-helper.md)
+- **Q8.2:** [ ] yes · [x] no (keep a merge helper) → [routers](../decisions/routers.md)
 - **Q8.3:** [ ] yes · [ ] no
 - **Q8.4:** [ ] prefix · [ ] contract · [ ] eager load · [ ] any of these
 - **Notes:**
