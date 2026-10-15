@@ -440,5 +440,5 @@ test('procedures without async steps run synchronously', () => {
     input: { n: 1 },
     signal: new AbortController().signal,
   });
-  expect(Effect.runSync(run)).toBe(2);
+  expect(Effect.runSync(run as Effect.Effect<unknown, unknown>)).toBe(2);
 });
