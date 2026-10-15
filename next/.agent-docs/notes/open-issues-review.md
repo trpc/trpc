@@ -8,7 +8,12 @@ Method: `gh issue list --repo trpc/trpc --state open --limit 1000 --json number,
 
 - #7626, sync validation: Standard Schema results, resolvers and `provide` values that aren't promises no longer go through a promise. A procedure with no async step runs under `Effect.runSync` (`procedures.test.ts`).
 - #6997 and #6800, "excessively deep" types: a recursive `JsonValue` output failed in vNext too. `Deserialized<T>` now returns plain data (no thenables, iterables or functions) as it is, which also keeps branded tuples identical (#6500) (`basics.test.ts`).
-- SSE keep-alives: the `fetch-sse` decision promised them but the handler sent none. It now sends `: ping` every 15 s (`sse.pingMs`).
+- SSE keep-alives: the `fetch-sse` decision promised them but the handler sent none. Both the RPC and OpenAPI handlers now send `: ping` every 15 s (`sse.pingMs`).
+- #1937, #7180, #6670, files over RPC: `File` and `Blob` anywhere in an input, sent by `httpLink` as `multipart/form-data` (proposal 11 (f)). The output side of Q11.6 is still open (`files.test.ts`).
+- #7022, tracing: every call runs in a `trpc.<path>` server span with `rpc.method`, `trpc.type` and `trpc.error.code` (`effect.test.ts`).
+- #7064, per-call reconnect: `{ reconnect: false }` on a subscription call fails with `NETWORK_ERROR` instead of rerunning it.
+- #6664, the React context: `createTrpcContext()` returns `context` for bridges (React and Preact).
+- Layers that provide no services (a tracer, a logger) were rejected by the `layer` option types.
 
 ## Already answered by vNext
 
@@ -47,24 +52,19 @@ Method: `gh issue list --repo trpc/trpc --state open --limit 1000 --json number,
 
 Ordered by demand and fit.
 
-1. **Files over RPC** (#1937 with 96 reactions, #7180, #6670, #7446). Proposal 11 (f) describes `File` and `Blob` as serializer types that reference `multipart/form-data` parts, anywhere in the input. Only OpenAPI handles files today; the RPC handler accepts JSON only. Q11.6 (nested inputs, outputs) is still open.
-2. **Built-in tracing** (#7022). Procedures could run in `Effect.withSpan('trpc.<path>')`, with path, type and error code as attributes. Effect's OpenTelemetry layer would then export them with no extra wiring. Today it's one middleware.
-3. **Query key prefix** (#6555, #5251, #4153). Two tRPC APIs sharing one `QueryClient` produce clashing keys. Something like `createTrpcQueryUtils(client, { keyPrefix })` would give `[[prefix, ...path], …]`. This changes the key shape in `tanstack-query-keys.md`, so it needs a call.
-4. **Structural sharing for danSON types** (#6306). TanStack's `replaceEqualDeep` treats `Date`, `Map` and `Set` as new values, so a refetch with equal data re-renders. `hydrationOptions()` could set a `structuralSharing` that compares them.
-5. **Invalidation declared on mutations** (#5264, #3468, #6715). For example `.meta({ invalidates: ['post'] })` read by a TanStack `MutationCache` `onSuccess` helper. It fits as an opt-in helper, not as router config.
-6. **Offline and persisted mutations** (#7021). Paused mutations resume only if `setMutationDefaults(mutationKey, { mutationFn })` is registered. A `trpc.post.create.mutationDefaults()` helper would cover it.
-7. **WebSocket heartbeat**. There's no ping/pong on `wsLink` or the socket server, and idle proxies drop quiet sockets. #7502 is v11's double ping on Fastify.
-8. **OpenAPI SSE keep-alives**, the same as RPC's.
-9. **Per-call subscription reconnect** (#7064). An untracked subscription reruns from scratch after a dropped connection, which repeats side effects. A link call option `reconnect: false` would fit the flattened call options.
-10. **Middleware that reshapes input** (#6892). `next({ input })` typed like `next({ ctx })`.
-11. **Deferred work after the response** (#7436). Document `Effect.forkDaemon` and the platform's `waitUntil` (Next's `after()`), or add a `waitUntil` to the handler options.
-12. **Bodies already read** (#5534, #7446). An Express or Koa body parser that ran first leaves an empty stream. Check `request.bodyUsed` and the Node request's state, and fail with a clear `BAD_REQUEST` instead of hanging.
-13. **`fetch` sees the operations** (#4184). `httpLink({ fetch })` could get `{ ops }` as a third argument for SSR cookie forwarding. `headers({ op })` covers most of it.
-14. **Dehydrating errors under Next** (#6771). Next's dynamic-rendering errors must not be redacted. Document `shouldRedactErrors` next to `createTrpcRsc`.
-15. **Publisher backends** (#5618). The `memory` layer is per process. Redis, Postgres `LISTEN` or Durable Object layers behind the same `PublisherShape` would let subscriptions run across instances.
-16. **TanStack DB** (#6891). `queryOptions()` should plug into `queryCollectionOptions` as it is; worth a test and a docs example.
-17. **The React context object** (#6664). Return it from `createTrpcContext()` for context bridges (react-three-fiber).
-18. **Adapters, recorded as later**: Lambda API Gateway and Lambda@Edge (#4978), Cloudflare hibernation, Firebase callable (#6388), WebTransport (#6971), raw TCP (#5995). The socket core is generic over connections, so the last two are a transport each.
+1. **Query key prefix** (#6555, #5251, #4153). Two tRPC APIs sharing one `QueryClient` produce clashing keys. Something like `createTrpcQueryUtils(client, { keyPrefix })` would give `[[prefix, ...path], …]`. This changes the key shape in `tanstack-query-keys.md`, so it needs a call.
+2. **Structural sharing for danSON types** (#6306). TanStack's `replaceEqualDeep` treats `Date`, `Map` and `Set` as new values, so a refetch with equal data re-renders. `hydrationOptions()` could set a `structuralSharing` that compares them.
+3. **Invalidation declared on mutations** (#5264, #3468, #6715). For example `.meta({ invalidates: ['post'] })` read by a TanStack `MutationCache` `onSuccess` helper. It fits as an opt-in helper, not as router config.
+4. **Offline and persisted mutations** (#7021). Paused mutations resume only if `setMutationDefaults(mutationKey, { mutationFn })` is registered. A `trpc.post.create.mutationDefaults()` helper would cover it.
+5. **WebSocket heartbeat**. There's no ping/pong on `wsLink` or the socket server, and idle proxies drop quiet sockets. #7502 is v11's double ping on Fastify.
+6. **Middleware that reshapes input** (#6892). `next({ input })` typed like `next({ ctx })`.
+7. **Deferred work after the response** (#7436). Document `Effect.forkDaemon` and the platform's `waitUntil` (Next's `after()`), or add a `waitUntil` to the handler options.
+8. **Bodies already read** (#5534, #7446). An Express or Koa body parser that ran first leaves an empty stream. Check `request.bodyUsed` and the Node request's state, and fail with a clear `BAD_REQUEST` instead of hanging.
+9. **`fetch` sees the operations** (#4184). `httpLink({ fetch })` could get `{ ops }` as a third argument for SSR cookie forwarding. `headers({ op })` covers most of it.
+10. **Dehydrating errors under Next** (#6771). Next's dynamic-rendering errors must not be redacted. Document `shouldRedactErrors` next to `createTrpcRsc`.
+11. **Publisher backends** (#5618). The `memory` layer is per process. Redis, Postgres `LISTEN` or Durable Object layers behind the same `PublisherShape` would let subscriptions run across instances.
+12. **TanStack DB** (#6891). `queryOptions()` should plug into `queryCollectionOptions` as it is; worth a test and a docs example.
+13. **Adapters, recorded as later**: Lambda API Gateway and Lambda@Edge (#4978), Cloudflare hibernation, Firebase callable (#6388), WebTransport (#6971), raw TCP (#5995). The socket core is generic over connections, so the last two are a transport each.
 
 ## Not pursuing
 
