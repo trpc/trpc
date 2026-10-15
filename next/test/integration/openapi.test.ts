@@ -659,3 +659,22 @@ test('an unvalidated output is documented by its schema input side', () => {
     type: 'string',
   });
 });
+
+test('quiet subscriptions send keep-alive comments', async () => {
+  const handler = createOpenApiHandler({
+    router: {
+      slow: t.procedure.subscription(async function* () {
+        yield 'a';
+        await new Promise((resolve) => setTimeout(resolve, 60));
+        yield 'b';
+      }),
+    },
+    createContext: () => ({ user: null }),
+    sse: { pingMs: 10 },
+  });
+  const res = await handler.fetch(new Request('http://localhost/api/slow'));
+  const text = await res.text();
+  expect(text).toContain(': ping\n\n');
+  expect(text).toContain('data: "b"');
+  await handler.dispose();
+});

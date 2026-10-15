@@ -94,6 +94,14 @@ export interface BaseOpenApiHandlerOptions<TRouter extends AnyRouter> {
   /** Called for every error, with the original cause. */
   onError?: (opts: OnErrorOpts) => void;
   plugins?: ReadonlyArray<OpenApiPlugin>;
+  sse?: {
+    /**
+     * Send a comment line this often while a subscription is quiet, so
+     * proxies don't close it as idle. `false` sends none.
+     * @default 15_000
+     */
+    pingMs?: number | false;
+  };
   /**
    * The routes, from `toContract(await loadRouter(appRouter))` at build
    * time. Lazy subtrees then load on their first request, whatever their
@@ -190,6 +198,7 @@ export function createOpenApiHandler<TRouter extends AnyRouter>(
   );
   const prefix = normalizePrefix(opts.prefix);
   const maxBodySize = opts.maxBodySize ?? 1_048_576;
+  const ssePingMs = opts.sse?.pingMs ?? 15_000;
   const plugins = opts.plugins ?? [];
 
   const makeEntry = (
@@ -416,6 +425,10 @@ export function createOpenApiHandler<TRouter extends AnyRouter>(
         };
         // Flushes headers on servers that hold them until the first chunk.
         write(': open\n\n');
+        const ping =
+          ssePingMs === false
+            ? undefined
+            : setInterval(() => write(': ping\n\n'), ssePingMs);
         const exit = await Effect.runPromiseExit(
           Stream.runForEach(stream, (event) =>
             Effect.sync(() => {
@@ -426,7 +439,7 @@ export function createOpenApiHandler<TRouter extends AnyRouter>(
             }),
           ),
           { signal: controller.signal },
-        );
+        ).finally(() => clearInterval(ping));
         if (controller.signal.aborted) return;
         if (Exit.isFailure(exit)) {
           const err = normalizeCause(exit.cause);
