@@ -7,6 +7,10 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./src/index.ts"
+    },
+    "./rsc": {
+      "types": "./src/rsc.ts",
+      "default": "./src/rsc.ts"
     }
   },
   "scripts": {
