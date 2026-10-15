@@ -179,9 +179,9 @@ export function serveConnection(
 
 /** What `connectionReceiver()` returns. @internal */
 export interface ConnectionReceiver {
-  receive(message: unknown): void;
+  readonly receive: (message: unknown) => void;
   /** Aborts the connection's calls. */
-  close(): void;
+  readonly close: () => void;
 }
 
 /**
