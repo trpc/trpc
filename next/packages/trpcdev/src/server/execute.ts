@@ -379,6 +379,17 @@ export function callProcedure(
       }
       return Effect.failCause(cause as Cause.Cause<AnyTrpcError>);
     }),
+    Effect.tapError((err) =>
+      Effect.annotateCurrentSpan('trpc.error.code', err.code),
+    ),
+    Effect.withSpan(`trpc.${path}`, {
+      kind: 'server',
+      attributes: {
+        'rpc.system': 'trpc',
+        'rpc.method': path,
+        'trpc.type': type,
+      },
+    }),
   );
 }
 

@@ -92,6 +92,8 @@ const withUser = t.middleware.effect<{ provides: CurrentUser }>()(
 );
 ```
 
+Every call runs in an Effect span named `trpc.<path>`, with `rpc.system`, `rpc.method` and `trpc.type` attributes, plus `trpc.error.code` when it fails. Spans opened in resolvers nest under it. Put an OpenTelemetry tracer in the handler's `layer` (`@effect/opentelemetry`) to export them.
+
 ## Calling procedures on the server
 
 ```ts

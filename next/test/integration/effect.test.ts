@@ -1,4 +1,4 @@
-import { Context, Effect, Exit, Layer, Stream, Tracer } from 'effect';
+import { Context, Effect, Exit, Layer, Option, Stream, Tracer } from 'effect';
 import { httpLink, type ClientError } from 'trpcdev/client';
 import { createEffectClient } from 'trpcdev/effect';
 import {
@@ -220,4 +220,48 @@ test('a layer that provides no services, like a tracer, is accepted', async () =
   const client = createRouterClient(router, { ctx: {}, layer: tracing });
   expect(await client.ping.query()).toBe('pong');
   await handler.dispose();
+});
+
+test('every call runs in a span named after its path', async () => {
+  const spans: Tracer.NativeSpan[] = [];
+  const tracer = Tracer.make({
+    span(options) {
+      const span = new Tracer.NativeSpan(options);
+      spans.push(span);
+      return span;
+    },
+  });
+  const t = initTrpc();
+  const traced = {
+    post: {
+      byId: t.procedure
+        .input(z.object({ id: z.string() }))
+        .errors({ NOT_FOUND: {} })
+        .query(({ input, errors }) =>
+          input.id === '1'
+            ? Effect.succeed('Hello').pipe(Effect.withSpan('db.find'))
+            : errors.NOT_FOUND(),
+        ),
+    },
+  };
+  const client = createRouterClient(traced, {
+    ctx: {},
+    layer: Layer.succeed(Tracer.Tracer, tracer),
+  });
+  expect(await client.post.byId.query({ id: '1' })).toBe('Hello');
+  await expect(client.post.byId.query({ id: '2' })).rejects.toMatchObject({
+    code: 'NOT_FOUND',
+  });
+
+  const calls = spans.filter((s) => s.name === 'trpc.post.byId');
+  expect(calls).toHaveLength(2);
+  expect(Object.fromEntries(calls[0]!.attributes)).toEqual({
+    'rpc.system': 'trpc',
+    'rpc.method': 'post.byId',
+    'trpc.type': 'query',
+  });
+  expect(calls[0]!.kind).toBe('server');
+  expect(calls[1]!.attributes.get('trpc.error.code')).toBe('NOT_FOUND');
+  const db = spans.find((s) => s.name === 'db.find')!;
+  expect(Option.getOrUndefined(db.parent)).toBe(calls[0]);
 });
