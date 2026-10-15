@@ -442,3 +442,49 @@ test('procedures without async steps run synchronously', () => {
   });
   expect(Effect.runSync(run as Effect.Effect<unknown, unknown>)).toBe(2);
 });
+
+test('next({ input }) replaces the input for later steps, typed like ctx (#6892)', async () => {
+  const slugs = new Map([['hello-world', { id: '1', title: 'Hello' }]]);
+  const bySlug = t.procedure
+    .input(z.object({ slug: z.string() }))
+    .use(({ input, ctx, next }) => {
+      const post = slugs.get(input.slug);
+      return post
+        ? next({ input: { post }, ctx: { viewer: ctx.user ?? 'anon' } })
+        : error({ code: 'NOT_FOUND' });
+    })
+    .query(({ input, ctx }) => {
+      expectTypeOf(input).toEqualTypeOf<{
+        post: { id: string; title: string };
+      }>();
+      return `${input.post.title} for ${ctx.viewer}`;
+    });
+  expect(
+    await call(bySlug, { slug: 'hello-world' }, { ctx: { user: 'alex' } }),
+  ).toBe('Hello for alex');
+  void (() =>
+    // @ts-expect-error -- the client still sends the schema's input
+    call(bySlug, { post: { id: '1', title: 'x' } }, { ctx: { user: null } }));
+
+  const trimmed = t.procedure
+    .input(z.string())
+    .use(({ input, next }) => next({ input: input.trim().length }))
+    .query(({ input }) => {
+      expectTypeOf(input).toEqualTypeOf<number>();
+      return input;
+    });
+  expect(await call(trimmed, '  hi  ', { ctx: { user: null } })).toBe(2);
+
+  const doubled = t.procedure
+    .input(z.number())
+    .use(
+      t.middleware.effect()(({ input, next }) =>
+        next({ input: String((input as number) * 2) }),
+      ),
+    )
+    .query(({ input }) => {
+      expectTypeOf(input).toEqualTypeOf<string>();
+      return input;
+    });
+  expect(await call(doubled, 4, { ctx: { user: null } })).toBe('8');
+});

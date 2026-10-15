@@ -64,7 +64,20 @@ const authed = t.procedure.use(({ ctx, next }) =>
 );
 ```
 
-`next({ ctx })` adds to the ctx; `ok(value)` short-circuits with a result. Middleware is per procedure: build base procedures and share them. Routers take none. `t.middleware(fn)` types a middleware once for reuse.
+`next({ ctx })` adds to the ctx; `ok(value)` short-circuits with a result. `next({ input })` replaces the input for the steps after it, and the resolver's `input` takes its type:
+
+```ts
+t.procedure
+  .input(z.object({ slug: z.string() }))
+  .use(async ({ input, next }) =>
+    next({ input: { post: await posts.bySlug(input.slug) } }),
+  )
+  .query(({ input }) => input.post.title); // input: { post: Post }
+```
+
+The client still sends the schema's input. A later `.input()` parses the raw call input again, merged over the replaced one when both are objects.
+
+Middleware is per procedure: build base procedures and share them. Routers take none. `t.middleware(fn)` types a middleware once for reuse.
 
 `trpcdev/middleware` has lifecycle helpers, each an ordinary middleware:
 

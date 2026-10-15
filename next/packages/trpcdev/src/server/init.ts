@@ -117,9 +117,14 @@ export interface TrpcRoot<TCtx extends object, TMeta extends object> {
  * @stability experimental
  */
 export interface RootMiddleware<TCtx extends object, TMeta extends object> {
-  <$Ctx extends object = {}, $Err extends AnyTrpcError = never, $Ok = never>(
-    fn: MiddlewareFunction<TCtx, unknown, TMeta, $Ctx, $Err, $Ok>,
-  ): MiddlewareFunction<TCtx, unknown, TMeta, $Ctx, $Err, $Ok>;
+  <
+    $Ctx extends object = {},
+    $Err extends AnyTrpcError = never,
+    $Ok = never,
+    $Input = Unset,
+  >(
+    fn: MiddlewareFunction<TCtx, unknown, TMeta, $Ctx, $Err, $Ok, $Input>,
+  ): MiddlewareFunction<TCtx, unknown, TMeta, $Ctx, $Err, $Ok, $Input>;
   /**
    * An Effect middleware (06 M-A): `next()` returns an `Effect`. Declare the
    * services it provides with `t.middleware.effect<{ provides: S }>()(fn)`.

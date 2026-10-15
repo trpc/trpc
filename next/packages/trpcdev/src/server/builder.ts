@@ -15,6 +15,7 @@ import {
   isEffectMiddleware,
   type EffectMiddleware,
   type MiddlewareFunction,
+  type NextInput,
   type ResponseHandle,
 } from './middleware.ts';
 import type {
@@ -522,20 +523,27 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
    * });
    * ```
    */
-  use<$Ctx extends object = {}, $Err extends AnyTrpcError = never, $Ok = never>(
+  use<
+    $Ctx extends object = {},
+    $Err extends AnyTrpcError = never,
+    $Ok = never,
+    $Input = Unset,
+  >(
     fn: MiddlewareFunction<
       CurrentCtx<TDef>,
       Value<TDef['inputOut']>,
       TDef['meta'],
       $Ctx,
       $Err,
-      $Ok
+      $Ok,
+      $Input
     >,
   ): ProcedureBuilder<
     With<
       TDef,
       {
         ctxAdded: Overwrite<TDef['ctxAdded'], $Ctx>;
+        inputOut: NextInput<TDef['inputOut'], $Input>;
         errors: TDef['errors'] | $Err;
         shorts: TDef['shorts'] | $Ok;
       }
@@ -552,6 +560,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
     $R,
     $Provides,
     $Ok = never,
+    $Input = Unset,
   >(
     mw: EffectMiddleware<
       CurrentCtx<TDef>,
@@ -561,13 +570,15 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
       $Err,
       $R,
       $Provides,
-      $Ok
+      $Ok,
+      $Input
     >,
   ): ProcedureBuilder<
     With<
       TDef,
       {
         ctxAdded: Overwrite<TDef['ctxAdded'], $Ctx>;
+        inputOut: NextInput<TDef['inputOut'], $Input>;
         errors: TDef['errors'] | $Err;
         shorts: TDef['shorts'] | $Ok;
         provided: TDef['provided'] | $Provides;

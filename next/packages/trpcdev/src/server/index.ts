@@ -68,6 +68,7 @@ export {
   type MiddlewareRequirements,
   type MiddlewareResult,
   type NextFn,
+  type NextInput,
   type OkResult,
   type ResponseHandle,
 } from './middleware.ts';

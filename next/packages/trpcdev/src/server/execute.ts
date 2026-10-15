@@ -220,6 +220,7 @@ export function callProcedure(
     );
   };
 
+  type NextOpts = { ctx?: object; input?: unknown };
   const run = (
     i: number,
     ctx: object,
@@ -270,9 +271,13 @@ export function callProcedure(
           });
         case 'use':
           if (step.effect) {
-            const next = (o?: { ctx?: object }) =>
+            const next = (o?: NextOpts) =>
               Effect.exit(
-                run(i + 1, o?.ctx ? { ...ctx, ...o.ctx } : ctx, input),
+                run(
+                  i + 1,
+                  o?.ctx ? { ...ctx, ...o.ctx } : ctx,
+                  o && 'input' in o ? o.input : input,
+                ),
               ).pipe(Effect.map(toResult));
             return Effect.suspend(() =>
               refail(
@@ -287,13 +292,13 @@ export function callProcedure(
           return Effect.gen(function* () {
             const services = yield* Effect.context<never>();
             const runNext = Effect.runPromiseExitWith(services);
-            const next = async (o?: { ctx?: object }) =>
+            const next = async (o?: NextOpts) =>
               toResult(
                 await runNext(
                   run(
                     i + 1,
                     o?.ctx ? { ...ctx, ...o.ctx } : ctx,
-                    input,
+                    o && 'input' in o ? o.input : input,
                   ) as Effect.Effect<unknown, AnyTrpcError>,
                   { signal },
                 ),

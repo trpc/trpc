@@ -4,6 +4,7 @@ import type {
   MaybePromise,
   ProcedureType,
   TypeError,
+  Unset,
 } from '../internal/types.ts';
 
 /**
@@ -28,16 +29,27 @@ export interface ResponseHandle {
 }
 
 /**
- * What `next()` resolves to. `'~ctx'` is a phantom that carries the ctx the
- * middleware added, so the builder can infer it.
+ * What `next()` resolves to. `'~ctx'` and `'~input'` are phantoms that carry
+ * the ctx the middleware added and the input it passed on (`Unset` when it
+ * passed the input unchanged), so the builder can infer them.
  *
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type MiddlewareResult<TCtx> = (
+export type MiddlewareResult<TCtx, TInput = Unset> = (
   | { readonly ok: true; readonly data: unknown }
   | { readonly ok: false; readonly error: AnyTrpcError }
-) & { readonly '~ctx'?: TCtx };
+) & { readonly '~ctx'?: TCtx; readonly '~input'?: TInput };
+
+/**
+ * The input after a middleware: the one it passed to `next({ input })`, or
+ * the current one.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export type NextInput<TCurrent, $Input> = [$Input] extends [Unset]
+  ? TCurrent
+  : $Input;
 
 /**
  * A short-circuit result from {@link ok}.
@@ -72,13 +84,19 @@ export function ok<const T>(data: T): OkResult<T> {
 }
 
 /**
- * Calls the rest of the chain, optionally extending `ctx`.
+ * Calls the rest of the chain, optionally extending `ctx` or replacing the
+ * input. A replaced input is what later steps and the resolver get, typed as
+ * passed.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
 export interface NextFn {
   (): Promise<MiddlewareResult<{}>>;
   <$Ctx extends object>(opts: { ctx: $Ctx }): Promise<MiddlewareResult<$Ctx>>;
+  <$Input, $Ctx extends object = {}>(opts: {
+    ctx?: $Ctx;
+    input: $Input;
+  }): Promise<MiddlewareResult<$Ctx, $Input>>;
 }
 
 /**
@@ -101,7 +119,7 @@ export interface MiddlewareOpts<TCtx, TInput, TMeta> {
 }
 
 /**
- * A middleware: calls `next()` (optionally extending `ctx`), returns
+ * A middleware: calls `next()` (optionally extending `ctx` or replacing the input), returns
  * {@link ok} to short-circuit with a value, or returns a `TrpcError` to fail.
  * A returned error joins the procedure's typed error union.
  *
@@ -115,9 +133,10 @@ export type MiddlewareFunction<
   $Ctx extends object,
   $Err extends AnyTrpcError,
   $Ok = never,
+  $Input = Unset,
 > = (
   opts: MiddlewareOpts<TCtx, TInput, TMeta>,
-) => MaybePromise<MiddlewareResult<$Ctx> | $Err | OkResult<$Ok>>;
+) => MaybePromise<MiddlewareResult<$Ctx, $Input> | $Err | OkResult<$Ok>>;
 
 /**
  * What a standalone middleware needs from the procedure it is used on.
@@ -157,6 +176,10 @@ export interface EffectNextFn<TProvides> {
   <$Ctx extends object>(opts: {
     ctx: $Ctx;
   }): Effect.Effect<MiddlewareResult<$Ctx>, never, TProvides>;
+  <$Input, $Ctx extends object = {}>(opts: {
+    ctx?: $Ctx;
+    input: $Input;
+  }): Effect.Effect<MiddlewareResult<$Ctx, $Input>, never, TProvides>;
 }
 
 /**
@@ -189,10 +212,11 @@ export interface EffectMiddleware<
   $R,
   $Provides,
   $Ok = never,
+  $Input = Unset,
 > {
   readonly '~effectMiddleware': (
     opts: EffectMiddlewareOpts<TCtx, TInput, TMeta, $Provides>,
-  ) => Effect.Effect<MiddlewareResult<$Ctx> | OkResult<$Ok>, $Err, $R>;
+  ) => Effect.Effect<MiddlewareResult<$Ctx, $Input> | OkResult<$Ok>, $Err, $R>;
   readonly '~types'?: { provides: $Provides; requires: $R };
 }
 
@@ -231,10 +255,11 @@ export type EffectMiddlewareFactory<TCtx, TInput, TMeta, $Provides> = <
   $E = never,
   $R = never,
   $Ok = never,
+  $Input = Unset,
 >(
   fn: (
     opts: EffectMiddlewareOpts<TCtx, TInput, TMeta, $Provides>,
-  ) => Effect.Effect<MiddlewareResult<$Ctx> | OkResult<$Ok>, $E, $R> &
+  ) => Effect.Effect<MiddlewareResult<$Ctx, $Input> | OkResult<$Ok>, $E, $R> &
     EffectBodyCheck<$E, $R, $Provides>,
 ) => EffectMiddleware<
   TCtx,
@@ -244,7 +269,8 @@ export type EffectMiddlewareFactory<TCtx, TInput, TMeta, $Provides> = <
   Extract<$E, AnyTrpcError>,
   Exclude<$R, $Provides>,
   $Provides,
-  $Ok
+  $Ok,
+  $Input
 >;
 
 /** @internal */
@@ -280,6 +306,7 @@ interface MiddlewareFactory {
     $Ctx extends object = {},
     $Err extends AnyTrpcError = never,
     $Ok = never,
+    $Input = Unset,
   >(
     fn: MiddlewareFunction<
       ReqCtx<TReq>,
@@ -287,7 +314,8 @@ interface MiddlewareFactory {
       ReqMeta<TReq>,
       $Ctx,
       $Err,
-      $Ok
+      $Ok,
+      $Input
     >,
   ) => MiddlewareFunction<
     ReqCtx<TReq>,
@@ -295,7 +323,8 @@ interface MiddlewareFactory {
     ReqMeta<TReq>,
     $Ctx,
     $Err,
-    $Ok
+    $Ok,
+    $Input
   >;
   /**
    * A standalone Effect middleware (06 M-A). Declare the services it

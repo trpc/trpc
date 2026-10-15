@@ -22,7 +22,11 @@ import {
   type SubscriptionResolverOpts,
   type With,
 } from './builder.ts';
-import type { EffectMiddleware, MiddlewareFunction } from './middleware.ts';
+import type {
+  EffectMiddleware,
+  MiddlewareFunction,
+  NextInput,
+} from './middleware.ts';
 import {
   isProcedure,
   type AnyProcedure,
@@ -155,6 +159,7 @@ export interface ImplementerMethods<
     $Ctx extends object = {},
     $Err extends TDef['errors'] = never,
     $Ok = never,
+    $Input = Unset,
   >(
     fn: MiddlewareFunction<
       CurrentCtx<TDef>,
@@ -162,13 +167,15 @@ export interface ImplementerMethods<
       TDef['meta'],
       $Ctx,
       $Err,
-      $Ok
+      $Ok,
+      $Input
     >,
   ): ProcedureImplementer<
     With<
       TDef,
       {
         ctxAdded: Overwrite<TDef['ctxAdded'], $Ctx>;
+        inputOut: NextInput<TDef['inputOut'], $Input>;
         shorts: TDef['shorts'] | $Ok;
       }
     >,
@@ -181,6 +188,7 @@ export interface ImplementerMethods<
     $R,
     $Provides,
     $Ok = never,
+    $Input = Unset,
   >(
     mw: EffectMiddleware<
       CurrentCtx<TDef>,
@@ -190,13 +198,15 @@ export interface ImplementerMethods<
       $Err,
       $R,
       $Provides,
-      $Ok
+      $Ok,
+      $Input
     >,
   ): ProcedureImplementer<
     With<
       TDef,
       {
         ctxAdded: Overwrite<TDef['ctxAdded'], $Ctx>;
+        inputOut: NextInput<TDef['inputOut'], $Input>;
         shorts: TDef['shorts'] | $Ok;
         provided: TDef['provided'] | $Provides;
         requires: TDef['requires'] | Exclude<$R, TDef['provided']>;
