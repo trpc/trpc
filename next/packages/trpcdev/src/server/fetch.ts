@@ -425,7 +425,11 @@ export function createFetchHandler<TRouter extends AnyRouter>(
         message: 'Mutations must use POST',
       });
     }
-    if (request.method !== 'GET' && request.method !== 'POST') {
+    if (
+      request.method !== 'GET' &&
+      request.method !== 'POST' &&
+      !(request.method === 'QUERY' && type !== 'mutation')
+    ) {
       throw protocolError(
         'METHOD_NOT_SUPPORTED',
         `${request.method} is not supported`,

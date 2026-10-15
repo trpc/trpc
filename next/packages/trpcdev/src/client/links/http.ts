@@ -41,10 +41,18 @@ export interface HttpLinkOptions {
   /** A custom `fetch`. */
   fetch?: typeof globalThis.fetch;
   /**
-   * Queries whose URL would be longer than this are sent as `POST`.
+   * Queries whose URL would be longer than this are sent with a body, as
+   * `longQuery` says.
    * @default 2048
    */
   maxUrlLength?: number;
+  /**
+   * How a query too long for a URL is sent: `POST`, or the HTTP `QUERY`
+   * method (a safe method with a body, which caches can key on). `QUERY`
+   * needs every proxy in between to allow it.
+   * @default 'post'
+   */
+  longQuery?: 'post' | 'query';
   /**
    * Batch queries (and, separately, mutations) made in the same tick into
    * one request. The server must enable batching too.
@@ -139,6 +147,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink {
   const serializer = opts.serializer ?? defaultSerializer;
   const baseUrl = String(opts.url).replace(/\/+$/, '');
   const maxUrlLength = opts.maxUrlLength ?? 2048;
+  const longQueryMethod = opts.longQuery === 'query' ? 'QUERY' : 'POST';
   const fetchFn = opts.fetch ?? globalThis.fetch;
   const maxItems =
     opts.batch === true ? 10 : opts.batch ? (opts.batch.maxItems ?? 10) : 0;
@@ -201,7 +210,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink {
     return text ? serializer.deserialize(JSON.parse(text)) : undefined;
   }
 
-  /** `GET` with the input in the URL, or `POST` above `maxUrlLength`. */
+  /** `GET` with the input in the URL, or a body above `maxUrlLength`. */
   async function send(
     op: Operation,
     accept: string,
@@ -222,7 +231,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink {
       }
     }
     return fetchFn(url, {
-      method: 'POST',
+      method: op.type === 'query' ? longQueryMethod : 'POST',
       headers: await buildHeaders([op], {
         accept,
         'content-type': CONTENT_TYPE.json,

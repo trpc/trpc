@@ -118,6 +118,38 @@ test('long queries fall back to POST', async () => {
   expect(server.requests.at(-1)!.method).toBe('POST');
 });
 
+test('longQuery: "query" sends long queries with the QUERY method (10 Q10.3)', async () => {
+  await using server = await createTestServer({ router });
+  const client = createTrpcClient<AppRouter>({
+    links: [
+      httpLink({ url: server.url, maxUrlLength: 100, longQuery: 'query' }),
+    ],
+  });
+  expect(await client.len.query({ text: 'x'.repeat(500) })).toBe(500);
+  expect(server.requests.at(-1)!.method).toBe('QUERY');
+
+  const res = await fetch(`${server.url}/save`, {
+    method: 'QUERY',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ json: { when: '2026-10-15', big: '1' } }),
+  });
+  expect(res.status).toBe(405);
+});
+
+test('query URLs are canonical: object keys sorted, array order kept', async () => {
+  await using server = await createTestServer({ router });
+  const client = createTrpcClient<AppRouter>({
+    links: [httpLink({ url: server.url })],
+  });
+  await client.raw.query({ b: 1, a: { d: [3, 1], c: 2 } });
+  await client.raw.query({ a: { c: 2, d: [3, 1] }, b: 1 });
+  const [first, second] = server.requests.slice(-2).map((r) => r.url);
+  expect(first).toBe(second);
+  expect(decodeURIComponent(new URL(first!).search)).toBe(
+    '?a[c]=2&a[d][]=3&a[d][]=1&b=1',
+  );
+});
+
 test('inputs cannot carry RegExps', async () => {
   await using server = await createTestServer({ router });
   const client = createTrpcClient<AppRouter>({

@@ -84,11 +84,28 @@ function flatten(prefix: string, v: JsonValue, out: Entry[]): boolean {
   );
 }
 
+/**
+ * Sorts object keys, keeping array order, so equal inputs give one URL and
+ * hit the same HTTP cache entry.
+ */
+function canonical(v: JsonValue): JsonValue {
+  if (Array.isArray(v)) return v.map(canonical);
+  if (v === null || typeof v !== 'object') return v;
+  const out: Record<string, JsonValue> = {};
+  for (const k of Object.keys(v).sort()) out[k] = canonical(v[k]!);
+  return out;
+}
+
 export function toQueryEntries(
   input: unknown,
   options?: SerializeOptions,
 ): Entry[] {
-  const { json, refs } = serializeSync(input, options);
+  const serialized = serializeSync(input, options);
+  const { refs } = serialized;
+  const json =
+    refs || serialized.json === undefined
+      ? serialized.json
+      : canonical(serialized.json);
   const fallback = (): Entry[] => [
     [FALLBACK_PARAM, JSON.stringify({ json, refs })],
   ];
