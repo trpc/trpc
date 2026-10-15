@@ -35,6 +35,7 @@ export {
   type OperationStream,
   type PromiseLinkOpts,
   type TrpcClientContext,
+  type TrpcRequestInit,
   type TrpcLink,
 } from './link.ts';
 export {

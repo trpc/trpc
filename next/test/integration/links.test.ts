@@ -308,3 +308,61 @@ test('one client for routers on two servers with different contexts (docs/client
   expect(cart).toEqual(['apple']);
   expectTypeOf(cart).toEqualTypeOf<string[]>();
 });
+
+test('httpLink init: a per-request default, merged with each call’s init', async () => {
+  await using server = await serve();
+  const seen: RequestInit[] = [];
+  const opsPerInit: string[][] = [];
+  const client = createTrpcClient<AppRouter>({
+    links: [
+      httpLink({
+        url: server.url,
+        batch: true,
+        headers: { authorization: 'link' },
+        init: ({ ops }) => {
+          opsPerInit.push(ops.map((op) => op.path));
+          return {
+            cache: 'no-store',
+            headers: { 'x-base': 'base', authorization: 'base' },
+            next: { revalidate: 60 },
+          };
+        },
+        fetch: (url, init) => {
+          seen.push(init!);
+          return fetch(url, init);
+        },
+      }),
+    ],
+  });
+
+  const [a, b, c] = await Promise.all([
+    client.whoami.query(),
+    client.today.query(),
+    client.whoami.query(undefined, {
+      init: { headers: { authorization: 'call' }, next: { tags: ['me'] } },
+    }),
+  ]);
+  expect([a, b, c]).toEqual([
+    'link',
+    new Date('2026-10-10T00:00:00.000Z'),
+    'call',
+  ]);
+  expect(opsPerInit).toEqual([['whoami', 'today'], ['whoami']]);
+  expect(server.requests).toHaveLength(2);
+
+  const own = seen.find(
+    (init) => new Headers(init.headers).get('authorization') === 'call',
+  );
+  expect(own).toMatchObject({
+    method: 'POST',
+    cache: 'no-store',
+    next: { revalidate: 60, tags: ['me'] },
+  });
+  expect(new Headers(own!.headers).get('x-base')).toBe('base');
+
+  await client.whoami.query(undefined, {
+    headers: { authorization: 'header' },
+    init: { headers: { authorization: 'init' } },
+  });
+  expect(new Headers(seen.at(-1)!.headers).get('authorization')).toBe('header');
+});

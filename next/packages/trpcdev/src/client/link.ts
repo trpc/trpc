@@ -25,11 +25,31 @@ export interface TrpcClientContext {
   /** Extra request headers, read by `httpLink`. */
   headers?: HeadersInit;
   /**
+   * `fetch` options for this call, merged onto `httpLink`'s `init`. A call
+   * whose `init` differs from the others' is batched apart from them.
+   * Read by `httpLink`.
+   */
+  init?: TrpcRequestInit;
+  /**
    * `false` ends a subscription with `NETWORK_ERROR` when its connection
    * drops, instead of subscribing again. Read by `httpLink` and `wsLink`.
    */
   reconnect?: false;
 }
+
+/**
+ * `fetch` options `httpLink` lets calls set: `RequestInit` without what the
+ * link sets itself, plus Next's data-cache options.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export type TrpcRequestInit = Omit<
+  RequestInit,
+  'body' | 'method' | 'signal'
+> & {
+  /** Next's `fetch` cache options, passed through as they are. */
+  next?: { revalidate?: number | false; tags?: string[] } | undefined;
+};
 
 /**
  * One call, as links see it. `TContext` types the `context` fields a link

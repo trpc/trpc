@@ -25,7 +25,7 @@ await client.post.byId.query(
 );
 ```
 
-`headers` is read by `httpLink`, and `dedupe` by `dedupeLink`. A link of your own declares what it reads:
+`headers` and `init` are read by `httpLink`, and `dedupe` by `dedupeLink`. A link of your own declares what it reads:
 
 ```ts
 const traceLink = link<{ context: { traceId?: string } }>(
@@ -41,7 +41,20 @@ Links receive the fields in `op.context`. `signal` and `lastEventId` are reserve
 
 ## Links
 
-- `httpLink({ url, batch?, headers?, maxUrlLength?, longQuery?, reconnect? })` sends queries as `GET`, mutations as `POST` and subscriptions as SSE. Outputs with nested promises or async iterables stream as JSONL. Inputs holding a `File` or `Blob` go alone as `multipart/form-data`.
+- `httpLink({ url, batch?, headers?, init?, fetch?, maxUrlLength?, longQuery?, reconnect? })` sends queries as `GET`, mutations as `POST` and subscriptions as SSE. Outputs with nested promises or async iterables stream as JSONL. Inputs holding a `File` or `Blob` go alone as `multipart/form-data`.
+
+  `init` sets `fetch` options. The link's `init` is a default, or a function called once per HTTP request with the calls it carries; a call's `init` is merged onto it (shallowly, but `headers` and `next` key by key). Calls with different `init`s are batched apart. `next` passes Next's data-cache options through:
+
+  ```ts
+  httpLink({
+    url,
+    init: ({ ops }) => ({ cache: 'no-store', headers: forwardCookies() }),
+  });
+  await client.post.list.query(input, {
+    init: { next: { revalidate: 60, tags: ['posts'] } },
+  });
+  ```
+
 - `wsLink({ url, connectionParams?, reconnect?, idleMs?, keepAlive? })` runs everything over one WebSocket. It pings every 30 s and reconnects when a ping goes unanswered for 10 s.
 - `splitLink({ condition, true, false })` picks a chain per call; its `condition` sees typed paths.
 - `switchLink({ name, links, pick })` picks one of several named chains, and a call can force one (below).

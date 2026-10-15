@@ -22,7 +22,12 @@ import {
   type SerializeReturn,
   type Serializer,
 } from '../../serializer/index.ts';
-import type { Operation, OperationStream, TrpcLink } from '../link.ts';
+import type {
+  Operation,
+  OperationStream,
+  TrpcLink,
+  TrpcRequestInit,
+} from '../link.ts';
 import { DeferredDecoder, serializeInput } from './events.ts';
 
 /**
@@ -39,6 +44,22 @@ export interface HttpLinkOptions {
   headers?:
     | HeadersInit
     | ((opts: { ops: ReadonlyArray<Operation> }) => MaybePromise<HeadersInit>);
+  /**
+   * Default `fetch` options, called once per HTTP request with the calls it
+   * carries. Each call's `init` is merged onto it: shallowly, except
+   * `headers` and `next`, which merge one level deeper.
+   *
+   * @example
+   * ```ts
+   * httpLink({ url, init: () => ({ credentials: 'include' }) });
+   * await client.post.list.query(input, { init: { next: { tags: ['posts'] } } });
+   * ```
+   */
+  init?:
+    | TrpcRequestInit
+    | ((opts: {
+        ops: ReadonlyArray<Operation>;
+      }) => MaybePromise<TrpcRequestInit | undefined>);
   /** A custom `fetch`. */
   fetch?: typeof globalThis.fetch;
   /**
@@ -131,6 +152,29 @@ function toHttpError(cause: unknown): AnyTrpcError {
 }
 
 /**
+ * Calls batch together only when their `init`s are equal. `undefined` for
+ * an `init` that can't be compared (it holds something JSON can't write).
+ */
+function initKey(op: Operation): string | undefined {
+  const init = op.context.init;
+  if (!init) return '';
+  try {
+    const { headers, ...rest } = init;
+    const sorted = (value: unknown): unknown =>
+      value && typeof value === 'object' && !Array.isArray(value)
+        ? Object.fromEntries(
+            Object.entries(value)
+              .sort(([a], [b]) => (a < b ? -1 : 1))
+              .map(([k, v]) => [k, sorted(v)]),
+          )
+        : value;
+    return JSON.stringify([[...new Headers(headers).entries()], sorted(rest)]);
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Sends calls over HTTP (17: one link for every HTTP transport). Queries use
  * `GET` with legible params, mutations `POST`, subscriptions SSE. Outputs
  * with nested `Promise`s or `AsyncIterable`s stream as JSONL. A call whose
@@ -159,21 +203,40 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink {
     ((attempt: number) => Math.min(1000 * 2 ** (attempt - 1), 30_000));
   const reviveError = (value: unknown) => fromWireError(value);
 
-  async function buildHeaders(
+  /**
+   * The request options for `ops`, which share one `init` (see `initKey`).
+   * Headers, lowest first: `init()`'s, the link's `headers`, the call's
+   * `init.headers`, the call's `headers`, then the protocol's.
+   */
+  async function requestInit(
     ops: ReadonlyArray<Operation>,
     extra: Record<string, string>,
-  ): Promise<Headers> {
-    const headers = new Headers(
+    request: { method: string; body?: BodyInit; signal: AbortSignal },
+  ): Promise<RequestInit> {
+    const base =
+      typeof opts.init === 'function' ? await opts.init({ ops }) : opts.init;
+    const call = ops[0]?.context.init;
+    const headers = new Headers(base?.headers);
+    const set = (init: HeadersInit | undefined) =>
+      new Headers(init).forEach((v, k) => headers.set(k, v));
+    set(
       typeof opts.headers === 'function'
         ? await opts.headers({ ops })
         : opts.headers,
     );
-    for (const op of ops) {
-      new Headers(op.context.headers).forEach((v, k) => headers.set(k, v));
-    }
+    set(call?.headers);
+    for (const op of ops) set(op.context.headers);
     headers.set(HEADER.version, PROTOCOL_VERSION);
     for (const [k, v] of Object.entries(extra)) headers.set(k, v);
-    return headers;
+    const next =
+      base?.next || call?.next ? { ...base?.next, ...call?.next } : undefined;
+    return {
+      ...base,
+      ...call,
+      ...(next ? { next } : {}),
+      headers,
+      ...request,
+    };
   }
 
   interface Encoded {
@@ -197,7 +260,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink {
   /** Blobs need a multipart request of their own; a bad input fails alone. */
   const unbatchable = (op: Operation) => {
     try {
-      return encode(op).parts.length > 0;
+      return encode(op).parts.length > 0 || initKey(op) === undefined;
     } catch {
       return true;
     }
@@ -251,35 +314,46 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink {
       for (const [i, blob] of parts.entries()) {
         form.append(String(i), blob, blob instanceof File ? blob.name : 'blob');
       }
-      return fetchFn(url, {
-        method: 'POST',
-        headers: await buildHeaders([op], { accept, ...extra }),
-        body: form,
-        signal,
-      });
+      return fetchFn(
+        url,
+        await requestInit(
+          [op],
+          { accept, ...extra },
+          {
+            method: 'POST',
+            body: form,
+            signal,
+          },
+        ),
+      );
     }
     if (op.type !== 'mutation') {
       const search =
         op.input === undefined ? '' : serializer.toSearch(op.input);
       const full = search ? `${url}?${search}` : url;
       if (full.length <= maxUrlLength) {
-        return fetchFn(full, {
-          method: 'GET',
-          headers: await buildHeaders([op], { accept, ...extra }),
-          signal,
-        });
+        return fetchFn(
+          full,
+          await requestInit(
+            [op],
+            { accept, ...extra },
+            { method: 'GET', signal },
+          ),
+        );
       }
     }
-    return fetchFn(url, {
-      method: op.type === 'query' ? longQueryMethod : 'POST',
-      headers: await buildHeaders([op], {
-        accept,
-        'content-type': CONTENT_TYPE.json,
-        ...extra,
-      }),
-      body: json === undefined ? '' : JSON.stringify(json),
-      signal,
-    });
+    return fetchFn(
+      url,
+      await requestInit(
+        [op],
+        { accept, 'content-type': CONTENT_TYPE.json, ...extra },
+        {
+          method: op.type === 'query' ? longQueryMethod : 'POST',
+          body: json === undefined ? '' : JSON.stringify(json),
+          signal,
+        },
+      ),
+    );
   }
 
   const linked = (signal: AbortSignal, op: Operation) =>
@@ -333,19 +407,22 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink {
           ...(json === undefined ? {} : { input: json }),
         };
       });
-      const res = await fetchFn(baseUrl, {
-        method: 'POST',
-        headers: await buildHeaders(
+      const res = await fetchFn(
+        baseUrl,
+        await requestInit(
           live.map((i) => i.op),
           {
             accept: CONTENT_TYPE.jsonl,
             'content-type': CONTENT_TYPE.json,
             [HEADER.batch]: '1',
           },
+          {
+            method: 'POST',
+            body: JSON.stringify(calls),
+            signal: controller.signal,
+          },
         ),
-        body: JSON.stringify(calls),
-        signal: controller.signal,
-      });
+      );
       if (!res.ok || !res.body) {
         const err = await readError(res);
         for (const item of live) item.reject(err);
@@ -400,9 +477,17 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink {
   function flush() {
     scheduled = false;
     for (const type of ['query', 'mutation'] as const) {
-      const items = queues[type].splice(0);
-      for (let i = 0; i < items.length; i += maxItems) {
-        void dispatch(items.slice(i, i + maxItems));
+      const groups = new Map<string, Pending[]>();
+      for (const item of queues[type].splice(0)) {
+        const key = initKey(item.op) ?? '';
+        let group = groups.get(key);
+        if (!group) groups.set(key, (group = []));
+        group.push(item);
+      }
+      for (const items of groups.values()) {
+        for (let i = 0; i < items.length; i += maxItems) {
+          void dispatch(items.slice(i, i + maxItems));
+        }
       }
     }
   }
