@@ -198,7 +198,7 @@ const client = createTRPCClient<AppRouter>({
 ## Decision
 
 - **Q12.1:** [ ] P-A · [ ] P-B · [ ] P-C
-- **Q12.2:** [ ] create once · [ ] per request
-- **Q12.3:** [ ] Fastify · [ ] Lambda · [ ] CF hibernation · [ ] MessagePort · [ ] Next (dedicated) · other: `____`
+- **Q12.2:** [x] create once · [ ] per request → [handlers](../decisions/handlers.md)
+- **Q12.3:** [x] Effect-native platforms, plus our own Lambda and CF hibernation adapters built Effect's way → [platforms-through-effect-layers](../decisions/platforms-through-effect-layers.md)
 - **Q12.4:** [x] yes · [ ] no → [websocket-standard-interface](../decisions/websocket-standard-interface.md)
 - **Notes:**

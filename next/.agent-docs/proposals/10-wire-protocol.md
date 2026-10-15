@@ -267,8 +267,8 @@ Errors are `{ json: { defined, code, status, message, data }, meta }` with a 4xx
 ## Decision
 
 - **Q10.1:** [ ] A · [ ] B · [ ] C
-- **Q10.2:** [ ] `/` · [ ] `.`
-- **Q10.3:** [ ] POST · [ ] QUERY · [ ] both
+- **Q10.2:** [ ] `/` · [x] `.` → [routers](../decisions/routers.md)
+- **Q10.3:** [x] configurable (`longQuery: 'post' | 'query'`, default POST), plus canonical GET URLs → [wire-protocol](../decisions/wire-protocol.md)
 - **Q10.4:** [ ] yes · [ ] on by default
 - **Q10.5:** [ ] JSONL · [ ] SSE
 - **Q10.6:** header `__________` · [ ] reject unknown · [ ] best effort

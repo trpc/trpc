@@ -1,0 +1,20 @@
+# Subscriptions resume with `lastEventId`; the publisher is an Effect service (human)
+
+- Alex, 2026-10-15 (Q14.2): "Yes". `tracked(id, data)` events set the SSE `id:`, and the resolver gets `lastEventId` in its options, not in its input, so reconnects resume (SSE's `Last-Event-ID`, `wsLink`'s resend).
+- Alex, 2026-10-15 (Q14.6): "Build something thay works great with effect and their integrations, it doesn't have to satisfy non effect people". The publisher is an Effect service provided as a layer: an in-memory layer on `PubSub` with an optional resume buffer, and other backends by swapping the layer. No Promise wrapper.
+
+  ```ts
+  class Posts extends Publisher.Tag('Posts')<{ created: Post }>() {}
+  const onPost = t.procedure.subscription(({ lastEventId }) =>
+    Stream.unwrap(
+      Effect.map(Posts.asEffect(), (p) =>
+        p.subscribe('created', { lastEventId }),
+      ),
+    ),
+  );
+  createFetchHandler({ router, layer: Posts.memory({ buffer: 100 }) });
+  ```
+
+- Lost: keeping the last event id in the input (v11), which mixes transport state into the schema; oRPC's Promise-facing `MemoryPublisher`.
+- Open: Q14.7, Cloudflare WebSocket hibernation in v1 or later (the agent recommends later).
+- Lives in: `packages/trpcdev/src/server/tracked.ts`, `src/server/publisher.ts`.

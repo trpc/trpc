@@ -239,7 +239,7 @@ const loggedProcedure = t.procedure
 - **Q6.1:** [ ] N-A · [ ] N-B
 - **Q6.2:** [ ] yes · [ ] no
 - **Q6.3:** [ ] yes · [ ] no · `mapInput`: [ ] yes · [ ] no
-- **Q6.4:** [ ] never · [ ] later · [ ] v1
-- **Q6.5:** [ ] yes · [ ] no
+- **Q6.4:** [x] never · [ ] later · [ ] v1 → [middleware](../decisions/middleware.md)
+- **Q6.5:** [x] yes, in `trpcdev/middleware` · [ ] no → [middleware](../decisions/middleware.md)
 - **Q6.6:** [ ] M-A · [ ] M-B · services in v1: [ ] yes · [ ] no
 - **Notes:**

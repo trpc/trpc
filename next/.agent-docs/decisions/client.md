@@ -1,8 +1,14 @@
-# The client is typed from `routerType<T>()` (agent)
+# The client is typed by inference, with link options on the call (human)
 
-- CS-A: `query(input, { signal, context })`, `mutate(…)`, and `subscribe(input, { signal, lastEventId })` returning an `AsyncIterable`.
-- D-C: `createTRPCClient({ router: routerType<AppRouter>(), links })` also infers the `context` fields the links declare. `router:` takes a contract or a `toContract()` value too. The explicit generic `createTRPCClient<AppRouter>({ links })` still works, with only the open `TRPCClientContext` interface.
-- The carrier is `routerType<T>()`, not proposal 17's `type<T>()`, which [`validation.md`](./validation.md) bans. `routerType` names what it carries and can't be mistaken for a validator.
-- `createEffectClient` in `trpcdev/effect` returns an `Effect` per call (a `Stream` for subscriptions) and takes `router:` too.
-- Outputs are typed as `Deserialized<Output>`: generators become `AsyncIterable`s and thenables `Promise`s at any depth; built-ins (`Date`, `Map`, `URL`, …) are left alone. Custom serializer types are mapped structurally, so methods stay but private fields are lost.
-- Lives in: `packages/trpcdev/src/client/client.ts`, `types.ts`, `src/effect/index.ts`, `src/internal/types.ts`.
+- Alex, 2026-10-15 (Q16.2): "Yes, but they don't have to live under context, they can just be on the options". Links declare typed per-call options, and they sit directly on the call options: `query(input, { signal, dedupe: false })`. Built-in names (`signal`, `lastEventId`) are reserved; a link declaring one is a type error.
+- Alex, 2026-10-15 (Q16.6): "A but they should also be inferrable and affect what's available". `links: [...]` stays an array, and what the links declare shapes the client's types.
+- Open: links affect more than options, e.g. a link's own errors join the union (`NETWORK_ERROR` from `wsLink`), and `.subscribe()` exists only when a link can carry subscriptions.
+- Alex, 2026-10-15 (Q16.3): "Ship both". `safe(promise)` and `createSafeClient(client)`, whose calls return the same dual `[data, error]` / `{ data, error }` result.
+- Alex, 2026-10-15 (Q14.1): "A, we should also allow an Effect native api where we can handle all errors and interruptions etc". Subscriptions are `AsyncIterable` first. `createEffectClient` in `trpcdev/effect` returns an `Effect` per call and a `Stream` per subscription, with typed errors in the error channel; interrupting the fiber aborts the request.
+- Alex, 2026-10-15 (Q16.5): "Ideally not but might be needed as a lower level thing for each client wrapping like the react libs". `createUntypedClient` is not in `trpcdev/client`; it is in `trpcdev/extend` ([`entry-points.md`](./entry-points.md)).
+- Alex, 2026-10-15 (Q5.5): "Yes later. I don't like packaging the contract in the clients if we don't need to, stuff should be inferrable". Decoding outputs with schemas on the client is a later opt-in. By default clients ship no contract and get types from `routerType<AppRouter>()`. `openAPILink` is the exception: it needs each procedure's method and path at runtime.
+- Lost: v11's `context: Record<string, unknown>`; a single composed `link` (oRPC); callback-first subscriptions.
+- (agent, CS-A) `query(input, opts)`, `mutate(…)`, and `subscribe(input, { signal, lastEventId })` returning an `AsyncIterable`.
+- (agent, D-C) `createTrpcClient({ router: routerType<AppRouter>(), links })`. `router:` takes a contract or a `toContract()` value too; the explicit generic `createTrpcClient<AppRouter>({ links })` still works. The carrier is `routerType<T>()`, not proposal 17's `type<T>()`, which [`validation.md`](./validation.md) bans.
+- (agent) Outputs are typed as `Deserialized<Output>`: generators become `AsyncIterable`s and thenables `Promise`s at any depth; built-ins (`Date`, `Map`, `URL`, …) are left alone. Custom serializer types are mapped structurally, so methods stay but private fields are lost.
+- Lives in: `packages/trpcdev/src/client/client.ts`, `types.ts`, `link.ts`, `src/effect/index.ts`, `src/internal/types.ts`.

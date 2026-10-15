@@ -309,6 +309,6 @@ The combined model:
 - **Q7.3:** [ ] `[data, error]` · [ ] `[error, data, isDefined]` · [ ] `{ data, error }`
 - **Q7.4:** [ ] yes, default status `___` · [ ] no custom codes
 - **Q7.5:** [x] yes · [ ] no → [mask-unexpected-errors](../decisions/mask-unexpected-errors.md)
-- **Q7.6:** [ ] remove · [ ] keep for shape
-- **Q7.7:** [ ] one class · [ ] two classes
+- **Q7.6:** [x] remove · [ ] keep for shape → [errors](../decisions/errors.md)
+- **Q7.7:** [x] one class · [ ] two classes → [errors](../decisions/errors.md)
 - **Notes:**

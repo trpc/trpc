@@ -18,5 +18,5 @@
 - (agent) Each framework package depends on `@trpcdev/tanstack-query` and re-exports it, so an app imports from one package.
 - Why: optional peers on subpaths still show up in every install. Package managers warn about or auto-install them, and a user of one framework sees the other six in `peerDependencies`. Separate packages give each framework accurate, required peers.
 - Lost: one package with optional peers per subpath (the first TanStack build's layout). Seven more packages to version and publish.
-- Open: Pinia Colada (Q19.6), when built, is `@trpcdev/pinia-colada`.
+- Alex, 2026-10-15 (Q19.6): "Later or never". Pinia Colada isn't planned; if it is ever built, it is `@trpcdev/pinia-colada`.
 - Lives in: `packages/tanstack-*/package.json`.

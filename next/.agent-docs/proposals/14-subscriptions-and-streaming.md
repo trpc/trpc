@@ -224,11 +224,11 @@ The WebSocket message model (10) lets a hibernated Durable Object rebuild subscr
 
 ## Decision
 
-- **Q14.1:** [ ] AsyncIterable first · [ ] callbacks first
-- **Q14.2:** [ ] yes · [ ] no
+- **Q14.1:** [x] AsyncIterable first, plus an Effect-native `Stream` · [ ] callbacks first → [client](../decisions/client.md)
+- **Q14.2:** [x] yes · [ ] no → [subscriptions](../decisions/subscriptions.md)
 - **Q14.3:** [ ] per-kind · [ ] always `stream()`
 - **Q14.4:** [ ] D-A · [ ] D-B · [ ] D-C
 - **Q14.5:** [x] yes · [ ] no (follow the SSE standard) → [fetch-sse](../decisions/fetch-sse.md)
-- **Q14.6:** [ ] yes · [ ] no
+- **Q14.6:** [x] yes, as an Effect service (memory layer on `PubSub`) · [ ] no → [subscriptions](../decisions/subscriptions.md)
 - **Q14.7:** [ ] v1 · [ ] later
 - **Notes:**

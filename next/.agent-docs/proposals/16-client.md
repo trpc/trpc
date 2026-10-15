@@ -170,9 +170,9 @@ const post = await untyped.request({
 ## Decision
 
 - **Q16.1:** [ ] CS-A · [ ] CS-B
-- **Q16.2:** [ ] yes · [ ] no
-- **Q16.3:** [ ] yes · [ ] no
-- **Q16.4:** [ ] new codes · [ ] flag
-- **Q16.5:** [ ] yes · [ ] no
-- **Q16.6:** [ ] array · [ ] single link · [ ] both
+- **Q16.2:** [x] yes, directly on the call options (no `context`) · [ ] no → [client](../decisions/client.md)
+- **Q16.3:** [x] yes, ship both · [ ] no → [client](../decisions/client.md)
+- **Q16.4:** [x] new codes (agent call, revisit later) · [ ] flag → [errors](../decisions/errors.md)
+- **Q16.5:** [ ] yes · [x] not in `trpcdev/client`; in `trpcdev/extend` → [entry-points](../decisions/entry-points.md)
+- **Q16.6:** [x] array, with inferred link options · [ ] single link · [ ] both → [client](../decisions/client.md)
 - **Notes:**

@@ -154,6 +154,6 @@ useInfiniteQuery(
 - **Q19.2:** [x] option bag · [ ] positional → [tanstack-option-bag](../decisions/tanstack-option-bag.md)
 - **Q19.3:** [ ] explicit input fn · [ ] cursor convention
 - **Q19.4:** name: `__________`
-- **Q19.5:** [ ] yes · [ ] later
-- **Q19.6:** [ ] later · [ ] never
+- **Q19.5:** [x] yes · [ ] later → [tanstack-query-subscriptions](../decisions/tanstack-query-subscriptions.md)
+- **Q19.6:** [x] later or never · [ ] never → [integration-packages](../decisions/integration-packages.md)
 - **Notes:**

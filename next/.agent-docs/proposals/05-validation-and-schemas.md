@@ -270,7 +270,7 @@ const post = await client.byId.query({ id: '1' }); // post.createdAt typed as Da
 - **Q5.1:** [ ] V-A · [ ] V-B
 - **Q5.2:** [ ] yes · [x] no → [validation](../decisions/validation.md)
 - **Q5.3:** [ ] C-A · [ ] C-B
-- **Q5.4:** [ ] yes · [ ] no · [ ] configurable, default `____`
-- **Q5.5:** [ ] yes, later · [ ] no
+- **Q5.4:** [x] yes, and inferred into the error union · [ ] no · [ ] configurable → [validation](../decisions/validation.md)
+- **Q5.5:** [x] yes, later (opt-in; clients ship no contract by default) · [ ] no → [client](../decisions/client.md)
 - **Q5.6:** [ ] D-A · [ ] D-B · [ ] D-C · [ ] D-D (pick any combination)
 - **Notes:**

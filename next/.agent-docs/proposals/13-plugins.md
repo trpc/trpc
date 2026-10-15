@@ -175,5 +175,5 @@ const csrf = (): HandlerPlugin => ({
 - **Q13.1:** [ ] yes · [ ] no — `onCall` as global middleware: [ ] yes · [ ] no
 - **Q13.2:** v1: `__________` — on by default: `__________`
 - **Q13.3:** [ ] plugins · [ ] fixed rules
-- **Q13.4:** [ ] manual only · [ ] typed contribution
+- **Q13.4:** [x] manual only (agent call) · [ ] typed contribution → [handlers](../decisions/handlers.md)
 - **Notes:**

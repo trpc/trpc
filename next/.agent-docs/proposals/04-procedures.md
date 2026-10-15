@@ -243,9 +243,9 @@ t.procedure
 
 ## Decision
 
-- **Q4.1:** [ ] T-A · [ ] T-B
+- **Q4.1:** [x] T-A · [ ] T-B → [builder-and-procedures](../decisions/builder-and-procedures.md)
 - **Q4.2:** [ ] R-A · [ ] R-B · [ ] R-C
 - **Q4.3:** [ ] yes · [ ] no · [ ] later
-- **Q4.4:** [ ] yes · [ ] no
+- **Q4.4:** [x] yes, per procedure: `.output(schema, { validate: false })`, typed from the schema's input · [ ] no → [builder-and-procedures](../decisions/builder-and-procedures.md)
 - **Q4.5:** [x] yes · [ ] no → [meta-in-resolvers](../decisions/meta-in-resolvers.md)
 - **Notes:**

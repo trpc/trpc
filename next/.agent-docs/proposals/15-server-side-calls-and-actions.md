@@ -147,8 +147,8 @@ const result = await createPost({ title }); // { data: Post } | { error: TypedEr
 
 ## Decision
 
-- **Q15.1:** [ ] SC-A · [ ] SC-B
-- **Q15.2:** [ ] wrappers · [ ] builder methods
-- **Q15.3:** [ ] `{ data } | { error }` · [ ] tuple like `safe()` · [ ] throw
-- **Q15.4:** [ ] package · [ ] docs
+- **Q15.1:** [x] both: SC-A and `localLink` → [server-side-calls](../decisions/server-side-calls.md)
+- **Q15.2:** [x] wrappers · [ ] builder methods → [actions-and-rsc](../decisions/actions-and-rsc.md)
+- **Q15.3:** [x] configurable on a `createAction({ ctx, result })` factory, `safe()`-style by default → [actions-and-rsc](../decisions/actions-and-rsc.md)
+- **Q15.4:** [x] neither: `trpcdev/actions` plus `@trpcdev/tanstack-react-query/rsc` → [actions-and-rsc](../decisions/actions-and-rsc.md)
 - **Notes:**

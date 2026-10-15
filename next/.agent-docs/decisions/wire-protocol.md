@@ -1,8 +1,10 @@
 # Wire protocol: proposal 10 Option B (agent)
 
+- Alex, 2026-10-15 (Q10.3): "There's bodies for GET now thay we can probably leverage... But it should be configurable". Long query inputs are configurable on `httpLink`: `longQuery: 'post' | 'query'`, default `'post'`, where `'query'` uses the HTTP `QUERY` method (browsers' `fetch` still rejects GET bodies).
+- Alex, 2026-10-15: "we could consider some normalisation of order of queries and sorting keys and stuff so caches are more likely to get hit". GET URLs are canonical: object keys are sorted before encoding (array order is kept), so equal inputs give equal URLs.
 - HTTP, as 10 Option B, with these specifics:
   - Bodies keep danSON's `{ json, refs? }` wrapper.
-  - Queries are `GET` with legible params (QP-C), falling back to `POST` above `maxURLLength`. Mutations require `POST` with `content-type: application/json`, which is the CSRF guard.
+  - Queries are `GET` with legible params (QP-C), falling back per `longQuery` above `maxUrlLength`. Mutations require `POST` with `content-type: application/json`, which is the CSRF guard.
   - Errors are `{ error: { code, message, data, defined } }` with the error's status.
   - Batching is `POST {base}` with `trpc-batch: 1`, answered with JSONL in completion order: `{ i, status, body }`, plus `{ i, chunk }` for deferred values.
   - Deferred values (a `Promise` or `AsyncIterable` nested in an output) stream as JSONL in danSON's async format. The server only switches to JSONL when an output contains one, so plain responses stay `application/json`.

@@ -116,6 +116,6 @@ export type AppRouter = typeof appRouter;
 
 - **Q8.1:** [ ] A · [ ] B
 - **Q8.2:** [ ] yes · [x] no (keep a merge helper) → [routers](../decisions/routers.md)
-- **Q8.3:** [ ] yes · [ ] no
-- **Q8.4:** [ ] prefix · [ ] contract · [ ] eager load · [ ] any of these
+- **Q8.3:** [x] yes, OpenAPI only · [ ] no → [routers](../decisions/routers.md)
+- **Q8.4:** [ ] prefix · [ ] contract · [ ] eager load · [x] any of these, `prefix` by default → [routers](../decisions/routers.md)
 - **Notes:**

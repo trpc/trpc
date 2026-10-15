@@ -212,6 +212,6 @@ const openapi = createOpenAPIHandler({
 - **Q18.1:** [ ] O-A · [ ] O-B · [ ] O-C
 - **Q18.2:** [ ] defaults · [ ] require `.route()`
 - **Q18.3:** [ ] keep · [ ] drop · [ ] later
-- **Q18.4:** [ ] v1 · [ ] later
+- **Q18.4:** [x] v1 · [ ] later → [openapi](../decisions/openapi.md)
 - **Q18.5:** [ ] yes · [ ] no
 - **Notes:**
