@@ -249,3 +249,24 @@ test('events can hold deferred values; their chunks stream after the event', asy
   ]);
   expect(await collect(uploads[1]!.data.progress)).toEqual([50, 100]);
 });
+
+test('quiet subscriptions send keep-alive comments', async () => {
+  const pinged = {
+    slow: t.procedure.subscription(async function* () {
+      yield 'a';
+      await sleep(60);
+      yield 'b';
+    }),
+  };
+  await using server = await createTestServer({
+    router: pinged,
+    createContext: () => ({ user: null }),
+    sse: { pingMs: 10 },
+  });
+  const text = await (await fetch(`${server.url}/slow`)).text();
+  expect(text).toContain(': ping\n\n');
+  const client = createTrpcClient<typeof pinged>({
+    links: [httpLink({ url: server.url })],
+  });
+  expect(await collect(client.slow.subscribe())).toEqual(['a', 'b']);
+});

@@ -25,6 +25,8 @@ client.onPost.subscribe(undefined, { lastEventId: '42' }); // resume from a know
 
 `httpLink` reconnects a dropped subscription with backoff (`reconnect: { attempts, delayMs }`). `wsLink` resends `lastEventId` after reconnecting.
 
+While a subscription is quiet, the handler sends a `: ping` comment every 15 seconds so proxies don't close it as idle. Set `createFetchHandler({ sse: { pingMs } })`, or `false` to turn it off.
+
 ## Publisher
 
 `Publisher` is typed publish/subscribe as an Effect service. Declare a key with its channels, then provide a layer:

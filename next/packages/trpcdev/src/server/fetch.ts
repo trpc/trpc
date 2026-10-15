@@ -134,6 +134,14 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter> {
   exposeUnexpectedErrors?: boolean;
   /** Called for every error, with the original cause. */
   onError?: (opts: OnErrorOpts) => void;
+  sse?: {
+    /**
+     * Send a comment line this often while a subscription is quiet, so
+     * proxies don't close it as idle. `false` sends none.
+     * @default 15_000
+     */
+    pingMs?: number | false;
+  };
 }
 
 /**
@@ -226,6 +234,7 @@ export function createFetchHandler<TRouter extends AnyRouter>(
   const serializer = opts.serializer ?? defaultSerializer;
   const endpoint = `/${(opts.endpoint ?? '/trpc').replace(/^\/+|\/+$/g, '')}`;
   const maxBodySize = opts.maxBodySize ?? 1_048_576;
+  const ssePingMs = opts.sse?.pingMs ?? 15_000;
   const batch =
     opts.batch === true
       ? { maxItems: 20 }
@@ -522,6 +531,10 @@ export function createFetchHandler<TRouter extends AnyRouter>(
         // Servers that buffer headers until the first body chunk (Node) would
         // otherwise hold them back until the first event.
         write(': open\n\n');
+        const ping =
+          ssePingMs === false
+            ? undefined
+            : setInterval(() => write(': ping\n\n'), ssePingMs);
         const done = await Effect.runPromiseExit(
           emitEvents(events, serializer, coerceError, (frame) => {
             if (frame.kind === 'event') {
@@ -543,7 +556,7 @@ export function createFetchHandler<TRouter extends AnyRouter>(
             }
           }),
           { signal: controller.signal },
-        );
+        ).finally(() => clearInterval(ping));
         if (controller.signal.aborted) return;
         if (Exit.isFailure(done)) {
           const err = normalizeCause(done.cause);
