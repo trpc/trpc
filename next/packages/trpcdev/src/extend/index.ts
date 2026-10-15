@@ -16,7 +16,9 @@ export {
   createRecursiveProxy,
   createUntypedClient,
   makeOperation,
+  splitCallOptions,
   type TrpcUntypedClient,
+  type UntypedCallOptions,
 } from '../client/client.ts';
 export { clientErrorFromCause, firstValue, runLinks } from '../client/link.ts';
 export {

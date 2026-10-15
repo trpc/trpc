@@ -101,7 +101,7 @@ export interface DedupeContext {
 /**
  * Shares one request between identical queries in flight at the same time.
  * Every caller gets the same result value, so a deferred `AsyncIterable`
- * in it is shared too: send such queries with `context: { dedupe: false }`.
+ * in it is shared too: send such queries with `{ dedupe: false }`.
  * The request is aborted only when every caller has aborted.
  *
  * @example

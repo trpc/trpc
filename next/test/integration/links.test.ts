@@ -62,7 +62,7 @@ const serve = () =>
     }),
   });
 
-test('a link can add headers through the call context', async () => {
+test('a link can add headers through the operation context', async () => {
   await using server = await serve();
   const authLink = link(async ({ op, next }) =>
     next({
@@ -79,7 +79,7 @@ test('a link can add headers through the call context', async () => {
   expect(await client.whoami.query()).toBe('Bearer whoami');
   expect(
     await client.whoami.query(undefined, {
-      context: { headers: { authorization: 'per-call' } },
+      headers: { authorization: 'per-call' },
     }),
   ).toBe('Bearer whoami');
 });

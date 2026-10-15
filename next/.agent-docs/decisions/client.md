@@ -1,6 +1,7 @@
 # The client is typed by inference, with link options on the call (human)
 
 - Alex, 2026-10-15 (Q16.2): "Yes, but they don't have to live under context, they can just be on the options". Links declare typed per-call options, and they sit directly on the call options: `query(input, { signal, dedupe: false })`. Built-in names (`signal`, `lastEventId`) are reserved; a link declaring one is a type error.
+- (agent) Links still read them from `op.context`. Two layers keep a `context` bag: the untyped client (its options also carry `type`, `path` and `input`) and the TanStack option bags (`queryOptions({ input, context })`), where flat fields would collide with TanStack's own options.
 - Alex, 2026-10-15 (Q16.6): "A but they should also be inferrable and affect what's available". `links: [...]` stays an array, and what the links declare shapes the client's types.
 - Open: links affect more than options, e.g. a link's own errors join the union (`NETWORK_ERROR` from `wsLink`), and `.subscribe()` exists only when a link can carry subscriptions.
 - Alex, 2026-10-15 (Q16.3): "Ship both". `safe(promise)` and `createSafeClient(client)`, whose calls return the same dual `[data, error]` / `{ data, error }` result.

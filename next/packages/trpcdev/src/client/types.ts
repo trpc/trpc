@@ -56,27 +56,31 @@ export interface TrpcSubscription<T, E> extends AsyncIterable<T> {
 }
 
 /**
- * Options for `query()` and `mutate()` (16 CS-A).
+ * Options for `query()` and `mutate()` (16 CS-A): `signal`, plus the fields
+ * links read (17 F-B), typed from the links with `router:`.
+ *
+ * @example
+ * ```ts
+ * await client.post.byId.query({ id }, { signal, headers, dedupe: false });
+ * ```
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface CallOptions<TContext extends object = {}> {
+export type CallOptions<TContext extends object = {}> = {
   signal?: AbortSignal | undefined;
-  /** Read by links (17 F-B). Typed from the links with `router:`. */
-  context?: (TrpcClientContext & TContext) | undefined;
-}
+} & TrpcClientContext &
+  TContext;
 
 /**
  * Options for `subscribe()`.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface SubscribeOptions<
-  TContext extends object = {},
-> extends CallOptions<TContext> {
-  /** Resume after this `tracked()` event id. */
-  lastEventId?: string | undefined;
-}
+export type SubscribeOptions<TContext extends object = {}> =
+  CallOptions<TContext> & {
+    /** Resume after this `tracked()` event id. */
+    lastEventId?: string | undefined;
+  };
 
 /** @internal */
 export type CallArgs<TInput, TOpts> = undefined extends TInput
@@ -146,7 +150,7 @@ export interface RouterType<TRouter> {
  *   router: routerType<AppRouter>(),
  *   links: [dedupeLink(), httpLink({ url })],
  * });
- * await client.post.byId.query({ id: '1' }, { context: { dedupe: false } });
+ * await client.post.byId.query({ id: '1' }, { dedupe: false });
  * ```
  * @since 12.0.0-alpha.0
  * @stability experimental
@@ -178,7 +182,7 @@ type DeclOf<TLink> =
     : never;
 
 /**
- * The `context` every link in `TLinks` declares, merged.
+ * The call option fields every link in `TLinks` declares, merged.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */

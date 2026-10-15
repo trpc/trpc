@@ -30,6 +30,7 @@ export {
   type AnyLink,
   type EffectLinkOpts,
   type LinkDecl,
+  type ReservedCallOptions,
   type Operation,
   type OperationStream,
   type PromiseLinkOpts,

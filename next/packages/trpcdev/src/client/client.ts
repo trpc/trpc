@@ -53,7 +53,7 @@ export function makeOperation(
   type: ProcedureType,
   path: string,
   input: unknown,
-  opts: SubscribeOptions<object> | undefined,
+  opts: UntypedCallOptions | undefined,
 ): Operation {
   return {
     id: ++nextId,
@@ -64,6 +64,33 @@ export function makeOperation(
     signal: opts?.signal,
     lastEventId: opts?.lastEventId,
   };
+}
+
+/**
+ * Splits typed call options into `signal`, `lastEventId` and the fields
+ * links read.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export function splitCallOptions(
+  opts: SubscribeOptions<object> | undefined,
+): UntypedCallOptions {
+  if (!opts) return {};
+  const { signal, lastEventId, ...context } = opts;
+  return { signal, lastEventId, context };
+}
+
+/**
+ * Call options as the untyped client takes them: what links read is in
+ * `context`.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export interface UntypedCallOptions {
+  signal?: AbortSignal | undefined;
+  context?: TrpcClientContext | undefined;
+  /** Subscriptions: resume after this event id. */
+  lastEventId?: string | undefined;
 }
 
 /** Interrupts `stream` quietly when `signal` aborts. @internal */
@@ -115,21 +142,17 @@ export interface TypedClientOptions<
  */
 export interface TrpcUntypedClient {
   /** Runs a query or mutation. */
-  request(opts: {
-    type: 'query' | 'mutation';
-    path: string;
-    input?: unknown;
-    signal?: AbortSignal | undefined;
-    context?: TrpcClientContext | undefined;
-  }): Promise<unknown>;
+  request(
+    opts: Omit<UntypedCallOptions, 'lastEventId'> & {
+      type: 'query' | 'mutation';
+      path: string;
+      input?: unknown;
+    },
+  ): Promise<unknown>;
   /** Starts a subscription. */
-  subscribe(opts: {
-    path: string;
-    input?: unknown;
-    signal?: AbortSignal | undefined;
-    context?: TrpcClientContext | undefined;
-    lastEventId?: string | undefined;
-  }): AsyncIterable<unknown>;
+  subscribe(
+    opts: UntypedCallOptions & { path: string; input?: unknown },
+  ): AsyncIterable<unknown>;
 }
 
 /**
@@ -174,7 +197,7 @@ export function createUntypedClient(
 
 /**
  * Creates a typed client for a router (16 CS-A). With `router:` (17 D-C)
- * the call options' `context` is typed from what the links declare, and
+ * the call options are typed from what the links declare, and
  * router-aware links like `splitLink` see typed paths.
  *
  * @example
@@ -198,8 +221,8 @@ export function createTrpcClient<
   opts: TypedClientOptions<TSource, TLinks>,
 ): TrpcClient<RouterOf<TSource>, LinksContext<TLinks>>;
 /**
- * Creates a typed client from an explicit router type. `context` is the
- * open {@link TrpcClientContext} interface.
+ * Creates a typed client from an explicit router type. Link fields on the
+ * call options come from the open {@link TrpcClientContext} interface.
  *
  * @example
  * ```ts
@@ -222,10 +245,11 @@ export function createTrpcClient(opts: TrpcClientOptions): unknown {
       );
     }
     const procedurePath = path.slice(0, -1).join('.');
-    const [input, callOpts] = args as [
+    const [input, typedOpts] = args as [
       unknown,
       SubscribeOptions<object> | undefined,
     ];
+    const callOpts = splitCallOptions(typedOpts);
     if (type === 'subscription') {
       return untyped.subscribe({ path: procedurePath, input, ...callOpts });
     }

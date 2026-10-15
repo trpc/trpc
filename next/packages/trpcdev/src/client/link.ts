@@ -7,8 +7,8 @@ import {
 import type { ProcedureType } from '../internal/types.ts';
 
 /**
- * Per-call context that links read (17 F-B). Built-in links read `headers`.
- * Augment it to type your own links' fields:
+ * Call option fields that links read from `op.context` (17 F-B). Built-in
+ * links read `headers`. Augment it to type your own links' fields:
  *
  * @example
  * ```ts
@@ -75,13 +75,24 @@ export interface PromiseLinkOpts<TContext extends object = {}> {
 }
 
 /**
+ * Call option names links can't declare: the client reads them itself.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export interface ReservedCallOptions {
+  signal?: never;
+  lastEventId?: never;
+}
+
+/**
  * What a link declares it reads (17 (c)). `context` fields are added to the
- * call options' `context` of clients created with `router:` (F-B).
+ * call options of clients created with `router:` (F-B), and arrive in
+ * `op.context`. `signal` and `lastEventId` are reserved.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
 export interface LinkDecl {
-  context?: object;
+  context?: object & ReservedCallOptions;
 }
 
 /**

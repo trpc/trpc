@@ -28,7 +28,7 @@ type NonUndefined<T> = T extends undefined ? never : T;
 
 type InputOf<F> = F extends (input: infer I, ...rest: any[]) => any ? I : never;
 type ContextOf<F> = F extends (input: any, opts?: infer O) => any
-  ? NonNullable<NonNullable<O> extends { context?: infer C } ? C : never>
+  ? Omit<NonNullable<O>, 'signal' | 'lastEventId'>
   : never;
 type OutputOf<F> = F extends (...args: any[]) => PromiseLike<infer T>
   ? T
@@ -67,7 +67,11 @@ type InputBag<TInput> = undefined extends TInput
   ? { input?: TInput | SkipToken }
   : { input: TInput | SkipToken };
 type ContextBag<TContext> = {
-  /** Read by links (17 F-B), typed from what the client's links declare. */
+  /**
+   * The call option fields links read (17 F-B), typed from what the
+   * client's links declare. A bag here, so they can't collide with
+   * TanStack's options.
+   */
   context?: TContext | undefined;
 };
 type BagArgs<TInput, TOpts> = undefined extends TInput
@@ -493,7 +497,7 @@ function streamFrom(
   input: unknown,
   context: unknown,
 ): (ctx: { signal: AbortSignal }) => AsyncIterable<unknown> {
-  return ({ signal }) => method(input, { signal, context });
+  return ({ signal }) => method(input, { ...(context as object), signal });
 }
 
 /**
@@ -550,8 +554,8 @@ export function createTrpcQueryUtils<TClient extends object>(
               ? skipToken
               : async (ctx: QueryFunctionContext) => {
                   const output = await query(input, {
+                    ...(context as object),
                     signal: ctx.signal,
-                    context,
                   });
                   if (!isAsyncIterable(output)) return output;
                   return streamedQuery({ streamFn: () => output })(ctx);
@@ -577,8 +581,8 @@ export function createTrpcQueryUtils<TClient extends object>(
               ? skipToken
               : (ctx: QueryFunctionContext<TrpcQueryKey, unknown>) =>
                   query(toInput(ctx.pageParam), {
+                    ...(context as object),
                     signal: ctx.signal,
-                    context,
                   }),
         };
       }
@@ -589,7 +593,7 @@ export function createTrpcQueryUtils<TClient extends object>(
         return {
           ...rest,
           mutationKey: [path],
-          mutationFn: (variables: unknown) => mutate(variables, { context }),
+          mutationFn: (variables: unknown) => mutate(variables, context ?? {}),
         };
       }
       case 'subscriptionOptions': {

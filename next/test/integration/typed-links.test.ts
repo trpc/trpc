@@ -58,7 +58,7 @@ test('dedupeLink shares identical queries in flight', async () => {
 
   await Promise.all([
     ctx.client.post.byId.query({ id: '1' }),
-    ctx.client.post.byId.query({ id: '1' }, { context: { dedupe: false } }),
+    ctx.client.post.byId.query({ id: '1' }, { dedupe: false }),
   ]);
   expect(ctx.server.requests).toHaveLength(4);
 
@@ -94,7 +94,7 @@ test('a shared query is aborted only when every caller aborts', async () => {
   await vi.waitFor(() => expect(state.aborted).toBe(before + 1));
 });
 
-test('links declare the context fields calls may pass (17 D-C, F-B)', async () => {
+test('links declare the call option fields calls may pass (17 D-C, F-B)', async () => {
   await using server = await createTestServer({ router });
   const seen: (string | undefined)[] = [];
   const traceLink = link<{ context: { traceId?: string } }>(
@@ -110,7 +110,7 @@ test('links declare the context fields calls may pass (17 D-C, F-B)', async () =
   });
   await client.post.byId.query(
     { id: '1' },
-    { context: { traceId: 'abc', dedupe: false, headers: { 'x-a': '1' } } },
+    { traceId: 'abc', dedupe: false, headers: { 'x-a': '1' } },
   );
   expect(seen).toEqual(['abc']);
   expect(server.requests.at(-1)!.headers.get('x-a')).toBe('1');
@@ -120,9 +120,9 @@ test('links declare the context fields calls may pass (17 D-C, F-B)', async () =
   });
   void (() => {
     // @ts-expect-error -- no link declares `cache`
-    void client.post.byId.query({ id: '1' }, { context: { cache: false } });
+    void client.post.byId.query({ id: '1' }, { cache: false });
     // @ts-expect-error -- the explicit-generic form does not infer link fields
-    void plain.post.byId.query({ id: '1' }, { context: { traceId: 'abc' } });
+    void plain.post.byId.query({ id: '1' }, { traceId: 'abc' });
   });
 });
 
@@ -143,7 +143,7 @@ test('splitLink sees typed paths, and merges both branches', async () => {
       }),
     ],
   });
-  await client.post.byId.query({ id: '1' }, { context: { dedupe: true } });
+  await client.post.byId.query({ id: '1' }, { dedupe: true });
   await client.post.create.mutate({ title: 'x' });
   expect(conditions).toEqual(['post.byId', 'post.create']);
   expect(server.requests.at(-1)!.headers.get('trpc-batch')).toBe('1');
@@ -175,7 +175,7 @@ test('routerType works for the Effect client too', async () => {
     links: [dedupeLink(), httpLink({ url: server.url })],
   });
   const post = await Effect.runPromise(
-    client.post.byId.query({ id: '5' }, { context: { dedupe: false } }),
+    client.post.byId.query({ id: '5' }, { dedupe: false }),
   );
   expect(post.id).toBe('5');
   expectTypeOf(post).toEqualTypeOf<{ id: string; call: number }>();
@@ -190,4 +190,9 @@ test('custom links get an Operation typed with their declared context', () => {
     },
   );
   expectTypeOf(declared).not.toBeAny();
+
+  // @ts-expect-error -- the client reads `signal` itself
+  link<{ context: { signal?: string } }>(({ op, next }) => next(op));
+  // @ts-expect-error -- the client reads `lastEventId` itself
+  link.effect<{ context: { lastEventId: number } }>(({ op, next }) => next(op));
 });

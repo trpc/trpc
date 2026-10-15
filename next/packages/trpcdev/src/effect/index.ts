@@ -16,7 +16,11 @@
  */
 import type { Effect } from 'effect';
 import { Stream } from 'effect';
-import { createRecursiveProxy, makeOperation } from '../client/client.ts';
+import {
+  createRecursiveProxy,
+  makeOperation,
+  splitCallOptions,
+} from '../client/client.ts';
 import type {
   TrpcClientOptions,
   TypedClientOptions,
@@ -137,7 +141,7 @@ export function createEffectClient(opts: TrpcClientOptions): unknown {
       type,
       path.slice(0, -1).join('.'),
       input,
-      callOpts,
+      splitCallOptions(callOpts),
     );
     const stream = Stream.suspend(() => runLinks(opts.links, op));
     return type === 'subscription' ? stream : firstValue(stream);
