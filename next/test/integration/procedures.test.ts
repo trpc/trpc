@@ -16,6 +16,7 @@ import {
   type InputValidationErrorData,
   type TrackedEnvelope,
 } from 'trpcdev/server';
+import { callProcedure } from 'trpcdev/extend';
 import { onError, onFinish, onStart, onSuccess } from 'trpcdev/middleware';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
@@ -425,4 +426,19 @@ test('.output(schema, { validate: false }) types the result without running the 
     .query(() => ({ id: '1', at: '2026-10-15' }));
   const out = await call(validated, undefined, { ctx: { user: null } });
   expect(out.at).toBeInstanceOf(Date);
+});
+
+test('procedures without async steps run synchronously', () => {
+  const plusOne = initTrpc()
+    .procedure.input(z.object({ n: z.number() }))
+    .output(z.number())
+    .query(({ input }) => Effect.succeed(input.n + 1));
+  const run = callProcedure({
+    procedure: plusOne,
+    path: 'plusOne',
+    ctx: {},
+    input: { n: 1 },
+    signal: new AbortController().signal,
+  });
+  expect(Effect.runSync(run)).toBe(2);
 });

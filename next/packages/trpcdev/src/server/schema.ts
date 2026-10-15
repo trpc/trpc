@@ -124,7 +124,12 @@ export function validate(
       ),
     );
   }
-  return Effect.promise(async () => schema['~standard'].validate(value)).pipe(
+  return Effect.suspend(() => {
+    const result = schema['~standard'].validate(value);
+    return result instanceof Promise
+      ? Effect.promise(() => result)
+      : Effect.succeed(result);
+  }).pipe(
     Effect.flatMap((result) =>
       result.issues
         ? Effect.fail(onIssues(normalizeIssues(result.issues)))

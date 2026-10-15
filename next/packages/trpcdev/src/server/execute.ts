@@ -19,6 +19,15 @@ import { isTracked, tracked } from './tracked.ts';
 
 const unexpectedErrors = new WeakSet<AnyTrpcError>();
 
+/** Runs user code; only a returned promise makes the call asynchronous. */
+const attempt = <A>(fn: () => A | PromiseLike<A>): Effect.Effect<A> =>
+  Effect.suspend(() => {
+    const ret = fn();
+    return typeof (ret as PromiseLike<A> | null)?.then === 'function'
+      ? Effect.promise(async () => ret)
+      : Effect.succeed(ret as A);
+  });
+
 /** Wraps a thrown non-`TrpcError` value. Its message is masked in production. @internal */
 export function unexpectedError(cause: unknown): AnyTrpcError {
   const err = new TrpcError({
@@ -249,7 +258,7 @@ export function callProcedure(
           });
         case 'provide':
           return Effect.gen(function* () {
-            const made = yield* Effect.promise(async () =>
+            const made = yield* attempt(() =>
               step.make({ ctx, input, meta, path }),
             );
             const value = Effect.isEffect(made)
@@ -289,7 +298,7 @@ export function callProcedure(
                   { signal },
                 ),
               );
-            const ret: unknown = yield* Effect.promise(async () =>
+            const ret: unknown = yield* attempt(() =>
               step.fn({ ...base, ctx, input, next }),
             );
             return yield* fromResult(ret);
@@ -308,7 +317,7 @@ export function callProcedure(
           }),
         );
       }
-      let ret: unknown = yield* Effect.promise(async () =>
+      let ret: unknown = yield* attempt(() =>
         resolver({
           ...base,
           ctx,
