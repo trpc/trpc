@@ -2,21 +2,21 @@ import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { NodeHttpServer } from '@effect/platform-node';
 import { Context, Effect, Exit, Layer, Schema, Scope } from 'effect';
-import { createTRPCClient, httpLink, routerType, safe } from 'trpcdev/client';
+import { createTrpcClient, httpLink, routerType, safe } from 'trpcdev/client';
 import { toContract } from 'trpcdev/contract';
 import { serve as serveHttp } from 'trpcdev/http';
 import {
-  createOpenAPIHandler,
-  generateOpenAPI,
-  openAPILink,
-  openAPIReference,
+  createOpenApiHandler,
+  generateOpenApi,
+  openApiLink,
+  openApiReference,
   parseBracketNotation,
   toBracketNotation,
-  type OpenAPIErrorBody,
+  type OpenApiErrorBody,
 } from 'trpcdev/openapi';
 import {
   createFetchHandler,
-  initTRPC,
+  initTrpc,
   tracked,
   type TrackedEnvelope,
 } from 'trpcdev/server';
@@ -27,7 +27,7 @@ import { appContract } from './fixtures/contract.ts';
 interface Ctx {
   user: string | null;
 }
-const t = initTRPC<{ ctx: Ctx }>();
+const t = initTrpc<{ ctx: Ctx }>();
 
 class Clock extends Context.Service<Clock, { now: () => number }>()('Clock') {}
 
@@ -148,16 +148,16 @@ async function serve(opts: { expose?: boolean } = {}) {
     user: request.headers.get('x-user'),
   });
   const rpc = createFetchHandler({ router, createContext, layer });
-  const openapi = createOpenAPIHandler({
+  const openapi = createOpenApiHandler({
     router,
     createContext,
     layer,
     exposeUnexpectedErrors: opts.expose ?? true,
     plugins: [
-      openAPIReference({
+      openApiReference({
         specGenerateOptions: { info: { title: 'Posts API', version: '1.0.0' } },
       }),
-      openAPIReference({
+      openApiReference({
         path: '/swagger',
         specPath: '/swagger.json',
         docsProvider: 'swagger',
@@ -213,7 +213,7 @@ test('procedures answer at their routes, with path params and declared errors (1
     status: 404,
     message: 'NOT_FOUND',
     data: { id: 'nope' },
-  } satisfies OpenAPIErrorBody);
+  } satisfies OpenApiErrorBody);
 
   expect(await (await s.api('/health')).json()).toBe('ok');
   expect((await s.api('/posts/1', { method: 'PUT' })).status).toBe(405);
@@ -345,7 +345,7 @@ test('unexpected errors are masked unless exposed', async () => {
 
 test('the same router serves RPC and REST at once', async () => {
   await using s = await serve();
-  const rpc = createTRPCClient({
+  const rpc = createTrpcClient({
     router: routerType<typeof router>(),
     links: [httpLink({ url: `${s.origin}/trpc` })],
   });
@@ -359,16 +359,16 @@ test('the same router serves RPC and REST at once', async () => {
   });
 });
 
-test('openAPILink calls the REST endpoints from a JSON contract (18 (d))', async () => {
+test('openApiLink calls the REST endpoints from a JSON contract (18 (d))', async () => {
   await using s = await serve();
   const contract = JSON.parse(JSON.stringify(toContract(router))) as ReturnType<
     typeof toContract<typeof router>
   >;
   const requests: string[] = [];
-  const client = createTRPCClient({
+  const client = createTrpcClient({
     router: contract,
     links: [
-      openAPILink({
+      openApiLink({
         url: s.origin,
         contract,
         headers: { 'x-user': 'alex' },
@@ -443,8 +443,8 @@ test('openAPILink calls the REST endpoints from a JSON contract (18 (d))', async
   ]);
 });
 
-test('generateOpenAPI documents routes, params, bodies and errors (18 (c))', () => {
-  const doc = generateOpenAPI(router, {
+test('generateOpenApi documents routes, params, bodies and errors (18 (c))', () => {
+  const doc = generateOpenApi(router, {
     info: { title: 'Posts API', version: '1.0.0' },
     servers: [{ url: 'https://api.example.com' }],
   });
@@ -559,7 +559,7 @@ test('generateOpenAPI documents routes, params, bodies and errors (18 (c))', () 
 });
 
 test("target: 'rpc' documents the RPC endpoint with zero configuration (O-C)", () => {
-  const doc = generateOpenAPI(router, {
+  const doc = generateOpenApi(router, {
     info: { title: 'RPC', version: '1.0.0' },
     target: 'rpc',
   });
@@ -585,7 +585,7 @@ test("target: 'rpc' documents the RPC endpoint with zero configuration (O-C)", (
 });
 
 test('a contract alone is enough to document an API', () => {
-  const doc = generateOpenAPI(appContract, {
+  const doc = generateOpenApi(appContract, {
     info: { title: 'Contract', version: '1.0.0' },
   });
   expect(doc.paths['/api/posts/{id}']!['get']!.operationId).toBe('post.byId');
@@ -594,7 +594,7 @@ test('a contract alone is enough to document an API', () => {
   );
 });
 
-test('openAPIReference serves Scalar or Swagger UI and the document (18 (e))', async () => {
+test('openApiReference serves Scalar or Swagger UI and the document (18 (e))', async () => {
   await using s = await serve();
   const html = await (await s.api('/docs')).text();
   expect(html).toContain('data-url="/api/openapi.json"');
@@ -616,7 +616,7 @@ test('openAPIReference serves Scalar or Swagger UI and the document (18 (e))', a
 
 test('two procedures on the same route are rejected', () => {
   expect(() =>
-    createOpenAPIHandler({
+    createOpenApiHandler({
       router: {
         a: t.procedure.route({ path: '/x/{id}' }).query(() => 1),
         b: t.procedure.route({ path: '/x/{slug}' }).query(() => 2),

@@ -15,7 +15,7 @@ import type {
   SkipToken,
 } from '@tanstack/query-core';
 
-export type TRPCQueryKey = readonly [
+export type TrpcQueryKey = readonly [
   path: readonly string[],
   opts?: { input?: unknown; type?: 'query' | 'infinite' },
 ];
@@ -30,7 +30,7 @@ type BagArgs<TInput, TOpts> = undefined extends TInput
   : [opts: InputBag<TInput> & TOpts];
 
 type QueryOpts<TOutput, TError, TData> = Omit<
-  QueryObserverOptions<TOutput, TError, TData, TOutput, TRPCQueryKey>,
+  QueryObserverOptions<TOutput, TError, TData, TOutput, TrpcQueryKey>,
   'queryKey' | 'queryFn'
 >;
 type QueryResult<TOutput, TError, TData> = QueryObserverOptions<
@@ -38,15 +38,15 @@ type QueryResult<TOutput, TError, TData> = QueryObserverOptions<
   TError,
   TData,
   TOutput,
-  DataTag<TRPCQueryKey, TOutput, TError>
-> & { queryKey: DataTag<TRPCQueryKey, TOutput, TError> };
+  DataTag<TrpcQueryKey, TOutput, TError>
+> & { queryKey: DataTag<TrpcQueryKey, TOutput, TError> };
 
 type InfiniteOpts<TOutput, TError, TData, TPageParam> = Omit<
   InfiniteQueryObserverOptions<
     TOutput,
     TError,
     TData,
-    TRPCQueryKey,
+    TrpcQueryKey,
     TPageParam
   >,
   'queryKey' | 'queryFn'
@@ -56,10 +56,10 @@ type InfiniteResult<TOutput, TError, TData, TPageParam> =
     TOutput,
     TError,
     TData,
-    DataTag<TRPCQueryKey, InfiniteData<TOutput, TPageParam>, TError>,
+    DataTag<TrpcQueryKey, InfiniteData<TOutput, TPageParam>, TError>,
     TPageParam
   > & {
-    queryKey: DataTag<TRPCQueryKey, InfiniteData<TOutput, TPageParam>, TError>;
+    queryKey: DataTag<TrpcQueryKey, InfiniteData<TOutput, TPageParam>, TError>;
   };
 
 /** 19's proposed option bag. */
@@ -71,7 +71,7 @@ export interface QueryProcedureUtils<TInput, TOutput, TError> {
     ...args: undefined extends TInput
       ? [opts?: { input?: TInput }]
       : [opts: { input: TInput }]
-  ): DataTag<TRPCQueryKey, TOutput, TError>;
+  ): DataTag<TrpcQueryKey, TOutput, TError>;
   /** Explicit page-param mapping. */
   infiniteOptions<TPageParam, TData = InfiniteData<TOutput, TPageParam>>(
     opts: { input: (pageParam: TPageParam) => TInput } & InfiniteOpts<

@@ -1,12 +1,12 @@
 import { Effect, Schema } from 'effect';
 import {
-  createTRPCClient,
+  createTrpcClient,
   httpLink,
   safe,
-  type TRPCClient,
+  type TrpcClient,
 } from 'trpcdev/client';
 import { toContract, type inferContract } from 'trpcdev/contract';
-import { error, initTRPC, tracked, type TrackedEnvelope } from 'trpcdev/server';
+import { error, initTrpc, tracked, type TrackedEnvelope } from 'trpcdev/server';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { appContract, type AppContract } from './fixtures/contract.ts';
@@ -14,7 +14,7 @@ import { appContract, type AppContract } from './fixtures/contract.ts';
 interface Context {
   user: string | null;
 }
-const t = initTRPC<{ ctx: Context; meta: { auth?: boolean } }>();
+const t = initTrpc<{ ctx: Context; meta: { auth?: boolean } }>();
 const posts = new Map([['1', { id: '1', title: 'Hello' }]]);
 
 const authed = t.middleware(({ ctx, next }) =>
@@ -57,7 +57,7 @@ async function setup() {
       user: request.headers.get('x-user'),
     }),
   });
-  const client = createTRPCClient({
+  const client = createTrpcClient({
     router: appContract,
     links: [httpLink({ url: server.url, headers: { 'x-user': 'alex' } })],
   });
@@ -97,7 +97,7 @@ test('contract errors and input validation apply to the implementation', async (
     router: appRouter,
     createContext: () => ({ user: null }),
   });
-  const client = createTRPCClient<AppContract>({
+  const client = createTrpcClient<AppContract>({
     links: [httpLink({ url: server.url })],
   });
   await expect(client.post.create.mutate({ title: 'x' })).rejects.toMatchObject(
@@ -187,7 +187,7 @@ test('impl.router() checks completeness at the type level and at runtime', () =>
 
 test('a contract procedure without an implementation answers NOT_IMPLEMENTED', async () => {
   await using server = await createTestServer({ router: appContract });
-  const client = createTRPCClient({
+  const client = createTrpcClient({
     router: appContract,
     links: [httpLink({ url: server.url })],
   });
@@ -199,11 +199,11 @@ test('a contract procedure without an implementation answers NOT_IMPLEMENTED', a
 
 test('inferContract strips server types; clients from it match', () => {
   type FromRouter = inferContract<typeof appRouter>;
-  expectTypeOf<TRPCClient<FromRouter>>().toEqualTypeOf<
-    TRPCClient<AppContract>
+  expectTypeOf<TrpcClient<FromRouter>>().toEqualTypeOf<
+    TrpcClient<AppContract>
   >();
-  expectTypeOf<TRPCClient<FromRouter>>().toEqualTypeOf<
-    TRPCClient<typeof appRouter>
+  expectTypeOf<TrpcClient<FromRouter>>().toEqualTypeOf<
+    TrpcClient<typeof appRouter>
   >();
 });
 
@@ -247,7 +247,7 @@ test('toContract() emits a JSON contract that types clients (Q9.4)', async () =>
     router: appRouter,
     createContext: () => ({ user: null }),
   });
-  const client = createTRPCClient({
+  const client = createTrpcClient({
     router: json,
     links: [httpLink({ url: server.url })],
   });

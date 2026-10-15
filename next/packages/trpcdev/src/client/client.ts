@@ -7,15 +7,15 @@ import {
   type Operation,
   type AnyLink,
   type OperationStream,
-  type TRPCClientContext,
-  type TRPCLink,
+  type TrpcClientContext,
+  type TrpcLink,
 } from './link.ts';
 import type {
   LinksContext,
   RouterOf,
   SubscribeOptions,
-  TRPCClient,
-  TRPCPromise,
+  TrpcClient,
+  TrpcPromise,
 } from './types.ts';
 
 /** @internal */
@@ -78,11 +78,11 @@ export function untilAborted(
 }
 
 /**
- * Options for {@link createTRPCClient}.
+ * Options for {@link createTrpcClient}.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface TRPCClientOptions {
+export interface TrpcClientOptions {
   /** The request chain. The last link sends the request. */
   links: ReadonlyArray<AnyLink>;
 }
@@ -94,7 +94,7 @@ export interface TRPCClientOptions {
  */
 export interface TypedClientOptions<
   TSource,
-  TLinks extends ReadonlyArray<TRPCLink<any, RouterOf<TSource>>>,
+  TLinks extends ReadonlyArray<TrpcLink<any, RouterOf<TSource>>>,
 > {
   /** `routerType<AppRouter>()`, a contract, or the router itself. */
   router: TSource;
@@ -107,21 +107,21 @@ export interface TypedClientOptions<
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface TRPCUntypedClient {
+export interface TrpcUntypedClient {
   /** Runs a query or mutation. */
   request(opts: {
     type: 'query' | 'mutation';
     path: string;
     input?: unknown;
     signal?: AbortSignal | undefined;
-    context?: TRPCClientContext | undefined;
+    context?: TrpcClientContext | undefined;
   }): Promise<unknown>;
   /** Starts a subscription. */
   subscribe(opts: {
     path: string;
     input?: unknown;
     signal?: AbortSignal | undefined;
-    context?: TRPCClientContext | undefined;
+    context?: TrpcClientContext | undefined;
     lastEventId?: string | undefined;
   }): AsyncIterable<unknown>;
 }
@@ -138,8 +138,8 @@ export interface TRPCUntypedClient {
  * @stability experimental
  */
 export function createUntypedClient(
-  opts: TRPCClientOptions,
-): TRPCUntypedClient {
+  opts: TrpcClientOptions,
+): TrpcUntypedClient {
   const { links } = opts;
   return {
     async request(o) {
@@ -175,7 +175,7 @@ export function createUntypedClient(
  * ```ts
  * import type { AppRouter } from './server';
  *
- * const client = createTRPCClient({
+ * const client = createTrpcClient({
  *   router: routerType<AppRouter>(),
  *   links: [dedupeLink(), httpLink({ url: 'http://localhost:3000/trpc' })],
  * });
@@ -185,27 +185,27 @@ export function createUntypedClient(
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function createTRPCClient<
+export function createTrpcClient<
   TSource,
-  TLinks extends ReadonlyArray<TRPCLink<any, RouterOf<TSource>>>,
+  TLinks extends ReadonlyArray<TrpcLink<any, RouterOf<TSource>>>,
 >(
   opts: TypedClientOptions<TSource, TLinks>,
-): TRPCClient<RouterOf<TSource>, LinksContext<TLinks>>;
+): TrpcClient<RouterOf<TSource>, LinksContext<TLinks>>;
 /**
  * Creates a typed client from an explicit router type. `context` is the
- * open {@link TRPCClientContext} interface.
+ * open {@link TrpcClientContext} interface.
  *
  * @example
  * ```ts
- * const client = createTRPCClient<AppRouter>({ links: [httpLink({ url })] });
+ * const client = createTrpcClient<AppRouter>({ links: [httpLink({ url })] });
  * ```
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function createTRPCClient<TRouter>(
-  opts: TRPCClientOptions,
-): TRPCClient<TRouter>;
-export function createTRPCClient(opts: TRPCClientOptions): unknown {
+export function createTrpcClient<TRouter>(
+  opts: TrpcClientOptions,
+): TrpcClient<TRouter>;
+export function createTrpcClient(opts: TrpcClientOptions): unknown {
   const untyped = createUntypedClient(opts);
   return createRecursiveProxy((path, args) => {
     const method = path.at(-1) as keyof typeof METHODS | undefined;
@@ -282,7 +282,7 @@ export async function safe<T, E = unknown>(
 export type SafeClient<TClient> = {
   [K in keyof TClient]: TClient[K] extends (
     ...args: infer A
-  ) => TRPCPromise<infer T, infer E>
+  ) => TrpcPromise<infer T, infer E>
     ? (...args: A) => Promise<SafeResult<T, E>>
     : TClient[K] extends (...args: any[]) => any
       ? TClient[K]

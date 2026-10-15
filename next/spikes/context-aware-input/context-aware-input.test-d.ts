@@ -2,13 +2,13 @@ import { type as arkType } from 'arktype';
 import { Context, Effect, Schema, SchemaGetter } from 'effect';
 import { describe, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
-import { initTRPC, type inferInput, type InputOpts } from './core.ts';
+import { initTrpc, type inferInput, type InputOpts } from './core.ts';
 
 interface User {
   id: string;
   isPro: boolean;
 }
-const t = initTRPC<{ ctx: { user: User | null }; meta: { scope?: string } }>();
+const t = initTrpc<{ ctx: { user: User | null }; meta: { scope?: string } }>();
 const authed = t.procedure.use(({ ctx }) => {
   if (!ctx.user) throw new Error('UNAUTHORIZED');
   return { user: ctx.user };

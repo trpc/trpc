@@ -1,6 +1,6 @@
-import { initTRPC, schema } from '../core.ts';
+import { initTrpc, schema } from '../core.ts';
 
-const t = initTRPC<{ user: { id: string } }>();
+const t = initTrpc<{ user: { id: string } }>();
 
 export const adminRouter = {
   stats: t.procedure.query(() => ({ users: 1 })),

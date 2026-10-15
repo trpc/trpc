@@ -9,7 +9,7 @@ import {
   type AppRouter,
   type CallOptions,
   type Post,
-  type TRPCClient,
+  type TrpcClient,
 } from './core.ts';
 import {
   createClientA,
@@ -146,7 +146,7 @@ describe('D-E return annotation', () => {
   const links = [cacheLink(), httpLink({ url: '/trpc' })];
 
   test('works when annotated', () => {
-    const client: TRPCClient<
+    const client: TrpcClient<
       AppRouter,
       CallOptions<typeof links>
     > = createClientE({ links });
@@ -159,7 +159,7 @@ describe('D-E return annotation', () => {
   });
 
   test('annotation is unchecked against the links passed in', () => {
-    const client: TRPCClient<
+    const client: TrpcClient<
       AppRouter,
       CallOptions<[ReturnType<typeof retryLink>]>
     > = createClientE({ links: [loggerLink()] });
@@ -167,12 +167,12 @@ describe('D-E return annotation', () => {
   });
 
   test('a checked variant rejects annotations the links cannot back', () => {
-    const ok: TRPCClient<
+    const ok: TrpcClient<
       AppRouter,
       CallOptions<typeof links>
     > = createClientEChecked({ links });
     void ok;
-    const bad: TRPCClient<
+    const bad: TrpcClient<
       AppRouter,
       CallOptions<[ReturnType<typeof retryLink>]>
     > = createClientEChecked({

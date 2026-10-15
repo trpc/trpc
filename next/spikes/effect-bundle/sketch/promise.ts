@@ -8,7 +8,7 @@ export interface Op {
   readonly signal?: AbortSignal | undefined;
 }
 
-export class TRPCClientError extends Error {
+export class TrpcClientError extends Error {
   readonly code: string;
   constructor(code: string, message: string, cause?: unknown) {
     super(message, { cause });
@@ -44,13 +44,13 @@ export function httpTerminal(url: string, codec: Codec = jsonCodec): Next {
               signal: op.signal,
             });
     } catch (cause) {
-      throw new TRPCClientError('NETWORK', 'fetch failed', cause);
+      throw new TrpcClientError('NETWORK', 'fetch failed', cause);
     }
     const body = codec.parse(await res.text()) as
       | { result: { data: unknown } }
       | { error: { code: string; message: string } };
     if ('error' in body) {
-      throw new TRPCClientError(body.error.code, body.error.message);
+      throw new TrpcClientError(body.error.code, body.error.message);
     }
     return body.result.data;
   };
@@ -64,7 +64,7 @@ export function retryLink(times: number): Link {
       } catch (err) {
         if (
           attempt >= times ||
-          !(err instanceof TRPCClientError) ||
+          !(err instanceof TrpcClientError) ||
           err.code !== 'NETWORK'
         ) {
           throw err;

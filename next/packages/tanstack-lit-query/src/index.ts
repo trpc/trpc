@@ -4,19 +4,19 @@
  * `createSubscriptionController`.
  *
  * Pass a function to `createQueryController` so the options follow host
- * state. Without a provider, `createTRPCQueryUtils({ client })` from the
+ * state. Without a provider, `createTrpcQueryUtils({ client })` from the
  * root entry point works too.
  *
  * @example
  * ```ts
- * import { createTRPCContext } from '@trpcdev/tanstack-lit-query';
+ * import { createTrpcContext } from '@trpcdev/tanstack-lit-query';
  *
- * export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
- * customElements.define('trpc-provider', TRPCProvider);
+ * export const { TrpcProvider, useTrpc } = createTrpcContext<AppRouter>();
+ * customElements.define('trpc-provider', TrpcProvider);
  *
  * class PostView extends LitElement {
  *   static properties = { postId: {} };
- *   trpc = useTRPC(this);
+ *   trpc = useTrpc(this);
  *   post = createQueryController(this, () =>
  *     this.trpc.post.byId.queryOptions({ input: { id: this.postId } }),
  *   );
@@ -42,57 +42,57 @@ import {
   type ReactiveElement,
   type TemplateResult,
 } from 'lit';
-import type { RouterOf, TRPCClient } from 'trpcdev/client';
+import type { RouterOf, TrpcClient } from 'trpcdev/client';
 import {
-  createTRPCQueryUtils,
+  createTrpcQueryUtils,
   SubscriptionObserver,
   type SubscriptionResult,
-  type TRPCQueryUtilsFor,
-  type TRPCSubscriptionOptions,
+  type TrpcQueryUtilsFor,
+  type TrpcSubscriptionOptions,
 } from '@trpcdev/tanstack-query';
 
 export * from '@trpcdev/tanstack-query';
 
 /**
- * The provider element class from {@link createTRPCContext}. Set `.client`
+ * The provider element class from {@link createTrpcContext}. Set `.client`
  * as a property.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface TRPCProviderElement<
+export interface TrpcProviderElement<
   TRouter,
   TContext extends object = {},
 > extends LitElement {
-  client: TRPCClient<RouterOf<TRouter>, TContext>;
+  client: TrpcClient<RouterOf<TRouter>, TContext>;
 }
 
 /**
- * What {@link createTRPCContext} returns.
+ * What {@link createTrpcContext} returns.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface TRPCLitContext<TRouter, TContext extends object = {}> {
+export interface TrpcLitContext<TRouter, TContext extends object = {}> {
   /**
    * Provides the client to descendants. Not registered: pass it to
    * `customElements.define` under a tag of your choice.
    */
-  TRPCProvider: new () => TRPCProviderElement<TRouter, TContext>;
+  TrpcProvider: new () => TrpcProviderElement<TRouter, TContext>;
   /**
    * The helpers for the provided client, resolved on first use. Call in a
    * field initializer and use them once the host is connected (in render or
    * in controller option functions).
    */
-  useTRPC: (host: ReactiveElement) => TRPCQueryUtilsFor<TRouter, TContext>;
+  useTrpc: (host: ReactiveElement) => TrpcQueryUtilsFor<TRouter, TContext>;
   /** The provided client, resolved on first use. */
-  useTRPCClient: (
+  useTrpcClient: (
     host: ReactiveElement,
-  ) => TRPCClient<RouterOf<TRouter>, TContext>;
+  ) => TrpcClient<RouterOf<TRouter>, TContext>;
   /** The `@lit/context` key, for `@consume` or a custom provider. */
   context: Context<
     unknown,
     | {
-        client: TRPCClient<RouterOf<TRouter>, TContext>;
-        utils: TRPCQueryUtilsFor<TRouter, TContext>;
+        client: TrpcClient<RouterOf<TRouter>, TContext>;
+        utils: TrpcQueryUtilsFor<TRouter, TContext>;
       }
     | undefined
   >;
@@ -111,8 +111,8 @@ function lazy<T extends object>(resolve: () => T): T {
  *
  * @example
  * ```ts
- * const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
- * customElements.define('trpc-provider', TRPCProvider);
+ * const { TrpcProvider, useTrpc } = createTrpcContext<AppRouter>();
+ * customElements.define('trpc-provider', TrpcProvider);
  *
  * html`<query-client-provider .client=${queryClient}>
  *   <trpc-provider .client=${client}><post-view></post-view></trpc-provider>
@@ -121,15 +121,15 @@ function lazy<T extends object>(resolve: () => T): T {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function createTRPCContext<
+export function createTrpcContext<
   TRouter,
   TContext extends object = {},
->(): TRPCLitContext<TRouter, TContext> {
-  type Client = TRPCClient<RouterOf<TRouter>, TContext>;
-  type Value = { client: Client; utils: TRPCQueryUtilsFor<TRouter, TContext> };
+>(): TrpcLitContext<TRouter, TContext> {
+  type Client = TrpcClient<RouterOf<TRouter>, TContext>;
+  type Value = { client: Client; utils: TrpcQueryUtilsFor<TRouter, TContext> };
   const context = createContext<Value | undefined>(Symbol('trpc'));
 
-  class TRPCProvider extends LitElement {
+  class TrpcProvider extends LitElement {
     static override properties = { client: { attribute: false } };
     declare client: Client;
     #provider = new ContextProvider(this, { context });
@@ -139,7 +139,7 @@ export function createTRPCContext<
         const client = this.client;
         this.#provider.setValue({
           client,
-          utils: createTRPCQueryUtils({ client }),
+          utils: createTrpcQueryUtils({ client }),
         });
       }
     }
@@ -162,18 +162,18 @@ export function createTRPCContext<
     const consumer = new ContextConsumer(host, { context, subscribe: true });
     return (): Value => {
       if (!consumer.value) {
-        throw new Error('Render inside the TRPCProvider element first');
+        throw new Error('Render inside the TrpcProvider element first');
       }
       return consumer.value;
     };
   };
   return {
-    TRPCProvider,
-    useTRPC: (host) => {
+    TrpcProvider,
+    useTrpc: (host) => {
       const value = consume(host);
       return lazy(() => value().utils);
     },
-    useTRPCClient: (host) => {
+    useTrpcClient: (host) => {
       const value = consume(host);
       return lazy(() => value().client);
     },
@@ -197,8 +197,8 @@ export type SubscriptionResultAccessor<TEvent, TError> =
   };
 
 type OptionsOrFn<TEvent, TError> =
-  | TRPCSubscriptionOptions<TEvent, TError>
-  | (() => TRPCSubscriptionOptions<TEvent, TError>);
+  | TrpcSubscriptionOptions<TEvent, TError>
+  | (() => TrpcSubscriptionOptions<TEvent, TError>);
 
 class SubscriptionController<TEvent, TError> implements ReactiveController {
   #host: ReactiveControllerHost;
@@ -216,7 +216,7 @@ class SubscriptionController<TEvent, TError> implements ReactiveController {
     host.addController(this);
   }
 
-  #read(): TRPCSubscriptionOptions<TEvent, TError> {
+  #read(): TrpcSubscriptionOptions<TEvent, TError> {
     return typeof this.#options === 'function'
       ? this.#options()
       : this.#options;
@@ -276,7 +276,7 @@ class SubscriptionController<TEvent, TError> implements ReactiveController {
  * ```ts
  * class Ticker extends LitElement {
  *   static properties = { from: {} };
- *   trpc = useTRPC(this);
+ *   trpc = useTrpc(this);
  *   ticks = createSubscriptionController(this, () =>
  *     this.trpc.clock.ticks.subscriptionOptions({ input: { from: this.from } }),
  *   );

@@ -91,9 +91,9 @@ export function generate(variant: Variant, n: number, outRoot: string): string {
 
   writeFileSync(
     join(dir, 'base.ts'),
-    `import { error, initTRPC } from '../../core.ts';
+    `import { error, initTrpc } from '../../core.ts';
 interface Context { user?: { id: string; name: string } }
-export const t = initTRPC<Context>();
+export const t = initTrpc<Context>();
 export const authed = t.procedure.use(async ({ ctx, next }) => {
   if (!ctx.user) return error({ code: 'UNAUTHORIZED' });
   return next({ ctx: { user: ctx.user } });

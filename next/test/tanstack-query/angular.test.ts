@@ -22,20 +22,20 @@ import {
   QueryClient,
 } from '@tanstack/angular-query-experimental';
 import {
-  createTRPCContext,
+  createTrpcContext,
   injectSubscription,
 } from '@trpcdev/tanstack-angular-query';
-import type { TRPCClient } from 'trpcdev/client';
+import type { TrpcClient } from 'trpcdev/client';
 import { afterEach, expect, expectTypeOf, test } from 'vite-plus/test';
 import { createApp, db, type AppRouter, type Post } from './fixtures/app.ts';
 import { click, text, waitFor } from './fixtures/dom.ts';
 
-const { provideTRPC, injectTRPC } = createTRPCContext<AppRouter>();
+const { provideTrpc, injectTrpc } = createTrpcContext<AppRouter>();
 
 TestBed.initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
 afterEach(() => TestBed.resetTestingModule());
 
-function render<T>(component: Type<T>, client: TRPCClient<AppRouter>) {
+function render<T>(component: Type<T>, client: TrpcClient<AppRouter>) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -43,7 +43,7 @@ function render<T>(component: Type<T>, client: TRPCClient<AppRouter>) {
     providers: [
       provideZonelessChangeDetection(),
       provideTanStackQuery(queryClient),
-      provideTRPC(client),
+      provideTrpc(client),
     ],
   });
   const fixture = TestBed.createComponent(component);
@@ -65,7 +65,7 @@ const PostView = Component({
   `,
 })(
   class {
-    trpc = injectTRPC();
+    trpc = injectTrpc();
     id = signal('1');
     post = injectQuery(() =>
       this.trpc.post.byId.queryOptions({ input: { id: this.id() } }),
@@ -102,7 +102,7 @@ const FeedView = Component({
   `,
 })(
   class {
-    trpc = injectTRPC();
+    trpc = injectTrpc();
     queryClient = inject(QueryClient);
     feed = injectInfiniteQuery(() =>
       this.trpc.post.list.infiniteOptions({
@@ -149,7 +149,7 @@ const LiveView = Component({
   `,
 })(
   class {
-    trpc = injectTRPC();
+    trpc = injectTrpc();
     seen: number[] = [];
     from = signal(2);
     countdown = injectSubscription(() =>

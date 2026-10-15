@@ -3,10 +3,10 @@
  * the worker's `parentPort`.
  */
 import { parentPort, threadId } from 'node:worker_threads';
-import { createFetchHandler, error, initTRPC, tracked } from 'trpcdev/server';
+import { createFetchHandler, error, initTrpc, tracked } from 'trpcdev/server';
 import { z } from 'zod';
 
-const t = initTRPC<{ ctx: { token: string | undefined; transport: string } }>();
+const t = initTrpc<{ ctx: { token: string | undefined; transport: string } }>();
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export const workerRouter = {

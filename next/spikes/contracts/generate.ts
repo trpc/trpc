@@ -48,8 +48,8 @@ export function generate(variant: Variant, n: number, outRoot: string): string {
 
   writeFileSync(
     join(dir, 'base.ts'),
-    `import { initTRPC } from '../../core.ts';
-export const t = initTRPC<{ user?: { id: string } }>();
+    `import { initTrpc } from '../../core.ts';
+export const t = initTrpc<{ user?: { id: string } }>();
 `,
   );
 

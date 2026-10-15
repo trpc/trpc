@@ -1,5 +1,5 @@
 import type { Effect } from 'effect';
-import type { AnyTRPCError } from '../internal/error.ts';
+import type { AnyTrpcError } from '../internal/error.ts';
 import type {
   MaybePromise,
   ProcedureType,
@@ -36,7 +36,7 @@ export interface ResponseHandle {
  */
 export type MiddlewareResult<TCtx> = (
   | { readonly ok: true; readonly data: unknown }
-  | { readonly ok: false; readonly error: AnyTRPCError }
+  | { readonly ok: false; readonly error: AnyTrpcError }
 ) & { readonly '~ctx'?: TCtx };
 
 /**
@@ -102,7 +102,7 @@ export interface MiddlewareOpts<TCtx, TInput, TMeta> {
 
 /**
  * A middleware: calls `next()` (optionally extending `ctx`), returns
- * {@link ok} to short-circuit with a value, or returns a `TRPCError` to fail.
+ * {@link ok} to short-circuit with a value, or returns a `TrpcError` to fail.
  * A returned error joins the procedure's typed error union.
  *
  * @since 12.0.0-alpha.0
@@ -113,7 +113,7 @@ export type MiddlewareFunction<
   TInput,
   TMeta,
   $Ctx extends object,
-  $Err extends AnyTRPCError,
+  $Err extends AnyTrpcError,
   $Ok = never,
 > = (
   opts: MiddlewareOpts<TCtx, TInput, TMeta>,
@@ -185,7 +185,7 @@ export interface EffectMiddleware<
   TInput,
   TMeta,
   $Ctx extends object,
-  $Err extends AnyTRPCError,
+  $Err extends AnyTrpcError,
   $R,
   $Provides,
   $Ok = never,
@@ -198,7 +198,7 @@ export interface EffectMiddleware<
 
 /** @internal */
 export type EffectBodyCheck<$E, $R, $Provides> = [
-  Exclude<$E, AnyTRPCError>,
+  Exclude<$E, AnyTrpcError>,
 ] extends [never]
   ? [Extract<$R, $Provides>] extends [never]
     ? unknown
@@ -207,8 +207,8 @@ export type EffectBodyCheck<$E, $R, $Provides> = [
         Extract<$R, $Provides>
       >
   : TypeError<
-      'Effect middleware: map failures to a TRPCError (e.g. Effect.catchTag) first',
-      Exclude<$E, AnyTRPCError>
+      'Effect middleware: map failures to a TrpcError (e.g. Effect.catchTag) first',
+      Exclude<$E, AnyTrpcError>
     >;
 
 /**
@@ -241,7 +241,7 @@ export type EffectMiddlewareFactory<TCtx, TInput, TMeta, $Provides> = <
   TInput,
   TMeta,
   $Ctx,
-  Extract<$E, AnyTRPCError>,
+  Extract<$E, AnyTrpcError>,
   Exclude<$R, $Provides>,
   $Provides,
   $Ok
@@ -278,7 +278,7 @@ interface MiddlewareFactory {
    */
   <TReq extends MiddlewareRequirements = {}>(): <
     $Ctx extends object = {},
-    $Err extends AnyTRPCError = never,
+    $Err extends AnyTrpcError = never,
     $Ok = never,
   >(
     fn: MiddlewareFunction<
@@ -387,7 +387,7 @@ export function onSuccess(
  * @stability experimental
  */
 export function onError(
-  fn: (error: AnyTRPCError, opts: AnyOpts) => MaybePromise<void>,
+  fn: (error: AnyTrpcError, opts: AnyOpts) => MaybePromise<void>,
 ): MiddlewareFunction<unknown, unknown, unknown, {}, never> {
   return async (opts) => {
     const result = await opts.next();
@@ -410,7 +410,7 @@ export function onFinish(
   fn: (
     result:
       | { readonly ok: true; readonly data: unknown }
-      | { readonly ok: false; readonly error: AnyTRPCError },
+      | { readonly ok: false; readonly error: AnyTrpcError },
     opts: AnyOpts,
   ) => MaybePromise<void>,
 ): MiddlewareFunction<unknown, unknown, unknown, {}, never> {

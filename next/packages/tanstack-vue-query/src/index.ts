@@ -1,18 +1,18 @@
 /**
- * Vue helpers for `@tanstack/vue-query`: an app plugin (or `provideTRPC`)
+ * Vue helpers for `@tanstack/vue-query`: an app plugin (or `provideTrpc`)
  * for the client and its helpers, and `useSubscription`.
  *
  * Pass a getter to `useQuery` so the options follow reactive input:
  *
  * @example
  * ```ts
- * import { createTRPCContext } from '@trpcdev/tanstack-vue-query';
+ * import { createTrpcContext } from '@trpcdev/tanstack-vue-query';
  *
- * export const { TRPCPlugin, useTRPC } = createTRPCContext<AppRouter>();
- * app.use(VueQueryPlugin).use(TRPCPlugin, { client });
+ * export const { TrpcPlugin, useTrpc } = createTrpcContext<AppRouter>();
+ * app.use(VueQueryPlugin).use(TrpcPlugin, { client });
  *
  * // in setup()
- * const trpc = useTRPC();
+ * const trpc = useTrpc();
  * const post = useQuery(() => trpc.post.byId.queryOptions({ input: { id: id.value } }));
  * ```
  * @module
@@ -32,40 +32,40 @@ import {
   type MaybeRefOrGetter,
   type Plugin,
 } from 'vue';
-import type { RouterOf, TRPCClient } from 'trpcdev/client';
+import type { RouterOf, TrpcClient } from 'trpcdev/client';
 import {
-  createTRPCQueryUtils,
+  createTrpcQueryUtils,
   SubscriptionObserver,
   type SubscriptionStatus,
-  type TRPCQueryUtilsFor,
-  type TRPCSubscriptionOptions,
+  type TrpcQueryUtilsFor,
+  type TrpcSubscriptionOptions,
 } from '@trpcdev/tanstack-query';
 
 export * from '@trpcdev/tanstack-query';
 
 /**
- * Options of the `TRPCPlugin` from {@link createTRPCContext}.
+ * Options of the `TrpcPlugin` from {@link createTrpcContext}.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface TRPCPluginOptions<TRouter, TContext extends object = {}> {
-  client: TRPCClient<RouterOf<TRouter>, TContext>;
+export interface TrpcPluginOptions<TRouter, TContext extends object = {}> {
+  client: TrpcClient<RouterOf<TRouter>, TContext>;
 }
 
 /**
- * What {@link createTRPCContext} returns.
+ * What {@link createTrpcContext} returns.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface TRPCVueContext<TRouter, TContext extends object = {}> {
-  /** Provides the client to the whole app: `app.use(TRPCPlugin, { client })`. */
-  TRPCPlugin: Plugin<[TRPCPluginOptions<TRouter, TContext>]>;
+export interface TrpcVueContext<TRouter, TContext extends object = {}> {
+  /** Provides the client to the whole app: `app.use(TrpcPlugin, { client })`. */
+  TrpcPlugin: Plugin<[TrpcPluginOptions<TRouter, TContext>]>;
   /** Provides the client to the current component's descendants. */
-  provideTRPC: (client: TRPCClient<RouterOf<TRouter>, TContext>) => void;
+  provideTrpc: (client: TrpcClient<RouterOf<TRouter>, TContext>) => void;
   /** The helpers for the provided client. */
-  useTRPC: () => TRPCQueryUtilsFor<TRouter, TContext>;
+  useTrpc: () => TrpcQueryUtilsFor<TRouter, TContext>;
   /** The provided client, for calls outside TanStack Query. */
-  useTRPCClient: () => TRPCClient<RouterOf<TRouter>, TContext>;
+  useTrpcClient: () => TrpcClient<RouterOf<TRouter>, TContext>;
 }
 
 /**
@@ -74,39 +74,39 @@ export interface TRPCVueContext<TRouter, TContext extends object = {}> {
  *
  * @example
  * ```ts
- * const { TRPCPlugin, useTRPC } = createTRPCContext<AppRouter>();
- * createApp(App).use(VueQueryPlugin).use(TRPCPlugin, { client }).mount('#app');
+ * const { TrpcPlugin, useTrpc } = createTrpcContext<AppRouter>();
+ * createApp(App).use(VueQueryPlugin).use(TrpcPlugin, { client }).mount('#app');
  * ```
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function createTRPCContext<
+export function createTrpcContext<
   TRouter,
   TContext extends object = {},
->(): TRPCVueContext<TRouter, TContext> {
-  type Client = TRPCClient<RouterOf<TRouter>, TContext>;
-  type Value = { client: Client; utils: TRPCQueryUtilsFor<TRouter, TContext> };
+>(): TrpcVueContext<TRouter, TContext> {
+  type Client = TrpcClient<RouterOf<TRouter>, TContext>;
+  type Value = { client: Client; utils: TrpcQueryUtilsFor<TRouter, TContext> };
   const key: InjectionKey<Value> = Symbol('trpc');
   const value = (client: Client): Value => ({
     client,
-    utils: createTRPCQueryUtils({ client }),
+    utils: createTrpcQueryUtils({ client }),
   });
   const use = (): Value => {
     const injected = inject(key, null);
     if (!injected) {
-      throw new Error('Install TRPCPlugin or call provideTRPC() first');
+      throw new Error('Install TrpcPlugin or call provideTrpc() first');
     }
     return injected;
   };
   return {
-    TRPCPlugin: {
+    TrpcPlugin: {
       install: (app, opts) => {
         app.provide(key, value(opts.client));
       },
     },
-    provideTRPC: (client) => provide(key, value(client)),
-    useTRPC: () => use().utils,
-    useTRPCClient: () => use().client,
+    provideTrpc: (client) => provide(key, value(client)),
+    useTrpc: () => use().utils,
+    useTrpcClient: () => use().client,
   };
 }
 
@@ -139,7 +139,7 @@ export interface UseSubscriptionReturn<TEvent, TError> {
  * @stability experimental
  */
 export function useSubscription<TEvent, TError>(
-  options: MaybeRefOrGetter<TRPCSubscriptionOptions<TEvent, TError>>,
+  options: MaybeRefOrGetter<TrpcSubscriptionOptions<TEvent, TError>>,
 ): UseSubscriptionReturn<TEvent, TError> {
   const observer = new SubscriptionObserver(toValue(options));
   const result = shallowRef(observer.getCurrentResult());

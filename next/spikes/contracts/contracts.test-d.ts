@@ -2,7 +2,7 @@ import { describe, expectTypeOf, test } from 'vite-plus/test';
 import {
   contract,
   createClient,
-  initTRPC,
+  initTrpc,
   lazy,
   mergeRouters,
   schema,
@@ -37,7 +37,7 @@ const appContract = {
   health: c.output(schema<'ok'>()).query(),
 };
 
-const t = initTRPC<{ db: typeof db; user?: { id: string } }>();
+const t = initTrpc<{ db: typeof db; user?: { id: string } }>();
 
 describe('09 Q9.1: contract syntax', () => {
   test('terminal and options-bag forms produce the same contract type', () => {

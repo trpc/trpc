@@ -9,26 +9,26 @@ import {
   useQueryClient,
 } from '@tanstack/preact-query';
 import {
-  createTRPCContext,
+  createTrpcContext,
   useSubscription,
 } from '@trpcdev/tanstack-preact-query';
 import { render, type ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
-import type { TRPCClient } from 'trpcdev/client';
+import type { TrpcClient } from 'trpcdev/client';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { createApp, db, type AppRouter, type Post } from './fixtures/app.ts';
 import { click, container, text, waitFor } from './fixtures/dom.ts';
 
-const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+const { TrpcProvider, useTrpc } = createTrpcContext<AppRouter>();
 
-function mount(ui: ComponentChildren, client: TRPCClient<AppRouter>) {
+function mount(ui: ComponentChildren, client: TrpcClient<AppRouter>) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
   const el = container();
   render(
     <QueryClientProvider client={queryClient}>
-      <TRPCProvider client={client}>{ui}</TRPCProvider>
+      <TrpcProvider client={client}>{ui}</TrpcProvider>
     </QueryClientProvider>,
     el,
   );
@@ -44,7 +44,7 @@ function mount(ui: ComponentChildren, client: TRPCClient<AppRouter>) {
 test('useQuery and useMutation through the provider', async () => {
   await using app = await createApp();
   function Posts() {
-    const trpc = useTRPC();
+    const trpc = useTrpc();
     const queryClient = useQueryClient();
     const list = useQuery(
       trpc.post.list.queryOptions({ input: { limit: 10 } }),
@@ -86,7 +86,7 @@ test('useQuery and useMutation through the provider', async () => {
 test('useInfiniteQuery loads pages on demand', async () => {
   await using app = await createApp({ posts: 3 });
   function Feed() {
-    const trpc = useTRPC();
+    const trpc = useTrpc();
     const feed = useInfiniteQuery(
       trpc.post.list.infiniteOptions({
         input: (cursor: number | undefined) => ({ limit: 2, cursor }),
@@ -119,7 +119,7 @@ test('useInfiniteQuery loads pages on demand', async () => {
 test('useSubscription and live queries update the UI', async () => {
   await using app = await createApp();
   function Live() {
-    const trpc = useTRPC();
+    const trpc = useTrpc();
     const [enabled, setEnabled] = useState(true);
     const added = useSubscription(
       trpc.post.onAdd.subscriptionOptions({ enabled }),

@@ -4,8 +4,8 @@ import { describe, expectTypeOf, test } from 'vite-plus/test';
 import {
   createClient,
   error,
-  initTRPC,
-  isTRPCError,
+  initTrpc,
+  isTrpcError,
   mapErrors,
   safe,
   safeErrorFirst,
@@ -15,7 +15,7 @@ import {
   type Issue,
   type inferProcedureErrors,
   type inferRouterErrors,
-  type TRPCError,
+  type TrpcError,
 } from './core.ts';
 
 interface Post {
@@ -28,7 +28,7 @@ declare const db: {
   findUnknown(id: string): Promise<unknown>;
 };
 
-const t = initTRPC<{ user?: { id: string } }>();
+const t = initTrpc<{ user?: { id: string } }>();
 
 const authed = t.procedure.use(async ({ ctx, next }) => {
   if (!ctx.user) return error({ code: 'UNAUTHORIZED' });
@@ -46,7 +46,7 @@ describe('B: returned errors', () => {
       });
     expectTypeOf(byId['~trpc'].output).toEqualTypeOf<Post>();
     expectTypeOf<inferProcedureErrors<typeof byId>>().toEqualTypeOf<
-      TRPCError<'NOT_FOUND', { id: string }> | InputValidationError
+      TrpcError<'NOT_FOUND', { id: string }> | InputValidationError
     >();
   });
 
@@ -62,7 +62,7 @@ describe('B: returned errors', () => {
       role: 'admin';
     }>();
     expectTypeOf<inferProcedureErrors<typeof proc>>().toEqualTypeOf<
-      TRPCError<'UNAUTHORIZED', undefined> | TRPCError<'FORBIDDEN', undefined>
+      TrpcError<'UNAUTHORIZED', undefined> | TrpcError<'FORBIDDEN', undefined>
     >();
   });
 
@@ -75,7 +75,7 @@ describe('B: returned errors', () => {
       .query(({ ctx }) => ctx.user.id);
     expectTypeOf(proc['~trpc'].output).toEqualTypeOf<string>();
     expectTypeOf<inferProcedureErrors<typeof proc>>().toEqualTypeOf<
-      TRPCError<'UNAUTHORIZED', undefined>
+      TrpcError<'UNAUTHORIZED', undefined>
     >();
   });
 
@@ -88,24 +88,24 @@ describe('B: returned errors', () => {
       return 1;
     });
     expectTypeOf<inferProcedureErrors<typeof proc>>().toEqualTypeOf<
-      | TRPCError<'NOT_FOUND', { id: string }>
-      | TRPCError<'NOT_FOUND', { slug: string }>
+      | TrpcError<'NOT_FOUND', { id: string }>
+      | TrpcError<'NOT_FOUND', { slug: string }>
     >();
   });
 
-  test('errors returned from helpers propagate with an `isTRPCError` guard', () => {
+  test('errors returned from helpers propagate with an `isTrpcError` guard', () => {
     async function loadPost(id: string) {
       const post = await db.find(id);
       return post ?? error({ code: 'NOT_FOUND', data: { id } });
     }
     const proc = t.procedure.query(async () => {
       const post = await loadPost('1');
-      if (isTRPCError(post)) return post;
+      if (isTrpcError(post)) return post;
       return post.title;
     });
     expectTypeOf(proc['~trpc'].output).toEqualTypeOf<string>();
     expectTypeOf<inferProcedureErrors<typeof proc>>().toEqualTypeOf<
-      TRPCError<'NOT_FOUND', { id: string }>
+      TrpcError<'NOT_FOUND', { id: string }>
     >();
   });
 
@@ -116,7 +116,7 @@ describe('B: returned errors', () => {
     });
     expectTypeOf(proc['~trpc'].output).toEqualTypeOf<Post>();
     expectTypeOf<inferProcedureErrors<typeof proc>>().toEqualTypeOf<
-      TRPCError<'NOT_FOUND', undefined>
+      TrpcError<'NOT_FOUND', undefined>
     >();
 
     // @ts-expect-error -- not a Post
@@ -138,7 +138,7 @@ describe('B: returned errors', () => {
       return row;
     });
     expectTypeOf(proc['~trpc'].output).toBeAny();
-    // The error union is lost too: `any | TRPCError` is `any`.
+    // The error union is lost too: `any | TrpcError` is `any`.
     expectTypeOf<inferProcedureErrors<typeof proc>>().toBeNever();
   });
 
@@ -148,7 +148,7 @@ describe('B: returned errors', () => {
       if (!row) return error({ code: 'NOT_FOUND' });
       return row;
     });
-    // `if (!row)` narrows `unknown` to `{}`, and every `TRPCError` is a `{}`.
+    // `if (!row)` narrows `unknown` to `{}`, and every `TrpcError` is a `{}`.
     expectTypeOf(proc['~trpc'].output).toEqualTypeOf<{}>();
     expectTypeOf<inferProcedureErrors<typeof proc>>().toBeNever();
 
@@ -176,8 +176,8 @@ describe('A: declared errors', () => {
         return 'ok';
       });
     expectTypeOf<inferProcedureErrors<typeof proc>>().toEqualTypeOf<
-      | TRPCError<'UNAUTHORIZED', undefined>
-      | TRPCError<'PAYMENT_REQUIRED', { plan: string }>
+      | TrpcError<'UNAUTHORIZED', undefined>
+      | TrpcError<'PAYMENT_REQUIRED', { plan: string }>
     >();
   });
 
@@ -186,7 +186,7 @@ describe('A: declared errors', () => {
       .errors({ CONFLICT: {} })
       .query(({ errors }) => (Math.random() > 0.5 ? errors.CONFLICT() : 1));
     expectTypeOf<inferProcedureErrors<typeof proc>>().toEqualTypeOf<
-      TRPCError<'CONFLICT', undefined>
+      TrpcError<'CONFLICT', undefined>
     >();
   });
 });
@@ -209,7 +209,7 @@ describe('mapping middleware', () => {
       )
       .query(() => 1);
     expectTypeOf<inferProcedureErrors<typeof proc>>().toEqualTypeOf<
-      TRPCError<'TOO_MANY_REQUESTS', { retryAfterMs: number }>
+      TrpcError<'TOO_MANY_REQUESTS', { retryAfterMs: number }>
     >();
   });
 });
@@ -237,13 +237,13 @@ describe('Effect `E` channel', () => {
       );
     expectTypeOf(proc['~trpc'].output).toEqualTypeOf<Post>();
     expectTypeOf<inferProcedureErrors<typeof proc>>().toEqualTypeOf<
-      | TRPCError<'INTERNAL_SERVER_ERROR', undefined>
-      | TRPCError<'NOT_FOUND', { id: string }>
+      | TrpcError<'INTERNAL_SERVER_ERROR', undefined>
+      | TrpcError<'NOT_FOUND', { id: string }>
       | InputValidationError
     >();
   });
 
-  test('a returned `TRPCError` is an `Effect`, so both rules agree', () => {
+  test('a returned `TrpcError` is an `Effect`, so both rules agree', () => {
     const plain = t.procedure.query(() => error({ code: 'CONFLICT' }));
     const effect = t.procedure.query(() =>
       Effect.fail(error({ code: 'CONFLICT' })),
@@ -256,7 +256,7 @@ describe('Effect `E` channel', () => {
 
   test('02 (d.ii): an unmapped typed failure is a compile error on the resolver', () => {
     t.procedure.query(() =>
-      // @ts-expect-error -- DbError is not a TRPCError
+      // @ts-expect-error -- DbError is not a TrpcError
       Effect.gen(function* () {
         return yield* findPost('1');
       }),

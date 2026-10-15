@@ -1,6 +1,6 @@
 import { describe, expectTypeOf, test } from 'vite-plus/test';
 import { auditPlugin, type AuditDb, tracedPlugin } from './audit-plugin.ts';
-import { initTRPC, type inferInput, schema } from './core.ts';
+import { initTrpc, type inferInput, schema } from './core.ts';
 
 interface User {
   id: string;
@@ -10,7 +10,7 @@ interface Db extends AuditDb {
   posts: { list(): Promise<string[]> };
 }
 
-const t = initTRPC<{
+const t = initTrpc<{
   ctx: { db: Db; user: User | null };
   meta: { audit?: boolean; scope?: string };
 }>();
@@ -37,13 +37,13 @@ describe('a plugin from another package', () => {
   });
 
   test('a missing ctx key is named', () => {
-    const noDb = initTRPC<{ ctx: { user: User }; meta: { audit?: boolean } }>();
+    const noDb = initTrpc<{ ctx: { user: User }; meta: { audit?: boolean } }>();
     // @ts-expect-error: concat: the plugin needs ctx this procedure does not have ("db")
     noDb.procedure.concat(auditPlugin);
   });
 
   test('meta requirements are checked too', () => {
-    const wrongMeta = initTRPC<{
+    const wrongMeta = initTrpc<{
       ctx: { db: Db; user: User };
       meta: { audit?: 'yes' | 'no' };
     }>();
@@ -51,7 +51,7 @@ describe('a plugin from another package', () => {
     wrongMeta.procedure.concat(auditPlugin);
 
     // an app without the optional key is fine: the plugin only reads it
-    const noMeta = initTRPC<{ ctx: { db: Db; user: User } }>();
+    const noMeta = initTrpc<{ ctx: { db: Db; user: User } }>();
     noMeta.procedure.concat(auditPlugin);
   });
 
@@ -86,7 +86,7 @@ describe('a plugin from another package', () => {
   });
 
   test("the plugin's ctx overrides keys of the same name", () => {
-    const shadow = initTRPC().procedure.use(async ({ next }) =>
+    const shadow = initTrpc().procedure.use(async ({ next }) =>
       next({ ctx: { user: { id: 'system' } } }),
     );
     authed.concat(shadow).query(({ ctx }) => {

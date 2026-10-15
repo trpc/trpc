@@ -1,6 +1,6 @@
 import { Schema } from 'effect';
-import { createTRPCClient, httpLink, safe } from 'trpcdev/client';
-import { error, initTRPC, type InputValidationErrorData } from 'trpcdev/server';
+import { createTrpcClient, httpLink, safe } from 'trpcdev/client';
+import { error, initTrpc, type InputValidationErrorData } from 'trpcdev/server';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
@@ -13,7 +13,7 @@ interface Context {
   user: User | null;
 }
 
-const t = initTRPC<{ ctx: Context }>();
+const t = initTrpc<{ ctx: Context }>();
 
 const authed = t.procedure.use(({ ctx, next }) =>
   ctx.user
@@ -56,7 +56,7 @@ async function setup(user: User | null = { id: 'u1', name: 'Alex' }) {
     router,
     createContext: () => ({ user }),
   });
-  const client = createTRPCClient<AppRouter>({
+  const client = createTrpcClient<AppRouter>({
     links: [httpLink({ url: server.url })],
   });
   return { server, client, [Symbol.asyncDispose]: () => server.close() };

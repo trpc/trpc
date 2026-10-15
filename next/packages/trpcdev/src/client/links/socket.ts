@@ -1,8 +1,8 @@
 import { Cause, Effect, Queue, Stream } from 'effect';
 import {
   fromWireError,
-  TRPCError,
-  type AnyTRPCError,
+  TrpcError,
+  type AnyTrpcError,
 } from '../../internal/error.ts';
 import {
   PROTOCOL_VERSION,
@@ -12,7 +12,7 @@ import {
 import type { MaybePromise } from '../../internal/types.ts';
 import { defaultSerializer, type Serializer } from '../../serializer/index.ts';
 import type { MessagePortLike } from '../../server/socket.ts';
-import type { Operation, OperationStream, TRPCLink } from '../link.ts';
+import type { Operation, OperationStream, TrpcLink } from '../link.ts';
 import { DeferredDecoder } from './events.ts';
 
 /** One open connection. @internal */
@@ -31,7 +31,7 @@ interface ActiveCall {
   onMessage(message: ServerMessage): void;
   /** The connection dropped and this call will be sent again. */
   onReconnect?(): void;
-  fail(error: AnyTRPCError): void;
+  fail(error: AnyTrpcError): void;
 }
 
 /**
@@ -57,7 +57,7 @@ export interface SocketLinkOptions {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface SocketLink extends TRPCLink, AsyncDisposable {
+export interface SocketLink extends TrpcLink, AsyncDisposable {
   /**
    * Closes the connection. Calls in flight fail with
    * `CLIENT_CLOSED_REQUEST`; the next call opens a new connection.
@@ -74,7 +74,7 @@ interface SocketTransport {
 }
 
 const lostError = () =>
-  new TRPCError({
+  new TrpcError({
     code: 'NETWORK_ERROR',
     message: 'The connection was lost',
   });
@@ -98,7 +98,7 @@ function socketLink(
         message.status,
       );
     } catch (cause) {
-      return new TRPCError({
+      return new TrpcError({
         code: 'PARSE_ERROR',
         message: 'Invalid error message',
         cause,
@@ -214,7 +214,7 @@ function socketLink(
 
   const single = (op: Operation): OperationStream =>
     Stream.fromEffect(
-      Effect.callback<unknown, AnyTRPCError>((resume) => {
+      Effect.callback<unknown, AnyTrpcError>((resume) => {
         const decoder = new DeferredDecoder(serializer);
         const call: ActiveCall = {
           op,
@@ -231,7 +231,7 @@ function socketLink(
                     (cause) =>
                       resume(
                         Effect.fail(
-                          new TRPCError({
+                          new TrpcError({
                             code: 'PARSE_ERROR',
                             message: 'Invalid result',
                             cause,
@@ -265,7 +265,7 @@ function socketLink(
     );
 
   const subscription = (op: Operation): OperationStream =>
-    Stream.callback<unknown, AnyTRPCError>((queue) =>
+    Stream.callback<unknown, AnyTrpcError>((queue) =>
       Effect.gen(function* () {
         let lastEventId = op.lastEventId;
         let decoder = new DeferredDecoder(serializer);
@@ -275,7 +275,7 @@ function socketLink(
             Queue.failCauseUnsafe(
               queue,
               Cause.fail(
-                new TRPCError({
+                new TrpcError({
                   code: 'PARSE_ERROR',
                   message: 'Invalid event',
                   cause,
@@ -345,7 +345,7 @@ function socketLink(
     current = undefined;
     for (const call of calls.values()) {
       call.fail(
-        new TRPCError({
+        new TrpcError({
           code: 'CLIENT_CLOSED_REQUEST',
           message: 'The link was closed',
         }),
@@ -355,7 +355,7 @@ function socketLink(
     conn?.close();
   };
 
-  const run: TRPCLink = ({ op }) =>
+  const run: TrpcLink = ({ op }) =>
     op.type === 'subscription' ? subscription(op) : single(op);
   return Object.assign(run, { close, [Symbol.asyncDispose]: close });
 }
@@ -399,7 +399,7 @@ export interface WebSocketLinkOptions extends SocketLinkOptions {
  *   url: 'ws://localhost:3000/trpc',
  *   connectionParams: async () => ({ token: await getToken() }),
  * });
- * createTRPCClient<AppRouter>({
+ * createTrpcClient<AppRouter>({
  *   links: [splitLink({ condition: (op) => op.type === 'subscription', true: ws, false: httpLink({ url }) })],
  * });
  * ```
@@ -478,7 +478,7 @@ export interface MessagePortLinkOptions extends SocketLinkOptions {
  * @example
  * ```ts
  * const worker = new Worker(new URL('./server.ts', import.meta.url), { type: 'module' });
- * createTRPCClient<AppRouter>({ links: [messagePortLink({ port: worker })] });
+ * createTrpcClient<AppRouter>({ links: [messagePortLink({ port: worker })] });
  * ```
  * @since 12.0.0-alpha.0
  * @stability experimental

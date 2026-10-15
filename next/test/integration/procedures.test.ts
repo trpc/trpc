@@ -1,6 +1,6 @@
 import { Context, Data, Effect, Layer } from 'effect';
 import {
-  createTRPCClient,
+  createTrpcClient,
   httpLink,
   safe,
   type ClientError,
@@ -8,7 +8,7 @@ import {
 import {
   call,
   error,
-  initTRPC,
+  initTrpc,
   middleware,
   ok,
   onError,
@@ -16,7 +16,7 @@ import {
   onStart,
   onSuccess,
   tracked,
-  TRPCError,
+  TrpcError,
   type TrackedEnvelope,
 } from 'trpcdev/server';
 import { createTestServer } from './fixtures/server.ts';
@@ -26,7 +26,7 @@ import { z } from 'zod';
 interface Ctx {
   user: string | null;
 }
-const t = initTRPC<{ ctx: Ctx }>();
+const t = initTrpc<{ ctx: Ctx }>();
 
 class CurrentUser extends Context.Service<CurrentUser, { name: string }>()(
   'CurrentUser',
@@ -48,7 +48,7 @@ const notFound = t.procedure.errors({
   GONE: { status: 410, message: 'This post was removed' },
 });
 
-const assertExists = (id: string, made: (id: string) => TRPCError) => {
+const assertExists = (id: string, made: (id: string) => TrpcError) => {
   if (id.startsWith('missing')) throw made(id);
 };
 
@@ -162,7 +162,7 @@ async function setup(user: string | null = 'alex', batch = false) {
     layer: ClockLive,
     exposeUnexpectedErrors: false,
   });
-  const client = createTRPCClient<AppRouter>({
+  const client = createTrpcClient<AppRouter>({
     links: [
       httpLink({
         url: server.url,
@@ -231,7 +231,7 @@ test('declared error data is validated; invalid data is an unexpected error', as
   });
 });
 
-test('Effect failures must be mapped to a TRPCError (02 d.ii)', async () => {
+test('Effect failures must be mapped to a TrpcError (02 d.ii)', async () => {
   await using ctx = await setup();
   expect(await ctx.client.post.fromEffect.query({ id: '1' })).toEqual({
     id: '1',
@@ -244,7 +244,7 @@ test('Effect failures must be mapped to a TRPCError (02 d.ii)', async () => {
     defined: true,
   });
 
-  // @ts-expect-error -- DbError is not a TRPCError
+  // @ts-expect-error -- DbError is not a TrpcError
   t.procedure.query(() => findPost('1'));
 });
 
@@ -315,7 +315,7 @@ test('Effect middleware provides services and its failures are typed', async () 
   const res = await safe(anon.client.me.query());
   expect(res.error).toMatchObject({ code: 'UNAUTHORIZED', defined: true });
   expectTypeOf(res.error).toEqualTypeOf<
-    ClientError<TRPCError<'UNAUTHORIZED', undefined>> | undefined
+    ClientError<TrpcError<'UNAUTHORIZED', undefined>> | undefined
   >();
 
   // Only the Clock layer is passed: the middleware provides CurrentUser.
@@ -324,7 +324,7 @@ test('Effect middleware provides services and its failures are typed', async () 
     router: provided,
     createContext: () => ({ user: 'kim' }),
   });
-  const client = createTRPCClient<typeof provided>({
+  const client = createTrpcClient<typeof provided>({
     links: [httpLink({ url: server.url })],
   });
   expect(await client.me.query()).toBe('kim');

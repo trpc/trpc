@@ -12,14 +12,14 @@ import type * as Effect from 'effect/Effect';
 declare const errorBrand: unique symbol;
 
 /** Isomorphic error. Yieldable, so it is also an `Effect<never, this>`. */
-export interface TRPCError<TCode extends string = string, TData = unknown>
+export interface TrpcError<TCode extends string = string, TData = unknown>
   extends Cause.YieldableError {
   readonly [errorBrand]: true;
   readonly code: TCode;
   readonly data: TData;
   readonly status: number;
 }
-export type AnyTRPCError = TRPCError<string, any>;
+export type AnyTrpcError = TrpcError<string, any>;
 
 export declare function error<
   const TCode extends string,
@@ -29,11 +29,11 @@ export declare function error<
   data?: TData;
   message?: string;
   status?: number;
-}): TRPCError<TCode, TData>;
+}): TrpcError<TCode, TData>;
 
-export declare function isTRPCError<T>(
+export declare function isTrpcError<T>(
   value: T,
-): value is Extract<T, AnyTRPCError>;
+): value is Extract<T, AnyTrpcError>;
 
 export type BuiltinCode =
   | 'BAD_REQUEST'
@@ -49,7 +49,7 @@ export interface Issue {
   readonly message: string;
   readonly path?: readonly PropertyKey[];
 }
-export type InputValidationError = TRPCError<
+export type InputValidationError = TrpcError<
   'BAD_REQUEST',
   { issues: readonly Issue[] }
 >;
@@ -59,14 +59,14 @@ export type InputValidationError = TRPCError<
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
 /** Success part of a resolver's (awaited) return type. */
-type OutputOf<R> = R extends AnyTRPCError
+type OutputOf<R> = R extends AnyTrpcError
   ? never
   : R extends Effect.Effect<infer A, any, any>
     ? A
     : R;
 
-/** Error part. A returned `TRPCError` and an Effect failure are the same case. */
-type ErrorsOf<R> = R extends AnyTRPCError
+/** Error part. A returned `TrpcError` and an Effect failure are the same case. */
+type ErrorsOf<R> = R extends AnyTrpcError
   ? R
   : R extends Effect.Effect<any, infer E, any>
     ? E
@@ -79,14 +79,14 @@ type SplitAwaited<R> =
     : { output: OutputOf<R>; errors: ErrorsOf<R> };
 
 /**
- * 02 (d.ii): an Effect failure that is not a `TRPCError` is a compile error,
+ * 02 (d.ii): an Effect failure that is not a `TrpcError` is a compile error,
  * reported on the resolver's return expression.
  */
 type CheckReturn<R> = [
-  Exclude<SplitReturn<R>['errors'], AnyTRPCError>,
+  Exclude<SplitReturn<R>['errors'], AnyTrpcError>,
 ] extends [never]
   ? unknown
-  : Effect.Effect<unknown, AnyTRPCError, never>;
+  : Effect.Effect<unknown, AnyTrpcError, never>;
 
 // --- schemas, middleware ------------------------------------------------------------
 
@@ -108,7 +108,7 @@ type Overwrite<A, B> = Omit<A, keyof B> & B;
 type CtxOf<R> = R extends MiddlewareResult<infer C> ? C : never;
 
 /** Mapping middleware (replaces v11 `.errors()` formatters). */
-export declare function mapErrors<$Err extends AnyTRPCError>(
+export declare function mapErrors<$Err extends AnyTrpcError>(
   fn: (cause: unknown) => $Err | undefined,
 ): (opts: { next: Next }) => Promise<MiddlewareResult<{}> | $Err>;
 
@@ -125,14 +125,14 @@ type DeclaredData<D> = D extends { data: Schema<any, any> }
   ? inferOut<D['data']>
   : undefined;
 export type DeclaredErrors<M extends ErrorMap> = {
-  [K in keyof M & string]: TRPCError<K, DeclaredData<M[K]>>;
+  [K in keyof M & string]: TrpcError<K, DeclaredData<M[K]>>;
 }[keyof M & string];
 export type ErrorConstructors<M extends ErrorMap> = {
   [K in keyof M & string]: (
     ...args: DeclaredData<M[K]> extends undefined
       ? [opts?: { message?: string }]
       : [opts: { message?: string; data: DeclaredData<M[K]> }]
-  ) => TRPCError<K, DeclaredData<M[K]>>;
+  ) => TrpcError<K, DeclaredData<M[K]>>;
 };
 
 // --- builder ----------------------------------------------------------------------------
@@ -180,18 +180,18 @@ export interface ProcedureBuilder<
   >;
 
   /** Whole-return inference: infer `$Ret`, then split ctx and errors. */
-  use<$Ret extends MaybePromise<MiddlewareResult<object> | AnyTRPCError>>(
+  use<$Ret extends MaybePromise<MiddlewareResult<object> | AnyTrpcError>>(
     fn: (opts: { ctx: TCtx; next: Next }) => $Ret,
   ): ProcedureBuilder<
     Overwrite<TCtx, CtxOf<Awaited<$Ret>>>,
     TInput,
     TOutputIn,
-    TErrors | Extract<Awaited<$Ret>, AnyTRPCError>,
+    TErrors | Extract<Awaited<$Ret>, AnyTrpcError>,
     TMap
   >;
 
   /** Split inference: one type parameter each for ctx and errors. */
-  useSplit<$Ctx extends object, $Err extends AnyTRPCError = never>(
+  useSplit<$Ctx extends object, $Err extends AnyTrpcError = never>(
     fn: (opts: {
       ctx: TCtx;
       next: Next;
@@ -209,7 +209,7 @@ export interface ProcedureBuilder<
       opts: ResolverOpts<TCtx, TInput, TMap>,
     ) => TOutputIn extends Unset
       ? $Ret & CheckReturn<$Ret>
-      : $Ret & MaybePromise<TOutputIn | AnyTRPCError> & CheckReturn<$Ret>,
+      : $Ret & MaybePromise<TOutputIn | AnyTrpcError> & CheckReturn<$Ret>,
   ): Procedure<
     'query',
     TInput extends Unset ? void : TInput,
@@ -218,7 +218,7 @@ export interface ProcedureBuilder<
   >;
 }
 
-export declare function initTRPC<TCtx extends object>(): {
+export declare function initTrpc<TCtx extends object>(): {
   procedure: ProcedureBuilder<TCtx, Unset, Unset, never, {}>;
 };
 
@@ -245,7 +245,7 @@ export interface ClientError<
   readonly status: number;
 }
 export type DefinedClientError<E> =
-  E extends TRPCError<infer C, infer D> ? ClientError<C, D, true> : never;
+  E extends TrpcError<infer C, infer D> ? ClientError<C, D, true> : never;
 export type UnexpectedClientError = ClientError<
   BuiltinCode | 'CLIENT_ABORTED' | 'NETWORK',
   unknown,
@@ -254,28 +254,28 @@ export type UnexpectedClientError = ClientError<
 export type ClientErrorOf<E> = DefinedClientError<E> | UnexpectedClientError;
 
 /** The call result carries its error type as a phantom so `safe()` can read it. */
-export interface TRPCPromise<T, E> extends Promise<T> {
+export interface TrpcPromise<T, E> extends Promise<T> {
   readonly '~error'?: E;
 }
 
 export type DecorateRouter<R> = {
   [K in keyof R]: R[K] extends Procedure<'query', infer I, infer O, infer E>
-    ? { query(input: I): TRPCPromise<O, ClientErrorOf<E>> }
+    ? { query(input: I): TrpcPromise<O, ClientErrorOf<E>> }
     : DecorateRouter<R[K]>;
 };
 export declare function createClient<R>(): DecorateRouter<R>;
 
 /** Q7.3 shapes. */
 export declare function safe<T, E>(
-  p: TRPCPromise<T, E>,
+  p: TrpcPromise<T, E>,
 ): Promise<[data: T, error: undefined] | [data: undefined, error: E]>;
 export declare function safeErrorFirst<T, E extends { defined: boolean }>(
-  p: TRPCPromise<T, E>,
+  p: TrpcPromise<T, E>,
 ): Promise<
   | [error: Extract<E, { defined: true }>, data: undefined, isDefined: true]
   | [error: Extract<E, { defined: false }>, data: undefined, isDefined: false]
   | [error: null, data: T, isDefined: false]
 >;
 export declare function safeObject<T, E>(
-  p: TRPCPromise<T, E>,
+  p: TrpcPromise<T, E>,
 ): Promise<{ data: T; error: undefined } | { data: undefined; error: E }>;

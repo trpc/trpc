@@ -11,17 +11,17 @@ import {
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import {
-  createTRPCQueryUtils,
+  createTrpcQueryUtils,
   hydrationOptions,
 } from '@trpcdev/tanstack-query';
 import {
-  createTRPCContext,
+  createTrpcContext,
   useSubscription,
 } from '@trpcdev/tanstack-react-query';
 import { Suspense, useState, type ReactNode } from 'react';
 import { createRoot, hydrateRoot } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
-import type { TRPCClient } from 'trpcdev/client';
+import type { TrpcClient } from 'trpcdev/client';
 import { createRouterClient } from 'trpcdev/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import {
@@ -33,9 +33,9 @@ import {
 } from './fixtures/app.ts';
 import { click, container, text, waitFor } from './fixtures/dom.ts';
 
-const { TRPCProvider, useTRPC, useTRPCClient } = createTRPCContext<AppRouter>();
+const { TrpcProvider, useTrpc, useTrpcClient } = createTrpcContext<AppRouter>();
 
-function mount(ui: ReactNode, client: TRPCClient<AppRouter>) {
+function mount(ui: ReactNode, client: TrpcClient<AppRouter>) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -43,7 +43,7 @@ function mount(ui: ReactNode, client: TRPCClient<AppRouter>) {
   const root = createRoot(el);
   root.render(
     <QueryClientProvider client={queryClient}>
-      <TRPCProvider client={client}>{ui}</TRPCProvider>
+      <TrpcProvider client={client}>{ui}</TrpcProvider>
     </QueryClientProvider>,
   );
   return {
@@ -57,7 +57,7 @@ function mount(ui: ReactNode, client: TRPCClient<AppRouter>) {
 }
 
 function PostTitle({ id }: { id: string }) {
-  const trpc = useTRPC();
+  const trpc = useTrpc();
   const post = useQuery(trpc.post.byId.queryOptions({ input: { id } }));
   if (post.error) {
     return (
@@ -91,7 +91,7 @@ test('useQuery reads through the provider; typed errors render', async () => {
 test('useMutation invalidates with pathFilter', async () => {
   await using app = await createApp();
   function Posts() {
-    const trpc = useTRPC();
+    const trpc = useTrpc();
     const queryClient = useQueryClient();
     const list = useQuery(
       trpc.post.list.queryOptions({ input: { limit: 10 } }),
@@ -125,7 +125,7 @@ test('useMutation invalidates with pathFilter', async () => {
 test('useSuspenseQuery suspends until the data arrives', async () => {
   await using app = await createApp();
   function Title() {
-    const trpc = useTRPC();
+    const trpc = useTrpc();
     const { data } = useSuspenseQuery(
       trpc.post.byId.queryOptions({ input: { id: '2' } }),
     );
@@ -145,7 +145,7 @@ test('useSuspenseQuery suspends until the data arrives', async () => {
 test('useInfiniteQuery loads pages on demand', async () => {
   await using app = await createApp({ posts: 5 });
   function Feed() {
-    const trpc = useTRPC();
+    const trpc = useTrpc();
     const feed = useInfiniteQuery(
       trpc.post.list.infiniteOptions({
         input: (cursor: number | undefined) => ({ limit: 2, cursor }),
@@ -181,7 +181,7 @@ test('useSubscription, live and streamed queries update the UI', async () => {
   await using app = await createApp();
   const toasts: string[] = [];
   function Live() {
-    const trpc = useTRPC();
+    const trpc = useTrpc();
     const [from, setFrom] = useState(100);
     const added = useSubscription(
       trpc.post.onAdd.subscriptionOptions({
@@ -222,9 +222,9 @@ test('useSubscription, live and streamed queries update the UI', async () => {
 test('server render with prefetched data, then hydrate without refetching', async () => {
   await using app = await createApp();
   function Page() {
-    const trpc = useTRPC();
-    const client = useTRPCClient();
-    expectTypeOf(client).toEqualTypeOf<TRPCClient<AppRouter>>();
+    const trpc = useTrpc();
+    const client = useTrpcClient();
+    expectTypeOf(client).toEqualTypeOf<TrpcClient<AppRouter>>();
     const { data } = useSuspenseQuery(
       trpc.post.byId.queryOptions({ input: { id: '3' } }),
     );
@@ -238,15 +238,15 @@ test('server render with prefetched data, then hydrate without refetching', asyn
     ctx: { locale: null },
   });
   await serverQueryClient.prefetchQuery(
-    createTRPCQueryUtils({ client: serverClient }).post.byId.queryOptions({
+    createTrpcQueryUtils({ client: serverClient }).post.byId.queryOptions({
       input: { id: '3' },
     }),
   );
-  const tree = (queryClient: QueryClient, client: TRPCClient<AppRouter>) => (
+  const tree = (queryClient: QueryClient, client: TrpcClient<AppRouter>) => (
     <QueryClientProvider client={queryClient}>
-      <TRPCProvider client={client}>
+      <TrpcProvider client={client}>
         <Page />
-      </TRPCProvider>
+      </TrpcProvider>
     </QueryClientProvider>
   );
   const html = renderToString(tree(serverQueryClient, serverClient));

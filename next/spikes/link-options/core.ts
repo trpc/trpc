@@ -1,6 +1,6 @@
 /**
  * Type-only model of links that declare the call options and context they
- * read. Shared by the D-A/B/C/E repros; only `createTRPCClient` differs.
+ * read. Shared by the D-A/B/C/E repros; only `createTrpcClient` differs.
  */
 import type { Procedure } from '../builder-generics/positional.ts';
 
@@ -36,14 +36,14 @@ export interface Operation<TPath extends string = string> {
  * `TRouter` is a phantom so router-aware links (e.g. `splitLink`) can type `op.path`.
  * `decl` must be invariant: if it were covariant, a declaration-less link would be a
  * supertype of every other link, and `[cacheLink(), loggerLink()]` would collapse to
- * `TRPCLink<{}>[]` through subtype reduction, losing `ignoreCache`.
+ * `TrpcLink<{}>[]` through subtype reduction, losing `ignoreCache`.
  */
-export interface TRPCLink<TDecl extends LinkDecl = {}, TRouter = any> {
+export interface TrpcLink<TDecl extends LinkDecl = {}, TRouter = any> {
   readonly '~types'?: { decl: (d: TDecl) => TDecl; router: TRouter };
   (op: Operation): Promise<unknown>;
 }
 
-export type AnyLink = TRPCLink<any, any>;
+export type AnyLink = TrpcLink<any, any>;
 
 type UnionToIntersection<U> = (
   U extends unknown ? (x: U) => void : never
@@ -51,7 +51,7 @@ type UnionToIntersection<U> = (
   ? I
   : never;
 type Simplify<T> = { [K in keyof T]: T[K] } & {};
-type DeclOf<TLink> = TLink extends TRPCLink<infer D, any> ? D : never;
+type DeclOf<TLink> = TLink extends TrpcLink<infer D, any> ? D : never;
 type OptionsOf<D> = D extends { options: infer O } ? O : never;
 type ContextOf<D> = D extends { context: infer C } ? C : never;
 type Merge<T> = Simplify<UnionToIntersection<T>>;
@@ -64,7 +64,7 @@ export type CallOptions<TLinks extends readonly AnyLink[]> = Merge<
   context?: Merge<ContextOf<DeclOf<TLinks[number]>>>;
 };
 
-export type TRPCClient<TRouter, TOpts> = DecorateRouter<TRouter, TOpts> & {
+export type TrpcClient<TRouter, TOpts> = DecorateRouter<TRouter, TOpts> & {
   readonly '~opts'?: TOpts;
 };
 type DecorateRouter<TRouter, TOpts> = {
@@ -88,14 +88,14 @@ export declare function type<T>(): Type<T>;
 
 export declare function httpLink(opts: {
   url: string;
-}): TRPCLink<{ context: { headers?: Record<string, string> } }>;
-export declare function cacheLink(): TRPCLink<{
+}): TrpcLink<{ context: { headers?: Record<string, string> } }>;
+export declare function cacheLink(): TrpcLink<{
   options: { ignoreCache?: boolean };
 }>;
-export declare function retryLink(): TRPCLink<{
+export declare function retryLink(): TrpcLink<{
   options: { retries?: number };
 }>;
-export declare function loggerLink(): TRPCLink;
+export declare function loggerLink(): TrpcLink;
 
 export declare function splitLink<
   TRouter = any,
@@ -105,7 +105,7 @@ export declare function splitLink<
   condition: (op: Operation<RouterPaths<TRouter>>) => boolean;
   true: TTrue;
   false: TFalse;
-}): TRPCLink<DeclOf<TTrue> | DeclOf<TFalse>, TRouter>;
+}): TrpcLink<DeclOf<TTrue> | DeclOf<TFalse>, TRouter>;
 
 // --- fixture router ----------------------------------------------------------
 

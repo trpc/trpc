@@ -1,11 +1,11 @@
 import { Effect, Exit, Stream, type Layer } from 'effect';
-import { inputJSONSchema } from '../internal/describe.ts';
+import { inputJsonSchema } from '../internal/describe.ts';
 import {
-  isTRPCError,
-  TRPCError,
-  type AnyTRPCError,
+  isTrpcError,
+  TrpcError,
+  type AnyTrpcError,
 } from '../internal/error.ts';
-import type { JSONSchema } from '../internal/json-schema.ts';
+import type { JsonSchema } from '../internal/json-schema.ts';
 import { isJsonContentType } from '../internal/protocol.ts';
 import type { MaybePromise } from '../internal/types.ts';
 import { createHandlerCore } from '../server/core.ts';
@@ -30,7 +30,7 @@ import type {
 import { isTracked } from '../server/tracked.ts';
 import { parseBracketNotation } from './bracket.ts';
 import { coerceBySchema, propertySchema } from './coerce.ts';
-import { toOpenAPIError } from './errors.ts';
+import { toOpenApiError } from './errors.ts';
 import {
   compileRoute,
   normalizePrefix,
@@ -40,26 +40,26 @@ import {
 } from './routes.ts';
 
 /**
- * What an {@link OpenAPIPlugin} receives.
+ * What an {@link OpenApiPlugin} receives.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface OpenAPIPluginContext {
+export interface OpenApiPluginContext {
   readonly router: AnyRouter;
   /** The handler's normalized prefix: `''` or `/api`. */
   readonly prefix: string;
 }
 
 /**
- * Extends the OpenAPI handler, e.g. {@link openAPIReference}. A plugin sees
+ * Extends the OpenAPI handler, e.g. {@link openApiReference}. A plugin sees
  * each request first and may answer it.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface OpenAPIPlugin {
+export interface OpenApiPlugin {
   fetch?(
     request: Request,
-    ctx: OpenAPIPluginContext,
+    ctx: OpenApiPluginContext,
   ): MaybePromise<Response | undefined>;
 }
 
@@ -68,7 +68,7 @@ export interface OpenAPIPlugin {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface BaseOpenAPIHandlerOptions<TRouter extends AnyRouter> {
+export interface BaseOpenApiHandlerOptions<TRouter extends AnyRouter> {
   router: TRouter;
   /**
    * Prepended to every route's path.
@@ -87,16 +87,16 @@ export interface BaseOpenAPIHandlerOptions<TRouter extends AnyRouter> {
   exposeUnexpectedErrors?: boolean;
   /** Called for every error, with the original cause. */
   onError?: (opts: OnErrorOpts) => void;
-  plugins?: ReadonlyArray<OpenAPIPlugin>;
+  plugins?: ReadonlyArray<OpenApiPlugin>;
 }
 
 /**
- * The options of {@link createOpenAPIHandler}.
+ * The options of {@link createOpenApiHandler}.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type OpenAPIHandlerOptions<TRouter extends AnyRouter> =
-  BaseOpenAPIHandlerOptions<TRouter> &
+export type OpenApiHandlerOptions<TRouter extends AnyRouter> =
+  BaseOpenApiHandlerOptions<TRouter> &
     ContextOption<inferRouterContext<TRouter>> &
     LayerOption<inferRouterServices<TRouter>>;
 
@@ -105,7 +105,7 @@ export type OpenAPIHandlerOptions<TRouter extends AnyRouter> =
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface OpenAPIHandler {
+export interface OpenApiHandler {
   fetch(request: Request): Promise<Response>;
   /** Releases the `layer`'s resources. */
   dispose(): Promise<void>;
@@ -116,7 +116,7 @@ interface Entry {
   readonly procedure: AnyProcedure;
   readonly route: ResolvedRoute;
   readonly match: (pathname: string) => Record<string, string> | undefined;
-  readonly input: JSONSchema | undefined;
+  readonly input: JsonSchema | undefined;
 }
 
 const encoder = new TextEncoder();
@@ -156,19 +156,19 @@ const specificity = (route: ResolvedRoute) =>
  *
  * @example
  * ```ts
- * const openapi = createOpenAPIHandler({
+ * const openapi = createOpenApiHandler({
  *   router: appRouter,
  *   createContext,
- *   plugins: [openAPIReference({ specGenerateOptions: { info: { title: 'API', version: '1.0.0' } } })],
+ *   plugins: [openApiReference({ specGenerateOptions: { info: { title: 'API', version: '1.0.0' } } })],
  * });
  * // GET /api/posts/1, GET /api/docs, GET /api/openapi.json
  * ```
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function createOpenAPIHandler<TRouter extends AnyRouter>(
-  opts: OpenAPIHandlerOptions<TRouter>,
-): OpenAPIHandler {
+export function createOpenApiHandler<TRouter extends AnyRouter>(
+  opts: OpenApiHandlerOptions<TRouter>,
+): OpenApiHandler {
   const base = createHandlerCore(
     opts as typeof opts & {
       createContext?: (o: CreateContextOpts) => MaybePromise<object>;
@@ -188,7 +188,7 @@ export function createOpenAPIHandler<TRouter extends AnyRouter>(
         procedure,
         route,
         match: compileRoute(route.path),
-        input: inputJSONSchema(def),
+        input: inputJsonSchema(def),
       };
     })
     .sort((a, b) => specificity(a.route).localeCompare(specificity(b.route)));
@@ -198,14 +198,14 @@ export function createOpenAPIHandler<TRouter extends AnyRouter>(
     const other = seen.get(key);
     if (other) {
       throw new Error(
-        `createOpenAPIHandler: "${entry.path}" and "${other}" both map to ${key}`,
+        `createOpenApiHandler: "${entry.path}" and "${other}" both map to ${key}`,
       );
     }
     seen.set(key, entry.path);
   }
 
-  const fail = (err: AnyTRPCError, headers?: Headers) =>
-    json(err.status, toOpenAPIError(base.publicError(err)), headers);
+  const fail = (err: AnyTrpcError, headers?: Headers) =>
+    json(err.status, toOpenApiError(base.publicError(err)), headers);
 
   async function readBody(request: Request): Promise<{
     value: unknown;
@@ -213,7 +213,7 @@ export function createOpenAPIHandler<TRouter extends AnyRouter>(
   }> {
     const length = Number(request.headers.get('content-length') ?? 0);
     if (length > maxBodySize) {
-      throw new TRPCError({
+      throw new TrpcError({
         code: 'PAYLOAD_TOO_LARGE',
         message: 'Request body is too large',
       });
@@ -230,14 +230,14 @@ export function createOpenAPIHandler<TRouter extends AnyRouter>(
     }
     const text = await request.text();
     if (encoder.encode(text).byteLength > maxBodySize) {
-      throw new TRPCError({
+      throw new TrpcError({
         code: 'PAYLOAD_TOO_LARGE',
         message: 'Request body is too large',
       });
     }
     if (text === '') return { value: undefined, fromStrings: false };
     if (!isJsonContentType(type)) {
-      throw new TRPCError({
+      throw new TrpcError({
         code: 'UNSUPPORTED_MEDIA_TYPE',
         message:
           'Bodies must be application/json, application/x-www-form-urlencoded or multipart/form-data',
@@ -246,7 +246,7 @@ export function createOpenAPIHandler<TRouter extends AnyRouter>(
     try {
       return { value: JSON.parse(text), fromStrings: false };
     } catch (cause) {
-      throw new TRPCError({
+      throw new TrpcError({
         code: 'PARSE_ERROR',
         message: 'Invalid JSON',
         cause,
@@ -287,7 +287,7 @@ export function createOpenAPIHandler<TRouter extends AnyRouter>(
     }
     if (!hasParams) return body.value;
     if (body.value !== undefined && !isPlainObject(body.value)) {
-      throw new TRPCError({
+      throw new TrpcError({
         code: 'BAD_REQUEST',
         message: 'A route with path params needs an object body',
       });
@@ -334,7 +334,7 @@ export function createOpenAPIHandler<TRouter extends AnyRouter>(
   function events(
     request: Request,
     entry: Entry,
-    stream: Stream.Stream<unknown, AnyTRPCError>,
+    stream: Stream.Stream<unknown, AnyTrpcError>,
     controller: AbortController,
     headers: Headers,
   ): Response {
@@ -361,7 +361,7 @@ export function createOpenAPIHandler<TRouter extends AnyRouter>(
           const err = normalizeCause(exit.cause);
           base.report(err, request, entry.path, 'subscription');
           write(
-            `event: error\ndata: ${JSON.stringify(toOpenAPIError(base.publicError(err)))}\n\n`,
+            `event: error\ndata: ${JSON.stringify(toOpenApiError(base.publicError(err)))}\n\n`,
           );
         } else {
           write('event: done\ndata: \n\n');
@@ -410,7 +410,7 @@ export function createOpenAPIHandler<TRouter extends AnyRouter>(
       return events(
         request,
         entry,
-        exit.value as Stream.Stream<unknown, AnyTRPCError>,
+        exit.value as Stream.Stream<unknown, AnyTrpcError>,
         controller,
         response.headers,
       );
@@ -445,7 +445,7 @@ export function createOpenAPIHandler<TRouter extends AnyRouter>(
           try {
             return await serve(request, url, entry, params);
           } catch (cause) {
-            const err = isTRPCError(cause) ? cause : unexpectedError(cause);
+            const err = isTrpcError(cause) ? cause : unexpectedError(cause);
             base.report(
               err,
               request,
@@ -455,7 +455,7 @@ export function createOpenAPIHandler<TRouter extends AnyRouter>(
             return fail(err);
           }
         }
-        throw new TRPCError(
+        throw new TrpcError(
           allowed
             ? {
                 code: 'METHOD_NOT_SUPPORTED',
@@ -464,7 +464,7 @@ export function createOpenAPIHandler<TRouter extends AnyRouter>(
             : { code: 'NOT_FOUND', message: `Not found: ${url.pathname}` },
         );
       } catch (cause) {
-        const err = isTRPCError(cause) ? cause : unexpectedError(cause);
+        const err = isTrpcError(cause) ? cause : unexpectedError(cause);
         base.report(err, request);
         return fail(err);
       }

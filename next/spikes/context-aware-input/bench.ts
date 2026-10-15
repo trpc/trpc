@@ -9,7 +9,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { Context, Effect, Schema, SchemaGetter } from 'effect';
 import { z } from 'zod';
-import { call, initTRPC, inputContext } from './core.ts';
+import { call, initTrpc, inputContext } from './core.ts';
 
 const iterations = Number(process.argv[2] ?? 50_000);
 
@@ -70,7 +70,7 @@ const validate = (schema: z.ZodType) => {
   if (result instanceof Promise || result.issues) throw new Error('invalid');
 };
 
-const t = initTRPC<{ ctx: { user: User } }>();
+const t = initTrpc<{ ctx: { user: User } }>();
 const procedures = {
   'call: static zod': t.procedure.input(staticZod).query(() => null),
   'call: callback zod (rebuilt)': t.procedure

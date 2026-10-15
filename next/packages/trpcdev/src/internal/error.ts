@@ -43,11 +43,11 @@ export const ERROR_STATUS = {
 export type BuiltinErrorCode = keyof typeof ERROR_STATUS;
 
 /**
- * Options for {@link TRPCError} and {@link error}.
+ * Options for {@link TrpcError} and {@link error}.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface TRPCErrorOptions<TCode extends string, TData> {
+export interface TrpcErrorOptions<TCode extends string, TData> {
   /** A built-in code (`'NOT_FOUND'`) or a custom one (`'PAYMENT_REQUIRED'`). */
   code: TCode;
   message?: string | undefined;
@@ -72,7 +72,7 @@ const YieldableBase: new (args: {
  * Return it (or `yield*` it in an Effect) from a resolver or middleware and
  * it becomes part of the procedure's typed error union, `defined: true` on
  * the client. Anything thrown is `defined: false`. Thrown values that are not
- * a `TRPCError` become `INTERNAL_SERVER_ERROR`, and their message is masked in
+ * a `TrpcError` become `INTERNAL_SERVER_ERROR`, and their message is masked in
  * production.
  *
  * @example
@@ -91,17 +91,17 @@ const YieldableBase: new (args: {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export class TRPCError<
+export class TrpcError<
   TCode extends string = string,
   TData = unknown,
 > extends YieldableBase {
-  override readonly name = 'TRPCError';
+  override readonly name = 'TrpcError';
   readonly code: TCode;
   readonly status: number;
   readonly data: TData;
   readonly defined: boolean;
 
-  constructor(opts: TRPCErrorOptions<TCode, TData>) {
+  constructor(opts: TrpcErrorOptions<TCode, TData>) {
     super({
       message: opts.message ?? opts.code,
       ...(opts.cause === undefined ? {} : { cause: opts.cause }),
@@ -115,14 +115,14 @@ export class TRPCError<
 }
 
 /**
- * Any {@link TRPCError}.
+ * Any {@link TrpcError}.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type AnyTRPCError = TRPCError<string, any>;
+export type AnyTrpcError = TrpcError<string, any>;
 
 /**
- * Creates a {@link TRPCError} to return (or `yield*`) from a resolver or
+ * Creates a {@link TrpcError} to return (or `yield*`) from a resolver or
  * middleware. Returned errors are inferred into the procedure's error union.
  *
  * @example
@@ -141,23 +141,23 @@ export type AnyTRPCError = TRPCError<string, any>;
  * @stability experimental
  */
 export function error<const TCode extends string, TData = undefined>(
-  opts: Omit<TRPCErrorOptions<TCode, TData>, 'defined'>,
-): TRPCError<TCode, TData> {
-  return new TRPCError({ ...opts, defined: true });
+  opts: Omit<TrpcErrorOptions<TCode, TData>, 'defined'>,
+): TrpcError<TCode, TData> {
+  return new TrpcError({ ...opts, defined: true });
 }
 
 /**
- * Whether `value` is a {@link TRPCError}.
+ * Whether `value` is a {@link TrpcError}.
  *
  * @example
  * ```ts
- * if (isTRPCError(cause)) cause.code;
+ * if (isTrpcError(cause)) cause.code;
  * ```
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function isTRPCError(value: unknown): value is AnyTRPCError {
-  return value instanceof TRPCError;
+export function isTrpcError(value: unknown): value is AnyTrpcError {
+  return value instanceof TrpcError;
 }
 
 /**
@@ -173,16 +173,16 @@ export function isTRPCError(value: unknown): value is AnyTRPCError {
 export function isDefinedError<E>(
   value: E,
 ): value is Extract<E, { readonly defined: true }> {
-  return isTRPCError(value) && value.defined;
+  return isTrpcError(value) && value.defined;
 }
 
 /** A copy of `err` with `defined` set. @internal */
-export function withDefined<E extends AnyTRPCError>(
+export function withDefined<E extends AnyTrpcError>(
   err: E,
   defined: boolean,
 ): E {
   if (err.defined === defined) return err;
-  return new TRPCError({
+  return new TrpcError({
     code: err.code,
     message: err.message,
     data: err.data,
@@ -198,7 +198,7 @@ export interface WireError {
 }
 
 /** @internal */
-export function toWireError(err: AnyTRPCError): WireError {
+export function toWireError(err: AnyTrpcError): WireError {
   return {
     error: {
       code: err.code,
@@ -212,12 +212,12 @@ export function toWireError(err: AnyTRPCError): WireError {
 const isRecord = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null;
 
-/** Rebuilds a {@link TRPCError} from a deserialized error body. @internal */
-export function fromWireError(body: unknown, status?: number): TRPCError {
+/** Rebuilds a {@link TrpcError} from a deserialized error body. @internal */
+export function fromWireError(body: unknown, status?: number): TrpcError {
   const inner = isRecord(body) && isRecord(body['error']) ? body['error'] : {};
   const code =
     typeof inner['code'] === 'string' ? inner['code'] : 'INTERNAL_SERVER_ERROR';
-  return new TRPCError({
+  return new TrpcError({
     code,
     message: typeof inner['message'] === 'string' ? inner['message'] : code,
     data: inner['data'],

@@ -1,9 +1,9 @@
 <script lang="ts">
   import { QueryClientProvider, type QueryClient } from '@tanstack/svelte-query';
   import type { Component } from 'svelte';
-  import type { TRPCClient } from 'trpcdev/client';
+  import type { TrpcClient } from 'trpcdev/client';
   import type { AppRouter } from '../fixtures/app.ts';
-  import { setTRPCContext } from './trpc.ts';
+  import { setTrpcContext } from './trpc.ts';
 
   let {
     queryClient,
@@ -12,13 +12,13 @@
     props = {},
   }: {
     queryClient: QueryClient;
-    client: TRPCClient<AppRouter>;
+    client: TrpcClient<AppRouter>;
     app: Component<any>;
     props?: Record<string, unknown>;
   } = $props();
 
   // svelte-ignore state_referenced_locally
-  setTRPCContext(client);
+  setTrpcContext(client);
 </script>
 
 <QueryClientProvider client={queryClient}>

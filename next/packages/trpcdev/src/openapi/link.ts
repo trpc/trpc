@@ -1,14 +1,14 @@
 import { Effect, Stream } from 'effect';
-import type { Operation, OperationStream, TRPCLink } from '../client/link.ts';
-import type { ContractJSON } from '../contract/index.ts';
+import type { Operation, OperationStream, TrpcLink } from '../client/link.ts';
+import type { ContractJson } from '../contract/index.ts';
 import {
-  isTRPCError,
-  TRPCError,
-  type AnyTRPCError,
+  isTrpcError,
+  TrpcError,
+  type AnyTrpcError,
 } from '../internal/error.ts';
-import { parseSSE } from '../internal/protocol.ts';
+import { parseSse } from '../internal/protocol.ts';
 import { toBracketNotation } from './bracket.ts';
-import { fromOpenAPIError } from './errors.ts';
+import { fromOpenApiError } from './errors.ts';
 import {
   fillPath,
   normalizePrefix,
@@ -18,15 +18,15 @@ import {
 } from './routes.ts';
 
 /**
- * The options of {@link openAPILink}.
+ * The options of {@link openApiLink}.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface OpenAPILinkOptions {
+export interface OpenApiLinkOptions {
   /** The server's origin (and any base path), without the handler prefix. */
   url: string | URL;
   /** Methods and paths for each procedure: from `toContract()`. */
-  contract: ContractJSON<any>;
+  contract: ContractJson<any>;
   /**
    * The handler's prefix.
    * @default '/api'
@@ -42,10 +42,10 @@ export interface OpenAPILinkOptions {
 const isAbort = (cause: unknown) =>
   cause instanceof Error && cause.name === 'AbortError';
 
-const toError = (cause: unknown): AnyTRPCError =>
-  isTRPCError(cause)
+const toError = (cause: unknown): AnyTrpcError =>
+  isTrpcError(cause)
     ? cause
-    : new TRPCError(
+    : new TrpcError(
         isAbort(cause)
           ? {
               code: 'CLIENT_CLOSED_REQUEST',
@@ -71,7 +71,7 @@ const hasBlob = (value: unknown): boolean =>
 
 /**
  * Calls a router's REST mapping (18 (d)): the endpoints
- * `createOpenAPIHandler` serves, at the methods and paths of a JSON
+ * `createOpenApiHandler` serves, at the methods and paths of a JSON
  * contract. Inputs become path params, bracket-notation query strings or
  * JSON bodies (`multipart/form-data` when they contain a `Blob`), and
  * subscriptions read `text/event-stream`. Works with any server that
@@ -81,16 +81,16 @@ const hasBlob = (value: unknown): boolean =>
  * ```ts
  * import contract from './contract.json' with { type: 'json' }; // toContract(appRouter)
  *
- * const client = createTRPCClient({
+ * const client = createTrpcClient({
  *   router: routerType<AppRouter>(),
- *   links: [openAPILink({ url: 'https://api.example.com', contract })],
+ *   links: [openApiLink({ url: 'https://api.example.com', contract })],
  * });
  * await client.post.byId.query({ id: '1' }); // GET https://api.example.com/api/posts/1
  * ```
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function openAPILink(opts: OpenAPILinkOptions): TRPCLink {
+export function openApiLink(opts: OpenApiLinkOptions): TrpcLink {
   const base = String(opts.url).replace(/\/+$/, '');
   const prefix = normalizePrefix(opts.prefix);
   const fetchFn = opts.fetch ?? globalThis.fetch;
@@ -100,7 +100,7 @@ export function openAPILink(opts: OpenAPILinkOptions): TRPCLink {
     if (!route) {
       const procedure = opts.contract.procedures[op.path];
       if (!procedure) {
-        throw new TRPCError({
+        throw new TrpcError({
           code: 'NOT_FOUND',
           message: `"${op.path}" is not in the contract`,
         });
@@ -175,12 +175,12 @@ export function openAPILink(opts: OpenAPILinkOptions): TRPCLink {
     });
   }
 
-  async function readError(res: Response): Promise<AnyTRPCError> {
+  async function readError(res: Response): Promise<AnyTrpcError> {
     const text = await res.text();
     try {
-      return fromOpenAPIError(JSON.parse(text), res.status);
+      return fromOpenApiError(JSON.parse(text), res.status);
     } catch (cause) {
-      return new TRPCError({
+      return new TrpcError({
         code: 'PARSE_ERROR',
         message: `Unexpected ${res.status} response`,
         status: res.status,
@@ -213,10 +213,10 @@ export function openAPILink(opts: OpenAPILinkOptions): TRPCLink {
   async function* events(op: Operation, signal: AbortSignal) {
     const res = await request(op, signal);
     if (!res.ok || !res.body) throw await readError(res);
-    for await (const event of parseSSE(res.body)) {
+    for await (const event of parseSse(res.body)) {
       if (event.event === 'done') return;
       if (event.event === 'error') {
-        throw fromOpenAPIError(JSON.parse(event.data), res.status);
+        throw fromOpenApiError(JSON.parse(event.data), res.status);
       }
       const data: unknown = JSON.parse(event.data);
       yield event.id === undefined ? data : { id: event.id, data };

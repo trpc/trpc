@@ -1,7 +1,7 @@
 import { Effect, Exit, type Layer } from 'effect';
-import { createTRPCClient } from '../client/client.ts';
+import { createTrpcClient } from '../client/client.ts';
 import { localLink } from '../client/links/local.ts';
-import type { TRPCClient } from '../client/types.ts';
+import type { TrpcClient } from '../client/types.ts';
 import type { MaybePromise } from '../internal/types.ts';
 import { callProcedure, normalizeCause } from './execute.ts';
 import type { Procedure, ProcedureDef } from './procedure.ts';
@@ -46,13 +46,13 @@ export function createRouterClient<TRouter extends AnyRouter>(
   ...[opts]: {} extends RouterClientOptions<TRouter>
     ? [opts?: RouterClientOptions<TRouter>]
     : [opts: RouterClientOptions<TRouter>]
-): TRPCClient<TRouter> {
+): TrpcClient<TRouter> {
   const o = (opts ?? {}) as {
     ctx?: object | (() => MaybePromise<object>);
     layer?: Layer.Layer<any, any, never>;
   };
   const ctx = o.ctx;
-  return createTRPCClient<TRouter>({
+  return createTrpcClient<TRouter>({
     links: [
       localLink({
         router,
@@ -80,7 +80,7 @@ export type CallOptions<TDef extends ProcedureDef> = {
 } & ServicesOption<TDef['services']>;
 
 /**
- * Calls one procedure directly. Throws the procedure's `TRPCError`s. The
+ * Calls one procedure directly. Throws the procedure's `TrpcError`s. The
  * `layer` is built for the call and released after it.
  *
  * @example

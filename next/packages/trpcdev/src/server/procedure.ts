@@ -1,5 +1,5 @@
 import type { Context } from 'effect';
-import type { AnyTRPCError } from '../internal/error.ts';
+import type { AnyTrpcError } from '../internal/error.ts';
 import type { ProcedureType } from '../internal/types.ts';
 import type { AnySchema } from './schema.ts';
 
@@ -67,7 +67,7 @@ export interface ProcedureDef {
   /** What the client receives (for subscriptions, each event). */
   output: unknown;
   /** The typed error union. */
-  errors: AnyTRPCError;
+  errors: AnyTrpcError;
   /** Effect services the handler's `layer` must provide. */
   services: unknown;
 }

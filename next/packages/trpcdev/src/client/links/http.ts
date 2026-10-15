@@ -1,14 +1,14 @@
 import { Cause, Effect, Queue, Stream } from 'effect';
 import {
   fromWireError,
-  isTRPCError,
-  TRPCError,
-  type AnyTRPCError,
+  isTrpcError,
+  TrpcError,
+  type AnyTrpcError,
 } from '../../internal/error.ts';
 import {
   CONTENT_TYPE,
   HEADER,
-  parseSSE,
+  parseSse,
   PROTOCOL_VERSION,
   readLines,
   SSE_EVENT,
@@ -21,7 +21,7 @@ import {
   type Frame,
   type Serializer,
 } from '../../serializer/index.ts';
-import type { Operation, OperationStream, TRPCLink } from '../link.ts';
+import type { Operation, OperationStream, TrpcLink } from '../link.ts';
 import { DeferredDecoder } from './events.ts';
 
 /**
@@ -29,7 +29,7 @@ import { DeferredDecoder } from './events.ts';
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface HTTPLinkOptions {
+export interface HttpLinkOptions {
   /** The endpoint, e.g. `http://localhost:3000/trpc`. */
   url: string | URL;
   /** Must match the server's. @default defaultSerializer */
@@ -44,7 +44,7 @@ export interface HTTPLinkOptions {
    * Queries whose URL would be longer than this are sent as `POST`.
    * @default 2048
    */
-  maxURLLength?: number;
+  maxUrlLength?: number;
   /**
    * Batch queries (and, separately, mutations) made in the same tick into
    * one request. The server must enable batching too.
@@ -105,16 +105,16 @@ const sleep = (ms: number, signal: AbortSignal) =>
 const isAbort = (cause: unknown) =>
   cause instanceof Error && cause.name === 'AbortError';
 
-function toHttpError(cause: unknown): AnyTRPCError {
-  if (isTRPCError(cause)) return cause;
+function toHttpError(cause: unknown): AnyTrpcError {
+  if (isTrpcError(cause)) return cause;
   if (isAbort(cause)) {
-    return new TRPCError({
+    return new TrpcError({
       code: 'CLIENT_CLOSED_REQUEST',
       message: 'The request was aborted',
       cause,
     });
   }
-  return new TRPCError({
+  return new TrpcError({
     code: 'NETWORK_ERROR',
     message: cause instanceof Error ? cause.message : 'Network error',
     cause,
@@ -128,17 +128,17 @@ function toHttpError(cause: unknown): AnyTRPCError {
  *
  * @example
  * ```ts
- * createTRPCClient<AppRouter>({
+ * createTrpcClient<AppRouter>({
  *   links: [httpLink({ url: 'http://localhost:3000/trpc', batch: true })],
  * });
  * ```
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function httpLink(opts: HTTPLinkOptions): TRPCLink {
+export function httpLink(opts: HttpLinkOptions): TrpcLink {
   const serializer = opts.serializer ?? defaultSerializer;
   const baseUrl = String(opts.url).replace(/\/+$/, '');
-  const maxURLLength = opts.maxURLLength ?? 2048;
+  const maxUrlLength = opts.maxUrlLength ?? 2048;
   const fetchFn = opts.fetch ?? globalThis.fetch;
   const maxItems =
     opts.batch === true ? 10 : opts.batch ? (opts.batch.maxItems ?? 10) : 0;
@@ -168,7 +168,7 @@ export function httpLink(opts: HTTPLinkOptions): TRPCLink {
   const body = (input: unknown) =>
     input === undefined ? '' : JSON.stringify(serializer.serialize(input));
 
-  async function readError(res: Response): Promise<AnyTRPCError> {
+  async function readError(res: Response): Promise<AnyTrpcError> {
     const text = await res.text();
     try {
       return fromWireError(
@@ -176,7 +176,7 @@ export function httpLink(opts: HTTPLinkOptions): TRPCLink {
         res.status,
       );
     } catch (cause) {
-      return new TRPCError({
+      return new TrpcError({
         code: 'PARSE_ERROR',
         message: `Unexpected ${res.status} response`,
         status: res.status,
@@ -201,7 +201,7 @@ export function httpLink(opts: HTTPLinkOptions): TRPCLink {
     return text ? serializer.deserialize(JSON.parse(text)) : undefined;
   }
 
-  /** `GET` with the input in the URL, or `POST` above `maxURLLength`. */
+  /** `GET` with the input in the URL, or `POST` above `maxUrlLength`. */
   async function send(
     op: Operation,
     accept: string,
@@ -213,7 +213,7 @@ export function httpLink(opts: HTTPLinkOptions): TRPCLink {
       const search =
         op.input === undefined ? '' : serializer.toSearch(op.input);
       const full = search ? `${url}?${search}` : url;
-      if (full.length <= maxURLLength) {
+      if (full.length <= maxUrlLength) {
         return fetchFn(full, {
           method: 'GET',
           headers: await buildHeaders([op], { accept, ...extra }),
@@ -259,7 +259,7 @@ export function httpLink(opts: HTTPLinkOptions): TRPCLink {
     aborted: boolean;
     settled: boolean;
     resolve: (value: unknown) => void;
-    reject: (error: AnyTRPCError) => void;
+    reject: (error: AnyTrpcError) => void;
     onAbort?: () => void;
   }
   const queues = { query: [] as Pending[], mutation: [] as Pending[] };
@@ -332,7 +332,7 @@ export function httpLink(opts: HTTPLinkOptions): TRPCLink {
       for (const [i, item] of live.entries()) {
         if (received.has(i)) continue;
         item.reject(
-          new TRPCError({
+          new TrpcError({
             code: 'PARSE_ERROR',
             message: 'The batch response ended without a result',
           }),
@@ -359,7 +359,7 @@ export function httpLink(opts: HTTPLinkOptions): TRPCLink {
 
   const batched = (op: Operation): OperationStream =>
     Stream.fromEffect(
-      Effect.callback<unknown, AnyTRPCError>((resume) => {
+      Effect.callback<unknown, AnyTrpcError>((resume) => {
         const item: Pending = {
           op,
           aborted: false,
@@ -409,7 +409,7 @@ export function httpLink(opts: HTTPLinkOptions): TRPCLink {
         if (!res.ok || !res.body) throw await readError(res);
         const decoder = new DeferredDecoder(serializer);
         try {
-          for await (const event of parseSSE(res.body)) {
+          for await (const event of parseSse(res.body)) {
             switch (event.event) {
               case SSE_EVENT.done:
                 return;
@@ -442,13 +442,13 @@ export function httpLink(opts: HTTPLinkOptions): TRPCLink {
             }
           }
         } catch (cause) {
-          if (isTRPCError(cause)) throw cause;
+          if (isTrpcError(cause)) throw cause;
         } finally {
           decoder.close();
         }
         if (signal.aborted) return;
         if (++attempt > reconnectAttempts) {
-          throw new TRPCError({
+          throw new TrpcError({
             code: 'NETWORK_ERROR',
             message: 'The subscription connection was lost',
           });
@@ -459,7 +459,7 @@ export function httpLink(opts: HTTPLinkOptions): TRPCLink {
   }
 
   const subscription = (op: Operation): OperationStream =>
-    Stream.callback<unknown, AnyTRPCError>((queue) =>
+    Stream.callback<unknown, AnyTrpcError>((queue) =>
       Effect.gen(function* () {
         const controller = new AbortController();
         yield* Effect.addFinalizer(() => Effect.sync(() => controller.abort()));

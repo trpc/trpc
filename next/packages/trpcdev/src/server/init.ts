@@ -1,5 +1,5 @@
 import type { AnyContractRouter } from '../contract/index.ts';
-import type { AnyTRPCError } from '../internal/error.ts';
+import type { AnyTrpcError } from '../internal/error.ts';
 import type { Unset } from '../internal/types.ts';
 import { createBuilder, type ProcedureBuilder } from './builder.ts';
 import { implement, type ImplementResult } from './implement.ts';
@@ -10,7 +10,7 @@ import {
 } from './middleware.ts';
 
 /**
- * The type-level config of `initTRPC`.
+ * The type-level config of `initTrpc`.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
@@ -22,7 +22,7 @@ export interface RootConfig {
 }
 
 /**
- * The runtime options of `initTRPC`.
+ * The runtime options of `initTrpc`.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
@@ -52,11 +52,11 @@ export interface RootDef<TCtx extends object, TMeta extends object> {
 }
 
 /**
- * What `initTRPC()` returns, conventionally named `t`.
+ * What `initTrpc()` returns, conventionally named `t`.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface TRPCRoot<TCtx extends object, TMeta extends object> {
+export interface TrpcRoot<TCtx extends object, TMeta extends object> {
   /** The base procedure builder. */
   procedure: ProcedureBuilder<RootDef<TCtx, TMeta>>;
   /**
@@ -104,7 +104,7 @@ export interface TRPCRoot<TCtx extends object, TMeta extends object> {
  * @stability experimental
  */
 export interface RootMiddleware<TCtx extends object, TMeta extends object> {
-  <$Ctx extends object = {}, $Err extends AnyTRPCError = never, $Ok = never>(
+  <$Ctx extends object = {}, $Err extends AnyTrpcError = never, $Ok = never>(
     fn: MiddlewareFunction<TCtx, unknown, TMeta, $Ctx, $Err, $Ok>,
   ): MiddlewareFunction<TCtx, unknown, TMeta, $Ctx, $Err, $Ok>;
   /**
@@ -138,15 +138,15 @@ export interface RootMiddleware<TCtx extends object, TMeta extends object> {
  * interface Context { user: User | null }
  * interface Meta { auth?: 'admin' }
  *
- * const t = initTRPC<{ ctx: Context; meta: Meta }>();
+ * const t = initTrpc<{ ctx: Context; meta: Meta }>();
  * export const publicProcedure = t.procedure;
  * ```
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function initTRPC<TConfig extends RootConfig = {}>(
+export function initTrpc<TConfig extends RootConfig = {}>(
   opts: RootOptions<TConfig['meta'] extends object ? TConfig['meta'] : {}> = {},
-): TRPCRoot<
+): TrpcRoot<
   TConfig['ctx'] extends object ? TConfig['ctx'] : {},
   TConfig['meta'] extends object ? TConfig['meta'] : {}
 > {

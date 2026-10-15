@@ -88,11 +88,11 @@ type ServicesCheck<TProvided, S> = [Exclude<ServicesOf<S>, TProvided>] extends [
 
 // --- errors -----------------------------------------------------------------------
 
-export class TRPCError extends Error {
+export class TrpcError extends Error {
   readonly code: 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR';
   readonly issues: ReadonlyArray<StandardIssue> | undefined;
   constructor(opts: {
-    code: TRPCError['code'];
+    code: TrpcError['code'];
     message: string;
     issues?: ReadonlyArray<StandardIssue>;
     cause?: unknown;
@@ -227,7 +227,7 @@ function createBuilder(
   };
 }
 
-export function initTRPC<
+export function initTrpc<
   TConfig extends { ctx: object; meta?: object },
 >(opts?: {
   meta?: TConfig['meta'];
@@ -254,12 +254,12 @@ const isSchema = (arg: AnySchema | InputFn<any, any>): arg is AnySchema =>
 function resolveSchema(
   arg: AnySchema | InputFn<any, any>,
   opts: InputOpts<unknown, unknown>,
-): Effect.Effect<AnySchema, TRPCError> {
+): Effect.Effect<AnySchema, TrpcError> {
   if (isSchema(arg)) return Effect.succeed(arg);
   return Effect.try({
     try: () => arg(opts),
     catch: (cause) =>
-      new TRPCError({
+      new TrpcError({
         code: 'INTERNAL_SERVER_ERROR',
         message: 'input callback threw',
         cause,
@@ -272,19 +272,19 @@ function validate(
   value: unknown,
   services: Context.Context<never>,
   opts: InputOpts<unknown, unknown>,
-): Effect.Effect<unknown, TRPCError> {
+): Effect.Effect<unknown, TrpcError> {
   if (Schema.isSchema(schema)) {
     return Schema.decodeUnknownEffect(schema)(value).pipe(
       Effect.provideContext(services as Context.Context<unknown>),
       Effect.mapError(
         (error) =>
-          new TRPCError({
+          new TrpcError({
             code: 'BAD_REQUEST',
             message: 'input validation failed',
             issues: formatEffectIssues(error.issue).issues,
           }),
       ),
-    ) as Effect.Effect<unknown, TRPCError>;
+    ) as Effect.Effect<unknown, TrpcError>;
   }
   return Effect.tryPromise({
     // `run` at the call site, rather than relying on propagation from the
@@ -292,7 +292,7 @@ function validate(
     try: async () =>
       inputStore.run(opts, () => schema['~standard'].validate(value)),
     catch: (cause) =>
-      new TRPCError({
+      new TrpcError({
         code: 'INTERNAL_SERVER_ERROR',
         message: 'input validation threw',
         cause,
@@ -301,7 +301,7 @@ function validate(
     Effect.flatMap((result) =>
       result.issues
         ? Effect.fail(
-            new TRPCError({
+            new TrpcError({
               code: 'BAD_REQUEST',
               message: 'input validation failed',
               issues: result.issues,

@@ -1,5 +1,5 @@
 import type { Context, Effect, Stream } from 'effect';
-import type { AnyTRPCError, TRPCError } from '../internal/error.ts';
+import type { AnyTrpcError, TrpcError } from '../internal/error.ts';
 import type {
   IsAny,
   MaybePromise,
@@ -48,7 +48,7 @@ export interface BuilderDef {
   inputOut: unknown;
   outputIn: unknown;
   outputOut: unknown;
-  errors: AnyTRPCError;
+  errors: AnyTrpcError;
   /** Errors declared with `.errors()`, by code. */
   declared: object;
   /** Values middleware may short-circuit with, via `ok()`. */
@@ -107,7 +107,7 @@ export type ErrorConstructorOpts<TData> = {
  * @stability experimental
  */
 export type ErrorConstructors<TDeclared> = {
-  readonly [K in keyof TDeclared]: TDeclared[K] extends TRPCError<any, infer D>
+  readonly [K in keyof TDeclared]: TDeclared[K] extends TrpcError<any, infer D>
     ? undefined extends D
       ? (opts?: ErrorConstructorOpts<D>) => TDeclared[K]
       : (opts: ErrorConstructorOpts<D>) => TDeclared[K]
@@ -159,19 +159,19 @@ export interface ProvideOpts<TDef extends BuilderDef> {
 
 // --- splitting a resolver's return type ----------------------------------------
 
-type OutputOf<R> = R extends AnyTRPCError
+type OutputOf<R> = R extends AnyTrpcError
   ? never
   : R extends Stream.Stream<infer A, any, any>
     ? AsyncIterable<A>
     : R extends Effect.Effect<infer A, any, any>
-      ? Exclude<A, AnyTRPCError>
+      ? Exclude<A, AnyTrpcError>
       : R;
-type ErrorsOf<R> = R extends AnyTRPCError
+type ErrorsOf<R> = R extends AnyTrpcError
   ? R
   : R extends Effect.Effect<infer A, infer E, any>
-    ? Extract<E | A, AnyTRPCError>
+    ? Extract<E | A, AnyTrpcError>
     : never;
-type ServicesOf<R> = R extends AnyTRPCError
+type ServicesOf<R> = R extends AnyTrpcError
   ? never
   : R extends Effect.Effect<any, any, infer S>
     ? S
@@ -186,7 +186,7 @@ type ServicesOf<R> = R extends AnyTRPCError
  */
 export interface Split {
   output: unknown;
-  errors: AnyTRPCError;
+  errors: AnyTrpcError;
   services: unknown;
 }
 /**
@@ -203,17 +203,17 @@ export type SplitReturn<R> =
         services: ServicesOf<Awaited<R>>;
       };
 
-type EventOf<R> = R extends AnyTRPCError
+type EventOf<R> = R extends AnyTrpcError
   ? never
   : R extends Stream.Stream<infer A, any, any>
     ? A
     : R extends AsyncIterable<infer T>
       ? T
       : never;
-type StreamErrorsOf<R> = R extends AnyTRPCError
+type StreamErrorsOf<R> = R extends AnyTrpcError
   ? R
   : R extends Stream.Stream<any, infer E, any>
-    ? Extract<E, AnyTRPCError>
+    ? Extract<E, AnyTrpcError>
     : never;
 /**
  * Part of inferred procedure types; exported so they stay nameable.
@@ -234,8 +234,8 @@ export type SplitStream<R> =
 type OutputConstraint<TDef extends BuilderDef> = TDef['outputIn'] extends Unset
   ? unknown
   :
-      | MaybePromise<TDef['outputIn'] | AnyTRPCError>
-      | Effect.Effect<TDef['outputIn'] | AnyTRPCError, any, any>;
+      | MaybePromise<TDef['outputIn'] | AnyTrpcError>
+      | Effect.Effect<TDef['outputIn'] | AnyTrpcError, any, any>;
 
 type EventConstraint<TDef extends BuilderDef> = TDef['outputIn'] extends Unset
   ? unknown
@@ -250,18 +250,18 @@ type EventConstraint<TDef extends BuilderDef> = TDef['outputIn'] extends Unset
           any,
           any
         >
-      | AnyTRPCError;
+      | AnyTrpcError;
 
 type UnmappedOf<R> =
   R extends Effect.Effect<any, infer E, any>
-    ? Exclude<E, AnyTRPCError>
+    ? Exclude<E, AnyTrpcError>
     : R extends Stream.Stream<any, infer E, any>
-      ? Exclude<E, AnyTRPCError>
+      ? Exclude<E, AnyTrpcError>
       : never;
 
 /**
  * 02 d.ii: an Effect or Stream that can fail with something other than a
- * `TRPCError` is a type error until the failure is mapped.
+ * `TrpcError` is a type error until the failure is mapped.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
@@ -271,7 +271,7 @@ export type StrictErrors<R> =
     : [UnmappedOf<Awaited<R>>] extends [never]
       ? unknown
       : TypeError<
-          'Map Effect failures to a TRPCError (e.g. Effect.catchTag) before returning them',
+          'Map Effect failures to a TrpcError (e.g. Effect.catchTag) before returning them',
           UnmappedOf<Awaited<R>>
         >;
 
@@ -354,12 +354,12 @@ export type ConcatCheck<TDef extends BuilderDef, TPlugin extends BuilderDef> = [
 export type ErrorMapInput = Record<string, ErrorSpec>;
 
 /**
- * The `TRPCError` types an error map declares, by code.
+ * The `TrpcError` types an error map declares, by code.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
 export type DeclaredErrors<M> = {
-  [K in keyof M & string]: TRPCError<
+  [K in keyof M & string]: TrpcError<
     K,
     M[K] extends { data: infer S } ? OutOf<S> : undefined
   >;
@@ -386,7 +386,7 @@ export interface BuilderInternals {
  *
  * @example
  * ```ts
- * const t = initTRPC<{ ctx: { user: User | null } }>();
+ * const t = initTrpc<{ ctx: { user: User | null } }>();
  *
  * const authed = t.procedure.use(({ ctx, next }) =>
  *   ctx.user ? next({ ctx: { user: ctx.user } }) : error({ code: 'UNAUTHORIZED' }),
@@ -493,7 +493,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
 
   /**
    * Adds middleware. It calls `next()` (optionally with `{ ctx }`), returns
-   * `ok(value)` to short-circuit, or returns a `TRPCError`, which becomes
+   * `ok(value)` to short-circuit, or returns a `TrpcError`, which becomes
    * part of the procedure's error union.
    *
    * @example
@@ -504,7 +504,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
    * });
    * ```
    */
-  use<$Ctx extends object = {}, $Err extends AnyTRPCError = never, $Ok = never>(
+  use<$Ctx extends object = {}, $Err extends AnyTrpcError = never, $Ok = never>(
     fn: MiddlewareFunction<
       CurrentCtx<TDef>,
       Value<TDef['inputOut']>,
@@ -530,7 +530,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
    */
   use<
     $Ctx extends object,
-    $Err extends AnyTRPCError,
+    $Err extends AnyTrpcError,
     $R,
     $Provides,
     $Ok = never,
@@ -561,7 +561,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
   /**
    * Provides an Effect service to everything after it: later input schemas,
    * `.provide()` calls and the resolver. The handler's `layer` no longer has
-   * to provide it. An Effect factory may only fail with a `TRPCError`.
+   * to provide it. An Effect factory may only fail with a `TrpcError`.
    *
    * @example
    * ```ts
@@ -573,7 +573,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
    * }));
    * ```
    */
-  provide<$Id, $Shape, $E extends AnyTRPCError = never, $R = never>(
+  provide<$Id, $Shape, $E extends AnyTrpcError = never, $R = never>(
     service: Context.Key<$Id, $Shape>,
     make: (
       opts: ProvideOpts<TDef>,
@@ -609,7 +609,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
    * @example
    * ```ts
    * // in a package
-   * const t = initTRPC<{ ctx: { db: Db } }>();
+   * const t = initTrpc<{ ctx: { db: Db } }>();
    * export const audited = t.procedure.use(({ ctx, next }) =>
    *   next({ ctx: { audit: makeAudit(ctx.db) } }),
    * );
@@ -640,7 +640,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
 
   /**
    * A read. The resolver can return a value, a `Promise`, an `Effect`, or a
-   * `TRPCError`. Outputs may contain `Promise`s and `AsyncIterable`s, which
+   * `TrpcError`. Outputs may contain `Promise`s and `AsyncIterable`s, which
    * stream to the client.
    *
    * @example

@@ -5,7 +5,7 @@
  *
  * - `inferred` (02 S1): the handler computes the union of every procedure's
  *   services across the router.
- * - `declared` (02 S2): services are declared in `initTRPC.create()`; each
+ * - `declared` (02 S2): services are declared in `initTrpc.create()`; each
  *   resolver is checked against them and the handler only reads the declared set.
  */
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -68,9 +68,9 @@ export const layer = Layer.mergeAll(${names.map((s) => `${s}Live`).join(', ')});
   writeFileSync(
     join(dir, 'base.ts'),
     `import * as Effect from 'effect/Effect';
-import { initTRPC } from '../../core.ts';
+import { initTrpc } from '../../core.ts';
 import { CurrentUser, ${names.join(', ')} } from './services.ts';
-export const t = initTRPC.create<{ ctx: { token?: string }${
+export const t = initTrpc.create<{ ctx: { token?: string }${
       variant === 'declared' ? `; services: ${names.join(' | ')}` : ''
     } }>();
 export const auth = t.middleware.effect<{ provides: CurrentUser }>()(({ ctx, next }) =>

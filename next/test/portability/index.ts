@@ -7,7 +7,7 @@
  */
 import { Context, Effect, Layer, Schema, Stream } from 'effect';
 import {
-  createTRPCClient,
+  createTrpcClient,
   dedupeLink,
   httpLink,
   link,
@@ -19,16 +19,16 @@ import {
 import { contract, toContract, type inferContract } from 'trpcdev/contract';
 import { createEffectClient } from 'trpcdev/effect';
 import {
-  createOpenAPIHandler,
-  generateOpenAPI,
-  openAPILink,
-  openAPIReference,
+  createOpenApiHandler,
+  generateOpenApi,
+  openApiLink,
+  openApiReference,
 } from 'trpcdev/openapi';
 import {
   createFetchHandler,
   createRouterClient,
   error,
-  initTRPC,
+  initTrpc,
   mergeRouters,
   middleware,
   ok,
@@ -52,7 +52,7 @@ export const PostRepoLive = Layer.succeed(PostRepo, {
   find: (id) => Effect.succeed(id === '1' ? { id, title: 'Hello' } : null),
 });
 
-export const t = initTRPC<{
+export const t = initTrpc<{
   ctx: { user: User | null };
   meta: { scope?: string };
 }>();
@@ -89,7 +89,7 @@ export const declared = t.procedure
   .errors({ NOT_FOUND: { data: z.object({ id: z.string() }) } })
   .route({ method: 'GET', path: '/posts/{id}' });
 
-const pluginT = initTRPC<{ ctx: { user: User } }>();
+const pluginT = initTrpc<{ ctx: { user: User } }>();
 export const orgPlugin = pluginT.procedure
   .input(z.object({ orgId: z.string() }))
   .use(({ input, next }) => next({ ctx: { orgId: input.orgId } }));
@@ -154,11 +154,11 @@ export const handler = createFetchHandler({
   layer: PostRepoLive,
 });
 
-export const client = createTRPCClient<AppRouter>({
+export const client = createTrpcClient<AppRouter>({
   links: [link(async ({ op, next }) => next(op)), httpLink({ url: '/trpc' })],
 });
 
-export const localClient = createTRPCClient<AppRouter>({
+export const localClient = createTrpcClient<AppRouter>({
   links: [localLink({ router: appRouter, layer: PostRepoLive })],
 });
 
@@ -172,7 +172,7 @@ export const traceLink = link<{ context: { traceId?: string } }>(
 
 export const socket = wsLink({ url: 'ws://localhost/trpc' });
 
-export const typedClient = createTRPCClient({
+export const typedClient = createTrpcClient({
   router: routerType<AppRouter>(),
   links: [
     traceLink,
@@ -221,30 +221,30 @@ export const userRouter = userImpl.router({
 });
 
 export type UserContract = inferContract<typeof userRouter>;
-export const userContractJSON = toContract(userRouter);
+export const userContractJson = toContract(userRouter);
 
-export const contractClient = createTRPCClient({
+export const contractClient = createTrpcClient({
   router: userContract,
   links: [httpLink({ url: '/trpc' })],
 });
 
-export const openapi = createOpenAPIHandler({
+export const openapi = createOpenApiHandler({
   router: userRouter,
   createContext: () => ({ user: null }),
   plugins: [
-    openAPIReference({
+    openApiReference({
       specGenerateOptions: { info: { title: 'Users', version: '1.0.0' } },
     }),
   ],
 });
 
-export const openapiDocument = generateOpenAPI(userRouter, {
+export const openapiDocument = generateOpenApi(userRouter, {
   info: { title: 'Users', version: '1.0.0' },
 });
 
-export const restClient = createTRPCClient({
-  router: userContractJSON,
-  links: [openAPILink({ url: '/', contract: userContractJSON })],
+export const restClient = createTrpcClient({
+  router: userContractJson,
+  links: [openApiLink({ url: '/', contract: userContractJson })],
 });
 
 export const caller = createRouterClient(appRouter, {

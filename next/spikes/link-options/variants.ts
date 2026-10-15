@@ -1,34 +1,34 @@
 import type {
   AnyLink,
   CallOptions,
-  TRPCClient,
-  TRPCLink,
+  TrpcClient,
+  TrpcLink,
   Type,
 } from './core.ts';
 
-/** D-A: curried. `createTRPCClient<AppRouter>()({ links })` */
+/** D-A: curried. `createTrpcClient<AppRouter>()({ links })` */
 export declare function createClientA<TRouter>(): <
-  TLinks extends readonly TRPCLink<any, TRouter>[],
+  TLinks extends readonly TrpcLink<any, TRouter>[],
 >(opts: {
   links: TLinks;
-}) => TRPCClient<TRouter, CallOptions<TLinks>>;
+}) => TrpcClient<TRouter, CallOptions<TLinks>>;
 
-/** D-B: second generic. `createTRPCClient<AppRouter, typeof links>({ links })` */
+/** D-B: second generic. `createTrpcClient<AppRouter, typeof links>({ links })` */
 export declare function createClientB<
   TRouter,
   TLinks extends readonly AnyLink[] = readonly AnyLink[],
->(opts: { links: TLinks }): TRPCClient<TRouter, CallOptions<TLinks>>;
+>(opts: { links: TLinks }): TrpcClient<TRouter, CallOptions<TLinks>>;
 
-/** D-C: router inferred from a value. `createTRPCClient({ router: type<AppRouter>(), links })` */
+/** D-C: router inferred from a value. `createTrpcClient({ router: type<AppRouter>(), links })` */
 export declare function createClientC<
   TRouter,
-  TLinks extends readonly TRPCLink<any, TRouter>[],
+  TLinks extends readonly TrpcLink<any, TRouter>[],
 >(opts: {
   router: Type<TRouter>;
   links: TLinks;
-}): TRPCClient<TRouter, CallOptions<TLinks>>;
+}): TrpcClient<TRouter, CallOptions<TLinks>>;
 
-/** D-E: return-type annotation (oRPC). `const c: TRPCClient<AppRouter, CallOptions<typeof links>> = createTRPCClient({ links })` */
+/** D-E: return-type annotation (oRPC). `const c: TrpcClient<AppRouter, CallOptions<typeof links>> = createTrpcClient({ links })` */
 export declare function createClientE<TClient>(opts: {
   links: readonly AnyLink[];
 }): TClient;
@@ -39,7 +39,7 @@ export declare function createClientE<TClient>(opts: {
  * annotation declares options no installed link provides.
  */
 export declare function createClientEChecked<
-  TClient extends TRPCClient<any, any>,
+  TClient extends TrpcClient<any, any>,
   const TLinks extends readonly AnyLink[] = readonly AnyLink[],
 >(opts: {
   links: TLinks & MissingLinkOptions<TLinks, NonNullable<TClient['~opts']>>;

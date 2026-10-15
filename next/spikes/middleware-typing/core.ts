@@ -213,7 +213,7 @@ export interface ProcedureBuilder<
   >;
 }
 
-export declare function initTRPC<
+export declare function initTrpc<
   TConfig extends { ctx: object; meta?: object },
 >(): {
   procedure: ProcedureBuilder<

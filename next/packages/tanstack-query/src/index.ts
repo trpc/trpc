@@ -7,17 +7,17 @@
  *
  * @example
  * ```ts
- * import { createTRPCQueryUtils } from '@trpcdev/tanstack-query';
+ * import { createTrpcQueryUtils } from '@trpcdev/tanstack-query';
  *
- * export const trpc = createTRPCQueryUtils({ client });
+ * export const trpc = createTrpcQueryUtils({ client });
  *
  * useQuery(trpc.post.byId.queryOptions({ input: { id } }));
  * ```
  * @module
  */
 export {
-  createTRPCQueryUtils,
-  type CreateTRPCQueryUtilsOptions,
+  createTrpcQueryUtils,
+  type CreateTrpcQueryUtilsOptions,
   type InfiniteOptionsIn,
   type InfiniteOptionsOut,
   type MutationOptionsIn,
@@ -32,20 +32,20 @@ export {
   type QueryProcedureUtils,
   type StreamedOptions,
   type SubscriptionProcedureUtils,
-  type TRPCQueryKeyFor,
-  type TRPCQueryUtilsFor,
-  type TRPCQueryUtils,
+  type TrpcQueryKeyFor,
+  type TrpcQueryUtilsFor,
+  type TrpcQueryUtils,
 } from './utils.ts';
 export type {
-  TRPCMutationKey,
-  TRPCQueryKey,
-  TRPCQueryKeyType,
+  TrpcMutationKey,
+  TrpcQueryKey,
+  TrpcQueryKeyType,
 } from './keys.ts';
 export {
   SubscriptionObserver,
   type SubscriptionCallbacks,
   type SubscriptionResult,
   type SubscriptionStatus,
-  type TRPCSubscriptionOptions,
+  type TrpcSubscriptionOptions,
 } from './subscription.ts';
 export { hydrationOptions, type HydrationOptionsOptions } from './hydration.ts';

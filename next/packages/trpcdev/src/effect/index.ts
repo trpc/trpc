@@ -18,10 +18,10 @@ import type { Effect } from 'effect';
 import { Stream } from 'effect';
 import { createRecursiveProxy, makeOperation } from '../client/client.ts';
 import type {
-  TRPCClientOptions,
+  TrpcClientOptions,
   TypedClientOptions,
 } from '../client/client.ts';
-import { firstValue, link, runLinks, type TRPCLink } from '../client/link.ts';
+import { firstValue, link, runLinks, type TrpcLink } from '../client/link.ts';
 import type {
   CallArgs,
   CallOptions,
@@ -103,7 +103,7 @@ const METHODS = {
  */
 export function createEffectClient<
   TSource,
-  TLinks extends ReadonlyArray<TRPCLink<any, RouterOf<TSource>>>,
+  TLinks extends ReadonlyArray<TrpcLink<any, RouterOf<TSource>>>,
 >(
   opts: TypedClientOptions<TSource, TLinks>,
 ): EffectClient<RouterOf<TSource>, LinksContext<TLinks>>;
@@ -118,9 +118,9 @@ export function createEffectClient<
  * @stability experimental
  */
 export function createEffectClient<TRouter>(
-  opts: TRPCClientOptions,
+  opts: TrpcClientOptions,
 ): EffectClient<TRouter>;
-export function createEffectClient(opts: TRPCClientOptions): unknown {
+export function createEffectClient(opts: TrpcClientOptions): unknown {
   return createRecursiveProxy((path, args) => {
     const method = path.at(-1) as keyof typeof METHODS | undefined;
     const type = method ? METHODS[method] : undefined;

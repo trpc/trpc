@@ -5,7 +5,7 @@ import {
   type CreateSubscriptionResult,
 } from '@trpcdev/tanstack-svelte-query';
 import { flushSync, mount, unmount, type Component } from 'svelte';
-import type { TRPCClient } from 'trpcdev/client';
+import type { TrpcClient } from 'trpcdev/client';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { createApp, db, type AppRouter } from './fixtures/app.ts';
 import { click, container, text, waitFor } from './fixtures/dom.ts';
@@ -13,11 +13,11 @@ import Feed from './svelte/Feed.svelte';
 import Live from './svelte/Live.svelte';
 import Post from './svelte/Post.svelte';
 import Root from './svelte/Root.svelte';
-import { useTRPC } from './svelte/trpc.ts';
+import { useTrpc } from './svelte/trpc.ts';
 
 function render<TProps extends Record<string, unknown>>(
   app: Component<TProps>,
-  client: TRPCClient<AppRouter>,
+  client: TrpcClient<AppRouter>,
   props?: TProps,
 ) {
   const queryClient = new QueryClient({
@@ -98,7 +98,7 @@ test('unmounting stops subscriptions', async () => {
 test('types: createSubscription infers events and errors', () => {
   // Runes only run inside components; this checks types.
   void (() => {
-    const trpc = useTRPC();
+    const trpc = useTrpc();
     const sub = createSubscription(() =>
       trpc.clock.countdown.subscriptionOptions({ input: { from: 3 } }),
     );

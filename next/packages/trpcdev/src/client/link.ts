@@ -1,8 +1,8 @@
 import { Cause, Effect, Option, Stream } from 'effect';
 import {
-  isTRPCError,
-  TRPCError,
-  type AnyTRPCError,
+  isTrpcError,
+  TrpcError,
+  type AnyTrpcError,
 } from '../internal/error.ts';
 import type { ProcedureType } from '../internal/types.ts';
 
@@ -13,7 +13,7 @@ import type { ProcedureType } from '../internal/types.ts';
  * @example
  * ```ts
  * declare module 'trpcdev/client' {
- *   interface TRPCClientContext {
+ *   interface TrpcClientContext {
  *     transport?: 'http' | 'local';
  *   }
  * }
@@ -21,7 +21,7 @@ import type { ProcedureType } from '../internal/types.ts';
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface TRPCClientContext {
+export interface TrpcClientContext {
   /** Extra request headers, read by `httpLink`. */
   headers?: HeadersInit;
 }
@@ -38,7 +38,7 @@ export interface Operation<TContext extends object = {}> {
   /** `'post.byId'` */
   readonly path: string;
   readonly input: unknown;
-  readonly context: TRPCClientContext & Partial<TContext>;
+  readonly context: TrpcClientContext & Partial<TContext>;
   readonly signal: AbortSignal | undefined;
   /** Subscriptions: resume after this event id. */
   readonly lastEventId?: string | undefined;
@@ -50,7 +50,7 @@ export interface Operation<TContext extends object = {}> {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type OperationStream = Stream.Stream<unknown, AnyTRPCError>;
+export type OperationStream = Stream.Stream<unknown, AnyTrpcError>;
 
 /**
  * What an Effect link receives.
@@ -92,7 +92,7 @@ export interface LinkDecl {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface TRPCLink<TDecl extends LinkDecl = {}, TRouter = any> {
+export interface TrpcLink<TDecl extends LinkDecl = {}, TRouter = any> {
   (opts: EffectLinkOpts): OperationStream;
   /**
    * Type-only. `decl` is invariant, so a link that declares nothing does not
@@ -109,7 +109,7 @@ export interface TRPCLink<TDecl extends LinkDecl = {}, TRouter = any> {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type AnyLink = TRPCLink<any, any>;
+export type AnyLink = TrpcLink<any, any>;
 
 /** The `context` a link's declaration adds. @internal */
 export type DeclContext<TDecl> = TDecl extends { context: infer C }
@@ -119,9 +119,9 @@ export type DeclContext<TDecl> = TDecl extends { context: infer C }
   : {};
 
 /** Turns anything a link threw into a client error. @internal */
-export function toClientError(cause: unknown): AnyTRPCError {
-  if (isTRPCError(cause)) return cause;
-  return new TRPCError({
+export function toClientError(cause: unknown): AnyTrpcError {
+  if (isTrpcError(cause)) return cause;
+  return new TrpcError({
     code: 'CLIENT_ERROR',
     message: cause instanceof Error ? cause.message : String(cause),
     cause,
@@ -131,14 +131,14 @@ export function toClientError(cause: unknown): AnyTRPCError {
 /** @internal */
 export function clientErrorFromCause(
   cause: Cause.Cause<unknown>,
-): AnyTRPCError {
+): AnyTrpcError {
   for (const reason of cause.reasons) {
     if (Cause.isFailReason(reason)) return toClientError(reason.error);
   }
   for (const reason of cause.reasons) {
     if (Cause.isDieReason(reason)) return toClientError(reason.defect);
   }
-  return new TRPCError({
+  return new TrpcError({
     code: 'CLIENT_CLOSED_REQUEST',
     message: 'The request was aborted',
   });
@@ -147,13 +147,13 @@ export function clientErrorFromCause(
 /** The single value of a query or mutation. @internal */
 export const firstValue = (
   stream: OperationStream,
-): Effect.Effect<unknown, AnyTRPCError> =>
+): Effect.Effect<unknown, AnyTrpcError> =>
   Stream.runHead(stream).pipe(
     Effect.flatMap((value) =>
       Option.isSome(value)
         ? Effect.succeed(value.value)
         : Effect.fail(
-            new TRPCError({
+            new TrpcError({
               code: 'CLIENT_ERROR',
               message: 'The link chain ended without a result',
             }),
@@ -179,7 +179,7 @@ export const firstValue = (
  */
 export function link<TDecl extends LinkDecl = {}>(
   fn: (opts: PromiseLinkOpts<DeclContext<TDecl>>) => Promise<unknown>,
-): TRPCLink<TDecl> {
+): TrpcLink<TDecl> {
   return ({ op, next }: EffectLinkOpts) => {
     const promiseNext = (o: Operation): Promise<unknown> =>
       o.type === 'subscription'
@@ -216,7 +216,7 @@ export function link<TDecl extends LinkDecl = {}>(
  */
 link.effect = <TDecl extends LinkDecl = {}>(
   fn: (opts: EffectLinkOpts<DeclContext<TDecl>>) => OperationStream,
-): TRPCLink<TDecl> => fn as TRPCLink<TDecl>;
+): TrpcLink<TDecl> => fn as TrpcLink<TDecl>;
 
 /** Runs an operation through a link chain. @internal */
 export function runLinks(
@@ -229,7 +229,7 @@ export function runLinks(
       const current = links[i];
       if (!current) {
         return Stream.fail(
-          new TRPCError({
+          new TrpcError({
             code: 'CLIENT_ERROR',
             message: 'The last link must send the request (e.g. httpLink)',
           }),

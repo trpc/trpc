@@ -8,18 +8,18 @@ import {
 } from '@tanstack/lit-query';
 import {
   createSubscriptionController,
-  createTRPCContext,
-  type TRPCProviderElement,
+  createTrpcContext,
+  type TrpcProviderElement,
 } from '@trpcdev/tanstack-lit-query';
 import { html, LitElement } from 'lit';
-import type { TRPCClient } from 'trpcdev/client';
+import type { TrpcClient } from 'trpcdev/client';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { createApp, db, type AppRouter, type Post } from './fixtures/app.ts';
 import { click, container, text, waitFor } from './fixtures/dom.ts';
 
-const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+const { TrpcProvider, useTrpc } = createTrpcContext<AppRouter>();
 customElements.define('lit-query-provider', QueryClientProvider);
-customElements.define('lit-trpc-provider', TRPCProvider);
+customElements.define('lit-trpc-provider', TrpcProvider);
 
 /** Renders into light DOM so tests can query it. */
 class View extends LitElement {
@@ -30,7 +30,7 @@ class View extends LitElement {
 
 function mount<T extends HTMLElement>(
   tag: string,
-  client: TRPCClient<AppRouter>,
+  client: TrpcClient<AppRouter>,
 ) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -41,7 +41,7 @@ function mount<T extends HTMLElement>(
   queryProvider.client = queryClient;
   const trpcProvider = document.createElement(
     'lit-trpc-provider',
-  ) as TRPCProviderElement<AppRouter>;
+  ) as TrpcProviderElement<AppRouter>;
   trpcProvider.client = client;
   const view = document.createElement(tag) as T;
   trpcProvider.append(view);
@@ -54,7 +54,7 @@ function mount<T extends HTMLElement>(
 class PostView extends View {
   static override properties = { postId: { state: true } };
   declare postId: string;
-  trpc = useTRPC(this);
+  trpc = useTrpc(this);
   post = createQueryController(this, () =>
     this.trpc.post.byId.queryOptions({ input: { id: this.postId } }),
   );
@@ -89,7 +89,7 @@ test('createQueryController follows host state', async () => {
 });
 
 class FeedView extends View {
-  trpc = useTRPC(this);
+  trpc = useTrpc(this);
   feed = createInfiniteQueryController(this, () =>
     this.trpc.post.list.infiniteOptions({
       input: (cursor: number | undefined) => ({ limit: 2, cursor }),
@@ -140,7 +140,7 @@ class LiveView extends View {
   static override properties = { from: { state: true } };
   declare from: number;
   seen: number[] = [];
-  trpc = useTRPC(this);
+  trpc = useTrpc(this);
   countdown = createSubscriptionController(this, () =>
     this.trpc.clock.countdown.subscriptionOptions({
       input: { from: this.from },
@@ -202,14 +202,14 @@ test('disconnecting the host stops subscriptions', async () => {
   await waitFor(() => expect(db.openTickers).toBe(0));
 });
 
-test('useTRPC throws outside a provider', async () => {
+test('useTrpc throws outside a provider', async () => {
   class Orphan extends View {
-    trpc = useTRPC(this);
+    trpc = useTrpc(this);
   }
   customElements.define('lit-orphan', Orphan);
   const el = container();
   const orphan = document.createElement('lit-orphan') as Orphan;
   el.append(orphan);
-  expect(() => orphan.trpc.post.pathKey()).toThrow(/TRPCProvider/);
+  expect(() => orphan.trpc.post.pathKey()).toThrow(/TrpcProvider/);
   el.remove();
 });

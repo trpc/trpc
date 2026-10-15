@@ -14,7 +14,7 @@ export interface TypeError<TMessage extends string, TDetail = never> {
 }
 
 declare const inferred: unique symbol;
-/** `services` not declared in `initTRPC.create()`: S1, the router carries `R`. */
+/** `services` not declared in `initTrpc.create()`: S1, the router carries `R`. */
 export type Inferred = typeof inferred;
 
 // --- middleware (06 (g) M-A) ----------------------------------------------------------
@@ -42,7 +42,7 @@ type ServiceCheck<TDeclared, TNeeded> = [TDeclared] extends [Inferred]
   : [TNeeded] extends [TDeclared]
     ? unknown
     : TypeError<
-        'resolver requires services not declared in initTRPC.create()',
+        'resolver requires services not declared in initTrpc.create()',
         Exclude<TNeeded, TDeclared>
       >;
 
@@ -65,7 +65,7 @@ export interface ProcedureBuilder<TCtx, TDeclared, TProvided, TRequired, TErr> {
   ): Procedure<$A, TErr | $E, Exclude<$R, TProvided> | TRequired>;
 }
 
-export declare const initTRPC: {
+export declare const initTrpc: {
   create<
     TConfig extends { ctx: object; services?: unknown } = { ctx: {} },
   >(): Root<

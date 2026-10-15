@@ -1,11 +1,11 @@
 <script lang="ts">
   import { createQuery } from '@tanstack/svelte-query';
   import { createSubscription } from '@trpcdev/tanstack-svelte-query';
-  import { useTRPC } from './trpc.ts';
+  import { useTrpc } from './trpc.ts';
 
   let { onCountdown }: { onCountdown: (n: number) => void } = $props();
 
-  const trpc = useTRPC();
+  const trpc = useTrpc();
   let from = $state(2);
   const countdown = createSubscription(() =>
     trpc.clock.countdown.subscriptionOptions({

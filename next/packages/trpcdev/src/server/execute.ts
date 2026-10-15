@@ -1,9 +1,9 @@
 import { Cause, Context, Effect, Exit, Stream } from 'effect';
 import {
-  isTRPCError,
-  TRPCError,
+  isTrpcError,
+  TrpcError,
   withDefined,
-  type AnyTRPCError,
+  type AnyTrpcError,
 } from '../internal/error.ts';
 import { errorConstructors, isDeclaredError } from './declared.ts';
 import type { ResponseHandle } from './middleware.ts';
@@ -11,11 +11,11 @@ import type { AnyProcedure, ProcedureInternals } from './procedure.ts';
 import { inputError, isSchema, outputError, validate } from './schema.ts';
 import { isTracked, tracked } from './tracked.ts';
 
-const unexpectedErrors = new WeakSet<AnyTRPCError>();
+const unexpectedErrors = new WeakSet<AnyTrpcError>();
 
-/** Wraps a thrown non-`TRPCError` value. Its message is masked in production. @internal */
-export function unexpectedError(cause: unknown): AnyTRPCError {
-  const err = new TRPCError({
+/** Wraps a thrown non-`TrpcError` value. Its message is masked in production. @internal */
+export function unexpectedError(cause: unknown): AnyTrpcError {
+  const err = new TrpcError({
     code: 'INTERNAL_SERVER_ERROR',
     message: cause instanceof Error ? cause.message : 'Internal server error',
     cause,
@@ -24,33 +24,33 @@ export function unexpectedError(cause: unknown): AnyTRPCError {
   return err;
 }
 
-/** Whether the error wraps something that was not a `TRPCError`. @internal */
-export const isUnexpectedError = (err: AnyTRPCError): boolean =>
+/** Whether the error wraps something that was not a `TrpcError`. @internal */
+export const isUnexpectedError = (err: AnyTrpcError): boolean =>
   unexpectedErrors.has(err);
 
 /**
  * The one error a failed call surfaces. Failures in the error channel are
- * typed (`defined`) errors. Defects are thrown values: a thrown `TRPCError`
+ * typed (`defined`) errors. Defects are thrown values: a thrown `TrpcError`
  * keeps its code but is `defined: false` (unless it came from a declared
  * error's constructor), anything else is unexpected.
  * @internal
  */
-export function normalizeCause(cause: Cause.Cause<unknown>): AnyTRPCError {
+export function normalizeCause(cause: Cause.Cause<unknown>): AnyTrpcError {
   for (const reason of cause.reasons) {
     if (Cause.isFailReason(reason)) {
-      return isTRPCError(reason.error)
+      return isTrpcError(reason.error)
         ? reason.error
         : unexpectedError(reason.error);
     }
   }
   for (const reason of cause.reasons) {
     if (Cause.isDieReason(reason)) {
-      return isTRPCError(reason.defect)
+      return isTrpcError(reason.defect)
         ? withDefined(reason.defect, isDeclaredError(reason.defect))
         : unexpectedError(reason.defect);
     }
   }
-  return new TRPCError({
+  return new TrpcError({
     code: 'CLIENT_CLOSED_REQUEST',
     message: 'The request was aborted',
   });
@@ -64,25 +64,25 @@ const isPlainObject = (value: unknown): value is Record<string, unknown> =>
 const isAsyncIterable = (value: unknown): value is AsyncIterable<unknown> =>
   typeof value === 'object' && value !== null && Symbol.asyncIterator in value;
 
-/** Typed `TRPCError` failures stay failures; anything else is a defect (02 d.i). */
+/** Typed `TrpcError` failures stay failures; anything else is a defect (02 d.i). */
 const refail = <A, R>(
   effect: Effect.Effect<A, unknown, R>,
-): Effect.Effect<A, AnyTRPCError, R> =>
+): Effect.Effect<A, AnyTrpcError, R> =>
   Effect.catchCause(effect, (cause) =>
     Effect.failCause(
       Cause.fromReasons(
         cause.reasons.map((reason) =>
           Cause.isFailReason(reason)
-            ? isTRPCError(reason.error)
+            ? isTrpcError(reason.error)
               ? Cause.makeFailReason(withDefined(reason.error, true))
               : Cause.makeDieReason(reason.error)
             : reason,
         ),
-      ) as Cause.Cause<AnyTRPCError>,
+      ) as Cause.Cause<AnyTrpcError>,
     ),
   );
 
-const fail = (err: AnyTRPCError) => Effect.fail(withDefined(err, true));
+const fail = (err: AnyTrpcError) => Effect.fail(withDefined(err, true));
 
 /** @internal */
 export interface CallOpts {
@@ -120,8 +120,8 @@ const isOkResult = (value: unknown): value is { ok: true; data: unknown } =>
 /** Validates declared errors' `data` (07 A). Invalid data is an unexpected error. */
 const checkDeclared = (
   def: ProcedureInternals,
-  err: AnyTRPCError,
-): Effect.Effect<never, AnyTRPCError> => {
+  err: AnyTrpcError,
+): Effect.Effect<never, AnyTrpcError> => {
   const spec = def.errors[err.code];
   if (!spec?.data || !err.defined) return Effect.fail(err);
   return validate(spec.data, err.data, () => err).pipe(
@@ -136,7 +136,7 @@ const checkDeclared = (
         Effect.fail(
           data === err.data
             ? err
-            : new TRPCError({
+            : new TrpcError({
                 code: err.code,
                 message: err.message,
                 status: err.status,
@@ -151,20 +151,20 @@ const checkDeclared = (
 
 /**
  * Runs a call: middleware, inputs, `.provide()` steps, the resolver and
- * output validation. Fails with typed `TRPCError`s; thrown values are
+ * output validation. Fails with typed `TrpcError`s; thrown values are
  * defects. A subscription succeeds with a `Stream` of events.
  * @internal
  */
 export function callProcedure(
   opts: CallOpts,
-): Effect.Effect<unknown, AnyTRPCError, any> {
+): Effect.Effect<unknown, AnyTrpcError, any> {
   const def = opts.procedure['~trpc'];
   const { path, signal } = opts;
   const { meta, type } = def;
   const response = opts.response ?? createResponseHandle();
   const base = { meta, path, type, signal, response };
 
-  const toResult = (exit: Exit.Exit<unknown, AnyTRPCError>) =>
+  const toResult = (exit: Exit.Exit<unknown, AnyTrpcError>) =>
     Exit.isSuccess(exit)
       ? isResolved(exit.value)
         ? { ok: true, data: exit.value[RESOLVED], [RESOLVED]: exit.value }
@@ -177,8 +177,8 @@ export function callProcedure(
 
   const fromResult = (
     ret: unknown,
-  ): Effect.Effect<unknown, AnyTRPCError, any> => {
-    if (isTRPCError(ret)) return fail(ret);
+  ): Effect.Effect<unknown, AnyTrpcError, any> => {
+    if (isTrpcError(ret)) return fail(ret);
     if (isResolved(ret)) return Effect.succeed(ret[RESOLVED]);
     if (isOkResult(ret)) return Effect.succeed(ret.data);
     if (typeof ret === 'object' && ret !== null && 'ok' in ret) {
@@ -187,11 +187,11 @@ export function callProcedure(
       ];
       return cause
         ? Effect.failCause(cause)
-        : fail((ret as unknown as { error: AnyTRPCError }).error);
+        : fail((ret as unknown as { error: AnyTrpcError }).error);
     }
     return Effect.die(
       new Error(
-        `Middleware on "${path}" must return next(), ok() or a TRPCError`,
+        `Middleware on "${path}" must return next(), ok() or a TrpcError`,
       ),
     );
   };
@@ -200,7 +200,7 @@ export function callProcedure(
     i: number,
     ctx: object,
     input: unknown,
-  ): Effect.Effect<unknown, AnyTRPCError, any> =>
+  ): Effect.Effect<unknown, AnyTrpcError, any> =>
     Effect.suspend(() => {
       const step = def.steps[i];
       if (!step) return resolve(ctx, input);
@@ -270,7 +270,7 @@ export function callProcedure(
                     i + 1,
                     o?.ctx ? { ...ctx, ...o.ctx } : ctx,
                     input,
-                  ) as Effect.Effect<unknown, AnyTRPCError>,
+                  ) as Effect.Effect<unknown, AnyTrpcError>,
                   { signal },
                 ),
               );
@@ -287,7 +287,7 @@ export function callProcedure(
       const resolver = def.resolver;
       if (!resolver) {
         return yield* Effect.fail(
-          new TRPCError({
+          new TrpcError({
             code: 'NOT_IMPLEMENTED',
             message: `"${path}" is a contract procedure without an implementation`,
           }),
@@ -302,10 +302,10 @@ export function callProcedure(
           ...(type === 'subscription' ? { lastEventId: opts.lastEventId } : {}),
         }),
       );
-      if (isTRPCError(ret)) return yield* fail(ret);
+      if (isTrpcError(ret)) return yield* fail(ret);
       if (Effect.isEffect(ret)) {
         ret = yield* refail(ret as Effect.Effect<unknown, unknown, any>);
-        if (isTRPCError(ret)) return yield* fail(ret);
+        if (isTrpcError(ret)) return yield* fail(ret);
       }
       const services = yield* Effect.context<never>();
       return { [RESOLVED]: finish(ret, services) } satisfies Resolved;
@@ -341,18 +341,18 @@ export function callProcedure(
   }).pipe(
     Effect.catchCause((cause) => {
       for (const reason of cause.reasons) {
-        if (Cause.isFailReason(reason) && isTRPCError(reason.error)) {
+        if (Cause.isFailReason(reason) && isTrpcError(reason.error)) {
           return checkDeclared(def, reason.error);
         }
         if (
           Cause.isDieReason(reason) &&
-          isTRPCError(reason.defect) &&
+          isTrpcError(reason.defect) &&
           isDeclaredError(reason.defect)
         ) {
           return checkDeclared(def, withDefined(reason.defect, true));
         }
       }
-      return Effect.failCause(cause as Cause.Cause<AnyTRPCError>);
+      return Effect.failCause(cause as Cause.Cause<AnyTrpcError>);
     }),
   );
 }
@@ -361,8 +361,8 @@ function toEventStream(
   value: unknown,
   services: Context.Context<never>,
   output: AnyProcedure['~trpc']['output'],
-): Stream.Stream<unknown, AnyTRPCError> {
-  let stream: Stream.Stream<unknown, AnyTRPCError, any>;
+): Stream.Stream<unknown, AnyTrpcError> {
+  let stream: Stream.Stream<unknown, AnyTrpcError, any>;
   if (Stream.isStream(value)) {
     stream = Stream.catchCause(
       value as Stream.Stream<unknown, unknown, any>,
@@ -386,6 +386,6 @@ function toEventStream(
   }
   return Stream.provideContext(stream, services) as Stream.Stream<
     unknown,
-    AnyTRPCError
+    AnyTrpcError
   >;
 }

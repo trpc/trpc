@@ -1,6 +1,6 @@
 import { Schedule, Stream } from 'effect';
-import { createTRPCClient, httpLink, type TRPCClient } from 'trpcdev/client';
-import { error, initTRPC, tracked, type TrackedEnvelope } from 'trpcdev/server';
+import { createTrpcClient, httpLink, type TrpcClient } from 'trpcdev/client';
+import { error, initTrpc, tracked, type TrackedEnvelope } from 'trpcdev/server';
 import {
   createTestServer,
   type NodeTestServer as TestServer,
@@ -11,7 +11,7 @@ import { z } from 'zod';
 interface Context {
   user: string | null;
 }
-const t = initTRPC<{ ctx: Context }>();
+const t = initTrpc<{ ctx: Context }>();
 
 const authed = t.procedure.use(({ ctx, next }) =>
   ctx.user
@@ -102,7 +102,7 @@ async function setup(user: string | null = 'alex') {
     createContext: () => ({ user }),
   });
   current = server;
-  const client: TRPCClient<AppRouter> = createTRPCClient<AppRouter>({
+  const client: TrpcClient<AppRouter> = createTrpcClient<AppRouter>({
     links: [httpLink({ url: server.url, reconnect: { delayMs: () => 10 } })],
   });
   return { server, client, [Symbol.asyncDispose]: () => server.close() };

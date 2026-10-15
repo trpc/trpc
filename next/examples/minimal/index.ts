@@ -6,9 +6,9 @@ import { createServer } from 'node:http';
 import { NodeHttpServer } from '@effect/platform-node';
 import { Effect, Layer, ManagedRuntime } from 'effect';
 import { HttpServer } from 'effect/http';
-import { createTRPCClient, httpLink, safe } from 'trpcdev/client';
+import { createTrpcClient, httpLink, safe } from 'trpcdev/client';
 import { serve } from 'trpcdev/http';
-import { createFetchHandler, error, initTRPC, tracked } from 'trpcdev/server';
+import { createFetchHandler, error, initTrpc, tracked } from 'trpcdev/server';
 import { z } from 'zod';
 
 // --- server --------------------------------------------------------------------------
@@ -19,7 +19,7 @@ interface Post {
 }
 const posts = new Map<string, Post>([['1', { id: '1', title: 'Hello v12' }]]);
 
-const t = initTRPC<{ ctx: { user: string | null } }>();
+const t = initTrpc<{ ctx: { user: string | null } }>();
 
 const authed = t.procedure.use(({ ctx, next }) =>
   ctx.user
@@ -70,7 +70,7 @@ const url = await runtime.runPromise(
 
 // --- client --------------------------------------------------------------------------
 
-const client = createTRPCClient<AppRouter>({
+const client = createTrpcClient<AppRouter>({
   links: [
     httpLink({
       url: `${url}/trpc`,

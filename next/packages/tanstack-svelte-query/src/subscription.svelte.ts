@@ -2,7 +2,7 @@ import { untrack } from 'svelte';
 import {
   SubscriptionObserver,
   type SubscriptionStatus,
-  type TRPCSubscriptionOptions,
+  type TrpcSubscriptionOptions,
 } from '@trpcdev/tanstack-query';
 
 /**
@@ -39,7 +39,7 @@ export interface CreateSubscriptionResult<TEvent, TError> {
  * @stability experimental
  */
 export function createSubscription<TEvent, TError>(
-  options: () => TRPCSubscriptionOptions<TEvent, TError>,
+  options: () => TrpcSubscriptionOptions<TEvent, TError>,
 ): CreateSubscriptionResult<TEvent, TError> {
   const observer = new SubscriptionObserver(untrack(options));
   let result = $state.raw(observer.getCurrentResult());

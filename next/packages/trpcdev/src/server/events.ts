@@ -1,5 +1,5 @@
 import { Effect, Fiber, Stream } from 'effect';
-import { isTRPCError, type AnyTRPCError } from '../internal/error.ts';
+import { isTrpcError, type AnyTrpcError } from '../internal/error.ts';
 import type { Serializer } from '../serializer/index.ts';
 import type { Chunk } from '../serializer/stream.ts';
 import { unexpectedError } from './execute.ts';
@@ -24,11 +24,11 @@ export type EventFrame =
  * @internal
  */
 export function emitEvents(
-  events: Stream.Stream<unknown, AnyTRPCError>,
+  events: Stream.Stream<unknown, AnyTrpcError>,
   serializer: Serializer,
   coerceError: (cause: unknown) => unknown,
   emit: (frame: EventFrame) => void,
-): Effect.Effect<void, AnyTRPCError> {
+): Effect.Effect<void, AnyTrpcError> {
   return Effect.scoped(
     Effect.gen(function* () {
       let deferredCount = 0;
@@ -38,7 +38,7 @@ export function emitEvents(
           const { head, chunks } = yield* Effect.try({
             try: () => serializer.serializeDeferred(event, { coerceError }),
             catch: (cause) =>
-              isTRPCError(cause) ? cause : unexpectedError(cause),
+              isTrpcError(cause) ? cause : unexpectedError(cause),
           });
           const eventId = isTracked(event) ? event.id : undefined;
           if (!chunks) {

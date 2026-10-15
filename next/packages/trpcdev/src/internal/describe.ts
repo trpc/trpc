@@ -1,21 +1,21 @@
-import type { ProcedureJSON } from '../contract/index.ts';
+import type { ProcedureJson } from '../contract/index.ts';
 import {
   isProcedure,
   type AnyProcedure,
   type ProcedureInternals,
 } from '../server/procedure.ts';
 import { isSchema } from '../server/schema.ts';
-import { toJSONSchema, type JSONSchema } from './json-schema.ts';
+import { toJsonSchema, type JsonSchema } from './json-schema.ts';
 
 /** The input JSON Schema of a procedure's steps: chained inputs are `allOf`. @internal */
-export function inputJSONSchema(
+export function inputJsonSchema(
   def: Pick<ProcedureInternals, 'steps'>,
-): JSONSchema | undefined {
-  const schemas: JSONSchema[] = [];
+): JsonSchema | undefined {
+  const schemas: JsonSchema[] = [];
   for (const step of def.steps) {
     if (step.kind !== 'input') continue;
     const json = isSchema(step.arg)
-      ? toJSONSchema(step.arg, 'input')
+      ? toJsonSchema(step.arg, 'input')
       : undefined;
     if (!json) return undefined;
     schemas.push(json);
@@ -41,9 +41,9 @@ export function flattenRouter(
 }
 
 /** @internal */
-export function procedureJSON(def: ProcedureInternals): ProcedureJSON {
-  const input = inputJSONSchema(def);
-  const output = def.output ? toJSONSchema(def.output, 'output') : undefined;
+export function procedureJson(def: ProcedureInternals): ProcedureJson {
+  const input = inputJsonSchema(def);
+  const output = def.output ? toJsonSchema(def.output, 'output') : undefined;
   const errors = Object.entries(def.errors);
   return {
     type: def.type,
@@ -55,7 +55,7 @@ export function procedureJSON(def: ProcedureInternals): ProcedureJSON {
           errors: Object.fromEntries(
             errors.map(([code, spec]) => {
               const data = spec.data
-                ? toJSONSchema(spec.data, 'output')
+                ? toJsonSchema(spec.data, 'output')
                 : undefined;
               return [
                 code,

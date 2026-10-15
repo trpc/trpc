@@ -1,16 +1,16 @@
 import {
-  generateOpenAPI,
-  type GenerateOpenAPIOptions,
-  type OpenAPIDocument,
+  generateOpenApi,
+  type GenerateOpenApiOptions,
+  type OpenApiDocument,
 } from './generate.ts';
-import type { OpenAPIPlugin } from './handler.ts';
+import type { OpenApiPlugin } from './handler.ts';
 
 /**
- * The options of {@link openAPIReference}.
+ * The options of {@link openApiReference}.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface OpenAPIReferenceOptions {
+export interface OpenApiReferenceOptions {
   /**
    * Where the docs UI is served, under the handler's prefix.
    * @default '/docs'
@@ -24,10 +24,10 @@ export interface OpenAPIReferenceOptions {
   /** @default 'scalar' */
   docsProvider?: 'scalar' | 'swagger';
   /**
-   * Options for {@link generateOpenAPI}. `servers` defaults to the request's
+   * Options for {@link generateOpenApi}. `servers` defaults to the request's
    * origin; `prefix` to the handler's.
    */
-  specGenerateOptions: GenerateOpenAPIOptions;
+  specGenerateOptions: GenerateOpenApiOptions;
 }
 
 const escapeHtml = (s: string) =>
@@ -53,15 +53,15 @@ function page(
 
 /**
  * Serves an API reference UI (Scalar by default, or Swagger UI, from a CDN)
- * and the OpenAPI document, as a plugin of {@link createOpenAPIHandler}
+ * and the OpenAPI document, as a plugin of {@link createOpenApiHandler}
  * (18 (e)). The document is generated once, on the first request.
  *
  * @example
  * ```ts
- * createOpenAPIHandler({
+ * createOpenApiHandler({
  *   router: appRouter,
  *   plugins: [
- *     openAPIReference({ specGenerateOptions: { info: { title: 'API', version: '1.0.0' } } }),
+ *     openApiReference({ specGenerateOptions: { info: { title: 'API', version: '1.0.0' } } }),
  *   ],
  * });
  * // GET /api/docs (UI), GET /api/openapi.json (document)
@@ -69,16 +69,16 @@ function page(
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function openAPIReference(opts: OpenAPIReferenceOptions): OpenAPIPlugin {
+export function openApiReference(opts: OpenApiReferenceOptions): OpenApiPlugin {
   const docsPath = opts.path ?? '/docs';
   const specPath = opts.specPath ?? '/openapi.json';
-  let spec: Omit<OpenAPIDocument, 'servers'> | undefined;
+  let spec: Omit<OpenApiDocument, 'servers'> | undefined;
   return {
     fetch(request, { router, prefix }) {
       if (request.method !== 'GET') return undefined;
       const url = new URL(request.url);
       if (url.pathname === `${prefix}${specPath}`) {
-        spec ??= generateOpenAPI(router, {
+        spec ??= generateOpenApi(router, {
           prefix,
           ...opts.specGenerateOptions,
         });

@@ -3,10 +3,10 @@
  *
  * @example
  * ```ts
- * import { createFetchHandler, error, initTRPC } from 'trpcdev/server';
+ * import { createFetchHandler, error, initTrpc } from 'trpcdev/server';
  * import { z } from 'zod';
  *
- * const t = initTRPC<{ ctx: { user: User | null } }>();
+ * const t = initTrpc<{ ctx: { user: User | null } }>();
  *
  * export const appRouter = {
  *   post: {
@@ -27,12 +27,12 @@
  * @module
  */
 export {
-  initTRPC,
+  initTrpc,
   type RootConfig,
   type RootDef,
   type RootMiddleware,
   type RootOptions,
-  type TRPCRoot,
+  type TrpcRoot,
 } from './init.ts';
 export type {
   AnyProcedureBuilder,
@@ -146,10 +146,10 @@ export {
   ERROR_STATUS,
   error,
   isDefinedError,
-  isTRPCError,
-  TRPCError,
-  type AnyTRPCError,
+  isTrpcError,
+  TrpcError,
+  type AnyTrpcError,
   type BuiltinErrorCode,
-  type TRPCErrorOptions,
+  type TrpcErrorOptions,
 } from '../internal/error.ts';
 export type { ProcedureType, TypeError, Unset } from '../internal/types.ts';

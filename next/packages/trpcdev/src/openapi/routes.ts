@@ -6,7 +6,7 @@ import type { Route } from '../server/procedure.ts';
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type HTTPMethod = NonNullable<Route['method']>;
+export type HttpMethod = NonNullable<Route['method']>;
 
 /**
  * A procedure's REST mapping, with defaults applied (Q18.2).
@@ -14,7 +14,7 @@ export type HTTPMethod = NonNullable<Route['method']>;
  * @stability experimental
  */
 export interface ResolvedRoute {
-  readonly method: HTTPMethod;
+  readonly method: HttpMethod;
   /** The full path template, prefix included: `/api/posts/{id}`. */
   readonly path: `/${string}`;
   /** The `{param}` names in `path`. */
@@ -53,7 +53,7 @@ export function resolveRoute(
 }
 
 /** Whether the method sends its input in the query string (GET) rather than a body. @internal */
-export const usesQuery = (method: HTTPMethod) => method === 'GET';
+export const usesQuery = (method: HttpMethod) => method === 'GET';
 
 /** Matches a path against a template, returning the decoded params. @internal */
 export function compileRoute(

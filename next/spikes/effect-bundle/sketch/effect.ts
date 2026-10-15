@@ -11,17 +11,17 @@ export interface Op {
   readonly input: unknown;
 }
 
-export class TRPCClientError extends Data.TaggedError('TRPCClientError')<{
+export class TrpcClientError extends Data.TaggedError('TrpcClientError')<{
   readonly code: string;
   readonly message: string;
   readonly cause?: unknown;
 }> {}
 
-export type Next = (op: Op) => Effect.Effect<unknown, TRPCClientError>;
+export type Next = (op: Op) => Effect.Effect<unknown, TrpcClientError>;
 export type Link = (
   op: Op,
   next: Next,
-) => Effect.Effect<unknown, TRPCClientError>;
+) => Effect.Effect<unknown, TrpcClientError>;
 
 export interface Codec {
   readonly stringify: (value: unknown) => string;
@@ -31,7 +31,7 @@ export interface Codec {
 const jsonCodec: Codec = { stringify: JSON.stringify, parse: JSON.parse };
 
 const networkError = (cause: unknown) =>
-  new TRPCClientError({ code: 'NETWORK', message: 'fetch failed', cause });
+  new TrpcClientError({ code: 'NETWORK', message: 'fetch failed', cause });
 
 export function httpTerminal(url: string, codec: Codec = jsonCodec): Next {
   return (op) =>
@@ -60,7 +60,7 @@ export function httpTerminal(url: string, codec: Codec = jsonCodec): Next {
           | { result: { data: unknown } }
           | { error: { code: string; message: string } };
         return 'error' in body
-          ? Effect.fail(new TRPCClientError(body.error))
+          ? Effect.fail(new TrpcClientError(body.error))
           : Effect.succeed(body.result.data);
       }),
     );
@@ -80,7 +80,7 @@ export function retryLink(times: number, timeoutMs: number): Link {
 export function sseTerminal(
   url: string,
   codec: Codec = jsonCodec,
-): (op: Op) => Stream.Stream<unknown, TRPCClientError> {
+): (op: Op) => Stream.Stream<unknown, TrpcClientError> {
   return (op) =>
     Stream.fromReadableStream({
       evaluate: () => {
@@ -112,7 +112,7 @@ function chain(links: readonly Link[], terminal: Next): Next {
 
 /** Adapts a `Stream` terminal for the Promise surface. */
 export const asIterable =
-  (subscribe: (op: Op) => Stream.Stream<unknown, TRPCClientError>) =>
+  (subscribe: (op: Op) => Stream.Stream<unknown, TrpcClientError>) =>
   (op: Op): AsyncIterable<unknown> =>
     Stream.toAsyncIterable(subscribe(op));
 
@@ -144,7 +144,7 @@ const opType = (method: string | undefined): Op['type'] =>
 
 /** Effect surface: procedures return `Effect`/`Stream`. */
 export function createEffectClient(
-  opts: ClientOptions<Stream.Stream<unknown, TRPCClientError>>,
+  opts: ClientOptions<Stream.Stream<unknown, TrpcClientError>>,
 ): unknown {
   const run = chain(opts.links ?? [], opts.terminal);
   return createProxy((path, method, [input]) => {

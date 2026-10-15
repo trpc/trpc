@@ -1,5 +1,5 @@
 import { Effect, Schema, SchemaIssue } from 'effect';
-import { TRPCError } from '../internal/error.ts';
+import { TrpcError } from '../internal/error.ts';
 
 /**
  * A [Standard Schema](https://standardschema.dev) issue.
@@ -75,7 +75,7 @@ export interface InputValidationErrorData {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type InputValidationError = TRPCError<
+export type InputValidationError = TrpcError<
   'BAD_REQUEST',
   InputValidationErrorData
 >;
@@ -110,8 +110,8 @@ const normalizeIssues = (
 export function validate(
   schema: AnySchema,
   value: unknown,
-  onIssues: (issues: InputValidationErrorData['issues']) => TRPCError,
-): Effect.Effect<unknown, TRPCError> {
+  onIssues: (issues: InputValidationErrorData['issues']) => TrpcError,
+): Effect.Effect<unknown, TrpcError> {
   if (Schema.isSchema(schema)) {
     return (
       Schema.decodeUnknownEffect(schema)(value) as Effect.Effect<
@@ -135,7 +135,7 @@ export function validate(
 
 /** @internal */
 export const inputError = (issues: InputValidationErrorData['issues']) =>
-  new TRPCError({
+  new TrpcError({
     code: 'BAD_REQUEST',
     message: 'Input validation failed',
     data: { issues },
@@ -144,7 +144,7 @@ export const inputError = (issues: InputValidationErrorData['issues']) =>
 
 /** @internal */
 export const outputError = (issues: InputValidationErrorData['issues']) =>
-  new TRPCError({
+  new TrpcError({
     code: 'INTERNAL_SERVER_ERROR',
     message: 'Output validation failed',
     cause: new Error(

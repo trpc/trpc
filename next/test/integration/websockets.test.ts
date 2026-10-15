@@ -1,7 +1,7 @@
 import { request as httpRequest } from 'node:http';
 import { Stream } from 'effect';
 import {
-  createTRPCClient,
+  createTrpcClient,
   httpLink,
   routerType,
   safe,
@@ -10,7 +10,7 @@ import {
 } from 'trpcdev/client';
 import {
   error,
-  initTRPC,
+  initTrpc,
   tracked,
   type CreateContextOpts,
 } from 'trpcdev/server';
@@ -25,7 +25,7 @@ interface Ctx {
   user: string | null;
   transport: string;
 }
-const t = initTRPC<{ ctx: Ctx }>();
+const t = initTrpc<{ ctx: Ctx }>();
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const state = {
@@ -133,7 +133,7 @@ async function setup(
       ? { connectionParams: async () => ({ token: 'kim' }) }
       : {}),
   });
-  const client = createTRPCClient({
+  const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [link],
   });
@@ -294,7 +294,7 @@ test('splitLink sends subscriptions over WebSockets and the rest over HTTP', asy
     createContext: ({ info }) => ({ user: null, transport: info.transport }),
   });
   await using ws = wsLink({ url: server.wsUrl });
-  const client = createTRPCClient({
+  const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [
       splitLink({
@@ -341,7 +341,7 @@ test('the Node upgrade handles large messages and enforces maxPayload', async ()
     maxPayload: 200_000,
   });
   await using link = wsLink({ url: server.wsUrl, reconnect: { attempts: 0 } });
-  const client = createTRPCClient<typeof echoRouter>({ links: [link] });
+  const client = createTrpcClient<typeof echoRouter>({ links: [link] });
   expect(await client.length.query('x'.repeat(100_000))).toBe(100_000);
   await expect(client.length.query('x'.repeat(300_000))).rejects.toMatchObject({
     code: 'NETWORK_ERROR',

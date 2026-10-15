@@ -1,6 +1,6 @@
 import { describe, expectTypeOf, test } from 'vite-plus/test';
 import {
-  initTRPC,
+  initTrpc,
   middleware,
   schema,
   type,
@@ -17,7 +17,7 @@ interface Post {
 }
 declare const kv: { get(key: string): Promise<Post | undefined> };
 
-const t = initTRPC<{
+const t = initTrpc<{
   ctx: { db: Db; user?: { id: string } };
   meta: { auth?: boolean };
 }>();
@@ -102,7 +102,7 @@ describe('06 (d): standalone dependency-declaring middleware', () => {
     // @ts-expect-error `orgId` is missing from the input
     t.procedure.input(schema<{ id: string }>()).use(withOrg);
 
-    const noDb = initTRPC<{ ctx: { user?: { id: string } } }>();
+    const noDb = initTrpc<{ ctx: { user?: { id: string } } }>();
     // @ts-expect-error ctx lacks `db`
     noDb.procedure.input(schema<{ orgId: string }>()).use(withOrg);
   });

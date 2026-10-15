@@ -1,11 +1,11 @@
 import { MessageChannel, threadId, Worker } from 'node:worker_threads';
 import {
-  createTRPCClient,
+  createTrpcClient,
   messagePortLink,
   routerType,
   safe,
 } from 'trpcdev/client';
-import { createFetchHandler, initTRPC } from 'trpcdev/server';
+import { createFetchHandler, initTrpc } from 'trpcdev/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import type { WorkerRouter } from './fixtures/worker-server.ts';
 
@@ -17,7 +17,7 @@ async function startWorker() {
     port: worker,
     connectionParams: { token: 'secret' },
   });
-  const client = createTRPCClient({
+  const client = createTrpcClient({
     router: routerType<WorkerRouter>(),
     links: [link],
   });
@@ -75,12 +75,12 @@ test('errors, deferred values and subscriptions cross the port', async () => {
 });
 
 test('a MessageChannel connects a client and a handler in one thread', async () => {
-  const t = initTRPC();
+  const t = initTrpc();
   const router = { ping: t.procedure.query(() => 'pong' as const) };
   const { port1, port2 } = new MessageChannel();
   createFetchHandler({ router }).messagePort(port1);
   const link = messagePortLink({ port: port2 });
-  const client = createTRPCClient<typeof router>({ links: [link] });
+  const client = createTrpcClient<typeof router>({ links: [link] });
   try {
     expect(await client.ping.query()).toBe('pong');
   } finally {

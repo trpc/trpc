@@ -1,9 +1,9 @@
 import { Effect, Exit, Stream, type Layer } from 'effect';
 import {
-  isTRPCError,
+  isTrpcError,
   toWireError,
-  TRPCError,
-  type AnyTRPCError,
+  TrpcError,
+  type AnyTrpcError,
 } from '../internal/error.ts';
 import {
   CONTENT_TYPE,
@@ -70,7 +70,7 @@ export interface CreateContextOpts {
  * @stability experimental
  */
 export interface OnErrorOpts {
-  readonly error: AnyTRPCError;
+  readonly error: AnyTrpcError;
   readonly path: string | undefined;
   readonly type: ProcedureType | undefined;
   readonly request: Request;
@@ -186,7 +186,7 @@ export interface FetchHandler {
 const encoder = new TextEncoder();
 
 const protocolError = (code: string, message: string) =>
-  new TRPCError({ code, message });
+  new TrpcError({ code, message });
 
 interface CallResult {
   status: number;
@@ -233,7 +233,7 @@ export function createFetchHandler<TRouter extends AnyRouter>(
         ? { maxItems: opts.batch.maxItems ?? 20 }
         : undefined;
 
-  const wire = (err: AnyTRPCError) =>
+  const wire = (err: AnyTrpcError) =>
     serializer.serialize(toWireError(publicError(err)));
 
   const respond = (
@@ -271,7 +271,7 @@ export function createFetchHandler<TRouter extends AnyRouter>(
     try {
       return JSON.parse(text);
     } catch (cause) {
-      throw new TRPCError({
+      throw new TrpcError({
         code: 'PARSE_ERROR',
         message: 'Invalid JSON',
         cause,
@@ -284,7 +284,7 @@ export function createFetchHandler<TRouter extends AnyRouter>(
     try {
       return serializer.deserialize(value as never, { input: true });
     } catch (cause) {
-      throw new TRPCError({
+      throw new TrpcError({
         code: 'PARSE_ERROR',
         message: cause instanceof Error ? cause.message : 'Invalid input',
         cause,
@@ -298,7 +298,7 @@ export function createFetchHandler<TRouter extends AnyRouter>(
       try {
         return serializer.fromSearch(url.search, { input: true });
       } catch (cause) {
-        throw new TRPCError({
+        throw new TrpcError({
           code: 'PARSE_ERROR',
           message: cause instanceof Error ? cause.message : 'Invalid input',
           cause,
@@ -344,7 +344,7 @@ export function createFetchHandler<TRouter extends AnyRouter>(
     try {
       const { head, chunks } = serializer.serializeDeferred(exit.value, {
         coerceError: (cause) => {
-          const err = isTRPCError(cause) ? cause : unexpectedError(cause);
+          const err = isTrpcError(cause) ? cause : unexpectedError(cause);
           report(err, request, path, type);
           return toWireError(publicError(err));
         },
@@ -420,7 +420,7 @@ export function createFetchHandler<TRouter extends AnyRouter>(
     }
     const type = procedure['~trpc'].type;
     if (type === 'mutation' && request.method !== 'POST') {
-      throw new TRPCError({
+      throw new TrpcError({
         code: 'METHOD_NOT_SUPPORTED',
         message: 'Mutations must use POST',
       });
@@ -469,7 +469,7 @@ export function createFetchHandler<TRouter extends AnyRouter>(
         result.headers,
       );
     } catch (cause) {
-      const err = isTRPCError(cause) ? cause : unexpectedError(cause);
+      const err = isTrpcError(cause) ? cause : unexpectedError(cause);
       report(err, request, path, type);
       return respond(err.status, JSON.stringify(wire(err)), CONTENT_TYPE.json);
     }
@@ -507,9 +507,9 @@ export function createFetchHandler<TRouter extends AnyRouter>(
         response.headers,
       );
     }
-    const events = exit.value as Stream.Stream<unknown, AnyTRPCError>;
+    const events = exit.value as Stream.Stream<unknown, AnyTrpcError>;
     const coerceError = (cause: unknown) => {
-      const err = isTRPCError(cause) ? cause : unexpectedError(cause);
+      const err = isTrpcError(cause) ? cause : unexpectedError(cause);
       report(err, request, path, 'subscription');
       return toWireError(publicError(err));
     };
@@ -611,7 +611,7 @@ export function createFetchHandler<TRouter extends AnyRouter>(
           controller.signal,
         );
       } catch (cause) {
-        const err = isTRPCError(cause) ? cause : unexpectedError(cause);
+        const err = isTrpcError(cause) ? cause : unexpectedError(cause);
         report(err, request, call.path);
         return { status: err.status, body: wire(err) };
       }
@@ -698,7 +698,7 @@ export function createFetchHandler<TRouter extends AnyRouter>(
         }
         return await single(request, url, decodeURIComponent(rest));
       } catch (cause) {
-        const err = isTRPCError(cause) ? cause : unexpectedError(cause);
+        const err = isTrpcError(cause) ? cause : unexpectedError(cause);
         report(err, request);
         return respond(
           err.status,

@@ -6,16 +6,16 @@
  *
  * @example
  * ```ts
- * import { createTRPCContext } from '@trpcdev/tanstack-angular-query';
+ * import { createTrpcContext } from '@trpcdev/tanstack-angular-query';
  *
- * export const { provideTRPC, injectTRPC } = createTRPCContext<AppRouter>();
+ * export const { provideTrpc, injectTrpc } = createTrpcContext<AppRouter>();
  *
  * bootstrapApplication(App, {
- *   providers: [provideTanStackQuery(new QueryClient()), provideTRPC(client)],
+ *   providers: [provideTanStackQuery(new QueryClient()), provideTrpc(client)],
  * });
  *
  * // in a component
- * trpc = injectTRPC();
+ * trpc = injectTrpc();
  * id = input.required<string>();
  * post = injectQuery(() => this.trpc.post.byId.queryOptions({ input: { id: this.id() } }));
  * ```
@@ -36,29 +36,29 @@ import {
   type Provider,
   type Signal,
 } from '@angular/core';
-import type { RouterOf, TRPCClient } from 'trpcdev/client';
+import type { RouterOf, TrpcClient } from 'trpcdev/client';
 import {
-  createTRPCQueryUtils,
+  createTrpcQueryUtils,
   SubscriptionObserver,
   type SubscriptionStatus,
-  type TRPCQueryUtilsFor,
-  type TRPCSubscriptionOptions,
+  type TrpcQueryUtilsFor,
+  type TrpcSubscriptionOptions,
 } from '@trpcdev/tanstack-query';
 
 export * from '@trpcdev/tanstack-query';
 
 /**
- * What {@link createTRPCContext} returns.
+ * What {@link createTrpcContext} returns.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface TRPCAngularContext<TRouter, TContext extends object = {}> {
+export interface TrpcAngularContext<TRouter, TContext extends object = {}> {
   /** Provides the client, next to `provideTanStackQuery`. */
-  provideTRPC: (client: TRPCClient<RouterOf<TRouter>, TContext>) => Provider;
+  provideTrpc: (client: TrpcClient<RouterOf<TRouter>, TContext>) => Provider;
   /** The helpers for the provided client. Call in an injection context. */
-  injectTRPC: () => TRPCQueryUtilsFor<TRouter, TContext>;
+  injectTrpc: () => TrpcQueryUtilsFor<TRouter, TContext>;
   /** The provided client, for calls outside TanStack Query. */
-  injectTRPCClient: () => TRPCClient<RouterOf<TRouter>, TContext>;
+  injectTrpcClient: () => TrpcClient<RouterOf<TRouter>, TContext>;
 }
 
 /**
@@ -67,28 +67,28 @@ export interface TRPCAngularContext<TRouter, TContext extends object = {}> {
  *
  * @example
  * ```ts
- * const { provideTRPC, injectTRPC } = createTRPCContext<AppRouter>();
- * providers: [provideTanStackQuery(queryClient), provideTRPC(client)];
+ * const { provideTrpc, injectTrpc } = createTrpcContext<AppRouter>();
+ * providers: [provideTanStackQuery(queryClient), provideTrpc(client)];
  * ```
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function createTRPCContext<
+export function createTrpcContext<
   TRouter,
   TContext extends object = {},
->(): TRPCAngularContext<TRouter, TContext> {
+>(): TrpcAngularContext<TRouter, TContext> {
   type Value = {
-    client: TRPCClient<RouterOf<TRouter>, TContext>;
-    utils: TRPCQueryUtilsFor<TRouter, TContext>;
+    client: TrpcClient<RouterOf<TRouter>, TContext>;
+    utils: TrpcQueryUtilsFor<TRouter, TContext>;
   };
   const token = new InjectionToken<Value>('trpc');
   return {
-    provideTRPC: (client) => ({
+    provideTrpc: (client) => ({
       provide: token,
-      useValue: { client, utils: createTRPCQueryUtils({ client }) },
+      useValue: { client, utils: createTrpcQueryUtils({ client }) },
     }),
-    injectTRPC: () => inject(token).utils,
-    injectTRPCClient: () => inject(token).client,
+    injectTrpc: () => inject(token).utils,
+    injectTrpcClient: () => inject(token).client,
   };
 }
 
@@ -134,7 +134,7 @@ export interface InjectSubscriptionResult<TEvent, TError> {
  * @stability experimental
  */
 export function injectSubscription<TEvent, TError>(
-  options: () => TRPCSubscriptionOptions<TEvent, TError>,
+  options: () => TrpcSubscriptionOptions<TEvent, TError>,
   opts: InjectSubscriptionOptions = {},
 ): InjectSubscriptionResult<TEvent, TError> {
   if (!opts.injector) assertInInjectionContext(injectSubscription);

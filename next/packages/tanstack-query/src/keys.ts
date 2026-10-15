@@ -6,7 +6,7 @@ import { skipToken } from '@tanstack/query-core';
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type TRPCQueryKeyType = 'query' | 'infinite' | 'streamed' | 'live';
+export type TrpcQueryKeyType = 'query' | 'infinite' | 'streamed' | 'live';
 
 /**
  * A tRPC query key: `[['post', 'byId'], { input, type }]`. The path is an
@@ -14,9 +14,9 @@ export type TRPCQueryKeyType = 'query' | 'infinite' | 'streamed' | 'live';
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type TRPCQueryKey = readonly [
+export type TrpcQueryKey = readonly [
   path: readonly string[],
-  opts?: { input?: unknown; type?: TRPCQueryKeyType },
+  opts?: { input?: unknown; type?: TrpcQueryKeyType },
 ];
 
 /**
@@ -24,14 +24,14 @@ export type TRPCQueryKey = readonly [
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type TRPCMutationKey = readonly [path: readonly string[]];
+export type TrpcMutationKey = readonly [path: readonly string[]];
 
 /** @internal */
 export function procedureKey(
   path: readonly string[],
   input: unknown,
-  type: TRPCQueryKeyType | undefined,
-): TRPCQueryKey {
+  type: TrpcQueryKeyType | undefined,
+): TrpcQueryKey {
   return [
     path,
     {
@@ -42,6 +42,6 @@ export function procedureKey(
 }
 
 /** @internal */
-export function pathKey(path: readonly string[]): TRPCQueryKey {
+export function pathKey(path: readonly string[]): TrpcQueryKey {
   return [path];
 }

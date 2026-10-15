@@ -1,9 +1,9 @@
 import { Context, Effect, ManagedRuntime, Stream, type Layer } from 'effect';
 import {
   fromWireError,
-  isTRPCError,
+  isTrpcError,
   toWireError,
-  TRPCError,
+  TrpcError,
 } from '../../internal/error.ts';
 import type { MaybePromise } from '../../internal/types.ts';
 import { defaultSerializer, type Serializer } from '../../serializer/index.ts';
@@ -17,7 +17,7 @@ import {
   type AnyRouter,
   type inferRouterContext,
 } from '../../server/router.ts';
-import { link, type TRPCLink } from '../link.ts';
+import { link, type TrpcLink } from '../link.ts';
 
 /**
  * Options for {@link localLink}.
@@ -43,7 +43,7 @@ export interface LocalLinkOptions<TRouter extends AnyRouter> {
  *
  * @example
  * ```ts
- * const client = createTRPCClient<AppRouter>({
+ * const client = createTrpcClient<AppRouter>({
  *   links: [localLink({ router: appRouter, createContext: () => ({ user }) })],
  * });
  * ```
@@ -52,7 +52,7 @@ export interface LocalLinkOptions<TRouter extends AnyRouter> {
  */
 export function localLink<TRouter extends AnyRouter>(
   opts: LocalLinkOptions<TRouter>,
-): TRPCLink {
+): TrpcLink {
   const serializer =
     opts.serializer === false
       ? undefined
@@ -74,7 +74,7 @@ export function localLink<TRouter extends AnyRouter>(
         const procedure = getProcedure(opts.router, op.path);
         if (!procedure) {
           return yield* Effect.fail(
-            new TRPCError({
+            new TrpcError({
               code: 'NOT_FOUND',
               message: `No procedure at path "${op.path}"`,
             }),
@@ -82,7 +82,7 @@ export function localLink<TRouter extends AnyRouter>(
         }
         if (procedure['~trpc'].type !== op.type) {
           return yield* Effect.fail(
-            new TRPCError({
+            new TrpcError({
               code: 'METHOD_NOT_SUPPORTED',
               message: `"${op.path}" is a ${procedure['~trpc'].type}, not a ${op.type}`,
             }),
@@ -109,7 +109,7 @@ export function localLink<TRouter extends AnyRouter>(
         if (!serializer) return Stream.make(data);
         const { head, chunks } = serializer.serializeDeferred(data, {
           coerceError: (cause) =>
-            toWireError(isTRPCError(cause) ? cause : unexpectedError(cause)),
+            toWireError(isTrpcError(cause) ? cause : unexpectedError(cause)),
         });
         return Stream.fromEffect(
           serializer.deserializeStream(

@@ -1,6 +1,6 @@
 import { Effect, Schema, Stream } from 'effect';
 import {
-  createTRPCClient,
+  createTrpcClient,
   createUntypedClient,
   httpLink,
   link,
@@ -11,7 +11,7 @@ import {
   splitLink,
   type LoggerEvent,
 } from 'trpcdev/client';
-import { call, createRouterClient, error, initTRPC } from 'trpcdev/server';
+import { call, createRouterClient, error, initTrpc } from 'trpcdev/server';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
@@ -19,7 +19,7 @@ import { z } from 'zod';
 interface Context {
   token: string | null;
 }
-const t = initTRPC<{ ctx: Context }>();
+const t = initTrpc<{ ctx: Context }>();
 
 const signals = { aborted: 0 };
 
@@ -73,7 +73,7 @@ test('a link can add headers through the call context', async () => {
       },
     }),
   );
-  const client = createTRPCClient<AppRouter>({
+  const client = createTrpcClient<AppRouter>({
     links: [authLink, httpLink({ url: server.url })],
   });
   expect(await client.whoami.query()).toBe('Bearer whoami');
@@ -87,7 +87,7 @@ test('a link can add headers through the call context', async () => {
 test('httpLink headers can be computed per request', async () => {
   await using server = await serve();
   let n = 0;
-  const client = createTRPCClient<AppRouter>({
+  const client = createTrpcClient<AppRouter>({
     links: [
       httpLink({
         url: server.url,
@@ -111,7 +111,7 @@ test('a Promise link can replace a result or a subscription', async () => {
     }
     return next(op);
   });
-  const client = createTRPCClient<AppRouter>({
+  const client = createTrpcClient<AppRouter>({
     links: [cacheLink, httpLink({ url: server.url })],
   });
   expect(await client.whoami.query()).toBe('cached');
@@ -128,7 +128,7 @@ test('an Effect link wraps the result stream', async () => {
       Stream.tap((value) => Effect.sync(() => seen.push([op.path, value]))),
     ),
   );
-  const client = createTRPCClient<AppRouter>({
+  const client = createTrpcClient<AppRouter>({
     links: [tapLink, httpLink({ url: server.url })],
   });
   await client.add.mutate({ a: 1, b: 2 });
@@ -137,7 +137,7 @@ test('an Effect link wraps the result stream', async () => {
 
 test('splitLink routes subscriptions and batched calls differently', async () => {
   await using server = await serve();
-  const client = createTRPCClient<AppRouter>({
+  const client = createTrpcClient<AppRouter>({
     links: [
       splitLink({
         condition: (op) => op.type === 'subscription',
@@ -164,7 +164,7 @@ test('splitLink routes subscriptions and batched calls differently', async () =>
 test('loggerLink sees requests, results and errors', async () => {
   await using server = await serve();
   const events: LoggerEvent[] = [];
-  const client = createTRPCClient<AppRouter>({
+  const client = createTrpcClient<AppRouter>({
     links: [
       loggerLink({ log: (event) => events.push(event) }),
       httpLink({ url: server.url }),
@@ -186,7 +186,7 @@ test('retryLink retries network failures on queries only', async () => {
     if (failures-- > 0) return Promise.reject(new TypeError('fetch failed'));
     return fetch(input, init);
   };
-  const client = createTRPCClient<AppRouter>({
+  const client = createTrpcClient<AppRouter>({
     links: [
       retryLink({ retries: 3, delayMs: () => 1 }),
       httpLink({ url: server.url, fetch: flakyFetch }),
@@ -209,7 +209,7 @@ test('retryLink retries network failures on queries only', async () => {
 
 test('aborting a call rejects with CLIENT_CLOSED_REQUEST and aborts the server', async () => {
   await using server = await serve();
-  const client = createTRPCClient<AppRouter>({
+  const client = createTrpcClient<AppRouter>({
     links: [httpLink({ url: server.url })],
   });
   const before = signals.aborted;
@@ -225,7 +225,7 @@ test('aborting a call rejects with CLIENT_CLOSED_REQUEST and aborts the server',
 });
 
 test('localLink runs the router in-process, through the serializer', async () => {
-  const client = createTRPCClient<AppRouter>({
+  const client = createTrpcClient<AppRouter>({
     links: [localLink({ router, createContext: () => ({ token: 'local' }) })],
   });
   expect(await client.whoami.query()).toBe('local');

@@ -6,14 +6,14 @@ import type { AnySchema } from '../server/schema.ts';
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type JSONSchema = { readonly [key: string]: unknown } | boolean;
+export type JsonSchema = { readonly [key: string]: unknown } | boolean;
 
 type Convert = (opts: {
   target: string;
   libraryOptions?: Record<string, unknown>;
 }) => Record<string, unknown>;
 
-interface StandardJSONSchema {
+interface StandardJsonSchema {
   readonly '~standard': {
     readonly jsonSchema?: { readonly input: Convert; readonly output: Convert };
   };
@@ -27,14 +27,14 @@ interface StandardJSONSchema {
  * (a `Date`) become `{}`.
  * @internal
  */
-export function toJSONSchema(
+export function toJsonSchema(
   schema: AnySchema,
   io: 'input' | 'output',
-): Exclude<JSONSchema, boolean> | undefined {
+): Exclude<JsonSchema, boolean> | undefined {
   try {
     const standard = (
       Schema.isSchema(schema) ? Schema.toStandardJSONSchemaV1(schema) : schema
-    ) as StandardJSONSchema;
+    ) as StandardJsonSchema;
     const convert = standard['~standard'].jsonSchema?.[io];
     if (!convert) return undefined;
     const { $schema: _, ...json } = convert({

@@ -6,12 +6,12 @@
  *
  * @example
  * ```tsx
- * import { createTRPCContext } from '@trpcdev/tanstack-solid-query';
+ * import { createTrpcContext } from '@trpcdev/tanstack-solid-query';
  *
- * export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+ * export const { TrpcProvider, useTrpc } = createTrpcContext<AppRouter>();
  *
  * function Post(props: { id: string }) {
- *   const trpc = useTRPC();
+ *   const trpc = useTrpc();
  *   const post = useQuery(() => trpc.post.byId.queryOptions({ input: { id: props.id } }));
  *   return <h1>{post.data?.title}</h1>;
  * }
@@ -30,39 +30,39 @@ import {
   type Accessor,
   type JSX,
 } from 'solid-js';
-import type { RouterOf, TRPCClient } from 'trpcdev/client';
+import type { RouterOf, TrpcClient } from 'trpcdev/client';
 import {
-  createTRPCQueryUtils,
+  createTrpcQueryUtils,
   SubscriptionObserver,
   type SubscriptionStatus,
-  type TRPCQueryUtilsFor,
-  type TRPCSubscriptionOptions,
+  type TrpcQueryUtilsFor,
+  type TrpcSubscriptionOptions,
 } from '@trpcdev/tanstack-query';
 
 export * from '@trpcdev/tanstack-query';
 
 /**
- * Props of the `TRPCProvider` from {@link createTRPCContext}.
+ * Props of the `TrpcProvider` from {@link createTrpcContext}.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface TRPCProviderProps<TRouter, TContext extends object = {}> {
-  client: TRPCClient<RouterOf<TRouter>, TContext>;
+export interface TrpcProviderProps<TRouter, TContext extends object = {}> {
+  client: TrpcClient<RouterOf<TRouter>, TContext>;
   children?: JSX.Element;
 }
 
 /**
- * What {@link createTRPCContext} returns.
+ * What {@link createTrpcContext} returns.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface TRPCSolidContext<TRouter, TContext extends object = {}> {
+export interface TrpcSolidContext<TRouter, TContext extends object = {}> {
   /** Provides the client. Render it inside `QueryClientProvider`. */
-  TRPCProvider: (props: TRPCProviderProps<TRouter, TContext>) => JSX.Element;
+  TrpcProvider: (props: TrpcProviderProps<TRouter, TContext>) => JSX.Element;
   /** The helpers for the provided client. */
-  useTRPC: () => TRPCQueryUtilsFor<TRouter, TContext>;
+  useTrpc: () => TrpcQueryUtilsFor<TRouter, TContext>;
   /** The provided client, for calls outside TanStack Query. */
-  useTRPCClient: () => TRPCClient<RouterOf<TRouter>, TContext>;
+  useTrpcClient: () => TrpcClient<RouterOf<TRouter>, TContext>;
 }
 
 /**
@@ -71,43 +71,43 @@ export interface TRPCSolidContext<TRouter, TContext extends object = {}> {
  *
  * @example
  * ```tsx
- * const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+ * const { TrpcProvider, useTrpc } = createTrpcContext<AppRouter>();
  *
  * <QueryClientProvider client={queryClient}>
- *   <TRPCProvider client={client}>
+ *   <TrpcProvider client={client}>
  *     <App />
- *   </TRPCProvider>
+ *   </TrpcProvider>
  * </QueryClientProvider>;
  * ```
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function createTRPCContext<
+export function createTrpcContext<
   TRouter,
   TContext extends object = {},
->(): TRPCSolidContext<TRouter, TContext> {
+>(): TrpcSolidContext<TRouter, TContext> {
   type Value = {
-    client: TRPCClient<RouterOf<TRouter>, TContext>;
-    utils: TRPCQueryUtilsFor<TRouter, TContext>;
+    client: TrpcClient<RouterOf<TRouter>, TContext>;
+    utils: TrpcQueryUtilsFor<TRouter, TContext>;
   };
   const Context = createContext<Value | null>(null);
   const use = (): Value => {
     const value = useContext(Context);
-    if (!value) throw new Error('Wrap your component in <TRPCProvider>');
+    if (!value) throw new Error('Wrap your component in <TrpcProvider>');
     return value;
   };
   return {
-    TRPCProvider: (props) => {
+    TrpcProvider: (props) => {
       const client = untrack(() => props.client);
       return createComponent(Context.Provider, {
-        value: { client, utils: createTRPCQueryUtils({ client }) },
+        value: { client, utils: createTrpcQueryUtils({ client }) },
         get children() {
           return props.children;
         },
       });
     },
-    useTRPC: () => use().utils,
-    useTRPCClient: () => use().client,
+    useTrpc: () => use().utils,
+    useTrpcClient: () => use().client,
   };
 }
 
@@ -141,7 +141,7 @@ export interface UseSubscriptionResult<TEvent, TError> {
  * @stability experimental
  */
 export function useSubscription<TEvent, TError>(
-  options: Accessor<TRPCSubscriptionOptions<TEvent, TError>>,
+  options: Accessor<TrpcSubscriptionOptions<TEvent, TError>>,
 ): UseSubscriptionResult<TEvent, TError> {
   const observer = new SubscriptionObserver(untrack(options));
   const [result, setResult] = createSignal(observer.getCurrentResult());

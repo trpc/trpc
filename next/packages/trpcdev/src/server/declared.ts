@@ -1,10 +1,10 @@
-import { TRPCError, type AnyTRPCError } from '../internal/error.ts';
+import { TrpcError, type AnyTrpcError } from '../internal/error.ts';
 import type { ErrorMap } from './procedure.ts';
 
-const declaredErrors = new WeakSet<AnyTRPCError>();
+const declaredErrors = new WeakSet<AnyTrpcError>();
 
 /** Whether an error came from a declared error's constructor. @internal */
-export const isDeclaredError = (err: AnyTRPCError): boolean =>
+export const isDeclaredError = (err: AnyTrpcError): boolean =>
   declaredErrors.has(err);
 
 const constructorsCache = new WeakMap<ErrorMap, Record<string, unknown>>();
@@ -18,7 +18,7 @@ export function errorConstructors(map: ErrorMap): Record<string, unknown> {
     cached[code] = (
       opts: { data?: unknown; message?: string; cause?: unknown } = {},
     ) => {
-      const err = new TRPCError({
+      const err = new TrpcError({
         code,
         status: spec.status,
         message: opts.message ?? spec.message,

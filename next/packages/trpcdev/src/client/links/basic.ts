@@ -1,5 +1,5 @@
 import { Effect, Exit, Stream } from 'effect';
-import type { AnyTRPCError } from '../../internal/error.ts';
+import type { AnyTrpcError } from '../../internal/error.ts';
 import { defaultSerializer } from '../../serializer/index.ts';
 import {
   firstValue,
@@ -8,7 +8,7 @@ import {
   type AnyLink,
   type Operation,
   type OperationStream,
-  type TRPCLink,
+  type TrpcLink,
 } from '../link.ts';
 import type { RouterPaths } from '../types.ts';
 
@@ -19,10 +19,10 @@ const asArray = (links: Chain) =>
 
 type ChainDecl<T> =
   T extends ReadonlyArray<infer L>
-    ? L extends TRPCLink<infer D, any>
+    ? L extends TrpcLink<infer D, any>
       ? D
       : never
-    : T extends TRPCLink<infer D, any>
+    : T extends TrpcLink<infer D, any>
       ? D
       : never;
 
@@ -67,12 +67,12 @@ export function splitLink<
   TFalse extends Chain = Chain,
 >(
   opts: SplitLinkOptions<TRouter, TTrue, TFalse>,
-): TRPCLink<ChainDecl<TTrue> | ChainDecl<TFalse>, TRouter> {
+): TrpcLink<ChainDecl<TTrue> | ChainDecl<TFalse>, TRouter> {
   const yes = asArray(opts.true);
   const no = asArray(opts.false);
   return link.effect(({ op }) =>
     runLinks(opts.condition(op as never) ? yes : no, op),
-  ) as TRPCLink<any, TRouter>;
+  ) as TrpcLink<any, TRouter>;
 }
 
 /**
@@ -106,7 +106,7 @@ export interface DedupeContext {
  *
  * @example
  * ```ts
- * createTRPCClient({
+ * createTrpcClient({
  *   router: routerType<AppRouter>(),
  *   links: [dedupeLink(), httpLink({ url })],
  * });
@@ -116,7 +116,7 @@ export interface DedupeContext {
  */
 export function dedupeLink(
   opts: DedupeLinkOptions = {},
-): TRPCLink<{ context: DedupeContext }> {
+): TrpcLink<{ context: DedupeContext }> {
   const keyOf =
     opts.key ??
     ((op: Operation) =>
@@ -124,7 +124,7 @@ export function dedupeLink(
   const inFlight = new Map<
     string,
     {
-      promise: Promise<Exit.Exit<unknown, AnyTRPCError>>;
+      promise: Promise<Exit.Exit<unknown, AnyTrpcError>>;
       controller: AbortController;
       refs: number;
     }
@@ -133,7 +133,7 @@ export function dedupeLink(
     if (op.type !== 'query' || op.context.dedupe === false) return next(op);
     const key = keyOf(op);
     return Stream.fromEffect(
-      Effect.callback<unknown, AnyTRPCError>((resume) => {
+      Effect.callback<unknown, AnyTrpcError>((resume) => {
         let entry = inFlight.get(key);
         if (!entry) {
           const controller = new AbortController();
@@ -180,7 +180,7 @@ export type LoggerEvent =
   | {
       direction: 'error';
       op: Operation;
-      error: AnyTRPCError;
+      error: AnyTrpcError;
       elapsedMs: number;
     };
 
@@ -199,7 +199,7 @@ export function loggerLink(
     enabled?: (op: Operation) => boolean;
     log?: (event: LoggerEvent) => void;
   } = {},
-): TRPCLink {
+): TrpcLink {
   const log =
     opts.log ??
     ((event: LoggerEvent) => {
@@ -244,7 +244,7 @@ export interface RetryLinkOptions {
    */
   retry?: (opts: {
     op: Operation;
-    error: AnyTRPCError;
+    error: AnyTrpcError;
     attempt: number;
   }) => boolean;
 }
@@ -260,14 +260,14 @@ const defaultRetry: NonNullable<RetryLinkOptions['retry']> = ({ op, error }) =>
  *
  * @example
  * ```ts
- * createTRPCClient<AppRouter>({
+ * createTrpcClient<AppRouter>({
  *   links: [retryLink({ retries: 3 }), httpLink({ url })],
  * });
  * ```
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function retryLink(opts: RetryLinkOptions = {}): TRPCLink {
+export function retryLink(opts: RetryLinkOptions = {}): TrpcLink {
   const retries = opts.retries ?? 3;
   const delayMs = opts.delayMs ?? ((attempt: number) => 2 ** attempt * 100);
   const shouldRetry = opts.retry ?? defaultRetry;

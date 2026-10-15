@@ -8,7 +8,7 @@ import {
   skipToken,
 } from '@tanstack/query-core';
 import {
-  createTRPCQueryUtils,
+  createTrpcQueryUtils,
   hydrationOptions,
   SubscriptionObserver,
   type SubscriptionResult,
@@ -17,7 +17,7 @@ import type { ClientError } from 'trpcdev/client';
 import {
   createRouterClient,
   type InputValidationErrorData,
-  type TRPCError,
+  type TrpcError,
 } from 'trpcdev/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { appRouter, createApp, db, sleep, type Post } from './fixtures/app.ts';
@@ -86,8 +86,8 @@ test('errors are the typed client errors', async () => {
   const result = await until(observer, (r) => r.status === 'error');
 
   type Expected = ClientError<
-    | TRPCError<'BAD_REQUEST', InputValidationErrorData>
-    | TRPCError<'NOT_FOUND', { id: string }>
+    | TrpcError<'BAD_REQUEST', InputValidationErrorData>
+    | TrpcError<'NOT_FOUND', { id: string }>
   >;
   expectTypeOf(result.error).toEqualTypeOf<Expected>();
   const error = result.error;
@@ -395,11 +395,11 @@ test('prefetch on the server, hydrate rich types in the browser', async () => {
   await using app = await createApp();
 
   const serverClient = new QueryClient({ defaultOptions: hydrationOptions() });
-  const serverTRPC = createTRPCQueryUtils({
+  const serverTrpc = createTrpcQueryUtils({
     client: createRouterClient(appRouter, { ctx: { locale: 'en' } }),
   });
   await serverClient.prefetchQuery(
-    serverTRPC.post.byId.queryOptions({ input: { id: '1' } }),
+    serverTrpc.post.byId.queryOptions({ input: { id: '1' } }),
   );
   const html = JSON.stringify(dehydrate(serverClient));
   expect(html).not.toContain('"createdAt":"2026');

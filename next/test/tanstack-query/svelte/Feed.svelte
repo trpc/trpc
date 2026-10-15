@@ -4,9 +4,9 @@
     createMutation,
     useQueryClient,
   } from '@tanstack/svelte-query';
-  import { useTRPC } from './trpc.ts';
+  import { useTrpc } from './trpc.ts';
 
-  const trpc = useTRPC();
+  const trpc = useTrpc();
   const queryClient = useQueryClient();
   const feed = createInfiniteQuery(() =>
     trpc.post.list.infiniteOptions({

@@ -1,13 +1,13 @@
 import { createServer } from 'node:http';
 import { NodeHttpServer } from '@effect/platform-node';
-import { createTRPCQueryUtils } from '@trpcdev/tanstack-query';
+import { createTrpcQueryUtils } from '@trpcdev/tanstack-query';
 import {
-  createTRPCClient,
+  createTrpcClient,
   dedupeLink,
   httpLink,
   routerType,
 } from 'trpcdev/client';
-import { error, initTRPC } from 'trpcdev/server';
+import { error, initTrpc } from 'trpcdev/server';
 import { createTestServer } from 'trpcdev/testing';
 import { z } from 'zod';
 
@@ -38,7 +38,7 @@ function addPost(title: string): Post {
   return post;
 }
 
-const t = initTRPC<{ ctx: { locale: string | null } }>();
+const t = initTrpc<{ ctx: { locale: string | null } }>();
 
 export const appRouter = {
   greeting: t.procedure.query(({ ctx }) => {
@@ -140,11 +140,11 @@ export async function createApp(opts: { posts?: number } = {}) {
       locale: request.headers.get('x-locale'),
     }),
   });
-  const client = createTRPCClient({
+  const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [dedupeLink(), httpLink({ url: server.url })],
   });
-  const trpc = createTRPCQueryUtils({ client });
+  const trpc = createTrpcQueryUtils({ client });
   return {
     server,
     client,

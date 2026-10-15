@@ -86,7 +86,7 @@ const textDecoder = () =>
   >;
 
 /** Parses SSE events out of a text stream, per the HTML spec's rules. */
-export async function* parseSSE(
+export async function* parseSse(
   stream: ReadableStream<Uint8Array>,
 ): AsyncGenerator<{ event: string; data: string; id: string | undefined }> {
   const reader = stream.pipeThrough(textDecoder()).getReader();

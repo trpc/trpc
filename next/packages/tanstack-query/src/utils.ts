@@ -11,16 +11,16 @@ import {
   type QueryObserverOptions,
   type SkipToken,
 } from '@tanstack/query-core';
-import type { RouterOf, TRPCClient } from 'trpcdev/client';
+import type { RouterOf, TrpcClient } from 'trpcdev/client';
 import {
   pathKey,
   procedureKey,
-  type TRPCMutationKey,
-  type TRPCQueryKey,
+  type TrpcMutationKey,
+  type TrpcQueryKey,
 } from './keys.ts';
 import type {
   SubscriptionCallbacks,
-  TRPCSubscriptionOptions,
+  TrpcSubscriptionOptions,
 } from './subscription.ts';
 
 type AnyFn = (...args: any[]) => any;
@@ -57,8 +57,8 @@ export type QueryData<TOutput> =
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type TRPCQueryKeyFor<TData, TError> = DataTag<
-  TRPCQueryKey,
+export type TrpcQueryKeyFor<TData, TError> = DataTag<
+  TrpcQueryKey,
   TData,
   TError
 >;
@@ -88,7 +88,7 @@ export type QueryOptionsIn<TQueryFnData, TError, TData> = Omit<
     TError,
     TData,
     TQueryFnData,
-    TRPCQueryKeyFor<TQueryFnData, TError>
+    TrpcQueryKeyFor<TQueryFnData, TError>
   >,
   'queryKey' | 'queryFn'
 >;
@@ -105,15 +105,15 @@ export type QueryOptionsOut<TQueryFnData, TError, TData> = Omit<
 > & {
   /** A boolean, so the options fit every adapter (Vue has no `(query) => boolean`). */
   enabled?: boolean;
-  queryKey: TRPCQueryKeyFor<TQueryFnData, TError>;
-  queryFn: QueryFunction<TQueryFnData, TRPCQueryKeyFor<TQueryFnData, TError>>;
+  queryKey: TrpcQueryKeyFor<TQueryFnData, TError>;
+  queryFn: QueryFunction<TQueryFnData, TrpcQueryKeyFor<TQueryFnData, TError>>;
 };
 
 type DefinedInitialData<TQueryFnData> = {
   initialData: NonUndefined<TQueryFnData> | (() => NonUndefined<TQueryFnData>);
 };
 
-type InfiniteKey<TOutput, TError, TPageParam> = TRPCQueryKeyFor<
+type InfiniteKey<TOutput, TError, TPageParam> = TrpcQueryKeyFor<
   InfiniteData<TOutput, TPageParam>,
   TError
 >;
@@ -184,7 +184,7 @@ export type MutationOptionsIn<TInput, TOutput, TError, TOnMutateResult> = Omit<
  */
 export type MutationOptionsOut<TInput, TOutput, TError, TOnMutateResult> =
   MutationOptionsIn<TInput, TOutput, TError, TOnMutateResult> & {
-    mutationKey: TRPCMutationKey;
+    mutationKey: TrpcMutationKey;
     mutationFn: (input: MutationVariables<TInput>) => Promise<TOutput>;
   };
 
@@ -221,11 +221,11 @@ export interface PathUtils {
    * A key that partially matches everything under this path: queries,
    * infinite queries, streamed and live queries, and mutations.
    */
-  pathKey(): TRPCQueryKey;
+  pathKey(): TrpcQueryKey;
   /** Filters for everything under this path. */
   pathFilter(
     filters?: QueryFiltersIn,
-  ): QueryFiltersIn & { queryKey: TRPCQueryKey };
+  ): QueryFiltersIn & { queryKey: TrpcQueryKey };
 }
 
 /**
@@ -264,7 +264,7 @@ export interface QueryProcedureUtils<
   /** The exact key `queryOptions()` uses. Typed for `getQueryData`. */
   queryKey(
     ...args: KeyArgs<TInput>
-  ): TRPCQueryKeyFor<QueryData<TOutput>, TError>;
+  ): TrpcQueryKeyFor<QueryData<TOutput>, TError>;
   /**
    * Filters for this procedure's queries: every input, or just `input`.
    *
@@ -274,7 +274,7 @@ export interface QueryProcedureUtils<
    * ```
    */
   queryFilter(opts?: { input?: TInput } & QueryFiltersIn): QueryFiltersIn & {
-    queryKey: TRPCQueryKeyFor<QueryData<TOutput>, TError>;
+    queryKey: TrpcQueryKeyFor<QueryData<TOutput>, TError>;
   };
   /**
    * Options for `useInfiniteQuery`. `input` maps the page param to the
@@ -332,7 +332,7 @@ export interface MutationProcedureUtils<
       MutationOptionsIn<TInput, TOutput, TError, TOnMutateResult>,
   ): MutationOptionsOut<TInput, TOutput, TError, TOnMutateResult>;
   /** The key `mutationOptions()` uses, for `useIsMutating` and filters. */
-  mutationKey(): TRPCMutationKey;
+  mutationKey(): TrpcMutationKey;
 }
 
 /**
@@ -366,7 +366,7 @@ export interface SubscriptionProcedureUtils<
         enabled?: boolean | undefined;
       } & SubscriptionCallbacks<TEvent, TError>
     >
-  ): TRPCSubscriptionOptions<TEvent, TError>;
+  ): TrpcSubscriptionOptions<TEvent, TError>;
   /**
    * Query options whose data is every event so far, built on TanStack's
    * `streamedQuery`. The subscription closes when no observer is left.
@@ -387,7 +387,7 @@ export interface SubscriptionProcedureUtils<
     >
   ): QueryOptionsOut<TEvent[], TError, TData>;
   /** The exact key `streamedOptions()` uses. */
-  streamedKey(...args: KeyArgs<TInput>): TRPCQueryKeyFor<TEvent[], TError>;
+  streamedKey(...args: KeyArgs<TInput>): TrpcQueryKeyFor<TEvent[], TError>;
   /**
    * Query options whose data is the latest event. The subscription closes
    * when no observer is left.
@@ -406,7 +406,7 @@ export interface SubscriptionProcedureUtils<
     >
   ): QueryOptionsOut<TEvent, TError, TData>;
   /** The exact key `liveOptions()` uses. */
-  liveKey(...args: KeyArgs<TInput>): TRPCQueryKeyFor<TEvent, TError>;
+  liveKey(...args: KeyArgs<TInput>): TrpcQueryKeyFor<TEvent, TError>;
 }
 
 /**
@@ -415,7 +415,7 @@ export interface SubscriptionProcedureUtils<
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type TRPCQueryUtils<TClient> = PathUtils & {
+export type TrpcQueryUtils<TClient> = PathUtils & {
   [K in keyof TClient]: TClient[K] extends { query: infer F extends AnyFn }
     ? QueryProcedureUtils<InputOf<F>, OutputOf<F>, ErrorOf<F>, ContextOf<F>>
     : TClient[K] extends { mutate: infer F extends AnyFn }
@@ -432,7 +432,7 @@ export type TRPCQueryUtils<TClient> = PathUtils & {
             ErrorOf<F>,
             ContextOf<F>
           >
-        : TRPCQueryUtils<TClient[K]>;
+        : TrpcQueryUtils<TClient[K]>;
 };
 
 /**
@@ -441,19 +441,19 @@ export type TRPCQueryUtils<TClient> = PathUtils & {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type TRPCQueryUtilsFor<
+export type TrpcQueryUtilsFor<
   TRouter,
   TContext extends object = {},
-> = TRPCQueryUtils<TRPCClient<RouterOf<TRouter>, TContext>>;
+> = TrpcQueryUtils<TrpcClient<RouterOf<TRouter>, TContext>>;
 
 /**
- * Options for {@link createTRPCQueryUtils}.
+ * Options for {@link createTrpcQueryUtils}.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface CreateTRPCQueryUtilsOptions<TClient> {
+export interface CreateTrpcQueryUtilsOptions<TClient> {
   /**
-   * A typed client: `createTRPCClient(...)` in the browser, or
+   * A typed client: `createTrpcClient(...)` in the browser, or
    * `createRouterClient(router, { ctx })` to prefetch on the server.
    */
   client: TClient;
@@ -507,7 +507,7 @@ function streamFrom(
  *
  * @example
  * ```ts
- * export const trpc = createTRPCQueryUtils({ client });
+ * export const trpc = createTrpcQueryUtils({ client });
  *
  * const post = useQuery(trpc.post.byId.queryOptions({ input: { id } }));
  * const create = useMutation(trpc.post.create.mutationOptions());
@@ -516,9 +516,9 @@ function streamFrom(
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function createTRPCQueryUtils<TClient extends object>(
-  opts: CreateTRPCQueryUtilsOptions<TClient>,
-): TRPCQueryUtils<TClient> {
+export function createTrpcQueryUtils<TClient extends object>(
+  opts: CreateTrpcQueryUtilsOptions<TClient>,
+): TrpcQueryUtils<TClient> {
   const { client } = opts;
   const method = (path: readonly string[], name: string): ClientMethod => {
     let target: any = client;
@@ -575,7 +575,7 @@ export function createTRPCQueryUtils<TClient extends object>(
           queryFn:
             toInput === skipToken
               ? skipToken
-              : (ctx: QueryFunctionContext<TRPCQueryKey, unknown>) =>
+              : (ctx: QueryFunctionContext<TrpcQueryKey, unknown>) =>
                   query(toInput(ctx.pageParam), {
                     signal: ctx.signal,
                     context,
@@ -648,5 +648,5 @@ export function createTRPCQueryUtils<TClient extends object>(
           `${fullPath.join('.')}() is not a TanStack Query helper`,
         );
     }
-  }) as TRPCQueryUtils<TClient>;
+  }) as TrpcQueryUtils<TClient>;
 }

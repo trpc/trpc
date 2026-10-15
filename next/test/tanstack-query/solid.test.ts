@@ -8,20 +8,20 @@ import {
   useQueryClient,
 } from '@tanstack/solid-query';
 import {
-  createTRPCContext,
+  createTrpcContext,
   useSubscription,
 } from '@trpcdev/tanstack-solid-query';
 import { createSignal, type JSX } from 'solid-js';
 import h from 'solid-js/h';
 import { isServer, render } from 'solid-js/web';
-import type { TRPCClient } from 'trpcdev/client';
+import type { TrpcClient } from 'trpcdev/client';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { createApp, db, type AppRouter, type Post } from './fixtures/app.ts';
 import { click, container, text, waitFor } from './fixtures/dom.ts';
 
-const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+const { TrpcProvider, useTrpc } = createTrpcContext<AppRouter>();
 
-function mount(App: () => JSX.Element, client: TRPCClient<AppRouter>) {
+function mount(App: () => JSX.Element, client: TrpcClient<AppRouter>) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -29,7 +29,7 @@ function mount(App: () => JSX.Element, client: TRPCClient<AppRouter>) {
   const dispose = render(
     () =>
       h(QueryClientProvider, { client: queryClient }, () =>
-        h(TRPCProvider, { client }, () => h(App, {})),
+        h(TrpcProvider, { client }, () => h(App, {})),
       ) as unknown as JSX.Element,
     el,
   );
@@ -50,7 +50,7 @@ test('useQuery follows signals through an accessor', async () => {
   await using app = await createApp();
   const [id, setId] = createSignal('1');
   using view = mount(() => {
-    const trpc = useTRPC();
+    const trpc = useTrpc();
     const post = useQuery(() =>
       trpc.post.byId.queryOptions({ input: { id: id() } }),
     );
@@ -70,7 +70,7 @@ test('useQuery follows signals through an accessor', async () => {
 test('useMutation invalidates; useInfiniteQuery pages', async () => {
   await using app = await createApp({ posts: 3 });
   using view = mount(() => {
-    const trpc = useTRPC();
+    const trpc = useTrpc();
     const queryClient = useQueryClient();
     const feed = useInfiniteQuery(() =>
       trpc.post.list.infiniteOptions({
@@ -115,7 +115,7 @@ test('useSubscription and live queries follow signals', async () => {
   const [from, setFrom] = createSignal(2);
   const seen: number[] = [];
   using view = mount(() => {
-    const trpc = useTRPC();
+    const trpc = useTrpc();
     const countdown = useSubscription(() =>
       trpc.clock.countdown.subscriptionOptions({
         input: { from: from() },

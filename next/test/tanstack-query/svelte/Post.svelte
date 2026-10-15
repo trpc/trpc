@@ -1,8 +1,8 @@
 <script lang="ts">
   import { createQuery } from '@tanstack/svelte-query';
-  import { useTRPC } from './trpc.ts';
+  import { useTrpc } from './trpc.ts';
 
-  const trpc = useTRPC();
+  const trpc = useTrpc();
   let id = $state('1');
   const post = createQuery(() =>
     trpc.post.byId.queryOptions({ input: { id } }),

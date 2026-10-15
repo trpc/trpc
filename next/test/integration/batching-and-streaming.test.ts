@@ -1,10 +1,10 @@
-import { createTRPCClient, httpLink, safe } from 'trpcdev/client';
-import { error, initTRPC } from 'trpcdev/server';
+import { createTrpcClient, httpLink, safe } from 'trpcdev/client';
+import { error, initTrpc } from 'trpcdev/server';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 
-const t = initTRPC();
+const t = initTrpc();
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -46,7 +46,7 @@ async function setup(opts: { serverBatch?: boolean; clientBatch?: boolean }) {
     router,
     batch: opts.serverBatch ?? true,
   });
-  const client = createTRPCClient<AppRouter>({
+  const client = createTrpcClient<AppRouter>({
     links: [httpLink({ url: server.url, batch: opts.clientBatch ?? true })],
   });
   return { server, client, [Symbol.asyncDispose]: () => server.close() };
@@ -94,7 +94,7 @@ test('queries and mutations are batched separately', async () => {
 
 test('the client splits batches above maxItems', async () => {
   await using server = await createTestServer({ router, batch: true });
-  const client = createTRPCClient<AppRouter>({
+  const client = createTrpcClient<AppRouter>({
     links: [httpLink({ url: server.url, batch: { maxItems: 2 } })],
   });
   const results = await Promise.all(

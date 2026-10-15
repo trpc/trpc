@@ -1,5 +1,5 @@
-import { createTRPCClient, httpLink, safe } from 'trpcdev/client';
-import { initTRPC } from 'trpcdev/server';
+import { createTrpcClient, httpLink, safe } from 'trpcdev/client';
+import { initTrpc } from 'trpcdev/server';
 import { createSerializer, type CustomType } from 'trpcdev/serializer';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
@@ -23,7 +23,7 @@ const money: CustomType<Money, [string, string]> = {
   deserialize: ([cents, currency]) => new Money(BigInt(cents), currency),
 };
 
-const t = initTRPC();
+const t = initTrpc();
 
 const router = {
   echo: t.procedure
@@ -67,7 +67,7 @@ type AppRouter = typeof router;
 
 test('built-in types round-trip through inputs and outputs', async () => {
   await using server = await createTestServer({ router });
-  const client = createTRPCClient<AppRouter>({
+  const client = createTrpcClient<AppRouter>({
     links: [httpLink({ url: server.url })],
   });
   const when = new Date('2026-01-02T03:04:05.000Z');
@@ -96,7 +96,7 @@ test('built-in types round-trip through inputs and outputs', async () => {
 test('custom types work when both ends share a serializer', async () => {
   const serializer = createSerializer({ types: { Money: money } });
   await using server = await createTestServer({ router, serializer });
-  const client = createTRPCClient<AppRouter>({
+  const client = createTrpcClient<AppRouter>({
     links: [httpLink({ url: server.url, serializer })],
   });
   const total = await client.total.query({
@@ -109,8 +109,8 @@ test('custom types work when both ends share a serializer', async () => {
 
 test('long queries fall back to POST', async () => {
   await using server = await createTestServer({ router });
-  const client = createTRPCClient<AppRouter>({
-    links: [httpLink({ url: server.url, maxURLLength: 100 })],
+  const client = createTrpcClient<AppRouter>({
+    links: [httpLink({ url: server.url, maxUrlLength: 100 })],
   });
   expect(await client.len.query({ text: 'short' })).toBe(5);
   expect(server.requests.at(-1)!.method).toBe('GET');
@@ -120,7 +120,7 @@ test('long queries fall back to POST', async () => {
 
 test('inputs cannot carry RegExps', async () => {
   await using server = await createTestServer({ router });
-  const client = createTRPCClient<AppRouter>({
+  const client = createTrpcClient<AppRouter>({
     links: [httpLink({ url: server.url })],
   });
   const [, err] = await safe(client.pattern.query(/(a+)+$/));
@@ -210,7 +210,7 @@ test('malformed JSON is a PARSE_ERROR', async () => {
 test('the endpoint is configurable', async () => {
   await using server = await createTestServer({ router, endpoint: '/api/rpc' });
   expect(server.url.endsWith('/api/rpc')).toBe(true);
-  const client = createTRPCClient<AppRouter>({
+  const client = createTrpcClient<AppRouter>({
     links: [httpLink({ url: server.url })],
   });
   expect(await client.greet.query({ name: 'there' })).toBe('hello there');

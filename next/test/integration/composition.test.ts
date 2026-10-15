@@ -1,7 +1,7 @@
-import { createTRPCClient, httpLink, safe } from 'trpcdev/client';
+import { createTrpcClient, httpLink, safe } from 'trpcdev/client';
 import {
   error,
-  initTRPC,
+  initTrpc,
   mergeRouters,
   middleware,
   type inferRouterInputs,
@@ -17,7 +17,7 @@ interface Db {
   log: string[];
 }
 
-const plugin = initTRPC<{ ctx: { db: Db }; meta: { audit?: string } }>();
+const plugin = initTrpc<{ ctx: { db: Db }; meta: { audit?: string } }>();
 
 export const audited = plugin.procedure
   .input(z.object({ orgId: z.string() }))
@@ -47,7 +47,7 @@ interface Context {
   user: string | null;
   plan: 'free' | 'pro';
 }
-const t = initTRPC<{ ctx: Context; meta: { audit?: string } }>();
+const t = initTrpc<{ ctx: Context; meta: { audit?: string } }>();
 
 const projectRouter = {
   rename: t.procedure
@@ -91,7 +91,7 @@ async function setup(ctxOverrides: Partial<Context> = {}) {
       ...ctxOverrides,
     }),
   });
-  const client = createTRPCClient<AppRouter>({
+  const client = createTrpcClient<AppRouter>({
     links: [httpLink({ url: server.url })],
   });
   return { db, server, client, [Symbol.asyncDispose]: () => server.close() };
@@ -138,7 +138,7 @@ test('a standalone middleware works with any `t` whose ctx fits', async () => {
 });
 
 test('concat checks the ctx a plugin requires', () => {
-  const other = initTRPC<{ ctx: { user: string } }>();
+  const other = initTrpc<{ ctx: { user: string } }>();
   // @ts-expect-error -- `db` is missing from this ctx
   other.procedure.concat(audited);
 

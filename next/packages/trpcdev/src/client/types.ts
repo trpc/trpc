@@ -1,11 +1,11 @@
-import type { BuiltinErrorCode, TRPCError } from '../internal/error.ts';
+import type { BuiltinErrorCode, TrpcError } from '../internal/error.ts';
 import type { Deserialized, IsAny } from '../internal/types.ts';
 import type { AnyProcedure, Procedure } from '../server/procedure.ts';
 import type {
   AnyLink,
   DeclContext,
-  TRPCClientContext,
-  TRPCLink,
+  TrpcClientContext,
+  TrpcLink,
 } from './link.ts';
 
 /**
@@ -14,8 +14,8 @@ import type {
  * @stability experimental
  */
 export type DefinedError<E> =
-  E extends TRPCError<infer C, infer D>
-    ? TRPCError<C, D> & { readonly defined: true }
+  E extends TrpcError<infer C, infer D>
+    ? TrpcError<C, D> & { readonly defined: true }
     : never;
 
 /**
@@ -24,7 +24,7 @@ export type DefinedError<E> =
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type UnexpectedError = TRPCError<
+export type UnexpectedError = TrpcError<
   BuiltinErrorCode | (string & {}),
   unknown
 > & { readonly defined: false };
@@ -41,7 +41,7 @@ export type ClientError<E> = DefinedError<E> | UnexpectedError;
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface TRPCPromise<T, E> extends Promise<T> {
+export interface TrpcPromise<T, E> extends Promise<T> {
   readonly '~error'?: E;
 }
 
@@ -51,7 +51,7 @@ export interface TRPCPromise<T, E> extends Promise<T> {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface TRPCSubscription<T, E> extends AsyncIterable<T> {
+export interface TrpcSubscription<T, E> extends AsyncIterable<T> {
   readonly '~error'?: E;
 }
 
@@ -63,7 +63,7 @@ export interface TRPCSubscription<T, E> extends AsyncIterable<T> {
 export interface CallOptions<TContext extends object = {}> {
   signal?: AbortSignal | undefined;
   /** Read by links (17 F-B). Typed from the links with `router:`. */
-  context?: (TRPCClientContext & TContext) | undefined;
+  context?: (TrpcClientContext & TContext) | undefined;
 }
 
 /**
@@ -94,18 +94,18 @@ export type DecorateProcedure<P, TContext extends object = {}> =
       ? {
           query(
             ...args: CallArgs<D['input'], CallOptions<TContext>>
-          ): TRPCPromise<Deserialized<D['output']>, ClientError<D['errors']>>;
+          ): TrpcPromise<Deserialized<D['output']>, ClientError<D['errors']>>;
         }
       : D['type'] extends 'mutation'
         ? {
             mutate(
               ...args: CallArgs<D['input'], CallOptions<TContext>>
-            ): TRPCPromise<Deserialized<D['output']>, ClientError<D['errors']>>;
+            ): TrpcPromise<Deserialized<D['output']>, ClientError<D['errors']>>;
           }
         : {
             subscribe(
               ...args: CallArgs<D['input'], SubscribeOptions<TContext>>
-            ): TRPCSubscription<
+            ): TrpcSubscription<
               Deserialized<D['output']>,
               ClientError<D['errors']>
             >;
@@ -117,10 +117,10 @@ export type DecorateProcedure<P, TContext extends object = {}> =
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type TRPCClient<TRouter, TContext extends object = {}> = {
+export type TrpcClient<TRouter, TContext extends object = {}> = {
   [K in keyof TRouter]: TRouter[K] extends AnyProcedure
     ? DecorateProcedure<TRouter[K], TContext>
-    : TRPCClient<TRouter[K], TContext>;
+    : TrpcClient<TRouter[K], TContext>;
 };
 
 declare const routerTypeBrand: unique symbol;
@@ -136,13 +136,13 @@ export interface RouterType<TRouter> {
 }
 
 /**
- * Carries a router type into `createTRPCClient({ router })` (17 D-C), so
+ * Carries a router type into `createTrpcClient({ router })` (17 D-C), so
  * the client also infers what its links declare. Nothing about the router
  * exists at runtime.
  *
  * @example
  * ```ts
- * const client = createTRPCClient({
+ * const client = createTrpcClient({
  *   router: routerType<AppRouter>(),
  *   links: [dedupeLink(), httpLink({ url })],
  * });
@@ -171,7 +171,7 @@ type UnionToIntersection<U> = (
   : never;
 
 type DeclOf<TLink> =
-  TLink extends TRPCLink<infer D, any>
+  TLink extends TrpcLink<infer D, any>
     ? IsAny<D> extends true
       ? never
       : D

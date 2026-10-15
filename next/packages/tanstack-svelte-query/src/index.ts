@@ -7,14 +7,14 @@
  * @example
  * ```ts
  * // trpc.ts
- * import { createTRPCContext } from '@trpcdev/tanstack-svelte-query';
+ * import { createTrpcContext } from '@trpcdev/tanstack-svelte-query';
  *
- * export const { setTRPCContext, useTRPC } = createTRPCContext<AppRouter>();
+ * export const { setTrpcContext, useTrpc } = createTrpcContext<AppRouter>();
  * ```
  *
  * ```svelte
  * <script lang="ts">
- *   const trpc = useTRPC();
+ *   const trpc = useTrpc();
  *   let { id } = $props();
  *   const post = createQuery(() => trpc.post.byId.queryOptions({ input: { id } }));
  * </script>
@@ -24,10 +24,10 @@
  * @module
  */
 import { getContext, setContext } from 'svelte';
-import type { RouterOf, TRPCClient } from 'trpcdev/client';
+import type { RouterOf, TrpcClient } from 'trpcdev/client';
 import {
-  createTRPCQueryUtils,
-  type TRPCQueryUtilsFor,
+  createTrpcQueryUtils,
+  type TrpcQueryUtilsFor,
 } from '@trpcdev/tanstack-query';
 
 export * from '@trpcdev/tanstack-query';
@@ -38,23 +38,23 @@ export {
 } from './subscription.svelte.ts';
 
 /**
- * What {@link createTRPCContext} returns.
+ * What {@link createTrpcContext} returns.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface TRPCSvelteContext<TRouter, TContext extends object = {}> {
+export interface TrpcSvelteContext<TRouter, TContext extends object = {}> {
   /**
    * Sets the client on the current component's context, for its
    * descendants. Call it during component init, next to
    * `QueryClientProvider` or `setQueryClientContext`.
    */
-  setTRPCContext: (
-    client: TRPCClient<RouterOf<TRouter>, TContext>,
-  ) => TRPCQueryUtilsFor<TRouter, TContext>;
+  setTrpcContext: (
+    client: TrpcClient<RouterOf<TRouter>, TContext>,
+  ) => TrpcQueryUtilsFor<TRouter, TContext>;
   /** The helpers for the client in context. */
-  useTRPC: () => TRPCQueryUtilsFor<TRouter, TContext>;
+  useTrpc: () => TrpcQueryUtilsFor<TRouter, TContext>;
   /** The client in context, for calls outside TanStack Query. */
-  useTRPCClient: () => TRPCClient<RouterOf<TRouter>, TContext>;
+  useTrpcClient: () => TrpcClient<RouterOf<TRouter>, TContext>;
 }
 
 /**
@@ -65,9 +65,9 @@ export interface TRPCSvelteContext<TRouter, TContext extends object = {}> {
  * ```svelte
  * <script lang="ts">
  *   import { QueryClient, QueryClientProvider } from '@tanstack/svelte-query';
- *   import { setTRPCContext } from './trpc.ts';
+ *   import { setTrpcContext } from './trpc.ts';
  *
- *   setTRPCContext(client);
+ *   setTrpcContext(client);
  * </script>
  *
  * <QueryClientProvider client={new QueryClient()}>
@@ -77,27 +77,27 @@ export interface TRPCSvelteContext<TRouter, TContext extends object = {}> {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function createTRPCContext<
+export function createTrpcContext<
   TRouter,
   TContext extends object = {},
->(): TRPCSvelteContext<TRouter, TContext> {
+>(): TrpcSvelteContext<TRouter, TContext> {
   type Value = {
-    client: TRPCClient<RouterOf<TRouter>, TContext>;
-    utils: TRPCQueryUtilsFor<TRouter, TContext>;
+    client: TrpcClient<RouterOf<TRouter>, TContext>;
+    utils: TrpcQueryUtilsFor<TRouter, TContext>;
   };
   const key = Symbol('trpc');
   const use = (): Value => {
     const value = getContext<Value | undefined>(key);
-    if (!value) throw new Error('Call setTRPCContext() in a parent first');
+    if (!value) throw new Error('Call setTrpcContext() in a parent first');
     return value;
   };
   return {
-    setTRPCContext: (client) =>
+    setTrpcContext: (client) =>
       setContext<Value>(key, {
         client,
-        utils: createTRPCQueryUtils({ client }),
+        utils: createTrpcQueryUtils({ client }),
       }).utils,
-    useTRPC: () => use().utils,
-    useTRPCClient: () => use().client,
+    useTrpc: () => use().utils,
+    useTrpcClient: () => use().client,
   };
 }

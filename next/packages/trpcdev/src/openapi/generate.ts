@@ -1,11 +1,11 @@
-import { flattenRouter, inputJSONSchema } from '../internal/describe.ts';
+import { flattenRouter, inputJsonSchema } from '../internal/describe.ts';
 import { ERROR_STATUS } from '../internal/error.ts';
-import { toJSONSchema, type JSONSchema } from '../internal/json-schema.ts';
+import { toJsonSchema, type JsonSchema } from '../internal/json-schema.ts';
 import type { AnyProcedure, ProcedureInternals } from '../server/procedure.ts';
 import { propertySchema } from './coerce.ts';
 import { normalizePrefix, resolveRoute, usesQuery } from './routes.ts';
 
-type Schema = Exclude<JSONSchema, boolean>;
+type Schema = Exclude<JsonSchema, boolean>;
 
 /**
  * An OpenAPI 3.1 document. Loosely typed: it is meant to be served or
@@ -13,12 +13,12 @@ type Schema = Exclude<JSONSchema, boolean>;
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface OpenAPIDocument {
+export interface OpenApiDocument {
   readonly openapi: '3.1.1';
-  readonly info: OpenAPIInfo;
-  readonly servers?: ReadonlyArray<OpenAPIServer>;
-  readonly paths: Record<string, Record<string, OpenAPIOperation>>;
-  readonly components: { readonly schemas: Record<string, JSONSchema> };
+  readonly info: OpenApiInfo;
+  readonly servers?: ReadonlyArray<OpenApiServer>;
+  readonly paths: Record<string, Record<string, OpenApiOperation>>;
+  readonly components: { readonly schemas: Record<string, JsonSchema> };
 }
 
 /**
@@ -26,7 +26,7 @@ export interface OpenAPIDocument {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface OpenAPIInfo {
+export interface OpenApiInfo {
   readonly title: string;
   readonly version: string;
   readonly description?: string;
@@ -37,17 +37,17 @@ export interface OpenAPIInfo {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface OpenAPIServer {
+export interface OpenApiServer {
   readonly url: string;
   readonly description?: string;
 }
 
 /**
- * One operation of an {@link OpenAPIDocument}.
+ * One operation of an {@link OpenApiDocument}.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface OpenAPIOperation {
+export interface OpenApiOperation {
   readonly operationId: string;
   readonly summary?: string;
   readonly description?: string;
@@ -59,15 +59,15 @@ export interface OpenAPIOperation {
 }
 
 /**
- * The options of {@link generateOpenAPI}.
+ * The options of {@link generateOpenApi}.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface GenerateOpenAPIOptions {
-  info: OpenAPIInfo;
-  servers?: ReadonlyArray<OpenAPIServer>;
+export interface GenerateOpenApiOptions {
+  info: OpenApiInfo;
+  servers?: ReadonlyArray<OpenApiServer>;
   /**
-   * `'openapi'` documents the REST mapping {@link createOpenAPIHandler}
+   * `'openapi'` documents the REST mapping {@link createOpenApiHandler}
    * serves (`.route()`s). `'rpc'` documents the RPC endpoint of
    * `createFetchHandler` with zero configuration (O-C).
    * @default 'openapi'
@@ -82,16 +82,16 @@ export interface GenerateOpenAPIOptions {
   filter?: (opts: { path: string; procedure: AnyProcedure }) => boolean;
 }
 
-const ERROR_SCHEMA = 'TRPCError';
+const ERROR_SCHEMA = 'TrpcError';
 
 /** Moves `$defs` into `components.schemas` and rewrites their `$ref`s. */
 function hoist(
-  schema: JSONSchema | undefined,
+  schema: JsonSchema | undefined,
   scope: string,
-  components: Record<string, JSONSchema>,
-): JSONSchema | undefined {
+  components: Record<string, JsonSchema>,
+): JsonSchema | undefined {
   if (!schema || typeof schema !== 'object') return schema;
-  const defs = schema['$defs'] as Record<string, JSONSchema> | undefined;
+  const defs = schema['$defs'] as Record<string, JsonSchema> | undefined;
   if (!defs) return schema;
   const name = (key: string) => `${scope}.${key}`;
   const rewrite = (node: unknown): unknown => {
@@ -107,19 +107,19 @@ function hoist(
     );
   };
   for (const [key, def] of Object.entries(defs)) {
-    components[name(key)] = rewrite(def) as JSONSchema;
+    components[name(key)] = rewrite(def) as JsonSchema;
   }
   const { $defs: _, ...rest } = schema;
-  return rewrite(rest) as JSONSchema;
+  return rewrite(rest) as JsonSchema;
 }
 
 const withoutProperties = (
-  schema: JSONSchema | undefined,
+  schema: JsonSchema | undefined,
   keys: ReadonlyArray<string>,
-): JSONSchema | undefined => {
+): JsonSchema | undefined => {
   if (!schema || typeof schema !== 'object' || keys.length === 0) return schema;
   const properties = schema['properties'] as
-    | Record<string, JSONSchema>
+    | Record<string, JsonSchema>
     | undefined;
   if (!properties) return schema;
   const rest = Object.fromEntries(
@@ -136,17 +136,17 @@ const withoutProperties = (
 };
 
 const objectProperties = (
-  schema: JSONSchema | undefined,
-): Array<[name: string, schema: JSONSchema, required: boolean]> => {
+  schema: JsonSchema | undefined,
+): Array<[name: string, schema: JsonSchema, required: boolean]> => {
   if (!schema || typeof schema !== 'object') return [];
   const parts = [schema, ...((schema['allOf'] as Schema[] | undefined) ?? [])];
   return parts.flatMap((part) => {
     const properties = part['properties'] as
-      | Record<string, JSONSchema>
+      | Record<string, JsonSchema>
       | undefined;
     const required = (part['required'] as string[] | undefined) ?? [];
     return Object.entries(properties ?? {}).map(
-      ([name, s]): [string, JSONSchema, boolean] => [
+      ([name, s]): [string, JsonSchema, boolean] => [
         name,
         s,
         required.includes(name),
@@ -155,14 +155,14 @@ const objectProperties = (
   });
 };
 
-const isStructured = (schema: JSONSchema) =>
+const isStructured = (schema: JsonSchema) =>
   typeof schema === 'object' &&
   (schema['type'] === 'object' || schema['properties'] !== undefined);
 
 const errorSchema = (
   code: string,
   status: number,
-  data?: JSONSchema,
+  data?: JsonSchema,
 ): Schema => ({
   type: 'object',
   properties: {
@@ -193,7 +193,7 @@ const VALIDATION_DATA: Schema = {
   required: ['issues'],
 };
 
-const rpcWrap = (schema: JSONSchema | undefined): Schema => ({
+const rpcWrap = (schema: JsonSchema | undefined): Schema => ({
   type: 'object',
   properties: { json: schema ?? {} },
   required: ['json'],
@@ -202,7 +202,7 @@ const rpcWrap = (schema: JSONSchema | undefined): Schema => ({
 function errorResponses(
   def: ProcedureInternals,
   scope: string,
-  components: Record<string, JSONSchema>,
+  components: Record<string, JsonSchema>,
   hasInput: boolean,
   target: 'openapi' | 'rpc',
 ): Record<string, Record<string, unknown>> {
@@ -214,7 +214,7 @@ function errorResponses(
     const status =
       spec.status ?? (ERROR_STATUS as Record<string, number>)[code] ?? 500;
     const data = spec.data
-      ? hoist(toJSONSchema(spec.data, 'output'), `${scope}.${code}`, components)
+      ? hoist(toJsonSchema(spec.data, 'output'), `${scope}.${code}`, components)
       : undefined;
     add(
       status,
@@ -268,7 +268,7 @@ function errorResponses(
  *
  * @example
  * ```ts
- * const spec = generateOpenAPI(appRouter, {
+ * const spec = generateOpenApi(appRouter, {
  *   info: { title: 'API', version: '1.0.0' },
  *   servers: [{ url: 'https://api.example.com' }],
  * });
@@ -277,16 +277,16 @@ function errorResponses(
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function generateOpenAPI(
+export function generateOpenApi(
   router: object,
-  opts: GenerateOpenAPIOptions,
-): OpenAPIDocument {
+  opts: GenerateOpenApiOptions,
+): OpenApiDocument {
   const target = opts.target ?? 'openapi';
   const prefix =
     target === 'rpc'
       ? normalizePrefix(opts.prefix ?? '/trpc')
       : normalizePrefix(opts.prefix);
-  const components: Record<string, JSONSchema> = {
+  const components: Record<string, JsonSchema> = {
     [ERROR_SCHEMA]: {
       type: 'object',
       properties: {
@@ -299,7 +299,7 @@ export function generateOpenAPI(
       required: ['defined', 'code', 'status', 'message'],
     },
   };
-  const paths: OpenAPIDocument['paths'] = {};
+  const paths: OpenApiDocument['paths'] = {};
 
   for (const [path, procedure] of flattenRouter(router)) {
     if (opts.filter && !opts.filter({ path, procedure })) continue;
@@ -308,9 +308,9 @@ export function generateOpenAPI(
       target === 'rpc'
         ? resolveRoute(path, def.type, { path: `/${path}` }, prefix)
         : resolveRoute(path, def.type, def.route, prefix);
-    const input = hoist(inputJSONSchema(def), `${path}.input`, components);
+    const input = hoist(inputJsonSchema(def), `${path}.input`, components);
     const rawOutput = def.output
-      ? toJSONSchema(def.output, 'output')
+      ? toJsonSchema(def.output, 'output')
       : undefined;
     const detailedIn =
       target === 'openapi' && route.inputStructure === 'detailed';
@@ -327,7 +327,7 @@ export function generateOpenAPI(
     const param = (
       name: string,
       where: string,
-      schema: JSONSchema,
+      schema: JsonSchema,
       required: boolean,
     ) => {
       parameters.push({
@@ -424,7 +424,7 @@ export function generateOpenAPI(
           };
 
     const r = def.route;
-    const operation: OpenAPIOperation = {
+    const operation: OpenApiOperation = {
       operationId: (target === 'openapi' && r?.operationId) || path,
       ...(r?.summary ? { summary: r.summary } : {}),
       ...(r?.description ? { description: r.description } : {}),

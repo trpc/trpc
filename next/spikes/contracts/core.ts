@@ -215,7 +215,7 @@ export interface Root<TCtx> {
     router(routes: ImplementedRouter<TContract>): ImplementedRouter<TContract>;
   };
 }
-export declare function initTRPC<TCtx extends object>(): Root<TCtx>;
+export declare function initTrpc<TCtx extends object>(): Root<TCtx>;
 
 // --- reducing routers to contracts ----------------------------------------------------
 

@@ -1,5 +1,5 @@
 import { Context, Effect, ManagedRuntime, type Exit, type Layer } from 'effect';
-import { TRPCError, type AnyTRPCError } from '../internal/error.ts';
+import { TrpcError, type AnyTrpcError } from '../internal/error.ts';
 import type { MaybePromise, ProcedureType } from '../internal/types.ts';
 import { callProcedure, isUnexpectedError } from './execute.ts';
 import type { CreateContextOpts, OnErrorOpts } from './fetch.ts';
@@ -37,12 +37,12 @@ export interface MakeContextOpts {
 
 /** What every handler shares: ctx, services, masking and `onError`. @internal */
 export interface HandlerCore {
-  readonly run: (opts: RunOpts) => Promise<Exit.Exit<unknown, AnyTRPCError>>;
+  readonly run: (opts: RunOpts) => Promise<Exit.Exit<unknown, AnyTrpcError>>;
   readonly makeContext: (opts: MakeContextOpts) => Promise<object>;
   /** Masks unexpected errors unless `exposeUnexpectedErrors`. */
-  readonly publicError: (err: AnyTRPCError) => AnyTRPCError;
+  readonly publicError: (err: AnyTrpcError) => AnyTrpcError;
   readonly report: (
-    err: AnyTRPCError,
+    err: AnyTrpcError,
     request: Request,
     path?: string,
     type?: ProcedureType,
@@ -88,7 +88,7 @@ export function createHandlerCore(opts: CoreOptions): HandlerCore {
     },
     publicError: (err) =>
       isUnexpectedError(err) && !expose
-        ? new TRPCError({
+        ? new TrpcError({
             code: 'INTERNAL_SERVER_ERROR',
             message: 'Internal server error',
           })

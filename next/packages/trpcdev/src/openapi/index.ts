@@ -5,7 +5,7 @@
  *
  * @example
  * ```ts
- * import { createOpenAPIHandler, generateOpenAPI, openAPIReference } from 'trpcdev/openapi';
+ * import { createOpenApiHandler, generateOpenApi, openApiReference } from 'trpcdev/openapi';
  *
  * const byId = t.procedure
  *   .route({ method: 'GET', path: '/posts/{id}', tags: ['posts'] })
@@ -13,9 +13,9 @@
  *   .errors({ NOT_FOUND: { data: z.object({ id: z.string() }) } })
  *   .query(…);
  *
- * export const openapi = createOpenAPIHandler({
+ * export const openapi = createOpenApiHandler({
  *   router: appRouter,
- *   plugins: [openAPIReference({ specGenerateOptions: { info: { title: 'API', version: '1.0.0' } } })],
+ *   plugins: [openApiReference({ specGenerateOptions: { info: { title: 'API', version: '1.0.0' } } })],
  * });
  * // GET /api/posts/1 → 200 { id, title } or 404 { defined, code: 'NOT_FOUND', data: { id } }
  * ```
@@ -24,24 +24,24 @@
  */
 export { parseBracketNotation, toBracketNotation } from './bracket.ts';
 export { coerceBySchema } from './coerce.ts';
-export type { OpenAPIErrorBody } from './errors.ts';
+export type { OpenApiErrorBody } from './errors.ts';
 export {
-  generateOpenAPI,
-  type GenerateOpenAPIOptions,
-  type OpenAPIDocument,
-  type OpenAPIInfo,
-  type OpenAPIOperation,
-  type OpenAPIServer,
+  generateOpenApi,
+  type GenerateOpenApiOptions,
+  type OpenApiDocument,
+  type OpenApiInfo,
+  type OpenApiOperation,
+  type OpenApiServer,
 } from './generate.ts';
 export {
-  createOpenAPIHandler,
-  type BaseOpenAPIHandlerOptions,
-  type OpenAPIHandler,
-  type OpenAPIHandlerOptions,
-  type OpenAPIPlugin,
-  type OpenAPIPluginContext,
+  createOpenApiHandler,
+  type BaseOpenApiHandlerOptions,
+  type OpenApiHandler,
+  type OpenApiHandlerOptions,
+  type OpenApiPlugin,
+  type OpenApiPluginContext,
 } from './handler.ts';
-export { openAPILink, type OpenAPILinkOptions } from './link.ts';
-export { openAPIReference, type OpenAPIReferenceOptions } from './reference.ts';
-export type { HTTPMethod, ResolvedRoute } from './routes.ts';
-export type { JSONSchema } from '../internal/json-schema.ts';
+export { openApiLink, type OpenApiLinkOptions } from './link.ts';
+export { openApiReference, type OpenApiReferenceOptions } from './reference.ts';
+export type { HttpMethod, ResolvedRoute } from './routes.ts';
+export type { JsonSchema } from '../internal/json-schema.ts';

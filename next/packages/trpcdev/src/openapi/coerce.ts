@@ -1,6 +1,6 @@
-import type { JSONSchema } from '../internal/json-schema.ts';
+import type { JsonSchema } from '../internal/json-schema.ts';
 
-type Schema = Exclude<JSONSchema, boolean>;
+type Schema = Exclude<JsonSchema, boolean>;
 
 const isObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' &&
@@ -91,19 +91,19 @@ const matches = (value: unknown, schema: Schema): boolean => {
  */
 export function coerceBySchema(
   value: unknown,
-  schema: JSONSchema | undefined,
-  root: JSONSchema | undefined = schema,
+  schema: JsonSchema | undefined,
+  root: JsonSchema | undefined = schema,
 ): unknown {
   const s = asSchema(schema);
   const r = asSchema(root);
   if (!s || !r || value === undefined) return value;
   const current = resolve(s, r);
 
-  for (const part of (current['allOf'] as JSONSchema[] | undefined) ?? []) {
+  for (const part of (current['allOf'] as JsonSchema[] | undefined) ?? []) {
     value = coerceBySchema(value, part, r);
   }
   const branches = (current['anyOf'] ?? current['oneOf']) as
-    | JSONSchema[]
+    | JsonSchema[]
     | undefined;
   if (branches) {
     for (const branch of branches) {
@@ -133,7 +133,7 @@ export function coerceBySchema(
     return coerceString(value, types);
   }
   if (Array.isArray(value)) {
-    const prefixItems = current['prefixItems'] as JSONSchema[] | undefined;
+    const prefixItems = current['prefixItems'] as JsonSchema[] | undefined;
     return value.map((item, i) =>
       coerceBySchema(item, prefixItems?.[i] ?? asSchema(current['items']), r),
     );
@@ -153,14 +153,14 @@ export function coerceBySchema(
 
 /** The schema of `key` in an object schema, looking through `allOf`. @internal */
 export function propertySchema(
-  schema: JSONSchema | undefined,
+  schema: JsonSchema | undefined,
   key: string,
-): JSONSchema | undefined {
+): JsonSchema | undefined {
   const s = asSchema(schema);
   if (!s) return undefined;
-  const own = asSchema(s['properties'])?.[key] as JSONSchema | undefined;
+  const own = asSchema(s['properties'])?.[key] as JsonSchema | undefined;
   if (own !== undefined) return own;
-  for (const part of (s['allOf'] as JSONSchema[] | undefined) ?? []) {
+  for (const part of (s['allOf'] as JsonSchema[] | undefined) ?? []) {
     const found = propertySchema(part, key);
     if (found !== undefined) return found;
   }

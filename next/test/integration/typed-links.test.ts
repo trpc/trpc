@@ -1,6 +1,6 @@
 import { Effect } from 'effect';
 import {
-  createTRPCClient,
+  createTrpcClient,
   dedupeLink,
   httpLink,
   link,
@@ -9,12 +9,12 @@ import {
   type Operation,
 } from 'trpcdev/client';
 import { createEffectClient } from 'trpcdev/effect';
-import { initTRPC } from 'trpcdev/server';
+import { initTrpc } from 'trpcdev/server';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 
-const t = initTRPC();
+const t = initTrpc();
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const state = { calls: 0, aborted: 0 };
 
@@ -38,7 +38,7 @@ const otherRouter = { other: t.procedure.query(() => 1) };
 
 async function setup() {
   const server = await createTestServer({ router });
-  const client = createTRPCClient({
+  const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [dedupeLink(), httpLink({ url: server.url })],
   });
@@ -104,7 +104,7 @@ test('links declare the context fields calls may pass (17 D-C, F-B)', async () =
       return next(op);
     },
   );
-  const client = createTRPCClient({
+  const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [traceLink, dedupeLink(), httpLink({ url: server.url })],
   });
@@ -115,7 +115,7 @@ test('links declare the context fields calls may pass (17 D-C, F-B)', async () =
   expect(seen).toEqual(['abc']);
   expect(server.requests.at(-1)!.headers.get('x-a')).toBe('1');
 
-  const plain = createTRPCClient<AppRouter>({
+  const plain = createTrpcClient<AppRouter>({
     links: [traceLink, httpLink({ url: server.url })],
   });
   void (() => {
@@ -129,7 +129,7 @@ test('links declare the context fields calls may pass (17 D-C, F-B)', async () =
 test('splitLink sees typed paths, and merges both branches', async () => {
   await using server = await createTestServer({ router, batch: true });
   const conditions: string[] = [];
-  const client = createTRPCClient({
+  const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [
       splitLink({
@@ -155,7 +155,7 @@ test('splitLink sees typed paths, and merges both branches', async () => {
     false: httpLink({ url: server.url }),
   });
 
-  createTRPCClient({
+  createTrpcClient({
     // @ts-expect-error -- the splitLink below is typed for another router
     router: routerType<AppRouter>(),
     links: [

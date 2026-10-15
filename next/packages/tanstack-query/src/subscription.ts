@@ -1,5 +1,5 @@
 import { hashKey } from '@tanstack/query-core';
-import type { TRPCQueryKey } from './keys.ts';
+import type { TrpcQueryKey } from './keys.ts';
 
 /**
  * Callbacks for a subscription. They always run with the latest options, so
@@ -21,12 +21,12 @@ export interface SubscriptionCallbacks<TEvent, TError> {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface TRPCSubscriptionOptions<
+export interface TrpcSubscriptionOptions<
   TEvent,
   TError,
 > extends SubscriptionCallbacks<TEvent, TError> {
   /** Identifies the subscription; a new key restarts it. */
-  readonly subscriptionKey: TRPCQueryKey;
+  readonly subscriptionKey: TrpcQueryKey;
   /** `false` (or `input: skipToken`) keeps it idle. */
   readonly enabled: boolean;
   /** Opens the subscription. Aborting `signal` closes it. */
@@ -55,7 +55,7 @@ export type SubscriptionResult<TEvent, TError> =
   | { status: 'error'; data: TEvent | undefined; error: TError };
 
 /** Options a {@link SubscriptionObserver} accepts. @internal */
-type AnyOptions<TEvent, TError> = TRPCSubscriptionOptions<TEvent, TError>;
+type AnyOptions<TEvent, TError> = TrpcSubscriptionOptions<TEvent, TError>;
 
 /**
  * Runs a subscription for UI code, like TanStack's `QueryObserver` does for

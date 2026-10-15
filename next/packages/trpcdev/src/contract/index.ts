@@ -22,15 +22,15 @@
  * };
  *
  * // client: no server types involved
- * const client = createTRPCClient({ router: appContract, links: [httpLink({ url })] });
+ * const client = createTrpcClient({ router: appContract, links: [httpLink({ url })] });
  * ```
  * @see ../../../../.agent-docs/proposals/09-contract-first.md
  * @module
  */
 import type { RouterType } from '../client/types.ts';
-import type { AnyTRPCError } from '../internal/error.ts';
-import { flattenRouter, procedureJSON } from '../internal/describe.ts';
-import type { JSONSchema } from '../internal/json-schema.ts';
+import type { AnyTrpcError } from '../internal/error.ts';
+import { flattenRouter, procedureJson } from '../internal/describe.ts';
+import type { JsonSchema } from '../internal/json-schema.ts';
 import type {
   Merge,
   Overwrite,
@@ -58,7 +58,7 @@ import type {
 } from '../server/schema.ts';
 import type { TrackedEnvelope } from '../server/tracked.ts';
 
-export type { JSONSchema } from '../internal/json-schema.ts';
+export type { JsonSchema } from '../internal/json-schema.ts';
 
 /**
  * A contract builder's state.
@@ -71,7 +71,7 @@ export interface ContractDef {
   inputOut: unknown;
   outputIn: unknown;
   outputOut: unknown;
-  errors: AnyTRPCError;
+  errors: AnyTrpcError;
   /** Errors declared with `.errors()`, by code. */
   declared: object;
   /** Effect services the schemas need to decode. */
@@ -363,7 +363,7 @@ export function isContractProcedure(
  * @example
  * ```ts
  * export type AppContract = inferContract<typeof appRouter>;
- * createTRPCClient<AppContract>({ links: [httpLink({ url })] });
+ * createTrpcClient<AppContract>({ links: [httpLink({ url })] });
  * ```
  * @since 12.0.0-alpha.0
  * @stability experimental
@@ -381,24 +381,24 @@ export type inferContract<TRouter> = TRouter extends AnyProcedure
   : { [K in keyof TRouter]: inferContract<TRouter[K]> };
 
 /**
- * One procedure of a {@link ContractJSON}.
+ * One procedure of a {@link ContractJson}.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface ProcedureJSON {
+export interface ProcedureJson {
   readonly type: ProcedureType;
   readonly route?: Route;
   /** What the client sends. Absent when there is no input or it can't be described. */
-  readonly input?: JSONSchema;
+  readonly input?: JsonSchema;
   /** What the client receives (for subscriptions, each event's `data`). */
-  readonly output?: JSONSchema;
+  readonly output?: JsonSchema;
   readonly errors?: Readonly<
     Record<
       string,
       {
         readonly status?: number;
         readonly message?: string;
-        readonly data?: JSONSchema;
+        readonly data?: JsonSchema;
       }
     >
   >;
@@ -407,15 +407,15 @@ export interface ProcedureJSON {
 /**
  * A JSON-serializable contract (Q9.4): procedure types, routes and JSON
  * Schemas by path. It carries the router's client type, so
- * `createTRPCClient({ router: contractJSON })` is typed.
+ * `createTrpcClient({ router: contractJSON })` is typed.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface ContractJSON<TRouter = unknown> extends RouterType<
+export interface ContractJson<TRouter = unknown> extends RouterType<
   inferContract<TRouter>
 > {
   readonly version: 1;
-  readonly procedures: Readonly<Record<string, ProcedureJSON>>;
+  readonly procedures: Readonly<Record<string, ProcedureJson>>;
 }
 
 /**
@@ -428,9 +428,9 @@ export interface ContractJSON<TRouter = unknown> extends RouterType<
  * export const appContract = toContract(appRouter);
  * await fs.writeFile('contract.json', JSON.stringify(appContract));
  *
- * const client = createTRPCClient({
+ * const client = createTrpcClient({
  *   router: appContract,
- *   links: [openAPILink({ url, contract: appContract })],
+ *   links: [openApiLink({ url, contract: appContract })],
  * });
  * ```
  * @since 12.0.0-alpha.0
@@ -438,10 +438,10 @@ export interface ContractJSON<TRouter = unknown> extends RouterType<
  */
 export function toContract<TRouter extends object>(
   router: TRouter,
-): ContractJSON<TRouter> {
-  const procedures: Record<string, ProcedureJSON> = {};
+): ContractJson<TRouter> {
+  const procedures: Record<string, ProcedureJson> = {};
   for (const [path, procedure] of flattenRouter(router)) {
-    procedures[path] = procedureJSON(procedure['~trpc']);
+    procedures[path] = procedureJson(procedure['~trpc']);
   }
-  return { version: 1, procedures } as ContractJSON<TRouter>;
+  return { version: 1, procedures } as ContractJson<TRouter>;
 }

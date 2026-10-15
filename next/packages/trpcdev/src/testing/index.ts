@@ -9,7 +9,7 @@
  *   router: appRouter,
  *   http: NodeHttpServer.layer(createServer, { port: 0 }),
  * });
- * const client = createTRPCClient<AppRouter>({ links: [httpLink({ url: server.url })] });
+ * const client = createTrpcClient<AppRouter>({ links: [httpLink({ url: server.url })] });
  * ```
  * @module
  */

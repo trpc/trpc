@@ -1,6 +1,6 @@
 import type { Context, Effect, Stream } from 'effect';
 import type { AnyContractRouter, ContractDef } from '../contract/index.ts';
-import type { AnyTRPCError } from '../internal/error.ts';
+import type { AnyTrpcError } from '../internal/error.ts';
 import type {
   MaybePromise,
   Overwrite,
@@ -70,8 +70,8 @@ export type UndeclaredCheck<TDef extends BuilderDef, $Errors> = [
 type ResultConstraint<TDef extends BuilderDef> = TDef['outputIn'] extends Unset
   ? unknown
   :
-      | MaybePromise<TDef['outputIn'] | AnyTRPCError>
-      | Effect.Effect<TDef['outputIn'] | AnyTRPCError, any, any>;
+      | MaybePromise<TDef['outputIn'] | AnyTrpcError>
+      | Effect.Effect<TDef['outputIn'] | AnyTrpcError, any, any>;
 
 type EventsConstraint<
   TDef extends BuilderDef,
@@ -82,11 +82,11 @@ type EventsConstraint<
     ?
         | AsyncIterable<TrackedEnvelope<TDef['outputIn']>, any, any>
         | Stream.Stream<TrackedEnvelope<TDef['outputIn']>, any, any>
-        | AnyTRPCError
+        | AnyTrpcError
     :
         | AsyncIterable<TDef['outputIn'], any, any>
         | Stream.Stream<TDef['outputIn'], any, any>
-        | AnyTRPCError;
+        | AnyTrpcError;
 
 /**
  * A procedure made from a contract leaf: the contract's client-facing types,

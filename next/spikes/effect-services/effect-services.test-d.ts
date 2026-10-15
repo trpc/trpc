@@ -3,7 +3,7 @@ import * as Data from 'effect/Data';
 import * as Effect from 'effect/Effect';
 import * as Layer from 'effect/Layer';
 import { describe, expectTypeOf, test } from 'vite-plus/test';
-import { createHandler, initTRPC, type inferRouterServices } from './core.ts';
+import { createHandler, initTrpc, type inferRouterServices } from './core.ts';
 
 interface Post {
   id: string;
@@ -35,7 +35,7 @@ const mailer = Layer.succeed(Mailer, { send: () => Effect.void });
 const clock = Layer.succeed(Clock, { now: Effect.sync(() => new Date()) });
 
 describe('06 (g) M-A: middleware that provides a service', () => {
-  const t = initTRPC.create<{ ctx: { token?: string } }>();
+  const t = initTrpc.create<{ ctx: { token?: string } }>();
 
   const auth = t.middleware.effect<{ provides: CurrentUser }>()(
     ({ ctx, next }) =>
@@ -71,7 +71,7 @@ describe('06 (g) M-A: middleware that provides a service', () => {
 });
 
 describe('02 (b) S1: inferred services', () => {
-  const t = initTRPC.create<{ ctx: {} }>();
+  const t = initTrpc.create<{ ctx: {} }>();
   const router = {
     post: {
       byId: t.procedure.query(() => PostRepo.use((r) => r.find('1'))),
@@ -100,7 +100,7 @@ describe('02 (b) S1: inferred services', () => {
 });
 
 describe('02 (b) S2: declared services', () => {
-  const t = initTRPC.create<{ ctx: {}; services: PostRepo | Mailer }>();
+  const t = initTrpc.create<{ ctx: {}; services: PostRepo | Mailer }>();
 
   test('resolvers may use declared services', () => {
     t.procedure.query(() => PostRepo.use((r) => r.find('1')));

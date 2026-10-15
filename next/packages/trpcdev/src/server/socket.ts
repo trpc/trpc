@@ -1,9 +1,9 @@
 import { Effect, Exit, Stream } from 'effect';
 import {
-  isTRPCError,
+  isTrpcError,
   toWireError,
-  TRPCError,
-  type AnyTRPCError,
+  TrpcError,
+  type AnyTrpcError,
 } from '../internal/error.ts';
 import {
   PROTOCOL_VERSION,
@@ -70,7 +70,7 @@ export interface SocketCore {
     signal: AbortSignal;
     response: ResponseHandle;
     lastEventId?: string | undefined;
-  }): Promise<Exit.Exit<unknown, AnyTRPCError>>;
+  }): Promise<Exit.Exit<unknown, AnyTrpcError>>;
   makeContext(opts: {
     request: Request;
     calls: ReadonlyArray<{ path: string; type: ProcedureType }>;
@@ -79,9 +79,9 @@ export interface SocketCore {
     connectionParams: Record<string, unknown> | undefined;
   }): Promise<object>;
   deserializeInput(value: unknown): unknown;
-  publicError(err: AnyTRPCError): AnyTRPCError;
+  publicError(err: AnyTrpcError): AnyTrpcError;
   report(
-    err: AnyTRPCError,
+    err: AnyTrpcError,
     request: Request,
     path?: string,
     type?: ProcedureType,
@@ -172,15 +172,15 @@ export function serveConnection(
   let connectionParams: Record<string, unknown> | undefined;
   let closed = false;
 
-  const wire = (err: AnyTRPCError) =>
+  const wire = (err: AnyTrpcError) =>
     core.serializer.serialize(toWireError(core.publicError(err)));
   const coerceError =
     (path: string, type: ProcedureType) => (cause: unknown) => {
-      const err = isTRPCError(cause) ? cause : unexpectedError(cause);
+      const err = isTrpcError(cause) ? cause : unexpectedError(cause);
       core.report(err, request, path, type);
       return toWireError(core.publicError(err));
     };
-  const sendError = (id: number | null, err: AnyTRPCError) =>
+  const sendError = (id: number | null, err: AnyTrpcError) =>
     conn.send({ id, type: 'error', status: err.status, body: wire(err) });
 
   conn.onClose(() => {
@@ -194,7 +194,7 @@ export function serveConnection(
     if (!isRecord(raw) || typeof raw['type'] !== 'string') {
       sendError(
         null,
-        new TRPCError({ code: 'PARSE_ERROR', message: 'Invalid message' }),
+        new TrpcError({ code: 'PARSE_ERROR', message: 'Invalid message' }),
       );
       return;
     }
@@ -204,7 +204,7 @@ export function serveConnection(
         if (message.version !== PROTOCOL_VERSION) {
           sendError(
             null,
-            new TRPCError({
+            new TrpcError({
               code: 'UNSUPPORTED_PROTOCOL',
               message: `Unsupported protocol version "${String(message.version)}", expected "${PROTOCOL_VERSION}"`,
             }),
@@ -226,7 +226,7 @@ export function serveConnection(
         if (typeof message.id !== 'number' || calls.has(message.id)) {
           sendError(
             null,
-            new TRPCError({
+            new TrpcError({
               code: 'BAD_REQUEST',
               message: 'Each request needs a unique numeric id',
             }),
@@ -239,7 +239,7 @@ export function serveConnection(
       default:
         sendError(
           null,
-          new TRPCError({ code: 'BAD_REQUEST', message: 'Unknown message' }),
+          new TrpcError({ code: 'BAD_REQUEST', message: 'Unknown message' }),
         );
     }
   });
@@ -256,13 +256,13 @@ export function serveConnection(
     const type = procedure?.['~trpc'].type;
     try {
       if (!procedure || !type) {
-        throw new TRPCError({
+        throw new TrpcError({
           code: 'NOT_FOUND',
           message: `No procedure at path "${path}"`,
         });
       }
       if (type !== message.method) {
-        throw new TRPCError({
+        throw new TrpcError({
           code: 'METHOD_NOT_SUPPORTED',
           message: `"${path}" is a ${type}, not a ${String(message.method)}`,
         });
@@ -294,7 +294,7 @@ export function serveConnection(
       if (type === 'subscription') {
         const done = await Effect.runPromiseExit(
           emitEvents(
-            exit.value as Stream.Stream<unknown, AnyTRPCError>,
+            exit.value as Stream.Stream<unknown, AnyTrpcError>,
             core.serializer,
             coerceError(path, type),
             (frame) => {
@@ -354,7 +354,7 @@ export function serveConnection(
       if (live()) conn.send({ id, type: 'done' });
     } catch (cause) {
       if (!live()) return;
-      const err = isTRPCError(cause) ? cause : unexpectedError(cause);
+      const err = isTrpcError(cause) ? cause : unexpectedError(cause);
       core.report(err, request, path, type);
       sendError(id, err);
     } finally {

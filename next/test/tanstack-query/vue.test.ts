@@ -8,25 +8,25 @@ import {
   VueQueryPlugin,
 } from '@tanstack/vue-query';
 import {
-  createTRPCContext,
+  createTrpcContext,
   useSubscription,
 } from '@trpcdev/tanstack-vue-query';
-import type { TRPCClient } from 'trpcdev/client';
+import type { TrpcClient } from 'trpcdev/client';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { createApp as createVueApp, defineComponent, h, ref } from 'vue';
 import { createApp, db, type AppRouter, type Post } from './fixtures/app.ts';
 import { click, container, text, waitFor } from './fixtures/dom.ts';
 
-const { TRPCPlugin, useTRPC } = createTRPCContext<AppRouter>();
+const { TrpcPlugin, useTrpc } = createTrpcContext<AppRouter>();
 
-function mount(setup: () => () => unknown, client: TRPCClient<AppRouter>) {
+function mount(setup: () => () => unknown, client: TrpcClient<AppRouter>) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
   const el = container();
   const vueApp = createVueApp(defineComponent({ setup }))
     .use(VueQueryPlugin, { queryClient })
-    .use(TRPCPlugin, { client });
+    .use(TrpcPlugin, { client });
   vueApp.mount(el);
   return {
     el,
@@ -41,7 +41,7 @@ test('useQuery follows reactive input through a getter', async () => {
   await using app = await createApp();
   const id = ref('1');
   using view = mount(() => {
-    const trpc = useTRPC();
+    const trpc = useTrpc();
     const post = useQuery(() =>
       trpc.post.byId.queryOptions({ input: { id: id.value } }),
     );
@@ -62,7 +62,7 @@ test('useQuery follows reactive input through a getter', async () => {
 test('useMutation invalidates; useInfiniteQuery pages', async () => {
   await using app = await createApp({ posts: 3 });
   using view = mount(() => {
-    const trpc = useTRPC();
+    const trpc = useTrpc();
     const queryClient = useQueryClient();
     const feed = useInfiniteQuery(
       trpc.post.list.infiniteOptions({
@@ -110,7 +110,7 @@ test('useSubscription restarts when its getter changes', async () => {
   const from = ref(3);
   const seen: number[] = [];
   using view = mount(() => {
-    const trpc = useTRPC();
+    const trpc = useTrpc();
     const countdown = useSubscription(() =>
       trpc.clock.countdown.subscriptionOptions({
         input: { from: from.value },

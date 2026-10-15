@@ -4,10 +4,10 @@ import { describe, expect, test } from 'vite-plus/test';
 import { z } from 'zod';
 import {
   call,
-  initTRPC,
+  initTrpc,
   inputContext,
   staticInputSchemas,
-  TRPCError,
+  TrpcError,
 } from './core.ts';
 
 interface User {
@@ -15,7 +15,7 @@ interface User {
   isPro: boolean;
   orgs: string[];
 }
-const t = initTRPC<{ ctx: { user: User | null } }>();
+const t = initTrpc<{ ctx: { user: User | null } }>();
 const pro: User = { id: 'u1', isPro: true, orgs: ['acme'] };
 const free: User = { id: 'u2', isPro: false, orgs: ['acme'] };
 
@@ -26,11 +26,11 @@ const authed = t.procedure.use(({ ctx }) => {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-async function rejection(promise: Promise<unknown>): Promise<TRPCError> {
+async function rejection(promise: Promise<unknown>): Promise<TrpcError> {
   try {
     await promise;
   } catch (error) {
-    if (error instanceof TRPCError) return error;
+    if (error instanceof TrpcError) return error;
     throw error;
   }
   throw new Error('expected a rejection');

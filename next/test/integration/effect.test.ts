@@ -1,7 +1,7 @@
 import { Context, Effect, Exit, Layer, Stream } from 'effect';
 import { httpLink, type ClientError } from 'trpcdev/client';
 import { createEffectClient } from 'trpcdev/effect';
-import { error, initTRPC, type TRPCError } from 'trpcdev/server';
+import { error, initTrpc, type TrpcError } from 'trpcdev/server';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
@@ -46,7 +46,7 @@ const PostRepoLive = Layer.effect(
 interface Ctx {
   user: string | null;
 }
-const t = initTRPC<{ ctx: Ctx }>();
+const t = initTrpc<{ ctx: Ctx }>();
 
 const withUser = t.procedure.provide(CurrentUser, ({ ctx }) =>
   ctx.user
@@ -148,8 +148,8 @@ test('typed errors land in the Effect error channel', async () => {
     Exit.Exit<
       Post,
       ClientError<
-        | TRPCError<'NOT_FOUND', { id: string }>
-        | TRPCError<
+        | TrpcError<'NOT_FOUND', { id: string }>
+        | TrpcError<
             'BAD_REQUEST',
             import('trpcdev/server').InputValidationErrorData
           >
