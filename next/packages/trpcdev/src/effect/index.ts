@@ -25,11 +25,18 @@ import type {
   TrpcClientOptions,
   TypedClientOptions,
 } from '../client/client.ts';
-import { firstValue, link, runLinks, type TrpcLink } from '../client/link.ts';
+import {
+  chainSwitchNames,
+  firstValue,
+  link,
+  runLinks,
+  type TrpcLink,
+} from '../client/link.ts';
 import type {
   CallArgs,
   CallOptions,
   ClientError,
+  DuplicateSwitchCheck,
   LinksContext,
   RouterOf,
   SubscribeOptions,
@@ -108,9 +115,9 @@ const METHODS = {
  */
 export function createEffectClient<
   TSource,
-  TLinks extends ReadonlyArray<TrpcLink<any, RouterOf<TSource>>>,
+  const TLinks extends ReadonlyArray<TrpcLink<any, RouterOf<TSource>>>,
 >(
-  opts: TypedClientOptions<TSource, TLinks>,
+  opts: TypedClientOptions<TSource, TLinks> & DuplicateSwitchCheck<TLinks>,
 ): EffectClient<RouterOf<TSource>, LinksContext<TLinks>>;
 /**
  * Creates an Effect client from an explicit router type.
@@ -126,6 +133,7 @@ export function createEffectClient<TRouter>(
   opts: TrpcClientOptions,
 ): EffectClient<TRouter>;
 export function createEffectClient(opts: TrpcClientOptions): unknown {
+  chainSwitchNames(opts.links);
   return createRecursiveProxy((path, args) => {
     const method = path.at(-1) as keyof typeof METHODS | undefined;
     const type = method ? METHODS[method] : undefined;

@@ -98,6 +98,8 @@ export interface ReservedCallOptions {
  */
 export interface LinkDecl {
   context?: object & ReservedCallOptions;
+  /** The `switchLink` names in this link, so a name can't be used twice on one path. */
+  switches?: string;
 }
 
 /**
@@ -240,6 +242,30 @@ export function link<TDecl extends LinkDecl = {}>(
 link.effect = <TDecl extends LinkDecl = {}>(
   fn: (opts: EffectLinkOpts<DeclContext<TDecl>>) => OperationStream,
 ): TrpcLink<TDecl> => fn as TrpcLink<TDecl>;
+
+const switchNames = new WeakMap<AnyLink, ReadonlySet<string>>();
+
+/** Records the `switchLink` names a link contains. @internal */
+export function setSwitchNames(target: AnyLink, names: Iterable<string>): void {
+  switchNames.set(target, new Set(names));
+}
+
+/**
+ * The `switchLink` names in a chain. Throws when two links on the chain
+ * use the same one, since one call option would force both. @internal
+ */
+export function chainSwitchNames(links: ReadonlyArray<AnyLink>): Set<string> {
+  const names = new Set<string>();
+  for (const current of links) {
+    for (const name of switchNames.get(current) ?? []) {
+      if (names.has(name)) {
+        throw new TypeError(`Two switchLinks on one chain are named "${name}"`);
+      }
+      names.add(name);
+    }
+  }
+  return names;
+}
 
 /**
  * Runs an operation through a link chain.

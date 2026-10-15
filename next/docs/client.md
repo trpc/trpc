@@ -44,9 +44,31 @@ Links receive the fields in `op.context`. `signal` and `lastEventId` are reserve
 - `httpLink({ url, batch?, headers?, maxUrlLength?, longQuery?, reconnect? })` sends queries as `GET`, mutations as `POST` and subscriptions as SSE. Outputs with nested promises or async iterables stream as JSONL. Inputs holding a `File` or `Blob` go alone as `multipart/form-data`.
 - `wsLink({ url, connectionParams?, reconnect?, idleMs?, keepAlive? })` runs everything over one WebSocket. It pings every 30 s and reconnects when a ping goes unanswered for 10 s.
 - `splitLink({ condition, true, false })` picks a chain per call; its `condition` sees typed paths.
+- `switchLink({ name, links, pick })` picks one of several named chains, and a call can force one (below).
 - `dedupeLink()` shares identical queries in flight.
 - `localLink({ router })` calls a router in-process.
 - `messagePortLink({ port })` talks to a worker.
+
+`switchLink`'s `name` becomes a typed call option, so one call can override `pick`:
+
+```ts
+const client = createTrpcClient({
+  router: routerType<AppRouter>(),
+  links: [
+    switchLink({
+      name: 'transport',
+      links: {
+        http: httpLink({ url, batch: true }),
+        ws: wsLink({ url: wsUrl }),
+      },
+      pick: (op) => (op.type === 'subscription' ? 'ws' : 'http'),
+    }),
+  ],
+});
+await client.report.query(input, { transport: 'http' });
+```
+
+A branch can be a chain (an array of links), including another `switchLink`. The name can't be `signal`, `lastEventId`, `init`, `headers` or `reconnect`, and two switch links on one chain can't share a name; both are type errors and throw when the link is made.
 
 `link(async ({ op, next }) => …)` writes a Promise link and `link.effect(({ op, next }) => stream)` an Effect one.
 

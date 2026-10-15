@@ -49,6 +49,12 @@ export {
   type SplitLinkOptions,
 } from './links/basic.ts';
 export { httpLink, type HttpLinkOptions } from './links/http.ts';
+export {
+  switchLink,
+  type ReservedSwitchName,
+  type SwitchLinkDecl,
+  type SwitchLinkOptions,
+} from './links/switch.ts';
 export { localLink, type LocalLinkOptions } from './links/local.ts';
 export {
   messagePortLink,

@@ -197,6 +197,34 @@ export type LinksContext<TLinks extends ReadonlyArray<AnyLink>> = [
       ]: UnionToIntersection<DeclContext<DeclOf<TLinks[number]>>>[K];
     };
 
+type SwitchesOf<TLink> =
+  DeclOf<TLink> extends infer D
+    ? D extends { switches: infer S extends string }
+      ? S
+      : never
+    : never;
+
+type DuplicateSwitch<
+  TLinks,
+  TSeen extends string = never,
+> = TLinks extends readonly [infer H, ...infer R]
+  ? [SwitchesOf<H> & TSeen] extends [never]
+    ? DuplicateSwitch<R, TSeen | SwitchesOf<H>>
+    : SwitchesOf<H> & TSeen
+  : never;
+
+/**
+ * A type error on `links` when two `switchLink`s on the chain share a name.
+ * @internal
+ */
+export type DuplicateSwitchCheck<TLinks> = [DuplicateSwitch<TLinks>] extends [
+  never,
+]
+  ? unknown
+  : {
+      links: `Two switchLinks on one chain are named "${DuplicateSwitch<TLinks>}"`;
+    };
+
 /**
  * Every procedure path of a router, `'post.byId'`.
  * @since 12.0.0-alpha.0

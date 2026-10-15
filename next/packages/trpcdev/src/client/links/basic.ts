@@ -9,15 +9,20 @@ import {
   type Operation,
   type OperationStream,
   type TrpcLink,
+  chainSwitchNames,
+  setSwitchNames,
 } from '../link.ts';
 import type { RouterPaths } from '../types.ts';
 
-type Chain = AnyLink | ReadonlyArray<AnyLink>;
+/** @internal */
+export type Chain = AnyLink | ReadonlyArray<AnyLink>;
 
-const asArray = (links: Chain) =>
+/** @internal */
+export const asArray = (links: Chain) =>
   Array.isArray(links) ? (links as ReadonlyArray<AnyLink>) : [links as AnyLink];
 
-type ChainDecl<T> =
+/** @internal */
+export type ChainDecl<T> =
   T extends ReadonlyArray<infer L>
     ? L extends TrpcLink<infer D, any>
       ? D
@@ -70,9 +75,11 @@ export function splitLink<
 ): TrpcLink<ChainDecl<TTrue> | ChainDecl<TFalse>, TRouter> {
   const yes = asArray(opts.true);
   const no = asArray(opts.false);
-  return link.effect(({ op }) =>
+  const split = link.effect(({ op }) =>
     runLinks(opts.condition(op as never) ? yes : no, op),
-  ) as TrpcLink<any, TRouter>;
+  );
+  setSwitchNames(split, [...chainSwitchNames(yes), ...chainSwitchNames(no)]);
+  return split as TrpcLink<any, TRouter>;
 }
 
 /**

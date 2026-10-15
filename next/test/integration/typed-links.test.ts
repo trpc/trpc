@@ -6,6 +6,7 @@ import {
   link,
   routerType,
   splitLink,
+  switchLink,
   type Operation,
 } from 'trpcdev/client';
 import { createEffectClient } from 'trpcdev/effect';
@@ -195,4 +196,96 @@ test('custom links get an Operation typed with their declared context', () => {
   link<{ context: { signal?: string } }>(({ op, next }) => next(op));
   // @ts-expect-error -- the client reads `lastEventId` itself
   link.effect<{ context: { lastEventId: number } }>(({ op, next }) => next(op));
+});
+
+test('switchLink picks a branch, and a typed call option forces one', async () => {
+  await using server = await createTestServer({ router, batch: true });
+  const picked: string[] = [];
+  const tag = (name: string) =>
+    link(async ({ op, next }) => {
+      picked.push(name);
+      return next(op);
+    });
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [
+      switchLink({
+        name: 'transport',
+        links: {
+          batched: [tag('batched'), httpLink({ url: server.url, batch: true })],
+          single: [tag('single'), dedupeLink(), httpLink({ url: server.url })],
+        },
+        pick: (op) => {
+          expectTypeOf(op.path).toEqualTypeOf<'post.byId' | 'post.create'>();
+          return op.type === 'mutation' ? 'single' : 'batched';
+        },
+      }),
+    ],
+  });
+  await client.post.byId.query({ id: '1' });
+  await client.post.byId.query(
+    { id: '1' },
+    { transport: 'single', dedupe: false },
+  );
+  await client.post.create.mutate({ title: 'x' });
+  await client.post.create.mutate({ title: 'x' }, { transport: 'batched' });
+  expect(picked).toEqual(['batched', 'single', 'single', 'batched']);
+  expect(server.requests.at(-1)!.headers.get('trpc-batch')).toBe('1');
+
+  void (() => {
+    // @ts-expect-error -- not a branch
+    void client.post.byId.query({ id: '1' }, { transport: 'ws' });
+  });
+});
+
+test('switchLink names are checked', () => {
+  const http = httpLink({ url: 'http://localhost' });
+  expect(() =>
+    switchLink({
+      // @ts-expect-error -- the client reads `signal` itself
+      name: 'signal',
+      links: { http },
+      pick: () => 'http',
+    }),
+  ).toThrow('reserved');
+  expect(() =>
+    switchLink({
+      // @ts-expect-error -- httpLink reads `headers`
+      name: 'headers',
+      links: { http },
+      pick: () => 'http',
+    }),
+  ).toThrow('reserved');
+  const name: string = 'transport';
+  // @ts-expect-error -- not a literal, so calls couldn't name it
+  switchLink({ name, links: { http }, pick: () => 'http' });
+
+  const inner = switchLink({
+    name: 'region',
+    links: { us: http, eu: http },
+    pick: () => 'us',
+  });
+  expect(() =>
+    switchLink({
+      // @ts-expect-error -- already used inside a branch
+      name: 'region',
+      links: { a: inner, b: http },
+      pick: () => 'a',
+    }),
+  ).toThrow('Two switchLinks on one chain are named "region"');
+  const outer = switchLink({
+    name: 'transport',
+    links: { a: inner, b: http },
+    pick: () => 'a',
+  });
+  expect(() =>
+    createTrpcClient({
+      // @ts-expect-error -- two switchLinks named `region` on one chain
+      router: routerType<AppRouter>(),
+      links: [
+        outer,
+        switchLink({ name: 'region', links: { x: http }, pick: () => 'x' }),
+      ],
+    }),
+  ).toThrow('Two switchLinks on one chain are named "region"');
 });

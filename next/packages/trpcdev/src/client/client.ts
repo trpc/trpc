@@ -2,6 +2,7 @@ import { Effect, Exit, Stream } from 'effect';
 import { frameworkError } from '../internal/error.ts';
 import type { ProcedureType } from '../internal/types.ts';
 import {
+  chainSwitchNames,
   clientErrorFromCause,
   firstValue,
   runLinks,
@@ -12,6 +13,7 @@ import {
   type TrpcLink,
 } from './link.ts';
 import type {
+  DuplicateSwitchCheck,
   LinksContext,
   RouterOf,
   SubscribeOptions,
@@ -171,6 +173,7 @@ export function createUntypedClient(
   opts: TrpcClientOptions,
 ): TrpcUntypedClient {
   const { links } = opts;
+  chainSwitchNames(links);
   return {
     async request(o) {
       const op = makeOperation(o.type, o.path, o.input, o);
@@ -218,9 +221,9 @@ export function createUntypedClient(
  */
 export function createTrpcClient<
   TSource,
-  TLinks extends ReadonlyArray<TrpcLink<any, RouterOf<TSource>>>,
+  const TLinks extends ReadonlyArray<TrpcLink<any, RouterOf<TSource>>>,
 >(
-  opts: TypedClientOptions<TSource, TLinks>,
+  opts: TypedClientOptions<TSource, TLinks> & DuplicateSwitchCheck<TLinks>,
 ): TrpcClient<RouterOf<TSource>, LinksContext<TLinks>>;
 /**
  * Creates a typed client from an explicit router type. Link fields on the
