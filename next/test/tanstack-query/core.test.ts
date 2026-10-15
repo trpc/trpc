@@ -440,3 +440,12 @@ test('prefetch on the server, hydrate rich types in the browser', async () => {
   expect(post?.createdAt).toBeInstanceOf(Date);
   expect(db.calls).toEqual(['post.byId:1']);
 });
+
+test('a refetch with equal Dates keeps the data reference', async () => {
+  await using app = await createApp();
+  const queryClient = new QueryClient();
+  const options = app.trpc.post.byId.queryOptions({ input: { id: '2' } });
+  const first = await queryClient.fetchQuery(options);
+  await queryClient.refetchQueries({ queryKey: options.queryKey });
+  expect(queryClient.getQueryData(options.queryKey)).toBe(first);
+});

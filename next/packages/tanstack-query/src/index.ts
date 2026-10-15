@@ -49,3 +49,4 @@ export {
   type TrpcSubscriptionOptions,
 } from './subscription.ts';
 export { hydrationOptions, type HydrationOptionsOptions } from './hydration.ts';
+export { structuralSharing } from './sharing.ts';

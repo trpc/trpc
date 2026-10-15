@@ -19,6 +19,8 @@ useMutation(trpc.post.create.mutationOptions());
 await queryClient.invalidateQueries(trpc.post.pathFilter());
 ```
 
+A refetch that returns equal data keeps the old reference, `Date`s, `Map`s and `Set`s included, so it doesn't re-render. `queryOptions()` sets `structuralSharing` for that; it's exported for other queries.
+
 Pass what links read in `context`, kept apart from TanStack's own options: `trpc.post.byId.queryOptions({ input, context: { dedupe: false } })`.
 
 With React, a client made per request or per test goes through context:

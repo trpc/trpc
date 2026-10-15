@@ -11,6 +11,7 @@ import {
   type QueryObserverOptions,
   type SkipToken,
 } from '@tanstack/query-core';
+import { structuralSharing } from './sharing.ts';
 import type { RouterOf, TrpcClient } from 'trpcdev/client';
 import {
   pathKey,
@@ -547,6 +548,7 @@ export function createTrpcQueryUtils<TClient extends object>(
       case 'queryOptions': {
         const query = method(path, 'query');
         return {
+          structuralSharing,
           ...rest,
           queryKey: procedureKey(path, input, 'query'),
           queryFn:
@@ -574,6 +576,7 @@ export function createTrpcQueryUtils<TClient extends object>(
         if (name === 'infiniteKey') return queryKey;
         const query = method(path, 'query');
         return {
+          structuralSharing,
           ...rest,
           queryKey,
           queryFn:

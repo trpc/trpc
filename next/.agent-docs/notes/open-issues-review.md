@@ -19,6 +19,7 @@ Method: `gh issue list --repo trpc/trpc --state open --limit 1000 --json number,
 - #7436, work after the response: `docs/procedures.md` documents `Effect.forkDetach` (tested) and the platforms' `waitUntil`. `docs/platforms.md` shows how a Workers `createContext` reaches `env` and `ctx` (a `WeakMap` keyed by the request).
 - #6771 and Next control flow: `redirect()`, `notFound()` and dynamic-API errors (a string `digest`) were wrapped as `INTERNAL_SERVER_ERROR` by actions and in-process callers, and RSC dehydration redacted them. They now pass through unchanged (`actions.test.ts`, `rsc.test.tsx`).
 - #7021, offline mutations: no helper needed. `mutationOptions()` carries `mutationKey` and `mutationFn`, so `setMutationDefaults(o.mutationKey, o)` lets a restored client resume paused mutations. Documented, and tested through dehydrate, JSON and hydrate (`core.test.ts`).
+- #6306, structural sharing: `queryOptions()` and `infiniteOptions()` keep equal `Date`, `Map`, `Set`, `URL` and typed-array values across refetches (`sharing.test.ts`, `core.test.ts`).
 - Layers that provide no services (a tracer, a logger) were rejected by the `layer` option types.
 
 ## Already answered by vNext
@@ -59,13 +60,12 @@ Method: `gh issue list --repo trpc/trpc --state open --limit 1000 --json number,
 Ordered by demand and fit.
 
 1. **Query key prefix** (#6555, #5251, #4153). Two tRPC APIs sharing one `QueryClient` produce clashing keys. Something like `createTrpcQueryUtils(client, { keyPrefix })` would give `[[prefix, ...path], …]`. This changes the key shape in `tanstack-query-keys.md`, so it needs a call.
-2. **Structural sharing for danSON types** (#6306). TanStack's `replaceEqualDeep` treats `Date`, `Map` and `Set` as new values, so a refetch with equal data re-renders. `hydrationOptions()` could set a `structuralSharing` that compares them.
-3. **Invalidation declared on mutations** (#5264, #3468, #6715). For example `.meta({ invalidates: ['post'] })` read by a TanStack `MutationCache` `onSuccess` helper. It fits as an opt-in helper, not as router config.
-4. **Middleware that reshapes input** (#6892). `next({ input })` typed like `next({ ctx })`.
-5. **`fetch` sees the operations** (#4184). `httpLink({ fetch })` could get `{ ops }` as a third argument for SSR cookie forwarding. `headers({ op })` covers most of it.
-6. **Publisher backends** (#5618). The `memory` layer is per process. Redis, Postgres `LISTEN` or Durable Object layers behind the same `PublisherShape` would let subscriptions run across instances.
-7. **TanStack DB** (#6891). `queryOptions()` should plug into `queryCollectionOptions` as it is; worth a test and a docs example.
-8. **Adapters, recorded as later**: Lambda API Gateway and Lambda@Edge (#4978), Cloudflare hibernation, Firebase callable (#6388), WebTransport (#6971), raw TCP (#5995). The socket core is generic over connections, so the last two are a transport each.
+2. **Invalidation declared on mutations** (#5264, #3468, #6715). For example `.meta({ invalidates: ['post'] })` read by a TanStack `MutationCache` `onSuccess` helper. It fits as an opt-in helper, not as router config.
+3. **Middleware that reshapes input** (#6892). `next({ input })` typed like `next({ ctx })`.
+4. **`fetch` sees the operations** (#4184). `httpLink({ fetch })` could get `{ ops }` as a third argument for SSR cookie forwarding. `headers({ op })` covers most of it.
+5. **Publisher backends** (#5618). The `memory` layer is per process. Redis, Postgres `LISTEN` or Durable Object layers behind the same `PublisherShape` would let subscriptions run across instances.
+6. **TanStack DB** (#6891). `queryOptions()` should plug into `queryCollectionOptions` as it is; worth a test and a docs example.
+7. **Adapters, recorded as later**: Lambda API Gateway and Lambda@Edge (#4978), Cloudflare hibernation, Firebase callable (#6388), WebTransport (#6971), raw TCP (#5995). The socket core is generic over connections, so the last two are a transport each.
 
 ## Not pursuing
 
