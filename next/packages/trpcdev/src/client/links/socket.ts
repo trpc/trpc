@@ -123,7 +123,13 @@ function socketLink(
   function lost() {
     current = undefined;
     for (const [id, call] of calls) {
-      if (call.resumable && transport.reconnect) continue;
+      if (
+        call.resumable &&
+        transport.reconnect &&
+        call.op.context.reconnect !== false
+      ) {
+        continue;
+      }
       calls.delete(id);
       call.fail(lostError());
     }

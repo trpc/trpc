@@ -258,6 +258,21 @@ test('after a dropped connection, subscriptions resume from the last tracked id'
   expect(state.lastEventIds).toEqual([undefined, '2']);
 });
 
+test('reconnect: false ends the subscription when the connection drops', async () => {
+  await using ctx = await setup();
+  state.lastEventIds = [];
+  const seen: number[] = [];
+  await expect(async () => {
+    for await (const event of ctx.client.posts.subscribe(undefined, {
+      reconnect: false,
+    })) {
+      seen.push(event.data.id);
+    }
+  }).rejects.toMatchObject({ code: 'NETWORK_ERROR' });
+  expect(seen).toEqual([1, 2]);
+  expect(state.lastEventIds).toEqual([undefined]);
+});
+
 test('queries in flight fail when the connection drops', async () => {
   await using ctx = await setup();
   await ctx.client.whoami.query();

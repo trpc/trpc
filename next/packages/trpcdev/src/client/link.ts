@@ -8,7 +8,7 @@ import type { ProcedureType } from '../internal/types.ts';
 
 /**
  * Call option fields that links read from `op.context` (17 F-B). Built-in
- * links read `headers`. Augment it to type your own links' fields:
+ * links read `headers` and `reconnect`. Augment it to type your own links' fields:
  *
  * @example
  * ```ts
@@ -24,6 +24,11 @@ import type { ProcedureType } from '../internal/types.ts';
 export interface TrpcClientContext {
   /** Extra request headers, read by `httpLink`. */
   headers?: HeadersInit;
+  /**
+   * `false` ends a subscription with `NETWORK_ERROR` when its connection
+   * drops, instead of subscribing again. Read by `httpLink` and `wsLink`.
+   */
+  reconnect?: false;
 }
 
 /**

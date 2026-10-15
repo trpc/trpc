@@ -401,6 +401,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink {
   async function* events(op: Operation, signal: AbortSignal) {
     let lastEventId = op.lastEventId;
     let attempt = 0;
+    const retry = () => op.context.reconnect !== false;
     while (!signal.aborted) {
       let res: Response | undefined;
       try {
@@ -412,7 +413,9 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink {
         );
       } catch (cause) {
         if (signal.aborted) return;
-        if (++attempt > reconnectAttempts) throw toHttpError(cause);
+        if (!retry() || ++attempt > reconnectAttempts) {
+          throw toHttpError(cause);
+        }
       }
       if (res) {
         if (!res.ok || !res.body) throw await readError(res);
@@ -456,7 +459,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink {
           decoder.close();
         }
         if (signal.aborted) return;
-        if (++attempt > reconnectAttempts) {
+        if (!retry() || ++attempt > reconnectAttempts) {
           throw new TrpcError({
             code: 'NETWORK_ERROR',
             message: 'The subscription connection was lost',
