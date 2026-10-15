@@ -139,53 +139,65 @@ export async function readFormData(
   return form;
 }
 
-const textDecoder = () =>
-  new TextDecoderStream() as unknown as ReadableWritablePair<
-    string,
-    Uint8Array
-  >;
+/**
+ * Decodes a byte stream as UTF-8 text. `TextDecoder` with `stream: true`
+ * rather than `TextDecoderStream`, which React Native's Hermes lacks.
+ */
+async function* readText(
+  stream: ReadableStream<Uint8Array>,
+): AsyncGenerator<string> {
+  const reader = stream.getReader();
+  const decoder = new TextDecoder();
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const text = decoder.decode(value, { stream: true });
+      if (text) yield text;
+    }
+    const rest = decoder.decode();
+    if (rest) yield rest;
+  } finally {
+    await reader.cancel().catch(() => {});
+  }
+}
 
 /** Parses SSE events out of a text stream, per the HTML spec's rules. */
 export async function* parseSse(
   stream: ReadableStream<Uint8Array>,
 ): AsyncGenerator<{ event: string; data: string; id: string | undefined }> {
-  const reader = stream.pipeThrough(textDecoder()).getReader();
   let buffer = '';
   let data: string[] = [];
   let event = '';
   let id: string | undefined;
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) return;
-      buffer += value;
-      let newline: number;
-      while ((newline = buffer.search(/\r\n|\r|\n/)) !== -1) {
-        const line = buffer.slice(0, newline);
-        buffer = buffer.slice(
-          newline + (buffer.startsWith('\r\n', newline) ? 2 : 1),
-        );
-        if (line === '') {
-          if (data.length > 0 || event) {
-            yield { event: event || 'message', data: data.join('\n'), id };
-          }
-          data = [];
-          event = '';
-          id = undefined;
-          continue;
+  for await (const value of readText(stream)) {
+    buffer += value;
+    let newline: number;
+    while ((newline = buffer.search(/\r\n|\r|\n/)) !== -1) {
+      // A trailing `\r` may be the first half of a `\r\n` split across chunks.
+      if (newline === buffer.length - 1 && buffer.endsWith('\r')) break;
+      const line = buffer.slice(0, newline);
+      buffer = buffer.slice(
+        newline + (buffer.startsWith('\r\n', newline) ? 2 : 1),
+      );
+      if (line === '') {
+        if (data.length > 0 || event) {
+          yield { event: event || 'message', data: data.join('\n'), id };
         }
-        if (line.startsWith(':')) continue;
-        const colon = line.indexOf(':');
-        const field = colon === -1 ? line : line.slice(0, colon);
-        let val = colon === -1 ? '' : line.slice(colon + 1);
-        if (val.startsWith(' ')) val = val.slice(1);
-        if (field === 'data') data.push(val);
-        else if (field === 'event') event = val;
-        else if (field === 'id') id = val;
+        data = [];
+        event = '';
+        id = undefined;
+        continue;
       }
+      if (line.startsWith(':')) continue;
+      const colon = line.indexOf(':');
+      const field = colon === -1 ? line : line.slice(0, colon);
+      let val = colon === -1 ? '' : line.slice(colon + 1);
+      if (val.startsWith(' ')) val = val.slice(1);
+      if (field === 'data') data.push(val);
+      else if (field === 'event') event = val;
+      else if (field === 'id') id = val;
     }
-  } finally {
-    await reader.cancel().catch(() => {});
   }
 }
 
@@ -193,22 +205,15 @@ export async function* parseSse(
 export async function* readLines(
   stream: ReadableStream<Uint8Array>,
 ): AsyncGenerator<string> {
-  const reader = stream.pipeThrough(textDecoder()).getReader();
   let buffer = '';
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += value;
-      let newline: number;
-      while ((newline = buffer.indexOf('\n')) !== -1) {
-        const line = buffer.slice(0, newline).trim();
-        buffer = buffer.slice(newline + 1);
-        if (line) yield line;
-      }
+  for await (const value of readText(stream)) {
+    buffer += value;
+    let newline: number;
+    while ((newline = buffer.indexOf('\n')) !== -1) {
+      const line = buffer.slice(0, newline).trim();
+      buffer = buffer.slice(newline + 1);
+      if (line) yield line;
     }
-    if (buffer.trim()) yield buffer.trim();
-  } finally {
-    await reader.cancel().catch(() => {});
   }
+  if (buffer.trim()) yield buffer.trim();
 }
