@@ -13,6 +13,7 @@
 - WebSocket and MessagePort: JSON messages, many calls over one connection.
   - The client first sends `{ type: 'init', version, connectionParams? }`.
   - Calls are `{ id, type: 'request', method, path, input?, lastEventId? }` and `{ id, type: 'abort' }`.
+  - (agent) `{ type: 'ping' }` gets `{ type: 'pong' }`, for client keep-alives.
   - The server answers with `result` (`deferred: true` when chunks follow), `event` (`eventId?`, `deferred?`), `chunk`, `chunkEnd`, `done`, and `error { id | null, status, body }`.
   - A version mismatch is an `id: null` error and close code 1002. Bodies use the endpoint's serializer.
 - Open: drop the `{ json }` wrapper.

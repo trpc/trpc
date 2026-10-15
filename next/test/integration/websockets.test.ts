@@ -395,3 +395,45 @@ test('the upgrade checks the path and allowOrigin', async () => {
   expect(await upgrade('/trpc', 'https://evil.example.com')).toBe(403);
   expect(await upgrade('/elsewhere', 'https://app.example.com')).toBe(404);
 });
+
+test('wsLink replaces a connection that stops answering pings', async () => {
+  const sockets: DeafSocket[] = [];
+  class DeafSocket extends WebSocket {
+    deaf = false;
+    constructor(url: string | URL) {
+      super(url);
+      sockets.push(this);
+    }
+    override addEventListener(
+      ...args: Parameters<WebSocket['addEventListener']>
+    ) {
+      const [type, listener, options] = args;
+      if (type !== 'message') return super.addEventListener(...args);
+      super.addEventListener(
+        type,
+        (event) => {
+          if (!this.deaf) (listener as (e: Event) => void)(event);
+        },
+        options,
+      );
+    }
+  }
+  await using server = await createTestServer({
+    router,
+    createContext: () => ({ user: null, transport: 'ws' }),
+  });
+  await using link = wsLink({
+    url: server.wsUrl,
+    WebSocket: DeafSocket,
+    keepAlive: { intervalMs: 20, timeoutMs: 20 },
+  });
+  const client = createTrpcClient<AppRouter>({ links: [link] });
+  expect(await client.hello.query({ name: 'a' })).toBe('hello a over ws');
+  await sleep(100);
+  expect(sockets).toHaveLength(1);
+
+  sockets[0]!.deaf = true;
+  await sleep(100);
+  expect(await client.hello.query({ name: 'b' })).toBe('hello b over ws');
+  expect(sockets).toHaveLength(2);
+});

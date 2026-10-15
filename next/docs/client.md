@@ -42,7 +42,7 @@ Links receive the fields in `op.context`. `signal` and `lastEventId` are reserve
 ## Links
 
 - `httpLink({ url, batch?, headers?, maxUrlLength?, longQuery?, reconnect? })` sends queries as `GET`, mutations as `POST` and subscriptions as SSE. Outputs with nested promises or async iterables stream as JSONL. Inputs holding a `File` or `Blob` go alone as `multipart/form-data`.
-- `wsLink({ url, connectionParams? })` runs everything over one WebSocket.
+- `wsLink({ url, connectionParams?, reconnect?, idleMs?, keepAlive? })` runs everything over one WebSocket. It pings every 30 s and reconnects when a ping goes unanswered for 10 s.
 - `splitLink({ condition, true, false })` picks a chain per call; its `condition` sees typed paths.
 - `dedupeLink()` shares identical queries in flight.
 - `localLink({ router })` calls a router in-process.

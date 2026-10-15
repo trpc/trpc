@@ -71,6 +71,7 @@ interface SocketTransport {
     | { attempts: number; delayMs: (attempt: number) => number }
     | undefined;
   idleMs: number | undefined;
+  keepAlive: { intervalMs: number; timeoutMs: number } | undefined;
 }
 
 const lostError = () =>
@@ -90,6 +91,8 @@ function socketLink(
   let attempt = 0;
   let idleTimer: ReturnType<typeof setTimeout> | undefined;
   let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
+  let pingTimer: ReturnType<typeof setInterval> | undefined;
+  let pongTimer: ReturnType<typeof setTimeout> | undefined;
 
   const revive = (message: Extract<ServerMessage, { type: 'error' }>) => {
     try {
@@ -110,6 +113,8 @@ function socketLink(
     if (typeof raw !== 'object' || raw === null) return;
     const message = raw as ServerMessage;
     attempt = 0;
+    clearTimeout(pongTimer);
+    if (message.type === 'pong') return;
     if (message.id === null) {
       if (message.type !== 'error') return;
       const err = revive(message);
@@ -120,7 +125,29 @@ function socketLink(
     calls.get(message.id)?.onMessage(message);
   }
 
+  function stopKeepAlive() {
+    clearInterval(pingTimer);
+    clearTimeout(pongTimer);
+  }
+
+  /** A connection that answers nothing within `timeoutMs` of a ping is lost. */
+  function startKeepAlive(conn: SocketConnection) {
+    const { keepAlive } = transport;
+    if (!keepAlive) return;
+    stopKeepAlive();
+    pingTimer = setInterval(() => {
+      conn.send({ type: 'ping' });
+      clearTimeout(pongTimer);
+      pongTimer = setTimeout(() => {
+        if (current !== conn) return;
+        lost();
+        conn.close();
+      }, keepAlive.timeoutMs);
+    }, keepAlive.intervalMs);
+  }
+
   function lost() {
+    stopKeepAlive();
     current = undefined;
     for (const [id, call] of calls) {
       if (
@@ -172,6 +199,7 @@ function socketLink(
       }
       connecting = false;
       current = conn;
+      startKeepAlive(conn);
       for (const call of calls.values()) conn.send(call.request());
       if (calls.size === 0) scheduleIdle();
     })();
@@ -183,6 +211,7 @@ function socketLink(
     const conn = current;
     idleTimer = setTimeout(() => {
       if (calls.size > 0 || current !== conn) return;
+      stopKeepAlive();
       current = undefined;
       conn.close();
     }, transport.idleMs);
@@ -354,6 +383,7 @@ function socketLink(
   const close = async () => {
     clearTimeout(idleTimer);
     clearTimeout(reconnectTimer);
+    stopKeepAlive();
     const conn = current;
     current = undefined;
     for (const call of calls.values()) {
@@ -400,6 +430,14 @@ export interface WebSocketLinkOptions extends SocketLinkOptions {
    * @default undefined, stay open until `close()`
    */
   idleMs?: number;
+  /**
+   * Ping every `intervalMs`. A connection that answers nothing within
+   * `timeoutMs` is treated as lost, so it reconnects instead of waiting for
+   * a close that a dead network never delivers. The traffic also keeps
+   * proxies from dropping a quiet socket. `false` sends no pings.
+   * @default { intervalMs: 30_000, timeoutMs: 10_000 }
+   */
+  keepAlive?: false | { intervalMs?: number; timeoutMs?: number };
 }
 
 /**
@@ -430,6 +468,13 @@ export function wsLink(opts: WebSocketLinkOptions): SocketLink {
           ((attempt) => Math.min(1000 * 2 ** (attempt - 1), 30_000)),
       },
       idleMs: opts.idleMs,
+      keepAlive:
+        opts.keepAlive === false
+          ? undefined
+          : {
+              intervalMs: opts.keepAlive?.intervalMs ?? 30_000,
+              timeoutMs: opts.keepAlive?.timeoutMs ?? 10_000,
+            },
       connect: () =>
         new Promise((resolve, reject) => {
           const ws = new Impl(opts.url);
@@ -532,6 +577,7 @@ export function messagePortLink(opts: MessagePortLinkOptions): SocketLink {
     {
       reconnect: undefined,
       idleMs: undefined,
+      keepAlive: undefined,
       connect: async () => {
         listeners.length = 0;
         return connection;

@@ -217,6 +217,9 @@ export function serveConnection(
           : undefined;
         return;
       }
+      case 'ping':
+        conn.send({ type: 'pong' });
+        return;
       case 'abort': {
         calls.get(message.id)?.abort();
         calls.delete(message.id);

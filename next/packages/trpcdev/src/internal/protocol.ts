@@ -77,7 +77,8 @@ export type ClientMessage =
       input?: unknown;
       lastEventId?: string | undefined;
     }
-  | { id: number; type: 'abort' };
+  | { id: number; type: 'abort' }
+  | { type: 'ping' };
 
 /**
  * What a WebSocket or MessagePort server sends (10). A `result` or `event`
@@ -96,7 +97,8 @@ export type ServerMessage =
   | { id: number; type: 'chunk'; event?: number; chunk: unknown }
   | { id: number; type: 'chunkEnd'; event: number }
   | { id: number; type: 'done' }
-  | { id: number | null; type: 'error'; status: number; body: unknown };
+  | { id: number | null; type: 'error'; status: number; body: unknown }
+  | { type: 'pong' };
 
 export const isJsonContentType = (value: string | null): boolean =>
   value !== null && /^application\/json\b/i.test(value);
