@@ -1,8 +1,8 @@
 # OpenAPI: a REST handler plus a generator (agent)
 
 - Human, 2026-10-15 (Q18.4): "V1". `openApiLink` ships in v1.
-- Q18.1: O-C. `createOpenApiHandler({ router, prefix = '/api', createContext?, layer?, plugins? })` serves the REST mapping and is the main feature. `generateOpenApi(router, { info, servers?, target: 'openapi' | 'rpc', prefix?, filter? })` documents the REST mapping or, with zero configuration, the RPC endpoint (`{ json }` bodies included).
-- Q18.2: defaults. Without `.route()`, a query is `GET {prefix}/post/byId`, a mutation `POST`, a subscription `GET` with `text/event-stream`.
+- (agent) Q18.1: O-C. Skipped in the decision round, 2026-10-16; kept O-C because it is built, gives oRPC parity, and RPC users get a spec with no configuration. `createOpenApiHandler({ router, prefix = '/api', createContext?, layer?, plugins? })` serves the REST mapping and is the main feature. `generateOpenApi(router, { info, servers?, target: 'openapi' | 'rpc', prefix?, filter? })` documents the REST mapping or, with zero configuration, the RPC endpoint (`{ json }` bodies included).
+- (agent) Q18.2: defaults. Skipped in the decision round, 2026-10-16; kept because the whole router is usable over REST with no configuration, as in oRPC. Without `.route()`, a query is `GET {prefix}/post/byId`, a mutation `POST`, a subscription `GET` with `text/event-stream`.
 - Requests:
   - Path params are `{name}`; static segments win, so `/posts/latest` matches before `/posts/{id}`. Two procedures on one method and path throw at creation.
   - `GET` reads the query string; other methods read a JSON, urlencoded or multipart body. Path params are merged into the input.
@@ -12,7 +12,7 @@
 - The spec is built from Standard JSON Schema (`~standard.jsonSchema`, `unrepresentable: 'any'`) and Effect's `Schema.toStandardJSONSchemaV1`, so there's no per-library converter. `$defs` are hoisted into `components.schemas`. Declared errors become responses by status; procedures with an input document the 400 validation error; `default` documents the error format.
 - Q18.3: later; the static TypeScript generator isn't ported.
 - `openApiLink({ url, contract })` reads methods and paths from a `toContract()` value, sends `multipart/form-data` when the input contains a `Blob`, and reads SSE for subscriptions.
-- Q18.5: the `openApiReference({ path, specPath, docsProvider: 'scalar' | 'swagger', specGenerateOptions })` plugin serves the UI from a CDN and generates the document on first request.
+- Human, 2026-10-16 (Q18.5, decision round): "A". The `openApiReference({ path, specPath, docsProvider: 'scalar' | 'swagger', specGenerateOptions })` plugin serves the UI from a CDN and generates the document on first request.
 - (agent) Inferred errors are documented by `generateOpenApiFromTypes` ([`openapi-type-generator-v1.md`](./openapi-type-generator-v1.md)).
 - (agent) OpenAPI-to-contract is `generateContractFromOpenApi` ([`openapi-to-contract.md`](./openapi-to-contract.md)).
 - (agent) `.route({ spec })` overrides the generated operation ([`route-spec-override.md`](./route-spec-override.md)).

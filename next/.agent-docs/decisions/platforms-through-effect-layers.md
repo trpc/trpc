@@ -1,4 +1,4 @@
-# `trpcdev` imports no Node; platforms come from Effect layers (human asked)
+# `trpcdev` imports no Node; it is built on `effect/http` (human)
 
 - Human, 2026-10-11: "in the server package, we don't wanna import from node directly and instead use Effect's runtime and dependency injection for node etc". `trpcdev` has no `node:*` imports and no `@types/node`; its only dependency stays `effect` ([`effect-dependency.md`](./effect-dependency.md)).
 - Human, later: "If effect depends on a lib it's okay but maybe it'd be better to use dependency injection of something that you provide when setting up the respnsne handlers". The platform layer is that injected dependency, so `ws` arriving through `@effect/platform-node` is fine and there is no hand-written WebSocket server.
@@ -24,5 +24,5 @@
   - Our own adapters where Effect has none, built the same way (the runtime injected as a layer or service, the handler core platform-free): AWS Lambda API Gateway events and Cloudflare WebSocket hibernation. Each is a `trpcdev/*` subpath if it needs no dependencies, otherwise a `@trpcdev/*` package ([`integration-packages.md`](./integration-packages.md)).
 - (agent) Bun: `test/bun` serves through `BunHttpServer.layer` under `bun test` in CI's `bun` job, covering batched queries with rich types, files both ways, SSE with resume, `wsLink` and disconnect aborts. It's its own suite rather than the Node integration suite on Bun, because that suite's fixtures drop connections through `node:http` and run on Vitest.
 - (agent) The Lambda adapter is built: `trpcdev/aws-lambda` ([`aws-lambda-adapter.md`](./aws-lambda-adapter.md)).
-- Open: Q12.1 in proposal 12 is for a human; this leans toward P-B/P-C.
+- Human, 2026-10-16 (Q12.1, decision round): "B". All-in on `effect/http` (proposal 12 P-B): the handler is `HttpRouter` routes, fetch platforms go through `HttpRouter.toWebHandler`, and `effect/http` being `@stability unstable` is accepted.
 - Lives in: `packages/trpcdev/src/http/index.ts`, `src/internal/testing/index.ts`, `test/integration/fixtures/server.ts`, `test/bun/`, `.github/workflows/next.yml` (`bun`), `docs/platforms.md` (Bun).

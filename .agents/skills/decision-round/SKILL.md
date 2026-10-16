@@ -20,7 +20,7 @@ Gather candidates, then drop any that a `(human)` decision already answers:
 
 If the human names a topic ("decide openapi"), filter every source with `pnpm decisions <regex>` and `rg -n "<topic>" .agent-docs/proposals/`.
 
-Order the queue as listed above, then by leverage: parity-critical (⚠️) and blocking items first (see "If you only answer a few questions" in `.agent-docs/README.md`). Merge items that are really one choice, such as a proposal's agent-answered questions reviewed together.
+Order the queue as listed above, then by leverage: parity-critical (⚠️) and blocking items first (see "If you only answer a few questions" in `.agent-docs/README.md`). Merge items only when they are really one choice. Ask each proposal question on its own, even when one decision file answers several; drop a question that an earlier human answer already settles, and say so.
 
 Before the first question, say in one line how many items there are and where they come from.
 
@@ -41,6 +41,8 @@ Reply with a letter or your own words, `skip`, or `done`.
 ```
 
 - Keep context to two to four lines: what exists today and what each option costs. Read the proposal and decision before writing, so the options match what is actually built.
+- When the choice is about API shape, show each option as a short code excerpt. If the human says they're on a phone, keep to prose; on a desktop, use code freely.
+- Point out when an earlier answer in the round changes this item (for example a new default), and adjust the options and the recommendation to it.
 - Mark one option as recommended. Choose it Effect-native first, v11's way second (`decisions/effect-native-by-default.md`).
 - For an agent call under review, option A is "Keep" and the others are real alternatives.
 - If the reply is a question ("why?", "show the code"), answer it briefly, then ask the same item again without advancing the count.
@@ -51,7 +53,7 @@ Reply with a letter or your own words, `skip`, or `done`.
 
 | Reply                 | Do                                                                                                                                                                                                       |
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A letter or free text | Record the answer verbatim as the human's, then go to the next item.                                                                                                                                     |
+| A letter or free text | Record the answer verbatim as the human's, then go to the next item. "Do recommended" is the recommended option, chosen by the human.                                                                                                                                     |
 | A hesitant answer     | "I don't get this", "might change", "not sure": record it as the human's, but tentative (step 3), and say so in one line.                                                                                |
 | `skip`                | Defer to the agent: pick the best option (Effect-native first, v11 second), say the pick in one line ("Skipped: going with A"), then go to the next item. It is recorded as `(agent)`, not the human's. |
 | `done`                | Stop asking and go to step 3. Unasked items stay open.                                                                                                                                                   |

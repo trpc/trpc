@@ -1,10 +1,11 @@
-# Links are callable functions on an Effect `Stream` core (agent)
+# Links are Effect functions on a `Stream` core (human)
 
-- A link is a callable `TrpcLink<TDecl, TRouter>`: `({ op, next }) => Stream`. `link(async fn)` and `link.effect(fn)` build one. The client takes them as an array ([`client.md`](./client.md), Q16.6).
+- A link is a callable `TrpcLink<TDecl, TRouter>`: `({ op, next }) => Stream`. `link(fn)` builds one from an Effect function; v11 links convert with `fromV11Link`. The client takes them as an array ([`client.md`](./client.md), Q16.6).
 - `TDecl` declares the call options a link reads; they sit top-level on the call (Q17.5 F-A, from the human Q16.2 in [`client.md`](./client.md)); declarations typed `any` are ignored when merging. It is an invariant phantom, so a link that declares nothing doesn't absorb the others' declarations in an array.
 - Why callable: TypeScript only infers an inline generic link's type parameters from return-type context when the type is callable. That is what lets `splitLink({ condition: (op) => … })` see `op.path` as the router's paths.
-- Q17.1 L-B: links are authored with promises (`link(async fn)`) or Effect (`link.effect(fn)`). Q17.2 OR-A: every operation is a `Stream` on an Effect core.
-- Q17.3 D-C: `createTrpcClient({ router: routerType<AppRouter>(), links })` infers what links declare; the plain `createTrpcClient<AppRouter>({ links })` form stays, with link options from the augmentable `TrpcClientContext` interface.
+- Human, 2026-10-16 (Q17.1, decision round): "B, build an interop mode to transform v11 links". Links are written with Effect only (L-A).
+- Human, 2026-10-16 (Q17.2, decision round): "A". Every operation is a `Stream` on an Effect core (OR-A).
+- Human, 2026-10-16 (Q17.3, decision round): "B". `createTrpcClient({ router: routerType<AppRouter>(), links })` is the only form; it infers what links declare. The `createTrpcClient<AppRouter>({ links })` form and augmenting `TrpcClientContext` go; the codemod rewrites v11's `createTRPCClient<AppRouter>(…)`.
 - Built-in links:
   - `httpLink`: `batch`, streaming and SSE by negotiation; `longQuery: 'post' | 'query'` ([`wire-protocol.md`](./wire-protocol.md)).
   - `splitLink`, typed with the router's paths; `loggerLink`, `retryLink`, `localLink`.
