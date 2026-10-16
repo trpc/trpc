@@ -294,7 +294,14 @@ export function serializeSync(
     const refs: Record<string, JsonValue> = {};
     let any = false;
     for (const [ref, location] of replace) {
-      if (!location) continue;
+      if (!location) {
+        // The root of a chunk after the head: it isn't `$0`, so it moves to `refs`.
+        if (ref === placeholderOf(0)) continue;
+        refs[ref] = json;
+        result.json = ref;
+        any = true;
+        continue;
+      }
       const [parent, key] = location;
       const original = (parent as Record<string | number, JsonValue>)[key]!;
       setOwn(parent as Record<string | number, JsonValue>, key, ref);
