@@ -53,7 +53,7 @@ t.procedure
 await client.setCover.mutate({ postId: '1', cover: file });
 ```
 
-`wsLink` and `messagePortLink` don't send files; the call fails with a `BAD_REQUEST`. For large uploads, use presigned URLs.
+`wsLink` and `experimental_messagePortLink` don't send files; the call fails with a `BAD_REQUEST`. For large uploads, use presigned URLs.
 
 Outputs can hold files too, over every link:
 
@@ -70,7 +70,7 @@ const report = await client.report.query({ id }); // File
 
 - When a `File` or `Blob` is the whole output of a call that isn't batched, `httpLink` gets it as the response body, with its `content-type` and a `content-disposition` naming the file, so the URL works as a download link too.
 - Anywhere else (nested in an object, yielded by an async iterable, or in a batch), its bytes stream after the rest of the output as base64 chunks. The value holding it resolves once they've arrived, so a nested `File` is a `File`, not a promise. A file that appears twice is sent once.
-- Those chunks are base64 in JSONL, SSE and WebSocket messages. `httpLink({ binary: true })` asks for binary frames instead (`application/vnd.trpc.frames`: the same lines, length-prefixed, with the bytes unencoded), a third smaller; servers answer with JSONL to clients that don't ask. `wsLink({ binary: true })` gets each chunk of bytes as a binary message, except from hibernating Durable Object sockets, which stay text. `messagePortLink` and `localLink` always pass the bytes as they are.
+- Those chunks are base64 in JSONL, SSE and WebSocket messages. `httpLink({ binary: true })` asks for binary frames instead (`application/vnd.trpc.frames`: the same lines, length-prefixed, with the bytes unencoded), a third smaller; servers answer with JSONL to clients that don't ask. `wsLink({ binary: true })` gets each chunk of bytes as a binary message, except from hibernating Durable Object sockets, which stay text. `experimental_messagePortLink` and `localLink` always pass the bytes as they are.
 - Over [OpenAPI](./openapi.md), a `File` or `Blob` output is the response body.
 
 ## Errors
@@ -87,7 +87,7 @@ const byId = t.procedure
   );
 ```
 
-Declaring errors with `.errors()` is optional. It adds typed constructors, `data` schemas and entries in `generateOpenApi`'s document. It also types what inference can't see: errors thrown from helpers (a `throw` has no type) and contracts, which have no resolver. `unstable_generateOpenApiFromTypes` documents inferred errors without declarations ([OpenAPI](./openapi.md)).
+Declaring errors with `.errors()` is optional. It adds typed constructors, `data` schemas and entries in `generateOpenApi`'s document. It also types what inference can't see: errors thrown from helpers (a `throw` has no type) and contracts, which have no resolver. `experimental_generateOpenApiFromTypes` documents inferred errors without declarations ([OpenAPI](./openapi.md)).
 
 ```ts
 const byId = t.procedure
@@ -199,29 +199,29 @@ createFetchHandler({
 
 On the client, `retryLink({ retry, delayMs })` gets the error, so it can wait `error.data.retryAfter`.
 
-`unstable_durable()` keeps a call's result, so a client that lost the response (a dropped connection, a closed tab) calls again and gets it instead of running the mutation twice. The call runs detached from its request: the client going away doesn't interrupt it. Results live in Effect's `BackingPersistence`: `Persistence.layerBackingMemory` for one instance, `layerBackingRedis`, `layerBackingSql` or `layerBackingKvs` for many. Put it after `.input()`, so a reused call id with a different input fails with `CONFLICT`:
+`experimental_durable()` keeps a call's result, so a client that lost the response (a dropped connection, a closed tab) calls again and gets it instead of running the mutation twice. The call runs detached from its request: the client going away doesn't interrupt it. Results live in Effect's `BackingPersistence`: `Persistence.layerBackingMemory` for one instance, `layerBackingRedis`, `layerBackingSql` or `layerBackingKvs` for many. Put it after `.input()`, so a reused call id with a different input fails with `CONFLICT`:
 
 ```ts
 import { Persistence } from 'effect/persistence';
-import { unstable_durableLink, httpLink } from 'trpcdev/client';
-import { unstable_durable } from 'trpcdev/middleware';
+import { experimental_durableLink, httpLink } from 'trpcdev/client';
+import { experimental_durable } from 'trpcdev/middleware';
 
 const checkout = t.procedure
   .input(Cart)
-  .use(unstable_durable({ ttl: '1 hour' }))
+  .use(experimental_durable({ ttl: '1 hour' }))
   .mutation(…);
 
 createFetchHandler({ router, layer: Persistence.layerBackingMemory });
 
 const client = createTrpcClient({
   router: routerType<AppRouter>(),
-  links: [unstable_durableLink(), httpLink({ url, batch: true })],
+  links: [experimental_durableLink(), httpLink({ url, batch: true })],
 });
 // After a reload, pick up the same call:
 await client.checkout.mutate(cart, { callId: sessionStorage.checkoutId });
 ```
 
-`unstable_durableLink()` gives every mutation (and queries called with `{ durable: true }`) a `trpc-call-id` header, sends it outside any batch, and retries a lost response with the same id. Successes and typed errors are kept for `ttl` (10 minutes by default); unexpected errors aren't, so a retry runs again. Two instances sharing a store run a call once: the second waits for the first's result, and runs it itself if the first stops heartbeating its claim (`claimTtl`). The store has no atomic claim, so two instances that start the same call at the same moment can both run it.
+`experimental_durableLink()` gives every mutation (and queries called with `{ durable: true }`) a `trpc-call-id` header, sends it outside any batch, and retries a lost response with the same id. Successes and typed errors are kept for `ttl` (10 minutes by default); unexpected errors aren't, so a retry runs again. Two instances sharing a store run a call once: the second waits for the first's result, and runs it itself if the first stops heartbeating its claim (`claimTtl`). The store has no atomic claim, so two instances that start the same call at the same moment can both run it.
 
 Results are stored with danSON (`serializer` to change it), whatever the wire serializer. Streamed outputs aren't kept: for work a client should follow and resume, start it in a mutation that returns an id and publish its progress to a [`Publisher`](./subscriptions.md) channel the client subscribes to with `lastEventId`. Over WebSockets there are no per-call headers; key the call from its input with `key: ({ input, path }) => \`${path}:${input.requestId}\``. The resolver's `signal` still aborts when the client leaves, so don't hand it to work that should finish.
 

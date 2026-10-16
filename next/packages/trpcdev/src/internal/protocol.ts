@@ -66,7 +66,7 @@ export const HEADER = {
   blob: 'trpc-blob',
   /** On a response a procedure returned itself: the client hands it over as is. */
   response: 'trpc-response',
-  /** On a request: the call's id, which `unstable_durable()` keeps its result under. */
+  /** On a request: the call's id, which `experimental_durable()` keeps its result under. */
   callId: 'trpc-call-id',
   /** On a response: the name of the serializer the handler uses. */
   serializer: 'trpc-serializer',

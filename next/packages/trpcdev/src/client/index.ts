@@ -41,7 +41,7 @@ export {
 } from './link.ts';
 export {
   dedupeLink,
-  unstable_durableLink,
+  experimental_durableLink,
   loggerLink,
   retryLink,
   splitLink,
@@ -66,8 +66,8 @@ export {
   type ValidationLinkOptions,
 } from './links/validation.ts';
 export {
-  messagePortLink,
-  socketLink,
+  experimental_messagePortLink,
+  experimental_socketLink,
   wsLink,
   type ConnectionLinkOptions,
   type MessagePortLinkOptions,

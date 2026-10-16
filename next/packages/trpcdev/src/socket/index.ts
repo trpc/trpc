@@ -2,7 +2,7 @@
  * Serve a fetch handler's router over raw sockets with Effect's
  * `SocketServer`: TCP, TLS or Unix sockets, whatever the platform layer
  * provides (`NodeSocketServer.layer` from `@effect/platform-node`). Calls
- * use the WebSocket protocol, one JSON message per line; `socketLink` from
+ * use the WebSocket protocol, one JSON message per line; `experimental_socketLink` from
  * `trpcdev/client` is the other end.
  *
  * @example
@@ -43,7 +43,7 @@ import {
  */
 export interface SocketOptions {
   /**
-   * Close a connection that sends nothing for this long; `socketLink`'s
+   * Close a connection that sends nothing for this long; `experimental_socketLink`'s
    * pings keep a live one open. `false` keeps silent connections.
    * @default 60_000
    */

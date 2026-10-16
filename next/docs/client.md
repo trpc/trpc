@@ -78,8 +78,8 @@ client.onPost.subscribe; // type error: no link carries subscriptions
 - `switchLink({ name, links, pick })` picks one of several named chains, and a call can force one (below).
 - `dedupeLink()` shares identical queries in flight.
 - `localLink({ router })` calls a router in-process.
-- `messagePortLink({ port })` talks to a worker.
-- `socketLink({ socket })` runs everything over a raw TCP, TLS or Unix socket, with `wsLink`'s options ([Raw sockets](./platforms.md#raw-sockets-tcp)).
+- `experimental_messagePortLink({ port })` talks to a worker.
+- `experimental_socketLink({ socket })` runs everything over a raw TCP, TLS or Unix socket, with `wsLink`'s options ([Raw sockets](./platforms.md#raw-sockets-tcp)).
 
 `switchLink`'s `name` becomes a typed call option, so one call can override `pick`:
 
@@ -167,7 +167,7 @@ const post = yield * client.post.byId.query({ id });
 
 ## Tracing
 
-Every call runs in an Effect span named `trpc.<path>` (kind `client`), with `rpc.method`, `trpc.type` and `trpc.error.code` on failure. When an Effect tracer is installed, `httpLink` sends the span as `traceparent` and `b3` headers (`wsLink` and `messagePortLink` put them in each request message's `trace` field), and the server's `trpc.<path>` span joins the same trace:
+Every call runs in an Effect span named `trpc.<path>` (kind `client`), with `rpc.method`, `trpc.type` and `trpc.error.code` on failure. When an Effect tracer is installed, `httpLink` sends the span as `traceparent` and `b3` headers (`wsLink` and `experimental_messagePortLink` put them in each request message's `trace` field), and the server's `trpc.<path>` span joins the same trace:
 
 ```ts
 import { NodeSdk } from '@effect/opentelemetry';

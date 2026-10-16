@@ -4,7 +4,7 @@ import { publicNames } from './public-exports.ts';
 
 const REQUIRED = ['@since', '@stability'] as const;
 
-/** Declarations whose names carry the `unstable_` prefix; types follow their value's. */
+/** Declarations whose names carry the `experimental_` prefix; types follow their value's. */
 const VALUES = new Set([
   'FunctionDeclaration',
   'TSDeclareFunction',
@@ -35,7 +35,7 @@ const rule: CreateRule = {
     type: 'suggestion',
     docs: {
       description:
-        "Exports reachable from a package's versioned entry points carry `@since` and `@stability`; experimental values are named `unstable_*`, and deprecated aliases name their replacement (proposal 21)",
+        "Exports reachable from a package's versioned entry points carry `@since` and `@stability`; experimental values are named `experimental_*`, and deprecated aliases name their replacement (proposal 21)",
     },
   },
   create(context) {
@@ -79,16 +79,16 @@ const rule: CreateRule = {
         }
         if (!VALUES.has(declaration.type)) return;
         const experimental = /^\s*\*?\s*@stability experimental\b/m.test(text);
-        const prefixed = name.startsWith('unstable_');
+        const prefixed = name.startsWith('experimental_');
         if (experimental && !prefixed) {
           context.report({
             node: declaration,
-            message: `\`${name}\` is experimental, so its name starts with \`unstable_\`: \`unstable_${name}\`.`,
+            message: `\`${name}\` is experimental, so its name starts with \`experimental_\`: \`experimental_${name}\`.`,
           });
         } else if (prefixed && !experimental && !deprecated) {
           context.report({
             node: declaration,
-            message: `\`${name}\` isn't experimental: export it as \`${name.slice('unstable_'.length)}\` and keep \`${name}\` as a \`@deprecated\` alias.`,
+            message: `\`${name}\` isn't experimental: export it as \`${name.slice('experimental_'.length)}\` and keep \`${name}\` as a \`@deprecated\` alias.`,
           });
         }
       },

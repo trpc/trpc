@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { useActionState, useOptimistic } from 'react';
 import { createRoot } from 'react-dom/client';
-import { createAction } from 'trpcdev/actions';
+import { experimental_createAction } from 'trpcdev/actions';
 import { initTrpc } from 'trpcdev/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
@@ -19,7 +19,7 @@ const addTitle = t.procedure
     return [...titles];
   });
 
-const action = createAction({ ctx: { user: 'ada' } });
+const action = experimental_createAction({ ctx: { user: 'ada' } });
 const addTitleAction = action(addTitle);
 
 function Titles() {

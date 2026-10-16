@@ -211,11 +211,11 @@ export const main = awslambda.streamifyResponse(
 
 ## Cloudflare Durable Objects
 
-A Durable Object can accept WebSockets with hibernation, so idle connections don't keep it in memory (or on the bill). `createHibernatingWebSockets()` from `trpcdev/cloudflare` serves a handler's router that way, from the object's `fetch`, `webSocketMessage` and `webSocketClose`:
+A Durable Object can accept WebSockets with hibernation, so idle connections don't keep it in memory (or on the bill). `experimental_createHibernatingWebSockets()` from `trpcdev/cloudflare` serves a handler's router that way, from the object's `fetch`, `webSocketMessage` and `webSocketClose`:
 
 ```ts
 import { DurableObject } from 'cloudflare:workers';
-import { createHibernatingWebSockets } from 'trpcdev/cloudflare';
+import { experimental_createHibernatingWebSockets } from 'trpcdev/cloudflare';
 import { createFetchHandler } from 'trpcdev/server';
 
 const handler = createFetchHandler<AppRouter, { env: Env }>({
@@ -224,7 +224,9 @@ const handler = createFetchHandler<AppRouter, { env: Env }>({
 });
 
 export class Room extends DurableObject<Env> {
-  sockets = createHibernatingWebSockets(handler, { state: this.ctx });
+  sockets = experimental_createHibernatingWebSockets(handler, {
+    state: this.ctx,
+  });
 
   fetch(request: Request) {
     if (request.headers.get('upgrade') !== 'websocket') {
@@ -255,7 +257,7 @@ Provide the object's [publisher](./subscriptions.md#publisher) with `hibernating
 
 ```ts
 import {
-  createHibernatingWebSockets,
+  experimental_createHibernatingWebSockets,
   hibernatingPublisher,
 } from 'trpcdev/cloudflare';
 
@@ -275,14 +277,16 @@ export class Room extends DurableObject<Env> {
     router,
     layer: hibernatingPublisher(Posts, { state: this.ctx, buffer: 100 }),
   });
-  sockets = createHibernatingWebSockets(this.handler, { state: this.ctx });
+  sockets = experimental_createHibernatingWebSockets(this.handler, {
+    state: this.ctx,
+  });
   // fetch, webSocketMessage and webSocketClose as above
 }
 ```
 
 - Event ids are timestamps, so they keep growing across wakes. Kept events (`buffer`) are in memory: a reconnect with `lastEventId` replays the ones the object still has.
 - The subscription runs its resolver once, when it starts. Anything the resolver does per event (filtering, mapping the stream) is skipped; filter in the channel name instead (`'room:42'`).
-- One adapter per object: the latest `createHibernatingWebSockets` for a `state` gets the events.
+- One adapter per object: the latest `experimental_createHibernatingWebSockets` for a `state` gets the events.
 - A subscription that doesn't fit the attachment runs as a normal stream, with a warning. SSE subscribers in the same object get a normal stream too.
 - [Tags](./subscriptions.md#tags) are kept with the parked subscription, so `Notes.publish('note', data, { tags: ['user:1'] })` only wakes the sockets subscribed with that tag.
 
@@ -400,13 +404,13 @@ serveSocket(handler).pipe(
 );
 ```
 
-The client is `socketLink` with an Effect `Socket`:
+The client is `experimental_socketLink` with an Effect `Socket`:
 
 ```ts
 import { NodeSocket } from '@effect/platform-node';
-import { socketLink } from 'trpcdev/client';
+import { experimental_socketLink } from 'trpcdev/client';
 
-const link = socketLink({
+const link = experimental_socketLink({
   socket: NodeSocket.makeNet({ host: 'localhost', port: 4000 }),
   connectionParams: { token },
 });

@@ -5,7 +5,7 @@
  */
 import { DurableObject } from 'cloudflare:workers';
 import {
-  createHibernatingWebSockets,
+  experimental_createHibernatingWebSockets,
   hibernatingPublisher,
 } from 'trpcdev/cloudflare';
 import { createFetchHandler } from 'trpcdev/server';
@@ -27,7 +27,7 @@ export class Room extends DurableObject<Env> {
   });
   // `x-room` is kept with each socket, so `createContext` still sees it
   // after the object wakes from hibernation.
-  sockets = createHibernatingWebSockets(this.handler, {
+  sockets = experimental_createHibernatingWebSockets(this.handler, {
     state: this.ctx,
     keepHeaders: ['x-room'],
   });

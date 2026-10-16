@@ -7,10 +7,10 @@
  *
  * @example
  * ```ts
- * import { unstable_generateOpenApiFromTypes } from 'trpcdev/openapi/typescript';
+ * import { experimental_generateOpenApiFromTypes } from 'trpcdev/openapi/typescript';
  * import { appRouter } from './router.ts';
  *
- * const spec = await unstable_generateOpenApiFromTypes(appRouter, {
+ * const spec = await experimental_generateOpenApiFromTypes(appRouter, {
  *   file: new URL('./router.ts', import.meta.url),
  *   info: { title: 'API', version: '1.0.0' },
  * });
@@ -39,7 +39,7 @@ import {
 } from './generate.ts';
 
 /**
- * The options of {@link unstable_generateOpenApiFromTypes}.
+ * The options of {@link experimental_generateOpenApiFromTypes}.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
@@ -369,7 +369,7 @@ function inferRouterTypes(
     const source = project?.program.getSourceFile(file);
     if (!project || !source) {
       throw new Error(
-        `unstable_generateOpenApiFromTypes: ${file} is not in a TypeScript project`,
+        `experimental_generateOpenApiFromTypes: ${file} is not in a TypeScript project`,
       );
     }
     const checker = project.checker;
@@ -380,7 +380,7 @@ function inferRouterTypes(
     const type = exported && checker.getTypeOfSymbol(exported);
     if (!type) {
       throw new Error(
-        `unstable_generateOpenApiFromTypes: ${file} doesn't export "${name}"`,
+        `experimental_generateOpenApiFromTypes: ${file} doesn't export "${name}"`,
       );
     }
     const out = new Map<string, InferredTypes>();
@@ -405,7 +405,7 @@ function inferRouterTypes(
  *
  * @example
  * ```ts
- * const spec = await unstable_generateOpenApiFromTypes(appRouter, {
+ * const spec = await experimental_generateOpenApiFromTypes(appRouter, {
  *   file: 'src/router.ts',
  *   info: { title: 'API', version: '1.0.0' },
  * });
@@ -413,7 +413,7 @@ function inferRouterTypes(
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export async function unstable_generateOpenApiFromTypes(
+export async function experimental_generateOpenApiFromTypes(
   router: object,
   opts: GenerateOpenApiFromTypesOptions,
 ): Promise<OpenApiDocument> {

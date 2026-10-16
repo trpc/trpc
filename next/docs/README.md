@@ -17,23 +17,23 @@ User docs for vNext, kept in step with the code. Design notes and decisions live
 
 Entry points of `trpcdev`:
 
-| Entry                | For                                                      |
-| -------------------- | -------------------------------------------------------- |
-| `trpcdev/server`     | `initTrpc`, routers, handlers, callers, `Publisher`      |
-| `trpcdev/client`     | `createTrpcClient`, links, `safe`                        |
-| `trpcdev/middleware` | `onStart`, `onSuccess`, `onError`, `onFinish`            |
-| `trpcdev/actions`    | `createAction`, `createCallable`                         |
-| `trpcdev/effect`     | `createEffectClient`                                     |
-| `trpcdev/http`       | `serve`, `toHttpEffect` on Effect's `HttpServer`         |
-| `trpcdev/cloudflare` | hibernating WebSockets and publisher on Durable Objects  |
-| `trpcdev/aws-lambda` | `toLambdaHandler` for API Gateway, ALB and Lambda@Edge   |
-| `trpcdev/socket`     | `serveSocket` on Effect's `SocketServer` (TCP, TLS)      |
-| `trpcdev/openapi`    | `createOpenApiHandler`, `generateOpenApi`, `openApiLink` |
-| `trpcdev/interop`    | `createV11Handler`, `fromV11Link` for v11 code           |
-| `trpcdev/contract`   | contract-first routers, `toContract`                     |
-| `trpcdev/serializer` | `jsonSerializer`, danSON, `createSyncSerializer`         |
-| `trpcdev/extend`     | building blocks for integrations                         |
+| Entry                | For                                                        |
+| -------------------- | ---------------------------------------------------------- |
+| `trpcdev/server`     | `initTrpc`, routers, handlers, callers, `Publisher`        |
+| `trpcdev/client`     | `createTrpcClient`, links, `safe`                          |
+| `trpcdev/middleware` | `onStart`, `onSuccess`, `onError`, `onFinish`              |
+| `trpcdev/actions`    | `experimental_createAction`, `experimental_createCallable` |
+| `trpcdev/effect`     | `createEffectClient`                                       |
+| `trpcdev/http`       | `serve`, `toHttpEffect` on Effect's `HttpServer`           |
+| `trpcdev/cloudflare` | hibernating WebSockets and publisher on Durable Objects    |
+| `trpcdev/aws-lambda` | `toLambdaHandler` for API Gateway, ALB and Lambda@Edge     |
+| `trpcdev/socket`     | `serveSocket` on Effect's `SocketServer` (TCP, TLS)        |
+| `trpcdev/openapi`    | `createOpenApiHandler`, `generateOpenApi`, `openApiLink`   |
+| `trpcdev/interop`    | `createV11Handler`, `fromV11Link` for v11 code             |
+| `trpcdev/contract`   | contract-first routers, `toContract`                       |
+| `trpcdev/serializer` | `jsonSerializer`, danSON, `createSyncSerializer`           |
+| `trpcdev/extend`     | building blocks for integrations                           |
 
-An export whose name starts with `unstable_` (such as `unstable_durableLink`) may still change in a minor release. When one becomes stable, it gets its name without the prefix, and the `unstable_` name stays as a deprecated alias until the next major. `npx @trpcdev/upgrade` rewrites those imports. Every export's JSDoc carries `@stability` (`stable` or `experimental`) and `@since`. Until 12.0.0, prereleases promise nothing; `@stability` says how the export is planned to ship.
+An export whose name starts with `experimental_` (such as `experimental_durableLink`) may still change in a minor release. When one becomes stable, it gets its name without the prefix, and the `experimental_` name stays as a deprecated alias until the next major. `npx @trpcdev/upgrade` rewrites those imports. Every export's JSDoc carries `@stability` (`stable` or `experimental`) and `@since`. Until 12.0.0, prereleases promise nothing; `@stability` says how the export is planned to ship.
 
 `trpcdev/internal` holds types that declaration emit refers to. Don't import it; it has no semver. `trpcdev/internal/testing` is a semi-public `TestServer` Effect layer for real-server tests (with `@effect/vitest`'s `it.layer`); it has no compatibility promise either. Test in process with `createRouterClient` or `localLink`.

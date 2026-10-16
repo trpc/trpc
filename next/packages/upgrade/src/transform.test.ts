@@ -287,15 +287,15 @@ function Posts() {
   });
 });
 
-describe('promoted unstable_ names', () => {
+describe('promoted experimental_ names', () => {
   test('imports and re-exports of a promoted name are rewritten', () => {
-    const promoted = { unstable_durableLink: 'durableLink' };
+    const promoted = { experimental_durableLink: 'durableLink' };
     expect(
       upgradeSource(
-        `import { unstable_durableLink, httpLink } from 'trpcdev/client';
-import { unstable_durableLink as retry } from 'trpcdev/client';
-export { unstable_durableLink } from 'trpcdev/client';
-const links = [unstable_durableLink(), retry(), httpLink({ url })];
+        `import { experimental_durableLink, httpLink } from 'trpcdev/client';
+import { experimental_durableLink as retry } from 'trpcdev/client';
+export { experimental_durableLink } from 'trpcdev/client';
+const links = [experimental_durableLink(), retry(), httpLink({ url })];
 `,
         'file.ts',
         { promoted },
@@ -303,7 +303,7 @@ const links = [unstable_durableLink(), retry(), httpLink({ url })];
     ).toMatchInlineSnapshot(`
       "import { durableLink, httpLink } from 'trpcdev/client';
       import { durableLink as retry } from 'trpcdev/client';
-      export { durableLink as unstable_durableLink } from 'trpcdev/client';
+      export { durableLink as experimental_durableLink } from 'trpcdev/client';
       const links = [durableLink(), retry(), httpLink({ url })];
       "
     `);

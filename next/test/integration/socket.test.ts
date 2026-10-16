@@ -2,7 +2,12 @@ import { connect } from 'node:net';
 import { NodeSocket, NodeSocketServer } from '@effect/platform-node';
 import { Context, Effect, Exit, Layer, Scope } from 'effect';
 import { SocketServer } from 'effect/socket';
-import { createTrpcClient, safe, socketLink, routerType } from 'trpcdev/client';
+import {
+  createTrpcClient,
+  safe,
+  experimental_socketLink,
+  routerType,
+} from 'trpcdev/client';
 import {
   createFetchHandler,
   error,
@@ -93,7 +98,7 @@ async function serve(opts: { idleTimeoutMs?: number | false } = {}) {
 
 test('queries, deferred values and errors over TCP', async () => {
   await using server = await serve();
-  await using link = socketLink({
+  await using link = experimental_socketLink({
     socket: server.socket,
     connectionParams: { user: 'ada' },
   });
@@ -120,7 +125,7 @@ test('queries, deferred values and errors over TCP', async () => {
 
 test('aborting a call aborts it on the server', async () => {
   await using server = await serve();
-  await using link = socketLink({ socket: server.socket });
+  await using link = experimental_socketLink({ socket: server.socket });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
     links: [link],
@@ -139,7 +144,7 @@ test('aborting a call aborts it on the server', async () => {
 
 test('subscriptions stream tracked events', async () => {
   await using server = await serve();
-  await using link = socketLink({ socket: server.socket });
+  await using link = experimental_socketLink({ socket: server.socket });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
     links: [link],
@@ -153,7 +158,7 @@ test('subscriptions stream tracked events', async () => {
 
 test('a dropped connection reconnects for the next call', async () => {
   await using server = await serve({ idleTimeoutMs: 50 });
-  await using link = socketLink({
+  await using link = experimental_socketLink({
     socket: server.socket,
     keepAlive: false,
     reconnect: { attempts: 3, delayMs: () => 10 },

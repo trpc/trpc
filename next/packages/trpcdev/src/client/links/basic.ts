@@ -341,7 +341,7 @@ export function retryLink(opts: RetryLinkOptions = {}): TrpcLink {
 }
 
 /**
- * Call options {@link unstable_durableLink} reads.
+ * Call options {@link experimental_durableLink} reads.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
@@ -357,7 +357,7 @@ export interface DurableContext {
 }
 
 /**
- * Options for {@link unstable_durableLink}.
+ * Options for {@link experimental_durableLink}.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
@@ -376,20 +376,20 @@ const lostResponse = (error: AnyTrpcError) =>
 /**
  * Gives mutations (and queries with `{ durable: true }`) a call id, sent as
  * the `trpc-call-id` header outside any batch, and retries a lost response
- * with the same id, so a procedure using `unstable_durable()` returns the kept
+ * with the same id, so a procedure using `experimental_durable()` returns the kept
  * result instead of running again. Put it before `httpLink`.
  *
  * @example
  * ```ts
  * createTrpcClient({
  *   router: routerType<AppRouter>(),
- *   links: [unstable_durableLink(), httpLink({ url, batch: true })],
+ *   links: [experimental_durableLink(), httpLink({ url, batch: true })],
  * });
  * ```
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function unstable_durableLink(
+export function experimental_durableLink(
   opts: DurableLinkOptions = {},
 ): TrpcLink<{ context: DurableContext }> {
   const retries = opts.retries ?? 3;

@@ -33,7 +33,7 @@ import {
 } from './middleware.ts';
 
 /**
- * Options for {@link unstable_durable}.
+ * Options for {@link experimental_durable}.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
@@ -41,7 +41,7 @@ export interface DurableOptions<TCtx, TInput, TMeta> {
   /**
    * The stored result's key, or `undefined` to run the call as usual. By
    * default `${path}:${callId}`, where `callId` is the `trpc-call-id`
-   * request header `unstable_durableLink` sends. Scope it by user when ids could
+   * request header `experimental_durableLink` sends. Scope it by user when ids could
    * be shared: `({ ctx, path, callId }) => callId && \`${ctx.userId}:${path}:${callId}\``.
    */
   readonly key?: (opts: {
@@ -136,15 +136,15 @@ const conflict = () =>
  * ```ts
  * import { Persistence } from 'effect/persistence';
  *
- * const checkout = t.procedure.use(unstable_durable()).mutation(…);
+ * const checkout = t.procedure.use(experimental_durable()).mutation(…);
  *
  * createFetchHandler({ router, layer: Persistence.layerBackingMemory });
- * createTrpcClient({ router: routerType<AppRouter>(), links: [unstable_durableLink(), httpLink({ url })] });
+ * createTrpcClient({ router: routerType<AppRouter>(), links: [experimental_durableLink(), httpLink({ url })] });
  * ```
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function unstable_durable<TReq extends MiddlewareRequirements = {}>(
+export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
   options: DurableOptions<ReqCtx<TReq>, ReqInput<TReq>, ReqMeta<TReq>> = {},
 ): EffectMiddleware<
   ReqCtx<TReq>,

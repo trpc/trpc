@@ -4,13 +4,15 @@ Nothing here is Next-specific: it works with any React Server Components setup.
 
 ## Server Actions
 
-`createAction` from `trpcdev/actions` makes a factory that sets the ctx, layer and result mode once. `action(procedure)` is then an async function that takes the input or a form's `FormData`:
+`experimental_createAction` from `trpcdev/actions` makes a factory that sets the ctx, layer and result mode once. `action(procedure)` is then an async function that takes the input or a form's `FormData`:
 
 ```ts
 'use server';
-import { createAction } from 'trpcdev/actions';
+import { experimental_createAction } from 'trpcdev/actions';
 
-const action = createAction({ ctx: async () => ({ user: await auth() }) });
+const action = experimental_createAction({
+  ctx: async () => ({ user: await auth() }),
+});
 
 export const createPost = action(appRouter.post.create);
 ```
@@ -65,10 +67,13 @@ function Titles() {
 - The state starts `undefined` and is then the last result (`{ data, error }` with `result: 'safe'`). The previous state isn't sent to the procedure.
 - The optimistic value shows until the action settles, then falls back to `result`.
 
-`createCallable` is the same factory for direct calls with typed input (no `FormData`), from server components, loaders or scripts:
+`experimental_createCallable` is the same factory for direct calls with typed input (no `FormData`), from server components, loaders or scripts:
 
 ```ts
-const callable = createCallable({ ctx: createContext, result: 'throw' });
+const callable = experimental_createCallable({
+  ctx: createContext,
+  result: 'throw',
+});
 const post = await callable(appRouter.post.byId)({ id: '1' });
 ```
 

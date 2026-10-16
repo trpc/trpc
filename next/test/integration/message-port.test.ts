@@ -1,7 +1,7 @@
 import { MessageChannel, threadId, Worker } from 'node:worker_threads';
 import {
   createTrpcClient,
-  messagePortLink,
+  experimental_messagePortLink,
   routerType,
   safe,
 } from 'trpcdev/client';
@@ -14,7 +14,7 @@ async function startWorker() {
   const worker = new Worker(
     new URL('./fixtures/worker-server.ts', import.meta.url),
   );
-  const link = messagePortLink({
+  const link = experimental_messagePortLink({
     port: worker,
     connectionParams: { token: 'secret' },
   });
@@ -80,7 +80,7 @@ test('a MessageChannel connects a client and a handler in one thread', async () 
   const router = { ping: t.procedure.query(() => 'pong' as const) };
   const { port1, port2 } = new MessageChannel();
   createFetchHandler({ router }).messagePort(port1);
-  const link = messagePortLink({ port: port2 });
+  const link = experimental_messagePortLink({ port: port2 });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
     links: [link],
@@ -106,7 +106,7 @@ test('file bytes cross a port as bytes, not base64', async () => {
   createFetchHandler({ router, serializer }).messagePort(port1);
   const sent: unknown[] = [];
   port2.on('message', (message: unknown) => sent.push(message));
-  const link = messagePortLink({ port: port2, serializer });
+  const link = experimental_messagePortLink({ port: port2, serializer });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
     links: [link],

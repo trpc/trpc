@@ -2,7 +2,7 @@ import { MessageChannel } from 'node:worker_threads';
 import {
   createTrpcClient,
   httpLink,
-  messagePortLink,
+  experimental_messagePortLink,
   safe,
   routerType,
   wsLink,
@@ -210,7 +210,7 @@ test("a socket link whose serializer isn't the server's fails with UNSUPPORTED_P
   createFetchHandler({ router: counter, serializer: danson }).messagePort(
     port1,
   );
-  const port = messagePortLink({ port: port2 });
+  const port = experimental_messagePortLink({ port: port2 });
   const portClient = createTrpcClient({
     router: routerType<typeof counter>(),
     links: [port],
@@ -218,7 +218,7 @@ test("a socket link whose serializer isn't the server's fails with UNSUPPORTED_P
   try {
     const [, err] = await safe(portClient.bump.mutate());
     expect(err?.message).toContain(
-      "The server uses the 'danson' serializer, but this messagePortLink uses 'json'",
+      "The server uses the 'danson' serializer, but this experimental_messagePortLink uses 'json'",
     );
   } finally {
     await port.close();

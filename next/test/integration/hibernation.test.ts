@@ -2,7 +2,7 @@ import { Effect, Schema } from 'effect';
 import { TestClock } from 'effect/testing';
 import {
   connectionToken,
-  createHibernatingWebSockets,
+  experimental_createHibernatingWebSockets,
   hibernatingPublisher,
   type HibernatableWebSocket,
 } from 'trpcdev/cloudflare';
@@ -92,7 +92,9 @@ const request = new Request('https://room.example/trpc', {
 });
 const platform = { env: { region: 'weur' } };
 const send = (
-  sockets: ReturnType<typeof createHibernatingWebSockets<{ env: Env }>>,
+  sockets: ReturnType<
+    typeof experimental_createHibernatingWebSockets<{ env: Env }>
+  >,
   socket: FakeSocket,
   message: object,
 ) => sockets.message(socket, JSON.stringify(message), platform);
@@ -105,7 +107,7 @@ afterEach(() => {
 test('calls work, and still see the connection after the object wakes', async () => {
   const state = fakeState();
   const socket = new FakeSocket();
-  const sockets = createHibernatingWebSockets(handler, { state });
+  const sockets = experimental_createHibernatingWebSockets(handler, { state });
   sockets.accept(socket, request, platform);
   expect(state.accepted).toEqual([socket]);
 
@@ -130,7 +132,9 @@ test('calls work, and still see the connection after the object wakes', async ()
   );
 
   // Evicted: a new object instance, the same socket and attachment.
-  const woken = createHibernatingWebSockets(handler, { state: fakeState() });
+  const woken = experimental_createHibernatingWebSockets(handler, {
+    state: fakeState(),
+  });
   send(woken, socket, {
     id: 2,
     type: 'request',
@@ -155,7 +159,9 @@ test('calls work, and still see the connection after the object wakes', async ()
 
 test('closing the socket stops its subscriptions', async () => {
   const socket = new FakeSocket();
-  const sockets = createHibernatingWebSockets(handler, { state: fakeState() });
+  const sockets = experimental_createHibernatingWebSockets(handler, {
+    state: fakeState(),
+  });
   sockets.accept(socket, request, platform);
   const before = ticksStopped;
   send(sockets, socket, {
@@ -186,7 +192,7 @@ test('keep-alive pings are answered without waking the object', () => {
   }
   vi.stubGlobal('WebSocketRequestResponsePair', Pair);
   const state = fakeState();
-  createHibernatingWebSockets(handler, { state });
+  experimental_createHibernatingWebSockets(handler, { state });
   expect(state.autoResponse).toEqual(
     new Pair('{"type":"ping"}', '{"type":"pong"}'),
   );
@@ -212,7 +218,7 @@ test('upgrade() accepts one end of a WebSocketPair and returns the other', () =>
     },
   );
   const state = fakeState();
-  const sockets = createHibernatingWebSockets(handler, { state });
+  const sockets = experimental_createHibernatingWebSockets(handler, { state });
   const res = sockets.upgrade(request, platform) as unknown as {
     init: { status: number; webSocket: unknown };
   };
@@ -222,7 +228,9 @@ test('upgrade() accepts one end of a WebSocketPair and returns the other', () =>
 
 test('a socket the adapter did not accept is closed', () => {
   const socket = new FakeSocket();
-  const sockets = createHibernatingWebSockets(handler, { state: fakeState() });
+  const sockets = experimental_createHibernatingWebSockets(handler, {
+    state: fakeState(),
+  });
   send(sockets, socket, { type: 'ping' });
   expect(socket.closed).toEqual([1011, 'Not a tRPC socket']);
 });
@@ -233,15 +241,15 @@ test('headers past the 2 KB attachment limit are dropped with a warning', async 
   const big = new Request('https://room.example/trpc', {
     headers: { cookie: `session=${'x'.repeat(2100)}` },
   });
-  createHibernatingWebSockets(handler, { state: fakeState() }).accept(
-    socket,
-    big,
-    platform,
-  );
+  experimental_createHibernatingWebSockets(handler, {
+    state: fakeState(),
+  }).accept(socket, big, platform);
   expect(warn).toHaveBeenCalledWith(expect.stringContaining('cookie'));
   expect(socket.deserializeAttachment()).toMatchObject({ headers: [] });
 
-  const woken = createHibernatingWebSockets(handler, { state: fakeState() });
+  const woken = experimental_createHibernatingWebSockets(handler, {
+    state: fakeState(),
+  });
   send(woken, socket, {
     id: 1,
     type: 'request',
@@ -277,7 +285,7 @@ const room = (state: ReturnType<typeof fakeState>) => {
     router: postsRouter,
     layer: hibernatingPublisher(Posts, { state, buffer: 10 }),
   });
-  return createHibernatingWebSockets(h, { state });
+  return experimental_createHibernatingWebSockets(h, { state });
 };
 const say = (
   sockets: ReturnType<typeof room>,
@@ -433,7 +441,7 @@ const notesRouter = {
 };
 
 const notesRoom = (state: ReturnType<typeof fakeState>) =>
-  createHibernatingWebSockets(
+  experimental_createHibernatingWebSockets(
     createFetchHandler({
       router: notesRouter,
       createContext: ({ info }) =>

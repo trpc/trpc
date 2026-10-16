@@ -14,7 +14,7 @@ import { deliveries, type HibernationState } from './hibernation.ts';
  * @stability stable
  */
 export interface HibernatingPublisherOptions {
-  /** The Durable Object's `ctx`, the same one `createHibernatingWebSockets` gets. */
+  /** The Durable Object's `ctx`, the same one `experimental_createHibernatingWebSockets` gets. */
   readonly state: HibernationState;
   /**
    * Events kept per channel for subscribers that resume with `lastEventId`.
@@ -42,7 +42,7 @@ export interface HibernatingPublisherOptions {
  *     router,
  *     layer: hibernatingPublisher(Posts, { state: this.ctx, buffer: 100 }),
  *   });
- *   sockets = createHibernatingWebSockets(this.handler, { state: this.ctx });
+ *   sockets = experimental_createHibernatingWebSockets(this.handler, { state: this.ctx });
  * }
  * ```
  * @since 12.0.0-alpha.0

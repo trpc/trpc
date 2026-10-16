@@ -15,7 +15,7 @@ import {
 /**
  * The options of {@link openApiReference}: the document comes from a router
  * (generated on the first request) or is given, e.g. from
- * `unstable_generateOpenApiFromTypes()` at build time.
+ * `experimental_generateOpenApiFromTypes()` at build time.
  * @since 12.0.0-alpha.0
  * @stability stable
  */

@@ -6,9 +6,9 @@
  * @example
  * ```ts
  * 'use server';
- * import { createAction } from 'trpcdev/actions';
+ * import { experimental_createAction } from 'trpcdev/actions';
  *
- * const action = createAction({ ctx: createContext });
+ * const action = experimental_createAction({ ctx: createContext });
  * export const createPost = action(appRouter.post.create);
  *
  * // <form action={createPost}>, or createPost({ title })
@@ -44,14 +44,14 @@ import type {
  * `'safe'` returns `safe()`'s `[data, error]` / `{ data, error }` result;
  * `'throw'` returns the data and throws `TrpcError`.
  * @since 12.0.0-alpha.0
- * @stability stable
+ * @stability experimental
  */
 export type ActionResultMode = 'safe' | 'throw';
 
 /**
- * Options for {@link createAction} and {@link createCallable}.
+ * Options for {@link experimental_createAction} and {@link experimental_createCallable}.
  * @since 12.0.0-alpha.0
- * @stability stable
+ * @stability experimental
  */
 export interface CreateActionOptions<
   TCtx extends object,
@@ -77,7 +77,7 @@ export interface CreateActionOptions<
 /**
  * What a wrapped procedure resolves to.
  * @since 12.0.0-alpha.0
- * @stability stable
+ * @stability experimental
  */
 export type ActionResult<
   TDef extends ProcedureDef,
@@ -100,7 +100,7 @@ type Args<TInput> = undefined extends TInput
  * // <form action={submit}>
  * ```
  * @since 12.0.0-alpha.0
- * @stability stable
+ * @stability experimental
  */
 export interface Action<
   TDef extends ProcedureDef,
@@ -120,7 +120,7 @@ export interface Action<
 /**
  * A procedure as a function, for calls with typed input.
  * @since 12.0.0-alpha.0
- * @stability stable
+ * @stability experimental
  */
 export type Callable<
   TDef extends ProcedureDef,
@@ -234,16 +234,16 @@ function makeFactory<TMode extends ActionResultMode>(
  *
  * @example
  * ```ts
- * const action = createAction({ ctx: async () => ({ user: await auth() }) });
+ * const action = experimental_createAction({ ctx: async () => ({ user: await auth() }) });
  * export const createPost = action(appRouter.post.create);
  * const { data, error } = await createPost(formData);
  *
- * const strict = createAction({ ctx: createContext, result: 'throw' });
+ * const strict = experimental_createAction({ ctx: createContext, result: 'throw' });
  * ```
  * @since 12.0.0-alpha.0
- * @stability stable
+ * @stability experimental
  */
-export function createAction<
+export function experimental_createAction<
   TCtx extends object = {},
   TServices = never,
   TMode extends ActionResultMode = 'safe',
@@ -257,19 +257,19 @@ export function createAction<
 }
 
 /**
- * Like {@link createAction}, for direct calls with typed input (no
+ * Like {@link experimental_createAction}, for direct calls with typed input (no
  * `FormData`): server components, route loaders, scripts.
  *
  * @example
  * ```ts
- * const callable = createCallable({ ctx: createContext, result: 'throw' });
+ * const callable = experimental_createCallable({ ctx: createContext, result: 'throw' });
  * const byId = callable(appRouter.post.byId);
  * const post = await byId({ id: '1' });
  * ```
  * @since 12.0.0-alpha.0
- * @stability stable
+ * @stability experimental
  */
-export function createCallable<
+export function experimental_createCallable<
   TCtx extends object = {},
   TServices = never,
   TMode extends ActionResultMode = 'safe',

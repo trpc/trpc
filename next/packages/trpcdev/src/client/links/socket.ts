@@ -78,7 +78,7 @@ interface Call {
 }
 
 /**
- * Options shared by {@link wsLink} and {@link messagePortLink}.
+ * Options shared by {@link wsLink} and {@link experimental_messagePortLink}.
  * @since 12.0.0-alpha.0
  * @stability stable
  */
@@ -503,7 +503,7 @@ function makeSocketLink(
 
 /**
  * Reconnect, idle and keep-alive options of {@link wsLink} and
- * {@link socketLink}.
+ * {@link experimental_socketLink}.
  * @since 12.0.0-alpha.0
  * @stability stable
  */
@@ -651,9 +651,9 @@ export function wsLink(opts: WebSocketLinkOptions): SocketLink<any> {
 }
 
 /**
- * Options for {@link messagePortLink}.
+ * Options for {@link experimental_messagePortLink}.
  * @since 12.0.0-alpha.0
- * @stability stable
+ * @stability experimental
  */
 export interface MessagePortLinkOptions extends SocketLinkOptions {
   /** A `MessagePort`, `Worker`, `worker_threads` port, or window-like object. */
@@ -669,15 +669,17 @@ export interface MessagePortLinkOptions extends SocketLinkOptions {
  * @example
  * ```ts
  * const worker = new Worker(new URL('./server.ts', import.meta.url), { type: 'module' });
- * createTrpcClient({ router: routerType<AppRouter>(), links: [messagePortLink({ port: worker })] });
+ * createTrpcClient({ router: routerType<AppRouter>(), links: [experimental_messagePortLink({ port: worker })] });
  * ```
  * @since 12.0.0-alpha.0
- * @stability stable
+ * @stability experimental
  */
-export function messagePortLink<TOpts extends MessagePortLinkOptions>(
-  opts: TOpts,
-): SocketLink<{ form: FormOfOptions<TOpts> }>;
-export function messagePortLink(opts: MessagePortLinkOptions): SocketLink<any> {
+export function experimental_messagePortLink<
+  TOpts extends MessagePortLinkOptions,
+>(opts: TOpts): SocketLink<{ form: FormOfOptions<TOpts> }>;
+export function experimental_messagePortLink(
+  opts: MessagePortLinkOptions,
+): SocketLink<any> {
   const { port } = opts;
   const listeners: ((message: unknown) => void)[] = [];
   const closeListeners: (() => void)[] = [];
@@ -711,7 +713,7 @@ export function messagePortLink(opts: MessagePortLinkOptions): SocketLink<any> {
   };
   return makeSocketLink(
     {
-      name: 'messagePortLink',
+      name: 'experimental_messagePortLink',
       reconnect: undefined,
       idleMs: undefined,
       keepAlive: undefined,
@@ -725,9 +727,9 @@ export function messagePortLink(opts: MessagePortLinkOptions): SocketLink<any> {
 }
 
 /**
- * Options for {@link socketLink}.
+ * Options for {@link experimental_socketLink}.
  * @since 12.0.0-alpha.0
- * @stability stable
+ * @stability experimental
  */
 export interface RawSocketLinkOptions
   extends SocketLinkOptions, ConnectionLinkOptions {
@@ -751,13 +753,15 @@ export interface RawSocketLinkOptions
  *
  * createTrpcClient({
  *   router: routerType<AppRouter>(),
- *   links: [socketLink({ socket: NodeSocket.makeNet({ host: 'localhost', port: 4000 }) })],
+ *   links: [experimental_socketLink({ socket: NodeSocket.makeNet({ host: 'localhost', port: 4000 }) })],
  * });
  * ```
  * @since 12.0.0-alpha.0
- * @stability stable
+ * @stability experimental
  */
-export function socketLink(opts: RawSocketLinkOptions): SocketLink {
+export function experimental_socketLink(
+  opts: RawSocketLinkOptions,
+): SocketLink {
   const connect = Effect.gen(function* () {
     const scope = yield* Scope.make();
     const socket = yield* opts.socket;
@@ -806,7 +810,7 @@ export function socketLink(opts: RawSocketLinkOptions): SocketLink {
   });
   return makeSocketLink(
     {
-      name: 'socketLink',
+      name: 'experimental_socketLink',
       ...connectionOptions(opts),
       connect: () => Effect.runPromise(connect),
     },

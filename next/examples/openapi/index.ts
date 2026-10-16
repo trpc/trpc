@@ -16,13 +16,13 @@ import {
   openApiLink,
   openApiReference,
 } from 'trpcdev/openapi';
-import { unstable_generateOpenApiFromTypes } from 'trpcdev/openapi/typescript';
+import { experimental_generateOpenApiFromTypes } from 'trpcdev/openapi/typescript';
 import { createFetchHandler } from 'trpcdev/server';
 import { appRouter } from './router.ts';
 
 // --- the document, usually a build step ----------------------------------------------
 
-const document = await unstable_generateOpenApiFromTypes(appRouter, {
+const document = await experimental_generateOpenApiFromTypes(appRouter, {
   file: new URL('./router.ts', import.meta.url),
   tsconfig: new URL('./tsconfig.json', import.meta.url),
   info: { title: 'Posts API', version: '1.0.0' },

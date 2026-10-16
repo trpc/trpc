@@ -21,7 +21,7 @@ export interface UpgradeNote {
  * @stability stable
  */
 export interface UpgradeOptions {
-  /** `unstable_*` names promoted to stable, old to new. @default PROMOTED */
+  /** `experimental_*` names promoted to stable, old to new. @default PROMOTED */
   readonly promoted?: Readonly<Record<string, string>> | undefined;
 }
 

@@ -26,7 +26,7 @@ const client = createTrpcClient({
 });
 ```
 
-`wsLink`, `messagePortLink`, `socketLink` and `localLink` take `serializer` the same way. With superjson or devalue, list the types the transformer rebuilds:
+`wsLink`, `experimental_messagePortLink`, `experimental_socketLink` and `localLink` take `serializer` the same way. With superjson or devalue, list the types the transformer rebuilds:
 
 ```ts
 export const serializer = createSyncSerializer<
@@ -35,7 +35,7 @@ export const serializer = createSyncSerializer<
 // devalue: createSyncSerializer({ serialize: devalue.stringify, deserialize: devalue.parse })
 ```
 
-If the two ends disagree, calls fail with `UNSUPPORTED_PROTOCOL`, with a message naming both serializers. Over HTTP the handler names its serializer in the `trpc-serializer` response header and `httpLink` checks it, after the server ran the call. Socket links (`wsLink`, `messagePortLink`, `socketLink`) name theirs in the connection's `init` message: the server answers with its own and runs none of that connection's calls on a mismatch.
+If the two ends disagree, calls fail with `UNSUPPORTED_PROTOCOL`, with a message naming both serializers. Over HTTP the handler names its serializer in the `trpc-serializer` response header and `httpLink` checks it, after the server ran the call. Socket links (`wsLink`, `experimental_messagePortLink`, `experimental_socketLink`) name theirs in the connection's `init` message: the server answers with its own and runs none of that connection's calls on a mismatch.
 
 ## Client types follow the link
 

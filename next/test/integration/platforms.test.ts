@@ -7,7 +7,7 @@ import { HttpEffect } from 'effect/http';
 import {
   createTrpcClient,
   httpLink,
-  messagePortLink,
+  experimental_messagePortLink,
   routerType,
 } from 'trpcdev/client';
 import { toHttpEffect } from 'trpcdev/http';
@@ -144,7 +144,7 @@ test('platform values reach createContext, typed by the handler (docs/platforms.
   worker.messagePort(channel.port1, { platform });
   const client = createTrpcClient({
     router: routerType<typeof workerRouter>(),
-    links: [messagePortLink({ port: channel.port2 })],
+    links: [experimental_messagePortLink({ port: channel.port2 })],
   });
   expect(await client.greet.query()).toBe('hej');
   channel.port1.close();
