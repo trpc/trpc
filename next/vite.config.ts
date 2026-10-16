@@ -64,6 +64,13 @@ export default defineConfig({
       // another origin.
       happyDOM: { settings: { fetch: { disableSameOriginPolicy: true } } },
     },
+    coverage: {
+      provider: 'v8',
+      reportOnFailure: true,
+      include: ['packages/*/src/**/*.{ts,tsx}'],
+      exclude: ['**/*.test.ts', '**/*.test.tsx', '**/*.test-d.ts'],
+      reporter: ['text-summary', 'json-summary', 'text'],
+    },
     projects: [
       {
         extends: true,

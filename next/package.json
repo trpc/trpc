@@ -10,6 +10,7 @@
     "fmt": "vp fmt",
     "lint": "vp lint",
     "test": "vp test run",
+    "coverage": "vp test run --coverage",
     "test:watch": "vp test watch",
     "test:bun": "pnpm --filter @test/bun run test:bun",
     "example": "pnpm -r --workspace-concurrency=1 --filter './examples/*' run smoke",
@@ -25,6 +26,9 @@
     "typescript": "^7.0.2",
     "vendor-src": "0.15.4",
     "vite-plus": "1.1.0"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "5.0.3"
   },
   "engines": {
     "node": "^24.11.0",
