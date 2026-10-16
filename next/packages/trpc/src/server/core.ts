@@ -104,10 +104,7 @@ export function createHandlerCore(opts: CoreOptions): HandlerCore {
       );
     }
     if (o.services) context = Context.merge(context, o.services);
-    const call = o.parent
-      ? Effect.withParentSpan(callProcedure(o), o.parent)
-      : callProcedure(o);
-    return { call, context };
+    return { call: callProcedure(o), context };
   };
 
   return {
@@ -121,7 +118,12 @@ export function createHandlerCore(opts: CoreOptions): HandlerCore {
       const inline = (layer: Context.Context<any>) => {
         const { call, context } = prepare(o, layer);
         // The call's services replace the server fiber's, as in `run`.
-        return Effect.exit(Effect.updateContext(call, () => context));
+        return Effect.exit(
+          Effect.updateContext<unknown, AnyTrpcError, any, never>(
+            call,
+            () => context,
+          ),
+        );
       };
       return ready
         ? inline(ready)

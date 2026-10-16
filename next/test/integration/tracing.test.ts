@@ -1,4 +1,4 @@
-import { Effect, Layer, Option, Tracer } from 'effect';
+import { Effect, Layer, Option, References, Tracer } from 'effect';
 import {
   createTrpcClient,
   httpLink,
@@ -137,6 +137,42 @@ test('without a tracer, or with propagation disabled, requests carry no trace he
     null,
   ]);
   expect(client.named('trpc.post', 'client')).toBeDefined();
+});
+
+test('the server span is the current span, the stack frame and the parent of spans in the call', async () => {
+  const server = recorder();
+  const seen: { span?: string; frame?: string | undefined } = {};
+  const traced = {
+    inner: t.procedure.query(() =>
+      Effect.gen(function* () {
+        seen.span = (yield* Effect.orDie(Effect.currentSpan)).name;
+        seen.frame = (yield* References.CurrentStackFrame)?.name;
+        return yield* Effect.succeed('ok').pipe(Effect.withSpan('work'));
+      }),
+    ),
+    fails: t.procedure.query(() => error({ code: 'NOT_FOUND' })),
+  };
+  const handler = createFetchHandler({
+    router: traced,
+    layer: Layer.succeed(Tracer.Tracer, server.tracer),
+  });
+  await handler.fetch(new Request('http://localhost/trpc/inner'));
+  await handler.fetch(new Request('http://localhost/trpc/fails'));
+  await handler.dispose();
+
+  expect(seen).toEqual({ span: 'trpc.inner', frame: 'trpc.inner' });
+  const inner = server.named('trpc.inner', 'server')!;
+  expect(Object.fromEntries(inner.attributes)).toEqual({
+    'rpc.system': 'trpc',
+    'rpc.method': 'inner',
+    'trpc.type': 'query',
+  });
+  expect(inner.status._tag).toBe('Ended');
+  const work = server.named('work', 'internal')!;
+  expect(Option.getOrUndefined(work.parent)?.spanId).toBe(inner.spanId);
+  const fails = server.named('trpc.fails', 'server')!;
+  expect(fails.attributes.get('trpc.error.code')).toBe('NOT_FOUND');
+  expect(fails.status._tag).toBe('Ended');
 });
 
 test('handler.fetch continues the trace in an incoming traceparent', async () => {

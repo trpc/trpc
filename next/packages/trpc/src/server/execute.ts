@@ -1,4 +1,12 @@
-import { Cause, Context, Effect, Exit, Stream } from 'effect';
+import {
+  Cause,
+  Context,
+  Effect,
+  Exit,
+  References,
+  Stream,
+  Tracer,
+} from 'effect';
 import { HttpServerResponse } from 'effect/http';
 import {
   isTrpcError,
@@ -130,6 +138,8 @@ export interface CallOpts {
   readonly response?: ResponseHandle | undefined;
   /** An unbatched HTTP call: the procedure may return an `HttpServerResponse`. */
   readonly allowResponse?: boolean | undefined;
+  /** The span the call's span is a child of; the fiber's current span otherwise. */
+  readonly parent?: Tracer.AnySpan | undefined;
 }
 
 /** A resolver's `HttpServerResponse` or web `Response`. @internal */
@@ -528,7 +538,6 @@ export function callProcedure(
       ? Effect.flatMap(out, (result) => complete(result, services))
       : complete(out, services);
   }).pipe(
-    Effect.provideService(ResponseKey, response),
     Effect.catchCause((cause) => {
       for (const reason of cause.reasons) {
         if (Cause.isFailReason(reason) && isTrpcError(reason.error)) {
@@ -548,18 +557,42 @@ export function callProcedure(
       Effect.annotateCurrentSpan('trpc.error.code', err.code),
     ),
   );
-  // Data-first: the pipeable form ignores `captureStackTrace` (effect 4.0.2).
-  return Effect.withSpan(call, `trpc.${path}`, {
-    kind: 'server',
-    // It would point here, the same line for every procedure.
-    captureStackTrace: false,
-    attributes: {
-      'rpc.system': 'trpc',
-      'rpc.method': path,
-      'trpc.type': type,
+  const name = `trpc.${path}`;
+  // `withSpan`'s result, but the span, its stack frame and the response
+  // handle go in with one context change: each fiber-cached key changed on
+  // its own rebuilds the fiber's cache.
+  return Effect.useSpan(
+    name,
+    {
+      kind: 'server',
+      parent: opts.parent,
+      attributes: {
+        'rpc.system': 'trpc',
+        'rpc.method': path,
+        'trpc.type': type,
+      },
     },
-  });
+    (span) =>
+      Effect.updateContext(call, (context) =>
+        Context.add(
+          Context.add(
+            Context.add(context, ResponseKey, response),
+            Tracer.ParentSpan,
+            span,
+          ),
+          References.CurrentStackFrame,
+          {
+            name,
+            // Its stack would point here, the same line for every procedure.
+            stack: noStack,
+            parent: Context.get(context, References.CurrentStackFrame),
+          },
+        ),
+      ),
+  );
 }
+
+const noStack = (): undefined => undefined;
 
 /**
  * `events` as the subscription at `procedure` would emit them: validated
