@@ -2,7 +2,7 @@ import { createElement, Suspense, use } from 'react';
 import { prerender } from 'react-dom/static';
 import { createTrpcClient, localLink, routerType } from 'trpcdev/client';
 import { error, initTrpc } from 'trpcdev/server';
-import { expect, test } from 'vite-plus/test';
+import { expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 import { cacheLink, createQueryCache, stablePromises } from './cache-link.ts';
 
@@ -45,7 +45,7 @@ test('a plain client returns a new promise per call, which use() cannot take', (
   );
 });
 
-test('with the hook, the same call returns the same promise while fresh', async () => {
+test('with the hook, the same call returns the same promise while its value is the same', async () => {
   let now = 0;
   const { trpc } = setup({ now: () => now });
   const first = trpc.post.byId.query({ id: '1' });
@@ -53,7 +53,11 @@ test('with the hook, the same call returns the same promise while fresh', async 
   expect(trpc.post.byId.query({ id: '2' })).not.toBe(first);
   await first;
   now = 1001;
-  expect(trpc.post.byId.query({ id: '1' })).not.toBe(first);
+  // Expired: still the same promise, refetched in the background. The new
+  // value equals the old one (a new `Date` with the same time), so it stays.
+  expect(trpc.post.byId.query({ id: '1' })).toBe(first);
+  await vi.waitFor(() => expect(calls).toBe(3));
+  expect(trpc.post.byId.query({ id: '1' })).toBe(first);
 });
 
 test('plain calls share the cache through the link; ignoreCache skips it', async () => {
@@ -75,7 +79,7 @@ test('failures are not cached', async () => {
   await expect(retried).rejects.toMatchObject({ code: 'NOT_FOUND' });
 });
 
-test('a mutation invalidates and tells subscribers', async () => {
+test('a mutation marks queries stale; the refetch with a new value makes a new promise', async () => {
   const { cache, trpc } = setup();
   const before = trpc.post.byId.query({ id: '1' });
   await before;
@@ -83,9 +87,12 @@ test('a mutation invalidates and tells subscribers', async () => {
   cache.subscribe(() => notified++);
   await trpc.post.rename.mutate({ id: '1', title: 'Renamed' });
   expect(notified).toBe(1);
+  expect(trpc.post.byId.query({ id: '1' })).toBe(before);
+  await vi.waitFor(() => expect(notified).toBe(2));
   const after = trpc.post.byId.query({ id: '1' });
   expect(after).not.toBe(before);
   expect(await after).toMatchObject({ title: 'Renamed' });
+  expect((await after).at).toBe((await before).at);
 });
 
 test('use() renders a cached query; components with the same call share one request', async () => {

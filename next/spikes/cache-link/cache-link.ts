@@ -6,6 +6,10 @@
  * `createTrpcClient`'s `request()`, a new one per call. So the cache owns
  * the outward promise, and `stablePromises()` stands in for the one-line core
  * hook (`request()` returning the cached promise) that shipping this needs.
+ *
+ * Like TanStack Query, the cache hands out thenables React reads without
+ * suspending once settled, sorts input keys before hashing them, and shares
+ * the parts of a refetched value that didn't change (`./share.ts`).
  */
 import { Effect, Option, Stream } from 'effect';
 import {
@@ -15,6 +19,13 @@ import {
   type TrpcLink,
 } from 'trpcdev/client';
 import { createSerializer } from 'trpcdev/serializer';
+import {
+  fulfilled,
+  replaceEqualDeep,
+  sortKeys,
+  track,
+  type Thenable,
+} from './share.ts';
 
 /** Keys use danSON, so inputs with `Date`s and `Map`s key apart. */
 const keySerializer = createSerializer();
@@ -25,22 +36,29 @@ export interface CacheContext {
 }
 
 interface Entry {
-  readonly promise: Promise<unknown>;
+  readonly thenable: Thenable<unknown>;
   readonly expiresAt: number;
+  stale: boolean;
+  refetching?: Promise<void>;
 }
 
 export interface QueryCache {
-  /** The cached promise for a call, while fresh. */
-  get(path: string, input: unknown): Promise<unknown> | undefined;
-  /** The cached promise, or the one `start()` makes, kept until it expires or fails. */
+  /** The cached thenable for a call, stale or not. */
+  get(path: string, input: unknown): Thenable<unknown> | undefined;
+  /**
+   * The cached thenable, or one for `start()`'s promise. A stale or expired
+   * one is still returned while `start()` refetches in the background; the
+   * refetched value shares every part equal to the old one, and when it is
+   * all equal the thenable stays the same object and nobody is told.
+   */
   promise(
     path: string,
     input: unknown,
     start: () => Promise<unknown>,
-  ): Promise<unknown>;
-  /** Drops entries whose path matches (all when omitted) and tells subscribers. */
+  ): Thenable<unknown>;
+  /** Marks entries whose path matches (all when omitted) stale and tells subscribers. */
   invalidate(match?: (path: string) => boolean): void;
-  /** Called after each invalidation; React needs this to re-render with a new promise. */
+  /** Called after an invalidation and after a refetch that changed a value. */
   subscribe(listener: () => void): () => void;
 }
 
@@ -50,40 +68,70 @@ export interface QueryCacheOptions {
   now?: () => number;
 }
 
+/** Plain objects' keys are sorted first, so `{ a, b }` and `{ b, a }` share an entry. */
 export const keyOf = (path: string, input: unknown): string =>
-  `${path}\n${input === undefined ? '' : JSON.stringify(keySerializer.serialize(input))}`;
+  `${path}\n${input === undefined ? '' : JSON.stringify(keySerializer.serialize(sortKeys(input)))}`;
 
 export function createQueryCache(opts: QueryCacheOptions = {}): QueryCache {
   const ttlMs = opts.ttlMs ?? 30_000;
   const now = opts.now ?? Date.now;
   const entries = new Map<string, Entry>();
   const listeners = new Set<() => void>();
-  const fresh = (key: string) => {
-    const entry = entries.get(key);
-    if (entry && entry.expiresAt > now()) return entry;
-    entries.delete(key);
-    return undefined;
+  const notify = () => {
+    for (const listener of listeners) listener();
+  };
+  const load = (key: string, start: () => Promise<unknown>) => {
+    const entry: Entry = {
+      thenable: track(start()),
+      expiresAt: now() + ttlMs,
+      stale: false,
+    };
+    entries.set(key, entry);
+    entry.thenable.catch(() => {
+      if (entries.get(key) === entry) entries.delete(key);
+    });
+    return entry.thenable;
+  };
+  const revalidate = (
+    key: string,
+    entry: Entry,
+    start: () => Promise<unknown>,
+  ) => {
+    if (entry.refetching || entry.thenable.status !== 'fulfilled') return;
+    const prev = entry.thenable.value;
+    entry.refetching = start().then(
+      (value) => {
+        if (entries.get(key) !== entry) return;
+        const shared = replaceEqualDeep(prev, value);
+        entries.set(key, {
+          thenable: shared === prev ? entry.thenable : fulfilled(shared),
+          expiresAt: now() + ttlMs,
+          stale: false,
+        });
+        if (shared !== prev) notify();
+      },
+      // A failed refetch keeps the old value; the next read tries again.
+      () => {
+        entry.refetching = undefined;
+      },
+    );
   };
   return {
-    get: (path, input) => fresh(keyOf(path, input))?.promise,
+    get: (path, input) => entries.get(keyOf(path, input))?.thenable,
     promise(path, input, start) {
       const key = keyOf(path, input);
-      const existing = fresh(key);
-      if (existing) return existing.promise;
-      const promise = start();
-      const entry = { promise, expiresAt: now() + ttlMs };
-      entries.set(key, entry);
-      promise.catch(() => {
-        if (entries.get(key) === entry) entries.delete(key);
-      });
-      return promise;
+      const entry = entries.get(key);
+      if (!entry) return load(key, start);
+      if (entry.stale || entry.expiresAt <= now())
+        revalidate(key, entry, start);
+      return entry.thenable;
     },
     invalidate(match) {
-      for (const key of entries.keys()) {
+      for (const [key, entry] of entries) {
         if (!match || match(key.slice(0, key.indexOf('\n'))))
-          entries.delete(key);
+          entry.stale = true;
       }
-      for (const listener of listeners) listener();
+      notify();
     },
     subscribe(listener) {
       listeners.add(listener);

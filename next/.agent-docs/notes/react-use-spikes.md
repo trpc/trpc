@@ -27,6 +27,29 @@ await client.post.byId.query({ id }, { ignoreCache: true });
   - A shared request can't be aborted by one caller's signal.
   - There's no hydration. Server-started promises crossing to the client is out of scope (Q20.3).
 
+### C, round 2: stable thenables, structural sharing, sorted keys
+
+Asked for in the decision round: promises that stay the same while the data does, as TanStack Query does. Code: `spikes/cache-link/share.ts` (ports of `@tanstack/query-core`'s `hashKey`, `replaceEqualDeep` and `pendingThenable`), tests in `share.test.ts`.
+
+```ts
+const first = trpc.post.list.query({ limit: 2, order: 'asc' });
+trpc.post.list.query({ order: 'asc', limit: 2 }) === first; // keys sorted before hashing
+await first;
+first.status; // 'fulfilled', and first.value is the list: use() reads it without suspending
+
+cache.invalidate(); // marks stale, tells subscribers
+trpc.post.list.query(input) === first; // still: the stale value, refetched in the background
+// refetch equal: same thenable, nobody told. Refetch with post 2 renamed:
+// a new thenable whose list[0] and list[1].tags are the old objects
+```
+
+- Keys: plain objects' keys are sorted at any depth before the danSON keying, so key order doesn't split entries while `Date`s and `Map`s still key apart.
+- Thenables: each cached promise gets React's `status` / `value` / `reason` fields when it settles. `renderToString` renders a settled cached query in one pass; a plain resolved promise shows the fallback.
+- Stale-while-revalidate: an expired or invalidated entry keeps its thenable and refetches once in the background. The new value goes through `replaceEqualDeep(old, new)`. All equal: the thenable stays the same object and subscribers aren't told, so React doesn't re-render. Otherwise: a new fulfilled thenable whose unchanged parts are the old objects, then subscribers are told. A failed refetch keeps the old value.
+- `replaceEqualDeep` also shares `Date`s with the same time. A danSON (or Effect `Schema`) response revives new `Date` objects each time, which would defeat TanStack's version on any value holding one. `Map`s, `Set`s and class instances are still compared by identity, as in TanStack.
+- Invalidation now tells subscribers twice for a changed value (stale, then refetched); a `useSyncExternalStore` store would read the same thenable on the first and re-render on the second.
+- Still open: the core hook for promise identity, and the React store for re-renders.
+
 ## D: `AtomTrpc` on `effect/reactivity`
 
 ```ts
