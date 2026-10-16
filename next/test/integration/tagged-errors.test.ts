@@ -5,6 +5,7 @@ import {
   isDefinedError,
   safe,
   TrpcError,
+  routerType,
 } from 'trpcdev/client';
 import { generateOpenApi } from 'trpcdev/openapi';
 import { initTrpc } from 'trpcdev/server';
@@ -64,7 +65,8 @@ type AppRouter = typeof router;
 
 async function setup() {
   const server = await createTestServer({ router });
-  const client = createTrpcClient<AppRouter>({
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
     links: [httpLink({ url: server.url })],
   });
   return { client, [Symbol.asyncDispose]: () => server.close() };

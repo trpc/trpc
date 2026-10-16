@@ -6,6 +6,7 @@ import {
   isDefinedError,
   safe,
   TrpcError,
+  routerType,
 } from 'trpcdev/client';
 import { error, initTrpc, type OnErrorOpts } from 'trpcdev/server';
 import { createTestServer } from './fixtures/server.ts';
@@ -84,7 +85,8 @@ async function setup(opts: { expose?: boolean } = {}) {
     exposeUnexpectedErrors: opts.expose ?? false,
     onError: (e) => errors.push(e),
   });
-  const client = createTrpcClient<AppRouter>({
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
     links: [httpLink({ url: server.url })],
   });
   return {

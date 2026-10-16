@@ -6,11 +6,12 @@ import {
   toWireError,
   TrpcError,
 } from '../../internal/error.ts';
-import type { MaybePromise } from '../../internal/types.ts';
-import {
-  defaultSerializer,
-  type AnySerializer,
-} from '../../serializer/index.ts';
+import type {
+  DansonForm,
+  FormOfSerializer,
+  MaybePromise,
+} from '../../internal/types.ts';
+import { jsonSerializer, type AnySerializer } from '../../serializer/index.ts';
 import {
   callProcedure,
   normalizeCause,
@@ -36,8 +37,8 @@ export interface LocalLinkOptions<TRouter extends AnyRouter> {
   layer?: Layer.Layer<never, any, never>;
   /**
    * Round-trip inputs and outputs through a serializer, as over the wire.
-   * `false` passes values by reference.
-   * @default defaultSerializer
+   * `false` passes values by reference, with native types.
+   * @default jsonSerializer
    */
   serializer?: AnySerializer | false;
 }
@@ -54,13 +55,19 @@ export interface LocalLinkOptions<TRouter extends AnyRouter> {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
+export function localLink<
+  TRouter extends AnyRouter,
+  TSerializer extends AnySerializer | false | undefined = undefined,
+>(
+  opts: LocalLinkOptions<TRouter> & { serializer?: TSerializer },
+): TrpcLink<{
+  form: TSerializer extends false ? DansonForm : FormOfSerializer<TSerializer>;
+}>;
 export function localLink<TRouter extends AnyRouter>(
   opts: LocalLinkOptions<TRouter>,
-): TrpcLink {
+): TrpcLink<any> {
   const serializer =
-    opts.serializer === false
-      ? undefined
-      : (opts.serializer ?? defaultSerializer);
+    opts.serializer === false ? undefined : (opts.serializer ?? jsonSerializer);
   const layer = opts.layer as Layer.Layer<any, any, never> | undefined;
   const runtime = layer ? ManagedRuntime.make(layer) : undefined;
   let services: Promise<Context.Context<any>> | undefined;

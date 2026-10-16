@@ -1,16 +1,13 @@
 import type { AnyContractRouter } from '../contract/index.ts';
 import type { AnyTrpcError } from '../internal/error.ts';
 import type {
-  DansonForm,
   Merge,
   Missing,
-  OutputForm,
   Overwrite,
   Simplify,
   TypeError,
   Unset,
 } from '../internal/types.ts';
-import type { AnySerializer } from '../serializer/index.ts';
 import {
   createBuilder,
   type AnyProcedureBuilder,
@@ -42,11 +39,6 @@ export interface RootConfig {
   ctx?: object;
   /** The shape of procedure meta. */
   meta?: object;
-  /**
-   * The serializer's type, so client types follow what it keeps. The handler
-   * must then be given that serializer. @default the danSON default
-   */
-  serializer?: AnySerializer;
 }
 
 /**
@@ -64,11 +56,7 @@ export interface RootOptions<TMeta> {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface RootDef<
-  TCtx extends object,
-  TMeta extends object,
-  TForm extends OutputForm = DansonForm,
-> {
+export interface RootDef<TCtx extends object, TMeta extends object> {
   ctx: TCtx;
   ctxAdded: {};
   meta: TMeta;
@@ -81,7 +69,6 @@ export interface RootDef<
   shorts: never;
   provided: Response;
   requires: never;
-  form: TForm;
 }
 
 /**
@@ -92,8 +79,7 @@ export interface RootDef<
 export interface TrpcRoot<
   TCtx extends object,
   TMeta extends object,
-  TForm extends OutputForm = DansonForm,
-  TDef extends BuilderDef = RootDef<TCtx, TMeta, TForm>,
+  TDef extends BuilderDef = RootDef<TCtx, TMeta>,
 > {
   /** The base procedure builder. */
   procedure: ProcedureBuilder<TDef>;
@@ -125,12 +111,7 @@ export interface TrpcRoot<
    */
   with<$Ext extends BuilderDef>(
     extension: ProcedureBuilder<$Ext> & WithCheck<TDef, $Ext>,
-  ): TrpcRoot<
-    TCtx,
-    Simplify<TMeta & $Ext['meta']>,
-    TForm,
-    ExtendedDef<TDef, $Ext>
-  >;
+  ): TrpcRoot<TCtx, Simplify<TMeta & $Ext['meta']>, ExtendedDef<TDef, $Ext>>;
   /**
    * Types a middleware against this root, for reuse across procedures.
    *
@@ -270,17 +251,6 @@ export interface RootMiddleware<TCtx extends object, TMeta extends object> {
 }
 
 /**
- * The output form of a serializer type; danSON's for `undefined`.
- * @since 12.0.0-alpha.0
- * @stability experimental
- */
-export type FormOfSerializer<S> = S extends { readonly '~form'?: infer F }
-  ? NonNullable<F> extends infer G extends OutputForm
-    ? G
-    : DansonForm
-  : DansonForm;
-
-/**
  * Creates the root object for a ctx and meta type: one option bag, no
  * `.create()`.
  *
@@ -299,8 +269,7 @@ export function initTrpc<TConfig extends RootConfig = {}>(
   opts: RootOptions<TConfig['meta'] extends object ? TConfig['meta'] : {}> = {},
 ): TrpcRoot<
   TConfig['ctx'] extends object ? TConfig['ctx'] : {},
-  TConfig['meta'] extends object ? TConfig['meta'] : {},
-  FormOfSerializer<TConfig['serializer']>
+  TConfig['meta'] extends object ? TConfig['meta'] : {}
 > {
   return makeRoot(
     createBuilder({
@@ -313,9 +282,7 @@ export function initTrpc<TConfig extends RootConfig = {}>(
   ) as never;
 }
 
-function makeRoot(
-  procedure: AnyProcedureBuilder,
-): TrpcRoot<any, any, any, any> {
+function makeRoot(procedure: AnyProcedureBuilder): TrpcRoot<any, any, any> {
   return {
     procedure,
     with: (extension: AnyProcedureBuilder) => {

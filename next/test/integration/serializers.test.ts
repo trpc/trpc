@@ -9,53 +9,46 @@ import {
   wsLink,
   type Deserialized,
 } from 'trpcdev/client';
+import { createRouterClient, initTrpc, TrpcError } from 'trpcdev/server';
 import {
-  createFetchHandler,
-  createRouterClient,
-  initTrpc,
-  TrpcError,
-  type TrpcRoot,
-} from 'trpcdev/server';
-import {
+  createSerializer,
   createSyncSerializer,
-  defaultSerializer,
-  jsonSerializer,
   type JsonOf,
-  type OutputForm,
 } from 'trpcdev/serializer';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 import { createTestServer } from './fixtures/server.ts';
 
 const at = new Date('2026-10-15T00:00:00.000Z');
+const danson = createSerializer();
+const t = initTrpc();
 
-function makeRouter<F extends OutputForm>(t: TrpcRoot<{}, {}, F>) {
-  return {
-    rich: t.procedure.input(z.object({ q: z.string() })).query(({ input }) => ({
-      q: input.q,
-      at,
-      tags: new Set(['a']),
-      missing: undefined as string | undefined,
-    })),
-    echo: t.procedure
-      .input(z.object({ text: z.string() }))
-      .mutation(({ input }) => input.text.toUpperCase()),
-    count: t.procedure.query(async function* () {
-      yield { n: 1, at };
-      yield { n: 2, at };
-      return 'done';
-    }),
-    later: t.procedure.query(() => Promise.resolve({ at })),
-    nothing: t.procedure.query((): void => {}),
-    fails: t.procedure.query((): string => {
-      throw new TrpcError({ code: 'NOT_FOUND', message: 'nope' });
-    }),
-    ticks: t.procedure.subscription(async function* () {
-      yield { at };
-      yield { at };
-    }),
-  };
-}
+/** The router doesn't name a serializer: the handler and the links do. */
+const router = {
+  rich: t.procedure.input(z.object({ q: z.string() })).query(({ input }) => ({
+    q: input.q,
+    at,
+    tags: new Set(['a']),
+    missing: undefined as string | undefined,
+  })),
+  echo: t.procedure
+    .input(z.object({ text: z.string() }))
+    .mutation(({ input }) => input.text.toUpperCase()),
+  count: t.procedure.query(async function* () {
+    yield { n: 1, at };
+    yield { n: 2, at };
+    return 'done';
+  }),
+  later: t.procedure.query(() => Promise.resolve({ at })),
+  nothing: t.procedure.query((): void => {}),
+  fails: t.procedure.query((): string => {
+    throw new TrpcError({ code: 'NOT_FOUND', message: 'nope' });
+  }),
+  ticks: t.procedure.subscription(async function* () {
+    yield { at };
+    yield { at };
+  }),
+};
 
 const collect = async <T>(iterable: AsyncIterable<T>) => {
   const out: T[] = [];
@@ -95,7 +88,7 @@ test('ReadableStream outputs arrive as ReadableStreams; unknown stays unknown', 
     data: unknown;
   }>();
   expectTypeOf<JsonOf<{ data: unknown }>>().toEqualTypeOf<{
-    data?: unknown;
+    data: unknown;
   }>();
 
   const items = (): ReadableStream<Item> =>
@@ -113,11 +106,14 @@ test('ReadableStream outputs arrive as ReadableStreams; unknown stays unknown', 
     return out;
   };
 
-  const rich = initTrpc();
-  const richRouter = { items: rich.procedure.query(items) };
-  await using richServer = await createTestServer({ router: richRouter });
-  const richOut = await createTrpcClient<typeof richRouter>({
-    links: [httpLink({ url: richServer.url })],
+  const itemsRouter = { items: t.procedure.query(items) };
+  await using richServer = await createTestServer({
+    router: itemsRouter,
+    serializer: danson,
+  });
+  const richOut = await createTrpcClient({
+    router: routerType<typeof itemsRouter>(),
+    links: [httpLink({ url: richServer.url, serializer: danson })],
   }).items.query();
   expectTypeOf(richOut).toEqualTypeOf<ReadableStream<Item>>();
   expect(richOut).toBeInstanceOf(ReadableStream);
@@ -126,17 +122,13 @@ test('ReadableStream outputs arrive as ReadableStreams; unknown stays unknown', 
     { at, data: null },
   ]);
 
-  const plain = initTrpc<{ serializer: typeof jsonSerializer }>();
-  const plainRouter = { items: plain.procedure.query(items) };
-  await using plainServer = await createTestServer({
-    router: plainRouter,
-    serializer: jsonSerializer,
-  });
-  const plainOut = await createTrpcClient<typeof plainRouter>({
-    links: [httpLink({ url: plainServer.url, serializer: jsonSerializer })],
+  await using plainServer = await createTestServer({ router: itemsRouter });
+  const plainOut = await createTrpcClient({
+    router: routerType<typeof itemsRouter>(),
+    links: [httpLink({ url: plainServer.url })],
   }).items.query();
   expectTypeOf(plainOut).toEqualTypeOf<
-    ReadableStream<{ at: string; data?: unknown }>
+    ReadableStream<{ at: string; data: unknown }>
   >();
   expect(plainOut).toBeInstanceOf(ReadableStream);
   expect(await read(plainOut)).toEqual([
@@ -146,21 +138,10 @@ test('ReadableStream outputs arrive as ReadableStreams; unknown stays unknown', 
 });
 
 test('no serializer: plain JSON, JSON-form client types, ?input= GET params', async () => {
-  const t = initTrpc<{ serializer: typeof jsonSerializer }>();
-  const router = makeRouter(t);
-  // @ts-expect-error the router declares jsonSerializer, so the handler must get it
-  createFetchHandler({ router });
-  // @ts-expect-error and only that serializer
-  createFetchHandler({ router, serializer: defaultSerializer });
-
-  await using server = await createTestServer({
-    router,
-    serializer: jsonSerializer,
-    batch: true,
-  });
+  await using server = await createTestServer({ router, batch: true });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: server.url, serializer: jsonSerializer })],
+    links: [httpLink({ url: server.url })],
   });
 
   const rich = await client.rich.query({ q: 'hi there' });
@@ -171,8 +152,8 @@ test('no serializer: plain JSON, JSON-form client types, ?input= GET params', as
     missing?: string;
   }>();
   expect(rich).toEqual({ q: 'hi there', at: at.toJSON(), tags: {} });
-  expect(server.requests.at(-1)!.url).toContain(
-    `?input=${encodeURIComponent('{"q":"hi there"}')}`,
+  expect(new URL(server.requests.at(-1)!.url).searchParams.get('input')).toBe(
+    '{"q":"hi there"}',
   );
 
   expect(await client.echo.mutate({ text: 'ok' })).toBe('OK');
@@ -214,9 +195,7 @@ test('no serializer: plain JSON, JSON-form client types, ?input= GET params', as
 
   const batched = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [
-      httpLink({ url: server.url, serializer: jsonSerializer, batch: true }),
-    ],
+    links: [httpLink({ url: server.url, batch: true })],
   });
   const [a, b] = await Promise.all([
     batched.rich.query({ q: 'x' }),
@@ -228,7 +207,7 @@ test('no serializer: plain JSON, JSON-form client types, ?input= GET params', as
     { n: 2, at: at.toJSON() },
   ]);
 
-  await using ws = wsLink({ url: server.wsUrl, serializer: jsonSerializer });
+  await using ws = wsLink({ url: server.wsUrl });
   const overWs = createTrpcClient({
     router: routerType<typeof router>(),
     links: [ws],
@@ -249,19 +228,15 @@ test('no serializer: plain JSON, JSON-form client types, ?input= GET params', as
 });
 
 test('error data follows the serializer like outputs', async () => {
-  const expired = <F extends OutputForm>(t: TrpcRoot<{}, {}, F>) => ({
+  const expiring = {
     expired: t.procedure.query(
       () => new TrpcError({ code: 'EXPIRED', status: 410, data: { at } }),
     ),
-  });
-  const plain = expired(initTrpc<{ serializer: typeof jsonSerializer }>());
-  await using server = await createTestServer({
-    router: plain,
-    serializer: jsonSerializer,
-  });
+  };
+  await using server = await createTestServer({ router: expiring });
   const client = createTrpcClient({
-    router: routerType<typeof plain>(),
-    links: [httpLink({ url: server.url, serializer: jsonSerializer })],
+    router: routerType<typeof expiring>(),
+    links: [httpLink({ url: server.url })],
   });
   const [, err] = await safe(client.expired.query());
   if (err?.defined && err.code === 'EXPIRED') {
@@ -269,11 +244,13 @@ test('error data follows the serializer like outputs', async () => {
   }
   expect(err).toMatchObject({ code: 'EXPIRED', data: { at: at.toJSON() } });
 
-  const native = expired(initTrpc());
-  await using danson = await createTestServer({ router: native });
+  await using nativeServer = await createTestServer({
+    router: expiring,
+    serializer: danson,
+  });
   const nativeClient = createTrpcClient({
-    router: routerType<typeof native>(),
-    links: [httpLink({ url: danson.url })],
+    router: routerType<typeof expiring>(),
+    links: [httpLink({ url: nativeServer.url, serializer: danson })],
   });
   const [, nativeErr] = await safe(nativeClient.expired.query());
   if (nativeErr?.defined && nativeErr.code === 'EXPIRED') {
@@ -288,8 +265,6 @@ const superjsonSerializer = createSyncSerializer<
 >(superjson);
 
 test('a sync serializer (superjson): its types survive, the transport frames root streams', async () => {
-  const t = initTrpc<{ serializer: typeof superjsonSerializer }>();
-  const router = makeRouter(t);
   await using server = await createTestServer({
     router,
     serializer: superjsonSerializer,
@@ -328,8 +303,6 @@ test('devalue as a sync transformer', async () => {
     serialize: devalue.stringify,
     deserialize: devalue.parse,
   });
-  const t = initTrpc<{ serializer: typeof devalueSerializer }>();
-  const router = makeRouter(t);
   await using server = await createTestServer({
     router,
     serializer: devalueSerializer,
@@ -349,24 +322,51 @@ test('devalue as a sync transformer', async () => {
   expect(count.map((c) => c.at)).toEqual([at, at]);
 });
 
-test('sync serializers reject what needs a streaming one', async () => {
-  const t = initTrpc<{ serializer: typeof jsonSerializer }>();
-  const router = {
-    nested: t.procedure.query(() => ({ later: Promise.resolve(1) })),
+test('nested deferred values stream with every serializer; files in inputs need danSON', async () => {
+  const deferred = {
+    nested: t.procedure.query(() => ({
+      later: Promise.resolve({ at }),
+      list: [1, Promise.resolve(2)] as const,
+      items: (async function* () {
+        yield { at };
+      })(),
+    })),
     file: t.procedure.input(z.instanceof(Blob).optional()).mutation(() => 'ok'),
   };
-  await using server = await createTestServer({
-    router,
-    serializer: jsonSerializer,
-    batch: true,
-  });
+  for (const serializer of [undefined, superjsonSerializer]) {
+    await using server = await createTestServer({
+      router: deferred,
+      serializer,
+      batch: true,
+    });
+    for (const batch of [false, true]) {
+      const client = createTrpcClient({
+        router: routerType<typeof deferred>(),
+        links: [httpLink({ url: server.url, serializer, batch })],
+      });
+      const nested = await client.nested.query();
+      expect(await nested.list[1]).toBe(2);
+      expect(nested.list[0]).toBe(1);
+      const later = await nested.later;
+      const items = await collect(nested.items);
+      if (serializer) {
+        expect(later.at).toEqual(at);
+        expect(items).toEqual([{ at }]);
+      } else {
+        expect(later).toEqual({ at: at.toJSON() });
+        expect(items).toEqual([{ at: at.toJSON() }]);
+      }
+    }
+  }
+
+  await using server = await createTestServer({ router: deferred });
   const client = createTrpcClient({
-    router: routerType<typeof router>(),
-    links: [httpLink({ url: server.url, serializer: jsonSerializer })],
+    router: routerType<typeof deferred>(),
+    links: [httpLink({ url: server.url })],
   });
-  expectTypeOf((await client.nested.query()).later).toEqualTypeOf<
-    Record<string, never>
-  >();
+  const nested = await client.nested.query();
+  expectTypeOf(nested.later).toEqualTypeOf<Promise<{ at: string }>>();
+  expectTypeOf(nested.items).toEqualTypeOf<AsyncIterable<{ at: string }>>();
   await expect(client.file.mutate(new Blob(['x']))).rejects.toMatchObject({
     message: expect.stringContaining('streaming serializer'),
   });

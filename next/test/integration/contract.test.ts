@@ -4,6 +4,7 @@ import {
   httpLink,
   safe,
   type TrpcClient,
+  routerType,
 } from 'trpcdev/client';
 import { contract, toContract, type inferContract } from 'trpcdev/contract';
 import { error, initTrpc, tracked, type TrackedEnvelope } from 'trpcdev/server';
@@ -97,7 +98,8 @@ test('contract errors and input validation apply to the implementation', async (
     router: appRouter,
     createContext: () => ({ user: null }),
   });
-  const client = createTrpcClient<AppContract>({
+  const client = createTrpcClient({
+    router: routerType<AppContract>(),
     links: [httpLink({ url: server.url })],
   });
   await expect(client.post.create.mutate({ title: 'x' })).rejects.toMatchObject(

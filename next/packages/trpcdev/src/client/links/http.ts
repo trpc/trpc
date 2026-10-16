@@ -10,6 +10,7 @@ import {
   CONTENT_TYPE,
   HEADER,
   parseSse,
+  toInputSearch,
   PROTOCOL_VERSION,
   readBlob,
   readLines,
@@ -18,9 +19,9 @@ import {
   type BatchLine,
 } from '../../internal/protocol.ts';
 import { decodeRecords } from '../../internal/frames.ts';
-import type { MaybePromise } from '../../internal/types.ts';
+import type { FormOfOptions, MaybePromise } from '../../internal/types.ts';
 import {
-  defaultSerializer,
+  jsonSerializer,
   type Frame,
   type SerializeReturn,
   type AnySerializer,
@@ -44,11 +45,17 @@ import {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface HttpLinkOptions {
+export interface HttpLinkOptions<
+  TSerializer extends AnySerializer = AnySerializer,
+> {
   /** The endpoint, e.g. `http://localhost:3000/trpc`. */
   url: string | URL;
-  /** Must match the server's. @default defaultSerializer */
-  serializer?: AnySerializer;
+  /**
+   * Must match the handler's; a response from a handler with another one
+   * fails with `UNSUPPORTED_PROTOCOL`. Client types follow it.
+   * @default jsonSerializer
+   */
+  serializer?: TSerializer;
   /** Extra headers, merged with each call's `context.headers`. */
   headers?:
     | HeadersInit
@@ -86,10 +93,17 @@ export interface HttpLinkOptions {
   longQuery?: 'post' | 'query';
   /**
    * Batch queries (and, separately, mutations) made in the same tick into
-   * one request. The server must enable batching too.
+   * one request. The server must enable batching too. A call opts out with
+   * `{ batch: false }`.
    * @default false
    */
   batch?: boolean | { maxItems?: number };
+  /**
+   * `false` turns subscriptions (SSE) off: procedures lose `.subscribe()`,
+   * for a link that should only carry queries and mutations.
+   * @default true
+   */
+  subscriptions?: boolean;
   /**
    * Ask for streamed outputs as binary frames instead of JSONL, so `File`
    * and `Blob` bytes in them arrive unencoded rather than as base64 (a
@@ -105,6 +119,21 @@ export interface HttpLinkOptions {
     delayMs?: (attempt: number) => number;
   };
 }
+
+/**
+ * What `httpLink` declares: its serializer's form, batching when on, and no
+ * subscriptions when they're off.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export type HttpLinkDecl<TOpts> = {
+  form: FormOfOptions<TOpts>;
+} & (TOpts extends { batch: true | { maxItems?: number } }
+  ? { batches: true }
+  : {}) &
+  (TOpts extends { subscriptions: false }
+    ? { unsupported: 'subscription' }
+    : {});
 
 const isAbort = (cause: unknown) =>
   cause instanceof Error && cause.name === 'AbortError';
@@ -150,44 +179,45 @@ function initKey(op: Operation): string | undefined {
 
 /**
  * Sends calls over HTTP (17: one link for every HTTP transport). Queries use
- * `GET` with legible params, mutations `POST`, subscriptions SSE. Outputs
- * with nested `Promise`s or `AsyncIterable`s stream as JSONL. A call whose
- * input holds a `File` or `Blob` is sent alone as `multipart/form-data`.
+ * `GET` with an `?input=` param, mutations `POST`, subscriptions SSE.
+ * Outputs with nested `Promise`s or `AsyncIterable`s stream as JSONL. A call
+ * whose input holds a `File` or `Blob` is sent alone as `multipart/form-data`.
  *
  * @example
  * ```ts
- * createTrpcClient<AppRouter>({
+ * createTrpcClient({
+ *   router: routerType<AppRouter>(),
  *   links: [httpLink({ url: 'http://localhost:3000/trpc', batch: true })],
  * });
  * ```
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function httpLink(
-  opts: HttpLinkOptions & { batch: true | { maxItems?: number } },
-): TrpcLink<{ batches: true }>;
-/**
- * Sends calls over HTTP (17: one link for every HTTP transport). Queries use
- * `GET` with legible params, mutations `POST`, subscriptions SSE. Outputs
- * with nested `Promise`s or `AsyncIterable`s stream as JSONL. A call whose
- * input holds a `File` or `Blob` is sent alone as `multipart/form-data`.
- *
- * @example
- * ```ts
- * createTrpcClient<AppRouter>({
- *   links: [httpLink({ url: 'http://localhost:3000/trpc', batch: true })],
- * });
- * ```
- * @since 12.0.0-alpha.0
- * @stability experimental
- */
-export function httpLink(opts: HttpLinkOptions): TrpcLink;
+export function httpLink<TOpts extends HttpLinkOptions>(
+  opts: TOpts,
+): TrpcLink<HttpLinkDecl<TOpts>>;
 export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
-  const serializer = opts.serializer ?? defaultSerializer;
+  const serializer = opts.serializer ?? jsonSerializer;
   const baseUrl = String(opts.url).replace(/\/+$/, '');
   const maxUrlLength = opts.maxUrlLength ?? 2048;
   const longQueryMethod = opts.longQuery === 'query' ? 'QUERY' : 'POST';
-  const fetchFn = opts.fetch ?? globalThis.fetch;
+  const rawFetch = opts.fetch ?? globalThis.fetch;
+  const fetchFn = async (
+    input: RequestInfo | URL,
+    init?: RequestInit,
+  ): Promise<Response> => {
+    const res = await rawFetch(input, init);
+    const theirs = res.headers.get(HEADER.serializer);
+    if (theirs !== null && theirs !== serializer.name) {
+      await res.body?.cancel().catch(() => {});
+      throw new TrpcError({
+        code: 'UNSUPPORTED_PROTOCOL',
+        message: `The server uses the '${theirs}' serializer, but this httpLink uses '${serializer.name}'. Pass the same serializer to the handler and httpLink.`,
+        status: res.status,
+      });
+    }
+    return res;
+  };
   const maxItems =
     opts.batch === true ? 10 : opts.batch ? (opts.batch.maxItems ?? 10) : 0;
   const reconnectAttempts = opts.reconnect?.attempts ?? 5;
@@ -346,8 +376,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
       );
     }
     if (op.type !== 'mutation') {
-      const search =
-        op.input === undefined ? '' : serializer.toSearch(op.input);
+      const search = json === undefined ? '' : toInputSearch(json);
       const full = search ? `${url}?${search}` : url;
       if (full.length <= maxUrlLength) {
         return fetchFn(
@@ -714,7 +743,17 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
 
   return withSerializer(
     (({ op }) => {
-      if (op.type === 'subscription') return subscription(op);
+      if (op.type === 'subscription') {
+        if (opts.subscriptions === false) {
+          return Stream.fail(
+            new TrpcError({
+              code: 'METHOD_NOT_SUPPORTED',
+              message: 'This httpLink has subscriptions turned off',
+            }),
+          );
+        }
+        return subscription(op);
+      }
       return maxItems > 0 && !unbatchable(op) ? batched(op) : single(op);
     }) as TrpcLink<any>,
     serializer,

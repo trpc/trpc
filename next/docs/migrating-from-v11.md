@@ -76,29 +76,29 @@ It rewrites what has one v12 form (imports, `initTRPC`, `TRPCError`, `mergeRoute
 
 ```
 would upgrade src/server/trpc.ts
-src/server/trpc.ts:4:3 transformer: declare the serializer by type, initTrpc<{ serializer: typeof serializer }>(), and pass createSyncSerializer(transformer) to the handler and links
+src/server/trpc.ts:4:3 transformer: drop it here; pass the same createSyncSerializer(transformer) to the handler and every link
 src/server/index.ts:1:1 observable() subscriptions: return an async generator or an Effect Stream
 ```
 
 ## API changes
 
-| v11                                                                | v12                                                                                                     |
-| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
-| `@trpc/server`, `@trpc/client`                                     | `trpcdev/server`, `trpcdev/client`                                                                      |
-| `initTRPC.context<Ctx>().meta<Meta>().create()`                    | `initTrpc<{ ctx: Ctx; meta: Meta }>()`                                                                  |
-| `t.router({ … })`, `t.mergeRouters(a, b)`                          | a plain object, `{ ...a, ...b }` (`router()` and `mergeRouters()` still exist)                          |
-| `throw new TRPCError({ code })`                                    | `return error({ code })`, or `throw new TrpcError({ code })`                                            |
-| `create({ errorFormatter })`                                       | declared errors (`.errors()`, `TrpcError.Tagged`) with typed `data`                                     |
-| `create({ transformer: superjson })` and each link's `transformer` | `serializer` on `initTrpc`, the handler and the client; danSON by default (Dates, Maps, BigInts, files) |
-| `fetchRequestHandler({ endpoint, req, router, createContext })`    | `createFetchHandler({ endpoint, router, createContext }).fetch(req)`                                    |
-| `createContext({ req, resHeaders })`                               | `createContext({ request, info })`; headers go on the procedure's `response` handle                     |
-| adapters (standalone, express, next, aws-lambda, ws)               | one handler: see [Platforms](./platforms.md)                                                            |
-| `createTRPCClient<AppRouter>({ links })`                           | `createTrpcClient({ router: routerType<AppRouter>(), links })`                                          |
-| `httpBatchLink`, `httpBatchStreamLink`, `httpSubscriptionLink`     | `httpLink({ url, batch: true })` streams and subscribes too                                             |
-| `createWSClient` + `wsLink({ client })`                            | `wsLink({ url })`                                                                                       |
-| `TRPCClientError`                                                  | `TrpcError`; `safe()` for `[data, error]`                                                               |
-| `t.createCallerFactory(router)(ctx)`                               | `createRouterClient(router, { ctx })`                                                                   |
-| subscriptions returning `observable()`                             | an async generator or an Effect `Stream`                                                                |
-| `input.lastEventId` in a subscription                              | the resolver's `lastEventId` option                                                                     |
-| `.subscribe(input, { onData, onError })`                           | `for await (const event of client.x.subscribe(input))`                                                  |
-| `@trpc/react-query`, `@trpc/tanstack-react-query`                  | `@trpcdev/tanstack-react-query` (and Solid, Svelte, Vue, Angular, Preact, Lit)                          |
+| v11                                                                | v12                                                                                                                               |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| `@trpc/server`, `@trpc/client`                                     | `trpcdev/server`, `trpcdev/client`                                                                                                |
+| `initTRPC.context<Ctx>().meta<Meta>().create()`                    | `initTrpc<{ ctx: Ctx; meta: Meta }>()`                                                                                            |
+| `t.router({ … })`, `t.mergeRouters(a, b)`                          | a plain object, `{ ...a, ...b }` (`router()` and `mergeRouters()` still exist)                                                    |
+| `throw new TRPCError({ code })`                                    | `return error({ code })`, or `throw new TrpcError({ code })`                                                                      |
+| `create({ errorFormatter })`                                       | declared errors (`.errors()`, `TrpcError.Tagged`) with typed `data`                                                               |
+| `create({ transformer: superjson })` and each link's `transformer` | `serializer` on the handler and every link; plain JSON by default, danSON with `createSerializer()` (Dates, Maps, BigInts, files) |
+| `fetchRequestHandler({ endpoint, req, router, createContext })`    | `createFetchHandler({ endpoint, router, createContext }).fetch(req)`                                                              |
+| `createContext({ req, resHeaders })`                               | `createContext({ request, info })`; headers go on the procedure's `response` handle                                               |
+| adapters (standalone, express, next, aws-lambda, ws)               | one handler: see [Platforms](./platforms.md)                                                                                      |
+| `createTRPCClient<AppRouter>({ links })`                           | `createTrpcClient({ router: routerType<AppRouter>(), links })`                                                                    |
+| `httpBatchLink`, `httpBatchStreamLink`, `httpSubscriptionLink`     | `httpLink({ url, batch: true })` streams and subscribes too                                                                       |
+| `createWSClient` + `wsLink({ client })`                            | `wsLink({ url })`                                                                                                                 |
+| `TRPCClientError`                                                  | `TrpcError`; `safe()` for `[data, error]`                                                                                         |
+| `t.createCallerFactory(router)(ctx)`                               | `createRouterClient(router, { ctx })`                                                                                             |
+| subscriptions returning `observable()`                             | an async generator or an Effect `Stream`                                                                                          |
+| `input.lastEventId` in a subscription                              | the resolver's `lastEventId` option                                                                                               |
+| `.subscribe(input, { onData, onError })`                           | `for await (const event of client.x.subscribe(input))`                                                                            |
+| `@trpc/react-query`, `@trpc/tanstack-react-query`                  | `@trpcdev/tanstack-react-query` (and Solid, Svelte, Vue, Angular, Preact, Lit)                                                    |

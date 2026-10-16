@@ -29,7 +29,7 @@ client.onPost.subscribe(undefined, { lastEventId: '42' }); // resume from a know
 
 While a subscription is quiet, the handler sends a `: ping` comment every 15 seconds so proxies don't close it as idle. Set `createFetchHandler({ sse: { pingMs } })`, or `false` to turn it off.
 
-The stream is standard SSE, so a browser `EventSource` (or `curl`) can read a subscription without the client. Input goes in the query string in the form `httpLink` sends (`/trpc/onPost?channel=news`). Each `message` event's `data` is a serialized value. An `EventSource` reconnects with `Last-Event-ID` by itself, so close it on the `done` event, or it reconnects when the stream ends. Failures arrive as `error` events with `data`:
+The stream is standard SSE, so a browser `EventSource` (or `curl`) can read a subscription without the client. Input goes in the query string as `httpLink` sends it (`/trpc/onPost?input={"channel":"news"}`, URL-encoded). Each `message` event's `data` is a serialized value. An `EventSource` reconnects with `Last-Event-ID` by itself, so close it on the `done` event, or it reconnects when the stream ends. Failures arrive as `error` events with `data`:
 
 ```ts
 const source = new EventSource('/trpc/onPost');
@@ -96,17 +96,16 @@ No backend packages ship; these recipes are yours to copy and adapt. Both serial
 
 ```ts
 import { Effect, Layer, Stream } from 'effect';
-import { defaultSerializer } from 'trpcdev/serializer';
+import { createSerializer } from 'trpcdev/serializer';
 import {
   tracked,
   type PublisherEvents,
   type PublisherShape,
 } from 'trpcdev/server';
 
-const encode = (data: unknown) =>
-  JSON.stringify(defaultSerializer.serialize(data));
-const decode = (text: string) =>
-  defaultSerializer.deserialize(JSON.parse(text));
+const danson = createSerializer();
+const encode = (data: unknown) => JSON.stringify(danson.serialize(data));
+const decode = (text: string) => danson.deserialize(JSON.parse(text));
 
 const resume = <TId>(opts: {
   live: Stream.Stream<[TId, string]>;

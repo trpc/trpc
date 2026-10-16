@@ -189,7 +189,7 @@ test('durableLink retries a lost response with the same id', async () => {
     ],
   });
   const order = await client.order.mutate({ sku: 'a' });
-  expect(order).toEqual({ id: 1, sku: 'a', at: new Date(0) });
+  expect(order).toEqual({ id: 1, sku: 'a', at: new Date(0).toJSON() });
   expect(runs.order).toBe(1);
   expect(sent).toHaveLength(2);
   expect(sent[0]!.callId).toMatch(/^[\w-]{36}$/);

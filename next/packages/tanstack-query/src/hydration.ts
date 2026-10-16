@@ -5,7 +5,7 @@ import {
 } from '@tanstack/query-core';
 import { getClientSerializer } from 'trpcdev/client';
 import {
-  defaultSerializer,
+  jsonSerializer,
   type AnySerializer,
   type SerializeReturn,
 } from 'trpcdev/serializer';
@@ -20,7 +20,7 @@ export interface HydrationOptionsOptions {
   client?: object | undefined;
   /**
    * Overrides the client's serializer. Must match on both ends.
-   * @default the client's serializer, else defaultSerializer
+   * @default the client's serializer, else jsonSerializer
    */
   serializer?: AnySerializer | undefined;
 }
@@ -48,7 +48,7 @@ export function hydrationOptions(opts: HydrationOptionsOptions = {}): {
   const serializer =
     opts.serializer ??
     (opts.client ? getClientSerializer(opts.client) : undefined) ??
-    defaultSerializer;
+    jsonSerializer;
   return {
     dehydrate: {
       serializeData: (data: unknown) => serializer.serialize(data),

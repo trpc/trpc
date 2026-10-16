@@ -1,4 +1,10 @@
-import { createTrpcClient, httpLink, safe, TrpcError } from 'trpcdev/client';
+import {
+  createTrpcClient,
+  httpLink,
+  safe,
+  TrpcError,
+  routerType,
+} from 'trpcdev/client';
 import { error, initTrpc } from 'trpcdev/server';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
@@ -57,7 +63,8 @@ async function setup(opts: { serverBatch?: boolean; clientBatch?: boolean }) {
     router,
     batch: opts.serverBatch ?? true,
   });
-  const client = createTrpcClient<AppRouter>({
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
     links: [httpLink({ url: server.url, batch: opts.clientBatch ?? true })],
   });
   return { server, client, [Symbol.asyncDispose]: () => server.close() };
@@ -105,7 +112,8 @@ test('queries and mutations are batched separately', async () => {
 
 test('the client splits batches above maxItems', async () => {
   await using server = await createTestServer({ router, batch: true });
-  const client = createTrpcClient<AppRouter>({
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
     links: [httpLink({ url: server.url, batch: { maxItems: 2 } })],
   });
   const results = await Promise.all(
@@ -198,7 +206,8 @@ test('a stream that ends early rejects open values with STREAM_INTERRUPTED', asy
       headers: res.headers,
     });
   };
-  const client = createTrpcClient<AppRouter>({
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
     links: [httpLink({ url: server.url, fetch: truncating })],
   });
   const out = await client.dashboard.query();

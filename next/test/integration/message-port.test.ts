@@ -5,6 +5,7 @@ import {
   routerType,
   safe,
 } from 'trpcdev/client';
+import { createSerializer } from 'trpcdev/serializer';
 import { createFetchHandler, initTrpc } from 'trpcdev/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import type { WorkerRouter } from './fixtures/worker-server.ts';
@@ -64,7 +65,7 @@ test('errors, deferred values and subscriptions cross the port', async () => {
 
   const slowly = await ctx.client.slowly.query();
   expect(slowly.ready).toBe(true);
-  expect(await slowly.later).toEqual(new Date(1000));
+  expect(await slowly.later).toBe(new Date(1000).toJSON());
 
   const events = await collect(ctx.client.progress.subscribe());
   expect(events).toEqual([
@@ -80,7 +81,10 @@ test('a MessageChannel connects a client and a handler in one thread', async () 
   const { port1, port2 } = new MessageChannel();
   createFetchHandler({ router }).messagePort(port1);
   const link = messagePortLink({ port: port2 });
-  const client = createTrpcClient<typeof router>({ links: [link] });
+  const client = createTrpcClient({
+    router: routerType<typeof router>(),
+    links: [link],
+  });
   try {
     expect(await client.ping.query()).toBe('pong');
   } finally {
@@ -98,11 +102,15 @@ test('file bytes cross a port as bytes, not base64', async () => {
     })),
   };
   const { port1, port2 } = new MessageChannel();
-  createFetchHandler({ router }).messagePort(port1);
+  const serializer = createSerializer();
+  createFetchHandler({ router, serializer }).messagePort(port1);
   const sent: unknown[] = [];
   port2.on('message', (message: unknown) => sent.push(message));
-  const link = messagePortLink({ port: port2 });
-  const client = createTrpcClient<typeof router>({ links: [link] });
+  const link = messagePortLink({ port: port2, serializer });
+  const client = createTrpcClient({
+    router: routerType<typeof router>(),
+    links: [link],
+  });
   try {
     const { file } = await client.report.query();
     expect([...new Uint8Array(await file.arrayBuffer())]).toEqual([0, 255, 1]);

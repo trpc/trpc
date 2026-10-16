@@ -51,7 +51,7 @@ test('invalid inputs fail on the client with the server error shape, before any 
   const client = createTrpcClient({
     router: appContract,
     links: [
-      validationLink({ contract: appContract }),
+      validationLink({ contract: appContract, output: 'json' }),
       httpLink({ url: http.url }),
     ],
   });

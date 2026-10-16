@@ -1,8 +1,7 @@
 <script lang="ts">
   import { QueryClientProvider, type QueryClient } from '@tanstack/svelte-query';
   import type { Component } from 'svelte';
-  import type { TrpcClient } from 'trpcdev/client';
-  import type { AppRouter } from '../fixtures/app.ts';
+  import type { AppClient } from '../fixtures/app.ts';
   import { setTrpcContext } from './trpc.ts';
 
   let {
@@ -12,7 +11,7 @@
     props = {},
   }: {
     queryClient: QueryClient;
-    client: TrpcClient<AppRouter>;
+    client: AppClient;
     app: Component<any>;
     props?: Record<string, unknown>;
   } = $props();

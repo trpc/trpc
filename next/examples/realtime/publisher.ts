@@ -6,7 +6,7 @@
  */
 import { Effect, Stream } from 'effect';
 import { Redis } from 'effect/persistence';
-import { defaultSerializer } from 'trpcdev/serializer';
+import { createSerializer } from 'trpcdev/serializer';
 import {
   tracked,
   type PublisherEvents,
@@ -15,10 +15,9 @@ import {
 
 // --- recipe: shared ---------------------------------------------------------
 
-const encode = (data: unknown) =>
-  JSON.stringify(defaultSerializer.serialize(data));
-const decode = (text: string) =>
-  defaultSerializer.deserialize(JSON.parse(text));
+const danson = createSerializer();
+const encode = (data: unknown) => JSON.stringify(danson.serialize(data));
+const decode = (text: string) => danson.deserialize(JSON.parse(text));
 
 /** Kept events after `lastEventId`, then live ones not already replayed. */
 const resume = <TId>(opts: {

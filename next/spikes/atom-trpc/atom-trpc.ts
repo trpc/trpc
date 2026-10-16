@@ -9,7 +9,10 @@ import { Duration, Layer, type Cause, type Effect, type Stream } from 'effect';
 import { AsyncResult, Atom, Reactivity } from 'effect/reactivity';
 import type { TrpcClientOptions } from 'trpcdev/client';
 import { createEffectClient, type EffectClient } from 'trpcdev/effect';
-import { defaultSerializer } from 'trpcdev/serializer';
+import { createSerializer } from 'trpcdev/serializer';
+
+/** Keys use danSON, so inputs with `Date`s and `Map`s key apart. */
+const keySerializer = createSerializer();
 
 type ReactivityKeys =
   | ReadonlyArray<unknown>
@@ -77,7 +80,7 @@ const keyString = (key: Key): string =>
   JSON.stringify([
     key.type,
     key.path,
-    key.input === undefined ? null : defaultSerializer.serialize(key.input),
+    key.input === undefined ? null : keySerializer.serialize(key.input),
     key.options?.reactivityKeys ?? null,
     key.options?.timeToLive === undefined
       ? null

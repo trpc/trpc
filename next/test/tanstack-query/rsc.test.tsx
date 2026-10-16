@@ -8,7 +8,13 @@ import { createTrpcRsc } from '@trpcdev/tanstack-react-query/rsc';
 import { renderToString } from 'react-dom/server';
 import { initTrpc } from 'trpcdev/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
-import { appRouter, createApp, db, type Post } from './fixtures/app.ts';
+import {
+  appRouter,
+  createApp,
+  db,
+  type Post,
+  serializer,
+} from './fixtures/app.ts';
 
 /** One request's worth of React `cache()`. */
 const requestCache = () => {
@@ -25,6 +31,7 @@ test('createTrpcRsc: per-request ctx and query client, and a server HydrationBou
   let contexts = 0;
   const rsc = createTrpcRsc({
     router: appRouter,
+    serializer,
     ctx: () => {
       contexts++;
       return { locale: 'sv' };
@@ -49,7 +56,9 @@ test('createTrpcRsc: per-request ctx and query client, and a server HydrationBou
     );
     return <h1>{data?.createdAt.toISOString().slice(0, 10)}</h1>;
   }
-  const browser = new QueryClient({ defaultOptions: hydrationOptions() });
+  const browser = new QueryClient({
+    defaultOptions: hydrationOptions({ serializer }),
+  });
   const html = renderToString(
     <QueryClientProvider client={browser}>
       <rsc.HydrationBoundary>

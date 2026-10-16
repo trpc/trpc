@@ -1,9 +1,9 @@
 /**
- * Wire serializers. The default is a port of [danSON](https://github.com/KATT/danson);
- * `createSyncSerializer` wraps superjson-style transformers and
- * `jsonSerializer` is plain JSON.
+ * Wire serializers. The default is `jsonSerializer`, plain JSON.
+ * `createSerializer()` is a port of [danSON](https://github.com/KATT/danson),
+ * and `createSyncSerializer` wraps superjson-style transformers.
  *
- * Plain JSON stays plain JSON. Non-JSON values (`Date`, `Map`, `Set`,
+ * With danSON, plain JSON stays plain JSON. Non-JSON values (`Date`, `Map`, `Set`,
  * `BigInt`, `undefined`, typed arrays, …) become inline
  * `{ _: '$', type, value }` markers, and repeated or circular references become
  * `$n` refs. Deferred values (`Promise`, `AsyncIterable`, `ReadableStream`) can
@@ -16,7 +16,6 @@
  */
 import type { Effect, Stream } from 'effect';
 import type { DansonForm, OutputForm } from '../internal/types.ts';
-import { fromSearch, toSearch } from './query.ts';
 import {
   deserializers as stdDeserializers,
   inputDeserializers as stdInputDeserializers,
@@ -49,8 +48,10 @@ export type {
 export {
   createSyncSerializer,
   jsonSerializer,
+  type SyncSerializerOptions,
   type SyncTransformer,
 } from './framed.ts';
+export type { FormOfSerializer } from '../internal/types.ts';
 export type {
   DeserializeRecord,
   SerializeRecord,
@@ -138,6 +139,11 @@ export interface SerializeOpts {
  */
 export interface Serializer<TForm extends OutputForm = DansonForm> {
   /**
+   * Names the wire format. The handler sends it in a `trpc-serializer`
+   * header, and a link with another one fails with an error naming both.
+   */
+  readonly name: string;
+  /**
    * `streaming` handles deferred values and files at any depth; with `sync`
    * and `none` the transport frames root streams and promises only.
    */
@@ -163,13 +169,12 @@ export interface Serializer<TForm extends OutputForm = DansonForm> {
       streamInterrupted?: () => unknown;
     },
   ): Effect.Effect<T, E | DansonError>;
-  /** Encodes a value as legible URL query params (`a=1&tags[]=x`). */
-  toSearch(value: unknown): string;
-  fromSearch<T = unknown>(search: string, opts?: DeserializeOpts): T;
 }
 
 /**
- * Creates a danSON-based serializer, optionally with extra types.
+ * Creates a danSON-based serializer, optionally with extra types. It keeps
+ * native types (`Date`, `Map`, `File`, …) and streams deferred values in one
+ * pass. Pass it to both the handler and the link.
  *
  * @example
  * ```ts
@@ -210,6 +215,7 @@ export function createSerializer(opts: SerializerOptions = {}): Serializer {
   };
 
   return {
+    name: 'danson',
     kind: 'streaming',
     serialize: (value, o) =>
       serializeSync(value, {
@@ -220,8 +226,6 @@ export function createSerializer(opts: SerializerOptions = {}): Serializer {
       serializeDeferred(value, { serializers, coerceError: o?.coerceError }),
     deserializeStream: (frames, o) =>
       deserializeStream(frames, { ...output, ...o }),
-    toSearch: (value) => toSearch(value, { serializers }),
-    fromSearch: (search, o) => fromSearch(search, de(o)),
   };
 }
 
@@ -284,13 +288,6 @@ function partDeserializers(parts: ReadonlyArray<Blob>): DeserializeRecord {
     },
   };
 }
-
-/**
- * The serializer used when none is configured.
- * @since 12.0.0-alpha.0
- * @stability experimental
- */
-export const defaultSerializer: Serializer = createSerializer();
 
 /**
  * Any serializer, whatever its output form.

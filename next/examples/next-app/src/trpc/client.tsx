@@ -5,10 +5,19 @@ import {
 } from '@trpcdev/tanstack-react-query';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
-import { createTrpcClient, httpLink } from 'trpcdev/client';
+import { createTrpcClient, httpLink, routerType } from 'trpcdev/client';
+import type { FormOfSerializer } from 'trpcdev/serializer';
 import type { AppRouter } from '../server/router.ts';
+import { serializer } from './serializer.ts';
 
-export const { TrpcProvider, useTrpc } = createTrpcContext<AppRouter>();
+/** The links' types: danSON's form, so hooks see `Date`s and files. */
+type Links = { form: FormOfSerializer<typeof serializer> };
+
+export const { TrpcProvider, useTrpc } = createTrpcContext<
+  AppRouter,
+  {},
+  Links
+>();
 
 const url = () =>
   typeof window === 'undefined'
@@ -17,8 +26,9 @@ const url = () =>
 
 export function Providers({ children }: { children: ReactNode }) {
   const [client] = useState(() =>
-    createTrpcClient<AppRouter>({
-      links: [httpLink({ url: url(), batch: true })],
+    createTrpcClient({
+      router: routerType<AppRouter>(),
+      links: [httpLink({ url: url(), batch: true, serializer })],
     }),
   );
   const [queryClient] = useState(

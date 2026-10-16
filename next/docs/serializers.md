@@ -1,80 +1,79 @@
 # Serializers
 
-The serializer turns inputs and outputs into JSON on the wire. Pass the same one to the handler and to every link.
+The serializer turns inputs and outputs into JSON on the wire. The default is plain JSON. To keep more types, pass the same serializer to the handler and to every link:
 
-| Kind      | Make it with                       | Keeps                                                                 |
-| --------- | ---------------------------------- | --------------------------------------------------------------------- |
-| Streaming | the default, or `createSerializer` | `Date`, `Map`, `Set`, `bigint`, files, nested promises and generators |
-| Sync      | `createSyncSerializer(superjson)`  | what the transformer knows, plus root generators and promises         |
-| None      | `jsonSerializer`                   | plain JSON, plus root generators and promises                         |
+| Serializer                        | Keeps                                                        |
+| --------------------------------- | ------------------------------------------------------------ |
+| `jsonSerializer`, the default     | plain JSON                                                   |
+| `createSerializer()`, danSON      | `Date`, `Map`, `Set`, `bigint`, `undefined`, `URL`, files, … |
+| `createSyncSerializer(superjson)` | what the transformer knows (superjson, devalue, your own)    |
 
-The default is a port of danSON. It may change before the final release.
+Every serializer streams deferred values: a procedure can return promises, generators and `ReadableStream`s at any depth, and each value goes through the serializer as it settles.
 
 ## Choosing one
 
-Declare it on `initTrpc` by type, so client types follow it, then give it to the handler and links:
+The serializer lives on the handler and the links, not on `initTrpc`:
 
 ```ts
-import superjson from 'superjson';
-import { createSyncSerializer } from 'trpcdev/serializer';
+import { createSerializer } from 'trpcdev/serializer';
 
-export const serializer = createSyncSerializer<
-  Date | Map<any, any> | Set<any> | bigint | undefined
->(superjson);
+export const serializer = createSerializer();
 
-const t = initTrpc<{ ctx: Context; serializer: typeof serializer }>();
-
-createFetchHandler({ router, serializer }); // required, and checked against the router
+createFetchHandler({ router, serializer });
 const client = createTrpcClient({
   router: routerType<AppRouter>(),
   links: [httpLink({ url, serializer })],
 });
 ```
 
-The type argument of `createSyncSerializer` lists the types the transformer rebuilds. devalue works the same way: `createSyncSerializer({ serialize: devalue.stringify, deserialize: devalue.parse })`.
-
-With no serializer at all:
+`wsLink`, `messagePortLink`, `socketLink` and `localLink` take `serializer` the same way. With superjson or devalue, list the types the transformer rebuilds:
 
 ```ts
-const t = initTrpc<{ serializer: typeof jsonSerializer }>();
-createFetchHandler({ router, serializer: jsonSerializer });
-httpLink({ url, serializer: jsonSerializer });
+export const serializer = createSyncSerializer<
+  Date | Map<any, any> | Set<any> | bigint | undefined
+>(superjson);
+// devalue: createSyncSerializer({ serialize: devalue.stringify, deserialize: devalue.parse })
 ```
 
-## Client types follow the serializer
+If the two ends disagree, HTTP calls fail with `UNSUPPORTED_PROTOCOL`: the handler names its serializer in the `trpc-serializer` response header, and `httpLink` checks it. The message names both serializers. Socket links don't check yet.
 
-A type the serializer doesn't keep arrives in its JSON form, and the client's types say so:
+## Client types follow the link
+
+The first link in the chain that has a serializer types the results. A type the serializer doesn't keep arrives in its JSON form, and the client's types say so:
 
 ```ts
 const getPost = t.procedure.query(() => ({
   at: new Date(),
   tags: new Set(['a']),
   draft: undefined,
+  comments: loadComments(), // Promise<Comment[]>
 }));
 
-// jsonSerializer
+// httpLink({ url })
 const post = await client.getPost.query();
-//    ^? { at: string; tags: Record<string, never> }
+//    ^? { at: string; tags: Record<string, never>; comments: Promise<JsonOf<Comment>[]> }
+
+// httpLink({ url, serializer: createSerializer() })
+//    ^? { at: Date; tags: Set<string>; draft: undefined; comments: Promise<Comment[]> }
 ```
 
-`Date` (and anything with `toJSON`) becomes what `toJSON` returns, `Map`, `Set` and other objects without own keys become `{}`, `undefined` keys are dropped and `undefined` array items become `null`. `JsonOf<T, Keeps>` is that transform, for your own types.
+`Date` (and anything with `toJSON`) becomes what `toJSON` returns, `Map`, `Set` and other objects without own keys become `{}`, `undefined` keys are dropped and `undefined` array items become `null`. Types that are already JSON are kept as written, so recursive and branded JSON types survive. `JsonOf<T, Keeps>` is that transform, for your own types.
 
-A typed error's `data` goes through the same serializer, so it follows the same rule: `new TrpcError({ code: 'EXPIRED', data: { at: new Date() } })` reaches a `jsonSerializer` client as `data: { at: string }`.
+A typed error's `data` goes through the same serializer: `new TrpcError({ code: 'EXPIRED', data: { at: new Date() } })` reaches a plain-JSON client as `data: { at: string }`.
 
-In-process callers (`createRouterClient`, `createTrpcRsc`) pass values by reference, so they keep native types whatever the serializer.
+In-process callers (`createRouterClient`, `createTrpcRsc`, `localLink({ serializer: false })`) pass values by reference, so they keep native types whatever the serializer.
 
-## What a sync serializer can't carry
+To keep plain JSON on the wire and still get `Date`s from a contract's Effect Schemas, put `validationLink({ contract, output: 'json' })` before `httpLink`: it decodes results with the schemas' JSON codecs and types them as the schemas' types.
 
-The transport frames a procedure that returns a generator, a `ReadableStream` or a promise: each item goes through the serializer on its own, in JSONL lines, SSE events or socket messages. Subscriptions work the same way.
+## Files
 
-A sync serializer (or none) can't carry these nested in other values, and can't carry `File` or `Blob`:
+A root `File` or `Blob` output of an unbatched HTTP call is the response body, with any serializer. On a batching chain, plain JSON can't batch it, so such calls take `{ batch: false }` (a type error otherwise). Files anywhere else, and files in inputs, need danSON; the other serializers fail before sending.
 
-- A nested promise or generator arrives as `{}`; its type says `Record<string, never>`.
-- A `File` or `Blob` input fails before sending. A root file output can still be a raw response on an unbatched HTTP call (see [Responses](./procedures.md#responses)).
+## Query URLs
 
-Query inputs are sent as `?input=<serialized JSON>` instead of the default's readable params. Inputs are deserialized by the transformer as they are; it decides what's safe to accept from a client.
+Query inputs go in the URL as `?input=<JSON>`, with object keys sorted (array order is kept), so equal inputs make the same URL and hit the same HTTP cache entry. A serializer that makes refs (danSON's `$n` markers) adds `&refs=`. Long inputs fall back to `POST` (see [Client](./client.md)).
 
-## Custom types with the default
+## Custom types with danSON
 
 ```ts
 const decimal: CustomType<Decimal, string> = {
@@ -87,4 +86,15 @@ export const serializer = createSerializer({ types: { Decimal: decimal } });
 
 ## Hydration
 
-`hydrationOptions({ client })` serializes TanStack Query data with the client's serializer (the first link that has one), so server-rendered data hydrates with the same types the client sees. See [TanStack Query](./tanstack-query.md#hydration).
+`hydrationOptions({ client })` serializes TanStack Query data with the client's serializer (the first link that has one), so server-rendered data hydrates with the same types the client sees. The query contexts take the links' form as their third type argument:
+
+```ts
+type Links = { form: FormOfSerializer<typeof serializer> };
+export const { TrpcProvider, useTrpc } = createTrpcContext<
+  AppRouter,
+  {},
+  Links
+>();
+```
+
+See [TanStack Query](./tanstack-query.md#hydration).

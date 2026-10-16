@@ -5,9 +5,8 @@ import {
   type CreateSubscriptionResult,
 } from '@trpcdev/tanstack-svelte-query';
 import { flushSync, mount, unmount, type Component } from 'svelte';
-import type { TrpcClient } from 'trpcdev/client';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
-import { createApp, db, type AppRouter } from './fixtures/app.ts';
+import { createApp, db, type AppClient } from './fixtures/app.ts';
 import { click, container, text, waitFor } from './fixtures/dom.ts';
 import Feed from './svelte/Feed.svelte';
 import Live from './svelte/Live.svelte';
@@ -17,7 +16,7 @@ import { useTrpc } from './svelte/trpc.ts';
 
 function render<TProps extends Record<string, unknown>>(
   app: Component<TProps>,
-  client: TrpcClient<AppRouter>,
+  client: AppClient,
   props?: TProps,
 ) {
   const queryClient = new QueryClient({

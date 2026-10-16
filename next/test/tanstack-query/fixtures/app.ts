@@ -7,7 +7,9 @@ import {
   dedupeLink,
   httpLink,
   routerType,
+  type TrpcClient,
 } from 'trpcdev/client';
+import { createSerializer, type DansonForm } from 'trpcdev/serializer';
 import { error, initTrpc } from 'trpcdev/server';
 import { TestServer } from 'trpcdev/internal/testing';
 import { z } from 'zod';
@@ -17,6 +19,14 @@ export interface Post {
   title: string;
   createdAt: Date;
 }
+
+/** Posts carry `Date`s through hydration, so both ends use danSON. */
+export const serializer = createSerializer();
+
+/** What the app's links declare: danSON's form. Contexts take it as their links' types. */
+export type Links = { form: DansonForm };
+
+export type AppClient = TrpcClient<AppRouter, {}, undefined, Links>;
 
 export const sleep = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -161,6 +171,7 @@ export async function createApp(opts: { posts?: number } = {}) {
       Layer.buildWithScope(
         TestServer.layer({
           router: appRouter,
+          serializer,
           createContext: ({ request }) => ({
             locale: request.headers['x-locale'] ?? null,
           }),
@@ -176,7 +187,7 @@ export async function createApp(opts: { posts?: number } = {}) {
   );
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [dedupeLink(), httpLink({ url: server.url })],
+    links: [dedupeLink(), httpLink({ url: server.url, serializer })],
   });
   const trpc = createTrpcQueryUtils({ client });
   return {

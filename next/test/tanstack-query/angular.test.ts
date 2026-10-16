@@ -25,17 +25,23 @@ import {
   createTrpcContext,
   injectSubscription,
 } from '@trpcdev/tanstack-angular-query';
-import type { TrpcClient } from 'trpcdev/client';
 import { afterEach, expect, expectTypeOf, test } from 'vite-plus/test';
-import { createApp, db, type AppRouter, type Post } from './fixtures/app.ts';
+import {
+  createApp,
+  db,
+  type AppRouter,
+  type Post,
+  type Links,
+  type AppClient,
+} from './fixtures/app.ts';
 import { click, text, waitFor } from './fixtures/dom.ts';
 
-const { provideTrpc, injectTrpc } = createTrpcContext<AppRouter>();
+const { provideTrpc, injectTrpc } = createTrpcContext<AppRouter, {}, Links>();
 
 TestBed.initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
 afterEach(() => TestBed.resetTestingModule());
 
-function render<T>(component: Type<T>, client: TrpcClient<AppRouter>) {
+function render<T>(component: Type<T>, client: AppClient) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });

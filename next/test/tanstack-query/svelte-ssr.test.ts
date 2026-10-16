@@ -6,13 +6,15 @@ import {
 import { render } from 'svelte/server';
 import { createRouterClient } from 'trpcdev/server';
 import { expect, test } from 'vite-plus/test';
-import { appRouter, createApp, db } from './fixtures/app.ts';
+import { appRouter, createApp, db, serializer } from './fixtures/app.ts';
 import Root from './svelte/Root.svelte';
 import Ssr from './svelte/Ssr.svelte';
 
 test('server render with prefetched data and no subscription', async () => {
   await using _app = await createApp();
-  const queryClient = new QueryClient({ defaultOptions: hydrationOptions() });
+  const queryClient = new QueryClient({
+    defaultOptions: hydrationOptions({ serializer }),
+  });
   const client = createRouterClient(appRouter, { ctx: { locale: null } });
   await queryClient.prefetchQuery(
     createTrpcQueryUtils({ client }).post.byId.queryOptions({

@@ -92,7 +92,7 @@ type DecorateEffectCarried<
           TLinks
         >
       ): Effect.Effect<
-        ClientValue<D['output'], ResultForm<D, undefined, TLinks>>,
+        ClientValue<D['output'], ResultForm<undefined, TLinks>>,
         ClientError<D['errors'] | TLinkErrors>
       >;
     }
@@ -106,7 +106,7 @@ type DecorateEffectCarried<
             TLinks
           >
         ): Effect.Effect<
-          ClientValue<D['output'], ResultForm<D, undefined, TLinks>>,
+          ClientValue<D['output'], ResultForm<undefined, TLinks>>,
           ClientError<D['errors'] | TLinkErrors>
         >;
       }
@@ -114,7 +114,7 @@ type DecorateEffectCarried<
         subscribe(
           ...args: CallArgs<D['input'], SubscribeOptions<TContext>>
         ): Stream.Stream<
-          ClientValue<D['output'], ResultForm<D, undefined, TLinks>>,
+          ClientValue<D['output'], ResultForm<undefined, TLinks>>,
           ClientError<D['errors'] | TLinkErrors>
         >;
       };

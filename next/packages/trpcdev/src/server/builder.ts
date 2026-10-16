@@ -5,7 +5,6 @@ import type {
   MaybePromise,
   Merge,
   Missing,
-  OutputForm,
   Overwrite,
   ProcedureType,
   Simplify,
@@ -71,8 +70,6 @@ export interface BuilderDef {
   provided: unknown;
   /** Effect services required by steps (input schemas, `.provide()` effects). */
   requires: unknown;
-  /** The root serializer's output form. */
-  form: OutputForm;
 }
 
 /**
@@ -363,7 +360,6 @@ export type BuildProcedure<
       : StreamedOutput<TDef['outputOut']>;
   errors: TDef['errors'] | TSplit['errors'];
   services: TDef['requires'] | Exclude<TSplit['services'], TDef['provided']>;
-  serializer: TDef['form'];
 }>;
 
 // --- ctx a middleware needs -------------------------------------------------------

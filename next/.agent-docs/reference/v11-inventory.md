@@ -66,19 +66,19 @@ Fates: **keep** (same idea, maybe renamed) · **change** (concept stays, API cha
 
 ## Integrations and tooling
 
-| v11 package / API                                                                  | Fate    | Proposal | Notes                                                        |
-| ---------------------------------------------------------------------------------- | ------- | -------- | ------------------------------------------------------------ |
-| `@trpc/server` + `@trpc/client`                                                    | replace | 01       | Merged into the single `trpcdev` package (the [brief](../decisions/brief.md))        |
-| `@trpc/react-query` (classic hooks, `createTRPCReact`, SSR helpers, RSC)           | delete  | —        | "`@trpc/react-query` is dead"                                |
-| `@trpc/tanstack-react-query` (`createTRPCContext`, `createTRPCOptionsProxy`)       | change  | 19       | Becomes framework-agnostic `@trpcdev/tanstack-query`         |
-| `@trpc/next` Pages Router (`withTRPC`, `createTRPCNext`, `ssrPrepass`)             | delete  | —        |                                                              |
-| `@trpc/next` app-dir experiments (server actions, `nextCacheLink`, `nextHttpLink`) | replace | 15, 20   |                                                              |
-| `@trpc/openapi` (static TS-based spec generation, Hey API helpers)                 | change  | 18       | Runtime handler + spec; static generator is an open question |
-| `@trpc/upgrade` (codemods)                                                         | delete  | —        | Maybe a v11 → vNext codemod later                            |
-| `www/` (Docusaurus site)                                                           | delete  | 22       | Markdown docs only                                           |
-| `examples/` (≈35 examples)                                                         | replace | 22       | Small set, workspace-linked                                  |
-| lerna, turbo, eslint, prettier, manypkg, konn, ts-prune, tsx                       | delete  | 22       | Only Vite-family tools, TypeScript, pnpm and Effect          |
-| `.github/` workflows                                                               | replace | 22       | Minimal CI                                                   |
+| v11 package / API                                                                  | Fate    | Proposal | Notes                                                                         |
+| ---------------------------------------------------------------------------------- | ------- | -------- | ----------------------------------------------------------------------------- |
+| `@trpc/server` + `@trpc/client`                                                    | replace | 01       | Merged into the single `trpcdev` package (the [brief](../decisions/brief.md)) |
+| `@trpc/react-query` (classic hooks, `createTRPCReact`, SSR helpers, RSC)           | delete  | —        | "`@trpc/react-query` is dead"                                                 |
+| `@trpc/tanstack-react-query` (`createTRPCContext`, `createTRPCOptionsProxy`)       | change  | 19       | Becomes framework-agnostic `@trpcdev/tanstack-query`                          |
+| `@trpc/next` Pages Router (`withTRPC`, `createTRPCNext`, `ssrPrepass`)             | delete  | —        |                                                                               |
+| `@trpc/next` app-dir experiments (server actions, `nextCacheLink`, `nextHttpLink`) | replace | 15, 20   |                                                                               |
+| `@trpc/openapi` (static TS-based spec generation, Hey API helpers)                 | change  | 18       | Runtime handler + spec; static generator is an open question                  |
+| `@trpc/upgrade` (codemods)                                                         | delete  | —        | Maybe a v11 → vNext codemod later                                             |
+| `www/` (Docusaurus site)                                                           | delete  | 22       | Markdown docs only                                                            |
+| `examples/` (≈35 examples)                                                         | replace | 22       | Small set, workspace-linked                                                   |
+| lerna, turbo, eslint, prettier, manypkg, konn, ts-prune, tsx                       | delete  | 22       | Only Vite-family tools, TypeScript, pnpm and Effect                           |
+| `.github/` workflows                                                               | replace | 22       | Minimal CI                                                                    |
 
 ## Worth carrying over as knowledge, not code
 

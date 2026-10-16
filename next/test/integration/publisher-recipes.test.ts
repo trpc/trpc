@@ -4,8 +4,8 @@ import { NodeRedis } from '@effect/platform-node';
 import { Effect, Layer, Redacted, Stream } from 'effect';
 import type { SqlError } from 'effect/sql/SqlError';
 import { Redis } from 'effect/persistence';
-import { createTrpcClient, httpLink } from 'trpcdev/client';
-import { defaultSerializer } from 'trpcdev/serializer';
+import { createTrpcClient, httpLink, routerType } from 'trpcdev/client';
+import { createSerializer } from 'trpcdev/serializer';
 import {
   initTrpc,
   Publisher,
@@ -19,10 +19,9 @@ import { z } from 'zod';
 
 // --- recipe: shared ---------------------------------------------------------
 
-const encode = (data: unknown) =>
-  JSON.stringify(defaultSerializer.serialize(data));
-const decode = (text: string) =>
-  defaultSerializer.deserialize(JSON.parse(text));
+const danson = createSerializer();
+const encode = (data: unknown) => JSON.stringify(danson.serialize(data));
+const decode = (text: string) => danson.deserialize(JSON.parse(text));
 
 /** Kept events after `lastEventId`, then live ones not already replayed. */
 const resume = <TId>(opts: {
@@ -254,9 +253,14 @@ test('the Redis publisher recipe delivers live events and resumes from lastEvent
   const layer = Layer.effect(Posts)(
     redisPublisher<{ created: Post }>({ prefix: 'posts' }),
   ).pipe(Layer.provide(fakeRedis));
-  await using server = await createTestServer({ router, layer });
-  const client = createTrpcClient<typeof router>({
-    links: [httpLink({ url: server.url })],
+  await using server = await createTestServer({
+    router,
+    layer,
+    serializer: danson,
+  });
+  const client = createTrpcClient({
+    router: routerType<typeof router>(),
+    links: [httpLink({ url: server.url, serializer: danson })],
   });
 
   const first = await client.create.mutate({ id: 'a' });

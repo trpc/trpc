@@ -1,5 +1,10 @@
 import { Schema, Stream } from 'effect';
-import { createTrpcClient, httpLink, TrpcError } from 'trpcdev/client';
+import {
+  createTrpcClient,
+  httpLink,
+  TrpcError,
+  routerType,
+} from 'trpcdev/client';
 import { contract } from 'trpcdev/contract';
 import { initTrpc, stream, tracked } from 'trpcdev/server';
 import { createTestServer } from './fixtures/server.ts';
@@ -56,7 +61,8 @@ type AppRouter = typeof router;
 
 async function setup() {
   const server = await createTestServer({ router });
-  const client = createTrpcClient<AppRouter>({
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
     links: [httpLink({ url: server.url })],
   });
   return { client, [Symbol.asyncDispose]: () => server.close() };

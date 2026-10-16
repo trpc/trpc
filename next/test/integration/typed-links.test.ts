@@ -118,14 +118,9 @@ test('links declare the call option fields calls may pass (17 D-C, F-B)', async 
   expect(seen).toEqual(['abc']);
   expect(server.requests.at(-1)!.headers.get('x-a')).toBe('1');
 
-  const plain = createTrpcClient<AppRouter>({
-    links: [traceLink, httpLink({ url: server.url })],
-  });
   void (() => {
     // @ts-expect-error -- no link declares `cache`
     void client.post.byId.query({ id: '1' }, { cache: false });
-    // @ts-expect-error -- the explicit-generic form does not infer link fields
-    void plain.post.byId.query({ id: '1' }, { traceId: 'abc' });
   });
 });
 

@@ -62,7 +62,7 @@ test('API Gateway REST events (payload 1.0)', async () => {
       httpMethod: 'GET',
       path: '/trpc/hello',
       headers: { host: 'api.example.com' },
-      multiValueQueryStringParameters: { name: ['a b'] },
+      multiValueQueryStringParameters: { input: ['{"name":"a b"}'] },
       body: null,
     },
     context,
@@ -126,7 +126,7 @@ test('ALB events keep the query string as sent and get a status line', async () 
     httpMethod: 'GET',
     path: '/trpc/hello',
     headers: {},
-    queryStringParameters: { name: 'alb%20x' },
+    queryStringParameters: { input: '%7B%22name%22%3A%22alb%20x%22%7D' },
     requestContext: { elb: { targetGroupArn: 'arn' } },
   })) as LambdaV1Result;
   expect(result.statusDescription).toBe('200');

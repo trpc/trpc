@@ -22,16 +22,14 @@ import {
   type ServerMessage,
 } from '../../internal/protocol.ts';
 import { decodeLines, encodeLine } from '../../internal/lines.ts';
-import type { MaybePromise } from '../../internal/types.ts';
-import {
-  defaultSerializer,
-  type AnySerializer,
-} from '../../serializer/index.ts';
+import type { FormOfOptions, MaybePromise } from '../../internal/types.ts';
+import { jsonSerializer, type AnySerializer } from '../../serializer/index.ts';
 import type { MessagePortLike } from '../../server/socket.ts';
 import {
   withSerializer,
   type Operation,
   type OperationStream,
+  type LinkDecl,
   type TrpcLink,
 } from '../link.ts';
 import { makeDeferredDecoder, parseError, serializeInput } from './events.ts';
@@ -83,7 +81,7 @@ interface Call {
  * @stability experimental
  */
 export interface SocketLinkOptions {
-  /** Must match the server's. @default defaultSerializer */
+  /** Must match the server's; client types follow it. @default jsonSerializer */
   serializer?: AnySerializer;
   /**
    * Sent once per connection, before any call; `createContext` receives
@@ -100,7 +98,8 @@ export interface SocketLinkOptions {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface SocketLink extends TrpcLink, AsyncDisposable {
+export interface SocketLink<TDecl extends LinkDecl = {}>
+  extends TrpcLink<TDecl>, AsyncDisposable {
   /**
    * Closes the connection. Calls in flight fail with
    * `CLIENT_CLOSED_REQUEST`; the next call opens a new connection.
@@ -129,7 +128,7 @@ function makeSocketLink(
   transport: SocketTransport,
   opts: SocketLinkOptions,
 ): SocketLink {
-  const serializer = opts.serializer ?? defaultSerializer;
+  const serializer = opts.serializer ?? jsonSerializer;
   /** Every call's inbox, so `close()` can fail them wherever they are. */
   const live = new Set<Queue.Queue<Signal>>();
   let current: Connection | undefined;
@@ -570,7 +569,10 @@ export interface WebSocketLinkOptions
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function wsLink(opts: WebSocketLinkOptions): SocketLink {
+export function wsLink<TOpts extends WebSocketLinkOptions>(
+  opts: TOpts,
+): SocketLink<{ form: FormOfOptions<TOpts> }>;
+export function wsLink(opts: WebSocketLinkOptions): SocketLink<any> {
   const Impl = opts.WebSocket ?? globalThis.WebSocket;
   return makeSocketLink(
     {
@@ -648,7 +650,10 @@ export interface MessagePortLinkOptions extends SocketLinkOptions {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function messagePortLink(opts: MessagePortLinkOptions): SocketLink {
+export function messagePortLink<TOpts extends MessagePortLinkOptions>(
+  opts: TOpts,
+): SocketLink<{ form: FormOfOptions<TOpts> }>;
+export function messagePortLink(opts: MessagePortLinkOptions): SocketLink<any> {
   const { port } = opts;
   const listeners: ((message: unknown) => void)[] = [];
   const closeListeners: (() => void)[] = [];

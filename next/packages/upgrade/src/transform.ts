@@ -104,7 +104,7 @@ const MODULE_NOTES: Readonly<Record<string, string>> = {
 
 const ROOT_OPTION_NOTES: Readonly<Record<string, string>> = {
   transformer:
-    'transformer: declare the serializer by type, initTrpc<{ serializer: typeof serializer }>(), and pass createSyncSerializer(transformer) to the handler and links',
+    'transformer: drop it here; pass the same createSyncSerializer(transformer) to the handler and every link',
   errorFormatter:
     'errorFormatter: declare errors with .errors() or TrpcError.Tagged; createV11Handler({ errorFormatter }) keeps old clients working',
   isDev: 'isDev: use the handler option exposeUnexpectedErrors',

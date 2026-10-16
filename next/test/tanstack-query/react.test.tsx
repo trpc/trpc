@@ -31,7 +31,6 @@ import {
   TrpcError,
   type LinksContext,
   type LinksTypes,
-  type TrpcClient,
 } from 'trpcdev/client';
 import { createRouterClient } from 'trpcdev/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
@@ -41,6 +40,9 @@ import {
   db,
   type AppRouter,
   type Post,
+  type Links,
+  type AppClient,
+  serializer,
 } from './fixtures/app.ts';
 import { click, container, text, waitFor } from './fixtures/dom.ts';
 
@@ -49,9 +51,9 @@ const {
   useTrpc,
   useTrpcClient,
   context: TrpcContext,
-} = createTrpcContext<AppRouter>();
+} = createTrpcContext<AppRouter, {}, Links>();
 
-function mount(ui: ReactNode, client: TrpcClient<AppRouter>) {
+function mount(ui: ReactNode, client: AppClient) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -308,7 +310,7 @@ test('server render with prefetched data, then hydrate without refetching', asyn
   function Page() {
     const trpc = useTrpc();
     const client = useTrpcClient();
-    expectTypeOf(client).toEqualTypeOf<TrpcClient<AppRouter>>();
+    expectTypeOf(client).toEqualTypeOf<AppClient>();
     const { data } = useSuspenseQuery(
       trpc.post.byId.queryOptions({ input: { id: '3' } }),
     );
@@ -316,7 +318,7 @@ test('server render with prefetched data, then hydrate without refetching', asyn
   }
 
   const serverQueryClient = new QueryClient({
-    defaultOptions: hydrationOptions(),
+    defaultOptions: hydrationOptions({ serializer }),
   });
   const serverClient = createRouterClient(appRouter, {
     ctx: { locale: null },
@@ -326,7 +328,7 @@ test('server render with prefetched data, then hydrate without refetching', asyn
       input: { id: '3' },
     }),
   );
-  const tree = (queryClient: QueryClient, client: TrpcClient<AppRouter>) => (
+  const tree = (queryClient: QueryClient, client: AppClient) => (
     <QueryClientProvider client={queryClient}>
       <TrpcProvider client={client}>
         <Page />
@@ -340,7 +342,7 @@ test('server render with prefetched data, then hydrate without refetching', asyn
   el.innerHTML = html;
   expect(text(el, 'h1')).toBe('2026-01-04');
   const browserQueryClient = new QueryClient({
-    defaultOptions: hydrationOptions(),
+    defaultOptions: hydrationOptions({ serializer }),
   });
   const root = hydrateRoot(
     el,
@@ -380,7 +382,9 @@ test('the context can be bridged into another tree', () => {
 });
 
 test('createTrpcContext({ keyPrefix }) prefixes the provided helpers', () => {
-  const billing = createTrpcContext<AppRouter>({ keyPrefix: 'billing' });
+  const billing = createTrpcContext<AppRouter, {}, Links>({
+    keyPrefix: 'billing',
+  });
   const client = createRouterClient(appRouter, { ctx: { locale: null } });
   function Key() {
     return <p>{JSON.stringify(billing.useTrpc().post.pathKey())}</p>;

@@ -15,7 +15,6 @@ import {
   hydrationOptions,
   useSubscription,
 } from '@trpcdev/tanstack-vue-query';
-import type { TrpcClient } from 'trpcdev/client';
 import { createRouterClient } from 'trpcdev/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import {
@@ -32,12 +31,15 @@ import {
   db,
   type AppRouter,
   type Post,
+  type Links,
+  type AppClient,
+  serializer,
 } from './fixtures/app.ts';
 import { click, container, text, waitFor } from './fixtures/dom.ts';
 
-const { TrpcPlugin, useTrpc } = createTrpcContext<AppRouter>();
+const { TrpcPlugin, useTrpc } = createTrpcContext<AppRouter, {}, Links>();
 
-function mount(setup: () => () => unknown, client: TrpcClient<AppRouter>) {
+function mount(setup: () => () => unknown, client: AppClient) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -177,9 +179,12 @@ test('server render with prefetched data and no subscription, then hydrate witho
   });
   const queryClient = () =>
     new QueryClient({
-      defaultOptions: { ...hydrationOptions(), queries: { staleTime: 30_000 } },
+      defaultOptions: {
+        ...hydrationOptions({ serializer }),
+        queries: { staleTime: 30_000 },
+      },
     });
-  const tree = (queryClient: QueryClient, client: TrpcClient<AppRouter>) =>
+  const tree = (queryClient: QueryClient, client: AppClient) =>
     createSSRApp(Page)
       .use(VueQueryPlugin, { queryClient })
       .use(TrpcPlugin, { client });

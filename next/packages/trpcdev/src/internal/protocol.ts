@@ -7,6 +7,49 @@ import type { ProcedureType } from './types.ts';
  */
 export const PROTOCOL_VERSION = '12';
 
+const canonical = (v: unknown): unknown => {
+  if (Array.isArray(v)) return v.map(canonical);
+  if (v === null || typeof v !== 'object') return v;
+  const out: Record<string, unknown> = {};
+  for (const k of Object.keys(v).sort()) {
+    out[k] = canonical((v as Record<string, unknown>)[k]);
+  }
+  return out;
+};
+
+/**
+ * A GET call's query string: `input=` with the serialized input's JSON, and
+ * `refs=` when the serializer made refs. Object keys are sorted, so equal
+ * inputs give equal URLs and caches hit.
+ * @internal
+ */
+export function toInputSearch(value: {
+  json?: unknown;
+  refs?: unknown;
+}): string {
+  if (value.json === undefined && value.refs === undefined) return '';
+  const params = new URLSearchParams();
+  if (value.json !== undefined) {
+    params.set('input', JSON.stringify(canonical(value.json)));
+  }
+  if (value.refs !== undefined) params.set('refs', JSON.stringify(value.refs));
+  return params.toString();
+}
+
+/** Reads what {@link toInputSearch} wrote; `undefined` without an input. @internal */
+export function fromInputSearch(
+  search: string,
+): { json?: never; refs?: never } | undefined {
+  const params = new URLSearchParams(search);
+  const input = params.get('input');
+  const refs = params.get('refs');
+  if (input === null && refs === null) return undefined;
+  return {
+    ...(input === null ? {} : { json: JSON.parse(input) as never }),
+    ...(refs === null ? {} : { refs: JSON.parse(refs) as never }),
+  };
+}
+
 /**
  * Header names the protocol uses.
  * @since 12.0.0-alpha.0
@@ -25,6 +68,8 @@ export const HEADER = {
   response: 'trpc-response',
   /** On a request: the call's id, which `durable()` keeps its result under. */
   callId: 'trpc-call-id',
+  /** On a response: the name of the serializer the handler uses. */
+  serializer: 'trpc-serializer',
 } as const;
 
 /**

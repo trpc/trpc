@@ -80,7 +80,7 @@ const t = initTRPC.create({
 `),
     ).toMatchInlineSnapshot(`
       [
-        "4:3 transformer: declare the serializer by type, initTrpc<{ serializer: typeof serializer }>(), and pass createSyncSerializer(transformer) to the handler and links",
+        "4:3 transformer: drop it here; pass the same createSyncSerializer(transformer) to the handler and every link",
         "5:3 errorFormatter: declare errors with .errors() or TrpcError.Tagged; createV11Handler({ errorFormatter }) keeps old clients working",
         "6:3 isDev: use the handler option exposeUnexpectedErrors",
       ]

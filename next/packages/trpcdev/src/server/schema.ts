@@ -66,7 +66,8 @@ export type SchemaServices<S> = S extends Schema.Top
 export interface InputValidationErrorData {
   readonly issues: ReadonlyArray<{
     readonly message: string;
-    readonly path?: ReadonlyArray<PropertyKey> | undefined;
+    /** Symbol keys arrive as their `String()`, so the data is plain JSON. */
+    readonly path?: ReadonlyArray<string | number> | undefined;
   }>;
 }
 
@@ -95,9 +96,10 @@ const normalizeIssues = (
     message: issue.message,
     ...(issue.path
       ? {
-          path: issue.path.map((p) =>
-            typeof p === 'object' && p !== null ? p.key : p,
-          ),
+          path: issue.path.map((p) => {
+            const key = typeof p === 'object' && p !== null ? p.key : p;
+            return typeof key === 'symbol' ? String(key) : key;
+          }),
         }
       : {}),
   }));

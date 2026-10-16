@@ -8,8 +8,15 @@ import { createServer } from 'node:http';
 import { NodeHttpServer, NodeRedis } from '@effect/platform-node';
 import { Effect, Layer, ManagedRuntime } from 'effect';
 import { HttpServer } from 'effect/http';
-import { createTrpcClient, httpLink, splitLink, wsLink } from 'trpcdev/client';
+import {
+  createTrpcClient,
+  httpLink,
+  routerType,
+  splitLink,
+  wsLink,
+} from 'trpcdev/client';
 import { serve } from 'trpcdev/http';
+import { createSerializer } from 'trpcdev/serializer';
 import {
   createFetchHandler,
   initTrpc,
@@ -18,6 +25,9 @@ import {
 } from 'trpcdev/server';
 import { z } from 'zod';
 import { redisPublisher } from './publisher.ts';
+
+/** Messages carry a `Date`, so both ends use danSON instead of plain JSON. */
+const serializer = createSerializer();
 
 interface Message {
   from: string;
@@ -53,7 +63,11 @@ const ChatLive = Layer.effect(Chat)(
 
 /** One server process; run as many as you like against the same Redis. */
 async function startServer() {
-  const handler = createFetchHandler({ router: appRouter, layer: ChatLive });
+  const handler = createFetchHandler({
+    router: appRouter,
+    layer: ChatLive,
+    serializer,
+  });
   const runtime = ManagedRuntime.make(
     serve(handler).pipe(
       Layer.provideMerge(
@@ -74,13 +88,14 @@ async function startServer() {
 }
 
 const connect = (url: string) => {
-  const ws = wsLink({ url: url.replace(/^http/, 'ws') });
-  const client = createTrpcClient<AppRouter>({
+  const ws = wsLink({ url: url.replace(/^http/, 'ws'), serializer });
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
     links: [
       splitLink({
         condition: (op) => op.type === 'subscription',
         true: ws,
-        false: httpLink({ url }),
+        false: httpLink({ url, serializer }),
       }),
     ],
   });

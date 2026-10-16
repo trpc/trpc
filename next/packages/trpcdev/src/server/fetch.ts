@@ -25,6 +25,7 @@ import {
 import {
   blobHeaders,
   CONTENT_TYPE,
+  fromInputSearch,
   HEADER,
   isJsonContentType,
   isMultipartContentType,
@@ -33,17 +34,8 @@ import {
   type BatchCall,
   type BatchLine,
 } from '../internal/protocol.ts';
-import type {
-  DansonForm,
-  MaybePromise,
-  OutputForm,
-  ProcedureType,
-} from '../internal/types.ts';
-import {
-  defaultSerializer,
-  type AnySerializer,
-  type Serializer,
-} from '../serializer/index.ts';
+import type { MaybePromise, ProcedureType } from '../internal/types.ts';
+import { jsonSerializer, type AnySerializer } from '../serializer/index.ts';
 import { accepts, encodeRecord } from '../internal/frames.ts';
 import type { Chunk } from '../serializer/stream.ts';
 import {
@@ -64,7 +56,6 @@ import {
   resolveProcedure,
   type AnyRouter,
   type inferRouterContext,
-  type inferRouterForm,
   type inferRouterServices,
 } from './router.ts';
 import {
@@ -174,22 +165,19 @@ export type LayerOption<TServices> = [TServices] extends [never]
     };
 
 /**
- * `serializer`, required when the router declares one on `initTrpc`, and
- * checked against it.
+ * The handler's `serializer` option.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type SerializerOption<TForm extends OutputForm> = [TForm] extends [
-  DansonForm,
-]
-  ? {
-      /** Must match the client's. @default defaultSerializer */
-      serializer?: Serializer<DansonForm>;
-    }
-  : {
-      /** The serializer declared on `initTrpc`; must match the client's. */
-      serializer: Serializer<TForm>;
-    };
+export interface SerializerOption {
+  /**
+   * The wire format. Links must use the same one; a link with another fails
+   * with an error naming both (`trpc-serializer` header). Client types
+   * follow the link's serializer.
+   * @default jsonSerializer
+   */
+  serializer?: AnySerializer;
+}
 
 /**
  * Options shared by every handler.
@@ -264,7 +252,7 @@ export type FetchHandlerOptions<
 > = BaseHandlerOptions<TRouter> &
   ContextOption<inferRouterContext<TRouter>, TPlatform> &
   LayerOption<inferRouterServices<TRouter>> &
-  SerializerOption<inferRouterForm<TRouter>>;
+  SerializerOption;
 
 /**
  * A web-standard request handler.
@@ -411,8 +399,7 @@ export function createFetchHandler<
     },
   );
   const { publicError, report } = base;
-  const serializer: AnySerializer =
-    (opts as { serializer?: AnySerializer }).serializer ?? defaultSerializer;
+  const serializer: AnySerializer = opts.serializer ?? jsonSerializer;
   const endpoint = `/${(opts.endpoint ?? '/trpc').replace(/^\/+|\/+$/g, '')}`;
   const maxBodySize = opts.maxBodySize ?? 1_048_576;
   const ssePingMs = opts.sse?.pingMs ?? 15_000;
@@ -448,7 +435,12 @@ export function createFetchHandler<
     const options = {
       status,
       contentType,
-      headers: { ...fromHandle, [HEADER.version]: PROTOCOL_VERSION, ...extra },
+      headers: {
+        ...fromHandle,
+        [HEADER.version]: PROTOCOL_VERSION,
+        [HEADER.serializer]: serializer.name,
+        ...extra,
+      },
       cookies,
     };
     if (typeof body === 'string') return HttpServerResponse.text(body, options);
@@ -552,7 +544,12 @@ export function createFetchHandler<
       if (request.method === 'GET') {
         if (url.search.length <= 1) return Effect.succeed(undefined);
         return Effect.try({
-          try: () => serializer.fromSearch(url.search, { input: true }),
+          try: () => {
+            const value = fromInputSearch(url.search);
+            return value === undefined
+              ? undefined
+              : serializer.deserialize(value, { input: true });
+          },
           catch: (cause) =>
             new TrpcError({
               code: 'PARSE_ERROR',

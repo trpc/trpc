@@ -12,12 +12,18 @@ import {
   type TrpcProviderElement,
 } from '@trpcdev/tanstack-lit-query';
 import { html, LitElement } from 'lit';
-import type { TrpcClient } from 'trpcdev/client';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
-import { createApp, db, type AppRouter, type Post } from './fixtures/app.ts';
+import {
+  createApp,
+  db,
+  type AppRouter,
+  type Post,
+  type Links,
+  type AppClient,
+} from './fixtures/app.ts';
 import { click, container, text, waitFor } from './fixtures/dom.ts';
 
-const { TrpcProvider, useTrpc } = createTrpcContext<AppRouter>();
+const { TrpcProvider, useTrpc } = createTrpcContext<AppRouter, {}, Links>();
 customElements.define('lit-query-provider', QueryClientProvider);
 customElements.define('lit-trpc-provider', TrpcProvider);
 
@@ -28,10 +34,7 @@ class View extends LitElement {
   }
 }
 
-function mount<T extends HTMLElement>(
-  tag: string,
-  client: TrpcClient<AppRouter>,
-) {
+function mount<T extends HTMLElement>(tag: string, client: AppClient) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });

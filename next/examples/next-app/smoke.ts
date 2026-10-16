@@ -4,8 +4,9 @@
  */
 import { spawn, spawnSync } from 'node:child_process';
 import { createServer } from 'node:net';
-import { createTrpcClient, httpLink } from 'trpcdev/client';
+import { createTrpcClient, httpLink, routerType } from 'trpcdev/client';
 import type { AppRouter } from './src/server/router.ts';
+import { serializer } from './src/trpc/serializer.ts';
 
 const next = new URL('node_modules/.bin/next', import.meta.url).pathname;
 const cwd = new URL('.', import.meta.url).pathname;
@@ -51,8 +52,9 @@ try {
   );
   console.log('page: server-rendered with the prefetched post');
 
-  const client = createTrpcClient<AppRouter>({
-    links: [httpLink({ url: `${origin}/api/trpc`, batch: true })],
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [httpLink({ url: `${origin}/api/trpc`, batch: true, serializer })],
   });
 
   const [first] = await client.post.list.query();

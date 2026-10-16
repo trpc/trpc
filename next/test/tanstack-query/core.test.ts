@@ -16,8 +16,13 @@ import {
   type SubscriptionResult,
 } from '@trpcdev/tanstack-query';
 import superjson from 'superjson';
-import { createTrpcClient, localLink, type ClientError } from 'trpcdev/client';
-import { createSyncSerializer, defaultSerializer } from 'trpcdev/serializer';
+import {
+  createTrpcClient,
+  localLink,
+  type ClientError,
+  routerType,
+} from 'trpcdev/client';
+import { createSerializer, createSyncSerializer } from 'trpcdev/serializer';
 import {
   createRouterClient,
   type InputValidationErrorData,
@@ -662,7 +667,9 @@ test('context reaches the links, typed from what they declare', async () => {
 test('prefetch on the server, hydrate rich types in the browser', async () => {
   await using app = await createApp();
 
-  const serverClient = new QueryClient({ defaultOptions: hydrationOptions() });
+  const serverClient = new QueryClient({
+    defaultOptions: hydrationOptions({ client: app.client }),
+  });
   const serverTrpc = createTrpcQueryUtils({
     client: createRouterClient(appRouter, { ctx: { locale: 'en' } }),
   });
@@ -672,7 +679,9 @@ test('prefetch on the server, hydrate rich types in the browser', async () => {
   const html = JSON.stringify(dehydrate(serverClient));
   expect(html).not.toContain('"createdAt":"2026');
 
-  const browserClient = new QueryClient({ defaultOptions: hydrationOptions() });
+  const browserClient = new QueryClient({
+    defaultOptions: hydrationOptions({ client: app.client }),
+  });
   hydrate(browserClient, JSON.parse(html));
   const post = browserClient.getQueryData(
     app.trpc.post.byId.queryKey({ input: { id: '1' } }),
@@ -684,7 +693,8 @@ test('prefetch on the server, hydrate rich types in the browser', async () => {
 test("hydration follows the client's serializer (19)", async () => {
   await using _app = await createApp();
   const serializer = createSyncSerializer<Date>(superjson);
-  const client = createTrpcClient<typeof appRouter>({
+  const client = createTrpcClient({
+    router: routerType<typeof appRouter>(),
     links: [
       localLink({
         router: appRouter,
@@ -711,7 +721,7 @@ test("hydration follows the client's serializer (19)", async () => {
   );
   expect(post?.createdAt).toBeInstanceOf(Date);
   expect(
-    hydrationOptions({ client, serializer: defaultSerializer }).dehydrate
+    hydrationOptions({ client, serializer: createSerializer() }).dehydrate
       .serializeData!(new Date(0)),
   ).toEqual({ json: { _: '$', type: 'Date', value: new Date(0).toJSON() } });
 });

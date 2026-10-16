@@ -2,7 +2,7 @@ import { connect } from 'node:net';
 import { NodeSocket, NodeSocketServer } from '@effect/platform-node';
 import { Context, Effect, Exit, Layer, Scope } from 'effect';
 import { SocketServer } from 'effect/socket';
-import { createTrpcClient, safe, socketLink } from 'trpcdev/client';
+import { createTrpcClient, safe, socketLink, routerType } from 'trpcdev/client';
 import {
   createFetchHandler,
   error,
@@ -91,13 +91,16 @@ async function serve(opts: { idleTimeoutMs?: number | false } = {}) {
   };
 }
 
-test('queries, rich types, deferred values and errors over TCP', async () => {
+test('queries, deferred values and errors over TCP', async () => {
   await using server = await serve();
   await using link = socketLink({
     socket: server.socket,
     connectionParams: { user: 'ada' },
   });
-  const client = createTrpcClient<typeof router>({ links: [link] });
+  const client = createTrpcClient({
+    router: routerType<typeof router>(),
+    links: [link],
+  });
 
   expect(await client.hello.query({ name: 'tcp' })).toBe(
     'hello tcp over socket',
@@ -105,7 +108,7 @@ test('queries, rich types, deferred values and errors over TCP', async () => {
   expect(await client.whoami.query()).toBe('ada');
   expect(await client.find.query({ id: '1' })).toEqual({
     id: '1',
-    at: new Date(0),
+    at: new Date(0).toJSON(),
   });
   const [, err] = await safe(client.find.query({ id: '2' }));
   expect(err).toMatchObject({ code: 'NOT_FOUND', data: { id: '2' } });
@@ -118,7 +121,10 @@ test('queries, rich types, deferred values and errors over TCP', async () => {
 test('aborting a call aborts it on the server', async () => {
   await using server = await serve();
   await using link = socketLink({ socket: server.socket });
-  const client = createTrpcClient<typeof router>({ links: [link] });
+  const client = createTrpcClient({
+    router: routerType<typeof router>(),
+    links: [link],
+  });
   const before = state.aborted;
   const controller = new AbortController();
   const pending = safe(
@@ -134,7 +140,10 @@ test('aborting a call aborts it on the server', async () => {
 test('subscriptions stream tracked events', async () => {
   await using server = await serve();
   await using link = socketLink({ socket: server.socket });
-  const client = createTrpcClient<typeof router>({ links: [link] });
+  const client = createTrpcClient({
+    router: routerType<typeof router>(),
+    links: [link],
+  });
   const events: number[] = [];
   for await (const event of client.ticks.subscribe()) {
     events.push(event.data);
@@ -149,7 +158,10 @@ test('a dropped connection reconnects for the next call', async () => {
     keepAlive: false,
     reconnect: { attempts: 3, delayMs: () => 10 },
   });
-  const client = createTrpcClient<typeof router>({ links: [link] });
+  const client = createTrpcClient({
+    router: routerType<typeof router>(),
+    links: [link],
+  });
   expect(await client.whoami.query()).toBe(null);
   await sleep(120);
   expect(await client.hello.query({ name: 'again' })).toBe(

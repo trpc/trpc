@@ -2,14 +2,15 @@ import { Cause, Deferred, Effect, Exit, Queue, Stream } from 'effect';
 import type { JsonForm, SyncForm } from '../internal/types.ts';
 import type { Serializer } from './index.ts';
 import {
+  deferredBuilders,
+  deferredChunks,
   ERROR,
   isAsyncIterable,
   isPromiseLike,
-  iterateWithReturn,
-  RETURN,
   sourceOf,
-  VALUE,
   type Chunk,
+  type ChunkQueue,
+  type PendingSource,
   type Status,
 } from './stream.ts';
 import type { SerializeReturn } from './sync.ts';
@@ -33,14 +34,17 @@ export interface SyncTransformer {
   deserialize(value: any): unknown;
 }
 
-type Root = 'Promise' | 'AsyncIterable' | 'ReadableStream';
+type Kind = 'Promise' | 'AsyncIterable' | 'ReadableStream';
 
-/** A framed stream's head: which deferred value the root is, if any. */
-interface FramedHead extends SerializeReturn {
-  root?: Root;
+/** Where a deferred value sat: its path in the value, chunk index and kind. */
+type Slot = [path: Array<string | number>, index: number, kind: Kind];
+
+/** A framed value: the transformer's JSON, plus the deferred values it held. */
+interface FramedPayload extends SerializeReturn {
+  d?: Slot[];
 }
 
-const rootOf = (v: unknown): Root | undefined =>
+const kindOf = (v: unknown): Kind | undefined =>
   v instanceof ReadableStream
     ? 'ReadableStream'
     : isAsyncIterable(v)
@@ -49,19 +53,88 @@ const rootOf = (v: unknown): Root | undefined =>
         ? 'Promise'
         : undefined;
 
+const isPlainObject = (v: unknown): v is Record<string, unknown> => {
+  if (typeof v !== 'object' || v === null) return false;
+  const proto = Object.getPrototypeOf(v);
+  return proto === Object.prototype || proto === null;
+};
+
+/**
+ * Takes the deferred values out of plain objects and arrays, leaving `null`
+ * in their place, and lists where they were. Only the containers on a path to
+ * a deferred value are copied. Other objects (a `Map`, a class instance) are
+ * the transformer's to handle.
+ */
+function holes(
+  value: unknown,
+  register: (deferred: Parameters<typeof sourceOf>[0]) => number,
+): { value: unknown; slots: Slot[] } {
+  const slots: Slot[] = [];
+  const path: Array<string | number> = [];
+  const open = new Set<object>();
+  const walk = (v: unknown): unknown => {
+    const kind = kindOf(v);
+    if (kind) {
+      slots.push([[...path], register(v as never), kind]);
+      return null;
+    }
+    const array = Array.isArray(v);
+    if (!array && !isPlainObject(v)) return v;
+    if (open.has(v as object)) return v;
+    open.add(v as object);
+    let copy: Record<string | number, unknown> | undefined;
+    const keys: Array<string | number> = array
+      ? Array.from((v as unknown[]).keys())
+      : Object.keys(v as object);
+    for (const key of keys) {
+      const item = (v as Record<string | number, unknown>)[key];
+      path.push(key);
+      const next = walk(item);
+      path.pop();
+      if (next !== item) {
+        copy ??= (
+          array ? [...(v as unknown[])] : { ...(v as object) }
+        ) as never;
+        copy![key] = next;
+      }
+    }
+    open.delete(v as object);
+    return copy ?? v;
+  };
+  return { value: walk(value), slots };
+}
+
+function setAt(
+  target: unknown,
+  path: ReadonlyArray<string | number>,
+  value: unknown,
+): unknown {
+  if (path.length === 0) return value;
+  let parent = target as Record<string | number, unknown>;
+  for (const key of path.slice(0, -1)) {
+    parent = parent?.[key] as Record<string | number, unknown>;
+  }
+  if (parent === null || typeof parent !== 'object') {
+    throw new DansonError('A deferred value has no place in the result');
+  }
+  parent[path[path.length - 1]!] = value;
+  return target;
+}
+
 const toDansonError = (cause: unknown) =>
   cause instanceof DansonError
     ? cause
     : new DansonError('serialize failed', { cause });
 
 function framedSerializer(
+  name: string,
   kind: 'sync' | 'none',
   transformer: SyncTransformer,
 ): Serializer<any> {
   const serialize = (value: unknown): SerializeReturn => {
     if (value instanceof Blob) {
       throw new DansonError(
-        'A File or Blob needs a streaming serializer (the default); a root file output can be a raw response instead',
+        'A File or Blob needs a streaming serializer such as createSerializer(); a root file output can be a raw response instead',
       );
     }
     const json = transformer.serialize(value);
@@ -71,27 +144,34 @@ function framedSerializer(
     value.json === undefined ? undefined : transformer.deserialize(value.json);
 
   return {
+    name,
     kind,
     serialize,
     deserialize,
     serializeDeferred: (value, opts) => {
-      const root = rootOf(value);
-      if (!root) return { head: serialize(value), chunks: undefined };
-      if (isPromiseLike(value)) Promise.resolve(value).catch(() => {});
-      const head: FramedHead = { root };
-      const chunks = sourceOf(value as never).pipe(
-        Stream.mapEffect(([status, v]) =>
-          Effect.try({
-            try: (): Chunk => [
-              0,
-              status,
-              serialize(
-                status === ERROR && opts?.coerceError ? opts.coerceError(v) : v,
-              ),
-            ],
-            catch: toDansonError,
-          }),
-        ),
+      const pending: PendingSource[] = [];
+      let next = 0;
+      const register = (v: Parameters<typeof sourceOf>[0]) => {
+        if (isPromiseLike(v)) Promise.resolve(v).catch(() => {});
+        const idx = next++;
+        pending.push([idx, sourceOf(v)]);
+        return idx;
+      };
+      const payload = (v: unknown): FramedPayload => {
+        const { value: rest, slots } = holes(v, register);
+        const out = serialize(rest);
+        return slots.length > 0 ? { ...out, d: slots } : out;
+      };
+      const head = payload(value);
+      if (pending.length === 0) return { head, chunks: undefined };
+      const chunks = deferredChunks(pending, (v, status) =>
+        Effect.try({
+          try: () =>
+            payload(
+              status === ERROR && opts?.coerceError ? opts.coerceError(v) : v,
+            ),
+          catch: toDansonError,
+        }),
       );
       return { head, chunks };
     },
@@ -106,8 +186,29 @@ function framedSerializer(
       const interrupted =
         opts.streamInterrupted ?? (() => new DansonError('Stream interrupted'));
       return Effect.gen(function* () {
-        const head = yield* Deferred.make<FramedHead, E | DansonError>();
-        const queue = yield* Queue.unbounded<[Status, unknown], unknown>();
+        const head = yield* Deferred.make<T, E | DansonError>();
+        const queues = new Map<number, ChunkQueue>();
+        const queueFor = (idx: number) => {
+          let q = queues.get(idx);
+          if (!q) {
+            q = Effect.runSync(Queue.unbounded<[Status, unknown], unknown>());
+            queues.set(idx, q);
+          }
+          return q;
+        };
+        const take = (idx: number) =>
+          Stream.fromQueue(queueFor(idx)).pipe(
+            Stream.ensuring(Effect.sync(() => queues.delete(idx))),
+          );
+        const builders = deferredBuilders(take, revive, interrupted);
+        const revivePayload = (p: FramedPayload): unknown => {
+          let v: unknown = deserialize(p);
+          for (const [path, idx, kind] of p.d ?? []) {
+            queueFor(idx);
+            v = setAt(v, path, builders[kind](idx));
+          }
+          return v;
+        };
         let first = true;
         yield* frames.pipe(
           Stream.runForEach((frame) =>
@@ -117,12 +218,15 @@ function framedSerializer(
                   first = false;
                   Deferred.doneUnsafe(
                     head,
-                    Effect.succeed(frame as FramedHead),
+                    Effect.succeed(revivePayload(frame as FramedPayload) as T),
                   );
                   return;
                 }
-                const [, status, json] = frame as Chunk;
-                Queue.offerUnsafe(queue, [status, deserialize(json)]);
+                const [idx, status, json] = frame as Chunk;
+                Queue.offerUnsafe(queueFor(idx), [
+                  status,
+                  revivePayload(json as FramedPayload),
+                ]);
               },
               catch: (cause) =>
                 cause instanceof DansonError
@@ -148,93 +252,80 @@ function framedSerializer(
                     : Effect.fail(interrupted() as never),
                 );
               }
-              Queue.failCauseUnsafe(queue, Cause.fail(error));
+              for (const q of queues.values()) {
+                Queue.failCauseUnsafe(q, Cause.fail(error));
+              }
             }),
           ),
           Effect.forkDetach,
         );
-        const h = yield* Deferred.await(head);
-        if (!h.root) return deserialize(h) as T;
-        const source = Stream.fromQueue(queue);
-        if (h.root === 'AsyncIterable') {
-          return iterateWithReturn(source, revive) as T;
-        }
-        const values = source.pipe(
-          Stream.takeWhile(([status]) => status !== RETURN),
-          Stream.mapEffect(([status, v]) =>
-            status === VALUE ? Effect.succeed(v) : Effect.fail(revive(v)),
-          ),
-        );
-        if (h.root === 'ReadableStream') {
-          return Stream.toReadableStream(values) as T;
-        }
-        const promise = Effect.runPromise(
-          values.pipe(
-            Stream.runHead,
-            Effect.flatMap((v) =>
-              v._tag === 'None'
-                ? Effect.fail(interrupted())
-                : Effect.succeed(v.value),
-            ),
-          ),
-        );
-        promise.catch(() => {});
-        return promise as T;
+        return yield* Deferred.await(head);
       });
     },
-    toSearch: (value) =>
-      `input=${encodeURIComponent(JSON.stringify(serialize(value).json ?? null))}`,
-    fromSearch: (search) => {
-      const raw = new URLSearchParams(search).get('input');
-      if (raw === null) return undefined as never;
-      return deserialize({ json: JSON.parse(raw) as JsonValue });
-    },
   };
+}
+
+/**
+ * Options for {@link createSyncSerializer}.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export interface SyncSerializerOptions {
+  /**
+   * Names the format in the `trpc-serializer` header, so a link with another
+   * serializer fails clearly.
+   * @default 'sync'
+   */
+  name?: string;
 }
 
 /**
  * A serializer from a sync transformer (superjson, devalue). `TKeeps` lists
  * the types it rebuilds, so client types show the rest in JSON form.
  *
- * The transport frames root generators, streams and promises; nested ones,
- * and `File`/`Blob` values, need a streaming serializer. GET inputs are sent
- * as `?input=<serialized JSON>`. Inputs are deserialized by the transformer
- * as they are; it decides what is safe to accept.
+ * The transport streams promises and async iterables in plain objects and
+ * arrays, at any depth. `File`/`Blob` values need `createSerializer()`. GET
+ * inputs are sent as `?input=<serialized JSON>`. Inputs are deserialized by
+ * the transformer as they are; it decides what is safe to accept.
  *
  * @example
  * ```ts
  * import superjson from 'superjson';
- * export const serializer = createSyncSerializer<Date | Map<any, any> | Set<any> | bigint | undefined>(superjson);
- * const t = initTrpc<{ ctx: Context; serializer: typeof serializer }>();
+ * export const serializer = createSyncSerializer<Date | Map<any, any> | Set<any> | bigint | undefined>(superjson, { name: 'superjson' });
  * createFetchHandler({ router, serializer });
- * httpLink({ url, serializer });
+ * httpLink({ url, serializer }); // client types keep Date, Map, Set, bigint
  * ```
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
 export function createSyncSerializer<TKeeps = never>(
   transformer: SyncTransformer,
+  opts: SyncSerializerOptions = {},
 ): Serializer<SyncForm<TKeeps>> {
-  return framedSerializer('sync', transformer);
+  return framedSerializer(opts.name ?? 'sync', 'sync', transformer);
 }
 
 /**
- * No serializer: plain `JSON`. Client types show outputs in JSON form
- * (`Date` → `string`, `undefined` keys dropped).
+ * Plain `JSON`, the default serializer. Client types show outputs in JSON
+ * form (`Date` → `string`, `undefined` keys dropped); promises and async
+ * iterables nested in plain objects and arrays still stream.
  *
  * @example
  * ```ts
- * const t = initTrpc<{ serializer: typeof jsonSerializer }>();
- * createFetchHandler({ router, serializer: jsonSerializer });
- * httpLink({ url, serializer: jsonSerializer });
+ * createFetchHandler({ router }); // jsonSerializer
+ * httpLink({ url }); // jsonSerializer
  * ```
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export const jsonSerializer: Serializer<JsonForm> = framedSerializer('none', {
-  serialize: (value) => {
-    const text = JSON.stringify(value);
-    return text === undefined ? undefined : JSON.parse(text);
+export const jsonSerializer: Serializer<JsonForm> = framedSerializer(
+  'json',
+  'none',
+  {
+    serialize: (value) => {
+      const text = JSON.stringify(value);
+      return text === undefined ? undefined : JSON.parse(text);
+    },
+    deserialize: (value) => value,
   },
-  deserialize: (value) => value,
-});
+);

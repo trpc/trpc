@@ -3,7 +3,13 @@
  * HTTP and subscribes to it over a hibernating WebSocket. `pnpm dev` serves
  * it for a browser instead.
  */
-import { createTrpcClient, httpLink, splitLink, wsLink } from 'trpcdev/client';
+import {
+  createTrpcClient,
+  httpLink,
+  splitLink,
+  wsLink,
+  routerType,
+} from 'trpcdev/client';
 import { unstable_startWorker } from 'wrangler';
 import type { AppRouter } from './src/router.ts';
 
@@ -15,7 +21,8 @@ try {
   await worker.ready;
   const url = new URL('/rooms/lobby/trpc', await worker.url).href;
   const ws = wsLink({ url: url.replace(/^http/, 'ws') });
-  const client = createTrpcClient<AppRouter>({
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
     links: [
       splitLink({
         condition: (op) => op.type === 'subscription',

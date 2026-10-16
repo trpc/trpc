@@ -21,9 +21,16 @@ import {
 } from '@trpcdev/tanstack-angular-query';
 import { createRouterClient } from 'trpcdev/server';
 import { expect, test } from 'vite-plus/test';
-import { appRouter, createApp, db, type AppRouter } from './fixtures/app.ts';
+import {
+  appRouter,
+  createApp,
+  db,
+  type AppRouter,
+  type Links,
+  serializer,
+} from './fixtures/app.ts';
 
-const { provideTrpc, injectTrpc } = createTrpcContext<AppRouter>();
+const { provideTrpc, injectTrpc } = createTrpcContext<AppRouter, {}, Links>();
 
 const Page = Component({
   selector: 'app-root',
@@ -43,7 +50,10 @@ const Page = Component({
 test('server render with prefetched data and no subscription', async () => {
   await using _app = await createApp();
   const queryClient = new QueryClient({
-    defaultOptions: { ...hydrationOptions(), queries: { staleTime: 30_000 } },
+    defaultOptions: {
+      ...hydrationOptions({ serializer }),
+      queries: { staleTime: 30_000 },
+    },
   });
   const client = createRouterClient(appRouter, { ctx: { locale: null } });
   await queryClient.prefetchQuery(

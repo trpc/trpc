@@ -4,7 +4,12 @@ import type { AddressInfo } from 'node:net';
 import { NodeHttpServer } from '@effect/platform-node';
 import { Effect, Exit, Scope } from 'effect';
 import { HttpEffect } from 'effect/http';
-import { createTrpcClient, httpLink, messagePortLink } from 'trpcdev/client';
+import {
+  createTrpcClient,
+  httpLink,
+  messagePortLink,
+  routerType,
+} from 'trpcdev/client';
 import { toHttpEffect } from 'trpcdev/http';
 import {
   createFetchHandler,
@@ -49,7 +54,8 @@ test('a body an Express parser already read is taken from req.body', async () =>
   const { port } = server.address() as AddressInfo;
   const url = `http://127.0.0.1:${port}/trpc`;
   try {
-    const client = createTrpcClient<typeof router>({
+    const client = createTrpcClient({
+      router: routerType<typeof router>(),
       links: [httpLink({ url })],
     });
     expect(await client.save.mutate({ n: 2 })).toBe(4);
@@ -80,7 +86,8 @@ test('a (req, res) handler for Express, Fastify and node:http (docs/platforms.md
   await new Promise<void>((resolve) => server.listen(0, resolve));
   const { port } = server.address() as AddressInfo;
   try {
-    const client = createTrpcClient<typeof router>({
+    const client = createTrpcClient({
+      router: routerType<typeof router>(),
       links: [httpLink({ url: `http://127.0.0.1:${port}/trpc` })],
     });
     expect(await client.hello.query({ name: 'node' })).toBe('hello node');
@@ -92,7 +99,10 @@ test('a (req, res) handler for Express, Fastify and node:http (docs/platforms.md
 
 test('a web handler from the Effect app, for fetch runtimes (docs/platforms.md)', async () => {
   const web = HttpEffect.toWebHandler(toHttpEffect(handler));
-  const res = await web(new Request('http://localhost/trpc/hello?name=web'));
+  const input = encodeURIComponent('{"name":"web"}');
+  const res = await web(
+    new Request(`http://localhost/trpc/hello?input=${input}`),
+  );
   expect(await res.json()).toEqual({ json: 'hello web' });
 });
 
@@ -132,7 +142,8 @@ test('platform values reach createContext, typed by the handler (docs/platforms.
 
   const channel = new MessageChannel();
   worker.messagePort(channel.port1, { platform });
-  const client = createTrpcClient<typeof workerRouter>({
+  const client = createTrpcClient({
+    router: routerType<typeof workerRouter>(),
     links: [messagePortLink({ port: channel.port2 })],
   });
   expect(await client.greet.query()).toBe('hej');

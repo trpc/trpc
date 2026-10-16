@@ -2,8 +2,8 @@ import type { BuiltinErrorCode, TrpcError } from '../internal/error.ts';
 import type {
   ClientValue,
   DansonForm,
-  FormOf,
   IsAny,
+  JsonForm,
   JsonOf,
   OutputForm,
   ProcedureResponse,
@@ -137,22 +137,30 @@ export interface ChainTypes {
   readonly form?: OutputForm;
 }
 
-/** The form results arrive in: the client's, else the links', else the router's. @internal */
+/** The form results arrive in: the client's, else the links', else plain JSON. @internal */
 export type ResultForm<
-  D,
   TForm extends OutputForm | undefined,
   TLinks extends ChainTypes,
 > = TForm extends OutputForm
   ? TForm
   : TLinks extends { form: infer F extends OutputForm }
     ? [F] extends [never]
-      ? FormOf<D>
+      ? JsonForm
       : F
-    : FormOf<D>;
+    : JsonForm;
+
+/**
+ * What a batch can't carry: a `Response`, and a root `Blob` unless the
+ * serializer streams files.
+ */
+type Unbatchable<TLinks extends ChainTypes> =
+  | ProcedureResponse
+  | (ResultForm<undefined, TLinks>['streaming'] extends true ? never : Blob);
 
 /**
  * The arguments of `query()`/`mutate()`. A procedure that may return a
- * `Response` can't be batched, so on a batching chain its calls must pass
+ * `Response`, or a `Blob` under a serializer that doesn't stream files,
+ * can't be batched, so on a batching chain its calls must pass
  * `{ batch: false }`.
  * @internal
  */
@@ -164,7 +172,7 @@ export type ProcedureCallArgs<
 > = TLinks extends { batches: infer B }
   ? [B] extends [never]
     ? CallArgs<TInput, TOpts>
-    : [Extract<TOutput, ProcedureResponse>] extends [never]
+    : [Extract<TOutput, Unbatchable<TLinks>>] extends [never]
       ? CallArgs<TInput, TOpts>
       : [input: TInput, opts: TOpts & { batch: false }]
   : CallArgs<TInput, TOpts>;
@@ -215,8 +223,8 @@ type DecorateCarried<
           TLinks
         >
       ): TrpcPromise<
-        ClientValue<D['output'], ResultForm<D, TForm, TLinks>>,
-        CallError<D, ResultForm<D, TForm, TLinks>, TLinkErrors>
+        ClientValue<D['output'], ResultForm<TForm, TLinks>>,
+        CallError<D, ResultForm<TForm, TLinks>, TLinkErrors>
       >;
     }
   : D['type'] extends 'mutation'
@@ -229,16 +237,16 @@ type DecorateCarried<
             TLinks
           >
         ): TrpcPromise<
-          ClientValue<D['output'], ResultForm<D, TForm, TLinks>>,
-          CallError<D, ResultForm<D, TForm, TLinks>, TLinkErrors>
+          ClientValue<D['output'], ResultForm<TForm, TLinks>>,
+          CallError<D, ResultForm<TForm, TLinks>, TLinkErrors>
         >;
       }
     : {
         subscribe(
           ...args: CallArgs<D['input'], SubscribeOptions<TContext>>
         ): TrpcSubscription<
-          ClientValue<D['output'], ResultForm<D, TForm, TLinks>>,
-          CallError<D, ResultForm<D, TForm, TLinks>, TLinkErrors>
+          ClientValue<D['output'], ResultForm<TForm, TLinks>>,
+          CallError<D, ResultForm<TForm, TLinks>, TLinkErrors>
         >;
       };
 

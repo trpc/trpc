@@ -73,7 +73,7 @@ test('the same call is the same atom, with typed success and errors', async () =
   expect(AsyncResult.getOrThrow(result)).toEqual({
     id: '1',
     title: 'Hello',
-    at: new Date(0),
+    at: new Date(0).toJSON(),
   });
 
   const missing = await until(
@@ -148,7 +148,7 @@ test('useAtomSuspense renders a query atom', async () => {
   const { trpc } = setup();
   function Post() {
     const post = useAtomSuspense(trpc.post.byId.query({ id: '1' })).value;
-    return createElement('h1', null, `${post.title} ${post.at.toISOString()}`);
+    return createElement('h1', null, `${post.title} ${post.at}`);
   }
   const { prelude } = await prerender(
     createElement(

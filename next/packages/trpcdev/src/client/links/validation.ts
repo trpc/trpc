@@ -23,9 +23,10 @@ export interface ValidationLinkOptions {
   /** Validate inputs before sending. @default true */
   input?: boolean;
   /**
-   * Validate results. `'json'` decodes plain JSON results (`openApiLink`)
-   * with the Effect Schema's JSON codec, so `Date`s, `bigint`s and classes
-   * come back as their types. @default true
+   * Validate results. `'json'` decodes plain JSON results (`httpLink`'s
+   * default serializer, `openApiLink`) with the Effect Schema's JSON codec,
+   * so `Date`s, `bigint`s and classes come back as their types.
+   * @default true
    */
   output?: boolean | 'json';
 }
@@ -88,7 +89,7 @@ const isEnvelope = (value: unknown): value is { id: string; data: unknown } =>
  * transformations don't run twice. Inputs from functions (context-aware) and
  * streamed (`stream()`) outputs are not checked. Paths the contract doesn't
  * have pass through. With `output: 'json'` the client types results as
- * the schemas' types again, not the JSON form `openApiLink` declares.
+ * the schemas' types again, not the JSON form plain-JSON links declare.
  *
  * @example
  * ```ts

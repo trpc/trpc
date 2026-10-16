@@ -9,6 +9,7 @@ import {
   safe,
   splitLink,
   type LoggerEvent,
+  routerType,
 } from 'trpcdev/client';
 import { createUntypedClient } from 'trpcdev/extend';
 import { createV11Handler } from 'trpcdev/interop';
@@ -80,7 +81,8 @@ test('a link can add headers through the operation context', async () => {
       },
     }),
   );
-  const client = createTrpcClient<AppRouter>({
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
     links: [authLink, httpLink({ url: server.url })],
   });
   expect(await client.whoami.query()).toBe('Bearer whoami');
@@ -94,7 +96,8 @@ test('a link can add headers through the operation context', async () => {
 test('httpLink headers can be computed per request', async () => {
   await using server = await serve();
   let n = 0;
-  const client = createTrpcClient<AppRouter>({
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
     links: [
       httpLink({
         url: server.url,
@@ -118,7 +121,8 @@ test('a Promise link can replace a result or a subscription', async () => {
     }
     return next(op);
   });
-  const client = createTrpcClient<AppRouter>({
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
     links: [cacheLink, httpLink({ url: server.url })],
   });
   expect(await client.whoami.query()).toBe('cached');
@@ -135,7 +139,8 @@ test('an Effect link wraps the result stream', async () => {
       Stream.tap((value) => Effect.sync(() => seen.push([op.path, value]))),
     ),
   );
-  const client = createTrpcClient<AppRouter>({
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
     links: [tapLink, httpLink({ url: server.url })],
   });
   await client.add.mutate({ a: 1, b: 2 });
@@ -144,7 +149,8 @@ test('an Effect link wraps the result stream', async () => {
 
 test('splitLink routes subscriptions and batched calls differently', async () => {
   await using server = await serve();
-  const client = createTrpcClient<AppRouter>({
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
     links: [
       splitLink({
         condition: (op) => op.type === 'subscription',
@@ -158,7 +164,7 @@ test('splitLink routes subscriptions and batched calls differently', async () =>
     client.today.query(),
   ]);
   expect(a).toBe('anonymous');
-  expect(b).toEqual(new Date('2026-10-10T00:00:00.000Z'));
+  expect(b).toBe('2026-10-10T00:00:00.000Z');
   expect(server.requests).toHaveLength(1);
   const ticks: number[] = [];
   for await (const n of client.ticks.subscribe()) ticks.push(n);
@@ -171,7 +177,8 @@ test('splitLink routes subscriptions and batched calls differently', async () =>
 test('loggerLink sees requests, results and errors', async () => {
   await using server = await serve();
   const events: LoggerEvent[] = [];
-  const client = createTrpcClient<AppRouter>({
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
     links: [
       loggerLink({ log: (event) => events.push(event) }),
       httpLink({ url: server.url }),
@@ -193,7 +200,8 @@ test('retryLink retries network failures on queries only', async () => {
     if (failures-- > 0) return Promise.reject(new TypeError('fetch failed'));
     return fetch(input, init);
   };
-  const client = createTrpcClient<AppRouter>({
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
     links: [
       retryLink({ retries: 3, delayMs: () => 1 }),
       httpLink({ url: server.url, fetch: flakyFetch }),
@@ -216,7 +224,8 @@ test('retryLink retries network failures on queries only', async () => {
 
 test('aborting a call rejects with CLIENT_CLOSED_REQUEST and aborts the server', async () => {
   await using server = await serve();
-  const client = createTrpcClient<AppRouter>({
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
     links: [httpLink({ url: server.url })],
   });
   const before = signals.aborted;
@@ -250,12 +259,13 @@ test('an aborted request.signal aborts the call on handler.fetch', async () => {
 });
 
 test('localLink runs the router in-process, through the serializer', async () => {
-  const client = createTrpcClient<AppRouter>({
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
     links: [localLink({ router, createContext: () => ({ token: 'local' }) })],
   });
   expect(await client.whoami.query()).toBe('local');
   const today = await client.today.query();
-  expect(today).toEqual(new Date('2026-10-10T00:00:00.000Z'));
+  expect(today).toBe('2026-10-10T00:00:00.000Z');
   const [, err] = await safe(client.find.query({ id: 'x' }));
   expect(err).toMatchObject({ code: 'NOT_FOUND', defined: true });
 });
@@ -316,10 +326,11 @@ test('one client for routers on two servers with different contexts (docs/client
     link.effect(({ op, next }) =>
       next({ ...op, path: op.path.slice(prefix.length + 1) }),
     );
-  const client = createTrpcClient<{
-    blog: typeof blogRouter;
-    shop: typeof shopRouter;
-  }>({
+  const client = createTrpcClient({
+    router: routerType<{
+      blog: typeof blogRouter;
+      shop: typeof shopRouter;
+    }>(),
     links: [
       splitLink({
         condition: (op) => op.path.startsWith('shop.'),
@@ -338,7 +349,8 @@ test('httpLink init: a per-request default, merged with each call’s init', asy
   await using server = await serve();
   const seen: RequestInit[] = [];
   const opsPerInit: string[][] = [];
-  const client = createTrpcClient<AppRouter>({
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
     links: [
       httpLink({
         url: server.url,
@@ -367,11 +379,7 @@ test('httpLink init: a per-request default, merged with each call’s init', asy
       init: { headers: { authorization: 'call' }, next: { tags: ['me'] } },
     }),
   ]);
-  expect([a, b, c]).toEqual([
-    'link',
-    new Date('2026-10-10T00:00:00.000Z'),
-    'call',
-  ]);
+  expect([a, b, c]).toEqual(['link', '2026-10-10T00:00:00.000Z', 'call']);
   expect(opsPerInit).toEqual([['whoami', 'today'], ['whoami']]);
   expect(server.requests).toHaveLength(2);
 

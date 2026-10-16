@@ -1,6 +1,12 @@
 import { Layer } from 'effect';
 import { RateLimiter } from 'effect/persistence';
-import { createTrpcClient, httpLink, retryLink, safe } from 'trpcdev/client';
+import {
+  createTrpcClient,
+  httpLink,
+  retryLink,
+  safe,
+  routerType,
+} from 'trpcdev/client';
 import { RateLimited, rateLimit } from 'trpcdev/middleware';
 import { createFetchHandler, initTrpc } from 'trpcdev/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
@@ -59,7 +65,8 @@ test('the error is typed on the client, and retryLink can wait for retryAfter', 
     layer: memory(),
     createContext: () => ({ ip: 'c' }),
   });
-  const client = createTrpcClient<typeof router>({
+  const client = createTrpcClient({
+    router: routerType<typeof router>(),
     links: [httpLink({ url: http.url })],
   });
   await client.ping.query();
@@ -76,7 +83,8 @@ test('the error is typed on the client, and retryLink can wait for retryAfter', 
   }
 
   const delays: number[] = [];
-  const retrying = createTrpcClient<typeof router>({
+  const retrying = createTrpcClient({
+    router: routerType<typeof router>(),
     links: [
       retryLink({
         retries: 1,

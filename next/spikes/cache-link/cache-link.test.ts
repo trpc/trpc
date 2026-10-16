@@ -92,7 +92,7 @@ test('use() renders a cached query; components with the same call share one requ
   const { trpc } = setup();
   function Post({ id }: { id: string }) {
     const post = use(trpc.post.byId.query({ id }));
-    return createElement('h1', null, `${post.title} ${post.at.toISOString()}`);
+    return createElement('h1', null, `${post.title} ${post.at}`);
   }
   const { prelude } = await prerender(
     createElement(

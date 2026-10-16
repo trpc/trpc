@@ -1,5 +1,5 @@
 import { Schema } from 'effect';
-import { createTrpcClient, httpLink, safe } from 'trpcdev/client';
+import { createTrpcClient, httpLink, safe, routerType } from 'trpcdev/client';
 import { error, initTrpc, type InputValidationErrorData } from 'trpcdev/server';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
@@ -56,7 +56,8 @@ async function setup(user: User | null = { id: 'u1', name: 'Ada' }) {
     router,
     createContext: () => ({ user }),
   });
-  const client = createTrpcClient<AppRouter>({
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
     links: [httpLink({ url: server.url })],
   });
   return { server, client, [Symbol.asyncDispose]: () => server.close() };
@@ -69,12 +70,14 @@ test('query without input', async () => {
   expectTypeOf(result).toEqualTypeOf<'ok'>();
 });
 
-test('query with a Standard Schema (zod) input, sent as legible GET params', async () => {
+test('query with a Standard Schema (zod) input, sent as a canonical ?input= GET param', async () => {
   await using ctx = await setup();
   expect(await ctx.client.greet.query({ name: 'world' })).toBe('hello world');
   const request = ctx.server.requests.at(-1)!;
   expect(request.method).toBe('GET');
-  expect(new URL(request.url, 'http://x').search).toBe('?name=world');
+  expect(new URL(request.url, 'http://x').searchParams.get('input')).toBe(
+    '{"name":"world"}',
+  );
 });
 
 test('query with an Effect Schema input', async () => {
@@ -145,7 +148,8 @@ test('recursive and branded outputs keep their types', async () => {
     router: typed,
     createContext: () => ({ user: null }),
   });
-  const client = createTrpcClient<typeof typed>({
+  const client = createTrpcClient({
+    router: routerType<typeof typed>(),
     links: [httpLink({ url: server.url })],
   });
   const json = await client.json.query();

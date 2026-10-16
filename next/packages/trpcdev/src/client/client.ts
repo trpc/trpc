@@ -281,7 +281,7 @@ const clientSerializers = new WeakMap<object, AnySerializer>();
  *
  * @example
  * ```ts
- * const serializer = getClientSerializer(client) ?? defaultSerializer;
+ * const serializer = getClientSerializer(client) ?? jsonSerializer;
  * ```
  * @since 12.0.0-alpha.0
  * @stability experimental

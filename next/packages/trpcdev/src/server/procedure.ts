@@ -1,6 +1,6 @@
 import type { Context } from 'effect';
 import type { AnyTrpcError } from '../internal/error.ts';
-import type { OutputForm, ProcedureType } from '../internal/types.ts';
+import type { ProcedureType } from '../internal/types.ts';
 import type { AnySchema } from './schema.ts';
 import type { OutputSchema } from './stream-schema.ts';
 
@@ -111,8 +111,6 @@ export interface ProcedureDef {
   errors: AnyTrpcError;
   /** Effect services the handler's `layer` must provide. */
   services: unknown;
-  /** The output form of the root's serializer; danSON's when absent. */
-  serializer?: OutputForm;
 }
 
 /** @internal */

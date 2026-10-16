@@ -19,9 +19,16 @@ import {
 import type { JSX } from 'solid-js';
 import { createRouterClient } from 'trpcdev/server';
 import { expect, test } from 'vite-plus/test';
-import { appRouter, createApp, db, type AppRouter } from './fixtures/app.ts';
+import {
+  appRouter,
+  createApp,
+  db,
+  type AppRouter,
+  type Links,
+  serializer,
+} from './fixtures/app.ts';
 
-const { TrpcProvider, useTrpc } = createTrpcContext<AppRouter>();
+const { TrpcProvider, useTrpc } = createTrpcContext<AppRouter, {}, Links>();
 
 test('runs with the server build', () => {
   expect(isServer).toBe(true);
@@ -29,7 +36,9 @@ test('runs with the server build', () => {
 
 test('server render with prefetched data and no subscription', async () => {
   await using _app = await createApp();
-  const queryClient = new QueryClient({ defaultOptions: hydrationOptions() });
+  const queryClient = new QueryClient({
+    defaultOptions: hydrationOptions({ serializer }),
+  });
   const client = createRouterClient(appRouter, { ctx: { locale: null } });
   await queryClient.prefetchQuery(
     createTrpcQueryUtils({ client }).post.byId.queryOptions({

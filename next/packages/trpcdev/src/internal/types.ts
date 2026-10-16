@@ -111,9 +111,8 @@ export type Deserialized<T> =
                   : { [K in keyof T]: Deserialized<T[K]> };
 
 /**
- * Which output types a serializer keeps, at the type level. Declared on
- * `initTrpc<{ serializer }>()` through the serializer's type, so client
- * types follow it.
+ * Which output types a serializer keeps, at the type level. A link declares
+ * its serializer's form, so client types follow it.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
@@ -125,7 +124,7 @@ export interface OutputForm {
 }
 
 /**
- * The default serializer's form: native types, deferred values at any depth.
+ * danSON's form, and in-process callers': native types, deferred values at any depth.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
@@ -153,88 +152,122 @@ export interface SyncForm<TKeeps> extends OutputForm {
 export type JsonForm = SyncForm<never>;
 
 type Dropped = undefined | symbol | ((...args: any[]) => unknown);
-type JsonItem<T, K> =
-  | JsonOf<Exclude<T, Dropped>, K>
+type JsonItem<T, K, D extends boolean> =
+  | JsonOf<Exclude<T, Dropped>, K, D>
   | ([Extract<T, Dropped>] extends [never] ? never : null);
 type Kept<T> = [Exclude<T, Dropped>] extends [never] ? false : true;
-type JsonObject<T, K> = Simplify<
+type JsonObject<T, K, D extends boolean> = Simplify<
   {
     [
       P in keyof T as P extends string
-        ? undefined extends T[P]
-          ? never
-          : Kept<T[P]> extends true
-            ? P
-            : never
+        ? unknown extends T[P]
+          ? P
+          : undefined extends T[P]
+            ? never
+            : Kept<T[P]> extends true
+              ? P
+              : never
         : never
-    ]: JsonOf<T[P], K>;
+    ]: JsonOf<T[P], K, D>;
   } & {
     [
       P in keyof T as P extends string
-        ? undefined extends T[P]
-          ? Kept<T[P]> extends true
-            ? P
+        ? unknown extends T[P]
+          ? never
+          : undefined extends T[P]
+            ? Kept<T[P]> extends true
+              ? P
+              : never
             : never
-          : never
         : never
-    ]?: JsonOf<Exclude<T[P], Dropped>, K>;
+    ]?: JsonOf<Exclude<T[P], Dropped>, K, D>;
   }
 >;
 
 /**
+ * Already JSON: kept as written, so recursive and branded types stay
+ * intact. `undefined` object values are dropped keys, which an optional
+ * key already allows.
+ */
+type JsonSafe =
+  | string
+  | number
+  | boolean
+  | null
+  | readonly JsonSafe[]
+  | { readonly [key: string]: JsonSafe | undefined };
+
+type Deferred<T, K> =
+  T extends ReadableStream<infer U>
+    ? ReadableStream<JsonOf<U, K, true>>
+    : T extends AsyncIterable<infer U, infer R>
+      ? IsAny<R> extends true
+        ? AsyncIterable<JsonOf<U, K, true>>
+        : [R] extends [void]
+          ? AsyncIterable<JsonOf<U, K, true>>
+          : AsyncIterable<JsonOf<U, K, true>, JsonOf<R, K, true>>
+      : T extends PromiseLike<infer U>
+        ? Promise<JsonOf<U, K, true>>
+        : never;
+
+/**
  * A value after a JSON round trip, keeping the types in `K`: `Date` becomes
  * `string`, `Map` and `Set` become `{}`, `undefined` keys are dropped and
- * `undefined` array items become `null`.
+ * `undefined` array items become `null`. With `D`, promises and streams in
+ * plain objects and arrays stay deferred, as the transport streams them.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type JsonOf<T, K = never> =
+export type JsonOf<T, K = never, D extends boolean = false> =
   IsAny<T> extends true
     ? any
     : unknown extends T
       ? unknown
       : T extends K
         ? T
-        : T extends { toJSON(): infer J }
-          ? JsonOf<J, K>
-          : T extends string | number | boolean | null
-            ? T
-            : T extends Dropped | bigint
-              ? never
-              : T extends
-                    | ReadonlyMap<unknown, unknown>
-                    | ReadonlySet<unknown>
-                    | Error
-                    | RegExp
-                    | Blob
-                    | PromiseLike<unknown>
-                    | AsyncIterable<unknown>
-                    | ReadableStream
-                ? Record<string, never>
-                : T extends readonly unknown[]
-                  ? { -readonly [I in keyof T]: JsonItem<T[I], K> }
-                  : T extends object
-                    ? JsonObject<T, K>
-                    : never;
+        : [T] extends [JsonSafe]
+          ? T
+          : D extends true
+            ? T extends
+                | PromiseLike<unknown>
+                | AsyncIterable<unknown>
+                | ReadableStream
+              ? Deferred<T, K>
+              : JsonValueOf<T, K, D>
+            : JsonValueOf<T, K, D>;
+
+type JsonValueOf<T, K, D extends boolean> = T extends { toJSON(): infer J }
+  ? JsonOf<J, K, D>
+  : T extends string | number | boolean | null
+    ? T
+    : T extends Dropped | bigint
+      ? never
+      : T extends
+            | ReadonlyMap<unknown, unknown>
+            | ReadonlySet<unknown>
+            | Error
+            | RegExp
+            | Blob
+            | PromiseLike<unknown>
+            | AsyncIterable<unknown>
+            | ReadableStream
+        ? Record<string, never>
+        : T extends readonly unknown[]
+          ? { -readonly [I in keyof T]: JsonItem<T[I], K, D> }
+          : T extends object
+            ? JsonObject<T, K, D>
+            : never;
 
 type Framed<T, K> =
   IsAny<T> extends true
     ? any
     : T extends ProcedureResponse
       ? globalThis.Response
-      : T extends ReadableStream<infer U>
-        ? ReadableStream<JsonOf<U, K>>
-        : T extends AsyncIterable<infer U, infer R>
-          ? IsAny<R> extends true
-            ? AsyncIterable<JsonOf<U, K>>
-            : [R] extends [void]
-              ? AsyncIterable<JsonOf<U, K>>
-              : AsyncIterable<JsonOf<U, K>, JsonOf<R, K>>
-          : T extends PromiseLike<infer U>
-            ? Promise<JsonOf<U, K>>
-            :
-                | JsonOf<Exclude<T, void>, K>
-                | (undefined extends T ? undefined : never);
+      : T extends Blob
+        ? T
+        :
+            | JsonOf<Exclude<T, void>, K, true>
+            | (undefined extends T ? undefined : never);
 
 /**
  * A procedure's output as the client receives it under a serializer's form.
@@ -247,13 +280,20 @@ export type ClientValue<
 > = F['streaming'] extends true ? Deserialized<T> : Framed<T, F['keeps']>;
 
 /**
- * The output form a procedure def declares; danSON's when it declares none.
+ * The output form of a serializer type; plain JSON's for `undefined`.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type FormOf<D> = D extends { serializer: infer F extends OutputForm }
-  ? F
-  : DansonForm;
+export type FormOfSerializer<S> = S extends { readonly '~form'?: infer F }
+  ? NonNullable<F> extends infer G extends OutputForm
+    ? G
+    : JsonForm
+  : JsonForm;
+
+/** The form of a link options bag's `serializer`; plain JSON's without one. @internal */
+export type FormOfOptions<TOpts> = FormOfSerializer<
+  TOpts extends { serializer?: infer S } ? NonNullable<S> : undefined
+>;
 
 /**
  * `query`, `mutation` or `subscription`.

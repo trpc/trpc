@@ -1,5 +1,5 @@
 import { Effect, Layer, Option, Tracer } from 'effect';
-import { createTrpcClient, httpLink, wsLink } from 'trpcdev/client';
+import { createTrpcClient, httpLink, wsLink, routerType } from 'trpcdev/client';
 import { createEffectClient } from 'trpcdev/effect';
 import { createFetchHandler, error, initTrpc } from 'trpcdev/server';
 import { expect, test } from 'vite-plus/test';
@@ -108,7 +108,8 @@ test('a failed call records the error code on the client span', async () => {
 
 test('without a tracer, or with propagation disabled, requests carry no trace headers', async () => {
   await using http = await createTestServer({ router });
-  const plain = createTrpcClient<typeof router>({
+  const plain = createTrpcClient({
+    router: routerType<typeof router>(),
     links: [httpLink({ url: http.url })],
   });
   await plain.post.query({ id: '1' });
@@ -141,9 +142,12 @@ test('handler.fetch continues the trace in an incoming traceparent', async () =>
   });
   const traceId = '4bf92f3577b34da6a3ce929d0e0e4736';
   const res = await handler.fetch(
-    new Request('http://localhost/trpc/post?id=abc', {
-      headers: { traceparent: `00-${traceId}-00f067aa0ba902b7-01` },
-    }),
+    new Request(
+      `http://localhost/trpc/post?input=${encodeURIComponent('{"id":"abc"}')}`,
+      {
+        headers: { traceparent: `00-${traceId}-00f067aa0ba902b7-01` },
+      },
+    ),
   );
   expect(res.status).toBe(200);
   expect(server.named('trpc.post', 'server')?.traceId).toBe(traceId);

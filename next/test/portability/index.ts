@@ -154,11 +154,13 @@ export const handler = createFetchHandler({
   layer: PostRepoLive,
 });
 
-export const client = createTrpcClient<AppRouter>({
+export const client = createTrpcClient({
+  router: routerType<AppRouter>(),
   links: [link(async ({ op, next }) => next(op)), httpLink({ url: '/trpc' })],
 });
 
-export const localClient = createTrpcClient<AppRouter>({
+export const localClient = createTrpcClient({
+  router: routerType<AppRouter>(),
   links: [localLink({ router: appRouter, layer: PostRepoLive })],
 });
 

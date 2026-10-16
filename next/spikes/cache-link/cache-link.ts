@@ -14,7 +14,10 @@ import {
   type Operation,
   type TrpcLink,
 } from 'trpcdev/client';
-import { defaultSerializer } from 'trpcdev/serializer';
+import { createSerializer } from 'trpcdev/serializer';
+
+/** Keys use danSON, so inputs with `Date`s and `Map`s key apart. */
+const keySerializer = createSerializer();
 
 export interface CacheContext {
   /** `true` skips the cache for this call: it neither reads nor fills it. */
@@ -48,7 +51,7 @@ export interface QueryCacheOptions {
 }
 
 export const keyOf = (path: string, input: unknown): string =>
-  `${path}\n${input === undefined ? '' : JSON.stringify(defaultSerializer.serialize(input))}`;
+  `${path}\n${input === undefined ? '' : JSON.stringify(keySerializer.serialize(input))}`;
 
 export function createQueryCache(opts: QueryCacheOptions = {}): QueryCache {
   const ttlMs = opts.ttlMs ?? 30_000;

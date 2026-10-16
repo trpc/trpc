@@ -4,6 +4,7 @@ import {
   httpLink,
   safe,
   type ClientError,
+  routerType,
 } from 'trpcdev/client';
 import {
   call,
@@ -161,7 +162,8 @@ async function setup(user: string | null = 'alex', batch = false) {
     layer: ClockLive,
     exposeUnexpectedErrors: false,
   });
-  const client = createTrpcClient<AppRouter>({
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
     links: [
       httpLink({
         url: server.url,
@@ -336,7 +338,8 @@ test('Effect middleware provides services and its failures are typed', async () 
     router: provided,
     createContext: () => ({ user: 'kim' }),
   });
-  const client = createTrpcClient<typeof provided>({
+  const client = createTrpcClient({
+    router: routerType<typeof provided>(),
     links: [httpLink({ url: server.url })],
   });
   expect(await client.me.query()).toBe('kim');

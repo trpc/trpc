@@ -1,6 +1,6 @@
 import { betterAuth } from 'better-auth';
 import { memoryAdapter } from 'better-auth/adapters/memory';
-import { createTrpcClient, httpLink, safe } from 'trpcdev/client';
+import { createTrpcClient, httpLink, safe, routerType } from 'trpcdev/client';
 import { error, initTrpc } from 'trpcdev/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { createTestServer } from './fixtures/server.ts';
@@ -51,7 +51,8 @@ test('a Better Auth session becomes the ctx user through a middleware', async ()
     .join('; ');
 
   const client = (headers: Record<string, string>) =>
-    createTrpcClient<typeof router>({
+    createTrpcClient({
+      router: routerType<typeof router>(),
       links: [httpLink({ url: server.url, headers })],
     });
   const me = await client({ cookie }).me.query();

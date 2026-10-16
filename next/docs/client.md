@@ -127,7 +127,7 @@ createTrpcClient<{ blog: BlogRouter; shop: ShopRouter }>({
 
 ## Query URLs
 
-Query inputs go in the URL as readable bracket notation: `?post[id]=1&tags[]=a`. Object keys are sorted (array order is kept), so equal inputs make the same URL and hit the same HTTP cache entry. With a sync [serializer](./serializers.md) or none, the input is `?input=<serialized JSON>`.
+Query inputs go in the URL as `?input=<JSON>`: `?input={"post":{"id":"1"}}`, URL-encoded. Object keys are sorted (array order is kept), so equal inputs make the same URL and hit the same HTTP cache entry. A [serializer](./serializers.md) that makes refs adds `&refs=`.
 
 A query whose URL would be longer than `maxUrlLength` (2048) is sent with a body. That is `POST` by default; `longQuery: 'query'` uses the HTTP `QUERY` method, a safe method with a body that caches can key on. Every proxy on the way has to allow `QUERY`.
 

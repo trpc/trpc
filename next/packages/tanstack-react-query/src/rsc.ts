@@ -40,7 +40,6 @@ import type { AnySerializer, DansonForm } from 'trpcdev/serializer';
 import {
   createRouterClient,
   type AnyRouter,
-  type inferRouterForm,
   type RouterClientOptions,
   type SerializerOption,
 } from 'trpcdev/server';
@@ -70,7 +69,7 @@ export type TrpcRscOptions<TRouter extends AnyRouter> = {
   /** Must match the browser's `keyPrefix`, so prefetched queries hydrate. */
   keyPrefix?: string | undefined;
 } & RouterClientOptions<TRouter> &
-  SerializerOption<inferRouterForm<TRouter>>;
+  SerializerOption;
 
 /**
  * What {@link createTrpcRsc} returns.

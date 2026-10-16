@@ -178,10 +178,10 @@ test('queries and mutations share one WebSocket', async () => {
   expect(ctx.server.requests).toHaveLength(0);
 });
 
-test('the serializer and typed errors work as over HTTP', async () => {
+test('the default serializer and typed errors work as over HTTP', async () => {
   await using ctx = await setup();
   const post = await ctx.client.find.query({ id: '1' });
-  expect(post.at).toEqual(new Date(0));
+  expect(post.at).toBe(new Date(0).toJSON());
   const res = await safe(ctx.client.find.query({ id: '2' }));
   expect(res.error).toMatchObject({
     code: 'NOT_FOUND',
@@ -243,7 +243,10 @@ test('close() fails a subscription waiting to reconnect at once', async () => {
   const url = server.wsUrl;
   await server.close();
   const link = wsLink({ url, reconnect: { delayMs: () => 60_000 } });
-  const client = createTrpcClient<AppRouter>({ links: [link] });
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [link],
+  });
   const ticks = collect(client.ticks.subscribe());
   await sleep(20);
   const started = Date.now();
@@ -389,7 +392,10 @@ test('the Node upgrade handles large messages and enforces maxPayload', async ()
     maxPayload: 200_000,
   });
   await using link = wsLink({ url: server.wsUrl, reconnect: { attempts: 0 } });
-  const client = createTrpcClient<typeof echoRouter>({ links: [link] });
+  const client = createTrpcClient({
+    router: routerType<typeof echoRouter>(),
+    links: [link],
+  });
   expect(await client.length.query('x'.repeat(100_000))).toBe(100_000);
   await expect(client.length.query('x'.repeat(300_000))).rejects.toMatchObject({
     code: 'NETWORK_ERROR',
@@ -460,7 +466,10 @@ test('wsLink replaces a connection that stops answering pings', async () => {
     WebSocket: DeafSocket,
     keepAlive: { intervalMs: 20, timeoutMs: 20 },
   });
-  const client = createTrpcClient<AppRouter>({ links: [link] });
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [link],
+  });
   expect(await client.hello.query({ name: 'a' })).toBe('hello a over ws');
   await sleep(100);
   expect(sockets).toHaveLength(1);

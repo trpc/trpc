@@ -4,13 +4,17 @@ import {
   localLink,
   safe,
   wsLink,
+  routerType,
 } from 'trpcdev/client';
 import { initTrpc } from 'trpcdev/server';
-import { defaultSerializer, type Frame } from 'trpcdev/serializer';
+import { createSerializer, type Frame } from 'trpcdev/serializer';
 import { Effect, Stream } from 'effect';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
+
+/** Files at any depth are danSON's; plain JSON only sends a root file. */
+const danson = createSerializer();
 
 const t = initTrpc();
 
@@ -73,9 +77,10 @@ type AppRouter = typeof router;
 const cover = new File(['<png>'], 'a.png', { type: 'image/png' });
 
 test('files anywhere in an input are sent as multipart parts', async () => {
-  await using server = await createTestServer({ router });
-  const client = createTrpcClient<AppRouter>({
-    links: [httpLink({ url: server.url })],
+  await using server = await createTestServer({ router, serializer: danson });
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [httpLink({ url: server.url, serializer: danson })],
   });
   const thumb = new Blob(['small'], { type: 'image/webp' });
   expect(
@@ -105,9 +110,14 @@ test('files anywhere in an input are sent as multipart parts', async () => {
 });
 
 test('a call with a file leaves the batch and goes alone', async () => {
-  await using server = await createTestServer({ router, batch: true });
-  const client = createTrpcClient<AppRouter>({
-    links: [httpLink({ url: server.url, batch: true })],
+  await using server = await createTestServer({
+    router,
+    serializer: danson,
+    batch: true,
+  });
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [httpLink({ url: server.url, serializer: danson, batch: true })],
   });
   const [size, a, b] = await Promise.all([
     client.size.query({ file: cover }),
@@ -119,16 +129,22 @@ test('a call with a file leaves the batch and goes alone', async () => {
 });
 
 test('localLink passes files through', async () => {
-  const client = createTrpcClient<AppRouter>({
-    links: [localLink({ router, createContext: () => ({}) })],
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [
+      localLink({ router, serializer: danson, createContext: () => ({}) }),
+    ],
   });
   expect(await client.size.query({ file: cover })).toBe(5);
 });
 
 test('wsLink rejects files with a clear error', async () => {
-  await using server = await createTestServer({ router });
-  await using ws = wsLink({ url: server.wsUrl });
-  const client = createTrpcClient<AppRouter>({ links: [ws] });
+  await using server = await createTestServer({ router, serializer: danson });
+  await using ws = wsLink({ url: server.wsUrl, serializer: danson });
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [ws],
+  });
   const [, err] = await safe(client.size.query({ file: cover }));
   expect(err).toMatchObject({
     code: 'BAD_REQUEST',
@@ -137,9 +153,14 @@ test('wsLink rejects files with a clear error', async () => {
 });
 
 test('maxBodySize applies to multipart bodies', async () => {
-  await using server = await createTestServer({ router, maxBodySize: 256 });
-  const client = createTrpcClient<AppRouter>({
-    links: [httpLink({ url: server.url })],
+  await using server = await createTestServer({
+    router,
+    serializer: danson,
+    maxBodySize: 256,
+  });
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [httpLink({ url: server.url, serializer: danson })],
   });
   const big = new File(['x'.repeat(1024)], 'big.txt');
   const [, err] = await safe(client.size.query({ file: big }));
@@ -163,7 +184,7 @@ test('maxBodySize applies to multipart bodies', async () => {
 });
 
 test('parts that are missing or not referenced correctly are a PARSE_ERROR', async () => {
-  await using server = await createTestServer({ router });
+  await using server = await createTestServer({ router, serializer: danson });
   const form = new FormData();
   form.append(
     'input',
@@ -179,7 +200,7 @@ test('parts that are missing or not referenced correctly are a PARSE_ERROR', asy
 });
 
 test('a JSON body cannot claim to hold files', async () => {
-  await using server = await createTestServer({ router });
+  await using server = await createTestServer({ router, serializer: danson });
   const res = await fetch(`${server.url}/size`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -190,9 +211,10 @@ test('a JSON body cannot claim to hold files', async () => {
   expect(res.status).toBe(400);
 });
 
-test('a root File output of an unbatched call is the response body', async () => {
+test('a root File output of an unbatched call is the response body, with any serializer', async () => {
   await using server = await createTestServer({ router, batch: true });
-  const client = createTrpcClient<AppRouter>({
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
     links: [httpLink({ url: server.url, batch: false })],
   });
   const file = await client.download.query({ name: 'Q3 rapport – é.csv' });
@@ -203,7 +225,9 @@ test('a root File output of an unbatched call is the response body', async () =>
   expect(file.lastModified).toBe(1_700_000_000_000);
   expect(await file.text()).toBe('report bytes');
 
-  const res = await fetch(`${server.url}/download?name=a.csv`);
+  const res = await fetch(
+    `${server.url}/download?input=${encodeURIComponent('{"name":"a.csv"}')}`,
+  );
   expect(res.headers.get('content-type')).toBe('text/csv');
   expect(res.headers.get('content-disposition')).toBe(
     `inline; filename="a.csv"; filename*=UTF-8''a.csv`,
@@ -214,12 +238,28 @@ test('a root File output of an unbatched call is the response body', async () =>
   expect(blob).not.toBeInstanceOf(File);
   expect(blob.type).toBe('');
   expect([...new Uint8Array(await blob.arrayBuffer())]).toEqual([0, 255, 1]);
+
+  const batching = createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [httpLink({ url: server.url, batch: true })],
+  });
+  const alone = await batching.rawBlob.query(undefined, { batch: false });
+  expect(alone.size).toBe(3);
+  void (() => {
+    // @ts-expect-error -- plain JSON can't batch a file, so the call leaves the batch
+    void batching.rawBlob.query();
+  });
 });
 
 test('a root File output in a batch streams like a nested one', async () => {
-  await using server = await createTestServer({ router, batch: true });
-  const client = createTrpcClient<AppRouter>({
-    links: [httpLink({ url: server.url, batch: true })],
+  await using server = await createTestServer({
+    router,
+    serializer: danson,
+    batch: true,
+  });
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [httpLink({ url: server.url, serializer: danson, batch: true })],
   });
   const [file, hello] = await Promise.all([
     client.download.query({ name: 'a.csv' }),
@@ -240,22 +280,37 @@ for (const transport of [
   'localLink',
 ] as const) {
   test(`files anywhere in an output stream as chunks (${transport})`, async () => {
-    await using server = await createTestServer({ router, batch: true });
+    await using server = await createTestServer({
+      router,
+      serializer: danson,
+      batch: true,
+    });
     await using ws = wsLink({
       url: server.wsUrl,
+      serializer: danson,
       binary: transport === 'wsLink binary',
     });
-    const client = createTrpcClient<AppRouter>({
+    const client = createTrpcClient({
+      router: routerType<AppRouter>(),
       links: [
         transport === 'httpLink'
-          ? httpLink({ url: server.url })
+          ? httpLink({ url: server.url, serializer: danson })
           : transport === 'httpLink binary'
-            ? httpLink({ url: server.url, binary: true })
+            ? httpLink({ url: server.url, serializer: danson, binary: true })
             : transport === 'httpLink binary batch'
-              ? httpLink({ url: server.url, binary: true, batch: true })
+              ? httpLink({
+                  url: server.url,
+                  serializer: danson,
+                  binary: true,
+                  batch: true,
+                })
               : transport.startsWith('wsLink')
                 ? ws
-                : localLink({ router, createContext: () => ({}) }),
+                : localLink({
+                    router,
+                    serializer: danson,
+                    createContext: () => ({}),
+                  }),
       ],
     });
     const out = await client.attachments.query();
@@ -281,7 +336,11 @@ for (const transport of [
 }
 
 test('binary frames carry nested file bytes unencoded when the client accepts them', async () => {
-  await using server = await createTestServer({ router, batch: true });
+  await using server = await createTestServer({
+    router,
+    serializer: danson,
+    batch: true,
+  });
   const get = async (accept?: string) => {
     const res = await fetch(`${server.url}/attachments`, {
       headers: accept === undefined ? {} : { accept },
@@ -301,8 +360,16 @@ test('binary frames carry nested file bytes unencoded when the client accepts th
   expect(jsonl.size).toBeGreaterThan(266_000);
   expect(frames.size).toBeLessThan(202_000);
 
-  const client = createTrpcClient<AppRouter>({
-    links: [httpLink({ url: server.url, binary: true, batch: true })],
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [
+      httpLink({
+        url: server.url,
+        serializer: danson,
+        binary: true,
+        batch: true,
+      }),
+    ],
   });
   const [out, hello] = await Promise.all([
     client.attachments.query(),
@@ -316,7 +383,7 @@ test('binary frames carry nested file bytes unencoded when the client accepts th
 });
 
 test('wsLink({ binary: true }) gets file bytes as binary messages and the rest as text', async () => {
-  await using server = await createTestServer({ router });
+  await using server = await createTestServer({ router, serializer: danson });
   const received: unknown[] = [];
   class Recording extends WebSocket {
     constructor(url: string | URL) {
@@ -326,10 +393,14 @@ test('wsLink({ binary: true }) gets file bytes as binary messages and the rest a
   }
   await using ws = wsLink({
     url: server.wsUrl,
+    serializer: danson,
     binary: true,
     WebSocket: Recording,
   });
-  const client = createTrpcClient<AppRouter>({ links: [ws] });
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [ws],
+  });
   const out = await client.attachments.query();
   expect(out.files[0]!.size).toBe(200_000);
   const size = (data: unknown[]) =>
@@ -348,13 +419,19 @@ test('wsLink({ binary: true }) gets file bytes as binary messages and the rest a
 
 for (const transport of ['httpLink', 'wsLink', 'wsLink binary'] as const) {
   test(`files inside subscription events decode while their bytes stream (${transport})`, async () => {
-    await using server = await createTestServer({ router });
+    await using server = await createTestServer({ router, serializer: danson });
     await using ws = wsLink({
       url: server.wsUrl,
+      serializer: danson,
       binary: transport === 'wsLink binary',
     });
-    const client = createTrpcClient<AppRouter>({
-      links: [transport === 'httpLink' ? httpLink({ url: server.url }) : ws],
+    const client = createTrpcClient({
+      router: routerType<AppRouter>(),
+      links: [
+        transport === 'httpLink'
+          ? httpLink({ url: server.url, serializer: danson })
+          : ws,
+      ],
     });
     const seen: string[] = [];
     for await (const event of client.photos.subscribe()) {
@@ -365,9 +442,10 @@ for (const transport of ['httpLink', 'wsLink', 'wsLink binary'] as const) {
 }
 
 test('files yielded by an async iterable arrive in order', async () => {
-  await using server = await createTestServer({ router });
-  const client = createTrpcClient<AppRouter>({
-    links: [httpLink({ url: server.url })],
+  await using server = await createTestServer({ router, serializer: danson });
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [httpLink({ url: server.url, serializer: danson })],
   });
   const names: string[] = [];
   for await (const file of await client.gallery.query()) {
@@ -377,7 +455,7 @@ test('files yielded by an async iterable arrive in order', async () => {
 });
 
 test("a stream that ends before a file's bytes fails instead of hanging", async () => {
-  const { head, chunks } = defaultSerializer.serializeDeferred({
+  const { head, chunks } = danson.serializeDeferred({
     file: new File(['bytes'], 'a.txt'),
   });
   const frames: Frame[] = [head];
@@ -388,7 +466,7 @@ test("a stream that ends before a file's bytes fails instead of hanging", async 
   );
   const read = (list: Frame[]) =>
     Effect.runPromise(
-      defaultSerializer.deserializeStream<{ file: File }, never>(
+      danson.deserializeStream<{ file: File }, never>(
         Stream.fromIterable(list),
       ),
     );

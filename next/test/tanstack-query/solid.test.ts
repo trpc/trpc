@@ -14,14 +14,20 @@ import {
 import { createSignal, type JSX } from 'solid-js';
 import h from 'solid-js/h';
 import { isServer, render } from 'solid-js/web';
-import type { TrpcClient } from 'trpcdev/client';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
-import { createApp, db, type AppRouter, type Post } from './fixtures/app.ts';
+import {
+  createApp,
+  db,
+  type AppRouter,
+  type Post,
+  type Links,
+  type AppClient,
+} from './fixtures/app.ts';
 import { click, container, text, waitFor } from './fixtures/dom.ts';
 
-const { TrpcProvider, useTrpc } = createTrpcContext<AppRouter>();
+const { TrpcProvider, useTrpc } = createTrpcContext<AppRouter, {}, Links>();
 
-function mount(App: () => JSX.Element, client: TrpcClient<AppRouter>) {
+function mount(App: () => JSX.Element, client: AppClient) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });

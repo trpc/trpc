@@ -1,8 +1,8 @@
 import { Effect, Exit, Stream } from 'effect';
 import type { AnyTrpcError } from '../../internal/error.ts';
 import { HEADER } from '../../internal/protocol.ts';
-import type { ProcedureType } from '../../internal/types.ts';
-import { defaultSerializer } from '../../serializer/index.ts';
+import type { IsAny, ProcedureType } from '../../internal/types.ts';
+import { danson } from '../../serializer/danson.ts';
 import {
   firstValue,
   link,
@@ -29,11 +29,14 @@ export const asArray = (links: Chain): ReadonlyArray<AnyLink> =>
 export type ChainDecl<T> =
   T extends ReadonlyArray<infer L>
     ? L extends TrpcLink<infer D, any>
-      ? D
+      ? Declared<D>
       : never
     : T extends TrpcLink<infer D, any>
-      ? D
+      ? Declared<D>
       : never;
+
+/** An untyped link declares nothing. */
+type Declared<D> = IsAny<D> extends true ? {} : D;
 
 type ChainUnsupported<T> =
   ChainDecl<T> extends infer D
@@ -167,7 +170,7 @@ export function dedupeLink(
   const keyOf =
     opts.key ??
     ((op: Operation) =>
-      `${op.path}\n${op.input === undefined ? '' : JSON.stringify(defaultSerializer.serialize(op.input))}`);
+      `${op.path}\n${op.input === undefined ? '' : JSON.stringify(danson.serialize(op.input))}`);
   const inFlight = new Map<
     string,
     {

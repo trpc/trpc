@@ -7,7 +7,7 @@ import {
   type HibernatableWebSocket,
 } from 'trpcdev/cloudflare';
 import { createFetchHandler, initTrpc, Publisher } from 'trpcdev/server';
-import { defaultSerializer } from 'trpcdev/serializer';
+import { jsonSerializer } from 'trpcdev/serializer';
 import { afterEach, expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 
@@ -119,7 +119,7 @@ test('calls work, and still see the connection after the object wakes', async ()
     type: 'request',
     method: 'query',
     path: 'double',
-    input: defaultSerializer.serialize({ n: 21 }),
+    input: jsonSerializer.serialize({ n: 21 }),
   });
   await vi.waitFor(() =>
     expect(socket.sent).toContainEqual({
@@ -301,7 +301,7 @@ const create = (
     type: 'request',
     method: 'mutation',
     path: 'create',
-    input: defaultSerializer.serialize({ title }),
+    input: jsonSerializer.serialize({ title }),
   });
 
 test('publisher subscriptions hibernate: kept on the socket, sent to after a wake', async () => {
@@ -489,7 +489,7 @@ test('a signed token sets the tags a hibernated subscription gets events for', a
       type: 'request',
       method: 'mutation',
       path: 'send',
-      input: defaultSerializer.serialize({ to, text }),
+      input: jsonSerializer.serialize({ to, text }),
     });
   send(2, 'team:1', 'standup');
   send(3, 'user:bob', 'hi bob');

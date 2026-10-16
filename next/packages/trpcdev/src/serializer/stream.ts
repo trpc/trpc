@@ -184,7 +184,7 @@ export function serializeDeferred(
   options: SerializeStreamOptions = {},
 ): SerializedDeferred {
   const nextIndex = counter();
-  const pending: [number, Stream.Stream<[Status, unknown]>][] = [];
+  const pending: PendingSource[] = [];
   const opts: SerializeOptions = {
     ...options,
     state: { indexCounter: counter(), refCounter: counter() },
@@ -248,7 +248,26 @@ export function serializeDeferred(
   const head = serializeSync(value, opts);
   if (pending.length === 0) return { head, chunks: undefined };
 
-  const chunks = Stream.callback<Chunk, DansonError>((queue) =>
+  const chunks = deferredChunks(pending, serialize);
+  return { head, chunks };
+}
+
+/** A deferred source waiting to start, under its chunk index. */
+export type PendingSource = [number, Stream.Stream<[Status, unknown]>];
+
+/**
+ * Runs every pending source concurrently, serializing each item into a chunk.
+ * Serializing an item may push more sources onto `pending` (a promise inside
+ * a yielded value); they start too, and the stream ends when all have.
+ */
+export function deferredChunks(
+  pending: PendingSource[],
+  serialize: (
+    value: unknown,
+    status: Status,
+  ) => Effect.Effect<SerializeReturn, DansonError>,
+): Stream.Stream<Chunk, DansonError> {
+  return Stream.callback<Chunk, DansonError>((queue) =>
     Effect.gen(function* () {
       let active = 0;
       const finishOne = Effect.sync(() => {
@@ -287,7 +306,6 @@ export function serializeDeferred(
       if (active === 0) Queue.endUnsafe(queue);
     }),
   );
-  return { head, chunks };
 }
 
 /** The head frame followed by every chunk. Single-use. */
@@ -322,6 +340,55 @@ export function iterateWithReturn(
   };
 }
 
+/**
+ * Rebuilds deferred values from their chunk streams: a `Promise` settles with
+ * the first chunk, an `AsyncIterable` yields until RETURN, and a
+ * `ReadableStream` reads the same items.
+ */
+export interface DeferredBuilders {
+  readonly iterate: (idx: number) => Stream.Stream<unknown, unknown>;
+  readonly Promise: (idx: number) => Promise<unknown>;
+  readonly AsyncIterable: (idx: number) => AsyncIterable<unknown, unknown>;
+  readonly ReadableStream: (idx: number) => ReadableStream<unknown>;
+}
+
+export function deferredBuilders(
+  take: (idx: number) => Stream.Stream<[Status, unknown], unknown>,
+  revive: (value: unknown) => unknown,
+  interrupted: () => unknown,
+): DeferredBuilders {
+  const iterate = (idx: number) =>
+    take(idx).pipe(
+      Stream.takeWhile(([status]) => status !== RETURN),
+      Stream.mapEffect(([status, v]) =>
+        status === VALUE ? Effect.succeed(v) : Effect.fail(revive(v)),
+      ),
+    );
+  return {
+    iterate,
+    Promise: (idx: number): Promise<unknown> => {
+      const p = Effect.runPromise(
+        take(idx).pipe(
+          Stream.runHead,
+          Effect.flatMap((first) => {
+            if (first._tag === 'None') return Effect.fail(interrupted());
+            const [status, v] = first.value;
+            return status === VALUE
+              ? Effect.succeed(v)
+              : Effect.fail(revive(v));
+          }),
+        ),
+      );
+      p.catch(() => {});
+      return p;
+    },
+    AsyncIterable: (idx: number): AsyncIterable<unknown, unknown> =>
+      iterateWithReturn(take(idx), revive),
+    ReadableStream: (idx: number): ReadableStream<unknown> =>
+      Stream.toReadableStream(iterate(idx)),
+  };
+}
+
 export interface DeserializeStreamOptions extends DeserializeOptions {
   /** Turns a deserialized ERROR chunk into the value a deferred rejects with. */
   reviveError?: (value: unknown) => unknown;
@@ -331,7 +398,7 @@ export interface DeserializeStreamOptions extends DeserializeOptions {
   streamInterrupted?: () => unknown;
 }
 
-type ChunkQueue = Queue.Queue<[Status, unknown], unknown>;
+export type ChunkQueue = Queue.Queue<[Status, unknown], unknown>;
 
 export function deserializeStream<T, E>(
   source: Stream.Stream<Frame, E>,
@@ -359,40 +426,16 @@ export function deserializeStream<T, E>(
         Stream.ensuring(Effect.sync(() => queues.delete(idx))),
       );
 
+    const { iterate, ...builders } = deferredBuilders(
+      take,
+      revive,
+      interrupted,
+    );
     const opts: DeserializeOptions = {
       ...options,
       cache: new Map(),
-      deserializers: {
-        ...options.deserializers,
-        Promise: (idx: number) => {
-          const p = Effect.runPromise(
-            take(idx).pipe(
-              Stream.runHead,
-              Effect.flatMap((first) => {
-                if (first._tag === 'None') {
-                  return Effect.fail(interrupted());
-                }
-                const [status, v] = first.value;
-                return status === VALUE
-                  ? Effect.succeed(v)
-                  : Effect.fail(revive(v));
-              }),
-            ),
-          );
-          p.catch(() => {});
-          return p;
-        },
-        AsyncIterable: (idx: number) => iterateWithReturn(take(idx), revive),
-        ReadableStream: (idx: number) => Stream.toReadableStream(iterate(idx)),
-      },
+      deserializers: { ...options.deserializers, ...builders },
     };
-    const iterate = (idx: number) =>
-      take(idx).pipe(
-        Stream.takeWhile(([status]) => status !== RETURN),
-        Stream.mapEffect(([status, v]) =>
-          status === VALUE ? Effect.succeed(v) : Effect.fail(revive(v)),
-        ),
-      );
 
     // A frame holding a `File` or `Blob` waits for its bytes, which arrive
     // as later chunks; frames for the same target keep their order.

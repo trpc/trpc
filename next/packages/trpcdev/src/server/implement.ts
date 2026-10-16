@@ -120,7 +120,6 @@ export type ImplementedProcedure<
   output: ProcedureDefOf<TContract>['output'];
   errors: ProcedureDefOf<TContract>['errors'];
   services: TDef['requires'] | Exclude<TServices, TDef['provided']>;
-  serializer: TDef['form'];
 }>;
 
 type Resolve<TDef extends BuilderDef, TContract extends AnyProcedure> = <$Ret>(

@@ -19,7 +19,8 @@ import {
 } from '../internal/error.ts';
 import { HEADER } from '../internal/protocol.ts';
 import type { Unset } from '../internal/types.ts';
-import { defaultSerializer, type Serializer } from '../serializer/index.ts';
+import { danson } from '../serializer/danson.ts';
+import type { Serializer } from '../serializer/index.ts';
 import type { SerializeReturn } from '../serializer/sync.ts';
 import {
   makeEffectMiddleware,
@@ -159,7 +160,7 @@ export function durable<TReq extends MiddlewareRequirements = {}>(
   const ttl = Duration.fromInputUnsafe(options.ttl ?? '10 minutes');
   const claimTtl = Duration.fromInputUnsafe(options.claimTtl ?? '30 seconds');
   const pollInterval = options.pollInterval ?? '250 millis';
-  const serializer = options.serializer ?? defaultSerializer;
+  const serializer = options.serializer ?? danson;
   const keyOf =
     options.key ??
     (({ path, callId }) =>

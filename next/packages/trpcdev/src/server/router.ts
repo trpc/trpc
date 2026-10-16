@@ -1,5 +1,4 @@
 import type {
-  FormOf,
   Simplify,
   TypeError,
   UnionToIntersection,
@@ -336,18 +335,6 @@ export type inferRouterErrors<R> = DefField<R, 'errors'>;
  * @stability experimental
  */
 export type inferRouterServices<R> = DefField<R, 'services'>;
-/**
- * The serializer form the router's procedures declare (`initTrpc<{ serializer }>`);
- * danSON's when none is declared.
- * @since 12.0.0-alpha.0
- * @stability experimental
- */
-export type inferRouterForm<R> =
-  AllDefs<R> extends infer D
-    ? D extends ProcedureDef
-      ? FormOf<D>
-      : never
-    : never;
 /**
  * The ctx `createContext` must return: every procedure's root ctx.
  * @since 12.0.0-alpha.0
