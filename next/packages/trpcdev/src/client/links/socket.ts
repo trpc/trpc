@@ -1,3 +1,4 @@
+import { decodeMessage } from '../../internal/frames.ts';
 import {
   Deferred,
   Duration,
@@ -114,6 +115,8 @@ interface SocketTransport {
     | undefined;
   idleMs: number | undefined;
   keepAlive: { intervalMs: number; timeoutMs: number } | undefined;
+  /** Ask the server for binary messages. */
+  binary?: boolean;
 }
 
 const lostError = () =>
@@ -216,6 +219,7 @@ function makeSocketLink(
       type: 'init',
       version: PROTOCOL_VERSION,
       ...(params ? { connectionParams: params } : {}),
+      ...(transport.binary ? { binary: true } : {}),
     });
     if (transport.keepAlive) {
       yield* Effect.forkScoped(keepAlive(conn, transport.keepAlive));
@@ -540,6 +544,13 @@ export interface WebSocketLinkOptions
   url: string | URL;
   /** A `WebSocket` implementation. @default globalThis.WebSocket */
   WebSocket?: new (url: string | URL) => WebSocket;
+  /**
+   * Ask for file bytes in outputs as binary messages instead of base64
+   * text. Other messages stay text; servers that don't know binary
+   * messages keep sending text.
+   * @default false
+   */
+  binary?: boolean;
 }
 
 /**
@@ -564,9 +575,11 @@ export function wsLink(opts: WebSocketLinkOptions): SocketLink {
   return makeSocketLink(
     {
       ...connectionOptions(opts),
+      binary: opts.binary === true,
       connect: () =>
         new Promise((resolve, reject) => {
           const ws = new Impl(opts.url);
+          ws.binaryType = 'arraybuffer';
           let open = false;
           ws.addEventListener(
             'open',
@@ -579,6 +592,11 @@ export function wsLink(opts: WebSocketLinkOptions): SocketLink {
                 close: () => ws.close(1000),
                 onMessage: (listener) =>
                   ws.addEventListener('message', (event) => {
+                    if (event.data instanceof ArrayBuffer) {
+                      const decoded = decodeMessage(new Uint8Array(event.data));
+                      if (decoded !== undefined) listener(decoded);
+                      return;
+                    }
                     if (typeof event.data !== 'string') return;
                     let parsed: unknown;
                     try {

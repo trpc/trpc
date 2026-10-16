@@ -127,6 +127,32 @@ const parse = (text: string, attachments: Uint8Array[]): unknown =>
           : value;
       });
 
+/** Cuts every complete record out of `state.pending`; returns the lines they finish. */
+const drain = (state: DecodeState): unknown[] => {
+  const lines: unknown[] = [];
+  while (state.pending.size >= HEADER_SIZE) {
+    const header = state.pending.peek(HEADER_SIZE);
+    const view = new DataView(header.buffer, header.byteOffset, HEADER_SIZE);
+    const kind = view.getUint8(0);
+    const length = view.getUint32(1);
+    if (state.pending.size < HEADER_SIZE + length) break;
+    state.pending.take(HEADER_SIZE);
+    const payload = state.pending.take(length);
+    if (kind === BYTES_RECORD) {
+      state.attachments.push(payload);
+    } else if (kind === JSON_RECORD) {
+      lines.push(parse(decoder.decode(payload), state.attachments));
+      state.attachments = [];
+    } else {
+      throw new Error(`Unknown frame record kind ${kind}`);
+    }
+  }
+  return lines;
+};
+
+const ended = (state: DecodeState): boolean =>
+  state.pending.size === 0 && state.attachments.length === 0;
+
 /**
  * The lines in a frame stream, parsed, with attachments as `Uint8Array`s.
  * A malformed or truncated stream dies, as a bad JSONL line does.
@@ -140,33 +166,11 @@ export const decodeRecords = <E, R>(
       (): DecodeState => ({ pending: new Pending(), attachments: [] }),
       (state, chunk) => {
         state.pending.push(chunk);
-        const lines: unknown[] = [];
-        while (state.pending.size >= HEADER_SIZE) {
-          const header = state.pending.peek(HEADER_SIZE);
-          const view = new DataView(
-            header.buffer,
-            header.byteOffset,
-            HEADER_SIZE,
-          );
-          const kind = view.getUint8(0);
-          const length = view.getUint32(1);
-          if (state.pending.size < HEADER_SIZE + length) break;
-          state.pending.take(HEADER_SIZE);
-          const payload = state.pending.take(length);
-          if (kind === BYTES_RECORD) {
-            state.attachments.push(payload);
-          } else if (kind === JSON_RECORD) {
-            lines.push(parse(decoder.decode(payload), state.attachments));
-            state.attachments = [];
-          } else {
-            throw new Error(`Unknown frame record kind ${kind}`);
-          }
-        }
-        return [state, lines] as const;
+        return [state, drain(state)] as const;
       },
       {
         onHalt: (state) => {
-          if (state.pending.size > 0 || state.attachments.length > 0) {
+          if (!ended(state)) {
             throw new Error('The frame stream ended mid-record');
           }
           return [];
@@ -174,6 +178,30 @@ export const decodeRecords = <E, R>(
       },
     ),
   );
+
+/**
+ * A binary WebSocket message: one line's records. `undefined` if it isn't
+ * exactly one whole line.
+ * @internal
+ */
+export const decodeMessage = (bytes: Uint8Array): unknown => {
+  const state: DecodeState = { pending: new Pending(), attachments: [] };
+  state.pending.push(bytes);
+  try {
+    const lines = drain(state);
+    return lines.length === 1 && ended(state) ? lines[0] : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+/**
+ * Whether a streamed chunk (`[index, status, { json }]`) holds file bytes.
+ * @internal
+ */
+export const carriesBytes = (chunk: unknown): boolean =>
+  Array.isArray(chunk) &&
+  (chunk[2] as { json?: unknown } | undefined)?.json instanceof JsonBytes;
 
 /**
  * Whether an `accept` header lists `type`.

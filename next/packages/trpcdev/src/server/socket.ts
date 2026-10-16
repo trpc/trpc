@@ -1,3 +1,4 @@
+import { carriesBytes, encodeRecord } from '../internal/frames.ts';
 import { Context, Effect, Exit, Option, Stream, type Tracer } from 'effect';
 import { Headers, HttpTraceContext, type HttpServerRequest } from 'effect/http';
 import {
@@ -51,7 +52,7 @@ const traceParent = (trace: unknown): Tracer.AnySpan | undefined =>
  */
 export interface WebSocketLike {
   readonly readyState: number;
-  send(data: string): void;
+  send(data: string | Uint8Array): void;
   close(code?: number, reason?: string): void;
   addEventListener(type: string, listener: (event: any) => void): void;
 }
@@ -123,6 +124,8 @@ export const socketCores: WeakMap<object, SocketCore> = new WeakMap();
 /** A connection, whatever carries it. @internal */
 export interface Connection {
   send(message: ServerMessage): void;
+  /** The client asked for binary messages; transports that have them may send file bytes so. */
+  acceptBinary?(): void;
   onMessage(listener: (message: unknown) => void): void;
   onClose(listener: () => void): void;
   close(code: number, reason: string): void;
@@ -142,9 +145,18 @@ export function parseSocketMessage(data: unknown): unknown {
 
 /** @internal */
 export function webSocketConnection(socket: WebSocketLike): Connection {
+  let binary = false;
   return {
     send(message) {
-      if (socket.readyState === OPEN) socket.send(JSON.stringify(message));
+      if (socket.readyState !== OPEN) return;
+      socket.send(
+        binary && message.type === 'chunk' && carriesBytes(message.chunk)
+          ? encodeRecord(message)
+          : JSON.stringify(message),
+      );
+    },
+    acceptBinary() {
+      binary = true;
     },
     onMessage(listener) {
       socket.addEventListener('message', (event: { data: unknown }) => {
@@ -259,7 +271,7 @@ export interface ConnectionReceiver {
  */
 export function connectionReceiver(
   core: SocketCore,
-  conn: Pick<Connection, 'send' | 'close'>,
+  conn: Pick<Connection, 'send' | 'close' | 'acceptBinary'>,
   opts: {
     request: HttpServerRequest.HttpServerRequest;
     /** What `createContext` gets as `platform`. */
@@ -327,6 +339,7 @@ export function connectionReceiver(
         connectionParams = isRecord(message.connectionParams)
           ? message.connectionParams
           : undefined;
+        if (message.binary === true) conn.acceptBinary?.();
         opts.onInit?.(connectionParams);
         return;
       }

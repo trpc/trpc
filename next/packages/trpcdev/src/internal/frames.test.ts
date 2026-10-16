@@ -1,6 +1,13 @@
 import { Effect, Exit, Stream } from 'effect';
 import { expect, test } from 'vite-plus/test';
-import { accepts, decodeRecords, encodeRecord, JsonBytes } from './frames.ts';
+import {
+  accepts,
+  carriesBytes,
+  decodeMessage,
+  decodeRecords,
+  encodeRecord,
+  JsonBytes,
+} from './frames.ts';
 
 const decode = (chunks: Uint8Array[]) =>
   Effect.runPromiseExit(
@@ -19,7 +26,10 @@ test('records carry lines and their bytes unencoded, however the stream is cut',
   const lines = [
     { json: { title: 'Post' } },
     [1, 0, { json: bytes(0, 255, 1) }],
-    { i: 0, chunk: [2, 0, { json: bytes(...new Array(300).fill(7)) }] },
+    {
+      i: 0,
+      chunk: [2, 0, { json: bytes(...Array.from({ length: 300 }, () => 7)) }],
+    },
     [2, 2, {}],
   ];
   const encoded = lines.map(encodeRecord);
@@ -70,4 +80,18 @@ test('accepts reads media types from an accept header', () => {
   expect(accepts(`${type}; q=0`, type)).toBe(false);
   expect(accepts('application/jsonl', type)).toBe(false);
   expect(accepts(undefined, type)).toBe(false);
+});
+
+test('a binary WebSocket message is exactly one line', () => {
+  const message = { id: 1, type: 'chunk', chunk: [2, 0, { json: bytes(1) }] };
+  expect(carriesBytes(message.chunk)).toBe(true);
+  expect(carriesBytes([2, 0, { json: 'AQ==' }])).toBe(false);
+  const one = encodeRecord(message);
+  expect(decodeMessage(one)).toEqual({
+    ...message,
+    chunk: [2, 0, { json: new Uint8Array([1]) }],
+  });
+  const two = new Uint8Array([...one, ...encodeRecord({ type: 'pong' })]);
+  expect(decodeMessage(two)).toBeUndefined();
+  expect(decodeMessage(one.subarray(0, -1))).toBeUndefined();
 });

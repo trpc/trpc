@@ -236,11 +236,15 @@ for (const transport of [
   'httpLink binary',
   'httpLink binary batch',
   'wsLink',
+  'wsLink binary',
   'localLink',
 ] as const) {
   test(`files anywhere in an output stream as chunks (${transport})`, async () => {
     await using server = await createTestServer({ router, batch: true });
-    await using ws = wsLink({ url: server.wsUrl });
+    await using ws = wsLink({
+      url: server.wsUrl,
+      binary: transport === 'wsLink binary',
+    });
     const client = createTrpcClient<AppRouter>({
       links: [
         transport === 'httpLink'
@@ -249,7 +253,7 @@ for (const transport of [
             ? httpLink({ url: server.url, binary: true })
             : transport === 'httpLink binary batch'
               ? httpLink({ url: server.url, binary: true, batch: true })
-              : transport === 'wsLink'
+              : transport.startsWith('wsLink')
                 ? ws
                 : localLink({ router, createContext: () => ({}) }),
       ],
@@ -311,12 +315,46 @@ test('binary frames carry nested file bytes unencoded when the client accepts th
   );
 });
 
-for (const transport of ['httpLink', 'wsLink'] as const) {
+test('wsLink({ binary: true }) gets file bytes as binary messages and the rest as text', async () => {
+  await using server = await createTestServer({ router });
+  const received: unknown[] = [];
+  class Recording extends WebSocket {
+    constructor(url: string | URL) {
+      super(url);
+      this.addEventListener('message', (event) => received.push(event.data));
+    }
+  }
+  await using ws = wsLink({
+    url: server.wsUrl,
+    binary: true,
+    WebSocket: Recording,
+  });
+  const client = createTrpcClient<AppRouter>({ links: [ws] });
+  const out = await client.attachments.query();
+  expect(out.files[0]!.size).toBe(200_000);
+  const size = (data: unknown[]) =>
+    data.reduce<number>(
+      (n, d) =>
+        n + (d instanceof ArrayBuffer ? d.byteLength : String(d).length),
+      0,
+    );
+  const binary = received.filter((d) => d instanceof ArrayBuffer);
+  const text = received.filter((d) => typeof d === 'string');
+  expect(size(binary)).toBeGreaterThan(200_000);
+  expect(size(binary)).toBeLessThan(202_000);
+  expect(size(text)).toBeLessThan(2_000);
+  expect(text.some((d) => d.includes('"type":"result"'))).toBe(true);
+});
+
+for (const transport of ['httpLink', 'wsLink', 'wsLink binary'] as const) {
   test(`files inside subscription events decode while their bytes stream (${transport})`, async () => {
     await using server = await createTestServer({ router });
-    await using ws = wsLink({ url: server.wsUrl });
+    await using ws = wsLink({
+      url: server.wsUrl,
+      binary: transport === 'wsLink binary',
+    });
     const client = createTrpcClient<AppRouter>({
-      links: [transport === 'wsLink' ? ws : httpLink({ url: server.url })],
+      links: [transport === 'httpLink' ? httpLink({ url: server.url }) : ws],
     });
     const seen: string[] = [];
     for await (const event of client.photos.subscribe()) {

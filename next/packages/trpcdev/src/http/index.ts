@@ -279,7 +279,9 @@ const serveSocket = (
   Effect.gen(function* () {
     const reader = yield* socket.reader;
     const writer = yield* socket.writer;
-    const outbox = yield* Queue.unbounded<string | Socket.CloseEvent>();
+    const outbox = yield* Queue.unbounded<
+      string | Uint8Array | Socket.CloseEvent
+    >();
     const listeners = new Map<string, Array<(event: any) => void>>();
     const emit = (type: string, event: unknown) => {
       for (const listener of listeners.get(type) ?? []) listener(event);

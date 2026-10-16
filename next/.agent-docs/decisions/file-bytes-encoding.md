@@ -5,5 +5,5 @@
 - Binary framing (a length-prefixed binary content type over HTTP, binary WebSocket messages) can come later, chosen by `accept`. Nothing in the wire format may assume text-only transport: the byte source is a chunk stream with an index, so a binary transport can carry the same chunks unencoded.
 - Why: one format works on every link today; large downloads already skip base64 through the raw root response.
 - Lost: 33% size overhead on nested files until binary lands.
-- (agent) Binary frames over HTTP are built, opt-in with `httpLink({ binary: true })`; JSONL stays the default and is unchanged. See [`binary-frames.md`](./binary-frames.md).
+- (agent) Binary framing is built, opt-in: `httpLink({ binary: true })` for HTTP frames and `wsLink({ binary: true })` for binary WebSocket messages; JSONL and text messages stay the default and are unchanged. See [`binary-frames.md`](./binary-frames.md).
 - Lives in: `packages/trpcdev/src/serializer/stream.ts`, `src/internal/frames.ts`.

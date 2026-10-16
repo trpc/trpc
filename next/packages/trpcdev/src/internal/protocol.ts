@@ -79,6 +79,8 @@ export type ClientMessage =
       type: 'init';
       version: string;
       connectionParams?: Record<string, unknown> | undefined;
+      /** The client reads binary messages: file bytes may come as frame records. */
+      binary?: true | undefined;
     }
   | {
       id: number;
