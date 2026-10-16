@@ -5,8 +5,8 @@ const CONSTANT = /^[A-Z0-9_]+$/;
 const PLATFORM = new Set(['toJSON']);
 
 /**
- * Cases each run of capitals as a word: `TrpcError` → `TrpcError`,
- * `maxUrlLength` → `maxUrlLength`, `toJSON` → `toJson`. A run followed by a
+ * Cases each run of capitals as a word: `TRPCError` → `TrpcError`,
+ * `maxURLLength` → `maxUrlLength`, `toJSON` → `toJson`. A run followed by a
  * lowercase letter keeps its last capital, which starts the next word.
  */
 export const suggest = (name: string): string =>
@@ -35,7 +35,7 @@ const rule: CreateRule = {
     type: 'suggestion',
     docs: {
       description:
-        'Case acronyms as words in declared names (`TrpcError`, not `TrpcError`)',
+        'Case acronyms as words in declared names (`TrpcError`, not `TRPCError`)',
     },
   },
   create(context) {
