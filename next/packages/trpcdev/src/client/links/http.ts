@@ -39,6 +39,7 @@ import {
   serializeInput,
   type DeferredDecoder,
 } from './events.ts';
+import { resumeOf, type Resume } from './resume.ts';
 
 /**
  * Options for {@link httpLink}.
@@ -329,16 +330,21 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
           Stream.map((line) => JSON.parse(line) as unknown),
         );
 
-  async function readResult(res: Response): Promise<unknown> {
+  async function readResult(res: Response, op?: Operation): Promise<unknown> {
     if (res.headers.get(HEADER.response) === '1') return res;
     if (!res.ok) throw await readError(res);
     const blob = res.headers.get(HEADER.blob);
     if (blob !== null) return readBlob(res, blob);
     const type = res.headers.get('content-type') ?? '';
     if (streamed(type) && res.body) {
+      const frames = readStream(type, res.body) as Stream.Stream<
+        Frame,
+        AnyTrpcError
+      >;
+      const resume = op && resumeOf(op.context);
       return Effect.runPromise(
         serializer.deserializeStream(
-          readStream(type, res.body) as Stream.Stream<Frame, AnyTrpcError>,
+          resume ? resumable(op, resume, frames) : frames,
           { reviveError, ...streamErrors },
         ),
       );
@@ -346,6 +352,66 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
     const text = await res.text();
     return text ? serializer.deserialize(JSON.parse(text)) : undefined;
   }
+
+  /**
+   * `frames`, then, when the connection drops, the rest from a retry that
+   * says how many arrived (`trpc-resume-from`), fed to the same deserializer.
+   */
+  const resumable = (
+    op: Operation,
+    resume: Resume,
+    frames: Stream.Stream<Frame, AnyTrpcError>,
+  ): Stream.Stream<Frame, AnyTrpcError> => {
+    let count = 0;
+    const reopen = (
+      n: number,
+      error: AnyTrpcError,
+    ): Stream.Stream<Frame, AnyTrpcError> =>
+      n < resume.retries && resume.lost(error)
+        ? Stream.unwrap(
+            Effect.sleep(resume.delayMs(n + 1, error)).pipe(
+              Effect.andThen(
+                Effect.tryPromise({
+                  try: async (signal) => {
+                    const res = await send(
+                      op,
+                      `${CONTENT_TYPE.json}, ${streamType}`,
+                      { [HEADER.resumeFrom]: String(count) },
+                      linked(signal, op),
+                    );
+                    if (!res.ok) throw await readError(res);
+                    const type = res.headers.get('content-type') ?? '';
+                    if (!streamed(type) || !res.body) {
+                      throw new TrpcError({
+                        code: 'PARSE_ERROR',
+                        message: 'A resumed call answered without frames',
+                      });
+                    }
+                    return readStream(type, res.body) as Stream.Stream<
+                      Frame,
+                      AnyTrpcError
+                    >;
+                  },
+                  catch: toHttpError,
+                }),
+              ),
+              Effect.match({
+                onFailure: (next) => reopen(n + 1, next),
+                onSuccess: (next) => attempt(n + 1, next),
+              }),
+            ),
+          )
+        : Stream.fail(error);
+    const attempt = (
+      n: number,
+      from: Stream.Stream<Frame, AnyTrpcError>,
+    ): Stream.Stream<Frame, AnyTrpcError> =>
+      Stream.catch(
+        Stream.tap(from, () => Effect.sync(() => count++)),
+        (error) => reopen(n, error),
+      );
+    return attempt(0, frames);
+  };
 
   /** `GET` with the input in the URL, or a body above `maxUrlLength`. */
   async function send(
@@ -417,6 +483,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
               {},
               linked(signal, op),
             ),
+            op,
           ),
         catch: toHttpError,
       }),

@@ -17,6 +17,7 @@ import {
   withSerializer,
 } from '../link.ts';
 import type { RouterPaths } from '../types.ts';
+import { withResume, type Resume } from './resume.ts';
 
 /** @internal */
 export type Chain = AnyLink | ReadonlyArray<AnyLink>;
@@ -377,7 +378,10 @@ const lostResponse = (error: AnyTrpcError) =>
  * Gives mutations (and queries with `{ durable: true }`) a call id, sent as
  * the `trpc-call-id` header outside any batch, and retries a lost response
  * with the same id, so a procedure using `experimental_durable()` returns the kept
- * result instead of running again. Put it before `httpLink`.
+ * result instead of running again. When a streamed output's connection
+ * drops, `httpLink` asks for the frames after the ones it got
+ * (`trpc-resume-from`) and the open deferred values settle from those. Put
+ * it before `httpLink`.
  *
  * @example
  * ```ts
@@ -400,9 +404,10 @@ export function experimental_durableLink(
     const callId = op.context.callId ?? crypto.randomUUID();
     const headers = new Headers(op.context.headers);
     headers.set(HEADER.callId, callId);
+    const resume: Resume = { retries, delayMs, lost: lostResponse };
     const sent: Operation = {
       ...op,
-      context: { ...op.context, headers, batch: false },
+      context: withResume({ ...op.context, headers, batch: false }, resume),
     };
     const attempt = (n: number): OperationStream =>
       Stream.catch(next(sent), (error) =>

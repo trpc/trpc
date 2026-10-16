@@ -38,4 +38,6 @@ const value = yield * serializer.deserializeStream(frames); // instance B finish
 
 ## Lean
 
+Landed, 2026-10-16 (human: "B - under experimental_"): in `experimental_durable()` and `experimental_durableLink`, with the HTTP handler writing the kept frames ([durable-calls](../decisions/durable-calls.md)). What follows was the lean before that.
+
 Don't land it yet. It works and is small (one module on `BackingPersistence`), but it adds a second resume path next to Publisher channels. If it lands, it goes into `durable()` (streamed outputs go to the log instead of being skipped) and `durableLink` (count frames, resume with `trpc-resume-from`).

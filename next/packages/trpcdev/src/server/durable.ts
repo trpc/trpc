@@ -1,9 +1,11 @@
 import {
+  Cause,
   Deferred,
   Duration,
   Effect,
   Fiber,
   Option,
+  Queue,
   Schedule,
   Stream,
 } from 'effect';
@@ -21,7 +23,9 @@ import { HEADER } from '../internal/protocol.ts';
 import type { Unset } from '../internal/types.ts';
 import { danson } from '../serializer/danson.ts';
 import type { Serializer } from '../serializer/index.ts';
+import type { Chunk, Frame } from '../serializer/stream.ts';
 import type { SerializeReturn } from '../serializer/sync.ts';
+import { frameSinks, type FrameSink } from './frame-sink.ts';
 import {
   makeEffectMiddleware,
   ok,
@@ -60,12 +64,15 @@ export interface DurableOptions<TCtx, TInput, TMeta> {
   readonly claimTtl?: Duration.Input;
   /** How often a call another instance is running is checked. @default '250 millis' */
   readonly pollInterval?: Duration.Input;
+  /** How often a resumed stream checks for new frames. @default '25 millis' */
+  readonly streamPollInterval?: Duration.Input;
   /** Turns results into the JSON the store keeps. @default the default serializer */
   readonly serializer?: Pick<Serializer, 'serialize' | 'deserialize'>;
 }
 
 type Entry =
   | { readonly state: 'running'; readonly input: string }
+  | { readonly state: 'streamed'; readonly input: string }
   | {
       readonly state: 'done';
       readonly input: string;
@@ -82,7 +89,14 @@ type Result =
   | { readonly ok: true; readonly data: unknown }
   | { readonly ok: false; readonly error: AnyTrpcError };
 
+/** A call's result, and whether its output streams (it isn't kept as data). */
+interface Ran {
+  readonly result: Result;
+  readonly streamed: boolean;
+}
+
 const CALL_ID = /^[\w.:-]{1,128}$/;
+const RESUME_FROM = /^\d{1,9}$/;
 
 const isDeferred = (value: unknown) =>
   Stream.isStream(value) ||
@@ -92,7 +106,7 @@ const isDeferred = (value: unknown) =>
       typeof (value as PromiseLike<unknown>).then === 'function'));
 
 /** Calls running on this instance, by store and key. */
-const running = new WeakMap<object, Map<string, Deferred.Deferred<Result>>>();
+const running = new WeakMap<object, Map<string, Deferred.Deferred<Ran>>>();
 
 /** A SHA-256 of the serialized input; `''` for inputs with files. */
 const fingerprint = (
@@ -129,8 +143,14 @@ const conflict = () =>
  * `Persistence.layerBackingMemory` for one instance, `layerBackingRedis`,
  * `layerBackingSql` or `layerBackingKvs` for many. Successes and typed
  * errors are kept; unexpected errors aren't, so a retry runs again. A call
- * id reused with another input fails with `CONFLICT`. Outputs that stream
- * (async iterables, `Stream`s) aren't kept.
+ * id reused with another input fails with `CONFLICT`.
+ *
+ * Over unbatched HTTP (`experimental_durableLink` sends durable calls
+ * unbatched), outputs that stream (async iterables, `Stream`s, promises at
+ * any depth) are kept as the frames the handler sends, written by a fiber
+ * detached from the request. A retry that got `n` frames sends
+ * `trpc-resume-from: n` and gets the rest, from any instance. Over other
+ * transports they aren't kept.
  *
  * @example
  * ```ts
@@ -160,6 +180,7 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
   const ttl = Duration.fromInputUnsafe(options.ttl ?? '10 minutes');
   const claimTtl = Duration.fromInputUnsafe(options.claimTtl ?? '30 seconds');
   const pollInterval = options.pollInterval ?? '250 millis';
+  const streamPollInterval = options.streamPollInterval ?? '25 millis';
   const serializer = options.serializer ?? danson;
   const keyOf =
     options.key ??
@@ -171,13 +192,20 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
       const request = yield* Effect.serviceOption(
         HttpServerRequest.HttpServerRequest,
       );
-      const callId = Option.isSome(request)
-        ? request.value.headers[HEADER.callId]
-        : undefined;
+      const header = (name: string) =>
+        Option.isSome(request) ? request.value.headers[name] : undefined;
+      const callId = header(HEADER.callId);
       if (callId !== undefined && !CALL_ID.test(callId)) {
         return new TrpcError({
           code: 'BAD_REQUEST',
           message: `${HEADER.callId} must be 1 to 128 letters, digits, "_", "-", "." or ":"`,
+        });
+      }
+      const resumeFrom = header(HEADER.resumeFrom);
+      if (resumeFrom !== undefined && !RESUME_FROM.test(resumeFrom)) {
+        return new TrpcError({
+          code: 'BAD_REQUEST',
+          message: `${HEADER.resumeFrom} must be a frame count`,
         });
       }
       const key = keyOf({ ...opts, callId });
@@ -185,6 +213,12 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
 
       const backing = yield* Persistence.BackingPersistence;
       const store = yield* backing.make('trpcdev/durable');
+      const log = yield* frameLog(backing, {
+        ttl,
+        claimTtl,
+        streamPollInterval,
+      });
+      const sink: FrameSink | undefined = frameSinks.get(opts.response);
       const input = yield* fingerprint(serializer, opts.input);
       let local = running.get(backing);
       if (!local) running.set(backing, (local = new Map()));
@@ -197,14 +231,29 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
         if (entry.state === 'failed') {
           return fromWireError(entry.error, entry.status);
         }
+        if (entry.state === 'streamed') {
+          if (!sink) {
+            return new TrpcError({
+              code: 'BAD_REQUEST',
+              message:
+                'A streamed durable call resumes over unbatched HTTP only',
+            });
+          }
+          sink.replay = log.read(key, Number(resumeFrom ?? 0));
+          return ok(undefined);
+        }
         return undefined;
       };
-      const settled = (result: Result) =>
-        result.ok ? ok(result.data) : result.error;
 
       while (true) {
         const inFlight = local.get(key);
-        if (inFlight) return settled(yield* Deferred.await(inFlight));
+        if (inFlight) {
+          const { result, streamed } = yield* Deferred.await(inFlight);
+          if (!streamed || !sink) return settled(result);
+          // Its first request keeps the frames; read them from the log.
+          yield* Effect.sleep(pollInterval);
+          continue;
+        }
         const entry = (yield* store.get(key).pipe(Effect.orDie)) as
           | Entry
           | undefined;
@@ -217,7 +266,7 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
         break;
       }
 
-      const deferred = yield* Deferred.make<Result>();
+      const deferred = yield* Deferred.make<Ran>();
       local.set(key, deferred);
       const claim: Entry = { state: 'running', input };
       yield* store.set(key, claim, claimTtl).pipe(Effect.orDie);
@@ -233,10 +282,14 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
         const result = yield* opts.next() as Effect.Effect<Result>;
         yield* Fiber.interrupt(heartbeat);
         const entry = stored(serializer, result, input);
-        yield* (
-          entry === undefined ? store.remove(key) : store.set(key, entry, ttl)
-        ).pipe(Effect.orDie);
-        return result;
+        // A streamed output's claim stays until the handler starts its log.
+        const streamed = entry === undefined && result.ok && sink !== undefined;
+        if (!streamed) {
+          yield* (
+            entry === undefined ? store.remove(key) : store.set(key, entry, ttl)
+          ).pipe(Effect.orDie);
+        }
+        return { result, streamed };
       }).pipe(
         Effect.onExit((exit) =>
           Effect.sync(() => local.delete(key)).pipe(
@@ -245,10 +298,136 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
         ),
       );
       const fiber = yield* Effect.forkDetach(work);
-      return yield* Fiber.join(fiber);
+      const { result, streamed } = yield* Fiber.join(fiber);
+      if (sink && streamed) {
+        sink.keep = (head, chunks) =>
+          log.keep(key, head, chunks, () =>
+            store
+              .set(key, { state: 'streamed', input }, ttl)
+              .pipe(Effect.orDie),
+          );
+      }
+      return result;
     }),
   );
 }
+
+const settled = (result: Result) =>
+  result.ok ? ok(result.data) : result.error;
+
+interface Meta {
+  readonly count: number;
+  readonly done: boolean;
+}
+
+/**
+ * Streamed outputs, kept as frames: `${key}:${i}` holds frame `i`, and
+ * `${key}:meta` how many there are. While the output streams, `meta` lives
+ * for `claimTtl` and is refreshed, so readers stop when its writer dies.
+ */
+const frameLog = (
+  backing: Persistence.BackingPersistence['Service'],
+  opts: {
+    readonly ttl: Duration.Duration;
+    readonly claimTtl: Duration.Duration;
+    readonly streamPollInterval: Duration.Input;
+  },
+) =>
+  Effect.map(backing.make('trpcdev/durable-frames'), (store) => {
+    const { ttl, claimTtl } = opts;
+    const meta = (key: string) =>
+      store.get(`${key}:meta`).pipe(Effect.orDie) as Effect.Effect<
+        Meta | undefined
+      >;
+
+    /**
+     * Writes the frames to the log from a fiber detached from the request,
+     * so the output keeps streaming into it after the client leaves.
+     * Returns them as they're written, for the request that ran the call.
+     */
+    const keep = (
+      key: string,
+      head: Frame,
+      chunks: Stream.Stream<Chunk, unknown>,
+      started: () => Effect.Effect<void>,
+    ): Stream.Stream<Frame> =>
+      Stream.unwrap(
+        Effect.gen(function* () {
+          const queue = yield* Queue.unbounded<Frame, Cause.Done>();
+          let count = 0;
+          const setMeta = (done: boolean) =>
+            store
+              .set(`${key}:meta`, { count, done }, done ? ttl : claimTtl)
+              .pipe(Effect.orDie);
+          yield* setMeta(false);
+          yield* started();
+          const write = Effect.gen(function* () {
+            const heartbeat = yield* setMeta(false).pipe(
+              Effect.repeat(
+                Schedule.spaced(Duration.divideUnsafe(claimTtl, 2)),
+              ),
+              Effect.forkChild,
+            );
+            yield* Stream.concat(
+              Stream.make(head),
+              Stream.catchCause(chunks, () => Stream.empty),
+            ).pipe(
+              Stream.runForEach((frame) =>
+                Effect.gen(function* () {
+                  yield* Queue.offer(queue, frame);
+                  const i = count++;
+                  yield* store
+                    .setMany([
+                      [`${key}:${i}`, { frame }, ttl],
+                      [`${key}:meta`, { count, done: false }, claimTtl],
+                    ])
+                    .pipe(Effect.orDie);
+                }),
+              ),
+            );
+            yield* Fiber.interrupt(heartbeat);
+            yield* setMeta(true);
+          }).pipe(Effect.ensuring(Queue.end(queue)));
+          yield* Effect.forkDetach(write);
+          return Stream.fromQueue(queue);
+        }),
+      );
+
+    /** The frames from `from` on, polling for new ones until the last. */
+    const read = (key: string, from: number): Stream.Stream<Frame> =>
+      Stream.unwrap(
+        Effect.gen(function* () {
+          const current = yield* meta(key);
+          if (!current) return Stream.empty;
+          const keys = Array.from(
+            { length: Math.max(0, current.count - from) },
+            (_, i) => `${key}:${from + i}`,
+          );
+          const entries = isNonEmpty(keys)
+            ? yield* store.getMany(keys).pipe(Effect.orDie)
+            : [];
+          const frames: Frame[] = [];
+          for (const entry of entries) {
+            if (entry === undefined) return Stream.fromIterable(frames);
+            frames.push((entry as { frame: Frame }).frame);
+          }
+          const next = from + frames.length;
+          if (current.done && next >= current.count) {
+            return Stream.fromIterable(frames);
+          }
+          return Stream.concat(
+            Stream.fromIterable(frames),
+            Stream.unwrap(
+              Effect.as(Effect.sleep(opts.streamPollInterval), read(key, next)),
+            ),
+          );
+        }),
+      );
+
+    return { keep, read };
+  });
+
+const isNonEmpty = <A>(items: A[]): items is [A, ...A[]] => items.length > 0;
 
 /** What to keep for `result`: nothing for unexpected errors and streams. */
 const stored = (

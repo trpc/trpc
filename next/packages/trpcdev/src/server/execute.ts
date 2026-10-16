@@ -8,6 +8,7 @@ import {
   type AnyTrpcError,
 } from '../internal/error.ts';
 import { errorConstructors, isDeclaredError } from './declared.ts';
+import { frameSinks } from './frame-sink.ts';
 import type { ResponseHandle } from './middleware.ts';
 import { Response as ResponseKey } from './response.ts';
 import type { AnyProcedure, ProcedureInternals } from './procedure.ts';
@@ -433,6 +434,8 @@ export function callProcedure(
         ? value
         : HttpServerResponse.fromWeb(value);
     }
+    // Kept frames were validated when the first call streamed them.
+    if (frameSinks.get(response)?.replay) return value;
     const output = validated(def);
     if (type !== 'subscription' && output) {
       if (!isStreamSchema(output)) {

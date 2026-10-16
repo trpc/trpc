@@ -237,3 +237,180 @@ test('experimental_durable() requires BackingPersistence', () => {
   // @ts-expect-error -- BackingPersistence is required
   createFetchHandler({ router });
 });
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** A feed whose items stream slowly, each with a deferred author. */
+const makeFeed = () => {
+  const runs = { feed: 0 };
+  const router = {
+    feed: t.procedure.use(experimental_durable()).mutation(() => {
+      runs.feed++;
+      return {
+        title: 'Feed',
+        items: (async function* () {
+          for (let id = 1; id <= 4; id++) {
+            await sleep(10);
+            yield {
+              id,
+              author: sleep(5).then(() => (id % 2 ? 'ada' : 'grace')),
+            };
+          }
+        })(),
+        total: sleep(60).then(() => 4),
+      };
+    }),
+  };
+  return { router, runs };
+};
+
+async function settle(feed: {
+  title: string;
+  items: AsyncIterable<{ id: number; author: Promise<string> }>;
+  total: Promise<number>;
+}) {
+  const items: Array<{ id: number; author: string }> = [];
+  for await (const item of feed.items) {
+    items.push({ id: item.id, author: await item.author });
+  }
+  return { title: feed.title, items, total: await feed.total };
+}
+
+const expectedFeed = {
+  title: 'Feed',
+  items: [1, 2, 3, 4].map((id) => ({ id, author: id % 2 ? 'ada' : 'grace' })),
+  total: 4,
+};
+
+/** `res` with its JSONL body cut, like a dropped connection, after `lines` lines. */
+const cutAfter = (res: Response, lines: number): Response => {
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+  let buffered = '';
+  let sent = 0;
+  const body = new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      while (true) {
+        const newline = buffered.indexOf('\n');
+        if (newline !== -1) {
+          if (sent === lines) {
+            await reader.cancel();
+            return controller.error(new TypeError('network connection lost'));
+          }
+          sent++;
+          controller.enqueue(
+            new TextEncoder().encode(buffered.slice(0, newline + 1)),
+          );
+          buffered = buffered.slice(newline + 1);
+          return;
+        }
+        const { done, value } = await reader.read();
+        if (done) return controller.close();
+        buffered += decoder.decode(value, { stream: true });
+      }
+    },
+  });
+  return new Response(body, { status: res.status, headers: res.headers });
+};
+
+const lines = async (res: Response) =>
+  (await res.text())
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => JSON.parse(line) as unknown);
+
+test('a streamed output is kept as frames; a retry gets them from where it says', async () => {
+  const { router, runs } = makeFeed();
+  const handler = createFetchHandler({
+    router,
+    layer: Persistence.layerBackingMemory,
+  });
+  const all = await lines(await post(handler, 'feed', undefined, 'f1'));
+  expect(all.length).toBeGreaterThan(4);
+
+  const resume = (from: string) =>
+    handler.fetch(
+      new Request('http://localhost/trpc/feed', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'trpc-call-id': 'f1',
+          'trpc-resume-from': from,
+        },
+        body: '',
+      }),
+    );
+  expect(await lines(await resume('0'))).toEqual(all);
+  expect(await lines(await resume('2'))).toEqual(all.slice(2));
+  expect((await resume('two')).status).toBe(400);
+  expect(runs.feed).toBe(1);
+  await handler.dispose();
+});
+
+test('experimental_durableLink resumes a streamed output mid-stream, on another instance', async () => {
+  const { router, runs } = makeFeed();
+  const shared = await Effect.runPromise(
+    Effect.service(Persistence.BackingPersistence).pipe(
+      Effect.provide(Persistence.layerBackingMemory),
+    ),
+  );
+  const instance = () =>
+    createFetchHandler({
+      router,
+      layer: Layer.succeed(Persistence.BackingPersistence, {
+        make: (id) => shared.make(id),
+      }),
+    });
+  const [a, b] = [instance(), instance()];
+  const sent: Array<string | null> = [];
+  const client = createTrpcClient({
+    router,
+    links: [
+      experimental_durableLink({ delayMs: () => 0 }),
+      httpLink({
+        url: 'http://localhost/trpc',
+        fetch: async (url, init) => {
+          const request = new Request(url, init);
+          sent.push(request.headers.get('trpc-resume-from'));
+          return sent.length === 1
+            ? cutAfter(await a.fetch(request), 3)
+            : b.fetch(request);
+        },
+      }),
+    ],
+  });
+  const feed = await client.feed.mutate();
+  expect(await settle(feed)).toEqual(expectedFeed);
+  expect(sent).toEqual([null, '3']);
+  expect(runs.feed).toBe(1);
+  await a.dispose();
+  await b.dispose();
+});
+
+test('a streamed output keeps going into the store after the client leaves', async () => {
+  const { router, runs } = makeFeed();
+  const handler = createFetchHandler({
+    router,
+    layer: Persistence.layerBackingMemory,
+  });
+  const controller = new AbortController();
+  const first = await post(handler, 'feed', undefined, 'g1', controller.signal);
+  await first.body!.getReader().read();
+  controller.abort();
+  await sleep(100);
+
+  const client = createTrpcClient({
+    router,
+    links: [
+      experimental_durableLink(),
+      httpLink({
+        url: 'http://localhost/trpc',
+        fetch: (url, init) => handler.fetch(new Request(url, init)),
+      }),
+    ],
+  });
+  const feed = await client.feed.mutate(undefined, { callId: 'g1' });
+  expect(await settle(feed)).toEqual(expectedFeed);
+  expect(runs.feed).toBe(1);
+  await handler.dispose();
+});

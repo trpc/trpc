@@ -68,6 +68,11 @@ export const HEADER = {
   response: 'trpc-response',
   /** On a request: the call's id, which `experimental_durable()` keeps its result under. */
   callId: 'trpc-call-id',
+  /**
+   * On a durable call's retry: how many frames of its streamed output the
+   * client already has, so the response starts after them.
+   */
+  resumeFrom: 'trpc-resume-from',
   /** On a response: the name of the serializer the handler uses. */
   serializer: 'trpc-serializer',
 } as const;

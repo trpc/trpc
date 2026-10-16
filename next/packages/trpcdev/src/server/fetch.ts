@@ -37,7 +37,7 @@ import {
 import type { MaybePromise, ProcedureType } from '../internal/types.ts';
 import { jsonSerializer, type AnySerializer } from '../serializer/index.ts';
 import { accepts, encodeRecord } from '../internal/frames.ts';
-import type { Chunk } from '../serializer/stream.ts';
+import type { Chunk, Frame } from '../serializer/stream.ts';
 import {
   consumedError,
   parsedBody,
@@ -51,6 +51,7 @@ import {
   unexpectedError,
 } from './execute.ts';
 import { emitEvents } from './events.ts';
+import { frameSinks, type FrameSink } from './frame-sink.ts';
 import type { AnyProcedure } from './procedure.ts';
 import {
   resolveProcedure,
@@ -366,6 +367,8 @@ interface CallResult {
   blob?: Blob | undefined;
   /** What the procedure returned instead of a value, sent as is. */
   response?: HttpServerResponse.HttpServerResponse | undefined;
+  /** Frames `experimental_durable()` keeps, sent instead of `body` and `chunks`. */
+  frames?: Stream.Stream<Frame> | undefined;
 }
 
 /**
@@ -611,6 +614,8 @@ export function createFetchHandler<
       const type = procedure['~trpc'].type;
       const response = createResponseHandle();
       const { headers } = response;
+      const sink: FrameSink = {};
+      if (single) frameSinks.set(response, sink);
       const parent = yield* parentSpan(request);
       const exit = yield* Effect.promise((_interrupted) =>
         base.run({
@@ -631,6 +636,9 @@ export function createFetchHandler<
         return { status: err.status, body: wire(err), headers };
       }
       const value = exit.value;
+      if (sink.replay) {
+        return { status: 200, body: undefined, frames: sink.replay, headers };
+      }
       if (HttpServerResponse.isHttpServerResponse(value)) {
         return {
           status: value.status,
@@ -651,6 +659,15 @@ export function createFetchHandler<
         const { head, chunks } = serializer.serializeDeferred(value, {
           coerceError: coerceError(request, path, type),
         });
+        if (chunks && sink.keep) {
+          const frames = sink.keep(head, chunks);
+          return {
+            status: response.status ?? 200,
+            body: undefined,
+            frames,
+            headers,
+          };
+        }
         return { status: response.status ?? 200, body: head, chunks, headers };
       } catch (cause) {
         const err = unexpectedError(cause);
@@ -791,6 +808,18 @@ export function createFetchHandler<
               result.blob,
               result.blob.type || 'application/octet-stream',
               blobHeaders(result.blob),
+              result.headers,
+            );
+          }
+          if (result.frames) {
+            const frames = result.frames;
+            return linesResponse(
+              (write) =>
+                Stream.runForEach(frames, (frame) =>
+                  Effect.sync(() => write(frame)),
+                ),
+              controller,
+              streamType(request),
               result.headers,
             );
           }
