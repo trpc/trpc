@@ -22,7 +22,7 @@ const appRouter = {
 // RPC: admin.users. OpenAPI: GET /api/staff/users, tagged admin.
 ```
 
-The prefix goes before every route below the group: before an explicit `.route({ path })`, and before the path derived from the keys below the group. Group tags come before a procedure's own. Groups nest.
+The prefix goes before every route below the group: before an explicit `.meta({ route: { path } })`, and before the path derived from the keys below the group. Group tags come before a procedure's own. Groups nest.
 
 ## Lazy subtrees
 

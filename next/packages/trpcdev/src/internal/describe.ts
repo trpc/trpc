@@ -3,8 +3,8 @@ import {
   isProcedure,
   type AnyProcedure,
   type ProcedureInternals,
-  type Route,
 } from '../server/procedure.ts';
+import { routeOf, type Route } from '../openapi/routes.ts';
 import { groupOf, isLazy, type AnyLazyRouter } from '../server/router.ts';
 import { isSchema } from '../server/schema.ts';
 import { isStreamSchema } from '../server/stream-schema.ts';
@@ -124,7 +124,7 @@ export function flattenRoutes(
 }
 
 /**
- * A procedure's `.route()` with its scope applied: the group prefix before
+ * A procedure's `route` meta with its scope applied: the group prefix before
  * its path (or before the path derived below the group), group tags first.
  * @since 12.0.0-alpha.0
  * @stability stable
@@ -183,13 +183,16 @@ const withoutSpec = (route: Route): Route => {
  * @since 12.0.0-alpha.0
  * @stability stable
  */
-export function procedureJson(def: ProcedureInternals): ProcedureJson {
+export function procedureJson(
+  def: ProcedureInternals,
+  route: Route | undefined = routeOf(def),
+): ProcedureJson {
   const input = inputJsonSchema(def);
   const output = outputJsonSchema(def);
   const errors = Object.entries(def.errors);
   return {
     type: def.type,
-    ...(def.route ? { route: withoutSpec(def.route) } : {}),
+    ...(route ? { route: withoutSpec(route) } : {}),
     ...(input ? { input } : {}),
     ...(output ? { output } : {}),
     ...(errors.length

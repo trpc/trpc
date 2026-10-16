@@ -6,7 +6,7 @@ import {
   validationLink,
 } from 'trpcdev/client';
 import { contract, toContract } from 'trpcdev/contract';
-import { createOpenApiHandler, openApiLink } from 'trpcdev/openapi';
+import { createOpenApiHandler, openapi, openApiLink } from 'trpcdev/openapi';
 import { initTrpc, tracked } from 'trpcdev/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
@@ -18,19 +18,19 @@ const Post = Schema.Struct({
   at: Schema.Date,
 });
 
-const c = contract.create();
+const c = contract.create().with(openapi());
 const appContract = {
   post: {
     byId: c
       .input(z.object({ id: z.string().min(1) }))
       .output(Post)
-      .route({ method: 'GET', path: '/posts/{id}' })
+      .meta({ route: { method: 'GET', path: '/posts/{id}' } })
       .query(),
     feed: c.output(Post).subscription({ tracked: true }),
   },
 };
 
-const t = initTrpc();
+const t = initTrpc().with(openapi());
 const at = new Date('2026-10-16T00:00:00.000Z');
 const impl = t.implement(appContract);
 const router = impl.router({

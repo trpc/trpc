@@ -292,7 +292,7 @@ const route = (
 
 /**
  * Routes a controller method by a contract's REST mapping and serves the
- * procedure it returns. Pass a leaf with a `.route({ path })`, and return
+ * procedure it returns. Pass a leaf with a `route` meta `path`, and return
  * `impl.post.byId.query(…)`; or a contract router, and return
  * `impl.router({ … })`, with default paths from the keys below it
  * (`/post/byId`). Put it above the method's other decorators, which then
@@ -321,7 +321,7 @@ export function Implement(
       const def = toContract({ [name]: contract }).procedures[name]!;
       if (!def.route?.path) {
         throw new Error(
-          `@Implement on ${name}(): a contract leaf needs a .route({ path }); or implement the router above it for default paths`,
+          `@Implement on ${name}(): a contract leaf needs a route path, .meta({ route: { path } }); or implement the router above it for default paths`,
         );
       }
       route(target, propertyKey, descriptor, name, def);

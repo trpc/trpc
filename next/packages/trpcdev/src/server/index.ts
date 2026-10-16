@@ -31,11 +31,13 @@ import type {} from 'trpcdev/internal';
 
 export {
   initTrpc,
+  type ExtendedDef,
   type RootConfig,
   type RootDef,
   type RootMiddleware,
   type RootOptions,
   type TrpcRoot,
+  type WithCheck,
 } from './init.ts';
 export type {
   AnyProcedureBuilder,
@@ -87,8 +89,7 @@ export {
   type Procedure,
   type ProcedureDef,
   type ProcedureInternals,
-  type OperationSpec,
-  type Route,
+  type MetaMerge,
 } from './procedure.ts';
 export {
   isLazy,

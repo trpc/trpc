@@ -22,11 +22,12 @@ import { onError, onFinish, onStart, onSuccess } from 'trpcdev/middleware';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
+import { openapi, type OpenApiMeta, type OperationSpec } from 'trpcdev/openapi';
 
 interface Ctx {
   user: string | null;
 }
-const t = initTrpc<{ ctx: Ctx }>();
+const t = initTrpc<{ ctx: Ctx }>().with(openapi());
 
 class CurrentUser extends Context.Service<CurrentUser, { name: string }>()(
   'CurrentUser',
@@ -380,17 +381,33 @@ test('.output() types tracked() subscription events', async () => {
   numbers.subscription(wrongEvents);
 });
 
-test('.route() is stored for the OpenAPI handler and merges through concat', () => {
-  const base = t.procedure.route({ tags: ['posts'] });
-  const proc = t.procedure
-    .route({ method: 'GET', path: '/posts/{id}' })
-    .concat(base)
+test('route meta from openapi() merges by key, and spec functions compose', () => {
+  const security = (op: OperationSpec) => ({
+    ...op,
+    security: [{ bearer: [] }],
+  });
+  const base = t.procedure.meta({ route: { tags: ['posts'], spec: security } });
+  const proc = base
+    .meta({
+      route: {
+        method: 'GET',
+        path: '/posts/{id}',
+        spec: (op) => ({ ...op, summary: 'One post' }),
+      },
+    })
     .query(() => null);
-  expect(proc['~trpc'].route).toEqual({
+  const { spec, ...route } = (proc['~trpc'].meta as OpenApiMeta).route!;
+  expect(route).toEqual({
     method: 'GET',
     path: '/posts/{id}',
     tags: ['posts'],
   });
+  expect(typeof spec === 'function' && spec({})).toEqual({
+    security: [{ bearer: [] }],
+    summary: 'One post',
+  });
+  // @ts-expect-error -- without openapi(), there is no route meta
+  initTrpc().procedure.meta({ route: { path: '/x' } });
 });
 
 test('call() runs one procedure, with a layer for its services', async () => {

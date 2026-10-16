@@ -12,33 +12,39 @@ import { NestFactory } from '@nestjs/core';
 import { Context, Effect, Layer, Schema } from 'effect';
 import { createTrpcClient, safe } from 'trpcdev/client';
 import { contract, toContract } from 'trpcdev/contract';
-import { openApiLink } from 'trpcdev/openapi';
+import { openapi, openApiLink } from 'trpcdev/openapi';
 import { initTrpc } from 'trpcdev/server';
 import { afterAll, beforeAll, expect, test } from 'vite-plus/test';
 import { Implement, TrpcModule } from './index.ts';
 
-const c = contract.create();
+const c = contract.create().with(openapi());
 const Post = Schema.Struct({ id: Schema.String, title: Schema.String });
 
 const appContract = {
   health: c.output(Schema.Literal('ok')).query(),
   post: {
     byId: c
-      .route({ method: 'GET', path: '/posts/{id}' })
+      .meta({ route: { method: 'GET', path: '/posts/{id}' } })
       .input(Schema.Struct({ id: Schema.String }))
       .output(Post)
       .errors({ NOT_FOUND: { data: Schema.Struct({ id: Schema.String }) } })
       .query(),
     create: c
-      .route({ method: 'POST', path: '/posts', successStatus: 201 })
+      .meta({ route: { method: 'POST', path: '/posts', successStatus: 201 } })
       .input(Schema.Struct({ title: Schema.String }))
       .output(Post)
       .errors({ UNAUTHORIZED: {} })
       .mutation(),
     count: c.output(Schema.Number).query(),
   },
-  secret: c.route({ path: '/secret' }).output(Schema.String).query(),
-  ticks: c.route({ path: '/ticks' }).output(Schema.Number).subscription(),
+  secret: c
+    .meta({ route: { path: '/secret' } })
+    .output(Schema.String)
+    .query(),
+  ticks: c
+    .meta({ route: { path: '/ticks' } })
+    .output(Schema.Number)
+    .subscription(),
 };
 
 class Counter extends Context.Service<
@@ -46,7 +52,7 @@ class Counter extends Context.Service<
   { next: Effect.Effect<number> }
 >()('Counter') {}
 
-const t = initTrpc<{ ctx: { user: string | null } }>();
+const t = initTrpc<{ ctx: { user: string | null } }>().with(openapi());
 const impl = t.implement(appContract);
 
 @Injectable()
@@ -237,5 +243,5 @@ test('a leaf without a route path throws', () => {
       }
     }
     return Bad;
-  }).toThrow(/needs a \.route\(\{ path \}\)/);
+  }).toThrow(/needs a route path/);
 });

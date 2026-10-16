@@ -1,7 +1,11 @@
 import { createTrpcClient, httpLink, routerType } from 'trpcdev/client';
 import { toContract } from 'trpcdev/contract';
 import { getProcedure } from 'trpcdev/extend';
-import { createOpenApiHandler, generateOpenApi } from 'trpcdev/openapi';
+import {
+  createOpenApiHandler,
+  generateOpenApi,
+  openapi,
+} from 'trpcdev/openapi';
 import {
   createRouterClient,
   initTrpc,
@@ -14,12 +18,12 @@ import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 
-const t = initTrpc();
+const t = initTrpc().with(openapi());
 
 const users = t.procedure.query(() => ['ada']);
 const ban = t.procedure
   .input(z.object({ id: z.string() }))
-  .route({ method: 'POST', path: '/bans/{id}', tags: ['moderation'] })
+  .meta({ route: { method: 'POST', path: '/bans/{id}', tags: ['moderation'] } })
   .mutation(({ input }) => `banned ${input.id}`);
 
 const makeRouter = () => {

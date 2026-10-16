@@ -4,32 +4,38 @@
 
 ## Routes
 
-A procedure without `.route()` is served at its path: `GET /api/post/byId` for queries, `POST /api/post/create` for mutations. `.route()` picks the method, path and status.
+The `openapi()` root extension adds a `route` meta key. A procedure without one is served at its path: `GET /api/post/byId` for queries, `POST /api/post/create` for mutations. `route` picks the method, path and status.
 
 ```ts
+import { openapi } from 'trpcdev/openapi';
+
+const t = initTrpc<{ ctx: Context }>().with(openapi());
+
 const byId = t.procedure
-  .route({ method: 'GET', path: '/posts/{id}', tags: ['posts'] })
+  .meta({ route: { method: 'GET', path: '/posts/{id}', tags: ['posts'] } })
   .input(z.object({ id: z.string() }))
   .errors({ NOT_FOUND: { data: z.object({ id: z.string() }) } })
   .query(…);
 
 const create = t.procedure
-  .route({ method: 'POST', path: '/posts', successStatus: 201 })
+  .meta({ route: { method: 'POST', path: '/posts', successStatus: 201 } })
   .input(z.object({ title: z.string().min(1) }))
   .mutation(…);
 ```
 
-`.route()` also takes `summary`, `description`, `deprecated` and `operationId`. When two paths match, the one with more leading static segments wins: `/posts/latest` before `/posts/{id}`.
+`route` also takes `summary`, `description`, `deprecated` and `operationId`. When two paths match, the one with more leading static segments wins: `/posts/latest` before `/posts/{id}`.
 
-`spec` overrides the generated operation in the document: an object replaces it, a function extends it. Functions compose across `.route()` calls, so a base procedure can add `security` and its procedures add more:
+`spec` overrides the generated operation in the document: an object replaces it, a function extends it. Later `.meta({ route })` calls merge into earlier ones key by key, and `spec` functions compose, so a base procedure can add `security` and its procedures add more:
 
 ```ts
 const authed = t.procedure
   .use(requireUser)
-  .route({ spec: (op) => ({ ...op, security: [{ bearer: [] }] }) });
+  .meta({ route: { spec: (op) => ({ ...op, security: [{ bearer: [] }] }) } });
 
 const me = authed
-  .route({ path: '/me', spec: (op) => ({ ...op, 'x-internal': true }) })
+  .meta({
+    route: { path: '/me', spec: (op) => ({ ...op, 'x-internal': true }) },
+  })
   .query(({ ctx }) => ctx.user);
 ```
 
@@ -76,7 +82,7 @@ With the default `inputStructure: 'compact'`, path params merge with the query s
 
 ```ts
 const update = t.procedure
-  .route({ method: 'PATCH', path: '/posts/{id}', inputStructure: 'detailed', outputStructure: 'detailed' })
+  .meta({ route: { method: 'PATCH', path: '/posts/{id}', inputStructure: 'detailed', outputStructure: 'detailed' } })
   .input(z.object({
     params: z.object({ id: z.string() }),
     headers: z.object({ 'if-match': z.string() }),
@@ -213,12 +219,13 @@ export const Pet = Schema.Struct({
   id: Schema.Number.check(Schema.isInt()),
   name: Schema.String,
 });
+const c = trpcContract.create().with(openapi());
 export const petstore = {
   pets: {
     list: c
       .input(PetsListInput)
       .output(PetsListOutput)
-      .route({ method: 'GET', path: '/pets' })
+      .meta({ route: { method: 'GET', path: '/pets' } })
       .query(),
   },
 };
@@ -244,7 +251,7 @@ const impl = t.implement(appContract);
 class PostController {
   constructor(@Inject(Posts) private readonly posts: Posts) {}
 
-  @Implement(appContract.post.byId) // .route({ method: 'GET', path: '/posts/{id}' })
+  @Implement(appContract.post.byId) // .meta({ route: { method: 'GET', path: '/posts/{id}' } })
   byId() {
     return impl.post.byId.query(
       ({ input, errors }) =>
@@ -269,7 +276,7 @@ class PostController {
 class AppModule {}
 ```
 
-- A leaf needs a `.route({ path })`. Pass a contract router instead and return `impl.router({ … })` (or a plain object of procedures) to get default paths from the keys below it (`/post/byId`).
+- A leaf needs a route `path`, `.meta({ route: { path } })`. Pass a contract router instead and return `impl.router({ … })` (or a plain object of procedures) to get default paths from the keys below it (`/post/byId`).
 - `TrpcModule.forRoot()` takes the OpenAPI handler's options; `createContext`'s `platform` is Nest's `ExecutionContext`. `forRootAsync({ inject, useFactory })` builds them from providers. One handler serves every route, so the `layer` is built once and released on shutdown (`app.enableShutdownHooks()` or `app.close()`).
 - Guards, pipes and filters run as usual; put `@Implement` above the method's other decorators so they apply to every route it adds. The procedure's own middleware and validation run after them, and errors use the REST shape above.
 - Bodies Nest's JSON and urlencoded parsers read are used as parsed; others are read from the request.

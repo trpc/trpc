@@ -1,6 +1,7 @@
 import { Effect, Schema } from 'effect';
 import { error, initTrpc, tracked, TrpcError } from 'trpcdev/server';
 import { z } from 'zod';
+import { openapi } from 'trpcdev/openapi';
 
 export interface Post {
   id: string;
@@ -24,13 +25,13 @@ class PostMissing extends TrpcError.Tagged('POST_NOT_FOUND', {
   data: Schema.Struct({ id: Schema.String }),
 }) {}
 
-const t = initTrpc<{ ctx: { user: string | null } }>();
+const t = initTrpc<{ ctx: { user: string | null } }>().with(openapi());
 const posts = new Map<string, Post>();
 
 export const appRouter = {
   post: {
     byId: t.procedure
-      .route({ method: 'GET', path: '/posts/{id}' })
+      .meta({ route: { method: 'GET', path: '/posts/{id}' } })
       .input(z.object({ id: z.string() }))
       .query(({ input }) =>
         Effect.gen(function* () {
@@ -40,10 +41,10 @@ export const appRouter = {
         }),
       ),
     list: t.procedure
-      .route({ method: 'GET', path: '/posts' })
+      .meta({ route: { method: 'GET', path: '/posts' } })
       .query((): Post[] => [...posts.values()]),
     create: t.procedure
-      .route({ method: 'POST', path: '/posts' })
+      .meta({ route: { method: 'POST', path: '/posts' } })
       .input((opts: { ctx: { user: string | null } }) =>
         opts.ctx.user ? z.object({ title: z.string() }) : z.never(),
       )
@@ -60,7 +61,7 @@ export const appRouter = {
         return post;
       }),
     comments: t.procedure
-      .route({ method: 'GET', path: '/posts/{id}/comments' })
+      .meta({ route: { method: 'GET', path: '/posts/{id}/comments' } })
       .input((opts: { ctx: { user: string | null } }) =>
         opts.ctx.user ? z.object({ id: z.string() }) : z.never(),
       )
@@ -76,12 +77,12 @@ export const appRouter = {
         }),
       ),
     onCreated: t.procedure
-      .route({ method: 'GET', path: '/posts/events' })
+      .meta({ route: { method: 'GET', path: '/posts/events' } })
       .subscription(async function* () {
         for (const post of posts.values()) yield tracked(post.id, post);
       }),
     count: t.procedure
-      .route({ method: 'GET', path: '/posts/count' })
+      .meta({ route: { method: 'GET', path: '/posts/count' } })
       .output(Schema.Number)
       .query(() =>
         Effect.gen(function* () {

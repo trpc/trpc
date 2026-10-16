@@ -5,10 +5,11 @@
  *
  * @example
  * ```ts
- * import { createOpenApiHandler, generateOpenApi, openApiReference } from 'trpcdev/openapi';
+ * import { createOpenApiHandler, generateOpenApi, openapi, openApiReference } from 'trpcdev/openapi';
  *
+ * const t = initTrpc().with(openapi());
  * const byId = t.procedure
- *   .route({ method: 'GET', path: '/posts/{id}', tags: ['posts'] })
+ *   .meta({ route: { method: 'GET', path: '/posts/{id}', tags: ['posts'] } })
  *   .input(z.object({ id: z.string() }))
  *   .errors({ NOT_FOUND: { data: z.object({ id: z.string() }) } })
  *   .query(…);
@@ -45,6 +46,8 @@ export {
   type OpenApiHandler,
   type OpenApiHandlerOptions,
 } from './handler.ts';
+export { openapi } from './extension.ts';
+export type { OpenApiMeta, OperationSpec, Route } from './routes.ts';
 export { openApiLink, type OpenApiLinkOptions } from './link.ts';
 export { openApiReference, type OpenApiReferenceOptions } from './reference.ts';
 export { resolveRoute, type HttpMethod, type ResolvedRoute } from './routes.ts';

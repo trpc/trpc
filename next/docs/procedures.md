@@ -258,6 +258,8 @@ t.procedure
 
 Extensions chain, and `t.middleware` and `t.implement()` see what they add. `.with()` is a type error when the root lacks ctx the extension needs, or declares one of its meta keys with another type. Services an extension provides with `.provide()` don't need the handler's `layer`; services it only uses do.
 
+Meta keys a root doesn't declare are a type error, and a later `.meta()` replaces a key unless its root says how to merge it. An extension sets that for its own keys with `initTrpc({ mergeMeta })`, which is how OpenAPI's `openapi()` merges `route` key by key ([OpenAPI](./openapi.md)). Contracts take extensions too, for their meta: `contract.create().with(openapi())`.
+
 ## Responses
 
 `response` sets the call's headers and status; Effect code uses the `Response` service over the same handle:

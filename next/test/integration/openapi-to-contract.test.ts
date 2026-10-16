@@ -6,12 +6,13 @@ import {
   generateContractFromOpenApi,
   generateOpenApi,
   openApiLink,
+  openapi,
 } from 'trpcdev/openapi';
 import { error, initTrpc, tracked } from 'trpcdev/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { appContract } from './fixtures/contract.ts';
 
-const t = initTrpc<{ ctx: {}; meta: { auth?: boolean } }>();
+const t = initTrpc<{ ctx: {}; meta: { auth?: boolean } }>().with(openapi());
 const impl = t.implement(appContract);
 const router = impl.router({
   health: impl.health.query(() => 'ok' as const),

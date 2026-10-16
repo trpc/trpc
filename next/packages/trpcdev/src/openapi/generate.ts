@@ -7,13 +7,15 @@ import {
 } from '../internal/describe.ts';
 import { ERROR_STATUS } from '../internal/error.ts';
 import { toJsonSchema, type JsonSchema } from '../internal/json-schema.ts';
-import type {
-  AnyProcedure,
-  OperationSpec,
-  ProcedureInternals,
-} from '../server/procedure.ts';
+import type { AnyProcedure, ProcedureInternals } from '../server/procedure.ts';
 import { propertySchema } from './coerce.ts';
-import { normalizePrefix, resolveRoute, usesQuery } from './routes.ts';
+import {
+  normalizePrefix,
+  resolveRoute,
+  routeOf,
+  usesQuery,
+  type OperationSpec,
+} from './routes.ts';
 
 type Schema = Exclude<JsonSchema, boolean>;
 
@@ -78,7 +80,7 @@ export interface GenerateOpenApiOptions {
   servers?: ReadonlyArray<OpenApiServer>;
   /**
    * `'openapi'` documents the REST mapping {@link createOpenApiHandler}
-   * serves (`.route()`s). `'rpc'` documents the RPC endpoint of
+   * serves (`route` meta). `'rpc'` documents the RPC endpoint of
    * `createFetchHandler` with zero configuration (O-C).
    * @default 'openapi'
    */
@@ -356,7 +358,7 @@ export function generateDocument(
     .procedures) {
     if (opts.filter && !opts.filter({ path, procedure })) continue;
     const def = procedure['~trpc'];
-    const scoped = scopedRoute(path, def.route, scope);
+    const scoped = scopedRoute(path, routeOf(def), scope);
     const route =
       target === 'rpc'
         ? resolveRoute(path, def.type, { path: `/${path}` }, prefix)

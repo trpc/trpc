@@ -29,7 +29,7 @@ import type {
 } from './middleware.ts';
 import {
   isProcedure,
-  mergeRoute,
+  mergeMeta,
   type AnyProcedure,
   type Procedure,
   type ProcedureDefOf,
@@ -150,8 +150,8 @@ type Terminals<TDef extends BuilderDef, TContract extends AnyProcedure> = {
 
 /**
  * The definition methods an implementer leaf keeps. Input, output, errors and
- * route come from the contract, so `.input()`, `.output()`, `.errors()` and
- * `.route()` are not available.
+ * meta come from the contract, so `.input()`, `.output()`, `.errors()` and
+ * `.meta()` are not available.
  * @since 12.0.0-alpha.0
  * @stability stable
  */
@@ -534,11 +534,11 @@ export function implement(
     const def = node['~trpc'];
     return createBuilder({
       steps: [...root.steps, ...def.steps],
-      meta: { ...root.meta, ...def.meta },
+      meta: mergeMeta(root.mergeMeta, root.meta, def.meta),
+      mergeMeta: root.mergeMeta,
       output: def.output,
       validateOutput: def.validateOutput,
       errors: { ...root.errors, ...def.errors },
-      route: mergeRoute(root.route, def.route),
     });
   };
   const tree = mirror(contract) as Record<string, unknown>;

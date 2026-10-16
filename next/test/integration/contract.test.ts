@@ -7,6 +7,7 @@ import {
   routerType,
 } from 'trpcdev/client';
 import { contract, toContract, type inferContract } from 'trpcdev/contract';
+import { openapi } from 'trpcdev/openapi';
 import { error, initTrpc, tracked, type TrackedEnvelope } from 'trpcdev/server';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
@@ -15,7 +16,7 @@ import { appContract, type AppContract } from './fixtures/contract.ts';
 interface Ctx {
   user: string | null;
 }
-const t = initTrpc<{ ctx: Ctx; meta: { auth?: boolean } }>();
+const t = initTrpc<{ ctx: Ctx; meta: { auth?: boolean } }>().with(openapi());
 const posts = new Map([['1', { id: '1', title: 'Hello' }]]);
 
 const authed = t.middleware(({ ctx, next }) =>

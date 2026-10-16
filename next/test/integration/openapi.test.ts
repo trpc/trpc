@@ -8,11 +8,12 @@ import { serve as serveHttp } from 'trpcdev/http';
 import {
   createOpenApiHandler,
   generateOpenApi,
+  openapi,
+  type OpenApiErrorBody,
   openApiLink,
   openApiReference,
   parseBracketNotation,
   toBracketNotation,
-  type OpenApiErrorBody,
 } from 'trpcdev/openapi';
 import {
   createFetchHandler,
@@ -27,7 +28,7 @@ import { appContract } from './fixtures/contract.ts';
 interface Ctx {
   user: string | null;
 }
-const t = initTrpc<{ ctx: Ctx }>();
+const t = initTrpc<{ ctx: Ctx }>().with(openapi());
 
 class Clock extends Context.Service<Clock, { now: () => number }>()('Clock') {}
 
@@ -41,11 +42,13 @@ const router = {
   health: t.procedure.query(() => 'ok' as const),
   post: {
     byId: t.procedure
-      .route({
-        method: 'GET',
-        path: '/posts/{id}',
-        tags: ['posts'],
-        summary: 'Get a post',
+      .meta({
+        route: {
+          method: 'GET',
+          path: '/posts/{id}',
+          tags: ['posts'],
+          summary: 'Get a post',
+        },
       })
       .input(z.object({ id: z.string() }))
       .output(Post)
@@ -55,11 +58,11 @@ const router = {
           posts.get(input.id) ?? errors.NOT_FOUND({ data: { id: input.id } }),
       ),
     latest: t.procedure
-      .route({ method: 'GET', path: '/posts/latest' })
+      .meta({ route: { method: 'GET', path: '/posts/latest' } })
       .output(Post)
       .query(() => posts.get(String(posts.size))!),
     list: t.procedure
-      .route({ method: 'GET', path: '/posts' })
+      .meta({ route: { method: 'GET', path: '/posts' } })
       .input(
         z.object({
           limit: z.number().int().max(50),
@@ -70,7 +73,7 @@ const router = {
       )
       .query(({ input }) => input),
     create: t.procedure
-      .route({ method: 'POST', path: '/posts', successStatus: 201 })
+      .meta({ route: { method: 'POST', path: '/posts', successStatus: 201 } })
       .input(z.object({ title: z.string().min(1) }))
       .output(Post)
       .errors({ UNAUTHORIZED: {} })
@@ -81,11 +84,13 @@ const router = {
         return post;
       }),
     update: t.procedure
-      .route({
-        method: 'PATCH',
-        path: '/posts/{id}',
-        inputStructure: 'detailed',
-        outputStructure: 'detailed',
+      .meta({
+        route: {
+          method: 'PATCH',
+          path: '/posts/{id}',
+          inputStructure: 'detailed',
+          outputStructure: 'detailed',
+        },
       })
       .input(
         z.object({
@@ -105,7 +110,7 @@ const router = {
         },
       })),
     remove: t.procedure
-      .route({ method: 'DELETE', path: '/posts/{id}' })
+      .meta({ route: { method: 'DELETE', path: '/posts/{id}' } })
       .input(z.object({ id: z.string() }))
       .mutation(({ input, response }) => {
         posts.delete(input.id);
@@ -119,7 +124,7 @@ const router = {
       }
     }),
     upload: t.procedure
-      .route({ method: 'POST', path: '/files' })
+      .meta({ route: { method: 'POST', path: '/files' } })
       .input(z.object({ name: z.string(), file: z.instanceof(File) }))
       .mutation(async ({ input }) => ({
         name: input.name,
@@ -128,7 +133,7 @@ const router = {
       })),
   },
   stats: t.procedure
-    .route({ method: 'GET', path: '/stats' })
+    .meta({ route: { method: 'GET', path: '/stats' } })
     .input(Schema.Struct({ days: Schema.Number }))
     .query(({ input }) =>
       Effect.gen(function* () {
@@ -626,8 +631,8 @@ test('two procedures on the same route are rejected', () => {
   expect(() =>
     createOpenApiHandler({
       router: {
-        a: t.procedure.route({ path: '/x/{id}' }).query(() => 1),
-        b: t.procedure.route({ path: '/x/{slug}' }).query(() => 2),
+        a: t.procedure.meta({ route: { path: '/x/{id}' } }).query(() => 1),
+        b: t.procedure.meta({ route: { path: '/x/{slug}' } }).query(() => 2),
       },
       createContext: () => ({ user: null }),
     }),
@@ -649,10 +654,10 @@ test('bracket notation round-trips', () => {
 });
 
 test('an unvalidated output is documented by its schema input side', () => {
-  const t = initTrpc();
+  const t = initTrpc().with(openapi());
   const router = {
     when: t.procedure
-      .route({ method: 'GET', path: '/when' })
+      .meta({ route: { method: 'GET', path: '/when' } })
       .output(
         z.string().transform((s) => s.length),
         { validate: false },
@@ -693,7 +698,7 @@ test('serve() runs one procedure with params the caller matched', async () => {
     createContext: () => ({ user: 'ada' }),
   });
   const byId = t.procedure
-    .route({ path: '/things/{id}', successStatus: 202 })
+    .meta({ route: { path: '/things/{id}', successStatus: 202 } })
     .input(z.object({ id: z.coerce.number(), q: z.string() }))
     .query(({ input, ctx }) => ({ ...input, user: ctx.user }));
   const res = await handler.serve(
@@ -705,21 +710,27 @@ test('serve() runs one procedure with params the caller matched', async () => {
   await handler.dispose();
 });
 
-test('.route({ spec }) replaces or extends the generated operation', () => {
-  const secured = t.procedure.route({
-    spec: (op) => ({ ...op, security: [{ apiKey: [] }] }),
+test('.meta({ route: { spec } }) replaces or extends the generated operation', () => {
+  const secured = t.procedure.meta({
+    route: {
+      spec: (op) => ({ ...op, security: [{ apiKey: [] }] }),
+    },
   });
   const specRouter = {
     me: secured
-      .route({ path: '/me', spec: (op) => ({ ...op, 'x-internal': true }) })
+      .meta({
+        route: { path: '/me', spec: (op) => ({ ...op, 'x-internal': true }) },
+      })
       .query(() => 'me'),
     raw: t.procedure
-      .route({
-        method: 'POST',
-        path: '/raw',
-        spec: {
-          operationId: 'upload',
-          responses: { 204: { description: 'Done' } },
+      .meta({
+        route: {
+          method: 'POST',
+          path: '/raw',
+          spec: {
+            operationId: 'upload',
+            responses: { 204: { description: 'Done' } },
+          },
         },
       })
       .mutation(() => undefined),

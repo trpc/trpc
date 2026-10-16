@@ -23,74 +23,34 @@ export interface ErrorSpec {
 export type ErrorMap = Readonly<Record<string, ErrorSpec>>;
 
 /**
- * REST metadata (04 (g)). The RPC endpoint ignores it; the OpenAPI handler,
- * generator and link use it (18).
+ * How meta keys merge when `.meta()` sets them again: by key, a function of
+ * the earlier and the new value. Keys without one are replaced. Extensions
+ * declare them for their keys with `initTrpc({ mergeMeta })`.
  * @since 12.0.0-alpha.0
  * @stability stable
  */
-export interface Route {
-  /** @default 'GET' for queries and subscriptions, 'POST' for mutations */
-  readonly method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-  /** With `{param}` placeholders, e.g. `/posts/{id}`. @default the procedure path, `/post/byId` */
-  readonly path?: `/${string}`;
-  /** @default 200 */
-  readonly successStatus?: number;
-  readonly summary?: string;
-  readonly description?: string;
-  readonly tags?: ReadonlyArray<string>;
-  readonly deprecated?: boolean;
-  readonly operationId?: string;
-  /**
-   * `compact` merges path params with the query (GET) or body into one input.
-   * `detailed` passes `{ params, query, headers, body }`.
-   * @default 'compact'
-   */
-  readonly inputStructure?: 'compact' | 'detailed';
-  /**
-   * `detailed` resolvers return `{ status?, headers?, body }`.
-   * @default 'compact'
-   */
-  readonly outputStructure?: 'compact' | 'detailed';
-  /**
-   * The generated OpenAPI operation, overridden: an object replaces it, a
-   * function gets it and returns the new one. Functions compose across
-   * `.route()` calls, so a base procedure can add `security` and a leaf
-   * still extends it. Documentation only; not sent by `toContract()`.
-   */
-  readonly spec?: OperationSpec | ((operation: OperationSpec) => OperationSpec);
-}
+export type MetaMerge<TMeta> = {
+  readonly [K in keyof TMeta]?: (before: TMeta[K], next: TMeta[K]) => TMeta[K];
+};
 
 /**
- * An OpenAPI operation object, as `.route({ spec })` sees it.
- * @since 12.0.0-alpha.0
- * @stability stable
- */
-export interface OperationSpec {
-  readonly [key: string]: unknown;
-}
-
-/**
- * `next` over `route`, composing `spec` functions.
+ * `next` shallow-merged over `before`, through `merge` for keys both set.
  * @internal
  */
-export function mergeRoute(
-  route: Route | undefined,
-  next: Route | undefined,
-): Route | undefined {
-  if (!next) return route;
-  if (!route) return next;
-  const before = route.spec;
-  const after = next.spec;
-  return {
-    ...route,
-    ...next,
-    ...(typeof after === 'function' && before
-      ? {
-          spec: (operation: OperationSpec) =>
-            after(typeof before === 'function' ? before(operation) : before),
-        }
-      : {}),
-  };
+export function mergeMeta(
+  merge: MetaMerge<any> | undefined,
+  before: object,
+  next: object,
+): object {
+  const out: Record<string, unknown> = { ...before };
+  for (const [key, value] of Object.entries(next)) {
+    const fn = merge?.[key];
+    out[key] =
+      fn && out[key] !== undefined && value !== undefined
+        ? fn(out[key], value)
+        : value;
+  }
+  return out;
 }
 
 /**
@@ -144,7 +104,6 @@ export interface ProcedureInternals {
   /** `false`: `output` only types and documents the result. */
   readonly validateOutput?: false | undefined;
   readonly errors: ErrorMap;
-  readonly route: Route | undefined;
   /** Absent on contract procedures (09). */
   readonly resolver: ((opts: any) => unknown) | undefined;
 }

@@ -1,8 +1,97 @@
 import type { ProcedureType } from '../internal/types.ts';
-import type { Route } from '../server/procedure.ts';
 
 /**
- * An HTTP method `.route()` accepts.
+ * REST metadata (04 (g)), the `route` meta key of the {@link openapi}
+ * extension. The RPC endpoint ignores it; the OpenAPI handler, generator and
+ * link use it (18).
+ * @since 12.0.0-alpha.0
+ * @stability stable
+ */
+export interface Route {
+  /** @default 'GET' for queries and subscriptions, 'POST' for mutations */
+  readonly method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  /** With `{param}` placeholders, e.g. `/posts/{id}`. @default the procedure path, `/post/byId` */
+  readonly path?: `/${string}`;
+  /** @default 200 */
+  readonly successStatus?: number;
+  readonly summary?: string;
+  readonly description?: string;
+  readonly tags?: ReadonlyArray<string>;
+  readonly deprecated?: boolean;
+  readonly operationId?: string;
+  /**
+   * `compact` merges path params with the query (GET) or body into one input.
+   * `detailed` passes `{ params, query, headers, body }`.
+   * @default 'compact'
+   */
+  readonly inputStructure?: 'compact' | 'detailed';
+  /**
+   * `detailed` resolvers return `{ status?, headers?, body }`.
+   * @default 'compact'
+   */
+  readonly outputStructure?: 'compact' | 'detailed';
+  /**
+   * The generated OpenAPI operation, overridden: an object replaces it, a
+   * function gets it and returns the new one. Functions compose across
+   * `.meta({ route })` calls, so a base procedure can add `security` and a leaf
+   * still extends it. Documentation only; not sent by `toContract()`.
+   */
+  readonly spec?: OperationSpec | ((operation: OperationSpec) => OperationSpec);
+}
+
+/**
+ * An OpenAPI operation object, as `route.spec` sees it.
+ * @since 12.0.0-alpha.0
+ * @stability stable
+ */
+export interface OperationSpec {
+  readonly [key: string]: unknown;
+}
+
+/**
+ * `next` over `route` by key, composing `spec` functions: the `route` meta
+ * key's merge.
+ * @internal
+ */
+export function mergeRoute(
+  route: Route | undefined,
+  next: Route | undefined,
+): Route | undefined {
+  if (!next) return route;
+  if (!route) return next;
+  const before = route.spec;
+  const after = next.spec;
+  return {
+    ...route,
+    ...next,
+    ...(typeof after === 'function' && before
+      ? {
+          spec: (operation: OperationSpec) =>
+            after(typeof before === 'function' ? before(operation) : before),
+        }
+      : {}),
+  };
+}
+
+/**
+ * The meta the `openapi()` extension adds.
+ * @since 12.0.0-alpha.0
+ * @stability stable
+ */
+export interface OpenApiMeta {
+  /** The procedure's REST mapping; `.meta({ route })` calls merge by key. */
+  route?: Route;
+}
+
+/**
+ * A procedure's REST mapping, from its `route` meta key.
+ * @internal
+ */
+export const routeOf = (def: { readonly meta: object }): Route | undefined =>
+  (def.meta as OpenApiMeta).route;
+
+/**
+ * An HTTP method a `route` accepts.
  * @since 12.0.0-alpha.0
  * @stability stable
  */

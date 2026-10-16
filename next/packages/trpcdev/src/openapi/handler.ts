@@ -38,7 +38,7 @@ import {
   type OnErrorOpts,
   type PlatformArgs,
 } from '../server/fetch.ts';
-import type { AnyProcedure, Route } from '../server/procedure.ts';
+import type { AnyProcedure } from '../server/procedure.ts';
 import {
   resolveProcedure,
   type AnyRouter,
@@ -53,8 +53,10 @@ import {
   compileRoute,
   normalizePrefix,
   resolveRoute,
+  routeOf,
   usesQuery,
   type ResolvedRoute,
+  type Route,
 } from './routes.ts';
 
 /**
@@ -156,7 +158,7 @@ export interface OpenApiCall {
   /** The procedure path (`post.byId`), for spans and `onError`. */
   readonly path: string;
   readonly procedure: AnyProcedure;
-  /** Replaces the procedure's own `.route()`, as a group's prefix does. */
+  /** Replaces the procedure's own `route` meta, as a group's prefix does. */
   readonly route?: Route;
   /** The path params the framework matched. */
   readonly params?: Readonly<Record<string, string>>;
@@ -201,7 +203,7 @@ const specificity = (route: ResolvedRoute) =>
     .join('');
 
 /**
- * Serves a router over REST (18 O-A): each procedure at its `.route()` (or
+ * Serves a router over REST (18 O-A): each procedure at its `route` meta (or
  * the default `GET|POST {prefix}/post/byId`), path params, bracket-notation
  * query strings and forms coerced from the input's JSON Schema, plain JSON
  * bodies, declared errors with their status, and subscriptions as
@@ -284,7 +286,7 @@ export function createOpenApiHandler<
         return makeEntry(
           path,
           def.type,
-          scopedRoute(path, def.route, scope),
+          scopedRoute(path, routeOf(def), scope),
           inputJsonSchema(def),
           () => procedure,
         );
@@ -323,7 +325,7 @@ export function createOpenApiHandler<
     return makeEntry(
       call.path,
       def.type,
-      call.route ?? def.route,
+      call.route ?? routeOf(def),
       input,
       () => call.procedure,
     );

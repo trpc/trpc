@@ -9,6 +9,7 @@ import type {
   ProcedureType,
   Simplify,
   TypeError,
+  UndeclaredMeta,
   Unset,
   Value,
 } from '../internal/types.ts';
@@ -20,11 +21,11 @@ import {
   type ResponseHandle,
 } from './middleware.ts';
 import {
-  mergeRoute,
+  mergeMeta,
   type ErrorMap,
   type ErrorSpec,
+  type MetaMerge,
   type Procedure,
-  type Route,
   type Step,
 } from './procedure.ts';
 import type {
@@ -454,7 +455,8 @@ export interface BuilderInternals {
   readonly output: OutputSchema | undefined;
   readonly validateOutput?: false | undefined;
   readonly errors: ErrorMap;
-  readonly route: Route | undefined;
+  /** How `.meta()` merges keys set again; from `initTrpc` and extensions. */
+  readonly mergeMeta?: MetaMerge<any> | undefined;
 }
 
 /**
@@ -579,17 +581,6 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
   >;
 
   /**
-   * REST metadata for the OpenAPI handler and generator (04 (g), 18). The RPC
-   * endpoint ignores it.
-   *
-   * @example
-   * ```ts
-   * t.procedure.route({ method: 'GET', path: '/posts/{id}', tags: ['posts'] });
-   * ```
-   */
-  route(route: Route): ProcedureBuilder<TDef>;
-
-  /**
    * Adds middleware. It calls `next()` (optionally with `{ ctx }`), returns
    * `ok(value)` to short-circuit, or returns a `TrpcError`, which becomes
    * part of the procedure's error union.
@@ -704,18 +695,21 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
   >;
 
   /**
-   * Sets procedure meta, shallow-merged over earlier meta. Middleware and
-   * resolvers receive it.
+   * Sets procedure meta, shallow-merged over earlier meta (keys with a
+   * `mergeMeta` function merge through it). Middleware and resolvers
+   * receive it.
    *
    * @example
    * ```ts
    * t.procedure.meta({ auth: 'admin' });
    * ```
    */
-  meta(meta: TDef['meta']): ProcedureBuilder<TDef>;
+  meta<const $Meta extends TDef['meta']>(
+    meta: $Meta & UndeclaredMeta<TDef['meta'], $Meta>,
+  ): ProcedureBuilder<TDef>;
 
   /**
-   * Appends another builder's steps, declared errors and route. The other
+   * Appends another builder's steps and declared errors. The other
    * builder can come from a different `t`, for example a plugin package: its
    * root ctx and meta are requirements, checked against this builder's
    * current ctx and meta.
@@ -875,7 +869,6 @@ export function createBuilder(
         output: internals.output,
         validateOutput: internals.validateOutput,
         errors: internals.errors,
-        route: internals.route,
         resolver,
       },
     });
@@ -891,11 +884,6 @@ export function createBuilder(
       }),
     errors: (map: ErrorMap) =>
       createBuilder({ ...internals, errors: { ...internals.errors, ...map } }),
-    route: (route: Route) =>
-      createBuilder({
-        ...internals,
-        route: mergeRoute(internals.route, route),
-      }),
     use: (mw: unknown) =>
       isEffectMiddleware(mw)
         ? add({ kind: 'use', fn: mw['~effectMiddleware'], effect: true })
@@ -903,14 +891,16 @@ export function createBuilder(
     provide: (key: Context.Key<any, any>, make: (opts: any) => unknown) =>
       add({ kind: 'provide', key, make }),
     meta: (meta: object) =>
-      createBuilder({ ...internals, meta: { ...internals.meta, ...meta } }),
+      createBuilder({
+        ...internals,
+        meta: mergeMeta(internals.mergeMeta, internals.meta, meta),
+      }),
     concat: (plugin: AnyProcedureBuilder) => {
       const other = plugin['~trpc'];
       return createBuilder({
         ...internals,
         steps: appendSteps(internals.steps, other.steps),
         errors: { ...internals.errors, ...other.errors },
-        route: mergeRoute(internals.route, other.route),
       });
     },
     query: build('query'),

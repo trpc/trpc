@@ -1,13 +1,14 @@
 import { contract } from 'trpcdev/contract';
 import { z } from 'zod';
+import { openapi } from 'trpcdev/openapi';
 
-const c = contract.create<{ meta: { auth?: boolean } }>();
+const c = contract.create<{ meta: { auth?: boolean } }>().with(openapi());
 
 export const Post = z.object({ id: z.string(), title: z.string() });
 
 export const postContract = {
   byId: c
-    .route({ method: 'GET', path: '/posts/{id}', tags: ['posts'] })
+    .meta({ route: { method: 'GET', path: '/posts/{id}', tags: ['posts'] } })
     .input(z.object({ id: z.string() }))
     .output(Post)
     .errors({ NOT_FOUND: { data: z.object({ id: z.string() }) } })

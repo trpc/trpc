@@ -301,3 +301,12 @@ export type FormOfOptions<TOpts> = FormOfSerializer<
  * @stability stable
  */
 export type ProcedureType = 'query' | 'mutation' | 'subscription';
+
+/**
+ * Meta keys a root doesn't declare become `never`, so `.meta({ route })`
+ * without the extension that adds `route` is an error.
+ * @internal
+ */
+export type UndeclaredMeta<TMeta, $Meta> = {
+  [K in Exclude<keyof $Meta, keyof TMeta>]: never;
+};

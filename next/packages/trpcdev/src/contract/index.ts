@@ -40,21 +40,25 @@ import type {
   Merge,
   Overwrite,
   ProcedureType,
+  Simplify,
+  UndeclaredMeta,
   Unset,
   Value,
 } from '../internal/types.ts';
 import type { DeclaredErrors, ErrorMapInput } from '../server/builder.ts';
 import {
   isProcedure,
-  mergeRoute,
+  mergeMeta,
   type AnyProcedure,
   type ErrorMap,
+  type MetaMerge,
   type Procedure,
   type ProcedureDef,
   type ProcedureDefOf,
-  type Route,
   type Step,
 } from '../server/procedure.ts';
+import { routeOf, type Route } from '../openapi/routes.ts';
+import type { BuilderDef, ProcedureBuilder } from '../server/builder.ts';
 import type {
   AnySchema,
   InOf,
@@ -209,9 +213,9 @@ export interface ContractSubscriptionOptions<TTracked extends boolean> {
  *
  * @example
  * ```ts
- * const c = contract.create<{ meta: Meta }>();
+ * const c = contract.create<{ meta: Meta }>().with(openapi());
  * export const byId = c
- *   .route({ method: 'GET', path: '/posts/{id}' })
+ *   .meta({ route: { method: 'GET', path: '/posts/{id}' } })
  *   .input(z.object({ id: z.string() }))
  *   .output(Post)
  *   .query();
@@ -273,11 +277,29 @@ export interface ContractBuilder<TDef extends ContractDef> {
     >
   >;
 
-  /** REST metadata for OpenAPI (18). */
-  route(route: Route): ContractBuilder<TDef>;
+  /**
+   * Procedure meta, shallow-merged over earlier meta (keys with a
+   * `mergeMeta` function merge through it).
+   */
+  meta<const $Meta extends TDef['meta']>(
+    meta: $Meta & UndeclaredMeta<TDef['meta'], $Meta>,
+  ): ContractBuilder<TDef>;
 
-  /** Procedure meta, shallow-merged over earlier meta. */
-  meta(meta: TDef['meta']): ContractBuilder<TDef>;
+  /**
+   * Adds a root extension's meta keys, their merges and default meta, as
+   * `t.with()` does. Contracts hold no middleware, so an extension with
+   * middleware throws; its errors and ctx don't apply.
+   *
+   * @example
+   * ```ts
+   * const c = contract.create().with(openapi());
+   * ```
+   */
+  with<$Ext extends BuilderDef>(
+    extension: ProcedureBuilder<$Ext>,
+  ): ContractBuilder<
+    ContractWith<TDef, { meta: Simplify<TDef['meta'] & $Ext['meta']> }>
+  >;
 
   /** A read, without a resolver. */
   query(): ContractProcedure<'query', TDef>;
@@ -302,7 +324,7 @@ export interface ContractInternals {
   readonly meta: object;
   readonly output: AnySchema | undefined;
   readonly errors: ErrorMap;
-  readonly route: Route | undefined;
+  readonly mergeMeta?: MetaMerge<any> | undefined;
 }
 
 function createContractBuilder(
@@ -320,9 +342,21 @@ function createContractBuilder(
     output: (output: AnySchema) => next({ output }),
     errors: (map: ErrorMap) =>
       next({ errors: { ...internals.errors, ...map } }),
-    route: (route: Route) =>
-      next({ route: mergeRoute(internals.route, route) }),
-    meta: (meta: object) => next({ meta: { ...internals.meta, ...meta } }),
+    meta: (meta: object) =>
+      next({ meta: mergeMeta(internals.mergeMeta, internals.meta, meta) }),
+    with: (extension: ProcedureBuilder<any>) => {
+      const ext = extension['~trpc'];
+      if (ext.steps.length > 0) {
+        throw new Error(
+          'contract.with(): the extension has middleware or inputs, which contracts cannot hold',
+        );
+      }
+      const merge = { ...ext.mergeMeta, ...internals.mergeMeta };
+      return next({
+        meta: mergeMeta(merge, ext.meta, internals.meta),
+        mergeMeta: merge,
+      });
+    },
     query: build('query'),
     mutation: build('mutation'),
     subscription: build('subscription'),
@@ -362,7 +396,6 @@ export const contract = {
       meta: {},
       output: undefined,
       errors: {},
-      route: undefined,
     });
   },
 };
@@ -466,10 +499,10 @@ export function toContract<TRouter extends object>(
   for (const { path, procedure, scope } of assertLoaded(flattenRoutes(router))
     .procedures) {
     const def = procedure['~trpc'];
-    procedures[path] = procedureJson({
-      ...def,
-      route: scopedRoute(path, def.route, scope),
-    });
+    procedures[path] = procedureJson(
+      def,
+      scopedRoute(path, routeOf(def), scope),
+    );
   }
   return { version: 1, procedures } as ContractJson<TRouter>;
 }

@@ -21,6 +21,7 @@ import { createEffectClient } from 'trpcdev/effect';
 import {
   createOpenApiHandler,
   generateOpenApi,
+  openapi,
   openApiLink,
   openApiReference,
 } from 'trpcdev/openapi';
@@ -55,7 +56,7 @@ export const PostRepoLive = Layer.succeed(PostRepo, {
 export const t = initTrpc<{
   ctx: { user: User | null };
   meta: { scope?: string };
-}>();
+}>().with(openapi());
 
 export const publicProcedure = t.procedure;
 
@@ -87,7 +88,7 @@ export const standaloneEffect = middleware.effect<{
 
 export const declared = t.procedure
   .errors({ NOT_FOUND: { data: z.object({ id: z.string() }) } })
-  .route({ method: 'GET', path: '/posts/{id}' });
+  .meta({ route: { method: 'GET', path: '/posts/{id}' } });
 
 const pluginT = initTrpc<{ ctx: { user: User } }>();
 export const orgPlugin = pluginT.procedure
@@ -193,7 +194,7 @@ export const typedEffectClient = createEffectClient({
   links: [traceLink, httpLink({ url: '/trpc' })],
 });
 
-const c = contract.create<{ meta: { scope?: string } }>();
+const c = contract.create<{ meta: { scope?: string } }>().with(openapi());
 
 export const userContract = {
   me: c
@@ -231,7 +232,7 @@ export const contractClient = createTrpcClient({
   links: [httpLink({ url: '/trpc' })],
 });
 
-export const openapi = createOpenApiHandler({
+export const openApiHandler = createOpenApiHandler({
   router: userRouter,
   createContext: () => ({ user: null }),
   middleware: [

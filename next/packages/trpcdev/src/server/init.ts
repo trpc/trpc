@@ -21,6 +21,7 @@ import {
   type ImplementMetaCheck,
   type ImplementResult,
 } from './implement.ts';
+import { mergeMeta, type MetaMerge } from './procedure.ts';
 import type { Response } from './response.ts';
 import { router } from './router.ts';
 import {
@@ -49,6 +50,19 @@ export interface RootConfig {
 export interface RootOptions<TMeta> {
   /** Meta every procedure starts with. */
   defaultMeta?: TMeta;
+  /**
+   * How meta keys merge when `.meta()` sets them again; others are
+   * replaced. Extensions set it for their keys, which then merge the same
+   * way in every root that adds them.
+   *
+   * @example
+   * ```ts
+   * initTrpc<{ meta: { tags?: string[] } }>({
+   *   mergeMeta: { tags: (before, next) => [...before, ...next] },
+   * });
+   * ```
+   */
+  mergeMeta?: MetaMerge<TMeta>;
 }
 
 /**
@@ -275,9 +289,9 @@ export function initTrpc<TConfig extends RootConfig = {}>(
     createBuilder({
       steps: [],
       meta: opts.defaultMeta ?? {},
+      mergeMeta: opts.mergeMeta,
       output: undefined,
       errors: {},
-      route: undefined,
     }),
   ) as never;
 }
@@ -288,10 +302,12 @@ function makeRoot(procedure: AnyProcedureBuilder): TrpcRoot<any, any, any> {
     with: (extension: AnyProcedureBuilder) => {
       const ext = extension['~trpc'];
       const own = procedure['~trpc'];
+      const merge = { ...ext.mergeMeta, ...own.mergeMeta };
       return makeRoot(
         createBuilder({
           ...own,
-          meta: { ...ext.meta, ...own.meta },
+          meta: mergeMeta(merge, ext.meta, own.meta),
+          mergeMeta: merge,
         }).concat(extension),
       );
     },
