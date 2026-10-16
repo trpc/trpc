@@ -42,10 +42,11 @@ import type {
   LinksContext,
   LinksTypes,
   ProcedureCallArgs,
+  ResultForm,
   RouterOf,
   SubscribeOptions,
 } from '../client/types.ts';
-import type { ClientValue, FormOf } from '../internal/types.ts';
+import type { ClientValue } from '../internal/types.ts';
 import type {
   AnyProcedure,
   Procedure,
@@ -91,7 +92,7 @@ type DecorateEffectCarried<
           TLinks
         >
       ): Effect.Effect<
-        ClientValue<D['output'], FormOf<D>>,
+        ClientValue<D['output'], ResultForm<D, undefined, TLinks>>,
         ClientError<D['errors'] | TLinkErrors>
       >;
     }
@@ -105,7 +106,7 @@ type DecorateEffectCarried<
             TLinks
           >
         ): Effect.Effect<
-          ClientValue<D['output'], FormOf<D>>,
+          ClientValue<D['output'], ResultForm<D, undefined, TLinks>>,
           ClientError<D['errors'] | TLinkErrors>
         >;
       }
@@ -113,7 +114,7 @@ type DecorateEffectCarried<
         subscribe(
           ...args: CallArgs<D['input'], SubscribeOptions<TContext>>
         ): Stream.Stream<
-          ClientValue<D['output'], FormOf<D>>,
+          ClientValue<D['output'], ResultForm<D, undefined, TLinks>>,
           ClientError<D['errors'] | TLinkErrors>
         >;
       };

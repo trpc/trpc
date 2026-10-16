@@ -5,7 +5,7 @@ import {
   TrpcError,
   type AnyTrpcError,
 } from '../internal/error.ts';
-import type { ProcedureType } from '../internal/types.ts';
+import type { OutputForm, ProcedureType } from '../internal/types.ts';
 import type { AnySerializer } from '../serializer/index.ts';
 
 /**
@@ -147,6 +147,12 @@ export interface LinkDecl {
    * `Response` must pass `{ batch: false }`.
    */
   batches?: true;
+  /**
+   * The form results reach the caller in, for links that change it:
+   * `openApiLink` receives plain JSON (`JsonForm`). The first link in the
+   * array that declares one wins, so a link in front can restore types.
+   */
+  form?: OutputForm;
 }
 
 /**

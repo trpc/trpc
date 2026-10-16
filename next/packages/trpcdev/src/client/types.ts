@@ -109,7 +109,21 @@ export interface ChainTypes {
   readonly errors?: unknown;
   readonly unsupported?: ProcedureType;
   readonly batches?: true;
+  readonly form?: OutputForm;
 }
+
+/** The form results arrive in: the client's, else the links', else the router's. @internal */
+export type ResultForm<
+  D,
+  TForm extends OutputForm | undefined,
+  TLinks extends ChainTypes,
+> = TForm extends OutputForm
+  ? TForm
+  : TLinks extends { form: infer F extends OutputForm }
+    ? [F] extends [never]
+      ? FormOf<D>
+      : F
+    : FormOf<D>;
 
 /**
  * The arguments of `query()`/`mutate()`. A procedure that may return a
@@ -176,7 +190,7 @@ type DecorateCarried<
           TLinks
         >
       ): TrpcPromise<
-        ClientValue<D['output'], TForm extends OutputForm ? TForm : FormOf<D>>,
+        ClientValue<D['output'], ResultForm<D, TForm, TLinks>>,
         ClientError<D['errors'] | TLinkErrors>
       >;
     }
@@ -190,10 +204,7 @@ type DecorateCarried<
             TLinks
           >
         ): TrpcPromise<
-          ClientValue<
-            D['output'],
-            TForm extends OutputForm ? TForm : FormOf<D>
-          >,
+          ClientValue<D['output'], ResultForm<D, TForm, TLinks>>,
           ClientError<D['errors'] | TLinkErrors>
         >;
       }
@@ -201,10 +212,7 @@ type DecorateCarried<
         subscribe(
           ...args: CallArgs<D['input'], SubscribeOptions<TContext>>
         ): TrpcSubscription<
-          ClientValue<
-            D['output'],
-            TForm extends OutputForm ? TForm : FormOf<D>
-          >,
+          ClientValue<D['output'], ResultForm<D, TForm, TLinks>>,
           ClientError<D['errors'] | TLinkErrors>
         >;
       };
@@ -317,7 +325,24 @@ export type LinksTypes<TLinks extends ReadonlyArray<AnyLink>> = {
       ? true
       : never
     : never;
+  form: FirstForm<TLinks>;
 };
+
+type FirstForm<TLinks extends ReadonlyArray<AnyLink>> =
+  TLinks extends readonly [
+    infer Head,
+    ...infer Rest extends ReadonlyArray<AnyLink>,
+  ]
+    ? DeclOf<Head> extends { form: infer F extends OutputForm }
+      ? F
+      : FirstForm<Rest>
+    : TLinks extends readonly []
+      ? never
+      : DeclOf<TLinks[number]> extends infer D
+        ? D extends { form: infer F extends OutputForm }
+          ? F
+          : never
+        : never;
 
 type SwitchesOf<TLink> =
   DeclOf<TLink> extends infer D

@@ -111,7 +111,9 @@ test("output: 'json' decodes openApiLink's plain JSON into the schema's types", 
       openApiLink({ url: 'http://localhost', contract: json, fetch: fetchVia }),
     ],
   });
-  expect((await plain.post.byId.query({ id: '1' })).at).toBe(at.toISOString());
+  const raw = await plain.post.byId.query({ id: '1' });
+  expectTypeOf(raw.at).toEqualTypeOf<string>();
+  expect(raw.at).toBe(at.toISOString());
 
   const decoded = createTrpcClient({
     router: json,

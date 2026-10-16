@@ -1,5 +1,6 @@
 import { Effect, Schema, Stream } from 'effect';
 import { TrpcError } from '../../internal/error.ts';
+import type { DansonForm } from '../../internal/types.ts';
 import type { ProcedureInternals, Step } from '../../server/procedure.ts';
 import {
   inputError,
@@ -86,7 +87,8 @@ const isEnvelope = (value: unknown): value is { id: string; data: unknown } =>
  * are checked against the output's type side, so Effect Schema
  * transformations don't run twice. Inputs from functions (context-aware) and
  * streamed (`stream()`) outputs are not checked. Paths the contract doesn't
- * have pass through.
+ * have pass through. With `output: 'json'` the client types results as
+ * the schemas' types again, not the JSON form `openApiLink` declares.
  *
  * @example
  * ```ts
@@ -98,7 +100,11 @@ const isEnvelope = (value: unknown): value is { id: string; data: unknown } =>
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function validationLink(opts: ValidationLinkOptions): TrpcLink {
+export function validationLink(
+  opts: ValidationLinkOptions & { output: 'json' },
+): TrpcLink<{ form: DansonForm }>;
+export function validationLink(opts: ValidationLinkOptions): TrpcLink;
+export function validationLink(opts: ValidationLinkOptions): TrpcLink<any> {
   const json = opts.output === 'json';
   return link.effect(({ op, next }) => {
     const def = definitionAt(opts.contract, op.path);

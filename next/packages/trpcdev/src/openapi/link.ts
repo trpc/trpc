@@ -7,6 +7,7 @@ import {
   type AnyTrpcError,
 } from '../internal/error.ts';
 import { parseSse } from '../internal/protocol.ts';
+import type { JsonForm } from '../internal/types.ts';
 import { toBracketNotation } from './bracket.ts';
 import { fromOpenApiError } from './errors.ts';
 import {
@@ -90,7 +91,9 @@ const hasBlob = (value: unknown): boolean =>
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function openApiLink(opts: OpenApiLinkOptions): TrpcLink {
+export function openApiLink(
+  opts: OpenApiLinkOptions,
+): TrpcLink<{ form: JsonForm }> {
   const base = String(opts.url).replace(/\/+$/, '');
   const prefix = normalizePrefix(opts.prefix);
   const fetchFn = opts.fetch ?? globalThis.fetch;
