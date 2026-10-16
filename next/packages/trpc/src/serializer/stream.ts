@@ -12,9 +12,12 @@ import { Cause, Deferred, Effect, Exit, Queue, Scope, Stream } from 'effect';
 import { Base64 } from 'effect/encoding';
 import {
   deserializeSync,
+  instancesOnly,
+  objectsOnly,
   serializeSync,
   type DeserializeOptions,
   type SerializeOptions,
+  type SerializeRecord,
   type SerializeReturn,
 } from './sync.ts';
 import { JsonBytes } from '../internal/frames.ts';
@@ -153,6 +156,55 @@ function blobStreams(frame: SerializeReturn): number[] {
   return out;
 }
 
+interface DeferredContext {
+  register(v: Parameters<typeof sourceOf>[0]): number;
+  registerBlob(blob: Blob): number;
+}
+
+/** Registers deferred values with the serialization's `DeferredContext`. */
+const deferredSerializers: SerializeRecord = {
+  ReadableStream: instancesOnly((v, ctx: DeferredContext) =>
+    v instanceof ReadableStream ? ctx.register(v) : false,
+  ),
+  AsyncIterable: objectsOnly((v, ctx: DeferredContext) =>
+    isAsyncIterable(v) ? ctx.register(v) : false,
+  ),
+  Promise: objectsOnly((v, ctx: DeferredContext) =>
+    isPromiseLike(v) ? ctx.register(v) : false,
+  ),
+  File: instancesOnly((v, ctx: DeferredContext) =>
+    isFile(v)
+      ? ({
+          stream: ctx.registerBlob(v),
+          name: v.name,
+          type: v.type,
+          lastModified: v.lastModified,
+        } satisfies BlobRef)
+      : false,
+  ),
+  Blob: instancesOnly((v, ctx: DeferredContext) =>
+    v instanceof Blob
+      ? ({
+          stream: ctx.registerBlob(v),
+          type: v.type,
+        } satisfies BlobRef)
+      : false,
+  ),
+};
+
+const withDeferredCache = new WeakMap<SerializeRecord, SerializeRecord>();
+const withDeferred = (
+  serializers: SerializeRecord | undefined,
+): SerializeRecord => {
+  if (!serializers) return deferredSerializers;
+  let merged = withDeferredCache.get(serializers);
+  if (!merged) {
+    merged = { ...serializers, ...deferredSerializers };
+    withDeferredCache.set(serializers, merged);
+  }
+  return merged;
+};
+
 export interface SerializeStreamOptions extends SerializeOptions {
   /** Turn a failure (rejected promise, thrown iterator) into something serializable. */
   coerceError?: (cause: unknown) => unknown;
@@ -186,31 +238,13 @@ export function serializeDeferred(
   const nextIndex = counter();
   const pending: PendingSource[] = [];
   const opts: SerializeOptions = {
-    ...options,
     state: { indexCounter: counter(), refCounter: counter() },
-    serializers: {
-      ...options.serializers,
-      ReadableStream: (v) =>
-        v instanceof ReadableStream ? register(v) : false,
-      AsyncIterable: (v) => (isAsyncIterable(v) ? register(v) : false),
-      Promise: (v) => (isPromiseLike(v) ? register(v) : false),
-      File: (v) =>
-        isFile(v)
-          ? ({
-              stream: registerBlob(v),
-              name: v.name,
-              type: v.type,
-              lastModified: v.lastModified,
-            } satisfies BlobRef)
-          : false,
-      Blob: (v) =>
-        v instanceof Blob
-          ? ({
-              stream: registerBlob(v),
-              type: v.type,
-            } satisfies BlobRef)
-          : false,
-    },
+    serializers: withDeferred(options.serializers),
+    dedupe: options.dedupe,
+    context: {
+      register: (v: Parameters<typeof sourceOf>[0]) => register(v),
+      registerBlob: (blob: Blob) => registerBlob(blob),
+    } satisfies DeferredContext,
   };
   const blobs = new Map<Blob, number>();
   /** A blob that appears twice sends its bytes once. */

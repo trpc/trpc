@@ -1,8 +1,9 @@
 /** Port of danSON 0.13.1 `std.ts`: built-in types, same names and shapes. */
-import type {
-  DeserializeRecord,
-  PlaceholderTransformer,
-  SerializeRecord,
+import {
+  instancesOnly,
+  type DeserializeRecord,
+  type PlaceholderTransformer,
+  type SerializeRecord,
 } from './sync.ts';
 
 const typedArrays = [
@@ -31,24 +32,35 @@ const nan = placeholder('NaN', NaN);
 
 export const serializers: SerializeRecord = {
   BigInt: (v) => (typeof v === 'bigint' ? v.toString() : false),
-  Date: (v) => (v instanceof Date ? v.toJSON() : false),
-  Headers: (v) => (v instanceof Headers ? Array.from(v.entries()) : false),
+  Date: instancesOnly((v) => (v instanceof Date ? v.toJSON() : false)),
+  Headers: instancesOnly((v) =>
+    v instanceof Headers ? Array.from(v.entries()) : false,
+  ),
   infinity,
-  Map: (v) => (v instanceof Map ? Array.from(v.entries()) : false),
+  Map: instancesOnly((v) =>
+    v instanceof Map ? Array.from(v.entries()) : false,
+  ),
   NaN: nan,
   negativeInfinity,
   negativeZero,
-  RegExp: (v) => (v instanceof RegExp ? [v.source, v.flags] : false),
-  Set: (v) => (v instanceof Set ? Array.from(v.values()) : false),
-  TypedArray: (v) => {
+  RegExp: instancesOnly((v) =>
+    v instanceof RegExp ? [v.source, v.flags] : false,
+  ),
+  Set: instancesOnly((v) =>
+    v instanceof Set ? Array.from(v.values()) : false,
+  ),
+  TypedArray: instancesOnly((v) => {
+    if (!ArrayBuffer.isView(v)) return false;
     for (const Ctor of typedArrays) {
       if (v instanceof Ctor) return [Ctor.name, Array.from(v as never)];
     }
     return false;
-  },
+  }),
   undefined: undefinedValue,
-  URL: (v) => (v instanceof URL ? v.href : false),
-  URLSearchParams: (v) => (v instanceof URLSearchParams ? v.toString() : false),
+  URL: instancesOnly((v) => (v instanceof URL ? v.href : false)),
+  URLSearchParams: instancesOnly((v) =>
+    v instanceof URLSearchParams ? v.toString() : false,
+  ),
 };
 
 export const deserializers: DeserializeRecord = {

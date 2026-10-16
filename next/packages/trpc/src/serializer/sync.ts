@@ -4,10 +4,11 @@
  * `$name` placeholders, `$`-prefixed strings escaped as type `string`.
  *
  * Added (proposal 11 (e)): forbidden keys and a depth limit on deserialize.
+ * Changed for speed, same output: a record's serializers are sorted once, and
+ * values skip the ones marked `objectsOnly` / `instancesOnly` that can't match.
  */
 import {
   counter,
-  createObject,
   DansonError,
   isJsonPrimitive,
   isPlainObject,
@@ -17,7 +18,11 @@ import {
 
 const PREFIX = '$';
 
-export type SerializeFn = (value: unknown) => unknown;
+/**
+ * Returns `false` for values it doesn't handle. `context` is what the
+ * serialization was given as `context`, for serializers that need state.
+ */
+export type SerializeFn = (value: unknown, context?: any) => unknown;
 export interface PlaceholderTransformer<T = unknown> {
   placeholder: string;
   value: T;
@@ -73,18 +78,84 @@ export interface SerializeOptions {
   serializers?: SerializeRecord;
   dedupe?: boolean;
   state?: SerializeState;
+  /** Passed to every serializer as its second argument. */
+  context?: unknown;
 }
 
-type Path = (number | string)[];
 type Location = [parent: JsonValue[] | JsonObject, key: number | string] | null;
 
-function isSubPath(path: Path, sub: Path): boolean {
-  if (path.length < sub.length) return false;
-  for (let i = 0; i < sub.length; i++) if (path[i] !== sub[i]) return false;
-  return true;
+const placeholderOf = (v: number | string) => `${PREFIX}${v}`;
+
+const PRIMITIVE = 0;
+const PLAIN = 1;
+const ARRAY = 2;
+const INSTANCE = 3;
+
+const objectOnly = new WeakSet<SerializeFn>();
+const instanceOnly = new WeakSet<SerializeFn>();
+
+/**
+ * Marks a serializer that returns `false` for every value that isn't an
+ * object, so strings, numbers, booleans and `null` skip it.
+ */
+export function objectsOnly<F extends SerializeFn>(fn: F): F {
+  objectOnly.add(fn);
+  return fn;
 }
 
-const placeholderOf = (v: number | string) => `${PREFIX}${v}`;
+/**
+ * Marks a serializer that returns `false` for everything but class
+ * instances (`instanceof` checks), so primitives, plain objects and arrays
+ * skip it.
+ */
+export function instancesOnly<F extends SerializeFn>(fn: F): F {
+  instanceOnly.add(fn);
+  return fn;
+}
+
+type Serializers = ReadonlyArray<readonly [string, SerializeFn]>;
+interface CompiledSerializers {
+  readonly all: Serializers;
+  /** For plain objects and arrays. */
+  readonly plain: Serializers;
+  readonly primitive: Serializers;
+  readonly placeholders: ReadonlyMap<unknown, PlaceholderTransformer>;
+}
+
+const noSerializers: CompiledSerializers = {
+  all: [],
+  plain: [],
+  primitive: [],
+  placeholders: new Map(),
+};
+const compiledSerializers = new WeakMap<SerializeRecord, CompiledSerializers>();
+
+/** A record's serializers, sorted once; records are not changed after use. */
+function compileSerializers(
+  record: SerializeRecord | undefined,
+): CompiledSerializers {
+  if (!record) return noSerializers;
+  const cached = compiledSerializers.get(record);
+  if (cached) return cached;
+  const all: [string, SerializeFn][] = [];
+  const plain: [string, SerializeFn][] = [];
+  const primitive: [string, SerializeFn][] = [];
+  const placeholders = new Map<unknown, PlaceholderTransformer>();
+  for (const [name, s] of Object.entries(record)) {
+    if (name === 'string') throw new DansonError('string is reserved');
+    if (typeof s === 'function') {
+      all.push([name, s]);
+      if (instanceOnly.has(s)) continue;
+      plain.push([name, s]);
+      if (!objectOnly.has(s)) primitive.push([name, s]);
+    } else {
+      placeholders.set(s.value, s);
+    }
+  }
+  const compiled = { all, plain, primitive, placeholders };
+  compiledSerializers.set(record, compiled);
+  return compiled;
+}
 
 /**
  * The output is plain objects, so it passes anywhere JSON does (React Server
@@ -118,21 +189,20 @@ export function serializeSync(
     indexCounter: counter(),
     refCounter: counter(),
   };
-  const seen = new Map<unknown, [index: number, Location, Path]>();
-  const refs: Record<string, JsonValue> = {};
-  const replace = new Map<string, Location>();
-  const indexToRef = new Map<number, string>();
-
-  const placeholders = new Map<unknown, PlaceholderTransformer>();
-  const serializers: [string, SerializeFn][] = [];
-  for (const [name, s] of Object.entries(options.serializers ?? {})) {
-    if (name === 'string') throw new DansonError('string is reserved');
-    if (typeof s === 'function') serializers.push([name, s]);
-    else placeholders.set(s.value, s);
-  }
+  const dedupe = options.dedupe === true;
+  const context = options.context;
+  const { all, plain, primitive, placeholders } = compileSerializers(
+    options.serializers,
+  );
+  const seen = new Map<unknown, [index: number, Location]>();
+  /** The values being serialized around the current one; a repeat is a cycle. */
+  const ancestors = new Set<unknown>();
+  let replace: Map<string, Location> | undefined;
+  let indexToRef: Map<number, string> | undefined;
 
   function refFor(index: number): string {
     if (index === 1) return placeholderOf(0);
+    indexToRef ??= new Map();
     let ref = indexToRef.get(index);
     if (!ref) {
       ref = placeholderOf(state.refCounter());
@@ -141,56 +211,76 @@ export function serializeSync(
     return ref;
   }
 
-  function toJson(thing: unknown, location: Location, path: Path): JsonValue {
-    const existing = seen.get(thing);
-    if (existing) {
-      const [index, loc, existingPath] = existing;
-      if (options.dedupe || isSubPath(path, existingPath)) {
-        const ref = refFor(index);
-        replace.set(ref, loc);
+  function toJson(thing: unknown, location: Location): JsonValue {
+    const isObject =
+      thing !== null &&
+      (typeof thing === 'object' || typeof thing === 'function');
+    // Only objects can be their own ancestors; dedupe shares primitives too.
+    const tracked = isObject || dedupe;
+    if (tracked) {
+      const existing = seen.get(thing);
+      if (existing && (dedupe || ancestors.has(thing))) {
+        const ref = refFor(existing[0]);
+        (replace ??= new Map()).set(ref, existing[1]);
         return ref;
       }
     }
     const index = state.indexCounter();
-    seen.set(thing, [index, location, path]);
+    if (tracked) seen.set(thing, [index, location]);
 
-    const placeholder = placeholders.get(thing);
-    if (placeholder && Object.is(placeholder.value, thing)) {
-      return PREFIX + placeholder.placeholder;
+    if (placeholders.size !== 0) {
+      const placeholder = placeholders.get(thing);
+      if (placeholder && Object.is(placeholder.value, thing)) {
+        return PREFIX + placeholder.placeholder;
+      }
     }
 
-    for (const [name, fn] of serializers) {
-      const out = fn(thing);
+    const shape = !isObject
+      ? PRIMITIVE
+      : Array.isArray(thing)
+        ? ARRAY
+        : isPlainObject(thing)
+          ? PLAIN
+          : INSTANCE;
+    for (const [name, fn] of shape === INSTANCE
+      ? all
+      : shape === PRIMITIVE
+        ? primitive
+        : plain) {
+      const out = fn(thing, context);
       if (out === false) continue;
       const custom: CustomValue = { _: PREFIX, type: name };
       if (out !== undefined) {
-        custom.value = toJson(
-          out,
-          [custom as unknown as JsonObject, 'value'],
-          [...path, 'value'],
-        );
+        ancestors.add(thing);
+        custom.value = toJson(out, [custom as unknown as JsonObject, 'value']);
+        ancestors.delete(thing);
       }
       return custom as unknown as JsonObject;
     }
 
-    if (isJsonPrimitive(thing)) {
-      if (typeof thing === 'string' && thing.startsWith(PREFIX)) {
-        return { _: PREFIX, type: 'string', value: thing };
+    if (shape === PRIMITIVE) {
+      if (isJsonPrimitive(thing)) {
+        if (typeof thing === 'string' && thing.startsWith(PREFIX)) {
+          return { _: PREFIX, type: 'string', value: thing };
+        }
+        return thing;
       }
-      return thing;
-    }
-    if (isPlainObject(thing)) {
+    } else if (shape === PLAIN) {
       const result: JsonObject = {};
-      for (const key in thing) {
-        setOwn(result, key, toJson(thing[key], [result, key], [...path, key]));
+      ancestors.add(thing);
+      const object = thing as Record<string, unknown>;
+      for (const key in object) {
+        setOwn(result, key, toJson(object[key], [result, key]));
       }
+      ancestors.delete(thing);
       return result;
-    }
-    if (Array.isArray(thing)) {
+    } else if (shape === ARRAY) {
       const result: JsonValue[] = [];
-      thing.forEach((it, i) => {
-        result.push(toJson(it, [result, i], [...path, i]));
+      ancestors.add(thing);
+      (thing as unknown[]).forEach((it, i) => {
+        result.push(toJson(it, [result, i]));
       });
+      ancestors.delete(thing);
       return result;
     }
     throw new DansonError(
@@ -198,16 +288,21 @@ export function serializeSync(
     );
   }
 
-  const json = toJson(value, null, []);
-  for (const [ref, location] of replace) {
-    if (!location) continue;
-    const [parent, key] = location;
-    const original = (parent as Record<string | number, JsonValue>)[key]!;
-    setOwn(parent as Record<string | number, JsonValue>, key, ref);
-    refs[ref] = original;
-  }
+  const json = toJson(value, null);
   const result: SerializeReturn = { json };
-  if (Object.keys(refs).length > 0) result.refs = refs;
+  if (replace) {
+    const refs: Record<string, JsonValue> = {};
+    let any = false;
+    for (const [ref, location] of replace) {
+      if (!location) continue;
+      const [parent, key] = location;
+      const original = (parent as Record<string | number, JsonValue>)[key]!;
+      setOwn(parent as Record<string | number, JsonValue>, key, ref);
+      refs[ref] = original;
+      any = true;
+    }
+    if (any) result.refs = refs;
+  }
   return result;
 }
 
@@ -221,41 +316,80 @@ export interface DeserializeOptions {
 
 const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
+interface CompiledDeserializers {
+  readonly deserializers: ReadonlyMap<
+    string,
+    DeserializeFn | DeserializeRecursive
+  >;
+  readonly placeholders: ReadonlyMap<string, unknown>;
+}
+
+const noDeserializers: CompiledDeserializers = {
+  deserializers: new Map(),
+  placeholders: new Map(),
+};
+const compiledDeserializers = new WeakMap<
+  DeserializeRecord,
+  CompiledDeserializers
+>();
+
+function compileDeserializers(
+  record: DeserializeRecord | undefined,
+): CompiledDeserializers {
+  if (!record) return noDeserializers;
+  const cached = compiledDeserializers.get(record);
+  if (cached) return cached;
+  const deserializers = new Map<string, DeserializeFn | DeserializeRecursive>();
+  const placeholders = new Map<string, unknown>();
+  for (const [name, d] of Object.entries(record)) {
+    if (typeof d === 'function' || 'create' in d) deserializers.set(name, d);
+    else placeholders.set(PREFIX + d.placeholder, d.value);
+  }
+  const compiled = { deserializers, placeholders };
+  compiledDeserializers.set(record, compiled);
+  return compiled;
+}
+
 export function deserializeSync<T = unknown>(
   obj: SerializeReturn,
   options: DeserializeOptions = {},
 ): T {
   if (obj.json === undefined) return undefined as T;
-  const refs = obj.refs ?? createObject<JsonValue>();
+  const refs = obj.refs;
   const maxDepth = options.maxDepth ?? 64;
-  const cache = options.cache ?? new Map<string, unknown>();
-  const deserializers = new Map<string, DeserializeFn | DeserializeRecursive>();
-  const placeholders = new Map<string, unknown>();
-  for (const [name, d] of Object.entries(options.deserializers ?? {})) {
-    if (typeof d === 'function' || 'create' in d) deserializers.set(name, d);
-    else placeholders.set(PREFIX + d.placeholder, d.value);
-  }
+  let cache = options.cache;
+  const { deserializers, placeholders } = compileDeserializers(
+    options.deserializers,
+  );
   const rootRef = placeholderOf(0);
+  const remember = (ref: string, value: unknown) =>
+    (cache ??= new Map()).set(ref, value);
 
   function fromRef(ref: string, depth: number): unknown {
-    if (cache.has(ref)) return cache.get(ref);
-    const result = fromJson(refs[ref]!, depth, ref);
-    cache.set(ref, result);
+    if (cache?.has(ref)) return cache.get(ref);
+    const result = fromJson(refs?.[ref] as JsonValue, depth, ref);
+    remember(ref, result);
     return result;
   }
 
   function fromJson(value: JsonValue, depth: number, ref?: string): unknown {
     if (depth > maxDepth) throw new DansonError('Max depth exceeded');
     if (typeof value === 'string') {
-      if (placeholders.has(value)) return placeholders.get(value);
-      if (Object.hasOwn(refs, value) || value === rootRef) {
+      if (placeholders.size !== 0 && placeholders.has(value)) {
+        return placeholders.get(value);
+      }
+      if (
+        value === rootRef ||
+        (refs !== undefined && Object.hasOwn(refs, value))
+      ) {
         return fromRef(value, depth);
       }
+      return value;
     }
     if (isJsonPrimitive(value)) return value;
     if (Array.isArray(value)) {
       const result: unknown[] = [];
-      if (ref) cache.set(ref, result);
+      if (ref) remember(ref, result);
       for (const it of value) result.push(fromJson(it, depth + 1));
       return result;
     }
@@ -273,17 +407,17 @@ export function deserializeSync<T = unknown>(
             : fromJson(custom.value, depth + 1);
         if (typeof d === 'function') return d(inner());
         const result = d.create();
-        if (ref) cache.set(ref, result);
+        if (ref) remember(ref, result);
         d.set(result, inner());
         return result;
       }
       const result: Record<string, unknown> = {};
-      if (ref) cache.set(ref, result);
-      for (const [key, v] of Object.entries(value)) {
+      if (ref) remember(ref, result);
+      for (const key of Object.keys(value)) {
         if (FORBIDDEN_KEYS.has(key)) {
           throw new DansonError(`Forbidden key: ${key}`);
         }
-        result[key] = fromJson(v, depth + 1);
+        result[key] = fromJson(value[key]!, depth + 1);
       }
       return result;
     }

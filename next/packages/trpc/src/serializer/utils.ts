@@ -30,9 +30,12 @@ export function isJsonPrimitive(value: unknown): value is JsonPrimitive {
 }
 
 export function isPlainObject(o: unknown): o is Record<string, unknown> {
-  if (Object.prototype.toString.call(o) !== '[object Object]') return false;
+  if (typeof o !== 'object' || o === null) return false;
   const proto = Object.getPrototypeOf(o) as unknown;
-  return proto === null || proto === Object.prototype;
+  return (
+    (proto === null || proto === Object.prototype) &&
+    Object.prototype.toString.call(o) === '[object Object]'
+  );
 }
 
 export function createObject<T>(): Record<string, T> {

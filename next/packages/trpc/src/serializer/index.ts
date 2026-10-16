@@ -29,6 +29,7 @@ import {
 } from './stream.ts';
 import {
   deserializeSync,
+  instancesOnly,
   serializeSync,
   type DeserializeRecord,
   type SerializeRecord,
@@ -171,6 +172,45 @@ export interface Serializer<TForm extends OutputForm = DansonForm> {
   ): Effect.Effect<T, E | DansonError>;
 }
 
+interface PartsContext {
+  readonly parts: Blob[] | undefined;
+  indexes?: Map<Blob, number>;
+}
+
+const addPart = (blob: Blob, ctx: PartsContext) => {
+  if (!ctx.parts) {
+    throw new DansonError(
+      'A File or Blob can only be sent as an input over httpLink',
+    );
+  }
+  ctx.indexes ??= new Map();
+  let index = ctx.indexes.get(blob);
+  if (index === undefined) {
+    index = ctx.parts.push(blob) - 1;
+    ctx.indexes.set(blob, index);
+  }
+  return index;
+};
+
+/** `File` before `Blob`, since every `File` is a `Blob`. */
+const partSerializers: SerializeRecord = {
+  File: instancesOnly((v, ctx: PartsContext) =>
+    typeof File !== 'undefined' && v instanceof File
+      ? ({
+          part: addPart(v, ctx),
+          name: v.name,
+          type: v.type,
+          lastModified: v.lastModified,
+        } satisfies PartRef)
+      : false,
+  ),
+  Blob: instancesOnly((v, ctx: PartsContext) =>
+    v instanceof Blob
+      ? ({ part: addPart(v, ctx), type: v.type } satisfies PartRef)
+      : false,
+  ),
+};
+
 /**
  * Creates a danSON-based serializer, optionally with extra types. It keeps
  * native types (`Date`, `Map`, `File`, …) and streams deferred values in one
@@ -197,6 +237,7 @@ export function createSerializer(opts: SerializerOptions = {}): Serializer {
     }
   }
   const serializers = { ...customSerializers, ...stdSerializers };
+  const withParts = { ...serializers, ...partSerializers };
   const output = {
     deserializers: { ...stdDeserializers, ...customDeserializers },
     maxDepth: opts.maxDepth,
@@ -219,7 +260,8 @@ export function createSerializer(opts: SerializerOptions = {}): Serializer {
     kind: 'streaming',
     serialize: (value, o) =>
       serializeSync(value, {
-        serializers: { ...serializers, ...partSerializers(o?.parts) },
+        serializers: withParts,
+        context: { parts: o?.parts } satisfies PartsContext,
       }),
     deserialize: (value, o) => deserializeSync(value, de(o)),
     serializeDeferred: (value, o) =>
@@ -234,39 +276,6 @@ interface PartRef {
   name?: string;
   type: string;
   lastModified?: number;
-}
-
-/** `File` before `Blob`, since every `File` is a `Blob`. */
-function partSerializers(parts: Blob[] | undefined): SerializeRecord {
-  const indexes = new Map<Blob, number>();
-  const add = (blob: Blob) => {
-    if (!parts) {
-      throw new DansonError(
-        'A File or Blob can only be sent as an input over httpLink',
-      );
-    }
-    let index = indexes.get(blob);
-    if (index === undefined) {
-      index = parts.push(blob) - 1;
-      indexes.set(blob, index);
-    }
-    return index;
-  };
-  return {
-    File: (v) =>
-      typeof File !== 'undefined' && v instanceof File
-        ? ({
-            part: add(v),
-            name: v.name,
-            type: v.type,
-            lastModified: v.lastModified,
-          } satisfies PartRef)
-        : false,
-    Blob: (v) =>
-      v instanceof Blob
-        ? ({ part: add(v), type: v.type } satisfies PartRef)
-        : false,
-  };
 }
 
 function partDeserializers(parts: ReadonlyArray<Blob>): DeserializeRecord {
