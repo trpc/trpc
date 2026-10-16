@@ -36,11 +36,13 @@ import {
 } from '@trpcdev/tanstack-query';
 import { cache as reactCache, createElement, type ReactNode } from 'react';
 import type { TrpcClient } from 'trpcdev/client';
-import type { Serializer } from 'trpcdev/serializer';
+import type { AnySerializer, DansonForm } from 'trpcdev/serializer';
 import {
   createRouterClient,
   type AnyRouter,
+  type inferRouterForm,
   type RouterClientOptions,
+  type SerializerOption,
 } from 'trpcdev/server';
 
 /** Next's `redirect()`, `notFound()` and dynamic-API errors carry a `digest`. */
@@ -59,8 +61,6 @@ export type TrpcRscOptions<TRouter extends AnyRouter> = {
   router: TRouter;
   /** Makes each request's query client. @default a `QueryClient` with a 30 s `staleTime` */
   makeQueryClient?: () => QueryClient;
-  /** Must match the browser's `hydrationOptions()`. @default defaultSerializer */
-  serializer?: Serializer;
   /**
    * Per-request memoization. React's `cache()` only memoizes in server
    * components; tests pass their own.
@@ -69,7 +69,8 @@ export type TrpcRscOptions<TRouter extends AnyRouter> = {
   cache?: <TFn extends (...args: any[]) => any>(fn: TFn) => TFn;
   /** Must match the browser's `keyPrefix`, so prefetched queries hydrate. */
   keyPrefix?: string | undefined;
-} & RouterClientOptions<TRouter>;
+} & RouterClientOptions<TRouter> &
+  SerializerOption<inferRouterForm<TRouter>>;
 
 /**
  * What {@link createTrpcRsc} returns.
@@ -78,9 +79,9 @@ export type TrpcRscOptions<TRouter extends AnyRouter> = {
  */
 export interface TrpcRsc<TRouter extends AnyRouter> {
   /** Query helpers whose calls go straight to the router. */
-  trpc: TrpcQueryUtils<TrpcClient<TRouter>>;
+  trpc: TrpcQueryUtils<TrpcClient<TRouter, {}, DansonForm>>;
   /** Calls the router directly, without the query cache. */
-  caller: TrpcClient<TRouter>;
+  caller: TrpcClient<TRouter, {}, DansonForm>;
   /** The request's query client. */
   getQueryClient: () => QueryClient;
   /** Starts a query on the request's client without waiting for it. */
@@ -114,7 +115,7 @@ export function createTrpcRsc<TRouter extends AnyRouter>(
 ): TrpcRsc<TRouter> {
   const cache = opts.cache ?? reactCache;
   const { dehydrate: dehydrateOptions } = hydrationOptions({
-    serializer: opts.serializer,
+    serializer: (opts as { serializer?: AnySerializer }).serializer,
   });
   const getQueryClient = cache(
     opts.makeQueryClient ??
@@ -127,7 +128,7 @@ export function createTrpcRsc<TRouter extends AnyRouter>(
   const caller = createRouterClient(opts.router, {
     ...opts,
     ctx: typeof ctx === 'function' ? cache(ctx as () => unknown) : ctx,
-  } as never) as TrpcClient<TRouter>;
+  } as never) as TrpcClient<TRouter, {}, DansonForm>;
   const trpc = createTrpcQueryUtils({
     client: caller,
     keyPrefix: opts.keyPrefix,

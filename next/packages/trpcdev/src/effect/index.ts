@@ -41,7 +41,7 @@ import type {
   RouterOf,
   SubscribeOptions,
 } from '../client/types.ts';
-import type { Deserialized } from '../internal/types.ts';
+import type { ClientValue, FormOf } from '../internal/types.ts';
 import type { AnyProcedure, Procedure } from '../server/procedure.ts';
 import type { Unlazy } from '../server/router.ts';
 
@@ -58,14 +58,17 @@ export type DecorateEffectProcedure<P, TContext extends object = {}> =
       ? {
           query(
             ...args: CallArgs<D['input'], CallOptions<TContext>>
-          ): Effect.Effect<Deserialized<D['output']>, ClientError<D['errors']>>;
+          ): Effect.Effect<
+            ClientValue<D['output'], FormOf<D>>,
+            ClientError<D['errors']>
+          >;
         }
       : D['type'] extends 'mutation'
         ? {
             mutate(
               ...args: CallArgs<D['input'], CallOptions<TContext>>
             ): Effect.Effect<
-              Deserialized<D['output']>,
+              ClientValue<D['output'], FormOf<D>>,
               ClientError<D['errors']>
             >;
           }
@@ -73,7 +76,7 @@ export type DecorateEffectProcedure<P, TContext extends object = {}> =
             subscribe(
               ...args: CallArgs<D['input'], SubscribeOptions<TContext>>
             ): Stream.Stream<
-              Deserialized<D['output']>,
+              ClientValue<D['output'], FormOf<D>>,
               ClientError<D['errors']>
             >;
           }

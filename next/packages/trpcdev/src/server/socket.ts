@@ -16,7 +16,7 @@ import {
   type ServerMessage,
 } from '../internal/protocol.ts';
 import type { ProcedureType } from '../internal/types.ts';
-import type { Serializer } from '../serializer/index.ts';
+import type { AnySerializer } from '../serializer/index.ts';
 import { emitEvents, type EventFrame } from './events.ts';
 import {
   createResponseHandle,
@@ -66,7 +66,7 @@ export type Transport = 'http' | 'websocket' | 'messagePort';
 /** What the fetch handler shares with socket connections. @internal */
 export interface SocketCore {
   readonly router: AnyRouter;
-  readonly serializer: Serializer;
+  readonly serializer: AnySerializer;
   run(opts: {
     procedure: AnyProcedure;
     path: string;

@@ -31,8 +31,17 @@ import {
   type BatchCall,
   type BatchLine,
 } from '../internal/protocol.ts';
-import type { MaybePromise, ProcedureType } from '../internal/types.ts';
-import { defaultSerializer, type Serializer } from '../serializer/index.ts';
+import type {
+  DansonForm,
+  MaybePromise,
+  OutputForm,
+  ProcedureType,
+} from '../internal/types.ts';
+import {
+  defaultSerializer,
+  type AnySerializer,
+  type Serializer,
+} from '../serializer/index.ts';
 import type { Chunk } from '../serializer/stream.ts';
 import { createHandlerCore } from './core.ts';
 import {
@@ -46,6 +55,7 @@ import {
   resolveProcedure,
   type AnyRouter,
   type inferRouterContext,
+  type inferRouterForm,
   type inferRouterServices,
 } from './router.ts';
 import {
@@ -153,6 +163,24 @@ export type LayerOption<TServices> = [TServices] extends [never]
     };
 
 /**
+ * `serializer`, required when the router declares one on `initTrpc`, and
+ * checked against it.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export type SerializerOption<TForm extends OutputForm> = [TForm] extends [
+  DansonForm,
+]
+  ? {
+      /** Must match the client's. @default defaultSerializer */
+      serializer?: Serializer<DansonForm>;
+    }
+  : {
+      /** The serializer declared on `initTrpc`; must match the client's. */
+      serializer: Serializer<TForm>;
+    };
+
+/**
  * Options shared by every handler.
  * @since 12.0.0-alpha.0
  * @stability experimental
@@ -164,8 +192,6 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter> {
    * @default '/trpc'
    */
   endpoint?: string;
-  /** Must match the client's. @default defaultSerializer */
-  serializer?: Serializer;
   /**
    * Accept batched requests (opt-in, 10).
    * @default false
@@ -226,7 +252,8 @@ export type FetchHandlerOptions<
   TPlatform = undefined,
 > = BaseHandlerOptions<TRouter> &
   ContextOption<inferRouterContext<TRouter>, TPlatform> &
-  LayerOption<inferRouterServices<TRouter>>;
+  LayerOption<inferRouterServices<TRouter>> &
+  SerializerOption<inferRouterForm<TRouter>>;
 
 /**
  * A web-standard request handler.
@@ -395,7 +422,8 @@ export function createFetchHandler<
     },
   );
   const { publicError, report } = base;
-  const serializer = opts.serializer ?? defaultSerializer;
+  const serializer: AnySerializer =
+    (opts as { serializer?: AnySerializer }).serializer ?? defaultSerializer;
   const endpoint = `/${(opts.endpoint ?? '/trpc').replace(/^\/+|\/+$/g, '')}`;
   const maxBodySize = opts.maxBodySize ?? 1_048_576;
   const ssePingMs = opts.sse?.pingMs ?? 15_000;

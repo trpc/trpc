@@ -33,6 +33,7 @@ export {
   initTrpc,
   type RootConfig,
   type RootDef,
+  type FormOfSerializer,
   type RootMiddleware,
   type RootOptions,
   type TrpcRoot,
@@ -102,6 +103,7 @@ export {
   type inferRouterErrors,
   type inferRouterInputs,
   type inferRouterOutputs,
+  type inferRouterForm,
   type inferRouterServices,
 } from './router.ts';
 export type {
@@ -132,6 +134,7 @@ export {
   type ContextOption,
   type CreateContextOpts,
   type LayerOption,
+  type SerializerOption,
   type FetchHandler,
   type FetchHandlerOptions,
   type OnErrorOpts,

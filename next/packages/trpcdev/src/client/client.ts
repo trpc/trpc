@@ -1,7 +1,9 @@
 import { Effect, Exit, Stream } from 'effect';
 import { frameworkError } from '../internal/error.ts';
 import type { ProcedureType } from '../internal/types.ts';
+import type { AnySerializer } from '../serializer/index.ts';
 import {
+  chainSerializer,
   chainSwitchNames,
   clientErrorFromCause,
   firstValue,
@@ -241,7 +243,7 @@ export function createTrpcClient<TRouter>(
 ): TrpcClient<TRouter>;
 export function createTrpcClient(opts: TrpcClientOptions): unknown {
   const untyped = createUntypedClient(opts);
-  return createRecursiveProxy((path, args) => {
+  const client = createRecursiveProxy((path, args) => {
     const method = path.at(-1) as keyof typeof METHODS | undefined;
     const type = method ? METHODS[method] : undefined;
     if (!type) {
@@ -260,6 +262,26 @@ export function createTrpcClient(opts: TrpcClientOptions): unknown {
     }
     return untyped.request({ type, path: procedurePath, input, ...callOpts });
   });
+  const serializer = chainSerializer(opts.links);
+  if (serializer) clientSerializers.set(client, serializer);
+  return client;
+}
+
+const clientSerializers = new WeakMap<object, AnySerializer>();
+
+/**
+ * The serializer a client's links send with (the first link that has one),
+ * for code that must match it, such as TanStack Query hydration.
+ *
+ * @example
+ * ```ts
+ * const serializer = getClientSerializer(client) ?? defaultSerializer;
+ * ```
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export function getClientSerializer(client: object): AnySerializer | undefined {
+  return clientSerializers.get(client);
 }
 
 /**

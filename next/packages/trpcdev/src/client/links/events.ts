@@ -8,7 +8,7 @@ import type {
   Frame,
   SerializeOpts,
   SerializeReturn,
-  Serializer,
+  AnySerializer,
 } from '../../serializer/index.ts';
 
 /**
@@ -17,7 +17,7 @@ import type {
  * @internal
  */
 export function serializeInput(
-  serializer: Serializer,
+  serializer: AnySerializer,
   input: unknown,
   opts?: SerializeOpts,
 ): SerializeReturn {
@@ -40,10 +40,10 @@ type FrameQueue = Queue.Queue<Frame, Cause.Done>;
  * @internal
  */
 export class DeferredDecoder {
-  #serializer: Serializer;
+  #serializer: AnySerializer;
   #queues = new Map<number, FrameQueue>();
 
-  constructor(serializer: Serializer) {
+  constructor(serializer: AnySerializer) {
     this.#serializer = serializer;
   }
 

@@ -22,13 +22,14 @@ import {
   defaultSerializer,
   type Frame,
   type SerializeReturn,
-  type Serializer,
+  type AnySerializer,
 } from '../../serializer/index.ts';
-import type {
-  Operation,
-  OperationStream,
-  TrpcLink,
-  TrpcRequestInit,
+import {
+  withSerializer,
+  type Operation,
+  type OperationStream,
+  type TrpcLink,
+  type TrpcRequestInit,
 } from '../link.ts';
 import { DeferredDecoder, serializeInput } from './events.ts';
 
@@ -41,7 +42,7 @@ export interface HttpLinkOptions {
   /** The endpoint, e.g. `http://localhost:3000/trpc`. */
   url: string | URL;
   /** Must match the server's. @default defaultSerializer */
-  serializer?: Serializer;
+  serializer?: AnySerializer;
   /** Extra headers, merged with each call's `context.headers`. */
   headers?:
     | HeadersInit
@@ -621,8 +622,8 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink {
       }),
     );
 
-  return ({ op }) => {
+  return withSerializer(({ op }) => {
     if (op.type === 'subscription') return subscription(op);
     return maxItems > 0 && !unbatchable(op) ? batched(op) : single(op);
-  };
+  }, serializer);
 }

@@ -14,7 +14,9 @@ import {
   SubscriptionObserver,
   type SubscriptionResult,
 } from '@trpcdev/tanstack-query';
-import type { ClientError } from 'trpcdev/client';
+import superjson from 'superjson';
+import { createTrpcClient, localLink, type ClientError } from 'trpcdev/client';
+import { createSyncSerializer, defaultSerializer } from 'trpcdev/serializer';
 import {
   createRouterClient,
   type InputValidationErrorData,
@@ -564,6 +566,41 @@ test('prefetch on the server, hydrate rich types in the browser', async () => {
   );
   expect(post?.createdAt).toBeInstanceOf(Date);
   expect(db.calls).toEqual(['post.byId:1']);
+});
+
+test("hydration follows the client's serializer (19)", async () => {
+  await using _app = await createApp();
+  const serializer = createSyncSerializer<Date>(superjson);
+  const client = createTrpcClient<typeof appRouter>({
+    links: [
+      localLink({
+        router: appRouter,
+        serializer,
+        createContext: () => ({ locale: 'en' }),
+      }),
+    ],
+  });
+  const options = hydrationOptions({ client });
+  const serverClient = new QueryClient({ defaultOptions: options });
+  const serverTrpc = createTrpcQueryUtils({
+    client: createRouterClient(appRouter, { ctx: { locale: 'en' } }),
+  });
+  await serverClient.prefetchQuery(
+    serverTrpc.post.byId.queryOptions({ input: { id: '1' } }),
+  );
+  const html = JSON.stringify(dehydrate(serverClient));
+  expect(html).toContain('"meta":{"values":{"createdAt":["Date"]}');
+
+  const browserClient = new QueryClient({ defaultOptions: options });
+  hydrate(browserClient, JSON.parse(html));
+  const post = browserClient.getQueryData(
+    serverTrpc.post.byId.queryKey({ input: { id: '1' } }),
+  );
+  expect(post?.createdAt).toBeInstanceOf(Date);
+  expect(
+    hydrationOptions({ client, serializer: defaultSerializer }).dehydrate
+      .serializeData!(new Date(0)),
+  ).toEqual({ json: { _: '$', type: 'Date', value: new Date(0).toJSON() } });
 });
 
 test('a refetch with equal Dates keeps the data reference', async () => {

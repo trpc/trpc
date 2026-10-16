@@ -118,10 +118,10 @@ queryClient.setMutationDefaults(createPost.mutationKey, createPost);
 
 ## Hydration
 
-`hydrationOptions()` returns `{ dehydrate, hydrate }` options that serialize data with danSON, so `Date`, `Map`, `Set`, `bigint` and custom types survive the trip, and that dehydrate pending queries.
+`hydrationOptions({ client })` returns `{ dehydrate, hydrate }` options that serialize data with the client's [serializer](./serializers.md), so the types it keeps (with the default: `Date`, `Map`, `Set`, `bigint`, custom types) survive the trip, and that dehydrate pending queries. Their data is serialized once it settles. Without `client` it uses the default serializer; `serializer` overrides both.
 
 ```ts
-new QueryClient({ defaultOptions: hydrationOptions() });
+new QueryClient({ defaultOptions: hydrationOptions({ client }) });
 ```
 
 For React Server Components, see [Server Actions and RSC](./actions-and-rsc.md).

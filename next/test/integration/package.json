@@ -13,7 +13,9 @@
     "@effect/sql-pg": "4.0.2",
     "@effect/vitest": "4.0.2",
     "@types/node": "^24.0.0",
+    "devalue": "5.9.4",
     "effect": "4.0.2",
+    "superjson": "2.2.6",
     "typescript": "^7.0.2",
     "vite-plus": "1.1.0",
     "zod": "4.6.5"

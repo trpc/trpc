@@ -42,6 +42,7 @@
     "react-dom": "19.3.0",
     "rxjs": "7.8.2",
     "solid-js": "1.9.17",
+    "superjson": "2.2.6",
     "svelte": "5.57.2",
     "typescript": "^7.0.2",
     "vite-plus": "1.1.0",

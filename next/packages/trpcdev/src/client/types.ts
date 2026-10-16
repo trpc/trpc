@@ -1,5 +1,10 @@
 import type { BuiltinErrorCode, TrpcError } from '../internal/error.ts';
-import type { Deserialized, IsAny } from '../internal/types.ts';
+import type {
+  ClientValue,
+  FormOf,
+  IsAny,
+  OutputForm,
+} from '../internal/types.ts';
 import type { AnyProcedure, Procedure } from '../server/procedure.ts';
 import type { Unlazy } from '../server/router.ts';
 import type {
@@ -93,39 +98,64 @@ export type CallArgs<TInput, TOpts> = undefined extends TInput
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type DecorateProcedure<P, TContext extends object = {}> =
+export type DecorateProcedure<
+  P,
+  TContext extends object = {},
+  TForm extends OutputForm | undefined = undefined,
+> =
   P extends Procedure<infer D>
     ? D['type'] extends 'query'
       ? {
           query(
             ...args: CallArgs<D['input'], CallOptions<TContext>>
-          ): TrpcPromise<Deserialized<D['output']>, ClientError<D['errors']>>;
+          ): TrpcPromise<
+            ClientValue<
+              D['output'],
+              TForm extends OutputForm ? TForm : FormOf<D>
+            >,
+            ClientError<D['errors']>
+          >;
         }
       : D['type'] extends 'mutation'
         ? {
             mutate(
               ...args: CallArgs<D['input'], CallOptions<TContext>>
-            ): TrpcPromise<Deserialized<D['output']>, ClientError<D['errors']>>;
+            ): TrpcPromise<
+              ClientValue<
+                D['output'],
+                TForm extends OutputForm ? TForm : FormOf<D>
+              >,
+              ClientError<D['errors']>
+            >;
           }
         : {
             subscribe(
               ...args: CallArgs<D['input'], SubscribeOptions<TContext>>
             ): TrpcSubscription<
-              Deserialized<D['output']>,
+              ClientValue<
+                D['output'],
+                TForm extends OutputForm ? TForm : FormOf<D>
+              >,
               ClientError<D['errors']>
             >;
           }
     : never;
 
 /**
- * The typed client for a router.
+ * The typed client for a router. Outputs follow the serializer the router
+ * declares; `TForm` overrides it, as in-process callers do (values by
+ * reference keep their types).
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type TrpcClient<TRouter, TContext extends object = {}> = {
+export type TrpcClient<
+  TRouter,
+  TContext extends object = {},
+  TForm extends OutputForm | undefined = undefined,
+> = {
   [K in keyof TRouter]: TRouter[K] extends AnyProcedure
-    ? DecorateProcedure<TRouter[K], TContext>
-    : TrpcClient<Unlazy<TRouter[K]>, TContext>;
+    ? DecorateProcedure<TRouter[K], TContext, TForm>
+    : TrpcClient<Unlazy<TRouter[K]>, TContext, TForm>;
 };
 
 declare const routerTypeBrand: unique symbol;

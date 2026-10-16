@@ -3,7 +3,7 @@ import { createTrpcClient } from '../client/client.ts';
 import { localLink } from '../client/links/local.ts';
 import type { TrpcClient } from '../client/types.ts';
 import { frameworkError } from '../internal/error.ts';
-import type { MaybePromise } from '../internal/types.ts';
+import type { DansonForm, MaybePromise } from '../internal/types.ts';
 import { callProcedure, normalizeCause } from './execute.ts';
 import type { Procedure, ProcedureDef } from './procedure.ts';
 import type {
@@ -47,7 +47,7 @@ export function createRouterClient<TRouter extends AnyRouter>(
   ...[opts]: {} extends RouterClientOptions<TRouter>
     ? [opts?: RouterClientOptions<TRouter>]
     : [opts: RouterClientOptions<TRouter>]
-): TrpcClient<TRouter> {
+): TrpcClient<TRouter, {}, DansonForm> {
   const o = (opts ?? {}) as {
     ctx?: object | (() => MaybePromise<object>);
     layer?: Layer.Layer<never, any, never>;
@@ -64,7 +64,7 @@ export function createRouterClient<TRouter extends AnyRouter>(
           : () => ctx ?? {}) as () => never,
       }),
     ],
-  });
+  }) as TrpcClient<TRouter, {}, DansonForm>;
 }
 
 /**

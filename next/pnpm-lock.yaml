@@ -460,9 +460,15 @@ importers:
       '@types/node':
         specifier: ^24.0.0
         version: 24.19.1
+      devalue:
+        specifier: 5.9.4
+        version: 5.9.4
       effect:
         specifier: 4.0.2
         version: 4.0.2
+      superjson:
+        specifier: 2.2.6
+        version: 2.2.6
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
@@ -654,6 +660,9 @@ importers:
       solid-js:
         specifier: 1.9.17
         version: 1.9.17
+      superjson:
+        specifier: 2.2.6
+        version: 2.2.6
       svelte:
         specifier: 5.57.2
         version: 5.57.2

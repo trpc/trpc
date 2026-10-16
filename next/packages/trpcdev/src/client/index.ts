@@ -19,6 +19,7 @@ import type {} from 'trpcdev/internal';
 export {
   createSafeClient,
   createTrpcClient,
+  getClientSerializer,
   safe,
   type SafeClient,
   type SafeResult,

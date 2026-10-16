@@ -10,9 +10,17 @@ import {
   type ServerMessage,
 } from '../../internal/protocol.ts';
 import type { MaybePromise } from '../../internal/types.ts';
-import { defaultSerializer, type Serializer } from '../../serializer/index.ts';
+import {
+  defaultSerializer,
+  type AnySerializer,
+} from '../../serializer/index.ts';
 import type { MessagePortLike } from '../../server/socket.ts';
-import type { Operation, OperationStream, TrpcLink } from '../link.ts';
+import {
+  withSerializer,
+  type Operation,
+  type OperationStream,
+  type TrpcLink,
+} from '../link.ts';
 import { DeferredDecoder, serializeInput } from './events.ts';
 
 /** One open connection. @internal */
@@ -41,7 +49,7 @@ interface ActiveCall {
  */
 export interface SocketLinkOptions {
   /** Must match the server's. @default defaultSerializer */
-  serializer?: Serializer;
+  serializer?: AnySerializer;
   /**
    * Sent once per connection, before any call; `createContext` receives
    * them as `info.connectionParams`. Browsers cannot set WebSocket headers,
@@ -400,7 +408,10 @@ function socketLink(
 
   const run: TrpcLink = ({ op }) =>
     op.type === 'subscription' ? subscription(op) : single(op);
-  return Object.assign(run, { close, [Symbol.asyncDispose]: close });
+  return withSerializer(
+    Object.assign(run, { close, [Symbol.asyncDispose]: close }),
+    serializer,
+  );
 }
 
 /**

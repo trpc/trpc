@@ -1,6 +1,7 @@
 import type { AnyContractRouter } from '../contract/index.ts';
 import type { AnyTrpcError } from '../internal/error.ts';
-import type { Unset } from '../internal/types.ts';
+import type { DansonForm, OutputForm, Unset } from '../internal/types.ts';
+import type { AnySerializer } from '../serializer/index.ts';
 import { createBuilder, type ProcedureBuilder } from './builder.ts';
 import { implement, type ImplementResult } from './implement.ts';
 import type { Response } from './response.ts';
@@ -21,6 +22,11 @@ export interface RootConfig {
   ctx?: object;
   /** The shape of procedure meta. */
   meta?: object;
+  /**
+   * The serializer's type, so client types follow what it keeps. The handler
+   * must then be given that serializer. @default the danSON default
+   */
+  serializer?: AnySerializer;
 }
 
 /**
@@ -38,7 +44,11 @@ export interface RootOptions<TMeta> {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface RootDef<TCtx extends object, TMeta extends object> {
+export interface RootDef<
+  TCtx extends object,
+  TMeta extends object,
+  TForm extends OutputForm = DansonForm,
+> {
   ctx: TCtx;
   ctxAdded: {};
   meta: TMeta;
@@ -51,6 +61,7 @@ export interface RootDef<TCtx extends object, TMeta extends object> {
   shorts: never;
   provided: Response;
   requires: never;
+  form: TForm;
 }
 
 /**
@@ -58,9 +69,13 @@ export interface RootDef<TCtx extends object, TMeta extends object> {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface TrpcRoot<TCtx extends object, TMeta extends object> {
+export interface TrpcRoot<
+  TCtx extends object,
+  TMeta extends object,
+  TForm extends OutputForm = DansonForm,
+> {
   /** The base procedure builder. */
-  procedure: ProcedureBuilder<RootDef<TCtx, TMeta>>;
+  procedure: ProcedureBuilder<RootDef<TCtx, TMeta, TForm>>;
   /**
    * Types a middleware against this root, for reuse across procedures.
    *
@@ -97,7 +112,7 @@ export interface TrpcRoot<TCtx extends object, TMeta extends object> {
    */
   implement<TContract extends AnyContractRouter>(
     contract: TContract,
-  ): ImplementResult<RootDef<TCtx, TMeta>, TContract>;
+  ): ImplementResult<RootDef<TCtx, TMeta, TForm>, TContract>;
   /**
    * Groups routes for OpenAPI: a path prefix and tags (08 Q8.3). Types and
    * RPC paths don't change, and it takes no middleware.
@@ -149,6 +164,17 @@ export interface RootMiddleware<TCtx extends object, TMeta extends object> {
 }
 
 /**
+ * The output form of a serializer type; danSON's for `undefined`.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export type FormOfSerializer<S> = S extends { readonly '~form'?: infer F }
+  ? NonNullable<F> extends infer G extends OutputForm
+    ? G
+    : DansonForm
+  : DansonForm;
+
+/**
  * Creates the root object for a ctx and meta type: one option bag, no
  * `.create()`.
  *
@@ -167,7 +193,8 @@ export function initTrpc<TConfig extends RootConfig = {}>(
   opts: RootOptions<TConfig['meta'] extends object ? TConfig['meta'] : {}> = {},
 ): TrpcRoot<
   TConfig['ctx'] extends object ? TConfig['ctx'] : {},
-  TConfig['meta'] extends object ? TConfig['meta'] : {}
+  TConfig['meta'] extends object ? TConfig['meta'] : {},
+  FormOfSerializer<TConfig['serializer']>
 > {
   const procedure = createBuilder({
     steps: [],

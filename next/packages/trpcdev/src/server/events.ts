@@ -1,6 +1,6 @@
 import { Effect, Fiber, Stream } from 'effect';
 import { isTrpcError, type AnyTrpcError } from '../internal/error.ts';
-import type { Serializer } from '../serializer/index.ts';
+import type { AnySerializer } from '../serializer/index.ts';
 import type { Chunk } from '../serializer/stream.ts';
 import { unexpectedError } from './execute.ts';
 import { isTracked } from './tracked.ts';
@@ -25,7 +25,7 @@ export type EventFrame =
  */
 export function emitEvents(
   events: Stream.Stream<unknown, AnyTrpcError>,
-  serializer: Serializer,
+  serializer: AnySerializer,
   coerceError: (cause: unknown) => unknown,
   emit: (frame: EventFrame) => void,
 ): Effect.Effect<void, AnyTrpcError> {

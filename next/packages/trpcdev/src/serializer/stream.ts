@@ -18,10 +18,10 @@ import {
 } from './sync.ts';
 import { counter, DansonError } from './utils.ts';
 
-const VALUE = 0;
-const ERROR = 1;
-const RETURN = 2;
-type Status = typeof VALUE | typeof ERROR | typeof RETURN;
+export const VALUE = 0;
+export const ERROR = 1;
+export const RETURN = 2;
+export type Status = typeof VALUE | typeof ERROR | typeof RETURN;
 
 /**
  * One streamed chunk of a deferred value: its index, status and serialized value.
@@ -36,15 +36,15 @@ export type Chunk = [index: number, status: Status, value: SerializeReturn];
  */
 export type Frame = SerializeReturn | Chunk;
 
-const isAsyncIterable = (v: unknown): v is AsyncIterable<unknown> =>
+export const isAsyncIterable = (v: unknown): v is AsyncIterable<unknown> =>
   typeof v === 'object' && v !== null && Symbol.asyncIterator in v;
-const isPromiseLike = (v: unknown): v is PromiseLike<unknown> =>
+export const isPromiseLike = (v: unknown): v is PromiseLike<unknown> =>
   typeof v === 'object' &&
   v !== null &&
   typeof (v as { then?: unknown }).then === 'function';
 
 /** Every deferred value becomes a stream of `[status, value]` pairs. */
-function sourceOf(
+export function sourceOf(
   value:
     | ReadableStream<unknown>
     | AsyncIterable<unknown>
@@ -301,7 +301,7 @@ export function serializeStream(
 }
 
 /** An async iterable whose `return` value is the stream's RETURN chunk. */
-function iterateWithReturn(
+export function iterateWithReturn(
   source: Stream.Stream<[Status, unknown], unknown>,
   revive: (value: unknown) => unknown,
 ): AsyncIterable<unknown, unknown> {

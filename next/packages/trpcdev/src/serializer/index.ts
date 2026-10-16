@@ -1,5 +1,7 @@
 /**
- * The default wire serializer: a port of [danSON](https://github.com/KATT/danson).
+ * Wire serializers. The default is a port of [danSON](https://github.com/KATT/danson);
+ * `createSyncSerializer` wraps superjson-style transformers and
+ * `jsonSerializer` is plain JSON.
  *
  * Plain JSON stays plain JSON. Non-JSON values (`Date`, `Map`, `Set`,
  * `BigInt`, `undefined`, typed arrays, …) become inline
@@ -13,6 +15,7 @@
  * @module
  */
 import type { Effect, Stream } from 'effect';
+import type { DansonForm, OutputForm } from '../internal/types.ts';
 import { fromSearch, toSearch } from './query.ts';
 import {
   deserializers as stdDeserializers,
@@ -35,6 +38,19 @@ import {
 import { DansonError } from './utils.ts';
 
 export type { Chunk, Frame, SerializedDeferred } from './stream.ts';
+export type {
+  ClientValue,
+  DansonForm,
+  JsonForm,
+  JsonOf,
+  OutputForm,
+  SyncForm,
+} from '../internal/types.ts';
+export {
+  createSyncSerializer,
+  jsonSerializer,
+  type SyncTransformer,
+} from './framed.ts';
 export type {
   DeserializeRecord,
   SerializeRecord,
@@ -114,12 +130,20 @@ export interface SerializeOpts {
 
 /**
  * Converts values to and from the wire format. Both ends of an endpoint must
- * use compatible serializers.
+ * use compatible serializers. `TForm` is which output types survive, for
+ * client types.
  *
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface Serializer {
+export interface Serializer<TForm extends OutputForm = DansonForm> {
+  /**
+   * `streaming` handles deferred values and files at any depth; with `sync`
+   * and `none` the transport frames root streams and promises only.
+   */
+  readonly kind: 'streaming' | 'sync' | 'none';
+  /** Type-only: the output form. */
+  readonly '~form'?: TForm;
   /** Serializes a value with no deferred parts. Throws on a `Promise` or stream. */
   serialize(value: unknown, opts?: SerializeOpts): SerializeReturn;
   deserialize<T = unknown>(value: SerializeReturn, opts?: DeserializeOpts): T;
@@ -186,6 +210,7 @@ export function createSerializer(opts: SerializerOptions = {}): Serializer {
   };
 
   return {
+    kind: 'streaming',
     serialize: (value, o) =>
       serializeSync(value, {
         serializers: { ...serializers, ...partSerializers(o?.parts) },
@@ -266,3 +291,10 @@ function partDeserializers(parts: ReadonlyArray<Blob>): DeserializeRecord {
  * @stability experimental
  */
 export const defaultSerializer: Serializer = createSerializer();
+
+/**
+ * Any serializer, whatever its output form.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export type AnySerializer = Serializer<OutputForm>;

@@ -14,4 +14,6 @@
 - Open:
   - Where client types learn the serializer: declared on `initTrpc` so it flows through `AppRouter` and is checked against the handler and link (proposal 11 CT-C, the agent's lean), or a client type parameter (CT-B).
   - The serializer interface for the three kinds, and whether danSON stays the default.
-- Lives in: `packages/trpcdev/src/serializer/`, `src/server/fetch.ts`, `src/client/links/http.ts`, `src/server/init.ts` (not built yet).
+- (agent) Built with the Open's lean (CT-C), pending a decision: `initTrpc<{ serializer: typeof s }>()` puts the serializer's output form on every procedure; client types use it, `createFetchHandler` and `createTrpcRsc` require that serializer, and in-process callers keep native types. `Serializer<TForm>` carries the form as a phantom `'~form'`; `createSyncSerializer<TKeeps>(transformer)` and `jsonSerializer` implement the same `Serializer` interface as danSON (`kind: 'sync' | 'none'`), so the transport keeps one code path: they frame only a root deferred value (head `{ root }`, then `[0, status, value]` chunks).
+- (agent) Error `data` types don't follow the form yet.
+- Lives in: `packages/trpcdev/src/serializer/framed.ts`, `src/serializer/index.ts`, `src/internal/types.ts` (`JsonOf`, `ClientValue`, forms), `src/server/init.ts`, `src/server/fetch.ts` (`SerializerOption`), `src/client/types.ts`, `src/client/link.ts` (`withSerializer`); tests in `test/integration/serializers.test.ts`; docs in `docs/serializers.md`.

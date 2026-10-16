@@ -5,6 +5,7 @@ import {
   type AnyTrpcError,
 } from '../internal/error.ts';
 import type { ProcedureType } from '../internal/types.ts';
+import type { AnySerializer } from '../serializer/index.ts';
 
 /**
  * Call option fields that links read from `op.context` (17 F-B). Built-in
@@ -290,6 +291,28 @@ export const link: LinkFactory = Object.assign(promiseLink, {
     fn: (opts: EffectLinkOpts<DeclContext<TDecl>>) => OperationStream,
   ): TrpcLink<TDecl> => fn as TrpcLink<TDecl>,
 });
+
+const serializers = new WeakMap<AnyLink, AnySerializer>();
+
+/** Records the serializer a link sends with. @internal */
+export function withSerializer<L extends AnyLink>(
+  target: L,
+  serializer: AnySerializer | undefined,
+): L {
+  if (serializer) serializers.set(target, serializer);
+  return target;
+}
+
+/** The first serializer a chain records, looking into split branches. @internal */
+export function chainSerializer(
+  links: ReadonlyArray<AnyLink>,
+): AnySerializer | undefined {
+  for (const current of links) {
+    const found = serializers.get(current);
+    if (found) return found;
+  }
+  return undefined;
+}
 
 const switchNames = new WeakMap<AnyLink, ReadonlySet<string>>();
 
