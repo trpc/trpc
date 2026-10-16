@@ -76,6 +76,7 @@ export interface SocketCore {
     response: ResponseHandle;
     lastEventId?: string | undefined;
     services?: Context.Context<never> | undefined;
+    request?: HttpServerRequest.HttpServerRequest | undefined;
   }): Promise<Exit.Exit<unknown, AnyTrpcError>>;
   makeContext(opts: {
     request: HttpServerRequest.HttpServerRequest;
@@ -386,6 +387,7 @@ export function connectionReceiver(
             })
           : undefined;
       const exit = await core.run({
+        request,
         procedure,
         path,
         ctx,

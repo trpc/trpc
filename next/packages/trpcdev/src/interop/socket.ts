@@ -133,6 +133,7 @@ export function serveV11Socket(
             connectionParams,
           });
           return base.run({
+            request,
             procedure,
             path,
             ctx,

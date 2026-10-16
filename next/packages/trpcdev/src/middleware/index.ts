@@ -13,6 +13,7 @@
  * ```
  * @module
  */
+export { durable, type DurableOptions } from '../server/durable.ts';
 export { onError, onFinish, onStart, onSuccess } from '../server/middleware.ts';
 export {
   RateLimited,

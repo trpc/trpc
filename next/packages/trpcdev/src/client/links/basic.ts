@@ -1,5 +1,6 @@
 import { Effect, Exit, Stream } from 'effect';
 import type { AnyTrpcError } from '../../internal/error.ts';
+import { HEADER } from '../../internal/protocol.ts';
 import type { ProcedureType } from '../../internal/types.ts';
 import { defaultSerializer } from '../../serializer/index.ts';
 import {
@@ -324,6 +325,83 @@ export function retryLink(opts: RetryLinkOptions = {}): TrpcLink {
     const attempt = (n: number): OperationStream =>
       Stream.catch(next(op), (error) =>
         n < retries && shouldRetry({ op, error, attempt: n + 1 })
+          ? Stream.unwrap(
+              Effect.sleep(delayMs(n + 1, error)).pipe(
+                Effect.as(attempt(n + 1)),
+              ),
+            )
+          : Stream.fail(error),
+      );
+    return attempt(0);
+  });
+}
+
+/**
+ * Call options {@link durableLink} reads.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export interface DurableContext {
+  /**
+   * The call's id, for a call that should pick up a result kept from
+   * before a reload (store it in `sessionStorage`). A new one per call by
+   * default.
+   */
+  callId?: string;
+  /** `false` sends this call as usual; `true` makes a query durable. */
+  durable?: boolean;
+}
+
+/**
+ * Options for {@link durableLink}.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export interface DurableLinkOptions {
+  /** Retries after a lost response, with the same call id. @default 3 */
+  retries?: number;
+  /** @default attempt => 2 ** attempt * 100 */
+  delayMs?: (attempt: number, error: AnyTrpcError) => number;
+}
+
+const lostResponse = (error: AnyTrpcError) =>
+  !error.defined &&
+  error.code !== 'CLIENT_CLOSED_REQUEST' &&
+  (error.status === 0 || error.status >= 500);
+
+/**
+ * Gives mutations (and queries with `{ durable: true }`) a call id, sent as
+ * the `trpc-call-id` header outside any batch, and retries a lost response
+ * with the same id, so a procedure using `durable()` returns the kept
+ * result instead of running again. Put it before `httpLink`.
+ *
+ * @example
+ * ```ts
+ * createTrpcClient<AppRouter>({
+ *   links: [durableLink(), httpLink({ url, batch: true })],
+ * });
+ * ```
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export function durableLink(
+  opts: DurableLinkOptions = {},
+): TrpcLink<{ context: DurableContext }> {
+  const retries = opts.retries ?? 3;
+  const delayMs = opts.delayMs ?? ((attempt: number) => 2 ** attempt * 100);
+  return link.effect<{ context: DurableContext }>(({ op, next }) => {
+    const { durable = op.type === 'mutation' } = op.context;
+    if (op.type === 'subscription' || !durable) return next(op);
+    const callId = op.context.callId ?? crypto.randomUUID();
+    const headers = new Headers(op.context.headers);
+    headers.set(HEADER.callId, callId);
+    const sent: Operation = {
+      ...op,
+      context: { ...op.context, headers, batch: false },
+    };
+    const attempt = (n: number): OperationStream =>
+      Stream.catch(next(sent), (error) =>
+        n < retries && lostResponse(error)
           ? Stream.unwrap(
               Effect.sleep(delayMs(n + 1, error)).pipe(
                 Effect.as(attempt(n + 1)),

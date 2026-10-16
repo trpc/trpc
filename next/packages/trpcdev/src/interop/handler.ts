@@ -527,6 +527,7 @@ export function createV11Handler<
       const parent = yield* parentSpan(request);
       const exit = yield* Effect.promise(() =>
         base.run({
+          request,
           procedure,
           path: call.path,
           ctx,
@@ -568,6 +569,7 @@ export function createV11Handler<
       const parent = yield* parentSpan(request);
       const exit = yield* Effect.promise(() =>
         base.run({
+          request,
           procedure: call.procedure,
           path: call.path,
           ctx,

@@ -594,6 +594,7 @@ export function createFetchHandler<
       const parent = yield* parentSpan(request);
       const exit = yield* Effect.promise(() =>
         base.run({
+          request,
           procedure,
           path,
           ctx,
@@ -819,6 +820,7 @@ export function createFetchHandler<
       const parent = yield* parentSpan(request);
       const exit = yield* Effect.promise(() =>
         base.run({
+          request,
           procedure,
           path,
           ctx,

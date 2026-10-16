@@ -23,6 +23,8 @@ export const HEADER = {
   blob: 'trpc-blob',
   /** On a response a procedure returned itself: the client hands it over as is. */
   response: 'trpc-response',
+  /** On a request: the call's id, which `durable()` keeps its result under. */
+  callId: 'trpc-call-id',
 } as const;
 
 /**

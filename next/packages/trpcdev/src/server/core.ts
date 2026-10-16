@@ -6,7 +6,7 @@ import {
   type Layer,
   type Tracer,
 } from 'effect';
-import type { HttpServerRequest } from 'effect/http';
+import { HttpServerRequest } from 'effect/http';
 import { TrpcError, type AnyTrpcError } from '../internal/error.ts';
 import type { MaybePromise, ProcedureType } from '../internal/types.ts';
 import { callProcedure, isUnexpectedError } from './execute.ts';
@@ -34,6 +34,11 @@ export interface RunOpts {
   lastEventId?: string | undefined;
   /** Added to the layer's services for this call. */
   services?: Context.Context<never> | undefined;
+  /**
+   * The HTTP request (or a socket's upgrade request), provided to the call
+   * as `HttpServerRequest`. In-process calls have none.
+   */
+  request?: HttpServerRequest.HttpServerRequest | undefined;
   /** The span the call's `trpc.<path>` span is a child of. */
   parent?: Tracer.AnySpan | undefined;
   /** An unbatched HTTP call, which may return an `HttpServerResponse`. */
@@ -84,8 +89,15 @@ export function createHandlerCore(opts: CoreOptions): HandlerCore {
 
   return {
     run: async (o) => {
-      const base = await getServices();
-      const context = o.services ? Context.merge(base, o.services) : base;
+      let context = await getServices();
+      if (o.request) {
+        context = Context.add(
+          context,
+          HttpServerRequest.HttpServerRequest,
+          o.request,
+        );
+      }
+      if (o.services) context = Context.merge(context, o.services);
       const call = o.parent
         ? Effect.withParentSpan(callProcedure(o), o.parent)
         : callProcedure(o);

@@ -5,5 +5,5 @@
 - (agent) Queries and mutations need nothing kept between messages. A subscription keeps the object awake while its generator runs, as Cloudflare requires for any pending work; hibernation helps idle connections, not open streams.
 - Why: Workers are a first-class platform, and idle WebSocket connections on Durable Objects are billed unless they hibernate.
 - Lost: oRPC's "durable iterator" (subscriptions that survive hibernation), which would need the publisher to replay into a rebuilt generator.
-- Open: resuming subscriptions after the object wakes, through the publisher's resume buffer.
+- (agent) The Open here (resuming subscriptions after the object wakes) is done: publisher subscriptions are kept on the socket and replay from `lastEventId` ([`hibernation-state-and-subscriptions.md`](./hibernation-state-and-subscriptions.md)).
 - Lives in: `packages/trpcdev/src/cloudflare/hibernation.ts` (`trpcdev/cloudflare`), `docs/platforms.md`.

@@ -41,11 +41,14 @@ export {
 } from './link.ts';
 export {
   dedupeLink,
+  durableLink,
   loggerLink,
   retryLink,
   splitLink,
   type DedupeContext,
   type DedupeLinkOptions,
+  type DurableContext,
+  type DurableLinkOptions,
   type LoggerEvent,
   type RetryLinkOptions,
   type SplitLinkOptions,

@@ -198,6 +198,32 @@ createFetchHandler({
 
 On the client, `retryLink({ retry, delayMs })` gets the error, so it can wait `error.data.retryAfter`.
 
+`durable()` keeps a call's result, so a client that lost the response (a dropped connection, a closed tab) calls again and gets it instead of running the mutation twice. The call runs detached from its request: the client going away doesn't interrupt it. Results live in Effect's `BackingPersistence`: `Persistence.layerBackingMemory` for one instance, `layerBackingRedis`, `layerBackingSql` or `layerBackingKvs` for many. Put it after `.input()`, so a reused call id with a different input fails with `CONFLICT`:
+
+```ts
+import { Persistence } from 'effect/persistence';
+import { durableLink, httpLink } from 'trpcdev/client';
+import { durable } from 'trpcdev/middleware';
+
+const checkout = t.procedure
+  .input(Cart)
+  .use(durable({ ttl: '1 hour' }))
+  .mutation(…);
+
+createFetchHandler({ router, layer: Persistence.layerBackingMemory });
+
+const client = createTrpcClient({
+  router: routerType<AppRouter>(),
+  links: [durableLink(), httpLink({ url, batch: true })],
+});
+// After a reload, pick up the same call:
+await client.checkout.mutate(cart, { callId: sessionStorage.checkoutId });
+```
+
+`durableLink()` gives every mutation (and queries called with `{ durable: true }`) a `trpc-call-id` header, sends it outside any batch, and retries a lost response with the same id. Successes and typed errors are kept for `ttl` (10 minutes by default); unexpected errors aren't, so a retry runs again. Two instances sharing a store run a call once: the second waits for the first's result, and runs it itself if the first stops heartbeating its claim (`claimTtl`). The store has no atomic claim, so two instances that start the same call at the same moment can both run it.
+
+Results are serialized with the default serializer (`serializer` to change it). Streamed outputs aren't kept: for work a client should follow and resume, start it in a mutation that returns an id and publish its progress to a [`Publisher`](./subscriptions.md) channel the client subscribes to with `lastEventId`. Over WebSockets there are no per-call headers; key the call from its input with `key: ({ input, path }) => \`${path}:${input.requestId}\``. The resolver's `signal` still aborts when the client leaves, so don't hand it to work that should finish.
+
 ### Root extensions
 
 A package can add middleware, ctx, meta keys, declared errors and Effect services to every procedure of an app. An extension is a procedure builder from the package's own `initTrpc`: its root ctx is what it needs from the app's, its meta type joins the app's (its default meta goes underneath), and the app adds it with `.with()`:
