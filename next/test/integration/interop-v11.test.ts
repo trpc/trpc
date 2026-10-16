@@ -558,6 +558,31 @@ test('FormData and binary inputs from v11 httpLink', async () => {
   expect(await client.mutation('bytes', new Blob(['12345']))).toBe(5);
 });
 
+test('a cross-site form or untyped body is refused, since v11 clients send no header to require', async () => {
+  await using app = await start();
+  const form = new FormData();
+  form.set('name', 'notes');
+  form.set('file', new File(['hello'], 'notes.txt'));
+  const forged = await fetch(`${app.url}/upload`, {
+    method: 'POST',
+    headers: { 'sec-fetch-site': 'cross-site' },
+    body: form,
+  });
+  expect(forged.status).toBe(403);
+  const untyped = await fetch(`${app.url}/bytes`, {
+    method: 'POST',
+    headers: { 'sec-fetch-site': 'cross-site' },
+    body: new Blob(['{}']),
+  });
+  expect(untyped.status).toBe(403);
+  const sameSite = await fetch(`${app.url}/upload`, {
+    method: 'POST',
+    headers: { 'sec-fetch-site': 'same-origin' },
+    body: form,
+  });
+  expect(sameSite.status).toBe(200);
+});
+
 test('batching can be turned off or capped', async () => {
   await using off = await start({ batch: false });
   const res = await fetch(`${off.url}/greet?batch=1&input={}`);

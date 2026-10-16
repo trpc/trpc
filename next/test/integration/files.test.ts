@@ -176,7 +176,10 @@ test('maxBodySize applies to multipart bodies', async () => {
   );
   const res = await fetch(`${server.url}/size`, {
     method: 'POST',
-    headers: { 'content-type': form.headers.get('content-type')! },
+    headers: {
+      'content-type': form.headers.get('content-type')!,
+      'trpc-version': '12',
+    },
     body: form.body,
     duplex: 'half',
   } as RequestInit);
@@ -192,11 +195,55 @@ test('parts that are missing or not referenced correctly are a PARSE_ERROR', asy
       json: { file: { _: '$', type: 'File', value: { part: 3, name: 'x' } } },
     }),
   );
-  const res = await fetch(`${server.url}/size`, { method: 'POST', body: form });
+  const res = await fetch(`${server.url}/size`, {
+    method: 'POST',
+    headers: { 'trpc-version': '12' },
+    body: form,
+  });
   expect(res.status).toBe(400);
   expect(await res.json()).toMatchObject({
     json: { error: { code: 'PARSE_ERROR' } },
   });
+});
+
+test('a multipart mutation needs the trpc-version header, which a cross-site form cannot send', async () => {
+  let ran = 0;
+  const csrf = {
+    post: t.procedure
+      .input(z.object({ title: z.string() }))
+      .mutation(({ input }) => {
+        ran++;
+        return input.title;
+      }),
+  };
+  await using server = await createTestServer({ router: csrf });
+  const form = () => {
+    const f = new FormData();
+    f.append('input', JSON.stringify({ json: { title: 'pwned' } }));
+    return f;
+  };
+  const forged = await fetch(`${server.url}/post`, {
+    method: 'POST',
+    body: form(),
+  });
+  expect(forged.status).toBe(415);
+  expect(await forged.json()).toMatchObject({
+    json: {
+      error: {
+        code: 'UNSUPPORTED_MEDIA_TYPE',
+        message: 'multipart/form-data requests need the trpc-version header',
+      },
+    },
+  });
+  expect(ran).toBe(0);
+
+  const sent = await fetch(`${server.url}/post`, {
+    method: 'POST',
+    headers: { 'trpc-version': '12' },
+    body: form(),
+  });
+  expect(sent.status).toBe(200);
+  expect(ran).toBe(1);
 });
 
 test('a JSON body cannot claim to hold files', async () => {

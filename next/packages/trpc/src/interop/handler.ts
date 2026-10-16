@@ -425,6 +425,17 @@ export function createV11Handler<
       if ((multipart || octet) && isBatch) {
         return yield* fail('BAD_REQUEST', `${type} requests cannot be batched`);
       }
+      // v11 clients send no custom header, so cross-site bodies a form or a
+      // no-cors fetch can send (multipart, or none at all) are refused by origin.
+      if (
+        (multipart || type === null) &&
+        request.headers['sec-fetch-site'] === 'cross-site'
+      ) {
+        return yield* fail(
+          'FORBIDDEN',
+          'Cross-site requests must have content-type: application/json',
+        );
+      }
       if (type !== null && !multipart && !octet && !isJsonContentType(type)) {
         return yield* fail(
           'UNSUPPORTED_MEDIA_TYPE',

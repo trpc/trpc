@@ -43,7 +43,7 @@ A plain `.output(Item)` on a streaming resolver is a type error that points to `
 
 ## Files
 
-`File` and `Blob` values can sit anywhere in an input. `httpLink` sends that call alone (outside a batch) as `multipart/form-data`, and the handler rebuilds them before validation. `maxBodySize` covers the whole body.
+`File` and `Blob` values can sit anywhere in an input. `httpLink` sends that call alone (outside a batch) as `multipart/form-data`, and the handler rebuilds them before validation. `maxBodySize` covers the whole body. The handler only takes a multipart body with the `trpc-version` header, which `httpLink` sends and a cross-site form can't, so a form on another site can't run your mutations (other `POST` bodies must be `application/json` for the same reason).
 
 ```ts
 t.procedure

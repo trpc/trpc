@@ -582,6 +582,15 @@ export function createFetchHandler<
         });
       }
       if (isMultipartContentType(request.headers['content-type'] ?? null)) {
+        // A cross-site form can send multipart without a preflight; it can't add a header.
+        if (request.headers[HEADER.version] === undefined) {
+          return Effect.fail(
+            protocolError(
+              'UNSUPPORTED_MEDIA_TYPE',
+              `multipart/form-data requests need the ${HEADER.version} header`,
+            ),
+          );
+        }
         return readMultipart(request);
       }
       return Effect.flatMap(readBody(request), (body) => deserialize(body));
