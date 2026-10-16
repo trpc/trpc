@@ -1,9 +1,11 @@
 import { createTrpcClient, httpLink, safe } from 'trpcdev/client';
 import {
+  createRouterClient,
   error,
   initTrpc,
   mergeRouters,
   middleware,
+  type inferRouterContext,
   type inferRouterInputs,
   type inferRouterOutputs,
 } from 'trpcdev/server';
@@ -185,4 +187,44 @@ test('procedures cannot be reached through prototype keys', async () => {
     const res = await fetch(`${ctx.server.url}/${path}`);
     expect(res.status).toBe(404);
   }
+});
+
+const withTenant = middleware<{ ctx: { tenant: string } }>()(({ ctx, next }) =>
+  next({ ctx: { scope: `tenant:${ctx.tenant}` } }),
+);
+const effectTenant = middleware.effect<{ ctx: { tenant: string } }>()(
+  ({ ctx, next }) => next({ ctx: { region: ctx.tenant.slice(0, 2) } }),
+);
+
+test('ctx a standalone middleware needs and the procedure lacks becomes a root ctx requirement', async () => {
+  const bare = initTrpc();
+  const tenantRouter = {
+    whoami: bare.procedure
+      .use(withTenant)
+      .use(effectTenant)
+      .query(({ ctx }) => `${ctx.scope}/${ctx.region}`),
+  };
+  expectTypeOf<inferRouterContext<typeof tenantRouter>>().toEqualTypeOf<{
+    tenant: string;
+  }>();
+
+  // @ts-expect-error -- the router now needs { tenant } in ctx
+  createRouterClient(tenantRouter);
+  const caller = createRouterClient(tenantRouter, { ctx: { tenant: 'eu-1' } });
+  expect(await caller.whoami.query()).toBe('tenant:eu-1/eu');
+
+  await using server = await createTestServer({
+    router: tenantRouter,
+    createContext: () => ({ tenant: 'us-2' }),
+  });
+  const client = createTrpcClient<typeof tenantRouter>({
+    links: [httpLink({ url: server.url })],
+  });
+  expect(await client.whoami.query()).toBe('tenant:us-2/us');
+
+  // The procedure has `user`, but nullable: that's a conflict, not a requirement.
+  const strict = middleware<{ ctx: { user: string } }>()(({ next }) => next());
+  // @ts-expect-error -- `user` is `string | null` here
+  t.procedure.use(strict);
+  t.procedure.use(requireUser).use(strict);
 });

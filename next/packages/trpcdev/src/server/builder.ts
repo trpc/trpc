@@ -8,6 +8,7 @@ import type {
   OutputForm,
   Overwrite,
   ProcedureType,
+  Simplify,
   TypeError,
   Unset,
   Value,
@@ -364,6 +365,43 @@ export type BuildProcedure<
   serializer: TDef['form'];
 }>;
 
+// --- ctx a middleware needs -------------------------------------------------------
+
+type NeedsConflict<TCtx, TNeeds> = {
+  [K in keyof TNeeds & keyof TCtx]: [TCtx[K]] extends [TNeeds[K]] ? never : K;
+}[keyof TNeeds & keyof TCtx];
+
+/**
+ * A type error when a standalone middleware needs a ctx key the procedure
+ * has with another type. Keys the procedure lacks are fine: see
+ * {@link WithNeeds}.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export type NeedsCheck<TCtx, TNeeds> = [NeedsConflict<TCtx, TNeeds>] extends [
+  never,
+]
+  ? unknown
+  : TypeError<
+      'use: the middleware needs ctx of another type than this procedure has',
+      NeedsConflict<TCtx, TNeeds>
+    >;
+
+/**
+ * The root ctx after a middleware that needs keys the procedure lacks: they
+ * become requirements on the root ctx, so `createContext` (or an
+ * in-process caller's `ctx`) must supply them, like an Effect requirement.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export type WithNeeds<TDef extends BuilderDef, TNeeds> = [
+  Exclude<keyof TNeeds, keyof CurrentCtx<TDef>>,
+] extends [never]
+  ? TDef['ctx']
+  : Simplify<
+      TDef['ctx'] & Pick<TNeeds, Exclude<keyof TNeeds, keyof CurrentCtx<TDef>>>
+    >;
+
 // --- concat ----------------------------------------------------------------------
 
 /**
@@ -572,20 +610,23 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
     $Err extends AnyTrpcError = never,
     $Ok = never,
     $Input = Unset,
+    $Needs extends object = {},
   >(
     fn: MiddlewareFunction<
-      CurrentCtx<TDef>,
+      CurrentCtx<TDef> & $Needs,
       Value<TDef['inputOut']>,
       TDef['meta'],
       $Ctx,
       $Err,
       $Ok,
       $Input
-    >,
+    > &
+      NeedsCheck<CurrentCtx<TDef>, $Needs>,
   ): ProcedureBuilder<
     With<
       TDef,
       {
+        ctx: WithNeeds<TDef, $Needs>;
         ctxAdded: Overwrite<TDef['ctxAdded'], $Ctx>;
         inputOut: NextInput<TDef['inputOut'], $Input>;
         errors: TDef['errors'] | $Err;
@@ -605,9 +646,10 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
     $Provides,
     $Ok = never,
     $Input = Unset,
+    $Needs extends object = {},
   >(
     mw: EffectMiddleware<
-      CurrentCtx<TDef>,
+      CurrentCtx<TDef> & $Needs,
       Value<TDef['inputOut']>,
       TDef['meta'],
       $Ctx,
@@ -616,11 +658,13 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
       $Provides,
       $Ok,
       $Input
-    >,
+    > &
+      NeedsCheck<CurrentCtx<TDef>, $Needs>,
   ): ProcedureBuilder<
     With<
       TDef,
       {
+        ctx: WithNeeds<TDef, $Needs>;
         ctxAdded: Overwrite<TDef['ctxAdded'], $Ctx>;
         inputOut: NextInput<TDef['inputOut'], $Input>;
         errors: TDef['errors'] | $Err;

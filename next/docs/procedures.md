@@ -141,6 +141,23 @@ The client still sends the schema's input. A later `.input()` parses the raw cal
 
 Middleware is per procedure: build base procedures and share them. Routers take none. `t.middleware(fn)` types a middleware once for reuse.
 
+`middleware<{ ctx }>()(fn)` (and `middleware.effect`) declares one outside any `t`, typed by the ctx it needs, for a package to publish. Used on a procedure that lacks a key it needs, the key becomes a requirement of the procedure's ctx, the way an Effect requirement moves to whoever runs it: the handler's `createContext` (or an in-process caller's `ctx`) must supply it. A key the procedure has with another type is a type error.
+
+```ts
+const withTenant = middleware<{ ctx: { tenant: string } }>()(({ ctx, next }) =>
+  next({ ctx: { db: dbFor(ctx.tenant) } }),
+);
+const router = {
+  posts: t.procedure.use(withTenant).query(({ ctx }) => ctx.db.posts()),
+};
+createFetchHandler({
+  router,
+  createContext: ({ request }) => ({ tenant: tenantOf(request) }),
+});
+```
+
+`.concat(plugin)` stays strict: a plugin builder's ctx must already be there.
+
 `trpcdev/middleware` has lifecycle helpers, each an ordinary middleware:
 
 ```ts
