@@ -555,21 +555,26 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             } else {
               abortSignal.addEventListener('abort', onAbort, { once: true });
             }
+            const onStreamEnd = () => {
+              abortSignal.removeEventListener('abort', onAbort);
+              result?.clearMaxDurationTimer?.();
+            };
 
             responseBody = new ReadableStream({
               async pull(controller) {
-                const chunk = await reader.read();
+                const chunk = await reader.read().catch((cause: unknown) => {
+                  onStreamEnd();
+                  throw cause;
+                });
                 if (chunk.done) {
-                  abortSignal.removeEventListener('abort', onAbort);
-                  result?.clearMaxDurationTimer?.();
+                  onStreamEnd();
                   controller.close();
                 } else {
                   controller.enqueue(chunk.value);
                 }
               },
               cancel() {
-                abortSignal.removeEventListener('abort', onAbort);
-                result?.clearMaxDurationTimer?.();
+                onStreamEnd();
                 return reader.cancel();
               },
             });

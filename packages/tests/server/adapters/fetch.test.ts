@@ -283,6 +283,7 @@ test.each([
   ['throws', 'throws'],
   ['is cancelled', 'infinite'],
   ['fails in responseMeta', 'responseMetaThrows'],
+  ['errors the stream', 'streamErrors'],
 ] as const)(
   'sse maxDurationMs timer is cleared when the subscription %s',
   async (_, path) => {
@@ -329,6 +330,10 @@ test.each([
       responseMetaThrows: t.procedure.subscription(async function* () {
         yield 1;
       }),
+      streamErrors: t.procedure.subscription(async function* () {
+        yield 1;
+        throw new Error('subscription failed');
+      }),
     });
 
     // the signal of this request never aborts
@@ -345,11 +350,19 @@ test.each([
         }
         return {};
       },
+      onError(opts) {
+        if (opts.path === 'streamErrors') {
+          // a throwing `onError` makes the SSE stream itself error
+          throw new Error('onError failed');
+        }
+      },
     });
     if (path === 'infinite') {
       const reader = res.body!.getReader();
       await reader.read();
       await reader.cancel();
+    } else if (path === 'streamErrors') {
+      await expect(res.text()).rejects.toThrow();
     } else {
       await res.text();
     }
