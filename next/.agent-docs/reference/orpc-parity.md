@@ -2,7 +2,7 @@
 
 **Goal from the [brief](../decisions/brief.md):** feature parity with [orpc.dev/docs/comparison](https://orpc.dev/docs/comparison). Any API decision that could stop us from getting there must be flagged and confirmed by a human before it is accepted.
 
-Source: `.repos/orpc/apps/content/docs/comparison.md` (oRPC `v1.15.5`). The oRPC and tRPC columns are copied from that table. The tRPC column is oRPC's assessment of v11 and may lag behind recent v11 work.
+Source: oRPC `v1.15.5`'s `apps/content/docs/comparison.md` (`git show 3bbcb0d76:next/.repos/orpc/apps/content/docs/comparison.md`). The oRPC and tRPC columns are copied from that table. The vendored tree is now v2, whose `comparison.mdx` has more rows (an open question in [`brief.md`](../decisions/brief.md)). The tRPC column is oRPC's assessment of v11 and may lag behind recent v11 work.
 
 Legend: ✅ first-class · 🟡 partial / third-party · 🛑 not supported. **Risk** marks the decisions that could block us.
 
