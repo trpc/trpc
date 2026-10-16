@@ -933,6 +933,13 @@ importers:
         version: 4.6.5
 
   tooling/decisions:
+    dependencies:
+      '@effect/platform-node':
+        specifier: ^4.0.2
+        version: 4.0.2(effect@4.0.2)(redis@6.3.0)
+      effect:
+        specifier: ^4.0.0
+        version: 4.0.2
     devDependencies:
       '@types/node':
         specifier: ^24.0.0
@@ -960,6 +967,13 @@ importers:
         version: 1.1.0(@types/node@24.19.1)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(svelte@5.57.2)(typescript@7.0.2)
 
   tooling/pack:
+    dependencies:
+      '@effect/platform-node':
+        specifier: ^4.0.2
+        version: 4.0.2(effect@4.0.2)(redis@6.3.0)
+      effect:
+        specifier: ^4.0.0
+        version: 4.0.2
     devDependencies:
       '@types/node':
         specifier: ^24.0.0

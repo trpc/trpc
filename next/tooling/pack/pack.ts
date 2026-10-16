@@ -4,64 +4,94 @@
  * point at `src/`; `publishConfig.exports` points at the build output and
  * must list the same subpaths. Run from the package directory.
  */
-import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { NodeRuntime, NodeServices } from '@effect/platform-node';
+import { Data, Effect, FileSystem } from 'effect';
+import { ChildProcess, ChildProcessSpawner } from 'effect/process';
 
 /** Conditions to files; `types` and `default` are required. */
 type Entry = Readonly<Record<string, string>> & {
   readonly types: string;
   readonly default: string;
 };
-interface PackageJson {
+export interface PackageJson {
   readonly name: string;
   readonly exports: Record<string, Entry>;
   readonly publishConfig?: { readonly exports?: Record<string, Entry> };
 }
 
-const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as PackageJson;
+export class InvalidExports extends Data.TaggedError('InvalidExports')<{
+  readonly message: string;
+}> {}
+
+class PackFailed extends Data.TaggedError('PackFailed')<{
+  readonly exitCode: number;
+}> {}
+
 const built = (condition: string, source: string) =>
   source
     .replace(/^\.\/src\//, './dist/')
     .replace(/\.ts$/, condition === 'types' ? '.d.ts' : '.js');
 
-const published = pkg.publishConfig?.exports ?? {};
-for (const [subpath, entry] of Object.entries(pkg.exports)) {
-  const expected = Object.fromEntries(
-    Object.entries(entry).map(([condition, file]) => [
-      condition,
-      built(condition, file),
-    ]),
-  );
-  if (JSON.stringify(published[subpath]) !== JSON.stringify(expected)) {
-    console.error(
-      `${pkg.name}: publishConfig.exports["${subpath}"] must be ${JSON.stringify(expected)}`,
-    );
-    process.exit(1);
-  }
-}
-for (const subpath of Object.keys(published)) {
-  if (!(subpath in pkg.exports)) {
-    console.error(
-      `${pkg.name}: publishConfig.exports["${subpath}"] is not in exports`,
-    );
-    process.exit(1);
-  }
-}
+/** Checks that `publishConfig.exports` mirrors `exports` with built paths. */
+export const checkExports = (
+  pkg: PackageJson,
+): Effect.Effect<void, InvalidExports> =>
+  Effect.gen(function* () {
+    const published = pkg.publishConfig?.exports ?? {};
+    for (const [subpath, entry] of Object.entries(pkg.exports)) {
+      const expected = Object.fromEntries(
+        Object.entries(entry).map(([condition, file]) => [
+          condition,
+          built(condition, file),
+        ]),
+      );
+      if (JSON.stringify(published[subpath]) !== JSON.stringify(expected)) {
+        return yield* new InvalidExports({
+          message: `${pkg.name}: publishConfig.exports["${subpath}"] must be ${JSON.stringify(expected)}`,
+        });
+      }
+    }
+    for (const subpath of Object.keys(published)) {
+      if (!(subpath in pkg.exports)) {
+        return yield* new InvalidExports({
+          message: `${pkg.name}: publishConfig.exports["${subpath}"] is not in exports`,
+        });
+      }
+    }
+  });
 
-const result = spawnSync(
-  'vp',
-  [
-    'pack',
-    '--no-config',
-    ...Object.values(pkg.exports).map((entry) => entry.default),
-    '--dts',
-    '--unbundle',
-    '--platform',
-    'neutral',
-    '--logLevel',
-    'warn',
-    ...process.argv.slice(2),
-  ],
-  { stdio: 'inherit' },
-);
-process.exit(result.status ?? 1);
+const pack = (extraArgs: ReadonlyArray<string>) =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const pkg = JSON.parse(
+      yield* fs.readFileString('package.json'),
+    ) as PackageJson;
+    yield* checkExports(pkg);
+    const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
+    const exitCode = yield* spawner.exitCode(
+      ChildProcess.make(
+        'vp',
+        [
+          'pack',
+          '--no-config',
+          ...Object.values(pkg.exports).map((entry) => entry.default),
+          '--dts',
+          '--unbundle',
+          '--platform',
+          'neutral',
+          '--logLevel',
+          'warn',
+          ...extraArgs,
+        ],
+        { stdin: 'inherit', stdout: 'inherit', stderr: 'inherit' },
+      ),
+    );
+    if (exitCode !== 0) return yield* new PackFailed({ exitCode });
+  });
+
+if (import.meta.main) {
+  pack(process.argv.slice(2)).pipe(
+    Effect.provide(NodeServices.layer),
+    NodeRuntime.runMain,
+  );
+}

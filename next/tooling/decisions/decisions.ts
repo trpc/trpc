@@ -9,8 +9,11 @@
  *   pnpm decisions --tentative     only decisions with a `Tentative (human):` bullet, printing it
  *   pnpm decisions --questions     every proposal question and the decisions citing it
  */
-import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { NodeRuntime, NodeServices } from '@effect/platform-node';
+import { Console, Data, Effect, FileSystem, Option, Path } from 'effect';
+import { Argument, Command, Flag } from 'effect/cli';
+import type { PlatformError } from 'effect/PlatformError';
 
 export type Who = 'human' | 'human asked' | 'agent';
 
@@ -30,9 +33,17 @@ export interface Decision {
   readonly text: string;
 }
 
-export const decisionsDir: URL = new URL(
-  '../../.agent-docs/decisions/',
-  import.meta.url,
+export class InvalidDecision extends Data.TaggedError('InvalidDecision')<{
+  readonly file: string;
+  readonly message: string;
+}> {}
+
+export const decisionsDir: string = fileURLToPath(
+  new URL('../../.agent-docs/decisions/', import.meta.url),
+);
+
+export const proposalsDir: string = fileURLToPath(
+  new URL('../../.agent-docs/proposals/', import.meta.url),
 );
 
 const TITLE = /^# (.+) \((human|human asked|agent)\)$/;
@@ -49,16 +60,22 @@ function bullets(text: string): string[] {
   return out;
 }
 
-export function parseDecision(file: string, text: string): Decision {
+export const parseDecision = (
+  file: string,
+  text: string,
+): Effect.Effect<Decision, InvalidDecision> => {
   const first = text.split('\n', 1)[0] ?? '';
   const match = TITLE.exec(first);
   if (!match) {
-    throw new Error(
-      `${file}: the first line must be "# Title (human|human asked|agent)", got "${first}"`,
+    return Effect.fail(
+      new InvalidDecision({
+        file,
+        message: `${file}: the first line must be "# Title (human|human asked|agent)", got "${first}"`,
+      }),
     );
   }
   const all = bullets(text);
-  return {
+  return Effect.succeed({
     file,
     title: match[1]!,
     who: match[2] as Who,
@@ -71,105 +88,173 @@ export function parseDecision(file: string, text: string): Decision {
       ?.slice('Lives in:'.length)
       .trim(),
     text,
-  };
-}
+  });
+};
 
-export function readDecisions(dir: URL = decisionsDir): Decision[] {
-  return readdirSync(dir)
-    .filter((f) => f.endsWith('.md'))
-    .sort()
-    .map((f) => parseDecision(f, readFileSync(new URL(f, dir), 'utf8')));
-}
-
-export const proposalsDir: URL = new URL(
-  '../../.agent-docs/proposals/',
-  import.meta.url,
-);
-
-/** The `- **Q7.2**` questions each proposal asks, in order. */
-export function readQuestions(
-  dir: URL = proposalsDir,
-): Array<{ question: string; proposal: string; text: string }> {
-  return readdirSync(dir)
-    .filter((f) => /^\d+-.*\.md$/.test(f))
-    .sort()
-    .flatMap((proposal) =>
-      [
-        ...readFileSync(new URL(proposal, dir), 'utf8').matchAll(
-          /^- \*\*(Q\d+\.\d+)\*\* (.*)$/gm,
-        ),
-      ].map(([, question, text]) => ({
-        question: question!,
-        proposal,
-        text: text!,
+const markdownFiles = (dir: string, pattern: RegExp) =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    const files = (yield* fs.readDirectory(dir))
+      .filter((f) => pattern.test(f))
+      .sort();
+    return yield* Effect.forEach(files, (file) =>
+      Effect.map(fs.readFileString(path.join(dir, file)), (text) => ({
+        file,
+        text,
       })),
     );
+  });
+
+export const readDecisions = (
+  dir: string = decisionsDir,
+): Effect.Effect<
+  ReadonlyArray<Decision>,
+  PlatformError | InvalidDecision,
+  FileSystem.FileSystem | Path.Path
+> =>
+  Effect.flatMap(markdownFiles(dir, /\.md$/), (files) =>
+    Effect.forEach(files, ({ file, text }) => parseDecision(file, text)),
+  );
+
+export interface Question {
+  readonly question: string;
+  readonly proposal: string;
+  readonly text: string;
+}
+
+/** The `- **Q7.2**` questions each proposal asks, in order. */
+export const readQuestions = (
+  dir: string = proposalsDir,
+): Effect.Effect<
+  ReadonlyArray<Question>,
+  PlatformError,
+  FileSystem.FileSystem | Path.Path
+> =>
+  Effect.map(markdownFiles(dir, /^\d+-.*\.md$/), (files) =>
+    files.flatMap(({ file, text }) =>
+      [...text.matchAll(/^- \*\*(Q\d+\.\d+)\*\* (.*)$/gm)].map(
+        ([, question, questionText]) => ({
+          question: question!,
+          proposal: file,
+          text: questionText!,
+        }),
+      ),
+    ),
+  );
+
+export interface QuestionCitations {
+  readonly question: string;
+  readonly proposal: string;
+  readonly decisions: ReadonlyArray<string>;
 }
 
 /** Each proposal question with the decisions that cite it. */
-export function questionIndex(
-  decisions: ReadonlyArray<Decision> = readDecisions(),
-): Array<{ question: string; proposal: string; decisions: string[] }> {
-  return readQuestions().map(({ question, proposal }) => ({
-    question,
-    proposal,
-    decisions: decisions
-      .filter((d) => d.questions.includes(question))
-      .map((d) => `${d.file} (${d.who})`),
-  }));
-}
-
-const WHO_FLAG: Record<string, Who> = {
-  human: 'human',
-  asked: 'human asked',
-  agent: 'agent',
-};
-
-function main(args: string[]): void {
-  if (args[0] === '--questions') {
-    for (const q of questionIndex()) {
-      const where = q.decisions.length > 0 ? q.decisions.join(', ') : '—';
-      console.log(`${q.question.padEnd(7)} ${q.proposal.padEnd(40)} ${where}`);
-    }
-    return;
-  }
-  let who: Who | undefined;
-  let open = false;
-  let tentative = false;
-  let agentBullets = false;
-  const terms: string[] = [];
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i]!;
-    if (arg === '--who') who = WHO_FLAG[args[++i] ?? ''];
-    else if (arg === '--open') open = true;
-    else if (arg === '--tentative') tentative = true;
-    else if (arg === '--agent-bullets') agentBullets = true;
-    else terms.push(arg);
-  }
-  const query = terms.length > 0 ? new RegExp(terms.join(' '), 'i') : undefined;
-  const found = readDecisions().filter(
-    (d) =>
-      (!who || d.who === who) &&
-      (!open || d.open.length > 0) &&
-      (!tentative || d.tentative.length > 0) &&
-      (!agentBullets || d.who === 'agent' || d.agentBullets.length > 0) &&
-      (!query || query.test(d.text)),
+export const questionIndex = (
+  decisions: ReadonlyArray<Decision>,
+): Effect.Effect<
+  ReadonlyArray<QuestionCitations>,
+  PlatformError,
+  FileSystem.FileSystem | Path.Path
+> =>
+  Effect.map(readQuestions(), (questions) =>
+    questions.map(({ question, proposal }) => ({
+      question,
+      proposal,
+      decisions: decisions
+        .filter((d) => d.questions.includes(question))
+        .map((d) => `${d.file} (${d.who})`),
+    })),
   );
-  for (const d of found) {
-    const questions =
-      d.questions.length > 0 ? ` [${d.questions.join(' ')}]` : '';
-    console.log(`${d.file.padEnd(44)} (${d.who}) ${d.title}${questions}`);
-    if (open)
-      for (const o of d.open) console.log(`    ${o.replace(/\n/g, '\n    ')}`);
-    if (tentative)
-      for (const t of d.tentative) console.log(`    ${t.split('\n')[0]}`);
-    if (agentBullets && d.who !== 'agent') {
-      for (const b of d.agentBullets) console.log(`    ${b.split('\n')[0]}`);
-    }
-  }
-  console.log(`\n${found.length} of ${readDecisions().length} decisions`);
+
+export interface Filters {
+  readonly who: Who | undefined;
+  readonly open: boolean;
+  readonly tentative: boolean;
+  readonly agentBullets: boolean;
+  readonly query: RegExp | undefined;
 }
+
+export const filterDecisions = (
+  decisions: ReadonlyArray<Decision>,
+  filters: Filters,
+): ReadonlyArray<Decision> =>
+  decisions.filter(
+    (d) =>
+      (!filters.who || d.who === filters.who) &&
+      (!filters.open || d.open.length > 0) &&
+      (!filters.tentative || d.tentative.length > 0) &&
+      (!filters.agentBullets ||
+        d.who === 'agent' ||
+        d.agentBullets.length > 0) &&
+      (!filters.query || filters.query.test(d.text)),
+  );
+
+const listQuestions = Effect.gen(function* () {
+  const index = yield* questionIndex(yield* readDecisions());
+  for (const q of index) {
+    const where = q.decisions.length > 0 ? q.decisions.join(', ') : '—';
+    yield* Console.log(
+      `${q.question.padEnd(7)} ${q.proposal.padEnd(40)} ${where}`,
+    );
+  }
+});
+
+const listDecisions = (filters: Filters) =>
+  Effect.gen(function* () {
+    const all = yield* readDecisions();
+    const found = filterDecisions(all, filters);
+    for (const d of found) {
+      const questions =
+        d.questions.length > 0 ? ` [${d.questions.join(' ')}]` : '';
+      yield* Console.log(
+        `${d.file.padEnd(44)} (${d.who}) ${d.title}${questions}`,
+      );
+      const details = [
+        ...(filters.open ? d.open.map((o) => o.replace(/\n/g, '\n    ')) : []),
+        ...(filters.tentative ? d.tentative.map((t) => t.split('\n')[0]) : []),
+        ...(filters.agentBullets && d.who !== 'agent'
+          ? d.agentBullets.map((b) => b.split('\n')[0])
+          : []),
+      ];
+      for (const detail of details) yield* Console.log(`    ${detail}`);
+    }
+    yield* Console.log(`\n${found.length} of ${all.length} decisions`);
+  });
+
+export const decisionsCommand = Command.make(
+  'decisions',
+  {
+    terms: Argument.String('terms').pipe(
+      Argument.variadic(),
+      Argument.withDescription('A regex to match against the text'),
+    ),
+    who: Flag.ChoiceWithValue('who', [
+      ['human', 'human'],
+      ['asked', 'human asked'],
+      ['agent', 'agent'],
+    ] as const).pipe(Flag.optional),
+    open: Flag.Boolean('open').pipe(Flag.withDefault(false)),
+    tentative: Flag.Boolean('tentative').pipe(Flag.withDefault(false)),
+    agentBullets: Flag.Boolean('agent-bullets').pipe(Flag.withDefault(false)),
+    questions: Flag.Boolean('questions').pipe(Flag.withDefault(false)),
+  },
+  ({ terms, who, open, tentative, agentBullets, questions }) =>
+    questions
+      ? listQuestions
+      : listDecisions({
+          who: Option.getOrUndefined(who),
+          open,
+          tentative,
+          agentBullets,
+          query:
+            terms.length > 0 ? new RegExp(terms.join(' '), 'i') : undefined,
+        }),
+).pipe(Command.withDescription('List and search the decision records'));
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  main(process.argv.slice(2));
+  Command.run(decisionsCommand, { version: '0.0.0' }).pipe(
+    Effect.provide(NodeServices.layer),
+    NodeRuntime.runMain,
+  );
 }

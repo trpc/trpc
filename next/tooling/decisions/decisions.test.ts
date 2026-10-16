@@ -1,4 +1,5 @@
-import { existsSync } from 'node:fs';
+import { NodeServices } from '@effect/platform-node';
+import { Effect, FileSystem, Path } from 'effect';
 import { expect, test } from 'vite-plus/test';
 import {
   decisionsDir,
@@ -7,7 +8,11 @@ import {
   readDecisions,
 } from './decisions.ts';
 
-const decisions = readDecisions();
+const run = <A, E>(
+  effect: Effect.Effect<A, E, FileSystem.FileSystem | Path.Path>,
+) => Effect.runPromise(Effect.provide(effect, NodeServices.layer));
+
+const decisions = await run(readDecisions());
 
 test('every decision says who made it and where it lives', () => {
   expect(decisions.length).toBeGreaterThan(0);
@@ -17,21 +22,29 @@ test('every decision says who made it and where it lives', () => {
   }
 });
 
-test('links between decisions and notes resolve', () => {
-  for (const d of decisions) {
-    for (const [, target] of d.text.matchAll(
-      /\]\((\.{1,2}\/[^)#]+)(#[^)]*)?\)/g,
-    )) {
-      expect(
-        existsSync(new URL(target!, decisionsDir)),
-        `${d.file} links to ${target}`,
-      ).toBe(true);
-    }
-  }
+test('links between decisions and notes resolve', async () => {
+  const missing = await run(
+    Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      const path = yield* Path.Path;
+      const links = decisions.flatMap((d) =>
+        [...d.text.matchAll(/\]\((\.{1,2}\/[^)#]+)(#[^)]*)?\)/g)].map(
+          ([, target]) => ({ file: d.file, target: target! }),
+        ),
+      );
+      const exists = yield* Effect.forEach(links, ({ target }) =>
+        fs.exists(path.resolve(decisionsDir, target)),
+      );
+      return links
+        .filter((_, i) => !exists[i])
+        .map(({ file, target }) => `${file} links to ${target}`);
+    }),
+  );
+  expect(missing).toEqual([]);
 });
 
-test('every proposal question is cited by a decision', () => {
-  const index = questionIndex(decisions);
+test('every proposal question is cited by a decision', async () => {
+  const index = await run(questionIndex(decisions));
   expect(index.length).toBeGreaterThan(100);
   expect(
     index.filter((q) => q.decisions.length === 0).map((q) => q.question),
@@ -39,18 +52,20 @@ test('every proposal question is cited by a decision', () => {
 });
 
 test('parses who, questions, open items, tentative answers and agent bullets', () => {
-  const d = parseDecision(
-    'example.md',
-    [
-      '# Errors are inferred (human)',
-      '',
-      '- Human (Q7.2): "A".',
-      '- Tentative (human): "might change". Challenge it when it gets in the way.',
-      '- (agent) Declared errors stay optional.',
-      '  More about it.',
-      '- Open: OpenAPI (Q18.1).',
-      '- Lives in: `src/errors.ts`.',
-    ].join('\n'),
+  const d = Effect.runSync(
+    parseDecision(
+      'example.md',
+      [
+        '# Errors are inferred (human)',
+        '',
+        '- Human (Q7.2): "A".',
+        '- Tentative (human): "might change". Challenge it when it gets in the way.',
+        '- (agent) Declared errors stay optional.',
+        '  More about it.',
+        '- Open: OpenAPI (Q18.1).',
+        '- Lives in: `src/errors.ts`.',
+      ].join('\n'),
+    ),
   );
   expect(d).toMatchObject({
     who: 'human',
@@ -63,5 +78,7 @@ test('parses who, questions, open items, tentative answers and agent bullets', (
     agentBullets: ['(agent) Declared errors stay optional.\n  More about it.'],
     livesIn: '`src/errors.ts`.',
   });
-  expect(() => parseDecision('bad.md', '# No marker\n')).toThrow(/first line/);
+  expect(
+    Effect.runSync(Effect.flip(parseDecision('bad.md', '# No marker\n'))),
+  ).toMatchObject({ _tag: 'InvalidDecision', message: /first line/ });
 });
