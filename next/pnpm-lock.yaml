@@ -588,6 +588,28 @@ importers:
         specifier: 4.6.5
         version: 4.6.5
 
+  test/bun:
+    dependencies:
+      trpcdev:
+        specifier: workspace:*
+        version: link:../../packages/trpcdev
+    devDependencies:
+      '@effect/platform-bun':
+        specifier: 4.0.2
+        version: 4.0.2(effect@4.0.2)
+      '@types/bun':
+        specifier: 1.4.3
+        version: 1.4.3
+      effect:
+        specifier: 4.0.2
+        version: 4.0.2
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
+
   test/integration:
     dependencies:
       trpcdev:
@@ -1012,6 +1034,11 @@ packages:
       effect: ^4.0.2
       react: '>=19.0.0 <20.0.0'
       scheduler: '>=0.25.0 <0.28.0'
+
+  '@effect/platform-bun@4.0.2':
+    resolution: {integrity: sha512-wbQ9jQKtTjqHOYvMrgINWKuP05Q0cXe/Rze2c2gOAakztE34tVzT4aRvvooUR2l+JGWf/hL26nmHXJ4/Urkqiw==}
+    peerDependencies:
+      effect: ^4.0.2
 
   '@effect/platform-node-shared@4.0.2':
     resolution: {integrity: sha512-xn8aDw9p/QUPt1Yi0C3HUMcycT+MjHfAe19FDUDrUuzcwq0xxskkamVSqbdykF/Dsuus4aZTsCBZA/vkhHIfbQ==}
@@ -2073,6 +2100,9 @@ packages:
   '@types/aria-query@5.0.4':
     resolution: {integrity: sha512-rfT93uj5s0PRL7EzccGMs3brplhcrghnDoV26NqKhCAS1hVo+WdNsPvE/yb6ilfr5hi2MEk6d5EWJTKdxg8jVw==}
 
+  '@types/bun@1.4.3':
+    resolution: {integrity: sha512-N67Pqy8JXbAY/j0tNraS3V5mubGvc6rrrNDmDCtZLlFzccbUJPDb0tvgUBC5q4m8ybkP93Jcn1QB+RYQ6PvBhw==}
+
   '@types/chai@5.2.3':
     resolution: {integrity: sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA==}
 
@@ -2620,6 +2650,9 @@ packages:
   buffer-image-size@0.6.4:
     resolution: {integrity: sha512-nEh+kZOPY1w+gcCMobZ6ETUp9WfibndnosbpwB1iJk/8Gt5ZF2bhS6+B6bPYz424KtwsR6Rflc3tCz1/ghX2dQ==}
     engines: {node: '>=4.0'}
+
+  bun-types@1.4.3:
+    resolution: {integrity: sha512-tinRJNGOmUN+tEAsn2y2e942n9JHRHR42iUYzDH75NmhJqVBokGSQkkfSFdNWwsANIdrK6ACH9t01M452YyTwg==}
 
   caniuse-lite@1.0.30001816:
     resolution: {integrity: sha512-+8Yx7BXCoqk6IF8yTicjfUR6D/ldJzdlsodlEOiOSPmhK844WIgk67/zIQaGAOxNkZyyvBlrRFnLvqKIoqbAFw==}
@@ -3381,6 +3414,14 @@ snapshots:
       react: 19.3.0
       scheduler: 0.27.0
 
+  '@effect/platform-bun@4.0.2(effect@4.0.2)':
+    dependencies:
+      '@effect/platform-node-shared': 4.0.2(effect@4.0.2)
+      effect: 4.0.2
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
   '@effect/platform-node-shared@4.0.2(effect@4.0.1)':
     dependencies:
       '@types/ws': 8.18.2
@@ -4136,6 +4177,10 @@ snapshots:
 
   '@types/aria-query@5.0.4': {}
 
+  '@types/bun@1.4.3':
+    dependencies:
+      bun-types: 1.4.3
+
   '@types/chai@5.2.3':
     dependencies:
       '@types/deep-eql': 4.0.2
@@ -4506,6 +4551,11 @@ snapshots:
   buffer-image-size@0.6.4:
     dependencies:
       '@types/node': 24.19.1
+
+  bun-types@1.4.3:
+    dependencies:
+      '@types/node': 24.19.1
+      undici-types: 7.24.6
 
   caniuse-lite@1.0.30001816: {}
 

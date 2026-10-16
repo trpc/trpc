@@ -1,0 +1,19 @@
+{
+  "name": "@test/bun",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:bun": "bun test ./bun.test.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "trpcdev": "workspace:*"
+  },
+  "devDependencies": {
+    "@effect/platform-bun": "4.0.2",
+    "@types/bun": "1.4.3",
+    "effect": "4.0.2",
+    "typescript": "^7.0.2",
+    "zod": "4.6.5"
+  }
+}

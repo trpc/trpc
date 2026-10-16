@@ -96,6 +96,16 @@ Bun.serve({ port: 3000, fetch: handler.fetch });
 
 Bun's server WebSockets aren't web-standard `WebSocket`s, so for WebSockets run `serve(handler)` on `BunHttpServer.layer` from `@effect/platform-bun`.
 
+```ts
+serve(handler).pipe(
+  Layer.provide(BunHttpServer.layer({ port: 3000 })),
+  Layer.launch,
+  BunRuntime.runMain,
+);
+```
+
+CI runs a suite on Bun this way (`pnpm test:bun`): batched queries, files, SSE with resume, `wsLink`, and aborting on disconnect.
+
 ## Deno
 
 ```ts

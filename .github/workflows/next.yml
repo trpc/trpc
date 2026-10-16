@@ -12,6 +12,9 @@ on:
       - 'next/**'
       - 'vendor-src.json'
       - '.github/workflows/next.yml'
+  schedule:
+    # New effect@4 releases reach users without a push here.
+    - cron: '0 6 * * 1'
 
 concurrency:
   group: next-${{ github.ref }}
@@ -52,3 +55,52 @@ jobs:
       - run: pnpm example
         env:
           REDIS_URL: redis://127.0.0.1:6379
+
+  effect-latest:
+    # `trpcdev` depends on `effect@^4`; users get the latest 4.x, the lockfile pins one.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: next/package.json
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: next/pnpm-lock.yaml
+      - name: Widen effect pins to ^4 and update to the latest 4.x
+        run: |
+          for f in $(git ls-files '*package.json'); do
+            sed -i -E 's/"(effect|@effect\/[a-z-]+)": "4\.[0-9]+\.[0-9]+"/"\1": "^4.0.0"/' "$f"
+          done
+          pnpm install --no-frozen-lockfile
+          pnpm update -r effect '@effect/*'
+          grep -E '^  effect@' pnpm-lock.yaml
+        env:
+          VP_GIT_HOOKS: '0'
+      - run: pnpm typecheck
+      - run: pnpm test
+
+  bun:
+    # The platform layer is injected; this serves through @effect/platform-bun.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: next/package.json
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: next/pnpm-lock.yaml
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - run: pnpm install --frozen-lockfile
+        env:
+          VP_GIT_HOOKS: '0'
+      - run: pnpm test:bun
