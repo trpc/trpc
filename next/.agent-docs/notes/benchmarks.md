@@ -14,34 +14,44 @@ Versions: tRPC v12 at `next/` HEAD, `@trpc/server` 11.19.0, `@orpc/server` 2.0.0
 
 ## Results
 
+Re-run after the `perf(...)` commits that followed the first run (first-run v12 numbers in the last column).
+
 Throughput (`pnpm bench runtime`):
 
-| server   | req/s (avg) | req/s (stdev) | requests |
-| -------- | ----------: | ------------: | -------: |
-| tRPC v12 |      14,505 |           301 |  159,540 |
-| tRPC v11 |      12,852 |           278 |  128,517 |
-| oRPC v2  |      55,654 |         1,189 |  556,500 |
+| server   | req/s (avg) | req/s (stdev) | requests | first run |
+| -------- | ----------: | ------------: | -------: | --------: |
+| tRPC v12 |      41,600 |           618 |  415,968 |    14,505 |
+| tRPC v11 |      13,181 |           245 |  131,814 |           |
+| oRPC v2  |      58,707 |         1,547 |  587,023 |           |
 
 Type-checking 3,000 procedures (`pnpm bench typecheck`):
 
-|          | check | total | memory | instantiations |
-| -------- | ----: | ----: | -----: | -------------: |
-| tRPC v12 | 1.16s | 1.39s | 369 MB |      1,524,258 |
-| tRPC v11 | 0.94s | 1.10s | 262 MB |      1,005,015 |
-| oRPC v2  | 0.70s | 0.83s | 237 MB |        886,784 |
+|          | check | total | memory | instantiations | first run                      |
+| -------- | ----: | ----: | -----: | -------------: | ------------------------------ |
+| tRPC v12 | 0.83s | 1.05s | 322 MB |      1,105,592 | 1.16s / 1.39s / 369 MB / 1.52M |
+| tRPC v11 | 0.92s | 1.08s | 262 MB |      1,005,015 |                                |
+| oRPC v2  | 0.70s | 0.82s | 237 MB |        886,784 |                                |
 
 Bundle size, minified / gzip (`pnpm bench bundle`):
 
-|               |            tRPC v12 |          tRPC v11 |           oRPC v2 |
-| ------------- | ------------------: | ----------------: | ----------------: |
-| client        |  104.7 kB / 35.0 kB | 36.4 kB / 11.8 kB |  27.1 kB / 9.6 kB |
-| Node server   | 344.0 kB / 110.1 kB | 53.1 kB / 17.3 kB | 41.3 kB / 13.2 kB |
-| fetch handler |  215.5 kB / 70.2 kB | 50.6 kB / 16.4 kB | 39.5 kB / 12.6 kB |
+|               |            tRPC v12 |          tRPC v11 |           oRPC v2 | v12 first run       |
+| ------------- | ------------------: | ----------------: | ----------------: | ------------------- |
+| client        |   91.4 kB / 30.5 kB | 36.4 kB / 11.8 kB |  27.1 kB / 9.6 kB | 104.7 kB / 35.0 kB  |
+| Node server   | 345.0 kB / 110.7 kB | 53.1 kB / 17.3 kB | 41.3 kB / 13.2 kB | 344.0 kB / 110.1 kB |
+| fetch handler |  216.4 kB / 70.7 kB | 50.6 kB / 16.4 kB | 39.5 kB / 12.6 kB | 215.5 kB / 70.2 kB  |
 
 ## Reading
 
-- The oRPC-to-v11 ratios match oRPC's published ones (4.3× throughput here, 4.2× there; type-check total 0.75× here, 0.70× there), so the harness measures the same thing.
-- **Throughput:** v12 is 13% ahead of v11 and at about a quarter of oRPC. Every v12 request goes through Effect's `HttpServer`, router, a fiber per call and danSON; where the time goes is not profiled yet.
-- **Type-checking:** v12 is the slowest: 23% more check time and 52% more instantiations than v11, 66% more check time than oRPC. "Typesafe at scale" holds (3,000 procedures check in about a second), but this is the row where v12 is behind both. [`builder-generics-typeperf.md`](./builder-generics-typeperf.md) has the builder-level measurements to start from.
-- **Bundle size:** v12's client is 3× v11's and 3.6× oRPC's gzipped, and its servers 4–8×. That's the Effect runtime, which every v12 entry point imports ([`effect-client-bundle-size.md`](./effect-client-bundle-size.md) splits it by module). The Node server also carries `@effect/platform-node`.
+- The oRPC-to-v11 ratios match oRPC's published ones (4.5× throughput here, 4.2× there; type-check total 0.76× here, 0.70× there), so the harness measures the same thing.
+- **Throughput:** v12 went from 14.5k to 41.6k req/s: 3.2× v11, 71% of oRPC. What changed:
+  - HTTP calls run in the request's fiber, synchronously until a step is async; one context change per call.
+  - `?input=` read without `URLSearchParams`; danSON sorts serializers once, plain values skip class checks, `Date` via `toISOString`.
+  - **The floor is Effect's `HttpServer`:** a bare `HttpRouter` route returning the same JSON does about 69k req/s here. v12 adds about 9 µs per request on top; in-process that's about 6 µs: the call's span about 1.2 µs, the procedure call about 1.2 µs, `?input=` about 0.7 µs, danSON about 0.5 µs, the rest spread under 0.3 µs each.
+  - oRPC at 58.7k is 17 µs per request in total, so matching it would leave v12 about 3 µs over Effect's floor. Dropping the span (the tracing decision's `trpc.<path>` span, `Effect.currentSpan` in resolvers) would buy 1.2 µs.
+- **Type-checking:** v12 now checks faster than v11 (0.83s vs 0.92s) with 10% more instantiations; oRPC is 16% faster. What changed:
+  - Standard Schema types read from `~standard.types` instead of inferred; `InputDef` spelled out; resolver checks skip moot branches.
+  - JSON-safe outputs skip the framing conditionals; link batching read once per chain.
+  - **Split:** the client half (3,000 typed calls) checks faster than oRPC's (about 0.41s vs 0.45s). The router half is the gap: 498k instantiations vs 311k, about 166 per procedure vs 104. The resolver checks (unmapped Effect failures, output, `ok()` short-circuits) cost about 40 per procedure and the inferred `Procedure` type about 12; cheaper spellings tried so far (`NoInfer`, pre-filters, nested checks) were all slower.
+  - **Memory:** a v12 project with no procedures already takes 100 MB vs oRPC's 35 MB: that's parsing Effect's declarations (188 files). Importing Effect by subpath would save about 12 MB.
+- **Bundle size:** the client went from 35.0 to 30.5 kB gzipped: `sideEffects: false`, base64 with `btoa`/`atob`, trace headers and the client span without `effect/http`, lean sequential `forEach` and stream-to-iterable helpers. It's still 3.2× oRPC's: the Effect APIs the client runs on are about 20 kB gzipped on their own (`Effect.runPromise` alone is 7.5 kB), tRPC's own code about 12 kB ([`effect-client-bundle-size.md`](./effect-client-bundle-size.md)). Server bundles aren't a goal.
 - Clinic profiles and the WebSocket and OpenAPI throughput rows of oRPC's table aren't measured yet.
