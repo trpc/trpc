@@ -2,6 +2,7 @@ import { Effect, Layer, Schema } from 'effect';
 import { Persistence } from 'effect/persistence';
 import { createTrpcClient, durableLink, httpLink, safe } from 'trpcdev/client';
 import { durable } from 'trpcdev/middleware';
+import { createOpenApiHandler } from 'trpcdev/openapi';
 import { createFetchHandler, initTrpc, TrpcError } from 'trpcdev/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { createTestServer } from './fixtures/server.ts';
@@ -201,6 +202,26 @@ test('durableLink retries a lost response with the same id', async () => {
 
   const [, err] = await safe(client.order.mutate({ sku: 'gone' }));
   expect(err).toMatchObject({ code: 'OUT_OF_STOCK' });
+});
+
+test('a call id is kept over REST too', async () => {
+  const { router, runs } = makeRouter();
+  const handler = createOpenApiHandler({
+    router,
+    layer: Persistence.layerBackingMemory,
+  });
+  const call = () =>
+    handler.fetch(
+      new Request('http://localhost/api/order', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'trpc-call-id': 'r1' },
+        body: JSON.stringify({ sku: 'a' }),
+      }),
+    );
+  const first = await (await call()).json();
+  expect(await (await call()).json()).toEqual(first);
+  expect(runs.order).toBe(1);
+  await handler.dispose();
 });
 
 test('durable() requires BackingPersistence', () => {

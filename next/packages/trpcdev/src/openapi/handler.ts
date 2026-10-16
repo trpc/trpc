@@ -504,6 +504,7 @@ export function createOpenApiHandler<
     });
     const response = createResponseHandle();
     const exit = await base.run({
+      request: httpOf(request),
       procedure,
       path: entry.path,
       ctx,
