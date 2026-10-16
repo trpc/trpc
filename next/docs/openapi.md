@@ -230,3 +230,47 @@ export const petstore = {
 - Objects that don't mention `additionalProperties` become closed structs (extra keys are still ignored when decoding), except where `allOf` merges them.
 - Error responses in trpcdev's own shape (`code` and `data`) become `.errors()`, so a document from `generateOpenApi` round-trips with typed errors. Other APIs' errors stay unexpected errors.
 - `pattern`s are ignored unless `patterns: 'apply'`; only use that with documents you trust.
+
+## NestJS
+
+`@trpcdev/nest` serves a contract from Nest controllers. `@Implement(contract)` adds the Nest route for the contract's REST mapping; the method returns the procedure, so the controller's injected services reach the resolver through `this`.
+
+```ts
+import { Implement, TrpcModule } from '@trpcdev/nest';
+
+const impl = t.implement(appContract);
+
+@Controller()
+class PostController {
+  constructor(@Inject(Posts) private readonly posts: Posts) {}
+
+  @Implement(appContract.post.byId) // .route({ method: 'GET', path: '/posts/{id}' })
+  byId() {
+    return impl.post.byId.query(
+      ({ input, errors }) =>
+        this.posts.find(input.id) ??
+        errors.NOT_FOUND({ data: { id: input.id } }),
+    );
+  }
+}
+
+@Module({
+  imports: [
+    TrpcModule.forRoot({
+      createContext: ({ platform }) => ({
+        user: platform.switchToHttp().getRequest().user,
+      }),
+      layer: Db.layer,
+    }),
+  ],
+  controllers: [PostController],
+  providers: [Posts],
+})
+class AppModule {}
+```
+
+- A leaf needs a `.route({ path })`. Pass a contract router instead and return `impl.router({ … })` (or a plain object of procedures) to get default paths from the keys below it (`/post/byId`).
+- `TrpcModule.forRoot()` takes the OpenAPI handler's options; `createContext`'s `platform` is Nest's `ExecutionContext`. `forRootAsync({ inject, useFactory })` builds them from providers. One handler serves every route, so the `layer` is built once and released on shutdown (`app.enableShutdownHooks()` or `app.close()`).
+- Guards, pipes and filters run as usual; put `@Implement` above the method's other decorators so they apply to every route it adds. The procedure's own middleware and validation run after them, and errors use the REST shape above.
+- Bodies Nest's JSON and urlencoded parsers read are used as parsed; others are read from the request.
+- Express only. Nest needs `experimentalDecorators`.
