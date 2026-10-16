@@ -9,6 +9,7 @@
  * @internal
  */
 import { Cause, Deferred, Effect, Exit, Queue, Scope, Stream } from 'effect';
+import { Base64 } from 'effect/encoding';
 import {
   deserializeSync,
   serializeSync,
@@ -16,6 +17,7 @@ import {
   type SerializeOptions,
   type SerializeReturn,
 } from './sync.ts';
+import { JsonBytes } from '../internal/frames.ts';
 import { counter, DansonError } from './utils.ts';
 
 export const VALUE = 0;
@@ -95,30 +97,29 @@ export function sourceOf(
 const isFile = (v: unknown): v is File =>
   typeof File !== 'undefined' && v instanceof File;
 
-/** A blob's bytes as base64 strings, one per read. */
-async function* base64Chunks(blob: Blob): AsyncGenerator<string> {
+/** A blob's bytes, one chunk per read. */
+async function* byteChunks(blob: Blob): AsyncGenerator<JsonBytes> {
   const reader = blob.stream().getReader();
   try {
     while (true) {
       const { done, value } = await reader.read();
       if (done) return;
-      let binary = '';
-      for (let i = 0; i < value.length; i += 0x8000) {
-        binary += String.fromCharCode(...value.subarray(i, i + 0x8000));
-      }
-      yield btoa(binary);
+      yield JsonBytes.wrap(value);
     }
   } finally {
     reader.releaseLock();
   }
 }
 
-function fromBase64(chunks: unknown[]): Uint8Array<ArrayBuffer>[] {
+/** Chunks arrive as bytes over binary transports, base64 over JSON ones. */
+function toBytes(chunks: unknown[]): Uint8Array<ArrayBuffer>[] {
   return chunks.map((chunk) => {
-    const binary = atob(String(chunk));
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    return bytes;
+    if (chunk instanceof Uint8Array) return chunk as Uint8Array<ArrayBuffer>;
+    const decoded = Base64.decode(String(chunk));
+    if (decoded._tag === 'Failure') {
+      throw new DansonError('Malformed file bytes', { cause: decoded.failure });
+    }
+    return decoded.success as Uint8Array<ArrayBuffer>;
   });
 }
 
@@ -216,7 +217,7 @@ export function serializeDeferred(
   function registerBlob(blob: Blob): number {
     let idx = blobs.get(blob);
     if (idx === undefined) {
-      idx = register(base64Chunks(blob));
+      idx = register(byteChunks(blob));
       blobs.set(blob, idx);
     }
     return idx;
@@ -231,14 +232,18 @@ export function serializeDeferred(
     return idx;
   }
   const serialize = (v: unknown, status: Status) =>
-    Effect.try({
-      try: () =>
-        serializeSync(
-          status === ERROR && options.coerceError ? options.coerceError(v) : v,
-          opts,
-        ),
-      catch: toDansonError,
-    });
+    v instanceof JsonBytes
+      ? Effect.succeed<SerializeReturn>({ json: v as never })
+      : Effect.try({
+          try: () =>
+            serializeSync(
+              status === ERROR && options.coerceError
+                ? options.coerceError(v)
+                : v,
+              opts,
+            ),
+          catch: toDansonError,
+        });
 
   const head = serializeSync(value, opts);
   if (pending.length === 0) return { head, chunks: undefined };
@@ -417,7 +422,7 @@ export function deserializeStream<T, E>(
         return iterate(idx).pipe(
           Stream.runCollect,
           Effect.map((chunks) => {
-            collected.set(idx, fromBase64(Array.from(chunks)));
+            collected.set(idx, toBytes(Array.from(chunks)));
           }),
           Deferred.into(done),
           Effect.forkDetach,
@@ -442,7 +447,9 @@ export function deserializeStream<T, E>(
       const [, status, json] = frame as Chunk;
       Queue.offerUnsafe(queueFor(target), [
         status,
-        deserializeSync(json, opts),
+        json.json instanceof Uint8Array
+          ? json.json
+          : deserializeSync(json, opts),
       ]);
     };
     const fail = (target: number, error: unknown) => {

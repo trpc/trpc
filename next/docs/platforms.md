@@ -51,7 +51,7 @@ const handler = createFetchHandler({
 
 ### Compression
 
-trpcdev doesn't compress. Your CDN or proxy (Cloudflare, Vercel, nginx) already negotiates `Accept-Encoding`, and does it better. If you add a compressing `HttpMiddleware`, skip `application/jsonl` and `text/event-stream` responses: a gzip stream buffers until its window fills, which stalls subscriptions and streamed results.
+trpcdev doesn't compress. Your CDN or proxy (Cloudflare, Vercel, nginx) already negotiates `Accept-Encoding`, and does it better. If you add a compressing `HttpMiddleware`, skip `application/jsonl`, `application/vnd.trpc.frames` and `text/event-stream` responses: a gzip stream buffers until its window fills, which stalls subscriptions and streamed results.
 
 ## Express, Fastify and `node:http`
 

@@ -44,6 +44,7 @@ import {
   type AnySerializer,
   type Serializer,
 } from '../serializer/index.ts';
+import { accepts, encodeRecord } from '../internal/frames.ts';
 import type { Chunk } from '../serializer/stream.ts';
 import {
   consumedError,
@@ -76,6 +77,8 @@ import {
   type Transport,
   type WebSocketLike,
 } from './socket.ts';
+
+const encoder = new TextEncoder();
 
 /**
  * What `createContext` receives.
@@ -639,6 +642,12 @@ export function createFetchHandler<
       }
     });
 
+  /** Frames when the client asks for them, JSONL otherwise. */
+  const streamType = (request: HttpServerRequest.HttpServerRequest) =>
+    accepts(request.headers['accept'], CONTENT_TYPE.frames)
+      ? CONTENT_TYPE.frames
+      : CONTENT_TYPE.jsonl;
+
   /** A streamed body of `produce`'s lines; the call's signal aborts if the client leaves. */
   const linesResponse = (
     produce: (write: (line: unknown) => void) => Effect.Effect<void>,
@@ -646,12 +655,17 @@ export function createFetchHandler<
     contentType: string = CONTENT_TYPE.jsonl,
     headers?: Headers,
   ): HttpServerResponse.HttpServerResponse => {
-    const lines = Stream.callback<string>((queue) =>
+    const binary = contentType === CONTENT_TYPE.frames;
+    const lines = Stream.callback<Uint8Array>((queue) =>
       Effect.andThen(
         produce((line) => {
           Queue.offerUnsafe(
             queue,
-            typeof line === 'string' ? line : `${JSON.stringify(line)}\n`,
+            binary
+              ? encodeRecord(line)
+              : encoder.encode(
+                  typeof line === 'string' ? line : `${JSON.stringify(line)}\n`,
+                ),
           );
         }),
         Queue.end(queue),
@@ -665,9 +679,11 @@ export function createFetchHandler<
     );
     return respond(
       200,
-      Stream.encodeText(lines),
+      lines,
       contentType,
-      { 'cache-control': 'no-cache' },
+      contentType === CONTENT_TYPE.sse
+        ? { 'cache-control': 'no-cache' }
+        : { 'cache-control': 'no-cache', vary: 'accept' },
       headers,
     );
   };
@@ -778,7 +794,7 @@ export function createFetchHandler<
                 return runChunks(chunks, write);
               }),
             controller,
-            CONTENT_TYPE.jsonl,
+            streamType(request),
             result.headers,
           );
         }),
@@ -1019,7 +1035,7 @@ export function createFetchHandler<
                 { concurrency: 'unbounded', discard: true },
               ),
             controller,
-            CONTENT_TYPE.jsonl,
+            streamType(request),
             headers,
           );
         }),

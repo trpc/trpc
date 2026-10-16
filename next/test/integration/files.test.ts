@@ -231,17 +231,27 @@ test('a root File output in a batch streams like a nested one', async () => {
   expect(server.requests).toHaveLength(1);
 });
 
-for (const transport of ['httpLink', 'wsLink', 'localLink'] as const) {
+for (const transport of [
+  'httpLink',
+  'httpLink binary',
+  'httpLink binary batch',
+  'wsLink',
+  'localLink',
+] as const) {
   test(`files anywhere in an output stream as chunks (${transport})`, async () => {
-    await using server = await createTestServer({ router });
+    await using server = await createTestServer({ router, batch: true });
     await using ws = wsLink({ url: server.wsUrl });
     const client = createTrpcClient<AppRouter>({
       links: [
         transport === 'httpLink'
           ? httpLink({ url: server.url })
-          : transport === 'wsLink'
-            ? ws
-            : localLink({ router, createContext: () => ({}) }),
+          : transport === 'httpLink binary'
+            ? httpLink({ url: server.url, binary: true })
+            : transport === 'httpLink binary batch'
+              ? httpLink({ url: server.url, binary: true, batch: true })
+              : transport === 'wsLink'
+                ? ws
+                : localLink({ router, createContext: () => ({}) }),
       ],
     });
     const out = await client.attachments.query();
@@ -265,6 +275,41 @@ for (const transport of ['httpLink', 'wsLink', 'localLink'] as const) {
     expect(await late.text()).toBe('late');
   });
 }
+
+test('binary frames carry nested file bytes unencoded when the client accepts them', async () => {
+  await using server = await createTestServer({ router, batch: true });
+  const get = async (accept?: string) => {
+    const res = await fetch(`${server.url}/attachments`, {
+      headers: accept === undefined ? {} : { accept },
+    });
+    return {
+      type: res.headers.get('content-type'),
+      vary: res.headers.get('vary'),
+      size: (await res.arrayBuffer()).byteLength,
+    };
+  };
+  const jsonl = await get();
+  const frames = await get('application/vnd.trpc.frames, application/jsonl');
+  expect(jsonl.type).toMatch(/^application\/jsonl/);
+  expect(frames.type).toMatch(/^application\/vnd\.trpc\.frames/);
+  expect(frames.vary).toBe('accept');
+  // `big` is 200 KB and sent once; base64 makes it 267 KB.
+  expect(jsonl.size).toBeGreaterThan(266_000);
+  expect(frames.size).toBeLessThan(202_000);
+
+  const client = createTrpcClient<AppRouter>({
+    links: [httpLink({ url: server.url, binary: true, batch: true })],
+  });
+  const [out, hello] = await Promise.all([
+    client.attachments.query(),
+    client.hello.query(),
+  ]);
+  expect(hello).toBe('hello');
+  expect(out.files[0]!.size).toBe(200_000);
+  expect(server.requests.at(-1)!.headers.get('accept')).toBe(
+    'application/vnd.trpc.frames, application/jsonl',
+  );
+});
 
 for (const transport of ['httpLink', 'wsLink'] as const) {
   test(`files inside subscription events decode while their bytes stream (${transport})`, async () => {

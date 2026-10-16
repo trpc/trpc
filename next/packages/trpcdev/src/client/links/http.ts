@@ -17,6 +17,7 @@ import {
   type BatchCall,
   type BatchLine,
 } from '../../internal/protocol.ts';
+import { decodeRecords } from '../../internal/frames.ts';
 import type { MaybePromise } from '../../internal/types.ts';
 import {
   defaultSerializer,
@@ -89,6 +90,13 @@ export interface HttpLinkOptions {
    * @default false
    */
   batch?: boolean | { maxItems?: number };
+  /**
+   * Ask for streamed outputs as binary frames instead of JSONL, so `File`
+   * and `Blob` bytes in them arrive unencoded rather than as base64 (a
+   * third smaller). Servers that don't know frames answer with JSONL.
+   * @default false
+   */
+  binary?: boolean;
   /** Subscription reconnects after a dropped connection. */
   reconnect?: {
     /** @default 5 */
@@ -270,19 +278,39 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
     }
   }
 
+  const streamType = opts.binary
+    ? `${CONTENT_TYPE.frames}, ${CONTENT_TYPE.jsonl}`
+    : CONTENT_TYPE.jsonl;
+  const streamed = (type: string) =>
+    type.startsWith(CONTENT_TYPE.jsonl) || type.startsWith(CONTENT_TYPE.frames);
+  /** A streamed body's lines, parsed. */
+  const readStream = (
+    type: string,
+    body: ReadableStream<Uint8Array>,
+  ): Stream.Stream<unknown, AnyTrpcError> =>
+    type.startsWith(CONTENT_TYPE.frames)
+      ? decodeRecords(
+          Stream.fromReadableStream({
+            evaluate: () => body,
+            onError: toHttpError,
+          }),
+        )
+      : Stream.fromAsyncIterable(readLines(body), toHttpError).pipe(
+          Stream.map((line) => JSON.parse(line) as unknown),
+        );
+
   async function readResult(res: Response): Promise<unknown> {
     if (res.headers.get(HEADER.response) === '1') return res;
     if (!res.ok) throw await readError(res);
     const blob = res.headers.get(HEADER.blob);
     if (blob !== null) return readBlob(res, blob);
     const type = res.headers.get('content-type') ?? '';
-    if (type.startsWith(CONTENT_TYPE.jsonl) && res.body) {
-      const frames = Stream.fromAsyncIterable(
-        readLines(res.body),
-        toHttpError,
-      ).pipe(Stream.map((line) => JSON.parse(line) as Frame));
+    if (streamed(type) && res.body) {
       return Effect.runPromise(
-        serializer.deserializeStream(frames, { reviveError, ...streamErrors }),
+        serializer.deserializeStream(
+          readStream(type, res.body) as Stream.Stream<Frame, AnyTrpcError>,
+          { reviveError, ...streamErrors },
+        ),
       );
     }
     const text = await res.text();
@@ -356,7 +384,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
           readResult(
             await send(
               op,
-              `${CONTENT_TYPE.json}, ${CONTENT_TYPE.jsonl}`,
+              `${CONTENT_TYPE.json}, ${streamType}`,
               {},
               linked(signal, op),
             ),
@@ -398,8 +426,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
         const frames = yield* Effect.forEach(live, () =>
           Queue.unbounded<Frame, AnyTrpcError | Cause.Done>(),
         );
-        const onLine = (text: string) => {
-          const line = JSON.parse(text) as BatchLine;
+        const onLine = (line: BatchLine) => {
           const item = live[line.i];
           const queue = frames[line.i];
           if (!item || !queue) return Effect.void;
@@ -448,7 +475,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
                 await requestInit(
                   live.map((i) => i.op),
                   {
-                    accept: CONTENT_TYPE.jsonl,
+                    accept: streamType,
                     'content-type': CONTENT_TYPE.json,
                     [HEADER.batch]: '1',
                   },
@@ -466,12 +493,12 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
             for (const item of live) item.reject(err);
             return;
           }
-          yield* Stream.fromAsyncIterable(
-            readLines(res.body),
-            toHttpError,
+          yield* readStream(
+            res.headers.get('content-type') ?? '',
+            res.body,
           ).pipe(
-            Stream.runForEach((text) =>
-              Effect.suspend(() => onLine(text)).pipe(
+            Stream.runForEach((line) =>
+              Effect.suspend(() => onLine(line as BatchLine)).pipe(
                 Effect.catchDefect((cause) => Effect.fail(toHttpError(cause))),
               ),
             ),

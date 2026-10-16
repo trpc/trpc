@@ -35,6 +35,8 @@ export const HEADER = {
 export const CONTENT_TYPE = {
   json: 'application/json',
   jsonl: 'application/jsonl',
+  /** JSONL's lines as length-prefixed records, with file bytes unencoded. */
+  frames: 'application/vnd.trpc.frames',
   sse: 'text/event-stream',
 } as const;
 

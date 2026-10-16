@@ -61,7 +61,7 @@ client.onPost.subscribe; // type error: no link carries subscriptions
 
 ## Links
 
-- `httpLink({ url, batch?, headers?, init?, fetch?, maxUrlLength?, longQuery?, reconnect? })` sends queries as `GET`, mutations as `POST` and subscriptions as SSE. Outputs with nested promises, async iterables or files stream as JSONL; an unbatched call whose output is a `File` or `Blob` gets it as the raw response body. Inputs holding a `File` or `Blob` go alone as `multipart/form-data`.
+- `httpLink({ url, batch?, headers?, init?, fetch?, maxUrlLength?, longQuery?, binary?, reconnect? })` sends queries as `GET`, mutations as `POST` and subscriptions as SSE. Outputs with nested promises, async iterables or files stream as JSONL (or, with `binary: true`, as [binary frames](./procedures.md#files) that carry file bytes unencoded); an unbatched call whose output is a `File` or `Blob` gets it as the raw response body. Inputs holding a `File` or `Blob` go alone as `multipart/form-data`.
 
   `init` sets `fetch` options. The link's `init` is a default, or a function called once per HTTP request with the calls it carries; a call's `init` is merged onto it (shallowly, but `headers` and `next` key by key). Calls with different `init`s are batched apart. `next` passes Next's data-cache options through:
 

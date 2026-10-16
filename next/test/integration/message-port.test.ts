@@ -89,3 +89,29 @@ test('a MessageChannel connects a client and a handler in one thread', async () 
     port2.close();
   }
 });
+
+test('file bytes cross a port as bytes, not base64', async () => {
+  const t = initTrpc();
+  const router = {
+    report: t.procedure.query(() => ({
+      file: new File([new Uint8Array([0, 255, 1])], 'r.bin'),
+    })),
+  };
+  const { port1, port2 } = new MessageChannel();
+  createFetchHandler({ router }).messagePort(port1);
+  const sent: unknown[] = [];
+  port2.on('message', (message: unknown) => sent.push(message));
+  const link = messagePortLink({ port: port2 });
+  const client = createTrpcClient<typeof router>({ links: [link] });
+  try {
+    const { file } = await client.report.query();
+    expect([...new Uint8Array(await file.arrayBuffer())]).toEqual([0, 255, 1]);
+    const wire = JSON.stringify(sent);
+    expect(wire).toContain('{"0":0,"1":255,"2":1}');
+    expect(wire).not.toContain('AP8B');
+  } finally {
+    await link.close();
+    port1.close();
+    port2.close();
+  }
+});
