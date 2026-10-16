@@ -1,0 +1,41 @@
+{
+  "name": "@trpcdev/upgrade",
+  "version": "0.0.0",
+  "private": true,
+  "bin": {
+    "trpcdev-upgrade": "./dist/bin.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build": "node ../../tooling/pack/pack.ts src/bin.ts"
+  },
+  "dependencies": {
+    "@effect/platform-node": "^4.0.2",
+    "effect": "^4.0.0",
+    "magic-string": "^0.30.21",
+    "oxc-parser": "^0.154.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.1",
+    "typescript": "^7.0.2",
+    "vite-plus": "1.1.0"
+  }
+}

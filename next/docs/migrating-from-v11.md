@@ -65,6 +65,21 @@ What differs from a v11 server:
 - `httpLink` and `httpBatchLink` get an output's promises settled; a procedure that returns an async iterable needs `httpBatchStreamLink` (as in v11).
 - `responseMeta` is gone: procedures set headers and status on their `response` handle, and the v11 handler sends them.
 
+## Run the codemod
+
+```sh
+npx @trpcdev/upgrade src          # dry run: what would change, what's left
+npx @trpcdev/upgrade src --write
+```
+
+It rewrites what has one v12 form (imports, `initTRPC`, `TRPCError`, `mergeRouters`, `createCaller`, `fetchRequestHandler`, the HTTP links and their `transformer`, `createTRPCContext`'s names) and keeps your formatting. The rest it prints as `file:line:column` steps, with the v12 way:
+
+```
+would upgrade src/server/trpc.ts
+src/server/trpc.ts:4:3 transformer: declare the serializer by type, initTrpc<{ serializer: typeof serializer }>(), and pass createSyncSerializer(transformer) to the handler and links
+src/server/index.ts:1:1 observable() subscriptions: return an async generator or an Effect Stream
+```
+
 ## API changes
 
 | v11                                                                | v12                                                                                                     |
