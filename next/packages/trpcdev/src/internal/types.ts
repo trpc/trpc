@@ -90,21 +90,25 @@ type Plain =
 export type Deserialized<T> =
   IsAny<T> extends true
     ? any
-    : [T] extends [Plain]
-      ? T
-      : T extends ProcedureResponse
-        ? globalThis.Response
-        : T extends Leaf
-          ? T
-          : T extends AsyncIterable<infer U, infer R>
-            ? IsAny<R> extends true
-              ? AsyncIterable<Deserialized<U>>
-              : [R] extends [void]
-                ? AsyncIterable<Deserialized<U>>
-                : AsyncIterable<Deserialized<U>, Deserialized<R>>
-            : T extends PromiseLike<infer U>
-              ? Promise<Deserialized<U>>
-              : { [K in keyof T]: Deserialized<T[K]> };
+    : unknown extends T
+      ? unknown
+      : [T] extends [Plain]
+        ? T
+        : T extends ProcedureResponse
+          ? globalThis.Response
+          : T extends Leaf
+            ? T
+            : T extends ReadableStream<infer U>
+              ? ReadableStream<Deserialized<U>>
+              : T extends AsyncIterable<infer U, infer R>
+                ? IsAny<R> extends true
+                  ? AsyncIterable<Deserialized<U>>
+                  : [R] extends [void]
+                    ? AsyncIterable<Deserialized<U>>
+                    : AsyncIterable<Deserialized<U>, Deserialized<R>>
+                : T extends PromiseLike<infer U>
+                  ? Promise<Deserialized<U>>
+                  : { [K in keyof T]: Deserialized<T[K]> };
 
 /**
  * Which output types a serializer keeps, at the type level. Declared on
@@ -187,46 +191,50 @@ type JsonObject<T, K> = Simplify<
 export type JsonOf<T, K = never> =
   IsAny<T> extends true
     ? any
-    : T extends K
-      ? T
-      : T extends { toJSON(): infer J }
-        ? JsonOf<J, K>
-        : T extends string | number | boolean | null
-          ? T
-          : T extends Dropped | bigint
-            ? never
-            : T extends
-                  | ReadonlyMap<unknown, unknown>
-                  | ReadonlySet<unknown>
-                  | Error
-                  | RegExp
-                  | Blob
-                  | PromiseLike<unknown>
-                  | AsyncIterable<unknown>
-                  | ReadableStream
-              ? Record<string, never>
-              : T extends readonly unknown[]
-                ? { -readonly [I in keyof T]: JsonItem<T[I], K> }
-                : T extends object
-                  ? JsonObject<T, K>
-                  : never;
+    : unknown extends T
+      ? unknown
+      : T extends K
+        ? T
+        : T extends { toJSON(): infer J }
+          ? JsonOf<J, K>
+          : T extends string | number | boolean | null
+            ? T
+            : T extends Dropped | bigint
+              ? never
+              : T extends
+                    | ReadonlyMap<unknown, unknown>
+                    | ReadonlySet<unknown>
+                    | Error
+                    | RegExp
+                    | Blob
+                    | PromiseLike<unknown>
+                    | AsyncIterable<unknown>
+                    | ReadableStream
+                ? Record<string, never>
+                : T extends readonly unknown[]
+                  ? { -readonly [I in keyof T]: JsonItem<T[I], K> }
+                  : T extends object
+                    ? JsonObject<T, K>
+                    : never;
 
 type Framed<T, K> =
   IsAny<T> extends true
     ? any
     : T extends ProcedureResponse
       ? globalThis.Response
-      : T extends AsyncIterable<infer U, infer R>
-        ? IsAny<R> extends true
-          ? AsyncIterable<JsonOf<U, K>>
-          : [R] extends [void]
+      : T extends ReadableStream<infer U>
+        ? ReadableStream<JsonOf<U, K>>
+        : T extends AsyncIterable<infer U, infer R>
+          ? IsAny<R> extends true
             ? AsyncIterable<JsonOf<U, K>>
-            : AsyncIterable<JsonOf<U, K>, JsonOf<R, K>>
-        : T extends PromiseLike<infer U>
-          ? Promise<JsonOf<U, K>>
-          :
-              | JsonOf<Exclude<T, void>, K>
-              | (undefined extends T ? undefined : never);
+            : [R] extends [void]
+              ? AsyncIterable<JsonOf<U, K>>
+              : AsyncIterable<JsonOf<U, K>, JsonOf<R, K>>
+          : T extends PromiseLike<infer U>
+            ? Promise<JsonOf<U, K>>
+            :
+                | JsonOf<Exclude<T, void>, K>
+                | (undefined extends T ? undefined : never);
 
 /**
  * A procedure's output as the client receives it under a serializer's form.

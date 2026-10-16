@@ -7,6 +7,7 @@ import {
   routerType,
   safe,
   wsLink,
+  type Deserialized,
 } from 'trpcdev/client';
 import {
   createFetchHandler,
@@ -83,6 +84,65 @@ test('JsonOf is the JSON round trip of a type', () => {
   expectTypeOf<JsonOf<Date | Set<number>, Date>>().toEqualTypeOf<
     Date | Record<string, never>
   >();
+});
+
+test('ReadableStream outputs arrive as ReadableStreams; unknown stays unknown', async () => {
+  type Item = { at: Date; data: unknown };
+  expectTypeOf<Deserialized<ReadableStream<Item>>>().toEqualTypeOf<
+    ReadableStream<Item>
+  >();
+  expectTypeOf<Deserialized<{ data: unknown }>>().toEqualTypeOf<{
+    data: unknown;
+  }>();
+  expectTypeOf<JsonOf<{ data: unknown }>>().toEqualTypeOf<{
+    data?: unknown;
+  }>();
+
+  const items = (): ReadableStream<Item> =>
+    new ReadableStream({
+      start(controller) {
+        controller.enqueue({ at, data: { n: 1 } });
+        controller.enqueue({ at, data: null });
+        controller.close();
+      },
+    });
+  const read = async <T>(stream: ReadableStream<T>) => {
+    const out: T[] = [];
+    for await (const item of stream as ReadableStream<T> & AsyncIterable<T>)
+      out.push(item);
+    return out;
+  };
+
+  const rich = initTrpc();
+  const richRouter = { items: rich.procedure.query(items) };
+  await using richServer = await createTestServer({ router: richRouter });
+  const richOut = await createTrpcClient<typeof richRouter>({
+    links: [httpLink({ url: richServer.url })],
+  }).items.query();
+  expectTypeOf(richOut).toEqualTypeOf<ReadableStream<Item>>();
+  expect(richOut).toBeInstanceOf(ReadableStream);
+  expect(await read(richOut)).toEqual([
+    { at, data: { n: 1 } },
+    { at, data: null },
+  ]);
+
+  const plain = initTrpc<{ serializer: typeof jsonSerializer }>();
+  const plainRouter = { items: plain.procedure.query(items) };
+  await using plainServer = await createTestServer({
+    router: plainRouter,
+    serializer: jsonSerializer,
+  });
+  const plainOut = await createTrpcClient<typeof plainRouter>({
+    links: [httpLink({ url: plainServer.url, serializer: jsonSerializer })],
+  }).items.query();
+  expectTypeOf(plainOut).toEqualTypeOf<
+    ReadableStream<{ at: string; data?: unknown }>
+  >();
+  expect(plainOut).toBeInstanceOf(ReadableStream);
+  expect(await read(plainOut)).toEqual([
+    { at: at.toISOString(), data: { n: 1 } },
+    { at: at.toISOString(), data: null },
+  ]);
 });
 
 test('no serializer: plain JSON, JSON-form client types, ?input= GET params', async () => {
