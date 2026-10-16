@@ -29,7 +29,7 @@ const negativeInfinity = placeholder('-Infinity', -Infinity);
 const negativeZero = placeholder('-0', -0);
 const nan = placeholder('NaN', NaN);
 
-export const serializers = {
+export const serializers: SerializeRecord = {
   BigInt: (v) => (typeof v === 'bigint' ? v.toString() : false),
   Date: (v) => (v instanceof Date ? v.toJSON() : false),
   Headers: (v) => (v instanceof Headers ? Array.from(v.entries()) : false),
@@ -49,9 +49,9 @@ export const serializers = {
   undefined: undefinedValue,
   URL: (v) => (v instanceof URL ? v.href : false),
   URLSearchParams: (v) => (v instanceof URLSearchParams ? v.toString() : false),
-} satisfies SerializeRecord;
+};
 
-export const deserializers = {
+export const deserializers: DeserializeRecord = {
   BigInt: (v: string) => BigInt(v),
   Date: (v: string) => new Date(v),
   Headers: {
@@ -85,7 +85,7 @@ export const deserializers = {
   undefined: undefinedValue,
   URL: (v: string) => new URL(v),
   URLSearchParams: (v: string) => new URLSearchParams(v),
-} satisfies DeserializeRecord;
+};
 
 /** Proposal 11 (e): `RegExp` is output-only by default (ReDoS). */
 export const inputDeserializers: DeserializeRecord = Object.fromEntries(

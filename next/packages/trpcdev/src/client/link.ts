@@ -207,22 +207,44 @@ export const firstValue = (
   );
 
 /**
- * Creates a link from an async function (17 L-B). Call `next(op)` to
- * continue the chain, and return its result (or a replacement).
- *
- * @example
- * ```ts
- * const authLink = link(async ({ op, next }) =>
- *   next({
- *     ...op,
- *     context: { ...op.context, headers: { authorization: await getToken() } },
- *   }),
- * );
- * ```
+ * {@link link}: an async-function link, plus `link.effect` for Effect ones.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function link<TDecl extends LinkDecl = {}>(
+export interface LinkFactory {
+  /**
+   * Creates a link from an async function (17 L-B). Call `next(op)` to
+   * continue the chain, and return its result (or a replacement).
+   *
+   * @example
+   * ```ts
+   * const authLink = link(async ({ op, next }) =>
+   *   next({
+   *     ...op,
+   *     context: { ...op.context, headers: { authorization: await getToken() } },
+   *   }),
+   * );
+   * ```
+   */
+  <TDecl extends LinkDecl = {}>(
+    fn: (opts: PromiseLinkOpts<DeclContext<TDecl>>) => Promise<unknown>,
+  ): TrpcLink<TDecl>;
+  /**
+   * Creates a link from a function returning an Effect `Stream` (17 L-B).
+   *
+   * @example
+   * ```ts
+   * const timingLink = link.effect(({ op, next }) =>
+   *   next(op).pipe(Stream.tap(() => Effect.log(op.path))),
+   * );
+   * ```
+   */
+  effect: <TDecl extends LinkDecl = {}>(
+    fn: (opts: EffectLinkOpts<DeclContext<TDecl>>) => OperationStream,
+  ) => TrpcLink<TDecl>;
+}
+
+function promiseLink<TDecl extends LinkDecl = {}>(
   fn: (opts: PromiseLinkOpts<DeclContext<TDecl>>) => Promise<unknown>,
 ): TrpcLink<TDecl> {
   return ({ op, next }: EffectLinkOpts) => {
@@ -248,10 +270,14 @@ export function link<TDecl extends LinkDecl = {}>(
 }
 
 /**
- * Creates a link from a function returning an Effect `Stream` (17 L-B).
+ * Creates a link from an async function, or with `link.effect`, from a
+ * function returning an Effect `Stream` (17 L-B).
  *
  * @example
  * ```ts
+ * const authLink = link(async ({ op, next }) =>
+ *   next({ ...op, context: { ...op.context, headers: { authorization: await getToken() } } }),
+ * );
  * const timingLink = link.effect(({ op, next }) =>
  *   next(op).pipe(Stream.tap(() => Effect.log(op.path))),
  * );
@@ -259,9 +285,11 @@ export function link<TDecl extends LinkDecl = {}>(
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-link.effect = <TDecl extends LinkDecl = {}>(
-  fn: (opts: EffectLinkOpts<DeclContext<TDecl>>) => OperationStream,
-): TrpcLink<TDecl> => fn as TrpcLink<TDecl>;
+export const link: LinkFactory = Object.assign(promiseLink, {
+  effect: <TDecl extends LinkDecl = {}>(
+    fn: (opts: EffectLinkOpts<DeclContext<TDecl>>) => OperationStream,
+  ): TrpcLink<TDecl> => fn as TrpcLink<TDecl>,
+});
 
 const switchNames = new WeakMap<AnyLink, ReadonlySet<string>>();
 

@@ -18,7 +18,7 @@ import type { RouterPaths } from '../types.ts';
 export type Chain = AnyLink | ReadonlyArray<AnyLink>;
 
 /** @internal */
-export const asArray = (links: Chain) =>
+export const asArray = (links: Chain): ReadonlyArray<AnyLink> =>
   Array.isArray(links) ? (links as ReadonlyArray<AnyLink>) : [links as AnyLink];
 
 /** @internal */

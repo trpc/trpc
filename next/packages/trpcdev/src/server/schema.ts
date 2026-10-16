@@ -139,7 +139,9 @@ export function validate(
 }
 
 /** @internal */
-export const inputError = (issues: InputValidationErrorData['issues']) =>
+export const inputError = (
+  issues: InputValidationErrorData['issues'],
+): TrpcError<'BAD_REQUEST', { issues: InputValidationErrorData['issues'] }> =>
   new TrpcError({
     code: 'BAD_REQUEST',
     message: 'Input validation failed',
@@ -148,7 +150,9 @@ export const inputError = (issues: InputValidationErrorData['issues']) =>
   });
 
 /** @internal */
-export const outputError = (issues: InputValidationErrorData['issues']) =>
+export const outputError = (
+  issues: InputValidationErrorData['issues'],
+): TrpcError<'INTERNAL_SERVER_ERROR'> =>
   new TrpcError({
     code: 'INTERNAL_SERVER_ERROR',
     message: 'Output validation failed',

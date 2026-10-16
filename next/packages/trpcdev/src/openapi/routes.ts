@@ -53,7 +53,7 @@ export function resolveRoute(
 }
 
 /** Whether the method sends its input in the query string (GET) rather than a body. @internal */
-export const usesQuery = (method: HttpMethod) => method === 'GET';
+export const usesQuery = (method: HttpMethod): boolean => method === 'GET';
 
 /** Matches a path against a template, returning the decoded params. @internal */
 export function compileRoute(
