@@ -24,10 +24,16 @@ export default defineConfig({
       '.repos/**',
       '**/dist/**',
       'spikes/**/generated/**',
+      'test/**/generated/**',
     ],
   },
   lint: {
-    ignorePatterns: ['.repos/**', '**/dist/**', 'spikes/**/generated/**'],
+    ignorePatterns: [
+      '.repos/**',
+      '**/dist/**',
+      'spikes/**/generated/**',
+      'test/**/generated/**',
+    ],
     options: {
       typeAware: true,
       typeCheck: true,

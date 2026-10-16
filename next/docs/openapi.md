@@ -190,3 +190,43 @@ links: [
   openApiLink({ url, contract: toContract(appContract) }),
 ];
 ```
+
+## A contract from an OpenAPI document
+
+`generateContractFromOpenApi(document, { prefix?, exportName?, patterns? })` turns an OpenAPI 3.0 or 3.1 document into the source of a `trpcdev/contract` module. Schemas are Effect Schemas, translated by Effect's `SchemaRepresentation`; each operation becomes a procedure with its `.route()`, so the contract works with `openApiLink` and `validationLink` against any REST API:
+
+```ts
+import { generateContractFromOpenApi } from 'trpcdev/openapi';
+
+const document = await (
+  await fetch('https://petstore.example/openapi.json')
+).json();
+await writeFile(
+  'src/petstore.ts',
+  generateContractFromOpenApi(document, { exportName: 'petstore' }),
+);
+```
+
+```ts
+// src/petstore.ts (generated)
+export const Pet = Schema.Struct({
+  id: Schema.Number.check(Schema.isInt()),
+  name: Schema.String,
+});
+export const petstore = {
+  pets: {
+    list: c
+      .input(PetsListInput)
+      .output(PetsListOutput)
+      .route({ method: 'GET', path: '/pets' })
+      .query(),
+  },
+};
+```
+
+- Procedure paths come from `operationId`s, with dots nesting (`pets.list`); without one, from the method and path (`deletePetsPetId`).
+- `GET` is a query, a `text/event-stream` response a subscription, anything else a mutation. The first 2xx status becomes `successStatus`.
+- Path and query parameters merge with the JSON body into one input, like `inputStructure: 'compact'`.
+- Objects that don't mention `additionalProperties` become closed structs (extra keys are still ignored when decoding), except where `allOf` merges them.
+- Error responses in trpcdev's own shape (`code` and `data`) become `.errors()`, so a document from `generateOpenApi` round-trips with typed errors. Other APIs' errors stay unexpected errors.
+- `pattern`s are ignored unless `patterns: 'apply'`; only use that with documents you trust.

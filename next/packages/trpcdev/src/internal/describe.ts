@@ -172,7 +172,12 @@ export function assertLoaded(flat: FlatRoutes): FlatRoutes {
   return flat;
 }
 
-const withoutSpec = ({ spec: _, ...route }: Route): Route => route;
+const withoutSpec = (route: Route): Route => {
+  if (!('spec' in route)) return route;
+  const copy = { ...route };
+  delete (copy as { spec?: unknown }).spec;
+  return copy;
+};
 
 /**
  * @since 12.0.0-alpha.0

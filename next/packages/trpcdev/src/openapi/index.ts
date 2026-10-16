@@ -24,6 +24,11 @@
  */
 export { parseBracketNotation, toBracketNotation } from './bracket.ts';
 export { coerceBySchema } from './coerce.ts';
+export {
+  generateContractFromOpenApi,
+  type GenerateContractOptions,
+  type OpenApiSource,
+} from './to-contract.ts';
 export type { OpenApiErrorBody } from './errors.ts';
 export {
   generateOpenApi,
