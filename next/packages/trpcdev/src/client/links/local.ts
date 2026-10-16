@@ -2,6 +2,7 @@ import { Context, Effect, ManagedRuntime, Stream, type Layer } from 'effect';
 import {
   fromWireError,
   isTrpcError,
+  streamErrors,
   toWireError,
   TrpcError,
 } from '../../internal/error.ts';
@@ -123,7 +124,10 @@ export function localLink<TRouter extends AnyRouter>(
             chunks
               ? Stream.concat(Stream.make(head), chunks)
               : Stream.make(head),
-            { reviveError: (value) => fromWireError(value) },
+            {
+              reviveError: (value) => fromWireError(value),
+              ...streamErrors,
+            },
           ),
         );
       }),

@@ -8,4 +8,4 @@
 - (agent) The code is what matters mid-stream; the HTTP status was already sent. `STREAM_INTERRUPTED` is a client-side code, so `Effect.catchTag('STREAM_INTERRUPTED', …)` works ([`error-tags.md`](./error-tags.md)).
 - Why: the error type no longer depends on the serializer ([`replaceable-serializers.md`](./replaceable-serializers.md)), and callers narrow stream failures like any other error.
 - Lost: `DansonError` as a distinct stream-failure type.
-- Lives in: `packages/trpcdev/src/serializer/stream.ts`, `src/internal/error.ts` (not built yet).
+- Lives in: `packages/trpcdev/src/serializer/stream.ts` (`streamFailed`, `streamInterrupted` options), `src/internal/error.ts` (`streamErrors`, passed by every client link); `test/integration/batching-and-streaming.test.ts`.

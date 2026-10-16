@@ -1,4 +1,4 @@
-import { createTrpcClient, httpLink, safe } from 'trpcdev/client';
+import { createTrpcClient, httpLink, safe, TrpcError } from 'trpcdev/client';
 import { error, initTrpc } from 'trpcdev/server';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
@@ -186,4 +186,29 @@ test('aborting a streamed output rejects with CLIENT_CLOSED_REQUEST and stops th
   expect(seen).toEqual([0, 1, 2]);
   expect(err).toMatchObject({ code: 'CLIENT_CLOSED_REQUEST' });
   await vi.waitFor(() => expect(ticksStopped).toBe(before + 1));
+});
+
+test('a stream that ends early rejects open values with STREAM_INTERRUPTED', async () => {
+  await using server = await createTestServer({ router });
+  const truncating: typeof fetch = async (input, init) => {
+    const res = await fetch(input, init);
+    const lines = (await res.text()).split('\n').filter(Boolean);
+    return new Response(`${lines[0]}\n`, {
+      status: res.status,
+      headers: res.headers,
+    });
+  };
+  const client = createTrpcClient<AppRouter>({
+    links: [httpLink({ url: server.url, fetch: truncating })],
+  });
+  const out = await client.dashboard.query();
+  const err = await out.stats.then(
+    () => undefined,
+    (e: unknown) => e,
+  );
+  expect(err).toBeInstanceOf(TrpcError);
+  expect(err).toMatchObject({
+    code: 'STREAM_INTERRUPTED',
+    _tag: 'STREAM_INTERRUPTED',
+  });
 });

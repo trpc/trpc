@@ -258,3 +258,22 @@ export function fromWireError(body: unknown, status?: number): TrpcError {
     defined: inner['defined'] === true,
   });
 }
+
+/**
+ * What a streamed value rejects with when its stream dies or ends early,
+ * for `Serializer.deserializeStream`.
+ * @internal
+ */
+export const streamErrors = {
+  streamFailed: (cause: unknown): AnyTrpcError =>
+    new TrpcError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Stream failed',
+      cause,
+    }),
+  streamInterrupted: (): AnyTrpcError =>
+    new TrpcError({
+      code: 'STREAM_INTERRUPTED',
+      message: 'Stream interrupted',
+    }),
+};

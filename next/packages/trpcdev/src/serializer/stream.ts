@@ -303,6 +303,10 @@ export function serializeStream(
 export interface DeserializeStreamOptions extends DeserializeOptions {
   /** Turns a deserialized ERROR chunk into the value a deferred rejects with. */
   reviveError?: (value: unknown) => unknown;
+  /** What open deferred values reject with when the source dies (a defect). */
+  streamFailed?: (cause: unknown) => unknown;
+  /** What open deferred values reject with when the source ends early. */
+  streamInterrupted?: () => unknown;
 }
 
 type ChunkQueue = Queue.Queue<[Status, unknown], unknown>;
@@ -312,6 +316,11 @@ export function deserializeStream<T, E>(
   options: DeserializeStreamOptions = {},
 ): Effect.Effect<T, E | DansonError> {
   const revive = options.reviveError ?? ((v: unknown) => v);
+  const failed =
+    options.streamFailed ??
+    ((cause: unknown) => new DansonError('Stream failed', { cause }));
+  const interrupted =
+    options.streamInterrupted ?? (() => new DansonError('Stream interrupted'));
   return Effect.gen(function* () {
     const head = yield* Deferred.make<T, E | DansonError>();
     const queues = new Map<number, ChunkQueue>();
@@ -339,7 +348,7 @@ export function deserializeStream<T, E>(
               Stream.runHead,
               Effect.flatMap((first) => {
                 if (first._tag === 'None') {
-                  return Effect.fail(new DansonError('Stream interrupted'));
+                  return Effect.fail(interrupted());
                 }
                 const [status, v] = first.value;
                 return status === VALUE
@@ -471,16 +480,14 @@ export function deserializeStream<T, E>(
           const error = failure
             ? failure.error
             : Exit.isFailure(exit)
-              ? new DansonError('Stream failed', {
-                  cause: Cause.squash(exit.cause),
-                })
-              : new DansonError('Stream interrupted');
+              ? failed(Cause.squash(exit.cause))
+              : interrupted();
           if (first) {
             Deferred.doneUnsafe(
               head,
               Exit.isFailure(exit)
                 ? Effect.failCause(exit.cause)
-                : Effect.fail(new DansonError('Empty stream')),
+                : Effect.fail(interrupted() as never),
             );
           }
           // Bytes already received still drain; then waiting frames settle.

@@ -131,7 +131,13 @@ export interface Serializer {
   /** Rebuilds a value from its head frame and chunks. */
   deserializeStream<T, E>(
     frames: Stream.Stream<Frame, E>,
-    opts?: { reviveError?: (value: unknown) => unknown },
+    opts?: {
+      reviveError?: (value: unknown) => unknown;
+      /** What open deferred values reject with when the frames die. */
+      streamFailed?: (cause: unknown) => unknown;
+      /** What open deferred values reject with when the frames end early. */
+      streamInterrupted?: () => unknown;
+    },
   ): Effect.Effect<T, E | DansonError>;
   /** Encodes a value as legible URL query params (`a=1&tags[]=x`). */
   toSearch(value: unknown): string;
@@ -188,7 +194,7 @@ export function createSerializer(opts: SerializerOptions = {}): Serializer {
     serializeDeferred: (value, o) =>
       serializeDeferred(value, { serializers, coerceError: o?.coerceError }),
     deserializeStream: (frames, o) =>
-      deserializeStream(frames, { ...output, reviveError: o?.reviveError }),
+      deserializeStream(frames, { ...output, ...o }),
     toSearch: (value) => toSearch(value, { serializers }),
     fromSearch: (search, o) => fromSearch(search, de(o)),
   };

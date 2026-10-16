@@ -1,5 +1,9 @@
 import { Cause, Effect, Queue, Stream } from 'effect';
-import { fromWireError, TrpcError } from '../../internal/error.ts';
+import {
+  fromWireError,
+  streamErrors,
+  TrpcError,
+} from '../../internal/error.ts';
 import type {
   Frame,
   SerializeOpts,
@@ -58,6 +62,7 @@ export class DeferredDecoder {
     return Effect.runPromise(
       this.#serializer.deserializeStream(Stream.fromQueue(queue), {
         reviveError: (value) => fromWireError(value),
+        ...streamErrors,
       }),
     );
   }

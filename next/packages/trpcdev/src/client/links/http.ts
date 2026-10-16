@@ -2,6 +2,7 @@ import { Cause, Effect, Queue, Stream } from 'effect';
 import {
   fromWireError,
   isTrpcError,
+  streamErrors,
   TrpcError,
   type AnyTrpcError,
 } from '../../internal/error.ts';
@@ -295,7 +296,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink {
         toHttpError,
       ).pipe(Stream.map((line) => JSON.parse(line) as Frame));
       return Effect.runPromise(
-        serializer.deserializeStream(frames, { reviveError }),
+        serializer.deserializeStream(frames, { reviveError, ...streamErrors }),
       );
     }
     const text = await res.text();
@@ -455,7 +456,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink {
         Effect.runPromise(
           serializer.deserializeStream(
             Stream.fromAsyncIterable(queue, toHttpError),
-            { reviveError },
+            { reviveError, ...streamErrors },
           ),
         ).then(item.resolve, (cause) => item.reject(toHttpError(cause)));
       }
