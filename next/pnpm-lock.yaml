@@ -621,6 +621,12 @@ importers:
       danson:
         specifier: 0.13.1
         version: 0.13.1
+      devalue:
+        specifier: 5.9.4
+        version: 5.9.4
+      devalue-async:
+        specifier: 0.7.2
+        version: 0.7.2(devalue@5.9.4)
       effect:
         specifier: 4.0.2
         version: 4.0.2
@@ -642,6 +648,9 @@ importers:
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
+      undici:
+        specifier: 8.11.2
+        version: 8.11.2
       vite-plus:
         specifier: 1.1.0
         version: 1.1.0(@types/node@24.19.1)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(svelte@5.57.2)(typescript@7.0.2)
@@ -3244,6 +3253,12 @@ packages:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
 
+  devalue-async@0.7.2:
+    resolution: {integrity: sha512-YzShHChhaacT/HYApu+E/ty4x5dEw7Gfo9xJZ+EN0T+G/k6S+MMyNwzFiaUB8+i7LAmiRHvpY/QtIq3+2Xpkkw==}
+    engines: {node: '>=18.3.0'}
+    peerDependencies:
+      devalue: ^5.0.0
+
   devalue@5.9.4:
     resolution: {integrity: sha512-sPAT4pztbu6586/hrhOnMKS17IJrvg12mXiSPSS3W5qDeN2RGgvZ0diZCm31dBbnevfVmujNO3IM2wrS4Y2Rhg==}
 
@@ -5754,6 +5769,10 @@ snapshots:
   dequal@2.0.3: {}
 
   detect-libc@2.1.2: {}
+
+  devalue-async@0.7.2(devalue@5.9.4):
+    dependencies:
+      devalue: 5.9.4
 
   devalue@5.9.4: {}
 

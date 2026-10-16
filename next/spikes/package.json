@@ -20,6 +20,8 @@
     "@types/react-dom": "19.2.3",
     "arktype": "2.2.8",
     "danson": "0.13.1",
+    "devalue": "5.9.4",
+    "devalue-async": "0.7.2",
     "effect": "4.0.2",
     "react": "19.3.0",
     "react-dom": "19.3.0",
@@ -27,6 +29,7 @@
     "scheduler": "0.27.0",
     "superjson": "2.2.6",
     "typescript": "^7.0.2",
+    "undici": "8.11.2",
     "vite-plus": "1.1.0",
     "zod": "4.6.5"
   }
