@@ -71,6 +71,19 @@ const byId = t.procedure
 
 On the client, `error.defined` is true for declared errors (narrow on `code` next) and false for anything else: thrown errors, network failures, aborts. Unexpected errors' messages are masked unless `NODE_ENV` is `development` or `test`, or `exposeUnexpectedErrors: true`. There is no `errorFormatter`.
 
+Any string is a code. The built-in ones (`NOT_FOUND`, `UNAUTHORIZED`, …) have their HTTP status; a custom code is a 400 unless you pass `status`:
+
+```ts
+error({ code: 'OUT_OF_STOCK' }); // 400
+error({ code: 'OUT_OF_STOCK', status: 409 }); // 409
+```
+
+An error's `_tag` is its code, so Effect code narrows with `catchTag`:
+
+```ts
+Effect.catchTag('NOT_FOUND', () => Effect.succeed(null));
+```
+
 ## Middleware
 
 ```ts

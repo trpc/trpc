@@ -33,6 +33,8 @@ export const ERROR_STATUS = {
   NETWORK_ERROR: 0,
   /** Client-side only: a link failed. */
   CLIENT_ERROR: 0,
+  /** Client-side only: a stream stopped without an end or an error. */
+  STREAM_INTERRUPTED: 0,
 } as const;
 
 /**
@@ -53,7 +55,7 @@ export interface TrpcErrorOptions<TCode extends string, TData> {
   message?: string | undefined;
   /** Sent to the client, serialized with the endpoint's serializer. */
   data?: TData;
-  /** HTTP status. Defaults from the code, or 500 for an unknown custom code. */
+  /** HTTP status. Defaults from the code, or 400 for a custom code. */
   status?: number | undefined;
   /** Whether the error is part of the procedure's typed error union. */
   defined?: boolean | undefined;
@@ -96,6 +98,8 @@ export class TrpcError<
   TData = unknown,
 > extends YieldableBase {
   override readonly name = 'TrpcError';
+  /** The code, so `Effect.catchTag('NOT_FOUND', …)` narrows on it. */
+  readonly _tag: TCode;
   readonly code: TCode;
   readonly status: number;
   readonly data: TData;
@@ -106,9 +110,10 @@ export class TrpcError<
       message: opts.message ?? opts.code,
       ...(opts.cause === undefined ? {} : { cause: opts.cause }),
     });
+    this._tag = opts.code;
     this.code = opts.code;
     this.status =
-      opts.status ?? (ERROR_STATUS as Record<string, number>)[opts.code] ?? 500;
+      opts.status ?? (ERROR_STATUS as Record<string, number>)[opts.code] ?? 400;
     this.data = opts.data as TData;
     this.defined = opts.defined ?? false;
   }

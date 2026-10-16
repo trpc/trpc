@@ -45,6 +45,9 @@ const router = {
       data: { plan: 'pro' as const },
     }),
   ),
+  outOfStock: t.procedure.mutation(() =>
+    error({ code: 'OUT_OF_STOCK', data: { sku: 'a1' } }),
+  ),
   thrown: t.procedure.query((): string => {
     throw new TrpcError({ code: 'CONFLICT', message: 'Already exists' });
   }),
@@ -130,6 +133,37 @@ test('custom codes keep their status and data', async () => {
     data: { plan: 'pro' },
     defined: true,
   });
+});
+
+test('a custom code without a status is a 400', async () => {
+  await using ctx = await setup();
+  const [, err] = await safe(ctx.client.outOfStock.mutate());
+  expect(err).toMatchObject({ code: 'OUT_OF_STOCK', status: 400 });
+  expect(new TrpcError({ code: 'ANYTHING' }).status).toBe(400);
+});
+
+test("an error's _tag is its code, so Effect.catchTag narrows on it", async () => {
+  const failing = (
+    id: string,
+  ): Effect.Effect<
+    never,
+    TrpcError<'NOT_FOUND', { id: string }> | TrpcError<'FORBIDDEN', undefined>
+  > =>
+    id === '1'
+      ? Effect.fail(error({ code: 'NOT_FOUND', data: { id } }))
+      : Effect.fail(error<'FORBIDDEN', undefined>({ code: 'FORBIDDEN' }));
+  const program = failing('1').pipe(
+    Effect.catchTag('NOT_FOUND', (e) => Effect.succeed(`missing ${e.data.id}`)),
+  );
+  expectTypeOf(program).toEqualTypeOf<
+    Effect.Effect<string, TrpcError<'FORBIDDEN', undefined>>
+  >();
+  expect(await Effect.runPromise(program)).toBe('missing 1');
+  expect(error({ code: 'NOT_FOUND' })._tag).toBe('NOT_FOUND');
+
+  await using ctx = await setup();
+  const [, err] = await safe(ctx.client.post.byId.query({ id: 'nope' }));
+  expect(err?._tag).toBe('NOT_FOUND');
 });
 
 test('a thrown TrpcError keeps its code but is not part of the typed union', async () => {
