@@ -13,7 +13,7 @@ next/
   packages/tanstack-query/  `@trpc12/tanstack-query`: framework-agnostic TanStack Query helpers
   packages/tanstack-*-query/  `@trpc12/tanstack-{react,preact,vue,solid,svelte,angular,lit}-query`: one package per TanStack adapter
   packages/upgrade/     `@trpc12/upgrade`: the v11 → v12 codemod (`trpc12-upgrade` bin)
-  packages/nest/        `@trpc12/nest`: contracts implemented in NestJS controllers (`@Implement`, `TrpcModule`)
+  packages/nest/        `@trpc12/nest`: contracts implemented in NestJS controllers (`@experimental_Implement`, `experimental_TrpcModule`)
   examples/             workspace-linked examples
   test/integration/     integration tests: real clients against real HTTP servers
   test/tanstack-query/  TanStack Query tests: real components per adapter (happy-dom) against real servers

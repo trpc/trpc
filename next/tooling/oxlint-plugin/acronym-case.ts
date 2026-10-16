@@ -3,6 +3,8 @@ import type { CreateRule, ESTree } from '@oxlint/plugins';
 const CONSTANT = /^[A-Z0-9_]+$/;
 /** Names the platform calls, so they can't be renamed. */
 const PLATFORM = new Set(['toJSON']);
+/** The stability prefix, cased apart from the name it marks. */
+const EXPERIMENTAL = 'experimental_';
 
 /**
  * Cases each run of capitals as a word: `TRPCError` → `TrpcError`,
@@ -22,6 +24,10 @@ export const expected = (
   name: string,
   typeParameter = false,
 ): string | undefined => {
+  if (name.startsWith(EXPERIMENTAL)) {
+    const fixed = expected(name.slice(EXPERIMENTAL.length), typeParameter);
+    return fixed === undefined ? undefined : EXPERIMENTAL + fixed;
+  }
   if (CONSTANT.test(name) || PLATFORM.has(name)) return undefined;
   const fixed =
     typeParameter && /^T[A-Z]/.test(name)

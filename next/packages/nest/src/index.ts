@@ -1,6 +1,6 @@
 /**
  * Serve contract-first procedures from NestJS controllers (`@trpc12/nest`).
- * `@Implement(contract)` routes a controller method by the contract's REST
+ * `@experimental_Implement(contract)` routes a controller method by the contract's REST
  * mapping, and the procedure it returns runs on `@trpc12/trpc/openapi`'s handler,
  * so the controller's injected services reach the resolver through `this`.
  *
@@ -10,13 +10,13 @@
  * class PostController {
  *   constructor(@Inject(Posts) private readonly posts: Posts) {}
  *
- *   @Implement(appContract.post.byId)
+ *   @experimental_Implement(appContract.post.byId)
  *   byId() {
  *     return impl.post.byId.query(({ input }) => this.posts.find(input.id));
  *   }
  * }
  *
- * @Module({ imports: [TrpcModule.forRoot({ createContext })], controllers: [PostController] })
+ * @Module({ imports: [experimental_TrpcModule.forRoot({ createContext })], controllers: [PostController] })
  * class AppModule {}
  * ```
  * @module
@@ -61,17 +61,17 @@ import {
 import type { AnyProcedure, CreateContextOpts } from '@trpc12/trpc/server';
 
 /**
- * The options of {@link TrpcModule.forRoot}: the OpenAPI handler's, with
+ * The options of {@link experimental_TrpcModule.forRoot}: the OpenAPI handler's, with
  * Nest's `ExecutionContext` as `createContext`'s `platform`.
  * @example
  * ```ts
- * TrpcModule.forRoot({
+ * experimental_TrpcModule.forRoot({
  *   createContext: ({ platform }) => ({ user: platform.switchToHttp().getRequest().user }),
  *   layer: Db.layer,
  * });
  * ```
  * @since 0.0.1
- * @stability stable
+ * @stability experimental
  */
 export interface TrpcModuleOptions extends Omit<
   BaseOpenApiHandlerOptions<never>,
@@ -89,16 +89,16 @@ export interface TrpcModuleOptions extends Omit<
 }
 
 /**
- * The options of {@link TrpcModule.forRootAsync}: a Nest factory provider.
+ * The options of {@link experimental_TrpcModule.forRootAsync}: a Nest factory provider.
  * @example
  * ```ts
- * TrpcModule.forRootAsync({
+ * experimental_TrpcModule.forRootAsync({
  *   inject: [Auth],
  *   useFactory: (auth: Auth) => ({ createContext: ({ platform }) => auth.contextOf(platform) }),
  * });
  * ```
  * @since 0.0.1
- * @stability stable
+ * @stability experimental
  */
 export interface TrpcModuleAsyncOptions extends Pick<
   ModuleMetadata,
@@ -114,12 +114,12 @@ export interface TrpcModuleAsyncOptions extends Pick<
  * The injection token of the {@link TrpcModuleOptions}.
  * @example
  * ```ts
- * constructor(@Inject(TRPC_MODULE_OPTIONS) options: TrpcModuleOptions) {}
+ * constructor(@Inject(experimental_TRPC_MODULE_OPTIONS) options: TrpcModuleOptions) {}
  * ```
  * @since 0.0.1
- * @stability stable
+ * @stability experimental
  */
-export const TRPC_MODULE_OPTIONS: unique symbol = Symbol(
+export const experimental_TRPC_MODULE_OPTIONS: unique symbol = Symbol(
   '@trpc12/nest/options',
 );
 
@@ -128,7 +128,7 @@ interface Target {
   readonly route: OpenApiCall['route'];
 }
 
-/** What each `@Implement` route serves, by the controller method Nest calls. */
+/** What each `@experimental_Implement` route serves, by the controller method Nest calls. */
 const targets = new WeakMap<object, Target>();
 
 const methodDecorators: Record<HttpMethod, (path: string) => MethodDecorator> =
@@ -138,19 +138,19 @@ const isProcedure = (value: unknown): value is AnyProcedure =>
   typeof value === 'object' && value !== null && '~trpc' in value;
 
 /**
- * Serves `@Implement` routes: one OpenAPI handler for the app, so the
+ * Serves `@experimental_Implement` routes: one OpenAPI handler for the app, so the
  * `layer` is built once, bridged to Nest's Node request and response by
  * Effect's `NodeHttpServer`.
  * @example
  * ```ts
- * app.get(TrpcHost).handler; // the OpenApiHandler behind every route
+ * app.get(experimental_TrpcHost).handler; // the OpenApiHandler behind every route
  * ```
  * @since 0.0.1
- * @stability stable
+ * @stability experimental
  */
 @Injectable()
-export class TrpcHost implements OnApplicationShutdown {
-  /** The OpenAPI handler every `@Implement` route runs on. */
+export class experimental_TrpcHost implements OnApplicationShutdown {
+  /** The OpenAPI handler every `@experimental_Implement` route runs on. */
   readonly handler: OpenApiHandler<ExecutionContext>;
   readonly #scope = Scope.makeUnsafe();
   readonly #pending = new WeakMap<
@@ -159,7 +159,9 @@ export class TrpcHost implements OnApplicationShutdown {
   >();
   readonly #node: (req: IncomingMessage, res: ServerResponse) => void;
 
-  constructor(@Inject(TRPC_MODULE_OPTIONS) options: TrpcModuleOptions) {
+  constructor(
+    @Inject(experimental_TRPC_MODULE_OPTIONS) options: TrpcModuleOptions,
+  ) {
     const handler = createOpenApiHandler({
       ...options,
       router: {},
@@ -213,21 +215,21 @@ export class TrpcHost implements OnApplicationShutdown {
 }
 
 /**
- * Runs the procedure an `@Implement` method returns. `@Implement` adds it;
+ * Runs the procedure an `@experimental_Implement` method returns. `@experimental_Implement` adds it;
  * it only needs registering by hand on a module that doesn't import
- * {@link TrpcModule}'s global providers.
+ * {@link experimental_TrpcModule}'s global providers.
  * @example
  * ```ts
- * @UseInterceptors(ImplementInterceptor)
+ * @UseInterceptors(experimental_ImplementInterceptor)
  * ```
  * @since 0.0.1
- * @stability stable
+ * @stability experimental
  */
 @Injectable()
-export class ImplementInterceptor implements NestInterceptor {
-  readonly #host: TrpcHost;
+export class experimental_ImplementInterceptor implements NestInterceptor {
+  readonly #host: experimental_TrpcHost;
 
-  constructor(@Inject(TrpcHost) host: TrpcHost) {
+  constructor(@Inject(experimental_TrpcHost) host: experimental_TrpcHost) {
     this.#host = host;
   }
 
@@ -238,7 +240,7 @@ export class ImplementInterceptor implements NestInterceptor {
       mergeMap(async (procedure: unknown) => {
         if (!isProcedure(procedure)) {
           throw new TypeError(
-            `@Implement: the method for "${target.path}" must return the procedure that implements it`,
+            `@experimental_Implement: the method for "${target.path}" must return the procedure that implements it`,
           );
         }
         const req = context
@@ -286,7 +288,7 @@ const route = (
   targets.set(descriptor.value as object, { path, route: procedure.route });
   applyDecorators(
     methodDecorators[resolved.method](nestPath(resolved.path)),
-    UseInterceptors(ImplementInterceptor),
+    UseInterceptors(experimental_ImplementInterceptor),
   )(target, key, descriptor);
 };
 
@@ -300,15 +302,15 @@ const route = (
  *
  * @example
  * ```ts
- * @Implement(appContract)
+ * @experimental_Implement(appContract)
  * all() {
  *   return impl.router({ post: { byId: impl.post.byId.query(({ input }) => this.posts.find(input.id)) } });
  * }
  * ```
  * @since 0.0.1
- * @stability stable
+ * @stability experimental
  */
-export function Implement(
+export function experimental_Implement(
   contract: object,
 ): (
   target: object,
@@ -321,7 +323,7 @@ export function Implement(
       const def = toContract({ [name]: contract }).procedures[name]!;
       if (!def.route?.path) {
         throw new Error(
-          `@Implement on ${name}(): a contract leaf needs a route path, .meta({ route: { path } }); or implement the router above it for default paths`,
+          `@experimental_Implement on ${name}(): a contract leaf needs a route path, .meta({ route: { path } }); or implement the router above it for default paths`,
         );
       }
       route(target, propertyKey, descriptor, name, def);
@@ -357,47 +359,55 @@ export function Implement(
 }
 
 /**
- * Provides the handler `@Implement` routes run on, to every module.
+ * Provides the handler `@experimental_Implement` routes run on, to every module.
  * @example
  * ```ts
- * @Module({ imports: [TrpcModule.forRoot({ createContext, layer })], controllers: [PostController] })
+ * @Module({ imports: [experimental_TrpcModule.forRoot({ createContext, layer })], controllers: [PostController] })
  * class AppModule {}
  * ```
  * @since 0.0.1
- * @stability stable
+ * @stability experimental
  */
 @Module({})
-export class TrpcModule {
+export class experimental_TrpcModule {
   /** Configures the handler with fixed options. */
   static forRoot(options: TrpcModuleOptions = {}): DynamicModule {
     return {
-      module: TrpcModule,
+      module: experimental_TrpcModule,
       global: true,
       providers: [
-        { provide: TRPC_MODULE_OPTIONS, useValue: options },
-        TrpcHost,
-        ImplementInterceptor,
+        { provide: experimental_TRPC_MODULE_OPTIONS, useValue: options },
+        experimental_TrpcHost,
+        experimental_ImplementInterceptor,
       ],
-      exports: [TRPC_MODULE_OPTIONS, TrpcHost, ImplementInterceptor],
+      exports: [
+        experimental_TRPC_MODULE_OPTIONS,
+        experimental_TrpcHost,
+        experimental_ImplementInterceptor,
+      ],
     };
   }
 
   /** Configures the handler from a factory that can inject providers. */
   static forRootAsync(options: TrpcModuleAsyncOptions): DynamicModule {
     return {
-      module: TrpcModule,
+      module: experimental_TrpcModule,
       global: true,
       imports: options.imports ?? [],
       providers: [
         {
-          provide: TRPC_MODULE_OPTIONS,
+          provide: experimental_TRPC_MODULE_OPTIONS,
           useFactory: options.useFactory,
           inject: options.inject ?? [],
         },
-        TrpcHost,
-        ImplementInterceptor,
+        experimental_TrpcHost,
+        experimental_ImplementInterceptor,
       ],
-      exports: [TRPC_MODULE_OPTIONS, TrpcHost, ImplementInterceptor],
+      exports: [
+        experimental_TRPC_MODULE_OPTIONS,
+        experimental_TrpcHost,
+        experimental_ImplementInterceptor,
+      ],
     };
   }
 }

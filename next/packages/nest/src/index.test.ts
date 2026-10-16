@@ -15,7 +15,7 @@ import { contract, toContract } from '@trpc12/trpc/contract';
 import { openapi, openApiLink } from '@trpc12/trpc/openapi';
 import { initTrpc } from '@trpc12/trpc/server';
 import { afterAll, beforeAll, expect, test } from 'vite-plus/test';
-import { Implement, TrpcModule } from './index.ts';
+import { experimental_Implement, experimental_TrpcModule } from './index.ts';
 
 const c = contract.create().with(openapi());
 const Post = Schema.Struct({ id: Schema.String, title: Schema.String });
@@ -75,7 +75,7 @@ class PostController {
     this.#posts = posts;
   }
 
-  @Implement(appContract.post.byId)
+  @experimental_Implement(appContract.post.byId)
   byId() {
     return impl.post.byId.query(
       ({ input, errors }) =>
@@ -92,7 +92,7 @@ class RestController {
     this.#posts = posts;
   }
 
-  @Implement({
+  @experimental_Implement({
     health: appContract.health,
     post: { create: appContract.post.create, count: appContract.post.count },
   })
@@ -122,13 +122,13 @@ class Deny implements CanActivate {
 
 @Controller()
 class GuardedController {
-  @Implement(appContract.secret)
+  @experimental_Implement(appContract.secret)
   @UseGuards(Deny)
   secret() {
     return impl.secret.query(() => 'hidden');
   }
 
-  @Implement(appContract.ticks)
+  @experimental_Implement(appContract.ticks)
   ticks() {
     return impl.ticks.subscription(async function* () {
       yield 1;
@@ -142,7 +142,7 @@ let count = 0;
 
 @Module({
   imports: [
-    TrpcModule.forRoot({
+    experimental_TrpcModule.forRoot({
       createContext: ({ request, platform }) => {
         const req = platform.switchToHttp().getRequest<{ path: string }>();
         expect(req.path).toBeTypeOf('string');
@@ -237,7 +237,7 @@ test('openApiLink calls the Nest app with the contract', async () => {
 test('a leaf without a route path throws', () => {
   expect(() => {
     class Bad {
-      @Implement(appContract.health)
+      @experimental_Implement(appContract.health)
       health() {
         return impl.health.query(() => 'ok' as const);
       }
