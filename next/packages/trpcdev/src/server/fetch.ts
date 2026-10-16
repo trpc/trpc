@@ -592,7 +592,7 @@ export function createFetchHandler<
       const response = createResponseHandle();
       const { headers } = response;
       const parent = yield* parentSpan(request);
-      const exit = yield* Effect.promise(() =>
+      const exit = yield* Effect.promise((_interrupted) =>
         base.run({
           request,
           procedure,
@@ -818,7 +818,7 @@ export function createFetchHandler<
       const lastEventId = request.headers[HEADER.lastEventId];
       const response = createResponseHandle();
       const parent = yield* parentSpan(request);
-      const exit = yield* Effect.promise(() =>
+      const exit = yield* Effect.promise((_interrupted) =>
         base.run({
           request,
           procedure,
@@ -1067,7 +1067,10 @@ export function createFetchHandler<
   const served = middleware.reduceRight<
     Effect.Effect<HttpServerResponse.HttpServerResponse, any, any>
   >((inner, m) => m(inner), app) as typeof app;
-  const webHandler = HttpEffect.toWebHandler(served as never);
+  // HttpEffect runs apps uninterruptibly; an aborted `request.signal` must abort the call.
+  const webHandler = HttpEffect.toWebHandler(
+    Effect.interruptible(served) as never,
+  );
 
   const core: SocketCore = {
     router,

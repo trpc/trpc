@@ -525,7 +525,7 @@ export function createV11Handler<
       const procedure = call.procedure;
       const response = createResponseHandle();
       const parent = yield* parentSpan(request);
-      const exit = yield* Effect.promise(() =>
+      const exit = yield* Effect.promise((_interrupted) =>
         base.run({
           request,
           procedure,
@@ -567,7 +567,7 @@ export function createV11Handler<
         inputEventId(callInput);
       const response = createResponseHandle();
       const parent = yield* parentSpan(request);
-      const exit = yield* Effect.promise(() =>
+      const exit = yield* Effect.promise((_interrupted) =>
         base.run({
           request,
           procedure: call.procedure,
@@ -864,7 +864,10 @@ export function createV11Handler<
   const served = middleware.reduceRight<
     Effect.Effect<HttpServerResponse.HttpServerResponse, any, any>
   >((inner, m) => m(inner), app);
-  const webHandler = HttpEffect.toWebHandler(served as never);
+  // HttpEffect runs apps uninterruptibly; an aborted `request.signal` must abort the call.
+  const webHandler = HttpEffect.toWebHandler(
+    Effect.interruptible(served) as never,
+  );
 
   const handler: V11Handler<unknown> = {
     fetch: (request, platform) =>

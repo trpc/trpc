@@ -11,7 +11,14 @@ import {
   type LoggerEvent,
 } from 'trpcdev/client';
 import { createUntypedClient } from 'trpcdev/extend';
-import { call, createRouterClient, error, initTrpc } from 'trpcdev/server';
+import { createV11Handler } from 'trpcdev/interop';
+import {
+  call,
+  createFetchHandler,
+  createRouterClient,
+  error,
+  initTrpc,
+} from 'trpcdev/server';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
@@ -222,6 +229,24 @@ test('aborting a call rejects with CLIENT_CLOSED_REQUEST and aborts the server',
   const [, err] = await pending;
   expect(err).toMatchObject({ code: 'CLIENT_CLOSED_REQUEST', defined: false });
   await vi.waitFor(() => expect(signals.aborted).toBe(before + 1));
+});
+
+test('an aborted request.signal aborts the call on handler.fetch', async () => {
+  const createContext = () => ({ token: null });
+  for (const handler of [
+    createFetchHandler({ router, createContext }),
+    createV11Handler({ router, createContext }),
+  ]) {
+    const before = signals.aborted;
+    const controller = new AbortController();
+    const pending = handler.fetch(
+      new Request('http://localhost/trpc/slow', { signal: controller.signal }),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    controller.abort();
+    await pending;
+    expect(signals.aborted).toBe(before + 1);
+  }
 });
 
 test('localLink runs the router in-process, through the serializer', async () => {
