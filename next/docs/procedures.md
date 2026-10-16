@@ -74,7 +74,19 @@ const report = await client.report.query({ id }); // File
 
 ## Errors
 
-There is one error class, `TrpcError`. Return or throw `error({ code })` from a resolver or a middleware. Errors a procedure declares get typed constructors, typed `data` and an OpenAPI entry:
+There is one error class, `TrpcError`. Return `error({ code })` from a resolver or a middleware, or fail with it in Effect code (`Effect.fail(error(…))`, `yield* error(…)`). The procedure's error union is inferred from those, with no declaration:
+
+```ts
+const byId = t.procedure
+  .input(z.object({ id: z.string() }))
+  .query(
+    ({ input }) =>
+      db.post.find(input.id) ??
+      error({ code: 'NOT_FOUND', data: { id: input.id } }),
+  );
+```
+
+Declaring errors with `.errors()` is optional. It adds typed constructors, `data` schemas and entries in `generateOpenApi`'s document. It also types what inference can't see: errors thrown from helpers (a `throw` has no type) and contracts, which have no resolver. `generateOpenApiFromTypes` documents inferred errors without declarations ([OpenAPI](./openapi.md)).
 
 ```ts
 const byId = t.procedure
@@ -89,7 +101,7 @@ const byId = t.procedure
   );
 ```
 
-On the client, `error.defined` is true for declared errors (narrow on `code` next) and false for anything else: thrown errors, network failures, aborts. Unexpected errors' messages are masked unless `NODE_ENV` is `development` or `test`, or `exposeUnexpectedErrors: true`. There is no `errorFormatter`.
+On the client, `error.defined` is true for errors in the union, whether returned, failed or declared (narrow on `code` next). It is false for anything else: undeclared thrown errors, network failures, aborts. Unexpected errors' messages are masked unless `NODE_ENV` is `development` or `test`, or `exposeUnexpectedErrors: true`. There is no `errorFormatter`.
 
 Any string is a code. The built-in ones (`NOT_FOUND`, `UNAUTHORIZED`, …) have their HTTP status; a custom code is a 400 unless you pass `status`:
 

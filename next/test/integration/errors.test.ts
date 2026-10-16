@@ -17,7 +17,20 @@ const t = initTrpc();
 const posts = new Map([['1', { id: '1', title: 'Hello', published: true }]]);
 posts.set('2', { id: '2', title: 'Draft', published: false });
 
+const signedOut = t.procedure.use(({ next, signal }) =>
+  signal.aborted ? next() : error({ code: 'UNAUTHORIZED' }),
+);
+const unpaid = t.procedure.use(
+  t.middleware.effect()(({ next, signal }) =>
+    signal.aborted
+      ? next()
+      : Effect.fail(error({ code: 'PLAN_REQUIRED', status: 402 })),
+  ),
+);
+
 const router = {
+  gated: signedOut.query(() => 'secret'),
+  paid: unpaid.query(() => 'pro'),
   post: {
     byId: t.procedure.input(z.object({ id: z.string() })).query(({ input }) => {
       const post = posts.get(input.id);
@@ -120,6 +133,28 @@ test('errors yielded in an Effect are inferred too', async () => {
   expect(err).toMatchObject({ code: 'NOT_FOUND', defined: true });
   if (isDefinedError(err)) {
     expectTypeOf(err.code).toEqualTypeOf<'NOT_FOUND' | 'BAD_REQUEST'>();
+  }
+});
+
+test('errors returned or failed in middleware join the union too', async () => {
+  await using ctx = await setup();
+  const gated = await safe(ctx.client.gated.query());
+  expect(gated.error).toMatchObject({
+    code: 'UNAUTHORIZED',
+    status: 401,
+    defined: true,
+  });
+  if (gated.error?.defined) {
+    expectTypeOf(gated.error.code).toEqualTypeOf<'UNAUTHORIZED'>();
+  }
+  const paid = await safe(ctx.client.paid.query());
+  expect(paid.error).toMatchObject({
+    code: 'PLAN_REQUIRED',
+    status: 402,
+    defined: true,
+  });
+  if (paid.error?.defined) {
+    expectTypeOf(paid.error.code).toEqualTypeOf<'PLAN_REQUIRED'>();
   }
 });
 
