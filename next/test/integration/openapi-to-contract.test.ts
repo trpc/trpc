@@ -206,3 +206,190 @@ test('two operations on one procedure path are rejected', () => {
     }),
   ).toThrow('two operations map to "x"');
 });
+
+test('recursive components, untyped and merged parameters, a prefix-only path and undeclared errors', async () => {
+  const doc = {
+    openapi: '3.1.0',
+    paths: {
+      '/api': { get: { operationId: 'root' } },
+      '/api/trees/{id}': {
+        put: {
+          operationId: 'trees.2nd',
+          parameters: [{ name: 'id', in: 'path' }],
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/Tree' },
+              },
+            },
+          },
+          responses: {
+            '200': {
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/Tree' },
+                },
+              },
+            },
+            '404': { description: 'no body' },
+            '409': {
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/Conflict' },
+                },
+              },
+            },
+            '500': {
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/Missing' },
+                },
+              },
+            },
+          },
+        },
+      },
+      '/api/notes': {
+        post: {
+          operationId: 'notes.add',
+          parameters: [
+            { name: 'draft', in: 'query', schema: { type: 'boolean' } },
+          ],
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: { text: { type: 'string' } },
+                },
+              },
+            },
+          },
+          responses: {
+            '200': {
+              content: {
+                'application/json': {
+                  schema: { type: 'object', properties: { ok: {} } },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    components: {
+      schemas: {
+        Tree: {
+          type: 'object',
+          required: ['value'],
+          properties: {
+            value: { type: 'string' },
+            children: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/Tree' },
+            },
+          },
+        },
+        Conflict: {
+          type: 'object',
+          required: ['code'],
+          properties: {
+            code: { const: 'CONFLICT' },
+            data: {
+              type: 'object',
+              required: ['at'],
+              properties: { at: { type: 'string' } },
+            },
+          },
+        },
+      },
+    },
+  };
+  const source = generateContractFromOpenApi(doc, { prefix: '/api/' });
+  await expect(source).toMatchFileSnapshot('./fixtures/generated/edges.ts');
+
+  const { contract, Tree } = await import('./fixtures/generated/edges.ts');
+  expect(
+    Schema.decodeUnknownSync(Tree)({
+      value: 'a',
+      children: [{ value: 'b', children: [] }],
+    }),
+  ).toEqual({ value: 'a', children: [{ value: 'b', children: [] }] });
+  expect(() =>
+    Schema.decodeUnknownSync(Tree)({ value: 'a', children: [{}] }),
+  ).toThrow();
+
+  const json = toContract(contract);
+  expect(
+    Object.fromEntries(
+      Object.entries(json.procedures).map(([path, p]) => [path, p.route]),
+    ),
+  ).toEqual({
+    root: { method: 'GET', path: '/' },
+    'trees.2nd': { method: 'PUT', path: '/trees/{id}' },
+    'notes.add': { method: 'POST', path: '/notes' },
+  });
+
+  const s = initTrpc<{ ctx: {} }>().concat(openapi());
+  const impl = s.implement(contract);
+  const server = impl.router({
+    root: impl.root.query(() => undefined),
+    trees: {
+      '2nd': impl.trees['2nd'].mutation(({ input }) =>
+        input.id === 'taken'
+          ? error({ code: 'CONFLICT', data: { at: input.value } })
+          : {
+              value: `${input.id}:${input.value}`,
+              children: input.children ?? [],
+            },
+      ),
+    },
+    notes: {
+      add: impl.notes.add.mutation(({ input }) => ({
+        ok: [input.draft ?? null, input.text ?? null],
+      })),
+    },
+  });
+  const handler = createOpenApiHandler({ router: server });
+  const client = createTrpcClient({
+    router: json,
+    links: [
+      openApiLink({
+        url: 'http://localhost',
+        contract: json,
+        fetch: (input, init) => handler.fetch(new Request(input, init)),
+      }),
+    ],
+  });
+  expect(await client.root.query()).toBeUndefined();
+  expect(
+    await client.trees['2nd'].mutate({
+      id: 'x',
+      value: 'v',
+      children: [{ value: 'c' }],
+    }),
+  ).toEqual({ value: 'x:v', children: [{ value: 'c' }] });
+  const [, err] = await safe(
+    client.trees['2nd'].mutate({ id: 'taken', value: 'v' }),
+  );
+  expect(err).toMatchObject({ code: 'CONFLICT', data: { at: 'v' } });
+  expect(await client.notes.add.mutate({ draft: true })).toEqual({
+    ok: [true, null],
+  });
+  await handler.dispose();
+});
+
+test('an operation cannot also be a namespace', () => {
+  expect(() =>
+    generateContractFromOpenApi({
+      openapi: '3.1.0',
+      paths: {
+        '/a': { get: { operationId: 'a', responses: {} } },
+        '/b': { get: { operationId: 'a.b', responses: {} } },
+      },
+    }),
+  ).toThrow('"a.b" nests under the operation "a"');
+  expect(generateContractFromOpenApi({ openapi: '3.1.0' })).toContain(
+    'export const contract = {\n};',
+  );
+});

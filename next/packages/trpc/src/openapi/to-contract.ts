@@ -307,7 +307,7 @@ export function generateContractFromOpenApi(
     if (inAllOf && typeof ref === 'string') merged.add(ref.split('/').at(-1)!);
     for (const [k, v] of Object.entries(node)) collect(v, k === 'allOf');
   };
-  collect(document, false);
+  collect([document, roots], false);
   const definitions = Object.fromEntries(
     Object.entries(components).map(([k, s]) => [
       k,
