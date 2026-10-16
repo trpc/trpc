@@ -92,16 +92,30 @@ type Args<TInput> = undefined extends TInput
 
 /**
  * A procedure as a function. It also takes `FormData`, parsed with bracket
- * notation (`tags[]=a&user[name]=alex`) and coerced from the input schema.
+ * notation (`tags[]=a&user[name]=alex`) and coerced from the input schema,
+ * and React's `useActionState` arguments: the previous state, then the input.
+ * @example
+ * ```ts
+ * const [result, submit, isPending] = useActionState(createPost, undefined);
+ * // <form action={submit}>
+ * ```
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type Action<
+export interface Action<
   TDef extends ProcedureDef,
   TMode extends ActionResultMode,
-> = (
-  ...args: Args<TDef['input'] | FormData>
-) => Promise<ActionResult<TDef, TMode>>;
+> {
+  (...args: Args<TDef['input'] | FormData>): Promise<ActionResult<TDef, TMode>>;
+  /**
+   * `useActionState`'s call: the previous state, which is ignored, then the
+   * input or `FormData`. The state starts `undefined`.
+   */
+  (
+    state: ActionResult<TDef, TMode> | undefined,
+    payload: TDef['input'] | FormData,
+  ): Promise<ActionResult<TDef, TMode> | undefined>;
+}
 
 /**
  * A procedure as a function, for calls with typed input.
@@ -179,7 +193,8 @@ function makeFactory<TMode extends ActionResultMode>(
       : err;
 
   return (procedure: AnyProcedure) =>
-    async (raw?: unknown): Promise<unknown> => {
+    async (...args: unknown[]): Promise<unknown> => {
+      const raw = args.length > 1 ? args[1] : args[0];
       const input =
         raw instanceof FormData ? fromFormData(procedure, raw) : raw;
       const ctx = typeof opts.ctx === 'function' ? await opts.ctx() : opts.ctx;

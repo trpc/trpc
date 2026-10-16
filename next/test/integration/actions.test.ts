@@ -85,6 +85,29 @@ test('createAction: FormData in, a safe result out (15 Q15.3)', async () => {
   }
 });
 
+test("an action takes useActionState's (previous state, input) call", async () => {
+  const run = createAction({ ctx: { user: 'alex' } })(createPost);
+  const form = new FormData();
+  form.set('title', 'Hi');
+  form.set('draft', 'false');
+  form.append('tags[]', 'news');
+  form.set('author[age]', '3');
+  const first = await run(undefined, form);
+  expect(first?.data).toMatchObject({ title: 'Hi', by: 'alex' });
+  const second = await run(first, {
+    title: '',
+    draft: false,
+    tags: [],
+    author: { age: 1 },
+  });
+  expect(second?.error).toMatchObject({ code: 'BAD_REQUEST' });
+  expectTypeOf(second).toEqualTypeOf<
+    Awaited<ReturnType<typeof run>> | undefined
+  >();
+  // @ts-expect-error the payload is the input or FormData
+  void run(undefined, { title: 1 });
+});
+
 test('defined errors are typed; unexpected ones are masked unless exposed', async () => {
   const seen: string[] = [];
   const anonymous = createAction({

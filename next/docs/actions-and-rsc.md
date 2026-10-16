@@ -30,6 +30,41 @@ const [post, error] = await createPost({ title, tags: [] });
 - A factory whose ctx or layer can't satisfy a procedure is a type error, and so is wrapping a subscription.
 - Next's `redirect()`, `notFound()` and dynamic-API errors thrown in a procedure or `ctx` are rethrown as they are, not returned as errors, so Next can act on them. Any error with a string `digest` counts. The same holds for `call()`, `createRouterClient()` and `localLink`.
 
+### Form state and optimistic updates
+
+An action also takes React's `useActionState` call (the previous state, then the input or `FormData`), so React's own hooks give pending state and optimistic UI; there is no `useServerAction`:
+
+```tsx
+'use client';
+import { useActionState, useOptimistic } from 'react';
+import { addTitle } from './actions'; // action(appRouter.title.add)
+
+function Titles() {
+  const [result, submit, isPending] = useActionState(addTitle, undefined);
+  const [shown, addShown] = useOptimistic(
+    result?.data ?? [],
+    (list: string[], title: string) => [...list, title],
+  );
+  return (
+    <form
+      action={(form) => {
+        addShown(form.get('title') as string);
+        submit(form);
+      }}
+    >
+      <input name="title" />
+      {shown.map((title) => (
+        <p key={title}>{title}</p>
+      ))}
+      {isPending ? 'Saving…' : result?.error?.code}
+    </form>
+  );
+}
+```
+
+- The state starts `undefined` and is then the last result (`{ data, error }` with `result: 'safe'`). The previous state isn't sent to the procedure.
+- The optimistic value shows until the action settles, then falls back to `result`.
+
 `createCallable` is the same factory for direct calls with typed input (no `FormData`), from server components, loaders or scripts:
 
 ```ts
