@@ -3,12 +3,8 @@ import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import { afterAll, expect, test } from 'vite-plus/test';
 import { z } from 'zod';
-import {
-  HEADER,
-  invalidation,
-  invalidationLink,
-  REF_HEADER,
-} from './invalidation.ts';
+import { HEADER, invalidation, invalidationLink } from './invalidation.ts';
+import { chain, responseHttpLink } from './response-meta.ts';
 
 const t = initTrpc().concat(invalidation());
 const titles = new Map([
@@ -41,26 +37,23 @@ const router = {
   },
 };
 
-const handler = createFetchHandler({ router });
+const handler = createFetchHandler({ router, batch: true });
 afterAll(() => handler.dispose());
 
 function setup() {
   const queryClient = new QueryClient();
   const requests: Request[] = [];
-  const invalidating = invalidationLink({
-    queryClient,
-    fetch: async (input, init) => {
-      const request = new Request(input, init);
-      requests.push(request.clone());
-      return handler.fetch(request);
-    },
-  });
+  const fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    const request = new Request(input, init);
+    requests.push(request.clone());
+    return handler.fetch(request);
+  };
   const client = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [
-      invalidating,
-      httpLink({ url: 'http://localhost/trpc', fetch: invalidating.fetch }),
-    ],
+    links: chain(
+      invalidationLink({ queryClient }),
+      responseHttpLink({ url: 'http://localhost/trpc', fetch, batch: true }),
+    ),
   });
   const keys = {
     list: [['post', 'list'], { type: 'query' }],
@@ -83,7 +76,9 @@ test('a mutation invalidates the queries its meta names, before it resolves', as
   const { client, invalidated, requests } = setup();
   await client.post.rename.mutate({ id: '1', title: 'Hi' });
   expect(invalidated()).toEqual({ list: true, one: true, two: false });
-  expect(requests[0]!.headers.get(REF_HEADER)).toBe('0');
+  expect([...requests[0]!.headers.keys()]).not.toContain(
+    'trpc-invalidation-ref',
+  );
 });
 
 test('the server sends the targets as a header; failures send none', async () => {
@@ -113,4 +108,14 @@ test('concurrent mutations each invalidate their own targets', async () => {
     client.post.byId.query({ id: '2' }),
   ]);
   expect(invalidated()).toEqual({ list: true, one: true, two: false });
+});
+
+test('the chain is checked: the link needs a response provider after it', () => {
+  const queryClient = new QueryClient();
+  const url = 'http://localhost/trpc';
+  chain(invalidationLink({ queryClient }), responseHttpLink({ url }));
+  // @ts-expect-error -- chain: a link needs 'response' from a link after it
+  chain(invalidationLink({ queryClient }), httpLink({ url }));
+  // @ts-expect-error -- a provider before the link doesn't count
+  chain(responseHttpLink({ url }), invalidationLink({ queryClient }));
 });

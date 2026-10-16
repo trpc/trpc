@@ -17,11 +17,10 @@ const rename = t.procedure
   .input(z.object({ id: z.string(), title: z.string() }))
   .mutation(({ input }) => db.post.rename(input));
 
-// client
-const invalidating = invalidationLink({ queryClient });
+// client (second round, below)
 createTrpcClient({
   router: routerType<AppRouter>(),
-  links: [invalidating, httpLink({ url, fetch: invalidating.fetch })],
+  links: chain(invalidationLink({ queryClient }), responseHttpLink({ url })),
 });
 await client.post.rename.mutate({ id: '1', title: 'Hi' });
 // post.list and post.byId({ id: '1' }) are invalidated before the promise resolves
@@ -43,3 +42,20 @@ await client.post.rename.mutate({ id: '1', title: 'Hi' });
 ## Lean
 
 Keep it out of v1 as decided. If it comes, ship the server half as `invalidation()` and the link in `@trpc12/tanstack-query`, after links can read response metadata, so the `fetch` wrapper and ref header go away.
+
+## Second round: links that need a provider after them
+
+Human, 2026-10-16 (decision round): "Can't the invalidation link somehow require that another link with specific stuff on context is added and then read those things from the link? If so http link could always contain more stuff like response headers that decorate the chain. Spike it further".
+
+Code: `next/spikes/invalidation/response-meta.ts`.
+
+- **Needs and provides, checked.** A link's type can carry `Capabilities<TProvides, TNeeds>`. `chain(...links)` walks the array from the end and fails with `chain: a link needs 'response' from a link after it` when nothing below a link provides what it needs; a provider before it doesn't count, since a link only reads what's below. `invalidationLink` needs `'response'`; `responseHttpLink` provides it.
+- **How the response comes back up.** The needing link puts an `onResponse` callback in the call's `op.context`; the provider calls it with `{ status, headers }` before the value goes up the stream; the needing link reads it on the first value (`withResponse`, on a `Deferred`). `responseHttpLink` is `httpLink` with the callback carried in the call's `init`, which `httpLink` spreads into `fetch`, and a wrapped `fetch` that reports. In the core change, `httpLink` would call `onResponse` itself.
+- **What went away.** The ref header, the app-side `fetch` wrapper, and forcing mutations unbatched in the link. A call with an `init` holding a function is batched apart today, so batched mutations still go alone; with `onResponse` in `httpLink` proper, a batch would report its shared response to each call, which works for headers the server sets per batch but not per call (the spike's header is per call).
+- **Over sockets** the provider would be `wsLink` with a per-frame meta field. Not built.
+- **Not changed:** the server half, and extension middleware still sees no parsed input.
+
+### Shape of the core change, if it ships
+
+- `BuiltinCallOptions.onResponse?: (meta: { status, headers }) => void`, called by `httpLink` per response (per batch line for batches, with the batch's headers), and `TrpcLink`'s `'~types'` gaining `provides` and `needs`, checked by `createTrpcClient({ links })` the way `switchLink` names are.
+- Batch lines would need their own headers for per-call metadata in a batch.

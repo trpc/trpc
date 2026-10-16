@@ -3,18 +3,19 @@
  * declares what a mutation invalidates, and a client link that applies it to
  * a TanStack `QueryClient`.
  *
- * Links only see result streams, not responses, so the server's targets
- * travel in a `trpc-invalidate` response header that the link's `fetch`
- * reads. The link tags each mutation with a ref header to find its response,
- * and sends mutations unbatched, since a batch merges headers.
+ * The server's targets travel in a `trpc-invalidate` response header. The
+ * first round read it with a `fetch` wrapper and a ref header per mutation;
+ * this round reads it from a link after it that reports responses
+ * (`./response-meta.ts`).
  *
  * Root-extension middleware runs before the procedure's `.input()`, so it
  * sees no parsed input: targets are computed from the output.
  */
 import type { QueryClient } from '@tanstack/query-core';
-import { Effect, Stream } from 'effect';
+import { Effect } from 'effect';
 import { link, type TrpcLink } from '@trpc12/trpc/client';
 import { initTrpc } from '@trpc12/trpc/server';
+import { type Capabilities, withResponse } from './response-meta.ts';
 
 /** A path (`'post.list'`), or a path and the input of the one query. */
 export type Target =
@@ -32,7 +33,6 @@ export interface InvalidationMeta {
 }
 
 export const HEADER = 'trpc-invalidate';
-export const REF_HEADER = 'trpc-invalidation-ref';
 
 /** The server half: `initTrpc().concat(invalidation())`. */
 export const invalidation = () => {
@@ -56,62 +56,49 @@ export const invalidation = () => {
   );
 };
 
-export interface InvalidationLink extends TrpcLink {
-  /** Pass to `httpLink({ fetch })`, so the link sees the response header. */
-  readonly fetch: typeof globalThis.fetch;
-}
+const invalidateTargets = (
+  queryClient: QueryClient,
+  targets: ReadonlyArray<Target>,
+) =>
+  Effect.promise(() =>
+    Promise.all(
+      targets.map((target) => {
+        const { path, input } =
+          typeof target === 'string'
+            ? { path: target, input: undefined }
+            : target;
+        // The adapters' key shape, `[path, { input, type }]`; a missing
+        // input partially matches every input.
+        return queryClient.invalidateQueries({
+          queryKey: [
+            path.split('.'),
+            ...(input === undefined ? [] : [{ input }]),
+          ],
+        });
+      }),
+    ),
+  );
 
-/** The client half: put it before the `httpLink` whose `fetch` it wraps. */
+/**
+ * The client half. It needs `'response'` from a link after it
+ * (`responseHttpLink` here; `httpLink` in the core change), which `chain()`
+ * checks, and reads the `trpc-invalidate` header from the response it
+ * reports. No ref header, no `fetch` wrapper, and batching is up to the
+ * provider.
+ */
 export function invalidationLink(opts: {
   queryClient: QueryClient;
-  fetch?: typeof globalThis.fetch;
-}): InvalidationLink {
-  const baseFetch = opts.fetch ?? globalThis.fetch;
-  const pending = new Map<string, ReadonlyArray<Target>>();
-  let nextRef = 0;
-  const fetch: typeof globalThis.fetch = async (input, init) => {
-    const request = new Request(input, init);
-    const ref = request.headers.get(REF_HEADER);
-    const res = await baseFetch(request);
-    const value = res.headers.get(HEADER);
-    if (ref && value) pending.set(ref, JSON.parse(value));
-    return res;
-  };
-  const invalidate = (ref: string) =>
-    Effect.promise(async () => {
-      const targets = pending.get(ref) ?? [];
-      pending.delete(ref);
-      await Promise.all(
-        targets.map((target) => {
-          const { path, input } =
-            typeof target === 'string'
-              ? { path: target, input: undefined }
-              : target;
-          // The adapters' key shape, `[path, { input, type }]`; a missing
-          // input partially matches every input.
-          return opts.queryClient.invalidateQueries({
-            queryKey: [
-              path.split('.'),
-              ...(input === undefined ? [] : [{ input }]),
-            ],
-          });
+}): TrpcLink & Capabilities<never, 'response'> {
+  return link(({ op, next }) =>
+    op.type !== 'mutation'
+      ? next(op)
+      : withResponse(op, next, (response) => {
+          const value = response.headers.get(HEADER);
+          return value
+            ? Effect.asVoid(
+                invalidateTargets(opts.queryClient, JSON.parse(value)),
+              )
+            : Effect.void;
         }),
-      );
-    });
-  const self = link(({ op, next }) => {
-    if (op.type !== 'mutation') return next(op);
-    const ref = String(nextRef++);
-    const headers = new Headers(op.context.headers);
-    headers.set(REF_HEADER, ref);
-    return next({
-      ...op,
-      context: { ...op.context, headers, batch: false },
-    }).pipe(
-      // The client takes the first value and interrupts, so this runs on
-      // the value, before the caller sees it, not on the stream's end.
-      Stream.tap(() => invalidate(ref)),
-      Stream.ensuring(Effect.sync(() => pending.delete(ref))),
-    );
-  });
-  return Object.assign(self, { fetch });
+  );
 }
