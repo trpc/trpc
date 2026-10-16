@@ -9,3 +9,8 @@ export {
   hibernatingPublisher,
   type HibernatingPublisherOptions,
 } from './publisher.ts';
+export {
+  connectionToken,
+  type ConnectionToken,
+  type ConnectionTokenOptions,
+} from './token.ts';

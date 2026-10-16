@@ -131,6 +131,8 @@ export {
   type PublisherClass,
   type PublisherEvents,
   type PublisherShape,
+  type PublishOptions,
+  type SubscribeOptions,
 } from './publisher.ts';
 export {
   createFetchHandler,

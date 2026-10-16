@@ -67,6 +67,29 @@ createFetchHandler({ router, layer: Posts.memory({ buffer: 100 }) });
 
 `subscribe()` yields `tracked()` events with the publisher's ids, so reconnects resume. `Posts.memory({ buffer })` serves one process on a `PubSub` and keeps `buffer` events per channel for resumes. For several processes, provide another layer with the same shape (`publish`, `subscribe`), built on the clients Effect already ships.
 
+### Tags
+
+`publish(channel, data, { tags })` sends an event only to subscribers with at least one of those tags; `subscribe(channel, { tags })` sets a subscriber's. Untagged events go to everyone, and an untagged subscriber gets only those. Set subscriber tags from `ctx` on the server, never from client input:
+
+```ts
+const router = {
+  notify: t.procedure
+    .input(Schema.Struct({ to: Schema.String, text: Schema.String }))
+    .mutation(({ input }) =>
+      Notes.publish(
+        'note',
+        { text: input.text },
+        { tags: [`user:${input.to}`] },
+      ),
+    ),
+  inbox: t.procedure.subscription(({ ctx, lastEventId }) =>
+    Notes.subscribe('note', { lastEventId, tags: [`user:${ctx.user.id}`] }),
+  ),
+};
+```
+
+Tags ride inside the event through the layer, so every backend below supports them unchanged, replays included. They apply through the `Notes.publish` and `Notes.subscribe` accessors; code that uses the service shape directly (`yield* Notes`) sees the tagged envelope.
+
 ## Publisher backends
 
 No backend packages ship; these recipes are yours to copy and adapt. Both serialize events with danSON (so `Date`s survive) and share one helper that replays kept events after `lastEventId`, then follows live ones:

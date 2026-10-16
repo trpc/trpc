@@ -84,7 +84,7 @@ export function hibernatingPublisher<
             Stream.unwrap(
               Effect.gen(function* () {
                 const slot = yield* HibernationSlot;
-                return slot?.park({ key, channel })
+                return slot?.park({ key, channel, tags: o?.tags })
                   ? Stream.fromIterable(memory.replay(channel, o?.lastEventId))
                   : memory.shape.subscribe(channel, o);
               }),

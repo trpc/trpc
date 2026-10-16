@@ -43,6 +43,60 @@ test('publish and subscribe as Effects, with ids and channels (14 Q14.6)', async
   ]);
 });
 
+test('tagged events reach only subscribers with a matching tag, replays included', async () => {
+  const program = Effect.gen(function* () {
+    yield* Posts.publish(
+      'created',
+      { id: '0', title: 'for ada, kept' },
+      {
+        tags: ['user:ada'],
+      },
+    );
+    const collect = (tags?: string[]) =>
+      Effect.forkChild(
+        Posts.subscribe('created', { lastEventId: '0', tags }).pipe(
+          Stream.take(2),
+          Stream.map((e) => e.data.title),
+          Stream.runCollect,
+        ),
+      );
+    const ada = yield* collect(['user:ada', 'team:1']);
+    const bob = yield* collect(['user:bob', 'team:1']);
+    const anon = yield* collect();
+    yield* Effect.sleep(10);
+    yield* Posts.publish(
+      'created',
+      { id: '1', title: 'for bob' },
+      {
+        tags: ['user:bob'],
+      },
+    );
+    yield* Posts.publish(
+      'created',
+      { id: '2', title: 'for team 1' },
+      {
+        tags: ['team:1'],
+      },
+    );
+    yield* Posts.publish('created', { id: '3', title: 'for all' });
+    yield* Posts.publish('created', { id: '4', title: 'for all, again' });
+    return {
+      ada: [...(yield* Fiber.join(ada))],
+      bob: [...(yield* Fiber.join(bob))],
+      anon: [...(yield* Fiber.join(anon))],
+    };
+  });
+  expect(
+    await Effect.runPromise(
+      Effect.scoped(program.pipe(Effect.provide(Posts.memory({ buffer: 10 })))),
+    ),
+  ).toEqual({
+    ada: ['for ada, kept', 'for team 1'],
+    bob: ['for bob', 'for team 1'],
+    anon: ['for all', 'for all, again'],
+  });
+});
+
 const t = initTrpc();
 const router = {
   create: t.procedure

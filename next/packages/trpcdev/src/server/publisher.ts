@@ -9,6 +9,42 @@ import { tracked, type TrackedEnvelope } from './tracked.ts';
 export type PublisherEvents = Record<string, unknown>;
 
 /**
+ * Options for `Publisher.publish`.
+ * @example
+ * ```ts
+ * Posts.publish('created', post, { tags: [`user:${post.authorId}`] });
+ * ```
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export interface PublishOptions {
+  /**
+   * Only subscribers with one of these tags get the event. Without tags,
+   * every subscriber does.
+   */
+  readonly tags?: ReadonlyArray<string> | undefined;
+}
+
+/**
+ * Options for `Publisher.subscribe`.
+ * @example
+ * ```ts
+ * Posts.subscribe('created', { lastEventId, tags: [`user:${ctx.user.id}`] });
+ * ```
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export interface SubscribeOptions {
+  /** Kept events after this id come first. */
+  readonly lastEventId?: string | undefined;
+  /**
+   * This subscriber's tags, for events published with `tags`. Set them on
+   * the server (from `ctx`), never from client input.
+   */
+  readonly tags?: ReadonlyArray<string> | undefined;
+}
+
+/**
  * What a publisher service does. Events carry ids, so subscribers resume
  * from `lastEventId` when the backend keeps history.
  * @since 12.0.0-alpha.0
@@ -26,7 +62,7 @@ export interface PublisherShape<TEvents extends PublisherEvents> {
    */
   readonly subscribe: <K extends keyof TEvents & string>(
     channel: K,
-    opts?: { readonly lastEventId?: string | undefined },
+    opts?: SubscribeOptions,
   ) => Stream.Stream<TrackedEnvelope<TEvents[K]>>;
 }
 
@@ -60,15 +96,53 @@ export interface PublisherClass<
    * processes (Redis, Postgres `LISTEN`, Durable Objects).
    */
   memory(opts?: MemoryPublisherOptions): Layer.Layer<Self>;
+  /** Publishes through the layer; `tags` limit who gets the event. */
   publish<K extends keyof TEvents & string>(
     channel: K,
     data: TEvents[K],
+    opts?: PublishOptions,
   ): Effect.Effect<string, never, Self>;
+  /** Subscribes through the layer, skipping events tagged for others. */
   subscribe<K extends keyof TEvents & string>(
     channel: K,
-    opts?: { readonly lastEventId?: string | undefined },
+    opts?: SubscribeOptions,
   ): Stream.Stream<TrackedEnvelope<TEvents[K]>, never, Self>;
 }
+
+const TAGS = '~trpc/tags';
+
+/**
+ * An event published with tags. The accessors wrap and unwrap it, so every
+ * backend carries tags without knowing about them.
+ * @internal
+ */
+export interface TaggedEvent {
+  readonly [TAGS]: ReadonlyArray<string>;
+  readonly data: unknown;
+}
+
+/** @internal */
+export const isTaggedEvent = (value: unknown): value is TaggedEvent =>
+  typeof value === 'object' &&
+  value !== null &&
+  Array.isArray((value as Partial<TaggedEvent>)[TAGS]);
+
+/** Whether a subscriber with `tags` gets an event with this data. @internal */
+export const isFor = (
+  data: unknown,
+  tags: ReadonlyArray<string> | undefined,
+): boolean =>
+  !isTaggedEvent(data) ||
+  (tags !== undefined && data[TAGS].some((tag) => tags.includes(tag)));
+
+/** The event's own data, without the tag envelope. @internal */
+export const untagged = (data: unknown): unknown =>
+  isTaggedEvent(data) ? data.data : data;
+
+const tag = (data: unknown, opts: PublishOptions | undefined): unknown =>
+  opts?.tags && opts.tags.length > 0
+    ? ({ [TAGS]: [...opts.tags], data } satisfies TaggedEvent)
+    : data;
 
 interface Event {
   readonly channel: string;
@@ -131,10 +205,7 @@ export const memoryPublisher = (
         return Effect.as(PubSub.publish(pubsub, event), String(event.id));
       });
 
-    const subscribe = (
-      channel: string,
-      o?: { readonly lastEventId?: string | undefined },
-    ) =>
+    const subscribe = (channel: string, o?: SubscribeOptions) =>
       Stream.unwrap(
         Effect.gen(function* () {
           const subscription = yield* PubSub.subscribe(pubsub);
@@ -194,16 +265,28 @@ export const Publisher = {
       key: Key,
     ): PublisherClass<Self, Key, TEvents> => {
       const Base = Context.Service<Self, PublisherShape<TEvents>>()(key);
-      const tag = Base as unknown as Context.Key<Self, PublisherShape<TEvents>>;
+      const service = Base as unknown as Context.Key<
+        Self,
+        PublisherShape<TEvents>
+      >;
       return Object.assign(Base, {
         memory: (opts?: MemoryPublisherOptions) =>
-          Layer.effect(tag)(makeMemoryPublisher<TEvents>(opts)),
-        publish: (channel: string, data: unknown) =>
-          Effect.flatMap(tag, (p) => p.publish(channel, data as never)),
-        subscribe: (
-          channel: string,
-          opts?: { readonly lastEventId?: string | undefined },
-        ) => Stream.unwrap(Effect.map(tag, (p) => p.subscribe(channel, opts))),
+          Layer.effect(service)(makeMemoryPublisher<TEvents>(opts)),
+        publish: (channel: string, data: unknown, opts?: PublishOptions) =>
+          Effect.flatMap(service, (p) =>
+            p.publish(channel, tag(data, opts) as never),
+          ),
+        subscribe: (channel: string, opts?: SubscribeOptions) =>
+          Stream.unwrap(
+            Effect.map(service, (p) => p.subscribe(channel, opts)),
+          ).pipe(
+            Stream.filter((event) => isFor(event.data, opts?.tags)),
+            Stream.map((event) =>
+              isTaggedEvent(event.data)
+                ? tracked(event.id, event.data.data)
+                : event,
+            ),
+          ),
       }) as never;
     },
 };

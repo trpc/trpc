@@ -267,6 +267,58 @@ export class Room extends DurableObject<Env> {
 - The subscription runs its resolver once, when it starts. Anything the resolver does per event (filtering, mapping the stream) is skipped; filter in the channel name instead (`'room:42'`).
 - One adapter per object: the latest `createHibernatingWebSockets` for a `state` gets the events.
 - A subscription that doesn't fit the attachment runs as a normal stream, with a warning. SSE subscribers in the same object get a normal stream too.
+- [Tags](./subscriptions.md#tags) are kept with the parked subscription, so `Notes.publish('note', data, { tags: ['user:1'] })` only wakes the sockets subscribed with that tag.
+
+### Signed connection tokens
+
+The Worker in front of the object usually authenticates the user already. `connectionToken(schema, { secret })` lets it hand that over: a procedure on the Worker signs claims, the client sends the token as a connection param, and the object's `createContext` verifies it (HMAC-SHA256 with WebCrypto) instead of looking up the session again:
+
+```ts
+import { connectionToken } from 'trpcdev/cloudflare';
+
+const RoomToken = connectionToken(
+  Schema.Struct({ room: Schema.String, tags: Schema.Array(Schema.String) }),
+  { secret: env.TOKEN_SECRET, ttlSeconds: 600 },
+);
+
+// the Worker's router
+const workerRouter = {
+  roomToken: t.procedure
+    .input(Schema.Struct({ room: Schema.String }))
+    .query(({ ctx, input }) =>
+      RoomToken.sign({ room: input.room, tags: [`user:${ctx.user.id}`] }),
+    ),
+};
+
+// the Durable Object's router and handler
+const roomRouter = {
+  inbox: t.procedure.subscription(({ ctx, lastEventId }) =>
+    Notes.subscribe('note', { lastEventId, tags: ctx.tags }),
+  ),
+};
+
+export class Room extends DurableObject<Env> {
+  handler = createFetchHandler({
+    router: roomRouter,
+    createContext: ({ info }) =>
+      Effect.runPromise(RoomToken.verify(info.connectionParams?.['token'])),
+    layer: hibernatingPublisher(Notes, { state: this.ctx }),
+  });
+  // sockets, fetch and webSocketMessage as above
+}
+
+// the browser
+const link = wsLink({
+  url,
+  connectionParams: async () => ({
+    token: await client.roomToken.query({ room }),
+  }),
+});
+```
+
+- `verify` fails with `UNAUTHORIZED` when the token is missing, malformed, signed with another secret or past `ttlSeconds` (default an hour). It reads the time from Effect's `Clock`.
+- The claims are encoded with the schema and readable by the client; keep secrets out of them.
+- Expiry is checked whenever `createContext` runs: on each call, and when a subscription starts. A parked subscription keeps getting events after the token expires, until the socket closes or the client reconnects.
 
 ## Workers and message ports
 

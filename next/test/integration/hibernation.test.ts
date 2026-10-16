@@ -1,5 +1,7 @@
-import { Effect } from 'effect';
+import { Effect, Schema } from 'effect';
+import { TestClock } from 'effect/testing';
 import {
+  connectionToken,
   createHibernatingWebSockets,
   hibernatingPublisher,
   type HibernatableWebSocket,
@@ -404,4 +406,161 @@ test('an event the subscription rejects ends it with an error', async () => {
     ]),
   );
   expect(sub.deserializeAttachment()).not.toHaveProperty('subs');
+});
+
+const RoomToken = connectionToken(
+  Schema.Struct({ user: Schema.String, tags: Schema.Array(Schema.String) }),
+  { secret: 'test-secret', ttlSeconds: 60 },
+);
+
+class Notes extends Publisher.Service<Notes, { note: { text: string } }>()(
+  'test/Notes',
+) {}
+
+const nt = initTrpc<{ ctx: { user: string; tags: readonly string[] } }>();
+const notesRouter = {
+  send: nt.procedure
+    .input(z.object({ to: z.string(), text: z.string() }))
+    .mutation(({ input }) =>
+      Effect.as(
+        Notes.publish('note', { text: input.text }, { tags: [input.to] }),
+        'sent',
+      ),
+    ),
+  inbox: nt.procedure.subscription(({ ctx, lastEventId }) =>
+    Notes.subscribe('note', { lastEventId, tags: ctx.tags }),
+  ),
+};
+
+const notesRoom = (state: ReturnType<typeof fakeState>) =>
+  createHibernatingWebSockets(
+    createFetchHandler({
+      router: notesRouter,
+      createContext: ({ info }) =>
+        Effect.runPromise(RoomToken.verify(info.connectionParams?.['token'])),
+      layer: hibernatingPublisher(Notes, { state, buffer: 10 }),
+    }),
+    { state },
+  );
+
+const join = async (
+  sockets: ReturnType<typeof notesRoom>,
+  user: string,
+  tags: string[],
+) => {
+  const socket = new FakeSocket();
+  sockets.accept(socket, request);
+  const token = await Effect.runPromise(RoomToken.sign({ user, tags }));
+  say(sockets, socket, {
+    type: 'init',
+    version: '12',
+    connectionParams: { token },
+  });
+  return socket;
+};
+
+test('a signed token sets the tags a hibernated subscription gets events for', async () => {
+  const state = fakeState();
+  const sockets = notesRoom(state);
+  const ada = await join(sockets, 'ada', ['user:ada', 'team:1']);
+  const bob = await join(sockets, 'bob', ['user:bob']);
+  for (const socket of [ada, bob]) {
+    say(sockets, socket, {
+      id: 1,
+      type: 'request',
+      method: 'subscription',
+      path: 'inbox',
+    });
+  }
+  await vi.waitFor(() => {
+    expect(ada.deserializeAttachment()).toMatchObject({
+      subs: [{ c: 1, t: ['user:ada', 'team:1'] }],
+    });
+    expect(bob.deserializeAttachment()).toMatchObject({
+      subs: [{ c: 1, t: ['user:bob'] }],
+    });
+  });
+
+  // Evicted: the tags come back from the attachments.
+  const woken = notesRoom(state);
+  const send = (id: number, to: string, text: string) =>
+    say(woken, bob, {
+      id,
+      type: 'request',
+      method: 'mutation',
+      path: 'send',
+      input: defaultSerializer.serialize({ to, text }),
+    });
+  send(2, 'team:1', 'standup');
+  send(3, 'user:bob', 'hi bob');
+  await vi.waitFor(() =>
+    expect(
+      bob.sent.filter((m) => (m as { type: string }).type === 'result'),
+    ).toHaveLength(2),
+  );
+  const texts = (socket: FakeSocket) =>
+    events(socket, 1).map(
+      (e) =>
+        (e as { body: { json: { data: { text: string } } } }).body.json.data
+          .text,
+    );
+  expect(texts(ada)).toEqual(['standup']);
+  expect(texts(bob)).toEqual(['hi bob']);
+});
+
+test('connection tokens fail with UNAUTHORIZED when missing, tampered with or expired', async () => {
+  const token = await Effect.runPromise(
+    RoomToken.sign({ user: 'ada', tags: [] }),
+  );
+  expect(await Effect.runPromise(RoomToken.verify(token))).toEqual({
+    user: 'ada',
+    tags: [],
+  });
+
+  const [body, mac] = token.split('.');
+  const forged = `${btoa(JSON.stringify({ c: '{"user":"eve","tags":[]}', exp: Date.now() + 1e6 })).replace(/=+$/, '')}.${mac}`;
+  for (const [bad, message] of [
+    [undefined, 'Missing connection token'],
+    ['nope', 'Malformed connection token'],
+    [forged, 'Invalid connection token'],
+    [`${body}.${mac}x`, 'Invalid connection token'],
+  ] as const) {
+    const exit = await Effect.runPromiseExit(RoomToken.verify(bad));
+    expect(exit).toMatchObject({
+      _tag: 'Failure',
+      cause: { reasons: [{ error: { code: 'UNAUTHORIZED', message } }] },
+    });
+  }
+
+  const expired = await Effect.runPromise(
+    Effect.gen(function* () {
+      const minted = yield* RoomToken.sign({ user: 'ada', tags: [] });
+      yield* TestClock.adjust('61 seconds');
+      return yield* Effect.flip(RoomToken.verify(minted));
+    }).pipe(Effect.provide(TestClock.layer())),
+  );
+  expect(expired).toMatchObject({
+    code: 'UNAUTHORIZED',
+    message: 'Expired connection token',
+  });
+
+  const rejected = new FakeSocket();
+  const sockets = notesRoom(fakeState());
+  sockets.accept(rejected, request);
+  say(sockets, rejected, {
+    type: 'init',
+    version: '12',
+    connectionParams: { token: forged },
+  });
+  say(sockets, rejected, {
+    id: 1,
+    type: 'request',
+    method: 'subscription',
+    path: 'inbox',
+  });
+  await vi.waitFor(() =>
+    expect(rejected.sent).toEqual([
+      expect.objectContaining({ id: 1, type: 'error', status: 401 }),
+    ]),
+  );
 });
