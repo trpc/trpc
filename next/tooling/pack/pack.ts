@@ -16,7 +16,10 @@ type Entry = Readonly<Record<string, string>> & {
 export interface PackageJson {
   readonly name: string;
   readonly exports: Record<string, Entry>;
-  readonly publishConfig?: { readonly exports?: Record<string, Entry> };
+  readonly publishConfig?: {
+    readonly access?: string;
+    readonly exports?: Record<string, Entry>;
+  };
 }
 
 export class InvalidExports extends Data.TaggedError('InvalidExports')<{

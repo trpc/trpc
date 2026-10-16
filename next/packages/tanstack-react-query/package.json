@@ -26,7 +26,8 @@
         "types": "./dist/rsc.d.ts",
         "default": "./dist/rsc.js"
       }
-    }
+    },
+    "access": "public"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",

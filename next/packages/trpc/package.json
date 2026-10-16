@@ -146,7 +146,8 @@
         "types": "./dist/internal/testing/index.d.ts",
         "default": "./dist/internal/testing/index.js"
       }
-    }
+    },
+    "access": "public"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",

@@ -18,7 +18,8 @@
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
       }
-    }
+    },
+    "access": "public"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",

@@ -64,6 +64,14 @@ test.each(entries)(
   },
 );
 
+test.each(packages.map(({ name, pkg }) => [name, pkg] as const))(
+  '%s publishes publicly under @trpc12',
+  (_name, pkg) => {
+    expect(pkg.name).toMatch(/^@trpc12\//);
+    expect(pkg.publishConfig.access).toBe('public');
+  },
+);
+
 test('publishConfig.exports must mirror exports', () => {
   const entry = { types: './src/a.ts', default: './src/a.ts' };
   const ok: PackageJson = {
