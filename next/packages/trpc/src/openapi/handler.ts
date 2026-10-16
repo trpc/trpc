@@ -387,7 +387,14 @@ export function createOpenApiHandler<
             code: 'PAYLOAD_TOO_LARGE',
             message: 'Request body is too large',
           }),
-      );
+      ).catch((cause: unknown) => {
+        if (cause instanceof TrpcError) throw cause;
+        throw new TrpcError({
+          code: 'PARSE_ERROR',
+          message: 'Invalid form body',
+          cause,
+        });
+      });
       return {
         value: parseBracketNotation(
           form as unknown as Iterable<[string, string]>,

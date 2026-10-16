@@ -480,3 +480,36 @@ test('openApiLink subscriptions yield plain and tracked events, then errors', as
   expect(err).toMatchObject({ code: 'SERVICE_UNAVAILABLE' });
   await Promise.all([handler.dispose(), refused.handler.dispose()]);
 });
+
+test('form bodies: none at all, malformed, and malformed past maxBodySize', async () => {
+  const handler = make({ maxBodySize: 64 });
+  const form = { 'content-type': 'application/x-www-form-urlencoded' };
+  const none = await api(handler, '/echo', { method: 'POST', headers: form });
+  expect(await none.json()).toEqual({});
+
+  const multipart = { 'content-type': 'multipart/form-data; boundary=x' };
+  const malformed = await api(handler, '/echo', {
+    method: 'POST',
+    headers: multipart,
+    body: 'not multipart',
+  });
+  expect(malformed.status).toBe(400);
+  expect(await malformed.json()).toMatchObject({
+    code: 'PARSE_ERROR',
+    message: 'Invalid form body',
+  });
+
+  const huge = await api(handler, '/echo', {
+    method: 'POST',
+    headers: multipart,
+    body: new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('y'.repeat(200)));
+        controller.close();
+      },
+    }),
+    duplex: 'half',
+  } as RequestInit);
+  expect(huge.status).toBe(413);
+  await handler.dispose();
+});
