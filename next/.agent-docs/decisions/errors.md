@@ -9,5 +9,5 @@
 - (agent, Q7.3) `safe()` returns `[data, error]` that also has `{ data, error }` properties, so both destructuring styles work.
 - (agent, Q16.4; Alex: "Revisit later. Pick something for now") Client-side failures are new codes in the same union (`NETWORK_ERROR`, `CLIENT_CLOSED_REQUEST`), not a flag.
 - Masking is [`mask-unexpected-errors.md`](./mask-unexpected-errors.md).
-- Open: tag errors by code so Effect users can `Effect.catchTag('NOT_FOUND', …)`.
+- (agent) The Open here (tag errors by code for `Effect.catchTag`) is done: [`error-tags.md`](./error-tags.md).
 - Lives in: `packages/trpcdev/src/internal/error.ts`, `src/server/declared.ts`, `test/integration/errors.test.ts`.

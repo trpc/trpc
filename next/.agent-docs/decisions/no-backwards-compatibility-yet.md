@@ -6,3 +6,4 @@
 - Why: designing for compatibility now would freeze choices before they're right.
 - Lost: nothing for users yet; prerelease adopters may need to update both ends together.
 - Open: the interop handlers' scope (v11's HTTP batch links, `wsLink`, SSE), codemod tooling.
+- Lives in: nothing yet; no interop handlers or codemods are built.

@@ -13,7 +13,7 @@ Start here (paths relative to `next/`):
 - `.agent-docs/approach.md` — process, principles, phases
 - `.agent-docs/README.md` — proposal index and how to decide
 - `.agent-docs/proposals/` — API proposals (options + recommendations; Alex decides)
-- `.agent-docs/decisions/` — one file per decided topic, titled `(human)` or `(agent)`; overrides proposals (`head -n 1 .agent-docs/decisions/*.md` lists them)
+- `.agent-docs/decisions/` — one file per decided topic, titled `(human)` or `(agent)`; overrides proposals (`pnpm decisions` lists and searches them; `--who agent` shows the unreviewed calls)
 - `.agent-docs/reference/` — oRPC parity, v11 inventory, prior art
 - `.agent-docs/notes/` — spike results and research
 - `spikes/` — throwaway prototypes backing the notes

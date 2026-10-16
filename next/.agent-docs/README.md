@@ -31,7 +31,15 @@ Many changes land in parallel, so each decision is its own file and two changes 
   Within a file, a bullet starting `(agent)` is the agent's call even when the title is `(human)`.
 
 - **The body is short bullets:** what was decided (quote Alex verbatim, with the question number), **Why**, **Lost** (the alternatives given up and their cost), **Open** (what's left), and **Lives in** (the files that implement it).
-- **Find decisions** with `head -n 1 .agent-docs/decisions/*.md`, or `rg -n "<topic>" .agent-docs/decisions/`.
+- **Find decisions** with `pnpm decisions` (from `next/`). It lists every decision with who made it and the questions it answers:
+  - `pnpm decisions <regex>` searches the decisions' text.
+  - `--who human|asked|agent` filters by who decided.
+  - `--open` prints what each one leaves open.
+  - `--agent-bullets` also lists the agent's calls inside `(human)` files.
+
+  `rg -n "<topic>" .agent-docs/decisions/` works too. `tooling/decisions/decisions.test.ts` checks every file has a title marker and a `Lives in` bullet, and that its links resolve.
+
+- **Ambiguous questions** go the Effect-native way first, v11's second ([`effect-native-by-default.md`](./decisions/effect-native-by-default.md)); each such call is marked `(agent)`.
 
 ## Digging deeper with git
 

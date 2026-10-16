@@ -12,6 +12,7 @@
     "test": "vp test run",
     "test:watch": "vp test watch",
     "example": "pnpm -r --workspace-concurrency=1 --filter './examples/*' run smoke",
+    "decisions": "node tooling/decisions/decisions.ts",
     "build": "pnpm -r run build",
     "postinstall": "vendor-src check",
     "vendor:sync": "vendor-src sync"
