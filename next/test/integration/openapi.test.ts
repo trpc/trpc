@@ -263,7 +263,7 @@ test('query strings use bracket notation, coerced from the JSON Schema', async (
   expect(await effect.json()).toEqual({ days: 7, at: 42 });
 });
 
-test('bodies: JSON, forms and files; status from .route() and the response handle', async () => {
+test('bodies: JSON, forms and files; status from the route meta and the response handle', async () => {
   await using s = await serve();
   const created = await s.api('/posts', {
     method: 'POST',

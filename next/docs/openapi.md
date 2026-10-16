@@ -199,7 +199,7 @@ links: [
 
 ## A contract from an OpenAPI document
 
-`generateContractFromOpenApi(document, { prefix?, exportName?, patterns? })` turns an OpenAPI 3.0 or 3.1 document into the source of a `trpcdev/contract` module. Schemas are Effect Schemas, translated by Effect's `SchemaRepresentation`; each operation becomes a procedure with its `.route()`, so the contract works with `openApiLink` and `validationLink` against any REST API:
+`generateContractFromOpenApi(document, { prefix?, exportName?, patterns? })` turns an OpenAPI 3.0 or 3.1 document into the source of a `trpcdev/contract` module. Schemas are Effect Schemas, translated by Effect's `SchemaRepresentation`; each operation becomes a procedure with its `route` meta (under `.with(openapi())`), so the contract works with `openApiLink` and `validationLink` against any REST API:
 
 ```ts
 import { generateContractFromOpenApi } from 'trpcdev/openapi';
