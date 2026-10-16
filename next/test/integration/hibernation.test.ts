@@ -410,7 +410,7 @@ test('an event the subscription rejects ends it with an error', async () => {
   create(sockets, sub, 2, 'far too long a title');
   await vi.waitFor(() =>
     expect(events(sub, 1)).toEqual([
-      expect.objectContaining({ id: 1, type: 'error', status: 500 }),
+      expect.objectContaining({ id: 1, type: 'error' }),
     ]),
   );
   expect(sub.deserializeAttachment()).not.toHaveProperty('subs');
@@ -569,7 +569,7 @@ test('connection tokens fail with UNAUTHORIZED when missing, tampered with or ex
   await vi.waitFor(() =>
     expect(rejected.sent).toEqual([
       { type: 'init', serializer: 'json' },
-      expect.objectContaining({ id: 1, type: 'error', status: 401 }),
+      expect.objectContaining({ id: 1, type: 'error' }),
     ]),
   );
 });

@@ -18,6 +18,7 @@ import {
 } from 'effect/http';
 import {
   isTrpcError,
+  statusOf,
   toWireError,
   TrpcError,
   type AnyTrpcError,
@@ -480,7 +481,7 @@ export function createFetchHandler<
   };
 
   const errorResponse = (err: AnyTrpcError) =>
-    respond(err.status, JSON.stringify(wire(err)), CONTENT_TYPE.json);
+    respond(statusOf(err), JSON.stringify(wire(err)), CONTENT_TYPE.json);
 
   const readBytes = (request: HttpServerRequest.HttpServerRequest) =>
     readRequestBytes(request, maxBodySize);
@@ -642,7 +643,11 @@ export function createFetchHandler<
       if (Exit.isFailure(exit)) {
         const err = normalizeCause(exit.cause);
         report(err, request, path, type);
-        return { status: err.status, body: wire(err), headers };
+        return {
+          status: statusOf(err, procedure['~trpc'].errors),
+          body: wire(err),
+          headers,
+        };
       }
       const value = exit.value;
       if (sink.replay) {
@@ -681,7 +686,11 @@ export function createFetchHandler<
       } catch (cause) {
         const err = unexpectedError(cause);
         report(err, request, path, type);
-        return { status: err.status, body: wire(err), headers };
+        return {
+          status: statusOf(err, procedure['~trpc'].errors),
+          body: wire(err),
+          headers,
+        };
       }
     });
 
@@ -906,7 +915,7 @@ export function createFetchHandler<
         const err = normalizeCause(exit.cause);
         report(err, request, path, 'subscription');
         return respond(
-          err.status,
+          statusOf(err, procedure['~trpc'].errors),
           JSON.stringify(wire(err)),
           CONTENT_TYPE.json,
           undefined,
@@ -1054,7 +1063,10 @@ export function createFetchHandler<
             }).pipe(
               Effect.catch((err: AnyTrpcError) => {
                 report(err, request, call.path);
-                return Effect.succeed({ status: err.status, body: wire(err) });
+                return Effect.succeed({
+                  status: statusOf(err),
+                  body: wire(err),
+                });
               }),
             );
 

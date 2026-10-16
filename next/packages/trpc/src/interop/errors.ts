@@ -1,4 +1,4 @@
-import type { AnyTrpcError } from '../internal/error.ts';
+import { statusOf, type AnyTrpcError } from '../internal/error.ts';
 import type { ProcedureType } from '../internal/types.ts';
 
 /** v11's JSON-RPC numbers, by code. */
@@ -86,17 +86,19 @@ export interface V11ErrorFormatterOpts {
 export function v11Shape(
   err: AnyTrpcError,
   path: string | undefined,
+  declared?: Parameters<typeof statusOf>[1],
 ): V11ErrorShape {
+  const status = statusOf(err, declared);
   const code =
     err.code in RPC_CODES
       ? err.code
-      : (CODE_BY_STATUS[err.status] ?? 'INTERNAL_SERVER_ERROR');
+      : (CODE_BY_STATUS[status] ?? 'INTERNAL_SERVER_ERROR');
   return {
     message: err.message,
     code: RPC_CODES[code]!,
     data: {
       code,
-      httpStatus: err.status,
+      httpStatus: status,
       ...(path === undefined ? {} : { path }),
     },
   };

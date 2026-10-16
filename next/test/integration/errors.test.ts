@@ -21,11 +21,13 @@ posts.set('2', { id: '2', title: 'Draft', published: false });
 const signedOut = t.procedure.use(({ next, signal }) =>
   signal.aborted ? next() : error({ code: 'UNAUTHORIZED' }),
 );
+class PlanRequired extends TrpcError.Tagged('PLAN_REQUIRED', {
+  status: 402,
+}) {}
+
 const unpaid = t.procedure.use(
   t.middleware.effect()(({ next, signal }) =>
-    signal.aborted
-      ? next()
-      : Effect.fail(error({ code: 'PLAN_REQUIRED', status: 402 })),
+    signal.aborted ? next() : Effect.fail(new PlanRequired()),
   ),
 );
 
@@ -51,14 +53,15 @@ const router = {
         }),
       ),
   },
-  pay: t.procedure.mutation(() =>
-    error({
-      code: 'PAYMENT_REQUIRED_CUSTOM',
-      status: 402,
-      message: 'Upgrade your plan',
-      data: { plan: 'pro' as const },
-    }),
-  ),
+  pay: t.procedure
+    .errors({ PAYMENT_REQUIRED_CUSTOM: { status: 402 } })
+    .mutation(() =>
+      error({
+        code: 'PAYMENT_REQUIRED_CUSTOM',
+        message: 'Upgrade your plan',
+        data: { plan: 'pro' as const },
+      }),
+    ),
   outOfStock: t.procedure.mutation(() =>
     error({ code: 'OUT_OF_STOCK', data: { sku: 'a1' } }),
   ),
@@ -80,6 +83,7 @@ type AppRouter = typeof router;
 
 async function setup(opts: { expose?: boolean } = {}) {
   const errors: OnErrorOpts[] = [];
+  const statuses: number[] = [];
   const server = await createTestServer({
     router,
     exposeUnexpectedErrors: opts.expose ?? false,
@@ -87,12 +91,23 @@ async function setup(opts: { expose?: boolean } = {}) {
   });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url })],
+    links: [
+      httpLink({
+        url: server.url,
+        fetch: async (input, init) => {
+          const res = await fetch(input, init);
+          statuses.push(res.status);
+          return res;
+        },
+      }),
+    ],
   });
   return {
     server,
     client,
     errors,
+    /** The HTTP status of the last response. */
+    status: () => statuses.at(-1),
     [Symbol.asyncDispose]: () => server.close(),
   };
 }
@@ -104,10 +119,11 @@ test('returned errors are inferred into the union and narrow on the client', asy
   expect(err).toBeInstanceOf(TrpcError);
   expect(err).toMatchObject({
     code: 'NOT_FOUND',
-    status: 404,
     defined: true,
     data: { id: 'nope' },
   });
+  expect(ctx.status()).toBe(404);
+  expect(err).not.toHaveProperty('status');
   if (err?.defined) {
     expectTypeOf(err.code).toEqualTypeOf<
       'NOT_FOUND' | 'FORBIDDEN' | 'BAD_REQUEST'
@@ -118,7 +134,8 @@ test('returned errors are inferred into the union and narrow on the client', asy
   }
 
   const forbidden = await safe(ctx.client.post.byId.query({ id: '2' }));
-  expect(forbidden.error).toMatchObject({ code: 'FORBIDDEN', status: 403 });
+  expect(forbidden.error).toMatchObject({ code: 'FORBIDDEN' });
+  expect(ctx.status()).toBe(403);
 
   const ok = await safe(ctx.client.post.byId.query({ id: '1' }));
   expect(ok.data).toEqual(posts.get('1'));
@@ -141,31 +158,25 @@ test('errors yielded in an Effect are inferred too', async () => {
 test('errors returned or failed in middleware join the union too', async () => {
   await using ctx = await setup();
   const gated = await safe(ctx.client.gated.query());
-  expect(gated.error).toMatchObject({
-    code: 'UNAUTHORIZED',
-    status: 401,
-    defined: true,
-  });
+  expect(gated.error).toMatchObject({ code: 'UNAUTHORIZED', defined: true });
+  expect(ctx.status()).toBe(401);
   if (gated.error?.defined) {
     expectTypeOf(gated.error.code).toEqualTypeOf<'UNAUTHORIZED'>();
   }
   const paid = await safe(ctx.client.paid.query());
-  expect(paid.error).toMatchObject({
-    code: 'PLAN_REQUIRED',
-    status: 402,
-    defined: true,
-  });
+  expect(paid.error).toMatchObject({ code: 'PLAN_REQUIRED', defined: true });
+  expect(ctx.status()).toBe(402);
   if (paid.error?.defined) {
     expectTypeOf(paid.error.code).toEqualTypeOf<'PLAN_REQUIRED'>();
   }
 });
 
-test('custom codes keep their status and data', async () => {
+test("custom codes keep their data, and answer with their declared spec's status", async () => {
   await using ctx = await setup();
   const [, err] = await safe(ctx.client.pay.mutate());
+  expect(ctx.status()).toBe(402);
   expect(err).toMatchObject({
     code: 'PAYMENT_REQUIRED_CUSTOM',
-    status: 402,
     message: 'Upgrade your plan',
     data: { plan: 'pro' },
     defined: true,
@@ -175,8 +186,8 @@ test('custom codes keep their status and data', async () => {
 test('a custom code without a status is a 400', async () => {
   await using ctx = await setup();
   const [, err] = await safe(ctx.client.outOfStock.mutate());
-  expect(err).toMatchObject({ code: 'OUT_OF_STOCK', status: 400 });
-  expect(new TrpcError({ code: 'ANYTHING' }).status).toBe(400);
+  expect(err).toMatchObject({ code: 'OUT_OF_STOCK' });
+  expect(ctx.status()).toBe(400);
 });
 
 test("an error's _tag is its code, so Effect.catchTag narrows on it", async () => {
@@ -208,10 +219,10 @@ test('a thrown TrpcError keeps its code but is not part of the typed union', asy
   const [, err] = await safe(ctx.client.thrown.query());
   expect(err).toMatchObject({
     code: 'CONFLICT',
-    status: 409,
     message: 'Already exists',
     defined: false,
   });
+  expect(ctx.status()).toBe(409);
   expectTypeOf(err!.defined).toEqualTypeOf<false>();
 });
 
@@ -220,10 +231,10 @@ test('unexpected errors are masked, and onError sees the cause', async () => {
   const [, err] = await safe(ctx.client.crash.query());
   expect(err).toMatchObject({
     code: 'INTERNAL_SERVER_ERROR',
-    status: 500,
     message: 'Internal server error',
     defined: false,
   });
+  expect(ctx.status()).toBe(500);
   expect(ctx.errors).toHaveLength(1);
   expect(ctx.errors[0]!.path).toBe('crash');
   expect((ctx.errors[0]!.error.cause as Error).message).toContain(

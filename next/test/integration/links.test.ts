@@ -210,7 +210,7 @@ test('retryLink retries network failures on queries only', async () => {
   failures = 1;
   attempts.length = 0;
   const [, err] = await safe(client.add.mutate({ a: 1, b: 1 }));
-  expect(err).toMatchObject({ code: 'NETWORK_ERROR', status: 0 });
+  expect(err).toMatchObject({ code: 'NETWORK_ERROR' });
   expect(attempts).toEqual(['POST']);
 
   attempts.length = 0;

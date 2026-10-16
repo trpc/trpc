@@ -228,7 +228,6 @@ test('procedures answer at their routes, with path params and declared errors (1
   expect(await missing.json()).toEqual({
     defined: true,
     code: 'NOT_FOUND',
-    status: 404,
     message: 'NOT_FOUND',
     data: { id: 'nope' },
   } satisfies OpenApiErrorBody);

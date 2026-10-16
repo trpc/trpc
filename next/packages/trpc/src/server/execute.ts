@@ -2,9 +2,11 @@ import { Cause, Context, Effect, Exit, Stream } from 'effect';
 import { HttpServerResponse } from 'effect/http';
 import {
   isTrpcError,
+  statusOf,
   taggedSpec,
   TrpcError,
   withDefined,
+  withStatusHint,
   type AnyTrpcError,
 } from '../internal/error.ts';
 import { errorConstructors, isDeclaredError } from './declared.ts';
@@ -217,14 +219,16 @@ const checkDeclared = (
         Effect.fail(
           data === err.data
             ? err
-            : new TrpcError({
-                code: err.code,
-                message: err.message,
-                status: err.status,
-                data,
-                defined: true,
-                cause: err.cause,
-              }),
+            : withStatusHint(
+                new TrpcError({
+                  code: err.code,
+                  message: err.message,
+                  data,
+                  defined: true,
+                  cause: err.cause,
+                }),
+                statusOf(err),
+              ),
         ),
     }),
   );

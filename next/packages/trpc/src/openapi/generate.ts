@@ -171,20 +171,15 @@ const isStructured = (schema: JsonSchema) =>
   typeof schema === 'object' &&
   (schema['type'] === 'object' || schema['properties'] !== undefined);
 
-const errorSchema = (
-  code: string,
-  status: number,
-  data?: JsonSchema,
-): Schema => ({
+const errorSchema = (code: string, data?: JsonSchema): Schema => ({
   type: 'object',
   properties: {
     defined: { const: true },
     code: { const: code },
-    status: { const: status },
     message: { type: 'string' },
     ...(data ? { data } : {}),
   },
-  required: ['defined', 'code', 'status', 'message', ...(data ? ['data'] : [])],
+  required: ['defined', 'code', 'message', ...(data ? ['data'] : [])],
 });
 
 const VALIDATION_DATA: Schema = {
@@ -240,18 +235,14 @@ function errorResponses(
   const codes = new Set(Object.keys(def.errors));
   if (hasInput) {
     codes.add('BAD_REQUEST');
-    add(400, errorSchema('BAD_REQUEST', 400, VALIDATION_DATA));
+    add(400, errorSchema('BAD_REQUEST', VALIDATION_DATA));
   }
   for (const e of inferred) {
     if (codes.has(e.code)) continue;
     codes.add(e.code);
     add(
       e.status,
-      errorSchema(
-        e.code,
-        e.status,
-        hoist(e.data, `${scope}.${e.code}`, components),
-      ),
+      errorSchema(e.code, hoist(e.data, `${scope}.${e.code}`, components)),
     );
   }
   for (const [code, spec] of Object.entries(def.errors)) {
@@ -260,10 +251,7 @@ function errorResponses(
     const data = spec.data
       ? hoist(toJsonSchema(spec.data, 'output'), `${scope}.${code}`, components)
       : undefined;
-    add(
-      status,
-      errorSchema(code, status, data ?? (spec.data ? {} : undefined)),
-    );
+    add(status, errorSchema(code, data ?? (spec.data ? {} : undefined)));
   }
   const responses: Record<string, Record<string, unknown>> = {};
   for (const [status, schemas] of [...byStatus].sort(([a], [b]) => a - b)) {
@@ -345,11 +333,10 @@ export function generateDocument(
       properties: {
         defined: { type: 'boolean' },
         code: { type: 'string' },
-        status: { type: 'integer' },
         message: { type: 'string' },
         data: {},
       },
-      required: ['defined', 'code', 'status', 'message'],
+      required: ['defined', 'code', 'message'],
     },
   };
   const paths: OpenApiDocument['paths'] = {};

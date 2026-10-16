@@ -230,7 +230,7 @@ test('no serializer: plain JSON, JSON-form client types, ?input= GET params', as
 test('error data follows the serializer like outputs', async () => {
   const expiring = {
     expired: t.procedure.query(
-      () => new TrpcError({ code: 'EXPIRED', status: 410, data: { at } }),
+      () => new TrpcError({ code: 'EXPIRED', data: { at } }),
     ),
   };
   await using server = await createTestServer({ router: expiring });

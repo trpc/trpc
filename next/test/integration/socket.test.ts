@@ -186,5 +186,5 @@ test('a line that is not JSON gets a PARSE_ERROR message', async () => {
     raw.once('error', reject);
   });
   const message = JSON.parse(reply.split('\n')[0]!);
-  expect(message).toMatchObject({ id: null, type: 'error', status: 400 });
+  expect(message).toMatchObject({ id: null, type: 'error' });
 });

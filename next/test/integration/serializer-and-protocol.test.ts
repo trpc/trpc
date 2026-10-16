@@ -250,7 +250,7 @@ test('with danSON, inputs cannot carry RegExps', async () => {
     links: [httpLink({ url: server.url, serializer: danson })],
   });
   const [, err] = await safe(client.pattern.query(/(a+)+$/));
-  expect(err).toMatchObject({ code: 'PARSE_ERROR', status: 400 });
+  expect(err).toMatchObject({ code: 'PARSE_ERROR' });
 });
 
 // --- the wire protocol, with plain fetch ---------------------------------------------

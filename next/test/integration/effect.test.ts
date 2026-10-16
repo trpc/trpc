@@ -176,7 +176,6 @@ test('.provide() supplies a service from ctx, and its failure is typed', async (
   const err = await Effect.runPromise(Effect.flip(anon.client.whoami.query()));
   expect(err).toMatchObject({
     code: 'UNAUTHORIZED',
-    status: 401,
     defined: true,
   });
   if (err.defined) expectTypeOf(err.code).toEqualTypeOf<'UNAUTHORIZED'>();

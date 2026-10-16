@@ -95,7 +95,7 @@ const update = t.procedure
 
 - The output is the JSON body. A `Blob` or `File` output is sent as the body. Promises and async iterables inside an output aren't supported over REST.
 - Set `response.status = 204` in a resolver to send no body.
-- Declared errors use their status: `404 { defined: true, code: 'NOT_FOUND', status, message, data }`. Invalid input is a `400` with `issues`.
+- Declared errors use their declared status, or their code's: `404 { defined: true, code: 'NOT_FOUND', message, data }`. The body has no `status`; the response's status is it. Invalid input is a `400` with `issues`.
 - Unexpected errors are masked as `500 Internal server error` unless `exposeUnexpectedErrors` is on. It defaults to on only in development and test.
 - Subscriptions are `text/event-stream` and resume from `Last-Event-ID`.
 

@@ -235,7 +235,6 @@ test('a Stream failure is a typed error', async () => {
   expect(seen).toEqual([1, 2]);
   expect(err).toMatchObject({
     code: 'TOO_MANY_REQUESTS',
-    status: 429,
     defined: true,
   });
 });

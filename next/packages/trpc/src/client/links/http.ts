@@ -1,5 +1,6 @@
 import { Cause, Effect, Option, Queue, Stream } from 'effect';
 import {
+  codeOfStatus,
   fromWireError,
   isTrpcError,
   streamErrors,
@@ -214,7 +215,6 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
       throw new TrpcError({
         code: 'UNSUPPORTED_PROTOCOL',
         message: `The server uses the '${theirs}' serializer, but this httpLink uses '${serializer.name}'. Pass the same serializer to the handler and httpLink.`,
-        status: res.status,
       });
     }
     return res;
@@ -295,15 +295,11 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
   async function readError(res: Response): Promise<AnyTrpcError> {
     const text = await res.text();
     try {
-      return fromWireError(
-        serializer.deserialize(JSON.parse(text)),
-        res.status,
-      );
+      return fromWireError(serializer.deserialize(JSON.parse(text)));
     } catch (cause) {
       return new TrpcError({
-        code: 'PARSE_ERROR',
+        code: codeOfStatus(res.status) ?? 'PARSE_ERROR',
         message: `Unexpected ${res.status} response`,
-        status: res.status,
         cause,
       });
     }
@@ -533,10 +529,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
           received.add(line.i);
           if (line.status >= 400) {
             item.reject(
-              fromWireError(
-                serializer.deserialize(line.body as never),
-                line.status,
-              ),
+              fromWireError(serializer.deserialize(line.body as never)),
             );
             Queue.endUnsafe(queue);
             return Effect.void;

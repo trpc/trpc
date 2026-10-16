@@ -56,7 +56,6 @@ test('errors, deferred values and subscriptions cross the port', async () => {
   const res = await safe(ctx.client.fail.query());
   expect(res.error).toMatchObject({
     code: 'FORBIDDEN',
-    status: 403,
     defined: true,
     data: { why: 'no' },
   });

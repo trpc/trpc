@@ -1,5 +1,5 @@
 import { Effect, Exit, Stream } from 'effect';
-import type { AnyTrpcError } from '../../internal/error.ts';
+import { serverFailure, type AnyTrpcError } from '../../internal/error.ts';
 import { HEADER } from '../../internal/protocol.ts';
 import type { IsAny, ProcedureType } from '../../internal/types.ts';
 import { danson } from '../../serializer/danson.ts';
@@ -307,7 +307,7 @@ const defaultRetry: NonNullable<RetryLinkOptions['retry']> = ({ op, error }) =>
   op.type === 'query' &&
   !error.defined &&
   error.code !== 'CLIENT_CLOSED_REQUEST' &&
-  (error.status === 0 || error.status >= 500);
+  serverFailure(error);
 
 /**
  * Retries failed operations.
@@ -372,7 +372,7 @@ export interface DurableLinkOptions {
 const lostResponse = (error: AnyTrpcError) =>
   !error.defined &&
   error.code !== 'CLIENT_CLOSED_REQUEST' &&
-  (error.status === 0 || error.status >= 500);
+  serverFailure(error);
 
 /**
  * Gives mutations (and queries with `{ durable: true }`) a call id, sent as

@@ -213,7 +213,6 @@ test('.errors() gives the resolver typed constructors for defined errors', async
   const res = await safe(ctx.client.post.byId.query({ id: 'missing-1' }));
   expect(res.error).toMatchObject({
     code: 'NOT_FOUND',
-    status: 404,
     defined: true,
     data: { id: 'missing-1' },
   });
@@ -224,7 +223,6 @@ test('.errors() gives the resolver typed constructors for defined errors', async
   const gone = await safe(ctx.client.post.byId.query({ id: 'gone' }));
   expect(gone.error).toMatchObject({
     code: 'GONE',
-    status: 410,
     message: 'This post was removed',
     defined: true,
   });

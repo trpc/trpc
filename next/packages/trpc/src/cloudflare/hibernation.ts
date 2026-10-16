@@ -364,7 +364,6 @@ export function experimental_createHibernatingWebSockets<TPlatform>(
       send({
         id: sub.c,
         type: 'error',
-        status: err.status,
         body: core.serializer.serialize(report(err)),
       });
       unpark(socket, sub.c);

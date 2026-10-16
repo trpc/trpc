@@ -102,7 +102,7 @@ test('an extension adds ctx, meta, errors and middleware to every procedure (03 
   expect(await client.hello.query()).toEqual({ count: 1, max: 2 });
   expect(await client.hello.query()).toEqual({ count: 2, max: 2 });
   const [, err] = await safe(client.hello.query());
-  expect(err).toMatchObject({ code: 'TOO_MANY_REQUESTS', status: 429 });
+  expect(err).toMatchObject({ code: 'TOO_MANY_REQUESTS' });
   if (err?.defined) {
     expectTypeOf(err.code).toEqualTypeOf<'TOO_MANY_REQUESTS'>();
   }

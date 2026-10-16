@@ -93,7 +93,6 @@ test('each call in a batch settles on its own', async () => {
   expect(ok.data).toBe(42);
   expect(failed.error).toMatchObject({
     code: 'NOT_FOUND',
-    status: 404,
     defined: true,
   });
   expect(ctx.server.requests).toHaveLength(1);
@@ -126,7 +125,7 @@ test('the client splits batches above maxItems', async () => {
 test('a server without batching rejects batched requests', async () => {
   await using ctx = await setup({ serverBatch: false });
   const [, err] = await safe(ctx.client.double.query({ n: 1 }));
-  expect(err).toMatchObject({ code: 'BAD_REQUEST', status: 400 });
+  expect(err).toMatchObject({ code: 'BAD_REQUEST' });
 });
 
 test('nested promises and async iterables stream as JSONL', async () => {

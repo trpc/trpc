@@ -143,10 +143,7 @@ function makeSocketLink(
 
   const revive = (message: Extract<ServerMessage, { type: 'error' }>) => {
     try {
-      return fromWireError(
-        serializer.deserialize(message.body as never),
-        message.status,
-      );
+      return fromWireError(serializer.deserialize(message.body as never));
     } catch (cause) {
       return parseError('Invalid error message')(cause);
     }

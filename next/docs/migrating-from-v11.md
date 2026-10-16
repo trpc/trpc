@@ -42,7 +42,7 @@ It speaks every v11 link:
 | `wsLink`                      | queries, mutations, subscriptions with `subscription.stop`, `connectionParams`, `PING`/`PONG`                                                                              |
 | `FormData` and `octet-stream` | a form becomes an object (bracket notation, files as `File`s); bytes become a `Blob`                                                                                       |
 
-Errors go out in v11's shape, so `TRPCClientError` reads them: `{ message, code: -32004, data: { code: 'NOT_FOUND', httpStatus: 404, path } }`. A code v11 doesn't have (`POST_LOCKED` with status `423`) takes v11's code for its status, `INTERNAL_SERVER_ERROR` when there's none; the HTTP status stays. If the v11 router had an `errorFormatter`, reproduce it:
+Errors go out in v11's shape, so `TRPCClientError` reads them: `{ message, code: -32004, data: { code: 'NOT_FOUND', httpStatus: 404, path } }`. A code v11 doesn't have (`POST_LOCKED`, declared with status `423`) takes v11's code for its status, `INTERNAL_SERVER_ERROR` when there's none; the HTTP status stays. If the v11 router had an `errorFormatter`, reproduce it:
 
 ```ts
 createV11Handler({

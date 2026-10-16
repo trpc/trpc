@@ -141,7 +141,7 @@ test('a standalone middleware works with any `t` whose ctx fits', async () => {
   const [, err] = await safe(
     ctx.client.rename.mutate({ orgId: 'acme', name: 'x' }),
   );
-  expect(err).toMatchObject({ code: 'UNAUTHORIZED', status: 401 });
+  expect(err).toMatchObject({ code: 'UNAUTHORIZED' });
   expect(ctx.db.log).toEqual([]);
 });
 

@@ -104,11 +104,14 @@ const byId = t.procedure
 
 On the client, `error.defined` is true for errors in the union, whether returned, failed or declared (narrow on `code` next). It is false for anything else: undeclared thrown errors, network failures, aborts. Unexpected errors' messages are masked unless `NODE_ENV` is `development` or `test`, or `exposeUnexpectedErrors: true`. There is no `errorFormatter`.
 
-Any string is a code. The built-in ones (`NOT_FOUND`, `UNAUTHORIZED`, …) have their HTTP status; a custom code is a 400 unless you pass `status`:
+Any string is a code. The built-in ones (`NOT_FOUND`, `UNAUTHORIZED`, …) have their HTTP status; a custom code is a 400 unless its declaration (`.errors()` or a `TrpcError.Tagged` class) has a `status`. The status is for HTTP: errors don't carry it, and neither do error bodies or socket frames.
 
 ```ts
-error({ code: 'OUT_OF_STOCK' }); // 400
-error({ code: 'OUT_OF_STOCK', status: 409 }); // 409
+t.procedure
+  .errors({ OUT_OF_STOCK: { status: 409 } })
+  .mutation(() => error({ code: 'OUT_OF_STOCK' })); // 409
+
+t.procedure.mutation(() => error({ code: 'OUT_OF_STOCK' })); // 400
 ```
 
 An error's `_tag` is its code, so Effect code narrows with `catchTag`:

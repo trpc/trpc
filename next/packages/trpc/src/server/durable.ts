@@ -14,8 +14,10 @@ import { Persistence } from 'effect/persistence';
 import {
   fromWireError,
   isTrpcError,
+  statusOf,
   toWireError,
   TrpcError,
+  withStatusHint,
   type AnyTrpcError,
   type WireError,
 } from '../internal/error.ts';
@@ -229,7 +231,7 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
           return ok(serializer.deserialize(entry.value));
         }
         if (entry.state === 'failed') {
-          return fromWireError(entry.error, entry.status);
+          return withStatusHint(fromWireError(entry.error), entry.status);
         }
         if (entry.state === 'streamed') {
           if (!sink) {
@@ -442,7 +444,7 @@ const stored = (
           state: 'failed',
           input,
           error: toWireError(error),
-          status: error.status,
+          status: statusOf(error),
         }
       : undefined;
   }

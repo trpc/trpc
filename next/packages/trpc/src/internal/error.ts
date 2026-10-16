@@ -56,8 +56,6 @@ export interface TrpcErrorOptions<TCode extends string, TData> {
   message?: string | undefined;
   /** Sent to the client, serialized with the endpoint's serializer. */
   data?: TData;
-  /** HTTP status. Defaults from the code, or 400 for a custom code. */
-  status?: number | undefined;
   /** Whether the error is part of the procedure's typed error union. */
   defined?: boolean | undefined;
   /** Never sent to the client. */
@@ -102,7 +100,6 @@ export class TrpcError<
   /** The code, so `Effect.catchTag('NOT_FOUND', …)` narrows on it. */
   readonly _tag: TCode;
   readonly code: TCode;
-  readonly status: number;
   readonly data: TData;
   readonly defined: boolean;
 
@@ -113,8 +110,6 @@ export class TrpcError<
     });
     this._tag = opts.code;
     this.code = opts.code;
-    this.status =
-      opts.status ?? (ERROR_STATUS as Record<string, number>)[opts.code] ?? 400;
     this.data = opts.data as TData;
     this.defined = opts.defined ?? false;
   }
@@ -163,7 +158,6 @@ export class TrpcError<
         super({
           code,
           data: hasData ? args[0] : undefined,
-          status: spec.status,
           message: opts?.message ?? spec.message,
           cause: opts?.cause,
           defined: true,
@@ -187,7 +181,11 @@ export interface TaggedErrorSpec<
 > {
   /** Validates the error's `data`, and documents it in OpenAPI. */
   readonly data?: TSchema;
-  /** Kept as a literal type, so the TypeScript OpenAPI generator sees it. @default 400 */
+  /**
+   * The HTTP status the RPC and OpenAPI handlers answer with. Kept as a
+   * literal type, so the TypeScript OpenAPI generator sees it. Instances
+   * don't carry it. @default the code's built-in status, or 400
+   */
   readonly status?: TStatus;
   readonly message?: string | undefined;
 }
@@ -228,7 +226,8 @@ export interface TaggedErrorClass<
       ? [data: OutOf<TSchema>, opts?: TaggedErrorOptions]
       : [opts?: TaggedErrorOptions]
   ): TrpcError<TCode, TaggedData<TSchema>> & {
-    readonly status: TStatus extends number ? TStatus : number;
+    /** Type only: the class's status, for the TypeScript OpenAPI generator. */
+    readonly '~status'?: TStatus;
   };
   readonly code: TCode;
   readonly data: TSchema;
@@ -237,11 +236,52 @@ export interface TaggedErrorClass<
 }
 
 /** The class spec of a {@link TrpcError.Tagged} instance, if it is one. @internal */
-export function taggedSpec(
-  err: AnyTrpcError,
-): { readonly data?: AnySchema | undefined } | undefined {
-  const ctor = err.constructor as { [TAGGED]?: true; data?: AnySchema };
+export function taggedSpec(err: AnyTrpcError):
+  | {
+      readonly data?: AnySchema | undefined;
+      readonly status?: number | undefined;
+    }
+  | undefined {
+  const ctor = err.constructor as {
+    [TAGGED]?: true;
+    data?: AnySchema;
+    status?: number;
+  };
   return ctor[TAGGED] ? ctor : undefined;
+}
+
+const statusHints = new WeakMap<AnyTrpcError, number>();
+
+/**
+ * Gives an error rebuilt from storage the status it had, for
+ * {@link statusOf}. The instance itself doesn't carry it.
+ * @internal
+ */
+export function withStatusHint<E extends AnyTrpcError>(
+  err: E,
+  status: number,
+): E {
+  statusHints.set(err, status);
+  return err;
+}
+
+/**
+ * The HTTP status for `err`: the procedure's declared spec for its code, the
+ * status it was kept with, its {@link TrpcError.Tagged} class's, the code's
+ * built-in status, or 400.
+ * @internal
+ */
+export function statusOf(
+  err: AnyTrpcError,
+  declared?: Readonly<Record<string, { readonly status?: number | undefined }>>,
+): number {
+  return (
+    declared?.[err.code]?.status ??
+    statusHints.get(err) ??
+    taggedSpec(err)?.status ??
+    (ERROR_STATUS as Record<string, number>)[err.code] ??
+    400
+  );
 }
 
 /**
@@ -274,6 +314,27 @@ export function error<const TCode extends string, TData = undefined>(
   opts: Omit<TrpcErrorOptions<TCode, TData>, 'defined'>,
 ): TrpcError<TCode, TData> {
   return new TrpcError({ ...opts, defined: true });
+}
+
+/**
+ * The built-in code for an HTTP status that isn't a tRPC error body (a
+ * proxy's 502, say), if there is one.
+ * @internal
+ */
+export function codeOfStatus(status: number): BuiltinErrorCode | undefined {
+  if (status < 400) return undefined;
+  const codes = Object.keys(ERROR_STATUS) as BuiltinErrorCode[];
+  return codes.find((code) => ERROR_STATUS[code] === status);
+}
+
+/**
+ * Whether `err` stands for the server failing or no response (a 5xx or a
+ * client-side code), which links may retry.
+ * @internal
+ */
+export function serverFailure(err: AnyTrpcError): boolean {
+  const status = statusOf(err);
+  return status === 0 || status >= 500;
 }
 
 /**
@@ -329,14 +390,16 @@ export function withDefined<E extends AnyTrpcError>(
   defined: boolean,
 ): E {
   if (err.defined === defined) return err;
-  return new TrpcError({
-    code: err.code,
-    message: err.message,
-    data: err.data,
-    status: err.status,
-    defined,
-    cause: err.cause,
-  }) as E;
+  return withStatusHint(
+    new TrpcError({
+      code: err.code,
+      message: err.message,
+      data: err.data,
+      defined,
+      cause: err.cause,
+    }),
+    statusOf(err),
+  ) as E;
 }
 
 /**
@@ -371,7 +434,7 @@ const isRecord = (v: unknown): v is Record<string, unknown> =>
  * @since 0.1.0
  * @stability stable
  */
-export function fromWireError(body: unknown, status?: number): TrpcError {
+export function fromWireError(body: unknown): TrpcError {
   const inner = isRecord(body) && isRecord(body['error']) ? body['error'] : {};
   const code =
     typeof inner['code'] === 'string' ? inner['code'] : 'INTERNAL_SERVER_ERROR';
@@ -379,7 +442,6 @@ export function fromWireError(body: unknown, status?: number): TrpcError {
     code,
     message: typeof inner['message'] === 'string' ? inner['message'] : code,
     data: inner['data'],
-    status,
     defined: inner['defined'] === true,
   });
 }

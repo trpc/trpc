@@ -20,7 +20,6 @@ export function errorConstructors(map: ErrorMap): Record<string, unknown> {
     ) => {
       const err = new TrpcError({
         code,
-        status: spec.status,
         message: opts.message ?? spec.message,
         data: opts.data,
         cause: opts.cause,

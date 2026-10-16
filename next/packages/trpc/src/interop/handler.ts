@@ -7,6 +7,7 @@ import {
 } from 'effect/http';
 import {
   isTrpcError,
+  statusOf,
   TrpcError,
   type AnyTrpcError,
 } from '../internal/error.ts';
@@ -182,6 +183,7 @@ export interface V11Core {
     err: AnyTrpcError,
     path: string | undefined,
     type: ProcedureType | 'unknown',
+    procedure?: AnyProcedure,
   ) => V11ErrorShape;
   /** A query's or mutation's output with its promises settled. */
   readonly settle: (value: unknown) => Effect.Effect<unknown, AnyTrpcError>;
@@ -341,9 +343,9 @@ export function createV11Handler<
               : undefined) ?? 100,
         };
 
-  const errorShape: V11Core['errorShape'] = (err, path, type) => {
+  const errorShape: V11Core['errorShape'] = (err, path, type, procedure) => {
     const error = publicError(err);
-    const shape = v11Shape(error, path);
+    const shape = v11Shape(error, path, procedure?.['~trpc'].errors);
     return opts.errorFormatter?.({ error, shape, path, type }) ?? shape;
   };
   const core: V11Core = {
@@ -383,9 +385,11 @@ export function createV11Handler<
         call.type === 'unknown' ? undefined : call.type,
       );
       return {
-        status: publicError(err).status,
+        status: statusOf(publicError(err), call.procedure?.['~trpc'].errors),
         text: JSON.stringify({
-          error: output.serialize(errorShape(err, call.path, call.type)),
+          error: output.serialize(
+            errorShape(err, call.path, call.type, call.procedure),
+          ),
         }),
       };
     };
@@ -598,7 +602,9 @@ export function createV11Handler<
         return frame(
           'serialized-error',
           JSON.stringify(
-            output.serialize(errorShape(err, call.path, 'subscription')),
+            output.serialize(
+              errorShape(err, call.path, 'subscription', call.procedure),
+            ),
           ),
         );
       };
@@ -751,7 +757,14 @@ export function createV11Handler<
                 };
               }
               report(result.error, request, call.path);
-              return { error: errorShape(result.error, call.path, call.type) };
+              return {
+                error: errorShape(
+                  result.error,
+                  call.path,
+                  call.type,
+                  call.procedure,
+                ),
+              };
             });
           });
           const lines = jsonlLines(data, {
@@ -760,7 +773,12 @@ export function createV11Handler<
               const call = calls[Number(path[0])];
               const err = normalizeCause(cause);
               report(err, request, call?.path);
-              return errorShape(err, call?.path, call?.type ?? 'unknown');
+              return errorShape(
+                err,
+                call?.path,
+                call?.type ?? 'unknown',
+                call?.procedure,
+              );
             },
           });
           return HttpServerResponse.stream(
@@ -814,7 +832,7 @@ export function createV11Handler<
         error: output.serialize(errorShape(err, undefined, 'unknown')),
       });
       return json(
-        publicError(err).status,
+        statusOf(publicError(err)),
         isBatch ? `[${paths.map(() => text).join(',')}]` : text,
       );
     };

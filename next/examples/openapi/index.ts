@@ -97,7 +97,7 @@ const post = await client.post.create.mutate({ title: 'From openApiLink' });
 console.log('openApiLink post.create', post.id, post.createdAt);
 
 const [, err] = await safe(client.post.byId.query({ id: '404' }));
-console.log('openApiLink post.byId', err?.code, err?.status);
+console.log('openApiLink post.byId', err?.code);
 if (err?.code !== 'NOT_FOUND') throw new Error('expected NOT_FOUND');
 
 await runtime.dispose();

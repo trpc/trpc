@@ -307,7 +307,7 @@ export function connectionReceiver(
       return toWireError(core.publicError(err));
     };
   const sendError = (id: number | null, err: AnyTrpcError) =>
-    conn.send({ id, type: 'error', status: err.status, body: wire(err) });
+    conn.send({ id, type: 'error', body: wire(err) });
 
   const close = () => {
     closed = true;

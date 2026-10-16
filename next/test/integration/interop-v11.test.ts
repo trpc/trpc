@@ -73,9 +73,9 @@ const router = {
   bytes: t.procedure
     .input(z.instanceof(Blob))
     .mutation(async ({ input }) => input.size),
-  locked: t.procedure.query(() =>
-    error({ code: 'POST_LOCKED', status: 423, message: 'Locked' }),
-  ),
+  locked: t.procedure
+    .errors({ POST_LOCKED: { status: 423 } })
+    .query(() => error({ code: 'POST_LOCKED', message: 'Locked' })),
   dates: t.procedure
     .input(z.object({ at: z.date() }))
     .query(({ input }) => ({ next: new Date(input.at.getTime() + 1000) })),

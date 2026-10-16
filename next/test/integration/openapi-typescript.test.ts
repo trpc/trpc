@@ -44,7 +44,6 @@ test('inferred errors are documented with their status (21)', () => {
   expect(json(op(doc, 'get', '/api/posts/{id}'), '404')).toMatchObject({
     properties: {
       code: { const: 'POST_NOT_FOUND' },
-      status: { const: 404 },
       data: {
         type: 'object',
         properties: { id: { type: 'string' } },
@@ -53,7 +52,7 @@ test('inferred errors are documented with their status (21)', () => {
     },
   });
   expect(json(op(doc, 'post', '/api/posts'), '401')).toMatchObject({
-    properties: { code: { const: 'UNAUTHORIZED' }, status: { const: 401 } },
+    properties: { code: { const: 'UNAUTHORIZED' } },
   });
   expect(
     json(op(doc, 'post', '/api/posts'), '401')['properties'],

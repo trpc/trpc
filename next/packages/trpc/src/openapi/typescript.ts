@@ -288,7 +288,7 @@ function inferErrors(checker: Checker, errors: Type): InferredTypes['errors'] {
     if (has(member, TypeFlags.Never)) continue;
     const code = propertyType(checker, member, 'code');
     if (!code?.isStringLiteralType()) continue;
-    const status = propertyType(checker, member, 'status');
+    const status = propertyType(checker, member, '~status');
     const data = propertyType(checker, member, 'data');
     found.push({
       code: code.value,

@@ -164,7 +164,7 @@ export type ServerMessage =
   | { id: number; type: 'chunk'; event?: number; chunk: unknown }
   | { id: number; type: 'chunkEnd'; event: number }
   | { id: number; type: 'done' }
-  | { id: number | null; type: 'error'; status: number; body: unknown }
+  | { id: number | null; type: 'error'; body: unknown }
   /** The answer to the client's `init`: the server's serializer's `name`, in plain JSON. */
   | { type: 'init'; serializer: string }
   | { type: 'pong' };

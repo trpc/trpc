@@ -109,7 +109,6 @@ test('input validation errors are typed BAD_REQUEST with issues', async () => {
   const [, err] = await safe(ctx.client.post.create.mutate({ title: '' }));
   expect(err).toMatchObject({
     code: 'BAD_REQUEST',
-    status: 400,
     defined: true,
   });
   if (err?.defined && err.code === 'BAD_REQUEST') {
@@ -124,7 +123,6 @@ test('middleware short-circuits with a returned error', async () => {
   expect(data).toBeUndefined();
   expect(err).toMatchObject({
     code: 'UNAUTHORIZED',
-    status: 401,
     message: 'Sign in first',
     defined: true,
   });

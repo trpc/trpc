@@ -14,6 +14,7 @@ import {
 } from '../internal/describe.ts';
 import {
   isTrpcError,
+  statusOf,
   TrpcError,
   type AnyTrpcError,
 } from '../internal/error.ts';
@@ -354,8 +355,16 @@ export function createOpenApiHandler<
     await loadFor(pathname);
   };
 
-  const fail = (err: AnyTrpcError, headers?: Headers) =>
-    json(err.status, toOpenApiError(base.publicError(err)), headers);
+  const fail = (
+    err: AnyTrpcError,
+    headers?: Headers,
+    procedure?: AnyProcedure,
+  ) =>
+    json(
+      statusOf(err, procedure?.['~trpc'].errors),
+      toOpenApiError(base.publicError(err)),
+      headers,
+    );
 
   async function readBody(request: Request): Promise<{
     value: unknown;
@@ -574,7 +583,7 @@ export function createOpenApiHandler<
     if (Exit.isFailure(exit)) {
       const err = normalizeCause(exit.cause);
       base.report(err, httpOf(request), entry.path, type);
-      return fail(err, response.headers);
+      return fail(err, response.headers, procedure);
     }
     if (type === 'subscription') {
       return events(

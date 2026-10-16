@@ -134,7 +134,7 @@ const program = Effect.gen(function* () {
     // `defined` separates the typed error from an untyped one with the same code.
     Effect.catchTag('POST_NOT_FOUND', (err) =>
       err.defined
-        ? Effect.succeed(`no post ${err.data.id} (${err.status})`)
+        ? Effect.succeed(`no post ${err.data.id} (${err.code})`)
         : Effect.fail(err),
     ),
   );

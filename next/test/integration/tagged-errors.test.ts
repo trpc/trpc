@@ -69,7 +69,11 @@ async function setup() {
     router: routerType<AppRouter>(),
     links: [httpLink({ url: server.url })],
   });
-  return { client, [Symbol.asyncDispose]: () => server.close() };
+  return {
+    client,
+    url: server.url,
+    [Symbol.asyncDispose]: () => server.close(),
+  };
 }
 
 test('a yielded tagged error reaches the client typed, with its status and data', async () => {
@@ -79,10 +83,13 @@ test('a yielded tagged error reaches the client typed, with its status and data'
   expect(err).toMatchObject({
     code: 'POST_NOT_FOUND',
     _tag: 'POST_NOT_FOUND',
-    status: 404,
     defined: true,
     data: { id: 'nope' },
   });
+  const res = await fetch(
+    `${ctx.url}/byId?input=${encodeURIComponent('{"id":"nope"}')}`,
+  );
+  expect(res.status).toBe(404);
   if (isDefinedError(err) && err.code === 'POST_NOT_FOUND') {
     expectTypeOf(err.data).toEqualTypeOf<{ readonly id: string }>();
   }
@@ -91,7 +98,8 @@ test('a yielded tagged error reaches the client typed, with its status and data'
 test('a tagged error without data defaults to 400', async () => {
   await using ctx = await setup();
   const [, err] = await safe(ctx.client.gone.query());
-  expect(err).toMatchObject({ code: 'GONE', status: 400, defined: true });
+  expect(err).toMatchObject({ code: 'GONE', defined: true });
+  expect((await fetch(`${ctx.url}/gone`)).status).toBe(400);
   expect(new Gone()).toBeInstanceOf(TrpcError);
   expect(new Gone()._tag).toBe('GONE');
 });

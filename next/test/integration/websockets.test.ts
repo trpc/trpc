@@ -185,7 +185,6 @@ test('the default serializer and typed errors work as over HTTP', async () => {
   const res = await safe(ctx.client.find.query({ id: '2' }));
   expect(res.error).toMatchObject({
     code: 'NOT_FOUND',
-    status: 404,
     defined: true,
     data: { id: '2' },
   });
@@ -282,7 +281,7 @@ test('errors mid-subscription reach the loop', async () => {
   const seen: number[] = [];
   await expect(async () => {
     for await (const n of ctx.client.failing.subscribe()) seen.push(n);
-  }).rejects.toMatchObject({ code: 'CONFLICT', status: 409, defined: false });
+  }).rejects.toMatchObject({ code: 'CONFLICT', defined: false });
   expect(seen).toEqual([1]);
 });
 
@@ -376,7 +375,6 @@ test('a client with another protocol version gets a connection error', async () 
   expect(await message).toMatchObject({
     id: null,
     type: 'error',
-    status: 400,
     body: { json: { error: { code: 'UNSUPPORTED_PROTOCOL' } } },
   });
   expect((await closed).code).toBe(1002);

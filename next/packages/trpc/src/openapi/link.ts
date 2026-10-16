@@ -2,6 +2,7 @@ import { Effect, Stream } from 'effect';
 import type { Operation, OperationStream, TrpcLink } from '../client/link.ts';
 import type { ContractJson } from '../contract/index.ts';
 import {
+  codeOfStatus,
   isTrpcError,
   TrpcError,
   type AnyTrpcError,
@@ -184,9 +185,8 @@ export function openApiLink(
       return fromOpenApiError(JSON.parse(text), res.status);
     } catch (cause) {
       return new TrpcError({
-        code: 'PARSE_ERROR',
+        code: codeOfStatus(res.status) ?? 'PARSE_ERROR',
         message: `Unexpected ${res.status} response`,
-        status: res.status,
         cause,
       });
     }
