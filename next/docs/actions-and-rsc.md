@@ -69,3 +69,24 @@ export default async function Page({ params }) {
 - `HydrationBoundary` dehydrates the request's queries, pending ones included, so they stream in. The browser's `QueryClient` needs `defaultOptions: hydrationOptions({ client })`. If the router declares a [serializer](./serializers.md), `createTrpcRsc` requires the same one as `serializer`, so `Date`s and custom types survive.
 - `await getQueryClient().fetchQuery(…)` reads data in the server component itself. `caller` calls the router without the cache.
 - A pending query that later fails is redacted in the dehydrated state, unless its error has a `digest`: Next has to see those to detect dynamic rendering. Set `dehydrate.shouldRedactErrors` on your `makeQueryClient` to change that.
+
+## Next.js data cache
+
+`cacheTags(key)` from `@trpcdev/tanstack-query` (re-exported by the framework packages) turns a query key into data-cache tags, broad to narrow: `trpc`, each path prefix (`trpc:post`, `trpc:post.byId`), then the path with its input (`trpc:post.byId:{"id":"1"}`, keys sorted). `revalidationTag(key)` is the one tag that covers a key, so revalidating works like `invalidateQueries`:
+
+```ts
+import { cacheTag, revalidateTag } from 'next/cache';
+import { cacheTags, revalidationTag } from '@trpcdev/tanstack-react-query';
+
+async function getPost(id: string) {
+  'use cache';
+  cacheTag(...cacheTags(trpc.post.byId.queryKey({ input: { id } })));
+  return caller.post.byId({ id });
+}
+
+// in a Server Action, after a write
+revalidateTag(revalidationTag(trpc.post.byId.queryKey({ input: { id } }))); // that post
+revalidateTag(revalidationTag(trpc.post.pathKey())); // every post.* call
+```
+
+An input whose tag would be longer than Next's 256 characters gets no tag of its own; it revalidates with its path.

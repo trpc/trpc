@@ -38,10 +38,12 @@ export {
   type TrpcQueryUtilsFor,
   type TrpcQueryUtils,
 } from './utils.ts';
-export type {
-  TrpcMutationKey,
-  TrpcQueryKey,
-  TrpcQueryKeyType,
+export {
+  cacheTags,
+  revalidationTag,
+  type TrpcMutationKey,
+  type TrpcQueryKey,
+  type TrpcQueryKeyType,
 } from './keys.ts';
 export {
   SubscriptionCache,
