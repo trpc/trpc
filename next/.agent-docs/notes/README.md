@@ -25,3 +25,4 @@ Agent-written working notes: research, spike results, benchmarks and anything wo
 | [Open trpc/trpc issues](./open-issues-review.md)                          | all        |                             |
 | [Interruptible streamed mutations](./interruptible-streamed-mutations.md) | 19         |                             |
 | [`use()`: link cache vs Effect atoms](./react-use-spikes.md)              | 20         | `cache-link/`, `atom-trpc/` |
+| [Declared invalidation plugin](./invalidation-plugin.md)                  | 19         | `invalidation/`             |

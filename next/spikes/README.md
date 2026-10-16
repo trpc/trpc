@@ -19,3 +19,4 @@ Generated fixtures and build output (`generated/`, `dist/`) are gitignored; the 
 | `concat-plugins/`      | `pnpm test` (root)                                             | [concat-plugins](../.agent-docs/notes/concat-plugins.md)                             |
 | `cache-link/`          | `pnpm test` (root)                                             | [react-use-spikes](../.agent-docs/notes/react-use-spikes.md)                         |
 | `atom-trpc/`           | `pnpm test` (root)                                             | [react-use-spikes](../.agent-docs/notes/react-use-spikes.md)                         |
+| `invalidation/`        | `pnpm test` (root)                                             | [invalidation-plugin](../.agent-docs/notes/invalidation-plugin.md)                   |
