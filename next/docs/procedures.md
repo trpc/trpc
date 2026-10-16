@@ -21,6 +21,26 @@ t.procedure
   .query(() => db.post.find(id));
 ```
 
+### Streamed outputs
+
+A query or mutation can return an async generator or an Effect `Stream`. To validate each item, wrap the item schema in `stream()`; a second schema validates the generator's return value, which the client gets as the iterator's final value:
+
+```ts
+import { stream } from 'trpcdev/server';
+
+const chat = t.procedure
+  .output(stream(Token, Summary))
+  .mutation(async function* () {
+    yield { text: 'He' };
+    yield { text: 'llo' };
+    return { tokens: 2 };
+  });
+
+const it = await client.chat.mutate(); // AsyncIterable<Token, Summary>
+```
+
+A plain `.output(Item)` on a streaming resolver is a type error that points to `stream()`. An invalid item fails the stream with `INTERNAL_SERVER_ERROR` after the items before it have been delivered. Streams nested inside an object output aren't validated.
+
 ## Files
 
 `File` and `Blob` values can sit anywhere in an input. `httpLink` sends that call alone (outside a batch) as `multipart/form-data`, and the handler rebuilds them before validation. `maxBodySize` covers the whole body.

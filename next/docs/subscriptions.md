@@ -10,6 +10,8 @@ const onPost = t.procedure.subscription(async function* ({ signal }) {
 for await (const post of client.onPost.subscribe()) render(post);
 ```
 
+`.output(Event)` validates each event (the `data` of `tracked()` events); `.output(stream(Event))` does the same, matching streamed queries.
+
 ## Resuming
 
 Yield `tracked(id, data)` to give events ids. SSE sends them as `id:`, and on reconnect the resolver gets `lastEventId` in its options (not in its input):

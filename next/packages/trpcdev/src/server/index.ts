@@ -110,6 +110,12 @@ export type {
   StandardIssue,
   StandardSchemaV1,
 } from './schema.ts';
+export {
+  stream,
+  type OutputSchema,
+  type StreamOutput,
+  type StreamSchema,
+} from './stream-schema.ts';
 export { tracked, type TrackedEnvelope } from './tracked.ts';
 export {
   makeMemoryPublisher,

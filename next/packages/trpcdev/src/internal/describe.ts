@@ -7,6 +7,7 @@ import {
 } from '../server/procedure.ts';
 import { groupOf, isLazy, type AnyLazyRouter } from '../server/router.ts';
 import { isSchema } from '../server/schema.ts';
+import { isStreamSchema } from '../server/stream-schema.ts';
 import { toJsonSchema, type JsonSchema } from './json-schema.ts';
 
 /**
@@ -21,7 +22,7 @@ export function outputJsonSchema(
 ): JsonSchema | undefined {
   if (!def.output) return undefined;
   return toJsonSchema(
-    def.output,
+    isStreamSchema(def.output) ? def.output['~trpc.stream'].item : def.output,
     def.validateOutput === false ? 'input' : 'output',
   );
 }

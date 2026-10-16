@@ -32,6 +32,16 @@ import type {
   OutOf,
   SchemaServices,
 } from './schema.ts';
+import type {
+  EventOutput,
+  OutputIn,
+  OutputOut,
+  OutputSchema,
+  OutputServices,
+  ResultOf,
+  StreamedOutput,
+  StreamOutput,
+} from './stream-schema.ts';
 import type { TrackedEnvelope } from './tracked.ts';
 
 /**
@@ -235,23 +245,49 @@ export type SplitStream<R> =
 type OutputConstraint<TDef extends BuilderDef> = TDef['outputIn'] extends Unset
   ? unknown
   :
-      | MaybePromise<TDef['outputIn'] | AnyTrpcError>
-      | Effect.Effect<TDef['outputIn'] | AnyTrpcError, any, any>;
+      | MaybePromise<ResultOf<TDef['outputIn']> | AnyTrpcError>
+      | Effect.Effect<ResultOf<TDef['outputIn']> | AnyTrpcError, any, any>;
 
 type EventConstraint<TDef extends BuilderDef> = TDef['outputIn'] extends Unset
   ? unknown
   :
       | AsyncIterable<
-          TDef['outputIn'] | TrackedEnvelope<TDef['outputIn']>,
+          | EventOutput<TDef['outputIn']>
+          | TrackedEnvelope<EventOutput<TDef['outputIn']>>,
           any,
           any
         >
       | Stream.Stream<
-          TDef['outputIn'] | TrackedEnvelope<TDef['outputIn']>,
+          | EventOutput<TDef['outputIn']>
+          | TrackedEnvelope<EventOutput<TDef['outputIn']>>,
           any,
           any
         >
       | AnyTrpcError;
+
+/**
+ * A query or mutation that streams needs `.output(stream(Item))`: a plain
+ * schema would be checked against the whole iterable.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export type StreamOutputCheck<
+  TDef extends BuilderDef,
+  $Ret,
+> = TDef['outputIn'] extends Unset
+  ? unknown
+  : TDef['outputIn'] extends StreamOutput<any, any>
+    ? unknown
+    : IsAny<Awaited<$Ret>> extends true
+      ? unknown
+      : Awaited<$Ret> extends AsyncIterable<any> | Stream.Stream<any, any, any>
+        ? TDef['outputIn'] extends AsyncIterable<any>
+          ? unknown
+          : TypeError<
+              'A streamed output validates each item with .output(stream(Item))',
+              TDef['outputIn']
+            >
+        : unknown;
 
 type UnmappedOf<R> =
   R extends Effect.Effect<any, infer E, any>
@@ -297,7 +333,7 @@ type ResolvedOutput<
   $Ret,
 > = TDef['outputIn'] extends Unset
   ? SplitReturn<$Ret>['output']
-  : TDef['outputIn'];
+  : ResultOf<TDef['outputIn']>;
 
 /**
  * Part of inferred procedure types; exported so they stay nameable.
@@ -317,9 +353,9 @@ export type BuildProcedure<
     ? TSplit['output']
     : TType extends 'subscription'
       ? TSplit['output'] extends TrackedEnvelope<any>
-        ? TrackedEnvelope<TDef['outputOut']>
-        : TDef['outputOut']
-      : TDef['outputOut'];
+        ? TrackedEnvelope<EventOutput<TDef['outputOut']>>
+        : EventOutput<TDef['outputOut']>
+      : StreamedOutput<TDef['outputOut']>;
   errors: TDef['errors'] | TSplit['errors'];
   services: TDef['requires'] | Exclude<TSplit['services'], TDef['provided']>;
 }>;
@@ -376,7 +412,7 @@ export type DeclaredErrors<M> = {
 export interface BuilderInternals {
   readonly steps: ReadonlyArray<Step>;
   readonly meta: object;
-  readonly output: AnySchema | undefined;
+  readonly output: OutputSchema | undefined;
   readonly validateOutput?: false | undefined;
   readonly errors: ErrorMap;
   readonly route: Route | undefined;
@@ -443,32 +479,36 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
    *   .query(() => db.post.find(id));
    * ```
    */
-  output<$S extends AnySchema>(
+  output<$S extends OutputSchema>(
     schema: $S,
     opts: { validate: false },
-  ): ProcedureBuilder<With<TDef, { outputIn: InOf<$S>; outputOut: InOf<$S> }>>;
+  ): ProcedureBuilder<
+    With<TDef, { outputIn: OutputIn<$S>; outputOut: OutputIn<$S> }>
+  >;
   /**
    * Validates the resolver's return value. The resolver returns the schema's
    * input type, and the client receives its output type. For subscriptions it
-   * validates each event (the `data` of `tracked()` events).
+   * validates each event (the `data` of `tracked()` events). For streamed
+   * queries and mutations, `stream(Item, Return?)` validates each item.
    *
    * @example
    * ```ts
    * t.procedure.output(z.object({ id: z.string() })).query(() => ({ id: '1' }));
+   * t.procedure.output(stream(Post)).query(async function* () { yield* posts; });
    * ```
    */
-  output<$S extends AnySchema>(
+  output<$S extends OutputSchema>(
     schema: $S,
     opts?: { validate?: true },
   ): ProcedureBuilder<
     With<
       TDef,
       {
-        outputIn: InOf<$S>;
-        outputOut: OutOf<$S>;
+        outputIn: OutputIn<$S>;
+        outputOut: OutputOut<$S>;
         requires:
           | TDef['requires']
-          | Exclude<SchemaServices<$S>, TDef['provided']>;
+          | Exclude<OutputServices<$S>, TDef['provided']>;
       }
     >
   >;
@@ -682,6 +722,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
       opts: ResolverOpts<TDef>,
     ) => $Ret &
       OutputConstraint<TDef> &
+      StreamOutputCheck<TDef, $Ret> &
       StrictErrors<$Ret> &
       ShortsCheck<TDef, ResolvedOutput<TDef, $Ret>>,
   ): BuildProcedure<TDef, 'query', SplitReturn<$Ret>>;
@@ -699,6 +740,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
       opts: ResolverOpts<TDef>,
     ) => $Ret &
       OutputConstraint<TDef> &
+      StreamOutputCheck<TDef, $Ret> &
       StrictErrors<$Ret> &
       ShortsCheck<TDef, ResolvedOutput<TDef, $Ret>>,
   ): BuildProcedure<TDef, 'mutation', SplitReturn<$Ret>>;

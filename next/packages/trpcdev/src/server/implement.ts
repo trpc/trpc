@@ -33,6 +33,7 @@ import {
   type Procedure,
   type ProcedureDefOf,
 } from './procedure.ts';
+import type { EventOutput, ResultOf } from './stream-schema.ts';
 import type { TrackedEnvelope } from './tracked.ts';
 
 /**
@@ -74,8 +75,8 @@ export type UndeclaredCheck<TDef extends BuilderDef, $Errors> = [
 type ResultConstraint<TDef extends BuilderDef> = TDef['outputIn'] extends Unset
   ? unknown
   :
-      | MaybePromise<TDef['outputIn'] | AnyTrpcError>
-      | Effect.Effect<TDef['outputIn'] | AnyTrpcError, any, any>;
+      | MaybePromise<ResultOf<TDef['outputIn']> | AnyTrpcError>
+      | Effect.Effect<ResultOf<TDef['outputIn']> | AnyTrpcError, any, any>;
 
 type EventsConstraint<
   TDef extends BuilderDef,
@@ -84,12 +85,20 @@ type EventsConstraint<
   ? unknown
   : TTracked extends true
     ?
-        | AsyncIterable<TrackedEnvelope<TDef['outputIn']>, any, any>
-        | Stream.Stream<TrackedEnvelope<TDef['outputIn']>, any, any>
+        | AsyncIterable<
+            TrackedEnvelope<EventOutput<TDef['outputIn']>>,
+            any,
+            any
+          >
+        | Stream.Stream<
+            TrackedEnvelope<EventOutput<TDef['outputIn']>>,
+            any,
+            any
+          >
         | AnyTrpcError
     :
-        | AsyncIterable<TDef['outputIn'], any, any>
-        | Stream.Stream<TDef['outputIn'], any, any>
+        | AsyncIterable<EventOutput<TDef['outputIn']>, any, any>
+        | Stream.Stream<EventOutput<TDef['outputIn']>, any, any>
         | AnyTrpcError;
 
 /**
@@ -121,7 +130,7 @@ type Resolve<TDef extends BuilderDef, TContract extends AnyProcedure> = <$Ret>(
     UndeclaredCheck<TDef, SplitReturn<$Ret>['errors']> &
     ShortsCheck<
       TDef,
-      TDef['outputIn'] extends Unset ? unknown : TDef['outputIn']
+      TDef['outputIn'] extends Unset ? unknown : ResultOf<TDef['outputIn']>
     >,
 ) => ImplementedProcedure<TDef, TContract, SplitReturn<$Ret>['services']>;
 

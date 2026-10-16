@@ -15,6 +15,11 @@ import {
   validate,
   type AnySchema,
 } from './schema.ts';
+import {
+  isStreamSchema,
+  type OutputSchema,
+  type StreamSchema,
+} from './stream-schema.ts';
 import { isTracked, tracked } from './tracked.ts';
 
 const unexpectedErrors = new WeakSet<AnyTrpcError>();
@@ -138,8 +143,47 @@ const isOkResult = (value: unknown): value is { ok: true; data: unknown } =>
 
 /** Validates declared errors' `data` (07 A). Invalid data is an unexpected error. */
 /** The output schema to run, unless it only types the result. */
-const validated = (def: ProcedureInternals): AnySchema | undefined =>
+const validated = (def: ProcedureInternals): OutputSchema | undefined =>
   def.validateOutput === false ? undefined : def.output;
+
+/** A subscription's event schema: `.output(Event)` or `.output(stream(Event))`. */
+const eventSchema = (
+  output: OutputSchema | undefined,
+): AnySchema | undefined =>
+  isStreamSchema(output) ? output['~trpc.stream'].item : output;
+
+/**
+ * Validates each item of a streamed output, and its return value when the
+ * schema has one. Invalid values fail the stream at that point.
+ */
+function validateItems(
+  source: AsyncIterable<unknown, unknown>,
+  schema: StreamSchema,
+  services: Context.Context<never>,
+): AsyncIterable<unknown, unknown> {
+  const run = Effect.runPromiseWith(services);
+  const { item, return: returns } = schema['~trpc.stream'];
+  return {
+    async *[Symbol.asyncIterator]() {
+      const iterator = source[Symbol.asyncIterator]();
+      let done = false;
+      try {
+        while (true) {
+          const next = await iterator.next();
+          if (next.done) {
+            done = true;
+            return returns
+              ? await run(validate(returns, next.value, outputError))
+              : next.value;
+          }
+          yield await run(validate(item, next.value, outputError));
+        }
+      } finally {
+        if (!done) await iterator.return?.();
+      }
+    },
+  };
+}
 
 const checkDeclared = (
   def: ProcedureInternals,
@@ -346,7 +390,7 @@ export function callProcedure(
     services: Context.Context<never>,
   ): unknown => {
     if (type === 'subscription') {
-      return toEventStream(value, services, validated(def));
+      return toEventStream(value, services, eventSchema(validated(def)));
     }
     if (Stream.isStream(value)) {
       return Stream.toAsyncIterableWith(
@@ -365,7 +409,17 @@ export function callProcedure(
       : finish(result, services);
     const output = validated(def);
     if (type !== 'subscription' && output) {
-      return yield* validate(output, value, outputError);
+      if (!isStreamSchema(output)) {
+        return yield* validate(output, value, outputError);
+      }
+      if (!isAsyncIterable(value)) {
+        return yield* Effect.fail(
+          outputError([
+            { message: 'Expected an AsyncIterable or a Stream (stream())' },
+          ]),
+        );
+      }
+      return validateItems(value, output, services);
     }
     return value;
   }).pipe(
@@ -401,7 +455,7 @@ export function callProcedure(
 function toEventStream(
   value: unknown,
   services: Context.Context<never>,
-  output: AnyProcedure['~trpc']['output'],
+  output: AnySchema | undefined,
 ): Stream.Stream<unknown, AnyTrpcError> {
   let stream: Stream.Stream<unknown, AnyTrpcError, any>;
   if (Stream.isStream(value)) {

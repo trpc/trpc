@@ -89,8 +89,12 @@ export type Deserialized<T> =
       ? T
       : T extends Leaf
         ? T
-        : T extends AsyncIterable<infer U>
-          ? AsyncIterable<Deserialized<U>>
+        : T extends AsyncIterable<infer U, infer R>
+          ? IsAny<R> extends true
+            ? AsyncIterable<Deserialized<U>>
+            : [R] extends [void]
+              ? AsyncIterable<Deserialized<U>>
+              : AsyncIterable<Deserialized<U>, Deserialized<R>>
           : T extends PromiseLike<infer U>
             ? Promise<Deserialized<U>>
             : { [K in keyof T]: Deserialized<T[K]> };

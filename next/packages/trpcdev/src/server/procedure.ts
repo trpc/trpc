@@ -2,6 +2,7 @@ import type { Context } from 'effect';
 import type { AnyTrpcError } from '../internal/error.ts';
 import type { ProcedureType } from '../internal/types.ts';
 import type { AnySchema } from './schema.ts';
+import type { OutputSchema } from './stream-schema.ts';
 
 /**
  * A declared error (07 A): its status, default message and `data` schema.
@@ -99,7 +100,7 @@ export interface ProcedureInternals {
   readonly type: ProcedureType;
   readonly meta: object;
   readonly steps: ReadonlyArray<Step>;
-  readonly output: AnySchema | undefined;
+  readonly output: OutputSchema | undefined;
   /** `false`: `output` only types and documents the result. */
   readonly validateOutput?: false | undefined;
   readonly errors: ErrorMap;

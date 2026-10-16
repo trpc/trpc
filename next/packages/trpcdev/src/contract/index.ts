@@ -61,6 +61,14 @@ import type {
   OutOf,
   SchemaServices,
 } from '../server/schema.ts';
+import type {
+  EventOutput,
+  OutputIn,
+  OutputOut,
+  OutputSchema,
+  OutputServices,
+  StreamedOutput,
+} from '../server/stream-schema.ts';
 import type { TrackedEnvelope } from '../server/tracked.ts';
 import type { Unlazy } from '../server/router.ts';
 
@@ -120,12 +128,16 @@ export type ContractWith<
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type ContractOutput<TDef extends ContractDef> =
-  TDef['outputOut'] extends Unset
-    ? unknown
-    : TDef['tracked'] extends true
-      ? TrackedEnvelope<TDef['outputOut']>
-      : TDef['outputOut'];
+export type ContractOutput<
+  TDef extends ContractDef,
+  TType extends ProcedureType = ProcedureType,
+> = TDef['outputOut'] extends Unset
+  ? unknown
+  : TType extends 'subscription'
+    ? TDef['tracked'] extends true
+      ? TrackedEnvelope<EventOutput<TDef['outputOut']>>
+      : EventOutput<TDef['outputOut']>
+    : StreamedOutput<TDef['outputOut']>;
 
 /**
  * The definition of a contract procedure: a {@link ProcedureDef} with the
@@ -141,7 +153,7 @@ export interface ContractProcedureDef<
   ctx: {};
   meta: TDef['meta'];
   input: Value<TDef['inputIn']>;
-  output: ContractOutput<TDef>;
+  output: ContractOutput<TDef, TType>;
   errors: TDef['errors'];
   services: never;
   contract: TDef;
@@ -227,16 +239,19 @@ export interface ContractBuilder<TDef extends ContractDef> {
     >
   >;
 
-  /** The output schema (for subscriptions, each event's `data`). */
-  output<$S extends AnySchema>(
+  /**
+   * The output schema (for subscriptions, each event's `data`); `stream(Item,
+   * Return?)` for streamed queries and mutations.
+   */
+  output<$S extends OutputSchema>(
     schema: $S,
   ): ContractBuilder<
     ContractWith<
       TDef,
       {
-        outputIn: InOf<$S>;
-        outputOut: OutOf<$S>;
-        requires: TDef['requires'] | SchemaServices<$S>;
+        outputIn: OutputIn<$S>;
+        outputOut: OutputOut<$S>;
+        requires: TDef['requires'] | OutputServices<$S>;
       }
     >
   >;

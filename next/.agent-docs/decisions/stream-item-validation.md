@@ -6,6 +6,8 @@
 - (agent) A plain `.output(Item)` on a query or mutation whose resolver returns a generator or `Stream` is a type error pointing to `stream()`.
 - (agent) A bad item fails the stream with `INTERNAL_SERVER_ERROR` after the items before it are delivered, like a bad output today. `{ validate: false }` types items without checking them.
 - (agent) Streams nested inside an object output are not validated in v1; schema libraries can't hold a `stream()` field.
+- (agent) Deserialized async iterables now end with the stream's return value, so `iterator.next()` gives `{ done: true, value: summary }`; the client type keeps the return type when it isn't `void` or `any`.
+- (agent) A `stream()` output's OpenAPI document describes the item schema.
 - Why: the common subscription case stays short, the ambiguous cases are explicit, and return values get a schema.
 - Lost: one rule for every kind.
-- Lives in: `packages/trpcdev/src/server/builder.ts`, `src/server/execute.ts` (not built yet).
+- Lives in: `packages/trpcdev/src/server/stream-schema.ts`, `src/server/execute.ts` (`validateItems`), `src/server/builder.ts` (`StreamOutputCheck`), `src/contract/index.ts`, `src/serializer/stream.ts` (return values); `test/integration/stream-output.test.ts`.

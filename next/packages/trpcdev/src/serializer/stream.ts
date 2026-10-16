@@ -300,6 +300,23 @@ export function serializeStream(
   return serialized.chunks ? Stream.concat(head, serialized.chunks) : head;
 }
 
+/** An async iterable whose `return` value is the stream's RETURN chunk. */
+function iterateWithReturn(
+  source: Stream.Stream<[Status, unknown], unknown>,
+  revive: (value: unknown) => unknown,
+): AsyncIterable<unknown, unknown> {
+  return {
+    async *[Symbol.asyncIterator]() {
+      for await (const [status, v] of Stream.toAsyncIterable(source)) {
+        if (status === VALUE) yield v;
+        else if (status === RETURN) return v;
+        else throw revive(v);
+      }
+      return undefined;
+    },
+  };
+}
+
 export interface DeserializeStreamOptions extends DeserializeOptions {
   /** Turns a deserialized ERROR chunk into the value a deferred rejects with. */
   reviveError?: (value: unknown) => unknown;
@@ -360,7 +377,7 @@ export function deserializeStream<T, E>(
           p.catch(() => {});
           return p;
         },
-        AsyncIterable: (idx: number) => Stream.toAsyncIterable(iterate(idx)),
+        AsyncIterable: (idx: number) => iterateWithReturn(take(idx), revive),
         ReadableStream: (idx: number) => Stream.toReadableStream(iterate(idx)),
       },
     };
