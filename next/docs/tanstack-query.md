@@ -129,6 +129,34 @@ queryClient.setMutationDefaults(createPost.mutationKey, createPost);
 // after restoring: await queryClient.resumePausedMutations();
 ```
 
+## TanStack DB
+
+A [query collection](https://tanstack.com/db/latest/docs/collections/query-collection) takes a query key and function, so `queryOptions()` plugs in without an adapter. Rows keep the serializer's types (a `Date` stays a `Date`), and the collection's handlers call mutations:
+
+```ts
+import { createCollection } from '@tanstack/db';
+import { queryCollectionOptions } from '@tanstack/query-db-collection';
+
+const list = trpc.post.list.queryOptions({ input: { limit: 50 } });
+
+const posts = createCollection(
+  queryCollectionOptions({
+    queryKey: list.queryKey,
+    queryFn: list.queryFn,
+    select: (data) => data.items,
+    queryClient,
+    getKey: (post) => post.id,
+    onInsert: async ({ transaction }) => {
+      for (const { modified } of transaction.mutations) {
+        await client.post.create.mutate({ title: modified.title });
+      }
+    },
+  }),
+);
+```
+
+`posts.insert(...)` shows the row at once, and the collection refetches `post.list` once `onInsert` resolves. The query lives in the same `QueryClient`, so `invalidateQueries` with the tRPC key refreshes the collection too.
+
 ## Hydration
 
 `hydrationOptions({ client })` returns `{ dehydrate, hydrate }` options that serialize data with the client's [serializer](./serializers.md), so the types it keeps (with the default: `Date`, `Map`, `Set`, `bigint`, custom types) survive the trip, and that dehydrate pending queries. Their data is serialized once it settles. Without `client` it uses the default serializer; `serializer` overrides both.

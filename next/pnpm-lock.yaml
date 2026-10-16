@@ -847,6 +847,9 @@ importers:
       '@tanstack/angular-query-experimental':
         specifier: 5.104.1
         version: 5.104.1(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(csstype@3.2.3)
+      '@tanstack/db':
+        specifier: 0.15.0
+        version: 0.15.0(typescript@7.0.2)
       '@tanstack/lit-query':
         specifier: 0.2.26
         version: 0.2.26(@tanstack/query-core@5.104.1)(lit@3.3.3)
@@ -856,6 +859,9 @@ importers:
       '@tanstack/query-core':
         specifier: 5.104.1
         version: 5.104.1
+      '@tanstack/query-db-collection':
+        specifier: 1.4.5
+        version: 1.4.5(@tanstack/query-core@5.104.1)(typescript@7.0.2)
       '@tanstack/react-query':
         specifier: 5.104.1
         version: 5.104.1(react@19.3.0)
@@ -2265,6 +2271,16 @@ packages:
       '@angular/common': '>=16.0.0'
       '@angular/core': '>=16.0.0'
 
+  '@tanstack/db-ivm@0.2.0':
+    resolution: {integrity: sha512-AuMuGzVdWR5qzJPRYajmrUp95vMo0duvMZ0zBjMOvaI9rkh2GHZWCsJ/p7s81UN4Lep6HHJjahnYUF+XVL0+AQ==}
+    peerDependencies:
+      typescript: '>=4.7'
+
+  '@tanstack/db@0.15.0':
+    resolution: {integrity: sha512-truZ/WWSS48goC3JlxR2dbjSxYcVfwLtA8Z8xexvayR8HG1Jii040rS+PKUs+C50QGNfUQo5jWQUZ+lERZYeQw==}
+    peerDependencies:
+      typescript: '>=4.7'
+
   '@tanstack/lit-query@0.2.26':
     resolution: {integrity: sha512-SVQN4uSsErLR984UCqbU15rbGUhX7onH1U5Md8HGZOmoTIat+J83qppCxYwdtC6kzM1GX8YES5TIzgfCh/WoEg==}
     peerDependencies:
@@ -2274,6 +2290,10 @@ packages:
   '@tanstack/match-sorter-utils@9.2.6':
     resolution: {integrity: sha512-DIpUSOhPfQ7u/qfUi/Wgm0wBO56MyBYXGvnlI0NcauDRPqdBUlAZZjW2Dxm92m+k1UWVhKw8YJ4f47+75Aujyw==}
     engines: {node: '>=20'}
+
+  '@tanstack/pacer-lite@0.2.2':
+    resolution: {integrity: sha512-eQ1MyLKCHyXiH7NbdmB80W77OhiMgGBUb+qDx/8WMGbwg5Lf/NlfD0TfNYAqY77i8V3AxoDoYdICrQE5ADw4Yw==}
+    engines: {node: '>=18'}
 
   '@tanstack/preact-query@5.104.1':
     resolution: {integrity: sha512-3+EnqSDx3R8yzGoycJpR0REeKVND3g6Mp+SLa5+KXUyYw8Pt5Twmqn/8/9W4EiWTFQ7OBCW2YOlVJUHa7TGAtQ==}
@@ -2285,6 +2305,12 @@ packages:
 
   '@tanstack/query-core@5.90.20':
     resolution: {integrity: sha512-OMD2HLpNouXEfZJWcKeVKUgQ5n+n3A2JFmBaScpNDUqSrQSjiveC7dKMe53uJUg1nDG16ttFPz2xfilz6i2uVg==}
+
+  '@tanstack/query-db-collection@1.4.5':
+    resolution: {integrity: sha512-Yd5+4jJfUzAUG4pG6MnpLczgYSBmghKVbKW/4vZ3ZEEnPrYUBze9WyoXvJ8MwVveqXNI+cRXHvhOMH1/OqVjfg==}
+    peerDependencies:
+      '@tanstack/query-core': ^5.90.15
+      typescript: '>=4.7'
 
   '@tanstack/query-devtools@5.104.1':
     resolution: {integrity: sha512-wmXnQbnwEz+SctYMTrwsOWWNHKhCsVgtaliL9E+VI2vx2Xr773d/MpcrbIU1hEOUqC3p7x59swXFUPDLbplT3g==}
@@ -3119,6 +3145,10 @@ packages:
   forwarded@0.2.0:
     resolution: {integrity: sha512-buRG0fpBtRHSTCOASe6hD258tEubFoRLb4ZNA6NxMVHNw2gOcwHo9wyablzMzOA5z9xA9L1KNjk/Nt6MT9aYow==}
     engines: {node: '>= 0.6'}
+
+  fractional-indexing@3.4.0:
+    resolution: {integrity: sha512-8J3glhz2rrpKG6KmI7wmJo3zH1VjeOpN+vTJSw1fOyO+Viqq3zX6/5NGh6oaZB2qIAYdOYuu5Dz9xp4faOO0Pg==}
+    engines: {node: ^14.13.1 || >=16.0.0}
 
   fresh@2.0.0:
     resolution: {integrity: sha512-Rx/WycZ60HOaqLKAi6cHRKKI7zxWbJ31MhntmtwMoaTeF7XFH9hhBp8vITaMidfljRQ6eYWCKkaTK+ykVJHP2A==}
@@ -4779,6 +4809,18 @@ snapshots:
     transitivePeerDependencies:
       - csstype
 
+  '@tanstack/db-ivm@0.2.0(typescript@7.0.2)':
+    dependencies:
+      fractional-indexing: 3.4.0
+      typescript: 7.0.2
+
+  '@tanstack/db@0.15.0(typescript@7.0.2)':
+    dependencies:
+      '@standard-schema/spec': 1.1.0
+      '@tanstack/db-ivm': 0.2.0(typescript@7.0.2)
+      '@tanstack/pacer-lite': 0.2.2
+      typescript: 7.0.2
+
   '@tanstack/lit-query@0.2.26(@tanstack/query-core@5.104.1)(lit@3.3.3)':
     dependencies:
       '@lit/context': 1.1.6
@@ -4789,6 +4831,8 @@ snapshots:
     dependencies:
       remove-accents: 0.5.0
 
+  '@tanstack/pacer-lite@0.2.2': {}
+
   '@tanstack/preact-query@5.104.1(preact@10.29.8)':
     dependencies:
       '@tanstack/query-core': 5.104.1
@@ -4797,6 +4841,13 @@ snapshots:
   '@tanstack/query-core@5.104.1': {}
 
   '@tanstack/query-core@5.90.20': {}
+
+  '@tanstack/query-db-collection@1.4.5(@tanstack/query-core@5.104.1)(typescript@7.0.2)':
+    dependencies:
+      '@standard-schema/spec': 1.1.0
+      '@tanstack/db': 0.15.0(typescript@7.0.2)
+      '@tanstack/query-core': 5.104.1
+      typescript: 7.0.2
 
   '@tanstack/query-devtools@5.104.1(csstype@3.2.3)':
     dependencies:
@@ -5480,6 +5531,8 @@ snapshots:
   flatted@3.4.4: {}
 
   forwarded@0.2.0: {}
+
+  fractional-indexing@3.4.0: {}
 
   fresh@2.0.0: {}
 
