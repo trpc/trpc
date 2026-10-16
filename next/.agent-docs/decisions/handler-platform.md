@@ -1,6 +1,6 @@
 # Handlers take a typed platform argument (human)
 
-- Alex, 2026-10-15 (issues review Q6, #7436): "A".
+- Human, 2026-10-15 (issues review Q6, #7436): "A".
   - `handler.fetch(request, platform)` and `handler.websocket(socket, { request, platform })`.
   - Typed by a handler generic: `createFetchHandler<AppRouter, { env: Env; ctx: ExecutionContext }>(…)`.
   - Read only in `createContext({ request, platform })`; there is no init-level variant.

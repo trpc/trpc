@@ -1,6 +1,6 @@
 # Six examples: the proposed five plus Cloudflare (human)
 
-- Alex, 2026-10-15 (decisions round 3, Q16 = proposal 22 Q22.4): "B".
+- Human, 2026-10-15 (decisions round 3, Q16 = proposal 22 Q22.4): "B".
 - `next/examples/`:
   - `minimal/`: Node HTTP server and client, plain Promise code (exists).
   - `effect/`: Effect server and client (layers, `Stream`, `catchTag`).

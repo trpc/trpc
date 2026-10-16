@@ -208,7 +208,7 @@ createTRPCClient({
 
 > ⚠️ This shapes every client example in the docs. It is the most visible API change in the client.
 
-## Questions for Alex
+## Questions
 
 - **Q17.1** Link authoring: Effect only (L-A) or dual Promise/Effect (L-B)?
 - **Q17.2** Operation model: everything is a `Stream` (OR-A) or a request/stream split (OR-B)?

@@ -134,7 +134,7 @@
 
 **ST-A + ST-C** with the rules above. `@since` starts at the first vNext version (Q21.2).
 
-## Questions for Alex
+## Questions
 
 - **Q21.1** Stability via JSDoc tags + experimental entry points, and no name prefixes?
 - **Q21.2** Version label for `@since`: `12.0.0`, or something else (is vNext "v12")?

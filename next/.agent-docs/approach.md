@@ -5,22 +5,22 @@ How vNext gets designed and built. It covers the process for proposals and decis
 ## 1. Process: proposals → decisions → code
 
 ```text
-proposal (proposed) ──► Alex decides ──► decision file ──► implementation ──► docs/examples
+proposal (proposed) ──► human decides ──► decision file ──► implementation ──► docs/examples
         │                     │
         └─ needs-research ◄───┘ (spike first, then re-propose)
 ```
 
 ### Statuses
 
-| Status           | Meaning                                                      |
-| ---------------- | ------------------------------------------------------------ |
-| `proposed`       | Options and a recommendation are written; waiting for Alex   |
-| `needs-research` | A spike or benchmark is needed before a decision is sensible |
-| `accepted`       | Decided; a file exists in `decisions/`                       |
-| `rejected`       | Not doing it; the reason is recorded in `decisions/`         |
-| `superseded`     | A later decision replaced it; links to the decision's file   |
+| Status           | Meaning                                                       |
+| ---------------- | ------------------------------------------------------------- |
+| `proposed`       | Options and a recommendation are written; waiting for a human |
+| `needs-research` | A spike or benchmark is needed before a decision is sensible  |
+| `accepted`       | Decided; a file exists in `decisions/`                        |
+| `rejected`       | Not doing it; the reason is recorded in `decisions/`          |
+| `superseded`     | A later decision replaced it; links to the decision's file    |
 
-### How Alex decides
+### How a human decides
 
 Use whichever is fastest:
 
@@ -126,15 +126,15 @@ Some recommendations depend on measurements. These are run as throwaway spikes, 
 
 ## 6. Phases
 
-| Phase | Goal                        | Exit criteria                                                                                                                                                                          |
-| ----- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0     | **Proposals** (this folder) | Alex has decided 01, 02, 03, 07, 11 and 22 (the foundations); spikes are scheduled for the rest                                                                                        |
-| 1     | Foundations                 | Implementation under `next/` (own pnpm workspace); Vite+ toolchain, CI and hook; `trpcdev` skeleton + portability fixture. Root v11 tree remains until Alex decides to delete it (22). |
-| 2     | Core server                 | Builder, procedures, validation, middleware, errors, routers, `createRouterClient`; Effect handlers; integration tests in-process                                                      |
-| 3     | Protocol and transport      | Serializer, fetch/Node handlers, batching, streaming/SSE, WebSocket; plugins with secure defaults                                                                                      |
-| 4     | Client                      | Proxy client, Effect link chain, `httpLink`, `wsLink`, typed link options; Effect client                                                                                               |
-| 5     | Integrations                | TanStack Query (agnostic), actions, contract-first, OpenAPI handler/generator/link                                                                                                     |
-| 6     | Parity review and polish    | Every row in `reference/orpc-parity.md` is ✅ or explicitly deferred by Alex; docs and examples complete                                                                               |
+| Phase | Goal                        | Exit criteria                                                                                                                                                                             |
+| ----- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0     | **Proposals** (this folder) | A human has decided 01, 02, 03, 07, 11 and 22 (the foundations); spikes are scheduled for the rest                                                                                        |
+| 1     | Foundations                 | Implementation under `next/` (own pnpm workspace); Vite+ toolchain, CI and hook; `trpcdev` skeleton + portability fixture. Root v11 tree remains until a human decides to delete it (22). |
+| 2     | Core server                 | Builder, procedures, validation, middleware, errors, routers, `createRouterClient`; Effect handlers; integration tests in-process                                                         |
+| 3     | Protocol and transport      | Serializer, fetch/Node handlers, batching, streaming/SSE, WebSocket; plugins with secure defaults                                                                                         |
+| 4     | Client                      | Proxy client, Effect link chain, `httpLink`, `wsLink`, typed link options; Effect client                                                                                                  |
+| 5     | Integrations                | TanStack Query (agnostic), actions, contract-first, OpenAPI handler/generator/link                                                                                                        |
+| 6     | Parity review and polish    | Every row in `reference/orpc-parity.md` is ✅ or explicitly deferred by a human; docs and examples complete                                                                               |
 
 ### Decision order
 
@@ -154,6 +154,6 @@ Foundations first, because later proposals assume them:
 | Effect leaks into Promise users' types or errors                                         | Dedicated overloads; type tests asserting hovers for Promise-only usage (02)            |
 | Bundle size for browser clients                                                          | Bundle budget in CI; keep Schema and `effect/http` out of client paths                  |
 | Effect v4 churn (unstable modules)                                                       | Use stable APIs publicly; CI against the latest Effect minor (02 (h))                   |
-| Scope creep from parity                                                                  | Parity rows can be explicitly deferred by Alex; phases keep scope ordered               |
+| Scope creep from parity                                                                  | Parity rows can be explicitly deferred by a human; phases keep scope ordered            |
 | Migration pain for v11 users                                                             | Familiar APIs; protocol version header; maybe a codemod later                           |
 | Decisions drift from implementation                                                      | Agents search `decisions/` first and propose supersession instead of silently diverging |

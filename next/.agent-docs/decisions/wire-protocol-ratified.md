@@ -1,6 +1,6 @@
 # The wire protocol is ratified as built, with protocol version `12` (human)
 
-- Alex, 2026-10-15 (decisions round 3, Q18 = proposal 10 Q10.1, Q10.4–Q10.6): "A. The version header should be 12 BTW".
+- Human, 2026-10-15 (decisions round 3, Q18 = proposal 10 Q10.1, Q10.4–Q10.6): "A. The version header should be 12 BTW".
 - The protocol in [`wire-protocol.md`](./wire-protocol.md) stands: GET queries with readable sorted params, POST mutations with `content-type: application/json`, opt-in batching (`trpc-batch: 1`, JSONL in completion order), JSONL only when an output has deferred values, SSE subscriptions, and the WebSocket/MessagePort message set.
 - Bodies keep danSON's `{ json, refs? }` wrapper; this closes that file's open item.
 - The protocol version is `12`: `trpc-version: 12` on HTTP requests and responses, and `version: 12` in the socket `init` message. A mismatch is still `UNSUPPORTED_PROTOCOL` (400) over HTTP and close code 1002 on sockets.

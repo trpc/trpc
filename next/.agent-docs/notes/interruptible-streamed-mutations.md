@@ -1,6 +1,6 @@
 # Interruptible streamed mutations
 
-2026-10-15. Question (Alex, issues review Q7, #5846): can a streamed mutation be stopped from the UI, and should it hand back a subscription instead? Measured against `@tanstack/query-core` 5.104.1 and trpcdev `httpLink`, in a throwaway test (deleted after; the prototype is below).
+2026-10-15. Question (human, issues review Q7, #5846): can a streamed mutation be stopped from the UI, and should it hand back a subscription instead? Measured against `@tanstack/query-core` 5.104.1 and trpcdev `httpLink`, in a throwaway test (deleted after; the prototype is below).
 
 ## What TanStack gives us
 

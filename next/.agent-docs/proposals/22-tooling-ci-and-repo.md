@@ -132,7 +132,7 @@ next/                         ← code root (cd here to work)
   docs/                       Markdown user docs
   test/portability/           TS2742 fixture (01)
   spikes/                     throwaway experiments (results in .agent-docs/notes/)
-packages/, examples/, www/    leftover v11 — do not extend; delete when Alex says (Q22.5)
+packages/, examples/, www/    leftover v11 — do not extend; delete when a human says (Q22.5)
 ```
 
 - Examples depend on `trpcdev: workspace:*` inside the `next/` workspace. No `subtree` syncing.
@@ -157,7 +157,7 @@ Adopt the toolchain, hook, CI and layout above. Verify these details against Vit
 - the `staged` command semantics;
 - `vp test related`.
 
-## Questions for Alex
+## Questions
 
 - **Q22.1** Vite+ (`vp`) as the single toolchain, or the individual tools (vitest, oxlint, oxfmt, tsdown) wired with pnpm scripts?
 - **Q22.2** Precommit hook: format + lint + related tests on staged files via `vp staged`. Should it also typecheck?

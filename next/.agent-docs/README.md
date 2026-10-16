@@ -26,17 +26,18 @@ Many changes land in parallel, so each decision is its own file and two changes 
 - **A new decision is a new file:** `decisions/<topic>.md`, kebab-case, named by topic. No dates or sequence numbers in the name (parallel changes would pick the same number), and no index file (every change would edit it).
 - **Changing a decision edits its file; reversing one rewrites or deletes it.** Superseded text doesn't pile up; git keeps it.
 - **Each file starts with `# Title (who)`:**
-  - `(human)`: Alex decided it. Don't reverse it without asking.
-  - `(human asked)`: Alex asked for the outcome; the agent chose the details. The outcome is Alex's, the details are open to revision.
+  - `(human)`: a human decided it. Don't reverse it without asking.
+  - `(human asked)`: a human asked for the outcome; the agent chose the details. The outcome is the human's, the details are open to revision.
   - `(agent)`: a judgement call, open to revision with a good reason.
 
-  Within a file, a bullet starting `(agent)` is the agent's call even when the title is `(human)`.
+  Within a file, a bullet starting `(agent)` is the agent's call even when the title is `(human)`. A `Tentative (human):` bullet marks a human answer given with doubt ("I don't really get this right now"): treat it as `(human)`, but challenge it when it gets in the way.
 
-- **The body is short bullets:** what was decided (quote Alex verbatim, with the question number), **Why**, **Lost** (the alternatives given up and their cost), **Open** (what's left), and **Lives in** (the files that implement it).
+- **The body is short bullets:** what was decided (quote the human verbatim as `Human, <date> (Q7.2): "…"`; never their name, git has it), **Why**, **Lost** (the alternatives given up and their cost), **Open** (what's left), and **Lives in** (the files that implement it).
 - **Find decisions** with `pnpm decisions` (from `next/`). It lists every decision with who made it and the questions it answers:
   - `pnpm decisions <regex>` searches the decisions' text.
   - `--who human|asked|agent` filters by who decided.
   - `--open` prints what each one leaves open.
+  - `--tentative` lists human answers flagged as tentative.
   - `--agent-bullets` also lists the agent's calls inside `(human)` files.
   - `--questions` lists every proposal question (`Q7.2`) with the decisions that cite it and who made them. A test fails when a question has none, so every answered question is findable by its number.
 

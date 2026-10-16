@@ -233,7 +233,7 @@ t.procedure
 - `.route()` is first-class.
 - No raw `Response` returns in v1. Revisit after OpenAPI, which needs binary or streaming responses anyway.
 
-## Questions for Alex
+## Questions
 
 - **Q4.1** Keep three procedure types (T-A), or a single `.handler()` (T-B)?
 - **Q4.2** Response headers/status: mutable handle (R-A), return wrapper (R-B) or endpoint-only (R-C)?

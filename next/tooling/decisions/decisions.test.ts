@@ -38,13 +38,14 @@ test('every proposal question is cited by a decision', () => {
   ).toEqual([]);
 });
 
-test('parses who, questions, open items and agent bullets', () => {
+test('parses who, questions, open items, tentative answers and agent bullets', () => {
   const d = parseDecision(
     'example.md',
     [
       '# Errors are inferred (human)',
       '',
-      '- Alex (Q7.2): "A".',
+      '- Human (Q7.2): "A".',
+      '- Tentative (human): "might change". Challenge it when it gets in the way.',
       '- (agent) Declared errors stay optional.',
       '  More about it.',
       '- Open: OpenAPI (Q18.1).',
@@ -56,6 +57,9 @@ test('parses who, questions, open items and agent bullets', () => {
     title: 'Errors are inferred',
     questions: ['Q7.2', 'Q18.1'],
     open: ['Open: OpenAPI (Q18.1).'],
+    tentative: [
+      'Tentative (human): "might change". Challenge it when it gets in the way.',
+    ],
     agentBullets: ['(agent) Declared errors stay optional.\n  More about it.'],
     livesIn: '`src/errors.ts`.',
   });

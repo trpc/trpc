@@ -46,5 +46,5 @@ First steps:
 
 - Create a folder with ideas for the new version of tRPC
 - Document API suggestions in bespoke files in a structured manner
-- Me (Alex) goes through and picks ideas and make decisions about APIs
+- Me: I go through and picks ideas and make decisions about APIs
 - Also document the approach

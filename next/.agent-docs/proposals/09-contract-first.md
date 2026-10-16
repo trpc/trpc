@@ -179,7 +179,7 @@ const client = createTRPCClient<typeof appContract>({
 
 > ⚠️ **Parity:** this row depends on 03 (d). If procedures cannot exist without a resolver, contract-first, the OpenAPI link and NestJS integration are all blocked.
 
-## Questions for Alex
+## Questions
 
 - **Q9.1** Contract syntax: resolver-less terminals (`.query()`), or an options-bag `contract.procedure({ type, input, output })`?
 - **Q9.2** Implementation API: `t.implement(contract)` mirror tree (recommended), or `t.procedure.implements(contract.post.byId)`?

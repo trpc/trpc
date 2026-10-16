@@ -158,7 +158,7 @@ const post = await untyped.request({
 - One error type with `defined`.
 - A public untyped client.
 
-## Questions for Alex
+## Questions
 
 - **Q16.1** Positional input + options (CS-A) or a single bag (CS-B)?
 - **Q16.2** Typed per-call `context` declared by links?

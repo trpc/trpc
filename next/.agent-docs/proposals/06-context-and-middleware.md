@@ -225,7 +225,7 @@ const loggedProcedure = t.procedure
 - Lifecycle helpers.
 - **M-A** for Effect middleware, with service provisioning gated on a type-level spike.
 
-## Questions for Alex
+## Questions
 
 - **Q6.1** `next({ ctx: { user } })` (N-A) or `next({ user })` (N-B)?
 - **Q6.2** Add `ok(data)` short-circuit for middleware?

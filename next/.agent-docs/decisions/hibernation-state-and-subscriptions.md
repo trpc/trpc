@@ -1,6 +1,6 @@
 # Hibernation keeps auth headers when they fit; subscriptions hibernate through the publisher (human asked)
 
-- Alex, 2026-10-15 (decisions round 3, Q2, after comparing oRPC): "Do what you think is best and works best with Effect". The agent's calls:
+- Human, 2026-10-15 (decisions round 3, Q2, after comparing oRPC): "Do what you think is best and works best with Effect". The agent's calls:
 - (agent, 2a) Each socket's attachment keeps the request URL, `cookie` and `authorization` (`keepHeaders` to change), and the connection params. If they don't fit Cloudflare's 2 KB limit, the headers are dropped with a warning, not the connection. Browsers can't set WebSocket headers, so same-origin apps authenticate with cookies.
 - (agent, 2b) Publisher subscriptions hibernate. Inside a Durable Object, a `Publisher` layer for hibernating sockets records a subscription (call id, channel, last event id) on the socket instead of holding a fiber, and `publish` writes events straight to matching sockets, so the object sleeps between events. `lastEventId` replays from the publisher's kept events. Other subscriptions (generators, streams) still keep the object awake.
 - Why: fan-out (chat rooms, live updates) is what hibernation is for, and `Publisher` is already the Effect service subscriptions use, so no new API.

@@ -41,14 +41,14 @@ Which option and why, including what we give up.
 
 > ⚠️ **Parity:** Note any option that would block a row in `../reference/orpc-parity.md`.
 
-## Questions for Alex
+## Questions
 
 - **QNN.1** …
 - **QNN.2** …
 
 ## Decision
 
-> Alex: tick an answer per question (or write your own), add notes, and set **Status** to `accepted`.
+> Human: tick an answer per question (or write your own), add notes, and set **Status** to `accepted`.
 > The agent then records it in `../decisions/` and links back here.
 
 - **QNN.1:** [ ] A · [ ] B

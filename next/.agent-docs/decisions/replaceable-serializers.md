@@ -1,6 +1,6 @@
 # Serializers are replaceable: none, sync or streaming (human)
 
-- Alex, 2026-10-15 (decisions round 3, Q19 = proposal 11 Q11.4/Q11.5): "Let's do B. Some people may not want a serializer at all. It makes it tricky though as we can see in the trpc code, but that's okay. So we should have options for sync transformers like superjson/devalue and async ones like danson thay can do anything and make sure thay we have that json transform of types when there isn't a standard one. We may not even go with danson as our default and do something else before we do final release of this version, we're still pre beta".
+- Human, 2026-10-15 (decisions round 3, Q19 = proposal 11 Q11.4/Q11.5): "Let's do B. Some people may not want a serializer at all. It makes it tricky though as we can see in the trpc code, but that's okay. So we should have options for sync transformers like superjson/devalue and async ones like danson thay can do anything and make sure thay we have that json transform of types when there isn't a standard one. We may not even go with danson as our default and do something else before we do final release of this version, we're still pre beta".
 - The RPC serializer can be replaced wholesale. Three kinds:
   - **None**: plain `JSON`.
   - **Sync**: whole values in and out (superjson, devalue).

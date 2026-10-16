@@ -105,7 +105,7 @@ export type AppRouter = typeof appRouter;
 
 **Option A.** `mergeRouters` goes; `lazy` stays; router options are limited to route defaults.
 
-## Questions for Alex
+## Questions
 
 - **Q8.1** Plain objects as routers (A), or mandatory `t.router()` (B)?
 - **Q8.2** Delete `mergeRouters` in favour of object spread?

@@ -274,7 +274,7 @@ It lives in `trpcdev/effect`. Per `ideas.md`, anything without an external depen
 - An Effect client in `trpcdev/effect`.
 - Bundle budget and Effect-version CI job as described above.
 
-## Questions for Alex
+## Questions
 
 - **Q2.1** Same builder with runtime detection (A1), or a separate Effect flavour (A2)? Add generator sugar (A3) now or later?
 - **Q2.2** Services inferred (S1) or declared at the root (S2)?

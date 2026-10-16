@@ -1,6 +1,6 @@
 # Every input is validated; no `type<T>()` (human)
 
-- Alex, 2026-10-09 (Q5.2): "I want to kill any support for that as I also want inputs to be able to have callback where we get the context etc so you can do context aware stuff in the validators." No `type<T>()` helper and no other unvalidated form: v11's plain `(input) => output` parsers are gone too.
+- Human, 2026-10-09 (Q5.2): "I want to kill any support for that as I also want inputs to be able to have callback where we get the context etc so you can do context aware stuff in the validators." No `type<T>()` helper and no other unvalidated form: v11's plain `(input) => output` parsers are gone too.
 
   ```ts
   t.procedure.input(type<{ id: string }>()); // ❌ no such helper
@@ -10,7 +10,7 @@
 
 - Why: `.input()` keeps one meaning, a schema that validates, and the function form is free for a context-aware callback.
 - Lost: a zero-cost "trust me" input for internal procedures and contracts; `type<T>()` as a pass-through Standard Schema (05's recommendation); plain-function parsers (V-C).
-- Alex, 2026-10-15 (Q5.4): "Yes", and "those validation errors should be inferrable automatically". Input validation errors include `data.issues` (`{ path, message }[]`) in every environment, and any procedure with an `.input()` has a defined `BAD_REQUEST` with typed `issues` in its error union.
+- Human, 2026-10-15 (Q5.4): "Yes", and "those validation errors should be inferrable automatically". Input validation errors include `data.issues` (`{ path, message }[]`) in every environment, and any procedure with an `.input()` has a defined `BAD_REQUEST` with typed `issues` in its error union.
 - (agent, Q5.1) V-A: Standard Schema and Effect Schema only.
 - (agent, Q5.3) C-A: inputs chain. Each schema sees the raw input, and object outputs are merged.
 - (agent, Q5.6) D-A: `.input(({ ctx, meta, path }) => schema)` is the context-aware form ([`../notes/context-aware-inputs.md`](../notes/context-aware-inputs.md)). D-C (Effect Schema services) works too, because inputs are decoded with the procedure's provided services.

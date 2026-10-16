@@ -1,6 +1,6 @@
 # The OpenAPI scope is ratified, and the TypeScript-based generator ships in v1 (human)
 
-- Alex, 2026-10-15 (decisions round 3, Q21 = proposal 18 Q18.3): "B".
+- Human, 2026-10-15 (decisions round 3, Q21 = proposal 18 Q18.3): "B".
 - [`openapi.md`](./openapi.md) stands as built: `createOpenApiHandler`, `generateOpenApi` (`target: 'openapi' | 'rpc'`), `openApiLink`, and schemas from Standard JSON Schema.
 - v1 also ships a generator that reads the router's **types** with the TypeScript compiler. It documents what the runtime generator can't see:
   - Errors that are only inferred (returned or failed, never declared).

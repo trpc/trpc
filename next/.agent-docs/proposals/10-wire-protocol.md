@@ -255,7 +255,7 @@ Errors are `{ json: { defined, code, status, message, data }, meta }` with a 4xx
 
 > ⚠️ **Parity:** the message model must not assume HTTP. MessagePort, WebSocket hibernation and future transports (stdio, workers) depend on it.
 
-## Questions for Alex
+## Questions
 
 - **Q10.1** New protocol (B), keep v11 (A) or adopt oRPC's (C)?
 - **Q10.2** Path separator in URLs: `/post/byId` (REST-like, oRPC) or `/post.byId` (v11)?

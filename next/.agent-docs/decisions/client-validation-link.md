@@ -1,6 +1,6 @@
 # Client-side validation is an opt-in link over a contract (agent)
 
-- Alex, 2026-10-15 (Q5.5, in [`client.md`](./client.md)): "Yes later. I don't like packaging the contract in the clients if we don't need to". So validation is opt-in, and only apps that add it ship schemas to the browser.
+- Human, 2026-10-15 (Q5.5, in [`client.md`](./client.md)): "Yes later. I don't like packaging the contract in the clients if we don't need to". So validation is opt-in, and only apps that add it ship schemas to the browser.
 - (agent) `validationLink({ contract, input = true, output = true | 'json' })` from `trpcdev/client`, placed before the transport link. oRPC splits it into `RequestValidationPlugin` and `ResponseValidationPlugin`; links already compose, so one link with two switches is enough.
 - (agent) Inputs: every static `.input()` schema runs against the input before anything is sent, failing with the server's `BAD_REQUEST` (`data.issues`), so a form can render the same errors either way. The original input is sent, not the parsed one: the server parses it again and expects the encoded form. Function (context-aware) inputs need server ctx and are skipped.
 - (agent, Effect-native first) Outputs are checked against `Schema.toType(output)`: the server already decoded them, so running transformations again would fail (oRPC documents this as a limitation; Effect Schema separates the type side, so trpcdev doesn't have it). Standard Schema outputs are validated as they are, with oRPC's limitation.

@@ -1,6 +1,6 @@
 # The handler core is built on `effect/http` (human)
 
-- Alex, 2026-10-15 (decisions round 3, Q4 = proposal 12 Q12.1): "C" (proposal 12 P-B), after the trade-offs below were laid out.
+- Human, 2026-10-15 (decisions round 3, Q4 = proposal 12 Q12.1): "C" (proposal 12 P-B), after the trade-offs below were laid out.
 - The core takes Effect's `HttpServerRequest` and returns `HttpServerResponse`. `handler.fetch` is that app through `HttpEffect.toWebHandler`; `serve()` and `toHttpEffect` use it directly, so Node no longer converts its request into a web `Request`.
 - `createContext` receives the `HttpServerRequest` (on fetch runtimes, `request.source` is the original web `Request`).
 - Q2.4 follows: the core may depend on Effect modules marked `@stability unstable` (`effect/http` is), pinned and tested.

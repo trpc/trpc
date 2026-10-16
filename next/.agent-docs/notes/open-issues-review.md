@@ -57,7 +57,7 @@ Method: `gh issue list --repo trpc/trpc --state open --limit 1000 --json number,
 
 ## Decided and built (second round)
 
-Alex answered the "Worth considering" list; each answer is a `decisions/` file.
+A human answered the "Worth considering" list; each answer is a `decisions/` file.
 
 - Query key prefix (#6555, #5251, #4153): `keyPrefix` on `createTrpcQueryUtils`, `createTrpcContext` and `createTrpcRsc` (`query-key-prefix.md`).
 - Invalidation declared on mutations (#5264, #3468, #6715): later, maybe as a link or plugin (`declared-invalidation-later.md`).

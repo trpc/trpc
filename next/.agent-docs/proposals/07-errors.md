@@ -292,7 +292,7 @@ The combined model:
 
 > ⚠️ **Parity:** oRPC's typed errors depend on the declared map (A). Dropping A would leave OpenAPI error docs incomplete. Choosing C alone would keep us at 🟡 for "End-to-end typesafe errors".
 
-## Questions for Alex
+## Questions
 
 - **Q7.1** Adopt the combined model (B primary, A optional, mapping middleware)? Or A only, C only, or D?
 - **Q7.2** May _resolvers_ return errors (Go-style), or only middleware ([#5554](https://github.com/trpc/trpc/pull/5554) did middleware only)?

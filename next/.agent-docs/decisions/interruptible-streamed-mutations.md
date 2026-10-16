@@ -1,6 +1,6 @@
 # Streamed mutations stop when unobserved or on a signal; long jobs use a subscription (human)
 
-- Alex, 2026-10-15 (decisions round 3, Q1): "C".
+- Human, 2026-10-15 (decisions round 3, Q1): "C".
   - `streamedMutationOptions({ abortWhenUnobserved: true })` aborts the server stream once the last `chunksOptions()` reader goes away, and `data` is the chunks so far.
   - A per-call `signal` stops it explicitly.
   - Docs show the pattern for long jobs: a mutation starts the job and returns its id, a `tracked()` subscription streams progress, and a `cancel` mutation stops it.

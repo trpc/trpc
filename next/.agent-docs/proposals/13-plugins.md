@@ -163,7 +163,7 @@ const csrf = (): HandlerPlugin => ({
 - The other plugins are opt-in.
 - Plugins do not change procedure types. A plugin that adds context exports a context type for users to merge into their own (as oRPC's `RequestHeadersPluginContext` does).
 
-## Questions for Alex
+## Questions
 
 - **Q13.1** One plugin interface with `onRequest` + `onCall` hooks? Is `onCall` also the answer for global, untyped middleware?
 - **Q13.2** Which plugins are v1, and which are on by default? (Proposed on by default: `bodyLimit`, `strictMethods`, `csrf`.)

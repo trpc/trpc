@@ -1,6 +1,6 @@
 # AWS Lambda events through `trpcdev/aws-lambda` (agent)
 
-- (agent) Built for Alex's Q12.3 answer ("provide adapters for the rest", [`platforms-through-effect-layers.md`](./platforms-through-effect-layers.md)): Effect has no Lambda event adapter, so `trpcdev/aws-lambda` is ours, a dependency-free subpath ([`flat-entry-points.md`](./flat-entry-points.md)).
+- (agent) Built for the human Q12.3 answer ("provide adapters for the rest", [`platforms-through-effect-layers.md`](./platforms-through-effect-layers.md)): Effect has no Lambda event adapter, so `trpcdev/aws-lambda` is ours, a dependency-free subpath ([`flat-entry-points.md`](./flat-entry-points.md)).
 - (agent) It wraps a fetch handler rather than the router. `toLambdaHandler(handler, { timeoutMarginMs? })` converts the event to a web `Request`, calls `handler.fetch(request, { event, context })` and converts the response back. The handler core stays platform-free; Lambda is the platform argument ([`handler-platform.md`](./handler-platform.md)), typed with `createFetchHandler<AppRouter, LambdaPlatform>`.
 - (agent) One function for every event shape: REST APIs and ALB (payload 1.0), HTTP APIs and function URLs (payload 2.0), and Lambda@Edge. The event's own shape picks the result shape, so there is no `format` option.
 - (agent) Bodies: text content types (JSON, JSONL, forms, XML, `text/*`, `+json`) stay text. Everything else is base64. Set-cookie goes to `multiValueHeaders` (1.0), `cookies` (2.0) or CloudFront headers (Edge).

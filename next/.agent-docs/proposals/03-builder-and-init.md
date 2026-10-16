@@ -271,7 +271,7 @@ export const appRouter = {
 - **(d)** as described, with the `'~trpc'` key.
 - If the G-A benchmark loses, keep positional generics internally but expose a `ProcedureDef<…>`-style bag in all public helper types.
 
-## Questions for Alex
+## Questions
 
 - **Q3.1** Root init: option-bag generic (I-A), chained builders (I-B) or oRPC style (I-C)?
 - **Q3.2** Single options-bag builder generic (G-A, after benchmark) or positional (G-B)?

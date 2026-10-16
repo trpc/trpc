@@ -122,7 +122,7 @@ t.procedure.input(type<{ id: string }>()).query(…); // no runtime validation
 
 ### (d) Input as a function of `ctx`
 
-[#6423](https://github.com/trpc/trpc/pull/6423) explored `.input(({ ctx }) => schema)`. Alex wants validators to be able to use `ctx` ([validation](../decisions/validation.md)). Each option sees the `ctx` at its position in the chain: middleware before `.input()` is visible, middleware after it is not.
+[#6423](https://github.com/trpc/trpc/pull/6423) explored `.input(({ ctx }) => schema)`. The human wants validators to be able to use `ctx` ([validation](../decisions/validation.md)). Each option sees the `ctx` at its position in the chain: middleware before `.input()` is visible, middleware after it is not.
 
 - **D-A — Callback.** The callback returns a Standard Schema or an Effect Schema.
   - ✅ Works with every library, and `ctx` is typed.
@@ -256,7 +256,7 @@ const post = await client.byId.query({ id: '1' }); // post.createdAt typed as Da
 - `BAD_REQUEST` with `data.issues`, built in and typed.
 - Standard JSON Schema with a converter fallback.
 
-## Questions for Alex
+## Questions
 
 - **Q5.1** Native Effect Schema (V-A) or Standard Schema only (V-B)?
 - **Q5.2** Add `type<T>()` for unvalidated inputs/outputs?

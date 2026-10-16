@@ -51,7 +51,7 @@ const router = {
 };
 type AppRouter = typeof router;
 
-async function setup(user: User | null = { id: 'u1', name: 'Alex' }) {
+async function setup(user: User | null = { id: 'u1', name: 'Ada' }) {
   const server = await createTestServer({
     router,
     createContext: () => ({ user }),
@@ -87,7 +87,7 @@ test('query with an Effect Schema input', async () => {
 test('mutation goes through middleware that extends ctx', async () => {
   await using ctx = await setup();
   const post = await ctx.client.post.create.mutate({ title: 'Hello' });
-  expect(post).toMatchObject({ title: 'Hello', author: 'Alex' });
+  expect(post).toMatchObject({ title: 'Hello', author: 'Ada' });
   expect(ctx.server.requests.at(-1)!.method).toBe('POST');
   expect(await ctx.client.post.byId.query({ id: post.id })).toEqual(post);
 });

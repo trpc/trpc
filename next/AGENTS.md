@@ -12,13 +12,13 @@ Start here (paths relative to `next/`):
 - `README.md` — implementation root layout and commands
 - `.agent-docs/approach.md` — process, principles, phases
 - `.agent-docs/README.md` — proposal index and how to decide
-- `.agent-docs/proposals/` — API proposals (options + recommendations; Alex decides)
+- `.agent-docs/proposals/` — API proposals (options + recommendations; a human decides)
 - `.agent-docs/decisions/` — one file per decided topic, titled `(human)` or `(agent)`; overrides proposals (`pnpm decisions` lists and searches them; `--who agent` shows the unreviewed calls)
 - `.agent-docs/reference/` — oRPC parity, v11 inventory, prior art
 - `.agent-docs/notes/` — spike results and research
 - `spikes/` — throwaway prototypes backing the notes
 
-Search `.agent-docs/` before designing or implementing. Do not silently diverge from a recorded decision, and don't reverse a `(human)` one without asking. A new decision is a new `decisions/<topic>.md`, not an addition to an existing file or an index; the format is in `.agent-docs/README.md#decisions`. Do not fill Decision blocks in proposals; Alex records decisions.
+Search `.agent-docs/` before designing or implementing. Do not silently diverge from a recorded decision, and don't reverse a `(human)` one without asking. A new decision is a new `decisions/<topic>.md`, not an addition to an existing file or an index; the format is in `.agent-docs/README.md#decisions`. Do not fill Decision blocks in proposals; humans record decisions.
 
 Agent skills live in the repo-root `.agents/skills/<name>/SKILL.md` (for example `decision-round`). Never use `.cursor/`.
 

@@ -199,7 +199,7 @@ const openapi = createOpenAPIHandler({
 
 > ⚠️ **Parity:** this needs serializers on endpoints (11), route metadata in the contract (03 (d), 04 (g)) and schema-based JSON Schema (05). If any of those is rejected, OpenAPI drops back to 🟡.
 
-## Questions for Alex
+## Questions
 
 - **Q18.1** Scope: OpenAPI handler + generator (O-A), RPC description only (O-B), or both (O-C)?
 - **Q18.2** Default REST mapping without `.route()`: `GET|POST {prefix}/post/byId` (recommended), or require `.route()` for every procedure exposed via OpenAPI?

@@ -212,7 +212,7 @@ The WebSocket message model (10) lets a hibernated Durable Object rebuild subscr
 - A memory publisher, with Effect `PubSub` documented.
 - Hibernation-ready design, with the implementation later.
 
-## Questions for Alex
+## Questions
 
 - **Q14.1** Client subscriptions: `AsyncIterable` first (recommended), or keep callbacks as the primary API?
 - **Q14.2** Move `lastEventId` from the input to resolver options?

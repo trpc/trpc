@@ -1,6 +1,6 @@
 # Files: multipart inputs, binary root outputs, streamed nested outputs (human)
 
-- Alex, 2026-10-15 (issues review Q1, proposal Q11.6): "A on openapi but b on rpc unless it's not in a batch".
+- Human, 2026-10-15 (issues review Q1, proposal Q11.6): "A on openapi but b on rpc unless it's not in a batch".
   - OpenAPI: a root `File` or `Blob` output is the response body.
   - RPC: a `File` or `Blob` can sit anywhere in an output and streams as danSON chunks.
   - An unbatched RPC call whose output is a root `File` or `Blob` gets a raw binary response with `content-type` and `content-disposition`, and the client rebuilds the `File`.

@@ -1,6 +1,6 @@
 # Stream items are validated with `stream()`; subscriptions accept either form (human)
 
-- Alex, 2026-10-15 (decisions round 3, Q13 = proposal 14 Q14.3): "A but B should work too specifically for subscriptions (allow that to have either or)".
+- Human, 2026-10-15 (decisions round 3, Q13 = proposal 14 Q14.3): "A but B should work too specifically for subscriptions (allow that to have either or)".
 - Subscriptions: `.output(Post)` and `.output(stream(Post))` both validate each event (the `data` of `tracked()` events).
 - Streamed queries and mutations: `.output(stream(Item, Return?))` validates each yielded item and the generator's return value. The client sees `AsyncIterable<Item>` or `AsyncGenerator<Item, Return>`.
 - (agent) A plain `.output(Item)` on a query or mutation whose resolver returns a generator or `Stream` is a type error pointing to `stream()`.

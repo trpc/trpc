@@ -138,7 +138,7 @@ const result = await createPost({ title }); // { data: Post } | { error: TypedEr
 - `callable()` and `action()` wrappers returning `{ data } | { error }`, with the result shape aligned to 07's `safe()` decision.
 - Framework helpers in docs first; add a package only if the helpers grow.
 
-## Questions for Alex
+## Questions
 
 - **Q15.1** Router client shape: direct calls (SC-A) or remote-client shape (SC-B)?
 - **Q15.2** `callable()`/`action()` wrappers instead of builder methods?

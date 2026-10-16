@@ -1,6 +1,6 @@
 # OpenAPI: a REST handler plus a generator (agent)
 
-- Alex, 2026-10-15 (Q18.4): "V1". `openApiLink` ships in v1.
+- Human, 2026-10-15 (Q18.4): "V1". `openApiLink` ships in v1.
 - Q18.1: O-C. `createOpenApiHandler({ router, prefix = '/api', createContext?, layer?, plugins? })` serves the REST mapping and is the main feature. `generateOpenApi(router, { info, servers?, target: 'openapi' | 'rpc', prefix?, filter? })` documents the REST mapping or, with zero configuration, the RPC endpoint (`{ json }` bodies included).
 - Q18.2: defaults. Without `.route()`, a query is `GET {prefix}/post/byId`, a mutation `POST`, a subscription `GET` with `text/event-stream`.
 - Requests:

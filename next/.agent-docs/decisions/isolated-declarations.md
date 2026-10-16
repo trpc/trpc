@@ -1,6 +1,6 @@
 # Published source uses `isolatedDeclarations` (human)
 
-- Alex, 2026-10-15 (decisions round 3, Q17 = proposal 01 Q1.5): "A".
+- Human, 2026-10-15 (decisions round 3, Q17 = proposal 01 Q1.5): "A".
 - `packages/trpcdev` compiles with `isolatedDeclarations: true` (and `declaration: true`): every export spells out its type.
 - (agent) Turned on now, not when `vp pack` is wired. Measured on 2026-10-15: 47 errors, 42 of them in `src/serializer/std.ts`.
 - (agent) The TanStack packages had no errors, so every package under `packages/` uses it.

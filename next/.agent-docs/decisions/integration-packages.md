@@ -1,7 +1,7 @@
 # Integrations with their own dependencies are `@trpcdev/*` packages (human)
 
-- Alex, 2026-10-09 (Q1.3): "yes". Integration packages are scoped `@trpcdev/*`, not unscoped `trpcdev-*`.
-- Alex, 2026-10-11: "One package, one subpath per framework applies when there's no other deps. In the here we have both tanstack and react as peer dependencies". A subpath of `trpcdev` is only for code whose dependencies `trpcdev` already has. An integration that brings its own (peer) dependencies is a separate package.
+- Human, 2026-10-09 (Q1.3): "yes". Integration packages are scoped `@trpcdev/*`, not unscoped `trpcdev-*`.
+- Human, 2026-10-11: "One package, one subpath per framework applies when there's no other deps. In the here we have both tanstack and react as peer dependencies". A subpath of `trpcdev` is only for code whose dependencies `trpcdev` already has. An integration that brings its own (peer) dependencies is a separate package.
 - TanStack Query is one package per TanStack adapter, named after TanStack's own (`@tanstack/react-query` → `@trpcdev/tanstack-react-query`):
 
   | Package                           | Peers besides `trpcdev`                                 |
@@ -19,5 +19,5 @@
 - (agent) Each framework package depends on `@trpcdev/tanstack-query` and re-exports it, so an app imports from one package.
 - Why: optional peers on subpaths still show up in every install. Package managers warn about or auto-install them, and a user of one framework sees the other six in `peerDependencies`. Separate packages give each framework accurate, required peers.
 - Lost: one package with optional peers per subpath (the first TanStack build's layout). Seven more packages to version and publish.
-- Alex, 2026-10-15 (Q19.6): "Later or never". Pinia Colada isn't planned; if it is ever built, it is `@trpcdev/pinia-colada`.
+- Human, 2026-10-15 (Q19.6): "Later or never". Pinia Colada isn't planned; if it is ever built, it is `@trpcdev/pinia-colada`.
 - Lives in: `packages/tanstack-*/package.json`.

@@ -56,4 +56,4 @@ useAtomSuspense(post).value; // @effect/atom-react
 
 - C needs both a core change (the promise hook) and a React store for invalidation. D needs neither: the registry is the store, and `effect/reactivity` already has keys, TTL and serialization.
 - D ties the integration to Effect's atom packages and their release cadence. C needs nothing beyond React.
-- Suggestion for Q20.2, for Alex to decide: a React store. Either D, if an Effect-first React package is wanted, or C's cache behind `useSyncExternalStore`. A bare link isn't enough on its own.
+- Suggestion for Q20.2, for a human to decide: a React store. Either D, if an Effect-first React package is wanted, or C's cache behind `useSyncExternalStore`. A bare link isn't enough on its own.

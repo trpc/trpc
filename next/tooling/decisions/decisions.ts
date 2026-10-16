@@ -6,6 +6,7 @@
  *   pnpm decisions --who agent     only agent calls (`human`, `asked`, `agent`)
  *   pnpm decisions --open          only decisions with an `Open:` bullet, printing it
  *   pnpm decisions --agent-bullets agent calls inside human decisions too
+ *   pnpm decisions --tentative     only decisions with a `Tentative (human):` bullet, printing it
  *   pnpm decisions --questions     every proposal question and the decisions citing it
  */
 import { readdirSync, readFileSync } from 'node:fs';
@@ -21,6 +22,8 @@ export interface Decision {
   readonly questions: ReadonlyArray<string>;
   /** `- Open:` and `- (agent) Open:` bullets. */
   readonly open: ReadonlyArray<string>;
+  /** `- Tentative (human):` bullets: answers the human flagged as open to challenge. */
+  readonly tentative: ReadonlyArray<string>;
   /** `- (agent …)` bullets: the agent's calls, also inside `(human)` files. */
   readonly agentBullets: ReadonlyArray<string>;
   readonly livesIn: string | undefined;
@@ -61,6 +64,7 @@ export function parseDecision(file: string, text: string): Decision {
     who: match[2] as Who,
     questions: [...new Set(text.match(/\bQ\d+\.\d+\b/g) ?? [])],
     open: all.filter((b) => /^(\(agent[^)]*\) )?Open\b/.test(b)),
+    tentative: all.filter((b) => b.startsWith('Tentative (human):')),
     agentBullets: all.filter((b) => b.startsWith('(agent')),
     livesIn: all
       .find((b) => b.startsWith('Lives in:'))
@@ -131,12 +135,14 @@ function main(args: string[]): void {
   }
   let who: Who | undefined;
   let open = false;
+  let tentative = false;
   let agentBullets = false;
   const terms: string[] = [];
   for (let i = 0; i < args.length; i++) {
     const arg = args[i]!;
     if (arg === '--who') who = WHO_FLAG[args[++i] ?? ''];
     else if (arg === '--open') open = true;
+    else if (arg === '--tentative') tentative = true;
     else if (arg === '--agent-bullets') agentBullets = true;
     else terms.push(arg);
   }
@@ -145,6 +151,7 @@ function main(args: string[]): void {
     (d) =>
       (!who || d.who === who) &&
       (!open || d.open.length > 0) &&
+      (!tentative || d.tentative.length > 0) &&
       (!agentBullets || d.who === 'agent' || d.agentBullets.length > 0) &&
       (!query || query.test(d.text)),
   );
@@ -154,6 +161,8 @@ function main(args: string[]): void {
     console.log(`${d.file.padEnd(44)} (${d.who}) ${d.title}${questions}`);
     if (open)
       for (const o of d.open) console.log(`    ${o.replace(/\n/g, '\n    ')}`);
+    if (tentative)
+      for (const t of d.tentative) console.log(`    ${t.split('\n')[0]}`);
     if (agentBullets && d.who !== 'agent') {
       for (const b of d.agentBullets) console.log(`    ${b.split('\n')[0]}`);
     }

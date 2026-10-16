@@ -1,6 +1,6 @@
 # Named switchLink with a typed call option (human)
 
-- Alex, 2026-10-15 (issues review Q9): "Also it'd be nice to have some sort of ability to have a split link (or switch link?) that can force which link to choose down that path for the ending ones", "The switch link can have a name", then "Yes" to:
+- Human, 2026-10-15 (issues review Q9): "Also it'd be nice to have some sort of ability to have a split link (or switch link?) that can force which link to choose down that path for the ending ones", "The switch link can have a name", then "Yes" to:
 
   ```ts
   switchLink({

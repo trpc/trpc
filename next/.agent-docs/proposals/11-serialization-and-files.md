@@ -242,7 +242,7 @@ Adopting danSON also makes nested deferred values (14 (e)) nearly free.
 
 > ⚠️ **Parity:** a router-level transformer (today's model) blocks serving the same router over RPC and OpenAPI. Not having a default rich serializer keeps "Native types" at 🟡. File inputs limited to top-level `FormData` keep "File/Blob" at 🟡.
 
-## Questions for Alex
+## Questions
 
 - **Q11.1** Default serializer: danSON ported in (S-A), oRPC-style (S-B), plain JSON (S-C) or bring your own (S-D)?
 - **Q11.2** Port danSON's code into `trpcdev/serializer` (recommended), or depend on the `danson` package? Keep wire compatibility with standalone danSON?

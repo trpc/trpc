@@ -139,7 +139,7 @@ useInfiniteQuery(
 
 > ⚠️ **Parity:** a React-only integration (hooks or providers in the core path) would keep Vue, Solid, Svelte and Angular at 🛑.
 
-## Questions for Alex
+## Questions
 
 - **Q19.1** One framework-agnostic package + `./react` (recommended), or per-framework packages?
 - **Q19.2** `queryOptions({ input, ...opts })` option bag (recommended), or v11's positional `queryOptions(input, opts)`?

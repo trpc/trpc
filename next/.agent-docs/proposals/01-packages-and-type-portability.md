@@ -190,7 +190,7 @@ export const utils = createTRPCQueryUtils({ client });
 - Adapters stay subpaths of `trpcdev`, because they only use platform built-ins (12).
 - `./testing` ships first-class test helpers. `ideas.md` says packages can export things that exist only for testing.
 
-## Questions for Alex
+## Questions
 
 - **Q1.1** `effect` as a peer dependency (recommended) or a regular dependency?
 - **Q1.2** Subpath granularity: as above (`./server/fetch`, `./server/node`, …), or flatter (`./server` includes the fetch handler; `./node`, `./ws` at the top level)?

@@ -81,7 +81,7 @@ const [state, submit, pending] = useActionState(
 
 **U-C** (defer), with one guardrail: link decorations (17) and stable promise identity for in-flight dedupe must remain possible, so that U-B can be built later as a link without changing the core.
 
-## Questions for Alex
+## Questions
 
 - **Q20.1** Defer (U-C)? Or commit now to U-A or U-B?
 - **Q20.2** If U-B: does the cache belong in a link (`cacheLink`) or in a React-specific store?

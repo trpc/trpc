@@ -1,6 +1,6 @@
 # oRPC parity matrix
 
-**Goal from `ideas.md`:** feature parity with [orpc.dev/docs/comparison](https://orpc.dev/docs/comparison). Any API decision that could stop us from getting there must be flagged and confirmed by Alex before it is accepted.
+**Goal from `ideas.md`:** feature parity with [orpc.dev/docs/comparison](https://orpc.dev/docs/comparison). Any API decision that could stop us from getting there must be flagged and confirmed by a human before it is accepted.
 
 Source: `.repos/orpc/apps/content/docs/comparison.md` (oRPC `v1.15.5`). The oRPC and tRPC columns are copied from that table. The tRPC column is oRPC's assessment of v11 and may lag behind recent v11 work.
 
@@ -119,5 +119,5 @@ oRPC ships these beyond the comparison rows. They are not parity requirements, b
 ## Maintenance
 
 - When a proposal's decision changes a row's plan, update the row in the same commit.
-- If a decision would turn a row's plan into 🛑, the agent must stop and ask Alex (see `../approach.md`).
+- If a decision would turn a row's plan into 🛑, the agent must stop and ask a human (see `../approach.md`).
 - Re-check against the upstream comparison page when bumping the vendored oRPC version.

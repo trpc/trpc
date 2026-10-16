@@ -1,6 +1,6 @@
 # Links and the Effect integration are ratified; public errors are opt-in tagged classes (human)
 
-- Alex, 2026-10-15 (decisions round 3, Q20): "C".
+- Human, 2026-10-15 (decisions round 3, Q20): "C".
 - [`links.md`](./links.md) and [`effect-integration.md`](./effect-integration.md) stand as built.
 - Effect failures that aren't `TrpcError`s stay a compile error, and a masked `INTERNAL_SERVER_ERROR` at runtime, unless the error class is marked public:
 

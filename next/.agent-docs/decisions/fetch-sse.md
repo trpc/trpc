@@ -1,6 +1,6 @@
 # Subscriptions are fetch-streamed SSE, following the SSE standard (human)
 
-- Alex, 2026-10-09 (Q14.5): "hell yes, but follow the sse standards". The client reads SSE with `fetch` streaming, not `EventSource`, and the wire format is the [WHATWG event-stream format](https://html.spec.whatwg.org/multipage/server-sent-events.html): `text/event-stream`, `event:`/`data:`/`id:` fields, comment lines for keep-alives, resume with `Last-Event-ID`. The client parser follows the spec's rules (line endings, the leading space after the colon).
+- Human, 2026-10-09 (Q14.5): "hell yes, but follow the sse standards". The client reads SSE with `fetch` streaming, not `EventSource`, and the wire format is the [WHATWG event-stream format](https://html.spec.whatwg.org/multipage/server-sent-events.html): `text/event-stream`, `event:`/`data:`/`id:` fields, comment lines for keep-alives, resume with `Last-Event-ID`. The client parser follows the spec's rules (line endings, the leading space after the colon).
 - Why: `fetch` gives headers, POST bodies and abort without a polyfill, and a standard stream stays readable by `EventSource`, `curl`, proxies and other languages.
 - Lost: nothing; v11 needed a polyfill for headers.
 - (agent) Event mapping: each `data:` is one serialized value; `tracked(id, data)` sets `id:`; `event: error` carries a serialized error and `event: done` ends the stream. Deferred values inside events are `event: deferred` with `data: { e, body }`, their chunks `event: chunk` with `{ e, chunk }`, and `{ e }` alone ends them; later events aren't held back.
