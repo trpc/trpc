@@ -367,6 +367,189 @@ export { initTRPC as init } from '@trpc/server';
   });
 });
 
+describe('edges', () => {
+  test('namespace imports keep their shape and get a note', () => {
+    const source = `import * as server from '@trpc/server';
+import { 'initTRPC' as init } from '@trpc/server';
+const t = init.create();
+`;
+    expect(upgrade(source).code).toMatchInlineSnapshot(`
+      "import * as server from '@trpc12/trpc/server';
+      import { initTrpc as init } from '@trpc12/trpc/server';
+      const t = init();
+      "
+    `);
+    expect(messages(source)).toMatchInlineSnapshot(`
+      [
+        "1:1 default or namespace import of @trpc/server: see docs/migrating-from-v11.md",
+      ]
+    `);
+  });
+
+  test('link options: empty, multiline, quoted and computed keys, SSE and ws notes', () => {
+    const source = `import { httpBatchLink, httpSubscriptionLink, wsLink, createWSClient } from '@trpc/client';
+const empty = httpBatchLink({});
+const multiline = httpBatchLink({
+  url: '/trpc',
+  'maxURLLength': 2000,
+  [key]: 1,
+});
+const sse = httpSubscriptionLink({ url: '/trpc', EventSource, eventSourceOptions: {} });
+const client = createWSClient({ url: 'ws://x' });
+const ws = wsLink({ client });
+`;
+    expect(upgrade(source).code).toMatchInlineSnapshot(`
+      "import { httpLink, wsLink, createWSClient } from '@trpc12/trpc/client';
+      const empty = httpLink({ batch: true });
+      const multiline = httpLink({
+        batch: true,
+        url: '/trpc',
+        maxUrlLength: 2000,
+        [key]: 1,
+      });
+      const sse = httpLink({ url: '/trpc', EventSource, eventSourceOptions: {} });
+      const client = createWSClient({ url: 'ws://x' });
+      const ws = wsLink({ client });
+      "
+    `);
+    expect(messages(source)).toMatchInlineSnapshot(`
+      [
+        "8:50 EventSource: httpLink streams SSE over fetch; use headers or init",
+        "8:63 eventSourceOptions: httpLink streams SSE over fetch; use headers or init",
+        "9:16 createWSClient: pass its options to wsLink({ url })",
+        "10:21 wsLink({ url, connectionParams }) replaces createWSClient + wsLink({ client })",
+      ]
+    `);
+  });
+
+  test('clients without options, with empty options, or multiline', () => {
+    expect(
+      upgrade(`import { createTRPCClient } from '@trpc/client';
+const a = createTRPCClient<AppRouter>();
+const b = createTRPCClient<AppRouter>({});
+const c = createTRPCClient<AppRouter>({
+  links,
+});
+`).code,
+    ).toMatchInlineSnapshot(`
+      "import { createTrpcClient, routerType } from '@trpc12/trpc/client';
+      const a = createTrpcClient<AppRouter>();
+      const b = createTrpcClient({ router: routerType<AppRouter>() });
+      const c = createTrpcClient({
+        router: routerType<AppRouter>(),
+        links,
+      });
+      "
+    `);
+  });
+
+  test('createTRPCContext destructured with a name it does not return', () => {
+    const source = `import { createTRPCContext } from '@trpc/tanstack-react-query';
+export const { TRPCProvider, useOther } = createTRPCContext<AppRouter>();
+export const { useTRPCClient: useClient } = createTRPCContext<AppRouter>();
+`;
+    expect(upgrade(source, 'trpc.ts').code).toMatchInlineSnapshot(`
+      "import { createTrpcContext } from '@trpc12/tanstack-react-query';
+      export const { TrpcProvider, useOther } = createTrpcContext<AppRouter>();
+      export const [, , useClient] = createTrpcContext<AppRouter>();
+      "
+    `);
+    expect(messages(source, 'trpc.ts')).toMatchInlineSnapshot(`
+      [
+        "2:30 createTrpcContext returns [TrpcProvider, useTrpc, useTrpcClient, context]: destructure it as a tuple",
+      ]
+    `);
+  });
+
+  test('mergeRouters as an arrow body, createCallerFactory, req last in fetchRequestHandler', () => {
+    const source = `import { initTRPC } from '@trpc/server';
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+const t = initTRPC.create();
+const merged = () => t.mergeRouters(a, b);
+const factory = t.createCallerFactory(appRouter);
+export const handle = (request: Request) =>
+  fetchRequestHandler({ endpoint: '/trpc', router: appRouter, req: request });
+`;
+    expect(upgrade(source).code).toMatchInlineSnapshot(`
+      "import { initTrpc } from '@trpc12/trpc/server';
+      import { createFetchHandler } from '@trpc12/trpc/server';
+      const t = initTrpc();
+      const merged = () => ({ ...a, ...b });
+      const factory = t.createCallerFactory(appRouter);
+      export const handle = (request: Request) =>
+        createFetchHandler({ endpoint: '/trpc', router: appRouter }).fetch(request);
+      "
+    `);
+    expect(messages(source)).toMatchInlineSnapshot(`
+      [
+        "5:17 createCallerFactory: createRouterClient(router, { ctx }) makes a caller",
+        "7:3 createFetchHandler: make the handler once, outside the request function; createContext gets { request, info }",
+      ]
+    `);
+  });
+
+  test('TRPCClientError<Router>, createTRPCOptionsProxy and spread JSX props are notes', () => {
+    const source = `import { TRPCClientError } from '@trpc/client';
+import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import { TRPCProvider } from './trpc';
+type E = TRPCClientError<AppRouter>;
+const proxy = createTRPCOptionsProxy({ client, queryClient });
+const app = <TRPCProvider {...props} trpcClient={client} />;
+`;
+    expect(upgrade(source, 'app.tsx').code).toMatchInlineSnapshot(`
+      "import { TrpcError } from '@trpc12/trpc/client';
+      import { createTrpcQueryUtils } from '@trpc12/tanstack-react-query';
+      import { TrpcProvider } from './trpc';
+      type E = TrpcError<AppRouter>;
+      const proxy = createTrpcQueryUtils({ client, queryClient });
+      const app = <TrpcProvider {...props} client={client} />;
+      "
+    `);
+    expect(messages(source, 'app.tsx')).toMatchInlineSnapshot(`
+      [
+        "4:10 TrpcError<TCode, TData> takes a code and data, not a router; use ClientError or safe()",
+        "5:15 createTrpcQueryUtils({ client }): the queryClient goes to QueryClientProvider",
+      ]
+    `);
+  });
+
+  test('class members, interface keys and qualified names keep v11 names', () => {
+    expect(
+      upgrade(`import { TRPCError } from '@trpc/server';
+class Errors {
+  TRPCError = TRPCError;
+}
+class Methods {
+  TRPCError() {}
+}
+interface Shape {
+  TRPCError: typeof TRPCError;
+}
+interface Callable {
+  TRPCError(): void;
+}
+type Q = errors.TRPCError;
+`).code,
+    ).toMatchInlineSnapshot(`
+      "import { TrpcError } from '@trpc12/trpc/server';
+      class Errors {
+        TRPCError = TrpcError;
+      }
+      class Methods {
+        TRPCError() {}
+      }
+      interface Shape {
+        TRPCError: typeof TrpcError;
+      }
+      interface Callable {
+        TRPCError(): void;
+      }
+      type Q = errors.TRPCError;
+      "
+    `);
+  });
+});
+
 describe('files and CLI', () => {
   const project = async () => {
     const root = await mkdtemp(join(tmpdir(), 'trpc-upgrade-'));
