@@ -1,5 +1,4 @@
 import { Cause, Effect, Option, Stream, Tracer } from 'effect';
-import { HttpTraceContext } from 'effect/http';
 import {
   isTrpcError,
   TrpcError,
@@ -291,6 +290,18 @@ export function chainSwitchNames(links: ReadonlyArray<AnyLink>): Set<string> {
   return names;
 }
 
+/** `HttpTraceContext.toHeaders`, as a plain record. */
+const traceHeaders = (span: Tracer.Span): Record<string, string> => {
+  const sampled = span.sampled ? '1' : '0';
+  const parent = Option.isSome(span.parent)
+    ? `-${span.parent.value.spanId}`
+    : '';
+  return {
+    b3: `${span.traceId}-${span.spanId}-${sampled}${parent}`,
+    traceparent: `00-${span.traceId}-${span.spanId}-0${sampled}`,
+  };
+};
+
 /**
  * Runs `op` through `links` in a `trpc.<path>` client span, with the span's
  * trace context on `op.trace` when a tracer is installed. Without one,
@@ -311,10 +322,7 @@ export function runOperation(
       if (tracer === Tracer.nativeTracer || disabled || Option.isNone(span)) {
         return runLinks(links, op);
       }
-      const trace = Object.fromEntries(
-        Object.entries(HttpTraceContext.toHeaders(span.value)),
-      ) as Record<string, string>;
-      return runLinks(links, { ...op, trace });
+      return runLinks(links, { ...op, trace: traceHeaders(span.value) });
     }),
   ).pipe(
     Stream.tapError((err) =>

@@ -62,6 +62,9 @@ test('client and server spans share a trace through traceparent', async () => {
   });
   const traceparent = http.requests[0]!.headers.get('traceparent');
   expect(traceparent).toBe(`00-${call.traceId}-${call.spanId}-01`);
+  expect(http.requests[0]!.headers.get('b3')).toBe(
+    `${call.traceId}-${call.spanId}-1-${page.spanId}`,
+  );
 
   const handled = server.named('trpc.post', 'server')!;
   expect(handled.traceId).toBe(call.traceId);
