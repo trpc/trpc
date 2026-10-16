@@ -120,7 +120,8 @@ export function createHandlerCore(opts: CoreOptions): HandlerCore {
     runEffect: (o) => {
       const inline = (layer: Context.Context<any>) => {
         const { call, context } = prepare(o, layer);
-        return Effect.exit(Effect.provideContext(call, context));
+        // The call's services replace the server fiber's, as in `run`.
+        return Effect.exit(Effect.updateContext(call, () => context));
       };
       return ready
         ? inline(ready)
