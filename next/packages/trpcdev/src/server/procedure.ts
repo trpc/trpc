@@ -10,9 +10,9 @@ import type { OutputSchema } from './stream-schema.ts';
  * @stability experimental
  */
 export interface ErrorSpec {
-  readonly status?: number;
-  readonly message?: string;
-  readonly data?: AnySchema;
+  readonly status?: number | undefined;
+  readonly message?: string | undefined;
+  readonly data?: AnySchema | undefined;
 }
 
 /**

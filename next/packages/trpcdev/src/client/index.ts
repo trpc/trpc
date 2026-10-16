@@ -88,6 +88,10 @@ export {
   isTrpcError,
   TrpcError,
   type AnyTrpcError,
+  type TaggedData,
+  type TaggedErrorClass,
+  type TaggedErrorOptions,
+  type TaggedErrorSpec,
   type BuiltinErrorCode,
   type TrpcErrorOptions,
 } from '../internal/error.ts';

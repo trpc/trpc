@@ -13,7 +13,8 @@
   ```
 
 - A public tagged error is a yieldable Effect error whose `_tag` is its code ([`error-tags.md`](./error-tags.md)). Its status defaults to 400 ([`custom-error-codes.md`](./custom-error-codes.md)), and it is inferred like any other returned error ([`inferred-errors.md`](./inferred-errors.md)).
-- (agent) `data` takes any Standard Schema; an Effect `Schema` is the documented form. The schema also serves OpenAPI and validates `data` before it is sent.
+- (agent) `data` takes any Standard Schema; an Effect `Schema` is the documented form. The schema validates `data` before it is sent; invalid data becomes a masked `INTERNAL_SERVER_ERROR`.
+- (agent) The class's statics (`code`, `status`, `message`, `data`) make it an error spec, so `.errors({ POST_NOT_FOUND: PostNotFound })` documents it in OpenAPI. Thrown instances are typed too, like declared errors' constructors.
 - Why: Effect code fails with tagged errors; marking the public ones avoids `catchTag` boilerplate without leaking internals like `SqlError` (query text, causes).
 - Lost: passing every tagged error through without marking it.
-- Lives in: `packages/trpcdev/src/internal/error.ts`, `src/server/execute.ts` (not built yet).
+- Lives in: `packages/trpcdev/src/internal/error.ts` (`TrpcError.Tagged`, `taggedSpec`), `src/server/execute.ts`; `test/integration/tagged-errors.test.ts`.

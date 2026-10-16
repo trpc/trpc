@@ -161,6 +161,25 @@ const byId = t.procedure
 createFetchHandler({ router: { byId }, layer: PostRepoLive });
 ```
 
+A failure that isn't a `TrpcError` is a type error until it is mapped (`Effect.catchTag`), so internals like a database error's query never reach clients. Mark the errors clients may see by making them `TrpcError.Tagged` classes; yielding or throwing one sends it typed, with its `data` validated first:
+
+```ts
+class PostNotFound extends TrpcError.Tagged('POST_NOT_FOUND', {
+  status: 404,
+  data: Schema.Struct({ id: Schema.String }),
+}) {}
+
+t.procedure.query(({ input }) =>
+  Effect.gen(function* () {
+    const post = yield* repo.find(input.id);
+    if (!post) return yield* new PostNotFound({ id: input.id });
+    return post;
+  }),
+);
+```
+
+`.errors({ POST_NOT_FOUND: PostNotFound })` documents one in OpenAPI.
+
 `t.middleware.effect<{ provides: S }>()(fn)` writes a middleware whose `next()` is an `Effect`, so it can provide services:
 
 ```ts

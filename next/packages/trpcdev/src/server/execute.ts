@@ -1,6 +1,7 @@
 import { Cause, Context, Effect, Exit, Stream } from 'effect';
 import {
   isTrpcError,
+  taggedSpec,
   TrpcError,
   withDefined,
   type AnyTrpcError,
@@ -189,7 +190,7 @@ const checkDeclared = (
   def: ProcedureInternals,
   err: AnyTrpcError,
 ): Effect.Effect<never, AnyTrpcError> => {
-  const spec = def.errors[err.code];
+  const spec = def.errors[err.code] ?? taggedSpec(err);
   if (!spec?.data || !err.defined) return Effect.fail(err);
   return validate(spec.data, err.data, () => err).pipe(
     Effect.matchEffect({
@@ -431,7 +432,7 @@ export function callProcedure(
         if (
           Cause.isDieReason(reason) &&
           isTrpcError(reason.defect) &&
-          isDeclaredError(reason.defect)
+          (isDeclaredError(reason.defect) || taggedSpec(reason.defect))
         ) {
           return checkDeclared(def, withDefined(reason.defect, true));
         }

@@ -1,5 +1,6 @@
 import { Data } from 'effect';
 import type * as Cause from 'effect/Cause';
+import type { AnySchema, OutOf } from '../server/schema.ts';
 
 /**
  * Built-in error codes and their default HTTP status.
@@ -117,6 +118,120 @@ export class TrpcError<
     this.data = opts.data as TData;
     this.defined = opts.defined ?? false;
   }
+
+  /**
+   * A public error class: yield or throw it and it reaches the client as a
+   * typed error, with no mapping. Its `_tag` is its code and its `data` is
+   * validated with the schema before it is sent. Errors that aren't marked
+   * public stay masked.
+   *
+   * @example
+   * ```ts
+   * class PostNotFound extends TrpcError.Tagged('POST_NOT_FOUND', {
+   *   status: 404,
+   *   data: Schema.Struct({ id: Schema.String }),
+   * }) {}
+   *
+   * t.procedure.query(({ input }) =>
+   *   Effect.gen(function* () {
+   *     const post = yield* db.find(input.id);
+   *     if (!post) return yield* new PostNotFound({ id: input.id });
+   *     return post;
+   *   }),
+   * );
+   * ```
+   */
+  static Tagged<
+    const TCode extends string,
+    TSchema extends AnySchema | undefined = undefined,
+  >(
+    code: TCode,
+    spec: TaggedErrorSpec<TSchema> = {},
+  ): TaggedErrorClass<TCode, TSchema> {
+    const hasData = spec.data !== undefined;
+    class Tagged extends TrpcError<TCode, unknown> {
+      static readonly [TAGGED] = true;
+      static readonly code = code;
+      static readonly data = spec.data;
+      static readonly status = spec.status;
+      static readonly message = spec.message;
+      constructor(...args: unknown[]) {
+        const opts = (hasData ? args[1] : args[0]) as
+          | TaggedErrorOptions
+          | undefined;
+        super({
+          code,
+          data: hasData ? args[0] : undefined,
+          status: spec.status,
+          message: opts?.message ?? spec.message,
+          cause: opts?.cause,
+          defined: true,
+        });
+      }
+    }
+    return Tagged as unknown as TaggedErrorClass<TCode, TSchema>;
+  }
+}
+
+const TAGGED: unique symbol = Symbol.for('trpcdev/TaggedError');
+
+/**
+ * The options of a {@link TrpcError.Tagged} class.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export interface TaggedErrorSpec<TSchema> {
+  /** Validates the error's `data`, and documents it in OpenAPI. */
+  readonly data?: TSchema;
+  /** @default 400 */
+  readonly status?: number | undefined;
+  readonly message?: string | undefined;
+}
+
+/**
+ * What a {@link TrpcError.Tagged} instance takes besides its `data`.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export interface TaggedErrorOptions {
+  readonly message?: string | undefined;
+  /** Never sent to the client. */
+  readonly cause?: unknown;
+}
+
+/**
+ * The `data` type of a {@link TrpcError.Tagged} class.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export type TaggedData<TSchema> = [TSchema] extends [AnySchema]
+  ? OutOf<TSchema>
+  : undefined;
+
+/**
+ * A class made by {@link TrpcError.Tagged}. Its statics make it an error
+ * spec, so `.errors({ POST_NOT_FOUND: PostNotFound })` documents it too.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export interface TaggedErrorClass<TCode extends string, TSchema> {
+  new (
+    ...args: [TSchema] extends [AnySchema]
+      ? [data: OutOf<TSchema>, opts?: TaggedErrorOptions]
+      : [opts?: TaggedErrorOptions]
+  ): TrpcError<TCode, TaggedData<TSchema>>;
+  readonly code: TCode;
+  readonly data: TSchema;
+  readonly status: number | undefined;
+  readonly message: string | undefined;
+}
+
+/** The class spec of a {@link TrpcError.Tagged} instance, if it is one. @internal */
+export function taggedSpec(
+  err: AnyTrpcError,
+): { readonly data?: AnySchema | undefined } | undefined {
+  const ctor = err.constructor as { [TAGGED]?: true; data?: AnySchema };
+  return ctor[TAGGED] ? ctor : undefined;
 }
 
 /**
