@@ -41,18 +41,31 @@ export interface StandardSchemaV1<I = unknown, O = I> {
  */
 export type AnySchema = StandardSchemaV1<any, any> | Schema.Top;
 
+// A Standard Schema's types are read from `~standard.types` rather than
+// inferred against this interface: every procedure with an input pays for
+// that inference. `validate` is the fallback for schemas without `types`.
 /** @internal */
-export type InOf<S> = S extends Schema.Top
-  ? S['Encoded']
-  : S extends StandardSchemaV1<infer I, any>
-    ? I
+export type InOf<S> = S extends StandardSchemaV1
+  ? StandardIn<S, NonNullable<S['~standard']['types']>['input']>
+  : S extends Schema.Top
+    ? S['Encoded']
     : never;
+type StandardIn<S, I> = unknown extends I
+  ? S extends StandardSchemaV1<infer V, any>
+    ? V
+    : never
+  : I;
 /** @internal */
-export type OutOf<S> = S extends Schema.Top
-  ? S['Type']
-  : S extends StandardSchemaV1<any, infer O>
-    ? O
+export type OutOf<S> = S extends StandardSchemaV1
+  ? StandardOut<S, NonNullable<S['~standard']['types']>['output']>
+  : S extends Schema.Top
+    ? S['Type']
     : never;
+type StandardOut<S, O> = unknown extends O
+  ? S extends StandardSchemaV1<any, infer V>
+    ? V
+    : never
+  : O;
 /** @internal */
 export type SchemaServices<S> = S extends Schema.Top
   ? S['DecodingServices']

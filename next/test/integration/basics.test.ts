@@ -137,6 +137,50 @@ test('unknown paths are NOT_FOUND', async () => {
   });
 });
 
+test('a Standard Schema types input from ~standard.types, or from validate without them', async () => {
+  const toNumber = {
+    '~standard': {
+      version: 1,
+      vendor: 'test',
+      validate: (value: unknown) => ({ value: Number(value) }),
+      types: { input: '' as string, output: 0 as number },
+    },
+  } as const;
+  const untyped = {
+    '~standard': {
+      version: 1,
+      vendor: 'test',
+      validate: (value: unknown) => ({ value: String(value) }),
+    },
+  } as const;
+  const schemas = {
+    typed: t.procedure.input(toNumber).query(({ input }) => {
+      expectTypeOf(input).toEqualTypeOf<number>();
+      return input + 1;
+    }),
+    untyped: t.procedure.input(untyped).query(({ input }) => {
+      expectTypeOf(input).toEqualTypeOf<string>();
+      return input.length;
+    }),
+  };
+  await using server = await createTestServer({
+    router: schemas,
+    createContext: () => ({ user: null }),
+  });
+  const client = createTrpcClient({
+    router: routerType<typeof schemas>(),
+    links: [httpLink({ url: server.url })],
+  });
+  expectTypeOf<
+    Parameters<typeof client.typed.query>[0]
+  >().toEqualTypeOf<string>();
+  expect(await client.typed.query('41')).toBe(42);
+  expectTypeOf<
+    Parameters<typeof client.untyped.query>[0]
+  >().toEqualTypeOf<unknown>();
+  expect(await client.untyped.query('abc')).toBe(3);
+});
+
 type JsonValue =
   | string
   | number
