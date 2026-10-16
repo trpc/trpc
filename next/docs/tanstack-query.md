@@ -17,6 +17,13 @@ useInfiniteQuery(
 );
 useMutation(trpc.post.create.mutationOptions());
 await queryClient.invalidateQueries(trpc.post.pathFilter());
+useQueries({
+  queries: ids.map((id) => trpc.post.byId.queryOptions({ input: { id } })),
+});
+useMutationState({
+  filters: trpc.post.create.mutationFilter({ status: 'pending' }),
+  select: (mutation) => mutation.state.variables,
+});
 ```
 
 A refetch that returns equal data keeps the old reference, `Date`s, `Map`s and `Set`s included, so it doesn't re-render. `queryOptions()` sets `structuralSharing` for that; it's exported for other queries.

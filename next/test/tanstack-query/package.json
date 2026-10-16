@@ -21,6 +21,7 @@
     "@angular/compiler": "22.2.2",
     "@angular/core": "22.2.2",
     "@angular/platform-browser": "22.2.2",
+    "@angular/platform-server": "22.2.2",
     "@effect/platform-node": "4.0.2",
     "@lit/context": "1.1.6",
     "@tanstack/angular-query-experimental": "5.104.1",

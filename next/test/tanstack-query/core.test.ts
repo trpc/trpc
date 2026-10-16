@@ -4,6 +4,7 @@ import {
   InfiniteQueryObserver,
   MutationObserver,
   onlineManager,
+  QueriesObserver,
   QueryClient,
   QueryObserver,
   skipToken,
@@ -314,6 +315,64 @@ test('mutationOptions run mutations and invalidate queries', async () => {
     // @ts-expect-error -- the variables are the procedure's input
     void failing.mutate({ name: 'x' });
   });
+});
+
+test('mutationFilter matches the procedure, typed for predicate', async () => {
+  await using app = await createApp();
+  const queryClient = new QueryClient();
+  const create = new MutationObserver(
+    queryClient,
+    app.trpc.post.create.mutationOptions(),
+  );
+  const pending = create.mutate({ title: 'Pending' });
+  const filter = app.trpc.post.create.mutationFilter({
+    status: 'pending',
+    predicate: (mutation) => {
+      expectTypeOf(mutation.state.variables).toEqualTypeOf<
+        { title: string } | undefined
+      >();
+      expectTypeOf(mutation.state.data).toEqualTypeOf<Post | undefined>();
+      return mutation.state.variables?.title === 'Pending';
+    },
+  });
+  expect(filter.mutationKey).toEqual(app.trpc.post.create.mutationKey());
+  expect(queryClient.isMutating(filter)).toBe(1);
+  await pending;
+  expect(queryClient.isMutating(filter)).toBe(0);
+  expect(
+    queryClient
+      .getMutationCache()
+      .findAll(app.trpc.post.create.mutationFilter({ status: 'success' })),
+  ).toHaveLength(1);
+});
+
+test('QueriesObserver (useQueries) takes queryOptions for many inputs', async () => {
+  await using app = await createApp();
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  const observer = new QueriesObserver(
+    queryClient,
+    ['1', '2', 'nope'].map((id) =>
+      app.trpc.post.byId.queryOptions({ input: { id } }),
+    ),
+  );
+  const results = await until(observer, (r) =>
+    r.every((q) => q.status !== 'pending'),
+  );
+  const posts = results.map((q) => q.data as Post | undefined);
+  expect(posts.map((post) => post?.title)).toEqual([
+    'Post 1',
+    'Post 2',
+    undefined,
+  ]);
+  expect(results[2]?.error).toMatchObject({ code: 'NOT_FOUND' });
+  expect(posts[0]?.createdAt).toBeInstanceOf(Date);
+  expect(
+    queryClient.getQueryData(
+      app.trpc.post.byId.queryKey({ input: { id: '2' } }),
+    )?.title,
+  ).toBe('Post 2');
 });
 
 test('paused mutations resume in a new client from setMutationDefaults (docs/tanstack-query.md)', async () => {

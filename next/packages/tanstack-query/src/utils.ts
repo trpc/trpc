@@ -5,6 +5,7 @@ import {
   type DataTag,
   type InfiniteData,
   type InfiniteQueryObserverOptions,
+  type MutationFilters,
   type MutationFunctionContext,
   type MutationObserverOptions,
   type QueryFilters,
@@ -377,6 +378,24 @@ export interface MutationProcedureUtils<
   /** The key `mutationOptions()` uses, for `useIsMutating` and filters. */
   mutationKey(): TrpcMutationKey;
   /**
+   * Filters for this procedure's mutations, typed for `predicate`. For
+   * `useMutationState`, `useIsMutating` and `queryClient.isMutating()`.
+   *
+   * @example
+   * ```ts
+   * const pending = useMutationState({
+   *   filters: trpc.post.create.mutationFilter({ status: 'pending' }),
+   *   select: (mutation) => mutation.state.variables,
+   * });
+   * ```
+   */
+  mutationFilter(
+    filters?: Omit<
+      MutationFilters<TOutput, TError, MutationVariables<TInput>>,
+      'mutationKey'
+    >,
+  ): MutationFilters & { mutationKey: TrpcMutationKey };
+  /**
    * Options for `useMutation` when the output is an `AsyncIterable`: `data`
    * is every chunk once the stream ends. While it runs, the chunks so far
    * are in the query cache at `streamedMutationKey()`, so a query on that
@@ -677,6 +696,8 @@ export function createTrpcQueryUtils<TClient extends object>(
       }
       case 'mutationKey':
         return [path];
+      case 'mutationFilter':
+        return { ...(args[0] as object), mutationKey: [path] };
       case 'streamedMutationKey':
         return procedureKey(path, undefined, 'mutation');
       case 'chunksOptions':

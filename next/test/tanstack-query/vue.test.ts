@@ -1,5 +1,7 @@
 // @vitest-environment happy-dom
 import {
+  dehydrate,
+  hydrate,
   QueryClient,
   useInfiniteQuery,
   useMutation,
@@ -9,12 +11,28 @@ import {
 } from '@tanstack/vue-query';
 import {
   createTrpcContext,
+  createTrpcQueryUtils,
+  hydrationOptions,
   useSubscription,
 } from '@trpcdev/tanstack-vue-query';
 import type { TrpcClient } from 'trpcdev/client';
+import { createRouterClient } from 'trpcdev/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
-import { createApp as createVueApp, defineComponent, h, ref } from 'vue';
-import { createApp, db, type AppRouter, type Post } from './fixtures/app.ts';
+import {
+  createApp as createVueApp,
+  createSSRApp,
+  defineComponent,
+  h,
+  ref,
+} from 'vue';
+import { renderToString } from 'vue/server-renderer';
+import {
+  appRouter,
+  createApp,
+  db,
+  type AppRouter,
+  type Post,
+} from './fixtures/app.ts';
 import { click, container, text, waitFor } from './fixtures/dom.ts';
 
 const { TrpcPlugin, useTrpc } = createTrpcContext<AppRouter>();
@@ -139,4 +157,58 @@ test('useSubscription restarts when its getter changes', async () => {
   await waitFor(() =>
     expect(Number(text(view.el, '.tick'))).toBeGreaterThan(1),
   );
+});
+
+test('server render with prefetched data and no subscription, then hydrate without refetching', async () => {
+  await using app = await createApp();
+  const Page = defineComponent({
+    setup() {
+      const trpc = useTrpc();
+      const post = useQuery(
+        trpc.post.byId.queryOptions({ input: { id: '3' } }),
+      );
+      const added = useSubscription(trpc.post.onAdd.subscriptionOptions());
+      return () =>
+        h('div', [
+          h('h1', post.data.value?.createdAt.toISOString().slice(0, 10)),
+          h('p', added.status.value),
+        ]);
+    },
+  });
+  const queryClient = () =>
+    new QueryClient({
+      defaultOptions: { ...hydrationOptions(), queries: { staleTime: 30_000 } },
+    });
+  const tree = (queryClient: QueryClient, client: TrpcClient<AppRouter>) =>
+    createSSRApp(Page)
+      .use(VueQueryPlugin, { queryClient })
+      .use(TrpcPlugin, { client });
+
+  const serverQueryClient = queryClient();
+  const serverClient = createRouterClient(appRouter, { ctx: { locale: null } });
+  await serverQueryClient.prefetchQuery(
+    createTrpcQueryUtils({ client: serverClient }).post.byId.queryOptions({
+      input: { id: '3' },
+    }),
+  );
+  const html = await renderToString(tree(serverQueryClient, serverClient));
+  expect(html).toContain('<h1>2026-01-04</h1><p>idle</p>');
+  expect(db.listeners.size).toBe(0);
+  const state = JSON.parse(JSON.stringify(dehydrate(serverQueryClient)));
+
+  const el = container();
+  el.innerHTML = html;
+  const browserQueryClient = queryClient();
+  hydrate(browserQueryClient, state);
+  const vueApp = tree(browserQueryClient, app.client);
+  vueApp.mount(el);
+  using _ = {
+    [Symbol.dispose]: () => {
+      vueApp.unmount();
+      el.remove();
+    },
+  };
+  expect(text(el, 'h1')).toBe('2026-01-04');
+  await waitFor(() => expect(db.listeners.size).toBe(1));
+  expect(db.calls).toEqual(['post.byId:3']);
 });

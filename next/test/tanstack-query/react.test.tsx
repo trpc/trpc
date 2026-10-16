@@ -6,6 +6,8 @@ import {
   QueryClientProvider,
   useInfiniteQuery,
   useMutation,
+  useMutationState,
+  useQueries,
   useQuery,
   useQueryClient,
   useSuspenseQuery,
@@ -231,6 +233,53 @@ test('useSubscription, live and streamed queries update the UI', async () => {
   await waitFor(() =>
     expect(Number(text(view.el, '.tick'))).toBeGreaterThan(500),
   );
+});
+
+test('useQueries takes queryOptions; combine sees the typed results', async () => {
+  await using app = await createApp();
+  function Titles() {
+    const trpc = useTrpc();
+    const titles = useQueries({
+      queries: ['1', '2', 'nope'].map((id) =>
+        trpc.post.byId.queryOptions({ input: { id } }),
+      ),
+      combine: (results) => {
+        expectTypeOf(results[0]!.data).toEqualTypeOf<Post | undefined>();
+        return results.map((r) =>
+          r.error?.defined ? r.error.code : (r.data?.title ?? '…'),
+        );
+      },
+    });
+    return <p>{titles.join(',')}</p>;
+  }
+  using view = mount(<Titles />, app.client);
+  await waitFor(() =>
+    expect(text(view.el, 'p')).toBe('Post 1,Post 2,NOT_FOUND'),
+  );
+});
+
+test('useMutationState reads pending variables through mutationFilter', async () => {
+  await using app = await createApp();
+  const seen: (string | undefined)[] = [];
+  function Composer() {
+    const trpc = useTrpc();
+    const create = useMutation(trpc.post.create.mutationOptions());
+    const pending = useMutationState({
+      filters: trpc.post.create.mutationFilter({ status: 'pending' }),
+      select: (mutation) => mutation.state.variables,
+    });
+    seen.push(...pending.map((v) => (v as { title: string }).title));
+    return (
+      <>
+        <p className="done">{create.data?.title}</p>
+        <button onClick={() => create.mutate({ title: 'Draft' })}>add</button>
+      </>
+    );
+  }
+  using view = mount(<Composer />, app.client);
+  await waitFor(() => click(view.el, 'button'));
+  await waitFor(() => expect(text(view.el, '.done')).toBe('Draft'));
+  expect(seen).toContain('Draft');
 });
 
 test('components with the same useSubscription key share one subscription', async () => {
