@@ -282,6 +282,7 @@ test.each([
   ['completes', 'completes'],
   ['throws', 'throws'],
   ['is cancelled', 'infinite'],
+  ['fails in responseMeta', 'responseMetaThrows'],
 ] as const)(
   'sse maxDurationMs timer is cleared when the subscription %s',
   async (_, path) => {
@@ -325,6 +326,9 @@ test.each([
           await new Promise((resolve) => setTimeout(resolve, 10));
         }
       }),
+      responseMetaThrows: t.procedure.subscription(async function* () {
+        yield 1;
+      }),
     });
 
     // the signal of this request never aborts
@@ -332,6 +336,15 @@ test.each([
       endpoint: '',
       router,
       req: new Request(`http://localhost/${path}`),
+      responseMeta(opts) {
+        if (
+          opts.info?.calls[0]?.path === 'responseMetaThrows' &&
+          opts.errors.length === 0
+        ) {
+          throw new Error('responseMeta failed');
+        }
+        return {};
+      },
     });
     if (path === 'infinite') {
       const reader = res.body!.getReader();

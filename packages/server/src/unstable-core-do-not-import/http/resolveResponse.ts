@@ -528,14 +528,20 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             headers.set(key, value);
           }
 
-          const headResponse = initResponse({
-            ctx: ctxManager.valueOrUndefined(),
-            info,
-            responseMeta: opts.responseMeta,
-            errors: [],
-            headers,
-            untransformedJSON: null,
-          });
+          let headResponse: ReturnType<typeof initResponse>;
+          try {
+            headResponse = initResponse({
+              ctx: ctxManager.valueOrUndefined(),
+              info,
+              responseMeta: opts.responseMeta,
+              errors: [],
+              headers,
+              untransformedJSON: null,
+            });
+          } catch (cause) {
+            result?.clearMaxDurationTimer?.();
+            throw cause;
+          }
 
           const abortSignal = result?.signal;
           let responseBody: ReadableStream<Uint8Array> = stream;
