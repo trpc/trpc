@@ -31,7 +31,11 @@ export {
   normalizeCause,
   type CallOpts,
 } from '../server/execute.ts';
-export { getProcedure, resolveProcedure } from '../server/router.ts';
+export {
+  getProcedure,
+  resolveProcedure,
+  routerMetaOf,
+} from '../server/router.ts';
 export {
   fromWireError,
   toWireError,

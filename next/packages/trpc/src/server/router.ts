@@ -29,30 +29,46 @@ export interface AnyRouter {
   readonly [key: string]: AnyProcedure | AnyRouter | AnyLazyRouter;
 }
 
+type RouterForm<T> = '~router' extends keyof NonNullable<T>
+  ? NonNullable<NonNullable<T>['~router' & keyof NonNullable<T>]>
+  : never;
+
 /**
- * OpenAPI grouping for a subtree (08 Q8.3): a path prefix and tags. Only
- * the OpenAPI handler and generator read it.
+ * The meta a router or lazy subtree takes: the root's meta keys whose type
+ * names a router-level form with a type-only `'~router'` key, as the
+ * `openapi()` extension's `route` does (`{ prefix?, tags? }`). Other keys
+ * apply to procedures only.
  * @since 0.1.0
  * @stability stable
  */
-export interface RouterGroup {
-  /** Prepended to every route below: `/admin`. */
-  readonly prefix?: `/${string}` | undefined;
-  /** Added before each procedure's own tags. */
-  readonly tags?: ReadonlyArray<string> | undefined;
-}
-
-const GROUP = '~group';
+export type RouterMeta<TMeta> = {
+  [
+    K in keyof TMeta as [RouterForm<TMeta[K]>] extends [never] ? never : K
+  ]?: RouterForm<TMeta[K]>;
+};
 
 /**
- * Groups routes for OpenAPI (08 Q8.3). The result is the same plain object
- * (with the group kept off its keys), so types and RPC paths don't change.
- * Routers take no middleware: put it on a base procedure.
+ * Options for `t.router()` and `t.lazy()`.
+ * @since 0.1.0
+ * @stability stable
+ */
+export interface RouterOptions<TMeta = Record<string, unknown>> {
+  /** Router-level meta, read by the extension that declares the key. */
+  readonly meta?: ([keyof TMeta] extends [never] ? never : TMeta) | undefined;
+}
+
+const META = '~meta';
+
+/**
+ * A router with router-level meta (08 Q8.3). The result is the same plain
+ * object (with the meta kept off its keys), so types and RPC paths don't
+ * change. Routers take no middleware: put it on a base procedure.
  *
  * @example
  * ```ts
+ * const t = initTrpc().with(openapi());
  * const appRouter = {
- *   admin: t.router({ prefix: '/admin', tags: ['admin'] }, { users, ban }),
+ *   admin: t.router({ meta: { route: { prefix: '/admin', tags: ['admin'] } } }, { users, ban }),
  * };
  * // RPC: admin.users; OpenAPI: GET /api/admin/users, tagged admin
  * ```
@@ -60,36 +76,28 @@ const GROUP = '~group';
  * @stability stable
  */
 export function router<const TRoutes extends AnyRouter>(
-  group: RouterGroup,
+  opts: RouterOptions,
   routes: TRoutes,
 ): TRoutes {
   const copy = { ...routes };
-  Object.defineProperty(copy, GROUP, { value: group, enumerable: false });
+  Object.defineProperty(copy, META, { value: opts.meta, enumerable: false });
   return copy;
 }
 
-/** The group a router was made with, if any. @internal */
-export const groupOf = (node: object): RouterGroup | undefined =>
-  (node as { [GROUP]?: RouterGroup })[GROUP];
-
 /**
- * Options for {@link lazy}.
+ * The router-level meta a router or lazy subtree was made with.
  * @since 0.1.0
  * @stability stable
  */
-export interface LazyOptions {
-  /**
-   * Every OpenAPI route of the subtree starts with this, which lets the
-   * OpenAPI handler load the subtree on the first request under it. Without
-   * it (or a `contract` on the handler), the handler loads it at startup.
-   */
-  readonly prefix?: `/${string}` | undefined;
-}
+export const routerMetaOf = (node: object): object | undefined =>
+  isLazy(node)
+    ? node['~lazy'].meta
+    : (node as { [META]?: object | undefined })[META];
 
 /** @internal */
 export interface LazyDef {
   readonly load: () => Promise<AnyRouter>;
-  readonly prefix: `/${string}` | undefined;
+  readonly meta: object | undefined;
   /** Set once loaded. */
   loaded: AnyRouter | undefined;
 }
@@ -121,14 +129,14 @@ export type Unlazy<T> = T extends LazyRouter<infer TRouter> ? TRouter : T;
 /**
  * Loads a subtree on its first call (08 Q8.4), for large routers in
  * serverless functions that should start fast. The client types it as if it
- * were inline. With `prefix`, its OpenAPI routes all start with the prefix,
- * as in a `t.router({ prefix })` group.
+ * were inline. `t.lazy(load, { meta })` also takes router-level meta, as
+ * `t.router()` does.
  *
  * @example
  * ```ts
  * export const appRouter = {
  *   post: postRouter,
- *   admin: lazy(() => import('./admin.ts'), { prefix: '/admin' }),
+ *   admin: lazy(() => import('./admin.ts')),
  * };
  * ```
  * @since 0.1.0
@@ -136,11 +144,18 @@ export type Unlazy<T> = T extends LazyRouter<infer TRouter> ? TRouter : T;
  */
 export function lazy<TRouter extends AnyRouter>(
   load: () => Promise<TRouter | { default: TRouter }>,
-  opts: LazyOptions = {},
+): LazyRouter<TRouter> {
+  return lazyWith(load, {});
+}
+
+/** {@link lazy} with router-level meta, for `t.lazy`. @internal */
+export function lazyWith<TRouter extends AnyRouter>(
+  load: () => Promise<TRouter | { default: TRouter }>,
+  opts: RouterOptions,
 ): LazyRouter<TRouter> {
   let pending: Promise<AnyRouter> | undefined;
   const def: LazyDef = {
-    prefix: opts.prefix,
+    meta: opts.meta,
     loaded: undefined,
     load: () =>
       (pending ??= load().then((mod) => {

@@ -104,7 +104,7 @@ export interface BaseOpenApiHandlerOptions<TRouter extends AnyRouter> {
   /**
    * The routes, from `toContract(await loadRouter(appRouter))` at build
    * time. Lazy subtrees then load on their first request, whatever their
-   * prefix (08 Q8.4).
+   * `route.prefix` (08 Q8.4).
    */
   contract?: ContractJson<TRouter>;
 }
@@ -159,7 +159,7 @@ export interface OpenApiCall {
   /** The procedure path (`post.byId`), for spans and `onError`. */
   readonly path: string;
   readonly procedure: AnyProcedure;
-  /** Replaces the procedure's own `route` meta, as a group's prefix does. */
+  /** Replaces the procedure's own `route` meta, as a router's `route` meta does. */
   readonly route?: Route;
   /** The path params the framework matched. */
   readonly params?: Readonly<Record<string, string>>;

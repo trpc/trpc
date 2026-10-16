@@ -13,16 +13,23 @@ Merge routers with `mergeRouters(a, b)`. A key in both is a type error and a run
 
 ## OpenAPI groups
 
-`t.router({ prefix, tags }, routes)` groups routes for OpenAPI. Types and RPC paths don't change, and it takes no middleware.
+Under the [`openapi()` extension](./openapi.md), `t.router({ meta: { route: { prefix, tags } } }, routes)` groups routes for OpenAPI. Types and RPC paths don't change, and it takes no middleware.
 
 ```ts
+const t = initTrpc<{ ctx: Context }>().with(openapi());
+
 const appRouter = {
-  admin: t.router({ prefix: '/staff', tags: ['admin'] }, { users, ban }),
+  admin: t.router(
+    { meta: { route: { prefix: '/staff', tags: ['admin'] } } },
+    { users, ban },
+  ),
 };
 // RPC: admin.users. OpenAPI: GET /api/staff/users, tagged admin.
 ```
 
 The prefix goes before every route below the group: before an explicit `.meta({ route: { path } })`, and before the path derived from the keys below the group. Group tags come before a procedure's own. Groups nest.
+
+A router's `meta` takes only the keys an extension gives a router-level form, like `route`; other meta is set on procedures.
 
 ## Lazy subtrees
 
@@ -33,17 +40,19 @@ import { lazy } from '@trpc12/trpc/server';
 
 export const appRouter = {
   post: postRouter,
-  admin: lazy(() => import('./admin.ts'), { prefix: '/admin' }),
+  admin: lazy(() => import('./admin.ts')),
 };
 ```
+
+`t.lazy(load, { meta })` also takes router-level meta, as `t.router()` does: `t.lazy(() => import('./admin.ts'), { meta: { route: { prefix: '/admin' } } })`.
 
 `load` may return the router or a module whose `default` export is the router. Each subtree loads once.
 
 - The RPC handlers, `createRouterClient` and `localLink` load it on the first call under it.
 - Tools that need the whole router ask for it loaded: `generateOpenApi(await loadRouter(appRouter), …)`, `toContract(await loadRouter(appRouter))`.
-- The OpenAPI handler finds a lazy subtree's routes by its `prefix` and loads it on the first request under the prefix. Without a prefix it loads the subtree at startup, unless the handler gets a `contract` (below).
+- The OpenAPI handler finds a lazy subtree's routes by its `route.prefix` and loads it on the first request under the prefix. Without a prefix it loads the subtree at startup, unless the handler gets a `contract` (below).
 
-With `prefix`, the subtree is scoped like a `t.router({ prefix })` group, so all its OpenAPI routes start with the prefix.
+With `route` meta, the subtree is scoped like a group, so all its OpenAPI routes start with the prefix.
 
 To load nothing until it's called, generate the contract at build time and pass it to the OpenAPI handler:
 

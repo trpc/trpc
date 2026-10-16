@@ -47,7 +47,12 @@ export {
   type OpenApiHandlerOptions,
 } from './handler.ts';
 export { openapi } from './extension.ts';
-export type { OpenApiMeta, OperationSpec, Route } from './routes.ts';
+export type {
+  OpenApiMeta,
+  OperationSpec,
+  Route,
+  RouteGroup,
+} from './routes.ts';
 export { openApiLink, type OpenApiLinkOptions } from './link.ts';
 export { openApiReference, type OpenApiReferenceOptions } from './reference.ts';
 export { resolveRoute, type HttpMethod, type ResolvedRoute } from './routes.ts';

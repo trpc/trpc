@@ -23,7 +23,14 @@ import {
 } from './implement.ts';
 import { mergeMeta, type MetaMerge } from './procedure.ts';
 import type { Response } from './response.ts';
-import { router } from './router.ts';
+import {
+  lazyWith,
+  router,
+  type AnyRouter,
+  type LazyRouter,
+  type RouterMeta,
+  type RouterOptions,
+} from './router.ts';
 import {
   makeEffectMiddleware,
   type EffectMiddlewareFactory,
@@ -164,17 +171,38 @@ export interface TrpcRoot<
     contract: TContract & ImplementMetaCheck<TDef['meta'], TContract>,
   ): ImplementResult<TDef, TContract>;
   /**
-   * Groups routes for OpenAPI: a path prefix and tags (08 Q8.3). Types and
-   * RPC paths don't change, and it takes no middleware.
+   * A router with router-level meta (08 Q8.3), for the meta keys that have
+   * a router-level form ({@link RouterMeta}). Types and RPC paths don't
+   * change, and it takes no middleware.
+   *
+   * @example
+   * ```ts
+   * const t = initTrpc().with(openapi());
+   * const appRouter = {
+   *   admin: t.router({ meta: { route: { prefix: '/admin', tags: ['admin'] } } }, { users, ban }),
+   * };
+   * ```
+   */
+  router<const TRoutes extends AnyRouter>(
+    opts: RouterOptions<RouterMeta<TDef['meta']>>,
+    routes: TRoutes,
+  ): TRoutes;
+  /**
+   * {@link lazy}, with router-level meta as `t.router()` takes. Under
+   * `openapi()`, a `route.prefix` lets the OpenAPI handler load the subtree
+   * on the first request under it instead of at startup.
    *
    * @example
    * ```ts
    * const appRouter = {
-   *   admin: t.router({ prefix: '/admin', tags: ['admin'] }, { users, ban }),
+   *   admin: t.lazy(() => import('./admin.ts'), { meta: { route: { prefix: '/admin' } } }),
    * };
    * ```
    */
-  router: typeof router;
+  lazy<TRouter extends AnyRouter>(
+    load: () => Promise<TRouter | { default: TRouter }>,
+    opts?: RouterOptions<RouterMeta<TDef['meta']>>,
+  ): LazyRouter<TRouter>;
 }
 
 /**
@@ -317,5 +345,7 @@ function makeRoot(procedure: AnyProcedureBuilder): TrpcRoot<any, any, any> {
     implement: (contract: AnyContractRouter) =>
       implement(procedure['~trpc'], contract) as never,
     router,
+    lazy: (load: () => Promise<never>, opts: RouterOptions = {}) =>
+      lazyWith(load, opts),
   };
 }

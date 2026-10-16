@@ -4,8 +4,8 @@ import {
   type AnyProcedure,
   type ProcedureInternals,
 } from '../server/procedure.ts';
-import { routeOf, type Route } from '../openapi/routes.ts';
-import { groupOf, isLazy, type AnyLazyRouter } from '../server/router.ts';
+import { routeGroupOf, routeOf, type Route } from '../openapi/routes.ts';
+import { isLazy, routerMetaOf, type AnyLazyRouter } from '../server/router.ts';
 import { isSchema } from '../server/schema.ts';
 import { isStreamSchema } from '../server/stream-schema.ts';
 import { toJsonSchema, type JsonSchema } from './json-schema.ts';
@@ -49,8 +49,8 @@ export function inputJsonSchema(
 }
 
 /**
- * Where a procedure sits among `t.router({ prefix, tags })` groups and
- * prefixed `lazy()` subtrees.
+ * Where a procedure sits among routers and lazy subtrees with `route` meta
+ * (`t.router({ meta: { route: { prefix, tags } } }, …)`).
  * @since 0.1.0
  * @stability stable
  */
@@ -111,11 +111,11 @@ export function flattenRoutes(
       out.procedures.push({ path, procedure: value, scope });
     } else if (isLazy(value)) {
       const def = value['~lazy'];
-      const inner = within(scope, path, { prefix: def.prefix });
+      const inner = within(scope, path, routeGroupOf(def.meta) ?? {});
       if (def.loaded) flattenRoutes(def.loaded, inner, `${path}.`, out);
       else out.lazies.push({ path, lazy: value, scope: inner });
     } else if (typeof value === 'object' && value !== null) {
-      const group = groupOf(value);
+      const group = routeGroupOf(routerMetaOf(value));
       const inner = group ? within(scope, path, group) : scope;
       flattenRoutes(value, inner, `${path}.`, out);
     }

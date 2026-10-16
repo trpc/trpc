@@ -31,15 +31,22 @@ const makeRouter = () => {
   const router = {
     health: t.procedure.query(() => 'ok'),
     admin: t.router(
-      { prefix: '/admin', tags: ['admin'] },
-      { users, ban, audit: t.router({ tags: ['audit'] }, { log: users }) },
+      { meta: { route: { prefix: '/admin', tags: ['admin'] } } },
+      {
+        users,
+        ban,
+        audit: t.router(
+          { meta: { route: { tags: ['audit'] } } },
+          { log: users },
+        ),
+      },
     ),
-    reports: lazy(
+    reports: t.lazy(
       async () => {
         loads.reports++;
         return { default: { daily: t.procedure.query(() => 'daily') } };
       },
-      { prefix: '/reports' },
+      { meta: { route: { prefix: '/reports' } } },
     ),
     billing: lazy(async () => {
       loads.billing++;
@@ -53,7 +60,7 @@ const makeRouter = () => {
   return { router, loads };
 };
 
-test('t.router({ prefix, tags }) only changes OpenAPI routes (08 Q8.3)', async () => {
+test('router-level route meta only changes OpenAPI routes (08 Q8.3)', async () => {
   const { router } = makeRouter();
   await using server = await createTestServer({ router });
   const client = createTrpcClient({
@@ -143,6 +150,17 @@ test('with a contract, the OpenAPI handler loads lazy subtrees only when called'
   expect(loads).toMatchObject({ reports: 0, billing: 0 });
   expect(await (await get(handler, '/billing/invoice?n=4')).json()).toBe(8);
   expect(loads).toMatchObject({ reports: 0, billing: 1 });
+});
+
+test('router-level meta takes only the keys an extension gives a router form', () => {
+  const app = initTrpc<{ meta: { auth?: 'admin' } }>().with(openapi());
+  app.router({ meta: { route: { prefix: '/a', tags: ['a'] } } }, { users });
+  // @ts-expect-error -- `auth` applies to procedures only
+  app.router({ meta: { auth: 'admin' } }, { users });
+  // @ts-expect-error -- a router's `route` is `{ prefix, tags }`
+  app.router({ meta: { route: { method: 'GET' } } }, { users });
+  // @ts-expect-error -- no `route` meta without openapi()
+  initTrpc().router({ meta: { route: { prefix: '/a' } } }, { users });
 });
 
 test('lazy() takes a module with a default export or the router itself', async () => {

@@ -101,7 +101,7 @@ const update = t.procedure
 
 ## Groups and lazy subtrees
 
-`t.router({ prefix, tags }, routes)` prefixes and tags every route below it, for OpenAPI only. A `lazy()` subtree's `prefix` does the same. See [Routers](./routers.md).
+`route` meta on a router prefixes and tags every route below it: `t.router({ meta: { route: { prefix: '/admin', tags: ['admin'] } } }, routes)`. A `t.lazy(load, { meta: { route: { prefix } } })` subtree does the same. See [Routers](./routers.md).
 
 The handler loads unprefixed lazy subtrees at startup, and a prefixed one on the first request under its prefix. Pass a contract so every route is known up front and each subtree loads on its first request, whatever its prefix:
 

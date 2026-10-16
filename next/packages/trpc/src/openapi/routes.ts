@@ -37,7 +37,33 @@ export interface Route {
    * still extends it. Documentation only; not sent by `toContract()`.
    */
   readonly spec?: OperationSpec | ((operation: OperationSpec) => OperationSpec);
+  /** Type only: `route` on a router, {@link RouteGroup}. */
+  readonly '~router'?: RouteGroup;
 }
+
+/**
+ * The `route` meta of a router or lazy subtree: `t.router({ meta: { route:
+ * { prefix, tags } } }, …)` (08 Q8.3).
+ * @since 0.1.0
+ * @stability stable
+ */
+export interface RouteGroup {
+  /**
+   * Prepended to every route below: `/admin`. On a `t.lazy()` subtree it
+   * lets the OpenAPI handler load the subtree on the first request under it;
+   * without it (or a `contract` on the handler), the handler loads it at
+   * startup.
+   */
+  readonly prefix?: `/${string}` | undefined;
+  /** Added before each procedure's own tags. */
+  readonly tags?: ReadonlyArray<string> | undefined;
+}
+
+/** A router's `route` meta. @internal */
+export const routeGroupOf = (
+  meta: object | undefined,
+): RouteGroup | undefined =>
+  (meta as { route?: RouteGroup } | undefined)?.route;
 
 /**
  * An OpenAPI operation object, as `route.spec` sees it.

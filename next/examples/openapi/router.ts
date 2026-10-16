@@ -16,7 +16,7 @@ const posts = new Map<string, Post>([
 const t = initTrpc<{ ctx: { user: string | null } }>().with(openapi());
 
 export const appRouter = t.router(
-  { tags: ['posts'] },
+  { meta: { route: { tags: ['posts'] } } },
   {
     post: {
       list: t.procedure
