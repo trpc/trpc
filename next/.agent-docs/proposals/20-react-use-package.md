@@ -6,7 +6,7 @@
 
 ## Summary
 
-`ideas.md`: "Possibly a new `use()`-native React package."
+The [brief](../decisions/brief.md): "Possibly a new `use()`-native React package."
 
 This proposal frames the options and **recommends deferring the decision** until the core and the TanStack integration exist. Only one constraint must hold now: nothing in the client or link design may prevent a cache layer built on links.
 

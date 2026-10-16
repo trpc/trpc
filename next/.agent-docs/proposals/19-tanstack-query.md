@@ -6,7 +6,7 @@
 
 ## Summary
 
-`ideas.md`: "`@trpc/react-query` is dead; `@trpc/tanstack-query` stays."
+The [brief](../decisions/brief.md): "`@trpc/react-query` is dead; `@trpc/tanstack-query` stays."
 
 **Recommendation:**
 
@@ -24,7 +24,7 @@
 ## Goals
 
 - One package for every TanStack framework.
-- Option bags (`ideas.md`).
+- Option bags (the [brief](../decisions/brief.md)).
 - Typed errors (07) in `error`.
 - SSR and hydration with rich types (Dates and so on) working out of the box.
 

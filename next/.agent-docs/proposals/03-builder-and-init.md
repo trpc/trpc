@@ -6,7 +6,7 @@
 
 ## Summary
 
-Decide what `initTRPC` looks like, how builder state is typed, and whether the "generic builder" from `ideas.md` is a public extension API or an internal foundation.
+Decide what `initTRPC` looks like, how builder state is typed, and whether the "generic builder" from the [brief](../decisions/brief.md) is a public extension API or an internal foundation.
 
 **Recommendation:**
 
@@ -34,7 +34,7 @@ t.procedure; // ProcedureBuilder<TContext, TMeta, TContextOverrides, TInputIn, T
 - Option bags over positional arguments, in type parameters too.
 - Adding builder state (errors, route metadata, services) must not require touching every signature.
 - Contract-first and implementation-first share one data model (09).
-- "RSC callers are opt-in" (`ideas.md`).
+- "RSC callers are opt-in" (the [brief](../decisions/brief.md)).
 
 ## Decision areas
 
@@ -158,9 +158,9 @@ Moving transport options out of the root:
 
 > **Spike (2026-10-09):** [`notes/builder-generics-typeperf.md`](../notes/builder-generics-typeperf.md). On 1k procedures, bags cost +15–25% check time and scale linearly. A flat mapped patch keeps hovers flat; `Omit & Patch` nests one layer per call.
 
-### (c) The "generic builder" from `ideas.md`
+### (c) The "generic builder" from the [brief](../decisions/brief.md)
 
-`ideas.md` says: "a generic builder becomes the basis of tRPC as a standalone package, which also makes RSC callers opt-in."
+The [brief](../decisions/brief.md) says: "a generic builder becomes the basis of tRPC as a standalone package, which also makes RSC callers opt-in."
 
 - **E-A — Public extension API.** Third parties can add terminals or builder methods, via a module registry ([#6027](https://github.com/trpc/trpc/pull/6027)) or a class `extend()`.
   - ❌ This is where #6027 died: type complexity, and global augmentation leaking between packages.
@@ -195,7 +195,7 @@ Moving transport options out of the root:
   export const getPost = callable(byId, { ctx: createContext });
   ```
 
-- **E-C — Standalone middleware/builder package** (`@trpcdev/procedure`?) that tRPC itself builds on. This goes against `ideas.md`'s single `trpcdev` package, unless it is only a subpath (`trpcdev/procedure`).
+- **E-C — Standalone middleware/builder package** (`@trpcdev/procedure`?) that tRPC itself builds on. This goes against the [brief](../decisions/brief.md)'s single `trpcdev` package, unless it is only a subpath (`trpcdev/procedure`).
   - Reuse outside tRPC.
   - ❌ Another package to version; benefit unclear without concrete consumers.
 

@@ -38,7 +38,7 @@ This is separate from the OpenAPI endpoint (18), which maps procedures to REST.
 - A readable protocol that works with plain `fetch` and `curl`, CDNs and log tooling.
 - One message model across HTTP, WebSocket and MessagePort, so that new transports are cheap and stateless WebSockets (hibernation) are possible.
 - Secure defaults.
-- Version negotiation, for future back-compat shims (`ideas.md`: "back-compat can come later via a client tRPC-version header").
+- Version negotiation, for future back-compat shims (the [brief](../decisions/brief.md): "back-compat can come later via a client tRPC-version header").
 
 ## Options
 
@@ -63,7 +63,7 @@ content-type: application/json
 ```
 
 - ✅ Old clients keep working.
-- ❌ Keeps all the pain. `ideas.md` explicitly allows breaking changes, and a back-compat adapter can be added later behind the version header.
+- ❌ Keeps all the pain. The [brief](../decisions/brief.md) explicitly allows breaking changes, and a back-compat adapter can be added later behind the version header.
 
 ### B — New tRPC protocol (recommended)
 

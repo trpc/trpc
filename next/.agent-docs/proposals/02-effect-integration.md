@@ -6,7 +6,7 @@
 
 ## Summary
 
-`ideas.md` asks for three things that pull in different directions:
+The [brief](../decisions/brief.md) asks for three things that pull in different directions:
 
 1. All logic in tRPC is written in Effect.
 2. First-class Effect support for users.
@@ -244,7 +244,7 @@ const program = Effect.gen(function* () {
 });
 ```
 
-It lives in `trpcdev/effect`. Per `ideas.md`, anything without an external dependency other than Effect belongs in `trpcdev` (01).
+It lives in `trpcdev/effect`. Per the [brief](../decisions/brief.md), anything without an external dependency other than Effect belongs in `trpcdev` (01).
 
 ### (g) Bundle size
 

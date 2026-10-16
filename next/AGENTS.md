@@ -8,7 +8,7 @@ This repo is a **from-scratch rewrite** of tRPC (vNext / `v12` branch), not main
 
 Start here (paths relative to `next/`):
 
-- `ideas.md` — brief and constraints
+- `.agent-docs/decisions/brief.md` — the brief and founding constraints
 - `README.md` — implementation root layout and commands
 - `.agent-docs/approach.md` — process, principles, phases
 - `.agent-docs/README.md` — proposal index and how to decide

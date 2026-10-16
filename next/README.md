@@ -2,15 +2,14 @@
 
 All **implementation** for the rewrite lives here. The old v11 tree at the repo root (`packages/`, `examples/`, `www/`, …) is reference only until it is deleted.
 
-Agents: start with [`AGENTS.md`](./AGENTS.md). Design docs live in [`.agent-docs/`](./.agent-docs/). Brief: [`ideas.md`](./ideas.md).
+Agents: start with [`AGENTS.md`](./AGENTS.md). Design docs live in [`.agent-docs/`](./.agent-docs/). Brief: [`.agent-docs/decisions/brief.md`](./.agent-docs/decisions/brief.md).
 
 ```text
 next/
   AGENTS.md             agent instructions for this code root
-  ideas.md              brief and constraints
   .agent-docs/          proposals, decisions, reference, spike notes (design only)
   .repos/               vendored dependency source (vendor-src, read-only)
-  packages/trpcdev/     core package (ideas.md: single `trpcdev` package)
+  packages/trpcdev/     core package (the brief: single `trpcdev` package)
   packages/tanstack-query/  `@trpcdev/tanstack-query`: framework-agnostic TanStack Query helpers
   packages/tanstack-*-query/  `@trpcdev/tanstack-{react,preact,vue,solid,svelte,angular,lit}-query`: one package per TanStack adapter
   packages/upgrade/     `@trpcdev/upgrade`: the v11 → v12 codemod (`trpcdev-upgrade` bin)

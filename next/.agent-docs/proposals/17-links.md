@@ -6,7 +6,7 @@
 
 ## Summary
 
-`ideas.md` asks for two things:
+The [brief](../decisions/brief.md) asks for two things:
 
 - "Links are rewritten in Effect instead of custom observables."
 - "Links can inform the options of `.query()` calls."

@@ -6,7 +6,7 @@
 
 ## Summary
 
-Decide how procedures are called in-process (tests, RSC, scripts, server-to-server) and how they become framework server actions. `ideas.md` makes RSC callers opt-in.
+Decide how procedures are called in-process (tests, RSC, scripts, server-to-server) and how they become framework server actions. The [brief](../decisions/brief.md) makes RSC callers opt-in.
 
 **Recommendation:**
 

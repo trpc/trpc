@@ -1,6 +1,6 @@
 # tRPC vNext: design proposals
 
-This folder (`next/.agent-docs/`) holds the **design** work for the next version of tRPC, following the brief in [`../ideas.md`](../ideas.md). **Implementation lives in the rest of [`next/`](../)** — do not put new packages in the repo-root `packages/` tree. Paths such as `.repos/effect` or `spikes/` are relative to `next/`.
+This folder (`next/.agent-docs/`) holds the **design** work for the next version of tRPC, following the [brief](./decisions/brief.md). **Implementation lives in the rest of [`next/`](../)** — do not put new packages in the repo-root `packages/` tree. Paths such as `.repos/effect` or `spikes/` are relative to `next/`.
 
 It contains:
 
@@ -54,7 +54,7 @@ Decision files hold the current answer; the reasoning behind earlier versions li
 - `git log -S '<phrase>' -- .agent-docs/`: when a phrase or option name appeared or disappeared.
 - `git blame -L <start>,<end> -- <file>`: who last changed a block of code a decision points to.
 
-## Already decided in `ideas.md`
+## Already decided in the brief
 
 These are treated as given:
 

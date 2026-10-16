@@ -1,6 +1,6 @@
 # oRPC parity matrix
 
-**Goal from `ideas.md`:** feature parity with [orpc.dev/docs/comparison](https://orpc.dev/docs/comparison). Any API decision that could stop us from getting there must be flagged and confirmed by a human before it is accepted.
+**Goal from the [brief](../decisions/brief.md):** feature parity with [orpc.dev/docs/comparison](https://orpc.dev/docs/comparison). Any API decision that could stop us from getting there must be flagged and confirmed by a human before it is accepted.
 
 Source: `.repos/orpc/apps/content/docs/comparison.md` (oRPC `v1.15.5`). The oRPC and tRPC columns are copied from that table. The tRPC column is oRPC's assessment of v11 and may lag behind recent v11 work.
 

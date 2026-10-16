@@ -6,7 +6,7 @@
 
 ## Summary
 
-`ideas.md` already sets the package layout:
+The [brief](../decisions/brief.md) already sets the package layout:
 
 > Rather than have a `@trpc/server` and a `@trpc/client` package, everything that doesn't have an external dependency (except Effect), eg. React etc, should be in a package just called `trpcdev` and exports can be in `/server` and `/client` folders etc.
 
@@ -188,7 +188,7 @@ export const utils = createTRPCQueryUtils({ client });
 - `effect` as a peer dependency.
 - The portability rules, including the CI fixture and `isolatedDeclarations`.
 - Adapters stay subpaths of `trpcdev`, because they only use platform built-ins (12).
-- `./testing` ships first-class test helpers. `ideas.md` says packages can export things that exist only for testing.
+- `./testing` ships first-class test helpers. The [brief](../decisions/brief.md) says packages can export things that exist only for testing.
 
 ## Questions
 
@@ -200,7 +200,7 @@ export const utils = createTRPCQueryUtils({ client });
 
 ## Decision
 
-> Package name and the single-package layout are given by `ideas.md`.
+> Package name and the single-package layout are given by the [brief](../decisions/brief.md).
 
 - **Q1.1:** [ ] peer dependency · [x] dependency (`^4.0.0`) → [effect-dependency](../decisions/effect-dependency.md)
 - **Q1.2:** [ ] as proposed · [ ] flatter · other: `____`

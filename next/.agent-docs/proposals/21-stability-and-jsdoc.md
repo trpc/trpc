@@ -6,7 +6,7 @@
 
 ## Summary
 
-`ideas.md` asks for two things:
+The [brief](../decisions/brief.md) asks for two things:
 
 - "JSDoc on every public function."
 - "Mark unstable internals more clearly than today."

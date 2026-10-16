@@ -6,7 +6,7 @@
 
 ## Summary
 
-`ideas.md`: "Node compatibility is solved the way Effect injects platforms."
+The [brief](../decisions/brief.md): "Node compatibility is solved the way Effect injects platforms."
 
 **Recommendation:**
 

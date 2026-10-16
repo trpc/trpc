@@ -6,7 +6,7 @@
 
 ## Summary
 
-`ideas.md` asks that "errors can be returned and inferred". This proposal combines three mechanisms into one model:
+The [brief](../decisions/brief.md) asks that "errors can be returned and inferred". This proposal combines three mechanisms into one model:
 
 1. **Inferred errors.** Errors that are _returned_ (or failed through Effect's `E` channel) from middleware and resolvers are inferred.
 2. **Declared errors.** An optional error map provides runtime schemas, typed constructors that can be thrown from deep code, and OpenAPI docs.

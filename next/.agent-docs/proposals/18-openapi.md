@@ -6,7 +6,7 @@
 
 ## Summary
 
-`ideas.md`: "The design must allow OpenAPI support like oRPC."
+The [brief](../decisions/brief.md): "The design must allow OpenAPI support like oRPC."
 
 **Recommendation:**
 

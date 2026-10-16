@@ -6,7 +6,7 @@
 
 ## Summary
 
-`ideas.md` makes three points about serialization:
+The [brief](../decisions/brief.md) makes three points about serialization:
 
 - "Transformers should be on the API endpoints, not in the `init` function of tRPC."
 - "We should probably have a library like [danSON](https://github.com/KATT/danson) as part of tRPC that we can use for serializing and deserializing data…"

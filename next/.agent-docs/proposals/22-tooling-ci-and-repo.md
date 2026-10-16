@@ -6,7 +6,7 @@
 
 ## Summary
 
-`ideas.md` sets these constraints:
+The [brief](../decisions/brief.md) sets these constraints:
 
 - The only dev dependencies are "Vite family stuff (vitest, oxlint, oxfmt, their monorepo tooling)", TypeScript (latest), pnpm and Effect.
 - "Recreate all CI things to be a lot simpler."
@@ -39,7 +39,7 @@
 | Build                    | tsdown (via `vp pack`) with `isolatedDeclarations` (01)                                                |                                                                                                                                                 |
 | Task running and caching | Vite Task (via `vp run`)                                                                               | Replaces turbo and lerna                                                                                                                        |
 | Type checking            | TypeScript 7 (`tsgo`)                                                                                  | Compiler-API tooling (JSDoc checker, OpenAPI static generator) uses `oxc-parser`, or the `ts-api` TS 6 catalog until TS 7 ships a stable JS API |
-| Versioning / releases    | none for now; later `pnpm publish -r` + a changelog script                                             | `ideas.md`: no releases soon                                                                                                                    |
+| Versioning / releases    | none for now; later `pnpm publish -r` + a changelog script                                             | The [brief](../decisions/brief.md): no releases soon                                                                                                                    |
 | Vendored sources         | `vendor-src` (existing)                                                                                | **Exception to the allow-list; confirm**                                                                                                        |
 
 The two shapes in Q22.1, as root `package.json` scripts:

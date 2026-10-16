@@ -38,18 +38,18 @@ Use whichever is fastest:
 
 ### Challenging decisions
 
-`ideas.md`: "Old decisions should be challenged if needed." When implementation reveals a decision is wrong (types too slow, an API is awkward in practice), the agent:
+The [brief](./decisions/brief.md): "Old decisions should be challenged if needed." When implementation reveals a decision is wrong (types too slow, an API is awkward in practice), the agent:
 
 - does **not** silently diverge;
 - writes a short proposal that supersedes it, with the evidence (benchmark, code sample), and asks.
 
 ### The parity gate
 
-`ideas.md`: "Highlight anything and prompt user when we make API decisions that may stop us from getting there." Every proposal lists the [oRPC comparison](https://orpc.dev/docs/comparison) rows it touches. If a choice would turn a row's plan into 🛑, the proposal says so in a ⚠️ **Parity** callout, and the agent must get explicit confirmation before recording it. See `reference/orpc-parity.md` for the rows at risk.
+The [brief](./decisions/brief.md): "Highlight anything and prompt user when we make API decisions that may stop us from getting there." Every proposal lists the [oRPC comparison](https://orpc.dev/docs/comparison) rows it touches. If a choice would turn a row's plan into 🛑, the proposal says so in a ⚠️ **Parity** callout, and the agent must get explicit confirmation before recording it. See `reference/orpc-parity.md` for the rows at risk.
 
 ## 2. How agents use this folder
 
-This folder is the agents' docs folder that `ideas.md` asks for.
+This folder is the agents' docs folder that the [brief](./decisions/brief.md) asks for.
 
 - **Search before acting:** `rg -n "<topic>" .agent-docs/` before designing or implementing anything. Decisions win over proposals, and proposals win over memory.
 - **Write things down:**
@@ -61,7 +61,7 @@ This folder is the agents' docs folder that `ideas.md` asks for.
 
 ## 3. Principles
 
-Taken from `ideas.md`. Every proposal is judged against them.
+Taken from the [brief](./decisions/brief.md). Every proposal is judged against them.
 
 1. **Effect inside, Promises outside.** All internal logic is Effect. Effect is first-class but never required: "You shouldn't need to know Effect to use tRPC."
 2. **One dependency:** `effect`. Integrations with third-party peers (React, TanStack, Next) are separate packages; everything else is in `trpcdev`.

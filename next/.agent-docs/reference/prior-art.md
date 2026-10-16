@@ -2,7 +2,7 @@
 
 What we already tried, and what neighbouring libraries do. Proposals link here instead of repeating it.
 
-## Abandoned tRPC experiments referenced in `ideas.md`
+## Abandoned tRPC experiments referenced in the [brief](../decisions/brief.md)
 
 ### Generic builder: [#6027](https://github.com/trpc/trpc/pull/6027) "wip - making a standalone middleware library"
 
@@ -91,7 +91,7 @@ What we already tried, and what neighbouring libraries do. Proposals link here i
 
 ### danSON ([KATT/danson](https://github.com/KATT/danson), `danson@0.13.1`)
 
-Referenced in `ideas.md` as the model for tRPC's serializer. It is a "progressive JSON" serializer.
+Referenced in the [brief](../decisions/brief.md) as the model for tRPC's serializer. It is a "progressive JSON" serializer.
 
 - **Sync API:** `stringifySync`/`parseSync` produce `{ json, refs? }`. Non-JSON values are inline markers, `{ "_": "$", "type": "Date", "value": "…" }`. Constants are placeholder strings (`"$undefined"`, `"$NaN"`), and `$`-prefixed strings are escaped. Optional de-duplication; circular references via `refs`.
 - **Async API:** `stringifyAsync`/`parseAsync` (and an event-stream variant). Streams `Promise`, `AsyncIterable` and `ReadableStream` values at any depth: a head chunk with placeholders, then `[index, status, { json }]` chunks (0 = value, 1 = failure, 2 = return).

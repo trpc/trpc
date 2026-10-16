@@ -1,6 +1,6 @@
 # v11 inventory: keep, change or delete
 
-**Purpose:** a single table of what v11 ships, with a suggested fate for vNext, so features can be deleted deliberately rather than by accident. Per `ideas.md`, we start from scratch and are allowed to be brutal. Anything not listed as **keep** or **change** is gone unless a decision brings it back.
+**Purpose:** a single table of what v11 ships, with a suggested fate for vNext, so features can be deleted deliberately rather than by accident. Per the [brief](../decisions/brief.md), we start from scratch and are allowed to be brutal. Anything not listed as **keep** or **change** is gone unless a decision brings it back.
 
 Source: v11 `main` (packages at `11.21.0`). Paths are relative to the repo root.
 
@@ -68,7 +68,7 @@ Fates: **keep** (same idea, maybe renamed) · **change** (concept stays, API cha
 
 | v11 package / API                                                                  | Fate    | Proposal | Notes                                                        |
 | ---------------------------------------------------------------------------------- | ------- | -------- | ------------------------------------------------------------ |
-| `@trpc/server` + `@trpc/client`                                                    | replace | 01       | Merged into the single `trpcdev` package (`ideas.md`)        |
+| `@trpc/server` + `@trpc/client`                                                    | replace | 01       | Merged into the single `trpcdev` package (the [brief](../decisions/brief.md))        |
 | `@trpc/react-query` (classic hooks, `createTRPCReact`, SSR helpers, RSC)           | delete  | —        | "`@trpc/react-query` is dead"                                |
 | `@trpc/tanstack-react-query` (`createTRPCContext`, `createTRPCOptionsProxy`)       | change  | 19       | Becomes framework-agnostic `@trpcdev/tanstack-query`         |
 | `@trpc/next` Pages Router (`withTRPC`, `createTRPCNext`, `ssrPrepass`)             | delete  | —        |                                                              |
