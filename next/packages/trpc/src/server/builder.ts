@@ -210,11 +210,13 @@ export interface Split {
  */
 export type SplitReturn<R> =
   IsAny<Awaited<R>> extends true
-    ? { output: any; errors: never; services: never }
+    ? { output: any; errors: never; services: never; unmapped: never }
     : {
         output: OutputOf<Awaited<R>>;
         errors: ErrorsOf<Awaited<R>>;
         services: ServicesOf<Awaited<R>>;
+        /** Failures that aren't a `TrpcError`, which {@link StrictErrors} rejects. */
+        unmapped: UnmappedOf<Awaited<R>>;
       };
 
 type EventOf<R> = R extends AnyTrpcError
@@ -308,12 +310,25 @@ type UnmappedOf<R> =
 export type StrictErrors<R> =
   IsAny<Awaited<R>> extends true
     ? unknown
-    : [UnmappedOf<Awaited<R>>] extends [never]
-      ? unknown
-      : TypeError<
-          'Map Effect failures to a TrpcError (e.g. Effect.catchTag) before returning them',
-          UnmappedOf<Awaited<R>>
-        >;
+    : UnmappedCheck<UnmappedOf<Awaited<R>>>;
+
+type UnmappedCheck<TUnmapped> = [TUnmapped] extends [never]
+  ? unknown
+  : TypeError<
+      'Map Effect failures to a TrpcError (e.g. Effect.catchTag) before returning them',
+      TUnmapped
+    >;
+
+// The resolver checks of `query` and `mutation`. Each conditional on the
+// resolver's return is instantiated on every inference pass, so they read
+// the `SplitReturn` the procedure type needs anyway, and skip what the
+// builder makes moot.
+type OutputChecks<
+  TDef extends BuilderDef,
+  $Ret,
+> = TDef['outputIn'] extends Unset
+  ? unknown
+  : OutputConstraint<TDef> & StreamOutputCheck<TDef, $Ret>;
 
 /**
  * Checks values from `ok()` short-circuits against the procedure's output.
@@ -337,6 +352,11 @@ type ResolvedOutput<
 > = TDef['outputIn'] extends Unset
   ? SplitReturn<$Ret>['output']
   : ResultOf<TDef['outputIn']>;
+
+/** {@link ShortsCheck}, without resolving the output when nothing short-circuits. */
+type ShortsFor<TDef extends BuilderDef, $Ret> = [TDef['shorts']] extends [never]
+  ? unknown
+  : ShortsCheck<TDef, ResolvedOutput<TDef, $Ret>>;
 
 /**
  * Part of inferred procedure types; exported so they stay nameable.
@@ -482,6 +502,18 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
   readonly '~trpc': BuilderInternals & { readonly '~types'?: TDef };
 
   /**
+   * Adds an input schema: Standard Schema (zod, valibot, ArkType, …) or Effect
+   * Schema. Object inputs chain: each schema validates the raw input, and the
+   * results are merged.
+   *
+   * @example
+   * ```ts
+   * t.procedure.input(z.object({ id: z.string() }));
+   * t.procedure.input(Schema.Struct({ id: Schema.String }));
+   * ```
+   */
+  input<$S extends AnySchema>(schema: $S): ProcedureBuilder<InputDef<TDef, $S>>;
+  /**
    * Adds an input schema built from the ctx (05 D-A). The callback runs per
    * call, so build schemas outside it where possible.
    *
@@ -495,18 +527,6 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
   input<$S extends AnySchema>(
     fn: (opts: InputOpts<CurrentCtx<TDef>, TDef['meta']>) => $S,
   ): ProcedureBuilder<InputDef<TDef, $S>>;
-  /**
-   * Adds an input schema: Standard Schema (zod, valibot, ArkType, …) or Effect
-   * Schema. Object inputs chain: each schema validates the raw input, and the
-   * results are merged.
-   *
-   * @example
-   * ```ts
-   * t.procedure.input(z.object({ id: z.string() }));
-   * t.procedure.input(Schema.Struct({ id: Schema.String }));
-   * ```
-   */
-  input<$S extends AnySchema>(schema: $S): ProcedureBuilder<InputDef<TDef, $S>>;
 
   /**
    * Types and documents the result with a schema, without running it: the
@@ -760,10 +780,9 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
     resolver: (
       opts: ResolverOpts<TDef>,
     ) => $Ret &
-      OutputConstraint<TDef> &
-      StreamOutputCheck<TDef, $Ret> &
-      StrictErrors<$Ret> &
-      ShortsCheck<TDef, ResolvedOutput<TDef, $Ret>>,
+      OutputChecks<TDef, $Ret> &
+      UnmappedCheck<SplitReturn<$Ret>['unmapped']> &
+      ShortsFor<TDef, $Ret>,
   ): BuildProcedure<TDef, 'query', SplitReturn<$Ret>>;
 
   /**
@@ -778,10 +797,9 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
     resolver: (
       opts: ResolverOpts<TDef>,
     ) => $Ret &
-      OutputConstraint<TDef> &
-      StreamOutputCheck<TDef, $Ret> &
-      StrictErrors<$Ret> &
-      ShortsCheck<TDef, ResolvedOutput<TDef, $Ret>>,
+      OutputChecks<TDef, $Ret> &
+      UnmappedCheck<SplitReturn<$Ret>['unmapped']> &
+      ShortsFor<TDef, $Ret>,
   ): BuildProcedure<TDef, 'mutation', SplitReturn<$Ret>>;
 
   /**
@@ -808,15 +826,22 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
  * @since 0.1.0
  * @stability stable
  */
-export type InputDef<TDef extends BuilderDef, $S extends AnySchema> = With<
-  TDef,
-  {
-    inputIn: Merge<TDef['inputIn'], InOf<$S>>;
-    inputOut: Merge<TDef['inputOut'], OutOf<$S>>;
-    errors: TDef['errors'] | InputValidationError;
-    requires: TDef['requires'] | Exclude<SchemaServices<$S>, TDef['provided']>;
-  }
->;
+// Spelled out rather than a `With`: every procedure with an input makes one,
+// and a mapped type costs a conditional per key.
+export type InputDef<TDef extends BuilderDef, $S extends AnySchema> = {
+  ctx: TDef['ctx'];
+  ctxAdded: TDef['ctxAdded'];
+  meta: TDef['meta'];
+  inputIn: Merge<TDef['inputIn'], InOf<$S>>;
+  inputOut: Merge<TDef['inputOut'], OutOf<$S>>;
+  outputIn: TDef['outputIn'];
+  outputOut: TDef['outputOut'];
+  errors: TDef['errors'] | InputValidationError;
+  declared: TDef['declared'];
+  shorts: TDef['shorts'];
+  provided: TDef['provided'];
+  requires: TDef['requires'] | Exclude<SchemaServices<$S>, TDef['provided']>;
+};
 
 /**
  * Any procedure builder.
