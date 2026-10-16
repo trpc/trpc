@@ -19,7 +19,11 @@ import {
   type ProcedureBuilder,
   type With,
 } from './builder.ts';
-import { implement, type ImplementResult } from './implement.ts';
+import {
+  implement,
+  type ImplementMetaCheck,
+  type ImplementResult,
+} from './implement.ts';
 import type { Response } from './response.ts';
 import { router } from './router.ts';
 import {
@@ -162,7 +166,7 @@ export interface TrpcRoot<
    * ```
    */
   implement<TContract extends AnyContractRouter>(
-    contract: TContract,
+    contract: TContract & ImplementMetaCheck<TDef['meta'], TContract>,
   ): ImplementResult<TDef, TContract>;
   /**
    * Groups routes for OpenAPI: a path prefix and tags (08 Q8.3). Types and

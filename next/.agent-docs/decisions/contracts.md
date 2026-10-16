@@ -11,5 +11,6 @@
   - A top-level contract key named `router` would shadow `impl.router()`, so `t.implement()` throws on one.
 - (agent, Q9.3) No undeclared errors: resolvers and middleware may only return errors the contract declares. Thrown errors are never typed, so they are still allowed.
 - (agent, Q9.4) `toContract(router)` emits `{ version: 1, procedures: { [path]: { type, route?, input?, output?, errors? } } }` with JSON Schemas, branded with the router's client type, so `createTrpcClient({ router: contractJSON })` is typed. `inferContract<typeof router>` gives the same client types as `typeof router`.
-- Open: no implementer-wide `.use()` (middleware is per leaf), and the contract's meta type isn't checked against `t`'s.
-- Lives in: `packages/trpcdev/src/contract/index.ts`, `src/server/implement.ts`, `test/integration/contract.test.ts`.
+- (agent, Effect-native first) `impl.use(mw)` and `impl.provide(Service, make)` return a new implementer whose root steps run before every leaf's own, like oRPC's implementer `.use()`. Both function and Effect middleware are accepted; errors must be declared by every leaf (Q9.3 applied to all of them), and a TypeError lists the leaves that don't. They can't replace the input, since leaves have different inputs. `use` and `provide` join `router` as reserved top-level contract keys.
+- (agent) `t.implement(contract)` is a type error when a contract meta key is missing from `t`'s meta or has a type `t`'s doesn't accept, because the root's middleware reads contract meta as `t`'s meta type.
+- Lives in: `packages/trpcdev/src/contract/index.ts`, `src/server/implement.ts`, `src/server/init.ts` (`implement`), `test/integration/contract.test.ts`, `docs/routers.md` (Contract-first).

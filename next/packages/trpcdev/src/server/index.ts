@@ -51,8 +51,11 @@ export type {
   SubscriptionResolverOpts,
 } from './builder.ts';
 export type {
+  EveryLeafDeclares,
   ImplementedRouter,
   Implementer,
+  ImplementerRoot,
+  ImplementMetaCheck,
   ImplementRouter,
   ImplementResult,
   ProcedureImplementer,

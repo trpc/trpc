@@ -4,13 +4,13 @@ User docs for vNext, kept in step with the code. Design notes and decisions live
 
 - [Getting started](./getting-started.md): a router, a handler, a client.
 - [Procedures](./procedures.md): input and output, errors, middleware, Effect.
-- [Routers](./routers.md): plain objects, `mergeRouters`, OpenAPI groups, `lazy()`.
+- [Routers](./routers.md): plain objects, `mergeRouters`, OpenAPI groups, `lazy()`, contract-first.
 - [Client](./client.md): links, call options, `safe()`, the Effect client, HTTP details.
 - [Serializers](./serializers.md): danSON, superjson-style sync serializers, plain JSON, client types.
 - [Subscriptions](./subscriptions.md): `tracked()`, resuming, `Publisher`.
 - [Server Actions and RSC](./actions-and-rsc.md): `trpcdev/actions`, `@trpcdev/tanstack-react-query/rsc`.
 - [TanStack Query](./tanstack-query.md): query helpers and hydration.
-- [OpenAPI](./openapi.md): the REST handler, the document, contracts.
+- [OpenAPI](./openapi.md): the REST handler, the document.
 - [Platforms](./platforms.md): Node, Bun, Deno, Express, Fastify, fetch runtimes.
 
 Entry points of `trpcdev`:

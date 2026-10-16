@@ -361,15 +361,169 @@ function checkImplementation(
   }
 }
 
+type LeafPaths<
+  TContract,
+  $Err,
+  P extends string = '',
+> = TContract extends AnyProcedure
+  ? [$Err] extends [ProcedureDefOf<TContract>['contract']['errors']]
+    ? never
+    : P
+  : {
+      [K in keyof TContract & string]: LeafPaths<
+        TContract[K],
+        $Err,
+        P extends '' ? K : `${P}.${K}`
+      >;
+    }[keyof TContract & string];
+
+/**
+ * `unknown` when every procedure of the contract declares `$Errors`: an
+ * implementer-wide `.use()` or `.provide()` runs for all of them (Q9.3).
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export type EveryLeafDeclares<TContract, $Errors> = [
+  LeafPaths<TContract, $Errors>,
+] extends [never]
+  ? unknown
+  : TypeError<
+      'impl.use: every procedure of the contract must declare this error; these do not',
+      LeafPaths<TContract, $Errors>
+    >;
+
+/**
+ * Implementer-wide steps: `impl.use()` and `impl.provide()` run before every
+ * leaf's own steps.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export interface ImplementerRoot<
+  TRoot extends BuilderDef,
+  TContract extends AnyContractRouter,
+> {
+  /**
+   * Adds middleware to every procedure of the contract. Errors it returns
+   * must be declared by all of them.
+   *
+   * @example
+   * ```ts
+   * const impl = t.implement(appContract).use(authed);
+   * ```
+   */
+  use<$Ctx extends object = {}, $Err extends AnyTrpcError = never, $Ok = never>(
+    fn: MiddlewareFunction<
+      CurrentCtx<TRoot>,
+      unknown,
+      TRoot['meta'],
+      $Ctx,
+      $Err,
+      $Ok
+    > &
+      EveryLeafDeclares<TContract, $Err>,
+  ): ImplementResult<
+    With<
+      TRoot,
+      {
+        ctxAdded: Overwrite<TRoot['ctxAdded'], $Ctx>;
+        shorts: TRoot['shorts'] | $Ok;
+      }
+    >,
+    TContract
+  >;
+  /** Adds an Effect middleware to every procedure of the contract. */
+  use<
+    $Ctx extends object,
+    $Err extends AnyTrpcError,
+    $R,
+    $Provides,
+    $Ok = never,
+  >(
+    mw: EffectMiddleware<
+      CurrentCtx<TRoot>,
+      unknown,
+      TRoot['meta'],
+      $Ctx,
+      $Err,
+      $R,
+      $Provides,
+      $Ok
+    > &
+      EveryLeafDeclares<TContract, $Err>,
+  ): ImplementResult<
+    With<
+      TRoot,
+      {
+        ctxAdded: Overwrite<TRoot['ctxAdded'], $Ctx>;
+        shorts: TRoot['shorts'] | $Ok;
+        provided: TRoot['provided'] | $Provides;
+        requires: TRoot['requires'] | Exclude<$R, TRoot['provided']>;
+      }
+    >,
+    TContract
+  >;
+  /** Provides an Effect service to every procedure of the contract. */
+  provide<$Id, $Shape, $E extends AnyTrpcError = never, $R = never>(
+    service: Context.Key<$Id, $Shape>,
+    make: ((
+      opts: ProvideOpts<TRoot>,
+    ) => MaybePromise<$Shape> | Effect.Effect<$Shape, $E, $R>) &
+      EveryLeafDeclares<TContract, $E>,
+  ): ImplementResult<
+    With<
+      TRoot,
+      {
+        provided: TRoot['provided'] | $Id;
+        requires: TRoot['requires'] | Exclude<$R, TRoot['provided']>;
+      }
+    >,
+    TContract
+  >;
+}
+
+type ContractMeta<TContract> = TContract extends AnyProcedure
+  ? ProcedureDefOf<TContract>['meta']
+  : { [K in keyof TContract]: ContractMeta<TContract[K]> }[keyof TContract];
+
+type MetaMismatch<TMeta, TContractMeta> = TContractMeta extends object
+  ? {
+      [K in keyof TContractMeta]-?: K extends keyof TMeta
+        ? [TContractMeta[K]] extends [TMeta[K]]
+          ? never
+          : K
+        : K;
+    }[keyof TContractMeta]
+  : never;
+
+/**
+ * `unknown` when the contract's meta keys exist in the root's meta with
+ * types the root accepts, so middleware reading `meta` sees what the
+ * contract set.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export type ImplementMetaCheck<TMeta, TContract> = [
+  MetaMismatch<TMeta, ContractMeta<TContract>>,
+] extends [never]
+  ? unknown
+  : TypeError<
+      't.implement: the contract declares meta keys this root does not have, or with other types',
+      MetaMismatch<TMeta, ContractMeta<TContract>>
+    >;
+
+const reserved = ['router', 'use', 'provide'];
+
 /** @internal */
 export function implement(
   root: BuilderInternals,
   contract: AnyContractRouter,
 ): unknown {
-  if (Object.hasOwn(contract, 'router')) {
-    throw new Error(
-      't.implement(): a top-level contract key named "router" would shadow impl.router(); nest it',
-    );
+  for (const key of reserved) {
+    if (Object.hasOwn(contract, key)) {
+      throw new Error(
+        `t.implement(): a top-level contract key named "${key}" would shadow impl.${key}(); nest it`,
+      );
+    }
   }
   const mirror = (node: AnyProcedure | AnyContractRouter): unknown => {
     if (!isProcedure(node)) {
@@ -398,6 +552,11 @@ export function implement(
     }
     return routes;
   };
+  const builder = createBuilder(root);
+  tree['use'] = (mw: unknown) =>
+    implement(builder.use(mw as never)['~trpc'], contract);
+  tree['provide'] = (key: Context.Key<any, any>, make: never) =>
+    implement(builder.provide(key, make)['~trpc'], contract);
   return tree;
 }
 
@@ -409,4 +568,6 @@ export function implement(
 export type ImplementResult<
   TRoot extends BuilderDef,
   TContract extends AnyContractRouter,
-> = Implementer<TRoot, TContract> & ImplementRouter<TContract>;
+> = Implementer<TRoot, TContract> &
+  ImplementRouter<TContract> &
+  ImplementerRoot<TRoot, TContract>;

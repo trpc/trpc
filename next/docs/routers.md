@@ -57,3 +57,37 @@ await fs.writeFile(
 // server
 createOpenApiHandler({ router: appRouter, contract });
 ```
+
+## Contract-first
+
+A contract describes procedures without implementing them. It lives in its own package, and clients and the OpenAPI generator accept it like a router.
+
+```ts
+import { contract } from 'trpcdev/contract';
+
+const c = contract.create<{ meta: Meta }>().errors({ UNAUTHORIZED: {} });
+
+export const appContract = {
+  post: {
+    byId: c.input(ById).output(Post).errors({ NOT_FOUND: {} }).query(),
+    create: c.meta({ auth: true }).input(NewPost).output(Post).mutation(),
+  },
+};
+```
+
+`t.implement(contract)` mirrors the contract. Each leaf already has its input, output, errors and route, and offers only `.use()`, `.provide()` and the terminal the contract declares. `impl.router()` checks at the type level and at runtime that every procedure is implemented and nothing else is added.
+
+```ts
+const impl = t.implement(appContract).use(authed).provide(Db, () => db);
+
+export const appRouter = impl.router({
+  post: {
+    byId: impl.post.byId.query(({ input, errors }) => /* … */),
+    create: impl.post.create.mutation(({ input }) => /* … */),
+  },
+});
+```
+
+- An implementation may only return errors its contract declares. Middleware passed to `impl.use()` or `impl.provide()` runs for every procedure, so all of them must declare its errors.
+- The contract's meta keys must exist in `t`'s meta with types `t` accepts, because middleware reads them as `t`'s meta.
+- Top-level contract keys named `router`, `use` or `provide` would shadow the implementer's methods, so `t.implement()` throws on them.

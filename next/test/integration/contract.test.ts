@@ -1,20 +1,20 @@
-import { Effect, Schema } from 'effect';
+import { Context, Effect, Schema } from 'effect';
 import {
   createTrpcClient,
   httpLink,
   safe,
   type TrpcClient,
 } from 'trpcdev/client';
-import { toContract, type inferContract } from 'trpcdev/contract';
+import { contract, toContract, type inferContract } from 'trpcdev/contract';
 import { error, initTrpc, tracked, type TrackedEnvelope } from 'trpcdev/server';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { appContract, type AppContract } from './fixtures/contract.ts';
 
-interface Context {
+interface Ctx {
   user: string | null;
 }
-const t = initTrpc<{ ctx: Context; meta: { auth?: boolean } }>();
+const t = initTrpc<{ ctx: Ctx; meta: { auth?: boolean } }>();
 const posts = new Map([['1', { id: '1', title: 'Hello' }]]);
 
 const authed = t.middleware(({ ctx, next }) =>
@@ -182,6 +182,78 @@ test('impl.router() checks completeness at the type level and at runtime', () =>
 
   expect(() => t.implement({ router: appContract.health })).toThrow(
     /shadow impl\.router/,
+  );
+});
+
+test('impl.use() and impl.provide() run for every procedure of the contract', async () => {
+  const c = contract.create<{ meta: { auth?: boolean } }>().errors({
+    UNAUTHORIZED: {},
+  });
+  const adminContract = {
+    stats: c.output(Schema.Number).query(),
+    users: { ban: c.input(Schema.String).output(Schema.String).mutation() },
+  };
+  class Audit extends Context.Service<Audit, { readonly by: string }>()(
+    'Audit',
+  ) {}
+
+  const impl = t
+    .implement(adminContract)
+    .use(authed)
+    .provide(Audit, ({ ctx }) => ({ by: ctx.user }));
+  const adminRouter = impl.router({
+    stats: impl.stats.query(({ ctx }) => {
+      expectTypeOf(ctx.user).toEqualTypeOf<string>();
+      return 1;
+    }),
+    users: {
+      ban: impl.users.ban.mutation(({ input }) =>
+        Effect.gen(function* () {
+          const audit = yield* Audit;
+          return `${audit.by} banned ${input}`;
+        }),
+      ),
+    },
+  });
+
+  await using server = await createTestServer({
+    router: adminRouter,
+    createContext: ({ request }) => ({
+      user: request.headers['x-user'] ?? null,
+    }),
+  });
+  const anon = createTrpcClient({
+    router: adminContract,
+    links: [httpLink({ url: server.url })],
+  });
+  await expect(anon.stats.query()).rejects.toMatchObject({
+    code: 'UNAUTHORIZED',
+    defined: true,
+  });
+  const admin = createTrpcClient({
+    router: adminContract,
+    links: [httpLink({ url: server.url, headers: { 'x-user': 'alex' } })],
+  });
+  expect(await admin.users.ban.mutate('bob')).toBe('alex banned bob');
+
+  void (() => {
+    // @ts-expect-error -- Q9.3: health and post.* don't declare UNAUTHORIZED
+    t.implement(appContract).use(authed);
+  });
+});
+
+test('t.implement() checks the contract meta against the root meta', () => {
+  const c = contract.create<{ meta: { auth?: boolean; scope: string } }>();
+  const scoped = { ping: c.meta({ scope: 'x' }).query() };
+  void (() => {
+    // @ts-expect-error -- scope is not in t's meta
+    t.implement(scoped);
+    // @ts-expect-error -- auth is a boolean in t's meta
+    initTrpc<{ ctx: Ctx; meta: { auth?: string } }>().implement(appContract);
+  });
+  initTrpc<{ meta: { auth?: boolean; scope: string } }>().implement(scoped);
+  expect(() => t.implement({ use: appContract.health })).toThrow(
+    /shadow impl\.use/,
   );
 });
 
