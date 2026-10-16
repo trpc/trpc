@@ -4,7 +4,7 @@ import { PROMOTED } from './promoted.ts';
 
 /**
  * Something the codemod couldn't rewrite: a manual step, at a position.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface UpgradeNote {
@@ -17,7 +17,7 @@ export interface UpgradeNote {
 
 /**
  * Options for {@link upgradeSource}.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface UpgradeOptions {
@@ -27,7 +27,7 @@ export interface UpgradeOptions {
 
 /**
  * What {@link upgradeSource} returns.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface UpgradeResult {
@@ -199,7 +199,7 @@ const isReference = (parent: Node | undefined, key: string) => {
  * ```ts
  * const { code, notes } = upgradeSource(source, 'server.ts');
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export function upgradeSource(

@@ -22,7 +22,7 @@ import {
 /**
  * Names a `switchLink` can't take: the client or the built-in links read
  * them as call options.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type ReservedSwitchName =
@@ -57,7 +57,7 @@ type SwitchName<TName extends string, TLinks> = string extends TName
 
 /**
  * Options for {@link switchLink}.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface SwitchLinkOptions<
@@ -84,7 +84,7 @@ export interface SwitchLinkOptions<
 /**
  * What {@link switchLink} declares: its call option, plus what its
  * branches declare.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type SwitchLinkDecl<
@@ -116,7 +116,7 @@ export type SwitchLinkDecl<
  * });
  * await client.report.query(input, { transport: 'http' });
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export function switchLink<

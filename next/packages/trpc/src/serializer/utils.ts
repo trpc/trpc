@@ -1,6 +1,6 @@
 /**
  * A value could not be serialized or deserialized.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export class DansonError extends Error {
@@ -14,7 +14,7 @@ export interface JsonObject {
 }
 /**
  * Any JSON value.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type JsonValue = JsonArray | JsonObject | JsonPrimitive;

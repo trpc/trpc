@@ -62,7 +62,7 @@ type EventOf<F> = F extends (...args: any[]) => AsyncIterable<infer T>
 /**
  * The data a query caches: its output, or the chunks so far when the output
  * is an `AsyncIterable` (they stream into the cache as they arrive).
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type QueryData<TOutput> =
@@ -71,7 +71,7 @@ export type QueryData<TOutput> =
 /**
  * A query key tagged with its data and error types, so
  * `queryClient.getQueryData(key)` is typed.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type TrpcQueryKeyFor<TData, TError> = DataTag<
@@ -100,7 +100,7 @@ type KeyArgs<TInput> = undefined extends TInput
 
 /**
  * TanStack's query options, minus what tRPC fills in.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type QueryOptionsIn<TQueryFnData, TError, TData> = Omit<
@@ -117,7 +117,7 @@ export type QueryOptionsIn<TQueryFnData, TError, TData> = Omit<
 /**
  * What `queryOptions()` returns: pass it to `useQuery`, `prefetchQuery`,
  * `fetchQuery` and friends in any TanStack adapter.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type QueryOptionsOut<TQueryFnData, TError, TData> = Omit<
@@ -141,7 +141,7 @@ type InfiniteKey<TOutput, TError, TPageParam> = TrpcQueryKeyFor<
 
 /**
  * TanStack's infinite query options, minus what tRPC fills in.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type InfiniteOptionsIn<TOutput, TError, TData, TPageParam> = Omit<
@@ -158,7 +158,7 @@ export type InfiniteOptionsIn<TOutput, TError, TData, TPageParam> = Omit<
 /**
  * What `infiniteOptions()` returns, for `useInfiniteQuery` and
  * `prefetchInfiniteQuery`.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type InfiniteOptionsOut<TOutput, TError, TData, TPageParam> = Omit<
@@ -176,7 +176,7 @@ export type InfiniteOptionsOut<TOutput, TError, TData, TPageParam> = Omit<
 
 /**
  * A mutation's variables: optional when the input is.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type MutationVariables<TInput> = undefined extends TInput
@@ -185,7 +185,7 @@ export type MutationVariables<TInput> = undefined extends TInput
 
 /**
  * TanStack's mutation options, minus what tRPC fills in.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type MutationOptionsIn<TInput, TOutput, TError, TOnMutateResult> = Omit<
@@ -200,7 +200,7 @@ export type MutationOptionsIn<TInput, TOutput, TError, TOnMutateResult> = Omit<
 
 /**
  * What `mutationOptions()` returns, for `useMutation`.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type MutationOptionsOut<TInput, TOutput, TError, TOnMutateResult> =
@@ -214,7 +214,7 @@ type ChunkOf<TOutput> =
 
 /**
  * Options for `streamedMutationOptions()`, on top of TanStack's.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface StreamedMutationOptions<TChunk, TInput = unknown> {
@@ -239,7 +239,7 @@ export interface StreamedMutationOptions<TChunk, TInput = unknown> {
 
 /**
  * How `streamedOptions()` keeps events.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface StreamedOptions {
@@ -255,14 +255,14 @@ export interface StreamedOptions {
 
 /**
  * Filters for `queryClient.invalidateQueries()` and friends, minus the key.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type QueryFiltersIn = Omit<QueryFilters, 'queryKey'>;
 
 /**
  * Keys and filters available on every router and procedure.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface PathUtils {
@@ -279,7 +279,7 @@ export interface PathUtils {
 
 /**
  * The TanStack helpers for a query procedure.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface QueryProcedureUtils<
@@ -355,7 +355,7 @@ export interface QueryProcedureUtils<
 
 /**
  * The TanStack helpers for a mutation procedure.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface MutationProcedureUtils<
@@ -431,7 +431,7 @@ export interface MutationProcedureUtils<
 
 /**
  * The TanStack helpers for a subscription procedure.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface SubscriptionProcedureUtils<
@@ -506,7 +506,7 @@ export interface SubscriptionProcedureUtils<
 /**
  * The TanStack helpers for a client: one entry per router and procedure,
  * typed from the client's methods.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type TrpcQueryUtils<TClient> = PathUtils & {
@@ -532,7 +532,7 @@ export type TrpcQueryUtils<TClient> = PathUtils & {
 /**
  * The helpers for a router type, `routerType()` value or contract, for
  * when there is no client value to infer them from (context helpers).
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type TrpcQueryUtilsFor<
@@ -543,7 +543,7 @@ export type TrpcQueryUtilsFor<
 
 /**
  * Options for {@link createTrpcQueryUtils}.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface CreateTrpcQueryUtilsOptions<TClient> {
@@ -564,7 +564,7 @@ export interface CreateTrpcQueryUtilsOptions<TClient> {
  * Options for a framework's `createTrpcContext()`: everything
  * {@link createTrpcQueryUtils} takes except the client, which the provider
  * gets.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type TrpcContextOptions = Omit<
@@ -586,7 +586,7 @@ type KnownClient<T> = [ClientTypes<T>] extends [never]
  * type AppClient = ReturnType<typeof makeClient>;
  * export const { TrpcProvider, useTrpc } = createTrpcContext<AppClient>();
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type SourceRouter<T> =
@@ -595,7 +595,7 @@ export type SourceRouter<T> =
 /**
  * The context a client type's links declare, for `createTrpcContext<T>()`;
  * `{}` when `T` isn't a client type.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type SourceContext<T> =
@@ -604,7 +604,7 @@ export type SourceContext<T> =
 /**
  * A client type's link types (errors, unsupported operations, result form),
  * for `createTrpcContext<T>()`; `{}` when `T` isn't a client type.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type SourceLinks<T> =
@@ -664,7 +664,7 @@ function streamFrom(
  * const create = useMutation(trpc.post.create.mutationOptions());
  * await queryClient.invalidateQueries(trpc.post.pathFilter());
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export function createTrpcQueryUtils<TClient extends object>(

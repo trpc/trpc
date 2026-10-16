@@ -40,7 +40,7 @@ import type { TrackedEnvelope } from './tracked.ts';
 /**
  * The builder state of an implementer leaf: the root's ctx and meta, the
  * contract's input, output and errors.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type ImplementerDef<
@@ -61,7 +61,7 @@ export type ImplementerDef<
 
 /**
  * Q9.3: an implementation may only return errors its contract declares.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type UndeclaredCheck<TDef extends BuilderDef, $Errors> = [
@@ -105,7 +105,7 @@ type EventsConstraint<
 /**
  * A procedure made from a contract leaf: the contract's client-facing types,
  * the implementation's ctx and services.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type ImplementedProcedure<
@@ -152,7 +152,7 @@ type Terminals<TDef extends BuilderDef, TContract extends AnyProcedure> = {
  * The definition methods an implementer leaf keeps. Input, output, errors and
  * meta come from the contract, so `.input()`, `.output()`, `.errors()` and
  * `.meta()` are not available.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface ImplementerMethods<
@@ -246,7 +246,7 @@ export interface ImplementerMethods<
 /**
  * A leaf of `t.implement(contract)`: `.use()`, `.provide()` and the terminal
  * the contract declares.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type ProcedureImplementer<
@@ -257,7 +257,7 @@ export type ProcedureImplementer<
 
 /**
  * The mirror tree `t.implement(contract)` returns.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type Implementer<
@@ -273,7 +273,7 @@ export type Implementer<
 /**
  * What `impl.router()` accepts at each contract leaf: a procedure with the
  * contract's type, input, output and errors.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type ImplementedRouter<TContract> = TContract extends AnyProcedure
@@ -290,7 +290,7 @@ export type ImplementedRouter<TContract> = TContract extends AnyProcedure
 
 /**
  * Rejects keys the contract does not have, at any depth.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type ExactRouter<TRouter, TContract> = TContract extends AnyProcedure
@@ -304,7 +304,7 @@ export type ExactRouter<TRouter, TContract> = TContract extends AnyProcedure
 /**
  * `impl.router()`: checks that a router implements every procedure of the
  * contract and nothing else.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface ImplementRouter<TContract> {
@@ -380,7 +380,7 @@ type LeafPaths<
 /**
  * `unknown` when every procedure of the contract declares `$Errors`: an
  * implementer-wide `.use()` or `.provide()` runs for all of them (Q9.3).
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type EveryLeafDeclares<TContract, $Errors> = [
@@ -395,7 +395,7 @@ export type EveryLeafDeclares<TContract, $Errors> = [
 /**
  * Implementer-wide steps: `impl.use()` and `impl.provide()` run before every
  * leaf's own steps.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface ImplementerRoot<
@@ -499,7 +499,7 @@ type MetaMismatch<TMeta, TContractMeta> = TContractMeta extends object
  * `unknown` when the contract's meta keys exist in the root's meta with
  * types the root accepts, so middleware reading `meta` sees what the
  * contract set.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type ImplementMetaCheck<TMeta, TContract> = [
@@ -562,7 +562,7 @@ export function implement(
 
 /**
  * What `t.implement(contract)` returns.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type ImplementResult<

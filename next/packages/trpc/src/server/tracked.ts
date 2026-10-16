@@ -2,7 +2,7 @@ const trackedSymbol = Symbol.for('trpc.tracked');
 
 /**
  * A subscription event with an id the client can resume from.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface TrackedEnvelope<TData> {
@@ -20,7 +20,7 @@ export interface TrackedEnvelope<TData> {
  *   for await (const post of posts.since(lastEventId)) yield tracked(post.id, post);
  * });
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export function tracked<TData>(

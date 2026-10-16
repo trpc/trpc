@@ -38,7 +38,7 @@ import {
 
 /**
  * Options for {@link experimental_durable}.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability experimental
  */
 export interface DurableOptions<TCtx, TInput, TMeta> {
@@ -161,7 +161,7 @@ const conflict = () =>
  * createFetchHandler({ router, layer: Persistence.layerBackingMemory });
  * createTrpcClient({ router: routerType<AppRouter>(), links: [experimental_durableLink(), httpLink({ url })] });
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability experimental
  */
 export function experimental_durable<TReq extends MiddlewareRequirements = {}>(

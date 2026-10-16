@@ -6,7 +6,7 @@ import type { OutputSchema } from './stream-schema.ts';
 
 /**
  * A declared error (07 A): its status, default message and `data` schema.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface ErrorSpec {
@@ -17,7 +17,7 @@ export interface ErrorSpec {
 
 /**
  * Declared errors by code.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type ErrorMap = Readonly<Record<string, ErrorSpec>>;
@@ -26,7 +26,7 @@ export type ErrorMap = Readonly<Record<string, ErrorSpec>>;
  * How meta keys merge when `.meta()` sets them again: by key, a function of
  * the earlier and the new value. Keys without one are replaced. Extensions
  * declare them for their keys with `initTrpc({ mergeMeta })`.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type MetaMerge<TMeta> = {
@@ -58,7 +58,7 @@ export function mergeMeta(
 
 /**
  * Everything the type system knows about a procedure.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface ProcedureDef {
@@ -96,7 +96,7 @@ export type Step =
 
 /**
  * The runtime definition under `'~trpc'`.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface ProcedureInternals {
@@ -113,7 +113,7 @@ export interface ProcedureInternals {
 
 /**
  * A procedure: a leaf of a router.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface Procedure<TDef extends ProcedureDef> {
@@ -122,7 +122,7 @@ export interface Procedure<TDef extends ProcedureDef> {
 
 /**
  * Any procedure.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type AnyProcedure = Procedure<any>;
@@ -132,26 +132,26 @@ export type ProcedureDefOf<P> = P extends Procedure<infer D> ? D : never;
 
 /**
  * What the client sends to a procedure.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type inferProcedureInput<P> = ProcedureDefOf<P>['input'];
 /**
  * What the client receives from a procedure.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type inferProcedureOutput<P> = ProcedureDefOf<P>['output'];
 /**
  * A procedure's typed error union.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type inferProcedureErrors<P> = ProcedureDefOf<P>['errors'];
 
 /**
  * Whether `value` is a procedure.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export function isProcedure(value: unknown): value is AnyProcedure {

@@ -47,7 +47,7 @@ export * from '@trpc12/tanstack-query';
 
 /**
  * Props of the `TrpcProvider` from {@link createTrpcContext}.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface TrpcProviderProps<
@@ -61,7 +61,7 @@ export interface TrpcProviderProps<
 
 /**
  * What {@link createTrpcContext} returns.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface TrpcSolidContext<
@@ -100,7 +100,7 @@ export interface TrpcSolidContext<
  *   </TrpcProvider>
  * </QueryClientProvider>;
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export function createTrpcContext<
@@ -139,7 +139,7 @@ export function createTrpcContext<
 /**
  * What {@link useSubscription} returns. The fields are reactive getters,
  * like `useQuery`'s result: don't destructure them.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface UseSubscriptionResult<TEvent, TError> {
@@ -162,7 +162,7 @@ export interface UseSubscriptionResult<TEvent, TError> {
  * );
  * return <p>{sub.data}</p>;
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export function useSubscription<TEvent, TError>(

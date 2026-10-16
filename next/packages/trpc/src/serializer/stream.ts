@@ -27,13 +27,13 @@ export type Status = typeof VALUE | typeof ERROR | typeof RETURN;
 
 /**
  * One streamed chunk of a deferred value: its index, status and serialized value.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type Chunk = [index: number, status: Status, value: SerializeReturn];
 /**
  * A JSONL line of a deferred stream: the head or a chunk.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type Frame = SerializeReturn | Chunk;
@@ -165,7 +165,7 @@ const toDansonError = (cause: unknown) =>
 
 /**
  * A serialized value: the head, plus a stream of chunks when it holds deferred values.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface SerializedDeferred {

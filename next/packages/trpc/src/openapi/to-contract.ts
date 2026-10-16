@@ -3,7 +3,7 @@ import { JsonSchema, SchemaRepresentation } from 'effect';
 /**
  * An OpenAPI 3.0 or 3.1 document, as {@link generateContractFromOpenApi}
  * reads it.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface OpenApiSource {
@@ -16,7 +16,7 @@ export interface OpenApiSource {
 
 /**
  * Options for {@link generateContractFromOpenApi}.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface GenerateContractOptions {
@@ -233,7 +233,7 @@ const nonEmpty = (s: JsonSchema.JsonSchema | undefined) =>
  * const source = generateContractFromOpenApi(await (await fetch(url)).json());
  * await writeFile('src/petstore.ts', source);
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export function generateContractFromOpenApi(

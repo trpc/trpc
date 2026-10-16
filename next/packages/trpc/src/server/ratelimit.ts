@@ -28,7 +28,7 @@ const RateLimitedBase: TaggedErrorClass<
 /**
  * The error {@link rateLimit} fails with: `429`, with the limit and the
  * milliseconds until a retry can pass.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export class RateLimited extends RateLimitedBase {}
@@ -36,7 +36,7 @@ export class RateLimited extends RateLimitedBase {}
 /**
  * Options for {@link rateLimit}. `limit`, `window`, `algorithm` and `tokens`
  * are Effect's `RateLimiter.consume` options.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface RateLimitOptions<TCtx, TInput, TMeta> {
@@ -80,7 +80,7 @@ const seconds = (d: Duration.Duration) =>
  *   layer: RateLimiter.layer.pipe(Layer.provide(RateLimiter.layerStoreMemory)),
  * });
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export function rateLimit<TReq extends MiddlewareRequirements = {}>(

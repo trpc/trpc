@@ -145,7 +145,7 @@ The [brief](../decisions/brief.md) asks for two things:
 ## Decision
 
 - **Q21.1:** [ ] yes · [ ] prefixes · [ ] other
-- **Q21.2:** `@since` = the v12 prerelease version (not `12.0.0`) → [since-prerelease](../decisions/since-prerelease.md)
+- **Q21.2:** `@since` = the v12 prerelease version (not `12.0.0`), now the `@trpc12/*` preview's `0.0.x` → [since-prerelease](../decisions/since-prerelease.md)
 - **Q21.3:** [x] yes, only for portability types; extensions use `@trpc12/trpc/extend` · [ ] no → [entry-points](../decisions/entry-points.md)
 - **Q21.4:** [x] yes (oxlint plugin) · [ ] no → [acronym-casing](../decisions/acronym-casing.md)
 - **Q21.5:** [ ] yes · [ ] no · [x] later; hand-written docs in `next/docs/` for now → [repo-and-tooling](../decisions/repo-and-tooling.md)

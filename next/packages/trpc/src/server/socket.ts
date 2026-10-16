@@ -47,7 +47,7 @@ const traceParent = (trace: unknown): Tracer.AnySpan | undefined =>
  * The parts of a standard `WebSocket` the handler uses: the server-side
  * socket of Deno, Bun, Cloudflare (`WebSocketPair`, after `accept()`) or
  * `@trpc12/trpc/http`'s upgrade.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface WebSocketLike {
@@ -60,7 +60,7 @@ export interface WebSocketLike {
 /**
  * A `MessagePort`, a `Worker`, a `worker_threads` port or anything with
  * `postMessage` and a `message` event.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface MessagePortLike {
@@ -74,7 +74,7 @@ export interface MessagePortLike {
 
 /**
  * How a call reached the server.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type Transport = 'http' | 'websocket' | 'messagePort' | 'socket';

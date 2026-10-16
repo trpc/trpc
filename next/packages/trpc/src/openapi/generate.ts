@@ -22,7 +22,7 @@ type Schema = Exclude<JsonSchema, boolean>;
 /**
  * An OpenAPI 3.1 document. Loosely typed: it is meant to be served or
  * written to a file.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface OpenApiDocument {
@@ -35,7 +35,7 @@ export interface OpenApiDocument {
 
 /**
  * The document's `info`.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface OpenApiInfo {
@@ -46,7 +46,7 @@ export interface OpenApiInfo {
 
 /**
  * A server the document lists.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface OpenApiServer {
@@ -56,7 +56,7 @@ export interface OpenApiServer {
 
 /**
  * One operation of an {@link OpenApiDocument}.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface OpenApiOperation {
@@ -72,7 +72,7 @@ export interface OpenApiOperation {
 
 /**
  * The options of {@link generateOpenApi}.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface GenerateOpenApiOptions {
@@ -318,7 +318,7 @@ function errorResponses(
  * });
  * await fs.writeFile('openapi.json', JSON.stringify(spec, null, 2));
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export function generateOpenApi(

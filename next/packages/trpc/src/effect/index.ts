@@ -61,7 +61,7 @@ export { link };
 
 /**
  * The Effect client methods for one procedure.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type DecorateEffectProcedure<
@@ -124,7 +124,7 @@ type DecorateEffectCarried<
 
 /**
  * The Effect client for a router.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type EffectClient<
@@ -157,7 +157,7 @@ const METHODS = {
  *   Effect.catchIf((e) => e.defined && e.code === 'NOT_FOUND', () => Effect.succeed(null)),
  * );
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export function createEffectClient<

@@ -16,7 +16,7 @@ import {
  * The options of {@link openApiReference}: the document comes from a router
  * (generated on the first request) or is given, e.g. from
  * `experimental_generateOpenApiFromTypes()` at build time.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type OpenApiReferenceOptions = {
@@ -97,7 +97,7 @@ const urlOf = (request: HttpServerRequest.HttpServerRequest) =>
  * });
  * // GET /api/docs (UI), GET /api/openapi.json (document)
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export function openApiReference(

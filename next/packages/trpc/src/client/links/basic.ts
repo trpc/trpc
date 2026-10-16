@@ -76,7 +76,7 @@ export type BranchesDecl<TBranches extends Record<string, Chain>> =
 
 /**
  * Options for {@link splitLink}.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface SplitLinkOptions<
@@ -106,7 +106,7 @@ export interface SplitLinkOptions<
  *   false: httpLink({ url, batch: true }),
  * });
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export function splitLink<
@@ -128,7 +128,7 @@ export function splitLink<
 
 /**
  * Options for {@link dedupeLink}.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface DedupeLinkOptions {
@@ -141,7 +141,7 @@ export interface DedupeLinkOptions {
 
 /**
  * What {@link dedupeLink} reads from `context`.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface DedupeContext {
@@ -162,7 +162,7 @@ export interface DedupeContext {
  *   links: [dedupeLink(), httpLink({ url })],
  * });
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export function dedupeLink(
@@ -222,7 +222,7 @@ export function dedupeLink(
 
 /**
  * A log entry from {@link loggerLink}.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type LoggerEvent =
@@ -242,7 +242,7 @@ export type LoggerEvent =
  * ```ts
  * loggerLink({ enabled: () => import.meta.env.DEV });
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export function loggerLink(
@@ -281,7 +281,7 @@ export function loggerLink(
 
 /**
  * Options for {@link retryLink}.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface RetryLinkOptions {
@@ -319,7 +319,7 @@ const defaultRetry: NonNullable<RetryLinkOptions['retry']> = ({ op, error }) =>
  *   links: [retryLink({ retries: 3 }), httpLink({ url })],
  * });
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export function retryLink(opts: RetryLinkOptions = {}): TrpcLink {
@@ -343,7 +343,7 @@ export function retryLink(opts: RetryLinkOptions = {}): TrpcLink {
 
 /**
  * Call options {@link experimental_durableLink} reads.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability experimental
  */
 export interface DurableContext {
@@ -359,7 +359,7 @@ export interface DurableContext {
 
 /**
  * Options for {@link experimental_durableLink}.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability experimental
  */
 export interface DurableLinkOptions {
@@ -390,7 +390,7 @@ const lostResponse = (error: AnyTrpcError) =>
  *   links: [experimental_durableLink(), httpLink({ url, batch: true })],
  * });
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability experimental
  */
 export function experimental_durableLink(

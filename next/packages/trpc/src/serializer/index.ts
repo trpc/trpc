@@ -72,7 +72,7 @@ export type { JsonValue } from './utils.ts';
  * };
  * createSerializer({ types: { Decimal: decimal } });
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface CustomType<T, TSerialized = unknown> {
@@ -90,7 +90,7 @@ export interface CustomType<T, TSerialized = unknown> {
 }
 
 /**
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface SerializerOptions {
@@ -104,7 +104,7 @@ export interface SerializerOptions {
 }
 
 /**
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface DeserializeOpts {
@@ -118,7 +118,7 @@ export interface DeserializeOpts {
 }
 
 /**
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface SerializeOpts {
@@ -134,7 +134,7 @@ export interface SerializeOpts {
  * use compatible serializers. `TForm` is which output types survive, for
  * client types.
  *
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface Serializer<TForm extends OutputForm = DansonForm> {
@@ -182,7 +182,7 @@ export interface Serializer<TForm extends OutputForm = DansonForm> {
  * createFetchHandler({ router, serializer });
  * httpLink({ url, serializer });
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export function createSerializer(opts: SerializerOptions = {}): Serializer {
@@ -291,7 +291,7 @@ function partDeserializers(parts: ReadonlyArray<Blob>): DeserializeRecord {
 
 /**
  * Any serializer, whatever its output form.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type AnySerializer = Serializer<OutputForm>;

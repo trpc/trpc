@@ -56,7 +56,7 @@ import { inputEventId, serveV11Socket } from './socket.ts';
 /**
  * A v11 data transformer: `superjson`, or anything with `serialize` and
  * `deserialize`. Must match the old clients'.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface V11Transformer {
@@ -66,7 +66,7 @@ export interface V11Transformer {
 
 /**
  * One transformer, or v11's separate `input` and `output` ones.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type V11TransformerOption =
@@ -75,7 +75,7 @@ export type V11TransformerOption =
 
 /**
  * Options shared by every {@link createV11Handler}.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface BaseV11HandlerOptions<TRouter extends AnyRouter> {
@@ -142,7 +142,7 @@ export interface BaseV11HandlerOptions<TRouter extends AnyRouter> {
 
 /**
  * The options of {@link createV11Handler}.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type V11HandlerOptions<
@@ -154,7 +154,7 @@ export type V11HandlerOptions<
 
 /**
  * A handler that serves v11 clients.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface V11Handler<TPlatform = undefined> {
@@ -300,7 +300,7 @@ const abortOnInterrupt =
  *     new URL(request.url).pathname.startsWith('/trpc/') ? legacy.fetch(request) : handler.fetch(request),
  * };
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export function createV11Handler<

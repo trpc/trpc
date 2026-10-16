@@ -38,7 +38,7 @@ import {
  * ```ts
  * serveSocket(handler, { idleTimeoutMs: false });
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface SocketOptions {
@@ -56,7 +56,7 @@ export interface SocketOptions {
  * ```ts
  * const handler: SocketHandlerLike = createFetchHandler({ router });
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface SocketHandlerLike {
@@ -117,7 +117,7 @@ const serveOne = (
  * ```ts
  * serveSocket(handler).pipe(Layer.provide(NodeSocketServer.layer({ port: 4000 })));
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export function serveSocket(

@@ -36,7 +36,7 @@ import type { AnyRouter } from '../../server/router.ts';
 
 /**
  * Options for {@link TestServer.layer}.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability internal
  */
 export type TestServerOptions<TRouter extends AnyRouter> =
@@ -44,7 +44,7 @@ export type TestServerOptions<TRouter extends AnyRouter> =
 
 /**
  * A request the test server received.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability internal
  */
 export interface RecordedRequest {
@@ -55,7 +55,7 @@ export interface RecordedRequest {
 
 /**
  * The running test server.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability internal
  */
 export interface TestServerShape {
@@ -117,7 +117,7 @@ const make = <TRouter extends AnyRouter>(
  * The test server service. `TestServer.layer(opts)` serves a router on the
  * `HttpServer` you provide (port 0 for a free one) until the layer's scope
  * closes, then disposes the handler.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability internal
  */
 export interface TestServer {
@@ -126,7 +126,7 @@ export interface TestServer {
 
 /**
  * The `TestServer` key, with `TestServer.layer(opts)`.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability internal
  */
 export interface TestServerClass extends Context.ServiceClass<
@@ -140,7 +140,7 @@ export interface TestServerClass extends Context.ServiceClass<
 }
 
 /**
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability internal
  */
 export const TestServer: TestServerClass = Object.assign(

@@ -20,7 +20,7 @@ import {
 
 /**
  * The options of {@link openApiLink}.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface OpenApiLinkOptions {
@@ -88,7 +88,7 @@ const hasBlob = (value: unknown): boolean =>
  * });
  * await client.post.byId.query({ id: '1' }); // GET https://api.example.com/api/posts/1
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export function openApiLink(

@@ -70,7 +70,7 @@ import type { AnyProcedure, CreateContextOpts } from '@trpc12/trpc/server';
  *   layer: Db.layer,
  * });
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface TrpcModuleOptions extends Omit<
@@ -97,7 +97,7 @@ export interface TrpcModuleOptions extends Omit<
  *   useFactory: (auth: Auth) => ({ createContext: ({ platform }) => auth.contextOf(platform) }),
  * });
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface TrpcModuleAsyncOptions extends Pick<
@@ -116,7 +116,7 @@ export interface TrpcModuleAsyncOptions extends Pick<
  * ```ts
  * constructor(@Inject(TRPC_MODULE_OPTIONS) options: TrpcModuleOptions) {}
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export const TRPC_MODULE_OPTIONS: unique symbol = Symbol(
@@ -145,7 +145,7 @@ const isProcedure = (value: unknown): value is AnyProcedure =>
  * ```ts
  * app.get(TrpcHost).handler; // the OpenApiHandler behind every route
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 @Injectable()
@@ -220,7 +220,7 @@ export class TrpcHost implements OnApplicationShutdown {
  * ```ts
  * @UseInterceptors(ImplementInterceptor)
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 @Injectable()
@@ -305,7 +305,7 @@ const route = (
  *   return impl.router({ post: { byId: impl.post.byId.query(({ input }) => this.posts.find(input.id)) } });
  * }
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export function Implement(
@@ -363,7 +363,7 @@ export function Implement(
  * @Module({ imports: [TrpcModule.forRoot({ createContext, layer })], controllers: [PostController] })
  * class AppModule {}
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 @Module({})

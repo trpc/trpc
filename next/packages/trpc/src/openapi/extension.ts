@@ -18,7 +18,7 @@ import { mergeRoute, type OpenApiMeta } from './routes.ts';
  *   .input(z.object({ id: z.string() }))
  *   .query(({ input }) => db.post.find(input.id));
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export function openapi(): ProcedureBuilder<RootDef<{}, OpenApiMeta>> {

@@ -43,7 +43,7 @@ export {
 
 /**
  * What {@link createTrpcContext} returns.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface TrpcSvelteContext<
@@ -90,7 +90,7 @@ export interface TrpcSvelteContext<
  *   <App />
  * </QueryClientProvider>
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export function createTrpcContext<

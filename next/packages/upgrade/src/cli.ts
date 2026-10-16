@@ -11,7 +11,7 @@ import { upgradeFiles } from './files.ts';
  * ```ts
  * Command.run(upgradeCommand, { version: '12.0.0' });
  * ```
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export const upgradeCommand: Command.Command<

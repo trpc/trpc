@@ -24,7 +24,7 @@ export interface PlaceholderTransformer<T = unknown> {
 }
 /**
  * Custom serializers by type name.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type SerializeRecord = Record<
@@ -39,7 +39,7 @@ export interface DeserializeRecursive {
 }
 /**
  * Custom deserializers by type name.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export type DeserializeRecord = Record<
@@ -49,7 +49,7 @@ export type DeserializeRecord = Record<
 
 /**
  * The serialized form of a value: its JSON and the references it shares.
- * @since 12.0.0-alpha.0
+ * @since 0.0.1
  * @stability stable
  */
 export interface SerializeReturn {
