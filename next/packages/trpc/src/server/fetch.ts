@@ -405,11 +405,25 @@ export const parentSpan = (
   request: HttpServerRequest.HttpServerRequest,
 ): Effect.Effect<Tracer.AnySpan | undefined> =>
   Effect.withFiber((fiber) =>
-    Effect.succeed(
-      Context.getOrUndefined(fiber.context, Tracer.ParentSpan) ??
-        Option.getOrUndefined(HttpTraceContext.fromHeaders(request.headers)),
-    ),
+    Effect.succeed(parentSpanIn(request, fiber.context)),
   );
+
+/** {@link parentSpan} in the fiber's `context`. */
+const parentSpanIn = (
+  request: HttpServerRequest.HttpServerRequest,
+  context: Context.Context<never>,
+): Tracer.AnySpan | undefined =>
+  Context.getOrUndefined(context, Tracer.ParentSpan) ??
+  Option.getOrUndefined(HttpTraceContext.fromHeaders(request.headers));
+
+/** `Effect.flatMap`, without a step when `effect` has already succeeded. */
+const chain = <A, B, E, E2, R, R2>(
+  effect: Effect.Effect<A, E, R>,
+  f: (a: A) => Effect.Effect<B, E2, R2>,
+): Effect.Effect<B, E | E2, R | R2> =>
+  Exit.isExit(effect) && Exit.isSuccess(effect)
+    ? f(effect.value as A)
+    : Effect.flatMap(effect, f);
 
 /**
  * Serves a router over the web-standard `fetch` interface (12 P-A). Works on
@@ -644,6 +658,7 @@ export function createFetchHandler<
     ctx: object,
     input: unknown,
     signal: AbortSignal,
+    parent: Tracer.AnySpan | undefined,
     single = false,
   ): Effect.Effect<CallResult> => {
     const type = procedure['~trpc'].type;
@@ -705,21 +720,19 @@ export function createFetchHandler<
         };
       }
     };
-    return Effect.flatMap(parentSpan(request), (parent) =>
-      Effect.map(
-        base.runEffect({
-          request,
-          procedure,
-          path,
-          ctx,
-          input,
-          signal,
-          response,
-          allowResponse: single,
-          parent,
-        }),
-        toResult,
-      ),
+    return Effect.map(
+      base.runEffect({
+        request,
+        procedure,
+        path,
+        ctx,
+        input,
+        signal,
+        response,
+        allowResponse: single,
+        parent,
+      }),
+      toResult,
     );
   };
 
@@ -792,14 +805,15 @@ export function createFetchHandler<
     request: HttpServerRequest.HttpServerRequest,
     search: string,
     path: string,
+    parent: Tracer.AnySpan | undefined,
   ): Effect.Effect<HttpServerResponse.HttpServerResponse, AnyTrpcError> => {
     const found = resolveProcedure(router, path);
     return found instanceof Promise
       ? Effect.flatMap(
           Effect.promise(() => found),
-          (procedure) => singleCall(request, search, path, procedure),
+          (procedure) => singleCall(request, search, path, procedure, parent),
         )
-      : singleCall(request, search, path, found);
+      : singleCall(request, search, path, found, parent);
   };
 
   const singleCall = (
@@ -807,6 +821,7 @@ export function createFetchHandler<
     search: string,
     path: string,
     procedure: AnyProcedure | undefined,
+    parent: Tracer.AnySpan | undefined,
   ): Effect.Effect<HttpServerResponse.HttpServerResponse, AnyTrpcError> => {
     if (!procedure) {
       return Effect.fail(
@@ -880,24 +895,31 @@ export function createFetchHandler<
         result.headers,
       );
     };
-    const call = Effect.flatMap(readInput(request, search), (input) =>
-      Effect.flatMap(
-        makeContext(request, [{ path, type }], controller.signal),
-        (ctx) =>
-          type === 'subscription'
-            ? subscription(request, procedure, path, ctx, input, controller)
-            : Effect.map(
-                execute(
-                  request,
-                  procedure,
-                  path,
-                  ctx,
-                  input,
-                  controller.signal,
-                  true,
-                ),
-                toResponse,
+    const call = chain(readInput(request, search), (input) =>
+      chain(makeContext(request, [{ path, type }], controller.signal), (ctx) =>
+        type === 'subscription'
+          ? subscription(
+              request,
+              procedure,
+              path,
+              ctx,
+              input,
+              controller,
+              parent,
+            )
+          : Effect.map(
+              execute(
+                request,
+                procedure,
+                path,
+                ctx,
+                input,
+                controller.signal,
+                parent,
+                true,
               ),
+              toResponse,
+            ),
       ),
     );
     return Effect.catch(abortOnInterrupt(call, controller), (err) => {
@@ -929,11 +951,11 @@ export function createFetchHandler<
     ctx: object,
     input: unknown,
     controller: AbortController,
+    parent: Tracer.AnySpan | undefined,
   ) =>
     Effect.gen(function* () {
       const lastEventId = request.headers[HEADER.lastEventId];
       const response = createResponseHandle();
-      const parent = yield* parentSpan(request);
       const exit = yield* base.runEffect({
         request,
         procedure,
@@ -1015,6 +1037,7 @@ export function createFetchHandler<
 
   const batched = (
     request: HttpServerRequest.HttpServerRequest,
+    parent: Tracer.AnySpan | undefined,
   ): Effect.Effect<HttpServerResponse.HttpServerResponse, AnyTrpcError> =>
     Effect.gen(function* () {
       if (!batch) {
@@ -1093,6 +1116,7 @@ export function createFetchHandler<
                 ctx,
                 input,
                 controller.signal,
+                parent,
               );
             }).pipe(
               Effect.catch((err: AnyTrpcError) => {
@@ -1149,8 +1173,9 @@ export function createFetchHandler<
     never,
     HttpServerRequest.HttpServerRequest
   > = Effect.withFiber((fiber) => {
+    const context = fiber.context as Context.Context<never>;
     const request = Context.get(
-      fiber.context as Context.Context<HttpServerRequest.HttpServerRequest>,
+      context as Context.Context<HttpServerRequest.HttpServerRequest>,
       HttpServerRequest.HttpServerRequest,
     );
     const { pathname, search } = splitUrl(request.url);
@@ -1167,10 +1192,11 @@ export function createFetchHandler<
       return Effect.fail(protocolError('NOT_FOUND', `Not found: ${pathname}`));
     }
     const rest = pathname.slice(endpoint.length + 1);
+    const parent = parentSpanIn(request, context);
     if (rest === '' && request.headers[HEADER.batch] === '1') {
-      return batched(request);
+      return batched(request, parent);
     }
-    return single(request, search, decodeURIComponent(rest));
+    return single(request, search, decodeURIComponent(rest), parent);
   }).pipe(
     Effect.catchCause((cause) =>
       Effect.flatMap(HttpServerRequest.HttpServerRequest, (request) => {
