@@ -129,9 +129,43 @@ export interface OpenApiHandler<TPlatform = undefined> {
     request: Request,
     ...platform: PlatformArgs<TPlatform>
   ) => Promise<Response>;
+  /**
+   * Serves `request` with one procedure, without matching routes, for
+   * frameworks that route requests themselves (`@trpcdev/nest`). The
+   * handler's `middleware`, `createContext` and `layer` apply as in `fetch`.
+   */
+  readonly serve: (
+    request: Request,
+    call: OpenApiCall,
+    ...platform: PlatformArgs<TPlatform>
+  ) => Promise<Response>;
   /** Releases the `layer`'s resources. */
   dispose(): Promise<void>;
 }
+
+/**
+ * The procedure {@link OpenApiHandler.serve} runs.
+ * @example
+ * ```ts
+ * await openapi.serve(request, { path: 'post.byId', procedure, params: { id: '1' } });
+ * ```
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export interface OpenApiCall {
+  /** The procedure path (`post.byId`), for spans and `onError`. */
+  readonly path: string;
+  readonly procedure: AnyProcedure;
+  /** Replaces the procedure's own `.route()`, as a group's prefix does. */
+  readonly route?: Route;
+  /** The path params the framework matched. */
+  readonly params?: Readonly<Record<string, string>>;
+}
+
+const SelectedCall = Context.Reference<OpenApiCall | undefined>(
+  'trpcdev/openapi/SelectedCall',
+  { defaultValue: () => undefined },
+);
 
 interface Entry {
   readonly path: string;
@@ -273,6 +307,27 @@ export function createOpenApiHandler<
     return list;
   };
   let entries = build();
+
+  const selected = new WeakMap<Request, OpenApiCall>();
+  /** Input JSON Schemas by schema, so a procedure built per request reuses one. */
+  const inputSchemas = new WeakMap<object, JsonSchema | undefined>();
+  const entryFor = (call: OpenApiCall): Entry => {
+    const def = call.procedure['~trpc'];
+    const inputs = def.steps.filter((s) => s.kind === 'input');
+    const key = inputs.length === 1 ? inputs[0]!.arg : undefined;
+    let input = key ? inputSchemas.get(key) : undefined;
+    if (!key || !inputSchemas.has(key)) {
+      input = inputJsonSchema(def);
+      if (key) inputSchemas.set(key, input);
+    }
+    return makeEntry(
+      call.path,
+      def.type,
+      call.route ?? def.route,
+      input,
+      () => call.procedure,
+    );
+  };
 
   /** Loads lazy subtrees without a prefix, until none are left. */
   const loadUnprefixed = async (): Promise<void> => {
@@ -546,6 +601,21 @@ export function createOpenApiHandler<
 
   async function serveWeb(request: Request): Promise<Response> {
     const url = new URL(request.url);
+    const call = selected.get(request);
+    if (call) {
+      try {
+        return await serve(request, url, entryFor(call), { ...call.params });
+      } catch (cause) {
+        const err = isTrpcError(cause) ? cause : unexpectedError(cause);
+        base.report(
+          err,
+          httpOf(request),
+          call.path,
+          call.procedure['~trpc'].type,
+        );
+        return fail(err);
+      }
+    }
     try {
       if (startup) {
         await startup;
@@ -592,6 +662,8 @@ export function createOpenApiHandler<
         : yield* HttpServerRequest.toWeb(http);
     httpRequests.set(request, http);
     if (platform !== undefined) platforms.set(request, platform);
+    const call = yield* SelectedCall;
+    if (call) selected.set(request, call);
     return HttpServerResponse.fromWeb(
       yield* Effect.promise(() => serveWeb(request)),
     );
@@ -608,6 +680,13 @@ export function createOpenApiHandler<
         platform === undefined
           ? undefined
           : (Context.make(CurrentPlatform, platform) as Context.Context<never>),
+      ),
+    serve: (request, call, platform) =>
+      webHandler(
+        request,
+        Context.make(SelectedCall, call).pipe(
+          Context.add(CurrentPlatform, platform),
+        ) as Context.Context<never>,
       ),
     dispose: base.dispose,
   };

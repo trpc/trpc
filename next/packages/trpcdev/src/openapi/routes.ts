@@ -33,7 +33,14 @@ export const normalizePrefix = (prefix: string | undefined): string => {
 /**
  * Applies the defaults: a query is `GET {prefix}/post/byId`, a mutation
  * `POST`, a subscription `GET` with `text/event-stream`.
- * @internal
+ *
+ * @example
+ * ```ts
+ * resolveRoute('post.byId', 'query', undefined, '/api');
+ * // { method: 'GET', path: '/api/post/byId', params: [], successStatus: 200, … }
+ * ```
+ * @since 12.0.0-alpha.0
+ * @stability experimental
  */
 export function resolveRoute(
   path: string,

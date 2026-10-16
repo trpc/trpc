@@ -687,6 +687,24 @@ test('quiet subscriptions send keep-alive comments', async () => {
   await handler.dispose();
 });
 
+test('serve() runs one procedure with params the caller matched', async () => {
+  const handler = createOpenApiHandler({
+    router: {},
+    createContext: () => ({ user: 'alex' }),
+  });
+  const byId = t.procedure
+    .route({ path: '/things/{id}', successStatus: 202 })
+    .input(z.object({ id: z.coerce.number(), q: z.string() }))
+    .query(({ input, ctx }) => ({ ...input, user: ctx.user }));
+  const res = await handler.serve(
+    new Request('http://localhost/anywhere?q=x'),
+    { path: 'things.byId', procedure: byId, params: { id: '7' } },
+  );
+  expect(res.status).toBe(202);
+  expect(await res.json()).toEqual({ id: 7, q: 'x', user: 'alex' });
+  await handler.dispose();
+});
+
 test('.route({ spec }) replaces or extends the generated operation', () => {
   const secured = t.procedure.route({
     spec: (op) => ({ ...op, security: [{ apiKey: [] }] }),

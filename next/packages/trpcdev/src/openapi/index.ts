@@ -41,10 +41,11 @@ export {
 export {
   createOpenApiHandler,
   type BaseOpenApiHandlerOptions,
+  type OpenApiCall,
   type OpenApiHandler,
   type OpenApiHandlerOptions,
 } from './handler.ts';
 export { openApiLink, type OpenApiLinkOptions } from './link.ts';
 export { openApiReference, type OpenApiReferenceOptions } from './reference.ts';
-export type { HttpMethod, ResolvedRoute } from './routes.ts';
+export { resolveRoute, type HttpMethod, type ResolvedRoute } from './routes.ts';
 export type { JsonSchema } from '../internal/json-schema.ts';
