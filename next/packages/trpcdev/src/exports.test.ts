@@ -11,9 +11,9 @@ const entries = {
   effect: () => import('trpcdev/effect'),
   http: () => import('trpcdev/http'),
   cloudflare: () => import('trpcdev/cloudflare'),
-  testing: () => import('trpcdev/testing'),
   extend: () => import('trpcdev/extend'),
   internal: () => import('trpcdev/internal'),
+  'internal/testing': () => import('trpcdev/internal/testing'),
 };
 
 test.each(Object.entries(entries))('trpcdev/%s resolves', async (_, load) => {

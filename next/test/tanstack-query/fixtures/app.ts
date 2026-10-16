@@ -1,5 +1,6 @@
 import { createServer } from 'node:http';
 import { NodeHttpServer } from '@effect/platform-node';
+import { Context, Effect, Exit, Layer, Scope } from 'effect';
 import { createTrpcQueryUtils } from '@trpcdev/tanstack-query';
 import {
   createTrpcClient,
@@ -8,7 +9,7 @@ import {
   routerType,
 } from 'trpcdev/client';
 import { error, initTrpc } from 'trpcdev/server';
-import { createTestServer } from 'trpcdev/testing';
+import { TestServer } from 'trpcdev/internal/testing';
 import { z } from 'zod';
 
 export interface Post {
@@ -154,13 +155,25 @@ export async function createApp(opts: { posts?: number } = {}) {
   db.locales.length = 0;
   for (let i = 1; i <= (opts.posts ?? 3); i++) addPost(`Post ${i}`);
 
-  const server = await createTestServer({
-    router: appRouter,
-    http: NodeHttpServer.layer(createServer, { port: 0, host: '127.0.0.1' }),
-    createContext: ({ request }) => ({
-      locale: request.headers.get('x-locale'),
-    }),
-  });
+  const scope = Scope.makeUnsafe();
+  const server = Context.get(
+    await Effect.runPromise(
+      Layer.buildWithScope(
+        TestServer.layer({
+          router: appRouter,
+          createContext: ({ request }) => ({
+            locale: request.headers.get('x-locale'),
+          }),
+        }).pipe(
+          Layer.provide(
+            NodeHttpServer.layer(createServer, { port: 0, host: '127.0.0.1' }),
+          ),
+        ),
+        scope,
+      ),
+    ),
+    TestServer,
+  );
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [dedupeLink(), httpLink({ url: server.url })],
@@ -171,6 +184,7 @@ export async function createApp(opts: { posts?: number } = {}) {
     client,
     trpc,
     addPost,
-    [Symbol.asyncDispose]: () => server.close(),
+    [Symbol.asyncDispose]: () =>
+      Effect.runPromise(Scope.close(scope, Exit.void)),
   };
 }

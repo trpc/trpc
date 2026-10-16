@@ -6,4 +6,5 @@
 - Users test in process with `createRouterClient` or `localLink`, and serve over a real port with `serve()` and their platform layer.
 - Why: our suites and early adopters can share a harness without freezing its API; an Effect layer is how tests compose servers.
 - Lost: a stable, documented real-server harness for users for now (#7030, #2468; `localLink` and `implement()` stubs answer most of them).
-- Lives in: `packages/trpcdev/src/testing/`, `test/integration/fixtures/server.ts` (not converted yet).
+- (agent) The suites' Promise fixtures (`test/integration/fixtures/server.ts`, `test/tanstack-query/fixtures/app.ts`) build `TestServer.layer` in a scope, so existing tests stay as they are; new suites use `it.layer`.
+- Lives in: `packages/trpcdev/src/internal/testing/index.ts` (`trpcdev/internal/testing`); `test/integration/test-server.test.ts`.

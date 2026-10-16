@@ -454,6 +454,9 @@ importers:
       '@effect/sql-pg':
         specifier: 4.0.2
         version: 4.0.2(effect@4.0.2)
+      '@effect/vitest':
+        specifier: 4.0.2
+        version: 4.0.2(effect@4.0.2)(vitest@5.0.3)
       '@types/node':
         specifier: ^24.0.0
         version: 24.19.1
@@ -782,6 +785,12 @@ packages:
     resolution: {integrity: sha512-i2N5F0L5s1S8Nx2I8V7k+awBinP26b5xiiHL1zn5b6RALNnloiU7FK1yS4dAkmqG9B0EcOVxvJrIpoMWwrB4hw==}
     peerDependencies:
       effect: ^4.0.2
+
+  '@effect/vitest@4.0.2':
+    resolution: {integrity: sha512-Zb72nu7iUy3rNdBp9J1Xu5oUQGwJ8cOYsUwmYgujj88aqyvASRDjOS01SjlcPViqf77csduetKdCJTVndMNfzw==}
+    peerDependencies:
+      effect: ^4.0.2
+      vitest: 5.0.3
 
   '@floating-ui/core@1.8.0':
     resolution: {integrity: sha512-0CIZ5itps/8x7BG8dEIhs53BvCUH2PCoogtakwRTut+Arm58sJooJ0AuZhLw2HJYIR5cMLNPBSS728sPho2khQ==}
@@ -2573,6 +2582,11 @@ snapshots:
   '@effect/sql-pg@4.0.2(effect@4.0.2)':
     dependencies:
       effect: 4.0.2
+
+  '@effect/vitest@4.0.2(effect@4.0.2)(vitest@5.0.3)':
+    dependencies:
+      effect: 4.0.2
+      vitest: 5.0.3(@types/node@24.19.1)(@vitest/browser-preview@5.0.3)(@vitest/ui@5.0.3)(@voidzero-dev/vite-plus-core@1.1.0(@types/node@24.19.1)(typescript@7.0.2))(happy-dom@20.14.6)
 
   '@floating-ui/core@1.8.0':
     dependencies:

@@ -26,7 +26,6 @@ Entry points of `trpcdev`:
 | `trpcdev/openapi`    | `createOpenApiHandler`, `generateOpenApi`, `openApiLink` |
 | `trpcdev/contract`   | contract-first routers, `toContract`                     |
 | `trpcdev/serializer` | danSON, custom types                                     |
-| `trpcdev/testing`    | `createTestServer`                                       |
 | `trpcdev/extend`     | building blocks for integrations                         |
 
-`trpcdev/internal` holds types that declaration emit refers to. Don't import it; it has no semver.
+`trpcdev/internal` holds types that declaration emit refers to. Don't import it; it has no semver. `trpcdev/internal/testing` is a semi-public `TestServer` Effect layer for real-server tests (with `@effect/vitest`'s `it.layer`); it has no compatibility promise either. Test in process with `createRouterClient` or `localLink`.

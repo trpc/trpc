@@ -44,10 +44,6 @@
       "types": "./src/cloudflare/index.ts",
       "default": "./src/cloudflare/index.ts"
     },
-    "./testing": {
-      "types": "./src/testing/index.ts",
-      "default": "./src/testing/index.ts"
-    },
     "./extend": {
       "types": "./src/extend/index.ts",
       "default": "./src/extend/index.ts"
@@ -55,6 +51,10 @@
     "./internal": {
       "types": "./src/internal/index.ts",
       "default": "./src/internal/index.ts"
+    },
+    "./internal/testing": {
+      "types": "./src/internal/testing/index.ts",
+      "default": "./src/internal/testing/index.ts"
     }
   },
   "scripts": {
