@@ -309,3 +309,60 @@ test('aborts request when response closes', async () => {
 
   expect(request.signal.aborted).toBe(true);
 });
+
+// https://github.com/trpc/trpc/issues/7663
+test('does not abort the request signal when the response finished normally', async () => {
+  const mockReq = createMockReq({
+    method: 'POST',
+  });
+  const mockRes = createMockRes();
+  // simulate a completed response: 'close' fires after `res.end()`
+  Object.defineProperty(mockRes, 'writableFinished', { value: true });
+
+  const request = incomingMessageToRequest(mockReq, mockRes, {
+    maxBodySize: null,
+  });
+
+  expect(request.signal.aborted).toBe(false);
+  mockRes.emit('close');
+
+  expect(request.signal.aborted).toBe(false);
+});
+
+test('aborts the request signal when the response closes before finishing', async () => {
+  const mockReq = createMockReq({
+    method: 'POST',
+  });
+  const mockRes = createMockRes();
+  // simulate a client disconnect mid-response: 'close' fires without `res.end()`
+  Object.defineProperty(mockRes, 'writableFinished', { value: false });
+
+  const request = incomingMessageToRequest(mockReq, mockRes, {
+    maxBodySize: null,
+  });
+
+  expect(request.signal.aborted).toBe(false);
+  mockRes.emit('close');
+
+  expect(request.signal.aborted).toBe(true);
+});
+
+// https://github.com/trpc/trpc/issues/7663
+test('completed requests do not abort the request signal', async () => {
+  const server = createServer({ maxBodySize: null });
+
+  const signals: AbortSignal[] = [];
+  const requestCount = 5;
+  for (let i = 0; i < requestCount; i++) {
+    await server.fetch({}, async (request) => {
+      signals.push(request.signal);
+    });
+    // allow the server-side response 'close' event to fire
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+
+  await server.close();
+
+  expect(signals).toHaveLength(requestCount);
+  expect(signals.filter((signal) => signal.aborted)).toHaveLength(0);
+});
