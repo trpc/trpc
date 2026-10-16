@@ -1,4 +1,5 @@
 import { Schedule, Stream } from 'effect';
+import { EventSource } from 'undici';
 import { createTrpcClient, httpLink, type TrpcClient } from 'trpcdev/client';
 import { error, initTrpc, tracked, type TrackedEnvelope } from 'trpcdev/server';
 import {
@@ -240,6 +241,44 @@ test('the wire format is plain SSE', async () => {
   const text = await res.text();
   expect(text).toContain('id: 3\ndata: ');
   expect(text.trimEnd().endsWith('event: done\ndata:')).toBe(true);
+});
+
+test('a real EventSource reads events, reconnects with Last-Event-ID and sees done', async () => {
+  await using ctx = await setup();
+  state.lastEventIds.length = 0;
+  const source = new EventSource(`${ctx.server.url}/posts`);
+  const ids: string[] = [];
+  const titles: string[] = [];
+  let opened = 0;
+  source.addEventListener('open', () => opened++);
+  await new Promise<void>((resolve) => {
+    source.addEventListener('message', (event) => {
+      ids.push(event.lastEventId);
+      titles.push(JSON.stringify(JSON.parse(event.data)));
+    });
+    source.addEventListener('done', () => {
+      source.close();
+      resolve();
+    });
+  });
+  expect(ids).toEqual(['1', '2', '3', '4']);
+  expect(titles.every((t, i) => t.includes(`Post ${i + 1}`))).toBe(true);
+  expect(opened).toBe(2);
+  expect(state.lastEventIds).toEqual([undefined, '2']);
+}, 10_000);
+
+test('a real EventSource gets error events as MessageEvents with data', async () => {
+  await using ctx = await setup();
+  const source = new EventSource(`${ctx.server.url}/failsMidway`);
+  const failure = await new Promise<string>((resolve) => {
+    source.addEventListener('error', (event) => {
+      if ('data' in event && typeof event.data === 'string') {
+        resolve(event.data);
+      }
+    });
+  });
+  source.close();
+  expect(failure).toContain('CONFLICT');
 });
 
 test('the response opens before the first event', async () => {

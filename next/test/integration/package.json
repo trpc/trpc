@@ -17,6 +17,7 @@
     "effect": "4.0.2",
     "superjson": "2.2.6",
     "typescript": "^7.0.2",
+    "undici": "8.11.2",
     "vite-plus": "1.1.0",
     "zod": "4.6.5"
   }

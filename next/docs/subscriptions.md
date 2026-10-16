@@ -29,6 +29,14 @@ client.onPost.subscribe(undefined, { lastEventId: '42' }); // resume from a know
 
 While a subscription is quiet, the handler sends a `: ping` comment every 15 seconds so proxies don't close it as idle. Set `createFetchHandler({ sse: { pingMs } })`, or `false` to turn it off.
 
+The stream is standard SSE, so a browser `EventSource` (or `curl`) can read a subscription without the client. Input goes in the query string in the form `httpLink` sends (`/trpc/onPost?channel=news`). Each `message` event's `data` is a serialized value. An `EventSource` reconnects with `Last-Event-ID` by itself, so close it on the `done` event, or it reconnects when the stream ends. Failures arrive as `error` events with `data`:
+
+```ts
+const source = new EventSource('/trpc/onPost');
+source.onmessage = (event) => render(JSON.parse(event.data));
+source.addEventListener('done', () => source.close());
+```
+
 ## Publisher
 
 `Publisher` is typed publish/subscribe as an Effect service. Declare a key with its channels, then provide a layer:
