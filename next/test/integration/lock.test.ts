@@ -27,10 +27,17 @@ function makeRouter(opts: {
   ttl?: Duration.Input;
 }) {
   const log: string[] = [];
-  const starts = new Map<string, PromiseWithResolvers<void>>();
+  const starts = new Map<
+    string,
+    { promise: Promise<void>; resolve: () => void }
+  >();
   const start = (by: string) => {
     let s = starts.get(by);
-    if (!s) starts.set(by, (s = Promise.withResolvers()));
+    if (!s) {
+      let resolve!: () => void;
+      const promise = new Promise<void>((r) => (resolve = r));
+      starts.set(by, (s = { promise, resolve }));
+    }
     return s;
   };
   /** Resolves once `by`'s resolver runs, so it holds the lock. */
