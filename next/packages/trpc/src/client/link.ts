@@ -314,27 +314,29 @@ export function runOperation(
   links: ReadonlyArray<AnyLink>,
   op: Operation,
 ): OperationStream {
+  // `Stream.withSpan`, from parts the client already ships.
   return Stream.unwrap(
     Effect.gen(function* () {
+      const span = yield* Effect.makeSpanScoped(`trpc.${op.path}`, {
+        kind: 'client',
+        attributes: {
+          'rpc.system': 'trpc',
+          'rpc.method': op.path,
+          'trpc.type': op.type,
+        },
+      });
       const tracer = yield* Effect.tracer;
       const disabled = yield* Tracer.DisablePropagation;
-      const span = yield* Effect.option(Effect.currentSpan);
-      if (tracer === Tracer.nativeTracer || disabled || Option.isNone(span)) {
-        return runLinks(links, op);
-      }
-      return runLinks(links, { ...op, trace: traceHeaders(span.value) });
-    }),
-  ).pipe(
-    Stream.tapError((err) =>
-      Effect.annotateCurrentSpan('trpc.error.code', err.code),
-    ),
-    Stream.withSpan(`trpc.${op.path}`, {
-      kind: 'client',
-      attributes: {
-        'rpc.system': 'trpc',
-        'rpc.method': op.path,
-        'trpc.type': op.type,
-      },
+      const traced =
+        tracer === Tracer.nativeTracer || disabled
+          ? op
+          : { ...op, trace: traceHeaders(span) };
+      return runLinks(links, traced).pipe(
+        Stream.tapError((err) =>
+          Effect.sync(() => span.attribute('trpc.error.code', err.code)),
+        ),
+        Stream.provideService(Tracer.ParentSpan, span),
+      );
     }),
   );
 }
