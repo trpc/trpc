@@ -27,6 +27,14 @@ function makeRouter(opts: {
   ttl?: Duration.Input;
 }) {
   const log: string[] = [];
+  const starts = new Map<string, PromiseWithResolvers<void>>();
+  const start = (by: string) => {
+    let s = starts.get(by);
+    if (!s) starts.set(by, (s = Promise.withResolvers()));
+    return s;
+  };
+  /** Resolves once `by`'s resolver runs, so it holds the lock. */
+  const started = (by: string) => start(by).promise;
   const byInvoice = experimental_lock<{ input: { invoice: string } }>({
     key: ({ input }) => `invoice:${input.invoice}`,
     timeout: opts.timeout ?? '5 seconds',
@@ -38,6 +46,7 @@ function makeRouter(opts: {
       .use(byInvoice)
       .mutation(async ({ input, ctx }) => {
         log.push(`start ${input.by}`);
+        start(input.by).resolve();
         await sleep(opts.work);
         log.push(`end ${input.by}`);
         return { by: input.by, waited: ctx.lock.waited };
@@ -48,7 +57,7 @@ function makeRouter(opts: {
       .use(byInvoice)
       .mutation(({ ctx }) => ctx.lock.waited),
   };
-  return { log, router };
+  return { log, router, started };
 }
 
 async function serve(
@@ -64,13 +73,13 @@ async function serve(
 }
 
 test('calls with the same key run one at a time; others run alongside', async () => {
-  const { log, router } = makeRouter({ work: 40 });
+  const { log, router, started } = makeRouter({ work: 40 });
   const { http, client } = await serve(router, experimental_memoryLocker());
   await using _ = http;
   const [a, b, c] = await Promise.all([
     client.pay.mutate({ invoice: '1', by: 'a' }),
-    sleep(5).then(() => client.pay.mutate({ invoice: '1', by: 'b' })),
-    sleep(5).then(() => client.pay.mutate({ invoice: '2', by: 'c' })),
+    started('a').then(() => client.pay.mutate({ invoice: '1', by: 'b' })),
+    started('a').then(() => client.pay.mutate({ invoice: '2', by: 'c' })),
   ]);
   expect(a).toEqual({ by: 'a', waited: false });
   expect(b).toEqual({ by: 'b', waited: true });
@@ -80,11 +89,11 @@ test('calls with the same key run one at a time; others run alongside', async ()
 });
 
 test('a lock still held after timeout fails the call with a typed CONFLICT', async () => {
-  const { router } = makeRouter({ work: 100, timeout: '20 millis' });
+  const { router, started } = makeRouter({ work: 100, timeout: '20 millis' });
   const { http, client } = await serve(router, experimental_memoryLocker());
   await using _ = http;
   const first = client.pay.mutate({ invoice: '1', by: 'a' });
-  await sleep(5);
+  await started('a');
   const [, err] = await safe(client.pay.mutate({ invoice: '1', by: 'b' }));
   expect(err).toMatchObject({ code: 'CONFLICT', defined: true });
   if (err?.defined)
@@ -101,15 +110,15 @@ test('a key the call already holds is not taken again', async () => {
 });
 
 test('a holder that outlives ttl loses the lock', async () => {
-  const { router } = makeRouter({ work: 80, ttl: '20 millis' });
+  const { router, started } = makeRouter({ work: 80, ttl: '20 millis' });
   const { http, client } = await serve(router, experimental_memoryLocker());
   await using _ = http;
-  const started = Date.now();
+  const t0 = Date.now();
   await Promise.all([
     client.pay.mutate({ invoice: '1', by: 'a' }),
-    sleep(5).then(() => client.pay.mutate({ invoice: '1', by: 'b' })),
+    started('a').then(() => client.pay.mutate({ invoice: '1', by: 'b' })),
   ]);
-  expect(Date.now() - started).toBeLessThan(150);
+  expect(Date.now() - t0).toBeLessThan(150);
 });
 
 test('an aborted waiter gives up its place in line', async () => {
@@ -156,7 +165,7 @@ const redisUrl = process.env['REDIS_URL'];
 test.skipIf(!redisUrl)(
   'two servers sharing Redis hold one lock between them',
   async () => {
-    const { log, router } = makeRouter({ work: 40 });
+    const { log, router, started } = makeRouter({ work: 40 });
     const layer = experimental_redisLocker({
       prefix: `test:lock:${Date.now()}:`,
       retryInterval: '5 millis',
@@ -167,7 +176,7 @@ test.skipIf(!redisUrl)(
     await using _2 = two.http;
     const [a, b] = await Promise.all([
       one.client.pay.mutate({ invoice: '1', by: 'a' }),
-      sleep(5).then(() => two.client.pay.mutate({ invoice: '1', by: 'b' })),
+      started('a').then(() => two.client.pay.mutate({ invoice: '1', by: 'b' })),
     ]);
     expect(a.waited).toBe(false);
     expect(b.waited).toBe(true);
