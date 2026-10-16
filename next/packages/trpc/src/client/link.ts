@@ -303,10 +303,10 @@ const traceHeaders = (span: Tracer.Span): Record<string, string> => {
 };
 
 /**
- * Runs `op` through `links` in a `trpc.<path>` client span, with the span's
- * trace context on `op.trace` when a tracer is installed. Without one,
- * requests get no extra headers, so simple cross-origin requests stay
- * simple (no CORS preflight).
+ * Runs `op` through `links`; when a tracer is installed, in a `trpc.<path>`
+ * client span, with the span's trace context on `op.trace`. Without one
+ * there is no span and requests get no extra headers, so simple
+ * cross-origin requests stay simple (no CORS preflight).
  * @since 0.1.0
  * @stability stable
  */
@@ -317,6 +317,8 @@ export function runOperation(
   // `Stream.withSpan`, from parts the client already ships.
   return Stream.unwrap(
     Effect.gen(function* () {
+      const tracer = yield* Effect.tracer;
+      if (tracer === Tracer.nativeTracer) return runLinks(links, op);
       const span = yield* Effect.makeSpanScoped(`trpc.${op.path}`, {
         kind: 'client',
         attributes: {
@@ -325,12 +327,8 @@ export function runOperation(
           'trpc.type': op.type,
         },
       });
-      const tracer = yield* Effect.tracer;
       const disabled = yield* Tracer.DisablePropagation;
-      const traced =
-        tracer === Tracer.nativeTracer || disabled
-          ? op
-          : { ...op, trace: traceHeaders(span) };
+      const traced = disabled ? op : { ...op, trace: traceHeaders(span) };
       return runLinks(links, traced).pipe(
         Stream.tapError((err) =>
           Effect.sync(() => span.attribute('trpc.error.code', err.code)),

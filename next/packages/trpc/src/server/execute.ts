@@ -553,15 +553,15 @@ export function callProcedure(
       }
       return Effect.failCause(cause as Cause.Cause<AnyTrpcError>);
     }),
-    Effect.tapError((err) =>
-      Effect.annotateCurrentSpan('trpc.error.code', err.code),
-    ),
   );
   const name = `trpc.${path}`;
+  const untraced = Effect.updateContext(call, (context) =>
+    Context.add(context, ResponseKey, response),
+  );
   // `withSpan`'s result, but the span, its stack frame and the response
   // handle go in with one context change: each fiber-cached key changed on
   // its own rebuilds the fiber's cache.
-  return Effect.useSpan(
+  const traced = Effect.useSpan(
     name,
     {
       kind: 'server',
@@ -573,22 +573,32 @@ export function callProcedure(
       },
     },
     (span) =>
-      Effect.updateContext(call, (context) =>
-        Context.add(
-          Context.add(
-            Context.add(context, ResponseKey, response),
-            Tracer.ParentSpan,
-            span,
-          ),
-          References.CurrentStackFrame,
-          {
-            name,
-            // Its stack would point here, the same line for every procedure.
-            stack: noStack,
-            parent: Context.get(context, References.CurrentStackFrame),
-          },
+      Effect.updateContext(
+        Effect.tapError(call, (err) =>
+          Effect.sync(() => span.attribute('trpc.error.code', err.code)),
         ),
+        (context) =>
+          Context.add(
+            Context.add(
+              Context.add(context, ResponseKey, response),
+              Tracer.ParentSpan,
+              span,
+            ),
+            References.CurrentStackFrame,
+            {
+              name,
+              // Its stack would point here, the same line for every procedure.
+              stack: noStack,
+              parent: Context.get(context, References.CurrentStackFrame),
+            },
+          ),
       ),
+  );
+  // A span costs every call, so only an installed tracer opts in to one.
+  return Effect.withFiber((fiber) =>
+    Context.get(fiber.context, Tracer.Tracer) === Tracer.nativeTracer
+      ? untraced
+      : traced,
   );
 }
 

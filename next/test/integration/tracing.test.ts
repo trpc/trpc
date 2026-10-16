@@ -1,7 +1,9 @@
-import { Effect, Layer, Option, References, Tracer } from 'effect';
+import { Effect, Layer, Option, References, Stream, Tracer } from 'effect';
 import {
   createTrpcClient,
   httpLink,
+  link,
+  localLink,
   wsLink,
   routerType,
 } from '@trpc12/trpc/client';
@@ -176,6 +178,42 @@ test('the server span is the current span, the stack frame and the parent of spa
   const fails = server.named('trpc.fails', 'server')!;
   expect(fails.attributes.get('trpc.error.code')).toBe('NOT_FOUND');
   expect(fails.status._tag).toBe('Ended');
+});
+
+test('without a tracer, calls open no spans: tracing is opt-in', async () => {
+  const seen: string[] = [];
+  const spanName = Effect.map(
+    Effect.option(Effect.currentSpan),
+    (span) => Option.getOrUndefined(span)?.name ?? 'none',
+  );
+  const traced = {
+    inner: t.procedure.query(() =>
+      Effect.map(spanName, (name) => {
+        seen.push(`resolver: ${name}`);
+        return 'ok';
+      }),
+    ),
+  };
+  const handler = createFetchHandler({ router: traced });
+  await handler.fetch(new Request('http://localhost/trpc/inner'));
+  await handler.dispose();
+
+  const spy = link(({ op, next }) =>
+    Stream.unwrap(
+      Effect.map(spanName, (name) => {
+        seen.push(`link: ${name}`);
+        return next(op);
+      }),
+    ),
+  );
+  const trpc = createEffectClient({
+    router: traced,
+    links: [spy, localLink({ router: traced })],
+  });
+  await Effect.runPromise(trpc.inner.query().pipe(Effect.withSpan('page')));
+
+  // Locally, the resolver runs in the caller's span.
+  expect(seen).toEqual(['resolver: none', 'link: page', 'resolver: page']);
 });
 
 test('handler.fetch continues the trace in an incoming traceparent', async () => {
