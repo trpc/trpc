@@ -1,4 +1,4 @@
-import { Cause, Effect, Queue, Stream } from 'effect';
+import { Cause, Effect, Option, Queue, Stream } from 'effect';
 import {
   fromWireError,
   isTrpcError,
@@ -92,48 +92,6 @@ export interface HttpLinkOptions {
     delayMs?: (attempt: number) => number;
   };
 }
-
-class AsyncQueue<T> implements AsyncIterable<T> {
-  #items: T[] = [];
-  #waiting: ((r: IteratorResult<T>) => void)[] = [];
-  #ended = false;
-  push(item: T) {
-    const waiter = this.#waiting.shift();
-    if (waiter) waiter({ value: item, done: false });
-    else this.#items.push(item);
-  }
-  end() {
-    this.#ended = true;
-    for (const waiter of this.#waiting.splice(0)) {
-      waiter({ value: undefined, done: true });
-    }
-  }
-  [Symbol.asyncIterator](): AsyncIterator<T> {
-    return {
-      next: () => {
-        const item = this.#items.shift();
-        if (item !== undefined)
-          return Promise.resolve({ value: item, done: false });
-        if (this.#ended)
-          return Promise.resolve({ value: undefined, done: true });
-        return new Promise((resolve) => this.#waiting.push(resolve));
-      },
-    };
-  }
-}
-
-const sleep = (ms: number, signal: AbortSignal) =>
-  new Promise<void>((resolve) => {
-    const timer = setTimeout(resolve, ms);
-    signal.addEventListener(
-      'abort',
-      () => {
-        clearTimeout(timer);
-        resolve();
-      },
-      { once: true },
-    );
-  });
 
 const isAbort = (cause: unknown) =>
   cause instanceof Error && cause.name === 'AbortError';
@@ -394,91 +352,122 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink {
   const queues = { query: [] as Pending[], mutation: [] as Pending[] };
   let scheduled = false;
 
-  async function dispatch(items: Pending[]) {
-    const live = items.filter((item) => !item.aborted);
-    if (live.length === 0) return;
-    const controller = new AbortController();
-    for (const item of live) {
-      item.onAbort = () => {
-        if (live.every((i) => i.aborted || i.settled)) controller.abort();
-      };
-    }
-    const frames = live.map(() => new AsyncQueue<Frame>());
-    const received = new Set<number>();
-    try {
-      const calls: BatchCall[] = live.map((item) => {
-        const { json } = encode(item.op);
-        return {
-          path: item.op.path,
-          ...(json === undefined ? {} : { input: json }),
+  const dispatch = (items: Pending[]): Effect.Effect<void> =>
+    Effect.suspend(() => {
+      const live = items.filter((item) => !item.aborted);
+      if (live.length === 0) return Effect.void;
+      const controller = new AbortController();
+      for (const item of live) {
+        item.onAbort = () => {
+          if (live.every((i) => i.aborted || i.settled)) controller.abort();
         };
-      });
-      const res = await fetchFn(
-        baseUrl,
-        await requestInit(
-          live.map((i) => i.op),
-          {
-            accept: CONTENT_TYPE.jsonl,
-            'content-type': CONTENT_TYPE.json,
-            [HEADER.batch]: '1',
-          },
-          {
-            method: 'POST',
-            body: JSON.stringify(calls),
-            signal: controller.signal,
-          },
-        ),
-      );
-      if (!res.ok || !res.body) {
-        const err = await readError(res);
-        for (const item of live) item.reject(err);
-        return;
       }
-      for await (const text of readLines(res.body)) {
-        const line = JSON.parse(text) as BatchLine;
-        const item = live[line.i];
-        const queue = frames[line.i];
-        if (!item || !queue) continue;
-        if ('chunk' in line) {
-          queue.push(line.chunk as Frame);
-          continue;
+      const received = new Set<number>();
+      const rejectRest = (err: AnyTrpcError) => {
+        for (const [i, item] of live.entries()) {
+          if (!received.has(i)) item.reject(err);
         }
-        received.add(line.i);
-        if (line.status >= 400) {
-          item.reject(
-            fromWireError(
-              serializer.deserialize(line.body as never),
-              line.status,
+      };
+      return Effect.gen(function* () {
+        const frames = yield* Effect.forEach(live, () =>
+          Queue.unbounded<Frame, AnyTrpcError | Cause.Done>(),
+        );
+        const onLine = (text: string) => {
+          const line = JSON.parse(text) as BatchLine;
+          const item = live[line.i];
+          const queue = frames[line.i];
+          if (!item || !queue) return Effect.void;
+          if ('chunk' in line) {
+            Queue.offerUnsafe(queue, line.chunk as Frame);
+            return Effect.void;
+          }
+          received.add(line.i);
+          if (line.status >= 400) {
+            item.reject(
+              fromWireError(
+                serializer.deserialize(line.body as never),
+                line.status,
+              ),
+            );
+            Queue.endUnsafe(queue);
+            return Effect.void;
+          }
+          Queue.offerUnsafe(queue, line.body as Frame);
+          return serializer
+            .deserializeStream(Stream.fromQueue(queue), {
+              reviveError,
+              ...streamErrors,
+            })
+            .pipe(
+              Effect.matchCause({
+                onSuccess: item.resolve,
+                onFailure: (cause) =>
+                  item.reject(toHttpError(Cause.squash(cause))),
+              }),
+              Effect.forkDetach,
+            );
+        };
+        yield* Effect.gen(function* () {
+          const calls: BatchCall[] = live.map((item) => {
+            const { json } = encode(item.op);
+            return {
+              path: item.op.path,
+              ...(json === undefined ? {} : { input: json }),
+            };
+          });
+          const res = yield* Effect.tryPromise({
+            try: async () =>
+              fetchFn(
+                baseUrl,
+                await requestInit(
+                  live.map((i) => i.op),
+                  {
+                    accept: CONTENT_TYPE.jsonl,
+                    'content-type': CONTENT_TYPE.json,
+                    [HEADER.batch]: '1',
+                  },
+                  {
+                    method: 'POST',
+                    body: JSON.stringify(calls),
+                    signal: controller.signal,
+                  },
+                ),
+              ),
+            catch: toHttpError,
+          });
+          if (!res.ok || !res.body) {
+            const err = yield* Effect.promise(() => readError(res));
+            for (const item of live) item.reject(err);
+            return;
+          }
+          yield* Stream.fromAsyncIterable(
+            readLines(res.body),
+            toHttpError,
+          ).pipe(
+            Stream.runForEach((text) =>
+              Effect.suspend(() => onLine(text)).pipe(
+                Effect.catchDefect((cause) => Effect.fail(toHttpError(cause))),
+              ),
             ),
           );
-          queue.end();
-          continue;
-        }
-        queue.push(line.body as Frame);
-        Effect.runPromise(
-          serializer.deserializeStream(
-            Stream.fromAsyncIterable(queue, toHttpError),
-            { reviveError, ...streamErrors },
+          rejectRest(
+            new TrpcError({
+              code: 'PARSE_ERROR',
+              message: 'The batch response ended without a result',
+            }),
+          );
+        }).pipe(
+          Effect.catchCause((cause) =>
+            Effect.sync(() => rejectRest(toHttpError(Cause.squash(cause)))),
           ),
-        ).then(item.resolve, (cause) => item.reject(toHttpError(cause)));
-      }
-      for (const [i, item] of live.entries()) {
-        if (received.has(i)) continue;
-        item.reject(
-          new TrpcError({
-            code: 'PARSE_ERROR',
-            message: 'The batch response ended without a result',
-          }),
+          Effect.ensuring(
+            Effect.sync(() => {
+              for (const queue of frames) Queue.endUnsafe(queue);
+            }),
+          ),
         );
-      }
-    } catch (cause) {
-      for (const [i, item] of live.entries()) {
-        if (!received.has(i)) item.reject(toHttpError(cause));
-      }
-    } finally {
-      for (const queue of frames) queue.end();
-    }
-  }
+      });
+    });
 
   function flush() {
     scheduled = false;
@@ -492,7 +481,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink {
       }
       for (const items of groups.values()) {
         for (let i = 0; i < items.length; i += maxItems) {
-          void dispatch(items.slice(i, i + maxItems));
+          Effect.runFork(dispatch(items.slice(i, i + maxItems)));
         }
       }
     }
@@ -519,7 +508,8 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink {
         queues[op.type as 'query' | 'mutation'].push(item);
         if (!scheduled) {
           scheduled = true;
-          setTimeout(flush, 0);
+          // A macrotask, so calls started in the same tick share a request.
+          Effect.runFork(Effect.andThen(Effect.sleep(0), Effect.sync(flush)));
         }
         return Effect.sync(() => {
           item.aborted = true;
@@ -530,97 +520,139 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink {
 
   // --- subscriptions ------------------------------------------------------------------
 
-  async function* events(op: Operation, signal: AbortSignal) {
-    let lastEventId = op.lastEventId;
-    let attempt = 0;
-    const retry = () => op.context.reconnect !== false;
-    while (!signal.aborted) {
-      let res: Response | undefined;
-      try {
-        res = await send(
-          op,
-          CONTENT_TYPE.sse,
-          lastEventId ? { [HEADER.lastEventId]: lastEventId } : {},
-          signal,
-        );
-      } catch (cause) {
-        if (signal.aborted) return;
-        if (!retry() || ++attempt > reconnectAttempts) {
-          throw toHttpError(cause);
-        }
-      }
-      if (res) {
-        if (!res.ok || !res.body) throw await readError(res);
-        const decoder = new DeferredDecoder(serializer);
-        try {
-          for await (const event of parseSse(res.body)) {
-            switch (event.event) {
-              case SSE_EVENT.done:
-                return;
-              case SSE_EVENT.error:
-                throw fromWireError(
-                  serializer.deserialize(JSON.parse(event.data)),
-                );
-              case SSE_EVENT.chunk: {
+  const subscription = (op: Operation): OperationStream =>
+    Stream.callback<unknown, AnyTrpcError>((queue) => {
+      const controller = new AbortController();
+      let lastEventId = op.lastEventId;
+      let attempt = 0;
+      const giveUp = () =>
+        op.context.reconnect === false || ++attempt > reconnectAttempts;
+
+      const read = (
+        event: { event: string; data: string; id?: string | undefined },
+        decoder: DeferredDecoder,
+      ): Effect.Effect<boolean, unknown> => {
+        switch (event.event) {
+          case SSE_EVENT.done:
+            return Effect.succeed(true);
+          case SSE_EVENT.error:
+            return Effect.try({
+              try: () =>
+                fromWireError(serializer.deserialize(JSON.parse(event.data))),
+              catch: (cause) => cause,
+            }).pipe(Effect.flatMap(Effect.fail));
+          case SSE_EVENT.chunk:
+            return Effect.try({
+              try: () => {
                 const frame = JSON.parse(event.data) as {
                   e: number;
                   chunk?: unknown;
                 };
                 if ('chunk' in frame) decoder.chunk(frame.e, frame.chunk);
                 else decoder.end(frame.e);
-                continue;
-              }
-              case SSE_EVENT.message:
-              case SSE_EVENT.deferred: {
-                if (event.id !== undefined) lastEventId = event.id;
-                attempt = 0;
+                return false;
+              },
+              catch: (cause) => cause,
+            });
+          case SSE_EVENT.message:
+          case SSE_EVENT.deferred: {
+            if (event.id !== undefined) lastEventId = event.id;
+            attempt = 0;
+            return Effect.tryPromise({
+              try: () => {
                 const data = JSON.parse(event.data) as unknown;
-                yield await (event.event === SSE_EVENT.deferred
+                return event.event === SSE_EVENT.deferred
                   ? decoder.decode(
                       (data as { body: unknown }).body,
                       (data as { e: number }).e,
                     )
-                  : decoder.decode(data, undefined));
-                continue;
-              }
-            }
+                  : decoder.decode(data, undefined);
+              },
+              catch: (cause) => cause,
+            }).pipe(
+              Effect.map((value) => {
+                Queue.offerUnsafe(queue, value);
+                return false;
+              }),
+            );
           }
-        } catch (cause) {
-          if (isTrpcError(cause)) throw cause;
-        } finally {
-          decoder.close();
+          default:
+            return Effect.succeed(false);
         }
-        if (signal.aborted) return;
-        if (!retry() || ++attempt > reconnectAttempts) {
-          throw new TrpcError({
-            code: 'NETWORK_ERROR',
-            message: 'The subscription connection was lost',
-          });
-        }
-      }
-      await sleep(reconnectDelay(attempt), signal);
-    }
-  }
+      };
 
-  const subscription = (op: Operation): OperationStream =>
-    Stream.callback<unknown, AnyTrpcError>((queue) =>
-      Effect.gen(function* () {
-        const controller = new AbortController();
-        yield* Effect.addFinalizer(() => Effect.sync(() => controller.abort()));
-        void (async () => {
-          try {
-            for await (const event of events(op, controller.signal)) {
-              Queue.offerUnsafe(queue, event);
-            }
-            Queue.endUnsafe(queue);
-          } catch (cause) {
-            if (!controller.signal.aborted) {
-              Queue.failCauseUnsafe(queue, Cause.fail(toHttpError(cause)));
-            }
-          }
-        })();
-      }),
-    );
+      /** One connection; `true` once the server ended the subscription. */
+      const connect = Effect.gen(function* () {
+        const res = yield* Effect.tryPromise({
+          try: () =>
+            send(
+              op,
+              CONTENT_TYPE.sse,
+              lastEventId ? { [HEADER.lastEventId]: lastEventId } : {},
+              linked(controller.signal, op),
+            ),
+          catch: (cause) => cause,
+        }).pipe(
+          Effect.catch((cause) =>
+            giveUp() ? Effect.fail(toHttpError(cause)) : Effect.succeed(null),
+          ),
+        );
+        if (!res) return false;
+        if (!res.ok || !res.body) {
+          return yield* Effect.fail(
+            yield* Effect.promise(() => readError(res)),
+          );
+        }
+        const decoder = new DeferredDecoder(serializer);
+        const ended = yield* Stream.fromAsyncIterable(
+          parseSse(res.body),
+          (cause) => cause,
+        ).pipe(
+          Stream.mapEffect((event) => read(event, decoder)),
+          Stream.takeUntil((done) => done),
+          Stream.runLast,
+          Effect.map((last) => Option.getOrElse(last, () => false)),
+          // Anything but a server error reconnects.
+          Effect.catch((cause) =>
+            isTrpcError(cause) ? Effect.fail(cause) : Effect.succeed(false),
+          ),
+          Effect.ensuring(Effect.sync(() => decoder.close())),
+        );
+        if (ended) return true;
+        if (giveUp()) {
+          return yield* Effect.fail(
+            new TrpcError({
+              code: 'NETWORK_ERROR',
+              message: 'The subscription connection was lost',
+            }),
+          );
+        }
+        return false;
+      });
+
+      const loop: Effect.Effect<void, AnyTrpcError> = Effect.flatMap(
+        connect,
+        (ended) =>
+          ended
+            ? Effect.void
+            : Effect.andThen(
+                Effect.sleep(reconnectDelay(attempt)),
+                Effect.suspend(() => loop),
+              ),
+      );
+      return loop.pipe(
+        Effect.matchCause({
+          onSuccess: () => Queue.endUnsafe(queue),
+          onFailure: (cause) => Queue.failCauseUnsafe(queue, cause),
+        }),
+        Effect.forkScoped,
+        // Finalizers run last-added first: aborting the response unblocks
+        // the body read before the fiber is interrupted.
+        Effect.andThen(
+          Effect.addFinalizer(() => Effect.sync(() => controller.abort())),
+        ),
+      );
+    });
 
   return withSerializer(({ op }) => {
     if (op.type === 'subscription') return subscription(op);

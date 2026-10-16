@@ -391,7 +391,7 @@ export function deserializeStream<T, E>(
 
     // A frame holding a `File` or `Blob` waits for its bytes, which arrive
     // as later chunks; frames for the same target keep their order.
-    const bytes = new Map<number, Promise<Uint8Array<ArrayBuffer>[]>>();
+    const bytes = new Map<number, Deferred.Deferred<void, unknown>>();
     const collected = new Map<number, Uint8Array<ArrayBuffer>[]>();
     const blobParts = (ref: BlobRef) => {
       const parts = collected.get(ref.stream);
@@ -408,26 +408,25 @@ export function deserializeStream<T, E>(
       Blob: (ref: BlobRef) =>
         new Blob(blobParts(ref), { type: String(ref.type ?? '') }),
     };
-    const collect = (idx: number) => {
-      let p = bytes.get(idx);
-      if (!p) {
-        p = Effect.runPromise(
-          iterate(idx).pipe(
-            Stream.runCollect,
-            Effect.map((chunks) => {
-              const parts = fromBase64(Array.from(chunks));
-              collected.set(idx, parts);
-              return parts;
-            }),
-          ),
+    const collect = (idx: number) =>
+      Effect.suspend(() => {
+        const known = bytes.get(idx);
+        if (known) return Effect.succeed(known);
+        const done = Deferred.makeUnsafe<void, unknown>();
+        bytes.set(idx, done);
+        return iterate(idx).pipe(
+          Stream.runCollect,
+          Effect.map((chunks) => {
+            collected.set(idx, fromBase64(Array.from(chunks)));
+          }),
+          Deferred.into(done),
+          Effect.forkDetach,
+          Effect.as(done),
         );
-        p.catch(() => {});
-        bytes.set(idx, p);
-      }
-      return p;
-    };
+      });
     const HEAD = -1;
-    const tails = new Map<number, Promise<void>>();
+    /** The last frame waiting for bytes, per target. */
+    const tails = new Map<number, Deferred.Deferred<void, unknown>>();
     const toDeserializeError = (cause: unknown) =>
       cause instanceof DansonError
         ? cause
@@ -455,40 +454,56 @@ export function deserializeStream<T, E>(
     let first = true;
     yield* source.pipe(
       Stream.runForEach((frame) =>
-        Effect.try({
-          try: () => {
-            const target = first ? HEAD : (frame as Chunk)[0];
-            first = false;
-            const waits = blobStreams(
-              target === HEAD
-                ? (frame as SerializeReturn)
-                : (frame as Chunk)[2],
-            ).map(collect);
-            const tail = tails.get(target);
-            if (waits.length === 0 && !tail) {
-              apply(target, frame);
-              return;
-            }
-            const next = Promise.all([tail, ...waits]).then(
-              () => {
+        Effect.gen(function* () {
+          const target = first ? HEAD : (frame as Chunk)[0];
+          first = false;
+          const refs = yield* Effect.try({
+            try: () =>
+              blobStreams(
+                target === HEAD
+                  ? (frame as SerializeReturn)
+                  : (frame as Chunk)[2],
+              ),
+            catch: toDeserializeError,
+          });
+          const waits = yield* Effect.forEach(refs, collect);
+          const tail = tails.get(target);
+          if (waits.length === 0 && !tail) {
+            return yield* Effect.try({
+              try: () => apply(target, frame),
+              catch: toDeserializeError,
+            });
+          }
+          const settled = Deferred.makeUnsafe<void, unknown>();
+          tails.set(target, settled);
+          const ready: ReadonlyArray<Deferred.Deferred<void, unknown>> = tail
+            ? [tail, ...waits]
+            : waits;
+          yield* Effect.forEach(ready, (d) => Deferred.await(d), {
+            discard: true,
+          }).pipe(
+            Effect.matchCause({
+              onFailure: (cause) => fail(target, Cause.squash(cause)),
+              onSuccess: () => {
                 try {
                   apply(target, frame);
                 } catch (cause) {
                   fail(target, toDeserializeError(cause));
                 }
               },
-              (error: unknown) => fail(target, error),
-            );
-            tails.set(target, next);
-            void next.then(() => {
-              if (tails.get(target) === next) tails.delete(target);
-            });
-          },
-          catch: toDeserializeError,
+            }),
+            Effect.ensuring(
+              Effect.sync(() => {
+                Deferred.doneUnsafe(settled, Effect.void);
+                if (tails.get(target) === settled) tails.delete(target);
+              }),
+            ),
+            Effect.forkDetach,
+          );
         }),
       ),
       Effect.onExit((exit) =>
-        Effect.promise(async () => {
+        Effect.gen(function* () {
           // The source's own failure (a network error, an abort) reaches
           // open deferred values as it is; defects and interrupts don't.
           const failure = Exit.isFailure(exit)
@@ -512,7 +527,9 @@ export function deserializeStream<T, E>(
             const q = queues.get(idx);
             if (q) Queue.failCauseUnsafe(q, Cause.fail(error));
           }
-          if (tails.size > 0) await Promise.all(tails.values());
+          yield* Effect.forEach([...tails.values()], Deferred.await, {
+            discard: true,
+          });
           for (const q of queues.values()) {
             Queue.failCauseUnsafe(q, Cause.fail(error));
           }

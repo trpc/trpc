@@ -6,3 +6,4 @@
 - Why: one model for interruption, cleanup and typed failures, and the parts compose with users' Effect code and layers.
 - Lost: zero-dependency, framework-free internals.
 - Open: existing promise-based internals (for example the file-bytes wait in `serializer/stream.ts`, `httpLink`'s batching) move over as they're touched.
+- (agent) Moved in round 3: the file-bytes wait in `serializer/stream.ts` (a `Deferred` per byte stream and per target, waits as fibers instead of promise chains) and `httpLink`'s batching (`Queue`s instead of a hand-rolled async queue, each batch an `Effect` run as a fiber, scheduling with `Effect.sleep(0)`) and SSE reconnect loop (`Stream` plus `Effect.sleep` backoff, no `setTimeout`). The rest still moves as it's touched, e.g. `socketLink` and `DeferredDecoder`.
