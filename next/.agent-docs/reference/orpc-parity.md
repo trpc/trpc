@@ -73,7 +73,7 @@ What the packages ship today, each row covered by integration tests with real cl
 | Message Port (Electron, browser, workers)                        | ✅     | `messagePortLink` + `handler.messagePort(port)`                                                                                                                                                  |
 | Nest.js integration                                              | 🛑     | Not built; contracts are the base it would use                                                                                                                                                   |
 | Leading-middleware dedupe                                        | ✅     | `.concat()` runs shared leading middleware once; client-side `dedupeLink`                                                                                                                        |
-| Request/response validation on the client                        | 🛑     | Not built                                                                                                                                                                                        |
+| Request/response validation on the client                        | ✅     | `validationLink({ contract })`; `output: 'json'` decodes `openApiLink` JSON with Effect Schema's JSON codec                                                                                      |
 | OpenTelemetry, logging integrations                              | ✅     | Effect's `Tracer`/`Logger` layers; client and server `trpc.<path>` spans share a trace via `traceparent`                                                                                         |
 | Rate limit helpers                                               | ✅     | `rateLimit()` over Effect's `RateLimiter` (memory/Redis stores), typed `RateLimited`, `RateLimit-*` headers                                                                                      |
 
@@ -107,7 +107,7 @@ oRPC ships these beyond the comparison rows. They are not parity requirements, b
 | Smart coercion for OpenAPI inputs                               | `openapi/plugins/smart-coercion.md`                        | v1 with OpenAPI             | 18       |
 | OpenAPI reference UI (Scalar/Swagger)                           | `openapi/plugins/openapi-reference.md`                     | v1 with OpenAPI             | 18       |
 | OpenAPI → contract (Hey API plugin)                             | `openapi/openapi-to-contract.md`                           | later                       | 09, 18   |
-| Request/response validation on the client (with contract)       | `plugins/request-validation.md`, `response-validation.md`  | later                       | 13, 17   |
+| Request/response validation on the client (with contract)       | `plugins/request-validation.md`, `response-validation.md`  | done (`validationLink`)     | 13, 17   |
 | `.callable()` procedures, `call()` helper                       | `client/server-side.md`                                    | v1                          | 15       |
 | `createFormAction`, `useServerAction`, optimistic actions       | `server-action.md`                                         | v1 / later                  | 15, 20   |
 | AI SDK and Better Auth integrations                             | `integrations/*`                                           | later (docs/recipes)        | —        |

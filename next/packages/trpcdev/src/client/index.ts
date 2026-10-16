@@ -59,6 +59,10 @@ export {
 } from './links/switch.ts';
 export { localLink, type LocalLinkOptions } from './links/local.ts';
 export {
+  validationLink,
+  type ValidationLinkOptions,
+} from './links/validation.ts';
+export {
   messagePortLink,
   wsLink,
   type MessagePortLinkOptions,

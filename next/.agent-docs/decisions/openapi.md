@@ -14,7 +14,8 @@
 - `openApiLink({ url, contract })` reads methods and paths from a `toContract()` value, sends `multipart/form-data` when the input contains a `Blob`, and reads SSE for subscriptions.
 - Q18.5: the `openApiReference({ path, specPath, docsProvider: 'scalar' | 'swagger', specGenerateOptions })` plugin serves the UI from a CDN and generates the document on first request.
 - (agent) Inferred errors are documented by `generateOpenApiFromTypes` ([`openapi-type-generator-v1.md`](./openapi-type-generator-v1.md)).
-- Open: no `.route({ spec })` override for procedures without static schemas; no response validation in `openApiLink`; no OpenAPI-to-contract (Hey API) tool.
+- Open: no `.route({ spec })` override for procedures without static schemas; no OpenAPI-to-contract (Hey API) tool.
+- (agent) Response validation for `openApiLink` is `validationLink({ contract, output: 'json' })` in front of it, which decodes plain JSON with Effect Schema's JSON codec ([`client-validation-link.md`](./client-validation-link.md)).
 - (agent) Round 3 ([`openapi-type-generator-v1.md`](./openapi-type-generator-v1.md)): `plugins` became `middleware` and `openApiReference` is Effect HTTP middleware; inferred errors and schema-less procedures are documented by `trpcdev/openapi/typescript`.
 - (agent) Open: `openApiLink`'s client types show the server types (`createdAt: Date`), but REST sends JSON (a string); the JSON-form types don't apply to REST yet.
 - Lives in: `packages/trpcdev/src/openapi/`, `test/integration/openapi.test.ts`, `test/integration/openapi-typescript.test.ts`.
