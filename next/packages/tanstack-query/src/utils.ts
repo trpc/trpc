@@ -21,12 +21,20 @@ import {
   type TrpcMutationKey,
   type TrpcQueryKey,
 } from './keys.ts';
-import type {
-  SubscriptionCallbacks,
-  TrpcSubscriptionOptions,
+import {
+  SubscriptionCache,
+  type SubscriptionCallbacks,
+  type TrpcSubscriptionOptions,
 } from './subscription.ts';
 
 type AnyFn = (...args: any[]) => any;
+
+const subscriptionCaches = new WeakMap<object, SubscriptionCache>();
+const subscriptionCacheFor = (client: object): SubscriptionCache => {
+  let cache = subscriptionCaches.get(client);
+  if (!cache) subscriptionCaches.set(client, (cache = new SubscriptionCache()));
+  return cache;
+};
 type NonUndefined<T> = T extends undefined ? never : T;
 
 type InputOf<F> = F extends (input: infer I, ...rest: any[]) => any ? I : never;
@@ -601,6 +609,7 @@ export function createTrpcQueryUtils<TClient extends object>(
   opts: CreateTrpcQueryUtilsOptions<TClient>,
 ): TrpcQueryUtils<TClient> {
   const { client, keyPrefix } = opts;
+  const subscriptionCache = subscriptionCacheFor(client);
   const method = (path: readonly string[], name: string): ClientMethod => {
     let target: any = client;
     for (const key of path) target = target[key];
@@ -748,6 +757,7 @@ export function createTrpcQueryUtils<TClient extends object>(
           subscriptionKey: procedureKey(path, input, undefined),
           enabled: input !== skipToken && enabled !== false,
           subscribe: streamFrom(method(callPath, 'subscribe'), input, context),
+          subscriptionCache,
         };
       }
       case 'streamedKey':

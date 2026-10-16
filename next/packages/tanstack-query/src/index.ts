@@ -44,6 +44,7 @@ export type {
   TrpcQueryKeyType,
 } from './keys.ts';
 export {
+  SubscriptionCache,
   SubscriptionObserver,
   type SubscriptionCallbacks,
   type SubscriptionResult,

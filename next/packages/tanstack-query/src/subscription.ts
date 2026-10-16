@@ -31,6 +31,12 @@ export interface TrpcSubscriptionOptions<
   readonly enabled: boolean;
   /** Opens the subscription. Aborting `signal` closes it. */
   readonly subscribe: (opts: { signal: AbortSignal }) => AsyncIterable<TEvent>;
+  /**
+   * Observers with the same cache and key share one subscription.
+   * `subscriptionOptions()` passes its client's cache; without one, each
+   * observer has its own.
+   */
+  readonly subscriptionCache?: SubscriptionCache | undefined;
 }
 
 /**
@@ -57,6 +63,120 @@ export type SubscriptionResult<TEvent, TError> =
 /** Options a {@link SubscriptionObserver} accepts. @internal */
 type AnyOptions<TEvent, TError> = TrpcSubscriptionOptions<TEvent, TError>;
 
+interface Member<TEvent, TError> {
+  options(): AnyOptions<TEvent, TError>;
+  receive(result: SubscriptionResult<TEvent, TError>): void;
+}
+
+const idle = { status: 'idle', data: undefined, error: null } as const;
+
+/** @internal */
+class SharedSubscription<TEvent, TError> {
+  result: SubscriptionResult<TEvent, TError> = idle;
+  readonly members: Set<Member<TEvent, TError>> = new Set();
+  readonly release: () => void;
+  #controller: AbortController | undefined;
+
+  constructor(release: () => void) {
+    this.release = release;
+  }
+
+  join(member: Member<TEvent, TError>): void {
+    this.members.add(member);
+    if (this.members.size === 1) this.#start(member.options());
+    else member.receive(this.result);
+  }
+
+  leave(member: Member<TEvent, TError>): void {
+    this.members.delete(member);
+    if (this.members.size > 0) return;
+    this.#stop();
+    this.release();
+  }
+
+  restart(options: AnyOptions<TEvent, TError>): void {
+    this.#stop();
+    this.#set(idle);
+    this.#start(options);
+  }
+
+  #set(result: SubscriptionResult<TEvent, TError>): void {
+    this.result = result;
+    for (const member of this.members) member.receive(result);
+  }
+
+  #each(fn: (options: AnyOptions<TEvent, TError>) => void): void {
+    for (const member of this.members) fn(member.options());
+  }
+
+  #start(options: AnyOptions<TEvent, TError>): void {
+    const controller = new AbortController();
+    this.#controller = controller;
+    this.#set({ status: 'connecting', data: this.result.data, error: null });
+    const { signal } = controller;
+    const live = () => this.#controller === controller && !signal.aborted;
+    void (async () => {
+      try {
+        for await (const event of options.subscribe({ signal })) {
+          if (!live()) return;
+          this.#set({ status: 'active', data: event, error: null });
+          this.#each((o) => o.onData?.(event));
+        }
+        if (!live()) return;
+        this.#controller = undefined;
+        this.#set({ status: 'idle', data: this.result.data, error: null });
+        this.#each((o) => o.onComplete?.());
+      } catch (cause) {
+        if (!live()) return;
+        this.#controller = undefined;
+        const error = cause as TError;
+        this.#set({ status: 'error', data: this.result.data, error });
+        this.#each((o) => o.onError?.(error));
+      }
+    })();
+  }
+
+  #stop(): void {
+    this.#controller?.abort();
+    this.#controller = undefined;
+  }
+}
+
+/**
+ * The running subscriptions of one client, by key. Observers that join a
+ * key share its connection, state and events; each keeps its own callbacks.
+ * The subscription closes when its last observer leaves.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export class SubscriptionCache {
+  readonly #entries = new Map<string, SharedSubscription<any, any>>();
+
+  /** @internal */
+  join<TEvent, TError>(
+    hash: string,
+    member: Member<TEvent, TError>,
+  ): SharedSubscription<TEvent, TError> {
+    let entry = this.#entries.get(hash) as
+      | SharedSubscription<TEvent, TError>
+      | undefined;
+    if (!entry) {
+      const created = new SharedSubscription<TEvent, TError>(() => {
+        if (this.#entries.get(hash) === created) this.#entries.delete(hash);
+      });
+      this.#entries.set(hash, created);
+      entry = created;
+    }
+    entry.join(member);
+    return entry;
+  }
+
+  /** How many subscriptions are open. */
+  get size(): number {
+    return this.#entries.size;
+  }
+}
+
 /**
  * Runs a subscription for UI code, like TanStack's `QueryObserver` does for
  * queries. It starts with the first listener, stops with the last, and
@@ -75,14 +195,20 @@ type AnyOptions<TEvent, TError> = TrpcSubscriptionOptions<TEvent, TError>;
 export class SubscriptionObserver<TEvent, TError> {
   #options: AnyOptions<TEvent, TError>;
   #hash: string;
-  #result: SubscriptionResult<TEvent, TError>;
+  #result: SubscriptionResult<TEvent, TError> = idle;
   #listeners = new Set<(result: SubscriptionResult<TEvent, TError>) => void>();
-  #controller: AbortController | undefined;
+  #entry: SharedSubscription<TEvent, TError> | undefined;
+  readonly #cache: SubscriptionCache;
+  readonly #member: Member<TEvent, TError>;
 
   constructor(options: AnyOptions<TEvent, TError>) {
     this.#options = options;
     this.#hash = hashKey(options.subscriptionKey);
-    this.#result = { status: 'idle', data: undefined, error: null };
+    this.#cache = options.subscriptionCache ?? new SubscriptionCache();
+    this.#member = {
+      options: () => this.#options,
+      receive: (result) => this.#set(result),
+    };
   }
 
   /** The current state. A new object whenever something changes. */
@@ -90,21 +216,21 @@ export class SubscriptionObserver<TEvent, TError> {
 
   /**
    * Listens for state changes; returns the unsubscribe function. The first
-   * listener starts the subscription and the last one stops it.
+   * listener starts (or joins) the subscription and the last one leaves it.
    */
   subscribe = (
     listener: (result: SubscriptionResult<TEvent, TError>) => void,
   ): (() => void) => {
     this.#listeners.add(listener);
-    if (this.#listeners.size === 1) this.#start();
+    if (this.#listeners.size === 1) this.#join();
     return () => {
       this.#listeners.delete(listener);
-      if (this.#listeners.size === 0) this.#stop();
+      if (this.#listeners.size === 0) this.#leave();
     };
   };
 
   /**
-   * Updates the options. A different key or `enabled` restarts the
+   * Updates the options. A different key or `enabled` moves to that
    * subscription (and clears `data`); new callbacks apply right away.
    */
   setOptions = (options: AnyOptions<TEvent, TError>): void => {
@@ -114,17 +240,16 @@ export class SubscriptionObserver<TEvent, TError> {
     this.#options = options;
     this.#hash = hash;
     if (restart && this.#listeners.size > 0) {
-      this.#stop();
-      this.#set({ status: 'idle', data: undefined, error: null });
-      this.#start();
+      this.#leave();
+      this.#set(idle);
+      this.#join();
     }
   };
 
-  /** Clears the state and starts again. */
+  /** Clears the state and starts again, for every observer of the key. */
   reset = (): void => {
-    this.#stop();
-    this.#set({ status: 'idle', data: undefined, error: null });
-    if (this.#listeners.size > 0) this.#start();
+    if (this.#entry) this.#entry.restart(this.#options);
+    else this.#set(idle);
   };
 
   #set(result: SubscriptionResult<TEvent, TError>): void {
@@ -132,36 +257,13 @@ export class SubscriptionObserver<TEvent, TError> {
     for (const listener of this.#listeners) listener(result);
   }
 
-  #start(): void {
-    if (!this.#options.enabled || this.#controller) return;
-    const controller = new AbortController();
-    this.#controller = controller;
-    this.#set({ status: 'connecting', data: this.#result.data, error: null });
-    const { signal } = controller;
-    const live = () => this.#controller === controller && !signal.aborted;
-    void (async () => {
-      try {
-        for await (const event of this.#options.subscribe({ signal })) {
-          if (!live()) return;
-          this.#set({ status: 'active', data: event, error: null });
-          this.#options.onData?.(event);
-        }
-        if (!live()) return;
-        this.#controller = undefined;
-        this.#set({ status: 'idle', data: this.#result.data, error: null });
-        this.#options.onComplete?.();
-      } catch (cause) {
-        if (!live()) return;
-        this.#controller = undefined;
-        const error = cause as TError;
-        this.#set({ status: 'error', data: this.#result.data, error });
-        this.#options.onError?.(error);
-      }
-    })();
+  #join(): void {
+    if (!this.#options.enabled || this.#entry) return;
+    this.#entry = this.#cache.join(this.#hash, this.#member);
   }
 
-  #stop(): void {
-    this.#controller?.abort();
-    this.#controller = undefined;
+  #leave(): void {
+    this.#entry?.leave(this.#member);
+    this.#entry = undefined;
   }
 }

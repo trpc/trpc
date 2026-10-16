@@ -530,6 +530,60 @@ test('SubscriptionObserver tracks status, events and restarts', async () => {
   expect(disabled.getCurrentResult().status).toBe('idle');
 });
 
+test('observers with the same key share one subscription', async () => {
+  await using app = await createApp();
+  const seen: string[] = [];
+  const observe = (name: string) =>
+    new SubscriptionObserver(
+      app.trpc.post.onAdd.subscriptionOptions({
+        onData: (post) => seen.push(`${name}:${post.title}`),
+      }),
+    );
+  const a = observe('a');
+  const b = observe('b');
+  const stopA = a.subscribe(() => {});
+  const stopB = b.subscribe(() => {});
+  expect(b.getCurrentResult().status).toBe('connecting');
+  await sleep(30);
+  expect(db.listeners.size).toBe(1);
+
+  app.addPost('One');
+  const [ra, rb] = await Promise.all([
+    until(a, (r) => r.status === 'active'),
+    until(b, (r) => r.status === 'active'),
+  ]);
+  expect(ra.data.title).toBe('One');
+  expect(rb).toBe(ra);
+  expect(seen).toEqual(['a:One', 'b:One']);
+
+  const late = observe('late');
+  const stopLate = late.subscribe(() => {});
+  expect(late.getCurrentResult()).toBe(a.getCurrentResult());
+
+  stopA();
+  app.addPost('Two');
+  await until(b, (r) => r.status === 'active' && r.data.title === 'Two');
+  expect(seen).toEqual(['a:One', 'b:One', 'b:Two', 'late:Two']);
+
+  b.reset();
+  expect(late.getCurrentResult().status).toBe('connecting');
+  stopB();
+  stopLate();
+  await sleep(20);
+  expect(db.listeners.size).toBe(0);
+
+  const own = new SubscriptionObserver({
+    ...app.trpc.post.onAdd.subscriptionOptions(),
+    subscriptionCache: undefined,
+  });
+  const stopOwn = own.subscribe(() => {});
+  const stopShared = observe('c').subscribe(() => {});
+  await sleep(30);
+  expect(db.listeners.size).toBe(2);
+  stopOwn();
+  stopShared();
+});
+
 test('context reaches the links, typed from what they declare', async () => {
   await using app = await createApp();
   const queryClient = new QueryClient();

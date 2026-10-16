@@ -233,6 +233,27 @@ test('useSubscription, live and streamed queries update the UI', async () => {
   );
 });
 
+test('components with the same useSubscription key share one subscription', async () => {
+  await using app = await createApp();
+  function Added({ name }: { name: string }) {
+    const trpc = useTrpc();
+    const added = useSubscription(trpc.post.onAdd.subscriptionOptions());
+    return <p className={name}>{added.data?.title}</p>;
+  }
+  using view = mount(
+    <>
+      <Added name="a" />
+      <Added name="b" />
+    </>,
+    app.client,
+  );
+  await waitFor(() => expect(db.listeners.size).toBe(1));
+  app.addPost('Shared');
+  await waitFor(() => expect(text(view.el, '.a')).toBe('Shared'));
+  expect(text(view.el, '.b')).toBe('Shared');
+  expect(db.listeners.size).toBe(1);
+});
+
 test('server render with prefetched data, then hydrate without refetching', async () => {
   await using app = await createApp();
   function Page() {

@@ -106,6 +106,12 @@ const progress = useSubscription(
 
 Unsubscribing stops watching, not the job. Keep jobs in a [Publisher](./subscriptions.md#publisher) so any instance can stream them.
 
+## Subscriptions
+
+`useSubscription(trpc.x.subscriptionOptions(...))` gives `status` (`idle`, `connecting`, `active`, `error`), the latest event as `data`, `error` and `reset()`. Components with the same client and key share one subscription. A late one starts from the current state, each component's `onData` runs for every later event, `reset()` restarts it for all of them, and it closes when the last one unmounts. Pass `subscriptionCache: undefined` to give an observer its own.
+
+`liveOptions()` (the latest event) and `streamedOptions()` (every event, capped by `maxChunks`) put the subscription in TanStack's cache instead, for `useQuery`.
+
 ## Offline mutations
 
 A paused mutation that was persisted (with `persistQueryClient`, say) can only resume if the restored client knows its `mutationFn`. `mutationOptions()` returns the key and the function, so register them as defaults:
