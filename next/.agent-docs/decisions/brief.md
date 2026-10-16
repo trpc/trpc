@@ -46,6 +46,7 @@
   - "Me: I go through and picks ideas and make decisions about APIs"
   - "Also document the approach"
 - (agent) Superseded or refined since, among others: transformers on endpoints ([`replaceable-serializers.md`](./replaceable-serializers.md)); danSON as an opt-in, not the default ([`serializer.md`](./serializer.md)); stability through `unstable_` prefixes plus tags ([`stability-jsdoc-tags.md`](./stability-jsdoc-tags.md)); `@trpc12/*` instead of `@trpcdev` and `trpcdev` ([`npm-names.md`](./npm-names.md)); the process in [`../approach.md`](../approach.md).
+- Open (human): the parity target has moved. orpc.dev/docs/comparison now shows oRPC v2 (vendored, `.repos/orpc/apps/content/docs/comparison.mdx`), and [`../reference/orpc-parity.md`](../reference/orpc-parity.md) was built from v1.15.5's table. v2 regroups the rows and adds `ReadableStream<Uint8Array>`, "typesafe at scale" (type-check benchmarks), custom serializers, a pub/sub publisher, rate limiting, locking (Redis, Upstash, Durable Objects), client plugins and interceptors, SWR and Pinia Colada, AI SDK, built-in helpers (cookie, encryption, signing), OpenTelemetry and Cloudflare Workers Traces, plus runtime, type-check and bundle-size benchmarks against tRPC v11. Should parity track v2's table, and which new rows (locking, the helpers, Workers Traces, the benchmarks) does v1 need?
 - Why: one place for the founding constraints, searchable with `pnpm decisions brief`.
 - Lost: nothing; this is the brief moved, not changed.
 - Lives in: all of `next/`; the process in `.agent-docs/approach.md`.
