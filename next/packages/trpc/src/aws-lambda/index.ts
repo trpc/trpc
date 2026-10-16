@@ -25,7 +25,7 @@ import { Effect, Stream } from 'effect';
  * ```ts
  * const event: LambdaV1Event = { httpMethod: 'GET', path: '/trpc/health', headers: {}, body: null };
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface LambdaV1Event {
@@ -58,7 +58,7 @@ export interface LambdaV1Event {
  *   requestContext: { http: { method: 'GET' } },
  * };
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface LambdaV2Event {
@@ -91,7 +91,7 @@ interface CloudFrontHeaders {
  *   Records: [{ cf: { request: { method: 'GET', uri: '/trpc/health', querystring: '', headers: {} } } }],
  * };
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface LambdaEdgeEvent {
@@ -117,7 +117,7 @@ export interface LambdaEdgeEvent {
  * ```ts
  * export const main = (event: LambdaEvent, context: LambdaContext) => lambda(event, context);
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type LambdaEvent = LambdaV1Event | LambdaV2Event | LambdaEdgeEvent;
@@ -129,7 +129,7 @@ export type LambdaEvent = LambdaV1Event | LambdaV2Event | LambdaEdgeEvent;
  * ```ts
  * createContext: ({ platform }) => ({ requestId: platform.context.awsRequestId })
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface LambdaContext {
@@ -144,7 +144,7 @@ export interface LambdaContext {
  * ```ts
  * createFetchHandler<AppRouter, LambdaPlatform>({ router, createContext: ({ platform }) => ({ event: platform.event }) });
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface LambdaPlatform {
@@ -158,7 +158,7 @@ export interface LambdaPlatform {
  * ```ts
  * const result: LambdaV1Result = { statusCode: 200, headers: {}, body: '"ok"', isBase64Encoded: false };
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface LambdaV1Result {
@@ -176,7 +176,7 @@ export interface LambdaV1Result {
  * ```ts
  * const result: LambdaV2Result = { statusCode: 200, headers: {}, cookies: [], body: '"ok"', isBase64Encoded: false };
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface LambdaV2Result {
@@ -193,7 +193,7 @@ export interface LambdaV2Result {
  * ```ts
  * const result: LambdaEdgeResult = { status: '200', headers: {}, body: '"ok"', bodyEncoding: 'text' };
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface LambdaEdgeResult {
@@ -209,7 +209,7 @@ export interface LambdaEdgeResult {
  * ```ts
  * const result: LambdaResult = await lambda(event, context);
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type LambdaResult = LambdaV1Result | LambdaV2Result | LambdaEdgeResult;
@@ -222,7 +222,7 @@ export type LambdaResult = LambdaV1Result | LambdaV2Result | LambdaEdgeResult;
  * ```ts
  * const handler: LambdaFetchHandler = createFetchHandler({ router });
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface LambdaFetchHandler {
@@ -235,7 +235,7 @@ export interface LambdaFetchHandler {
  * ```ts
  * toLambdaHandler(handler, { timeoutMarginMs: 500 });
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface LambdaHandlerOptions {
@@ -454,7 +454,7 @@ const toResult = (
  * ```ts
  * export const main = toLambdaHandler(createFetchHandler({ router }));
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function toLambdaHandler(
@@ -480,7 +480,7 @@ export function toLambdaHandler(
  * ```ts
  * export const main = awslambda.streamifyResponse(toLambdaStreamingHandler(handler));
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface LambdaResponseStream {
@@ -511,7 +511,7 @@ const write = (stream: LambdaResponseStream, chunk: Uint8Array) =>
  *   toLambdaStreamingHandler(createFetchHandler({ router })),
  * );
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function toLambdaStreamingHandler(

@@ -8,7 +8,7 @@ import {
 /**
  * What {@link createSubscription} returns. The fields are reactive getters,
  * like `createQuery`'s result: don't destructure them.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface CreateSubscriptionResult<TEvent, TError> {
@@ -35,7 +35,7 @@ export interface CreateSubscriptionResult<TEvent, TError> {
  *
  * <p>{sub.data}</p>
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function createSubscription<TEvent, TError>(

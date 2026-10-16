@@ -53,7 +53,7 @@ export * from '@trpc12/tanstack-query';
 
 /**
  * What {@link createTrpcContext} returns.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface TrpcAngularContext<
@@ -87,7 +87,7 @@ export interface TrpcAngularContext<
  * const { provideTrpc, injectTrpc } = createTrpcContext<AppRouter>();
  * providers: [provideTanStackQuery(queryClient), provideTrpc(client)];
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function createTrpcContext<TSource>(
@@ -117,7 +117,7 @@ export function createTrpcContext<TSource>(
 
 /**
  * Options of {@link injectSubscription}.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface InjectSubscriptionOptions {
@@ -128,7 +128,7 @@ export interface InjectSubscriptionOptions {
 /**
  * What {@link injectSubscription} returns: signals for the latest event and
  * status.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface InjectSubscriptionResult<TEvent, TError> {
@@ -153,7 +153,7 @@ export interface InjectSubscriptionResult<TEvent, TError> {
  * );
  * // template: {{ ticks.data() }}
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function injectSubscription<TEvent, TError>(

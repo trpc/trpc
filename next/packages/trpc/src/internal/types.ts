@@ -1,7 +1,7 @@
 /**
  * Marks a builder slot that has not been set. An interface rather than a
  * `unique symbol`, so a published plugin's `.d.ts` can always name it.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface Unset {
@@ -33,7 +33,7 @@ export type UnionToIntersection<U> = (
 
 /**
  * Shows up in a type error when a builder check fails.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface TypeError<TMessage extends string, TDetail = never> {
@@ -84,7 +84,7 @@ type Plain =
 /**
  * A value as the client receives it: generators arrive as plain
  * `AsyncIterable`s and thenables as `Promise`s, at any depth.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type Deserialized<T> =
@@ -113,7 +113,7 @@ export type Deserialized<T> =
 /**
  * Which output types a serializer keeps, at the type level. A link declares
  * its serializer's form, so client types follow it.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface OutputForm {
@@ -125,7 +125,7 @@ export interface OutputForm {
 
 /**
  * danSON's form, and in-process callers': native types, deferred values at any depth.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface DansonForm extends OutputForm {
@@ -136,7 +136,7 @@ export interface DansonForm extends OutputForm {
 /**
  * A sync serializer's form: `TKeeps` survive, the rest arrives in its JSON
  * form. Root generators and promises are still framed by the transport.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface SyncForm<TKeeps> extends OutputForm {
@@ -146,7 +146,7 @@ export interface SyncForm<TKeeps> extends OutputForm {
 
 /**
  * Plain JSON's form: every value arrives as `JSON.parse(JSON.stringify(v))`.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type JsonForm = SyncForm<never>;
@@ -215,7 +215,7 @@ type Deferred<T, K> =
  * `string`, `Map` and `Set` become `{}`, `undefined` keys are dropped and
  * `undefined` array items become `null`. With `D`, promises and streams in
  * plain objects and arrays stay deferred, as the transport streams them.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type JsonOf<T, K = never, D extends boolean = false> =
@@ -271,7 +271,7 @@ type Framed<T, K> =
 
 /**
  * A procedure's output as the client receives it under a serializer's form.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type ClientValue<
@@ -281,7 +281,7 @@ export type ClientValue<
 
 /**
  * The output form of a serializer type; plain JSON's for `undefined`.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type FormOfSerializer<S> = S extends { readonly '~form'?: infer F }
@@ -297,7 +297,7 @@ export type FormOfOptions<TOpts> = FormOfSerializer<
 
 /**
  * `query`, `mutation` or `subscription`.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type ProcedureType = 'query' | 'mutation' | 'subscription';

@@ -2,7 +2,7 @@ import { TrpcError, type AnyTrpcError } from '../internal/error.ts';
 
 /**
  * The JSON body of an OpenAPI error response.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface OpenApiErrorBody {

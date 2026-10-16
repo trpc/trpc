@@ -3,7 +3,7 @@ import { tracked, type TrackedEnvelope } from './tracked.ts';
 
 /**
  * Event types by channel: `{ created: Post; deleted: { id: string } }`.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type PublisherEvents = Record<string, unknown>;
@@ -14,7 +14,7 @@ export type PublisherEvents = Record<string, unknown>;
  * ```ts
  * Posts.publish('created', post, { tags: [`user:${post.authorId}`] });
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface PublishOptions {
@@ -31,7 +31,7 @@ export interface PublishOptions {
  * ```ts
  * Posts.subscribe('created', { lastEventId, tags: [`user:${ctx.user.id}`] });
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface SubscribeOptions {
@@ -47,7 +47,7 @@ export interface SubscribeOptions {
 /**
  * What a publisher service does. Events carry ids, so subscribers resume
  * from `lastEventId` when the backend keeps history.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface PublisherShape<TEvents extends PublisherEvents> {
@@ -68,7 +68,7 @@ export interface PublisherShape<TEvents extends PublisherEvents> {
 
 /**
  * Options for the in-memory layer.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface MemoryPublisherOptions {
@@ -83,7 +83,7 @@ export interface MemoryPublisherOptions {
 /**
  * The class `Publisher.Service` makes: a `Context` key for the publisher,
  * with an in-memory layer and accessors.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface PublisherClass<
@@ -152,7 +152,7 @@ interface Event {
 
 /**
  * The in-memory publisher, for a layer of your own key.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export const makeMemoryPublisher = <TEvents extends PublisherEvents>(
@@ -255,7 +255,7 @@ export const memoryPublisher = (
  * };
  * createFetchHandler({ router, layer: Posts.memory({ buffer: 100 }) });
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export const Publisher = {

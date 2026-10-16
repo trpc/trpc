@@ -42,7 +42,7 @@ import { isUpgrade, upgradeTo } from '../server/upgrade.ts';
 
 /**
  * Anything with a web-standard `fetch` method, like `createFetchHandler()`.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface FetchLike {
@@ -51,7 +51,7 @@ export interface FetchLike {
 
 /**
  * Something that serves WebSockets, like `createFetchHandler()`.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface WebSocketHandlerLike {
@@ -60,7 +60,7 @@ export interface WebSocketHandlerLike {
 
 /**
  * Options for {@link toHttpEffect} and {@link serve}.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface HttpOptions {
@@ -73,7 +73,7 @@ export interface HttpOptions {
 
 /**
  * Options for {@link cors}: Effect's `HttpMiddleware.cors` options.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type CorsOptions = NonNullable<
@@ -94,7 +94,7 @@ export type CorsOptions = NonNullable<
  *   middleware: [cors({ allowedOrigins: ['https://app.example.com'], credentials: true })],
  * });
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function cors(options: CorsOptions = {}): HttpMiddleware.HttpMiddleware {
@@ -127,7 +127,7 @@ export function cors(options: CorsOptions = {}): HttpMiddleware.HttpMiddleware {
  * ```ts
  * const app = toHttpEffect(handler);
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function toHttpEffect(
@@ -208,7 +208,7 @@ export function toHttpEffect(
  *   Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 })),
  * );
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function serve(

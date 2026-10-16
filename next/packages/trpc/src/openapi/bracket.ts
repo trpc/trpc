@@ -29,7 +29,7 @@ function segmentsOf(key: string): string[] {
  * parseBracketNotation(new URLSearchParams('a[b]=1&tags[]=x&tags[]=y'));
  * // { a: { b: '1' }, tags: ['x', 'y'] }
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function parseBracketNotation(
@@ -88,7 +88,7 @@ export function parseBracketNotation(
  * new URLSearchParams(toBracketNotation({ a: { b: 1 }, tags: ['x', 'y'] }) as string[][]);
  * // a[b]=1&tags[]=x&tags[]=y
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function toBracketNotation(

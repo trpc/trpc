@@ -43,14 +43,14 @@ import type {
 /**
  * `'safe'` returns `safe()`'s `[data, error]` / `{ data, error }` result;
  * `'throw'` returns the data and throws `TrpcError`.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability experimental
  */
 export type ActionResultMode = 'safe' | 'throw';
 
 /**
  * Options for {@link experimental_createAction} and {@link experimental_createCallable}.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability experimental
  */
 export interface CreateActionOptions<
@@ -76,7 +76,7 @@ export interface CreateActionOptions<
 
 /**
  * What a wrapped procedure resolves to.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability experimental
  */
 export type ActionResult<
@@ -99,7 +99,7 @@ type Args<TInput> = undefined extends TInput
  * const [result, submit, isPending] = useActionState(createPost, undefined);
  * // <form action={submit}>
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability experimental
  */
 export interface Action<
@@ -119,7 +119,7 @@ export interface Action<
 
 /**
  * A procedure as a function, for calls with typed input.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability experimental
  */
 export type Callable<
@@ -240,7 +240,7 @@ function makeFactory<TMode extends ActionResultMode>(
  *
  * const strict = experimental_createAction({ ctx: createContext, result: 'throw' });
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability experimental
  */
 export function experimental_createAction<
@@ -266,7 +266,7 @@ export function experimental_createAction<
  * const byId = callable(appRouter.post.byId);
  * const post = await byId({ id: '1' });
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability experimental
  */
 export function experimental_createCallable<

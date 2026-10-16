@@ -26,7 +26,7 @@ import { link, withSerializer, type TrpcLink } from '../link.ts';
 
 /**
  * Options for {@link localLink}.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface LocalLinkOptions<TRouter extends AnyRouter> {
@@ -53,7 +53,7 @@ export interface LocalLinkOptions<TRouter extends AnyRouter> {
  *   links: [localLink({ router: appRouter, createContext: () => ({ user }) })],
  * });
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function localLink<

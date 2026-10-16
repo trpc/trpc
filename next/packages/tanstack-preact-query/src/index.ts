@@ -41,7 +41,7 @@ export * from '@trpc12/tanstack-query';
 
 /**
  * Props of the `TrpcProvider` from {@link createTrpcContext}.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface TrpcProviderProps<
@@ -60,7 +60,7 @@ export interface TrpcProviderProps<
  * TanStack Query), and the Preact context, for bridging it into another
  * render tree: read it with `useContext`, then provide that value on the
  * other side.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type TrpcPreactContext<
@@ -98,7 +98,7 @@ export type TrpcPreactContext<
  *   </TrpcProvider>
  * </QueryClientProvider>;
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function createTrpcContext<TSource>(
@@ -141,7 +141,7 @@ export function createTrpcContext<TSource>(
 
 /**
  * What {@link useSubscription} returns: the latest event and status.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type UseSubscriptionResult<TEvent, TError> = SubscriptionResult<
@@ -161,7 +161,7 @@ export type UseSubscriptionResult<TEvent, TError> = SubscriptionResult<
  * const sub = useSubscription(trpc.post.onAdd.subscriptionOptions());
  * return <p>{sub.data?.title}</p>;
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function useSubscription<TEvent, TError>(

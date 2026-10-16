@@ -25,7 +25,7 @@ import type {
 } from './types.ts';
 
 /**
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function createRecursiveProxy(
@@ -52,7 +52,7 @@ const METHODS = {
 let nextId = 0;
 
 /**
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function makeOperation(
@@ -75,7 +75,7 @@ export function makeOperation(
 /**
  * Splits typed call options into `signal`, `lastEventId` and the fields
  * links read.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function splitCallOptions(
@@ -89,7 +89,7 @@ export function splitCallOptions(
 /**
  * Call options as the untyped client takes them: what links read is in
  * `context`.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface UntypedCallOptions {
@@ -118,7 +118,7 @@ export function untilAborted(
 
 /**
  * Options for {@link createTrpcClient}.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface TrpcClientOptions {
@@ -128,7 +128,7 @@ export interface TrpcClientOptions {
 
 /**
  * Options for a client typed from a `router:` value (17 D-C).
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface TypedClientOptions<
@@ -143,7 +143,7 @@ export interface TypedClientOptions<
 
 /**
  * The untyped client that typed clients and integrations are built on.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface TrpcUntypedClient {
@@ -169,7 +169,7 @@ export interface TrpcUntypedClient {
  * const untyped = createUntypedClient({ links: [httpLink({ url })] });
  * const post = await untyped.request({ type: 'query', path: 'post.byId', input: { id: '1' } });
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function createUntypedClient(
@@ -219,7 +219,7 @@ export function createUntypedClient(
  * const post = await client.post.byId.query({ id: '1' }, { signal });
  * for await (const event of client.onPost.subscribe()) render(event);
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function createTrpcClient<
@@ -269,7 +269,7 @@ const clientSerializers = new WeakMap<object, AnySerializer>();
  * ```ts
  * const serializer = getClientSerializer(client) ?? jsonSerializer;
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function getClientSerializer(client: object): AnySerializer | undefined {
@@ -279,7 +279,7 @@ export function getClientSerializer(client: object): AnySerializer | undefined {
 /**
  * The result of `safe()`: a `[data, error]` tuple that also has `data` and
  * `error` properties (07 Q7.3).
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type SafeResult<T, E> =
@@ -302,7 +302,7 @@ export type SafeResult<T, E> =
  *
  * const { data, error } = await safe(client.post.create.mutate(input));
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export async function safe<T, E = unknown>(
@@ -325,7 +325,7 @@ export async function safe<T, E = unknown>(
 
 /**
  * A client whose queries and mutations resolve to `safe()` results.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type SafeClient<TClient> = {
@@ -346,7 +346,7 @@ export type SafeClient<TClient> = {
  * const safeClient = createSafeClient(client);
  * const [post, error] = await safeClient.post.byId.query({ id });
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function createSafeClient<TClient extends object>(

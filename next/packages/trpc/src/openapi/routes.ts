@@ -4,7 +4,7 @@ import type { ProcedureType } from '../internal/types.ts';
  * REST metadata (04 (g)), the `route` meta key of the {@link openapi}
  * extension. The RPC endpoint ignores it; the OpenAPI handler, generator and
  * link use it (18).
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface Route {
@@ -41,7 +41,7 @@ export interface Route {
 
 /**
  * An OpenAPI operation object, as `route.spec` sees it.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface OperationSpec {
@@ -75,7 +75,7 @@ export function mergeRoute(
 
 /**
  * The meta the `openapi()` extension adds.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface OpenApiMeta {
@@ -92,14 +92,14 @@ export const routeOf = (def: { readonly meta: object }): Route | undefined =>
 
 /**
  * An HTTP method a `route` accepts.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type HttpMethod = NonNullable<Route['method']>;
 
 /**
  * A procedure's REST mapping, with defaults applied (Q18.2).
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface ResolvedRoute {
@@ -128,7 +128,7 @@ export const normalizePrefix = (prefix: string | undefined): string => {
  * resolveRoute('post.byId', 'query', undefined, '/api');
  * // { method: 'GET', path: '/api/post/byId', params: [], successStatus: 200, … }
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function resolveRoute(

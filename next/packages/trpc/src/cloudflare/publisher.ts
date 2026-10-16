@@ -10,7 +10,7 @@ import { tracked } from '../server/tracked.ts';
 import { deliveries, type HibernationState } from './hibernation.ts';
 
 /**
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface HibernatingPublisherOptions {
@@ -45,7 +45,7 @@ export interface HibernatingPublisherOptions {
  *   sockets = experimental_createHibernatingWebSockets(this.handler, { state: this.ctx });
  * }
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function hibernatingPublisher<

@@ -11,7 +11,7 @@ import type { AnySerializer } from '../serializer/index.ts';
 /**
  * Call option fields the built-in links read from `op.context` (17 F-B).
  * Your own links declare theirs with `link<{ context: … }>()`.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type BuiltinCallOptions = {
@@ -38,7 +38,7 @@ export type BuiltinCallOptions = {
 /**
  * `fetch` options `httpLink` lets calls set: `RequestInit` without what the
  * link sets itself, plus Next's data-cache options.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type TrpcRequestInit = Omit<
@@ -52,7 +52,7 @@ export type TrpcRequestInit = Omit<
 /**
  * One call, as links see it. `TContext` types the `context` fields a link
  * declares it reads.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface Operation<TContext extends object = {}> {
@@ -75,14 +75,14 @@ export interface Operation<TContext extends object = {}> {
 /**
  * The result of an operation (17 OR-A): a query or mutation is a
  * one-element stream, a subscription is a stream of events.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type OperationStream = Stream.Stream<unknown, AnyTrpcError>;
 
 /**
  * What an Effect link receives.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface EffectLinkOpts<TContext extends object = {}> {
@@ -93,7 +93,7 @@ export interface EffectLinkOpts<TContext extends object = {}> {
 
 /**
  * Call option names links can't declare: the client reads them itself.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface ReservedCallOptions {
@@ -105,7 +105,7 @@ export interface ReservedCallOptions {
  * What a link declares it reads (17 (c)). `context` fields are added to the
  * call options of clients created with `router:` (F-B), and arrive in
  * `op.context`. `signal` and `lastEventId` are reserved.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface LinkDecl {
@@ -140,7 +140,7 @@ export interface LinkDecl {
  * operation and the rest of the chain to the result stream. The last link
  * sends the request. `TDecl` is what it reads from `context`; `TRouter` is
  * set on router-aware links like a typed `splitLink`.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface TrpcLink<TDecl extends LinkDecl = {}, TRouter = any> {
@@ -157,7 +157,7 @@ export interface TrpcLink<TDecl extends LinkDecl = {}, TRouter = any> {
 
 /**
  * Any link, whatever it declares.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type AnyLink = TrpcLink<any, any>;
@@ -180,7 +180,7 @@ export function toClientError(cause: unknown): AnyTrpcError {
 }
 
 /**
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function clientErrorFromCause(
@@ -200,7 +200,7 @@ export function clientErrorFromCause(
 
 /**
  * The single value of a query or mutation.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export const firstValue = (
@@ -238,7 +238,7 @@ export const firstValue = (
  *   next(op).pipe(Stream.tap(() => Effect.log(op.path))),
  * );
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export const link = <TDecl extends LinkDecl = {}>(
@@ -296,7 +296,7 @@ export function chainSwitchNames(links: ReadonlyArray<AnyLink>): Set<string> {
  * trace context on `op.trace` when a tracer is installed. Without one,
  * requests get no extra headers, so simple cross-origin requests stay
  * simple (no CORS preflight).
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function runOperation(
@@ -333,7 +333,7 @@ export function runOperation(
 
 /**
  * Runs an operation through a link chain.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function runLinks(

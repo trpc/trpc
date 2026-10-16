@@ -61,7 +61,7 @@ import {
 
 /**
  * Options shared by every OpenAPI handler.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface BaseOpenApiHandlerOptions<TRouter extends AnyRouter> {
@@ -110,7 +110,7 @@ export interface BaseOpenApiHandlerOptions<TRouter extends AnyRouter> {
 
 /**
  * The options of {@link createOpenApiHandler}.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type OpenApiHandlerOptions<
@@ -122,7 +122,7 @@ export type OpenApiHandlerOptions<
 
 /**
  * A web-standard handler for the REST mapping of a router.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface OpenApiHandler<TPlatform = undefined> {
@@ -151,7 +151,7 @@ export interface OpenApiHandler<TPlatform = undefined> {
  * ```ts
  * await openapi.serve(request, { path: 'post.byId', procedure, params: { id: '1' } });
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface OpenApiCall {
@@ -222,7 +222,7 @@ const specificity = (route: ResolvedRoute) =>
  * });
  * // GET /api/posts/1, GET /api/docs, GET /api/openapi.json
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function createOpenApiHandler<

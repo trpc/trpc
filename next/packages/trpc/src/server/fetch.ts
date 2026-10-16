@@ -75,7 +75,7 @@ const encoder = new TextEncoder();
 
 /**
  * What `createContext` receives.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface CreateContextOpts<TPlatform = undefined> {
@@ -105,7 +105,7 @@ export interface CreateContextOpts<TPlatform = undefined> {
 
 /**
  * What `onError` receives. `error.cause` holds the original thrown value.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface OnErrorOpts {
@@ -117,7 +117,7 @@ export interface OnErrorOpts {
 
 /**
  * `createContext`, required when the router's procedures need ctx.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type ContextOption<TCtx, TPlatform = undefined> = {} extends TCtx
@@ -136,7 +136,7 @@ export type ContextOption<TCtx, TPlatform = undefined> = {} extends TCtx
  * The platform argument `fetch()` takes: none without a platform type (so
  * `handler.fetch` fits Next's route handler type), optional when the type
  * allows `undefined`, required otherwise.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type PlatformArgs<TPlatform> = [TPlatform] extends [undefined]
@@ -147,7 +147,7 @@ export type PlatformArgs<TPlatform> = [TPlatform] extends [undefined]
 
 /**
  * The `platform` field of `websocket()` and `messagePort()` options.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type PlatformField<TPlatform> = undefined extends TPlatform
@@ -156,7 +156,7 @@ export type PlatformField<TPlatform> = undefined extends TPlatform
 
 /**
  * `layer`, required when the router's procedures need Effect services.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type LayerOption<TServices> = [TServices] extends [never]
@@ -168,7 +168,7 @@ export type LayerOption<TServices> = [TServices] extends [never]
 
 /**
  * The handler's `serializer` option.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface SerializerOption {
@@ -183,7 +183,7 @@ export interface SerializerOption {
 
 /**
  * Options shared by every handler.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface BaseHandlerOptions<TRouter extends AnyRouter> {
@@ -245,7 +245,7 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter> {
 
 /**
  * The options of {@link createFetchHandler}.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type FetchHandlerOptions<
@@ -258,7 +258,7 @@ export type FetchHandlerOptions<
 
 /**
  * A web-standard request handler.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface FetchHandler<TPlatform = undefined> {
@@ -407,7 +407,7 @@ export const parentSpan = (
  * });
  * export default { fetch: handler.fetch };
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function createFetchHandler<

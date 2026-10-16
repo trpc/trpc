@@ -18,7 +18,7 @@ import type { ResponseHandle } from './middleware.ts';
  *   }),
  * );
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface Response {
@@ -27,7 +27,7 @@ export interface Response {
 
 /**
  * The `Response` key and its accessors.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface ResponseService extends Context.ServiceClass<
@@ -54,7 +54,7 @@ const update = (f: (handle: ResponseHandle) => void) =>
   Effect.flatMap(tag, (handle) => Effect.sync(() => f(handle)));
 
 /**
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export const Response: ResponseService = Object.assign(Key, {

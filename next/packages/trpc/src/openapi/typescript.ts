@@ -40,7 +40,7 @@ import {
 
 /**
  * The options of {@link experimental_generateOpenApiFromTypes}.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability experimental
  */
 export interface GenerateOpenApiFromTypesOptions extends GenerateOpenApiOptions {
@@ -410,7 +410,7 @@ function inferRouterTypes(
  *   info: { title: 'API', version: '1.0.0' },
  * });
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability experimental
  */
 export async function experimental_generateOpenApiFromTypes(

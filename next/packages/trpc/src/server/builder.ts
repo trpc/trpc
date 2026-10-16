@@ -49,7 +49,7 @@ import type { TrackedEnvelope } from './tracked.ts';
 
 /**
  * The builder's state: one mapped bag (03 G-A).
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface BuilderDef {
@@ -75,7 +75,7 @@ export interface BuilderDef {
 
 /**
  * Part of inferred procedure types; exported so they stay nameable.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type With<TDef extends BuilderDef, P extends Partial<BuilderDef>> = {
@@ -84,7 +84,7 @@ export type With<TDef extends BuilderDef, P extends Partial<BuilderDef>> = {
 
 /**
  * The ctx at this point of the chain.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type CurrentCtx<TDef extends BuilderDef> = Overwrite<
@@ -94,7 +94,7 @@ export type CurrentCtx<TDef extends BuilderDef> = Overwrite<
 
 /**
  * What a context-aware input callback receives (05 D-A).
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface InputOpts<TCtx, TMeta> {
@@ -106,7 +106,7 @@ export interface InputOpts<TCtx, TMeta> {
 
 /**
  * The input of a declared error's constructor.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type ErrorConstructorOpts<TData> = {
@@ -117,7 +117,7 @@ export type ErrorConstructorOpts<TData> = {
 /**
  * Typed constructors for the errors declared with `.errors()` (07 A). The
  * errors they make are `defined` even when thrown from deep helper code.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type ErrorConstructors<TDeclared> = {
@@ -130,7 +130,7 @@ export type ErrorConstructors<TDeclared> = {
 
 /**
  * What a resolver receives.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface ResolverOpts<TDef extends BuilderDef> {
@@ -149,7 +149,7 @@ export interface ResolverOpts<TDef extends BuilderDef> {
 
 /**
  * What a subscription resolver receives.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface SubscriptionResolverOpts<
@@ -161,7 +161,7 @@ export interface SubscriptionResolverOpts<
 
 /**
  * What `.provide()`'s factory receives.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface ProvideOpts<TDef extends BuilderDef> {
@@ -195,7 +195,7 @@ type ServicesOf<R> = R extends AnyTrpcError
 
 /**
  * Part of inferred procedure types; exported so they stay nameable.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface Split {
@@ -205,7 +205,7 @@ export interface Split {
 }
 /**
  * Part of inferred procedure types; exported so they stay nameable.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type SplitReturn<R> =
@@ -231,7 +231,7 @@ type StreamErrorsOf<R> = R extends AnyTrpcError
     : never;
 /**
  * Part of inferred procedure types; exported so they stay nameable.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type SplitStream<R> =
@@ -271,7 +271,7 @@ type EventConstraint<TDef extends BuilderDef> = TDef['outputIn'] extends Unset
 /**
  * A query or mutation that streams needs `.output(stream(Item))`: a plain
  * schema would be checked against the whole iterable.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type StreamOutputCheck<
@@ -302,7 +302,7 @@ type UnmappedOf<R> =
 /**
  * 02 d.ii: an Effect or Stream that can fail with something other than a
  * `TrpcError` is a type error until the failure is mapped.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type StrictErrors<R> =
@@ -317,7 +317,7 @@ export type StrictErrors<R> =
 
 /**
  * Checks values from `ok()` short-circuits against the procedure's output.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type ShortsCheck<TDef extends BuilderDef, TOutput> = [
@@ -340,7 +340,7 @@ type ResolvedOutput<
 
 /**
  * Part of inferred procedure types; exported so they stay nameable.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type BuildProcedure<
@@ -373,7 +373,7 @@ type NeedsConflict<TCtx, TNeeds> = {
  * A type error when a standalone middleware needs a ctx key the procedure
  * has with another type. Keys the procedure lacks are fine: see
  * {@link WithNeeds}.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type NeedsCheck<TCtx, TNeeds> = [NeedsConflict<TCtx, TNeeds>] extends [
@@ -389,7 +389,7 @@ export type NeedsCheck<TCtx, TNeeds> = [NeedsConflict<TCtx, TNeeds>] extends [
  * The root ctx after a middleware that needs keys the procedure lacks: they
  * become requirements on the root ctx, so `createContext` (or an
  * in-process caller's `ctx`) must supply them, like an Effect requirement.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type WithNeeds<TDef extends BuilderDef, TNeeds> = [
@@ -404,7 +404,7 @@ export type WithNeeds<TDef extends BuilderDef, TNeeds> = [
 
 /**
  * `unknown` when `plugin` may be concatenated onto a builder with `TDef`.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type ConcatCheck<TDef extends BuilderDef, TPlugin extends BuilderDef> = [
@@ -425,14 +425,14 @@ export type ConcatCheck<TDef extends BuilderDef, TPlugin extends BuilderDef> = [
 
 /**
  * The `.errors()` argument.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type ErrorMapInput = Record<string, ErrorSpec>;
 
 /**
  * The `TrpcError` types an error map declares, by code.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type DeclaredErrors<M> = {
@@ -446,7 +446,7 @@ export type DeclaredErrors<M> = {
 
 /**
  * The runtime state under `'~trpc'`.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface BuilderInternals {
@@ -475,7 +475,7 @@ export interface BuilderInternals {
  *   me: authed.query(({ ctx }) => ctx.user),
  * };
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface ProcedureBuilder<TDef extends BuilderDef> {
@@ -805,7 +805,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
 
 /**
  * Part of inferred procedure types; exported so they stay nameable.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type InputDef<TDef extends BuilderDef, $S extends AnySchema> = With<
@@ -820,7 +820,7 @@ export type InputDef<TDef extends BuilderDef, $S extends AnySchema> = With<
 
 /**
  * Any procedure builder.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type AnyProcedureBuilder = ProcedureBuilder<any>;

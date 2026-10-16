@@ -12,7 +12,7 @@ import {
 
 /**
  * Options for {@link hydrationOptions}.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface HydrationOptionsOptions {
@@ -38,7 +38,7 @@ export interface HydrationOptionsOptions {
  *   defaultOptions: { ...hydrationOptions({ client }), queries: { staleTime: 30_000 } },
  * });
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function hydrationOptions(opts: HydrationOptionsOptions = {}): {

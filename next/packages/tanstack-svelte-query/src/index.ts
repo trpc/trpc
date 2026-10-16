@@ -48,7 +48,7 @@ export {
  * context for its descendants (call it during component init, next to
  * `QueryClientProvider` or `setQueryClientContext`) and returns its
  * helpers; and the client in context, for calls outside TanStack Query.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type TrpcSvelteContext<
@@ -87,7 +87,7 @@ export type TrpcSvelteContext<
  *   <App />
  * </QueryClientProvider>
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function createTrpcContext<TSource>(

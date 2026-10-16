@@ -32,7 +32,7 @@ import {
 
 /**
  * The type-level config of `initTrpc`.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface RootConfig {
@@ -44,7 +44,7 @@ export interface RootConfig {
 
 /**
  * The runtime options of `initTrpc`.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface RootOptions<TMeta> {
@@ -67,7 +67,7 @@ export interface RootOptions<TMeta> {
 
 /**
  * The initial builder state for a root ctx and meta.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface RootDef<TCtx extends object, TMeta extends object> {
@@ -87,7 +87,7 @@ export interface RootDef<TCtx extends object, TMeta extends object> {
 
 /**
  * What `initTrpc()` returns, conventionally named `t`.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface TrpcRoot<
@@ -180,7 +180,7 @@ export interface TrpcRoot<
 /**
  * `unknown` when an extension fits a root: the root has the ctx it needs and
  * no meta key with a different type.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type WithCheck<TDef extends BuilderDef, TExt extends BuilderDef> = [
@@ -207,7 +207,7 @@ type MetaConflicts<A, B> = {
 
 /**
  * A root's builder state after `.with(extension)`.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type ExtendedDef<
@@ -230,7 +230,7 @@ export type ExtendedDef<
 
 /**
  * `t.middleware`, with `t.middleware.effect` for Effect middleware.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface RootMiddleware<TCtx extends object, TMeta extends object> {
@@ -276,7 +276,7 @@ export interface RootMiddleware<TCtx extends object, TMeta extends object> {
  * const t = initTrpc<{ ctx: Context; meta: Meta }>();
  * export const publicProcedure = t.procedure;
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function initTrpc<TConfig extends RootConfig = {}>(

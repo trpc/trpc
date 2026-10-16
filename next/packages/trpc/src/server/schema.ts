@@ -3,7 +3,7 @@ import { TrpcError } from '../internal/error.ts';
 
 /**
  * A [Standard Schema](https://standardschema.dev) issue.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface StandardIssue {
@@ -20,7 +20,7 @@ type StandardResult<O> =
 /**
  * The [Standard Schema](https://standardschema.dev) interface, implemented by
  * zod, valibot, ArkType and others.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface StandardSchemaV1<I = unknown, O = I> {
@@ -36,7 +36,7 @@ export interface StandardSchemaV1<I = unknown, O = I> {
 
 /**
  * A schema `.input()` and `.output()` accept: Standard Schema or Effect Schema.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type AnySchema = StandardSchemaV1<any, any> | Schema.Top;
@@ -60,7 +60,7 @@ export type SchemaServices<S> = S extends Schema.Top
 
 /**
  * The `data` of an input validation error.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface InputValidationErrorData {
@@ -73,7 +73,7 @@ export interface InputValidationErrorData {
 
 /**
  * Added to the error union of every procedure with an input.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type InputValidationError = TrpcError<

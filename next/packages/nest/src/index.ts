@@ -70,7 +70,7 @@ import type { AnyProcedure, CreateContextOpts } from '@trpc12/trpc/server';
  *   layer: Db.layer,
  * });
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability experimental
  */
 export interface TrpcModuleOptions extends Omit<
@@ -97,7 +97,7 @@ export interface TrpcModuleOptions extends Omit<
  *   useFactory: (auth: Auth) => ({ createContext: ({ platform }) => auth.contextOf(platform) }),
  * });
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability experimental
  */
 export interface TrpcModuleAsyncOptions extends Pick<
@@ -116,7 +116,7 @@ export interface TrpcModuleAsyncOptions extends Pick<
  * ```ts
  * constructor(@Inject(experimental_TRPC_MODULE_OPTIONS) options: TrpcModuleOptions) {}
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability experimental
  */
 export const experimental_TRPC_MODULE_OPTIONS: unique symbol = Symbol(
@@ -145,7 +145,7 @@ const isProcedure = (value: unknown): value is AnyProcedure =>
  * ```ts
  * app.get(experimental_TrpcHost).handler; // the OpenApiHandler behind every route
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability experimental
  */
 @Injectable()
@@ -222,7 +222,7 @@ export class experimental_TrpcHost implements OnApplicationShutdown {
  * ```ts
  * @UseInterceptors(experimental_ImplementInterceptor)
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability experimental
  */
 @Injectable()
@@ -307,7 +307,7 @@ const route = (
  *   return impl.router({ post: { byId: impl.post.byId.query(({ input }) => this.posts.find(input.id)) } });
  * }
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability experimental
  */
 export function experimental_Implement(
@@ -365,7 +365,7 @@ export function experimental_Implement(
  * @Module({ imports: [experimental_TrpcModule.forRoot({ createContext, layer })], controllers: [PostController] })
  * class AppModule {}
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability experimental
  */
 @Module({})

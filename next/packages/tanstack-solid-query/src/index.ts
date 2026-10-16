@@ -47,7 +47,7 @@ export * from '@trpc12/tanstack-query';
 
 /**
  * Props of the `TrpcProvider` from {@link createTrpcContext}.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface TrpcProviderProps<
@@ -64,7 +64,7 @@ export interface TrpcProviderProps<
  * Solid's context providers: the provider (render it inside
  * `QueryClientProvider`), the hook for the provided client's helpers and
  * the hook for the client itself, for calls outside TanStack Query.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type TrpcSolidContext<
@@ -101,7 +101,7 @@ export type TrpcSolidContext<
  *   </TrpcProvider>
  * </QueryClientProvider>;
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function createTrpcContext<TSource>(
@@ -141,7 +141,7 @@ export function createTrpcContext<TSource>(
 /**
  * What {@link useSubscription} returns. The fields are reactive getters,
  * like `useQuery`'s result: don't destructure them.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface UseSubscriptionResult<TEvent, TError> {
@@ -164,7 +164,7 @@ export interface UseSubscriptionResult<TEvent, TError> {
  * );
  * return <p>{sub.data}</p>;
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function useSubscription<TEvent, TError>(

@@ -43,7 +43,7 @@ import { resumeOf, type Resume } from './resume.ts';
 
 /**
  * Options for {@link httpLink}.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface HttpLinkOptions<
@@ -124,7 +124,7 @@ export interface HttpLinkOptions<
 /**
  * What `httpLink` declares: its serializer's form, batching when on, and no
  * subscriptions when they're off.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type HttpLinkDecl<TOpts> = {
@@ -191,7 +191,7 @@ function initKey(op: Operation): string | undefined {
  *   links: [httpLink({ url: 'http://localhost:3000/trpc', batch: true })],
  * });
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function httpLink<TOpts extends HttpLinkOptions>(

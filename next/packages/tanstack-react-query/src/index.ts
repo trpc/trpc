@@ -44,7 +44,7 @@ export * from '@trpc12/tanstack-query';
 
 /**
  * Props of the `TrpcProvider` from {@link createTrpcContext}.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface TrpcProviderProps<
@@ -63,7 +63,7 @@ export interface TrpcProviderProps<
  * TanStack Query), and the React context, for bridging it into another
  * renderer (react-three-fiber, react-pdf): read it with `useContext`, then
  * provide that value on the other side.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type TrpcReactContext<
@@ -103,7 +103,7 @@ export type TrpcReactContext<
  *   </TrpcProvider>
  * </QueryClientProvider>;
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function createTrpcContext<TSource>(
@@ -146,7 +146,7 @@ export function createTrpcContext<TSource>(
 
 /**
  * What {@link useSubscription} returns: the latest event and status.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type UseSubscriptionResult<TEvent, TError> = SubscriptionResult<
@@ -168,7 +168,7 @@ export type UseSubscriptionResult<TEvent, TError> = SubscriptionResult<
  * );
  * if (sub.status === 'error') return <button onClick={sub.reset}>Retry</button>;
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function useSubscription<TEvent, TError>(

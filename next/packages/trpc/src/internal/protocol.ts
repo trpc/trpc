@@ -2,7 +2,7 @@ import type { ProcedureType } from './types.ts';
 
 /**
  * The wire protocol version this build speaks.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export const PROTOCOL_VERSION = '12';
@@ -52,7 +52,7 @@ export function fromInputSearch(
 
 /**
  * Header names the protocol uses.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export const HEADER = {
@@ -79,7 +79,7 @@ export const HEADER = {
 
 /**
  * Content types the protocol uses.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export const CONTENT_TYPE = {
@@ -92,7 +92,7 @@ export const CONTENT_TYPE = {
 
 /**
  * One call in a batch request body.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface BatchCall {
@@ -102,7 +102,7 @@ export interface BatchCall {
 
 /**
  * One JSONL line of a batch response.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type BatchLine =

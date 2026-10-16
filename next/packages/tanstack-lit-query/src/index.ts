@@ -60,7 +60,7 @@ export * from '@trpc12/tanstack-query';
 /**
  * The provider element class from {@link createTrpcContext}. Set `.client`
  * as a property.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface TrpcProviderElement<
@@ -73,7 +73,7 @@ export interface TrpcProviderElement<
 
 /**
  * What {@link createTrpcContext} returns.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface TrpcLitContext<
@@ -131,7 +131,7 @@ function lazy<T extends object>(resolve: () => T): T {
  *   <trpc-provider .client=${client}><post-view></post-view></trpc-provider>
  * </query-client-provider>`;
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function createTrpcContext<TSource>(
@@ -206,7 +206,7 @@ export function createTrpcContext<TSource>(
 /**
  * What {@link createSubscriptionController} returns: call it (or read
  * `current`) during render for the latest state.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type SubscriptionResultAccessor<TEvent, TError> =
@@ -307,7 +307,7 @@ class SubscriptionController<TEvent, TError> implements ReactiveController {
  *   }
  * }
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function createSubscriptionController<TEvent, TError>(

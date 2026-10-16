@@ -26,7 +26,7 @@ import { DansonError, type JsonValue } from './utils.ts';
  * const transformer: SyncTransformer = superjson;
  * const devalueTransformer: SyncTransformer = { serialize: devalue.stringify, deserialize: devalue.parse };
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface SyncTransformer {
@@ -267,7 +267,7 @@ function framedSerializer(
 
 /**
  * Options for {@link createSyncSerializer}.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface SyncSerializerOptions {
@@ -295,7 +295,7 @@ export interface SyncSerializerOptions {
  * createFetchHandler({ router, serializer });
  * httpLink({ url, serializer }); // client types keep Date, Map, Set, bigint
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function createSyncSerializer<TKeeps = never>(
@@ -315,7 +315,7 @@ export function createSyncSerializer<TKeeps = never>(
  * createFetchHandler({ router }); // jsonSerializer
  * httpLink({ url }); // jsonSerializer
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export const jsonSerializer: Serializer<JsonForm> = framedSerializer(

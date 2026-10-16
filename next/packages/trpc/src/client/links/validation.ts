@@ -14,7 +14,7 @@ import { link, type TrpcLink } from '../link.ts';
 
 /**
  * Options for {@link validationLink}.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface ValidationLinkOptions {
@@ -98,7 +98,7 @@ const isEnvelope = (value: unknown): value is { id: string; data: unknown } =>
  *   links: [validationLink({ contract: appContract }), httpLink({ url })],
  * });
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function validationLink(

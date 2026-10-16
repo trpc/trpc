@@ -4,7 +4,7 @@ import { Effect } from 'effect';
 import { Command } from 'effect/cli';
 import { upgradeCommand } from './cli.ts';
 
-Command.run(upgradeCommand, { version: '0.0.1' }).pipe(
+Command.run(upgradeCommand, { version: '0.1.0' }).pipe(
   Effect.provide(NodeServices.layer),
   NodeRuntime.runMain,
 );

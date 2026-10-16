@@ -28,7 +28,7 @@ import { tracked, type TrackedEnvelope } from '../server/tracked.ts';
 /**
  * The server-side `WebSocket` a Durable Object gets from
  * `state.acceptWebSocket()`.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability experimental
  */
 export interface HibernatableWebSocket {
@@ -41,7 +41,7 @@ export interface HibernatableWebSocket {
 
 /**
  * The parts of `DurableObjectState` the adapter uses.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability experimental
  */
 export interface HibernationState {
@@ -52,7 +52,7 @@ export interface HibernationState {
 }
 
 /**
- * @since 0.0.1
+ * @since 0.1.0
  * @stability experimental
  */
 export interface HibernatingWebSocketsOptions {
@@ -70,7 +70,7 @@ export interface HibernatingWebSocketsOptions {
 /**
  * What `experimental_createHibernatingWebSockets()` returns. Call it from the Durable
  * Object's `fetch`, `webSocketMessage` and `webSocketClose`.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability experimental
  */
 export interface HibernatingWebSockets<TPlatform> {
@@ -196,7 +196,7 @@ const requestOf = (attachment: Attachment) =>
  *   }
  * }
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability experimental
  */
 export function experimental_createHibernatingWebSockets<TPlatform>(

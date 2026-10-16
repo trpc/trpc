@@ -19,7 +19,7 @@ import type {
  *   response.status = 201;
  * });
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface ResponseHandle {
@@ -33,7 +33,7 @@ export interface ResponseHandle {
  * the ctx the middleware added and the input it passed on (`Unset` when it
  * passed the input unchanged), so the builder can infer them.
  *
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type MiddlewareResult<TCtx, TInput = Unset> = (
@@ -44,7 +44,7 @@ export type MiddlewareResult<TCtx, TInput = Unset> = (
 /**
  * The input after a middleware: the one it passed to `next({ input })`, or
  * the current one.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type NextInput<TCurrent, $Input> = [$Input] extends [Unset]
@@ -53,7 +53,7 @@ export type NextInput<TCurrent, $Input> = [$Input] extends [Unset]
 
 /**
  * A short-circuit result from {@link ok}.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface OkResult<T> {
@@ -76,7 +76,7 @@ export interface OkResult<T> {
  *   return hit ? ok(hit) : next();
  * });
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function ok<const T>(data: T): OkResult<T> {
@@ -87,7 +87,7 @@ export function ok<const T>(data: T): OkResult<T> {
  * Calls the rest of the chain, optionally extending `ctx` or replacing the
  * input. A replaced input is what later steps and the resolver get, typed as
  * passed.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface NextFn {
@@ -101,7 +101,7 @@ export interface NextFn {
 
 /**
  * The options a middleware receives.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface MiddlewareOpts<TCtx, TInput, TMeta> {
@@ -123,7 +123,7 @@ export interface MiddlewareOpts<TCtx, TInput, TMeta> {
  * {@link ok} to short-circuit with a value, or returns a `TrpcError` to fail.
  * A returned error joins the procedure's typed error union.
  *
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export type MiddlewareFunction<
@@ -140,7 +140,7 @@ export type MiddlewareFunction<
 
 /**
  * What a standalone middleware needs from the procedure it is used on.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface MiddlewareRequirements {
@@ -168,7 +168,7 @@ export type ReqInput<T extends MiddlewareRequirements> = 'input' extends keyof T
  * `next()` for Effect middleware. It requires the services the middleware
  * declares in `provides`, so a body that forgets to provide them is a type
  * error.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface EffectNextFn<TProvides> {
@@ -184,7 +184,7 @@ export interface EffectNextFn<TProvides> {
 
 /**
  * The options an Effect middleware receives.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface EffectMiddlewareOpts<
@@ -200,7 +200,7 @@ export interface EffectMiddlewareOpts<
  * A middleware whose body is an `Effect`. Its failures join the error union,
  * its requirements join the procedure's services, and the services it
  * `provides` are removed from what later steps require.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface EffectMiddleware<
@@ -237,7 +237,7 @@ export type EffectBodyCheck<$E, $R, $Provides> = [
 
 /**
  * What an Effect middleware declares.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface EffectMiddlewareDecl extends MiddlewareRequirements {
@@ -353,7 +353,7 @@ interface MiddlewareFactory {
 
 /**
  * Declares a middleware outside any `t`. See the call signatures.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export const middleware: MiddlewareFactory = Object.assign(
@@ -372,7 +372,7 @@ type AnyOpts = MiddlewareOpts<unknown, unknown, unknown>;
  * ```ts
  * t.procedure.use(onStart(({ path }) => log.info('start', path)));
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function onStart(
@@ -392,7 +392,7 @@ export function onStart(
  * ```ts
  * t.procedure.use(onSuccess((data, { path }) => log.info('ok', path)));
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function onSuccess(
@@ -412,7 +412,7 @@ export function onSuccess(
  * ```ts
  * t.procedure.use(onError((error, { path }) => report(error, path)));
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function onError(
@@ -432,7 +432,7 @@ export function onError(
  * ```ts
  * t.procedure.use(onFinish((result) => metrics.increment(result.ok ? 'ok' : 'error')));
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function onFinish(

@@ -49,7 +49,7 @@ export * from '@trpc12/tanstack-query';
 
 /**
  * Options of the `TrpcPlugin` from {@link createTrpcContext}.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface TrpcPluginOptions<
@@ -62,7 +62,7 @@ export interface TrpcPluginOptions<
 
 /**
  * What {@link createTrpcContext} returns.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface TrpcVueContext<
@@ -98,7 +98,7 @@ export interface TrpcVueContext<
  * const { TrpcPlugin, useTrpc } = createTrpcContext<AppRouter>();
  * createApp(App).use(VueQueryPlugin).use(TrpcPlugin, { client }).mount('#app');
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function createTrpcContext<TSource>(
@@ -143,7 +143,7 @@ export function createTrpcContext<TSource>(
 /**
  * What {@link useSubscription} returns: refs for the latest event and
  * status.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface UseSubscriptionReturn<TEvent, TError> {
@@ -165,7 +165,7 @@ export interface UseSubscriptionReturn<TEvent, TError> {
  *   trpc.post.onAdd.subscriptionOptions({ input: { channel: channel.value } }),
  * );
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function useSubscription<TEvent, TError>(

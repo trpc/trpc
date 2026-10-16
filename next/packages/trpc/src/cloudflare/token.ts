@@ -8,7 +8,7 @@ import { TrpcError } from '../internal/error.ts';
  * ```ts
  * connectionToken(RoomClaims, { secret: env.TOKEN_SECRET, ttlSeconds: 600 });
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface ConnectionTokenOptions {
@@ -28,7 +28,7 @@ export interface ConnectionTokenOptions {
  * const token = yield* RoomToken.sign({ room: '42', tags: ['user:1'] });
  * const claims = yield* RoomToken.verify(token);
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface ConnectionToken<A> {
@@ -68,7 +68,7 @@ const unauthorized = (message: string) =>
  * createContext: async ({ info }) =>
  *   Effect.runPromise(RoomToken.verify(info.connectionParams?.['token'])),
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function connectionToken<S extends Schema.Codec<any, any>>(

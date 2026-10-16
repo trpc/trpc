@@ -7,7 +7,7 @@ const SKIP = new Set(['node_modules', 'dist', '.git', '.next', '.output']);
 
 /**
  * One file {@link upgradeFiles} looked at.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface FileUpgrade {
@@ -52,7 +52,7 @@ const sourceFiles = (
  * ```ts
  * const results = yield* upgradeFiles(['src'], { write: true });
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export const upgradeFiles = (

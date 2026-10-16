@@ -79,7 +79,7 @@ interface Call {
 
 /**
  * Options shared by {@link wsLink} and {@link experimental_messagePortLink}.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface SocketLinkOptions {
@@ -101,7 +101,7 @@ export interface SocketLinkOptions {
 
 /**
  * A link that also owns a connection.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface SocketLink<TDecl extends LinkDecl = {}>
@@ -504,7 +504,7 @@ function makeSocketLink(
 /**
  * Reconnect, idle and keep-alive options of {@link wsLink} and
  * {@link experimental_socketLink}.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface ConnectionLinkOptions {
@@ -556,7 +556,7 @@ const connectionOptions = (
 
 /**
  * Options for {@link wsLink}.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export interface WebSocketLinkOptions
@@ -589,7 +589,7 @@ export interface WebSocketLinkOptions
  *   links: [splitLink({ condition: (op) => op.type === 'subscription', true: ws, false: httpLink({ url }) })],
  * });
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability stable
  */
 export function wsLink<TOpts extends WebSocketLinkOptions>(
@@ -652,7 +652,7 @@ export function wsLink(opts: WebSocketLinkOptions): SocketLink<any> {
 
 /**
  * Options for {@link experimental_messagePortLink}.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability experimental
  */
 export interface MessagePortLinkOptions extends SocketLinkOptions {
@@ -671,7 +671,7 @@ export interface MessagePortLinkOptions extends SocketLinkOptions {
  * const worker = new Worker(new URL('./server.ts', import.meta.url), { type: 'module' });
  * createTrpcClient({ router: routerType<AppRouter>(), links: [experimental_messagePortLink({ port: worker })] });
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability experimental
  */
 export function experimental_messagePortLink<
@@ -728,7 +728,7 @@ export function experimental_messagePortLink(
 
 /**
  * Options for {@link experimental_socketLink}.
- * @since 0.0.1
+ * @since 0.1.0
  * @stability experimental
  */
 export interface RawSocketLinkOptions
@@ -756,7 +756,7 @@ export interface RawSocketLinkOptions
  *   links: [experimental_socketLink({ socket: NodeSocket.makeNet({ host: 'localhost', port: 4000 }) })],
  * });
  * ```
- * @since 0.0.1
+ * @since 0.1.0
  * @stability experimental
  */
 export function experimental_socketLink(
