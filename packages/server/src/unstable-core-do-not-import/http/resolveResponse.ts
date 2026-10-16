@@ -323,11 +323,13 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     interface RPCResultOk {
       data: unknown;
       signal?: AbortSignal;
+      clearMaxDurationTimer?: () => void;
     }
     type RPCResult = ResultTuple<RPCResultOk>;
     const rpcCalls = info.calls.map(async (call): Promise<RPCResult> => {
       const proc = call.procedure;
       const combinedAbort = combinedAbortController(opts.req.signal);
+      let clearMaxDurationTimer: (() => void) | undefined;
       try {
         if (opts.error) {
           throw opts.error;
@@ -365,6 +367,13 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             }
             const timer = setTimeout(cleanup, config.sse.maxDurationMs);
             combinedAbort.signal.addEventListener('abort', cleanup);
+
+            // the request signal may never abort (e.g. after a completed
+            // response), so the timer is also cleared when the stream ends
+            clearMaxDurationTimer = () => {
+              clearTimeout(timer);
+              combinedAbort.signal.removeEventListener('abort', cleanup);
+            };
           }
         }
         const data: unknown = await proc({
@@ -383,9 +392,11 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               proc._def.type === 'subscription'
                 ? combinedAbort.signal
                 : undefined,
+            clearMaxDurationTimer,
           },
         ];
       } catch (cause) {
+        clearMaxDurationTimer?.();
         const error = getTRPCErrorFromUnknown(cause);
         const input = call.result();
 
@@ -544,6 +555,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                 const chunk = await reader.read();
                 if (chunk.done) {
                   abortSignal.removeEventListener('abort', onAbort);
+                  result?.clearMaxDurationTimer?.();
                   controller.close();
                 } else {
                   controller.enqueue(chunk.value);
@@ -551,6 +563,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               },
               cancel() {
                 abortSignal.removeEventListener('abort', onAbort);
+                result?.clearMaxDurationTimer?.();
                 return reader.cancel();
               },
             });

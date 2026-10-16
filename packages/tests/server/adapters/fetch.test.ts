@@ -4,10 +4,12 @@ import {
   httpBatchLink,
   httpBatchStreamLink,
 } from '@trpc/client';
-import { initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { observable, tap } from '@trpc/server/observable';
+import { run } from '@trpc/server/unstable-core-do-not-import';
+import { makeResource } from '@trpc/server/unstable-core-do-not-import/stream/utils/disposable';
 import { serve } from 'srvx';
 import { z } from 'zod';
 
@@ -275,3 +277,81 @@ test('batching', async () => {
 
   expect(normalResult).toEqual(urlEncodedResult);
 });
+
+test.each([
+  ['completes', 'completes'],
+  ['throws', 'throws'],
+  ['is cancelled', 'infinite'],
+] as const)(
+  'sse maxDurationMs timer is cleared when the subscription %s',
+  async (_, path) => {
+    const nonce = Math.floor(Math.random() * 1000);
+    const MAX_DURATION_MS = 60_000 * 60 * 24 + nonce; // 1 day + nonce
+
+    using timeoutSpies = run(() => {
+      const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+      const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
+      return makeResource(
+        {
+          setTimeoutSpy,
+          clearTimeoutSpy,
+        },
+        () => {
+          setTimeoutSpy.mockRestore();
+          clearTimeoutSpy.mockRestore();
+        },
+      );
+    });
+
+    const t = initTRPC.create({
+      sse: {
+        maxDurationMs: MAX_DURATION_MS,
+      },
+    });
+    const router = t.router({
+      completes: t.procedure.subscription(async function* () {
+        yield 1;
+      }),
+      throws: t.procedure
+        .use(() => {
+          throw new TRPCError({ code: 'UNAUTHORIZED' });
+        })
+        .subscription(async function* () {
+          yield 1;
+        }),
+      infinite: t.procedure.subscription(async function* () {
+        for (;;) {
+          yield 1;
+          await new Promise((resolve) => setTimeout(resolve, 10));
+        }
+      }),
+    });
+
+    // the signal of this request never aborts
+    const res = await fetchRequestHandler({
+      endpoint: '',
+      router,
+      req: new Request(`http://localhost/${path}`),
+    });
+    if (path === 'infinite') {
+      const reader = res.body!.getReader();
+      await reader.read();
+      await reader.cancel();
+    } else {
+      await res.text();
+    }
+
+    const maxDurationTimerIndex =
+      timeoutSpies.setTimeoutSpy.mock.calls.findIndex(
+        (args) => args[1] === MAX_DURATION_MS,
+      );
+    expect(maxDurationTimerIndex).not.toBe(-1);
+    const maxDurationTimerResult =
+      timeoutSpies.setTimeoutSpy.mock.results[maxDurationTimerIndex];
+    assert(maxDurationTimerResult?.type === 'return');
+
+    expect(timeoutSpies.clearTimeoutSpy).toHaveBeenCalledWith(
+      maxDurationTimerResult.value,
+    );
+  },
+);
