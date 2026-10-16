@@ -1,4 +1,13 @@
-import { Cause, Effect, Queue, Stream } from 'effect';
+import {
+  Deferred,
+  Duration,
+  Effect,
+  Fiber,
+  Queue,
+  RcRef,
+  Scope,
+  Stream,
+} from 'effect';
 import {
   fromWireError,
   TrpcError,
@@ -21,7 +30,7 @@ import {
   type OperationStream,
   type TrpcLink,
 } from '../link.ts';
-import { DeferredDecoder, serializeInput } from './events.ts';
+import { makeDeferredDecoder, parseError, serializeInput } from './events.ts';
 
 /** One open connection. @internal */
 interface SocketConnection {
@@ -31,15 +40,37 @@ interface SocketConnection {
   onClose(listener: () => void): void;
 }
 
-interface ActiveCall {
+/** What a call's inbox receives. */
+type Signal =
+  | { readonly _tag: 'message'; readonly message: CallMessage }
+  /** The connection dropped; the call may be sent again on a new one. */
+  | { readonly _tag: 'lost' }
+  | { readonly _tag: 'fail'; readonly error: AnyTrpcError };
+
+type CallMessage = Exclude<ServerMessage, { type: 'pong' }>;
+
+const LOST: Signal = { _tag: 'lost' };
+
+interface Connection {
+  readonly socket: SocketConnection;
+  /** Inboxes of the calls sent on this connection, by call id. */
+  readonly calls: Map<number, Queue.Queue<Signal>>;
+  /** Messages received, so a keep-alive check can tell if it heard back. */
+  received: number;
+  lost: boolean;
+}
+
+interface Call {
   readonly op: Operation;
   /** Subscriptions are sent again after a reconnect. */
   readonly resumable: boolean;
-  request(): ClientMessage;
-  onMessage(message: ServerMessage): void;
-  /** The connection dropped and this call will be sent again. */
-  onReconnect?(): void;
-  fail(error: AnyTrpcError): void;
+  readonly request: () => ClientMessage;
+  /** `true` once the call is complete. */
+  readonly onMessage: (
+    message: CallMessage,
+  ) => Effect.Effect<boolean, AnyTrpcError>;
+  /** The connection dropped and the call will be sent again. */
+  readonly onReconnect?: Effect.Effect<void>;
 }
 
 /**
@@ -93,14 +124,9 @@ function socketLink(
   opts: SocketLinkOptions,
 ): SocketLink {
   const serializer = opts.serializer ?? defaultSerializer;
-  const calls = new Map<number, ActiveCall>();
-  let current: SocketConnection | undefined;
-  let connecting = false;
-  let attempt = 0;
-  let idleTimer: ReturnType<typeof setTimeout> | undefined;
-  let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
-  let pingTimer: ReturnType<typeof setInterval> | undefined;
-  let pongTimer: ReturnType<typeof setTimeout> | undefined;
+  /** Every call's inbox, so `close()` can fail them wherever they are. */
+  const live = new Set<Queue.Queue<Signal>>();
+  let current: Connection | undefined;
 
   const revive = (message: Extract<ServerMessage, { type: 'error' }>) => {
     try {
@@ -109,147 +135,195 @@ function socketLink(
         message.status,
       );
     } catch (cause) {
-      return new TrpcError({
-        code: 'PARSE_ERROR',
-        message: 'Invalid error message',
-        cause,
-      });
+      return parseError('Invalid error message')(cause);
     }
   };
 
-  function dispatch(raw: unknown) {
+  function dispatch(conn: Connection, raw: unknown) {
     if (typeof raw !== 'object' || raw === null) return;
     const message = raw as ServerMessage;
-    attempt = 0;
-    clearTimeout(pongTimer);
+    conn.received++;
     if (message.type === 'pong') return;
     if (message.id === null) {
       if (message.type !== 'error') return;
-      const err = revive(message);
-      for (const call of calls.values()) call.fail(err);
-      calls.clear();
+      const signal: Signal = { _tag: 'fail', error: revive(message) };
+      for (const inbox of conn.calls.values()) Queue.offerUnsafe(inbox, signal);
+      conn.calls.clear();
       return;
     }
-    calls.get(message.id)?.onMessage(message);
+    const inbox = conn.calls.get(message.id);
+    if (inbox) Queue.offerUnsafe(inbox, { _tag: 'message', message });
   }
 
-  function stopKeepAlive() {
-    clearInterval(pingTimer);
-    clearTimeout(pongTimer);
+  function lose(conn: Connection) {
+    if (conn.lost) return;
+    conn.lost = true;
+    for (const inbox of conn.calls.values()) Queue.offerUnsafe(inbox, LOST);
+    conn.calls.clear();
+    Effect.runFork(RcRef.invalidate(connection));
   }
 
   /** A connection that answers nothing within `timeoutMs` of a ping is lost. */
-  function startKeepAlive(conn: SocketConnection) {
-    const { keepAlive } = transport;
-    if (!keepAlive) return;
-    stopKeepAlive();
-    pingTimer = setInterval(() => {
-      conn.send({ type: 'ping' });
-      clearTimeout(pongTimer);
-      pongTimer = setTimeout(() => {
-        if (current !== conn) return;
-        lost();
-        conn.close();
-      }, keepAlive.timeoutMs);
-    }, keepAlive.intervalMs);
-  }
-
-  function lost() {
-    stopKeepAlive();
-    current = undefined;
-    for (const [id, call] of calls) {
-      if (
-        call.resumable &&
-        transport.reconnect &&
-        call.op.context.reconnect !== false
-      ) {
-        continue;
+  const keepAlive = (
+    conn: Connection,
+    { intervalMs, timeoutMs }: { intervalMs: number; timeoutMs: number },
+  ) =>
+    Effect.gen(function* () {
+      for (;;) {
+        yield* Effect.sleep(intervalMs);
+        const received = conn.received;
+        conn.socket.send({ type: 'ping' });
+        yield* Effect.sleep(timeoutMs);
+        if (conn.received === received) {
+          lose(conn);
+          conn.socket.close();
+          return;
+        }
       }
-      calls.delete(id);
-      call.fail(lostError());
-    }
-    if (calls.size === 0) return;
-    const reconnect = transport.reconnect!;
-    if (++attempt > reconnect.attempts) {
-      for (const call of calls.values()) call.fail(lostError());
-      calls.clear();
-      return;
-    }
-    for (const call of calls.values()) call.onReconnect?.();
-    reconnectTimer = setTimeout(connect, reconnect.delayMs(attempt));
-  }
+    });
 
-  function connect() {
-    if (connecting || current) return;
-    connecting = true;
-    void (async () => {
-      let conn: SocketConnection | undefined;
-      try {
-        conn = await transport.connect();
-        const params =
-          typeof opts.connectionParams === 'function'
-            ? await opts.connectionParams()
-            : opts.connectionParams;
-        conn.onMessage(dispatch);
-        conn.onClose(() => {
-          if (current === conn) lost();
-        });
-        conn.send({
-          type: 'init',
-          version: PROTOCOL_VERSION,
-          ...(params ? { connectionParams: params } : {}),
-        });
-      } catch {
-        connecting = false;
-        conn?.close();
-        lost();
-        return;
+  const acquire = Effect.gen(function* () {
+    const socket = yield* Effect.tryPromise({
+      try: () => transport.connect(),
+      catch: lostError,
+    });
+    const conn: Connection = {
+      socket,
+      calls: new Map(),
+      received: 0,
+      lost: false,
+    };
+    yield* Effect.addFinalizer(() =>
+      Effect.sync(() => {
+        conn.lost = true;
+        if (current === conn) current = undefined;
+        socket.close();
+      }),
+    );
+    const params = yield* Effect.tryPromise({
+      try: async () =>
+        typeof opts.connectionParams === 'function'
+          ? await opts.connectionParams()
+          : opts.connectionParams,
+      catch: lostError,
+    });
+    socket.onMessage((message) => dispatch(conn, message));
+    socket.onClose(() => lose(conn));
+    socket.send({
+      type: 'init',
+      version: PROTOCOL_VERSION,
+      ...(params ? { connectionParams: params } : {}),
+    });
+    if (transport.keepAlive) {
+      yield* Effect.forkScoped(keepAlive(conn, transport.keepAlive));
+    }
+    current = conn;
+    return conn;
+  });
+
+  /**
+   * Shared by every call and released when the last one ends; `idleMs`
+   * later the connection closes. A lost connection is invalidated, so the
+   * next call opens a new one.
+   */
+  const connection = Effect.runSync(
+    RcRef.make({
+      acquire,
+      idleTimeToLive: transport.idleMs ?? Duration.infinity,
+    }).pipe(Scope.provide(Scope.makeUnsafe())),
+  );
+
+  /** A connection that isn't lost, or `undefined` if none opens. */
+  const connected: Effect.Effect<Connection | undefined, never, Scope.Scope> =
+    Effect.gen(function* () {
+      for (;;) {
+        const conn = yield* Effect.option(RcRef.get(connection));
+        if (conn._tag === 'None') return undefined;
+        if (!conn.value.lost) return conn.value;
+        yield* RcRef.invalidate(connection);
       }
-      connecting = false;
-      current = conn;
-      startKeepAlive(conn);
-      for (const call of calls.values()) conn.send(call.request());
-      if (calls.size === 0) scheduleIdle();
-    })();
-  }
+    });
 
-  function scheduleIdle() {
-    if (transport.idleMs === undefined || calls.size > 0 || !current) return;
-    clearTimeout(idleTimer);
-    const conn = current;
-    idleTimer = setTimeout(() => {
-      if (calls.size > 0 || current !== conn) return;
-      stopKeepAlive();
-      current = undefined;
-      conn.close();
-    }, transport.idleMs);
-  }
+  /**
+   * Sends the call on one connection. `complete`, or the connection dropped
+   * and `heard` says whether it had answered anything, so the next
+   * reconnect counts from the first attempt again.
+   */
+  const attach = (
+    call: Call,
+    inbox: Queue.Queue<Signal>,
+  ): Effect.Effect<'complete' | 'heard' | 'silent', AnyTrpcError> =>
+    Effect.gen(function* () {
+      const request = yield* Effect.try({
+        try: call.request,
+        catch: (cause) => cause as AnyTrpcError,
+      });
+      const conn = yield* connected;
+      if (!conn) return 'silent';
+      const { id } = call.op;
+      let complete = false;
+      yield* Effect.addFinalizer(() =>
+        Effect.sync(() => {
+          if (conn.calls.get(id) !== inbox) return;
+          conn.calls.delete(id);
+          if (!complete) conn.socket.send({ id, type: 'abort' });
+        }),
+      );
+      conn.calls.set(id, inbox);
+      conn.socket.send(request);
+      for (;;) {
+        const signal = yield* Queue.take(inbox);
+        switch (signal._tag) {
+          case 'lost':
+            return conn.received > 0 ? 'heard' : 'silent';
+          case 'fail':
+            complete = true;
+            return yield* Effect.fail(signal.error);
+          case 'message': {
+            const { type } = signal.message;
+            complete =
+              type === 'done' ||
+              type === 'error' ||
+              (type === 'result' && !signal.message.deferred);
+            if (yield* call.onMessage(signal.message)) return 'complete';
+          }
+        }
+      }
+    }).pipe(Effect.scoped);
 
-  function start(call: ActiveCall) {
-    let message: ClientMessage;
-    try {
-      message = call.request();
-    } catch (cause) {
-      call.fail(cause as AnyTrpcError);
-      return;
-    }
-    clearTimeout(idleTimer);
-    calls.set(call.op.id, call);
-    if (current) current.send(message);
-    else connect();
-  }
-
-  function finish(call: ActiveCall) {
-    if (calls.get(call.op.id) === call) calls.delete(call.op.id);
-    scheduleIdle();
-  }
-
-  function abort(call: ActiveCall) {
-    if (calls.get(call.op.id) !== call) return;
-    calls.delete(call.op.id);
-    current?.send({ id: call.op.id, type: 'abort' });
-    scheduleIdle();
-  }
+  /**
+   * Runs a call to completion. A dropped connection fails it with
+   * `NETWORK_ERROR`, unless it's a subscription the link reconnects.
+   */
+  const run = (call: Call): Effect.Effect<void, AnyTrpcError> =>
+    Effect.gen(function* () {
+      const inbox = yield* Queue.unbounded<Signal>();
+      live.add(inbox);
+      yield* Effect.addFinalizer(() => Effect.sync(() => live.delete(inbox)));
+      const { reconnect } = transport;
+      let attempt = 0;
+      for (;;) {
+        const outcome = yield* attach(call, inbox);
+        if (outcome === 'complete') return;
+        if (outcome === 'heard') attempt = 0;
+        if (
+          !call.resumable ||
+          !reconnect ||
+          call.op.context.reconnect === false ||
+          ++attempt > reconnect.attempts
+        ) {
+          return yield* Effect.fail(lostError());
+        }
+        if (call.onReconnect) yield* call.onReconnect;
+        // `close()` can fail the call while it waits.
+        const signal = yield* Queue.take(inbox).pipe(
+          Effect.timeoutOption(reconnect.delayMs(attempt)),
+        );
+        if (signal._tag === 'Some' && signal.value._tag === 'fail') {
+          return yield* Effect.fail(signal.value.error);
+        }
+      }
+    }).pipe(Effect.scoped);
 
   const request = (op: Operation, lastEventId?: string): ClientMessage => ({
     id: op.id,
@@ -262,154 +336,138 @@ function socketLink(
     ...(lastEventId === undefined ? {} : { lastEventId }),
   });
 
+  /**
+   * The call runs on its own fiber, which outlives the returned value when
+   * the result has deferred parts still streaming in.
+   */
   const single = (op: Operation): OperationStream =>
     Stream.fromEffect(
-      Effect.callback<unknown, AnyTrpcError>((resume) => {
-        const decoder = new DeferredDecoder(serializer);
-        const call: ActiveCall = {
+      Effect.gen(function* () {
+        const result = yield* Deferred.make<unknown, AnyTrpcError>();
+        const decoder = makeDeferredDecoder(serializer);
+        const call: Call = {
           op,
           resumable: false,
           request: () => request(op),
-          onMessage(message) {
+          onMessage: (message) => {
             switch (message.type) {
               case 'result':
-                if (!message.deferred) finish(call);
-                decoder
+                return decoder
                   .decode(message.body, message.deferred ? 0 : undefined)
-                  .then(
-                    (value) => resume(Effect.succeed(value)),
-                    (cause) =>
-                      resume(
-                        Effect.fail(
-                          new TrpcError({
-                            code: 'PARSE_ERROR',
-                            message: 'Invalid result',
-                            cause,
-                          }),
-                        ),
-                      ),
+                  .pipe(
+                    Effect.flatMap((value) => {
+                      const settle = value.pipe(
+                        Effect.mapError(parseError('Invalid result')),
+                        Effect.exit,
+                        Effect.flatMap((exit) => Deferred.done(result, exit)),
+                      );
+                      return message.deferred
+                        ? Effect.asVoid(Effect.forkDetach(settle))
+                        : settle;
+                    }),
+                    Effect.as(!message.deferred),
                   );
-                return;
               case 'chunk':
-                decoder.chunk(0, message.chunk);
-                return;
-              case 'done':
-                finish(call);
-                decoder.close();
-                return;
+                return Effect.as(decoder.chunk(0, message.chunk), false);
               case 'error':
-                finish(call);
-                decoder.close();
-                resume(Effect.fail(revive(message)));
-                return;
-            }
-          },
-          fail(error) {
-            decoder.close();
-            resume(Effect.fail(error));
-          },
-        };
-        start(call);
-        return Effect.sync(() => abort(call));
-      }),
-    );
-
-  const subscription = (op: Operation): OperationStream =>
-    Stream.callback<unknown, AnyTrpcError>((queue) =>
-      Effect.gen(function* () {
-        let lastEventId = op.lastEventId;
-        let decoder = new DeferredDecoder(serializer);
-        let chain = Promise.resolve();
-        const enqueue = (fn: () => void | Promise<void>) => {
-          chain = chain.then(fn).catch((cause: unknown) => {
-            Queue.failCauseUnsafe(
-              queue,
-              Cause.fail(
-                new TrpcError({
-                  code: 'PARSE_ERROR',
-                  message: 'Invalid event',
-                  cause,
-                }),
-              ),
-            );
-          });
-        };
-        const call: ActiveCall = {
-          op,
-          resumable: true,
-          request: () => request(op, lastEventId),
-          onMessage(message) {
-            switch (message.type) {
-              case 'event': {
-                if (message.eventId !== undefined) {
-                  lastEventId = message.eventId;
-                }
-                const value = decoder.decode(message.body, message.deferred);
-                enqueue(async () => {
-                  Queue.offerUnsafe(queue, await value);
-                });
-                return;
-              }
-              case 'chunk':
-                decoder.chunk(message.event ?? 0, message.chunk);
-                return;
-              case 'chunkEnd':
-                decoder.end(message.event);
-                return;
+                return Effect.fail(revive(message));
               case 'done':
-                finish(call);
-                enqueue(() => void Queue.endUnsafe(queue));
-                return;
-              case 'error': {
-                finish(call);
-                const err = revive(message);
-                enqueue(
-                  () => void Queue.failCauseUnsafe(queue, Cause.fail(err)),
-                );
-                return;
-              }
+                return Effect.succeed(true);
+              default:
+                return Effect.succeed(false);
             }
           },
-          onReconnect() {
-            decoder.close();
-            decoder = new DeferredDecoder(serializer);
-          },
-          fail(error) {
-            enqueue(() => void Queue.failCauseUnsafe(queue, Cause.fail(error)));
-          },
         };
-        start(call);
-        yield* Effect.addFinalizer(() =>
-          Effect.sync(() => {
-            abort(call);
-            decoder.close();
-          }),
+        const fiber = yield* run(call).pipe(
+          Effect.onError((cause) => Deferred.failCause(result, cause)),
+          Effect.ensuring(decoder.close),
+          Effect.forkDetach,
+        );
+        return yield* Deferred.await(result).pipe(
+          Effect.onInterrupt(() => Fiber.interrupt(fiber)),
         );
       }),
     );
 
-  const close = async () => {
-    clearTimeout(idleTimer);
-    clearTimeout(reconnectTimer);
-    stopKeepAlive();
-    const conn = current;
-    current = undefined;
-    for (const call of calls.values()) {
-      call.fail(
-        new TrpcError({
-          code: 'CLIENT_CLOSED_REQUEST',
-          message: 'The link was closed',
-        }),
-      );
-    }
-    calls.clear();
-    conn?.close();
-  };
+  const subscription = (op: Operation): OperationStream =>
+    Stream.callback<Effect.Effect<unknown, AnyTrpcError>, AnyTrpcError>(
+      (queue) => {
+        let lastEventId = op.lastEventId;
+        let decoder = makeDeferredDecoder(serializer);
+        const call: Call = {
+          op,
+          resumable: true,
+          request: () => request(op, lastEventId),
+          onMessage: (message) => {
+            switch (message.type) {
+              case 'event':
+                if (message.eventId !== undefined)
+                  lastEventId = message.eventId;
+                return decoder.decode(message.body, message.deferred).pipe(
+                  Effect.map((value) => {
+                    Queue.offerUnsafe(
+                      queue,
+                      Effect.mapError(value, parseError('Invalid event')),
+                    );
+                    return false;
+                  }),
+                );
+              case 'chunk':
+                return Effect.as(
+                  decoder.chunk(message.event ?? 0, message.chunk),
+                  false,
+                );
+              case 'chunkEnd':
+                return Effect.as(decoder.end(message.event), false);
+              case 'error':
+                return Effect.fail(revive(message));
+              case 'done':
+                return Effect.succeed(true);
+              default:
+                return Effect.succeed(false);
+            }
+          },
+          onReconnect: Effect.suspend(() => {
+            const stale = decoder;
+            decoder = makeDeferredDecoder(serializer);
+            return stale.close;
+          }),
+        };
+        return run(call).pipe(
+          Effect.matchCause({
+            onSuccess: () => Queue.endUnsafe(queue),
+            onFailure: (cause) => Queue.failCauseUnsafe(queue, cause),
+          }),
+          Effect.ensuring(Effect.suspend(() => decoder.close)),
+          Effect.forkScoped,
+        );
+      },
+    ).pipe(Stream.mapEffect((value) => value));
 
-  const run: TrpcLink = ({ op }) =>
+  const close = () =>
+    Effect.runPromise(
+      Effect.gen(function* () {
+        const signal: Signal = {
+          _tag: 'fail',
+          error: new TrpcError({
+            code: 'CLIENT_CLOSED_REQUEST',
+            message: 'The link was closed',
+          }),
+        };
+        for (const inbox of live) Queue.offerUnsafe(inbox, signal);
+        const conn = current;
+        yield* RcRef.invalidate(connection);
+        if (conn) {
+          conn.lost = true;
+          conn.socket.close();
+        }
+      }),
+    );
+
+  const link: TrpcLink = ({ op }) =>
     op.type === 'subscription' ? subscription(op) : single(op);
   return withSerializer(
-    Object.assign(run, { close, [Symbol.asyncDispose]: close }),
+    Object.assign(link, { close, [Symbol.asyncDispose]: close }),
     serializer,
   );
 }
@@ -442,7 +500,7 @@ export interface WebSocketLinkOptions extends SocketLinkOptions {
    */
   idleMs?: number;
   /**
-   * Ping every `intervalMs`. A connection that answers nothing within
+   * Ping after `intervalMs` of each check. A connection that answers nothing within
    * `timeoutMs` is treated as lost, so it reconnects instead of waiting for
    * a close that a dead network never delivers. The traffic also keeps
    * proxies from dropping a quiet socket. `false` sends no pings.

@@ -1,4 +1,4 @@
-import { Cause, Effect, Queue, Stream } from 'effect';
+import { Cause, Effect, Fiber, Queue, Stream } from 'effect';
 import {
   fromWireError,
   streamErrors,
@@ -32,56 +32,79 @@ export function serializeInput(
   }
 }
 
+/** @internal */
+export const parseError =
+  (message: string) =>
+  (cause: unknown): TrpcError =>
+    new TrpcError({ code: 'PARSE_ERROR', message, cause });
+
 type FrameQueue = Queue.Queue<Frame, Cause.Done>;
 
 /**
  * Rebuilds values whose deferred parts arrive as later chunks: subscription
- * events (numbered per call) or a single result.
+ * events (numbered per call) or a single result. Run its effects in message
+ * order.
  * @internal
  */
-export class DeferredDecoder {
-  #serializer: AnySerializer;
-  #queues = new Map<number, FrameQueue>();
-
-  constructor(serializer: AnySerializer) {
-    this.#serializer = serializer;
-  }
-
-  /** The value, once its head is decoded. Its deferred parts settle later. */
-  decode(body: unknown, deferred: number | undefined): Promise<unknown> {
-    if (deferred === undefined) {
-      try {
-        return Promise.resolve(this.#serializer.deserialize(body as never));
-      } catch (cause) {
-        return Promise.reject(cause);
-      }
-    }
-    const queue = Effect.runSync(Queue.unbounded<Frame, Cause.Done>());
-    this.#queues.set(deferred, queue);
-    Queue.offerUnsafe(queue, body as Frame);
-    return Effect.runPromise(
-      this.#serializer.deserializeStream(Stream.fromQueue(queue), {
-        reviveError: (value) => fromWireError(value),
-        ...streamErrors,
-      }),
-    );
-  }
-
-  chunk(deferred: number, chunk: unknown): void {
-    const queue = this.#queues.get(deferred);
-    if (queue) Queue.offerUnsafe(queue, chunk as Frame);
-  }
-
-  end(deferred: number): void {
-    const queue = this.#queues.get(deferred);
-    if (!queue) return;
-    this.#queues.delete(deferred);
-    Queue.endUnsafe(queue);
-  }
-
+export interface DeferredDecoder {
+  /**
+   * Starts decoding a value and returns an effect that waits for its head;
+   * deferred parts settle later. The head itself can wait on later chunks
+   * (a file's bytes), so keep feeding chunks while it decodes.
+   */
+  readonly decode: (
+    body: unknown,
+    deferred: number | undefined,
+  ) => Effect.Effect<Effect.Effect<unknown, unknown>>;
+  readonly chunk: (deferred: number, chunk: unknown) => Effect.Effect<void>;
+  readonly end: (deferred: number) => Effect.Effect<void>;
   /** Ends every pending value: their unsettled parts reject. */
-  close(): void {
-    for (const queue of this.#queues.values()) Queue.endUnsafe(queue);
-    this.#queues.clear();
-  }
+  readonly close: Effect.Effect<void>;
+}
+
+/** @internal */
+export function makeDeferredDecoder(
+  serializer: AnySerializer,
+): DeferredDecoder {
+  const queues = new Map<number, FrameQueue>();
+  return {
+    decode: (body, deferred) =>
+      deferred === undefined
+        ? Effect.sync(() =>
+            Effect.try({
+              try: () => serializer.deserialize(body as never),
+              catch: (cause) => cause,
+            }),
+          )
+        : Effect.gen(function* () {
+            const queue = yield* Queue.unbounded<Frame, Cause.Done>();
+            queues.set(deferred, queue);
+            yield* Queue.offer(queue, body as Frame);
+            const head = yield* serializer
+              .deserializeStream(Stream.fromQueue(queue), {
+                reviveError: (value) => fromWireError(value),
+                ...streamErrors,
+              })
+              .pipe(Effect.forkDetach);
+            return Fiber.join(head);
+          }),
+    chunk: (deferred, chunk) =>
+      Effect.suspend(() => {
+        const queue = queues.get(deferred);
+        return queue
+          ? Effect.asVoid(Queue.offer(queue, chunk as Frame))
+          : Effect.void;
+      }),
+    end: (deferred) =>
+      Effect.sync(() => {
+        const queue = queues.get(deferred);
+        if (!queue) return;
+        queues.delete(deferred);
+        Queue.endUnsafe(queue);
+      }),
+    close: Effect.sync(() => {
+      for (const queue of queues.values()) Queue.endUnsafe(queue);
+      queues.clear();
+    }),
+  };
 }

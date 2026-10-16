@@ -49,6 +49,11 @@ const router = {
       yield new File([name], name, { type: 'image/png' });
     }
   }),
+  photos: t.procedure.subscription(async function* () {
+    for (const name of ['1.png', '2.png']) {
+      yield { photo: new File([name], name, { type: 'image/png' }) };
+    }
+  }),
   attachments: t.procedure.query(() => {
     const big = new File([new Uint8Array(200_000).fill(7)], 'big.bin');
     return {
@@ -258,6 +263,21 @@ for (const transport of ['httpLink', 'wsLink', 'localLink'] as const) {
     const late = await out.later;
     expect(late.name).toBe('late.txt');
     expect(await late.text()).toBe('late');
+  });
+}
+
+for (const transport of ['httpLink', 'wsLink'] as const) {
+  test(`files inside subscription events decode while their bytes stream (${transport})`, async () => {
+    await using server = await createTestServer({ router });
+    await using ws = wsLink({ url: server.wsUrl });
+    const client = createTrpcClient<AppRouter>({
+      links: [transport === 'wsLink' ? ws : httpLink({ url: server.url })],
+    });
+    const seen: string[] = [];
+    for await (const event of client.photos.subscribe()) {
+      seen.push(`${event.photo.name}:${await event.photo.text()}`);
+    }
+    expect(seen).toEqual(['1.png:1.png', '2.png:2.png']);
   });
 }
 

@@ -31,7 +31,12 @@ import {
   type TrpcLink,
   type TrpcRequestInit,
 } from '../link.ts';
-import { DeferredDecoder, serializeInput } from './events.ts';
+import {
+  makeDeferredDecoder,
+  parseError,
+  serializeInput,
+  type DeferredDecoder,
+} from './events.ts';
 
 /**
  * Options for {@link httpLink}.
@@ -521,138 +526,143 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink {
   // --- subscriptions ------------------------------------------------------------------
 
   const subscription = (op: Operation): OperationStream =>
-    Stream.callback<unknown, AnyTrpcError>((queue) => {
-      const controller = new AbortController();
-      let lastEventId = op.lastEventId;
-      let attempt = 0;
-      const giveUp = () =>
-        op.context.reconnect === false || ++attempt > reconnectAttempts;
+    Stream.callback<Effect.Effect<unknown, AnyTrpcError>, AnyTrpcError>(
+      (queue) => {
+        const controller = new AbortController();
+        let lastEventId = op.lastEventId;
+        let attempt = 0;
+        const giveUp = () =>
+          op.context.reconnect === false || ++attempt > reconnectAttempts;
 
-      const read = (
-        event: { event: string; data: string; id?: string | undefined },
-        decoder: DeferredDecoder,
-      ): Effect.Effect<boolean, unknown> => {
-        switch (event.event) {
-          case SSE_EVENT.done:
-            return Effect.succeed(true);
-          case SSE_EVENT.error:
-            return Effect.try({
-              try: () =>
-                fromWireError(serializer.deserialize(JSON.parse(event.data))),
-              catch: (cause) => cause,
-            }).pipe(Effect.flatMap(Effect.fail));
-          case SSE_EVENT.chunk:
-            return Effect.try({
-              try: () => {
-                const frame = JSON.parse(event.data) as {
-                  e: number;
-                  chunk?: unknown;
-                };
-                if ('chunk' in frame) decoder.chunk(frame.e, frame.chunk);
-                else decoder.end(frame.e);
-                return false;
-              },
-              catch: (cause) => cause,
-            });
-          case SSE_EVENT.message:
-          case SSE_EVENT.deferred: {
-            if (event.id !== undefined) lastEventId = event.id;
-            attempt = 0;
-            return Effect.tryPromise({
-              try: () => {
-                const data = JSON.parse(event.data) as unknown;
-                return event.event === SSE_EVENT.deferred
-                  ? decoder.decode(
-                      (data as { body: unknown }).body,
-                      (data as { e: number }).e,
-                    )
-                  : decoder.decode(data, undefined);
-              },
-              catch: (cause) => cause,
-            }).pipe(
-              Effect.map((value) => {
-                Queue.offerUnsafe(queue, value);
-                return false;
+        const read = (
+          event: { event: string; data: string; id?: string | undefined },
+          decoder: DeferredDecoder,
+        ): Effect.Effect<boolean, unknown> => {
+          switch (event.event) {
+            case SSE_EVENT.done:
+              return Effect.succeed(true);
+            case SSE_EVENT.error:
+              return Effect.try({
+                try: () =>
+                  fromWireError(serializer.deserialize(JSON.parse(event.data))),
+                catch: (cause) => cause,
+              }).pipe(Effect.flatMap(Effect.fail));
+            case SSE_EVENT.chunk:
+              return Effect.try({
+                try: () =>
+                  JSON.parse(event.data) as { e: number; chunk?: unknown },
+                catch: (cause) => cause,
+              }).pipe(
+                Effect.flatMap((frame) =>
+                  'chunk' in frame
+                    ? decoder.chunk(frame.e, frame.chunk)
+                    : decoder.end(frame.e),
+                ),
+                Effect.as(false),
+              );
+            case SSE_EVENT.message:
+            case SSE_EVENT.deferred: {
+              if (event.id !== undefined) lastEventId = event.id;
+              attempt = 0;
+              return Effect.try({
+                try: () => JSON.parse(event.data) as unknown,
+                catch: (cause) => cause,
+              }).pipe(
+                Effect.flatMap((data) =>
+                  event.event === SSE_EVENT.deferred
+                    ? decoder.decode(
+                        (data as { body: unknown }).body,
+                        (data as { e: number }).e,
+                      )
+                    : decoder.decode(data, undefined),
+                ),
+                Effect.map((value) => {
+                  Queue.offerUnsafe(
+                    queue,
+                    Effect.mapError(value, parseError('Invalid event')),
+                  );
+                  return false;
+                }),
+              );
+            }
+            default:
+              return Effect.succeed(false);
+          }
+        };
+
+        /** One connection; `true` once the server ended the subscription. */
+        const connect = Effect.gen(function* () {
+          const res = yield* Effect.tryPromise({
+            try: () =>
+              send(
+                op,
+                CONTENT_TYPE.sse,
+                lastEventId ? { [HEADER.lastEventId]: lastEventId } : {},
+                linked(controller.signal, op),
+              ),
+            catch: (cause) => cause,
+          }).pipe(
+            Effect.catch((cause) =>
+              giveUp() ? Effect.fail(toHttpError(cause)) : Effect.succeed(null),
+            ),
+          );
+          if (!res) return false;
+          if (!res.ok || !res.body) {
+            return yield* Effect.fail(
+              yield* Effect.promise(() => readError(res)),
+            );
+          }
+          const decoder = makeDeferredDecoder(serializer);
+          const ended = yield* Stream.fromAsyncIterable(
+            parseSse(res.body),
+            (cause) => cause,
+          ).pipe(
+            Stream.mapEffect((event) => read(event, decoder)),
+            Stream.takeUntil((done) => done),
+            Stream.runLast,
+            Effect.map((last) => Option.getOrElse(last, () => false)),
+            // Anything but a server error reconnects.
+            Effect.catch((cause) =>
+              isTrpcError(cause) ? Effect.fail(cause) : Effect.succeed(false),
+            ),
+            Effect.ensuring(decoder.close),
+          );
+          if (ended) return true;
+          if (giveUp()) {
+            return yield* Effect.fail(
+              new TrpcError({
+                code: 'NETWORK_ERROR',
+                message: 'The subscription connection was lost',
               }),
             );
           }
-          default:
-            return Effect.succeed(false);
-        }
-      };
+          return false;
+        });
 
-      /** One connection; `true` once the server ended the subscription. */
-      const connect = Effect.gen(function* () {
-        const res = yield* Effect.tryPromise({
-          try: () =>
-            send(
-              op,
-              CONTENT_TYPE.sse,
-              lastEventId ? { [HEADER.lastEventId]: lastEventId } : {},
-              linked(controller.signal, op),
-            ),
-          catch: (cause) => cause,
-        }).pipe(
-          Effect.catch((cause) =>
-            giveUp() ? Effect.fail(toHttpError(cause)) : Effect.succeed(null),
+        const loop: Effect.Effect<void, AnyTrpcError> = Effect.flatMap(
+          connect,
+          (ended) =>
+            ended
+              ? Effect.void
+              : Effect.andThen(
+                  Effect.sleep(reconnectDelay(attempt)),
+                  Effect.suspend(() => loop),
+                ),
+        );
+        return loop.pipe(
+          Effect.matchCause({
+            onSuccess: () => Queue.endUnsafe(queue),
+            onFailure: (cause) => Queue.failCauseUnsafe(queue, cause),
+          }),
+          Effect.forkScoped,
+          // Finalizers run last-added first: aborting the response unblocks
+          // the body read before the fiber is interrupted.
+          Effect.andThen(
+            Effect.addFinalizer(() => Effect.sync(() => controller.abort())),
           ),
         );
-        if (!res) return false;
-        if (!res.ok || !res.body) {
-          return yield* Effect.fail(
-            yield* Effect.promise(() => readError(res)),
-          );
-        }
-        const decoder = new DeferredDecoder(serializer);
-        const ended = yield* Stream.fromAsyncIterable(
-          parseSse(res.body),
-          (cause) => cause,
-        ).pipe(
-          Stream.mapEffect((event) => read(event, decoder)),
-          Stream.takeUntil((done) => done),
-          Stream.runLast,
-          Effect.map((last) => Option.getOrElse(last, () => false)),
-          // Anything but a server error reconnects.
-          Effect.catch((cause) =>
-            isTrpcError(cause) ? Effect.fail(cause) : Effect.succeed(false),
-          ),
-          Effect.ensuring(Effect.sync(() => decoder.close())),
-        );
-        if (ended) return true;
-        if (giveUp()) {
-          return yield* Effect.fail(
-            new TrpcError({
-              code: 'NETWORK_ERROR',
-              message: 'The subscription connection was lost',
-            }),
-          );
-        }
-        return false;
-      });
-
-      const loop: Effect.Effect<void, AnyTrpcError> = Effect.flatMap(
-        connect,
-        (ended) =>
-          ended
-            ? Effect.void
-            : Effect.andThen(
-                Effect.sleep(reconnectDelay(attempt)),
-                Effect.suspend(() => loop),
-              ),
-      );
-      return loop.pipe(
-        Effect.matchCause({
-          onSuccess: () => Queue.endUnsafe(queue),
-          onFailure: (cause) => Queue.failCauseUnsafe(queue, cause),
-        }),
-        Effect.forkScoped,
-        // Finalizers run last-added first: aborting the response unblocks
-        // the body read before the fiber is interrupted.
-        Effect.andThen(
-          Effect.addFinalizer(() => Effect.sync(() => controller.abort())),
-        ),
-      );
-    });
+      },
+    ).pipe(Stream.mapEffect((value) => value));
 
   return withSerializer(({ op }) => {
     if (op.type === 'subscription') return subscription(op);
