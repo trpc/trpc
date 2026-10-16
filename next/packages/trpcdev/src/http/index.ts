@@ -21,23 +21,24 @@
  * ```
  * @module
  */
-import { Effect, Layer, Queue } from 'effect';
+import { Effect, type Layer } from 'effect';
 import {
   HttpEffect,
   HttpMiddleware,
+  HttpRouter,
   HttpServer,
   HttpServerError,
   HttpServerRequest,
   HttpServerResponse,
 } from 'effect/http';
-import { Socket } from 'effect/socket';
 import {
   HEADER,
   isJsonContentType,
   PROTOCOL_VERSION,
 } from '../internal/protocol.ts';
-import { httpApps } from '../server/fetch.ts';
+import { type FetchHandler, httpApps } from '../server/fetch.ts';
 import { socketCores, type WebSocketLike } from '../server/socket.ts';
+import { isUpgrade, upgradeTo } from '../server/upgrade.ts';
 
 /**
  * Anything with a web-standard `fetch` method, like `createFetchHandler()`.
@@ -78,9 +79,6 @@ export interface HttpOptions {
 export type CorsOptions = NonNullable<
   Parameters<typeof HttpMiddleware.cors>[0]
 >;
-
-const isUpgrade = (request: HttpServerRequest.HttpServerRequest) =>
-  request.headers['upgrade']?.toLowerCase() === 'websocket';
 
 /**
  * Effect's CORS middleware, for the handler's `middleware` option, that
@@ -153,15 +151,6 @@ export function toHttpEffect(
           : handler.fetch(replayed);
       }),
     );
-  const upgrade = (
-    request: HttpServerRequest.HttpServerRequest,
-    onSocket: (ws: WebSocketLike) => void,
-  ) =>
-    Effect.flatMap(request.upgrade, (socket) =>
-      serveSocket(socket, onSocket).pipe(
-        Effect.catchTag('SocketError', () => Effect.void),
-      ),
-    );
   /** A handler other than `createFetchHandler()`'s gets a web `Request`. */
   const viaWeb = (request: HttpServerRequest.HttpServerRequest) =>
     Effect.gen(function* () {
@@ -176,7 +165,7 @@ export function toHttpEffect(
           (reason) => new HttpServerError.HttpServerError({ reason }),
         ),
       );
-      yield* upgrade(request, (ws) =>
+      yield* upgradeTo(request, (ws) =>
         (handler as WebSocketHandlerLike).websocket(ws, {
           request: webRequest,
         }),
@@ -191,11 +180,9 @@ export function toHttpEffect(
         if (pathname !== endpoint && pathname !== `${endpoint}/`) {
           return HttpServerResponse.empty({ status: 404 });
         }
-        yield* Effect.scoped(
-          core
-            ? upgrade(request, (ws) => core.serveWebSocket(ws, request))
-            : viaWeb(request),
-        );
+        yield* core
+          ? upgradeTo(request, (ws) => core.serveWebSocket(ws, request))
+          : Effect.scoped(viaWeb(request));
         return HttpServerResponse.empty();
       });
   const wrapped = (own?.middleware ?? []).reduceRight<
@@ -211,6 +198,9 @@ export function toHttpEffect(
 
 /**
  * Serves a fetch handler (and its WebSockets) on the current `HttpServer`.
+ * A `createFetchHandler()` handler serves its `routes`, so other paths get
+ * the router's 404; merge `handler.routes` with your own routes to serve
+ * both.
  *
  * @example
  * ```ts
@@ -225,7 +215,10 @@ export function serve(
   handler: FetchLike | (FetchLike & WebSocketHandlerLike),
   opts: HttpOptions = {},
 ): Layer.Layer<never, never, HttpServer.HttpServer> {
-  return HttpServer.serve(toHttpEffect(handler, opts));
+  const { routes } = handler as Partial<FetchHandler>;
+  return routes && opts.endpoint === undefined
+    ? HttpRouter.serve(routes, { disableLogger: true, disableListenLog: true })
+    : HttpServer.serve(toHttpEffect(handler, opts));
 }
 
 /**
@@ -263,75 +256,3 @@ function replayParsedBody(web: Request, source: object): Request | Response {
     headers,
   });
 }
-
-const OPEN = 1;
-const CLOSING = 2;
-const CLOSED = 3;
-
-/**
- * Exposes an Effect `Socket` as a `WebSocketLike` until it closes. Text
- * frames arrive as strings, binary frames as `Uint8Array`.
- */
-const serveSocket = (
-  socket: Socket.Socket,
-  accept: (ws: WebSocketLike) => void,
-) =>
-  Effect.gen(function* () {
-    const reader = yield* socket.reader;
-    const writer = yield* socket.writer;
-    const outbox = yield* Queue.unbounded<
-      string | Uint8Array | Socket.CloseEvent
-    >();
-    const listeners = new Map<string, Array<(event: any) => void>>();
-    const emit = (type: string, event: unknown) => {
-      for (const listener of listeners.get(type) ?? []) listener(event);
-    };
-    let readyState = OPEN;
-    const closed = (code: number, reason: string) => {
-      if (readyState === CLOSED) return;
-      readyState = CLOSED;
-      emit('close', { code, reason, wasClean: code !== 1006 });
-    };
-    const ws: WebSocketLike = {
-      get readyState() {
-        return readyState;
-      },
-      send(data) {
-        if (readyState === OPEN) Queue.offerUnsafe(outbox, data);
-      },
-      close(code, reason) {
-        if (readyState !== OPEN) return;
-        readyState = CLOSING;
-        Queue.offerUnsafe(outbox, new Socket.CloseEvent(code, reason));
-      },
-      addEventListener(type, listener) {
-        const list = listeners.get(type);
-        if (list) list.push(listener);
-        else listeners.set(type, [listener]);
-      },
-    };
-    yield* Queue.take(outbox).pipe(
-      Effect.flatMap(writer.write),
-      Effect.forever,
-      Effect.ignore,
-      Effect.forkScoped,
-    );
-    accept(ws);
-    yield* reader.pull.pipe(
-      Effect.flatMap((frames) =>
-        Effect.sync(() => {
-          for (const data of frames) emit('message', { data });
-        }),
-      ),
-      Effect.forever,
-      Effect.catch((err) =>
-        Effect.sync(() => {
-          const { reason } = err;
-          if (reason._tag === 'SocketCloseError') {
-            closed(reason.code, reason.closeReason ?? '');
-          }
-        }),
-      ),
-      Effect.ensuring(Effect.sync(() => closed(1006, ''))),
-    );
-  });

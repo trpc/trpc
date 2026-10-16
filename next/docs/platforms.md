@@ -28,7 +28,24 @@ serve(handler).pipe(
 
 `serve` takes `endpoint`, the path WebSocket upgrades must use. Any Effect `HttpServer` layer works in place of Node's.
 
-The handler is an `effect/http` app underneath: `createContext` gets Effect's `HttpServerRequest`, and on Node the request is never converted to a web `Request`. To compose with your own Effect HTTP app, `toHttpEffect(handler)` is the app itself.
+The handler is an `effect/http` app underneath: `createContext` gets Effect's `HttpServerRequest`, and on Node the request is never converted to a web `Request`. `handler.routes` is that app as `HttpRouter` routes for the endpoint and the paths under it, WebSocket upgrades included, and `serve(handler)` serves exactly those, so other paths get a 404. Merge them with your own routes:
+
+```ts
+import { HttpRouter, HttpServerResponse } from 'effect/http';
+
+const app = Layer.mergeAll(
+  handler.routes,
+  HttpRouter.add('GET', '/health', HttpServerResponse.text('ok')),
+);
+
+HttpRouter.serve(app).pipe(
+  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 })),
+  Layer.launch,
+  NodeRuntime.runMain,
+);
+```
+
+`handler.fetch` runs the same app through `HttpRouter.toWebHandler`. To use the handler as one app instead of routes, `toHttpEffect(handler)` is the app itself.
 
 ### Middleware and CORS
 

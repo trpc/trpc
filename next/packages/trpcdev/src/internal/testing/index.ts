@@ -25,9 +25,8 @@
  * @stability internal
  */
 import { Context, Effect, Layer, type Scope } from 'effect';
-import { HttpServer, HttpServerRequest } from 'effect/http';
+import { HttpRouter, HttpServer, HttpServerRequest } from 'effect/http';
 import { NetAddress } from 'effect/net';
-import { toHttpEffect } from '../../http/index.ts';
 import {
   createFetchHandler,
   type FetchHandler,
@@ -88,20 +87,22 @@ const make = <TRouter extends AnyRouter>(
     if (NetAddress.isUnspecified(address.address)) {
       origin.hostname = NetAddress.formatIp(NetAddress.ipv4Loopback);
     }
-    const app = toHttpEffect(handler, { endpoint: opts.endpoint });
     yield* Layer.build(
-      HttpServer.serve(
-        Effect.flatMap(HttpServerRequest.HttpServerRequest, (request) => {
-          if (request.headers['upgrade']?.toLowerCase() !== 'websocket') {
-            requests.push({
-              method: request.method,
-              url: `${origin.origin}${request.url}`,
-              headers: new Headers(request.headers),
-            });
-          }
-          return app;
-        }),
-      ),
+      HttpRouter.serve(handler.routes, {
+        disableLogger: true,
+        disableListenLog: true,
+        middleware: (app) =>
+          Effect.flatMap(HttpServerRequest.HttpServerRequest, (request) => {
+            if (request.headers['upgrade']?.toLowerCase() !== 'websocket') {
+              requests.push({
+                method: request.method,
+                url: `${origin.origin}${request.url}`,
+                headers: new Headers(request.headers),
+              });
+            }
+            return app;
+          }),
+      }),
     );
     const endpoint = (opts.endpoint ?? '/trpc').replace(/^\/+|\/+$/g, '');
     return {

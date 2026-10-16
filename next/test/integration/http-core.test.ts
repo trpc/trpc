@@ -1,5 +1,5 @@
-import { Effect } from 'effect';
-import { HttpMiddleware, HttpServerResponse } from 'effect/http';
+import { Effect, Layer } from 'effect';
+import { HttpMiddleware, HttpRouter, HttpServerResponse } from 'effect/http';
 import { createTrpcClient, httpLink, routerType } from 'trpcdev/client';
 import { cors } from 'trpcdev/http';
 import {
@@ -187,4 +187,28 @@ test('a procedure can return its own response on unbatched HTTP calls (04 Q4.3)'
   await expect(caller.csv.query()).rejects.toMatchObject({
     code: 'BAD_REQUEST',
   });
+});
+
+test('handler.routes are effect/http routes that merge with your own (12 Q12.1)', async () => {
+  const handler = createFetchHandler({ router, createContext });
+  const app = Layer.mergeAll(
+    handler.routes,
+    HttpRouter.add('GET', '/health', HttpServerResponse.text('ok')),
+  );
+  const web = HttpRouter.toWebHandler(app, { disableLogger: true });
+  try {
+    const health = await web.handler(new Request('http://localhost/health'));
+    expect(await health.text()).toBe('ok');
+    const res = await web.handler(
+      new Request('http://localhost/trpc/whoami', {
+        headers: { cookie: 's=3' },
+      }),
+    );
+    expect(await res.json()).toEqual({ json: { cookie: 's=3', web: true } });
+    const missing = await web.handler(new Request('http://localhost/nope'));
+    expect(missing.status).toBe(404);
+  } finally {
+    await web.dispose();
+    await handler.dispose();
+  }
 });

@@ -10,11 +10,11 @@ import {
   type Tracer,
 } from 'effect';
 import {
-  HttpEffect,
   HttpServerRequest,
   HttpServerResponse,
   HttpTraceContext,
   type HttpMiddleware,
+  type HttpRouter,
 } from 'effect/http';
 import {
   isTrpcError,
@@ -58,6 +58,7 @@ import {
   type inferRouterContext,
   type inferRouterServices,
 } from './router.ts';
+import { httpParts } from './routes.ts';
 import {
   messagePortConnection,
   serveConnection,
@@ -309,6 +310,25 @@ export interface FetchHandler<TPlatform = undefined> {
       ? [opts?: { request?: Request; platform?: TPlatform }]
       : [opts: { request?: Request; platform: TPlatform }]
   ): void;
+  /**
+   * The handler as `effect/http` routes for its endpoint and the paths
+   * under it, WebSocket upgrades included. Merge them with your own routes
+   * and serve them with `HttpRouter.serve`.
+   *
+   * @example
+   * ```ts
+   * const app = Layer.mergeAll(
+   *   handler.routes,
+   *   HttpRouter.add('GET', '/health', HttpServerResponse.text('ok')),
+   * );
+   * HttpRouter.serve(app).pipe(
+   *   Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 })),
+   *   Layer.launch,
+   *   NodeRuntime.runMain,
+   * );
+   * ```
+   */
+  readonly routes: Layer.Layer<never, never, HttpRouter.HttpRouter>;
   /** Releases the `layer`'s resources. */
   dispose(): Promise<void>;
 }
@@ -1077,13 +1097,12 @@ export function createFetchHandler<
   ) as never;
 
   const middleware = opts.middleware ?? [];
-  const served = middleware.reduceRight<
-    Effect.Effect<HttpServerResponse.HttpServerResponse, any, any>
-  >((inner, m) => m(inner), app) as typeof app;
-  // HttpEffect runs apps uninterruptibly; an aborted `request.signal` must abort the call.
-  const webHandler = HttpEffect.toWebHandler(
-    Effect.interruptible(served) as never,
-  );
+  const http = httpParts({
+    app,
+    middleware,
+    endpoint,
+    webSocket: (ws, request) => core.serveWebSocket(ws, request),
+  });
 
   const core: SocketCore = {
     router,
@@ -1120,13 +1139,17 @@ export function createFetchHandler<
       });
     },
     fetch: (request, platform) =>
-      webHandler(
+      http.fetch(
         request,
         platform === undefined
           ? undefined
           : (Context.make(CurrentPlatform, platform) as Context.Context<never>),
       ),
-    dispose: base.dispose,
+    routes: http.routes,
+    async dispose() {
+      await http.dispose();
+      await base.dispose();
+    },
   };
   socketCores.set(handler, core);
   httpApps.set(handler, { app, middleware });
