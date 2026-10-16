@@ -11,7 +11,7 @@
   ```
 
 - Lost: a single `.handler()` terminal (T-B).
-- Human: "mutations and queries that return something we can subscribe to too (make it durable for res cancellations)". Built as [`durable-calls.md`](./durable-calls.md); mid-stream resume is a spike there.
+- Human: "mutations and queries that return something we can subscribe to too (make it durable for res cancellations)". Built as [`durable-calls.md`](./durable-calls.md); streamed outputs resume mid-stream there.
 - `durable()` middleware plus `durableLink()` keep results by call id on Effect's `BackingPersistence`; streamed work is a mutation plus a resumable `Publisher` subscription, and streamed outputs resume mid-stream ([`durable-calls.md`](./durable-calls.md), human).
 - Human, 2026-10-15 (Q4.4): "Scoped per procedure is fine, especially if it makes it so transforms break (we can point ts to the input rather than the output of its validators)". `.output(schema, { validate: false })` documents an output (OpenAPI, contracts) without running the schema. The client is then typed with the schema's input type, since no transform runs. No global or production-only switch. oRPC does this per base procedure with `initialOutputValidationIndex: NaN`.
 - (agent, Q3.2) G-A. The builder carries one mapped definition bag, `TDef`, instead of a generic per field.
