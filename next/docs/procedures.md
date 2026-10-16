@@ -296,3 +296,5 @@ await call(appRouter.post.byId, { id: '1' }, { ctx: { user } });
 ```
 
 `localLink({ router })` does the same inside a client's link chain. For React Server Actions, see [Server Actions and RSC](./actions-and-rsc.md).
+
+In-process calls have no HTTP request: you pass the `ctx` (or a function that makes it) yourself, and the handler's `createContext` doesn't run. To share request-reading code with the handler, keep it in a function of the request and build one: `ctx: () => contextFor(HttpServerRequest.fromWeb(new Request(url, { headers })))`. WebSocket calls get their upgrade request, and MessagePort calls the request given to `handler.messagePort()`.
