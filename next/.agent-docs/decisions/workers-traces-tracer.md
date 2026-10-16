@@ -1,0 +1,10 @@
+# Workers Traces through an Effect `Tracer` (agent)
+
+- Builds the Workers Traces row of [`orpc-v2-parity.md`](./orpc-v2-parity.md), and follows [`tracing-across-client-and-server.md`](./tracing-across-client-and-server.md): tracing is Effect's `Tracer`, so Workers Traces is one more tracer layer, not a tRPC plugin.
+- (agent) `experimental_workersTracer({ tracing, snapshot? })` from `@trpc12/trpc/cloudflare` records every Effect span (tRPC's `trpc.<path>` server and client spans and any `Effect.withSpan`) with Workers' custom spans API (`tracing.startActiveSpan`), with attributes, `span.kind`, an error status and the exception on failure. `tracing` is passed in, so the package imports no `cloudflare:workers`.
+- (agent) Workers nests spans by async context, not by a parent argument. With `snapshot: AsyncLocalStorage.snapshot`, each span captures its context, and the tracer's `context` hook (Effect 4 runs every fiber step through it) runs the fiber's steps in its current span's context. So spans nest as Effect nests them, and the spans Workers adds (subrequests, storage, other objects) sit under the call that made them. Without `snapshot`, every span is a child of the request's.
+- (agent) Checked on workerd: `examples/cloudflare`'s smoke test reads Wrangler's local trace store and asserts that the lock's Durable Object subrequest is a child of `trpc.claim`.
+- (agent, tentative) Effect span events are dropped (Workers spans have none), and an incoming `traceparent` doesn't parent the call: Workers can't start a span under a remote parent.
+- Why: Effect already creates the spans and their nesting; the tracer only maps them, the same way for the Promise and Effect clients and the server.
+- Lost: oRPC's `withActiveSpan` equivalent (Workers can't activate an existing span either); per-step context switching costs something on every fiber step when `snapshot` is set, not measured.
+- Lives in: `packages/trpc/src/cloudflare/tracer.ts`, `test/integration/workers-tracer.test.ts` (a fake `tracing` on `AsyncLocalStorage`), `examples/cloudflare/src/index.ts`, `examples/cloudflare/smoke.ts`, `docs/platforms.md` (Workers Traces).
