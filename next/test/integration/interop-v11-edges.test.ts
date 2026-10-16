@@ -6,10 +6,7 @@ import {
 import { Effect, Stream } from 'effect';
 import { HttpServerResponse } from 'effect/http';
 import superjson from 'superjson';
-import {
-  createV11Handler,
-  type V11HandlerOptions,
-} from '@trpc12/trpc/interop';
+import { createV11Handler, type V11HandlerOptions } from '@trpc12/trpc/interop';
 import { error, initTrpc } from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
 import { z } from 'zod';
@@ -23,12 +20,10 @@ const router = {
   add: t.procedure
     .input(z.unknown())
     .mutation(({ input }) => input ?? 'nothing'),
-  tagged: t.procedure
-    .input(z.string())
-    .query(({ input, response }) => {
-      response.headers.set('x-tag', input);
-      return input;
-    }),
+  tagged: t.procedure.input(z.string()).query(({ input, response }) => {
+    response.headers.set('x-tag', input);
+    return input;
+  }),
   deferred: t.procedure
     .input(z.enum(['defined', 'unexpected']))
     .query(({ input }) => ({
