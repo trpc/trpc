@@ -43,57 +43,43 @@ test('publish and subscribe as Effects, with ids and channels (14 Q14.6)', async
   ]);
 });
 
-test('tagged events reach only subscribers with a matching tag, replays included', async () => {
+class Chat extends Publisher.Service<
+  Chat,
+  { [room: `chat:${string}`]: { text: string } }
+>()('test/Chat') {}
+
+test('a channel per audience: template keys type every room, replays included', async () => {
   const program = Effect.gen(function* () {
-    yield* Posts.publish(
-      'created',
-      { id: '0', title: 'for ada, kept' },
-      {
-        tags: ['user:ada'],
-      },
-    );
-    const collect = (tags?: string[]) =>
+    yield* Chat.publish('chat:1', { text: 'kept for room 1' });
+    const collect = (room: string) =>
       Effect.forkChild(
-        Posts.subscribe('created', { lastEventId: '0', tags }).pipe(
+        Chat.subscribe(`chat:${room}`, { lastEventId: '0' }).pipe(
           Stream.take(2),
-          Stream.map((e) => e.data.title),
+          Stream.map((e) => e.data.text),
           Stream.runCollect,
         ),
       );
-    const ada = yield* collect(['user:ada', 'team:1']);
-    const bob = yield* collect(['user:bob', 'team:1']);
-    const anon = yield* collect();
+    const one = yield* collect('1');
+    const two = yield* collect('2');
     yield* Effect.sleep(10);
-    yield* Posts.publish(
-      'created',
-      { id: '1', title: 'for bob' },
-      {
-        tags: ['user:bob'],
-      },
-    );
-    yield* Posts.publish(
-      'created',
-      { id: '2', title: 'for team 1' },
-      {
-        tags: ['team:1'],
-      },
-    );
-    yield* Posts.publish('created', { id: '3', title: 'for all' });
-    yield* Posts.publish('created', { id: '4', title: 'for all, again' });
+    yield* Chat.publish('chat:2', { text: 'for room 2' });
+    yield* Chat.publish('chat:1', { text: 'for room 1' });
+    yield* Chat.publish('chat:2', { text: 'for room 2, again' });
     return {
-      ada: [...(yield* Fiber.join(ada))],
-      bob: [...(yield* Fiber.join(bob))],
-      anon: [...(yield* Fiber.join(anon))],
+      one: [...(yield* Fiber.join(one))],
+      two: [...(yield* Fiber.join(two))],
     };
   });
+  expectTypeOf<Parameters<typeof Chat.publish<'chat:9'>>[1]>().toEqualTypeOf<{
+    text: string;
+  }>();
   expect(
     await Effect.runPromise(
-      Effect.scoped(program.pipe(Effect.provide(Posts.memory({ buffer: 10 })))),
+      Effect.scoped(program.pipe(Effect.provide(Chat.memory({ buffer: 10 })))),
     ),
   ).toEqual({
-    ada: ['for ada, kept', 'for team 1'],
-    bob: ['for bob', 'for team 1'],
-    anon: ['for all', 'for all, again'],
+    one: ['kept for room 1', 'for room 1'],
+    two: ['for room 2', 'for room 2, again'],
   });
 });
 

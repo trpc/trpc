@@ -3,33 +3,18 @@ import { tracked, type TrackedEnvelope } from './tracked.ts';
 
 /**
  * Event types by channel: `{ created: Post; deleted: { id: string } }`.
+ * For a channel per audience (a room, a user), key it with a template
+ * literal type such as `chat:${string}` and publish to `chat:${roomId}`.
  * @since 0.1.0
  * @stability stable
  */
 export type PublisherEvents = Record<string, unknown>;
 
 /**
- * Options for `Publisher.publish`.
- * @example
- * ```ts
- * Posts.publish('created', post, { tags: [`user:${post.authorId}`] });
- * ```
- * @since 0.1.0
- * @stability stable
- */
-export interface PublishOptions {
-  /**
-   * Only subscribers with one of these tags get the event. Without tags,
-   * every subscriber does.
-   */
-  readonly tags?: ReadonlyArray<string> | undefined;
-}
-
-/**
  * Options for `Publisher.subscribe`.
  * @example
  * ```ts
- * Posts.subscribe('created', { lastEventId, tags: [`user:${ctx.user.id}`] });
+ * Posts.subscribe('created', { lastEventId });
  * ```
  * @since 0.1.0
  * @stability stable
@@ -37,11 +22,6 @@ export interface PublishOptions {
 export interface SubscribeOptions {
   /** Kept events after this id come first. */
   readonly lastEventId?: string | undefined;
-  /**
-   * This subscriber's tags, for events published with `tags`. Set them on
-   * the server (from `ctx`), never from client input.
-   */
-  readonly tags?: ReadonlyArray<string> | undefined;
 }
 
 /**
@@ -96,53 +76,17 @@ export interface PublisherClass<
    * processes (Redis, Postgres `LISTEN`, Durable Objects).
    */
   memory(opts?: MemoryPublisherOptions): Layer.Layer<Self>;
-  /** Publishes through the layer; `tags` limit who gets the event. */
+  /** Publishes through the layer. */
   publish<K extends keyof TEvents & string>(
     channel: K,
     data: TEvents[K],
-    opts?: PublishOptions,
   ): Effect.Effect<string, never, Self>;
-  /** Subscribes through the layer, skipping events tagged for others. */
+  /** Subscribes through the layer. */
   subscribe<K extends keyof TEvents & string>(
     channel: K,
     opts?: SubscribeOptions,
   ): Stream.Stream<TrackedEnvelope<TEvents[K]>, never, Self>;
 }
-
-const TAGS = '~trpc/tags';
-
-/**
- * An event published with tags. The accessors wrap and unwrap it, so every
- * backend carries tags without knowing about them.
- * @internal
- */
-export interface TaggedEvent {
-  readonly [TAGS]: ReadonlyArray<string>;
-  readonly data: unknown;
-}
-
-/** @internal */
-export const isTaggedEvent = (value: unknown): value is TaggedEvent =>
-  typeof value === 'object' &&
-  value !== null &&
-  Array.isArray((value as Partial<TaggedEvent>)[TAGS]);
-
-/** Whether a subscriber with `tags` gets an event with this data. @internal */
-export const isFor = (
-  data: unknown,
-  tags: ReadonlyArray<string> | undefined,
-): boolean =>
-  !isTaggedEvent(data) ||
-  (tags !== undefined && data[TAGS].some((tag) => tags.includes(tag)));
-
-/** The event's own data, without the tag envelope. @internal */
-export const untagged = (data: unknown): unknown =>
-  isTaggedEvent(data) ? data.data : data;
-
-const tag = (data: unknown, opts: PublishOptions | undefined): unknown =>
-  opts?.tags && opts.tags.length > 0
-    ? ({ [TAGS]: [...opts.tags], data } satisfies TaggedEvent)
-    : data;
 
 interface Event {
   readonly channel: string;
@@ -272,21 +216,10 @@ export const Publisher = {
       return Object.assign(Base, {
         memory: (opts?: MemoryPublisherOptions) =>
           Layer.effect(service)(makeMemoryPublisher<TEvents>(opts)),
-        publish: (channel: string, data: unknown, opts?: PublishOptions) =>
-          Effect.flatMap(service, (p) =>
-            p.publish(channel, tag(data, opts) as never),
-          ),
+        publish: (channel: string, data: unknown) =>
+          Effect.flatMap(service, (p) => p.publish(channel, data as never)),
         subscribe: (channel: string, opts?: SubscribeOptions) =>
-          Stream.unwrap(
-            Effect.map(service, (p) => p.subscribe(channel, opts)),
-          ).pipe(
-            Stream.filter((event) => isFor(event.data, opts?.tags)),
-            Stream.map((event) =>
-              isTaggedEvent(event.data)
-                ? tracked(event.id, event.data.data)
-                : event,
-            ),
-          ),
+          Stream.unwrap(Effect.map(service, (p) => p.subscribe(channel, opts))),
       }) as never;
     },
 };

@@ -416,27 +416,28 @@ test('an event the subscription rejects ends it with an error', async () => {
   expect(sub.deserializeAttachment()).not.toHaveProperty('subs');
 });
 
-const RoomToken = connectionToken(
-  Schema.Struct({ user: Schema.String, tags: Schema.Array(Schema.String) }),
-  { secret: 'test-secret', ttlSeconds: 60 },
-);
+const RoomToken = connectionToken(Schema.Struct({ user: Schema.String }), {
+  secret: 'test-secret',
+  ttlSeconds: 60,
+});
 
-class Notes extends Publisher.Service<Notes, { note: { text: string } }>()(
-  'test/Notes',
-) {}
+class Notes extends Publisher.Service<
+  Notes,
+  { [inbox: `inbox:${string}`]: { text: string } }
+>()('test/Notes') {}
 
-const nt = initTrpc<{ ctx: { user: string; tags: readonly string[] } }>();
+const nt = initTrpc<{ ctx: { user: string } }>();
 const notesRouter = {
   send: nt.procedure
     .input(z.object({ to: z.string(), text: z.string() }))
     .mutation(({ input }) =>
       Effect.as(
-        Notes.publish('note', { text: input.text }, { tags: [input.to] }),
+        Notes.publish(`inbox:${input.to}`, { text: input.text }),
         'sent',
       ),
     ),
   inbox: nt.procedure.subscription(({ ctx, lastEventId }) =>
-    Notes.subscribe('note', { lastEventId, tags: ctx.tags }),
+    Notes.subscribe(`inbox:${ctx.user}`, { lastEventId }),
   ),
 };
 
@@ -451,14 +452,10 @@ const notesRoom = (state: ReturnType<typeof fakeState>) =>
     { state },
   );
 
-const join = async (
-  sockets: ReturnType<typeof notesRoom>,
-  user: string,
-  tags: string[],
-) => {
+const join = async (sockets: ReturnType<typeof notesRoom>, user: string) => {
   const socket = new FakeSocket();
   sockets.accept(socket, request);
-  const token = await Effect.runPromise(RoomToken.sign({ user, tags }));
+  const token = await Effect.runPromise(RoomToken.sign({ user }));
   say(sockets, socket, {
     type: 'init',
     version: '12',
@@ -467,11 +464,11 @@ const join = async (
   return socket;
 };
 
-test('a signed token sets the tags a hibernated subscription gets events for', async () => {
+test('a signed token picks the channel a hibernated subscription gets events for', async () => {
   const state = fakeState();
   const sockets = notesRoom(state);
-  const ada = await join(sockets, 'ada', ['user:ada', 'team:1']);
-  const bob = await join(sockets, 'bob', ['user:bob']);
+  const ada = await join(sockets, 'ada');
+  const bob = await join(sockets, 'bob');
   for (const socket of [ada, bob]) {
     say(sockets, socket, {
       id: 1,
@@ -482,14 +479,14 @@ test('a signed token sets the tags a hibernated subscription gets events for', a
   }
   await vi.waitFor(() => {
     expect(ada.deserializeAttachment()).toMatchObject({
-      subs: [{ c: 1, t: ['user:ada', 'team:1'] }],
+      subs: [{ c: 1, ch: 'inbox:ada' }],
     });
     expect(bob.deserializeAttachment()).toMatchObject({
-      subs: [{ c: 1, t: ['user:bob'] }],
+      subs: [{ c: 1, ch: 'inbox:bob' }],
     });
   });
 
-  // Evicted: the tags come back from the attachments.
+  // Evicted: the channels come back from the attachments.
   const woken = notesRoom(state);
   const send = (id: number, to: string, text: string) =>
     say(woken, bob, {
@@ -499,8 +496,8 @@ test('a signed token sets the tags a hibernated subscription gets events for', a
       path: 'send',
       input: jsonSerializer.serialize({ to, text }),
     });
-  send(2, 'team:1', 'standup');
-  send(3, 'user:bob', 'hi bob');
+  send(2, 'ada', 'hi ada');
+  send(3, 'bob', 'hi bob');
   await vi.waitFor(() =>
     expect(
       bob.sent.filter((m) => (m as { type: string }).type === 'result'),
@@ -512,21 +509,18 @@ test('a signed token sets the tags a hibernated subscription gets events for', a
         (e as { body: { json: { data: { text: string } } } }).body.json.data
           .text,
     );
-  expect(texts(ada)).toEqual(['standup']);
+  expect(texts(ada)).toEqual(['hi ada']);
   expect(texts(bob)).toEqual(['hi bob']);
 });
 
 test('connection tokens fail with UNAUTHORIZED when missing, tampered with or expired', async () => {
-  const token = await Effect.runPromise(
-    RoomToken.sign({ user: 'ada', tags: [] }),
-  );
+  const token = await Effect.runPromise(RoomToken.sign({ user: 'ada' }));
   expect(await Effect.runPromise(RoomToken.verify(token))).toEqual({
     user: 'ada',
-    tags: [],
   });
 
   const [body, mac] = token.split('.');
-  const forged = `${btoa(JSON.stringify({ c: '{"user":"eve","tags":[]}', exp: Date.now() + 1e6 })).replace(/=+$/, '')}.${mac}`;
+  const forged = `${btoa(JSON.stringify({ c: '{"user":"eve"}', exp: Date.now() + 1e6 })).replace(/=+$/, '')}.${mac}`;
   for (const [bad, message] of [
     [undefined, 'Missing connection token'],
     ['nope', 'Malformed connection token'],
@@ -542,7 +536,7 @@ test('connection tokens fail with UNAUTHORIZED when missing, tampered with or ex
 
   const expired = await Effect.runPromise(
     Effect.gen(function* () {
-      const minted = yield* RoomToken.sign({ user: 'ada', tags: [] });
+      const minted = yield* RoomToken.sign({ user: 'ada' });
       yield* TestClock.adjust('61 seconds');
       return yield* Effect.flip(RoomToken.verify(minted));
     }).pipe(Effect.provide(TestClock.layer())),

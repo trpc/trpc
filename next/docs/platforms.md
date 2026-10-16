@@ -288,7 +288,7 @@ export class Room extends DurableObject<Env> {
 - The subscription runs its resolver once, when it starts. Anything the resolver does per event (filtering, mapping the stream) is skipped; filter in the channel name instead (`'room:42'`).
 - One adapter per object: the latest `experimental_createHibernatingWebSockets` for a `state` gets the events.
 - A subscription that doesn't fit the attachment runs as a normal stream, with a warning. SSE subscribers in the same object get a normal stream too.
-- [Tags](./subscriptions.md#tags) are kept with the parked subscription, so `Notes.publish('note', data, { tags: ['user:1'] })` only wakes the sockets subscribed with that tag.
+- A parked subscription keeps its channel, so with [a channel per audience](./subscriptions.md#a-channel-per-audience) `Notes.publish('inbox:1', data)` only wakes the sockets subscribed to `inbox:1`.
 
 ### Durable calls in an object
 
@@ -309,7 +309,7 @@ The Worker in front of the object usually authenticates the user already. `conne
 import { connectionToken } from '@trpc12/trpc/cloudflare';
 
 const RoomToken = connectionToken(
-  Schema.Struct({ room: Schema.String, tags: Schema.Array(Schema.String) }),
+  Schema.Struct({ room: Schema.String, user: Schema.String }),
   { secret: env.TOKEN_SECRET, ttlSeconds: 600 },
 );
 
@@ -318,14 +318,14 @@ const workerRouter = {
   roomToken: t.procedure
     .input(Schema.Struct({ room: Schema.String }))
     .query(({ ctx, input }) =>
-      RoomToken.sign({ room: input.room, tags: [`user:${ctx.user.id}`] }),
+      RoomToken.sign({ room: input.room, user: ctx.user.id }),
     ),
 };
 
 // the Durable Object's router and handler
 const roomRouter = {
   inbox: t.procedure.subscription(({ ctx, lastEventId }) =>
-    Notes.subscribe('note', { lastEventId, tags: ctx.tags }),
+    Notes.subscribe(`inbox:${ctx.user}`, { lastEventId }),
   ),
 };
 

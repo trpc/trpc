@@ -22,7 +22,6 @@ import {
   type ConnectionReceiver,
   type SocketCore,
 } from '../server/socket.ts';
-import { isFor, untagged } from '../server/publisher.ts';
 import { tracked, type TrackedEnvelope } from '../server/tracked.ts';
 
 /**
@@ -92,13 +91,12 @@ export interface HibernatingWebSockets<TPlatform> {
   close(socket: HibernatableWebSocket, code?: number, reason?: string): void;
 }
 
-/** A parked publisher subscription: call id, publisher key, channel, path, tags. */
+/** A parked publisher subscription: call id, publisher key, channel, path. */
 interface Parked {
   c: number;
   k: string;
   ch: string;
   p: string;
-  t?: string[];
 }
 
 interface Attachment {
@@ -284,17 +282,11 @@ export function experimental_createHibernatingWebSockets<TPlatform>(
               });
             }
           },
-          hibernate({ id, path, key, channel, tags }) {
+          hibernate({ id, path, key, channel }) {
             const now = current(socket) ?? attachment;
             const subs: Parked[] = [
               ...(now.subs ?? []),
-              {
-                c: id,
-                k: key,
-                ch: channel,
-                p: path,
-                ...(tags && tags.length > 0 ? { t: [...tags] } : {}),
-              },
+              { c: id, k: key, ch: channel, p: path },
             ];
             if (store(socket, { ...now, subs })) return true;
             warn(
@@ -318,16 +310,14 @@ export function experimental_createHibernatingWebSockets<TPlatform>(
       sockets.flatMap((socket) => {
         const attachment = current(socket);
         return (attachment?.subs ?? [])
-          .filter(
-            (s) => s.k === key && s.ch === channel && isFor(event.data, s.t),
-          )
+          .filter((s) => s.k === key && s.ch === channel)
           .map((sub) =>
             sendEvent(
               core,
               socket,
               attachment!,
               sub,
-              tracked(event.id, untagged(event.data)),
+              tracked(event.id, event.data),
             ),
           );
       }),

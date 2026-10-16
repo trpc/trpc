@@ -5,8 +5,6 @@ export interface ParkedSubscription {
   /** The publisher's service key. */
   readonly key: string;
   readonly channel: string;
-  /** The subscriber's tags, for events published with tags. */
-  readonly tags?: ReadonlyArray<string> | undefined;
 }
 
 /**

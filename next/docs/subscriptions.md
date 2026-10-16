@@ -67,28 +67,29 @@ createFetchHandler({ router, layer: Posts.memory({ buffer: 100 }) });
 
 `subscribe()` yields `tracked()` events with the publisher's ids, so reconnects resume. `Posts.memory({ buffer })` serves one process on a `PubSub` and keeps `buffer` events per channel for resumes. For several processes, provide another layer with the same shape (`publish`, `subscribe`), built on the clients Effect already ships.
 
-### Tags
+### A channel per audience
 
-`publish(channel, data, { tags })` sends an event only to subscribers with at least one of those tags; `subscribe(channel, { tags })` sets a subscriber's. Untagged events go to everyone, and an untagged subscriber gets only those. Set subscriber tags from `ctx` on the server, never from client input:
+To reach some subscribers only (a room, a user's inbox), give each audience its own channel. A template literal key types every one of them; take the subscriber's channel from `ctx` on the server, never from client input:
 
 ```ts
+class Notes extends Publisher.Service<
+  Notes,
+  { [inbox: `inbox:${string}`]: { text: string } }
+>()('Notes') {}
+
 const router = {
   notify: t.procedure
     .input(Schema.Struct({ to: Schema.String, text: Schema.String }))
     .mutation(({ input }) =>
-      Notes.publish(
-        'note',
-        { text: input.text },
-        { tags: [`user:${input.to}`] },
-      ),
+      Notes.publish(`inbox:${input.to}`, { text: input.text }),
     ),
   inbox: t.procedure.subscription(({ ctx, lastEventId }) =>
-    Notes.subscribe('note', { lastEventId, tags: [`user:${ctx.user.id}`] }),
+    Notes.subscribe(`inbox:${ctx.user.id}`, { lastEventId }),
   ),
 };
 ```
 
-Tags ride inside the event through the layer, so every backend below supports them unchanged, replays included. They apply through the `Notes.publish` and `Notes.subscribe` accessors; code that uses the service shape directly (`yield* Notes`) sees the tagged envelope.
+The backend filters by channel, so a process only receives its subscribers' channels (Redis subscribes per channel). To reach several audiences, publish to each channel.
 
 ## Publisher backends
 

@@ -6,6 +6,6 @@
 - Why: fan-out (chat rooms, live updates) is what hibernation is for, and `Publisher` is already the Effect service subscriptions use, so no new API.
 - Compared: oRPC's `HibernationEventIterator` and `encodeHibernationRPCEvent` do this by hand per procedure; its Durable Iterator adds signed tokens, tags and stored resume. Signed tokens and tag targeting are later.
 - Lost: rerunning arbitrary resolvers after a wake.
-- (agent) Signed tokens and tag targeting are built: [`hibernation-connection-tokens.md`](./hibernation-connection-tokens.md) and [`publisher-tags.md`](./publisher-tags.md).
+- (agent) Signed tokens are built ([`hibernation-connection-tokens.md`](./hibernation-connection-tokens.md)). Tag targeting was built and then dropped for a channel per audience ([`publisher-tags.md`](./publisher-tags.md)).
 - (agent) The adapter moved to `@trpc12/trpc/cloudflare` with `hibernatingPublisher(Posts, { state })`. Live events skip the resolver: a resolver that filters or maps `Posts.subscribe()` only applies to replayed events, so the docs say to filter by channel name.
 - Lives in: `packages/trpc/src/cloudflare/hibernation.ts`, `src/cloudflare/publisher.ts`, `src/internal/hibernation.ts`, `src/cloudflare/token.ts`, `test/integration/hibernation.test.ts`, `docs/platforms.md#subscriptions-that-hibernate`.
