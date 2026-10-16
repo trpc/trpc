@@ -19,7 +19,7 @@ const addTitle = t.procedure
     return [...titles];
   });
 
-const action = createAction({ ctx: { user: 'alex' } });
+const action = createAction({ ctx: { user: 'ada' } });
 const addTitleAction = action(addTitle);
 
 function Titles() {

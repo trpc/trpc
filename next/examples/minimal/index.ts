@@ -76,7 +76,7 @@ const client = createTrpcClient({
     httpLink({
       url: `${url}/trpc`,
       batch: true,
-      headers: { authorization: 'alex' },
+      headers: { authorization: 'ada' },
     }),
   ],
 });

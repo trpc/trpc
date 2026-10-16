@@ -92,7 +92,7 @@ type Args<TInput> = undefined extends TInput
 
 /**
  * A procedure as a function. It also takes `FormData`, parsed with bracket
- * notation (`tags[]=a&user[name]=alex`) and coerced from the input schema,
+ * notation (`tags[]=a&user[name]=ada`) and coerced from the input schema,
  * and React's `useActionState` arguments: the previous state, then the input.
  * @example
  * ```ts

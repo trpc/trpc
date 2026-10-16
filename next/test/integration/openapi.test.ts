@@ -231,12 +231,12 @@ test('procedures answer at their routes, with path params and declared errors (1
 test('query strings use bracket notation, coerced from the JSON Schema', async () => {
   await using s = await serve();
   const res = await s.api(
-    '/posts?limit=5&tags[]=a&tags[]=b&author[name]=alex&published=true',
+    '/posts?limit=5&tags[]=a&tags[]=b&author[name]=ada&published=true',
   );
   expect(await res.json()).toEqual({
     limit: 5,
     tags: ['a', 'b'],
-    author: { name: 'alex' },
+    author: { name: 'ada' },
     published: true,
   });
 
@@ -262,7 +262,7 @@ test('bodies: JSON, forms and files; status from .route() and the response handl
   await using s = await serve();
   const created = await s.api('/posts', {
     method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-user': 'alex' },
+    headers: { 'content-type': 'application/json', 'x-user': 'ada' },
     body: JSON.stringify({ title: 'New' }),
   });
   expect(created.status).toBe(201);
@@ -278,7 +278,7 @@ test('bodies: JSON, forms and files; status from .route() and the response handl
 
   const form = await s.api('/posts', {
     method: 'POST',
-    headers: { 'x-user': 'alex' },
+    headers: { 'x-user': 'ada' },
     body: new URLSearchParams({ title: 'From a form' }),
   });
   expect(await form.json()).toMatchObject({ title: 'From a form' });
@@ -379,7 +379,7 @@ test('openApiLink calls the REST endpoints from a JSON contract (18 (d))', async
       openApiLink({
         url: s.origin,
         contract,
-        headers: { 'x-user': 'alex' },
+        headers: { 'x-user': 'ada' },
         fetch: (input, init) => {
           requests.push(
             `${init?.method} ${(input instanceof Request ? input.url : String(input as string | URL)).slice(s.origin.length)}`,
@@ -690,7 +690,7 @@ test('quiet subscriptions send keep-alive comments', async () => {
 test('serve() runs one procedure with params the caller matched', async () => {
   const handler = createOpenApiHandler({
     router: {},
-    createContext: () => ({ user: 'alex' }),
+    createContext: () => ({ user: 'ada' }),
   });
   const byId = t.procedure
     .route({ path: '/things/{id}', successStatus: 202 })
@@ -701,7 +701,7 @@ test('serve() runs one procedure with params the caller matched', async () => {
     { path: 'things.byId', procedure: byId, params: { id: '7' } },
   );
   expect(res.status).toBe(202);
-  expect(await res.json()).toEqual({ id: 7, q: 'x', user: 'alex' });
+  expect(await res.json()).toEqual({ id: 7, q: 'x', user: 'ada' });
   await handler.dispose();
 });
 

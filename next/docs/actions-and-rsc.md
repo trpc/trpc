@@ -24,7 +24,7 @@ export const createPost = action(appRouter.post.create);
 const [post, error] = await createPost({ title, tags: [] });
 ```
 
-- `FormData` is parsed with bracket notation (`tags[]=a`, `author[name]=alex`) and coerced from the input's JSON Schema (`'40'` becomes `40` where the schema wants a number). Framework fields such as Next's `$ACTION_ID_…` are dropped.
+- `FormData` is parsed with bracket notation (`tags[]=a`, `author[name]=ada`) and coerced from the input's JSON Schema (`'40'` becomes `40` where the schema wants a number). Framework fields such as Next's `$ACTION_ID_…` are dropped.
 - `result: 'safe'` (the default) returns the `[data, error]` / `{ data, error }` result of `safe()`. `result: 'throw'` returns the data and throws `TrpcError`.
 - Results reach the browser, so unexpected errors are masked outside development, as in handlers. `onError` sees them first.
 - A factory whose ctx or layer can't satisfy a procedure is a type error, and so is wrapping a subscription.

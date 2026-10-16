@@ -88,7 +88,7 @@ async function setup(ctxOverrides: Partial<Context> = {}) {
     router,
     createContext: (): Context => ({
       db,
-      user: 'alex',
+      user: 'ada',
       plan: 'free',
       ...ctxOverrides,
     }),
@@ -103,7 +103,7 @@ async function setup(ctxOverrides: Partial<Context> = {}) {
 test('a plugin from another `t` adds ctx, input, meta-aware behavior and errors', async () => {
   await using ctx = await setup();
   const result = await ctx.client.rename.mutate({ orgId: 'acme', name: 'New' });
-  expect(result).toEqual({ orgId: 'acme', name: 'New', by: 'alex' });
+  expect(result).toEqual({ orgId: 'acme', name: 'New', by: 'ada' });
   expect(ctx.db.log).toEqual(['rename:acme:New']);
 
   expectTypeOf<inferRouterInputs<AppRouter>['rename']>().toEqualTypeOf<{
@@ -180,14 +180,14 @@ test('concat runs the leading middleware an app and a plugin share once', async 
       .query(({ ctx }) => ctx.tag),
   };
   const caller = createRouterClient(r, {
-    ctx: { db: { log: [] }, user: 'alex', plan: 'free' },
+    ctx: { db: { log: [] }, user: 'ada', plan: 'free' },
   });
 
-  expect(await caller.shared.query()).toBe('alex');
+  expect(await caller.shared.query()).toBe('ada');
   expect(calls).toEqual(['session', 'plugin']);
 
   calls.length = 0;
-  expect(await caller.reordered.query()).toBe('alex');
+  expect(await caller.reordered.query()).toBe('ada');
   expect(calls).toEqual(['log', 'session', 'session', 'plugin']);
 });
 

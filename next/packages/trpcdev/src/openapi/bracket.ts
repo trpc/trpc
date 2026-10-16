@@ -1,6 +1,6 @@
 /**
  * Bracket notation (18 (b)) for query strings and form bodies:
- * `user[name]=alex&tags[]=a&tags[]=b&items[0][id]=1`. Leaves stay strings
+ * `user[name]=ada&tags[]=a&tags[]=b&items[0][id]=1`. Leaves stay strings
  * (or `Blob`s in forms); the handler coerces them from the input's JSON
  * Schema.
  */

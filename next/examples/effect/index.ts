@@ -119,7 +119,7 @@ const program = Effect.gen(function* () {
   const client = createEffectClient({
     router: routerType<AppRouter>(),
     links: [
-      httpLink({ url: `${url}/trpc`, headers: { authorization: 'alex' } }),
+      httpLink({ url: `${url}/trpc`, headers: { authorization: 'ada' } }),
     ],
   });
 

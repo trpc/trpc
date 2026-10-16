@@ -60,7 +60,7 @@ async function setup() {
   });
   const client = createTrpcClient({
     router: appContract,
-    links: [httpLink({ url: server.url, headers: { 'x-user': 'alex' } })],
+    links: [httpLink({ url: server.url, headers: { 'x-user': 'ada' } })],
   });
   return { server, client, [Symbol.asyncDispose]: () => server.close() };
 }
@@ -234,9 +234,9 @@ test('impl.use() and impl.provide() run for every procedure of the contract', as
   });
   const admin = createTrpcClient({
     router: adminContract,
-    links: [httpLink({ url: server.url, headers: { 'x-user': 'alex' } })],
+    links: [httpLink({ url: server.url, headers: { 'x-user': 'ada' } })],
   });
-  expect(await admin.users.ban.mutate('bob')).toBe('alex banned bob');
+  expect(await admin.users.ban.mutate('bob')).toBe('ada banned bob');
 
   void (() => {
     // @ts-expect-error -- Q9.3: health and post.* don't declare UNAUTHORIZED

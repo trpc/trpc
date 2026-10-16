@@ -45,7 +45,7 @@ const tick = t.procedure.subscription(async function* () {
 });
 
 test('createAction: FormData in, a safe result out (15 Q15.3)', async () => {
-  const action = createAction({ ctx: async () => ({ user: 'alex' }) });
+  const action = createAction({ ctx: async () => ({ user: 'ada' }) });
   const run = action(createPost);
 
   const form = new FormData();
@@ -62,7 +62,7 @@ test('createAction: FormData in, a safe result out (15 Q15.3)', async () => {
     draft: true,
     tags: ['a', 'b'],
     author: { age: 40 },
-    by: 'alex',
+    by: 'ada',
   });
 
   const typed = await run({
@@ -71,7 +71,7 @@ test('createAction: FormData in, a safe result out (15 Q15.3)', async () => {
     tags: [],
     author: { age: 1 },
   });
-  expect(typed.data?.by).toBe('alex');
+  expect(typed.data?.by).toBe('ada');
 
   const invalid = await run({
     title: '',
@@ -86,14 +86,14 @@ test('createAction: FormData in, a safe result out (15 Q15.3)', async () => {
 });
 
 test("an action takes useActionState's (previous state, input) call", async () => {
-  const run = createAction({ ctx: { user: 'alex' } })(createPost);
+  const run = createAction({ ctx: { user: 'ada' } })(createPost);
   const form = new FormData();
   form.set('title', 'Hi');
   form.set('draft', 'false');
   form.append('tags[]', 'news');
   form.set('author[age]', '3');
   const first = await run(undefined, form);
-  expect(first?.data).toMatchObject({ title: 'Hi', by: 'alex' });
+  expect(first?.data).toMatchObject({ title: 'Hi', by: 'ada' });
   const second = await run(first, {
     title: '',
     draft: false,
@@ -136,7 +136,7 @@ test('defined errors are typed; unexpected ones are masked unless exposed', asyn
 
 test("result: 'throw' returns the data and throws TrpcError", async () => {
   const callable = createCallable({
-    ctx: { user: 'alex' },
+    ctx: { user: 'ada' },
     result: 'throw',
     layer: Layer.succeed(Clock, { now: () => 42 }),
   });
@@ -151,7 +151,7 @@ test("result: 'throw' returns the data and throws TrpcError", async () => {
 
 test('the factory must satisfy what a procedure needs', () => {
   const noCtx = createCallable();
-  const withCtx = createCallable({ ctx: { user: 'alex' } });
+  const withCtx = createCallable({ ctx: { user: 'ada' } });
   void (() => {
     // @ts-expect-error -- createPost needs { user }
     noCtx(createPost);
@@ -162,7 +162,7 @@ test('the factory must satisfy what a procedure needs', () => {
     // @ts-expect-error -- callables don't take FormData
     void withCtx(createPost)(new FormData());
   });
-  void createAction({ ctx: { user: 'alex' } })(createPost)(new FormData());
+  void createAction({ ctx: { user: 'ada' } })(createPost)(new FormData());
 });
 
 test("Next's redirect() and notFound() pass through in-process calls unchanged", async () => {

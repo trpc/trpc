@@ -182,12 +182,12 @@ test('a router gets default paths from its keys; bodies Nest parsed are read', a
   const json = { 'content-type': 'application/json' };
   expect((await create(json, '{"title":"x"}')).status).toBe(401);
 
-  const created = await create({ ...json, 'x-user': 'alex' }, '{"title":"Hi"}');
+  const created = await create({ ...json, 'x-user': 'ada' }, '{"title":"Hi"}');
   expect(created.status).toBe(201);
   expect(await created.json()).toEqual({ id: '2', title: 'Hi' });
 
   const form = await create(
-    { 'content-type': 'application/x-www-form-urlencoded', 'x-user': 'alex' },
+    { 'content-type': 'application/x-www-form-urlencoded', 'x-user': 'ada' },
     'title=Form',
   );
   expect(form.status).toBe(201);

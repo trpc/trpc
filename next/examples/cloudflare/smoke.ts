@@ -43,8 +43,8 @@ try {
   })();
   // The subscription is registered once its first message reaches the object.
   await new Promise((resolve) => setTimeout(resolve, 200));
-  await client.send.mutate({ from: 'alex', text: 'hello' });
-  await client.send.mutate({ from: 'alex', text: 'still here' });
+  await client.send.mutate({ from: 'ada', text: 'hello' });
+  await client.send.mutate({ from: 'ada', text: 'still here' });
   await done;
   console.log('onMessage:', seen);
   if (seen.length !== 2) throw new Error('expected two messages');

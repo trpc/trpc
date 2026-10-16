@@ -153,7 +153,7 @@ type AppRouter = typeof router;
 
 const ClockLive = Layer.succeed(Clock, { now: () => 1234 });
 
-async function setup(user: string | null = 'alex', batch = false) {
+async function setup(user: string | null = 'ada', batch = false) {
   const responses: Response[] = [];
   const server = await createTestServer({
     router,
@@ -264,14 +264,14 @@ test('Effect failures must be mapped to a TrpcError (02 d.ii)', async () => {
 
 test('the response handle sets headers and the success status', async () => {
   await using ctx = await setup();
-  expect(await ctx.client.login.mutate({ name: 'alex' })).toEqual({ ok: true });
+  expect(await ctx.client.login.mutate({ name: 'ada' })).toEqual({ ok: true });
   const response = ctx.responses.at(-1)!;
   expect(response.status).toBe(201);
-  expect(response.headers.getSetCookie()).toEqual(['session=alex; HttpOnly']);
+  expect(response.headers.getSetCookie()).toEqual(['session=ada; HttpOnly']);
 });
 
 test('inside a batch, headers from every call are merged', async () => {
-  await using ctx = await setup('alex', true);
+  await using ctx = await setup('ada', true);
   const [login, theme] = await Promise.all([
     ctx.client.login.mutate({ name: 'sam' }),
     ctx.client.theme.query(),
@@ -323,7 +323,7 @@ test('lifecycle helpers observe the chain', async () => {
 
 test('Effect middleware provides services and its failures are typed', async () => {
   await using ctx = await setup();
-  expect(await ctx.client.me.query()).toBe('alex');
+  expect(await ctx.client.me.query()).toBe('ada');
 
   await using anon = await setup(null);
   const res = await safe(anon.client.me.query());
@@ -463,8 +463,8 @@ test('next({ input }) replaces the input for later steps, typed like ctx (#6892)
       return `${input.post.title} for ${ctx.viewer}`;
     });
   expect(
-    await call(bySlug, { slug: 'hello-world' }, { ctx: { user: 'alex' } }),
-  ).toBe('Hello for alex');
+    await call(bySlug, { slug: 'hello-world' }, { ctx: { user: 'ada' } }),
+  ).toBe('Hello for ada');
   void (() =>
     // @ts-expect-error -- the client still sends the schema's input
     call(bySlug, { post: { id: '1', title: 'x' } }, { ctx: { user: null } }));

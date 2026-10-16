@@ -102,7 +102,7 @@ const router = {
 };
 type AppRouter = typeof router;
 
-async function setup(user: string | null = 'alex') {
+async function setup(user: string | null = 'ada') {
   const server = await createTestServer({
     router,
     createContext: () => ({ user }),

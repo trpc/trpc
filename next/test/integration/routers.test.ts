@@ -16,7 +16,7 @@ import { z } from 'zod';
 
 const t = initTrpc();
 
-const users = t.procedure.query(() => ['alex']);
+const users = t.procedure.query(() => ['ada']);
 const ban = t.procedure
   .input(z.object({ id: z.string() }))
   .route({ method: 'POST', path: '/bans/{id}', tags: ['moderation'] })
@@ -56,8 +56,8 @@ test('t.router({ prefix, tags }) only changes OpenAPI routes (08 Q8.3)', async (
     router: routerType<typeof router>(),
     links: [httpLink({ url: server.url })],
   });
-  expect(await client.admin.users.query()).toEqual(['alex']);
-  expect(await client.admin.audit.log.query()).toEqual(['alex']);
+  expect(await client.admin.users.query()).toEqual(['ada']);
+  expect(await client.admin.audit.log.query()).toEqual(['ada']);
 
   const doc = generateOpenApi(await loadRouter(router), {
     info: { title: 'x', version: '1' },
@@ -123,7 +123,7 @@ const get = (
 test('the OpenAPI handler loads a prefixed lazy subtree on a request under it', async () => {
   const { router, loads } = makeRouter();
   const handler = createOpenApiHandler({ router });
-  expect(await (await get(handler, '/admin/users')).json()).toEqual(['alex']);
+  expect(await (await get(handler, '/admin/users')).json()).toEqual(['ada']);
   await (await get(handler, '/billing/invoice?n=1')).json();
   expect(loads).toMatchObject({ reports: 0, billing: 1 });
   expect(await (await get(handler, '/reports/daily')).json()).toBe('daily');
@@ -135,7 +135,7 @@ test('with a contract, the OpenAPI handler loads lazy subtrees only when called'
   const contract = toContract(await loadRouter(makeRouter().router));
   const { router, loads } = makeRouter();
   const handler = createOpenApiHandler({ router, contract });
-  expect(await (await get(handler, '/admin/users')).json()).toEqual(['alex']);
+  expect(await (await get(handler, '/admin/users')).json()).toEqual(['ada']);
   expect(loads).toMatchObject({ reports: 0, billing: 0 });
   expect(await (await get(handler, '/billing/invoice?n=4')).json()).toBe(8);
   expect(loads).toMatchObject({ reports: 0, billing: 1 });

@@ -77,7 +77,7 @@ console.log('GET /api/posts/404', missing.status, await missing.json());
 
 const created = await fetch(`${url}/api/posts`, {
   method: 'POST',
-  headers: { 'content-type': 'application/json', 'x-user': 'alex' },
+  headers: { 'content-type': 'application/json', 'x-user': 'ada' },
   body: JSON.stringify({ title: 'From fetch' }),
 });
 console.log('POST /api/posts', created.status, await created.json());
@@ -90,7 +90,7 @@ console.log('GET /api/openapi.json', spec.status);
 const contract = toContract(appRouter);
 const client = createTrpcClient({
   router: contract,
-  links: [openApiLink({ url, contract, headers: { 'x-user': 'alex' } })],
+  links: [openApiLink({ url, contract, headers: { 'x-user': 'ada' } })],
 });
 
 const post = await client.post.create.mutate({ title: 'From openApiLink' });

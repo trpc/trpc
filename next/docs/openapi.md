@@ -172,7 +172,7 @@ const client = createTrpcClient({
     openApiLink({
       url: 'https://api.example.com',
       contract,
-      headers: { 'x-user': 'alex' },
+      headers: { 'x-user': 'ada' },
     }),
   ],
 });

@@ -98,7 +98,7 @@ const router = {
 };
 type AppRouter = typeof router;
 
-async function setup(user: string | null = 'alex') {
+async function setup(user: string | null = 'ada') {
   const server = await createTestServer({
     router,
     createContext: () => ({ user }),
@@ -169,7 +169,7 @@ test('typed errors land in the Effect error channel', async () => {
 test('.provide() supplies a service from ctx, and its failure is typed', async () => {
   await using ctx = await setup();
   expect(await Effect.runPromise(ctx.client.whoami.query())).toBe(
-    'you are alex',
+    'you are ada',
   );
 
   await using anon = await setup(null);
