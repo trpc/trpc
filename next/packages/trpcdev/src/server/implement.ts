@@ -29,6 +29,7 @@ import type {
 } from './middleware.ts';
 import {
   isProcedure,
+  mergeRoute,
   type AnyProcedure,
   type Procedure,
   type ProcedureDefOf,
@@ -538,7 +539,7 @@ export function implement(
       output: def.output,
       validateOutput: def.validateOutput,
       errors: { ...root.errors, ...def.errors },
-      route: def.route ? { ...root.route, ...def.route } : root.route,
+      route: mergeRoute(root.route, def.route),
     });
   };
   const tree = mirror(contract) as Record<string, unknown>;

@@ -7,7 +7,11 @@ import {
 } from '../internal/describe.ts';
 import { ERROR_STATUS } from '../internal/error.ts';
 import { toJsonSchema, type JsonSchema } from '../internal/json-schema.ts';
-import type { AnyProcedure, ProcedureInternals } from '../server/procedure.ts';
+import type {
+  AnyProcedure,
+  OperationSpec,
+  ProcedureInternals,
+} from '../server/procedure.ts';
 import { propertySchema } from './coerce.ts';
 import { normalizePrefix, resolveRoute, usesQuery } from './routes.ts';
 
@@ -496,8 +500,13 @@ export function generateDocument(
         ),
       },
     };
+    const spec = target === 'openapi' ? r?.spec : undefined;
     const methods = (paths[route.path] ??= {});
-    methods[route.method.toLowerCase()] = operation;
+    methods[route.method.toLowerCase()] = (
+      typeof spec === 'function'
+        ? spec(operation as unknown as OperationSpec)
+        : (spec ?? operation)
+    ) as OpenApiOperation;
   }
 
   return {

@@ -21,6 +21,20 @@ const create = t.procedure
 
 `.route()` also takes `summary`, `description`, `deprecated` and `operationId`. When two paths match, the one with more leading static segments wins: `/posts/latest` before `/posts/{id}`.
 
+`spec` overrides the generated operation in the document: an object replaces it, a function extends it. Functions compose across `.route()` calls, so a base procedure can add `security` and its procedures add more:
+
+```ts
+const authed = t.procedure
+  .use(requireUser)
+  .route({ spec: (op) => ({ ...op, security: [{ bearer: [] }] }) });
+
+const me = authed
+  .route({ path: '/me', spec: (op) => ({ ...op, 'x-internal': true }) })
+  .query(({ ctx }) => ctx.user);
+```
+
+`spec` only changes the document (`target: 'openapi'`); `toContract()` leaves it out.
+
 ## The handler
 
 ```ts

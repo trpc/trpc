@@ -51,6 +51,46 @@ export interface Route {
    * @default 'compact'
    */
   readonly outputStructure?: 'compact' | 'detailed';
+  /**
+   * The generated OpenAPI operation, overridden: an object replaces it, a
+   * function gets it and returns the new one. Functions compose across
+   * `.route()` calls, so a base procedure can add `security` and a leaf
+   * still extends it. Documentation only; not sent by `toContract()`.
+   */
+  readonly spec?: OperationSpec | ((operation: OperationSpec) => OperationSpec);
+}
+
+/**
+ * An OpenAPI operation object, as `.route({ spec })` sees it.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export interface OperationSpec {
+  readonly [key: string]: unknown;
+}
+
+/**
+ * `next` over `route`, composing `spec` functions.
+ * @internal
+ */
+export function mergeRoute(
+  route: Route | undefined,
+  next: Route | undefined,
+): Route | undefined {
+  if (!next) return route;
+  if (!route) return next;
+  const before = route.spec;
+  const after = next.spec;
+  return {
+    ...route,
+    ...next,
+    ...(typeof after === 'function' && before
+      ? {
+          spec: (operation: OperationSpec) =>
+            after(typeof before === 'function' ? before(operation) : before),
+        }
+      : {}),
+  };
 }
 
 /**

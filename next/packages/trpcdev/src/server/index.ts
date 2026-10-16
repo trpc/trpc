@@ -88,6 +88,7 @@ export {
   type Procedure,
   type ProcedureDef,
   type ProcedureInternals,
+  type OperationSpec,
   type Route,
 } from './procedure.ts';
 export {

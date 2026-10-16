@@ -20,12 +20,13 @@ import {
   type NextInput,
   type ResponseHandle,
 } from './middleware.ts';
-import type {
-  ErrorMap,
-  ErrorSpec,
-  Procedure,
-  Route,
-  Step,
+import {
+  mergeRoute,
+  type ErrorMap,
+  type ErrorSpec,
+  type Procedure,
+  type Route,
+  type Step,
 } from './procedure.ts';
 import type {
   AnySchema,
@@ -895,7 +896,10 @@ export function createBuilder(
     errors: (map: ErrorMap) =>
       createBuilder({ ...internals, errors: { ...internals.errors, ...map } }),
     route: (route: Route) =>
-      createBuilder({ ...internals, route: { ...internals.route, ...route } }),
+      createBuilder({
+        ...internals,
+        route: mergeRoute(internals.route, route),
+      }),
     use: (mw: unknown) =>
       isEffectMiddleware(mw)
         ? add({ kind: 'use', fn: mw['~effectMiddleware'], effect: true })
@@ -910,9 +914,7 @@ export function createBuilder(
         ...internals,
         steps: appendSteps(internals.steps, other.steps),
         errors: { ...internals.errors, ...other.errors },
-        route: other.route
-          ? { ...internals.route, ...other.route }
-          : internals.route,
+        route: mergeRoute(internals.route, other.route),
       });
     },
     query: build('query'),

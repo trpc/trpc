@@ -172,6 +172,8 @@ export function assertLoaded(flat: FlatRoutes): FlatRoutes {
   return flat;
 }
 
+const withoutSpec = ({ spec: _, ...route }: Route): Route => route;
+
 /**
  * @since 12.0.0-alpha.0
  * @stability experimental
@@ -182,7 +184,7 @@ export function procedureJson(def: ProcedureInternals): ProcedureJson {
   const errors = Object.entries(def.errors);
   return {
     type: def.type,
-    ...(def.route ? { route: def.route } : {}),
+    ...(def.route ? { route: withoutSpec(def.route) } : {}),
     ...(input ? { input } : {}),
     ...(output ? { output } : {}),
     ...(errors.length

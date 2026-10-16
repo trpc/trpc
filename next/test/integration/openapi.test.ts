@@ -686,3 +686,44 @@ test('quiet subscriptions send keep-alive comments', async () => {
   expect(text).toContain('data: "b"');
   await handler.dispose();
 });
+
+test('.route({ spec }) replaces or extends the generated operation', () => {
+  const secured = t.procedure.route({
+    spec: (op) => ({ ...op, security: [{ apiKey: [] }] }),
+  });
+  const specRouter = {
+    me: secured
+      .route({ path: '/me', spec: (op) => ({ ...op, 'x-internal': true }) })
+      .query(() => 'me'),
+    raw: t.procedure
+      .route({
+        method: 'POST',
+        path: '/raw',
+        spec: {
+          operationId: 'upload',
+          responses: { 204: { description: 'Done' } },
+        },
+      })
+      .mutation(() => undefined),
+  };
+  const doc = generateOpenApi(specRouter, {
+    info: { title: 'x', version: '1' },
+  });
+  expect(doc.paths['/api/me']!['get']).toMatchObject({
+    operationId: 'me',
+    security: [{ apiKey: [] }],
+    'x-internal': true,
+    responses: { 200: { description: 'OK' } },
+  });
+  expect(doc.paths['/api/raw']!['post']).toEqual({
+    operationId: 'upload',
+    responses: { 204: { description: 'Done' } },
+  });
+  expect(toContract(specRouter).procedures.me.route).toEqual({ path: '/me' });
+
+  const rpc = generateOpenApi(specRouter, {
+    info: { title: 'x', version: '1' },
+    target: 'rpc',
+  });
+  expect(JSON.stringify(rpc)).not.toContain('apiKey');
+});

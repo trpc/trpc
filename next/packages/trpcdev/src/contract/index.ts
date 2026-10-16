@@ -46,6 +46,7 @@ import type {
 import type { DeclaredErrors, ErrorMapInput } from '../server/builder.ts';
 import {
   isProcedure,
+  mergeRoute,
   type AnyProcedure,
   type ErrorMap,
   type Procedure,
@@ -319,7 +320,8 @@ function createContractBuilder(
     output: (output: AnySchema) => next({ output }),
     errors: (map: ErrorMap) =>
       next({ errors: { ...internals.errors, ...map } }),
-    route: (route: Route) => next({ route: { ...internals.route, ...route } }),
+    route: (route: Route) =>
+      next({ route: mergeRoute(internals.route, route) }),
     meta: (meta: object) => next({ meta: { ...internals.meta, ...meta } }),
     query: build('query'),
     mutation: build('mutation'),
