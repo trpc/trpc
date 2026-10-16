@@ -72,7 +72,7 @@ Alex answered the "Worth considering" list; each answer is a `decisions/` file.
 ## Still worth considering
 
 1. **TanStack DB** (#6891). `queryOptions()` should plug into `queryCollectionOptions` as it is; worth a test and a docs example. Built since: `test/tanstack-query/db.test.ts`, `docs/tanstack-query.md` (TanStack DB), `tanstack-db-collections.md`.
-2. **Adapters, recorded as later**: Lambda API Gateway and Lambda@Edge (#4978, built since: `trpcdev/aws-lambda`, `aws-lambda-adapter.md`), Firebase callable (#6388), WebTransport (#6971, not built: `webtransport-not-yet.md`), raw TCP (#5995, built since: `trpcdev/socket`, `socketLink`, `raw-socket-transport.md`). The socket core is generic over connections, so the last two are a transport each.
+2. **Adapters, recorded as later**: Lambda API Gateway and Lambda@Edge (#4978, built since: `trpcdev/aws-lambda`, `aws-lambda-adapter.md`), Firebase callable (#6388, built since as a recipe: `firebase-callable-recipe.md`), WebTransport (#6971, not built: `webtransport-not-yet.md`), raw TCP (#5995, built since: `trpcdev/socket`, `socketLink`, `raw-socket-transport.md`). The socket core is generic over connections, so the last two are a transport each.
 
 ## Not pursuing
 
@@ -92,5 +92,5 @@ Alex answered the "Worth considering" list; each answer is a `decisions/` file.
   - #5113: a link can rewrite `op.path`, so one client can cover routers on different servers with different contexts. The recipe is in `docs/client.md`, tested in `links.test.ts`.
   - #5455: RSC caching is per request (React `cache()`), so a ctx-dependent query can't leak between users.
 - Worth considering:
-  - #4829: there are no Next data-cache tags. With `'use cache'`, `cacheTag(...trpc.post.pathKey())` style tags (path prefixes, then path and input) would match TanStack's key hierarchy. Worth a docs recipe once `'use cache'` is stable.
+  - #4829: there are no Next data-cache tags. With `'use cache'`, `cacheTag(...trpc.post.pathKey())` style tags (path prefixes, then path and input) would match TanStack's key hierarchy. Worth a docs recipe once `'use cache'` is stable. Built since: `cacheTags`/`revalidationTag`, `next-cache-tags.md`.
   - #6996: the `TextDecoderStream` dependency is gone, but streaming hasn't been tried on a React Native device.

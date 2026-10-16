@@ -272,6 +272,49 @@ export class Room extends DurableObject<Env> {
 
 `handler.messagePort(port)` serves calls over a `MessagePort`, a web `Worker` or a `worker_threads` port. See [Client](./client.md) for the matching link.
 
+## Firebase callable functions
+
+A callable function gets JSON `data` and Firebase's `auth`, and reports errors as `HttpsError`. Call the procedure with `call()` and map the error code:
+
+```ts
+import {
+  HttpsError,
+  onCall,
+  type FunctionsErrorCode,
+} from 'firebase-functions/v2/https';
+import { call, isTrpcError } from 'trpcdev/server';
+
+const firebaseCode: Record<string, FunctionsErrorCode> = {
+  BAD_REQUEST: 'invalid-argument',
+  UNPROCESSABLE_CONTENT: 'invalid-argument',
+  UNAUTHORIZED: 'unauthenticated',
+  FORBIDDEN: 'permission-denied',
+  NOT_FOUND: 'not-found',
+  CONFLICT: 'already-exists',
+  PRECONDITION_FAILED: 'failed-precondition',
+  TOO_MANY_REQUESTS: 'resource-exhausted',
+  TIMEOUT: 'deadline-exceeded',
+  CLIENT_CLOSED_REQUEST: 'cancelled',
+  NOT_IMPLEMENTED: 'unimplemented',
+  SERVICE_UNAVAILABLE: 'unavailable',
+};
+
+export const createPost = onCall(async (request) => {
+  try {
+    return await call(appRouter.post.create, request.data, {
+      ctx: { uid: request.auth?.uid ?? null },
+    });
+  } catch (error) {
+    const code = isTrpcError(error) ? firebaseCode[error.code] : undefined;
+    // Anything else reaches the client as Firebase's masked `internal`.
+    if (!isTrpcError(error) || code === undefined) throw error;
+    throw new HttpsError(code, error.message, error.data);
+  }
+});
+```
+
+The input is validated by the procedure as usual. Firebase's wire format is plain JSON, so outputs lose `Date`s, `Map`s and the other types the tRPC serializer keeps; return strings or numbers for those. Firebase hosting can also serve `handler.fetch` through an HTTPS function (`onRequest`) behind Express ([Express](#express-fastify-and-nodehttp)), which keeps the whole protocol.
+
 ## Raw sockets (TCP)
 
 Between services, or where there is no HTTP stack, `serveSocket(handler)` from `trpcdev/socket` serves the router on Effect's `SocketServer`. The platform layer picks the socket: `NodeSocketServer.layer({ port })` for TCP, `NodeSocketServer.layerTls` for TLS, or `{ path }` for a Unix socket.
