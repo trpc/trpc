@@ -19,6 +19,7 @@ Scripts are Effect programs on `kit.ts`: `writeFixture` writes a generated fixtu
 | `tanstack-options/`    | `pnpm test` (root)                                             | [tanstack-options-typing](../.agent-docs/notes/tanstack-options-typing.md)           |
 | `context-aware-input/` | `pnpm test` (root), `node context-aware-input/bench.ts [n]`    | [context-aware-inputs](../.agent-docs/notes/context-aware-inputs.md)                 |
 | `concat-plugins/`      | `pnpm test` (root)                                             | [concat-plugins](../.agent-docs/notes/concat-plugins.md)                             |
+| `use-overloads/`       | `pnpm test` (root)                                             | [use-overloads](../.agent-docs/notes/use-overloads.md)                               |
 | `cache-link/`          | `pnpm test` (root)                                             | [react-use-spikes](../.agent-docs/notes/react-use-spikes.md)                         |
 | `atom-trpc/`           | `pnpm test` (root)                                             | [react-use-spikes](../.agent-docs/notes/react-use-spikes.md)                         |
 | `invalidation/`        | `pnpm test` (root)                                             | [invalidation-plugin](../.agent-docs/notes/invalidation-plugin.md)                   |
