@@ -47,7 +47,7 @@ Bundle size, minified / gzip (`pnpm bench bundle`):
   - HTTP calls run in the request's fiber, synchronously until a step is async; one context change per call.
   - `?input=` read without `URLSearchParams`; danSON sorts serializers once, plain values skip class checks, `Date` via `toISOString`.
   - **The floor is Effect's `HttpServer`:** a bare `HttpRouter` route returning the same JSON does about 69k req/s here. v12 adds about 9 µs per request on top; in-process that's about 6 µs: the call's span about 1.2 µs, the procedure call about 1.2 µs, `?input=` about 0.7 µs, danSON about 0.5 µs, the rest spread under 0.3 µs each.
-  - oRPC at 58.7k is 17 µs per request in total, so matching it would leave v12 about 3 µs over Effect's floor. Dropping the span (the tracing decision's `trpc.<path>` span, `Effect.currentSpan` in resolvers) would buy 1.2 µs.
+  - oRPC at 58.7k is 17 µs per request in total, so matching it would leave v12 about 3 µs over Effect's floor. Dropping the call's span would buy 1.2 µs; it stays (human, [`tracing`](../decisions/tracing-across-client-and-server.md)): middlewares and resolvers trace inside it.
 - **Type-checking:** v12 now checks faster than v11 (0.83s vs 0.92s) with 10% more instantiations; oRPC is 16% faster. What changed:
   - Standard Schema types read from `~standard.types` instead of inferred; `InputDef` spelled out; resolver checks skip moot branches.
   - JSON-safe outputs skip the framing conditionals; link batching read once per chain.
