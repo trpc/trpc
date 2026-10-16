@@ -1,11 +1,6 @@
 import { Effect, Stream } from 'effect';
 import { HttpServerResponse } from 'effect/http';
-import {
-  createTrpcClient,
-  routerType,
-  safe,
-  type TrpcClientError,
-} from '@trpc12/trpc/client';
+import { createTrpcClient, routerType, safe } from '@trpc12/trpc/client';
 import { toContract } from '@trpc12/trpc/contract';
 import {
   createOpenApiHandler,
@@ -132,9 +127,7 @@ const make = (
 ) =>
   createOpenApiHandler({
     router,
-    createContext: ({ platform }) => ({
-      user: (platform as { user?: string } | undefined)?.user ?? 'ada',
-    }),
+    createContext: () => ({ user: 'ada' }),
     exposeUnexpectedErrors: true,
     ...opts,
   });
@@ -336,7 +329,10 @@ test('serve() reports input errors with their own status', async () => {
 });
 
 test('fetch(request, platform) hands the platform to createContext', async () => {
-  const handler = make();
+  const handler = createOpenApiHandler<typeof router, { user: string }>({
+    router,
+    createContext: ({ platform }) => ({ user: platform.user }),
+  });
   const res = await handler.fetch(new Request('http://localhost/api/who'), {
     user: 'grace',
   });
@@ -459,7 +455,7 @@ test('openApiLink turns fetch failures into client errors', async () => {
 test('openApiLink subscriptions yield plain and tracked events, then errors', async () => {
   const { client, handler } = linked();
   const events: unknown[] = [];
-  let failure: TrpcClientError<any> | undefined;
+  let failure: unknown;
   try {
     for await (const event of client.feed.subscribe(
       { fail: true },
@@ -470,7 +466,7 @@ test('openApiLink subscriptions yield plain and tracked events, then errors', as
       events.push(event);
     }
   } catch (err) {
-    failure = err as TrpcClientError<any>;
+    failure = err;
   }
   expect(events).toEqual(['plain', { id: '7', data: 'tracked' }]);
   expect(failure).toMatchObject({ code: 'CONFLICT', message: 'feed broke' });
