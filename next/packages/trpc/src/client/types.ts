@@ -169,13 +169,19 @@ export type ProcedureCallArgs<
   TOutput,
   TOpts,
   TLinks extends ChainTypes,
-> = TLinks extends { batches: infer B }
-  ? [B] extends [never]
+> =
+  Batches<TLinks> extends false
     ? CallArgs<TInput, TOpts>
     : [Extract<TOutput, Unbatchable<TLinks>>] extends [never]
       ? CallArgs<TInput, TOpts>
-      : [input: TInput, opts: TOpts & { batch: false }]
-  : CallArgs<TInput, TOpts>;
+      : [input: TInput, opts: TOpts & { batch: false }];
+
+/** Read once per chain rather than once per procedure. */
+type Batches<TLinks extends ChainTypes> = TLinks extends { batches: infer B }
+  ? [B] extends [never]
+    ? false
+    : true
+  : false;
 
 type ChainErrors<T extends ChainTypes> = T extends { errors: infer E }
   ? E
