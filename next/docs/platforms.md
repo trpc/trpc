@@ -49,6 +49,10 @@ const handler = createFetchHandler({
 
 `cors()` is Effect's `HttpMiddleware.cors` plus an origin check on WebSocket upgrades (403 for other origins). Browsers send cookies with cross-site upgrades and CORS doesn't cover them, so use it when you authenticate with cookies.
 
+### Compression
+
+trpcdev doesn't compress. Your CDN or proxy (Cloudflare, Vercel, nginx) already negotiates `Accept-Encoding`, and does it better. If you add a compressing `HttpMiddleware`, skip `application/jsonl` and `text/event-stream` responses: a gzip stream buffers until its window fills, which stalls subscriptions and streamed results.
+
 ## Express, Fastify and `node:http`
 
 `NodeHttpServer.makeHandler` turns the Effect app into a `(req, res)` handler. Its resources live in the scope you pass.
