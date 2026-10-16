@@ -19,6 +19,7 @@ import {
   type BatchCall,
   type BatchLine,
 } from '../../internal/protocol.ts';
+import { forEachSeq } from '../../internal/effects.ts';
 import { decodeRecords } from '../../internal/frames.ts';
 import type { FormOfOptions, MaybePromise } from '../../internal/types.ts';
 import {
@@ -515,7 +516,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
         }
       };
       return Effect.gen(function* () {
-        const frames = yield* Effect.forEach(live, () =>
+        const frames = yield* forEachSeq(live, () =>
           Queue.unbounded<Frame, AnyTrpcError | Cause.Done>(),
         );
         const onLine = (line: BatchLine) => {

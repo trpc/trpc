@@ -163,6 +163,19 @@ test('aborting the signal ends the subscription quietly', async () => {
   await vi.waitFor(() => expect(state.cleanups).toBe(before + 1));
 });
 
+test('a signal aborted before subscribing yields nothing and sends nothing', async () => {
+  await using ctx = await setup();
+  const requests = ctx.server.requests.length;
+  const seen: number[] = [];
+  for await (const n of ctx.client.ticks.subscribe(undefined, {
+    signal: AbortSignal.abort(),
+  })) {
+    seen.push(n);
+  }
+  expect(seen).toEqual([]);
+  expect(ctx.server.requests.length).toBe(requests);
+});
+
 test('tracked() events reconnect from the last event id', async () => {
   await using ctx = await setup();
   state.lastEventIds = [];

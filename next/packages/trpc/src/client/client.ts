@@ -1,4 +1,5 @@
-import { Effect, Exit, Stream } from 'effect';
+import { Effect, Exit } from 'effect';
+import { toAsyncIterable } from '../internal/effects.ts';
 import { frameworkError } from '../internal/error.ts';
 import type { ProcedureType } from '../internal/types.ts';
 import type { AnySerializer } from '../serializer/index.ts';
@@ -10,7 +11,6 @@ import {
   runOperation,
   type Operation,
   type AnyLink,
-  type OperationStream,
   type BuiltinCallOptions,
   type TrpcLink,
 } from './link.ts';
@@ -99,23 +99,6 @@ export interface UntypedCallOptions {
   lastEventId?: string | undefined;
 }
 
-/** Interrupts `stream` quietly when `signal` aborts. @internal */
-export function untilAborted(
-  stream: OperationStream,
-  signal: AbortSignal | undefined,
-): OperationStream {
-  if (!signal) return stream;
-  return Stream.interruptWhen(
-    stream,
-    Effect.callback<void>((resume) => {
-      if (signal.aborted) return resume(Effect.void);
-      const onAbort = () => resume(Effect.void);
-      signal.addEventListener('abort', onAbort, { once: true });
-      return Effect.sync(() => signal.removeEventListener('abort', onAbort));
-    }),
-  );
-}
-
 /**
  * Options for {@link createTrpcClient}.
  * @since 0.1.0
@@ -194,9 +177,9 @@ export function createUntypedClient(
       return {
         [Symbol.asyncIterator]() {
           const op = makeOperation('subscription', o.path, o.input, o);
-          return Stream.toAsyncIterable(
-            untilAborted(runOperation(links, op), op.signal),
-          )[Symbol.asyncIterator]();
+          return toAsyncIterable(runOperation(links, op), op.signal)[
+            Symbol.asyncIterator
+          ]();
         },
       };
     },

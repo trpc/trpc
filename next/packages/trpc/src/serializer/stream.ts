@@ -9,7 +9,6 @@
  * @internal
  */
 import { Cause, Deferred, Effect, Exit, Queue, Scope, Stream } from 'effect';
-import { Base64 } from 'effect/encoding';
 import {
   deserializeSync,
   instancesOnly,
@@ -20,7 +19,12 @@ import {
   type SerializeRecord,
   type SerializeReturn,
 } from './sync.ts';
-import { JsonBytes } from '../internal/frames.ts';
+import {
+  forEachSeq,
+  toAsyncIterable,
+  toReadableStream,
+} from '../internal/effects.ts';
+import { fromBase64, JsonBytes } from '../internal/frames.ts';
 import { counter, DansonError } from './utils.ts';
 
 export const VALUE = 0;
@@ -118,11 +122,9 @@ async function* byteChunks(blob: Blob): AsyncGenerator<JsonBytes> {
 function toBytes(chunks: unknown[]): Uint8Array<ArrayBuffer>[] {
   return chunks.map((chunk) => {
     if (chunk instanceof Uint8Array) return chunk as Uint8Array<ArrayBuffer>;
-    const decoded = Base64.decode(String(chunk));
-    if (decoded._tag === 'Failure') {
-      throw new DansonError('Malformed file bytes', { cause: decoded.failure });
-    }
-    return decoded.success as Uint8Array<ArrayBuffer>;
+    const decoded = fromBase64(String(chunk));
+    if (!decoded) throw new DansonError('Malformed file bytes');
+    return decoded;
   });
 }
 
@@ -310,30 +312,26 @@ export function deferredChunks(
       });
 
       // Serializing a chunk may register more sources; start them too.
-      const startPending: Effect.Effect<void, never, Scope.Scope> =
+      const startPending: Effect.Effect<unknown, never, Scope.Scope> =
         Effect.suspend(() =>
-          Effect.forEach(
-            pending.splice(0),
-            ([idx, source]) => {
-              active++;
-              return source.pipe(
-                Stream.runForEach(([status, v]) =>
-                  serialize(v, status).pipe(
-                    Effect.flatMap((json) => {
-                      Queue.offerUnsafe(queue, [idx, status, json]);
-                      return startPending;
-                    }),
-                  ),
+          forEachSeq(pending.splice(0), ([idx, source]) => {
+            active++;
+            return source.pipe(
+              Stream.runForEach(([status, v]) =>
+                serialize(v, status).pipe(
+                  Effect.flatMap((json) => {
+                    Queue.offerUnsafe(queue, [idx, status, json]);
+                    return startPending;
+                  }),
                 ),
-                Effect.catchCause((cause) =>
-                  Effect.sync(() => Queue.failCauseUnsafe(queue, cause)),
-                ),
-                Effect.ensuring(finishOne),
-                Effect.forkScoped,
-              );
-            },
-            { discard: true },
-          ),
+              ),
+              Effect.catchCause((cause) =>
+                Effect.sync(() => Queue.failCauseUnsafe(queue, cause)),
+              ),
+              Effect.ensuring(finishOne),
+              Effect.forkScoped,
+            );
+          }),
         );
 
       yield* startPending;
@@ -364,7 +362,7 @@ export function iterateWithReturn(
 ): AsyncIterable<unknown, unknown> {
   return {
     async *[Symbol.asyncIterator]() {
-      for await (const [status, v] of Stream.toAsyncIterable(source)) {
+      for await (const [status, v] of toAsyncIterable(source)) {
         if (status === VALUE) yield v;
         else if (status === RETURN) return v;
         else throw revive(v);
@@ -419,7 +417,7 @@ export function deferredBuilders(
     AsyncIterable: (idx: number): AsyncIterable<unknown, unknown> =>
       iterateWithReturn(take(idx), revive),
     ReadableStream: (idx: number): ReadableStream<unknown> =>
-      Stream.toReadableStream(iterate(idx)),
+      toReadableStream(iterate(idx)),
   };
 }
 
@@ -550,7 +548,7 @@ export function deserializeStream<T, E>(
               ),
             catch: toDeserializeError,
           });
-          const waits = yield* Effect.forEach(refs, collect);
+          const waits = yield* forEachSeq(refs, collect);
           const tail = tails.get(target);
           if (waits.length === 0 && !tail) {
             return yield* Effect.try({
@@ -563,9 +561,7 @@ export function deserializeStream<T, E>(
           const ready: ReadonlyArray<Deferred.Deferred<void, unknown>> = tail
             ? [tail, ...waits]
             : waits;
-          yield* Effect.forEach(ready, (d) => Deferred.await(d), {
-            discard: true,
-          }).pipe(
+          yield* forEachSeq(ready, (d) => Deferred.await(d)).pipe(
             Effect.matchCause({
               onFailure: (cause) => fail(target, Cause.squash(cause)),
               onSuccess: () => {
@@ -611,9 +607,7 @@ export function deserializeStream<T, E>(
             const q = queues.get(idx);
             if (q) Queue.failCauseUnsafe(q, Cause.fail(error));
           }
-          yield* Effect.forEach([...tails.values()], Deferred.await, {
-            discard: true,
-          });
+          yield* forEachSeq([...tails.values()], Deferred.await);
           for (const q of queues.values()) {
             Queue.failCauseUnsafe(q, Cause.fail(error));
           }
@@ -655,7 +649,7 @@ export function stringifyAsync(
   value: unknown,
   options?: SerializeStreamOptions,
 ): AsyncIterable<string> {
-  return Stream.toAsyncIterable(stringifyStream(value, options));
+  return toAsyncIterable(stringifyStream(value, options));
 }
 
 /** Promise surface: same shape as danSON's `parseAsync`. */
