@@ -1,19 +1,64 @@
 import process from 'node:process'
-import { svelte } from '@sveltejs/vite-plugin-svelte'
-import { svelteTesting } from '@testing-library/svelte/vite'
+import codspeedPlugin from '@codspeed/vitest-plugin'
 import { loadEnv } from 'vite'
-import solid from 'vite-plugin-solid'
-import { defineConfig } from 'vitest/config'
+import { defaultExclude, defineConfig } from 'vitest/config'
 
 export default defineConfig(({ mode }) => ({
   test: {
     env: loadEnv(mode, process.cwd(), ''),
+    coverage: {
+      include: ['packages/*/src/**'],
+      exclude: [
+        '**.bench.*',
+        '**.test-d.*',
+        '**.test.*',
+        './packages/bun/**',
+        './packages/cloudflare/**',
+      ],
+    },
     projects: [
+      {
+        plugins: [codspeedPlugin()],
+        test: {
+          globals: true,
+          exclude: ['**/**'],
+          benchmark: {
+            include: ['**/*.bench.ts'],
+            exclude: [...defaultExclude, '**/.claude/**'],
+          },
+        },
+      },
       {
         test: {
           globals: true,
           setupFiles: ['./vitest.javascript.ts'],
           include: ['**/*.test.ts'],
+          exclude: [
+            ...defaultExclude,
+            '**/.claude/**',
+            './packages/bun/**',
+            './packages/cloudflare/**',
+            // MSW v3 requires Node.js 22+, older versions only run the MSW v2 project below
+            ...(Number.parseInt(process.versions.node) < 22 ? ['./packages/msw/**'] : []),
+          ],
+          benchmark: {
+            exclude: ['**/**'],
+          },
+        },
+      },
+      {
+        // also test @orpc/experimental-msw against MSW v2
+        resolve: {
+          alias: { msw: 'msw-v2' },
+        },
+        test: {
+          name: 'msw-v2',
+          globals: true,
+          setupFiles: ['./vitest.javascript.ts'],
+          include: ['./packages/msw/**/*.test.ts'],
+          benchmark: {
+            exclude: ['**/**'],
+          },
         },
       },
       {
@@ -22,47 +67,14 @@ export default defineConfig(({ mode }) => ({
           environment: 'jsdom',
           setupFiles: ['./vitest.javascript.ts', './vitest.jsdom.ts'],
           include: [
-            './packages/react/**/*.test.tsx',
-            './packages/react-query/**/*.test.tsx',
-            './packages/react-swr/**/*.test.tsx',
+            './packages/next/**/*.test.tsx',
             './packages/tanstack-query/**/*.test.tsx',
-            './packages/vue-colada/**/*.test.tsx',
-            './packages/vue-query/**/*.test.tsx',
+            './packages/pinia-colada/**/*.test.tsx',
+            './packages/swr/**/*.test.tsx',
           ],
-        },
-      },
-      {
-        test: {
-          globals: true,
-          environment: 'jsdom',
-          setupFiles: ['./vitest.javascript.ts', './vitest.jsdom.ts'],
-          include: [
-            './packages/solid-query/**/*.test.tsx',
-          ],
-          deps: {
-            inline: [/solid-js/, /@solidjs\/testing-library/],
+          benchmark: {
+            exclude: ['**/**'],
           },
-        },
-        plugins: [solid()],
-        resolve: {
-          conditions: ['development', 'browser'],
-        },
-      },
-      {
-        test: {
-          globals: true,
-          environment: 'jsdom',
-          setupFiles: ['./vitest.javascript.ts', './vitest.jsdom.ts'],
-          include: [
-            './packages/svelte-query/**/*.test.tsx',
-          ],
-          deps: {
-            inline: [/svelte/, /@testing-library\/svelte /],
-          },
-        },
-        plugins: [svelte(), svelteTesting()],
-        resolve: {
-          conditions: ['development', 'browser'],
         },
       },
     ],

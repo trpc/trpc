@@ -1,209 +1,270 @@
-import type { AnyContractProcedure } from './procedure'
-import { inputSchema, outputSchema, ping, pong, router } from '../tests/shared'
-import { oc } from './builder'
-import { isContractProcedure } from './procedure'
-import { enhanceRoute } from './route'
-import { enhanceContractRouter, getContractRouter, minifyContractRouter, populateContractRouterPaths } from './router-utils'
+import type { AnyMetaPlugin } from './meta'
+import { z } from 'zod'
+import * as ErrorUtilsModule from './error-utils'
+import * as MetaUtilsModule from './meta-utils'
+import { ProcedureContract } from './procedure'
+import { augmentContractRouter, getProcedureContractOrThrow, getRouterContract, minifyRouterContract } from './router-utils'
 
-it('getContractRouter', () => {
-  expect(getContractRouter(router, [])).toEqual(router)
-  expect(getContractRouter(router, ['ping'])).toEqual(router.ping)
-  expect(getContractRouter(router, ['nested', 'pong'])).toEqual(router.nested.pong)
+const mergeErrorMapSpy = vi.spyOn(ErrorUtilsModule, 'mergeErrorMap')
+const resolveMetaPluginsSpy = vi.spyOn(MetaUtilsModule, 'resolveMetaPlugins')
 
-  expect(getContractRouter(router, ['not-exist'])).toBeUndefined()
-  expect(getContractRouter(router, ['nested', 'not-exist', 'not-exist'])).toBeUndefined()
-
-  expect(getContractRouter(router, ['pong', '~orpc'])).toBeUndefined()
-  expect(getContractRouter(router, ['ping', '~orpc'])).toBeUndefined()
+beforeEach(() => {
+  mergeErrorMapSpy.mockClear()
+  resolveMetaPluginsSpy.mockClear()
 })
 
-it('enhanceContractRouter', async () => {
-  const errorMap = {
-    INVALID: { message: 'INVALID' },
-    OVERRIDE: { message: 'OVERRIDE' },
-  }
-  const options = { errorMap, prefix: '/enhanced', tags: ['enhanced'] } as const
+const schema1 = z.object({ schema1: z.string() })
+const schema2 = z.object({ schema2: z.string() })
 
-  const enhanced = enhanceContractRouter(router, options)
+function callable<T extends object>(value: T): T {
+  return Object.assign(() => {}, value)
+}
 
-  expect(enhanced.ping['~orpc'].errorMap).toEqual({ ...errorMap, ...ping['~orpc'].errorMap })
-  expect(enhanced.ping['~orpc'].route).toEqual(enhanceRoute(ping['~orpc'].route, options))
+const meta1: AnyMetaPlugin = {
+  name: 'meta1',
+  init(meta) {
+    return {
+      ...meta,
+      meta1: true,
+    }
+  },
+}
 
-  expect(enhanced.pong['~orpc'].errorMap).toEqual({ ...errorMap, ...pong['~orpc'].errorMap })
-  expect(enhanced.pong['~orpc'].route).toEqual(enhanceRoute(pong['~orpc'].route, options))
+const meta2: AnyMetaPlugin = {
+  name: 'meta2',
+  init(meta) {
+    return {
+      ...meta,
+      meta2: true,
+    }
+  },
+}
 
-  expect(enhanced.nested.ping['~orpc'].errorMap).toEqual({ ...errorMap, ...ping['~orpc'].errorMap })
-  expect(enhanced.nested.ping['~orpc'].route).toEqual(enhanceRoute(ping['~orpc'].route, options))
-
-  expect(enhanced.nested.pong['~orpc'].errorMap).toEqual({ ...errorMap, ...pong['~orpc'].errorMap })
-  expect(enhanced.nested.pong['~orpc'].route).toEqual(enhanceRoute(pong['~orpc'].route, options))
-})
-
-it('minifyContractRouter', () => {
-  const minified = minifyContractRouter(router)
-
-  const minifiedPing = {
-    '~orpc': {
-      errorMap: {},
-      meta: {
-        mode: 'dev',
+/**
+ * Router utilities should handle invalid routers/procedures
+ * and support function-like routers/procedures.
+ */
+const router = {
+  ping: new ProcedureContract({
+    errorMap: {},
+    meta: { ping: true },
+    inputSchemas: [schema1],
+    outputSchemas: [schema2],
+  }),
+  pong: new ProcedureContract({
+    errorMap: {
+      PONG_ERROR: {
+        data: schema1,
+        message: 'pong error',
       },
-      route: {
-        path: '/base',
+    },
+    meta: { pong: true, meta2: true },
+    inputSchemas: [schema1, schema2],
+    outputSchemas: [],
+    metaPlugins: [meta2],
+  }),
+  invalid: 'invalid' as any,
+  nested: callable({
+    ping: callable(new ProcedureContract({
+      errorMap: {
+        NESTED_PING_ERROR: {
+          data: schema2,
+        },
       },
-    },
+      meta: { nestedPing: true },
+      inputSchemas: [],
+      outputSchemas: [schema2],
+    })),
+    invalid: 'invalid' as any,
+  }),
+}
+
+describe('augmentContractRouter', () => {
+  function createAugmentOptions() {
+    return {
+      meta: { base: 'augmentContractRouter' },
+      errorMap: {
+        OVERRIDE: {
+          data: schema1,
+        },
+      },
+      metaPlugins: [meta1],
+    }
   }
 
-  const minifiedPong = {
-    '~orpc': {
-      errorMap: {},
-      meta: {},
-      route: {},
-    },
+  function expectAugmentedProcedure(
+    callIndex: number,
+    actual: any,
+    original: any,
+    options: ReturnType<typeof createAugmentOptions>,
+  ) {
+    const resolved = resolveMetaPluginsSpy.mock.results[callIndex - 1]?.value
+
+    expect(actual).toBeInstanceOf(ProcedureContract)
+    expect(actual).not.toBe(original)
+    expect(mergeErrorMapSpy).toHaveBeenNthCalledWith(callIndex, options.errorMap, original['~orpc'].errorMap)
+    expect(resolveMetaPluginsSpy).toHaveBeenNthCalledWith(
+      callIndex,
+      options.meta,
+      options.metaPlugins,
+      original['~orpc'].metaPlugins,
+    )
+    expect(actual['~orpc']).toEqual({
+      ...original['~orpc'],
+      errorMap: mergeErrorMapSpy.mock.results[callIndex - 1]?.value,
+      meta: resolved?.[0],
+      metaPlugins: resolved?.[1],
+    })
   }
 
-  expect((minified as any).ping).toSatisfy(isContractProcedure)
-  expect((minified as any).ping).toEqual(minifiedPing)
+  it('augments every procedure in nested routers', () => {
+    const options = createAugmentOptions()
+    const augmented = augmentContractRouter(router, options)
 
-  expect((minified as any).pong).toSatisfy(isContractProcedure)
-  expect((minified as any).pong).toEqual(minifiedPong)
+    expect(augmented).not.toBe(router)
+    expect(augmented.nested).not.toBe(router.nested)
+    expect(augmented.invalid).toBe('invalid')
+    expect(augmented.nested.invalid).toBe('invalid')
 
-  expect((minified as any).nested.ping).toSatisfy(isContractProcedure)
-  expect((minified as any).nested.ping).toEqual(minifiedPing)
+    expect(mergeErrorMapSpy).toHaveBeenCalledTimes(3)
+    expect(resolveMetaPluginsSpy).toHaveBeenCalledTimes(3)
 
-  expect((minified as any).nested.pong).toSatisfy(isContractProcedure)
-  expect((minified as any).nested.pong).toEqual(minifiedPong)
-})
-
-describe('contract modules that export primitives alongside procedures', () => {
-  // Simulates: import * as userContract from './contracts/user'
-  // where the module exports contract procedures AND constants like:
-  //   export const getUser = oc.input(userSchema)
-  //   export const listUsers = oc.input(listSchema)
-  //   export const API_VERSION = 'v2'
-  //   export const MAX_PAGE_SIZE = 100
-  //   export const ENABLE_CACHE = true
-
-  const moduleWithPrimitives = {
-    getUser: ping,
-    listUsers: pong,
-    API_VERSION: 'v2',
-    MAX_PAGE_SIZE: 100,
-    ENABLE_CACHE: true,
-    DEPRECATED: null,
-    OPTIONAL_FEATURE: undefined,
-  } as any
-
-  describe('enhanceContractRouter', () => {
-    const options = { errorMap: {}, prefix: '/api', tags: ['api'] } as const
-
-    it('enhances procedures and passes through primitive exports', () => {
-      const enhanced = enhanceContractRouter(moduleWithPrimitives, options) as unknown as {
-        getUser: AnyContractProcedure
-        listUsers: AnyContractProcedure
-        API_VERSION: string
-        MAX_PAGE_SIZE: number
-        ENABLE_CACHE: boolean
-      }
-      expect(isContractProcedure(enhanced.getUser)).toBe(true)
-      expect(isContractProcedure(enhanced.listUsers)).toBe(true)
-      expect(enhanced.API_VERSION).toBe('v2')
-      expect(enhanced.MAX_PAGE_SIZE).toBe(100)
-      expect(enhanced.ENABLE_CACHE).toBe(true)
-    })
-
-    it('handles single-character string exports without stack overflow', () => {
-      // Single-char strings are the worst case: for...in on 'v' yields key '0',
-      // and 'v'[0] === 'v' creates an infinite loop
-      const moduleWithFlag = { getUser: ping, v: 'v' } as any
-      expect(() => enhanceContractRouter(moduleWithFlag, options)).not.toThrow()
-    })
+    expectAugmentedProcedure(1, augmented.ping, router.ping, options)
+    expectAugmentedProcedure(2, augmented.pong, router.pong, options)
+    expectAugmentedProcedure(3, augmented.nested.ping, router.nested.ping, options)
   })
 
-  describe('minifyContractRouter', () => {
-    it('minifies procedures and passes through primitive exports', () => {
-      const minified = minifyContractRouter(moduleWithPrimitives)
-      expect(isContractProcedure((minified as any).getUser)).toBe(true)
-      expect(isContractProcedure((minified as any).listUsers)).toBe(true)
-      expect((minified as any).API_VERSION).toBe('v2')
-      expect((minified as any).MAX_PAGE_SIZE).toBe(100)
-    })
+  it('augments a procedure passed as the root router', () => {
+    const options = createAugmentOptions()
+    const augmented = augmentContractRouter(router.pong, options)
 
-    it('handles single-character string exports without stack overflow', () => {
-      const moduleWithFlag = { getUser: ping, v: 'v' } as any
-      expect(() => minifyContractRouter(moduleWithFlag)).not.toThrow()
-    })
+    expect(mergeErrorMapSpy).toHaveBeenCalledTimes(1)
+    expect(resolveMetaPluginsSpy).toHaveBeenCalledTimes(1)
+
+    expectAugmentedProcedure(1, augmented, router.pong, options)
   })
 
-  describe('populateContractRouterPaths', () => {
-    it('populates procedure paths and passes through primitive exports', () => {
-      const moduleForPaths = {
-        getUser: oc.input(inputSchema),
-        listUsers: oc.output(outputSchema),
-        API_VERSION: 'v2',
-        MAX_PAGE_SIZE: 100,
-        ENABLE_CACHE: true,
-      } as any
-      const populated = populateContractRouterPaths(moduleForPaths) as unknown as {
-        getUser: AnyContractProcedure
-        listUsers: AnyContractProcedure
-        API_VERSION: string
-        MAX_PAGE_SIZE: number
-        ENABLE_CACHE: boolean
-      }
-      expect(isContractProcedure(populated.getUser)).toBe(true)
-      expect(populated.getUser['~orpc'].route.path).toBe('/getUser')
-      expect(isContractProcedure(populated.listUsers)).toBe(true)
-      expect(populated.listUsers['~orpc'].route.path).toBe('/listUsers')
-      expect(populated.API_VERSION).toBe('v2')
-      expect(populated.MAX_PAGE_SIZE).toBe(100)
-    })
+  it('supports function-like routers passed as the root router', () => {
+    const options = createAugmentOptions()
+    const functionRouter = callable(router.nested)
+    const augmented = augmentContractRouter(functionRouter, options)
 
-    it('handles single-character string exports without stack overflow', () => {
-      const moduleWithFlag = { getUser: oc.input(inputSchema), v: 'v' } as any
-      expect(() => populateContractRouterPaths(moduleWithFlag)).not.toThrow()
-    })
+    expect(augmented).not.toBe(functionRouter)
+    expect(augmented.invalid).toBe('invalid')
+
+    expect(mergeErrorMapSpy).toHaveBeenCalledTimes(1)
+    expect(resolveMetaPluginsSpy).toHaveBeenCalledTimes(1)
+
+    expectAugmentedProcedure(1, augmented.ping, router.nested.ping, options)
   })
 
-  describe('getContractRouter', () => {
-    it('returns undefined when path traverses past a primitive export', () => {
-      expect(getContractRouter(moduleWithPrimitives, ['API_VERSION', 'length'])).toBeUndefined()
-      expect(getContractRouter(moduleWithPrimitives, ['MAX_PAGE_SIZE', 'toFixed'])).toBeUndefined()
-      expect(getContractRouter(moduleWithPrimitives, ['ENABLE_CACHE', 'valueOf'])).toBeUndefined()
-    })
+  it('returns non-object router values as-is', () => {
+    const options = createAugmentOptions()
+    const invalid = 'invalid' as any
 
-    it('returns undefined for single-character string exports instead of indexed characters', () => {
-      // Without the typeof guard, getContractRouter(['v', '0']) returns 'v'
-      // because 'v'[0] === 'v', walking character indices instead of bailing out.
-      const moduleWithFlag = { getUser: ping, v: 'v' } as any
-      expect(getContractRouter(moduleWithFlag, ['v', '0'])).toBeUndefined()
-      expect(getContractRouter(moduleWithFlag, ['v', '0', '0', '0'])).toBeUndefined()
-    })
+    expect(augmentContractRouter(invalid, options)).toBe(invalid)
+    expect(mergeErrorMapSpy).not.toHaveBeenCalled()
+    expect(resolveMetaPluginsSpy).not.toHaveBeenCalled()
   })
 })
 
-it('populateContractRouterPaths', () => {
-  const contract = {
-    ping: oc.input(inputSchema),
-    pong: oc.route({
-      path: '/pong/{id}',
-    }),
-    nested: {
-      ping: oc.output(outputSchema),
-      pong: oc.route({
-        path: '/pong2/{id}',
-      }),
-    },
+describe('getRouterContract', () => {
+  it('returns routers and procedures for valid paths', () => {
+    expect(getRouterContract(router, [])).toBe(router)
+    expect(getRouterContract(router, ['ping'])).toBe(router.ping)
+    expect(getRouterContract(router, ['nested'])).toBe(router.nested)
+    expect(getRouterContract(router, ['nested', 'ping'])).toBe(router.nested.ping)
+
+    expect(getRouterContract(router.ping, [])).toBe(router.ping)
+    expect(getRouterContract(router.nested, [])).toBe(router.nested)
+    expect(getRouterContract(router.nested, ['ping'])).toBe(router.nested.ping)
+  })
+
+  it('returns undefined for invalid paths', () => {
+    expect(getRouterContract(router, ['notExist'])).toBeUndefined()
+    expect(getRouterContract(router, ['notExist', 'notExist'])).toBeUndefined()
+
+    expect(getRouterContract(router, ['invalid'])).toBeUndefined()
+    expect(getRouterContract(router, ['invalid', 'notExist'])).toBeUndefined()
+    expect(getRouterContract(router, ['nested', 'invalid'])).toBeUndefined()
+
+    expect(getRouterContract(router, ['nested', 'ping', '~orpc'])).toBeUndefined()
+    expect(getRouterContract(router, ['nested', 'ping', '~orpc', 'invalid'])).toBeUndefined()
+    expect(getRouterContract(router.ping, ['invalid'])).toBeUndefined()
+
+    expect(getRouterContract('invalid' as any, [])).toBeUndefined()
+    expect(getRouterContract('invalid' as any, ['invalid'])).toBeUndefined()
+
+    expect(getRouterContract(router, ['__proto__'])).toBeUndefined()
+    expect(getRouterContract(router, ['nested', 'hasOwnProperty'])).toBeUndefined()
+  })
+})
+
+describe('getProcedureContractOrThrow', () => {
+  it('returns procedures for valid paths', () => {
+    expect(getProcedureContractOrThrow(router, ['ping'])).toBe(router.ping)
+    expect(getProcedureContractOrThrow(router, ['nested', 'ping'])).toBe(router.nested.ping)
+    expect(getProcedureContractOrThrow(router.ping, [])).toBe(router.ping)
+    expect(getProcedureContractOrThrow(router.nested, ['ping'])).toBe(router.nested.ping)
+  })
+
+  it('throws for non-procedure or invalid paths', () => {
+    function noProcedureError(path: readonly string[]) {
+      return new TypeError(`No valid procedure found at path "${path.join('.')}", this may happen when the router contract is not properly configured.`)
+    }
+
+    expect(() => getProcedureContractOrThrow(router, [])).toThrow(noProcedureError([]))
+    expect(() => getProcedureContractOrThrow(router, ['nested'])).toThrow(noProcedureError(['nested']))
+    expect(() => getProcedureContractOrThrow(router, ['notExist'])).toThrow(noProcedureError(['notExist']))
+    expect(() => getProcedureContractOrThrow(router, ['invalid'])).toThrow(noProcedureError(['invalid']))
+    expect(() => getProcedureContractOrThrow('invalid' as any, [])).toThrow(noProcedureError([]))
+  })
+})
+
+describe('minifyRouterContract', () => {
+  function expectMinifiedProcedure(actual: any, original: any) {
+    expect(actual).toBeInstanceOf(ProcedureContract)
+    expect(actual).not.toBe(original)
+    expect(actual).toEqual({
+      '~orpc': {
+        errorMap: {},
+        meta: original['~orpc'].meta,
+      },
+    })
   }
 
-  const populated = populateContractRouterPaths(contract)
+  it('minifies every procedure in nested routers', () => {
+    const minified = minifyRouterContract(router) as any
 
-  expect(populated.pong['~orpc'].route.path).toBe('/pong/{id}')
-  expect(populated.nested.pong['~orpc'].route.path).toBe('/pong2/{id}')
+    expect(minified).not.toBe(router)
+    expect(minified.nested).not.toBe(router.nested)
 
-  expect(populated.ping['~orpc'].route.path).toBe('/ping')
-  expect(populated.ping['~orpc'].inputSchema).toBe(inputSchema)
+    expectMinifiedProcedure(minified.ping, router.ping)
+    expectMinifiedProcedure(minified.pong, router.pong)
+    expectMinifiedProcedure(minified.nested.ping, router.nested.ping)
 
-  expect(populated.nested.ping['~orpc'].route.path).toBe('/nested/ping')
-  expect(populated.nested.ping['~orpc'].outputSchema).toBe(outputSchema)
+    expect(minified.invalid).toBe('invalid')
+    expect(minified.nested.invalid).toBe('invalid')
+  })
+
+  it('minifies a procedure passed as the root router', () => {
+    const minified = minifyRouterContract(router.pong)
+
+    expectMinifiedProcedure(minified, router.pong)
+  })
+
+  it('supports function-like routers passed as the root router', () => {
+    const functionRouter = callable(router.nested)
+    const minified = minifyRouterContract(functionRouter) as any
+
+    expect(minified).not.toBe(functionRouter)
+    expectMinifiedProcedure(minified.ping, router.nested.ping)
+    expect(minified.invalid).toBe('invalid')
+  })
+
+  it('returns non-object router values as-is', () => {
+    const invalid = 'invalid' as any
+
+    expect(minifyRouterContract(invalid)).toBe(invalid)
+  })
 })

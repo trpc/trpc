@@ -1,8 +1,13 @@
 {
   "name": "@orpc/json-schema",
   "type": "module",
-  "version": "1.15.5",
+  "version": "2.0.0-beta.44",
+  "description": "JSON Schema conversion and smart request coercion for oRPC and OpenAPI",
   "license": "MIT",
+  "funding": [
+    "https://github.com/sponsors/dinwwwh",
+    "https://opencollective.com/middleapi"
+  ],
   "homepage": "https://orpc.dev",
   "repository": {
     "type": "git",
@@ -10,11 +15,17 @@
     "directory": "packages/json-schema"
   },
   "keywords": [
-    "orpc"
+    "orpc",
+    "json-schema",
+    "openapi",
+    "coercion",
+    "validation",
+    "typescript"
   ],
   "sideEffects": false,
   "publishConfig": {
     "exports": {
+      "./package.json": "./package.json",
       ".": {
         "types": "./dist/index.d.mts",
         "import": "./dist/index.mjs",
@@ -23,25 +34,25 @@
     }
   },
   "exports": {
+    "./package.json": "./package.json",
     ".": "./src/index.ts"
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "unbuild",
-    "build:watch": "pnpm run build --watch",
+    "prepack": "unbuild",
     "type:check": "tsc -b"
   },
   "dependencies": {
+    "@openapi-spec/types": "~0.3.0",
+    "@orpc/client": "workspace:*",
     "@orpc/contract": "workspace:*",
-    "@orpc/interop": "workspace:*",
-    "@orpc/openapi": "workspace:*",
     "@orpc/server": "workspace:*",
     "@orpc/shared": "workspace:*",
-    "json-schema-typed": "^8.0.2"
+    "@standard-schema/spec": "^1.1.0"
   },
   "devDependencies": {
-    "zod": "^4.6.2"
+    "zod": "^4.6.5"
   }
 }

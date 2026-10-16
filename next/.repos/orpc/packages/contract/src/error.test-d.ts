@@ -1,20 +1,21 @@
 import type { ORPCError } from '@orpc/client'
-import type { outputSchema } from '../tests/shared'
-import type { MergedErrorMap, ORPCErrorFromErrorMap } from './error'
-import type { InferSchemaOutput } from './schema'
+import type { ORPCErrorFromErrorMap } from './error'
+import z from 'zod'
 
-it('MergedErrorMap', () => {
-  expectTypeOf<
-    MergedErrorMap<{ BASE: { message: string } }, { INVALID: { message: string } }>
-  >().toMatchTypeOf<{ BASE: { message: string }, INVALID: { message: string } }>()
+describe('ORPCErrorFromErrorMap', () => {
+  it('converts an error map to an ORPCError union and defaults to unknown when schema is undefined', () => {
+    const errorMap = {
+      TEST1: { data: z.string() },
+      TEST2: { data: z.number().transform(() => 'string') },
+      UNDEFINED_SCHEMA: {},
+    }
 
-  expectTypeOf<
-    MergedErrorMap<{ BASE: { message: string }, INVALID: { status: number } }, { INVALID: { message: string } }>
-  >().toMatchTypeOf<{ BASE: { message: string }, INVALID: { message: string } }>()
-})
-
-it('ORPCErrorFromErrorMap', () => {
-  expectTypeOf<ORPCErrorFromErrorMap<{ BASE: { message: string } }>>().toEqualTypeOf<ORPCError<'BASE', unknown>>()
-  expectTypeOf<ORPCErrorFromErrorMap<{ BASE: { message: string }, INVALID: { data: typeof outputSchema } }>>()
-    .toEqualTypeOf<ORPCError<'BASE', unknown> | ORPCError<'INVALID', InferSchemaOutput<typeof outputSchema>>>()
+    expectTypeOf<
+      ORPCErrorFromErrorMap<typeof errorMap>
+    >().toEqualTypeOf<
+      | ORPCError<'TEST1', string>
+      | ORPCError<'TEST2', string>
+      | ORPCError<'UNDEFINED_SCHEMA', unknown>
+    >()
+  })
 })

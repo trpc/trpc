@@ -1,4 +1,4 @@
-import { AbortError } from './error'
+import { AbortError } from '@standard-server/shared'
 
 export interface AsyncIdQueueCloseOptions {
   id?: string
@@ -10,16 +10,8 @@ export class AsyncIdQueue<T> {
   private readonly queues = new Map<string, T[]>()
   private readonly waiters = new Map<string, (readonly [resolve: (item: T) => void, reject: (err: unknown) => void])[]>()
 
-  get length(): number {
+  get size(): number {
     return this.openIds.size
-  }
-
-  get waiterIds(): string[] {
-    return Array.from(this.waiters.keys())
-  }
-
-  hasBufferedItems(id: string): boolean {
-    return Boolean(this.queues.get(id)?.length)
   }
 
   open(id: string): void {
@@ -104,7 +96,7 @@ export class AsyncIdQueue<T> {
     this.queues.delete(id)
   }
 
-  assertOpen(id: string): void {
+  private assertOpen(id: string): void {
     if (!this.isOpen(id)) {
       throw new Error(`[AsyncIdQueue] Cannot access queue[${id}] because it is not open or aborted.`)
     }

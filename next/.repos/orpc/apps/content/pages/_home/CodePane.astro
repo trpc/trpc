@@ -1,0 +1,32 @@
+---
+// Landing-page code pane. `highlightCode` runs the same Shiki themes and
+// notation transformers the docs fences use, so a snippet here is colored
+// exactly like the same snippet in /docs. The `.prose` code styles don't reach
+// the landing page, so the dual-theme variables are re-applied by the
+// `.orpc-code` rules in theme.css.
+import { highlightCode } from 'blume/markdown'
+
+interface Props {
+  code: string
+  lang?: string
+  /** Filename shown in the pane's header bar; omit for a bare pane. */
+  file?: string
+  class?: string
+}
+
+const { code, lang = 'ts', file, class: className } = Astro.props
+
+const html = await highlightCode(code.trim(), lang, { icons: false })
+---
+
+<div class:list={['orpc-code', className]}>
+  {
+    file && (
+      <div class="orpc-code-file">
+        <span class="orpc-code-dot" />
+        {file}
+      </div>
+    )
+  }
+  <Fragment set:html={html} />
+</div>

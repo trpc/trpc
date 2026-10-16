@@ -1,3 +1,5 @@
 it('exports OpenAPIHandler', async () => {
-  expect(Object.keys(await import('./index'))).toContain('OpenAPIHandler')
+  await expect(import('.')).resolves.toMatchObject({
+    OpenAPIHandler: expect.any(Function),
+  })
 })

@@ -1,0 +1,54 @@
+{
+  "name": "@orpc/hibernation",
+  "type": "module",
+  "version": "2.0.0-beta.44",
+  "description": "Hibernation API support for oRPC, including Cloudflare Durable Objects' WebSocket Hibernation",
+  "license": "MIT",
+  "funding": [
+    "https://github.com/sponsors/dinwwwh",
+    "https://opencollective.com/middleapi"
+  ],
+  "homepage": "https://orpc.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/middleapi/orpc.git",
+    "directory": "packages/hibernation"
+  },
+  "keywords": [
+    "orpc",
+    "hibernation",
+    "websocket",
+    "cloudflare",
+    "durable-objects",
+    "typescript"
+  ],
+  "sideEffects": false,
+  "publishConfig": {
+    "exports": {
+      "./package.json": "./package.json",
+      ".": {
+        "types": "./dist/index.d.mts",
+        "import": "./dist/index.mjs",
+        "default": "./dist/index.mjs"
+      }
+    }
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "prepack": "unbuild",
+    "type:check": "tsc -b"
+  },
+  "dependencies": {
+    "@orpc/client": "workspace:*",
+    "@orpc/server": "workspace:*",
+    "@orpc/shared": "workspace:*",
+    "@standard-server/core": "~0.10.3",
+    "@standard-server/peer": "~0.10.3"
+  }
+}

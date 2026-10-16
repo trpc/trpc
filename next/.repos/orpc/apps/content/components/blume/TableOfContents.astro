@@ -1,0 +1,85 @@
+---
+import type { Heading } from "blume/core/types.ts";
+import Icon from "blume/components/Icon.astro";
+import CoffeeCard from "../../sponsors/CoffeeCard.astro";
+
+interface Props {
+  /** Headings to list (already filtered to the depths shown in the TOC). */
+  headings: Heading[];
+  /** Localized "On this page" heading. */
+  title: string;
+  /**
+   * `mobile` renders the collapsible `<details>` shown above content on narrow
+   * viewports; `desktop` renders the sticky aside list shown on wide ones.
+   */
+  variant: "mobile" | "desktop";
+}
+
+const { headings, title, variant } = Astro.props;
+// The mobile dropdown also holds what the layout passes as children (the
+// mount the page actions move into below `xl`, where the rail that renders
+// them is hidden), so a page with actions but no headings still gets it.
+const hasChildren = Astro.slots.has("default");
+---
+
+{
+  (headings.length > 0 || hasChildren) && variant === "mobile" && (
+    <details class="group mx-auto mb-6 max-w-content rounded-blume border border-border xl:hidden">
+      <summary class="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 font-medium text-foreground text-sm [&::-webkit-details-marker]:hidden">
+        <span>{title}</span>
+        <Icon
+          class="text-muted-foreground transition-transform group-open:rotate-180"
+          name="chevron-down"
+          size={16}
+        />
+      </summary>
+      {headings.length > 0 && (
+        <blume-toc class="block">
+          <ul class="m-0 list-none border-border border-t p-2">
+            {headings.map((heading) => (
+              <li
+                data-depth={heading.depth}
+                style={`padding-inline-start:${(heading.depth - 2) * 0.75}rem`}
+              >
+                <a
+                  class="block rounded-md px-2 py-1.5 text-muted-foreground text-sm transition-colors hover:text-foreground aria-[current=location]:font-medium aria-[current=location]:text-foreground"
+                  href={`#${heading.slug}`}
+                >
+                  {heading.text}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </blume-toc>
+      )}
+      <slot />
+    </details>
+  )
+}
+{
+  headings.length > 0 && variant === "desktop" && (
+    <>
+      <p class="mb-3 font-semibold text-muted-foreground text-xs uppercase tracking-[0.05em]">
+        {title}
+      </p>
+      <blume-toc class="block">
+        <ul class="m-0 list-none p-0">
+          {headings.map((heading) => (
+            <li
+              data-depth={heading.depth}
+              style={`padding-inline-start:${(heading.depth - 2) * 0.875}rem`}
+            >
+              <a
+                class="block py-1 text-muted-foreground transition-colors hover:text-foreground aria-[current=location]:text-accent"
+                href={`#${heading.slug}`}
+              >
+                {heading.text}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </blume-toc>
+      <CoffeeCard />
+    </>
+  )
+}

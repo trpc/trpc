@@ -1,3 +1,11 @@
 export * from './coercer'
-export * from './smart-coercion-plugin'
+export * from './composition-utils'
+export * from './convert'
+export * from './ref-utils'
+export * from './smart-coercion-handler-plugin'
+export * from './smart-coercion-link-plugin'
+export * from './standard-json-schema-converter'
 export * from './types'
+export * from './utils'
+
+export type { AnySchema, Schema } from '@orpc/contract'

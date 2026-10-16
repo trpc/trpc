@@ -1,0 +1,264 @@
+---
+title: "Batch Plugin"
+description: "Combine multiple requests into a single batch and receive their responses together, reducing the overhead of separate requests."
+sidebar:
+  label: "Batch"
+---
+
+:::warning
+HTTP/2, HTTP/3, and later versions already support multiplexing, which allows multiple requests and responses to share a single connection. Because these protocols are now widely adopted, this plugin is often less useful than it once was.
+:::
+
+## Setup
+
+Set up batching on both the server and the client. The server plugin handles incoming batch requests, and the client plugin groups outgoing requests into batches.
+
+<CodeGroup>
+
+```ts server.ts
+import { BatchHandlerPlugin } from '@orpc/server/plugins'
+
+const handler = new RPCHandler(router, {
+  plugins: [
+    new BatchHandlerPlugin(),
+  ],
+})
+```
+
+```ts client.ts
+import { BatchLinkPlugin } from '@orpc/client/plugins'
+
+const link = new RPCLink({
+  url: '/rpc',
+  plugins: [
+    new BatchLinkPlugin({
+      groups: [
+        {
+          condition: () => true,
+          context: {},
+        },
+      ],
+    }),
+  ],
+})
+```
+
+</CodeGroup>
+
+:::warning
+`BatchHandlerPlugin` detects batch requests by checking for the `orpc-batch` header, so cross-origin batch requests need CORS to allow it. The [CORS Plugin](/docs/plugins/cors) allows requested headers by default. If you set `allowHeaders` or configure CORS elsewhere, include `orpc-batch` along with `Content-Type` and any other headers your clients send:
+
+```ts
+const cors = new CORSHandlerPlugin({
+  allowHeaders: ['Content-Type', 'orpc-batch'],
+})
+```
+
+:::
+
+## Response Modes
+
+By default, the plugin uses `streaming` mode. Responses are sent as soon as they are ready, so one slow request does not block the rest of the batch.
+
+If your environment does not support streaming responses, such as some serverless platforms or older browsers, switch to `buffered` mode instead. In this mode, all responses are collected and sent together, unless a procedure returns an [AsyncIteratorObject](/docs/async-iterator-object) or a [`ReadableStream`](/docs/binary-data). Such a stream can stay open indefinitely, so the batch switches to streaming as soon as one is returned: the server writes out the responses collected so far, then sends the rest as they are ready. If your client cannot read streamed responses, keep these procedures out of the batch with [`filter`](#filtering-requests).
+
+```ts
+const link = new RPCLink({
+  url: '/rpc',
+  plugins: [
+    new BatchLinkPlugin({
+      mode: 'buffered',
+      groups: [
+        {
+          condition: () => true,
+          context: {},
+        },
+      ],
+    }),
+  ],
+})
+```
+
+### Keep-Alive Timer
+
+In **streaming** mode, or once a buffered batch switches to streaming, long-running batch responses may remain idle for extended periods. The server plugin can send keep-alive frames to keep the connection alive.
+
+```ts
+const handler = new RPCHandler(router, {
+  plugins: [
+    new BatchHandlerPlugin({
+      keepAlive: {
+        /**
+         * If true, a keep-alive frame is sent periodically while the stream is idle.
+         *
+         * @default true
+         */
+        enabled: true,
+        /**
+         * Interval (in milliseconds) between keep-alive frames after the last message.
+         *
+         * @default 15000
+         */
+        interval: 15000,
+      },
+    }),
+  ],
+})
+```
+
+## Compression
+
+A batch response might be left uncompressed by the [Response Compression Plugin](/docs/plugins/response-compression), depending on the shape it takes. On Node.js, add the [Batch Response Compression Plugin](/docs/plugins/batch-response-compression) when you know your batch responses are all compressible. It covers every one of them, without giving up streaming:
+
+```ts
+import { BatchResponseCompressionHandlerPlugin } from '@orpc/node'
+
+const handler = new RPCHandler(router, {
+  plugins: [
+    new BatchHandlerPlugin(),
+    new BatchResponseCompressionHandlerPlugin(),
+  ],
+})
+```
+
+## Groups
+
+Only requests in the same group are batched together. Each group also defines a context, as described in [client context](/docs/rpc/link#client-context).
+
+The following example batches requests by cache policy:
+
+```ts
+interface ClientContext {
+  cache?: RequestCache
+}
+
+const link = new RPCLink<ClientContext>({
+  method: ({ context }) => {
+    if (context?.cache) {
+      return 'GET'
+    }
+
+    return 'POST'
+  },
+  plugins: [
+    new BatchLinkPlugin({
+      groups: [
+        {
+          condition: ({ context }) => context?.cache === 'force-cache',
+          context: { // used for the rest of the request lifecycle
+            cache: 'force-cache',
+          },
+        },
+        { // Fallback for all other requests. Keep this last.
+          condition: () => true,
+          context: {},
+        },
+      ],
+    }),
+  ],
+  fetch: (url, init, { context }) => globalThis.fetch(url, {
+    ...init,
+    cache: context?.cache,
+  }),
+})
+```
+
+Now, calls made with `cache = 'force-cache'` use that cache setting whether they are batched or sent individually.
+
+## Filtering Requests
+
+Use `filter` to skip batching for specific requests before group matching runs. Requests for which `filter` returns `false` continue through the link chain individually.
+
+```ts
+const link = new RPCLink({
+  url: '/rpc',
+  plugins: [
+    new BatchLinkPlugin({
+      filter: ({ path }) => !path.includes('upload'),
+      groups: [
+        {
+          condition: () => true,
+          context: {},
+        },
+      ],
+    }),
+  ],
+})
+```
+
+## Wait Time
+
+By default, only requests made in the same [event loop](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Execution_model#job_queue_and_event_loop) tick are batched together. Set `wait` to keep collecting requests for a number of milliseconds, trading a little latency for fewer, larger batches.
+
+```ts
+const link = new RPCLink({
+  url: '/rpc',
+  plugins: [
+    new BatchLinkPlugin({
+      wait: 10, // ms
+      groups: [
+        {
+          condition: () => true,
+          context: {},
+        },
+      ],
+    }),
+  ],
+})
+```
+
+The wait starts when the first request is queued, so no request waits longer than `wait`, even while more keep arriving.
+
+## Scope
+
+On the server, requests from different users can be batched together. If your transport reads per-request data (in `fetch`, `origin`, and so on), set `scope` to a value unique to the incoming request.
+
+```ts
+import { AsyncLocalStorage } from 'node:async_hooks'
+
+const requestStorage = new AsyncLocalStorage<Request>() // set per incoming request
+
+const link = new RPCLink({
+  url: '/rpc',
+  plugins: [
+    new BatchLinkPlugin({
+      scope: () => requestStorage.getStore(),
+      groups: [
+        {
+          condition: () => true,
+          context: {},
+        },
+      ],
+    }),
+  ],
+})
+```
+
+:::tip
+Per-request data passed through the link's [`headers` option](/docs/rpc/link#url-and-header-options) is resolved for each request, so it is safe without `scope`.
+:::
+
+## Limitations
+
+Cookies set in a batched call are never stored, because the browser only reads headers from the batch response itself, not from each subresponse. Send procedures that set cookies outside the batch:
+
+```ts
+const link = new RPCLink({
+  url: '/rpc',
+  plugins: [
+    new BatchLinkPlugin({
+      filter: ({ path }) => path[0] !== 'auth', // auth procedures set cookies
+      groups: [
+        {
+          condition: () => true,
+          context: {},
+        },
+      ],
+    }),
+  ],
+})
+```
+
+## Learn More
+
+See the [BatchHandlerPlugin source code](https://github.com/middleapi/orpc/blob/main/packages/server/src/plugins/batch.ts) and the [BatchLinkPlugin source code](https://github.com/middleapi/orpc/blob/main/packages/client/src/plugins/batch.ts) for implementation details.

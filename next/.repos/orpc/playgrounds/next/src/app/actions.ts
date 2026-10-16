@@ -1,37 +1,21 @@
 'use server'
 
-import { pub } from '@/orpc'
+import { publicOS } from '@/orpc'
 import * as z from 'zod'
-import { createFormAction } from '@orpc/react'
-import { redirect } from 'next/navigation'
-import { onSuccess } from '@orpc/client'
+import { createServerFunctionable } from '@orpc/next'
+import { messagePublisher } from '../context'
 
-export const getting = pub
-  .input(z.object({
-    name: z.string().min(6),
-  }))
-  .output(z.string())
-  .handler(async ({ input }) => {
-    return `Hello ${input.name}!`
-  })
-  .actionable()
-
-const dosomething = pub
-  .input(z.object({
-    user: z.object({
-      name: z.string(),
-      age: z.coerce.number(),
-    }),
-  }))
-  .handler(({ input }) => {
-    console.log('An form action was called!')
-    console.log(input)
-  })
-
-export const redirectToScalarForm = createFormAction(dosomething, {
-  interceptors: [
-    onSuccess(async () => {
-      redirect('/api')
-    }),
-  ],
+const actionable = createServerFunctionable({
+  context: { messagePublisher },
 })
+
+export const ping = actionable(
+  publicOS
+    .input(z.object({
+      name: z.string().min(6),
+    }))
+    .output(z.string())
+    .handler(async ({ input }) => {
+      return `Hello ${input.name}!`
+    }),
+)

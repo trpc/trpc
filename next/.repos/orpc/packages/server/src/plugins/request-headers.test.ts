@@ -1,46 +1,35 @@
-import type { RequestHeadersPluginContext } from './request-headers'
-import { OpenAPIHandler } from '../../../openapi/src/adapters/fetch/openapi-handler'
+import type { RequestHeadersHandlerPluginContext } from './request-headers'
+import { RPCHandler } from '../adapters/fetch/rpc-handler'
 import { os } from '../builder'
-import { RequestHeadersPlugin } from './request-headers'
+import { RequestHeadersHandlerPlugin } from './request-headers'
 
-describe('requestHeadersPlugin', () => {
-  it('works', async () => {
-    let capturedHeaders: Headers | undefined
+beforeEach(() => {
+  vi.clearAllMocks()
+})
 
-    const router = os
-      .$context<RequestHeadersPluginContext>()
-      .use(({ context, next }) => {
-        // Capture the headers from context for verification
-        capturedHeaders = context.reqHeaders
-        return next()
-      })
-      .route({
-        method: 'GET',
-        path: '/ping',
-      })
-      .handler(() => 'pong')
+describe('requestHeadersHandlerPlugin', () => {
+  it('injects request headers into context as Headers instance', async () => {
+    const procedureHandler = vi.fn(() => 'pong')
+    const procedure = os.$context<RequestHeadersHandlerPluginContext>().handler(procedureHandler)
 
-    const handler = new OpenAPIHandler(router, {
-      plugins: [
-        new RequestHeadersPlugin(),
-      ],
+    const handler = new RPCHandler(procedure, {
+      plugins: [new RequestHeadersHandlerPlugin()],
     })
 
-    const request = new Request('https://example.com/ping', {
+    const { response } = await handler.handle(new Request('https://example.com', {
+      method: 'POST',
       headers: {
+        'content-type': 'application/json',
         'x-custom-1': 'value1',
         'x-custom-2': 'value2',
-        'content-type': 'application/json',
         'authorization': 'Bearer token123',
       },
-    })
+      body: JSON.stringify({ json: null }),
+    }))
 
-    const { response } = await handler.handle(request)
-
-    if (!response) {
-      throw new Error('response is undefined')
-    }
-
+    expect(response).toBeDefined()
+    expect(procedureHandler).toHaveBeenCalledOnce()
+    const capturedHeaders = (procedureHandler as any).mock.calls[0]![0].context.reqHeaders
     expect(capturedHeaders).toBeInstanceOf(Headers)
     expect(capturedHeaders?.get('x-custom-1')).toBe('value1')
     expect(capturedHeaders?.get('x-custom-2')).toBe('value2')
@@ -48,67 +37,26 @@ describe('requestHeadersPlugin', () => {
     expect(capturedHeaders?.get('authorization')).toBe('Bearer token123')
   })
 
-  it('should clone the context to avoid reference issues', async () => {
-    const router = os
-      .$context<RequestHeadersPluginContext>()
-      .route({
-        method: 'GET',
-        path: '/ping',
-      })
-      .handler(() => 'ping')
+  it('preserves existing reqHeaders when already provided in context', async () => {
+    const procedure = os
+      .$context<RequestHeadersHandlerPluginContext>()
+      .handler(() => 'pong')
 
-    const interceptor = vi.fn(({ next }) => next())
+    const interceptor = vi.fn(({ next }: any) => next())
 
-    const handler = new OpenAPIHandler(router, {
-      plugins: [
-        new RequestHeadersPlugin(),
-      ],
-      interceptors: [
-        interceptor,
-      ],
-    })
-
-    const context = { a: 'value' }
-    await handler.handle(new Request('https://example.com/ping'), { context })
-
-    expect(interceptor).toHaveBeenCalledOnce()
-    expect(interceptor).toHaveBeenCalledWith(expect.objectContaining({
-      context: { ...context, reqHeaders: expect.any(Headers) },
-    }))
-
-    expect(interceptor.mock.calls[0]![0].context).not.toBe(context)
-  })
-
-  it('should use the provided reqHeaders when already defined', async () => {
-    const router = os
-      .$context<RequestHeadersPluginContext>()
-      .route({
-        method: 'GET',
-        path: '/ping',
-      })
-      .handler(() => 'ping')
-
-    const interceptor = vi.fn(({ next }) => next())
-
-    const handler = new OpenAPIHandler(router, {
-      plugins: [
-        new RequestHeadersPlugin(),
-      ],
-      interceptors: [
-        interceptor,
-      ],
+    const handler = new RPCHandler(procedure, {
+      plugins: [new RequestHeadersHandlerPlugin()],
+      interceptors: [interceptor],
     })
 
     const existingHeaders = new Headers({ 'existing-header': 'existing-value' })
-    const context = { a: 'value', reqHeaders: existingHeaders }
-    await handler.handle(new Request('https://example.com/ping'), { context })
+    await handler.handle(new Request('https://example.com', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ json: null }),
+    }), { context: { reqHeaders: existingHeaders } })
 
     expect(interceptor).toHaveBeenCalledOnce()
-    expect(interceptor).toHaveBeenCalledWith(expect.objectContaining({
-      context,
-    }))
-
-    // The existing reqHeaders should be preserved
     expect(interceptor.mock.calls[0]![0].context.reqHeaders).toBe(existingHeaders)
   })
 })

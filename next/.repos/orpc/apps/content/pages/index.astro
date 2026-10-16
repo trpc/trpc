@@ -1,0 +1,85 @@
+---
+import PageLayout from 'blume/components/layout/PageLayout.astro'
+import data from 'blume:data'
+import CallToAction from './_home/CallToAction.astro'
+import Comparison from './_home/Comparison.astro'
+import Features from './_home/Features.astro'
+import Footer from './_home/Footer.astro'
+import Hero from './_home/Hero.astro'
+import Packages from './_home/Packages.astro'
+import Runtimes from './_home/Runtimes.astro'
+import Sponsors from './_home/Sponsors.astro'
+
+export const prerender = true
+
+const { config } = data
+
+// Kept under ~155 characters so search results show it whole, and in the same
+// plain words as the hero rather than jargon like "REST surface".
+const description
+  = 'Write your API once with oRPC. Get a fully typed TypeScript client, a REST API with an '
+    + 'OpenAPI document, and typed realtime streams. No code generation.'
+
+// schema.org JSON-LD, absolute when the site URL is known (production).
+// PageLayout carries no structured data of its own — Blume only emits it for
+// generated content pages — so the home page declares its own graph: the site
+// identity node plus the project as a free developer application.
+const siteBase = (config.site ?? '').replace(/\/$/, '')
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebSite',
+      '@id': `${siteBase}/#website`,
+      'url': `${siteBase}/`,
+      'name': config.title,
+      'description': description,
+      'inLanguage': 'en',
+    },
+    {
+      '@type': 'SoftwareApplication',
+      '@id': `${siteBase}/#software`,
+      'name': 'oRPC',
+      'applicationCategory': 'DeveloperApplication',
+      'operatingSystem': 'Cross-platform',
+      'url': siteBase,
+      'description': description,
+      'license': 'https://github.com/middleapi/orpc/blob/main/LICENSE',
+      'codeRepository': 'https://github.com/middleapi/orpc',
+      'isAccessibleForFree': true,
+      'offers': { '@type': 'Offer', 'price': '0', 'priceCurrency': 'USD' },
+    },
+  ],
+}
+---
+
+<PageLayout
+  site={{ title: config.title, description: config.description }}
+  logo={config.logo}
+  banner={config.banner}
+  analytics={config.analytics}
+  navigation={data.navigation}
+  favicon={config.favicon}
+  fontCssVars={data.fontCssVars}
+  themeMode={config.theme.mode}
+  searchEnabled={config.search.enabled}
+  siteUrl={config.site}
+  ogEnabled={config.og.enabled}
+  page={{ title: 'oRPC - Typesafe APIs Made Simple 🪄', description, route: '/' }}
+  x={config.x}
+>
+  <script
+    is:inline
+    type="application/ld+json"
+    set:html={JSON.stringify(jsonLd).replaceAll('<', '\\u003c')}
+  />
+
+  <Hero />
+  <Runtimes />
+  <Features />
+  <Packages />
+  <Comparison />
+  <Sponsors />
+  <CallToAction />
+  <Footer slot="footer" />
+</PageLayout>

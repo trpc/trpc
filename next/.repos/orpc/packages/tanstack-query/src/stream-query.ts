@@ -1,13 +1,13 @@
 import type { Promisable } from '@orpc/shared'
 import type { QueryFunction, QueryFunctionContext, QueryKey } from '@tanstack/query-core'
 
-export interface experimental_SerializableStreamedQueryOptions {
+export interface SerializableStreamedQueryOptions {
   /**
-   * Determines how data is handled when the query is refetched.
+   * Determines how data is handled when the query is fetched again
    *
-   * - `'reset'`: Clears existing data and sets the query back to a pending state.
-   * - `'append'`: Appends new data chunks to the existing data.
-   * - `'replace'`: Collects all streamed data and replaces the cache once the stream finishes.
+   * - `'reset'`: Clears existing data and returns the query to a pending state.
+   * - `'append'`: Adds new streamed chunks to the existing data.
+   * - `'replace'`: Buffers streamed data and replaces the cache after the stream completes.
    *
    * @default 'reset'
    */
@@ -27,15 +27,15 @@ export interface experimental_SerializableStreamedQueryOptions {
  * - Options are serializable
  * - The output is predictable
  */
-export function experimental_serializableStreamedQuery<
+export function serializableStreamedQuery<
   TQueryFnData = unknown,
   TQueryKey extends QueryKey = QueryKey,
 >(
   queryFn: (
     context: QueryFunctionContext<TQueryKey>,
   ) => Promisable<AsyncIterable<TQueryFnData>>,
-  { refetchMode = 'reset', maxChunks = Number.POSITIVE_INFINITY }: experimental_SerializableStreamedQueryOptions = {},
-): QueryFunction<Array<TQueryFnData>, TQueryKey> {
+  { refetchMode = 'reset', maxChunks = Number.POSITIVE_INFINITY }: SerializableStreamedQueryOptions = {},
+): QueryFunction<TQueryFnData[], TQueryKey> {
   /**
    * below code is inspired from old `streamedQuery`: https://github.com/TanStack/query/blob/9973e0f1d82acd6ccf5a49d9a0b5e7e401fc5489/packages/query-core/src/streamedQuery.ts#L19
    */

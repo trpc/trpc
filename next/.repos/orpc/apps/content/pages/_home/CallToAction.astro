@@ -1,0 +1,51 @@
+---
+// Mirrors the hero's buttons on purpose: a reader who scrolled the whole page
+// should end on the same three doors they started at. Discord, Sponsor, and the
+// rest live in the footer directly below.
+import Icon from 'blume/components/Icon.astro'
+import { githubStars } from './stats'
+
+const stars = await githubStars()
+---
+
+<section class="relative isolate overflow-hidden border-b border-border">
+  <div aria-hidden="true" class="orpc-dots orpc-dots-bottom"></div>
+
+  <div class="relative mx-auto max-w-6xl px-6 py-24 text-center sm:py-32">
+    <h2 class="font-display mx-auto max-w-2xl text-3xl font-semibold tracking-[-0.035em] text-balance sm:text-5xl">
+      Start with one procedure.
+    </h2>
+    <p class="mx-auto mt-5 max-w-xl text-base leading-relaxed text-balance text-muted-foreground">
+      Add a schema when you want validation, a route when you want REST, a contract when the team
+      grows. Your procedures and your client never change. The first one takes five lines.
+    </p>
+
+    <div class="mt-9 flex flex-wrap items-center justify-center gap-3">
+      <a href="/docs/getting-started" class="orpc-btn orpc-btn-primary">
+        Get started
+        <Icon name="arrow-right" size={15} />
+      </a>
+      <a href="/docs/playgrounds" class="orpc-btn orpc-btn-ghost">
+        <Icon name="joystick" size={15} />
+        Playgrounds
+      </a>
+      <a
+        href="https://github.com/middleapi/orpc"
+        class="orpc-btn orpc-btn-ghost"
+        rel="noopener"
+        target="_blank"
+      >
+        <Icon name="github" size={15} />
+        GitHub
+        {
+          stars && (
+            <span class="orpc-btn-count">
+              <Icon name="star" size={12} />
+              {stars}
+            </span>
+          )
+        }
+      </a>
+    </div>
+  </div>
+</section>

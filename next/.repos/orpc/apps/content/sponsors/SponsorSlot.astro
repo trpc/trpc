@@ -1,0 +1,44 @@
+---
+// Two shapes, both injected into MDX by inject.ts:
+//
+//   <SponsorSlot grid />  the page's first slot — every position, sold or not.
+//   <SponsorSlot />       later slots — two cells that client.ts rotates
+//                         through the pool, so a page varies per view.
+//
+// Both render real cards on the server. The inline ones are rewritten in place
+// rather than swapped in, so the markup never changes shape: no skeleton, no
+// layout shift, and the cards still show without JS.
+import AdCard from './AdCard.astro'
+import AdvertiseCard from './AdvertiseCard.astro'
+import { adSlots, inlineAdSlots } from './ads'
+
+interface Props {
+  grid?: boolean
+}
+
+const { grid = false } = Astro.props
+
+const INLINE_CELLS = 2
+
+const cells = grid ? adSlots() : inlineAdSlots(INLINE_CELLS)
+---
+
+{/* Always plural: even an inline slot carries two cells. */}
+<aside aria-label="Sponsors" class="my-6" data-sponsor-slot={grid ? undefined : ''}>
+  <p class="slot-label font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
+    Sponsors
+  </p>
+
+  {/* One card per row until `md`, where the prose column reaches 673-700px and
+      a name and tagline still read side by side at ~340px. Below that the
+      column is 592px or less, which is too tight for two. */}
+  <div class="grid grid-cols-1 gap-2 md:grid-cols-2">
+    {
+      cells.map(({ position, sponsor }) => (
+        sponsor
+          ? <AdCard sponsor={sponsor} />
+          : <AdvertiseCard position={position} />
+      ))
+    }
+  </div>
+</aside>

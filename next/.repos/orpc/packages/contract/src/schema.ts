@@ -1,39 +1,37 @@
-import type { IsEqual, Promisable } from '@orpc/shared'
 // eslint-disable-next-line no-restricted-imports
 import type { StandardSchemaV1 } from '@standard-schema/spec'
 
-export type Schema<TInput, TOutput> = StandardSchemaV1<TInput, TOutput>
+/**
+ * TOutput default = TInput for better readability (shorter) in-case both TInput, TOutput is equal
+ */
+export type Schema<TInput, TOutput = TInput> = StandardSchemaV1<TInput, TOutput>
 
-export type AnySchema = Schema<any, any>
+/**
+ * Any Standard Schema compatible schema, regardless of its input and output types.
+ *
+ * @see {@link https://orpc.dev/docs/integrations/standard-schema | Standard Schema Integration}
+ */
+export type AnySchema = Schema<any>
 
 export type SchemaIssue = StandardSchemaV1.Issue
 
+/**
+ * Infers the input type of a schema.
+ *
+ * @see {@link https://orpc.dev/docs/metadata | Metadata}
+ */
 export type InferSchemaInput<T extends AnySchema> = T extends StandardSchemaV1<infer UInput, any> ? UInput : never
 
+/**
+ * Infers the output type of a schema.
+ *
+ * @see {@link https://orpc.dev/docs/metadata | Metadata}
+ */
 export type InferSchemaOutput<T extends AnySchema> = T extends StandardSchemaV1<any, infer UOutput> ? UOutput : never
 
-export type TypeRest<TInput, TOutput>
-  = | [map: (input: TInput) => Promisable<TOutput>]
-    | (IsEqual<TInput, TOutput> extends true ? [] : never)
-
-/**
- * The schema for things can be trust without validation.
- * If the TInput and TOutput are different, you need pass a map function.
- *
- * @see {@link https://orpc.dev/docs/procedure#type-utility Type Utility Docs}
- */
-export function type<TInput, TOutput = TInput>(...[map]: TypeRest<TInput, TOutput>): Schema<TInput, TOutput> {
-  return {
-    '~standard': {
-      vendor: 'custom',
-      version: 1,
-      async validate(value) {
-        if (map) {
-          return { value: await map(value as TInput) as TOutput }
-        }
-
-        return { value: value as TOutput }
-      },
-    },
-  }
-}
+export type MergedSchema<T extends AnySchema, U extends AnySchema>
+  = T extends Schema<infer TInput, infer TOutput>
+    ? U extends Schema<infer UInput, infer UOutput>
+      ? Schema<TInput & UInput, TOutput & UOutput>
+      : never
+    : never

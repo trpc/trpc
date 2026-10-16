@@ -1,14 +1,23 @@
+import type { ORPCErrorFromErrorMap } from '@orpc/contract'
 import type { GetNextPageParamFunction, InfiniteData } from '@tanstack/angular-query-experimental'
-import type { ErrorFromErrorMap } from '../../contract/src/error'
-import type { baseErrorMap } from '../../contract/tests/shared'
 import type { ProcedureUtils } from './procedure-utils'
 import { injectInfiniteQuery, injectMutation, injectQuery, QueryClient } from '@tanstack/angular-query-experimental'
 import { injectQueries } from '@tanstack/angular-query-experimental/inject-queries-experimental'
+import z from 'zod'
+
+export const outputSchema = z.object({ output: z.number().transform(n => `${n}`) })
+
+const baseErrorMap = {
+  BASE: {
+    data: outputSchema,
+  },
+  OVERRIDE: {},
+}
 
 describe('ProcedureUtils', () => {
   type UtilsInput = { search?: string, cursor?: number } | undefined
   type UtilsOutput = { title: string }[]
-  type UtilsError = ErrorFromErrorMap<typeof baseErrorMap>
+  type UtilsError = ORPCErrorFromErrorMap<typeof baseErrorMap>
 
   const queryClient = new QueryClient()
 
@@ -91,13 +100,13 @@ describe('ProcedureUtils', () => {
   describe('.streamedOptions', () => {
     describe('injectQuery', () => {
       it('without args', () => {
-        const query = injectQuery(() => streamUtils.experimental_streamedOptions())
+        const query = injectQuery(() => streamUtils.streamedOptions())
         expectTypeOf(query.data()).toEqualTypeOf<UtilsOutput | undefined>()
         expectTypeOf(query.error()).toEqualTypeOf<UtilsError | null>()
       })
 
       it('can infer errors inside options', () => {
-        const query = injectQuery(() => streamUtils.experimental_streamedOptions({
+        const query = injectQuery(() => streamUtils.streamedOptions({
           throwOnError(error) {
             expectTypeOf(error).toEqualTypeOf<UtilsError>()
             return false
@@ -108,7 +117,7 @@ describe('ProcedureUtils', () => {
       })
 
       it('with initial data & select', () => {
-        const query = injectQuery(() => streamUtils.experimental_streamedOptions({
+        const query = injectQuery(() => streamUtils.streamedOptions({
           select: data => ({ mapped: data }),
           initialData: [{ title: 'title' }],
         }))
@@ -121,12 +130,12 @@ describe('ProcedureUtils', () => {
     it('injectQueries', () => {
       const queries = injectQueries(() => ({
         queries: [
-          streamUtils.experimental_streamedOptions(),
-          streamUtils.experimental_streamedOptions({
+          streamUtils.streamedOptions(),
+          streamUtils.streamedOptions({
             input: { search: 'search' },
             context: { batch: true },
           }),
-          streamUtils.experimental_streamedOptions({
+          streamUtils.streamedOptions({
             select: data => ({ mapped: data }),
           }),
         ],
@@ -143,7 +152,7 @@ describe('ProcedureUtils', () => {
 
     it('fetchQuery', () => {
       expectTypeOf(
-        queryClient.fetchQuery(streamUtils.experimental_streamedOptions()),
+        queryClient.fetchQuery(streamUtils.streamedOptions()),
       ).toEqualTypeOf<
         Promise<UtilsOutput>
       >()
@@ -153,13 +162,13 @@ describe('ProcedureUtils', () => {
   describe('.liveOptions', () => {
     describe('injectQuery', () => {
       it('without args', () => {
-        const query = injectQuery(() => streamUtils.experimental_liveOptions())
+        const query = injectQuery(() => streamUtils.liveOptions())
         expectTypeOf(query.data()).toEqualTypeOf<UtilsOutput[number] | undefined>()
         expectTypeOf(query.error()).toEqualTypeOf<UtilsError | null>()
       })
 
       it('can infer errors inside options', () => {
-        const query = injectQuery(() => streamUtils.experimental_liveOptions({
+        const query = injectQuery(() => streamUtils.liveOptions({
           throwOnError(error) {
             expectTypeOf(error).toEqualTypeOf<UtilsError>()
             return false
@@ -170,7 +179,7 @@ describe('ProcedureUtils', () => {
       })
 
       it('with initial data & select', () => {
-        const query = injectQuery(() => streamUtils.experimental_liveOptions({
+        const query = injectQuery(() => streamUtils.liveOptions({
           select: data => ({ mapped: data }),
           initialData: { title: 'title' },
         }))
@@ -183,12 +192,12 @@ describe('ProcedureUtils', () => {
     it('injectQueries', () => {
       const queries = injectQueries(() => ({
         queries: [
-          streamUtils.experimental_liveOptions(),
-          streamUtils.experimental_liveOptions({
+          streamUtils.liveOptions(),
+          streamUtils.liveOptions({
             input: { search: 'search' },
             context: { batch: true },
           }),
-          streamUtils.experimental_liveOptions({
+          streamUtils.liveOptions({
             select: data => ({ mapped: data }),
           }),
         ],
@@ -205,7 +214,7 @@ describe('ProcedureUtils', () => {
 
     it('fetchQuery', () => {
       expectTypeOf(
-        queryClient.fetchQuery(streamUtils.experimental_liveOptions()),
+        queryClient.fetchQuery(streamUtils.liveOptions()),
       ).toEqualTypeOf<
         Promise<UtilsOutput[number]>
       >()
@@ -224,7 +233,6 @@ describe('ProcedureUtils', () => {
           initialPageParam,
         }))
         expectTypeOf(query.data()).toEqualTypeOf<InfiniteData<UtilsOutput, number> | undefined>()
-        // @ts-expect-error - TODO: fix this, seem angular-query injectInfiniteQuery cannot infer error
         expectTypeOf(query.error()).toEqualTypeOf<UtilsError | null>()
       })
 
@@ -240,7 +248,6 @@ describe('ProcedureUtils', () => {
         }))
 
         expectTypeOf(query.data()).toEqualTypeOf<InfiniteData<UtilsOutput, number> | undefined>()
-        // @ts-expect-error - TODO: fix this, seem angular-query injectInfiniteQuery cannot infer error
         expectTypeOf(query.error()).toEqualTypeOf<UtilsError | null>()
       })
 
@@ -254,7 +261,6 @@ describe('ProcedureUtils', () => {
         }))
 
         expectTypeOf(query.data()).toEqualTypeOf<{ mapped: InfiniteData<UtilsOutput, number> }>()
-        // @ts-expect-error - TODO: fix this, seem angular-query injectInfiniteQuery cannot infer error
         expectTypeOf(query.error()).toEqualTypeOf<UtilsError | null>()
       })
     })

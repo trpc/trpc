@@ -1,279 +1,415 @@
-import type { Schema } from '@orpc/contract'
-import { isContractProcedure } from '@orpc/contract'
-import * as z from 'zod'
-import { baseErrorMap, baseMeta, baseRoute, generalSchema, inputSchema, outputSchema } from '../../contract/tests/shared'
-import { router } from '../tests/shared'
-import { Builder } from './builder'
-import { unlazy } from './lazy'
-import * as MiddlewareDecorated from './middleware-decorated'
-import { DecoratedProcedure } from './procedure-decorated'
+import type { AnyMetaPlugin, ErrorMap } from '@orpc/contract'
+import type { AnyFunction } from '@orpc/shared'
+import type { AnyMiddleware } from './middleware'
+import * as ContractModule from '@orpc/contract'
+import { toArray } from '@orpc/shared'
+import { z } from 'zod'
+import { Builder, os } from './builder'
+import * as LazyModule from './lazy'
+import * as MiddlewareDecoratedModule from './middleware-decorated'
+import * as ProcedureDecoratedModule from './procedure-decorated'
 import * as RouterUtilsModule from './router-utils'
 
-const decorateMiddlewareSpy = vi.spyOn(MiddlewareDecorated, 'decorateMiddleware')
-const enhanceRouterSpy = vi.spyOn(RouterUtilsModule, 'enhanceRouter')
-
-const mid = vi.fn()
-
-const def = {
-  config: {
-    initialInputValidationIndex: 11,
-    initialOutputValidationIndex: 22,
-  },
-  middlewares: [mid],
-  errorMap: baseErrorMap,
-  inputSchema,
-  outputSchema,
-  inputValidationIndex: 99,
-  meta: baseMeta,
-  outputValidationIndex: 88,
-  route: baseRoute,
-  prefix: '/adapt' as const,
-  tags: ['adapt'],
-  dedupeLeadingMiddlewares: true,
-}
-
-const builder = new Builder(def)
+const resolveMetaPluginsSpy = vi.spyOn(ContractModule, 'resolveMetaPlugins')
+const mergeErrorMapSpy = vi.spyOn(ContractModule, 'mergeErrorMap')
+const augmentRouterSpy = vi.spyOn(RouterUtilsModule, 'augmentRouter')
+const decorateMiddlewareSpy = vi.spyOn(MiddlewareDecoratedModule, 'decorateMiddleware')
 
 beforeEach(() => {
   vi.clearAllMocks()
 })
 
 describe('builder', () => {
-  it('is a contract procedure', () => {
-    expect(builder).toSatisfy(isContractProcedure)
-  })
+  const builder = Builder.create()
+  builder['~orpc'] = {
+    errorMap: {
+      BASE: { status: 400 },
+    },
+    inputSchemas: [
+      z.object({ init: z.string() }),
+    ],
+    outputSchemas: [
+      z.object({ init: z.string() }),
+    ],
+    meta: {
+      base: true,
+    },
+    metaPlugins: [
+      {
+        name: 'test',
+        init: m => m,
+      },
+    ],
+    orderedMiddlewares: [
+      { middleware: vi.fn() as AnyFunction, inputSchemasLengthAtUse: 0, outputSchemasLengthAtUse: 0 },
+    ],
+    disableInputValidation: false,
+    disableOutputValidation: false,
+  }
 
-  it('.$config', () => {
-    const config = {
-      initialInputValidationIndex: Number.NEGATIVE_INFINITY,
-      initialOutputValidationIndex: Number.POSITIVE_INFINITY,
-      dedupeLeadingMiddlewares: false,
-    }
-    const applied = builder.$config(config)
+  const metaPlugin: AnyMetaPlugin = {
+    name: 'test',
+    init: m => ({ ...m, metaPlugin: true }),
+  }
 
-    expect(applied).instanceOf(Builder)
-    expect(applied).not.toBe(builder)
-    expect(applied['~orpc']).toEqual({
-      ...def,
-      config,
-      dedupeLeadingMiddlewares: false,
-      inputValidationIndex: Number.NEGATIVE_INFINITY,
-      outputValidationIndex: Number.POSITIVE_INFINITY,
+  it('create', () => {
+    expect(os).toBeInstanceOf(Builder)
+    expect(os['~orpc']).toEqual({
+      errorMap: {},
+      meta: {},
+      orderedMiddlewares: [],
     })
   })
 
-  it('.$context', () => {
-    const applied = builder.$context()
-
-    expect(applied).instanceOf(Builder)
-    expect(applied).not.toBe(builder)
-    expect(applied['~orpc']).toEqual({
-      ...def,
-      middlewares: [],
-      inputValidationIndex: 11,
-      outputValidationIndex: 22,
-    })
+  it('$context', () => {
+    expect(builder.$context()).toBe(builder)
   })
 
-  it('.$meta', () => {
-    const meta = { mode: 'test' }
-    const applied = builder.$meta(meta)
-
-    expect(applied).instanceOf(Builder)
-    expect(applied).not.toBe(builder)
-    expect(applied['~orpc']).toEqual({
-      ...def,
-      meta,
-    })
-  })
-
-  it('.$route', () => {
-    const route = { method: 'GET', description: 'test' } as const
-    const applied = builder.$route(route)
-
-    expect(applied).instanceOf(Builder)
-    expect(applied).not.toBe(builder)
-    expect(applied['~orpc']).toEqual({
-      ...def,
-      route,
-    })
-  })
-
-  describe('.$input', () => {
-    it('with actual schema', () => {
-      const schema = z.void()
-      const applied = builder.$input(schema)
-
-      expect(applied).instanceOf(Builder)
-      expect(applied).not.toBe(builder)
-      expect(applied['~orpc']).toEqual({
-        ...def,
-        inputSchema: schema,
-      })
+  it('$config', () => {
+    const applied = builder.$config({
+      disableOutputValidation: undefined,
     })
 
-    it('with type only', () => {
-      const applied = builder.$input<Schema<void, unknown>>()
-
-      expect(applied).instanceOf(Builder)
-      expect(applied).not.toBe(builder)
-      expect(applied['~orpc']).toEqual({
-        ...def,
-        inputSchema: undefined,
-      })
-    })
-  })
-
-  it('.middleware', () => {
-    const mid = vi.fn()
-    const applied = builder.middleware(mid)
-
-    expect(applied).toBe(decorateMiddlewareSpy.mock.results[0]?.value)
-    expect(decorateMiddlewareSpy).toBeCalledTimes(1)
-    expect(decorateMiddlewareSpy).toBeCalledWith(mid)
-  })
-
-  it('.errors', () => {
-    const errors = { BAD_GATEWAY: { message: 'BAD' } }
-
-    const applied = builder.errors(errors)
-    expect(applied).instanceOf(Builder)
+    expect(applied).toBeInstanceOf(Builder)
     expect(applied).not.toBe(builder)
 
     expect(applied['~orpc']).toEqual({
-      ...def,
-      errorMap: { ...def.errorMap, ...errors },
-    })
-  })
-
-  describe('.use', () => {
-    it('without map input', () => {
-      const mid2 = vi.fn()
-      const applied = builder.use(mid2)
-
-      expect(applied).instanceOf(Builder)
-      expect(applied).not.toBe(builder)
-      expect(applied['~orpc']).toEqual({
-        ...def,
-        middlewares: [mid, mid2],
-      })
-    })
-
-    it('with map input', () => {
-      const mid2 = vi.fn()
-      const map2 = vi.fn()
-
-      decorateMiddlewareSpy.mockImplementationOnce(mid => ({
-        mapInput: (map: any) => [mid, map] as any,
-      }) as any)
-
-      // @ts-expect-error --- this builder support .use with map input but not type
-      const applied = builder.use(mid2, map2)
-
-      expect(applied).instanceOf(Builder)
-      expect(applied).not.toBe(builder)
-      expect(applied['~orpc']).toEqual({
-        ...def,
-        middlewares: [mid, [mid2, map2]],
-      })
+      ...builder['~orpc'],
+      disableOutputValidation: undefined,
     })
   })
 
   it('.meta', () => {
-    const meta = { log: true } as any
-    const applied = builder.meta(meta)
-
-    expect(applied).instanceOf(Builder)
+    const applied = builder.meta(metaPlugin)
+    expect(applied).toBeInstanceOf(Builder)
     expect(applied).not.toBe(builder)
+
+    expect(resolveMetaPluginsSpy).toHaveBeenCalledOnce()
+    expect(resolveMetaPluginsSpy).toHaveBeenCalledWith(
+      builder['~orpc'].meta,
+      builder['~orpc'].metaPlugins,
+      [metaPlugin],
+    )
+
     expect(applied['~orpc']).toEqual({
-      ...def,
-      meta: { ...def.meta, ...meta },
+      ...builder['~orpc'],
+      meta: resolveMetaPluginsSpy.mock.results[0]?.value[0],
+      metaPlugins: resolveMetaPluginsSpy.mock.results[0]?.value[1],
     })
   })
 
-  it('.route', () => {
-    const route = { description: 'test' } as any
-    const applied = builder.route(route)
+  describe('.errors', () => {
+    it('without meta plugins', () => {
+      const errors = {
+        OVERRIDE: { message: 'override' },
+      } satisfies ErrorMap
 
-    expect(applied).instanceOf(Builder)
-    expect(applied).not.toBe(builder)
-    expect(applied['~orpc']).toEqual({
-      ...def,
-      route: { ...def.route, ...route },
+      const applied = builder.errors(errors)
+      expect(applied).toBeInstanceOf(Builder)
+      expect(applied).not.toBe(builder)
+
+      expect(mergeErrorMapSpy).toHaveBeenCalledOnce()
+      expect(mergeErrorMapSpy).toHaveBeenCalledWith(
+        builder['~orpc'].errorMap,
+        errors,
+      )
+
+      expect(applied['~orpc']).toEqual({
+        ...builder['~orpc'],
+        errorMap: mergeErrorMapSpy.mock.results[0]?.value,
+      })
+    })
+
+    it('with meta plugins', () => {
+      const errors = {
+        OVERRIDE: { message: 'override' },
+      } satisfies ErrorMap
+
+      ContractModule.setHiddenMetaPlugins(errors, [metaPlugin])
+
+      const applied = builder.errors(errors)
+      expect(applied).toBeInstanceOf(Builder)
+      expect(applied).not.toBe(builder)
+
+      expect(mergeErrorMapSpy).toHaveBeenCalledOnce()
+      expect(mergeErrorMapSpy).toHaveBeenCalledWith(
+        builder['~orpc'].errorMap,
+        errors,
+      )
+
+      expect(resolveMetaPluginsSpy).toHaveBeenCalledOnce()
+      expect(resolveMetaPluginsSpy).toHaveBeenCalledWith(
+        builder['~orpc'].meta,
+        builder['~orpc'].metaPlugins,
+        [metaPlugin],
+      )
+
+      expect(applied['~orpc']).toEqual({
+        ...builder['~orpc'],
+        errorMap: mergeErrorMapSpy.mock.results[0]?.value,
+        meta: resolveMetaPluginsSpy.mock.results[0]?.value[0],
+        metaPlugins: resolveMetaPluginsSpy.mock.results[0]?.value[1],
+      })
     })
   })
 
-  it('.input', () => {
-    const applied = builder.input(generalSchema)
+  describe('.use', () => {
+    it('without meta plugins', () => {
+      const middleware = vi.fn()
+      const applied = builder.use(middleware)
+      expect(applied).toBeInstanceOf(Builder)
+      expect(applied).not.toBe(builder)
 
-    expect(applied).instanceOf(Builder)
-    expect(applied).not.toBe(builder)
-    expect(applied['~orpc']).toEqual({
-      ...def,
-      inputSchema: generalSchema,
-      inputValidationIndex: 12,
+      expect(mergeErrorMapSpy).toHaveBeenCalledOnce()
+      expect(mergeErrorMapSpy).toHaveBeenCalledWith(
+        {},
+        builder['~orpc'].errorMap,
+      )
+
+      expect(applied['~orpc']).toEqual({
+        ...builder['~orpc'],
+        errorMap: mergeErrorMapSpy.mock.results[0]?.value,
+        orderedMiddlewares: [
+          ...builder['~orpc'].orderedMiddlewares,
+          {
+            middleware,
+            inputSchemasLengthAtUse: builder['~orpc'].inputSchemas!.length,
+            outputSchemasLengthAtUse: builder['~orpc'].outputSchemas!.length,
+          },
+        ],
+      })
+    })
+
+    it('with middleware error map', () => {
+      const middleware: any = vi.fn()
+      middleware['~orpc'] = { errorMap: { MID: { status: 400 } } }
+      const applied = builder.use(middleware)
+
+      expect(mergeErrorMapSpy).toHaveBeenCalledOnce()
+      expect(mergeErrorMapSpy).toHaveBeenCalledWith(
+        middleware['~orpc'].errorMap,
+        builder['~orpc'].errorMap,
+      )
+    })
+
+    it('with meta plugins', () => {
+      const middleware: any = vi.fn()
+      middleware['~orpc'] = { metaPlugins: [metaPlugin] }
+
+      const applied = builder.use(middleware)
+      expect(applied).toBeInstanceOf(Builder)
+      expect(applied).not.toBe(builder)
+
+      expect(resolveMetaPluginsSpy).toHaveBeenCalledOnce()
+      expect(resolveMetaPluginsSpy).toHaveBeenCalledWith(
+        builder['~orpc'].meta,
+        builder['~orpc'].metaPlugins,
+        [metaPlugin],
+      )
+
+      expect(applied['~orpc']).toEqual({
+        ...builder['~orpc'],
+        errorMap: mergeErrorMapSpy.mock.results[0]?.value,
+        meta: resolveMetaPluginsSpy.mock.results[0]?.value[0],
+        metaPlugins: resolveMetaPluginsSpy.mock.results[0]?.value[1],
+        orderedMiddlewares: [
+          ...builder['~orpc'].orderedMiddlewares,
+          {
+            middleware,
+            inputSchemasLengthAtUse: builder['~orpc'].inputSchemas!.length,
+            outputSchemasLengthAtUse: builder['~orpc'].outputSchemas!.length,
+          },
+        ],
+      })
     })
   })
 
-  it('.output', () => {
-    const applied = builder.output(generalSchema)
+  describe('.middleware', () => {
+    it('without previous middleware', () => {
+      const b = Builder.create()
+      const middleware = vi.fn()
+      const decorated = { use: vi.fn().mockReturnThis() }
+      decorateMiddlewareSpy.mockReturnValue(decorated as any)
 
-    expect(applied).instanceOf(Builder)
-    expect(applied).not.toBe(builder)
-    expect(applied['~orpc']).toEqual({
-      ...def,
-      outputSchema: generalSchema,
-      outputValidationIndex: 23,
+      const applied = b.middleware(middleware)
+      expect(applied).toBe(decorated)
+      expect(applied['~orpc']).toEqual({
+        errorMap: b['~orpc'].errorMap,
+        metaPlugins: toArray(b['~orpc'].metaPlugins),
+      })
+
+      expect(decorateMiddlewareSpy).toHaveBeenCalledWith(middleware)
+      expect(decorated.use).not.toHaveBeenCalled()
+    })
+
+    it('with previous middleware', () => {
+      const middleware = vi.fn()
+      const result = { use: vi.fn() }
+      const decorated = { use: vi.fn().mockReturnValue(result) }
+      decorateMiddlewareSpy.mockReturnValue(decorated as any)
+
+      const applied = builder.middleware(middleware)
+      expect(applied).toBe(result)
+      expect(applied['~orpc']).toEqual({
+        errorMap: builder['~orpc'].errorMap,
+        metaPlugins: builder['~orpc'].metaPlugins,
+      })
+
+      expect(decorateMiddlewareSpy).toHaveBeenCalledWith(builder['~orpc'].orderedMiddlewares[0]!.middleware)
+      expect(decorated.use).toHaveBeenCalledWith(middleware)
+    })
+
+    it('with meta plugins', () => {
+      const middleware: AnyMiddleware = vi.fn() as any
+      const midMetaPlugin: AnyMetaPlugin = { name: 'test', init: m => m }
+      middleware['~orpc'] = {
+        metaPlugins: [midMetaPlugin],
+      }
+      const decorated = { use: vi.fn().mockReturnThis() }
+      decorateMiddlewareSpy.mockReturnValue(decorated as any)
+
+      const applied = builder.middleware(middleware)
+      expect(applied).toBe(decorated)
+      expect(applied['~orpc']).toEqual({
+        errorMap: builder['~orpc'].errorMap,
+        metaPlugins: [...builder['~orpc'].metaPlugins!, midMetaPlugin],
+      })
     })
   })
 
-  it('.handler', () => {
-    const handler = vi.fn()
-    const applied = builder.handler(handler)
+  describe('.input', () => {
+    it('without meta plugins', () => {
+      const schema = z.object({ input: z.string() })
+      const applied = builder.input(schema)
+      expect(applied).toBeInstanceOf(Builder)
+      expect(applied).not.toBe(builder)
 
-    expect(applied).instanceOf(DecoratedProcedure)
-    expect(applied['~orpc']).toEqual({
-      ...def,
-      handler,
+      expect(applied['~orpc']).toEqual({
+        ...builder['~orpc'],
+        inputSchemas: [...builder['~orpc'].inputSchemas!, schema],
+      })
+    })
+
+    it('with meta plugins', () => {
+      const schema = z.object({ input: z.string() })
+      ContractModule.setHiddenMetaPlugins(schema, [metaPlugin])
+
+      const applied = builder.input(schema)
+      expect(applied).toBeInstanceOf(Builder)
+      expect(applied).not.toBe(builder)
+
+      expect(resolveMetaPluginsSpy).toHaveBeenCalledOnce()
+      expect(resolveMetaPluginsSpy).toHaveBeenCalledWith(
+        builder['~orpc'].meta,
+        builder['~orpc'].metaPlugins,
+        [metaPlugin],
+      )
+
+      expect(applied['~orpc']).toEqual({
+        ...builder['~orpc'],
+        meta: resolveMetaPluginsSpy.mock.results[0]?.value[0],
+        metaPlugins: resolveMetaPluginsSpy.mock.results[0]?.value[1],
+        inputSchemas: [...builder['~orpc'].inputSchemas!, schema],
+      })
     })
   })
 
-  it('.prefix', () => {
-    const applied = builder.prefix('/test')
+  describe('.output', () => {
+    it('without meta plugins', () => {
+      const schema = z.object({ output: z.string() })
+      const applied = builder.output(schema)
+      expect(applied).toBeInstanceOf(Builder)
+      expect(applied).not.toBe(builder)
+      expect(applied['~orpc']).toEqual({
+        ...builder['~orpc'],
+        outputSchemas: [...builder['~orpc'].outputSchemas!, schema],
+      })
+    })
 
-    expect(applied).instanceOf(Builder)
-    expect(applied).not.toBe(builder)
-    expect(applied['~orpc']).toEqual({
-      ...def,
-      prefix: '/adapt/test',
+    it('with meta plugins', () => {
+      const schema = z.object({ output: z.string() })
+      ContractModule.setHiddenMetaPlugins(schema, [metaPlugin])
+
+      const applied = builder.output(schema)
+      expect(applied).toBeInstanceOf(Builder)
+      expect(applied).not.toBe(builder)
+
+      expect(resolveMetaPluginsSpy).toHaveBeenCalledOnce()
+      expect(resolveMetaPluginsSpy).toHaveBeenCalledWith(
+        builder['~orpc'].meta,
+        builder['~orpc'].metaPlugins,
+        [metaPlugin],
+      )
+
+      expect(applied['~orpc']).toEqual({
+        ...builder['~orpc'],
+        meta: resolveMetaPluginsSpy.mock.results[0]?.value[0],
+        metaPlugins: resolveMetaPluginsSpy.mock.results[0]?.value[1],
+        outputSchemas: [...builder['~orpc'].outputSchemas!, schema],
+      })
     })
   })
 
-  it('.tag', () => {
-    const applied = builder.tag('test')
+  describe('.handler', () => {
+    it('without meta plugins', () => {
+      const handler = vi.fn()
+      const applied = builder.handler(handler)
+      expect(applied).toBeInstanceOf(ProcedureDecoratedModule.DecoratedProcedure)
+      expect(applied['~orpc']).toEqual({
+        ...builder['~orpc'],
+        handler,
+      })
+    })
 
-    expect(applied).instanceOf(Builder)
-    expect(applied).not.toBe(builder)
-    expect(applied['~orpc']).toEqual({
-      ...def,
-      tags: ['adapt', 'test'],
+    it('with meta plugins', () => {
+      const handler = vi.fn()
+      ContractModule.setHiddenMetaPlugins(handler, [metaPlugin])
+
+      const applied = builder.handler(handler)
+      expect(applied).toBeInstanceOf(ProcedureDecoratedModule.DecoratedProcedure)
+
+      expect(resolveMetaPluginsSpy).toHaveBeenCalledOnce()
+      expect(resolveMetaPluginsSpy).toHaveBeenCalledWith(
+        builder['~orpc'].meta,
+        builder['~orpc'].metaPlugins,
+        [metaPlugin],
+      )
+
+      expect(applied['~orpc']).toEqual({
+        ...builder['~orpc'],
+        meta: resolveMetaPluginsSpy.mock.results[0]?.value[0],
+        metaPlugins: resolveMetaPluginsSpy.mock.results[0]?.value[1],
+        handler,
+      })
     })
   })
 
   it('.router', () => {
-    const applied = builder.router(router as any)
-
-    expect(applied).toBe(enhanceRouterSpy.mock.results[0]?.value)
-    expect(enhanceRouterSpy).toBeCalledTimes(1)
-    expect(enhanceRouterSpy).toBeCalledWith(router, def)
+    const router = { ping: builder.handler(vi.fn()) }
+    const applied = builder.router(router)
+    expect(applied).toBe(augmentRouterSpy.mock.results[0]?.value)
+    expect(augmentRouterSpy).toHaveBeenCalledOnce()
+    expect(augmentRouterSpy).toHaveBeenCalledWith(router, {
+      ...builder['~orpc'],
+      middlewares: builder['~orpc'].orderedMiddlewares.map((m: any) => m.middleware),
+    })
   })
 
-  it('.lazy', () => {
-    const applied = builder.lazy(() => Promise.resolve({ default: router as any }))
+  it('.lazy', async () => {
+    const router = { ping: builder.handler(vi.fn()) }
+    const loader = async () => ({ default: router })
+    const applied = builder.lazy(loader)
 
-    expect(applied).toBe(enhanceRouterSpy.mock.results[0]?.value)
-    expect(enhanceRouterSpy).toBeCalledTimes(1)
-    expect(enhanceRouterSpy).toBeCalledWith(expect.any(Object), def)
-    expect(unlazy(enhanceRouterSpy.mock.calls[0]![0])).resolves.toEqual({ default: router })
+    expect(applied).toBeInstanceOf(LazyModule.Lazy)
+    expect(applied['~orpc'].meta).toEqual(builder['~orpc'].meta)
+    expect(applied['~orpc'].metaPlugins).toEqual(builder['~orpc'].metaPlugins)
+
+    const unlazied = await applied['~orpc'].loader()
+    expect(unlazied.default).toBe(augmentRouterSpy.mock.results[0]?.value)
+    expect(augmentRouterSpy).toHaveBeenCalledOnce()
+    expect(augmentRouterSpy).toHaveBeenCalledWith(router, {
+      ...builder['~orpc'],
+      middlewares: builder['~orpc'].orderedMiddlewares.map((m: any) => m.middleware),
+    })
   })
 })

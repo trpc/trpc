@@ -2,12 +2,15 @@ name: CI
 
 on:
   push:
-    branches: [1.x]
+    branches: [main]
   pull_request:
-    branches: [1.x]
+    branches: [main]
+
+permissions:
+  contents: read
 
 jobs:
-  lint:
+  lint_and_typecheck:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -20,11 +23,9 @@ jobs:
 
       - run: pnpm run type:check
 
-      - name: Ensure apps/content builds successfully
-        working-directory: apps/content
-        run: pnpm run build
+      - run: pnpm run docs:validate
 
-  test:
+  test_matrix:
     runs-on: ubuntu-latest
     services:
       redis:
@@ -36,14 +37,19 @@ jobs:
           --health-retries 5
         ports:
           - 6379:6379
+    strategy:
+      matrix:
+        node-version: [26, 24, 22, 20]
+      fail-fast: false
     steps:
       - uses: actions/checkout@v7
 
       - uses: pnpm/action-setup@v6
 
-      - run: pnpm i
+      - run: pnpm runtime set node ${{ matrix.node-version }}
+      - run: pnpm runtime set bun 1
 
-      - run: pnpm runtime set node 22
+      - run: pnpm i
 
       - run: pnpm run test:coverage
         env:
@@ -51,11 +57,14 @@ jobs:
           UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
           UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
 
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v7
+        # Upstash tests are skipped in node 26 - so we prefer node 24
+        # TODO: use node 26
+        if: matrix.node-version == 24
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
-  publish-commit:
+  publish_preview:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -64,4 +73,4 @@ jobs:
 
       - run: pnpm i
 
-      - run: pnpm run packages:publish:commit
+      - run: pnpm exec pkg-pr-new publish './packages/*' --pnpm --compact --template './playgrounds/*'

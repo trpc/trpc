@@ -1,0 +1,211 @@
+---
+// Features says what a procedure can do; this grid is about what ships around
+// it. Two columns rather than the three Features uses directly above, so the
+// two grids do not read as one, and an even item count fills the last row.
+import Icon from 'blume/components/Icon.astro'
+
+// The heading and the lead never name a card, so adding one is a data change
+// here and nothing else. `pkg` is the specifier you import from, which is a
+// package of its own for some and a subpath of the core for others. `backends`
+// are platform tags rather than adapter class names, so they stay true no
+// matter which package an adapter ships from, and the cards carrying them are
+// ordered first so the tag row does not switch on and off down the grid.
+// `href` stays off until something has a docs page, and `soon` marks one not
+// yet released.
+const packages = [
+  {
+    id: 'package-uploads',
+    icon: 'hard-drive-upload',
+    title: 'File uploads',
+    pkg: '@orpc/node',
+    body: 'Stream large uploads to disk instead of buffering them in memory.',
+    backends: ['Node'],
+    href: '/docs/plugins/tmp-file-upload',
+  },
+  {
+    id: 'package-publisher',
+    icon: 'megaphone',
+    title: 'Publish and subscribe',
+    pkg: '@orpc/publisher',
+    // "live subscriber": one that falls behind loses events past
+    // maxBufferedEvents, and one that was not attached needs resume enabled.
+    body: 'Publish an event once and every live subscriber receives it.',
+    backends: ['In-memory', 'Redis', 'Upstash', 'Bun', 'Cloudflare'],
+    href: '/docs/helpers/publisher',
+  },
+  {
+    id: 'package-ratelimit',
+    icon: 'gauge',
+    title: 'Rate limiting',
+    pkg: '@orpc/ratelimit',
+    // "what each key may consume" because a call carries a weight and can
+    // spend more than one point.
+    body: 'Cap what each key may consume, and tell clients when to retry.',
+    backends: ['In-memory', 'Redis', 'Upstash', 'Bun', 'Cloudflare'],
+    href: '/docs/helpers/ratelimit',
+  },
+  {
+    id: 'package-lock',
+    icon: 'lock',
+    title: 'Locking',
+    pkg: '@orpc/experimental-lock',
+    // "had to wait": the callback and the handler receive a `waited` flag, so
+    // a call queued behind another holder can reuse that holder's result.
+    body: 'Run one call per key at a time, and tell handlers when they had to wait.',
+    backends: ['In-memory', 'Redis', 'Upstash', 'Bun', 'Cloudflare'],
+    href: '/docs/helpers/lock',
+  },
+  {
+    id: 'package-coercion',
+    icon: 'wand-sparkles',
+    title: 'Smart coercion',
+    pkg: '@orpc/json-schema',
+    // The whole input, not just query and path: the handler plugin coerces the
+    // request against `.input`, and the link plugin coerces the response
+    // against `.output` and `.errors`.
+    body: 'Coerce request and response values into the types your schema declares.',
+    // One entry rather than Zod/Valibot/ArkType, the same call Runtimes.astro
+    // makes: the integration is with the spec, so any library implementing it
+    // works. Coercion reads a schema through a converter, falling back to
+    // Standard JSON Schema when none is configured.
+    backends: ['Standard Schema'],
+    href: '/docs/plugins/smart-coercion',
+  },
+  {
+    id: 'package-cookie',
+    icon: 'cookie',
+    // Cookies and the crypto that secures them ship from the same helpers
+    // entry point, and the cookie page links on to signing and encryption.
+    title: 'Cookies and crypto',
+    pkg: '@orpc/server/helpers',
+    body: 'Read and write cookies, and sign or encrypt any value.',
+    href: '/docs/helpers/cookie',
+  },
+  {
+    id: 'package-reference',
+    icon: 'book-open',
+    title: 'API reference UI',
+    pkg: '@orpc/openapi/plugins',
+    body: 'Serve interactive Scalar or Swagger docs straight from your router.',
+    href: '/docs/plugins/openapi-reference',
+  },
+  {
+    id: 'package-batch',
+    icon: 'layers',
+    title: 'Request batching',
+    pkg: '@orpc/server/plugins',
+    body: 'Combine many calls into one request and get their responses together.',
+    href: '/docs/plugins/batch',
+  },
+  {
+    id: 'package-cache',
+    icon: 'database',
+    title: 'Caching',
+    body: 'A caching layer for procedures.',
+    soon: true,
+  },
+]
+---
+
+<section class="border-b border-border">
+  <div class="mx-auto max-w-6xl px-6 py-20 sm:py-28">
+    <div class="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <p class="font-mono text-[0.6875rem] tracking-[0.18em] text-muted-foreground uppercase">
+          Built in
+        </p>
+        <h2 class="font-display mt-4 max-w-2xl text-3xl font-semibold tracking-[-0.03em] text-balance sm:text-4xl">
+          What a procedure needs in production.
+        </h2>
+        <p class="mt-4 max-w-xl text-base leading-relaxed text-muted-foreground">
+          None of these are required. Add the ones you need, each built for oRPC rather than
+          bolted on.
+        </p>
+      </div>
+      <a class="orpc-btn orpc-btn-ghost shrink-0 self-start sm:self-auto" href="/docs/api-reference">
+        All packages
+        <Icon name="arrow-right" size={15} />
+      </a>
+    </div>
+
+    <ul class="mt-12 grid gap-3 sm:grid-cols-2">
+      {
+        packages.map((item) => {
+          // An unreleased package has nowhere to link, so its card is a plain
+          // box: no hover, no arrow, nothing that reads as clickable.
+          const Card = item.href ? 'a' : 'div'
+
+          return (
+            <li class="flex">
+              <Card
+                aria-labelledby={item.href ? item.id : undefined}
+                class:list={[
+                  'group flex flex-1 flex-col rounded-blume border border-border p-6',
+                  item.href && 'transition-colors hover:bg-muted/60',
+                ]}
+                href={item.href}
+              >
+                {/* Wraps so a long title does not squeeze the package name into
+                    the arrow on a narrow screen; the two stay one unit and drop
+                    to their own line together. */}
+                <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                  <Icon name={item.icon} size={18} class="flex-none text-muted-foreground transition-colors group-hover:text-foreground" />
+                  <h3 class="font-display text-[0.9375rem] font-semibold tracking-tight" id={item.id}>
+                    {item.title}
+                    {/* Inside the heading, so a reader skimming by heading alone
+                        hears that this one is unreleased and has no link. */}
+                    {item.soon && <span class="sr-only">, not released yet</span>}
+                  </h3>
+                  {item.soon && (
+                    <span
+                      aria-hidden="true"
+                      class="rounded-full border border-border px-2 py-0.5 text-[0.6875rem] text-muted-foreground"
+                    >
+                      Soon
+                    </span>
+                  )}
+                  {/* The package sits with the title rather than under the tags:
+                      what you install ranks above where it stores things, and
+                      two stacked mono lines read as one muddled block. */}
+                  {(item.pkg || item.href) && (
+                    <span class="ml-auto flex items-center gap-2">
+                      {item.pkg && (
+                        <span class="font-mono text-xs text-muted-foreground">{item.pkg}</span>
+                      )}
+                      {item.href && (
+                        <Icon
+                          name="arrow-up-right"
+                          size={15}
+                          class="flex-none text-muted-foreground transition-colors group-hover:text-foreground"
+                        />
+                      )}
+                    </span>
+                  )}
+                </div>
+
+                <p class="mt-3 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
+
+                {/* mt-auto pins the tags to the bottom edge, so they line up
+                    across a row however long the sentence above runs. */}
+                {item.backends && (
+                  <div class="mt-auto pt-5">
+                    <p class="sr-only" id={`${item.id}-backends`}>Backed by</p>
+                    {/* Spaced rather than separated, the same as the Runtimes
+                        strip: the gap does the work a slash would, and a wrapped
+                        line can never open with a stray one. */}
+                    <ul
+                      aria-labelledby={`${item.id} ${item.id}-backends`}
+                      class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground"
+                    >
+                      {item.backends.map(backend => <li>{backend}</li>)}
+                    </ul>
+                  </div>
+                )}
+              </Card>
+            </li>
+          )
+        })
+      }
+    </ul>
+  </div>
+</section>

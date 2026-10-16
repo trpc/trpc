@@ -10,10 +10,3 @@ export function value<T, TArgs extends any[]>(
 
   return value as any
 }
-
-/**
- * Returns the value if it is defined, otherwise returns the fallback
- */
-export function fallback<T>(value: T | undefined, fallback: T): T {
-  return value === undefined ? fallback : value
-}

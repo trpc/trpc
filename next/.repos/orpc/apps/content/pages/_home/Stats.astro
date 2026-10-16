@@ -1,0 +1,26 @@
+---
+// Rendered as the closing rail of the hero section, not as a band of its own:
+// next to the "Runs on" strip the two hairline rows read as one striped table.
+import { landingStats } from './stats'
+
+const stats = await landingStats()
+---
+
+{/* Column count follows the data: a stat whose source was unreachable at build
+    time drops out without leaving a hole in the row. */}
+<ul class="orpc-stats mx-auto max-w-6xl px-6" style={`--orpc-stat-count:${stats.length}`}>
+  {
+    stats.map((stat) => {
+      const external = stat.href.startsWith('http')
+
+      return (
+        <li class="orpc-stat">
+          <a href={stat.href} rel={external ? 'noopener' : undefined} target={external ? '_blank' : undefined}>
+            <span class="orpc-stat-value">{stat.value}</span>
+            <span class="orpc-stat-label">{stat.label}</span>
+          </a>
+        </li>
+      )
+    })
+  }
+</ul>

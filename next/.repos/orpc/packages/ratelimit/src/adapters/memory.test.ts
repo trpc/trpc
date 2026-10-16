@@ -1,202 +1,161 @@
-import { sleep } from '@orpc/shared'
-import { describe, expect, it } from 'vitest'
-import { MemoryRatelimiter } from './memory'
+import { MemoryRateLimiter } from './memory'
 
-describe('memoryRatelimiter', () => {
-  function createTestingRatelimiter(options: Partial<ConstructorParameters<typeof MemoryRatelimiter>[0]> = {}) {
-    return new MemoryRatelimiter({
-      maxRequests: 2,
-      window: 1000,
-      ...options,
-    })
-  }
-
-  describe('basic rate limiting', () => {
-    it('should allow requests within limit', async () => {
-      const ratelimiter = createTestingRatelimiter()
-
-      const result1 = await ratelimiter.limit('test')
-      expect(result1.success).toBe(true)
-      expect(result1.remaining).toBe(1)
-      expect(result1.limit).toBe(2)
-      expect(result1.reset).toBeGreaterThan(Date.now())
-
-      const result2 = await ratelimiter.limit('test')
-      expect(result2.success).toBe(true)
-      expect(result2.remaining).toBe(0)
-      expect(result2.limit).toBe(2)
-      expect(result2.reset).toEqual(result1.reset)
-
-      const result3 = await ratelimiter.limit('test')
-      expect(result3.success).toBe(false)
-      expect(result3.remaining).toBe(0)
-      expect(result3.limit).toBe(2)
-      expect(result3.reset).toEqual(result1.reset)
-    })
-
-    it('should reset after window expires', async () => {
-      const ratelimiter = createTestingRatelimiter({
-        window: 200,
-        maxRequests: 3.0,
-      })
-
-      const result1 = await ratelimiter.limit('test')
-      expect(result1.remaining).toBe(2)
-      const result2 = await ratelimiter.limit('test')
-      expect(result2.remaining).toBe(1)
-      const result3 = await ratelimiter.limit('test')
-      expect(result3.remaining).toBe(0)
-
-      await sleep(210)
-
-      const result4 = await ratelimiter.limit('test')
-      expect(result4.success).toBe(true)
-      expect(result4.remaining).toBe(2)
-    })
-
-    it('should handle multiple keys independently', async () => {
-      const ratelimiter = createTestingRatelimiter()
-
-      const result1 = await ratelimiter.limit('test1')
-      expect(result1.success).toBe(true)
-      expect(result1.remaining).toBe(1)
-
-      const result2 = await ratelimiter.limit('test2')
-      expect(result2.success).toBe(true)
-      expect(result2.remaining).toBe(1)
-    })
+describe('memoryRateLimiter', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(0)
   })
 
-  describe('blocking mode', () => {
-    it('should block until ready', async () => {
-      const ratelimiter = createTestingRatelimiter({
-        maxRequests: 1,
-        window: 1000,
-        blockingUntilReady: {
-          enabled: true,
-          timeout: 2000,
-        },
-      })
-
-      const result1 = await ratelimiter.limit('test')
-      expect(result1.remaining).toEqual(0)
-
-      const start = Date.now()
-      const result2 = await ratelimiter.limit('test')
-      const end = Date.now()
-      expect(result2.success).toEqual(true)
-      expect(end - start).toBeGreaterThanOrEqual(100) // actually await
-      expect(end - start).toBeLessThanOrEqual(1100)
-    })
-
-    it('should respect timeout', async () => {
-      const ratelimiter = createTestingRatelimiter({
-        maxRequests: 1,
-        window: 2000,
-        blockingUntilReady: {
-          enabled: true,
-          timeout: 1000,
-        },
-      })
-
-      const result1 = await ratelimiter.limit('test')
-      expect(result1.remaining).toBe(0)
-
-      const result2 = await ratelimiter.limit('test')
-      expect(result2.success).toBe(false)
-    })
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
-  it('should handle concurrent requests correctly', async () => {
-    const ratelimiter = createTestingRatelimiter({
-      maxRequests: 3,
-      window: 1000,
-    })
+  it('allows requests up to the limit, then starts denying', async () => {
+    const limiter = new MemoryRateLimiter({ maxRequests: 3, window: 1000 })
 
-    const test = async (key: string, request: number) => {
-      const results = await Promise.all(
-        Array.from({ length: 5 }, () => ratelimiter.limit(key)),
-      )
+    expect(await limiter.limit('key')).toEqual({ success: true, limit: 3, remaining: 2, reset: 1000 })
+    expect(await limiter.limit('key')).toEqual({ success: true, limit: 3, remaining: 1, reset: 1000 })
+    expect(await limiter.limit('key')).toEqual({ success: true, limit: 3, remaining: 0, reset: 1000 })
+    expect(await limiter.limit('key')).toEqual({ success: false, limit: 3, remaining: 0, reset: 1000 })
+  })
 
-      // Count successful and failed requests
-      const successful = results.filter(r => r.success).length
-      const failed = results.filter(r => !r.success).length
+  it('consumes weight and denies when accumulated weight exceeds the limit', async () => {
+    const limiter = new MemoryRateLimiter({ maxRequests: 5, window: 1000 })
 
-      // Should have exactly maxRequests successful requests
-      expect(successful).toBe(3)
-      expect(failed).toBe(2)
+    expect(await limiter.limit('key', { weight: 3 })).toEqual({ success: true, limit: 5, remaining: 2, reset: 1000 })
+    expect(await limiter.limit('key', { weight: 3 })).toEqual({ success: false, limit: 5, remaining: 2, reset: 1000 })
+    expect(await limiter.limit('key', { weight: 2 })).toEqual({ success: true, limit: 5, remaining: 0, reset: 1000 })
+    expect(await limiter.limit('key', { weight: 1 })).toEqual({ success: false, limit: 5, remaining: 0, reset: 1000 })
+  })
 
-      // Verify remaining counts are consistent
-      const successfulResults = results.filter(r => r.success)
-      expect(successfulResults[0]!.remaining).toBe(2)
-      expect(successfulResults[1]!.remaining).toBe(1)
-      expect(successfulResults[2]!.remaining).toBe(0)
-    }
+  it('tracks limits independently per key', async () => {
+    const limiter = new MemoryRateLimiter({ maxRequests: 1, window: 1000 })
 
-    await Promise.all(
-      Array.from({ length: 5 }, (_, i) => test(`test${i}`, i + 1)),
+    expect(await limiter.limit('alice')).toEqual({ success: true, limit: 1, remaining: 0, reset: 1000 })
+    expect(await limiter.limit('alice')).toEqual({ success: false, limit: 1, remaining: 0, reset: 1000 })
+    expect(await limiter.limit('bob')).toEqual ({ success: true, limit: 1, remaining: 0, reset: 1000 })
+  })
+
+  it('denies within window and resets counter on new epoch', async () => {
+    const limiter = new MemoryRateLimiter({ maxRequests: 2, window: 1000 })
+
+    expect(await limiter.limit('key')).toEqual({ success: true, limit: 2, remaining: 1, reset: 1000 })
+    expect(await limiter.limit('key')).toEqual({ success: true, limit: 2, remaining: 0, reset: 1000 })
+
+    await vi.advanceTimersByTimeAsync(999) // still inside window
+    expect(await limiter.limit('key')).toEqual({ success: false, limit: 2, remaining: 0, reset: 1000 })
+
+    await vi.advanceTimersByTimeAsync(1) // t=1000 — new epoch
+    expect(await limiter.limit('key', { weight: 2 })).toEqual({ success: true, limit: 2, remaining: 0, reset: 2000 })
+    expect(await limiter.limit('key')).toEqual ({ success: false, limit: 2, remaining: 0, reset: 2000 })
+  })
+
+  it('reset is pegged to epoch start and does not shift mid-window', async () => {
+    vi.setSystemTime(200)
+    const limiter = new MemoryRateLimiter({ maxRequests: 3, window: 1000 })
+
+    expect(await limiter.limit('key', { weight: 2 })).toEqual({ success: true, limit: 3, remaining: 1, reset: 1200 })
+    vi.setSystemTime(500)
+    expect(await limiter.limit('key', { weight: 1 })).toEqual({ success: true, limit: 3, remaining: 0, reset: 1200 })
+    vi.setSystemTime(600)
+    expect(await limiter.limit('key', { weight: 2 })).toEqual({ success: false, limit: 3, remaining: 0, reset: 1200 })
+  })
+
+  it('throws for invalid weights', async () => {
+    const limiter = new MemoryRateLimiter({ maxRequests: 5, window: 1000 })
+
+    await expect(limiter.limit('key', { weight: 0 })).rejects.toThrow(TypeError)
+    await expect(limiter.limit('key', { weight: -1 })).rejects.toThrow(TypeError)
+    await expect(limiter.limit('key', { weight: 1.5 })).rejects.toThrow(
+      'Rate limit weight must be an integer greater than 0',
     )
   })
 
-  describe('cleanup', () => {
-    it('should cleanup expired entries on next limit call', async () => {
-      const ratelimiter = createTestingRatelimiter({
-        maxRequests: 2,
-        window: 200,
-      })
-
-      await ratelimiter.limit('test1')
-      await ratelimiter.limit('test2')
-
-      // @ts-expect-error accessing private property for testing
-      expect(ratelimiter.store.size).toBe(2)
-
-      await sleep(210)
-
-      // Trigger cleanup - test1 should be removed
-      await ratelimiter.limit('test2')
-
-      // @ts-expect-error accessing private property for testing
-      expect(ratelimiter.store.size).toBe(1)
+  it('should not allow more than maxRequests under concurrent requests', async () => {
+    const limiter = new MemoryRateLimiter({
+      maxRequests: 10,
+      window: 1000,
     })
 
-    it('should handle cleanup with all expired timestamps', async () => {
-      const ratelimiter = createTestingRatelimiter({
-        maxRequests: 2,
-        window: 150,
+    const results = await Promise.all(
+      Array.from({ length: 100 }, () => limiter.limit('user')),
+    )
+
+    const successCount = results.filter(r => r.success).length
+
+    expect(successCount).toBe(10)
+    expect(results.length - successCount).toBe(90)
+  })
+
+  describe('blockingUntilReady', () => {
+    it('blocks and retries until a slot opens up', async () => {
+      const limiter = new MemoryRateLimiter({
+        maxRequests: 1,
+        window: 500,
+        blockingUntilReady: { enabled: true, timeout: 1000 },
       })
 
-      await ratelimiter.limit('test1')
-      await sleep(160)
+      expect(await limiter.limit('key')).toEqual({ success: true, limit: 1, remaining: 0, reset: 500 })
 
-      // @ts-expect-error accessing private property for testing
-      ratelimiter.lastCleanupTime = Date.now() - 200
+      const pending = limiter.limit('key')
+      await vi.advanceTimersByTimeAsync(500) // new epoch at t=500
 
-      // Trigger cleanup - test1 has all timestamps expired (idx === -1 branch)
-      await ratelimiter.limit('test2')
-
-      // @ts-expect-error accessing private property for testing
-      expect(ratelimiter.store.has('test1')).toBe(false)
+      expect(await pending).toEqual({ success: true, limit: 1, remaining: 0, reset: 1000 })
     })
 
-    it('should handle cleanup with partially expired timestamps', async () => {
-      const ratelimiter = createTestingRatelimiter({
+    it('blocks and retries with weight until a slot opens up', async () => {
+      const limiter = new MemoryRateLimiter({
         maxRequests: 3,
-        window: 150,
+        window: 500,
+        blockingUntilReady: { enabled: true, timeout: 1000 },
       })
 
-      await ratelimiter.limit('test1')
-      await sleep(160)
-      await ratelimiter.limit('test1')
+      expect(await limiter.limit('key', { weight: 3 })).toEqual({ success: true, limit: 3, remaining: 0, reset: 500 })
 
-      // @ts-expect-error accessing private property for testing
-      ratelimiter.lastCleanupTime = Date.now() - 200
+      const pending = limiter.limit('key', { weight: 2 })
+      await vi.advanceTimersByTimeAsync(500) // new epoch at t=500
 
-      // Trigger cleanup - test1 has partial timestamps expired (idx !== -1 branch)
-      await ratelimiter.limit('test2')
+      expect(await pending).toEqual({ success: true, limit: 3, remaining: 1, reset: 1000 })
+    })
 
-      // @ts-expect-error accessing private property for testing
-      expect(ratelimiter.store.get('test1')?.length).toBe(1)
+    it('gives up immediately when the wait would exceed the timeout', async () => {
+      const limiter = new MemoryRateLimiter({
+        maxRequests: 1,
+        window: 2000,
+        blockingUntilReady: { enabled: true, timeout: 100 },
+      })
+
+      expect(await limiter.limit('key')).toEqual({ success: true, limit: 1, remaining: 0, reset: 2000 })
+
+      const pending = limiter.limit('key')
+      await vi.advanceTimersByTimeAsync(200)
+
+      expect(await pending).toEqual({ success: false, limit: 1, remaining: 0, reset: 2000 })
+    })
+
+    it('ignores the blocking option when disabled', async () => {
+      const limiter = new MemoryRateLimiter({
+        maxRequests: 1,
+        window: 1000,
+        blockingUntilReady: { enabled: false, timeout: 5000 },
+      })
+
+      expect(await limiter.limit('key')).toEqual({ success: true, limit: 1, remaining: 0, reset: 1000 })
+      expect(await limiter.limit('key')).toEqual({ success: false, limit: 1, remaining: 0, reset: 1000 })
+    })
+  })
+
+  describe('epoch rotation', () => {
+    it('drops stale keys from memory when the epoch rotates', async () => {
+      const limiter = new MemoryRateLimiter({ maxRequests: 5, window: 1000 })
+
+      await limiter.limit('key1')
+      await limiter.limit('key2')
+      expect((limiter as any).current.size).toBe(2)
+
+      await vi.advanceTimersByTimeAsync(1000)
+      await limiter.limit('other') // triggers rotation
+      expect((limiter as any).current.size).toBe(1) // only 'other' is in current
     })
   })
 })

@@ -1,24 +1,20 @@
 import { router } from '@/routers'
-import { onError } from '@orpc/server'
-import { BatchHandlerPlugin } from '@orpc/server/plugins'
 import { RPCHandler } from '@orpc/server/fetch'
-import '../../../polyfill'
+import { EvlogHandlerPlugin } from '@orpc/evlog'
+import { messagePublisher } from '@/context'
+import { BatchHandlerPlugin } from '@orpc/server/plugins'
 
-const rpcHandler = new RPCHandler(router, {
-  interceptors: [
-    onError((error) => {
-      console.error(error)
-    }),
-  ],
+export const handler = new RPCHandler(router, {
   plugins: [
+    new EvlogHandlerPlugin({ logAbort: true }),
     new BatchHandlerPlugin(),
   ],
 })
 
 async function handleRequest(request: Request) {
-  const { response } = await rpcHandler.handle(request, {
+  const { response } = await handler.handle(request, {
     prefix: '/rpc',
-    context: {},
+    context: { messagePublisher },
   })
 
   return response ?? new Response('Not found', { status: 404 })

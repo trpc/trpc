@@ -1,0 +1,29 @@
+# Hidden folders and files
+.*
+!.gitignore
+!.*.example
+
+# Common generated folders
+logs/
+node_modules/
+out/
+dist/
+dist-ssr/
+build/
+coverage/
+temp/
+
+# Common generated files
+*.log
+*.log.*
+*.tsbuildinfo
+*.vitest-temp.json
+vite.config.ts.timestamp-*
+vitest.config.ts.timestamp-*
+
+# Common manual ignore files
+*.local
+*.pem
+
+## Hey API Code gen
+/tests/client/

@@ -1,22 +1,22 @@
 import type { ClientContext } from '../../types'
-import type { StandardRPCLinkOptions } from '../standard'
-import type { LinkWebsocketClientOptions } from './link-client'
-import { StandardRPCLink } from '../standard'
-import { LinkWebsocketClient } from './link-client'
+import type { RPCLinkCodecOptions, StandardLinkOptions } from '../standard'
+import type { WebSocketLinkTransportOptions } from './transport'
+import { RPCLinkCodec, StandardLink } from '../standard'
+import { WebSocketLinkTransport } from './transport'
 
 export interface RPCLinkOptions<T extends ClientContext>
-  extends Omit<StandardRPCLinkOptions<T>, 'url' | 'method' | 'fallbackMethod' | 'maxUrlLength'>, LinkWebsocketClientOptions {}
+  extends StandardLinkOptions<T>, WebSocketLinkTransportOptions<T>, RPCLinkCodecOptions<T> {
+}
 
 /**
- * The RPC Link communicates with the server using the RPC protocol over WebSocket.
+ * Client link that communicates with an RPC Handler over a WebSocket connection.
  *
- * @see {@link https://orpc.dev/docs/client/rpc-link RPC Link Docs}
- * @see {@link https://orpc.dev/docs/adapters/websocket WebSocket Adapter Docs}
+ * @see {@link https://orpc.dev/docs/adapters/websocket | WebSocket Adapters}
  */
-export class RPCLink<T extends ClientContext> extends StandardRPCLink<T> {
+export class RPCLink<T extends ClientContext> extends StandardLink<T> {
   constructor(options: RPCLinkOptions<T>) {
-    const linkClient = new LinkWebsocketClient(options)
-
-    super(linkClient, { ...options, url: 'http://orpc' })
+    const codec = new RPCLinkCodec(options)
+    const transport = new WebSocketLinkTransport(options)
+    super(codec, transport, options)
   }
 }

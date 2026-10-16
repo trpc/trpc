@@ -1,3 +1,4 @@
+import { getCookie } from './cookie'
 import { getSignedValue, sign, unsign } from './signing'
 
 describe('signing', () => {
@@ -243,5 +244,56 @@ describe('signing', () => {
       // All unsigned values should be identical and match original
       expect(results.every(r => r.unsigned === value)).toBe(true)
     })
+  })
+
+  describe('compatibility fixtures', () => {
+    it('should preserve existing signed values across releases', async () => {
+      const fixtures = [
+        {
+          value: 'compatibility-value',
+          secret: 'compatibility-signing-secret',
+          signed: 'compatibility-value.9FauF6a16X8xuMNDd6C6RWDkFQ6qUrAv_7nmeipkmN4',
+        },
+        {
+          value: '',
+          secret: 'compatibility-signing-secret',
+          signed: '.NH49AU2pii6l1BfOq7Qb9Bbf2FhV9D5cTZfwThTusNw',
+        },
+        {
+          value: 'value.with.dots-🚀-中文',
+          secret: 'compatibility-signing-secret',
+          signed: 'value.with.dots-🚀-中文.kMRSELRa3ULkbxo9gB-FOcNVdYmT_7Dv64b7hyhQOPA',
+        },
+      ] as const
+
+      for (const fixture of fixtures) {
+        expect(await sign(fixture.value, fixture.secret)).toBe(fixture.signed)
+        expect(await unsign(fixture.signed, fixture.secret)).toBe(fixture.value)
+      }
+    })
+  })
+})
+
+describe('unsign canonical form', () => {
+  it('accepts only the canonical signature string', async () => {
+    const secret = 'my-secret-key'
+    const signed = await sign('user123', secret)
+    expect(signed).toBe('user123.oneQsU0r5dvwQFHFEjjV1uOI_IR3gZfkYHij3TRauVA')
+    expect(await unsign(signed, secret)).toBe('user123')
+
+    const variants = [
+      'user123.oneQsU0r5dvwQFHFEjjV1uOI_IR3gZfkYHij3TRauVB', // non-zero unused bits
+      'user123.oneQsU0r5dvwQFHFEjjV1uOI_IR3gZfkYHij3TRauVC',
+      'user123.oneQsU0r5dvwQFHFEjjV1uOI_IR3gZfkYHij3TRauVD',
+      'user123.oneQsU0r5dvwQFHFEjjV1uOI_IR3gZfkYHij3TRauVA=', // padding
+      'user123.oneQsU0r5dvwQFHFEjjV1uOI/IR3gZfkYHij3TRauVA', // standard-base64 char
+      'user123.oneQsU0r5dvw\nQFHFEjjV1uOI_IR3gZfkYHij3TRauVA', // whitespace
+      // percent-encoded whitespace becomes a real space after getCookie
+      getCookie(new Headers({ cookie: 'sid=user123.oneQsU0r5dvw%20QFHFEjjV1uOI_IR3gZfkYHij3TRauVA' }), 'sid'),
+    ]
+
+    for (const variant of variants) {
+      expect(await unsign(variant, secret), JSON.stringify(variant)).toBeUndefined()
+    }
   })
 })

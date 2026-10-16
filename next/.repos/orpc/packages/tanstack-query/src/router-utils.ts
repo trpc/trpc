@@ -1,82 +1,160 @@
-import type { Client, NestedClient } from '@orpc/client'
-import type { GeneralUtils } from './general-utils'
-import type { experimental_ProcedureUtilsDefaults, ProcedureUtils } from './procedure-utils'
+import type { AnyNestedClient, Client, InferClientContext, InferClientError } from '@orpc/client'
+import type { Public } from '@orpc/shared'
+import type { OperationKeyPrefixOptions } from './key'
+import type { RouterUtilsPlugin } from './plugin'
+import type { ProcedureUtilsInfiniteInterceptor, ProcedureUtilsLiveInterceptor, ProcedureUtilsMutationInterceptor, ProcedureUtilsOptions, ProcedureUtilsQueryInterceptor, ProcedureUtilsStreamedInterceptor } from './procedure-utils'
 import { RECURSIVE_CLIENT_UNWRAP_KEYS } from '@orpc/client'
-import { get, isTypescriptObject, toArray } from '@orpc/shared'
-import { createGeneralUtils } from './general-utils'
-import { createProcedureUtils } from './procedure-utils'
-
-export type RouterUtils<T extends NestedClient<any>>
-  = T extends Client<infer UClientContext, infer UInput, infer UOutput, infer UError>
-    ? ProcedureUtils<UClientContext, UInput, UOutput, UError> & GeneralUtils<UInput>
-    : {
-      [K in keyof T]: T[K] extends NestedClient<any> ? RouterUtils<T[K]> : never
-    } & GeneralUtils<unknown>
-
-export type experimental_RouterUtilsDefaults<T extends NestedClient<any>>
-  = T extends Client<infer UClientContext, infer UInput, infer UOutput, infer UError>
-    ? experimental_ProcedureUtilsDefaults<UClientContext, UInput, UOutput, UError>
-    : {
-        [K in keyof T]?: T[K] extends NestedClient<any> ? experimental_RouterUtilsDefaults<T[K]> : never
-      }
+import { bindMethods, isTypescriptObject, pick, toArray } from '@orpc/shared'
+import { CompositeRouterUtilsPlugin } from './plugin'
+import { isProcedureUtilsOptions, mergeProcedureUtilsOptions, ProcedureUtils } from './procedure-utils'
+import { SharedUtils } from './shared-utils'
 
 /**
- * @todo remove default generic types on v2
+ * The utils shape derived from a client: procedure clients map to procedure
+ * utils, and routers map recursively to nested utils.
+ *
+ * @see {@link https://orpc.dev/docs/integrations/tanstack-query | TanStack Query Integration}
  */
-export interface CreateRouterUtilsOptions<T extends NestedClient<any> = NestedClient<any>> {
-  path?: readonly string[]
-  experimental_defaults?: experimental_RouterUtilsDefaults<T>
+export type RouterUtils<T extends AnyNestedClient>
+  = T extends Client<infer UClientContext, infer UInput, infer UOutput, infer UError>
+    ? Public<ProcedureUtils<UClientContext, UInput, UOutput, UError>>
+    : {
+      [K in keyof T]: T[K] extends AnyNestedClient ? RouterUtils<T[K]> : never
+    } & Public<SharedUtils<unknown>>
+
+export type RouterUtilsScoped<T extends AnyNestedClient>
+  = T extends Client<infer UClientContext, infer UInput, infer UOutput, infer UError>
+    ? ProcedureUtilsOptions<UClientContext, UInput, UOutput, UError>
+    : {
+        [K in keyof T]?: T[K] extends AnyNestedClient ? RouterUtilsScoped<T[K]> : never
+      }
+
+export interface RouterUtilsOptions<T extends AnyNestedClient> extends OperationKeyPrefixOptions {
+  /**
+   * Base path for all query keys.
+   *
+   * @internal
+   */
+  path?: string[] | undefined
+
+  /**
+   * Interceptors that intercept queryFn inside .queryOptions
+   */
+  queryInterceptors?: ProcedureUtilsQueryInterceptor<InferClientContext<T>, unknown, unknown, InferClientError<T>>[]
+
+  /**
+   * Interceptors that intercept queryFn inside .streamedOptions
+   */
+  streamedInterceptors?: ProcedureUtilsStreamedInterceptor<InferClientContext<T>, unknown, unknown, InferClientError<T>>[]
+
+  /**
+   * Interceptors that intercept queryFn inside .liveOptions
+   */
+  liveInterceptors?: ProcedureUtilsLiveInterceptor<InferClientContext<T>, unknown, unknown, InferClientError<T>>[]
+
+  /**
+   * Interceptors that intercept queryFn inside .infiniteOptions
+   */
+  infiniteInterceptors?: ProcedureUtilsInfiniteInterceptor<InferClientContext<T>, unknown, unknown, InferClientError<T>>[]
+
+  /**
+   * Interceptors that intercept mutationFn inside .mutationOptions
+   */
+  mutationInterceptors?: ProcedureUtilsMutationInterceptor<InferClientContext<T>, unknown, unknown, InferClientError<T>>[]
+
+  /**
+   * Per-procedure options following the shape of the router.
+   * Allows fine-grained configuration of individual procedure utils
+   * without affecting the rest of the router.
+   */
+  scoped?: RouterUtilsScoped<T> | undefined
+
+  /**
+   * Plugins to extend router utils behavior.
+   */
+  plugins?: RouterUtilsPlugin<T>[] | undefined
 }
 
 /**
- * Create a router utils from a client.
+ * Creates TanStack Query utils from a client, exposing query/mutation
+ * option builders for every procedure in the router.
  *
- * @info Both client-side and server-side clients are supported.
- * @see {@link https://orpc.dev/docs/integrations/tanstack-query Tanstack Query Integration}
+ * @remarks
+ * **Note**: Both client-side and server-side clients are supported.
+ *
+ * @see {@link https://orpc.dev/docs/integrations/tanstack-query | TanStack Query Integration}
  */
-export function createRouterUtils<T extends NestedClient<any>>(
+export function createRouterUtils<T extends AnyNestedClient>(
   client: T,
-  options: CreateRouterUtilsOptions<T> = {},
+  options: NoInfer<RouterUtilsOptions<T>> = {},
+): RouterUtils<T> {
+  const plugin = new CompositeRouterUtilsPlugin<T>(options.plugins)
+  options = plugin.init(options)
+
+  return createRouterUtilsInternal(client, options, plugin)
+}
+
+function createRouterUtilsInternal<T extends AnyNestedClient>(
+  client: T,
+  options: RouterUtilsOptions<T>,
+  plugin: CompositeRouterUtilsPlugin<any>,
 ): RouterUtils<T> {
   const path = toArray(options.path)
 
-  const generalUtils = createGeneralUtils(path)
-  const procedureUtils = createProcedureUtils(client as any, {
-    path,
-    experimental_defaults: options.experimental_defaults,
-  })
+  const utils = typeof client === 'function' && (options.scoped === undefined || isProcedureUtilsOptions(options.scoped))
+    ? bindMethods(new ProcedureUtils(
+        path,
+        client,
+        plugin.initProcedureOptions(path, mergeProcedureUtilsOptions(
+          pick(options, [
+            'prefix',
+            'queryInterceptors',
+            'streamedInterceptors',
+            'liveInterceptors',
+            'infiniteInterceptors',
+            'mutationInterceptors',
+          ]) as ProcedureUtilsOptions<any, any, any, any>,
+          options.scoped ?? {},
+        )),
+      ), { unbound: ['call'] })
+    : bindMethods(new SharedUtils(path, options))
 
-  const recursive = new Proxy({
-    ...generalUtils,
-    ...procedureUtils,
-  }, {
+  const cache = new Map<string, unknown>()
+
+  const recursive = new Proxy(utils, {
     get(target, prop) {
       const value = Reflect.get(target, prop)
-      const nextClient = isTypescriptObject(client) ? Reflect.get(client, prop) : undefined
+      const nextClient = Reflect.get(client, prop)
 
       if (typeof prop !== 'string' || RECURSIVE_CLIENT_UNWRAP_KEYS.has(prop) || !isTypescriptObject(nextClient)) {
         return value
       }
 
-      const nextUtils = createRouterUtils((client as any)[prop], {
-        ...options,
-        path: [...path, prop],
-        experimental_defaults: get(options.experimental_defaults, [prop]) as any,
-      })
+      let result = cache.get(prop)
 
-      if (typeof value !== 'function') {
-        return nextUtils
+      if (result === undefined) {
+        const nextUtils = createRouterUtilsInternal(nextClient as any, {
+          ...options,
+          path: [...path, prop],
+          scoped: (options.scoped as undefined | Record<string, RouterUtilsOptions<T>['scoped']>)?.[prop],
+        }, plugin)
+
+        result = typeof value !== 'function'
+          ? nextUtils
+          : new Proxy(value, {
+              get(target, prop) {
+                if (typeof prop !== 'string' || RECURSIVE_CLIENT_UNWRAP_KEYS.has(prop)) {
+                  return Reflect.get(target, prop)
+                }
+
+                return Reflect.get(nextUtils, prop)
+              },
+            })
+
+        cache.set(prop, result)
       }
 
-      return new Proxy(value, {
-        get(target, prop) {
-          if (typeof prop !== 'string' || RECURSIVE_CLIENT_UNWRAP_KEYS.has(prop)) {
-            return Reflect.get(target, prop)
-          }
-
-          return Reflect.get(nextUtils, prop)
-        },
-      })
+      return result
     },
   })
 

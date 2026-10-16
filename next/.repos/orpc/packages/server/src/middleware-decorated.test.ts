@@ -1,95 +1,272 @@
-import { baseErrorMap } from '../../contract/tests/shared'
+import * as ContractModule from '@orpc/contract'
+import { sleep } from '@orpc/shared'
+import { vi } from 'vitest'
 import { decorateMiddleware } from './middleware-decorated'
+
+const mergeErrorMapSpy = vi.spyOn(ContractModule, 'mergeErrorMap')
 
 beforeEach(() => {
   vi.clearAllMocks()
 })
 
 describe('decorateMiddleware', () => {
-  it('just a copied function', () => {
-    const fn = vi.fn()
-    const decorated = decorateMiddleware(fn) as any
+  describe('create', () => {
+    it('should forward calls to the original middleware', async () => {
+      const original = vi.fn().mockResolvedValue({ output: 'result' })
+      const decorated = decorateMiddleware(original as any)
 
-    fn.mockReturnValueOnce('__mocked__')
+      const opts = { context: { a: 1 }, next: vi.fn() }
+      const input = { x: 2 }
+      const done = vi.fn()
+      const result = await decorated(opts as any, input as any, done as any)
 
-    expect(decorated).not.toBe(fn)
-    expect(decorated('input')).toBe('__mocked__')
-    expect(fn).toHaveBeenCalledTimes(1)
-    expect(fn).toHaveBeenCalledWith('input')
+      expect(original).toHaveBeenCalledWith(opts, input, done)
+      expect(result).toEqual({ output: 'result' })
+    })
+
+    it('should preserve error map & name & hidden meta plugins', () => {
+      const plugins = [{ name: 'test', init: vi.fn() }]
+      const original = Object.assign(vi.fn(), {
+        '~orpc': {
+          errorMap: { BASE: { message: 'test' } },
+          metaPlugins: plugins,
+        },
+      })
+      Object.defineProperty(original, 'name', { value: 'originalName' })
+
+      const decorated = decorateMiddleware(original as any)
+
+      expect(decorated['~orpc']).toEqual(original['~orpc'])
+      expect(decorated.name).toBe('originalName')
+    })
   })
 
-  it('.mapInput', () => {
-    const fn = Object.assign(vi.fn(), { '~orpcErrorMap': baseErrorMap })
-    const map = vi.fn()
-    const decorated = decorateMiddleware(fn).mapInput(map) as any
+  describe('.adaptInput', () => {
+    it('should map input before calling original middleware', async () => {
+      const original = vi.fn().mockResolvedValue({ output: 'result' })
+      const decorated = decorateMiddleware(original as any)
+      const mapped = decorated.adaptInput((input: string) => ({ x: Number(input) }))
 
-    fn.mockReturnValueOnce('__mocked__')
-    map.mockReturnValueOnce('__input__')
+      const opts = { context: { a: 1 }, next: vi.fn() }
+      const done = vi.fn()
+      const result = await (mapped as any)(opts as any, '123' as any, done)
 
-    expect(decorated({}, 'something')).toBe('__mocked__')
+      expect(original).toHaveBeenCalledWith(opts, { x: 123 }, done)
+      expect(result).toEqual({ output: 'result' })
+    })
 
-    expect(map).toHaveBeenCalledTimes(1)
-    expect(map).toHaveBeenCalledWith('something')
+    it('should preserve error map & name & hidden meta plugins', () => {
+      const plugins = [{ name: 'test', init: vi.fn() }]
+      const original = Object.assign(vi.fn(), {
+        '~orpc': { errorMap: { BASE: { message: 'test' } } },
+        'metaPlugins': plugins,
+      })
+      Object.defineProperty(original, 'name', { value: 'originalName' })
 
-    expect(fn).toHaveBeenCalledTimes(1)
-    expect(fn).toHaveBeenCalledWith({}, '__input__')
+      const decorated = decorateMiddleware(original as any)
+      const mapped = decorated.adaptInput((input: any) => input)
+
+      expect(mapped['~orpc']).toEqual(original['~orpc'])
+      expect(mapped.name).toBe('originalName')
+    })
+
+    it('should preserve metadata assigned after decoration', () => {
+      const decorated = decorateMiddleware(vi.fn() as any)
+      decorated['~orpc'] = { errorMap: { BASE: { message: 'test' } }, metaPlugins: [{ name: 'test', init: vi.fn() }] }
+
+      expect(decorated.adaptInput((input: any) => input)['~orpc']).toBe(decorated['~orpc'])
+    })
   })
 
-  describe('.concat', () => {
-    const fn = vi.fn()
-    const fn2 = vi.fn()
-    const next = vi.fn()
+  describe('.errors', () => {
+    it('should merge error maps & preserve name & hidden meta plugins', () => {
+      const plugins = [{ name: 'test', init: vi.fn() }]
+      const original = Object.assign(vi.fn(), {
+        '~orpc': {
+          errorMap: { BASE: { message: 'base' } },
+          metaPlugins: plugins,
+        },
+      })
+      Object.defineProperty(original, 'name', { value: 'originalName' })
 
-    const mid1 = vi.fn((options, input, output) => {
-      fn(options, input, output)
-      return options.next({ context: { auth: 1, mid1: true } })
+      const decorated = decorateMiddleware(original as any)
+      const withErrors = decorated.errors({ NEW: { message: 'new' } })
+
+      expect(mergeErrorMapSpy).toHaveBeenCalledTimes(1)
+      expect(mergeErrorMapSpy).toHaveBeenCalledWith(original['~orpc']?.errorMap, { NEW: { message: 'new' } })
+
+      expect(withErrors['~orpc']?.errorMap).toBe(mergeErrorMapSpy.mock.results[0]!.value)
+      expect(withErrors['~orpc']?.metaPlugins).toBe(plugins)
+      expect(withErrors.name).toBe('originalName')
     })
 
-    const mid2 = vi.fn((options, input, output) => {
-      fn2(options, input, output)
-      return options.next({ context: { auth: 2, mid2: true } })
+    it('does not affect the internal behavior', async () => {
+      const original = vi.fn().mockResolvedValue({ output: 'result' })
+      const decorated = decorateMiddleware(original as any)
+      const withErrors = decorated.errors({ NEW: { message: 'new' } })
+
+      const opts = { context: { a: 1 }, next: vi.fn() }
+      const input = { x: 2 }
+      const done = vi.fn()
+      const result = await withErrors(opts as any, input as any, done as any)
+
+      expect(original).toHaveBeenCalledWith(opts, input, done)
+      expect(result).toEqual({ output: 'result' })
     })
+  })
 
-    it('without map input', async () => {
-      const decorated = decorateMiddleware(mid1).concat(mid2) as any
+  describe('.use', () => {
+    it('should execution order correctly and merge context', async () => {
+      const mid1 = vi.fn().mockImplementation(async ({ next, context }) => {
+        return next({ context: { i2: 'override', mid1: true, mid11: true } })
+      })
 
-      next.mockReturnValueOnce('__mocked__')
-      const outputFn = vi.fn()
-      const signal = AbortSignal.timeout(100)
-      expect((await decorated({ next, context: { origin: true }, signal }, 'input', outputFn))).toBe('__mocked__')
+      const mid2 = vi.fn().mockImplementation(async ({ next, context }) => {
+        return next({ context: { i3: 'override', mid11: 'override', mid2: true } })
+      })
 
-      expect(fn).toHaveBeenCalledTimes(1)
-      expect(fn).toHaveBeenCalledWith({ next: expect.any(Function), context: { origin: true }, signal }, 'input', outputFn)
+      const combined = decorateMiddleware(mid1 as any).use(mid2 as any)
 
-      expect(fn2).toHaveBeenCalledTimes(1)
-      expect(fn2).toHaveBeenCalledWith({ next: expect.any(Function), context: { origin: true, auth: 1, mid1: true }, signal }, 'input', outputFn)
+      const next = vi.fn().mockImplementation(async ({ context }) => ({ output: 'final', context }))
+      const done = vi.fn()
+      const result = await (combined as any)({ context: { i1: true, i2: true, i3: true }, next }, 'input', done)
+
+      expect(result).toEqual({ output: 'final', context: { i2: 'override', i3: 'override', mid1: true, mid11: 'override', mid2: true } })
+
+      expect(mid1).toHaveBeenCalledTimes(1)
+      expect(mid1).toHaveBeenCalledWith(expect.objectContaining({ context: { i1: true, i2: true, i3: true } }), 'input', done)
+      expect(mid1).toHaveResolvedWith(result)
+
+      expect(mid2).toHaveBeenCalledTimes(1)
+      expect(mid2).toHaveBeenCalledAfter(mid1)
+      expect(mid2).toHaveBeenCalledWith(expect.objectContaining({ context: { i1: true, i2: 'override', i3: true, mid1: true, mid11: true } }), 'input', done)
+      expect(mid2).toHaveResolvedWith(result)
 
       expect(next).toHaveBeenCalledTimes(1)
-      expect(next).toHaveBeenCalledWith({ context: { auth: 2, mid2: true, mid1: true } })
+      expect(next).toHaveBeenCalledAfter(mid2)
+      expect(next).toHaveBeenCalledWith(expect.objectContaining({ context: { i2: 'override', i3: 'override', mid1: true, mid11: 'override', mid2: true } }))
+      expect(next).toHaveResolvedWith(result)
+
+      expect(done).not.toHaveBeenCalled()
     })
 
-    it('with map input', async () => {
-      const map = vi.fn()
+    it('can stop early with done', async () => {
+      const mid1 = vi.fn().mockImplementation(async ({ next }) => {
+        return await next({ context: { mid1: true } })
+      })
+      const mid2 = vi.fn().mockImplementation(async (opts, input, done) => {
+        return done({ output: 'early' })
+      })
 
-      const decorated = decorateMiddleware(mid1).concat(mid2, map) as any
+      const combined = decorateMiddleware(mid1 as any).use(mid2 as any)
+      const next = vi.fn().mockImplementation(async ({ context }) => ({ output: 'final', context }))
+      const done = vi.fn().mockImplementation(opts => ({ ...opts, context: {} }))
 
-      map.mockReturnValueOnce({ name: 'input' })
-      next.mockReturnValueOnce('__mocked__')
+      const result = await (combined as any)({ context: { initial: true }, next }, 'input', done)
 
-      const outputFn = vi.fn()
-      expect((await decorated({ next }, 'input', outputFn))).toBe('__mocked__')
+      expect(result).toEqual({ output: 'early', context: { mid1: true } })
 
-      expect(fn).toHaveBeenCalledTimes(1)
-      expect(fn).toHaveBeenCalledWith({ next: expect.any(Function) }, 'input', outputFn)
+      expect(done).toHaveBeenCalledTimes(1)
+      expect(done).toHaveBeenCalledWith({ output: 'early' })
 
-      expect(map).toHaveBeenCalledTimes(1)
-      expect(map).toHaveBeenCalledWith('input')
+      expect(mid1).toHaveBeenCalledTimes(1)
+      expect(mid1).toHaveBeenCalledWith(expect.objectContaining({ context: { initial: true } }), 'input', done)
+      expect(mid1).toHaveResolvedWith(result)
 
-      expect(fn2).toHaveBeenCalledTimes(1)
-      expect(fn2).toHaveBeenCalledWith({ context: { auth: 1, mid1: true }, next: expect.any(Function) }, { name: 'input' }, outputFn)
+      expect(mid2).toHaveBeenCalledTimes(1)
+      expect(mid2).toHaveBeenCalledAfter(mid1)
+      expect(mid2).toHaveBeenCalledWith(expect.objectContaining({ context: { initial: true, mid1: true } }), 'input', done)
+      expect(mid2).toHaveResolvedWith(done.mock.results[0]!.value)
+
+      expect(next).not.toHaveBeenCalled()
+    })
+
+    it('correctly handle multiple next calls', async () => {
+      let mid1Result1
+      const mid1 = vi.fn()
+        .mockImplementationOnce(async ({ next }) => {
+          const [result1, result2] = await Promise.all([
+            next({ context: { mid1: 1 } }),
+            next({ context: { mid1: 2 } }),
+          ])
+
+          mid1Result1 = result1
+          return result2
+        })
+
+      const mid2 = vi.fn()
+        .mockImplementationOnce(async ({ next }, input, done) => {
+          await sleep(10) // this ensure they can handle in parallel
+          return done({ output: 'done' })
+        })
+        .mockImplementationOnce(async ({ next }, input, done) => next({ context: { mid2: 1 } }))
+
+      const combined = decorateMiddleware(mid1 as any).use(mid2 as any)
+      const next = vi.fn().mockImplementation(({ context }) => ({ output: 'ok', context }))
+      const done = vi.fn().mockImplementation(opts => ({ ...opts, context: {} }))
+
+      const result = await (combined as any)({ context: { initial: true }, next }, 'input', done)
+
+      expect(result).toEqual({ output: 'ok', context: { mid1: 2, mid2: 1 } })
+      expect(mid1Result1).toEqual({ output: 'done', context: { mid1: 1 } })
+
+      expect(done).toHaveBeenCalledTimes(1)
+      expect(done).toHaveBeenCalledWith({ output: 'done' })
+
+      expect(mid1).toHaveBeenCalledTimes(1)
+      expect(mid1).toHaveBeenCalledWith(expect.objectContaining({ context: { initial: true } }), 'input', done)
+      expect(mid1).toHaveResolvedWith(result)
+
+      expect(mid2).toHaveBeenCalledTimes(2)
+      expect(mid2).toHaveBeenCalledAfter(mid1)
+      expect(mid2).toHaveBeenNthCalledWith(1, expect.objectContaining({ context: { initial: true, mid1: 1 } }), 'input', done)
+      expect(mid2).toHaveBeenNthCalledWith(2, expect.objectContaining({ context: { initial: true, mid1: 2 } }), 'input', done)
+      expect(mid2).toHaveNthResolvedWith(1, done.mock.results[0]!.value)
+      expect(mid2).toHaveNthResolvedWith(2, result)
 
       expect(next).toHaveBeenCalledTimes(1)
-      expect(next).toHaveBeenCalledWith({ context: { auth: 2, mid1: true, mid2: true } })
+      expect(next).toHaveBeenCalledAfter(mid2)
+      expect(next).toHaveBeenCalledWith(expect.objectContaining({ context: { mid1: 2, mid2: 1 } }))
+    })
+
+    it('should combine error maps & name & hidden meta plugins', () => {
+      const plugins1 = [{ name: 'test', init: vi.fn() }]
+      const mid1 = Object.assign(vi.fn(), {
+        '~orpc': {
+          errorMap: { M1: { message: 'm1' }, CONFLICT: { message: 'm1' } },
+          metaPlugins: plugins1,
+        },
+      })
+      Object.defineProperty(mid1, 'name', { value: 'M1' })
+
+      const plugins2 = [{ name: 'test', init: vi.fn() }]
+      const mid2 = Object.assign(vi.fn(), {
+        '~orpc': {
+          errorMap: { M2: { message: 'm2' }, CONFLICT: { message: 'm2' } },
+          metaPlugins: plugins2,
+        },
+      })
+      Object.defineProperty(mid2, 'name', { value: 'M2' })
+
+      const decorated1 = decorateMiddleware(mid1 as any)
+      const combined = decorated1.use(mid2 as any)
+
+      expect(mergeErrorMapSpy).toHaveBeenCalledTimes(1)
+      expect(mergeErrorMapSpy).toHaveBeenCalledWith(mid2['~orpc']?.errorMap, mid1['~orpc']?.errorMap)
+      expect(combined['~orpc']?.errorMap).toEqual(mergeErrorMapSpy.mock.results[0]!.value)
+
+      expect(combined.name).toBe('M1 + M2')
+      expect(combined['~orpc']?.metaPlugins).toEqual([...plugins1, ...plugins2])
+    })
+
+    it('should combine hidden meta plugins assigned after decoration', () => {
+      const plugins1 = [{ name: 'test', init: vi.fn() }]
+      const plugins2 = [{ name: 'test', init: vi.fn() }]
+      const decorated = decorateMiddleware(vi.fn() as any)
+      decorated['~orpc'] = { metaPlugins: plugins1 }
+
+      const combined = decorated.use(Object.assign(vi.fn(), { '~orpc': { metaPlugins: plugins2 } }) as any)
+      expect(combined['~orpc']?.metaPlugins).toEqual([...plugins1, ...plugins2])
     })
   })
 })

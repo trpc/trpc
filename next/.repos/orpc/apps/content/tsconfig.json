@@ -3,6 +3,14 @@
   "compilerOptions": {
     "types": ["node"]
   },
+  "include": [
+    "blume.config.ts",
+    "components.ts",
+    "experts",
+    "pages",
+    "sponsors",
+    ".blume/.astro/types.d.ts"
+  ],
   "exclude": [
     "**/*.test.*",
     "**/*.test-d.ts",

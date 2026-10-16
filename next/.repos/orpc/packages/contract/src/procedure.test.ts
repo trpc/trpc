@@ -1,77 +1,46 @@
-import * as ClientModule from '@orpc/client'
-import { ping, pong } from '../tests/shared'
-import { ContractProcedure, isContractProcedure } from './procedure'
+import { ProcedureContract } from './procedure'
 
-const isORPCErrorStatusSpy = vi.spyOn(ClientModule, 'isORPCErrorStatus')
-
-beforeEach(() => {
-  vi.clearAllMocks()
-})
-
-describe('contractProcedure', () => {
-  it('throws error when route.successStatus is invalid', () => {
-    isORPCErrorStatusSpy.mockReturnValueOnce(true)
-
-    expect(
-      () => new ContractProcedure({ ...ping['~orpc'], route: { successStatus: 1999 } }),
-    ).toThrowError()
-
-    expect(isORPCErrorStatusSpy).toHaveBeenCalledTimes(1)
-    expect(isORPCErrorStatusSpy).toHaveBeenCalledWith(1999)
-
-    isORPCErrorStatusSpy.mockClear()
-    isORPCErrorStatusSpy.mockReturnValueOnce(false)
-
-    expect(
-      () => new ContractProcedure({ ...ping['~orpc'], route: { successStatus: 2000 } }),
-    ).not.toThrowError()
-
-    expect(isORPCErrorStatusSpy).toHaveBeenCalledTimes(1)
-    expect(isORPCErrorStatusSpy).toHaveBeenCalledWith(2000)
+describe('procedureContract', () => {
+  const procedure = new ProcedureContract({
+    errorMap: {},
+    meta: {},
+    inputSchemas: [],
+    outputSchemas: [],
   })
 
-  it('throws error when errorMap has invalid status code', () => {
-    isORPCErrorStatusSpy.mockReturnValueOnce(false)
+  describe('instanceof', () => {
+    it('support both instanceof and structural check', () => {
+      expect(procedure).toBeInstanceOf(ProcedureContract)
+      expect({ '~orpc': procedure['~orpc'] }).toBeInstanceOf(ProcedureContract)
 
-    expect(
-      () => new ContractProcedure({
-        ...ping['~orpc'],
-        errorMap: { BAD_GATEWAY: { status: 200 } },
-      }),
-    ).toThrowError()
+      expect({}).not.toBeInstanceOf(ProcedureContract)
+      expect({ '~orpc': {} }).not.toBeInstanceOf(ProcedureContract)
+      expect({ '~orpc': {
+        ...procedure['~orpc'],
+        errorMap: 'invalid',
+      } }).not.toBeInstanceOf(ProcedureContract)
+      expect({ '~orpc': {
+        ...procedure['~orpc'],
+        meta: 'invalid',
+      } }).not.toBeInstanceOf(ProcedureContract)
+    })
 
-    expect(isORPCErrorStatusSpy).toHaveBeenCalledTimes(1)
-    expect(isORPCErrorStatusSpy).toHaveBeenCalledWith(200)
+    it('not support structural for extended class', () => {
+      class ExtendedProcedureContract extends ProcedureContract<any, any, any> {
+        constructor() {
+          super({
+            ...procedure['~orpc'],
+            errorMap: {},
+            meta: {},
+          })
+        }
+      }
 
-    isORPCErrorStatusSpy.mockClear()
-    isORPCErrorStatusSpy.mockReturnValueOnce(true)
+      expect(new ExtendedProcedureContract()).toBeInstanceOf(ProcedureContract)
+      expect(new ExtendedProcedureContract()).toBeInstanceOf(ExtendedProcedureContract)
 
-    expect(
-      () => new ContractProcedure({
-        ...ping['~orpc'],
-        errorMap: {
-          BAD_GATEWAY: { status: 500 },
-        },
-      }),
-    ).not.toThrowError()
-
-    expect(isORPCErrorStatusSpy).toHaveBeenCalledTimes(1)
-    expect(isORPCErrorStatusSpy).toHaveBeenCalledWith(500)
-  })
-})
-
-describe('isContractProcedure', () => {
-  it('works', () => {
-    expect(ping).toSatisfy(isContractProcedure)
-    expect(pong).toSatisfy(isContractProcedure)
-    expect({}).not.toSatisfy(isContractProcedure)
-    expect(true).not.toSatisfy(isContractProcedure)
-    expect(1).not.toSatisfy(isContractProcedure)
-    expect({ '~orpc': {} }).not.toSatisfy(isContractProcedure)
-  })
-
-  it('works with raw object', () => {
-    expect(Object.assign({}, ping)).toSatisfy(isContractProcedure)
-    expect(Object.assign({}, pong)).toSatisfy(isContractProcedure)
+      expect({ '~orpc': new ExtendedProcedureContract()['~orpc'] }).toBeInstanceOf(ProcedureContract)
+      expect({ '~orpc': new ExtendedProcedureContract()['~orpc'] }).not.toBeInstanceOf(ExtendedProcedureContract)
+    })
   })
 })

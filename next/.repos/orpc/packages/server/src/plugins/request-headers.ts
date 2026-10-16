@@ -1,30 +1,45 @@
 import type { StandardHandlerOptions, StandardHandlerPlugin } from '../adapters/standard'
-import { toFetchHeaders } from '@orpc/standard-server-fetch'
+import { toArray } from '@orpc/shared'
+import { toFetchHeaders } from '@standard-server/fetch'
 
-export interface RequestHeadersPluginContext {
-  reqHeaders?: Headers
+/**
+ * The context shape into which the Request Headers Plugin injects `reqHeaders`.
+ *
+ * @see {@link https://orpc.dev/docs/plugins/request-headers | Request Headers Plugin}
+ */
+export interface RequestHeadersHandlerPluginContext {
+  /**
+   * Request headers as a Headers instance. This is injected by the Request Headers Plugin.
+   */
+  reqHeaders?: Headers | undefined
 }
 
 /**
  * The Request Headers Plugin injects a `reqHeaders` instance into the context,
  * allowing access to request headers in oRPC.
  *
- * @see {@link https://orpc.dev/docs/plugins/request-headers Request Headers Plugin Docs}
+ * @see {@link https://orpc.dev/docs/plugins/request-headers | Request Headers Plugin}
  */
-export class RequestHeadersPlugin<T extends RequestHeadersPluginContext> implements StandardHandlerPlugin<T> {
-  init(options: StandardHandlerOptions<T>): void {
-    options.rootInterceptors ??= []
+export class RequestHeadersHandlerPlugin<T extends RequestHeadersHandlerPluginContext> implements StandardHandlerPlugin<T> {
+  name = '~request-headers'
 
-    options.rootInterceptors.push((interceptorOptions) => {
-      const reqHeaders = interceptorOptions.context.reqHeaders ?? toFetchHeaders(interceptorOptions.request.headers)
+  init(options: StandardHandlerOptions<T>): StandardHandlerOptions<T> {
+    return {
+      ...options,
+      interceptors: [
+        (interceptorOptions) => {
+          const reqHeaders = interceptorOptions.context.reqHeaders ?? toFetchHeaders(interceptorOptions.request.headers)
 
-      return interceptorOptions.next({
-        ...interceptorOptions,
-        context: {
-          ...interceptorOptions.context,
-          reqHeaders,
+          return interceptorOptions.next({
+            ...interceptorOptions,
+            context: {
+              ...interceptorOptions.context,
+              reqHeaders,
+            },
+          })
         },
-      })
-    })
+        ...toArray(options.interceptors),
+      ],
+    }
   }
 }

@@ -1,3 +1,3 @@
-it('exports LoggingHandlerPlugin', async () => {
-  expect(Object.keys(await import('./index'))).toContain('LoggingHandlerPlugin')
+it('exports PinoHandlerPlugin', async () => {
+  expect(Object.keys(await import('./index'))).toContain('PinoHandlerPlugin')
 })

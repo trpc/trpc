@@ -1,672 +1,1011 @@
+import type { ErrorMap } from '@orpc/contract'
 import { ORPCError } from '@orpc/client'
-import { validateORPCError } from '@orpc/contract'
-import * as Shared from '@orpc/shared'
-import { HibernationEventIterator } from '@orpc/standard-server'
-import * as z from 'zod'
-import { createORPCErrorConstructorMap } from './error'
-import { isLazy, lazy, unlazy } from './lazy'
-import { Procedure } from './procedure'
+import * as ContractModule from '@orpc/contract'
+import * as SharedV2Module from '@orpc/shared'
+import z from 'zod'
+import { os } from './builder'
 import { createProcedureClient } from './procedure-client'
 
-const overlayProxySpy = vi.spyOn(Shared, 'overlayProxy')
-
-vi.mock('@orpc/contract', async origin => ({
-  ...await origin(),
-  validateORPCError: vi.fn((map, error) => error),
-}))
-
-vi.mock('./error', async origin => ({
-  ...await origin(),
-  createORPCErrorConstructorMap: vi.fn(),
-}))
-
-// this transform ensure workflow is correct preMiddlewares <-> validation <-> postMiddlewares <-> handler
-const schema = z.object({ val: z.string().transform(v => Number(v)) })
-
-const handler = vi.fn(() => ({ val: '123' }))
-const preMid1 = vi.fn(({ next }, input, output) => next({}))
-const preMid2 = vi.fn(({ next }, input, output) => next({}))
-
-const postMid1 = vi.fn(({ next }, input, output) => next({}))
-const postMid2 = vi.fn(({ next }, input, output) => next({}))
-
-const baseErrors = {
-  BAD_REQUEST: {
-    data: z.object({ why: z.string().transform(v => Number(v)) }),
-  },
-}
-
-const procedure = new Procedure({
-  inputSchema: schema,
-  outputSchema: schema,
-  errorMap: baseErrors,
-  route: {},
-  handler,
-  middlewares: [preMid1, preMid2, postMid1, postMid2],
-  inputValidationIndex: 2,
-  outputValidationIndex: 2,
-  meta: {},
-})
-
-const unvalidatedProcedure = new Procedure({
-  errorMap: baseErrors,
-  route: {},
-  handler,
-  middlewares: [preMid1, preMid2, postMid1, postMid2],
-  inputValidationIndex: 2,
-  outputValidationIndex: 2,
-  meta: {},
-})
-
-const procedureCases = [
-  ['without lazy', procedure],
-  ['with lazy', lazy(() => Promise.resolve({ default: procedure }))],
-] as const
+const isAsyncIteratorObject = SharedV2Module.isAsyncIteratorObject
+const ValidationError = ContractModule.ValidationError
+const createORPCErrorConstructorMapSpy = vi.spyOn(ContractModule, 'createORPCErrorConstructorMap')
+const reconcileErrorSpy = vi.spyOn(ContractModule, 'reconcileORPCError')
+const overrideSpy = vi.spyOn(SharedV2Module, 'override')
 
 beforeEach(() => {
-  vi.resetAllMocks()
+  vi.clearAllMocks()
 })
 
-describe.each(procedureCases)('createProcedureClient - case %s', async (_, procedure) => {
-  const unwrappedProcedure = isLazy(procedure) ? (await unlazy(procedure)).default : procedure
+describe('createProcedureClient', () => {
+  const handler = vi.fn(async () => '__OUTPUT__')
+  const mid1 = vi.fn(({ next }, input, done) => next())
+  const mid2 = vi.fn(({ next }, input, done) => next())
+  const interceptor = vi.fn(({ next }) => next())
+  const procedure = os.use(mid1).use(mid2).handler(handler)
+  const client = createProcedureClient(procedure, { interceptors: [interceptor] })
 
-  it('just a client', async () => {
-    const client = createProcedureClient(procedure)
+  it('workflow is correct', async () => {
+    await expect(client()).resolves.toBe('__OUTPUT__')
 
-    vi.mocked(createORPCErrorConstructorMap).mockReturnValueOnce('__constructors__' as any)
+    expect(interceptor).toHaveBeenCalledTimes(1)
+    expect(interceptor).toHaveResolvedWith('__OUTPUT__')
 
-    await expect(client({ val: '123' })).resolves.toEqual({ val: 123 })
+    expect(mid1).toHaveBeenCalledTimes(1)
+    expect(mid1).toHaveBeenCalledAfter(interceptor)
+    expect(mid1).toHaveResolvedWith({ context: {}, output: '__OUTPUT__' })
 
-    expect(createORPCErrorConstructorMap).toBeCalledTimes(1)
-    expect(createORPCErrorConstructorMap).toBeCalledWith(baseErrors)
+    expect(mid2).toHaveBeenCalledTimes(1)
+    expect(mid2).toHaveBeenCalledAfter(mid1)
+    expect(mid2).toHaveResolvedWith({ context: {}, output: '__OUTPUT__' })
 
-    expect(handler).toBeCalledTimes(1)
-    expect(handler).toBeCalledWith({
-      input: { val: 123 },
-      context: {},
-      path: [],
-      procedure: unwrappedProcedure,
-      errors: '__constructors__',
-    })
-
-    expect(preMid1).toBeCalledTimes(1)
-    expect(preMid1).toBeCalledWith(expect.objectContaining({
-      path: [],
-      procedure: unwrappedProcedure,
-      next: expect.any(Function),
-      context: {},
-      errors: '__constructors__',
-    }), { val: '123' }, expect.any(Function))
-
-    expect(preMid2).toBeCalledTimes(1)
-    expect(preMid2).toBeCalledWith(expect.objectContaining({
-      path: [],
-      procedure: unwrappedProcedure,
-      next: expect.any(Function),
-      context: {},
-      errors: '__constructors__',
-    }), { val: '123' }, expect.any(Function))
-
-    expect(postMid1).toBeCalledTimes(1)
-    expect(postMid1).toBeCalledWith(expect.objectContaining({
-      path: [],
-      procedure: unwrappedProcedure,
-      next: expect.any(Function),
-      context: {},
-      errors: '__constructors__',
-    }), { val: 123 }, expect.any(Function))
-
-    expect(postMid2).toBeCalledTimes(1)
-    expect(postMid2).toBeCalledWith(expect.objectContaining({
-      path: [],
-      procedure: unwrappedProcedure,
-      next: expect.any(Function),
-      context: {},
-      errors: '__constructors__',
-    }), { val: 123 }, expect.any(Function))
+    expect(handler).toHaveBeenCalledTimes(1)
+    expect(handler).toHaveBeenCalledAfter(mid2)
+    expect(handler).toHaveResolvedWith('__OUTPUT__')
   })
 
-  it('validate input and output', async () => {
-    const client = createProcedureClient(procedure)
+  it('handler throw error', async () => {
+    const error = new Error('__ERROR__')
+    handler.mockRejectedValueOnce(error)
 
-    // @ts-expect-error - invalid input
-    expect(client({ val: 123 })).rejects.toThrow('Input validation failed')
+    await expect(client('INPUT' as any)).rejects.toBe(error)
 
-    // @ts-expect-error - invalid output
-    handler.mockReturnValueOnce({ val: 1234 })
-    expect(client({ val: '1234' })).rejects.toThrow('Output validation failed')
+    expect(interceptor).toHaveBeenCalledTimes(1)
+    await expect(interceptor.mock.results[0]!.value).rejects.toThrow(error)
 
-    postMid1.mockReturnValueOnce({ output: { val: 1234 } })
-    expect(client({ val: '1234' })).rejects.toThrow('Output validation failed')
+    expect(mid1).toHaveBeenCalledTimes(1)
+    expect(mid1).toHaveBeenCalledAfter(interceptor)
+    await expect(mid1.mock.results[0]!.value).rejects.toThrow(error)
+
+    expect(mid2).toHaveBeenCalledTimes(1)
+    expect(mid2).toHaveBeenCalledAfter(mid1)
+    await expect(mid2.mock.results[0]!.value).rejects.toThrow(error)
+
+    expect(handler).toHaveBeenCalledTimes(1)
+    expect(handler).toHaveBeenCalledAfter(mid2)
   })
 
-  it('middleware can return output directly', async () => {
-    const client = createProcedureClient(procedure)
+  it('middleware throw error', async () => {
+    const error = new Error('__MIDDLEWARE_ERROR__')
+    mid2.mockRejectedValueOnce(error)
 
-    preMid1.mockReturnValueOnce({ output: { val: 990 } })
-    await expect(client({ val: '123' })).resolves.toEqual({ val: 990 })
-    expect(preMid1).toBeCalledTimes(1)
-    expect(preMid2).toBeCalledTimes(0)
-    expect(postMid1).toBeCalledTimes(0)
-    expect(postMid2).toBeCalledTimes(0)
-    expect(handler).toBeCalledTimes(0)
+    await expect(client('INPUT' as any)).rejects.toThrow(error)
 
-    vi.clearAllMocks()
-    preMid2.mockReturnValueOnce({ output: { val: 9900 } })
-    await expect(client({ val: '123' })).resolves.toEqual({ val: 9900 })
-    expect(preMid1).toBeCalledTimes(1)
-    expect(preMid2).toBeCalledTimes(1)
-    expect(postMid1).toBeCalledTimes(0)
-    expect(postMid2).toBeCalledTimes(0)
-    expect(handler).toBeCalledTimes(0)
-    expect(preMid1).toReturnWith(Promise.resolve({ output: { val: '9900' }, context: {} }))
+    expect(interceptor).toHaveBeenCalledTimes(1)
+    await expect(interceptor.mock.results[0]!.value).rejects.toThrow(error)
 
-    vi.clearAllMocks()
-    postMid1.mockReturnValueOnce({ output: { val: '9900' } })
-    await expect(client({ val: '123' })).resolves.toEqual({ val: 9900 })
-    expect(preMid1).toBeCalledTimes(1)
-    expect(preMid2).toBeCalledTimes(1)
-    expect(postMid1).toBeCalledTimes(1)
-    expect(postMid2).toBeCalledTimes(0)
-    expect(handler).toBeCalledTimes(0)
-    expect(preMid1).toReturnWith(Promise.resolve({ output: { val: 9900 }, context: {} }))
-    expect(preMid2).toReturnWith(Promise.resolve({ output: { val: 9900 }, context: {} }))
+    expect(mid1).toHaveBeenCalledTimes(1)
+    expect(mid1).toHaveBeenCalledAfter(interceptor)
+    await expect(mid1.mock.results[0]!.value).rejects.toThrow(error)
 
-    vi.clearAllMocks()
-    postMid2.mockReturnValueOnce({ output: { val: '9900' } })
-    await expect(client({ val: '123' })).resolves.toEqual({ val: 9900 })
-    expect(preMid1).toBeCalledTimes(1)
-    expect(preMid2).toBeCalledTimes(1)
-    expect(postMid1).toBeCalledTimes(1)
-    expect(postMid2).toBeCalledTimes(1)
-    expect(handler).toBeCalledTimes(0)
-    expect(preMid1).toReturnWith(Promise.resolve({ output: { val: 9900 }, context: {} }))
-    expect(preMid2).toReturnWith(Promise.resolve({ output: { val: 9900 }, context: {} }))
-    expect(postMid1).toReturnWith(Promise.resolve({ output: { val: '9900' }, context: {} }))
+    expect(mid2).toHaveBeenCalledTimes(1)
+    expect(mid2).toHaveBeenCalledAfter(mid1)
+
+    expect(handler).not.toHaveBeenCalled()
   })
 
-  it('middleware can add extra context', async () => {
-    const client = createProcedureClient(procedure)
+  it('interceptor throw error', async () => {
+    const error = new Error('__INTERCEPTOR_ERROR__')
+    interceptor.mockRejectedValueOnce(error)
 
-    preMid1.mockImplementationOnce(({ next }) => {
-      return next({
-        context: {
-          extra1: '__extra1__',
-        },
-      })
-    })
+    await expect(client('INPUT' as any)).rejects.toThrow(error)
 
-    preMid2.mockImplementationOnce(({ next }) => {
-      return next()
-    })
+    expect(interceptor).toHaveBeenCalledTimes(1)
 
-    postMid1.mockImplementationOnce(({ next }) => {
-      return next({
-        context: {
-          extra2: '__extra2__',
-        },
-      })
-    })
-
-    postMid2.mockImplementationOnce(({ next }) => {
-      return next({
-        context: {
-          extra3: '__extra3__',
-        },
-      })
-    })
-
-    await expect(client({ val: '123' })).resolves.toEqual({ val: 123 })
-
-    expect(preMid1).toBeCalledTimes(1)
-    expect(preMid1).toHaveBeenCalledWith(expect.objectContaining({ context: {} }), expect.any(Object), expect.any(Function))
-    expect(await preMid1.mock.results[0]!.value).toEqual({ output: { val: 123 }, context: { extra1: '__extra1__' } })
-
-    expect(preMid2).toBeCalledTimes(1)
-    expect(preMid2).toHaveBeenCalledWith(expect.objectContaining({
-      context: { extra1: '__extra1__' },
-    }), expect.any(Object), expect.any(Function))
-    expect(await preMid2.mock.results[0]!.value).toEqual({ output: { val: 123 }, context: { } })
-
-    expect(postMid1).toBeCalledTimes(1)
-    expect(postMid1).toHaveBeenCalledWith(expect.objectContaining({
-      context: {
-        extra1: '__extra1__',
-      },
-    }), expect.any(Object), expect.any(Function))
-    expect(await postMid1.mock.results[0]!.value).toEqual({ output: { val: '123' }, context: { extra2: '__extra2__' } })
-
-    expect(postMid2).toBeCalledTimes(1)
-    expect(postMid2).toHaveBeenCalledWith(expect.objectContaining({
-      context: {
-        extra1: '__extra1__',
-        extra2: '__extra2__',
-      },
-    }), expect.any(Object), expect.any(Function))
-    expect(await postMid2.mock.results[0]!.value).toEqual({ output: { val: '123' }, context: { extra3: '__extra3__' } })
-
-    expect(handler).toBeCalledTimes(1)
-    expect(handler).toHaveBeenCalledWith(expect.objectContaining({ context: {
-      extra1: '__extra1__',
-      extra2: '__extra2__',
-      extra3: '__extra3__',
-    } }))
-    expect(await handler.mock.results[0]!.value).toEqual({ val: '123' })
+    expect(mid1).not.toHaveBeenCalled()
+    expect(mid2).not.toHaveBeenCalled()
+    expect(handler).not.toHaveBeenCalled()
   })
 
-  it('middleware can override context', async () => {
+  it('with context, procedure, path, errors, input, signal, lastEventId', async () => {
+    const signal = new AbortController().signal
+    const errorMap = {
+      UNAUTHENTICATED: { message: '__UNAUTHENTICATED__' },
+    }
+
+    const procedure = os.input(z.any()).errors(errorMap).use(mid1).use(mid2).handler(handler)
     const client = createProcedureClient(procedure, {
-      context: { userId: '123' },
+      interceptors: [interceptor],
+      context: { auth: true },
+      path: ['__PATH__'],
     })
 
-    preMid1.mockImplementationOnce(({ next }) => {
-      return next({
-        context: {
-          userId: '__override1__',
-        },
-      })
-    })
+    await expect(client('INPUT', { signal, lastEventId: '__LAST_EVENT_ID__' })).resolves.toBe('__OUTPUT__')
 
-    preMid2.mockImplementationOnce(({ next }) => {
-      return next({
-        context: {
-          userId: '__override2__',
-        },
-      })
-    })
+    expect(createORPCErrorConstructorMapSpy).toHaveBeenCalledTimes(1)
+    expect(createORPCErrorConstructorMapSpy).toHaveBeenCalledWith(errorMap)
 
-    postMid1.mockImplementationOnce(({ next }) => {
-      return next({
-        context: {
-          userId: '__override3__',
-        },
-      })
-    })
+    expect(interceptor).toHaveBeenCalledTimes(1)
+    expect(interceptor).toHaveBeenCalledWith(
+      expect.objectContaining({
+        context: { auth: true },
+        path: ['__PATH__'],
+        input: 'INPUT',
+        signal,
+        lastEventId: '__LAST_EVENT_ID__',
+        procedure: expect.toBeOneOf([procedure]),
+        errors: expect.toBeOneOf([createORPCErrorConstructorMapSpy.mock.results[0]!.value]),
+      }),
+    )
 
-    postMid2.mockImplementationOnce(({ next }) => {
-      return next({
-        context: {
-          userId: '__override4__',
-        },
-      })
-    })
+    expect(mid1).toHaveBeenCalledTimes(1)
+    expect(mid1).toHaveBeenCalledAfter(interceptor)
+    expect(mid1).toHaveBeenCalledWith(
+      expect.objectContaining({
+        context: { auth: true },
+        path: ['__PATH__'],
+        signal,
+        lastEventId: '__LAST_EVENT_ID__',
+        procedure: expect.toBeOneOf([procedure]),
+        errors: expect.toBeOneOf([createORPCErrorConstructorMapSpy.mock.results[0]!.value]),
+      }),
+      'INPUT',
+      expect.any(Function),
+    )
 
-    await expect(client({ val: '123' })).resolves.toEqual({ val: 123 })
+    expect(mid2).toHaveBeenCalledTimes(1)
+    expect(mid2).toHaveBeenCalledAfter(mid1)
+    expect(mid2).toHaveBeenCalledWith(
+      expect.objectContaining({
+        context: { auth: true },
+        path: ['__PATH__'],
+        signal,
+        lastEventId: '__LAST_EVENT_ID__',
+        procedure: expect.toBeOneOf([procedure]),
+        errors: expect.toBeOneOf([createORPCErrorConstructorMapSpy.mock.results[0]!.value]),
+      }),
+      'INPUT',
+      expect.any(Function),
+    )
 
-    expect(preMid1).toBeCalledTimes(1)
-    expect(preMid1).toHaveBeenCalledWith(expect.objectContaining({
-      context: expect.objectContaining({ userId: '123' }),
-    }), expect.any(Object), expect.any(Function))
-    expect(await preMid1.mock.results[0]!.value).toEqual({ output: { val: 123 }, context: { userId: '__override1__' } })
-
-    expect(preMid2).toBeCalledTimes(1)
-    expect(preMid2).toHaveBeenCalledWith(expect.objectContaining({
-      context: expect.objectContaining({ userId: '__override1__' }),
-    }), expect.any(Object), expect.any(Function))
-    expect(await preMid2.mock.results[0]!.value).toEqual({ output: { val: 123 }, context: { userId: '__override2__' } })
-
-    expect(postMid1).toBeCalledTimes(1)
-    expect(postMid1).toHaveBeenCalledWith(expect.objectContaining({
-      context: expect.objectContaining({ userId: '__override2__' }),
-    }), expect.any(Object), expect.any(Function))
-    expect(await postMid1.mock.results[0]!.value).toEqual({ output: { val: '123' }, context: { userId: '__override3__' } })
-
-    expect(postMid2).toBeCalledTimes(1)
-    expect(postMid2).toHaveBeenCalledWith(expect.objectContaining({
-      context: expect.objectContaining({ userId: '__override3__' }),
-    }), expect.any(Object), expect.any(Function))
-    expect(await postMid2.mock.results[0]!.value).toEqual({ output: { val: '123' }, context: { userId: '__override4__' } })
-
-    expect(handler).toBeCalledTimes(1)
-    expect(handler).toHaveBeenCalledWith(expect.objectContaining({ context: expect.objectContaining({ userId: '__override4__' }) }))
-    expect(await handler.mock.results[0]!.value).toEqual({ val: '123' })
+    expect(handler).toHaveBeenCalledTimes(1)
+    expect(handler).toHaveBeenCalledAfter(mid2)
+    expect(handler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        context: { auth: true },
+        path: ['__PATH__'],
+        signal,
+        lastEventId: '__LAST_EVENT_ID__',
+        input: 'INPUT',
+        procedure: expect.toBeOneOf([procedure]),
+        errors: expect.toBeOneOf([createORPCErrorConstructorMapSpy.mock.results[0]!.value]),
+      }),
+      'INPUT',
+    )
   })
 
-  const contextCases = [
-    ['directly value', { val: '__val__' }],
-    ['sync function value', () => ({ val: '__val__' })],
-    ['async function value', async () => ({ val: '__val__' })],
-  ] as const
+  it('interceptor can change input/output/signal/procedure', async () => {
+    const signal = new AbortController().signal
 
-  it.each(contextCases)('can accept context: %s', async (_, context) => {
-    const client = createProcedureClient(procedure, {
-      context,
+    const overrideSignal = new AbortController().signal
+    const overridedHandler = vi.fn(() => '__OVERRIDED_OUTPUT__')
+    const overridedProcedure = os.use(mid1).handler(overridedHandler)
+    interceptor.mockImplementationOnce(async ({ next }) => {
+      const output = await next({
+        input: '__OVERRIDED_INPUT__',
+        signal: overrideSignal,
+        procedure: overridedProcedure,
+        context: { auth: '__OVERRIDED_CONTEXT__' },
+        path: ['__OVERRIDED_PATH__'],
+        lastEventId: '__OVERRIDED_LAST_EVENT_ID__',
+      })
+
+      return `OVERRIDED__${output}`
     })
 
-    await client({ val: '123' })
+    await expect(client('INPUT' as any, { signal, lastEventId: '__LAST_EVENT_ID__' })).resolves.toBe('OVERRIDED____OVERRIDED_OUTPUT__')
 
-    expect(preMid1).toBeCalledTimes(1)
-    expect(preMid1).toBeCalledWith(
-      expect.objectContaining({ context: { val: '__val__' } }),
-      expect.any(Object),
+    expect(interceptor).toHaveBeenCalledTimes(1)
+    expect(interceptor).toHaveBeenCalledWith(
+      expect.objectContaining({
+        context: {},
+        path: [],
+        signal,
+        lastEventId: '__LAST_EVENT_ID__',
+        procedure: expect.toBeOneOf([procedure]),
+        input: 'INPUT',
+      }),
+    )
+
+    expect(mid1).toHaveBeenCalledTimes(1)
+    expect(mid1).toHaveBeenCalledAfter(interceptor)
+    expect(mid1).toHaveBeenCalledWith(
+      expect.objectContaining({
+        signal: overrideSignal,
+        procedure: overridedProcedure,
+        context: { auth: '__OVERRIDED_CONTEXT__' },
+        path: ['__OVERRIDED_PATH__'],
+        lastEventId: '__OVERRIDED_LAST_EVENT_ID__',
+      }),
+      '__OVERRIDED_INPUT__',
       expect.any(Function),
     )
 
-    expect(preMid2).toBeCalledTimes(1)
-    expect(preMid2).toBeCalledWith(
-      expect.objectContaining({ context: { val: '__val__' } }),
-      expect.any(Object),
-      expect.any(Function),
-    )
+    // mid2 and handler are not called because overridedProcedure does not use them
+    expect(mid2).toHaveBeenCalledTimes(0)
+    expect(handler).toHaveBeenCalledTimes(0)
 
-    expect(postMid1).toBeCalledTimes(1)
-    expect(postMid1).toBeCalledWith(
-      expect.objectContaining({ context: { val: '__val__' } }),
-      expect.any(Object),
-      expect.any(Function),
+    expect(overridedHandler).toHaveBeenCalledTimes(1)
+    expect(overridedHandler).toHaveBeenCalledAfter(mid1)
+    expect(overridedHandler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        context: { auth: '__OVERRIDED_CONTEXT__' },
+        path: ['__OVERRIDED_PATH__'],
+        signal: overrideSignal,
+        lastEventId: '__OVERRIDED_LAST_EVENT_ID__',
+      }),
+      '__OVERRIDED_INPUT__',
     )
-
-    expect(postMid2).toBeCalledTimes(1)
-    expect(postMid2).toBeCalledWith(
-      expect.objectContaining({ context: { val: '__val__' } }),
-      expect.any(Object),
-      expect.any(Function),
-    )
-
-    expect(handler).toBeCalledTimes(1)
-    expect(handler).toBeCalledWith(expect.objectContaining({ context: { val: '__val__' } }))
   })
 
-  it.each(contextCases)('can intercept - context: %s', async (_, context) => {
-    const interceptor = vi.fn(({ next }) => next())
-
+  it('middleware can override/extend context/output', async () => {
     const client = createProcedureClient(procedure, {
-      context,
-      path: ['users'],
+      context: { i1: 'i', i2: 'i' },
       interceptors: [interceptor],
     })
 
-    vi.mocked(createORPCErrorConstructorMap).mockReturnValueOnce('__constructors__' as any)
-
-    const signal = new AbortController().signal
-
-    await client({ val: '123' }, { signal })
-
-    expect(interceptor).toBeCalledTimes(1)
-    expect(interceptor).toHaveBeenCalledWith({
-      input: { val: '123' },
-      context: { val: '__val__' },
-      signal,
-      path: ['users'],
-      errors: '__constructors__',
-      procedure: unwrappedProcedure,
-      next: expect.any(Function),
-    })
-  })
-
-  it('accept paths', async () => {
-    const client = createProcedureClient(procedure, {
-      path: ['users'],
-    })
-
-    await client({ val: '123' })
-
-    expect(preMid1).toBeCalledTimes(1)
-    expect(preMid1).toHaveBeenCalledWith(expect.objectContaining({ path: ['users'] }), expect.any(Object), expect.any(Function))
-
-    expect(preMid2).toBeCalledTimes(1)
-    expect(preMid2).toHaveBeenCalledWith(expect.objectContaining({ path: ['users'] }), expect.any(Object), expect.any(Function))
-
-    expect(handler).toBeCalledTimes(1)
-    expect(handler).toHaveBeenCalledWith(expect.objectContaining({ path: ['users'] }))
-  })
-
-  it('support signal', async () => {
-    const controller = new AbortController()
-    const signal = controller.signal
-
-    const client = createProcedureClient(procedure, {
-      context: { userId: '123' },
-    })
-
-    await client({ val: '123' }, { signal })
-
-    expect(preMid1).toBeCalledTimes(1)
-    expect(preMid1).toHaveBeenCalledWith(expect.objectContaining({ signal }), expect.any(Object), expect.any(Function))
-
-    expect(preMid2).toBeCalledTimes(1)
-    expect(preMid2).toHaveBeenCalledWith(expect.objectContaining({ signal }), expect.any(Object), expect.any(Function))
-
-    expect(postMid1).toBeCalledTimes(1)
-    expect(postMid1).toHaveBeenCalledWith(expect.objectContaining({ signal }), expect.any(Object), expect.any(Function))
-
-    expect(postMid2).toBeCalledTimes(1)
-    expect(postMid2).toHaveBeenCalledWith(expect.objectContaining({ signal }), expect.any(Object), expect.any(Function))
-
-    expect(handler).toBeCalledTimes(1)
-    expect(handler).toHaveBeenCalledWith(expect.objectContaining({ signal }))
-  })
-
-  it('support lastEventId', async () => {
-    const client = createProcedureClient(procedure, {
-      context: { userId: '123' },
-    })
-
-    await client({ val: '123' }, { lastEventId: '12345' })
-
-    expect(preMid1).toBeCalledTimes(1)
-    expect(preMid1).toHaveBeenCalledWith(expect.objectContaining({ lastEventId: '12345' }), expect.any(Object), expect.any(Function))
-
-    expect(preMid2).toBeCalledTimes(1)
-    expect(preMid2).toHaveBeenCalledWith(expect.objectContaining({ lastEventId: '12345' }), expect.any(Object), expect.any(Function))
-
-    expect(postMid1).toBeCalledTimes(1)
-    expect(postMid1).toHaveBeenCalledWith(expect.objectContaining({ lastEventId: '12345' }), expect.any(Object), expect.any(Function))
-
-    expect(postMid2).toBeCalledTimes(1)
-    expect(postMid2).toHaveBeenCalledWith(expect.objectContaining({ lastEventId: '12345' }), expect.any(Object), expect.any(Function))
-
-    expect(handler).toBeCalledTimes(1)
-    expect(handler).toHaveBeenCalledWith(expect.objectContaining({ lastEventId: '12345' }))
-  })
-
-  describe('error validation', () => {
-    const client = createProcedureClient(procedure)
-
-    it('throw non-ORPC Error right away', () => {
-      const e1 = new Error('non-ORPC Error')
-      handler.mockRejectedValueOnce(e1)
-      expect(client({ val: '123' })).rejects.toBe(e1)
-    })
-
-    it('validate ORPC Error', async () => {
-      const e1 = new ORPCError('BAD_REQUEST')
-      const e2 = new ORPCError('BAD_REQUEST', { defined: true })
-
-      handler.mockRejectedValueOnce(e1)
-      vi.mocked(validateORPCError).mockReturnValueOnce(Promise.resolve(e2))
-
-      await expect(client({ val: '123' })).rejects.toBe(e2)
-
-      expect(validateORPCError).toBeCalledTimes(1)
-      expect(validateORPCError).toBeCalledWith(baseErrors, e1)
-    })
-
-    describe('event iterator', async () => {
-      const client = createProcedureClient(unvalidatedProcedure)
-
-      it('throw non-ORPCError right away', async () => {
-        const e1 = new Error('non-ORPC Error')
-        handler.mockImplementationOnce(async function* () {
-          throw e1
-        } as any)
-
-        const iterator = await client({ val: '123' }) as any
-
-        await expect(iterator.next()).rejects.toBe(e1)
+    mid1.mockImplementationOnce(async ({ next }, input, done) => {
+      const result = await next({
+        context: { i1: 'mid1', mid11: 'mid1', mid12: 'mid1' },
       })
 
-      it('validate ORPC Error', async () => {
-        const e1 = new ORPCError('BAD_REQUEST')
-        const e2 = new ORPCError('BAD_REQUEST', { defined: true })
+      return {
+        ...result,
+        output: `MID1__${result.output}`,
+      }
+    })
 
-        handler.mockImplementationOnce(async function* () {
-          throw e1
-        } as any)
-        vi.mocked(validateORPCError).mockReturnValueOnce(Promise.resolve(e2))
+    mid2.mockImplementationOnce(async ({ next }, input, done) => {
+      const result = await next({
+        context: { mid11: 'mid2', mid21: 'mid2', mid22: 'mid2' },
+      })
 
-        // signal here for test coverage
-        const iterator = await client({ val: '123' }, { signal: AbortSignal.timeout(10) }) as any
+      return {
+        ...result,
+        output: `MID2__${result.output}`,
+      }
+    })
 
-        await expect(iterator.next()).rejects.toBe(e2)
+    await expect(client()).resolves.toBe('MID1__MID2____OUTPUT__')
 
-        expect(validateORPCError).toBeCalledTimes(1)
-        expect(validateORPCError).toBeCalledWith(baseErrors, e1)
+    expect(mid1).toHaveBeenCalledTimes(1)
+    expect(mid1).toHaveBeenCalledWith(
+      expect.objectContaining({
+        context: { i1: 'i', i2: 'i' },
+      }),
+      undefined,
+      expect.any(Function),
+    )
+    expect(mid1).toHaveNthResolvedWith(1, { output: 'MID1__MID2____OUTPUT__', context: { i1: 'mid1', i2: 'i', mid12: 'mid1', mid11: 'mid2', mid21: 'mid2', mid22: 'mid2' } })
+
+    expect(mid2).toHaveBeenCalledTimes(1)
+    expect(mid2).toHaveBeenCalledAfter(mid1)
+    expect(mid2).toHaveBeenCalledWith(
+      expect.objectContaining({
+        context: { i1: 'mid1', i2: 'i', mid11: 'mid1', mid12: 'mid1' },
+      }),
+      undefined,
+      expect.any(Function),
+    )
+    expect(mid2).toHaveNthResolvedWith(1, { output: 'MID2____OUTPUT__', context: { i1: 'mid1', i2: 'i', mid12: 'mid1', mid11: 'mid2', mid21: 'mid2', mid22: 'mid2' } })
+
+    expect(handler).toHaveBeenCalledTimes(1)
+    expect(handler).toHaveBeenCalledAfter(mid2)
+    expect(handler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        context: { i1: 'mid1', i2: 'i', mid12: 'mid1', mid11: 'mid2', mid21: 'mid2', mid22: 'mid2' },
+      }),
+      undefined,
+    )
+  })
+
+  it('middleware can early return with done helper', async () => {
+    mid1.mockImplementationOnce((options, input, done) => done({ output: 'MID1__EARLY_RETURN__' }))
+
+    await expect(client()).resolves.toBe('MID1__EARLY_RETURN__')
+
+    expect(interceptor).toHaveBeenCalledTimes(1)
+    await expect(interceptor.mock.results[0]!.value).resolves.toBe('MID1__EARLY_RETURN__')
+
+    expect(mid1).toHaveBeenCalledTimes(1)
+    expect(mid2).toHaveBeenCalledTimes(0)
+    expect(handler).toHaveBeenCalledTimes(0)
+  })
+
+  describe('with multiple standard schemas', () => {
+    it('success - input and output schemas that transform during validation', async () => {
+      const inputSchema1 = z.string().transform(value => `inputSchema1__${value}`)
+      const inputSchema2 = z.string().transform(value => `inputSchema2__${value}`)
+      const inputSchema3 = z.string().transform(value => `inputSchema3__${value}`)
+      const outputSchema1 = z.string().transform(value => `outputSchema1__${value}`)
+      const outputSchema2 = z.string().transform(value => `outputSchema2__${value}`)
+      const outputSchema3 = z.string().transform(value => `outputSchema3__${value}`)
+
+      const mid3 = vi.fn(({ next }) => next())
+
+      const procedure = os
+        .input(inputSchema1)
+        .output(outputSchema1)
+        .use(mid1)
+        .input(inputSchema2)
+        .output(outputSchema2)
+        .use(mid2)
+        .input(inputSchema3)
+        .output(outputSchema3)
+        .use(mid3)
+        .handler(handler)
+
+      const client = createProcedureClient(procedure, { interceptors: [interceptor] })
+
+      await expect(client('INPUT')).resolves.toBe('outputSchema1__outputSchema2__outputSchema3____OUTPUT__')
+
+      expect(interceptor).toHaveBeenCalledTimes(1)
+      expect(interceptor).toHaveBeenCalledWith(expect.objectContaining({ input: 'INPUT' }))
+      expect(interceptor).toHaveResolvedWith('outputSchema1__outputSchema2__outputSchema3____OUTPUT__')
+
+      expect(mid1).toHaveBeenCalledTimes(1)
+      expect(mid1).toHaveBeenCalledAfter(interceptor)
+      expect(mid1).toHaveBeenCalledWith(
+        expect.objectContaining({ }),
+        'inputSchema1__INPUT',
+        expect.any(Function),
+      )
+      expect(mid1).toHaveResolvedWith(
+        expect.objectContaining({ output: 'outputSchema2__outputSchema3____OUTPUT__' }),
+      )
+
+      expect(mid2).toHaveBeenCalledTimes(1)
+      expect(mid2).toHaveBeenCalledAfter(mid1)
+      expect(mid2).toHaveBeenCalledWith(
+        expect.objectContaining({ }),
+        'inputSchema2__inputSchema1__INPUT',
+        expect.any(Function),
+      )
+      expect(mid2).toHaveResolvedWith(
+        expect.objectContaining({ output: 'outputSchema3____OUTPUT__' }),
+      )
+
+      expect(mid3).toHaveBeenCalledTimes(1)
+      expect(mid3).toHaveBeenCalledAfter(mid2)
+      expect(mid3).toHaveBeenCalledWith(
+        expect.objectContaining({}),
+        'inputSchema3__inputSchema2__inputSchema1__INPUT',
+        expect.any(Function),
+      )
+      expect(mid3).toHaveResolvedWith(
+        expect.objectContaining({ output: '__OUTPUT__' }),
+      )
+
+      expect(handler).toHaveBeenCalledTimes(1)
+      expect(handler).toHaveBeenCalledAfter(mid3)
+      expect(handler).toHaveBeenCalledWith(
+        expect.objectContaining({}),
+        'inputSchema3__inputSchema2__inputSchema1__INPUT',
+      )
+    })
+
+    describe('failed', async () => {
+      const inputSchema1 = z.looseObject({ inputSchema1: z.number() })
+      const inputSchema2 = z.looseObject({ inputSchema2: z.number() })
+      const inputSchema3 = z.looseObject({ inputSchema3: z.number() })
+      const outputSchema1 = z.looseObject({ outputSchema1: z.number() })
+      const outputSchema2 = z.looseObject({ outputSchema2: z.number() })
+      const outputSchema3 = z.looseObject({ outputSchema3: z.number() })
+
+      const inputSchema1ValidationSpy = vi.spyOn(inputSchema1['~standard'], 'validate')
+      const inputSchema2ValidationSpy = vi.spyOn(inputSchema2['~standard'], 'validate')
+      const inputSchema3ValidationSpy = vi.spyOn(inputSchema3['~standard'], 'validate')
+      const outputSchema1ValidationSpy = vi.spyOn(outputSchema1['~standard'], 'validate')
+      const outputSchema2ValidationSpy = vi.spyOn(outputSchema2['~standard'], 'validate')
+      const outputSchema3ValidationSpy = vi.spyOn(outputSchema3['~standard'], 'validate')
+
+      const mid3 = vi.fn(({ next }) => next())
+      const handler = vi.fn(() => ({ outputSchema1: 1, outputSchema2: 2, outputSchema3: 3 }))
+
+      const procedure = os
+        .input(inputSchema1)
+        .output(outputSchema1)
+        .use(mid1)
+        .input(inputSchema2)
+        .output(outputSchema2)
+        .use(mid2)
+        .input(inputSchema3)
+        .output(outputSchema3)
+        .use(mid3)
+        .handler(handler)
+
+      const client = createProcedureClient(procedure, { interceptors: [interceptor] })
+
+      it('inputSchema1', async () => {
+        const invalidInput: any = { inputSchema1: 'INVALID', inputSchema2: 2, inputSchema3: 3 }
+        await expect(client(invalidInput)).rejects.toSatisfy((error) => {
+          expect(inputSchema1ValidationSpy).toHaveBeenCalledTimes(1)
+          expect(inputSchema2ValidationSpy).toHaveBeenCalledTimes(0)
+          expect(inputSchema3ValidationSpy).toHaveBeenCalledTimes(0)
+          expect(outputSchema1ValidationSpy).toHaveBeenCalledTimes(0)
+          expect(outputSchema2ValidationSpy).toHaveBeenCalledTimes(0)
+          expect(outputSchema3ValidationSpy).toHaveBeenCalledTimes(0)
+
+          expect(error).toBeInstanceOf(ORPCError)
+          expect(error.code).toEqual('BAD_REQUEST')
+          expect(error.cause).toBeInstanceOf(ValidationError)
+          expect(error.cause.issues).toBe(inputSchema1ValidationSpy.mock.results[0]!.value.issues)
+          expect(error.cause.invalidData).toEqual(invalidInput)
+
+          return true
+        })
+
+        expect(interceptor).toHaveBeenCalledTimes(1)
+        await expect(interceptor.mock.results[0]!.value).rejects.toThrow(ORPCError)
+        expect(mid1).toHaveBeenCalledTimes(0)
+        expect(mid2).toHaveBeenCalledTimes(0)
+        expect(mid3).toHaveBeenCalledTimes(0)
+        expect(handler).toHaveBeenCalledTimes(0)
+      })
+
+      it('inputSchema2', async () => {
+        const invalidInput: any = { inputSchema1: 1, inputSchema2: 'INVALID', inputSchema3: 3 }
+        await expect(client(invalidInput)).rejects.toSatisfy((error) => {
+          expect(inputSchema1ValidationSpy).toHaveBeenCalledTimes(1)
+          expect(inputSchema2ValidationSpy).toHaveBeenCalledTimes(1)
+          expect(inputSchema3ValidationSpy).toHaveBeenCalledTimes(0)
+          expect(outputSchema1ValidationSpy).toHaveBeenCalledTimes(0)
+          expect(outputSchema2ValidationSpy).toHaveBeenCalledTimes(0)
+          expect(outputSchema3ValidationSpy).toHaveBeenCalledTimes(0)
+
+          expect(error).toBeInstanceOf(ORPCError)
+          expect(error.code).toEqual('BAD_REQUEST')
+          expect(error.cause).toBeInstanceOf(ValidationError)
+          expect(error.cause.issues).toBe(inputSchema2ValidationSpy.mock.results[0]!.value.issues)
+          expect(error.cause.invalidData).toEqual(invalidInput)
+
+          return true
+        })
+
+        expect(interceptor).toHaveBeenCalledTimes(1)
+        await expect(interceptor.mock.results[0]!.value).rejects.toThrow(ORPCError)
+        expect(mid1).toHaveBeenCalledTimes(1)
+        await expect(mid1.mock.results[0]!.value).rejects.toThrow(ORPCError)
+        expect(mid2).toHaveBeenCalledTimes(0)
+        expect(mid3).toHaveBeenCalledTimes(0)
+        expect(handler).toHaveBeenCalledTimes(0)
+      })
+
+      it('inputSchema3', async () => {
+        const invalidInput: any = { inputSchema1: 1, inputSchema2: 2, inputSchema3: 'INVALID' }
+        await expect(client(invalidInput)).rejects.toSatisfy((error) => {
+          expect(inputSchema1ValidationSpy).toHaveBeenCalledTimes(1)
+          expect(inputSchema2ValidationSpy).toHaveBeenCalledTimes(1)
+          expect(inputSchema3ValidationSpy).toHaveBeenCalledTimes(1)
+          expect(outputSchema1ValidationSpy).toHaveBeenCalledTimes(0)
+          expect(outputSchema2ValidationSpy).toHaveBeenCalledTimes(0)
+          expect(outputSchema3ValidationSpy).toHaveBeenCalledTimes(0)
+
+          expect(error).toBeInstanceOf(ORPCError)
+          expect(error.code).toEqual('BAD_REQUEST')
+          expect(error.cause).toBeInstanceOf(ValidationError)
+          expect(error.cause.issues).toBe(inputSchema3ValidationSpy.mock.results[0]!.value.issues)
+          expect(error.cause.invalidData).toEqual(invalidInput)
+
+          return true
+        })
+
+        expect(interceptor).toHaveBeenCalledTimes(1)
+        await expect(interceptor.mock.results[0]!.value).rejects.toThrow(ORPCError)
+        expect(mid1).toHaveBeenCalledTimes(1)
+        await expect(mid1.mock.results[0]!.value).rejects.toThrow(ORPCError)
+        expect(mid2).toHaveBeenCalledTimes(1)
+        await expect(mid2.mock.results[0]!.value).rejects.toThrow(ORPCError)
+        expect(mid3).toHaveBeenCalledTimes(0)
+        expect(handler).toHaveBeenCalledTimes(0)
+      })
+
+      it('outputSchema1', async () => {
+        const invalidOutput: any = { outputSchema1: 'INVALID', outputSchema2: 2, outputSchema3: 3 }
+        handler.mockResolvedValueOnce(invalidOutput)
+
+        await expect(client({ inputSchema1: 1, inputSchema2: 2, inputSchema3: 3 })).rejects.toSatisfy((error) => {
+          expect(inputSchema1ValidationSpy).toHaveBeenCalledTimes(1)
+          expect(inputSchema2ValidationSpy).toHaveBeenCalledTimes(1)
+          expect(inputSchema3ValidationSpy).toHaveBeenCalledTimes(1)
+          expect(outputSchema1ValidationSpy).toHaveBeenCalledTimes(1)
+          expect(outputSchema2ValidationSpy).toHaveBeenCalledTimes(1)
+          expect(outputSchema3ValidationSpy).toHaveBeenCalledTimes(1)
+
+          expect(error).toBeInstanceOf(ORPCError)
+          expect(error.code).toEqual('INTERNAL_SERVER_ERROR')
+          expect(error.cause).toBeInstanceOf(ValidationError)
+          expect(error.cause.issues).toBe(outputSchema1ValidationSpy.mock.results[0]!.value.issues)
+          expect(error.cause.invalidData).toEqual(invalidOutput)
+
+          return true
+        })
+
+        expect(interceptor).toHaveBeenCalledTimes(1)
+        await expect(interceptor.mock.results[0]!.value).rejects.toThrow(ORPCError)
+        expect(mid1).toHaveBeenCalledTimes(1)
+        expect(mid1).toHaveResolvedWith(expect.objectContaining({ output: invalidOutput }))
+        expect(mid2).toHaveBeenCalledTimes(1)
+        expect(mid2).toHaveResolvedWith(expect.objectContaining({ output: invalidOutput }))
+        expect(mid3).toHaveBeenCalledTimes(1)
+        expect(mid3).toHaveResolvedWith(expect.objectContaining({ output: invalidOutput }))
+        expect(handler).toHaveBeenCalledTimes(1)
+        expect(handler).toHaveResolvedWith(invalidOutput)
+      })
+
+      it('outputSchema2', async () => {
+        const invalidOutput: any = { outputSchema1: 1, outputSchema2: 'INVALID', outputSchema3: 3 }
+        handler.mockResolvedValueOnce(invalidOutput)
+
+        await expect(client({ inputSchema1: 1, inputSchema2: 2, inputSchema3: 3 })).rejects.toSatisfy((error) => {
+          expect(inputSchema1ValidationSpy).toHaveBeenCalledTimes(1)
+          expect(inputSchema2ValidationSpy).toHaveBeenCalledTimes(1)
+          expect(inputSchema3ValidationSpy).toHaveBeenCalledTimes(1)
+          expect(outputSchema1ValidationSpy).toHaveBeenCalledTimes(0)
+          expect(outputSchema2ValidationSpy).toHaveBeenCalledTimes(1)
+          expect(outputSchema3ValidationSpy).toHaveBeenCalledTimes(1)
+
+          expect(error).toBeInstanceOf(ORPCError)
+          expect(error.code).toEqual('INTERNAL_SERVER_ERROR')
+          expect(error.cause).toBeInstanceOf(ValidationError)
+          expect(error.cause.issues).toBe(outputSchema2ValidationSpy.mock.results[0]!.value.issues)
+          expect(error.cause.invalidData).toEqual(invalidOutput)
+
+          return true
+        })
+
+        expect(interceptor).toHaveBeenCalledTimes(1)
+        await expect(interceptor.mock.results[0]!.value).rejects.toThrow(ORPCError)
+        expect(mid1).toHaveBeenCalledTimes(1)
+        await expect(mid1.mock.results[0]!.value).rejects.toThrow(ORPCError)
+        expect(mid2).toHaveBeenCalledTimes(1)
+        expect(mid2).toHaveResolvedWith(expect.objectContaining({ output: invalidOutput }))
+        expect(mid3).toHaveBeenCalledTimes(1)
+        expect(mid3).toHaveResolvedWith(expect.objectContaining({ output: invalidOutput }))
+        expect(handler).toHaveBeenCalledTimes(1)
+        expect(handler).toHaveResolvedWith(invalidOutput)
+      })
+
+      it('outputSchema3', async () => {
+        const invalidOutput: any = { outputSchema1: 1, outputSchema2: 2, outputSchema3: 'INVALID' }
+        handler.mockResolvedValueOnce(invalidOutput)
+
+        await expect(client({ inputSchema1: 1, inputSchema2: 2, inputSchema3: 3 })).rejects.toSatisfy((error) => {
+          expect(inputSchema1ValidationSpy).toHaveBeenCalledTimes(1)
+          expect(inputSchema2ValidationSpy).toHaveBeenCalledTimes(1)
+          expect(inputSchema3ValidationSpy).toHaveBeenCalledTimes(1)
+          expect(outputSchema1ValidationSpy).toHaveBeenCalledTimes(0)
+          expect(outputSchema2ValidationSpy).toHaveBeenCalledTimes(0)
+          expect(outputSchema3ValidationSpy).toHaveBeenCalledTimes(1)
+
+          expect(error).toBeInstanceOf(ORPCError)
+          expect(error.code).toEqual('INTERNAL_SERVER_ERROR')
+          expect(error.cause).toBeInstanceOf(ValidationError)
+          expect(error.cause.issues).toBe(outputSchema3ValidationSpy.mock.results[0]!.value.issues)
+          expect(error.cause.invalidData).toEqual(invalidOutput)
+
+          return true
+        })
+
+        expect(interceptor).toHaveBeenCalledTimes(1)
+        await expect(interceptor.mock.results[0]!.value).rejects.toThrow(ORPCError)
+        expect(mid1).toHaveBeenCalledTimes(1)
+        await expect(mid1.mock.results[0]!.value).rejects.toThrow(ORPCError)
+        expect(mid2).toHaveBeenCalledTimes(1)
+        await expect(mid2.mock.results[0]!.value).rejects.toThrow(ORPCError)
+        expect(mid3).toHaveBeenCalledTimes(1)
+        expect(mid3).toHaveResolvedWith(expect.objectContaining({ output: invalidOutput }))
+        expect(handler).toHaveBeenCalledTimes(1)
+        expect(handler).toHaveResolvedWith(invalidOutput)
       })
     })
   })
 
-  it('with client context', async () => {
-    const context = vi.fn()
-    const client = createProcedureClient(procedure, {
-      context,
+  describe('with stacked object schemas', () => {
+    it('composes every schema fragment into a single flat input', async () => {
+      const rootMid = vi.fn(({ next }) => next())
+      const parentMid = vi.fn(({ next }) => next())
+      const childMid = vi.fn(({ next }) => next())
+
+      const procedure = os
+        .use(rootMid)
+        .input(z.object({ parent: z.string().transform(value => `parent__${value}`) }))
+        .use(parentMid)
+        .input(z.object({ child: z.string().transform(value => `child__${value}`) }))
+        .use(childMid)
+        .handler(({ input }) => input)
+
+      const client = createProcedureClient(procedure)
+
+      await expect(client({ parent: 'PARENT', child: 'CHILD', unknown: 'UNKNOWN' } as any))
+        .resolves
+        .toEqual({ parent: 'parent__PARENT', child: 'child__CHILD' })
+
+      expect(rootMid).toHaveBeenCalledWith(expect.any(Object), { parent: 'PARENT', child: 'CHILD', unknown: 'UNKNOWN' }, expect.any(Function))
+      expect(parentMid).toHaveBeenCalledWith(expect.any(Object), { parent: 'parent__PARENT', child: 'CHILD', unknown: 'UNKNOWN' }, expect.any(Function))
+      expect(childMid).toHaveBeenCalledWith(expect.any(Object), { parent: 'parent__PARENT', child: 'child__CHILD' }, expect.any(Function))
     })
 
-    await client({ val: '123' })
-    expect(context).toBeCalledTimes(1)
-    expect(context).toBeCalledWith({})
+    it('gives middleware between schemas the not-yet-validated rest of the input, validated fields win', async () => {
+      const beforeMid = vi.fn(({ next }, _input: unknown) => next())
+      const betweenMid = vi.fn(({ next }) => next())
+      const afterMid = vi.fn(({ next }) => next())
 
-    context.mockClear()
-    await client({ val: '123' }, { context: { cache: true } })
-    expect(context).toBeCalledTimes(1)
-    expect(context).toBeCalledWith({ cache: true })
+      const procedure = os
+        .use(beforeMid)
+        .input(z.object({ params: z.object({ id: z.string().transform(value => `id__${value}`) }) }))
+        .use(betweenMid)
+        .input(z.object({ params: z.object({ slug: z.string() }), page: z.coerce.number() }))
+        .use(afterMid)
+        .handler(({ input }) => input)
+
+      const client = createProcedureClient(procedure)
+
+      const rawInput: any = { params: { id: 'ID', slug: 'SLUG', unknown: 'UNKNOWN' }, page: '2', unknown: 'UNKNOWN' }
+
+      await expect(client(rawInput))
+        .resolves
+        .toEqual({ params: { id: 'id__ID', slug: 'SLUG' }, page: 2 })
+
+      expect(beforeMid.mock.calls[0]![1]).toBe(rawInput)
+      expect(betweenMid).toHaveBeenCalledWith(
+        expect.any(Object),
+        { params: { id: 'id__ID', slug: 'SLUG', unknown: 'UNKNOWN' }, page: '2', unknown: 'UNKNOWN' },
+        expect.any(Function),
+      )
+      expect(afterMid).toHaveBeenCalledWith(
+        expect.any(Object),
+        { params: { id: 'id__ID', slug: 'SLUG' }, page: 2 },
+        expect.any(Function),
+      )
+    })
+
+    it('composes fragments nested one level deep', async () => {
+      const procedure = os
+        .input(z.object({ params: z.object({ id: z.string() }) }))
+        .input(z.object({ params: z.object({ slug: z.string() }), query: z.object({ page: z.number() }) }))
+        .handler(({ input }) => input)
+
+      const client = createProcedureClient(procedure)
+
+      await expect(client({
+        params: { id: 'ID', slug: 'SLUG', unknown: 'UNKNOWN' },
+        query: { page: 1 },
+      } as any)).resolves.toEqual({
+        params: { id: 'ID', slug: 'SLUG' },
+        query: { page: 1 },
+      })
+    })
+
+    it('lets a loose schema keep the properties it accepts', async () => {
+      const parentMid = vi.fn(({ next }) => next())
+
+      const procedure = os
+        .input(z.looseObject({ parent: z.string().transform(value => `parent__${value}`) }))
+        .use(parentMid)
+        .input(z.object({ child: z.string().transform(value => `child__${value}`) }))
+        .handler(({ input }) => input)
+
+      const client = createProcedureClient(procedure)
+
+      await expect(client({ parent: 'PARENT', child: 'CHILD', unknown: 'UNKNOWN' } as any))
+        .resolves
+        .toEqual({ parent: 'parent__PARENT', child: 'child__CHILD', unknown: 'UNKNOWN' })
+
+      expect(parentMid).toHaveBeenCalledWith(expect.any(Object), { parent: 'parent__PARENT', child: 'CHILD', unknown: 'UNKNOWN' }, expect.any(Function))
+    })
+
+    it('gives later schemas what earlier ones returned', async () => {
+      const procedure = os
+        .input(z.object({ id: z.coerce.number(), page: z.coerce.number() }))
+        .input(z.looseObject({ name: z.string() }))
+        .input(z.object({ page: z.number().transform(page => page * 2) }))
+        .handler(({ input }) => input)
+
+      const client = createProcedureClient(procedure)
+
+      await expect(client({ id: '5', page: '1', name: 'NAME' } as any))
+        .resolves
+        .toEqual({ id: 5, page: 2, name: 'NAME' })
+    })
+
+    it('keeps piping input schemas that do not validate into a plain object', async () => {
+      const procedure = os
+        .input(ContractModule.asyncIteratorObject(ContractModule.type<string, string>(value => `first__${value}`)))
+        .input(ContractModule.asyncIteratorObject(ContractModule.type<string, string>(value => `second__${value}`)))
+        .handler(({ input }) => input)
+
+      const client = createProcedureClient(procedure)
+      const output = await client((async function* () {
+        yield 'INPUT'
+      })())
+
+      expect(isAsyncIteratorObject(output)).toBe(true)
+      await expect(output.next()).resolves.toEqual({ done: false, value: 'second__first__INPUT' })
+    })
+
+    it('keeps piping output schemas', async () => {
+      const procedure = os
+        .output(z.looseObject({ first: z.string() }))
+        .output(z.looseObject({ second: z.string() }))
+        .handler(() => ({ first: 'FIRST', second: 'SECOND' }) as any)
+
+      const client = createProcedureClient(procedure)
+
+      await expect(client()).resolves.toEqual({ first: 'FIRST', second: 'SECOND' })
+    })
   })
 
-  it('can multiple .next calls', async () => {
+  describe('disable validations', () => {
+    const inputSchema = z.object({ value: z.string() })
+    const outputSchema = z.object({ value: z.string() })
+    const inputSchemaValidateSpy = vi.spyOn(inputSchema['~standard'], 'validate')
+    const outputSchemaValidateSpy = vi.spyOn(outputSchema['~standard'], 'validate')
+
+    it('skips input validation when disableInputValidation is enabled', async () => {
+      const handler = vi.fn(async (opts: any) => {
+        expect(opts.input).toEqual({ value: 'INVALID' })
+        return { value: 'ok' }
+      })
+      const procedure = os
+        .$config({ disableInputValidation: true })
+        .input(inputSchema)
+        .output(outputSchema)
+        .handler(handler)
+      const client = createProcedureClient(procedure)
+
+      await expect(client({ value: 'INVALID' } as any)).resolves.toEqual({ value: 'ok' })
+
+      expect(inputSchemaValidateSpy).toHaveBeenCalledTimes(0)
+      expect(outputSchemaValidateSpy).toHaveBeenCalledTimes(1)
+      expect(handler).toHaveBeenCalledTimes(1)
+    })
+
+    it('skips output validation when disableOutputValidation is enabled', async () => {
+      const handler = vi.fn(async () => ({ value: 'INVALID' }))
+      const procedure = os
+        .$config({ disableOutputValidation: true })
+        .input(inputSchema)
+        .output(outputSchema)
+        .handler(handler)
+      const client = createProcedureClient(procedure)
+
+      await expect(client({ value: 'ok' })).resolves.toEqual({ value: 'INVALID' })
+
+      expect(inputSchemaValidateSpy).toHaveBeenCalledTimes(1)
+      expect(outputSchemaValidateSpy).toHaveBeenCalledTimes(0)
+      expect(handler).toHaveBeenCalledTimes(1)
+    })
+
+    it('skips both when both flags are enabled', async () => {
+      const handler = vi.fn(async (opts: any) => {
+        expect(opts.input).toEqual({ value: 'INVALID' })
+        return { value: 'INVALID' }
+      })
+      const procedure = os
+        .$config({ disableOutputValidation: true, disableInputValidation: true })
+        .input(inputSchema)
+        .output(outputSchema)
+        .handler(handler)
+      const client = createProcedureClient(procedure)
+
+      await expect(client({ value: 'INVALID' } as any)).resolves.toEqual({ value: 'INVALID' })
+
+      expect(inputSchemaValidateSpy).toHaveBeenCalledTimes(0)
+      expect(outputSchemaValidateSpy).toHaveBeenCalledTimes(0)
+      expect(handler).toHaveBeenCalledTimes(1)
+    })
+
+    it('does not apply schema transforms when validations are disabled', async () => {
+      const transformInputSchema = z.string().transform(value => `in__${value}`)
+      const transformOutputSchema = z.string().transform(value => `out__${value}`)
+      const handler = vi.fn(async (opts: any) => {
+        expect(opts.input).toBe('raw')
+        return 'raw-out'
+      })
+      const procedure = os
+        .$config({ disableOutputValidation: true, disableInputValidation: true })
+        .input(transformInputSchema)
+        .output(transformOutputSchema)
+        .handler(handler)
+      const client = createProcedureClient(procedure)
+
+      await expect(client('raw')).resolves.toBe('raw-out')
+    })
+  })
+
+  it('next method can be called multiple times (with transforming schemas)', async () => {
+    const inputSchema = z.string().transform(v => `inputSchema__${v}`)
+    const outputSchema = z.string().transform(v => `outputSchema__${v}`)
+
+    const inputSchemaValidateSpy = vi.spyOn(inputSchema['~standard'], 'validate')
+    const outputSchemaValidateSpy = vi.spyOn(outputSchema['~standard'], 'validate')
+
+    interceptor.mockImplementationOnce(
+      options => Promise.all([
+        options.next({ ...options, context: { auth: 1 } }),
+        options.next({ ...options, context: { auth: 2 } }),
+      ]).then(([_1, _2]) => _2),
+    )
+
+    mid1
+      .mockImplementationOnce(({ next }) => next({ context: { auth: 3 } }))
+      .mockImplementationOnce(({ next }) => Promise.all([
+        next({ context: { auth: 4 } }),
+        next({ context: { auth: 5 } }),
+      ]).then(([_1, _2]) => _2))
+
+    mid2
+      .mockImplementationOnce(({ next }) => next({ context: { auth: 6 } }))
+      .mockImplementationOnce(({ next }) => next({ context: { auth: 7 } }))
+      .mockImplementationOnce(({ next }) => Promise.all([
+        next({ context: { auth: 8 } }),
+        next({ context: { auth: 9 } }),
+      ]).then(([_1, _2]) => _2))
+
+    handler
+      .mockResolvedValueOnce('__1__')
+      .mockResolvedValueOnce('__2__')
+      .mockResolvedValueOnce('__3__')
+      .mockResolvedValueOnce('__4__')
+
+    const procedure = os.use(mid1).input(inputSchema).output(outputSchema).use(mid2).handler(handler)
+
+    const client = createProcedureClient(procedure, { interceptors: [interceptor] })
+
+    await expect(client('INPUT')).resolves.toBe('outputSchema____4__')
+
+    expect(interceptor).toHaveBeenCalledTimes(1)
+    expect(interceptor).toHaveNthResolvedWith(1, 'outputSchema____4__')
+
+    expect(mid1).toHaveBeenCalledTimes(2)
+    expect(mid1).toHaveBeenNthCalledWith(1, expect.objectContaining({ context: { auth: 1 } }), 'INPUT', expect.any(Function))
+    expect(mid1).toHaveNthResolvedWith(1, expect.objectContaining({ output: 'outputSchema____1__' }))
+    expect(mid1).toHaveBeenNthCalledWith(2, expect.objectContaining({ context: { auth: 2 } }), 'INPUT', expect.any(Function))
+    expect(mid1).toHaveNthResolvedWith(2, expect.objectContaining({ output: 'outputSchema____4__' }))
+
+    expect(inputSchemaValidateSpy).toHaveBeenCalledTimes(3)
+    expect(outputSchemaValidateSpy).toHaveBeenCalledTimes(3)
+
+    expect(mid2).toHaveBeenCalledTimes(3)
+    expect(mid2).toHaveBeenNthCalledWith(1, expect.objectContaining({ context: { auth: 3 } }), 'inputSchema__INPUT', expect.any(Function))
+    expect(mid2).toHaveNthResolvedWith(1, expect.objectContaining({ output: '__1__' }))
+    expect(mid2).toHaveBeenNthCalledWith(2, expect.objectContaining({ context: { auth: 4 } }), 'inputSchema__INPUT', expect.any(Function))
+    expect(mid2).toHaveNthResolvedWith(2, expect.objectContaining({ output: '__2__' }))
+    expect(mid2).toHaveBeenNthCalledWith(3, expect.objectContaining({ context: { auth: 5 } }), 'inputSchema__INPUT', expect.any(Function))
+    expect(mid2).toHaveNthResolvedWith(3, expect.objectContaining({ output: '__4__' }))
+
+    expect(handler).toHaveBeenCalledTimes(4)
+    expect(handler).toHaveBeenNthCalledWith(1, expect.objectContaining({ context: { auth: 6 } }), 'inputSchema__INPUT')
+    expect(handler).toHaveBeenNthCalledWith(2, expect.objectContaining({ context: { auth: 7 } }), 'inputSchema__INPUT')
+    expect(handler).toHaveBeenNthCalledWith(3, expect.objectContaining({ context: { auth: 8 } }), 'inputSchema__INPUT')
+    expect(handler).toHaveBeenNthCalledWith(4, expect.objectContaining({ context: { auth: 9 } }), 'inputSchema__INPUT')
+  })
+
+  it('client context', async () => {
+    const context = vi.fn().mockResolvedValue({ auth: true })
+    const client = createProcedureClient(procedure, { context })
+
+    await client(undefined, { context: { from: 'client_context' } })
+
+    expect(context).toHaveBeenCalledTimes(1)
+    expect(context).toHaveBeenCalledWith({ from: 'client_context' })
+    expect(handler).toHaveBeenCalledWith(expect.objectContaining({ context: { auth: true } }), undefined)
+  })
+
+  it('trace output AsyncIteratorObject and use override for proxy', async () => {
+    const handlerIterator = (async function* () {
+      yield 'event'
+      return 'result'
+    })()
+    handler.mockResolvedValueOnce(handlerIterator as any)
+
     const client = createProcedureClient(procedure)
 
-    preMid1.mockImplementationOnce(async ({ next }, input, output) => output([(await next()).output, (await next()).output, (await next()).output, (await next()).output]))
+    const iterator = await client() as any
+    expect(iterator).toSatisfy(isAsyncIteratorObject)
 
-    let index = 0
+    expect(overrideSpy).toHaveBeenCalledTimes(1)
+    expect(overrideSpy).toHaveBeenCalledWith(handlerIterator, expect.any(Object))
+    expect(iterator).toBe(overrideSpy.mock.results[0]!.value)
 
-    preMid2.mockImplementation(({ next }) => next({ context: { preMid2: index++ } }))
-    postMid1.mockImplementation(({ next }) => next({ context: { postMid1: index++ } }))
-
-    await expect(client({ val: '123' })).resolves.toEqual([{ val: 123 }, { val: 123 }, { val: 123 }, { val: 123 }])
-
-    expect(preMid1).toBeCalledTimes(1)
-    expect(preMid2).toBeCalledTimes(4)
-    expect(postMid1).toBeCalledTimes(4)
-    expect(postMid2).toBeCalledTimes(4)
-    expect(handler).toBeCalledTimes(4)
-
-    expect((handler as any).mock.calls[0][0].context.preMid2).toBe(0)
-    expect((handler as any).mock.calls[0][0].context.postMid1).toBe(1)
-
-    expect((handler as any).mock.calls[1][0].context.preMid2).toBe(2)
-    expect((handler as any).mock.calls[1][0].context.postMid1).toBe(3)
-
-    expect((handler as any).mock.calls[2][0].context.preMid2).toBe(4)
-    expect((handler as any).mock.calls[2][0].context.postMid1).toBe(5)
-
-    expect((handler as any).mock.calls[3][0].context.preMid2).toBe(6)
-    expect((handler as any).mock.calls[3][0].context.postMid1).toBe(7)
+    await expect(iterator.next()).resolves.toEqual({ value: 'event', done: false })
+    await expect(iterator.next()).resolves.toEqual({ value: 'result', done: true })
   })
 
-  it('works with async iterator', async () => {
-    const client = createProcedureClient(unvalidatedProcedure)
-    const rootIterator = (async function* () {
-      yield { order: 1 }
-      return { order: 2 }
-    }())
-    ;(rootIterator as any)[Symbol.for('TEST')] = 'test'
+  it('trace output readable stream and use override for proxy', async () => {
+    const handlerStream = new ReadableStream({
+      start(controller) {
+        controller.enqueue('event')
+        controller.close()
+      },
+    })
+    handler.mockResolvedValueOnce(handlerStream as any)
 
-    handler.mockResolvedValueOnce(rootIterator as any)
-    const iterator = await client({ val: '123' }) as any
+    const client = createProcedureClient(procedure)
 
-    expect((iterator as any)[Symbol.for('TEST')]).toBe('test')
-    expect(await iterator.next()).toEqual({ done: false, value: { order: 1 } })
-    expect(await iterator.next()).toEqual({ done: true, value: { order: 2 } })
+    const stream = await client() as any
+    expect(stream).toBeInstanceOf(ReadableStream)
 
-    expect(overlayProxySpy).toHaveBeenCalledTimes(1)
-    expect(overlayProxySpy).toHaveBeenCalledWith(rootIterator, expect.any(Shared.AsyncIteratorClass))
-    expect(iterator).toBe(overlayProxySpy.mock.results[0]?.value)
+    expect(overrideSpy).toHaveBeenCalledTimes(1)
+    expect(overrideSpy).toHaveBeenCalledWith(handlerStream, expect.any(Object))
+    expect(stream).toBe(overrideSpy.mock.results[0]!.value)
+
+    const reader = stream.getReader()
+    await expect(reader.read()).resolves.toEqual({ value: 'event', done: false })
+    await expect(reader.read()).resolves.toEqual({ value: undefined, done: true })
   })
 
-  it('not modify HibernationEventIterator', async () => {
-    const client = createProcedureClient(unvalidatedProcedure)
-    const iterator = new HibernationEventIterator(() => {})
-    handler.mockResolvedValueOnce(iterator as any)
-    await expect(client({ val: '123' })).resolves.toBe(iterator)
+  describe('without a tracer', () => {
+    beforeEach(() => {
+      const tracer = SharedV2Module.getTracer()
+      SharedV2Module.setTracer(undefined)
+      return () => SharedV2Module.setTracer(tracer)
+    })
 
-    expect(overlayProxySpy).not.toBeCalled()
-  })
-})
+    it('still wraps output AsyncIteratorObject to reconcile iteration errors', async () => {
+      const errorMap: ErrorMap = { BAD_REQUEST: { message: 'Bad Request' } }
+      const procedure = os.errors(errorMap).handler(handler)
+      const error = new ORPCError('BAD_REQUEST', { data: 'data' })
+      const handlerIterator = (async function* () {
+        throw error
+      }())
+      handler.mockResolvedValueOnce(handlerIterator as any)
+      const reconciledError = new ORPCError('__reconciled__')
+      reconcileErrorSpy.mockResolvedValueOnce(reconciledError)
 
-it('still work without InputSchema', async () => {
-  const procedure = new Procedure({
-    outputSchema: schema,
-    errorMap: {},
-    route: {},
-    meta: {},
-    handler,
-    middlewares: [],
-    inputValidationIndex: 0,
-    outputValidationIndex: 0,
-  })
+      const iterator = await createProcedureClient(procedure)() as any
+      expect(iterator).toSatisfy(isAsyncIteratorObject)
+      expect(overrideSpy).toHaveBeenCalledWith(handlerIterator, expect.any(Object))
 
-  const client = createProcedureClient(procedure)
+      await expect(iterator.next()).rejects.toThrow(reconciledError)
+      expect(reconcileErrorSpy).toHaveBeenCalledWith(errorMap, error)
+    })
 
-  await expect(client('anything')).resolves.toEqual({ val: 123 })
+    it('returns output ReadableStream as is', async () => {
+      const handlerStream = new ReadableStream()
+      handler.mockResolvedValueOnce(handlerStream as any)
 
-  expect(handler).toBeCalledTimes(1)
-  expect(handler).toHaveBeenCalledWith({ input: 'anything', context: {}, path: [], procedure })
-})
-
-it('still work without OutputSchema', async () => {
-  const procedure = new Procedure({
-    inputSchema: schema,
-    outputSchema: undefined,
-    errorMap: {},
-    route: {},
-    meta: {},
-    handler,
-    middlewares: [],
-    inputValidationIndex: 0,
-    outputValidationIndex: 0,
+      await expect(createProcedureClient(procedure)()).resolves.toBe(handlerStream)
+      expect(overrideSpy).not.toHaveBeenCalled()
+    })
   })
 
-  const client = createProcedureClient(procedure)
+  describe('reconcile error', () => {
+    const errorMap: ErrorMap = {
+      BAD_REQUEST: { message: 'Bad Request' },
+    }
+    const procedure = os.use(mid1).errors(errorMap).use(mid2).handler(handler)
+    const client = createProcedureClient(procedure, { interceptors: [interceptor] })
 
-  // @ts-expect-error - without output schema
-  handler.mockReturnValueOnce('anything')
+    it('reconcile error before throw', async () => {
+      const error = new ORPCError('BAD_REQUEST', { data: 'data' })
+      handler.mockRejectedValueOnce(error)
+      const reconciledError = new ORPCError('__reconciled__')
+      reconcileErrorSpy.mockResolvedValueOnce(reconciledError)
 
-  await expect(client({ val: '123' })).resolves.toEqual('anything')
+      await expect(client()).rejects.toThrow(reconciledError)
 
-  expect(handler).toBeCalledTimes(1)
-  expect(handler).toHaveBeenCalledWith({ input: { val: 123 }, context: {}, path: [], procedure })
-})
+      expect(reconcileErrorSpy).toHaveBeenCalledTimes(1)
+      expect(reconcileErrorSpy).toHaveBeenCalledWith(errorMap, error)
+    })
 
-it('has helper `output` in meta', async () => {
-  const client = createProcedureClient(procedure)
+    describe('asyncIteratorObject', () => {
+      it('reconcile error event before throw', async () => {
+        const error = new ORPCError('BAD_REQUEST', { data: 'data' })
+        handler.mockResolvedValueOnce((async function* () {
+          throw error
+        })() as any)
+        const reconciledError = new ORPCError('__reconciled__')
+        reconcileErrorSpy.mockResolvedValueOnce(reconciledError)
 
-  preMid2.mockImplementationOnce((_, __, output) => {
-    return output({ val: 99990 })
+        const iterator = await client() as any
+        expect(iterator).toSatisfy(isAsyncIteratorObject)
+
+        await expect(iterator.next()).rejects.toThrow(reconciledError)
+
+        expect(reconcileErrorSpy).toHaveBeenCalledTimes(1)
+        expect(reconcileErrorSpy).toHaveBeenCalledWith(errorMap, error)
+      })
+    })
   })
-
-  await expect(client({ val: '123' })).resolves.toEqual({ val: 99990 })
-
-  expect(preMid1).toBeCalledTimes(1)
-  expect(preMid2).toBeCalledTimes(1)
-  expect(handler).toBeCalledTimes(0)
-
-  expect(preMid1).toReturnWith(Promise.resolve({ output: { val: '99990' }, context: {} }))
-})
-
-it('support disable input/output validation by setting validation index to NaN', async () => {
-  const procedure = new Procedure({
-    inputSchema: schema,
-    outputSchema: schema,
-    errorMap: {},
-    route: {},
-    meta: {},
-    handler: ({ input }) => input,
-    middlewares: [],
-    inputValidationIndex: Number.NaN,
-    outputValidationIndex: Number.NaN,
-  })
-
-  const client = createProcedureClient(procedure)
-
-  await expect(client('invalid' as any)).resolves.toEqual('invalid')
 })

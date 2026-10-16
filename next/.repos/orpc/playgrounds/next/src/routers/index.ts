@@ -1,20 +1,24 @@
-import { me, signin, signup } from './auth'
-import { createPlanet, findPlanet, listPlanets, updatePlanet } from './planet'
-import { sse } from './sse'
+import { deleteFile, findFile, uploadFile } from './file'
+import { publishMessage, subscribeMessages } from './message'
+import { createPlanet, deletePlanet, findPlanet, listPlanets, updatePlanet } from './planet'
 
 export const router = {
-  auth: {
-    signup,
-    signin,
-    me,
+  file: {
+    find: findFile,
+    upload: uploadFile,
+    delete: deleteFile,
   },
 
   planet: {
     list: listPlanets,
-    create: createPlanet,
     find: findPlanet,
+    create: createPlanet,
     update: updatePlanet,
+    delete: deletePlanet,
   },
 
-  sse,
+  message: {
+    publish: publishMessage,
+    subscribe: subscribeMessages,
+  },
 }

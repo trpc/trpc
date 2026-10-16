@@ -1,212 +1,136 @@
-import { StandardHandler, StandardRPCMatcher } from '@orpc/server/standard'
-import { describe, expect, it } from 'vitest'
-import { RATELIMIT_HANDLER_CONTEXT_SYMBOL, RatelimitHandlerPlugin } from './handler-plugin'
+import { ORPCError, os } from '@orpc/server'
+import { RPCHandler } from '@orpc/server/fetch'
+import { RATELIMIT_HANDLER_PLUGIN_CONTEXT_SYMBOL, RateLimitHandlerPlugin } from './handler-plugin'
 
 describe('ratelimitHandlerPlugin', () => {
-  const createMockRequest = (url: string) => ({
-    method: 'GET',
-    url: new URL(url),
-    headers: {},
-    signal: new AbortController().signal,
-    body: () => Promise.resolve(''),
+  const handlerFn = vi.fn()
+  const procedure = os.handler(handlerFn)
+  const handler = new RPCHandler(procedure, {
+    allowMethods: ['GET'], // tests below send GET requests
+    plugins: [
+      new RateLimitHandlerPlugin(),
+    ],
   })
 
-  it('adds rate limit headers', async () => {
-    const resetTime = Date.now() + 60000
+  it('adds rate limit headers to a successful response after a limit check', async () => {
+    const reset = Date.now() + 60000
 
-    const options: any = { rootInterceptors: [] }
-    new RatelimitHandlerPlugin().init(options)
-
-    options.rootInterceptors.push(async ({ context }: any) => {
-      context[RATELIMIT_HANDLER_CONTEXT_SYMBOL].ratelimitResult = {
-        limit: 100,
-        remaining: 50,
-        reset: resetTime,
-      }
-
-      return {
-        matched: true as const,
-        response: { status: 200, headers: {}, body: 'ok' },
-      }
+    handlerFn.mockImplementationOnce(({ context, path, procedure }) => {
+      context[RATELIMIT_HANDLER_PLUGIN_CONTEXT_SYMBOL].checks.push({
+        path,
+        procedure,
+        result: {
+          success: true,
+          limit: 100,
+          remaining: 50,
+          reset,
+        },
+      })
     })
 
-    const handler = new StandardHandler({}, new StandardRPCMatcher(), {} as any, options)
-    const result = await handler.handle(createMockRequest('https://example.com/ping'), { context: {} })
+    const { response } = await handler.handle(new Request('http://localhost:3000'))
 
-    if (!result.matched)
-      throw new Error('request should match')
-
-    expect(result.response.headers['ratelimit-limit']).toBe('100')
-    expect(result.response.headers['ratelimit-remaining']).toBe('50')
-    expect(result.response.headers['ratelimit-reset']).toBe(resetTime.toString())
+    expect(response!.headers.get('ratelimit-limit')).toBe('100')
+    expect(response!.headers.get('ratelimit-remaining')).toBe('50')
+    expect(response!.headers.get('ratelimit-reset')).toBe(reset.toString())
+    expect(response!.headers.get('retry-after')).toBe(null)
   })
 
-  it('adds retry-after header on 429 status', async () => {
-    const resetTime = Date.now() + 30000
+  it('adds retry-after when a request is rejected for exceeding the limit', async () => {
+    const reset = Date.now() + 60000
 
-    const options: any = { rootInterceptors: [] }
-    new RatelimitHandlerPlugin().init(options)
+    handlerFn.mockImplementationOnce(({ context, path, procedure }) => {
+      context[RATELIMIT_HANDLER_PLUGIN_CONTEXT_SYMBOL].checks.push({
+        path,
+        procedure,
+        result: {
+          success: false,
+          limit: 100,
+          remaining: 50,
+          reset,
+        },
+      })
 
-    options.rootInterceptors.push(async ({ context }: any) => {
-      context[RATELIMIT_HANDLER_CONTEXT_SYMBOL].ratelimitResult = {
-        success: false,
-        reset: resetTime,
-      }
-
-      return {
-        matched: true as const,
-        response: { status: 429, headers: {}, body: 'too many requests' },
-      }
+      throw new ORPCError('TOO_MANY_REQUESTS')
     })
 
-    const handler = new StandardHandler({}, new StandardRPCMatcher(), {} as any, options)
-    const result = await handler.handle(createMockRequest('https://example.com/ping'), { context: {} })
+    const { response } = await handler.handle(new Request('http://localhost:3000'))
 
-    if (!result.matched)
-      throw new Error('request should match')
-
-    const retryAfter = Number.parseInt(result.response.headers['retry-after'] as string)
-    expect(retryAfter).toBeGreaterThan(0)
-    expect(retryAfter).toBeLessThanOrEqual(31)
+    expect(response!.headers.get('ratelimit-limit')).toBe('100')
+    expect(response!.headers.get('ratelimit-remaining')).toBe('50')
+    expect(response!.headers.get('ratelimit-reset')).toBe(reset.toString())
+    expect(response!.headers.get('retry-after')).toBe('60') // 60s
   })
 
-  it('does not add retry-after when success is true', async () => {
-    const options: any = { rootInterceptors: [] }
-    new RatelimitHandlerPlugin().init(options)
+  it('skips rate limit headers when no limit check ran for the request', async () => {
+    const { response } = await handler.handle(new Request('http://localhost:3000'))
 
-    options.rootInterceptors.push(async ({ context }: any) => {
-      context[RATELIMIT_HANDLER_CONTEXT_SYMBOL].ratelimitResult = {
-        success: true,
-        reset: Date.now() + 60000,
-      }
+    expect(response!.headers.get('ratelimit-limit')).toBe(null)
+    expect(response!.headers.get('ratelimit-remaining')).toBe(null)
+    expect(response!.headers.get('ratelimit-reset')).toBe(null)
+    expect(response!.headers.get('retry-after')).toBe(null)
+  })
 
-      return {
-        matched: true as const,
-        response: { status: 429, headers: {}, body: 'ok' },
-      }
+  it('uses the most restrictive limit when multiple checks run for one request', async () => {
+    const reset = Date.now() + 60000
+
+    handlerFn.mockImplementationOnce(({ context, path, procedure }) => {
+      context[RATELIMIT_HANDLER_PLUGIN_CONTEXT_SYMBOL].checks.push({
+        path,
+        procedure,
+        result: {
+          success: false,
+        },
+      })
+
+      context[RATELIMIT_HANDLER_PLUGIN_CONTEXT_SYMBOL].checks.push({
+        path,
+        procedure,
+        result: {
+          success: false,
+        },
+      })
+
+      context[RATELIMIT_HANDLER_PLUGIN_CONTEXT_SYMBOL].checks.push({
+        path,
+        procedure,
+        result: {
+          success: false,
+          limit: 100,
+          remaining: 3,
+          reset,
+        },
+      })
+
+      context[RATELIMIT_HANDLER_PLUGIN_CONTEXT_SYMBOL].checks.push({
+        path,
+        procedure,
+        result: {
+          success: false,
+          limit: 100,
+          remaining: 2,
+          reset,
+        },
+      })
+
+      // remaining is lowest but success: true so it still low priority to pick
+      context[RATELIMIT_HANDLER_PLUGIN_CONTEXT_SYMBOL].checks.push({
+        path,
+        procedure,
+        result: {
+          success: true,
+          limit: 100,
+          remaining: 1,
+          reset,
+        },
+      })
     })
 
-    const handler = new StandardHandler({}, new StandardRPCMatcher(), {} as any, options)
-    const result = await handler.handle(createMockRequest('https://example.com/ping'), { context: {} })
+    const { response } = await handler.handle(new Request('http://localhost:3000'))
 
-    if (!result.matched)
-      throw new Error('request should match')
-
-    expect(result.response.headers['retry-after']).toBeUndefined()
-  })
-
-  it('does not add retry-after when status is not 429', async () => {
-    const options: any = { rootInterceptors: [] }
-    new RatelimitHandlerPlugin().init(options)
-
-    options.rootInterceptors.push(async ({ context }: any) => {
-      context[RATELIMIT_HANDLER_CONTEXT_SYMBOL].ratelimitResult = {
-        success: false,
-        reset: Date.now() + 60000,
-      }
-
-      return {
-        matched: true as const,
-        response: { status: 200, headers: {}, body: 'ok' },
-      }
-    })
-
-    const handler = new StandardHandler({}, new StandardRPCMatcher(), {} as any, options)
-    const result = await handler.handle(createMockRequest('https://example.com/ping'), { context: {} })
-
-    if (!result.matched)
-      throw new Error('request should match')
-
-    expect(result.response.headers['retry-after']).toBeUndefined()
-  })
-
-  it('clamps retry-after to 0 when reset is in the past', async () => {
-    const resetTime = Date.now() - 5000 // 5 seconds ago
-
-    const options: any = { rootInterceptors: [] }
-    new RatelimitHandlerPlugin().init(options)
-
-    options.rootInterceptors.push(async ({ context }: any) => {
-      context[RATELIMIT_HANDLER_CONTEXT_SYMBOL].ratelimitResult = {
-        success: false,
-        reset: resetTime,
-      }
-
-      return {
-        matched: true as const,
-        response: { status: 429, headers: {}, body: 'too many requests' },
-      }
-    })
-
-    const handler = new StandardHandler({}, new StandardRPCMatcher(), {} as any, options)
-    const result = await handler.handle(createMockRequest('https://example.com/ping'), { context: {} })
-
-    if (!result.matched) {
-      throw new Error('request should match')
-    }
-
-    expect(result.response.headers['retry-after']).toBe('0')
-  })
-
-  it('does not add headers when ratelimitResult is undefined', async () => {
-    const options: any = { rootInterceptors: [] }
-    new RatelimitHandlerPlugin().init(options)
-
-    options.rootInterceptors.push(async () => ({
-      matched: true as const,
-      response: { status: 200, headers: {}, body: 'ok' },
-    }))
-
-    const handler = new StandardHandler({}, new StandardRPCMatcher(), {} as any, options)
-    const result = await handler.handle(createMockRequest('https://example.com/ping'), { context: {} })
-
-    if (!result.matched)
-      throw new Error('request should match')
-
-    expect(result.response.headers['ratelimit-limit']).toBeUndefined()
-    expect(result.response.headers['ratelimit-remaining']).toBeUndefined()
-  })
-
-  it('handles partial ratelimitResult', async () => {
-    const options: any = { rootInterceptors: [] }
-    new RatelimitHandlerPlugin().init(options)
-
-    options.rootInterceptors.push(async ({ context }: any) => {
-      context[RATELIMIT_HANDLER_CONTEXT_SYMBOL].ratelimitResult = { limit: 100 }
-
-      return {
-        matched: true as const,
-        response: { status: 200, headers: {}, body: 'ok' },
-      }
-    })
-
-    const handler = new StandardHandler({}, new StandardRPCMatcher(), {} as any, options)
-    const result = await handler.handle(createMockRequest('https://example.com/ping'), { context: {} })
-
-    if (!result.matched)
-      throw new Error('request should match')
-
-    expect(result.response.headers['ratelimit-limit']).toBe('100')
-    expect(result.response.headers['ratelimit-remaining']).toBeUndefined()
-  })
-
-  it('injects context with symbol', async () => {
-    let capturedContext: any
-
-    const options: any = { rootInterceptors: [] }
-    new RatelimitHandlerPlugin().init(options)
-
-    options.rootInterceptors.push(async ({ context }: any) => {
-      capturedContext = context
-      return {
-        matched: true as const,
-        response: { status: 200, headers: {}, body: 'ok' },
-      }
-    })
-
-    const handler = new StandardHandler({}, new StandardRPCMatcher(), {} as any, options)
-    await handler.handle(createMockRequest('https://example.com/ping'), { context: {} })
-
-    expect(capturedContext[RATELIMIT_HANDLER_CONTEXT_SYMBOL]).toBeDefined()
+    expect(response!.headers.get('ratelimit-limit')).toBe('100')
+    expect(response!.headers.get('ratelimit-remaining')).toBe('2')
+    expect(response!.headers.get('ratelimit-reset')).toBe(reset.toString())
+    expect(response!.headers.get('retry-after')).toBe(null)
   })
 })

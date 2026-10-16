@@ -1,25 +1,25 @@
 {
   "compilerOptions": {
     "incremental": true,
-    "target": "ES2022",
-    "lib": ["ES2022"],
+    "target": "ES2023",
+    "lib": ["ES2023"],
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "baseUrl": "./",
+    "rootDir": "src",
     "module": "ES2022",
     "moduleResolution": "bundler",
+    "resolvePackageJsonExports": true,
     "types": ["node"],
     "strict": true,
-    "strictBindCallApply": false,
-    "strictNullChecks": true,
-    "noFallthroughCasesInSwitch": false,
-    "noImplicitAny": false,
-    "declaration": false,
-    "outDir": "./dist",
+    "strictPropertyInitialization": false,
+    "declaration": true,
+    "outDir": "dist",
     "removeComments": true,
     "sourceMap": true,
     "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
     "skipLibCheck": true
-  }
+  },
+  "include": ["src"]
 }

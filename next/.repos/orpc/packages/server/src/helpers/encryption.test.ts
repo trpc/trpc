@@ -69,4 +69,46 @@ describe('encrypt/decrypt', () => {
     expect(await decrypt(undefined, 'secret')).toBeUndefined()
     expect(await decrypt(null, 'secret')).toBeUndefined()
   })
+
+  it('should decrypt compatibility fixtures from previous releases', async () => {
+    const fixtures = [
+      {
+        value: 'compatibility-value',
+        secret: 'compatibility-encryption-secret',
+        encrypted: 'hbSNaYOIGOVnapa2UgZgzHgNr6ARf1zWk-3cNWhDBwsFOnQ9S4IZR5uUdqIM-WbTRAfryalkWnHJD8voMh5y',
+      },
+      {
+        value: '',
+        secret: 'compatibility-encryption-secret',
+        encrypted: '5IXfizzzaGLhausAUKPlg4JBoyYnbKqa5qdVnLFVPMY8YWZfh0ouEFrZGQw',
+      },
+      {
+        value: 'value.with.dots-🚀-中文',
+        secret: 'compatibility-encryption-secret',
+        encrypted: 'xLe6faWGA5J3MUy-Cue5_mZXiJVlrzqKho8ywwhlCHbO4koT4XT3MxzesdTMLxZIAS6pPJLfU4qKKcZHwOwAAU5RHP-sMp8',
+      },
+    ] as const
+
+    for (const fixture of fixtures) {
+      expect(await decrypt(fixture.encrypted, fixture.secret)).toBe(fixture.value)
+    }
+  })
+})
+
+describe('decrypt canonical form', () => {
+  it('accepts only the canonical ciphertext string', async () => {
+    const secret = 'test-secret-key'
+    // 16 salt + 12 iv + 8 data + 16 tag = 52 bytes -> 70 chars; last char carries 4 unused bits
+    const encrypted = await encrypt('user1234', secret)
+    expect(encrypted).toHaveLength(70)
+    expect(await decrypt(encrypted, secret)).toBe('user1234')
+
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
+    const last = alphabet.indexOf(encrypted.at(-1)!)
+    for (let flip = 1; flip < 16; flip++) {
+      expect(await decrypt(encrypted.slice(0, -1) + alphabet[last ^ flip], secret)).toBeUndefined()
+    }
+    expect(await decrypt(`${encrypted}=`, secret)).toBeUndefined()
+    expect(await decrypt(`${encrypted}==`, secret)).toBeUndefined()
+  })
 })

@@ -1,11 +1,9 @@
-import '../lib/orpc.server'
-
 import type { Metadata } from 'next'
 import { Providers } from './providers'
+import './global.css'
 
 export const metadata: Metadata = {
-  title: 'ORPC Playground',
-  description: 'End-to-end typesafe APIs builder, Developer-first simplicity',
+  title: 'oRPC Next.js Playground',
 }
 
 export default function RootLayout({

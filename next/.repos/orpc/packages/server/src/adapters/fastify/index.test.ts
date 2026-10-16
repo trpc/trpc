@@ -1,3 +1,5 @@
 it('exports RPCHandler', async () => {
-  expect(Object.keys(await import('./index'))).toContain('RPCHandler')
+  await expect(import('.')).resolves.toMatchObject({
+    RPCHandler: expect.any(Function),
+  })
 })

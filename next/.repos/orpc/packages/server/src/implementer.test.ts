@@ -1,160 +1,93 @@
-import { router as contract } from '../../contract/tests/shared'
-import { router } from '../tests/shared'
-import { Builder } from './builder'
+import type { RouterContract } from '@orpc/contract'
+import { oc } from '@orpc/contract'
+import z from 'zod'
 import { implement } from './implementer'
-import { isLazy, unlazy } from './lazy'
-import * as MiddlewareDecorated from './middleware-decorated'
-import * as RouterHiddenModule from './router-hidden'
-import * as RouterUtilsModule from './router-utils'
+import { ImplementedProcedure, ProcedureImplementer } from './implementer-procedure'
+import * as ImplementerRouter from './implementer-router'
 
-const setHiddenRouterContractSpy = vi.spyOn(RouterHiddenModule, 'setHiddenRouterContract')
-const decorateMiddlewareSpy = vi.spyOn(MiddlewareDecorated, 'decorateMiddleware')
-const enhanceRouterSpy = vi.spyOn(RouterUtilsModule, 'enhanceRouter')
+const createRouterImplementerSpy = vi.spyOn(ImplementerRouter, 'createRouterImplementer')
+
+const contract = {
+  ping: oc.input(z.object({})).output(z.object({})).errors({ INTERNAL_SERVER_ERROR: {} }),
+  nested: {
+    pong: oc.input(z.string()),
+  },
+
+  // ensure can handle procedure/router with name that conflict with implementer methods
+  $context: oc.output(z.boolean({})),
+  $config: oc.output(z.boolean({})),
+} satisfies RouterContract
 
 beforeEach(() => {
   vi.clearAllMocks()
 })
 
 describe('implement', () => {
-  const rawImplementer = implement(contract)
+  const implementer = implement(contract, { disableInputValidation: false })
 
-  const mid = vi.fn()
-  const config = {
-    initialInputValidationIndex: Number.POSITIVE_INFINITY,
-  }
+  it('crate with router implementer', () => {
+    void implement(contract, { disableInputValidation: false })
+    expect(createRouterImplementerSpy).toHaveBeenCalledTimes(1)
+    expect(createRouterImplementerSpy).toHaveBeenCalledWith(contract, { disableInputValidation: false })
+  })
 
-  const implementer = rawImplementer.$config(config).use(mid)
-
-  describe('root level', () => {
-    it('.$context', () => {
-      const applied = rawImplementer.$context<{ anything: string }>()
-
-      expect(applied).toBe(rawImplementer)
+  describe('.$context', () => {
+    it('on conflict procedure name', () => {
+      expect(implementer.$context()).toBe(implementer)
     })
 
-    it('.$config', () => {
-      const config = {
-        initialInputValidationIndex: Number.NEGATIVE_INFINITY,
-        dedupeLeadingMiddlewares: false,
+    it('without conflict', () => {
+      const contract2 = {
+        ping: contract.ping,
       }
-      const applied = rawImplementer.$config(config)
 
-      expect(applied.nested.ping['~orpc'].config).toBe(config)
+      const implementer = implement(contract2)
+      expect(implementer.$context()).toBe(implementer)
     })
   })
 
-  describe('router level', () => {
-    it('.middleware', () => {
-      const mid = vi.fn()
-      const applied = rawImplementer.nested.middleware(mid)
-      expect(applied).toBe(decorateMiddlewareSpy.mock.results[0]?.value)
-      expect(decorateMiddlewareSpy).toHaveBeenCalledOnce()
-      expect(decorateMiddlewareSpy).toHaveBeenCalledWith(mid)
+  describe('.$config', () => {
+    it('on conflict procedure name', () => {
+      const applied = implementer.$config({ disableOutputValidation: true })
+      expect(applied.ping['~orpc'].disableInputValidation).toBe(false)
+      expect(applied.ping['~orpc'].disableOutputValidation).toBe(true)
     })
 
-    it('.use', () => {
-      const mid = vi.fn()
-      const applied = rawImplementer.nested.use(mid)
+    it('without conflict', () => {
+      const contract2 = {
+        ping: contract.ping,
+      }
 
-      expect(applied.ping['~orpc'].middlewares).toEqual([mid])
-    })
-
-    it('.router', () => {
-      const applied = implementer.nested.router(router as any)
-
-      expect(RouterHiddenModule.getHiddenRouterContract(applied)).toBe(contract.nested)
-      expect(applied).toBe(setHiddenRouterContractSpy.mock.results[0]?.value)
-
-      expect(setHiddenRouterContractSpy).toHaveBeenCalledOnce()
-      expect(setHiddenRouterContractSpy).toHaveBeenCalledWith(enhanceRouterSpy.mock.results[0]?.value, contract.nested)
-
-      expect(enhanceRouterSpy).toHaveBeenCalledOnce()
-      expect(enhanceRouterSpy).toHaveBeenCalledWith(router, {
-        middlewares: [mid],
-        errorMap: {},
-        dedupeLeadingMiddlewares: true,
-      })
-    })
-
-    it('.lazy', () => {
-      const applied = implementer.nested.lazy(() => Promise.resolve({ default: router as any }))
-
-      expect(RouterHiddenModule.getHiddenRouterContract(applied)).toBe(contract.nested)
-      expect(applied).toBe(setHiddenRouterContractSpy.mock.results[0]?.value)
-
-      expect(setHiddenRouterContractSpy).toHaveBeenCalledOnce()
-      expect(setHiddenRouterContractSpy).toHaveBeenCalledWith(enhanceRouterSpy.mock.results[0]?.value, contract.nested)
-
-      expect(enhanceRouterSpy).toHaveBeenCalledOnce()
-      expect(enhanceRouterSpy).toHaveBeenCalledWith(expect.any(Object), {
-        middlewares: [mid],
-        errorMap: {},
-        dedupeLeadingMiddlewares: true,
-      })
-
-      const lazied = enhanceRouterSpy.mock.calls[0]?.[0]
-
-      expect(lazied).toSatisfy(isLazy)
-      expect(unlazy(lazied)).resolves.toEqual({ default: router })
+      const implementer = implement(contract2, { disableInputValidation: false })
+      const applied = implementer.$config({ disableOutputValidation: true })
+      expect(applied.ping['~orpc'].disableInputValidation).toBe(false)
+      expect(applied.ping['~orpc'].disableOutputValidation).toBe(true)
     })
   })
 
-  it('each procedure is a ProcedureImplementer', () => {
-    const pingBuilder = (builder: any) => {
-      expect(builder).toBeInstanceOf(Builder)
-      expect(builder['~orpc']).toEqual({
-        ...contract.ping['~orpc'],
-        config,
-        middlewares: [mid],
-        inputValidationIndex: Number.POSITIVE_INFINITY,
-        outputValidationIndex: 1,
-        dedupeLeadingMiddlewares: true,
-      })
-
-      return true
-    }
-
-    const pongBuilder = (builder: any) => {
-      expect(builder).toBeInstanceOf(Builder)
-      expect(builder['~orpc']).toEqual({
-        ...contract.pong['~orpc'],
-        config,
-        middlewares: [mid],
-        inputValidationIndex: Number.POSITIVE_INFINITY,
-        outputValidationIndex: 1,
-        dedupeLeadingMiddlewares: true,
-      })
-
-      return true
-    }
-
-    expect(implementer.ping).toSatisfy(pingBuilder)
-    expect(implementer.nested.ping).toSatisfy(pingBuilder)
-
-    expect(implementer.pong).toSatisfy(pongBuilder)
-    expect(implementer.nested.pong).toSatisfy(pongBuilder)
+  it('router/procedure access', () => {
+    expect(implementer.ping).toBeInstanceOf(ProcedureImplementer)
+    expect(implementer.nested.pong).toBeInstanceOf(ProcedureImplementer)
   })
 
-  it('contract & method has the same name', () => {
-    const conflictedContract = {
-      $context: {
-        $context: contract,
-      },
-      use: {
-        use: contract,
-      },
-    }
+  it('can handle procedure/router with name that conflict with implementer methods', () => {
+    const mid = vi.fn()
 
-    const implementer = implement(conflictedContract)
+    expect(implementer.$context.use(mid)).toBeInstanceOf(ProcedureImplementer)
+    expect(implementer.$context.use(mid)['~orpc']).toMatchObject(contract.$context['~orpc'])
+    expect(implementer.$context.use(mid)['~orpc'].orderedMiddlewares).toEqual([expect.objectContaining({ middleware: mid })])
 
-    expect(implementer.$context.$context.nested.ping).toBeInstanceOf(Builder)
-    expect(implementer.use.use.nested.ping).toBeInstanceOf(Builder)
+    expect(implementer.$context.handler(vi.fn())).toBeInstanceOf(ImplementedProcedure)
+    expect(implementer.$context.handler(vi.fn())['~orpc']).toMatchObject(contract.$context['~orpc'])
   })
 
-  it('not recursive if access with a symbol', () => {
-    expect((implementer as any)[Symbol.for('test')]).toBeUndefined()
-    expect((implementer.nested as any)[Symbol.for('test')]).toBeUndefined()
-    expect((implementer.nested.ping as any)[Symbol.for('test')]).toBeUndefined()
-    expect((implementer.use as any)[Symbol.for('test')]).toBeUndefined()
+  it('support implement single procedure', () => {
+    const implementer = implement(contract.ping)
+    expect(implementer.$context()).toBe(implementer)
+
+    const mid = vi.fn()
+    expect(implementer.use(mid)).toBeInstanceOf(ProcedureImplementer)
+    expect(implementer.use(mid)['~orpc']).toMatchObject(contract.ping['~orpc'])
+    expect(implementer.use(mid)['~orpc'].orderedMiddlewares).toEqual([expect.objectContaining({ middleware: mid })])
   })
 })

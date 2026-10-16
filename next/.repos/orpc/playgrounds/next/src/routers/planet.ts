@@ -1,98 +1,143 @@
-import { ORPCError } from '@orpc/server'
-import * as z from 'zod'
-import { authed, pub } from '../orpc'
-import { NewPlanetSchema, PlanetSchema, UpdatePlanetSchema } from '../schemas/planet'
-import { retry } from '@/middlewares/retry'
+import { protectedOS, publicOS } from '@/orpc'
+import { CreatingPlanetSchema, PlanetSchema } from '@/schemas/planet'
+import type { Planet } from '@/schemas/planet'
+import z from 'zod'
+import { openapi } from '@orpc/openapi'
+import { call } from '@orpc/server'
+import { deleteFile, uploadFile } from './file'
 
-export const listPlanets = pub
-  .use(retry({ times: 3 }))
-  .route({
+const DB: Planet[] = [
+  {
+    id: 'bcf900e3-2f66-4a03-aa6c-6336eb601630',
+    name: 'Earth',
+    description: 'The planet Earth',
+  },
+  {
+    id: 'eb9f4084-f06f-4b59-aeb5-2341e5051619',
+    name: 'Mars',
+    description: 'The planet Mars',
+  },
+]
+
+export const listPlanets = publicOS
+  .meta(openapi({
     method: 'GET',
     path: '/planets',
     summary: 'List all planets',
-    tags: ['Planets'],
-  })
-  .input(
-    z.object({
-      limit: z.number().int().min(1).max(100).default(10),
-      cursor: z.number().int().min(0).default(0),
-    }),
-  )
+    tags: ['Planet'],
+  }))
+  .input(z.object({
+    keyword: z.string().optional(),
+    limit: z.number().int().min(1).max(100).default(10),
+    cursor: z.number().int().min(0).default(0),
+  }))
   .output(z.array(PlanetSchema))
-  .handler(async ({ input, context }) => {
-    return context.db.planets.list(input.limit, input.cursor)
+  .handler(async (_, { keyword, cursor, limit }) => {
+    const planets = keyword !== undefined
+      ? DB.filter(p => p.name.includes(keyword) || p.description?.includes(keyword))
+      : DB
+
+    return planets.slice(cursor, cursor + limit)
   })
 
-export const createPlanet = authed
-  .route({
-    method: 'POST',
-    path: '/planets',
-    summary: 'Create a planet',
-    tags: ['Planets'],
-  })
-  .input(NewPlanetSchema)
-  .output(PlanetSchema)
-  .handler(async ({ input, context }) => {
-    return context.db.planets.create(input, context.user)
-  })
-
-export const findPlanet = pub
-  .use(retry({ times: 3 }))
-  .route({
+export const findPlanet = publicOS
+  .meta(openapi({
     method: 'GET',
     path: '/planets/{id}',
     summary: 'Find a planet',
-    tags: ['Planets'],
-  })
-  .input(
-    z.object({
-      id: z.number().int().min(1),
-    }),
-  )
+    tags: ['Planet'],
+  }))
+  .input(z.object({
+    id: PlanetSchema.shape.id,
+  }))
   .output(PlanetSchema)
-  .handler(async ({ input, context }) => {
-    const planet = await context.db.planets.find(input.id)
+  .errors({ NOT_FOUND: { message: 'Planet not found' } })
+  .handler(({ input, errors }) => {
+    const planet = DB.find(p => p.id === input.id)
 
     if (!planet) {
-      throw new ORPCError('NOT_FOUND', { message: 'Planet not found' })
+      throw errors.NOT_FOUND()
     }
 
     return planet
   })
 
-export const updatePlanet = authed
-  .route({
-    method: 'PUT',
-    path: '/planets/{id}',
-    summary: 'Update a planet',
-    tags: ['Planets'],
-  })
-  .errors({
-    NOT_FOUND: {
-      message: 'Planet not found',
-      data: z.object({ id: UpdatePlanetSchema.shape.id }),
-    },
-  })
-  .input(UpdatePlanetSchema)
+export const createPlanet = protectedOS
+  .meta(openapi({
+    method: 'POST',
+    path: '/planets',
+    summary: 'Create a new planet',
+    tags: ['Planet'],
+  }))
+  .input(CreatingPlanetSchema)
   .output(PlanetSchema)
-  .handler(async ({ input, context, errors }) => {
-    const planet = await context.db.planets.find(input.id)
-
-    if (!planet) {
-      /**
-       *  1. Type-Safe Error Handling
-       *
-       * {@link https://orpc.dev/docs/error-handling#type%E2%80%90safe-error-handling}
-       */
-      throw errors.NOT_FOUND({ data: { id: input.id } })
-
-      /**
-       * 2. Normal Approach
-       *
-       * {@link https://orpc.dev/docs/error-handling#normal-approach}
-       */
-      // throw new ORPCError('NOT_FOUND', { message: 'Planet not found' })
+  .handler(async ({ input, context }) => {
+    const planet: Planet = {
+      id: crypto.randomUUID(),
+      name: input.name,
+      description: input.description,
     }
 
-    return context.db.planets.update(input)
+    if (input.image) {
+      const uploaded = await call(uploadFile, input.image, { context })
+      planet.image = uploaded.id
+    }
+
+    DB.push(planet)
+
+    return planet
+  })
+
+export const updatePlanet = protectedOS
+  .meta(openapi({
+    method: 'PUT',
+    path: '/planets/{id}',
+    summary: 'Update an existing planet',
+    tags: ['Planet'],
+  }))
+  .input(CreatingPlanetSchema.extend({ id: PlanetSchema.shape.id }))
+  .output(PlanetSchema)
+  .errors({ NOT_FOUND: { message: 'Planet not found' } })
+  .handler(async ({ input, errors, context }) => {
+    const planet = DB.find(p => p.id === input.id)
+
+    if (!planet) {
+      throw errors.NOT_FOUND()
+    }
+
+    planet.name = input.name
+    planet.description = input.description
+
+    if (planet.image) {
+      await call(deleteFile, { id: planet.image }, { context })
+    }
+
+    if (input.image) {
+      const uploaded = await call(uploadFile, input.image, { context })
+      planet.image = uploaded.id
+    }
+
+    return planet
+  })
+
+export const deletePlanet = protectedOS
+  .meta(openapi({
+    method: 'DELETE',
+    path: '/planets/{id}',
+    summary: 'Delete a planet',
+    tags: ['Planet'],
+  }))
+  .input(z.object({
+    id: PlanetSchema.shape.id,
+  }))
+  .handler(async ({ input, context }) => {
+    const index = DB.findIndex(p => p.id === input.id)
+
+    if (index >= 0) {
+      const [planet] = DB.splice(index, 1)
+
+      if (planet.image) {
+        await call(deleteFile, { id: planet.image }, { context })
+      }
+    }
   })

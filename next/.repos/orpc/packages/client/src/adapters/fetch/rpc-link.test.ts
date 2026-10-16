@@ -1,224 +1,361 @@
-import { getEventMeta, ORPCError, os, withEventMeta } from '@orpc/server'
-import { RPCHandler } from '@orpc/server/fetch'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { supportedDataTypes } from '../../../tests/shared'
+import { toFetchBody } from '@standard-server/fetch'
+import { createORPCClient } from '../../client'
 import { RPCLink } from './rpc-link'
+
+vi.mock('@orpc/shared', async (loadOrigin) => {
+  const origin = await loadOrigin() as any
+
+  return {
+    ...origin,
+    once: (fn: any) => fn,
+  }
+})
+
+vi.mock('@standard-server/fetch', async (loadOrigin) => {
+  const origin = await loadOrigin() as any
+
+  return {
+    ...origin,
+    toFetchBody: vi.fn(origin.toFetchBody),
+  }
+})
 
 beforeEach(() => {
   vi.clearAllMocks()
 })
 
-describe.each(supportedDataTypes)('rpcLink: $name', ({ value, expected }) => {
-  describe.each(['GET', 'POST'] as const)('method: %s', (method) => {
-    async function assertSuccessCase(value: unknown, expected: unknown): Promise<true> {
-      const handler = vi.fn(({ input }) => input)
-
-      const rpcHandler = new RPCHandler(os.handler(handler), {
-        strictGetMethodPluginEnabled: false,
-      })
-
-      const rpcLink = new RPCLink({
-        url: 'http://api.example.com',
-        method,
-        fetch: async (request) => {
-          const { matched, response } = await rpcHandler.handle(request)
-
-          if (matched) {
-            return response
-          }
-
-          throw new Error('No procedure match')
+describe('rpcLink', () => {
+  it('calls endpoint with fetch transport', async () => {
+    const fetch = vi.fn(async () => {
+      return new Response(JSON.stringify({ json: 'pong' }), {
+        status: 200,
+        headers: {
+          'content-type': 'application/json',
         },
       })
-
-      const output = await rpcLink.call([], value, { context: {} })
-
-      expect(output).toEqual(expected)
-      expect(handler).toHaveBeenCalledTimes(1)
-      expect(handler).toHaveBeenCalledWith(expect.objectContaining({ input: expected }))
-
-      return true
-    }
-
-    async function assertErrorCase(value: unknown, expected: unknown): Promise<true> {
-      const handler = vi.fn(({ input }) => {
-        throw new ORPCError('TEST', {
-          data: input,
-        })
-      })
-
-      const rpcHandler = new RPCHandler(os.handler(handler), {
-        strictGetMethodPluginEnabled: false,
-      })
-
-      const rpcLink = new RPCLink({
-        url: 'http://api.example.com',
-        method,
-        fetch: async (request) => {
-          const { matched, response } = await rpcHandler.handle(request)
-
-          if (matched) {
-            return response
-          }
-
-          throw new Error('No procedure match')
-        },
-      })
-
-      await expect(rpcLink.call([], value, { context: {} })).rejects.toSatisfy((e) => {
-        expect(e).toBeInstanceOf(ORPCError)
-        expect(e.code).toBe('TEST')
-        expect(e.data).toEqual(expected)
-
-        return true
-      })
-
-      return true
-    }
-
-    it('should work on flat', async () => {
-      expect(await assertSuccessCase(value, expected)).toBe(true)
-      expect(await assertErrorCase(value, expected)).toBe(true)
     })
 
-    it('should work on nested object', async () => {
-      expect(await assertSuccessCase({ data: value }, { data: expected })).toBe(true)
-      expect(await assertErrorCase({ data: value }, { data: expected })).toBe(true)
-    })
+    const orpc = createORPCClient(new RPCLink({
+      fetch,
+      origin: 'http://api.example.com',
+    })) as any
 
-    it('should work on complex object', async () => {
-      expect(await assertSuccessCase({
-        '!@#$%^^&()[]>?<~_<:"~+!_': value,
-        'list': [value],
-        'map': new Map([[value, value]]),
-        'set': new Set([value]),
-        'nested': {
-          nested: value,
-        },
-      }, {
-        '!@#$%^^&()[]>?<~_<:"~+!_': expected,
-        'list': [expected],
-        'map': new Map([[expected, expected]]),
-        'set': new Set([expected]),
-        'nested': {
-          nested: expected,
-        },
-      })).toBe(true)
+    await expect(orpc.ping('input')).resolves.toEqual('pong')
 
-      expect(await assertErrorCase({
-        '!@#$%^^&()[]>?<~_<:"~+!_': value,
-        'list': [value],
-        'map': new Map([[value, value]]),
-        'set': new Set([value]),
-        'nested': {
-          nested: value,
-        },
-      }, {
-        '!@#$%^^&()[]>?<~_<:"~+!_': expected,
-        'list': [expected],
-        'map': new Map([[expected, expected]]),
-        'set': new Set([expected]),
-        'nested': {
-          nested: expected,
-        },
-      })).toBe(true)
-    })
+    expect(fetch).toHaveBeenCalledOnce()
+    expect(fetch).toHaveBeenCalledWith(
+      'http://api.example.com/ping',
+      expect.objectContaining({
+        method: 'POST',
+        redirect: 'manual',
+      }),
+      expect.objectContaining({
+        context: {},
+      }),
+      ['ping'],
+    )
   })
-})
 
-describe('standardRPCLink: event-iterator', async () => {
-  const OriginalRequest = globalThis.Request
+  it('sends QUERY requests with body-encoded input', async () => {
+    const fetch = vi.fn(async () => {
+      return new Response(JSON.stringify({ json: 'pong' }), {
+        status: 200,
+        headers: {
+          'content-type': 'application/json',
+        },
+      })
+    })
 
-  beforeEach(() => {
-    (globalThis as any).Request = class Request extends OriginalRequest {
-      constructor(input: any, init: any) {
-        super(input, {
-          ...init,
-          duplex: 'half',
-        } as any)
+    const orpc = createORPCClient(new RPCLink({
+      fetch,
+      method: 'QUERY',
+      origin: 'http://api.example.com',
+    })) as any
+
+    await expect(orpc.ping('input')).resolves.toEqual('pong')
+
+    expect(fetch).toHaveBeenCalledWith(
+      'http://api.example.com/ping',
+      expect.objectContaining({
+        body: JSON.stringify({ json: 'input' }),
+        method: 'QUERY',
+      }),
+      expect.objectContaining({ context: {} }),
+      ['ping'],
+    )
+  })
+
+  it('supports custom headers and query parameters in origin', async () => {
+    const fetch = vi.fn(async () => {
+      return new Response(JSON.stringify({ json: 'pong' }), {
+        status: 200,
+        headers: {
+          'content-type': 'application/json',
+        },
+      })
+    })
+
+    const headers = vi.fn(() => ({ 'x-custom-header': 'value' }))
+
+    const orpc = createORPCClient(new RPCLink({
+      fetch,
+      origin: 'http://api.example.com/api?token=abc',
+      headers,
+    })) as any
+
+    await expect(orpc.ping('input')).resolves.toEqual('pong')
+
+    expect(fetch).toHaveBeenCalledOnce()
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining('http://api.example.com/api?token=abc'),
+      expect.objectContaining({
+        method: 'POST',
+        redirect: 'manual',
+        headers: expect.toSatisfy((h: Headers) => h.get('x-custom-header') === 'value'),
+      }),
+      expect.objectContaining({
+        context: {},
+      }),
+      ['ping'],
+    )
+  })
+
+  it('uses default global fetch when fetch option is not provided', async ({ onTestFinished }) => {
+    const fetchSpy = vi.fn(async () => {
+      return new Response(JSON.stringify({ json: 'pong' }), {
+        status: 200,
+        headers: {
+          'content-type': 'application/json',
+        },
+      })
+    })
+
+    const originalFetch = globalThis.fetch
+    ;(globalThis as any).fetch = fetchSpy
+
+    onTestFinished(() => {
+      globalThis.fetch = originalFetch
+    })
+
+    const orpc = createORPCClient(new RPCLink({
+      origin: 'http://api.example.com/',
+    })) as any
+
+    await expect(orpc.ping('input')).resolves.toEqual('pong')
+
+    expect(fetchSpy).toHaveBeenCalledOnce()
+    expect(fetchSpy).toHaveBeenCalledWith(
+      'http://api.example.com/ping',
+      expect.objectContaining({
+        method: 'POST',
+        redirect: 'manual',
+      }),
+    )
+  })
+
+  it('uses the current global fetch even when it is patched after link construction', async ({ onTestFinished }) => {
+    const orpc = createORPCClient(new RPCLink({
+      origin: 'http://api.example.com/',
+    })) as any
+
+    const fetchSpy = vi.fn(async () => {
+      return new Response(JSON.stringify({ json: 'pong' }), {
+        status: 200,
+        headers: {
+          'content-type': 'application/json',
+        },
+      })
+    })
+
+    const originalFetch = globalThis.fetch
+    ;(globalThis as any).fetch = fetchSpy
+
+    onTestFinished(() => {
+      globalThis.fetch = originalFetch
+    })
+
+    await expect(orpc.ping('input')).resolves.toEqual('pong')
+
+    expect(fetchSpy).toHaveBeenCalledOnce()
+    expect(fetchSpy).toHaveBeenCalledWith(
+      'http://api.example.com/ping',
+      expect.objectContaining({
+        method: 'POST',
+        redirect: 'manual',
+      }),
+    )
+  })
+
+  it('calls custom fetch without a receiver so native browser fetch can be passed directly', async () => {
+    const fetch = vi.fn(async () => {
+      return new Response(JSON.stringify({ json: 'pong' }), {
+        status: 200,
+        headers: {
+          'content-type': 'application/json',
+        },
+      })
+    })
+
+    const orpc = createORPCClient(new RPCLink({
+      fetch,
+      origin: 'http://api.example.com',
+    })) as any
+
+    await expect(orpc.ping('input')).resolves.toEqual('pong')
+
+    expect(fetch.mock.contexts).toEqual([undefined])
+  })
+
+  it('supports custom fetch and toFetchRequest options', async () => {
+    const fetch = vi.fn(async () => {
+      return new Response(JSON.stringify({ json: 'pong' }), {
+        status: 200,
+        headers: {
+          'content-type': 'application/json',
+        },
+      })
+    })
+
+    const toFetchRequestOptions = { eventStream: { keepAlive: { enabled: true, comment: 'ok' } } }
+
+    const orpc = createORPCClient(new RPCLink({
+      fetch,
+      origin: 'http://api.example.com',
+      toFetchRequest: toFetchRequestOptions,
+    })) as any
+
+    await expect(orpc.ping('input')).resolves.toEqual('pong')
+
+    expect(fetch).toHaveBeenCalledOnce()
+    expect(fetch).toHaveBeenCalledWith(
+      'http://api.example.com/ping',
+      expect.objectContaining({
+        method: 'POST',
+        redirect: 'manual',
+      }),
+      expect.objectContaining({ context: {} }),
+      ['ping'],
+    )
+    expect(toFetchBody).toHaveBeenCalledWith({ json: 'input' }, {}, toFetchRequestOptions)
+  })
+
+  it('supports request without origin', async () => {
+    const fetch = vi.fn(async () => {
+      return new Response(JSON.stringify({ json: 'pong' }), {
+        status: 200,
+        headers: {
+          'content-type': 'application/json',
+        },
+      })
+    })
+
+    const orpc = createORPCClient(new RPCLink({
+      fetch,
+    })) as any
+
+    await expect(orpc.ping('input')).resolves.toEqual('pong')
+
+    expect(fetch).toHaveBeenCalledOnce()
+    expect(fetch).toHaveBeenCalledWith(
+      '/ping',
+      expect.objectContaining({
+        method: 'POST',
+        redirect: 'manual',
+      }),
+      expect.objectContaining({
+        context: {},
+      }),
+      ['ping'],
+    )
+  })
+
+  it('sets duplex mode for ReadableStream body when supported', async () => {
+    const fetch = vi.fn(async () => {
+      return new Response(JSON.stringify({ json: 'pong' }), {
+        status: 200,
+        headers: {
+          'content-type': 'application/json',
+        },
+      })
+    })
+
+    const orpc = createORPCClient(new RPCLink({
+      fetch,
+      origin: 'http://api.example.com',
+      toFetchRequest: { eventStream: { keepAlive: { enabled: true, comment: 'ok' } } },
+    })) as any
+
+    await expect(orpc.ping(new ReadableStream())).resolves.toEqual('pong')
+
+    expect(fetch).toHaveBeenCalledOnce()
+    expect(fetch).toHaveBeenCalledWith(
+      'http://api.example.com/ping',
+      expect.objectContaining({
+        method: 'POST',
+        redirect: 'manual',
+        duplex: 'half',
+      }),
+      expect.objectContaining({
+        context: {},
+      }),
+      ['ping'],
+    )
+  })
+
+  it('does not set duplex mode for ReadableStream body when not supported', async ({ onTestFinished }) => {
+    const OriginalRequest = globalThis.Request
+    ;(globalThis as any).Request = class ThrowsDuplex extends OriginalRequest {
+      constructor(input: any, init?: any) {
+        if (init?.duplex !== undefined) {
+          throw new Error('duplex not supported')
+        }
+        super(input, init)
       }
     }
-  })
 
-  afterEach(() => {
-    globalThis.Request = OriginalRequest
-  })
-
-  const handler = vi.fn(({ input }) => input)
-
-  const rpcHandler = new RPCHandler(os.handler(handler), {
-    strictGetMethodPluginEnabled: false,
-  })
-
-  const rpcLink = new RPCLink({
-    url: 'http://api.example.com',
-    fetch: async (request) => {
-      const { matched, response } = await rpcHandler.handle(new Request(request))
-
-      if (matched) {
-        return response
-      }
-
-      throw new Error('No procedure match')
-    },
-  })
-
-  it('on success', async () => {
-    const output = await rpcLink.call([], (async function* () {
-      yield 1
-      yield withEventMeta({ hello: 2 }, { id: '29224', retry: 8393 })
-      return withEventMeta({ hello: 3 }, { id: '391', retry: 28973 })
-    })(), { context: {} }) as any
-
-    expect(await output.next()).toEqual({ value: 1, done: false })
-
-    expect(await output.next()).toSatisfy(({ value, done }) => {
-      expect(done).toBe(false)
-      expect(value).toEqual({ hello: 2 })
-      expect(getEventMeta(value)).toEqual(expect.objectContaining({ id: '29224', retry: 8393 }))
-
-      return true
+    onTestFinished(() => {
+      (globalThis as any).Request = OriginalRequest
     })
 
-    expect(await output.next()).toSatisfy(({ value, done }) => {
-      expect(done).toBe(true)
-      expect(value).toEqual({ hello: 3 })
-      expect(getEventMeta(value)).toEqual(expect.objectContaining({ id: '391', retry: 28973 }))
-
-      return true
+    const fetch = vi.fn(async () => {
+      return new Response(JSON.stringify({ json: 'pong' }), {
+        status: 200,
+        headers: {
+          'content-type': 'application/json',
+        },
+      })
     })
 
-    expect(await output.next()).toEqual(expect.objectContaining({ value: undefined, done: true }))
+    const orpc = createORPCClient(new RPCLink({
+      fetch,
+      origin: 'http://api.example.com',
+      toFetchRequest: { eventStream: { keepAlive: { enabled: true, comment: 'ok' } } },
+    })) as any
+
+    await expect(orpc.ping(new ReadableStream())).resolves.toEqual('pong')
+
+    expect(fetch).toHaveBeenCalledOnce()
+    const init = (fetch as any).mock.calls[0][1]
+    expect(init).not.toHaveProperty('duplex')
   })
 
-  it('on error', async () => {
-    const output = await rpcLink.call([], (async function* () {
-      yield 1
-      yield withEventMeta({ hello: 2 }, { id: '29224', retry: 8393 })
-      throw withEventMeta(new ORPCError('INTERNAL', {
-        data: { hello: 3 },
-      }), { id: '391', retry: 28973 })
-    })(), { context: {} }) as any
-
-    expect(await output.next()).toEqual({ value: 1, done: false })
-
-    expect(await output.next()).toSatisfy(({ value, done }) => {
-      expect(done).toBe(false)
-      expect(value).toEqual({ hello: 2 })
-      expect(getEventMeta(value)).toEqual(expect.objectContaining({ id: '29224', retry: 8393 }))
-
-      return true
+  it.each([
+    ['opaqueredirect', 'Unexpected redirect response: redirects are not followed.'],
+    ['opaque', 'Unexpected opaque response: the response is unreadable, likely due to a no-cors request.'],
+  ])('throws on %s responses', async (type, message) => {
+    const fetch = vi.fn(async () => {
+      // Browsers return opaque responses with status 0 and no headers or body
+      const response = Response.error()
+      Object.defineProperty(response, 'type', { value: type })
+      return response
     })
 
-    await expect(output.next()).rejects.toSatisfy((err) => {
-      expect(err).toBeInstanceOf(ORPCError)
-      expect(err.code).toBe('INTERNAL')
-      expect(err.data).toEqual({ hello: 3 })
-      expect(getEventMeta(err)).toEqual(expect.objectContaining({ id: '391', retry: 28973 }))
+    const orpc = createORPCClient(new RPCLink({
+      fetch,
+      origin: 'http://api.example.com',
+    })) as any
 
-      return true
-    })
-
-    expect(await output.next()).toEqual(expect.objectContaining({ value: undefined, done: true }))
+    await expect(orpc.ping('input')).rejects.toThrow(new TypeError(message))
+    expect(fetch).toHaveBeenCalledOnce()
   })
 })

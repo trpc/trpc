@@ -1,0 +1,65 @@
+{
+  "name": "@orpc/evlog",
+  "type": "module",
+  "version": "2.0.0-beta.44",
+  "description": "Evlog integration for oRPC: wide-event logging for typesafe APIs",
+  "license": "MIT",
+  "funding": [
+    "https://github.com/sponsors/dinwwwh",
+    "https://opencollective.com/middleapi"
+  ],
+  "homepage": "https://orpc.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/middleapi/orpc.git",
+    "directory": "packages/evlog"
+  },
+  "keywords": [
+    "orpc",
+    "evlog",
+    "logging",
+    "wide-events",
+    "observability",
+    "typescript"
+  ],
+  "sideEffects": false,
+  "publishConfig": {
+    "exports": {
+      "./package.json": "./package.json",
+      ".": {
+        "types": "./dist/index.d.mts",
+        "import": "./dist/index.mjs",
+        "default": "./dist/index.mjs"
+      },
+      "./node": {
+        "types": "./dist/adapters/node.d.mts",
+        "import": "./dist/adapters/node.mjs",
+        "default": "./dist/adapters/node.mjs"
+      }
+    }
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/index.ts",
+    "./node": "./src/adapters/node.ts"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "prepack": "unbuild",
+    "type:check": "tsc -b"
+  },
+  "peerDependencies": {
+    "evlog": ">=2.18.1"
+  },
+  "dependencies": {
+    "@orpc/client": "workspace:*",
+    "@orpc/server": "workspace:*",
+    "@orpc/shared": "workspace:*",
+    "@standard-server/core": "~0.10.3"
+  },
+  "devDependencies": {
+    "evlog": "^2.30.1"
+  }
+}

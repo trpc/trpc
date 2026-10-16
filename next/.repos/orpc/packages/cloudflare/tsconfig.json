@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.lib.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "types": [
+      "node",
+      "@cloudflare/vitest-pool-workers/types"
+    ]
+  },
+  "include": [
+    "package.json",
+    "worker-configuration.d.ts",
+    "src",
+    "tests"
+  ]
+}

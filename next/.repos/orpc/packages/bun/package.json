@@ -1,0 +1,63 @@
+{
+  "name": "@orpc/bun",
+  "type": "module",
+  "version": "2.0.0-beta.44",
+  "description": "Bun integration for oRPC: Redis-backed pub/sub, rate limiting, and locking using Bun's built-in Redis client",
+  "license": "MIT",
+  "funding": [
+    "https://github.com/sponsors/dinwwwh",
+    "https://opencollective.com/middleapi"
+  ],
+  "homepage": "https://orpc.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/middleapi/orpc.git",
+    "directory": "packages/bun"
+  },
+  "keywords": [
+    "orpc",
+    "bun",
+    "redis",
+    "pubsub",
+    "ratelimit",
+    "lock",
+    "typescript"
+  ],
+  "sideEffects": false,
+  "publishConfig": {
+    "exports": {
+      "./package.json": "./package.json",
+      ".": {
+        "types": "./dist/index.d.mts",
+        "import": "./dist/index.mjs",
+        "default": "./dist/index.mjs"
+      }
+    }
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "prepack": "unbuild",
+    "type:check": "tsc -b",
+    "test": "bun --env-file=../../.env test",
+    "test:coverage": "bun --env-file=../../.env test --coverage"
+  },
+  "dependencies": {
+    "@orpc/client": "workspace:*",
+    "@orpc/experimental-lock": "workspace:*",
+    "@orpc/publisher": "workspace:*",
+    "@orpc/ratelimit": "workspace:*",
+    "@orpc/server": "workspace:*",
+    "@orpc/shared": "workspace:*",
+    "@standard-server/core": "~0.10.3"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.14",
+    "redis": "^6.3.0"
+  }
+}

@@ -1,17 +1,25 @@
 import { sleep } from '@orpc/shared'
-import { queryClient } from '../tests/shared'
-import { experimental_serializableStreamedQuery as streamedQuery } from './stream-query'
+import { QueryClient } from '@tanstack/query-core'
+import { serializableStreamedQuery } from './stream-query'
 
-beforeEach(() => {
-  queryClient.clear()
-})
+describe('serializableStreamedQuery', () => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  })
 
-describe('streamedQuery', () => {
+  beforeEach(() => {
+    queryClient.clear()
+  })
+
   describe('refetchMode option', () => {
     it('works with reset refetch mode (default)', async () => {
       const key = ['refetch-test']
 
-      const queryFn1 = streamedQuery(async () => {
+      const queryFn1 = serializableStreamedQuery(async () => {
         await sleep(50)
         return (async function* () {
           await sleep(50)
@@ -47,7 +55,7 @@ describe('streamedQuery', () => {
       await promise1
 
       // Refetch with reset mode (default)
-      const queryFn2 = streamedQuery(async () => {
+      const queryFn2 = serializableStreamedQuery(async () => {
         await sleep(50)
         return (async function* () {
           await sleep(50)
@@ -83,7 +91,7 @@ describe('streamedQuery', () => {
       const key = ['append-test']
 
       // First query
-      const queryFn1 = streamedQuery(async () => {
+      const queryFn1 = serializableStreamedQuery(async () => {
         await sleep(50)
         return (async function* () {
           await sleep(50)
@@ -120,7 +128,7 @@ describe('streamedQuery', () => {
       await promise1
 
       // Refetch with append mode
-      const queryFn2 = streamedQuery(async () => {
+      const queryFn2 = serializableStreamedQuery(async () => {
         await sleep(50)
         return (async function* () {
           await sleep(50)
@@ -158,7 +166,7 @@ describe('streamedQuery', () => {
     it('works with replace refetch mode', async () => {
       const key = ['replace-test']
 
-      const queryFn1 = streamedQuery(async () => {
+      const queryFn1 = serializableStreamedQuery(async () => {
         await sleep(50)
         return (async function* () {
           await sleep(50)
@@ -193,7 +201,7 @@ describe('streamedQuery', () => {
       await promise1
 
       // Refetch with replace mode
-      const queryFn2 = streamedQuery(async () => {
+      const queryFn2 = serializableStreamedQuery(async () => {
         await sleep(50)
         return (async function* () {
           await sleep(50)
@@ -231,7 +239,7 @@ describe('streamedQuery', () => {
 
   describe('maxChunks option', () => {
     it('works with append & parallel', async () => {
-      const queryFn = streamedQuery(async () => {
+      const queryFn = serializableStreamedQuery(async () => {
         await sleep(50)
 
         return (async function* () {
@@ -288,7 +296,7 @@ describe('streamedQuery', () => {
     })
 
     it('works with reset & parallel', async () => {
-      const queryFn = streamedQuery(async () => {
+      const queryFn = serializableStreamedQuery(async () => {
         await sleep(50)
 
         return (async function* () {
@@ -345,7 +353,7 @@ describe('streamedQuery', () => {
     })
 
     it('works with replace & parallel', async () => {
-      const queryFn = streamedQuery(async () => {
+      const queryFn = serializableStreamedQuery(async () => {
         await sleep(50)
 
         return (async function* () {
@@ -402,7 +410,7 @@ describe('streamedQuery', () => {
     })
 
     it('with value Infinite (unlimited)', async () => {
-      const queryFn = streamedQuery(async function* () {
+      const queryFn = serializableStreamedQuery(async function* () {
         yield 'chunk1'
         yield 'chunk2'
         yield 'chunk3'
@@ -425,7 +433,7 @@ describe('streamedQuery', () => {
     it('handles abort signal during streaming', async () => {
       let cleanupCalled = false
       const yieldFn = vi.fn(v => v)
-      const queryFn = streamedQuery(async function* () {
+      const queryFn = serializableStreamedQuery(async function* () {
         try {
           yield yieldFn('chunk1')
           await new Promise(resolve => setTimeout(resolve, 50))
@@ -460,7 +468,7 @@ describe('streamedQuery', () => {
 
     it('handles abort signal with replace refetch mode', async () => {
     // First query
-      const queryFn1 = streamedQuery(async function* () {
+      const queryFn1 = serializableStreamedQuery(async function* () {
         yield 'initial1'
         yield 'initial2'
       })
@@ -474,7 +482,7 @@ describe('streamedQuery', () => {
       expect(queryClient.getQueryData(['abort-replace-test'])).toEqual(['initial1', 'initial2'])
 
       // Refetch with replace mode and abort
-      const queryFn2 = streamedQuery(async function* () {
+      const queryFn2 = serializableStreamedQuery(async function* () {
         yield 'replace1'
         await new Promise(resolve => setTimeout(resolve, 50))
         yield 'replace2'
@@ -502,7 +510,7 @@ describe('streamedQuery', () => {
     it('handle cache is reset while ending stream', async () => {
       const key = ['data-reset-test']
 
-      const queryFn = streamedQuery(async function* () {
+      const queryFn = serializableStreamedQuery(async function* () {
         yield 'chunk1'
         await sleep(100)
       })
@@ -523,7 +531,7 @@ describe('streamedQuery', () => {
     })
 
     it('handles error in stream', async () => {
-      const queryFn = streamedQuery(async function* () {
+      const queryFn = serializableStreamedQuery(async function* () {
         yield 'chunk1'
         await new Promise(resolve => setTimeout(resolve, 50))
         throw new Error('Stream error')

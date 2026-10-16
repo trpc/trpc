@@ -1,22 +1,48 @@
+import type { OrderablePlugin } from '@orpc/shared'
 import type { Context } from '../../context'
-import type { Router } from '../../router'
 import type { StandardHandlerOptions } from './handler'
+import { sortPlugins } from '@orpc/shared'
 
-export interface StandardHandlerPlugin<T extends Context> {
-  order?: number
-  init?(options: StandardHandlerOptions<T>, router: Router<any, T>): void
+export interface StandardHandlerPlugin<T extends Context> extends OrderablePlugin {
+  /**
+   * Initializes the plugin and returns new handler options.
+   * Called once per plugin instance during composition.
+   *
+   * This method allows plugins to wrap, extend, or transform handler options
+   * such as interceptors, or configuration.
+   *
+   * @param options - The current handler options from previous plugins or base configuration
+   * @returns Transformed handler options with plugin's modifications applied
+   *
+   * @example
+   * ```ts
+   * init(options) {
+   *   return {
+   *     ...options,
+   *     interceptors: [...(options.interceptors || []), myInterceptor]
+   *   }
+   * }
+   * ```
+   */
+  init?(options: StandardHandlerOptions<T>): StandardHandlerOptions<T>
 }
 
-export class CompositeStandardHandlerPlugin<T extends Context, TPlugin extends StandardHandlerPlugin<T>> implements StandardHandlerPlugin<T> {
-  protected readonly plugins: TPlugin[]
+export class CompositeStandardHandlerPlugin<T extends Context> implements StandardHandlerPlugin<T> {
+  readonly name = '~composite'
 
-  constructor(plugins: readonly TPlugin[] = []) {
-    this.plugins = [...plugins].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+  protected readonly plugins: StandardHandlerPlugin<T>[]
+
+  constructor(plugins: StandardHandlerPlugin<T>[] = []) {
+    this.plugins = sortPlugins(plugins)
   }
 
-  init(options: StandardHandlerOptions<T>, router: Router<any, T>): void {
+  init(options: StandardHandlerOptions<T>): StandardHandlerOptions<T> {
     for (const plugin of this.plugins) {
-      plugin.init?.(options, router)
+      if (plugin.init) {
+        options = plugin.init(options)
+      }
     }
+
+    return options
   }
 }

@@ -1,0 +1,60 @@
+{
+  "name": "@orpc/node",
+  "type": "module",
+  "version": "2.0.0-beta.44",
+  "description": "Node.js plugins for oRPC: static file serving, temporary file uploads, and batch response compression",
+  "license": "MIT",
+  "funding": [
+    "https://github.com/sponsors/dinwwwh",
+    "https://opencollective.com/middleapi"
+  ],
+  "homepage": "https://orpc.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/middleapi/orpc.git",
+    "directory": "packages/node"
+  },
+  "keywords": [
+    "orpc",
+    "nodejs",
+    "node",
+    "static-files",
+    "file-upload",
+    "compression",
+    "typescript"
+  ],
+  "sideEffects": false,
+  "publishConfig": {
+    "exports": {
+      "./package.json": "./package.json",
+      ".": {
+        "types": "./dist/index.d.mts",
+        "import": "./dist/index.mjs",
+        "default": "./dist/index.mjs"
+      }
+    }
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "prepack": "unbuild",
+    "type:check": "tsc -b"
+  },
+  "dependencies": {
+    "@orpc/server": "workspace:*",
+    "@orpc/shared": "workspace:*",
+    "@standard-server/core": "~0.10.3",
+    "@standard-server/fetch": "~0.10.3",
+    "@standard-server/node": "~0.10.3",
+    "mime": "^4.1.1"
+  },
+  "devDependencies": {
+    "@orpc/client": "workspace:*",
+    "supertest": "^7.3.1"
+  }
+}

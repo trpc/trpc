@@ -1,0 +1,43 @@
+---
+// One sold slot. The inline slots render these server-side too and let
+// client.ts rewrite the fields in place, so the markup never changes shape —
+// hence the data-sponsor-* hooks.
+//
+import type { AdSponsor } from './ads'
+import { relAttribute, tintStyle } from './ads'
+
+interface Props {
+  sponsor: AdSponsor
+}
+
+const { sponsor } = Astro.props
+---
+
+<a
+  class="slot-card flex h-[76px] items-center gap-3 rounded-blume border border-border px-4 transition"
+  data-sponsor-card
+  href={sponsor.href}
+  rel={relAttribute(sponsor.rel)}
+  style={tintStyle(sponsor)}
+  target="_blank"
+  title={sponsor.description}
+>
+  <img
+    alt=""
+    class="m-0 size-8 flex-none rounded-md"
+    data-no-zoom
+    data-sponsor-logo
+    height="32"
+    loading="lazy"
+    src={sponsor.logo}
+    width="32"
+  />
+  <span class="flex min-w-0 flex-col gap-0.5">
+    <span class="truncate text-sm leading-tight font-semibold text-foreground" data-sponsor-name>
+      {sponsor.name}
+    </span>
+    <span class="truncate text-xs leading-tight text-muted-foreground" data-sponsor-desc>
+      {sponsor.description}
+    </span>
+  </span>
+</a>

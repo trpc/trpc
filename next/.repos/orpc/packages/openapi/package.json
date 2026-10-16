@@ -1,8 +1,13 @@
 {
   "name": "@orpc/openapi",
   "type": "module",
-  "version": "1.15.5",
+  "version": "2.0.0-beta.44",
+  "description": "Generate OpenAPI specs from oRPC routers and serve OpenAPI-compliant APIs with end-to-end type safety",
   "license": "MIT",
+  "funding": [
+    "https://github.com/sponsors/dinwwwh",
+    "https://opencollective.com/middleapi"
+  ],
   "homepage": "https://orpc.dev",
   "repository": {
     "type": "git",
@@ -10,15 +15,32 @@
     "directory": "packages/openapi"
   },
   "keywords": [
-    "orpc"
+    "orpc",
+    "rpc",
+    "api",
+    "typescript",
+    "typesafe",
+    "openapi",
+    "swagger",
+    "scalar",
+    "json-schema",
+    "rest"
   ],
-  "sideEffects": false,
+  "sideEffects": [
+    "./dist/extensions/route.mjs"
+  ],
   "publishConfig": {
     "exports": {
+      "./package.json": "./package.json",
       ".": {
         "types": "./dist/index.d.mts",
         "import": "./dist/index.mjs",
         "default": "./dist/index.mjs"
+      },
+      "./helpers": {
+        "types": "./dist/helpers/index.d.mts",
+        "import": "./dist/helpers/index.mjs",
+        "default": "./dist/helpers/index.mjs"
       },
       "./plugins": {
         "types": "./dist/plugins/index.d.mts",
@@ -40,48 +62,76 @@
         "import": "./dist/adapters/node/index.mjs",
         "default": "./dist/adapters/node/index.mjs"
       },
+      "./aws-lambda": {
+        "types": "./dist/adapters/aws-lambda/index.d.mts",
+        "import": "./dist/adapters/aws-lambda/index.mjs",
+        "default": "./dist/adapters/aws-lambda/index.mjs"
+      },
       "./fastify": {
         "types": "./dist/adapters/fastify/index.d.mts",
         "import": "./dist/adapters/fastify/index.mjs",
         "default": "./dist/adapters/fastify/index.mjs"
       },
-      "./aws-lambda": {
-        "types": "./dist/adapters/aws-lambda/index.d.mts",
-        "import": "./dist/adapters/aws-lambda/index.mjs",
-        "default": "./dist/adapters/aws-lambda/index.mjs"
+      "./extensions/route": {
+        "types": "./dist/extensions/route.d.mts",
+        "import": "./dist/extensions/route.mjs",
+        "default": "./dist/extensions/route.mjs"
       }
     }
   },
   "exports": {
+    "./package.json": "./package.json",
     ".": "./src/index.ts",
+    "./helpers": "./src/helpers/index.ts",
     "./plugins": "./src/plugins/index.ts",
     "./standard": "./src/adapters/standard/index.ts",
     "./fetch": "./src/adapters/fetch/index.ts",
     "./node": "./src/adapters/node/index.ts",
+    "./aws-lambda": "./src/adapters/aws-lambda/index.ts",
     "./fastify": "./src/adapters/fastify/index.ts",
-    "./aws-lambda": "./src/adapters/aws-lambda/index.ts"
+    "./extensions/route": "./src/extensions/route.ts"
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "unbuild",
-    "build:watch": "pnpm run build --watch",
+    "prepack": "unbuild",
     "type:check": "tsc -b"
   },
+  "peerDependencies": {
+    "@scalar/api-reference": ">=1.57.2",
+    "@types/swagger-ui": ">=5.32.0",
+    "swagger-ui": ">=5.32.6"
+  },
+  "peerDependenciesMeta": {
+    "@scalar/api-reference": {
+      "optional": true
+    },
+    "@types/swagger-ui": {
+      "optional": true
+    },
+    "swagger-ui": {
+      "optional": true
+    }
+  },
   "dependencies": {
+    "@openapi-spec/downgrader": "~0.3.0",
+    "@openapi-spec/types": "~0.3.0",
     "@orpc/client": "workspace:*",
     "@orpc/contract": "workspace:*",
-    "@orpc/interop": "workspace:*",
-    "@orpc/openapi-client": "workspace:*",
+    "@orpc/json-schema": "workspace:*",
     "@orpc/server": "workspace:*",
     "@orpc/shared": "workspace:*",
-    "@orpc/standard-server": "workspace:*",
-    "json-schema-typed": "^8.0.2",
-    "rou3": "^0.7.12"
+    "@standard-server/core": "~0.10.3",
+    "@standard-server/fetch": "~0.10.3",
+    "rou3": "^1.0.0"
   },
   "devDependencies": {
-    "fastify": "^5.8.3",
-    "zod": "^4.6.2"
+    "@scalar/api-reference": "^1.73.1",
+    "@standard-server/aws-lambda": "~0.10.3",
+    "@types/swagger-ui": "^5.32.0",
+    "fastify": "^5.12.5",
+    "swagger-ui": "^5.33.1",
+    "zod": "^4.6.5"
   }
 }

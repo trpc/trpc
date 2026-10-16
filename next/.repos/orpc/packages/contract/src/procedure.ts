@@ -1,66 +1,60 @@
 import type { ErrorMap } from './error'
-import type { Meta } from './meta'
-import type { Route } from './route'
+import type { AnyMetaPlugin, Meta } from './meta'
 import type { AnySchema } from './schema'
-import { isORPCErrorStatus } from '@orpc/client'
+import { getConstructor, isTypescriptObject } from '@orpc/shared'
 
-export interface ContractProcedureDef<
+export interface ProcedureContractDefinition<
   TInputSchema extends AnySchema,
   TOutputSchema extends AnySchema,
   TErrorMap extends ErrorMap,
-  TMeta extends Meta,
 > {
-  meta: TMeta
-  route: Route
-  inputSchema?: TInputSchema
-  outputSchema?: TOutputSchema
+  __TInputSchema?: { type: TInputSchema }
+  __TOutputSchema?: { type: TOutputSchema }
+
+  /**
+   * Non-serializable should be optional
+   */
+  inputSchemas?: AnySchema[] | undefined
+  outputSchemas?: AnySchema[] | undefined
+  metaPlugins?: AnyMetaPlugin[] | undefined
   errorMap: TErrorMap
+  meta: Meta
 }
 
-/**
- * This class represents a contract procedure.
- *
- * @see {@link https://orpc.dev/docs/contract-first/define-contract#procedure-contract Contract Procedure Docs}
- */
-export class ContractProcedure<
+export class ProcedureContract<
   TInputSchema extends AnySchema,
   TOutputSchema extends AnySchema,
   TErrorMap extends ErrorMap,
-  TMeta extends Meta,
 > {
-  /**
-   * This property holds the defined options for the contract procedure.
-   */
-  '~orpc': ContractProcedureDef<TInputSchema, TOutputSchema, TErrorMap, TMeta>
+  '~orpc': ProcedureContractDefinition<TInputSchema, TOutputSchema, TErrorMap>
 
-  constructor(def: ContractProcedureDef<TInputSchema, TOutputSchema, TErrorMap, TMeta>) {
-    if (def.route?.successStatus && isORPCErrorStatus(def.route.successStatus)) {
-      throw new Error('[ContractProcedure] Invalid successStatus.')
-    }
-
-    if (Object.values(def.errorMap).some(val => val && val.status && !isORPCErrorStatus(val.status))) {
-      throw new Error('[ContractProcedure] Invalid error status code.')
-    }
-
+  constructor(def: ProcedureContractDefinition<TInputSchema, TOutputSchema, TErrorMap>) {
     this['~orpc'] = def
   }
-}
 
-export type AnyContractProcedure = ContractProcedure<any, any, any, any>
+  /**
+   * Checks if the given instance satisfies the {@link ProcedureContract} class/interface.
+   */
+  static [Symbol.hasInstance](instance: unknown): boolean {
+    if (this !== ProcedureContract) {
+      // fallback to default instanceof check if this is extended class
+      return Function.prototype[Symbol.hasInstance].call(this, instance)
+    }
 
-export function isContractProcedure(item: unknown): item is AnyContractProcedure {
-  if (item instanceof ContractProcedure) {
-    return true
+    const constructor = getConstructor(instance)
+    if (constructor === ProcedureContract) {
+      return true
+    }
+
+    return (
+      isTypescriptObject(instance)
+      && isTypescriptObject(instance['~orpc'])
+      && isTypescriptObject(instance['~orpc'].errorMap)
+      && isTypescriptObject(instance['~orpc'].meta)
+      && (instance['~orpc'].inputSchemas === undefined || Array.isArray(instance['~orpc'].inputSchemas))
+      && (instance['~orpc'].outputSchemas === undefined || Array.isArray(instance['~orpc'].outputSchemas))
+    )
   }
-
-  return (
-    (typeof item === 'object' || typeof item === 'function')
-    && item !== null
-    && '~orpc' in item
-    && typeof item['~orpc'] === 'object'
-    && item['~orpc'] !== null
-    && 'errorMap' in item['~orpc']
-    && 'route' in item['~orpc']
-    && 'meta' in item['~orpc']
-  )
 }
+
+export type AnyProcedureContract = ProcedureContract<any, any, any>

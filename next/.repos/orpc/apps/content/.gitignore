@@ -1,24 +1,28 @@
-# Logs
-logs
+# Hidden folders and files
+.*
+!.gitignore
+!.*.example
+
+# Common generated folders
+logs/
+node_modules/
+out/
+dist/
+dist-ssr/
+build/
+coverage/
+temp/
+
+# Common generated files
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+*.log.*
+*.tsbuildinfo
+*.vitest-temp.json
+vite.config.ts.timestamp-*
+vitest.config.ts.timestamp-*
 
-node_modules
-dist
-dist-ssr
+# Common manual ignore files
 *.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+*.pem
+.vercel/
+.wrangler/

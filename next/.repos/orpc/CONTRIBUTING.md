@@ -40,17 +40,39 @@ This repository uses:
 8. **Commit & Push**:
    - Commit should follow the [Conventional Commits Cheatsheet](https://gist.github.com/Zekfad/f51cb06ac76e2457f11c80ed705c95a3) but not required because we usually use `Squash and Merge`.
 9. **Pull Request**: Open a PR against `main` (or corresponding version branch).
-   - our PR title should follow the [Conventional Commits Cheatsheet](https://gist.github.com/Zekfad/f51cb06ac76e2457f11c80ed705c95a3), with scope corresponding to the package.
+   - our PR title should follow the [Conventional Commits Cheatsheet](https://gist.github.com/Zekfad/f51cb06ac76e2457f11c80ed705c95a3). Scope rules:
+     - Use the package name (e.g. `feat(server): ...`), or `rpc`/`openapi` for changes tied to a protocol rather than a single package, such as its serializers, handlers, links, or dedicated plugins.
+     - Use `content` only for the docs site itself (styles, Blume config, ...), and only with the `chore` type — never `feat`/`fix`/`perf`/`docs`, since these changes do not affect library users. Documentation about a package or protocol uses that package/protocol scope instead (e.g. `docs(openapi): ...`).
+     - Omit the scope when the change is too broad for a single one.
    - In the description, summarize your changes and reference any related issue, e.g., `Fixes #123`.
 
-## Structure
+## JSDoc & Documentation Links
 
-- **@orpc/shared** — shared utilities and types.
-- **@orpc/client** — core library, ORPCError, RPC serializers, RPC link,...
-- **@orpc/contract** — contract definitions (input/output/errors/meta/route, contract builder).
-- **@orpc/server** — contract implementer, procedure/router builder, procedure/router client, RPC handler, ...
-- **@orpc/openapi-client** - OpenAPI serializers, OpenAPI Link, ...
-- **@orpc/openapi** — OpenAPI Spec generator, OpenAPI handler, ...
-- **@orpc/standard-server\*** — environment adapters (`fetch`, `node`, etc.).
-- **playgrounds/** — example applications.
-- **apps/content/** - content, documentation, and website.
+Every public API mentioned in the documentation (`apps/content/docs`) must carry a JSDoc comment with a backlink to the official website. This is enforced in CI:
+
+```bash
+pnpm docs:validate # runs scripts/verify-docs-jsdoc.ts (accepts [--filter server,client] [--strict] [--list] via node) and `blume validate --strict`
+```
+
+JSDoc blocks follow this template:
+
+```ts
+/**
+ * <Summary: 1-3 short sentences. Verb-first for functions, noun phrase for types/classes.>
+ *
+ * @remarks
+ * **Warning**: <footguns, breaking behavior>
+ * **Note**: <non-obvious behavior, limits>
+ *
+ * @param name - <only extra info beyond the type>
+ * @returns <only extra info beyond the type>
+ *
+ * @see {@link https://orpc.dev/docs/... | Page Title}
+ */
+```
+
+- `@remarks` is optional (max 1-3 bold lines) and uses `**Warning**:`/`**Note**:` — not `@warning`/`@info` tags.
+- `@param`/`@returns` only when they add information beyond the type signature.
+- No `@example` blocks — examples live on the linked docs page.
+- `@see` is always the last tag. The URL must map to an existing `apps/content/docs/<path>.mdx` page (plus optional `#anchor` matching a real heading). The title after `|` is the page's title (its frontmatter `title`), or `Page Title - Heading` when the link targets an anchor.
+- Every `https://orpc.dev/...` link anywhere in package sources (inline markdown links included) is validated against the content pages in `apps/content`.

@@ -1,0 +1,2 @@
+export const DEFAULT_SUCCESS_STATUS = 200
+export const DEFAULT_ERROR_STATUS = 500

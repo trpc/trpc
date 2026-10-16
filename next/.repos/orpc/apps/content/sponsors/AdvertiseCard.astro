@@ -1,0 +1,32 @@
+---
+// An unsold position. Just a `+`: a wall of empty cells should read as quiet
+// space, not as ten repeated pitches. Held back at low opacity so it never
+// competes with the article, then lifted to full strength with a muted fill on
+// hover/focus.
+//
+// A position is passed only by the grid, where cells map to something a
+// sponsor can actually buy. The inline slots rotate at random, so the cell
+// someone clicked there is not a slot, and the enquiry stays generic.
+import type { AdPosition } from './ads'
+import Icon from 'blume/components/Icon.astro'
+import { advertiseHref } from './ads'
+
+interface Props {
+  position?: AdPosition
+}
+
+const { position } = Astro.props
+
+const label = position === undefined
+  ? 'Advertise here'
+  : `Advertise here (sponsor slot #${position})`
+---
+
+<a
+  aria-label={label}
+  class="slot-card slot-empty flex h-[76px] items-center justify-center rounded-blume border border-dashed border-border text-muted-foreground opacity-40 transition hover:opacity-100 focus-visible:opacity-100"
+  href={advertiseHref(position)}
+  title={label}
+>
+  <Icon name="plus" size={18} />
+</a>

@@ -1,112 +1,146 @@
-import { sendStandardResponse, toStandardLazyRequest } from '@orpc/standard-server-aws-lambda'
+import type { APIGatewayProxyEventV2, AwsLambdaGlobal, HttpResponseStream } from '@standard-server/aws-lambda'
+import type { StandardHandlerPlugin } from '../standard'
+import { Buffer } from 'node:buffer'
+import { Writable } from 'node:stream'
 import { os } from '../../builder'
 import { RPCHandler } from './rpc-handler'
 
-vi.mock('@orpc/standard-server-aws-lambda', () => ({
-  toStandardLazyRequest: vi.fn(),
-  sendStandardResponse: vi.fn(),
-}))
+class TestResponseStream extends Writable implements HttpResponseStream {
+  chunks: Buffer[] = []
+  metadata: { statusCode: number, headers: Record<string, string>, cookies: string[] } | undefined
 
-vi.mock('../standard', async origin => ({
-  ...await origin(),
-  StandardHandler: vi.fn(),
-}))
+  get text(): string {
+    return Buffer.concat(this.chunks).toString()
+  }
+
+  setContentType(): void {
+    // noop
+  }
+
+  override _write(chunk: any, _encoding: BufferEncoding, callback: () => void): void {
+    this.chunks.push(Buffer.from(chunk))
+    callback()
+  }
+}
+
+function createEvent(override: Partial<APIGatewayProxyEventV2> = {}): APIGatewayProxyEventV2 {
+  return {
+    rawPath: '/ping',
+    rawQueryString: '',
+    headers: {
+      'host': 'example.com',
+      'content-type': 'application/json',
+    },
+    requestContext: { http: { method: 'POST' } },
+    body: JSON.stringify({ json: null }),
+    isBase64Encoded: false,
+    ...override,
+  }
+}
 
 beforeEach(() => {
   vi.clearAllMocks()
+
+  vi.stubGlobal('awslambda', {
+    streamifyResponse: handler => handler,
+    HttpResponseStream: {
+      from(responseStream, metadata) {
+        (responseStream as TestResponseStream).metadata = metadata
+        return responseStream
+      },
+    },
+  } satisfies AwsLambdaGlobal)
 })
 
-describe('rpcHandler', async () => {
-  const handlerOptions = { eventIteratorKeepAliveComment: '__test__' }
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
 
-  const handler = new RPCHandler({
-    ping: os.route({ method: 'GET' }).handler(({ input }) => ({ output: input })),
-    pong: os.handler(({ input }) => ({ output: input })),
-  }, handlerOptions)
-
-  const event: any = { req: true }
-  const responseStream: any = { res: true }
-
-  const standardRequest = {
-    method: 'POST',
-    url: new URL('https://example.com/api/v1/ping'),
-    headers: {
-      'content-type': 'application/json',
-      'content-length': '12',
-    },
-    body: () => Promise.resolve({ json: 'value' }),
-    signal: undefined,
-  }
-
-  it('on match', async () => {
-    vi.mocked(toStandardLazyRequest).mockReturnValueOnce(standardRequest)
-    const options = { prefix: '/api/v1', context: { db: 'postgres' } } as const
-
-    const result = await handler.handle(event, responseStream, options)
-
-    expect(result).toEqual({
-      matched: true,
+describe('rpcHandler', () => {
+  it('accepts context and prefix options in handle method', async () => {
+    const handler = new RPCHandler({
+      ping: os
+        .$context<{ userId: string }>()
+        .handler(({ context }) => context.userId),
     })
 
-    expect(toStandardLazyRequest).toHaveBeenCalledOnce()
-    expect(toStandardLazyRequest).toHaveBeenCalledWith(event, responseStream)
+    const responseStream = new TestResponseStream()
+    const result = await handler.handle(createEvent({ rawPath: '/api/v1/ping' }), responseStream, {
+      context: { userId: 'u_123' },
+      prefix: '/api/v1',
+    })
 
-    expect(sendStandardResponse).toHaveBeenCalledOnce()
-    expect(sendStandardResponse).toHaveBeenCalledWith(responseStream, {
-      status: 200,
-      headers: {},
-      body: {
-        json: { output: 'value' },
-      },
-    }, handlerOptions)
+    expect(result.matched).toBe(true)
+    expect(responseStream.metadata?.statusCode).toBe(200)
+    expect(responseStream.text).toContain('u_123')
+
+    const mismatchStream = new TestResponseStream()
+    const mismatchResult = await handler.handle(createEvent({ rawPath: '/invalid/ping' }), mismatchStream, {
+      context: { userId: 'u_123' },
+      prefix: '/api/v1',
+    })
+
+    expect(mismatchResult.matched).toBe(false)
+    expect(mismatchStream.metadata).toBeUndefined()
+    expect(mismatchStream.text).toBe('')
   })
 
-  it('on mismatch', async () => {
-    vi.mocked(toStandardLazyRequest).mockReturnValueOnce({
-      ...standardRequest,
-      url: new URL('https://example.com/api/v1/not-found'),
-    })
+  it('supports standard handler plugins', async () => {
+    const plugin: StandardHandlerPlugin<any> = {
+      name: 'test',
+      init(options) {
+        return {
+          ...options,
+          routingInterceptors: [
+            async () => ({ matched: true, response: { status: 200, headers: {}, body: 'intercepted' } }),
+          ],
+        }
+      },
+    }
 
-    const options = { prefix: '/api/v1', context: { db: 'postgres' } } as const
-    const result = await handler.handle(event, responseStream, options)
+    const handler = new RPCHandler({}, { plugins: [plugin] })
 
-    expect(result).toEqual({
-      matched: false,
-      response: undefined,
-    })
+    const responseStream = new TestResponseStream()
+    const result = await handler.handle(createEvent({ requestContext: { http: { method: 'GET' } }, body: undefined }), responseStream)
 
-    expect(toStandardLazyRequest).toHaveBeenCalledOnce()
-    expect(toStandardLazyRequest).toHaveBeenCalledWith(event, responseStream)
-
-    expect(sendStandardResponse).not.toHaveBeenCalled()
+    expect(result.matched).toBe(true)
+    expect(responseStream.text).toBe('"intercepted"')
   })
 
-  it('strict GET method by default', async () => {
-    vi.mocked(toStandardLazyRequest).mockReturnValueOnce({
-      ...standardRequest,
-      url: new URL('https://example.com/api/v1/pong?data=%7B%22json%22%3A%22value%22%7D'),
-      method: 'GET',
+  it('treats GET requests as unmatched by default', async () => {
+    const handler = new RPCHandler({
+      ping: os.handler(() => 'pong'),
     })
 
-    const options = { prefix: '/api/v1', context: { db: 'postgres' } } as const
-    const result = await handler.handle(event, responseStream, options)
+    const responseStream = new TestResponseStream()
+    const result = await handler.handle(createEvent({
+      requestContext: { http: { method: 'GET' } },
+      rawQueryString: `data=${encodeURIComponent(JSON.stringify({ json: null }))}`,
+      body: undefined,
+    }), responseStream)
 
-    expect(result).toEqual({
-      matched: true,
-    })
+    expect(result.matched).toBe(false)
+  })
 
-    expect(toStandardLazyRequest).toHaveBeenCalledOnce()
-    expect(toStandardLazyRequest).toHaveBeenCalledWith(event, responseStream)
-
-    expect(sendStandardResponse).toHaveBeenCalledOnce()
-    expect(sendStandardResponse).toHaveBeenCalledWith(responseStream, {
-      status: 405,
-      headers: {},
-      body: {
-        json: expect.objectContaining({
-          message: 'Method Not Supported',
-        }),
+  it('allows GET requests when allowMethods includes GET', async () => {
+    const handler = new RPCHandler(
+      {
+        ping: os.handler(() => 'pong'),
       },
-    }, handlerOptions)
+      {
+        allowMethods: ['GET'],
+      },
+    )
+
+    const responseStream = new TestResponseStream()
+    const result = await handler.handle(createEvent({
+      requestContext: { http: { method: 'GET' } },
+      rawQueryString: `data=${encodeURIComponent(JSON.stringify({ json: null }))}`,
+      body: undefined,
+    }), responseStream)
+
+    expect(result.matched).toBe(true)
+    expect(responseStream.metadata?.statusCode).toBe(200)
+    expect(responseStream.text).toContain('pong')
   })
 })

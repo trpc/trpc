@@ -1,111 +1,10 @@
-import { overlayProxy, preventNativeAwait } from './proxy'
+import { override } from './proxy'
 
-describe('preventNativeAwait', () => {
-  it('should work normally if not awaited', () => {
-    const obj = { value: 42 }
-    const proxy = preventNativeAwait(obj)
-    expect(proxy).toEqual(obj)
-
-    const obj2 = { then: 323, catch: 123 }
-    const proxy2 = preventNativeAwait(obj2)
-    expect(proxy2).toEqual(obj2)
-
-    const obj3 = { then: (...args: any[]) => ({ args }), catch: (...args: any[]) => ({ args }) }
-    const proxy3 = preventNativeAwait(obj3)
-    expect(proxy3.then(1, 2, 3)).toEqual({ args: [1, 2, 3] })
-    expect(proxy3.catch(4, 5, 6)).toEqual({ args: [4, 5, 6] })
-  })
-
-  it('returns itself if awaited', async () => {
-    const obj = { value: 42 }
-    const proxy = preventNativeAwait(obj)
-    expect(await proxy).toEqual(obj)
-
-    const obj2 = { then: 323, catch: 123 }
-    const proxy2 = preventNativeAwait(obj2)
-    expect(await proxy2).toEqual(obj2)
-    expect(await proxy2).toEqual(obj2)
-
-    const obj3 = { then: (...args: any[]) => ({ args }), catch: (...args: any[]) => ({ args }) }
-    const proxy3 = preventNativeAwait(obj3)
-    const result3 = await (proxy3 as any)
-    expect(result3.then(1, 2, 3)).toEqual({ args: [1, 2, 3] })
-    expect(result3.catch(3, 4, 5)).toEqual({ args: [3, 4, 5] })
-  })
-
-  it('returns itself if multiple awaited times', async () => {
-    const obj = { value: 42 }
-    const proxy = preventNativeAwait(obj)
-    const result = await (proxy as any)
-    expect(result).toEqual(obj)
-    await new Promise(resolve => setTimeout(resolve, 1))
-    expect(await proxy).toEqual(obj)
-
-    const obj2 = { then: 323, catch: 123 }
-    const proxy2 = preventNativeAwait(obj2)
-    const result2 = await (proxy2 as any)
-    expect(result2).toEqual(obj2)
-    await new Promise(resolve => setTimeout(resolve, 1))
-    expect(await proxy2).toEqual(obj2)
-
-    const obj3 = { then: (...args: any[]) => ({ args }), catch: (...args: any[]) => ({ args }) }
-    const proxy3 = preventNativeAwait(obj3)
-    const result3 = await (proxy3 as any)
-    expect(result3.then(1, 2, 3)).toEqual({ args: [1, 2, 3] })
-    expect(result3.catch(4, 5, 6)).toEqual({ args: [4, 5, 6] })
-    await new Promise(resolve => setTimeout(resolve, 1))
-    const result3_2 = await (proxy3 as any)
-    expect(result3_2.then(1, 2, 3)).toEqual({ args: [1, 2, 3] })
-    expect(result3_2.catch(4, 5, 6)).toEqual({ args: [4, 5, 6] })
-  })
-
-  it('returns itself if nested awaited times', async () => {
-    const obj = { value: 42 }
-    const proxy = preventNativeAwait(obj)
-    const result = await (proxy as any)
-    expect(result).toEqual(obj)
-    await new Promise(resolve => setTimeout(resolve, 1))
-    expect(await result).toEqual(obj)
-
-    const obj2 = { then: 323, catch: 123 }
-    const proxy2 = preventNativeAwait(obj2)
-    const result2 = await (proxy2 as any)
-    expect(result2).toEqual(obj2)
-    await new Promise(resolve => setTimeout(resolve, 1))
-    expect(await result2).toEqual(obj2)
-
-    const obj3 = { then: (...args: any[]) => ({ args }), catch: (...args: any[]) => ({ args }) }
-    const proxy3 = preventNativeAwait(obj3)
-    const result3 = await (proxy3 as any)
-    expect(result3.then(1, 2, 3)).toEqual({ args: [1, 2, 3] })
-    expect(result3.catch(4, 5, 6)).toEqual({ args: [4, 5, 6] })
-    await new Promise(resolve => setTimeout(resolve, 1))
-    const result3_2 = await (result3 as any)
-    expect(result3_2.then(1, 2, 3)).toEqual({ args: [1, 2, 3] })
-    expect(result3_2.catch(4, 5, 6)).toEqual({ args: [4, 5, 6] })
-  })
-
-  it('resolves via Promise.resolve without triggering thenable assimilation', async () => {
-    const obj = { value: 42 }
-    const proxy = preventNativeAwait(obj)
-    await expect(Promise.resolve(proxy)).resolves.toEqual(obj)
-
-    const obj2 = { then: 123 }
-    const proxy2 = preventNativeAwait(obj2)
-    await expect(Promise.resolve(proxy2)).resolves.toEqual(obj2)
-
-    const obj3 = { then: (...args: any[]) => ({ args }) }
-    const proxy3 = preventNativeAwait(obj3)
-    const resolved = await Promise.resolve(proxy3 as any)
-    expect(resolved.then(1, 2, 3)).toEqual({ args: [1, 2, 3] })
-  })
-})
-
-describe('overlayProxy', () => {
+describe('override', () => {
   it('should combine properties from both target and overlay (overlay takes precedence)', () => {
     const target = { a: 1, b: 2, c: 3 }
     const overlay = { a: 10, d: 40 }
-    const proxy = overlayProxy(target, overlay)
+    const proxy = override(target, overlay)
 
     expect(proxy.a).toBe(10) // from overlay (overridden)
     expect(proxy.b).toBe(2) // from target
@@ -132,17 +31,38 @@ describe('overlayProxy', () => {
       name: 'overlay',
       getName2() { return `overlay: ${this.name}` },
     }
-    const proxy = overlayProxy(target, overlay)
+    const proxy = override(target, overlay)
 
     expect(proxy.getName1()).toBe('target: target')
     expect(proxy.getName2()).toBe('overlay: overlay')
+  })
+
+  it('usable for async generator', async () => {
+    // async generator require .bind method to make it usable
+
+    const target = (async function* () {
+      yield 1
+      yield 2
+    }())
+
+    ;(target as any)[Symbol.for('TEST')] = true
+
+    const proxy = override(target, (async function* () {
+      yield 3
+      yield 4
+    }()))
+
+    expect((proxy as any)[Symbol.for('TEST')]).toBe(true)
+    expect(await proxy.next()).toEqual({ done: false, value: 3 })
+    expect(await proxy.next()).toEqual({ done: false, value: 4 })
+    expect(await proxy.next()).toEqual({ done: true, value: undefined })
   })
 
   describe('lazy target', () => {
     it('should combine properties from both target and overlay (overlay takes precedence)', () => {
       const target = vi.fn(() => ({ a: 1, b: 2, c: 3 }))
       const overlay = { a: 10, d: 40 }
-      const proxy = overlayProxy(target, overlay)
+      const proxy = override(target, overlay)
 
       expect(proxy.a).toBe(10) // from overlay (overridden)
       expect(proxy.b).toBe(2) // from target
@@ -174,7 +94,7 @@ describe('overlayProxy', () => {
         name: 'overlay',
         getName2() { return `overlay: ${this.name}` },
       }
-      const proxy = overlayProxy(target, overlay)
+      const proxy = override(target, overlay)
 
       expect(proxy.getName1()).toBe('target: target')
       expect(proxy.getName2()).toBe('overlay: overlay')
@@ -189,24 +109,20 @@ describe('overlayProxy', () => {
       expect(proxy.getName1()).toBe('target: target2')
       expect(proxy.getName2()).toBe('overlay: overlay')
     })
-  })
 
-  it('usable for async generator', async () => {
-    const target = (async function* () {
-      yield 1
-      yield 2
-    }())
+    it('target can be dynamic', () => {
+      const target = vi.fn(() => ({ a: 1 }))
+      const overlay = { b: 10 }
+      const proxy = override(target, overlay)
 
-    ;(target as any)[Symbol.for('TEST')] = true
+      expect(proxy.a).toBe(1)
+      expect(proxy.b).toBe(10)
+      expect(target).toHaveBeenCalledTimes(1)
 
-    const proxy = overlayProxy(target, (async function* () {
-      yield 3
-      yield 4
-    }()))
-
-    expect((proxy as any)[Symbol.for('TEST')]).toBe(true)
-    expect(await proxy.next()).toEqual({ done: false, value: 3 })
-    expect(await proxy.next()).toEqual({ done: false, value: 4 })
-    expect(await proxy.next()).toEqual({ done: true, value: undefined })
+      target.mockReturnValue({ a: 2 })
+      expect(proxy.a).toBe(2)
+      expect(proxy.b).toBe(10)
+      expect(target).toHaveBeenCalledTimes(2)
+    })
   })
 })

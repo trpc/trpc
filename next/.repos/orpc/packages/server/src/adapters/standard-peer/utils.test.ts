@@ -1,136 +1,94 @@
-import { encodeRequestMessage, encodeResponseMessage, MessageType, ServerPeer } from '@orpc/standard-server-peer'
-import {
-  createServerPeerHandleRequestFn,
-  handleStandardServerPeerMessage,
-} from './utils'
+import type { StandardLazyRequest } from '@standard-server/core'
+import { createStandardPeerRequestHandler } from './utils'
 
 beforeEach(() => {
   vi.clearAllMocks()
 })
 
-describe('handleStandardServerPeerMessage', () => {
-  const send = vi.fn()
-  const peer = new ServerPeer(send)
-  const handler = {
-    handle: vi.fn(async () => ({ response: undefined })),
-  } as any
+describe('createStandardPeerRequestHandler', () => {
+  it('returns matched response and forwards lazy request', async () => {
+    const response = { status: 200, headers: { 'x-test': 'ok' }, body: 'ok' }
 
-  it('do nothing if not a request', async () => {
-    const message = await encodeRequestMessage('test', MessageType.ABORT_SIGNAL, void 0)
+    const handler = {
+      handle: vi.fn(async () => ({ matched: true, response })),
+    } as any
 
-    await handleStandardServerPeerMessage(
-      handler,
-      peer,
-      message,
-      { context: { context: true } },
-    )
+    const handleRequest = createStandardPeerRequestHandler(handler, { context: { context: true }, prefix: '/api' })
 
-    expect(send).toHaveBeenCalledTimes(0)
-    expect(handler.handle).toHaveBeenCalledTimes(0)
-  })
-
-  it('send request if handler matches', async () => {
-    const request = {
-      body: 'test',
+    const request: StandardLazyRequest = {
+      resolveBody: async () => 'request-body',
       headers: { 'x-custom': 'value' },
       method: 'GET',
-      url: new URL('http://localhost/test'),
+      url: '/api/test',
+      signal: new AbortController().signal,
     }
-    const response = { status: 200, headers: {}, body: 'ok' }
-
-    handler.handle.mockResolvedValueOnce({ response })
-
-    const message = await encodeRequestMessage('test', MessageType.REQUEST, request)
-
-    await handleStandardServerPeerMessage(
-      handler,
-      peer,
-      message,
-      { context: { context: true } },
-    )
-
-    expect(send).toHaveBeenCalledTimes(1)
-    expect(send).toHaveBeenCalledWith(
-      await encodeResponseMessage('test', MessageType.RESPONSE, response),
-    )
-
-    expect(handler.handle).toHaveBeenCalledTimes(1)
-    expect(handler.handle).toHaveBeenCalledWith(
-      { ...request, body: expect.any(Function), signal: expect.any(AbortSignal) },
-      { context: { context: true } },
-    )
-  })
-
-  it('send 404 request if handler not matches', async () => {
-    const request = {
-      body: 'test',
-      headers: { 'x-custom': 'value' },
-      method: 'GET',
-      url: new URL('http://localhost/test'),
-    }
-
-    const message = await encodeRequestMessage('test', MessageType.REQUEST, request)
-
-    await handleStandardServerPeerMessage(
-      handler,
-      peer,
-      message,
-      { context: { context: true } },
-    )
-
-    expect(send).toHaveBeenCalledTimes(1)
-    expect(send).toHaveBeenCalledWith(
-      await encodeResponseMessage('test', MessageType.RESPONSE, { status: 404, headers: {}, body: 'No procedure matched' }),
-    )
-
-    expect(handler.handle).toHaveBeenCalledTimes(1)
-    expect(handler.handle).toHaveBeenCalledWith(
-      { ...request, body: expect.any(Function), signal: expect.any(AbortSignal) },
-      { context: { context: true } },
-    )
-  })
-})
-
-describe('createServerPeerHandleRequestFn', () => {
-  const handler = {
-    handle: vi.fn(async () => ({ response: undefined })),
-  } as any
-
-  const handleRequest = createServerPeerHandleRequestFn(handler, { context: { context: true } })
-
-  const request = {
-    body: 'test',
-    headers: { 'x-custom': 'value' },
-    method: 'GET',
-    url: new URL('http://localhost/test'),
-    signal: new AbortController().signal,
-  }
-
-  it('on matched', async () => {
-    const response = { status: 200, headers: {}, body: 'ok' }
-
-    handler.handle.mockResolvedValueOnce({ matched: true, response })
 
     const result = await handleRequest(request)
 
-    expect(result).toBe(response)
+    expect(result).toEqual(response)
+
     expect(handler.handle).toHaveBeenCalledTimes(1)
-    expect(handler.handle).toHaveBeenCalledWith(
-      { ...request, body: expect.any(Function), signal: expect.any(AbortSignal) },
-      { context: { context: true } },
-    )
+    expect(handler.handle).toHaveBeenCalledWith(request, { context: { context: true }, prefix: '/api' })
   })
 
-  it('on not matched', async () => {
-    handler.handle.mockResolvedValueOnce({ matched: false, response: undefined })
+  it('returns 404 response when no procedure matched', async () => {
+    const handler = {
+      handle: vi.fn(async () => ({ matched: false, response: undefined })),
+    } as any
 
-    const result = await handleRequest(request)
+    const handleRequest = createStandardPeerRequestHandler(handler, { context: { context: true } })
+
+    const result = await handleRequest({
+      resolveBody: async () => 'request-body',
+      headers: { 'x-custom': 'value' },
+      method: 'GET',
+      url: '/api/test',
+      signal: new AbortController().signal,
+    })
 
     expect(result).toEqual({ status: 404, headers: {}, body: 'No procedure matched' })
     expect(handler.handle).toHaveBeenCalledTimes(1)
-    expect(handler.handle).toHaveBeenCalledWith(
-      { ...request, body: expect.any(Function), signal: expect.any(AbortSignal) },
-      { context: { context: true } },
-    )
+  })
+
+  it('context fallback to empty object when it undefined', async () => {
+    const handler = {
+      handle: vi.fn(async () => ({ matched: false, response: undefined })),
+    } as any
+
+    const handleRequest = createStandardPeerRequestHandler(handler, { })
+
+    const lazyRequest = {
+      resolveBody: async () => 'request-body',
+      headers: { 'x-custom': 'value' },
+      method: 'GET',
+      url: '/api/test',
+      signal: new AbortController().signal,
+    } as const
+
+    await handleRequest(lazyRequest)
+    expect(handler.handle).toHaveBeenCalledTimes(1)
+    expect(handler.handle).toHaveBeenCalledWith(lazyRequest, { context: {} })
+  })
+
+  it('forwards a context function unresolved so the handler resolves it after its prefix check', async () => {
+    const handler = {
+      handle: vi.fn(async () => ({ matched: false, response: undefined })),
+    } as any
+
+    const context = vi.fn(() => ({ db: 'postgres' }))
+    const handleRequest = createStandardPeerRequestHandler(handler, { context })
+
+    const lazyRequest = {
+      resolveBody: async () => 'request-body',
+      headers: { 'x-custom': 'value' },
+      method: 'GET',
+      url: '/api/test',
+      signal: new AbortController().signal,
+    } as const
+    await handleRequest(lazyRequest)
+
+    expect(context).not.toHaveBeenCalled()
+    expect(handler.handle).toHaveBeenCalledTimes(1)
+    expect(handler.handle).toHaveBeenCalledWith(lazyRequest, { context })
   })
 })

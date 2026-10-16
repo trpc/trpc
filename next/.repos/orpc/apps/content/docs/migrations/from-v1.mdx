@@ -1,0 +1,1314 @@
+---
+title: "Migrating from oRPC v1"
+description: "Upgrade an oRPC v1 app to v2, with side-by-side v1 and v2 comparisons for every change that needs your attention."
+sidebar:
+  label: "Migrating from v1"
+---
+
+Most of your code keeps working: many v1 names still compile through deprecated aliases, so your editor shows a strike-through hint instead of an error.
+
+:::warning[Read these first]
+
+- The RPC serializer format and the error response format changed, so v1 [RPC Link](/docs/rpc/link) and [OpenAPI Link](/docs/openapi/link) clients cannot talk to a v2 server. Deploy the upgraded server and client together. See [Wire Format Changes](#wire-format-changes).
+- Automatic middleware deduplication was removed. Middleware applied at both router and procedure level now runs twice. See [Middleware](#middleware).
+- The Batch Plugin replaced `exclude` with `filter`, which has the opposite meaning. In most cases you can simply remove `exclude`. See [Batch Plugin](#batch-plugin).
+- A prefix now applies to every procedure, not only the ones that define a `path`, so procedures relying on the router-derived path move under the prefix. See [Routing Moved to OpenAPI Metadata](#routing-moved-to-openapi-metadata).
+
+:::
+
+## Update Packages
+
+Install the v2 versions of the packages you use:
+
+```sh v2
+npm install @orpc/server@beta @orpc/client@beta
+```
+
+Some packages were renamed, merged, or promoted from experimental status:
+
+| v1 package                                                                           | v2 package                  |
+| ------------------------------------------------------------------------------------ | --------------------------- |
+| `@orpc/openapi-client`                                                               | merged into `@orpc/openapi` |
+| `@orpc/react`                                                                        | `@orpc/next`                |
+| `@orpc/react-query` / `@orpc/vue-query` / `@orpc/solid-query` / `@orpc/svelte-query` | `@orpc/tanstack-query`      |
+| `@orpc/vue-colada`                                                                   | `@orpc/pinia-colada`        |
+| `@orpc/experimental-react-swr`                                                       | `@orpc/swr`                 |
+| `@orpc/experimental-publisher`                                                       | `@orpc/publisher`           |
+| `@orpc/experimental-publisher-durable-object`                                        | `@orpc/cloudflare`          |
+| `@orpc/experimental-ratelimit`                                                       | `@orpc/ratelimit`           |
+| `@orpc/experimental-pino`                                                            | `@orpc/pino`                |
+| `@orpc/otel`                                                                         | `@orpc/opentelemetry`       |
+| `@orpc/server/hibernation` (subpath)                                                 | `@orpc/hibernation`         |
+
+:::warning
+The Hey API and Durable Iterator integrations no longer exist in v2. In place of Durable Iterator, use [Hibernation](/docs/integrations/hibernation) or [DurablePublisher](/docs/helpers/publisher#adapters).
+:::
+
+## Wire Format Changes
+
+Two formats changed on the wire:
+
+- The [RPC serializer](/docs/rpc/serializer) format, described in the [RPC Protocol](/docs/rpc/protocol).
+- The error response body, which no longer contains a `status` field, since [`status` was removed from errors](#status-removed-from-errors).
+
+Because of these changes, a v1 [RPC Link](/docs/rpc/link) or [OpenAPI Link](/docs/openapi/link) cannot talk to a v2 server (and vice versa). Deploy the upgraded server and clients together.
+
+If your [OpenAPI Handler](/docs/openapi/handler) endpoints have external consumers that expect the v1 error format, add the `status` field back with a [custom error response](/docs/openapi/handler#custom-error-response):
+
+```ts
+import { COMMON_ERROR_STATUS_MAP } from '@orpc/openapi'
+
+const handler = new OpenAPIHandler(router, {
+  customErrorResponseBodyEncoder: error => ({
+    ...error.toJSON(),
+    status: COMMON_ERROR_STATUS_MAP[error.code] ?? 500,
+  }),
+})
+```
+
+## Routing Moved to OpenAPI Metadata
+
+The biggest change: `.route`, `.prefix`, `.tag`, and `.$route` no longer exist on the builder. OpenAPI routing now lives in [metadata](/docs/metadata), set with the `openapi` helper from `@orpc/openapi`. See [OpenAPI Routing](/docs/openapi/routing).
+
+<CodeGroup>
+
+```ts v2
+import { openapi } from '@orpc/openapi'
+
+const listPlanet = os
+  .meta(openapi({ method: 'GET', path: '/planets' }))
+  .handler(async () => [])
+
+const router = os
+  .meta(openapi({ prefix: '/planets', tags: ['planets'] }))
+  .router({ list: listPlanet })
+```
+
+```ts v1
+const listPlanet = os
+  .route({ method: 'GET', path: '/planets' })
+  .handler(async () => [])
+
+const router = os
+  .prefix('/planets')
+  .tag('planets')
+  .router({ list: listPlanet })
+```
+
+</CodeGroup>
+
+:::tip
+If you prefer the old style, the [`.route` extension](/docs/openapi/routing#route-extension) brings `.route` back (but not `.prefix`, `.tag`, or `.$route`):
+
+```ts
+import '@orpc/openapi/extensions/route' // once at init time
+
+const listPlanet = os
+  .route({ method: 'GET', path: '/planets' }) // works again
+  .handler(async () => [])
+```
+
+:::
+
+:::warning[Prefixes now apply to every procedure]
+In v1, `.prefix` only applied to procedures that defined a `path` and left the rest untouched. In v2, `prefix` applies to every procedure, including those that fall back to the [router-derived path](/docs/openapi/routing#basic-routing), so those endpoints move under the prefix:
+
+<CodeGroup>
+
+```ts v2
+const router = os.meta(openapi({ prefix: '/api/v2' })).router({
+  planet: {
+    // POST /api/v2/planet/create
+    create: os.handler(async () => ({})),
+  },
+})
+```
+
+```ts v1
+const router = os.prefix('/api/v2').router({
+  planet: {
+    // POST /planet/create
+    create: os.handler(async () => ({})),
+  },
+})
+```
+
+</CodeGroup>
+:::
+
+The same applies to lazy routers with a prefix:
+
+<CodeGroup>
+
+```ts v2
+const router = {
+  planet: os.meta(openapi({ prefix: '/planets' })).lazy(() => import('./planet')),
+}
+```
+
+```ts v1
+const router = {
+  planet: os.prefix('/planets').lazy(() => import('./planet')),
+}
+```
+
+</CodeGroup>
+
+## Procedure Builder
+
+### `.callable` is no longer built in
+
+In v2, prefer [`call` or `createRouterClient`](/docs/client/server-side) to call procedures on the server:
+
+<CodeGroup>
+
+```ts v2
+import { call } from '@orpc/server'
+
+const getting = os.handler(async () => 'pong')
+
+const result = await call(getting, undefined, { context: {} })
+```
+
+```ts v1
+const getting = os
+  .handler(async () => 'pong')
+  .callable({ context: {} })
+
+const result = await getting()
+```
+
+</CodeGroup>
+
+:::tip
+If you prefer the v1 style, the [`.callable` extension](/docs/client/server-side#callable-extension) brings `.callable` back:
+
+```ts
+import '@orpc/server/extensions/callable' // once at init time
+
+const getting = os
+  .handler(async () => 'pong')
+  .callable({ context: {} })
+```
+
+:::
+
+### `.actionable` moved to `@orpc/next`
+
+Server actions are now called [server functions](/docs/integrations/next#server-functions) and live in the [Next.js Integration](/docs/integrations/next). In v2, prefer `createServerFunctionable` (or `createServerFunction`): it works exactly like `.actionable`, returning a value that is both a server function and a regular procedure.
+
+<CodeGroup>
+
+```ts v2
+'use server'
+
+import { createServerFunctionable } from '@orpc/next'
+import { os } from '@orpc/server'
+
+const functionable = createServerFunctionable({ context: {} })
+
+export const getting = functionable(
+  os.handler(async () => 'pong'),
+)
+```
+
+```ts v1
+'use server'
+
+import { os } from '@orpc/server'
+
+export const getting = os
+  .handler(async () => 'pong')
+  .actionable({ context: {} })
+```
+
+</CodeGroup>
+
+:::tip
+If you prefer the v1 style, the [`.actionable` extension](/docs/integrations/next#actionable-extension) brings `.actionable` back:
+
+```ts
+import '@orpc/next/extensions/actionable' // once at init time
+```
+
+:::
+
+The hooks were renamed too: `useServerAction` is now `useServerFunction` and `useOptimisticServerAction` is now `useOptimisticServerFunction`, both imported from `@orpc/next/hooks` (old names still work as deprecated aliases). `createFormAction` is now [`createServerFormFunction`](/docs/integrations/next#server-form-functions).
+
+### `.input` and `.output` now stack
+
+In v1, a procedure had at most one input and one output schema. In v2, each `.input` or `.output` call adds another schema on top of the previous ones. See [Multiple Schemas](/docs/procedure#multiple-schemas).
+
+```ts
+const example = os
+  .input(z.object({ name: z.string() }))
+  .input(z.object({ id: z.number() })) // adds a second schema
+  .handler(async ({ input }) => {}) // input: { name: string } & { id: number }
+```
+
+:::info
+Stacked object input schemas compose into a single flat value, so one schema never strips the keys another schema needs. Output schemas are piped, so use loose object schemas (like `z.looseObject`) when stacking them. `.$input` was removed along with this change.
+:::
+
+### `.$config` options changed
+
+The index-based validation options were replaced by two simple flags. v2 tracks the order of middleware and validation automatically, so `dedupeLeadingMiddlewares` and the index options are gone. See [Validation Customization](/docs/recipes/validation-customization).
+
+<CodeGroup>
+
+```ts v2
+const base = os.$config({
+  disableInputValidation: true,
+  disableOutputValidation: true,
+})
+```
+
+```ts v1
+const base = os.$config({
+  initialInputValidationIndex: Number.NEGATIVE_INFINITY,
+  initialOutputValidationIndex: Number.NaN,
+})
+```
+
+</CodeGroup>
+
+### `.$meta` replaced by meta plugins
+
+`.meta` now accepts meta plugins created with `defineMeta`, and `.$meta<T>()` was removed. See [Metadata](/docs/metadata).
+
+<CodeGroup>
+
+```ts v2
+import { defineMeta, os } from '@orpc/server'
+
+const [cacheMeta, getCacheMeta] = defineMeta(
+  'cache',
+  (incoming: boolean) => incoming,
+)
+
+const base = os.use(async ({ procedure, next }) => {
+  if (getCacheMeta(procedure) !== true) {
+    return next()
+  }
+  // ...
+  return next()
+})
+
+const example = base
+  .meta(cacheMeta(true))
+  .handler(async () => {})
+```
+
+```ts v1
+import { os } from '@orpc/server'
+
+interface ORPCMetadata {
+  cache?: boolean
+}
+
+const base = os
+  .$meta<ORPCMetadata>({})
+  .use(async ({ procedure, next }) => {
+    if (!procedure['~orpc'].meta.cache) {
+      return next()
+    }
+    // ...
+    return next()
+  })
+
+const example = base
+  .meta({ cache: true })
+  .handler(async () => {})
+```
+
+</CodeGroup>
+
+## Middleware
+
+### Renamed methods
+
+`.concat` is now `.use`, and `.mapInput` is now `.adaptInput`. The two argument form `.use(middleware, mapInput)` was removed. See [Middleware](/docs/middleware).
+
+<CodeGroup>
+
+```ts v2
+const merged = aMiddleware.use(anotherMiddleware)
+
+const example = os
+  .input(z.object({ id: z.number() }))
+  .use(canUpdate.adaptInput(input => input.id))
+  .handler(async () => {})
+```
+
+```ts v1
+const merged = aMiddleware.concat(anotherMiddleware)
+
+const example = os
+  .input(z.object({ id: z.number() }))
+  .use(canUpdate, input => input.id)
+  .handler(async () => {})
+```
+
+</CodeGroup>
+
+### `output` argument replaced by `done`
+
+The third middleware argument for short-circuiting with an output changed shape. See [Middleware](/docs/middleware).
+
+<CodeGroup>
+
+```ts v2
+const cacheMiddleware = os.middleware(async ({ next }, input, done) => {
+  if (cache.has(key)) {
+    return done({ output: cache.get(key) })
+  }
+
+  return next()
+})
+```
+
+```ts v1
+const cacheMiddleware = os.middleware(async ({ next }, input, output) => {
+  if (cache.has(key)) {
+    return output(cache.get(key))
+  }
+
+  return next()
+})
+```
+
+</CodeGroup>
+
+### Automatic deduplication removed
+
+v1 automatically skipped router-level middleware that was already applied to a procedure. v2 no longer does this.
+
+:::warning
+Middleware applied at both the router and the procedure level now runs twice. Nothing warns you about it: an auth or logging middleware simply executes two times per request.
+:::
+
+Guard shared middleware yourself with the context flag pattern from [Dedupe Middleware](/docs/recipes/dedupe-middleware):
+
+```ts
+const authMiddleware = os
+  .$context<{ user?: User, authLoaded?: boolean }>()
+  .middleware(async ({ context, next }) => {
+    if (context.authLoaded) {
+      return next()
+    }
+
+    return next({
+      context: { user: await loadUser(), authLoaded: true },
+    })
+  })
+```
+
+The `dedupeLeadingMiddlewares` config option was removed together with this behavior.
+
+## Error Handling
+
+### `status` removed from errors
+
+`ORPCError` and `.errors` definitions no longer accept a `status`. HTTP status codes are now a handler concern, configured with `errorStatusMap`. Error response bodies no longer contain the field either, see [Wire Format Changes](#wire-format-changes). See [Error Handling](/docs/error-handling) and [RPC Handler](/docs/rpc/handler).
+
+<CodeGroup>
+
+```ts v2
+import { COMMON_ERROR_STATUS_MAP } from '@orpc/server'
+
+const example = os
+  .errors({
+    RATE_LIMITED: { data: z.object({ retryAfter: z.number() }) },
+  })
+  .handler(async ({ errors }) => {
+    throw errors.RATE_LIMITED({ data: { retryAfter: 60 } })
+  })
+
+const handler = new RPCHandler(router, {
+  errorStatusMap: { ...COMMON_ERROR_STATUS_MAP, RATE_LIMITED: 429 },
+})
+```
+
+```ts v1
+const example = os
+  .errors({
+    RATE_LIMITED: { status: 429, data: z.object({ retryAfter: z.number() }) },
+  })
+  .handler(async ({ errors }) => {
+    throw errors.RATE_LIMITED({ data: { retryAfter: 60 } })
+  })
+
+const handler = new RPCHandler(router)
+```
+
+</CodeGroup>
+
+### `safe` result changed
+
+The third element of the `safe` result is now the typed error itself (or `null`) instead of a boolean, and a fourth `isSuccess` element was added. See [Client Error Handling](/docs/client/error-handling).
+
+<CodeGroup>
+
+```ts v2
+import { isDefinedError, safe } from '@orpc/client'
+
+const [error, data, definedError, isSuccess] = await safe(client.example({ id: 1 }))
+
+if (definedError) {
+  console.log(definedError.data.retryAfter)
+}
+```
+
+```ts v1
+import { isDefinedError, safe } from '@orpc/client'
+
+const [error, data, isDefined] = await safe(client.example({ id: 1 }))
+
+if (error && isDefined) {
+  console.log(error.data.retryAfter)
+}
+```
+
+</CodeGroup>
+
+:::tip
+v2 also introduces `error` factories for defining reusable typed errors outside `.errors`. See [Error Handling](/docs/error-handling).
+:::
+
+## AsyncIteratorObject (Event Iterator)
+
+The "Event Iterator" concept was renamed to [AsyncIteratorObject](/docs/async-iterator-object) (see also [AsyncIteratorObject in Client](/docs/client/async-iterator-object)). All old names still work as deprecated aliases:
+
+| v1                                   | v2                                   |
+| ------------------------------------ | ------------------------------------ |
+| `eventIterator`                      | `asyncIteratorObject`                |
+| `consumeEventIterator`               | `consumeAsyncIterator`               |
+| `eventIteratorToStream`              | `asyncIteratorToStream`              |
+| `eventIteratorToUnproxiedDataStream` | `asyncIteratorToUnproxiedDataStream` |
+| `streamToEventIterator`              | `streamToAsyncIteratorObject`        |
+
+<CodeGroup>
+
+```ts v2
+import { asyncIteratorObject } from '@orpc/server'
+
+const streaming = os
+  .output(asyncIteratorObject(z.object({ message: z.string() })))
+  .handler(async function* () {
+    yield { message: 'Hello' }
+  })
+```
+
+```ts v1
+import { eventIterator } from '@orpc/server'
+
+const streaming = os
+  .output(eventIterator(z.object({ message: z.string() })))
+  .handler(async function* () {
+    yield { message: 'Hello' }
+  })
+```
+
+</CodeGroup>
+
+### `EventPublisher` replaced by `MemoryPublisher`
+
+`EventPublisher` was removed from `@orpc/server`. Use the [Publisher Helpers](/docs/helpers/publisher) instead. Note that `publish` is now async.
+
+<CodeGroup>
+
+```ts v2
+import { MemoryPublisher } from '@orpc/publisher/memory'
+
+const publisher = new MemoryPublisher<{ 'something-updated': { id: string } }>()
+
+await publisher.publish('something-updated', { id: '1' })
+```
+
+```ts v1
+import { EventPublisher } from '@orpc/server'
+
+const publisher = new EventPublisher<{ 'something-updated': { id: string } }>()
+
+publisher.publish('something-updated', { id: '1' })
+```
+
+</CodeGroup>
+
+## RPC Handler
+
+### GET requests are rejected by default
+
+v1 shipped `StrictGetMethodPlugin` enabled by default. v2 removed that plugin (and the `strictGetMethodPluginEnabled` option) in favor of an `allowMethods` option that defaults to `['POST', 'PUT', 'PATCH', 'DELETE']`. If your client sends GET requests, allow them explicitly and add CSRF protection. See [RPC Handler](/docs/rpc/handler).
+
+<CodeGroup>
+
+```ts v2
+import { GetMethodCsrfProtectionHandlerPlugin } from '@orpc/server/plugins'
+import { RPC_DEFAULT_ALLOW_METHODS } from '@orpc/server/standard'
+
+const handler = new RPCHandler(router, {
+  allowMethods: ['GET', ...RPC_DEFAULT_ALLOW_METHODS],
+  plugins: [new GetMethodCsrfProtectionHandlerPlugin()],
+})
+```
+
+```ts v1
+// GET was accepted when the procedure declared .route({ method: 'GET' }),
+// enforced by the default StrictGetMethodPlugin
+const handler = new RPCHandler(router)
+```
+
+</CodeGroup>
+
+:::tip
+The simplest migration is to stop sending GET instead of allowing it: remove the `method` option from your [RPC Link](/docs/rpc/link) so every call uses POST (the default), and keep the handler's default `allowMethods`. Only allow GET when you really need it, for example for HTTP caching.
+:::
+
+The v2 [GET Method CSRF Protection Plugin](/docs/plugins/get-method-csrf-protection) replaces the v1 CSRF plugin pair. It checks the browser's `Sec-Fetch-*` headers, so it needs no matching link plugin and no configuration. Remove `SimpleCsrfProtectionPlugin` from your handler and `SimpleCsrfProtectionLinkPlugin` from your client; they no longer exist.
+
+### Interceptor options renamed
+
+`rootInterceptors` is now `routingInterceptors`. `adapterInterceptors` was removed, because regular interceptors can now customize body parsing behavior. See [RPC Handler](/docs/rpc/handler).
+
+<CodeGroup>
+
+```ts v2
+const handler = new RPCHandler(router, {
+  routingInterceptors: [/* ... */],
+})
+```
+
+```ts v1
+const handler = new RPCHandler(router, {
+  rootInterceptors: [/* ... */],
+})
+```
+
+</CodeGroup>
+
+### `filter` takes positional arguments
+
+The `filter` option on handlers (and the OpenAPI generator) receives positional arguments now. The v1 destructured form still type-checks but reads the wrong values, so update it carefully. See [RPC Handler](/docs/rpc/handler) and [OpenAPI Specification](/docs/openapi/specification).
+
+<CodeGroup>
+
+```ts v2
+const handler = new RPCHandler(router, {
+  filter: (contract, path) => !path.includes('internal'),
+})
+```
+
+```ts v1
+const handler = new RPCHandler(router, {
+  filter: ({ contract, path }) => !path.includes('internal'),
+})
+```
+
+</CodeGroup>
+
+### Custom serializers use a `serializer` instance
+
+The `customJsonSerializers` option with numeric types was replaced by a `serializer` instance with string-keyed handlers, shared between [RPC Handler](/docs/rpc/handler) and [RPC Link](/docs/rpc/link). To override a built-in type, reuse its key (for example `date`) instead of matching a magic number. See [RPC Serializer](/docs/rpc/serializer).
+
+<CodeGroup>
+
+```ts v2
+import { RPCSerializer } from '@orpc/client'
+
+const serializer = new RPCSerializer({
+  handlers: {
+    user: {
+      condition: data => data instanceof User,
+      serialize: data => data.toJSON(),
+      deserialize: (data: any) => new User(data.id, data.name),
+    },
+  },
+})
+
+const handler = new RPCHandler(router, { serializer })
+const link = new RPCLink({ serializer })
+```
+
+```ts v1
+import type { StandardRPCCustomJsonSerializer } from '@orpc/client/standard'
+
+const userSerializer: StandardRPCCustomJsonSerializer = {
+  type: 21, // unique number > 20
+  condition: data => data instanceof User,
+  serialize: data => data.toJSON(),
+  deserialize: data => new User(data.id, data.name),
+}
+
+const handler = new RPCHandler(router, { customJsonSerializers: [userSerializer] })
+const link = new RPCLink({ url: '...', customJsonSerializers: [userSerializer] })
+```
+
+</CodeGroup>
+
+### `RegExp` is no longer a built-in type
+
+The [RPC Serializer](/docs/rpc/serializer) and [OpenAPI Serializer](/docs/openapi/serializer) no longer serialize `RegExp` values, and the [Smart Coercion Plugin](/docs/plugins/smart-coercion) no longer recognizes `x-native-type: 'regexp'`. A `RegExp` now serializes like any other class instance, as an empty object. If you send regular expressions over the wire, register a handler to restore the previous behavior:
+
+```ts
+import { RPCSerializer } from '@orpc/client'
+
+const REGEXP_PATTERN = /^\/([\s\S]*)\/([a-z]*)$/
+
+const serializer = new RPCSerializer({
+  handlers: {
+    regexp: {
+      condition: data => data instanceof RegExp,
+      serialize: (data: RegExp) => data.toString(),
+      deserialize: (data: string) => {
+        const [, pattern, flags] = data.match(REGEXP_PATTERN)!
+        return new RegExp(pattern!, flags)
+      },
+      isTerminal: true,
+    },
+  },
+})
+```
+
+### Event stream options nested under the response mapping
+
+The flat `eventIterator*` handler options moved under the adapter's response option, and the keep-alive default changed from 5 to 15 seconds. See [RPC Handler](/docs/rpc/handler).
+
+<CodeGroup>
+
+```ts v2
+const handler = new RPCHandler(router, {
+  toFetchResponse: { // fetch adapter; node uses sendStandardResponse
+    eventStream: {
+      keepAlive: { enabled: true, interval: 15000, comment: '' },
+    },
+  },
+})
+```
+
+```ts v1
+const handler = new RPCHandler(router, {
+  eventIteratorKeepAliveEnabled: true,
+  eventIteratorKeepAliveInterval: 5000,
+  eventIteratorKeepAliveComment: '',
+})
+```
+
+</CodeGroup>
+
+### WebSocket adapters unified
+
+`@orpc/server/ws` and `@orpc/server/bun-ws` were removed. A single `@orpc/server/websocket` adapter now covers `ws`, Bun, Deno, Cloudflare, and more. See [WebSocket Adapters](/docs/adapters/websocket).
+
+<CodeGroup>
+
+```ts v2
+import { RPCHandler } from '@orpc/server/websocket'
+
+wss.on('connection', (ws) => {
+  handler.upgrade(ws, { context: {} })
+})
+```
+
+```ts v1
+import { RPCHandler } from '@orpc/server/ws'
+
+wss.on('connection', (ws) => {
+  handler.upgrade(ws, { context: {} })
+})
+```
+
+</CodeGroup>
+
+## Server Plugins
+
+Handler plugins were renamed with a `HandlerPlugin` suffix. Deprecated aliases exist unless noted:
+
+| v1                                        | v2                                                                                                                                                |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CORSPlugin`                              | [`CORSHandlerPlugin`](/docs/plugins/cors)                                                                                                         |
+| `RequestHeadersPlugin`                    | [`RequestHeadersHandlerPlugin`](/docs/plugins/request-headers)                                                                                    |
+| `ResponseHeadersPlugin`                   | [`ResponseHeadersHandlerPlugin`](/docs/plugins/response-headers)                                                                                  |
+| `BodyLimitPlugin` (from adapter subpaths) | [`RequestLimitHandlerPlugin`](/docs/plugins/request-limit) (from `@orpc/server/plugins`)                                                          |
+| `CompressionPlugin` (no alias)            | [`RequestCompressionHandlerPlugin`](/docs/plugins/request-compression) + [`ResponseCompressionHandlerPlugin`](/docs/plugins/response-compression) |
+| `experimental_RethrowHandlerPlugin`       | [`RethrowHandlerPlugin`](/docs/plugins/rethrow)                                                                                                   |
+| `StrictGetMethodPlugin` (no alias)        | removed, use `allowMethods`                                                                                                                       |
+
+<CodeGroup>
+
+```ts v2
+import {
+  RequestLimitHandlerPlugin,
+  ResponseCompressionHandlerPlugin,
+} from '@orpc/server/plugins'
+
+const handler = new RPCHandler(router, {
+  plugins: [
+    new RequestLimitHandlerPlugin({ maxBodySize: 1024 * 1024 }),
+    new ResponseCompressionHandlerPlugin(),
+  ],
+})
+```
+
+```ts v1
+import { BodyLimitPlugin, CompressionPlugin } from '@orpc/server/fetch'
+
+const handler = new RPCHandler(router, {
+  plugins: [
+    new BodyLimitPlugin({ maxBodySize: 1024 * 1024 }),
+    new CompressionPlugin(),
+  ],
+})
+```
+
+</CodeGroup>
+
+:::info
+When serving binary data cross-origin, allow and expose both the `Content-Disposition` and the new `Standard-Server` headers in your CORS configuration. See [Binary Data](/docs/binary-data).
+:::
+
+### CORS allows any origin by default
+
+In v1, `CORSPlugin` reflected the request origin by default. In v2, `CORSHandlerPlugin` defaults `origin` to `*`, which browsers reject for [credentialed requests](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS#requests_with_credentials). If you rely on `credentials`, list the origins allowed to send credentials. The `origin` and `timingOrigin` functions can now also be async. See [CORS](/docs/plugins/cors).
+
+<CodeGroup>
+
+```ts v2
+const handler = new RPCHandler(router, {
+  plugins: [
+    new CORSHandlerPlugin({
+      origin: ['https://app.example.com'],
+      credentials: true,
+    }),
+  ],
+})
+```
+
+```ts v1
+const handler = new RPCHandler(router, {
+  plugins: [
+    new CORSPlugin({
+      credentials: true,
+    }),
+  ],
+})
+```
+
+</CodeGroup>
+
+## Client
+
+### `RPCLink` splits `url` into `origin` and `url`
+
+`url` is now a path prefix starting with `/`, and the origin moves to a separate `origin` option (omit it in the browser to use the current origin). See [RPC Link](/docs/rpc/link).
+
+<CodeGroup>
+
+```ts v2
+import { RPCLink } from '@orpc/client/fetch'
+
+const link = new RPCLink({
+  origin: 'http://localhost:3000',
+  url: '/rpc',
+})
+```
+
+```ts v1
+import { RPCLink } from '@orpc/client/fetch'
+
+const link = new RPCLink({
+  url: 'http://localhost:3000/rpc',
+})
+```
+
+</CodeGroup>
+
+### Custom `fetch` receives a URL string
+
+The first argument of a custom `fetch` is now the URL string instead of a `Request` object. See [RPC Link](/docs/rpc/link).
+
+<CodeGroup>
+
+```ts v2
+const link = new RPCLink({
+  url: '/rpc',
+  fetch: (url, init, { context }) => globalThis.fetch(url, {
+    ...init,
+    credentials: 'include',
+  }),
+})
+```
+
+```ts v1
+const link = new RPCLink({
+  url: 'http://localhost:3000/rpc',
+  fetch: (request, init, { context }) => globalThis.fetch(request, {
+    ...init,
+    credentials: 'include',
+  }),
+})
+```
+
+</CodeGroup>
+
+### Link interceptors renamed
+
+`clientInterceptors` is now `transportInterceptors`. `adapterInterceptors` was removed, mirroring the handler-side change. Event stream options moved under `toFetchRequest.eventStream`. See [RPC Link](/docs/rpc/link).
+
+### Typed clients for contracts
+
+`ContractRouterClient` was renamed to `RouterContractClient` (the old name still works as a deprecated alias). `RouterClient` from `@orpc/server` is unchanged. See [Client-Side Clients](/docs/client/client-side).
+
+<CodeGroup>
+
+```ts v2
+import type { RouterContractClient } from '@orpc/contract'
+
+const client: RouterContractClient<typeof contract> = createORPCClient(link)
+```
+
+```ts v1
+import type { ContractRouterClient } from '@orpc/contract'
+
+const client: ContractRouterClient<typeof contract> = createORPCClient(link)
+```
+
+</CodeGroup>
+
+### WebSocket link uses a `connect` factory
+
+Pass a factory instead of a WebSocket instance. Reconnection is now built in, so you no longer need `partysocket`. See [WebSocket Adapters](/docs/adapters/websocket).
+
+<CodeGroup>
+
+```ts v2
+import { RPCLink } from '@orpc/client/websocket'
+
+const link = new RPCLink({
+  connect: () => new WebSocket('ws://localhost:3000'),
+  reconnect: { enabled: true },
+})
+```
+
+```ts v1
+import { RPCLink } from '@orpc/client/websocket'
+
+const websocket = new WebSocket('ws://localhost:3000')
+
+const link = new RPCLink({ websocket })
+```
+
+</CodeGroup>
+
+## Client Plugins
+
+Link plugins were renamed with a `LinkPlugin` suffix. Deprecated aliases exist for all of them:
+
+| v1                     | v2                                                  |
+| ---------------------- | --------------------------------------------------- |
+| `ClientRetryPlugin`    | [`RetryLinkPlugin`](/docs/plugins/retry)            |
+| `DedupeRequestsPlugin` | [`DedupeLinkPlugin`](/docs/plugins/dedupe)          |
+| `RetryAfterPlugin`     | [`RetryAfterLinkPlugin`](/docs/plugins/retry-after) |
+
+v2 also adds new plugins: [Timeout](/docs/plugins/timeout), [Request Compression](/docs/plugins/request-compression), and [Response Compression](/docs/plugins/response-compression).
+
+### Batch Plugin
+
+The v2 [Batch Plugin](/docs/plugins/batch) supports every response type, including [AsyncIteratorObject](/docs/async-iterator-object) and [File/Blob](/docs/binary-data). In v1, `exclude` existed mainly to skip those unsupported responses, so in most cases you can simply remove it:
+
+<CodeGroup>
+
+```ts v2
+import { BatchLinkPlugin } from '@orpc/client/plugins'
+
+const batchPlugin = new BatchLinkPlugin({
+  groups: [{ condition: () => true, context: {} }],
+})
+```
+
+```ts v1
+import { BatchLinkPlugin } from '@orpc/client/plugins'
+
+const batchPlugin = new BatchLinkPlugin({
+  groups: [{ condition: () => true, context: {} }],
+  exclude: ({ path }) => {
+    return ['planets/getImage', 'planets/subscribe'].includes(path.join('/'))
+  },
+})
+```
+
+</CodeGroup>
+
+:::warning
+Some cases still need to skip batching, for example procedures that rely on [Hibernation](/docs/integrations/hibernation), which cannot work through batched responses. For those, use `filter`. Its meaning is inverted compared to `exclude`: `exclude` returned `true` to skip batching, while `filter` returns `false` to skip batching. Negate your predicate when migrating.
+
+```ts
+const batchPlugin = new BatchLinkPlugin({
+  groups: [{ condition: () => true, context: {} }],
+  filter: ({ path }) => path.join('/') !== 'chat/subscribe', // false = not batched
+})
+```
+
+:::
+
+## Contract-First
+
+Contract types and utilities changed word order from `ContractRouter*` to `RouterContract*`. Deprecated aliases exist for all of them. See [Procedure Contract](/docs/contract/procedure) and [Router Contract](/docs/contract/router).
+
+| v1                                               | v2                                                     |
+| ------------------------------------------------ | ------------------------------------------------------ |
+| `ContractRouterClient`                           | `RouterContractClient`                                 |
+| `AnyContractRouter`                              | `RouterContract`                                       |
+| `AnyContractProcedure`                           | `AnyProcedureContract`                                 |
+| `InferContractRouterInputs`                      | `InferRouterContractInputs`                            |
+| `InferContractRouterOutputs`                     | `InferRouterContractOutputs`                           |
+| `minifyContractRouter`                           | `minifyRouterContract`                                 |
+| `populateContractRouterPaths` (`@orpc/contract`) | `populateRouterContractOpenAPIPaths` (`@orpc/openapi`) |
+| `RequestValidationPlugin`                        | `RequestValidationLinkPlugin`                          |
+| `ResponseValidationPlugin`                       | `ResponseValidationLinkPlugin`                         |
+
+The implementer works the same as in v1: `implement(contract)` still supports `.$context`, `.use`, and `.middleware`. New in v2, it also accepts a [procedure config](/docs/recipes/validation-customization), either as a second argument or through `.$config`. See [Contract Implementation](/docs/contract/implementation).
+
+```ts
+import { implement } from '@orpc/server'
+
+const os = implement(contract, { disableOutputValidation: true })
+```
+
+Contract routing uses `openapi()` metadata now, as described in [Routing Moved to OpenAPI Metadata](#routing-moved-to-openapi-metadata).
+
+## OpenAPI
+
+### `OpenAPILink` moved into `@orpc/openapi`
+
+The `@orpc/openapi-client` package was merged into `@orpc/openapi`. Its options follow the same changes as `RPCLink` (`origin` + `url`, `transportInterceptors`, and so on). See [OpenAPI Link](/docs/openapi/link).
+
+<CodeGroup>
+
+```ts v2
+import { OpenAPILink } from '@orpc/openapi/fetch'
+
+const link = new OpenAPILink(contract, {
+  origin: 'http://localhost:3000',
+  url: '/api',
+})
+```
+
+```ts v1
+import { OpenAPILink } from '@orpc/openapi-client/fetch'
+
+const link = new OpenAPILink(contract, {
+  url: 'http://localhost:3000/api',
+})
+```
+
+</CodeGroup>
+
+The form data helpers moved with it, from `@orpc/openapi-client/helpers` to `@orpc/openapi/helpers`.
+
+### `OpenAPIGenerator` options restructured
+
+`schemaConverters` is now `converters`, and document fields moved under `base`. `commonSchemas` was removed: define reusable schemas natively in your schema library instead (for example `.meta({ id: 'Planet' })` in Zod), and they are hoisted into `components.schemas` automatically. See [OpenAPI Specification](/docs/openapi/specification).
+
+<CodeGroup>
+
+```ts v2
+import { OpenAPIGenerator } from '@orpc/openapi'
+import { ZodToJsonSchemaConverter } from '@orpc/zod'
+
+const generator = new OpenAPIGenerator({
+  converters: [new ZodToJsonSchemaConverter()],
+})
+
+const spec = await generator.generate(router, {
+  version: '3.1.1',
+  base: {
+    info: { title: 'My App', version: '0.0.0' },
+  },
+})
+```
+
+```ts v1
+import { OpenAPIGenerator } from '@orpc/openapi'
+import { ZodToJsonSchemaConverter } from '@orpc/zod'
+
+const generator = new OpenAPIGenerator({
+  schemaConverters: [new ZodToJsonSchemaConverter()],
+})
+
+const spec = await generator.generate(router, {
+  info: { title: 'My App', version: '0.0.0' },
+})
+```
+
+</CodeGroup>
+
+Three smaller changes in the same area:
+
+- The `oo` helper (`oo.spec`) was removed. To customize the operation object, attach [`openapi({ spec })` metadata](/docs/openapi/specification#customizing-the-operation-object) directly on the procedure or router.
+- The `shouldHoistDef` option was replaced by [`customComponentName`](/docs/openapi/specification#hoisting-defs). Root `$defs` are now always hoisted into `components.schemas`; this option only renames them.
+- Documents are generated as OpenAPI 3.2.0 by default. The example above passes [`version: '3.1.1'`](/docs/openapi/specification#openapi-version) to keep the v1 behavior.
+
+### `OpenAPIReferencePlugin` renamed and reshaped
+
+The plugin is now `OpenAPIReferenceHandlerPlugin`, and you provide the spec yourself instead of passing converters and generate options. See [OpenAPI Reference Plugin](/docs/plugins/openapi-reference).
+
+<CodeGroup>
+
+```ts v2
+import { OpenAPIGenerator } from '@orpc/openapi'
+import { OpenAPIReferenceHandlerPlugin } from '@orpc/openapi/plugins'
+
+const generator = new OpenAPIGenerator({
+  converters: [new ZodToJsonSchemaConverter()],
+})
+
+const handler = new OpenAPIHandler(router, {
+  plugins: [
+    new OpenAPIReferenceHandlerPlugin({
+      provider: 'scalar',
+      spec: () => generator.generate(router, {
+        base: { info: { title: 'My App', version: '0.0.0' } },
+      }),
+    }),
+  ],
+})
+```
+
+```ts v1
+import { OpenAPIReferencePlugin } from '@orpc/openapi/plugins'
+
+const handler = new OpenAPIHandler(router, {
+  plugins: [
+    new OpenAPIReferencePlugin({
+      docsProvider: 'scalar',
+      schemaConverters: [new ZodToJsonSchemaConverter()],
+      specGenerateOptions: { info: { title: 'My App', version: '0.0.0' } },
+    }),
+  ],
+})
+```
+
+</CodeGroup>
+
+### Zod integration requires Zod v4
+
+`@orpc/zod` now supports Zod v4 only. The `@orpc/zod/zod4` subpath and the `oz` helper (`oz.file()`, `oz.openapi()`, ...) were removed. See [Zod Integration](/docs/integrations/zod).
+
+`ZodSmartCoercionPlugin` was also removed. Use the schema-agnostic [Smart Coercion Plugin](/docs/plugins/smart-coercion) instead, whose option is now named `converters`:
+
+<CodeGroup>
+
+```ts v2
+import { SmartCoercionHandlerPlugin } from '@orpc/json-schema'
+import { ZodToJsonSchemaConverter } from '@orpc/zod'
+
+const handler = new OpenAPIHandler(router, {
+  plugins: [
+    new SmartCoercionHandlerPlugin({
+      converters: [new ZodToJsonSchemaConverter()],
+    }),
+  ],
+})
+```
+
+```ts v1
+import { ZodSmartCoercionPlugin } from '@orpc/zod'
+
+const handler = new OpenAPIHandler(router, {
+  plugins: [new ZodSmartCoercionPlugin()],
+})
+```
+
+</CodeGroup>
+
+The Valibot and ArkType converters dropped their `experimental_` prefixes: `ValibotToJsonSchemaConverter` and `ArkTypeToJsonSchemaConverter`. When no converter matches, v2 falls back to [Standard Schema](/docs/integrations/standard-schema) JSON conversion instead of producing an unknown schema.
+
+## Integrations
+
+### TanStack Query
+
+The per-framework packages were removed in favor of `@orpc/tanstack-query`, and a few options changed. See [TanStack Query Integration](/docs/integrations/tanstack-query).
+
+<CodeGroup>
+
+```ts v2
+import { createTanstackQueryUtils } from '@orpc/tanstack-query'
+
+const orpc = createTanstackQueryUtils(client, { prefix: 'user' })
+
+orpc.streamed.streamedOptions({ input: {} })
+orpc.live.liveOptions({ input: {} })
+```
+
+```ts v1
+import { createTanstackQueryUtils } from '@orpc/tanstack-query'
+
+const orpc = createTanstackQueryUtils(client, { path: ['user'] })
+
+orpc.streamed.experimental_streamedOptions({ input: {} })
+orpc.live.experimental_liveOptions({ input: {} })
+```
+
+</CodeGroup>
+
+`experimental_defaults` became `scoped`, and the hydration serializer changed from `StandardRPCJsonSerializer` to `RPCJsonSerializer` (see [RPC JSON Serializer](/docs/rpc/serializer#rpc-json-serializer)).
+
+### SWR and Pinia Colada
+
+`@orpc/experimental-react-swr` is now `@orpc/swr` (see [SWR Integration](/docs/integrations/swr)), and `@orpc/vue-colada` is now `@orpc/pinia-colada` with `createORPCVueColadaUtils` renamed to `createPiniaColadaUtils` (see [Pinia Colada Integration](/docs/integrations/pinia-colada)). Both switched from `path` to `prefix`, same as TanStack Query.
+
+### NestJS
+
+Import `implement`, `ORPCError`, and `onError` from `@orpc/server` instead of `@orpc/nest`, and augment `DefaultInitialContext` instead of `ORPCGlobalContext`. See [NestJS Integration](/docs/integrations/nest).
+
+<CodeGroup>
+
+```ts v2
+import { Implement } from '@orpc/nest'
+import { implement, ORPCError } from '@orpc/server'
+
+declare module '@orpc/server' {
+  interface DefaultInitialContext {
+    request: Request
+  }
+}
+```
+
+```ts v1
+import { Implement, implement, ORPCError } from '@orpc/nest'
+
+declare module '@orpc/nest' {
+  interface ORPCGlobalContext {
+    request: Request
+  }
+}
+```
+
+</CodeGroup>
+
+### AI SDK
+
+`@orpc/ai-sdk` now targets AI SDK v7+. `implementTool` and `createTool` became factories, and tool metadata uses the `aiSdkTool()` meta plugin. See [AI SDK Integration](/docs/integrations/ai-sdk).
+
+<CodeGroup>
+
+```ts v2
+import { createToolFactory } from '@orpc/ai-sdk'
+
+const createTool = createToolFactory({ context: {} })
+const tool = createTool(someProcedure)
+```
+
+```ts v1
+import { createTool } from '@orpc/ai-sdk'
+
+const tool = createTool(someProcedure, { context: {} })
+```
+
+</CodeGroup>
+
+### Hibernation
+
+The `@orpc/server/hibernation` subpath became the `@orpc/hibernation` package. `HibernationPlugin` is now `HibernationHandlerPlugin`, `HibernationEventIterator` is now `HibernationAsyncIteratorClass` (aliases kept), `encodeHibernationRPCEvent` is now async, and the `'done'` event was renamed to `'close'`. See [Hibernation Integration](/docs/integrations/hibernation).
+
+### Logging and tracing
+
+`@orpc/experimental-pino` is now `@orpc/pino`, with `LoggingHandlerPlugin` renamed to `PinoHandlerPlugin` (see [Pino Integration](/docs/integrations/pino)). `@orpc/otel` is now `@orpc/opentelemetry`, and context propagation works out of the box (see [OpenTelemetry Integration](/docs/integrations/opentelemetry)).
+
+## Helpers
+
+Base64Url, Cookie, Encryption, and Signing helpers are unchanged in `@orpc/server/helpers`.
+
+### Publisher
+
+The package is now `@orpc/publisher`. The resume option was restructured, `customJsonSerializers` became a `serializer` instance (see [RPC JSON Serializer](/docs/rpc/serializer#rpc-json-serializer)), and the Redis adapter switched from `ioredis` to `node-redis`. See [Publisher Helpers](/docs/helpers/publisher).
+
+<CodeGroup>
+
+```ts v2
+import { RedisPublisher } from '@orpc/publisher/redis'
+
+const publisher = new RedisPublisher(client, {
+  subscriber,
+  resume: { enabled: true, seconds: 300 },
+})
+```
+
+```ts v1
+import { IORedisPublisher } from '@orpc/experimental-publisher/ioredis'
+
+const publisher = new IORedisPublisher({
+  commander,
+  listener,
+  resumeRetentionSeconds: 300,
+})
+```
+
+</CodeGroup>
+
+The Durable Object adapter moved to `@orpc/cloudflare`, with `PublisherDurableObject` renamed to `DurablePublisherObject`.
+
+### Rate Limit
+
+The package is now `@orpc/ratelimit`. Watch the casing change from `Ratelimiter` to `RateLimiter` in every class name, and the middleware helper rename. See [Rate Limit Helpers](/docs/helpers/ratelimit).
+
+<CodeGroup>
+
+```ts v2
+import { ratelimit } from '@orpc/ratelimit'
+import { MemoryRateLimiter } from '@orpc/ratelimit/memory'
+
+const limiter = new MemoryRateLimiter({ maxRequests: 10, window: 60_000 })
+
+const example = os
+  .use(ratelimit({
+    limiter: () => limiter,
+    key: ({ context }) => `user:${context.user.id}`,
+  }))
+  .handler(async () => {})
+```
+
+```ts v1
+import { createRatelimitMiddleware } from '@orpc/experimental-ratelimit'
+import { MemoryRatelimiter } from '@orpc/experimental-ratelimit/memory'
+
+const limiter = new MemoryRatelimiter({ maxRequests: 10, window: 60_000 })
+
+const example = os
+  .use(createRatelimitMiddleware({
+    limiter: () => limiter,
+    key: ({ context }) => `user:${context.user.id}`,
+  }))
+  .handler(async () => {})
+```
+
+</CodeGroup>
+
+The Cloudflare rate limiter moved to `@orpc/cloudflare`.
+
+## Deprecated Alias Cheat Sheet
+
+These renames still compile through deprecated aliases, so you can migrate them gradually:
+
+| v1 name                      | v2 name                       | Package                          |
+| ---------------------------- | ----------------------------- | -------------------------------- |
+| `InferClientErrorUnion`      | `InferClientError`            | `@orpc/client`                   |
+| `ClientPromiseResult`        | `PromiseWithError`            | `@orpc/client`                   |
+| `eventIterator`              | `asyncIteratorObject`         | `@orpc/server`, `@orpc/contract` |
+| `consumeEventIterator`       | `consumeAsyncIterator`        | `@orpc/client`                   |
+| `InferRouterCurrentContexts` | `InferRouterFinalContexts`    | `@orpc/server`                   |
+| `CORSPlugin`                 | `CORSHandlerPlugin`           | `@orpc/server/plugins`           |
+| `BodyLimitPlugin`            | `RequestLimitHandlerPlugin`   | `@orpc/server/plugins`           |
+| `ClientRetryPlugin`          | `RetryLinkPlugin`             | `@orpc/client/plugins`           |
+| `DedupeRequestsPlugin`       | `DedupeLinkPlugin`            | `@orpc/client/plugins`           |
+| `RetryAfterPlugin`           | `RetryAfterLinkPlugin`        | `@orpc/client/plugins`           |
+| `AnyContractRouter`          | `RouterContract`              | `@orpc/contract`                 |
+| `ContractRouterClient`       | `RouterContractClient`        | `@orpc/contract`                 |
+| `minifyContractRouter`       | `minifyRouterContract`        | `@orpc/contract`                 |
+| `useServerAction`            | `useServerFunction`           | `@orpc/next/hooks`               |
+| `useOptimisticServerAction`  | `useOptimisticServerFunction` | `@orpc/next/hooks`               |
+| `createFormAction`           | `createServerFormFunction`    | `@orpc/next`                     |
+| `createORPCVueColadaUtils`   | `createPiniaColadaUtils`      | `@orpc/pinia-colada`             |
+
+If anything is missing from this guide, check the corresponding page in the v2 docs, or open an issue on [GitHub](https://github.com/middleapi/orpc/issues).

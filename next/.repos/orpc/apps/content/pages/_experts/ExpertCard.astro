@@ -1,0 +1,77 @@
+---
+import type { Expert } from '../../experts/data'
+import Icon from 'blume/components/Icon.astro'
+import { relAttribute } from '../../sponsors/ads'
+import Avatar from '../../sponsors/Avatar.astro'
+
+interface Props {
+  expert: Expert
+}
+
+const { expert } = Astro.props
+
+const id = `expert-${expert.github.toLowerCase()}`
+const isEmail = expert.contact.startsWith('mailto:')
+---
+
+<article aria-labelledby={id} class="flex h-full flex-col rounded-blume border border-border bg-background p-5 sm:p-6">
+  <div class="flex items-center gap-3">
+    <Avatar
+      class:list={['size-12', expert.type === 'company' ? 'rounded-blume' : 'rounded-full']}
+      name={expert.name}
+      px={48}
+      src={`https://github.com/${expert.github}.png`}
+    />
+    <div class="flex-1">
+      <h3 id={id} class="text-base leading-snug font-semibold tracking-tight">
+        <bdi class="line-clamp-2 break-words" title={expert.name}>{expert.name}</bdi>
+      </h3>
+      <p class="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+        <Icon name="map-pin" size={12} class="flex-none" />
+        <span class="truncate" title={expert.location}>{expert.location}</span>
+      </p>
+    </div>
+  </div>
+
+  <p class="mt-4 inline-flex items-center gap-1.5 self-start rounded-full bg-accent/10 px-2.5 py-1 text-xs font-medium">
+    <Icon name="heart-handshake" size={13} class="flex-none text-accent" />
+    <span>Gives {expert.commission}% back to oRPC</span>
+  </p>
+
+  <p class="mt-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">{expert.headline}</p>
+
+  <ul aria-label="Skills" class="mt-4 flex flex-wrap gap-1.5">
+    {expert.skills.slice(0, 4).map(skill => (
+      <li class="max-w-full truncate rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
+        {skill}
+      </li>
+    ))}
+  </ul>
+
+  <div class="mt-auto pt-5">
+    <div class="flex items-center justify-between gap-3 border-t border-border pt-4">
+      <a
+        aria-label={`${expert.github} on GitHub`}
+        class="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        href={`https://github.com/${expert.github}`}
+        rel="noopener"
+        target="_blank"
+      >
+        <Icon name="github" size={14} class="flex-none" />
+        <span class="truncate">{expert.github}</span>
+      </a>
+
+      {/* Not `.orpc-btn`: its unlayered height beats `h-9`. */}
+      <a
+        aria-label={`Contact ${expert.name}`}
+        class="inline-flex h-9 flex-none items-center gap-1.5 rounded-blume border border-border px-3 text-sm font-medium transition-colors hover:bg-muted"
+        href={expert.contact}
+        rel={isEmail ? undefined : relAttribute('sponsored')}
+        target={isEmail ? undefined : '_blank'}
+      >
+        Contact
+        <Icon name={isEmail ? 'mail' : 'arrow-up-right'} size={14} />
+      </a>
+    </div>
+  </div>
+</article>

@@ -2,25 +2,50 @@ packages:
   - 'apps/*'
   - 'packages/*'
   - 'playgrounds/*'
-overrides:
-  '@wxt-dev/storage': 1.2.0
-  typescript: ~5.8.3
 
-preferWorkspacePackages: true
+# Hoist everything (default) except @types/bun. When @types/node and @types/bun are
+# installed in different packages, hoisting both into the same env causes a
+# conflict and breaks type checking when working on Node.js types alongside
+# a package that imports from 'bun'. Excluding @types/bun from hoisting
+# avoids this while keeping hoisting enabled for everything else.
+hoistPattern:
+  - '*'
+  - '!@types/bun'
+
+# Lets playgrounds/* resolve local packages without the 'workspace:' protocol
+# during development. When a playground is cloned standalone, the same
+# dependencies resolve to registry versions instead.
 linkWorkspacePackages: true
-shamefullyHoist: true
+preferWorkspacePackages: true
+
 allowBuilds:
-  '@nestjs/core': true
-  '@parcel/watcher': true
+  '@parcel/watcher': false
+  '@scarf/scarf': false
   '@swc/core': true
-  better-sqlite3: true
-  electron: true
-  electron-winstaller: true
-  esbuild: true
-  msw: true
-  protobufjs: true
-  sharp: true
-  simple-git-hooks: true
-  spawn-sync: true
-  vue-demi: true
-  workerd: true
+  '@tree-sitter-grammars/tree-sitter-yaml': false
+  core-js-pure: false
+  esbuild: false
+  msw: false
+  protobufjs: false
+  sharp: false
+  simple-git-hooks: false
+  spawn-sync: false
+  tree-sitter: false
+  tree-sitter-json: false
+  vue-demi: false
+  workerd: false
+
+# Only needed while a version is younger than the minimumReleaseAge gate.
+# Entries go inert once the version ages past it, so prune them on the next bump
+# instead of letting versions accumulate.
+minimumReleaseAgeExclude:
+  - '@standard-server/aws-lambda@0.10.3'
+  - '@standard-server/core@0.10.3'
+  - '@standard-server/fastify@0.10.3'
+  - '@standard-server/fetch@0.10.3'
+  - '@standard-server/node@0.10.3'
+  - '@standard-server/peer@0.10.3'
+  - '@standard-server/shared@0.10.3'
+  - blume@2.2.1
+  - effect@4.0.0
+  - rou3@1.0.0

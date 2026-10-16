@@ -1,56 +1,41 @@
 import { router } from '@/routers'
 import { OpenAPIHandler } from '@orpc/openapi/fetch'
-import { onError } from '@orpc/server'
-import { ZodToJsonSchemaConverter } from '@orpc/zod/zod4'
-import { SmartCoercionPlugin } from '@orpc/json-schema'
-import { OpenAPIReferencePlugin } from '@orpc/openapi/plugins'
-import '../../../polyfill'
-import { NewUserSchema, UserSchema } from '@/schemas/user'
-import { CredentialSchema, TokenSchema } from '@/schemas/auth'
-import { NewPlanetSchema, PlanetSchema, UpdatePlanetSchema } from '@/schemas/planet'
+import { OpenAPIReferenceHandlerPlugin } from '@orpc/openapi/plugins'
+import { CORSHandlerPlugin } from '@orpc/server/plugins'
+import { EvlogHandlerPlugin } from '@orpc/evlog'
+import { messagePublisher } from '@/context'
+import { OpenAPIGenerator } from '@orpc/openapi'
+import { ZodToJsonSchemaConverter } from '@orpc/zod'
+import { SmartCoercionHandlerPlugin } from '@orpc/json-schema'
 
-const openAPIHandler = new OpenAPIHandler(router, {
-  interceptors: [
-    onError((error) => {
-      console.error(error)
-    }),
-  ],
+const zodConverter = new ZodToJsonSchemaConverter()
+
+const generator = new OpenAPIGenerator({
+  converters: [zodConverter],
+})
+
+const handler = new OpenAPIHandler(router, {
   plugins: [
-    new SmartCoercionPlugin({
-      schemaConverters: [
-        new ZodToJsonSchemaConverter(),
-      ],
+    new CORSHandlerPlugin({
+      exposeHeaders: ['Content-Disposition', 'Standard-Server'],
     }),
-    new OpenAPIReferencePlugin({
-      schemaConverters: [
-        new ZodToJsonSchemaConverter(),
-      ],
-      specGenerateOptions: {
-        info: {
-          title: 'ORPC Playground',
-          version: '1.0.0',
-        },
-        commonSchemas: {
-          NewUser: { schema: NewUserSchema },
-          User: { schema: UserSchema },
-          Credential: { schema: CredentialSchema },
-          Token: { schema: TokenSchema },
-          NewPlanet: { schema: NewPlanetSchema },
-          UpdatePlanet: { schema: UpdatePlanetSchema },
-          Planet: { schema: PlanetSchema },
-          UndefinedError: { error: 'UndefinedError' },
-        },
-        security: [{ bearerAuth: [] }],
-        components: {
-          securitySchemes: {
-            bearerAuth: {
-              type: 'http',
-              scheme: 'bearer',
+    new EvlogHandlerPlugin({ logAbort: true }),
+    new SmartCoercionHandlerPlugin({ converters: [zodConverter] }),
+    new OpenAPIReferenceHandlerPlugin({
+      spec: () => generator.generate(router, {
+        base: {
+          servers: [{ url: '/api' }],
+          components: {
+            securitySchemes: {
+              bearerAuth: {
+                type: 'http',
+                scheme: 'bearer',
+              },
             },
           },
         },
-      },
-      docsConfig: {
+      }),
+      providerConfig: {
         authentication: {
           securitySchemes: {
             bearerAuth: {
@@ -64,9 +49,9 @@ const openAPIHandler = new OpenAPIHandler(router, {
 })
 
 async function handleRequest(request: Request) {
-  const { response } = await openAPIHandler.handle(request, {
+  const { response } = await handler.handle(request, {
     prefix: '/api',
-    context: {},
+    context: { messagePublisher },
   })
 
   return response ?? new Response('Not found', { status: 404 })

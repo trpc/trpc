@@ -1,13 +1,55 @@
-import { ping } from '../tests/shared'
-import { getLazyMeta, isLazy, lazy, unlazy } from './lazy'
+import { Lazy, unlazy } from './lazy'
 
-it('lazy & isLazy & getLazyMeta & unlazy ', () => {
-  const lazied = lazy(() => Promise.resolve({ default: ping }), { prefix: '/adapt' })
-  expect(lazied).toSatisfy(isLazy)
-  expect(unlazy(lazied)).resolves.toEqual({ default: ping })
-  expect(getLazyMeta(lazied)).toEqual({ prefix: '/adapt' })
+describe('lazy', () => {
+  const meta = { title: 'test' }
+  const loader = async () => ({ default: 'hello' })
+  const lazy = new Lazy({ meta, loader })
 
-  expect({}).not.toSatisfy(isLazy)
-  expect(true).not.toSatisfy(isLazy)
-  expect(unlazy(123)).resolves.toEqual({ default: 123 })
+  describe('instanceof', () => {
+    it('support both instanceof and structural check', async () => {
+      expect(lazy).toBeInstanceOf(Lazy)
+      expect({ '~orpc': lazy['~orpc'] }).toBeInstanceOf(Lazy)
+
+      expect(null).not.toBeInstanceOf(Lazy)
+      expect(undefined).not.toBeInstanceOf(Lazy)
+      expect({}).not.toBeInstanceOf(Lazy)
+      expect({ '~orpc': {} }).not.toBeInstanceOf(Lazy)
+      expect({ '~orpc': { ...lazy['~orpc'], meta: 'invalid' } }).not.toBeInstanceOf(Lazy)
+      expect({ '~orpc': { ...lazy['~orpc'], loader: 'invalid' } }).not.toBeInstanceOf(Lazy)
+      expect({ '~orpc': { ...lazy['~orpc'], metaPlugins: 'invalid' } }).not.toBeInstanceOf(Lazy)
+
+      expect({
+        '~orpc': {
+          ...lazy['~orpc'],
+          metaPlugins: [{ name: 'test', apply: () => {} }],
+        },
+      }).toBeInstanceOf(Lazy)
+    })
+
+    it('not support structural for extended class', () => {
+      class ExtendedLazy extends Lazy<any> {}
+
+      const extendedLazy = new ExtendedLazy({ meta, loader })
+
+      expect(extendedLazy).toBeInstanceOf(Lazy)
+      expect(extendedLazy).toBeInstanceOf(ExtendedLazy)
+
+      expect({ '~orpc': extendedLazy['~orpc'] }).toBeInstanceOf(Lazy)
+      expect({ '~orpc': extendedLazy['~orpc'] }).not.toBeInstanceOf(ExtendedLazy)
+    })
+  })
+})
+
+describe('unlazy', () => {
+  it('with non-lazy value', async () => {
+    const val = { foo: 'bar' }
+    await expect(unlazy(val)).resolves.toEqual({ default: val })
+  })
+
+  it('with lazy value', async () => {
+    const loader = vi.fn().mockResolvedValue({ default: 'hello' })
+    const lazy = new Lazy({ meta: {}, loader })
+    await expect(unlazy(lazy)).resolves.toEqual({ default: 'hello' })
+    expect(loader).toHaveBeenCalledTimes(1)
+  })
 })

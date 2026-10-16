@@ -1,8 +1,13 @@
 {
-  "name": "@orpc/experimental-publisher",
+  "name": "@orpc/publisher",
   "type": "module",
-  "version": "1.15.5",
+  "version": "2.0.0-beta.44",
+  "description": "Typesafe pub/sub for oRPC event streaming, with memory, Redis, and Upstash adapters",
   "license": "MIT",
+  "funding": [
+    "https://github.com/sponsors/dinwwwh",
+    "https://opencollective.com/middleapi"
+  ],
   "homepage": "https://orpc.dev",
   "repository": {
     "type": "git",
@@ -10,66 +15,81 @@
     "directory": "packages/publisher"
   },
   "keywords": [
-    "orpc"
+    "orpc",
+    "pubsub",
+    "publish-subscribe",
+    "events",
+    "event-iterator",
+    "sse",
+    "redis",
+    "upstash",
+    "typescript"
   ],
   "sideEffects": false,
   "publishConfig": {
     "exports": {
+      "./package.json": "./package.json",
       ".": {
         "types": "./dist/index.d.mts",
         "import": "./dist/index.mjs",
         "default": "./dist/index.mjs"
+      },
+      "./base-redis": {
+        "types": "./dist/adapters/base-redis.d.mts",
+        "import": "./dist/adapters/base-redis.mjs",
+        "default": "./dist/adapters/base-redis.mjs"
       },
       "./memory": {
         "types": "./dist/adapters/memory.d.mts",
         "import": "./dist/adapters/memory.mjs",
         "default": "./dist/adapters/memory.mjs"
       },
-      "./ioredis": {
-        "types": "./dist/adapters/ioredis.d.mts",
-        "import": "./dist/adapters/ioredis.mjs",
-        "default": "./dist/adapters/ioredis.mjs"
+      "./redis": {
+        "types": "./dist/adapters/redis.d.mts",
+        "import": "./dist/adapters/redis.mjs",
+        "default": "./dist/adapters/redis.mjs"
       },
-      "./upstash-redis": {
-        "types": "./dist/adapters/upstash-redis.d.mts",
-        "import": "./dist/adapters/upstash-redis.mjs",
-        "default": "./dist/adapters/upstash-redis.mjs"
+      "./upstash": {
+        "types": "./dist/adapters/upstash.d.mts",
+        "import": "./dist/adapters/upstash.mjs",
+        "default": "./dist/adapters/upstash.mjs"
       }
     }
   },
   "exports": {
+    "./package.json": "./package.json",
     ".": "./src/index.ts",
+    "./base-redis": "./src/adapters/base-redis.ts",
     "./memory": "./src/adapters/memory.ts",
-    "./ioredis": "./src/adapters/ioredis.ts",
-    "./upstash-redis": "./src/adapters/upstash-redis.ts"
+    "./redis": "./src/adapters/redis.ts",
+    "./upstash": "./src/adapters/upstash.ts"
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "unbuild",
-    "build:watch": "pnpm run build --watch",
+    "prepack": "unbuild",
     "type:check": "tsc -b"
   },
   "peerDependencies": {
     "@upstash/redis": ">=1.35.6",
-    "ioredis": ">=5.8.1"
+    "redis": ">=6.0.0"
   },
   "peerDependenciesMeta": {
     "@upstash/redis": {
       "optional": true
     },
-    "ioredis": {
+    "redis": {
       "optional": true
     }
   },
   "dependencies": {
     "@orpc/client": "workspace:*",
     "@orpc/shared": "workspace:*",
-    "@orpc/standard-server": "workspace:*"
+    "@standard-server/core": "~0.10.3"
   },
   "devDependencies": {
-    "@upstash/redis": "^1.37.0",
-    "ioredis": "^5.10.0"
+    "@upstash/redis": "^1.39.0",
+    "redis": "^6.3.0"
   }
 }

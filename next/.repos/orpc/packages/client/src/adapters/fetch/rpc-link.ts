@@ -1,22 +1,22 @@
 import type { ClientContext } from '../../types'
-import type { StandardRPCLinkOptions } from '../standard'
-import type { LinkFetchClientOptions } from './link-fetch-client'
-import { StandardRPCLink } from '../standard'
-import { LinkFetchClient } from './link-fetch-client'
+import type { RPCLinkCodecOptions, StandardLinkOptions } from '../standard'
+import type { FetchLinkTransportOptions } from './transport'
+import { RPCLinkCodec, StandardLink } from '../standard'
+import { FetchLinkTransport } from './transport'
 
 export interface RPCLinkOptions<T extends ClientContext>
-  extends LinkFetchClientOptions<T>, Omit<StandardRPCLinkOptions<T>, 'plugins'> {}
+  extends StandardLinkOptions<T>, FetchLinkTransportOptions<T>, RPCLinkCodecOptions<T> {
+}
 
 /**
- * The RPC Link communicates with the server using the RPC protocol.
+ * Client link that communicates with an RPC Handler over the Fetch API (HTTP).
  *
- * @see {@link https://orpc.dev/docs/client/rpc-link RPC Link Docs}
- * @see {@link https://orpc.dev/docs/advanced/rpc-protocol RPC Protocol Docs}
+ * @see {@link https://orpc.dev/docs/adapters/fetch-api | Fetch API Adapter}
  */
-export class RPCLink<T extends ClientContext> extends StandardRPCLink<T> {
+export class RPCLink<T extends ClientContext> extends StandardLink<T> {
   constructor(options: RPCLinkOptions<T>) {
-    const linkClient = new LinkFetchClient(options)
-
-    super(linkClient, options)
+    const codec = new RPCLinkCodec(options)
+    const transport = new FetchLinkTransport(options)
+    super(codec, transport, options)
   }
 }

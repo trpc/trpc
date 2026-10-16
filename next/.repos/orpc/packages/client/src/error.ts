@@ -1,112 +1,59 @@
-import type { MaybeOptionalOptions } from '@orpc/shared'
-import { getConstructor, isObject, resolveMaybeOptionalOptions } from '@orpc/shared'
-import { ORPC_CLIENT_PACKAGE_NAME, ORPC_CLIENT_PACKAGE_VERSION } from './consts'
+import type { MaybeOptionalOptions, Registry } from '@orpc/shared'
+import type { StandardResponse } from '@standard-server/core'
+import { getConstructors, isPlainObject, resolveMaybeOptionalOptions } from '@orpc/shared'
 
-export const COMMON_ORPC_ERROR_DEFS = {
-  BAD_REQUEST: {
-    status: 400,
-    message: 'Bad Request',
-  },
-  UNAUTHORIZED: {
-    status: 401,
-    message: 'Unauthorized',
-  },
-  FORBIDDEN: {
-    status: 403,
-    message: 'Forbidden',
-  },
-  NOT_FOUND: {
-    status: 404,
-    message: 'Not Found',
-  },
-  METHOD_NOT_SUPPORTED: {
-    status: 405,
-    message: 'Method Not Supported',
-  },
-  NOT_ACCEPTABLE: {
-    status: 406,
-    message: 'Not Acceptable',
-  },
-  TIMEOUT: {
-    status: 408,
-    message: 'Request Timeout',
-  },
-  CONFLICT: {
-    status: 409,
-    message: 'Conflict',
-  },
-  PRECONDITION_FAILED: {
-    status: 412,
-    message: 'Precondition Failed',
-  },
-  PAYLOAD_TOO_LARGE: {
-    status: 413,
-    message: 'Payload Too Large',
-  },
-  UNSUPPORTED_MEDIA_TYPE: {
-    status: 415,
-    message: 'Unsupported Media Type',
-  },
-  UNPROCESSABLE_CONTENT: {
-    status: 422,
-    message: 'Unprocessable Content',
-  },
-  TOO_MANY_REQUESTS: {
-    status: 429,
-    message: 'Too Many Requests',
-  },
-  CLIENT_CLOSED_REQUEST: {
-    status: 499,
-    message: 'Client Closed Request',
-  },
-
-  INTERNAL_SERVER_ERROR: {
-    status: 500,
-    message: 'Internal Server Error',
-  },
-  NOT_IMPLEMENTED: {
-    status: 501,
-    message: 'Not Implemented',
-  },
-  BAD_GATEWAY: {
-    status: 502,
-    message: 'Bad Gateway',
-  },
-  SERVICE_UNAVAILABLE: {
-    status: 503,
-    message: 'Service Unavailable',
-  },
-  GATEWAY_TIMEOUT: {
-    status: 504,
-    message: 'Gateway Timeout',
-  },
-} as const
-
-export type CommonORPCErrorCode = keyof typeof COMMON_ORPC_ERROR_DEFS
-
-export type ORPCErrorCode = CommonORPCErrorCode | (string & {})
-
-export function fallbackORPCErrorStatus(code: ORPCErrorCode, status: number | undefined): number {
-  return status ?? (COMMON_ORPC_ERROR_DEFS as any)[code]?.status ?? 500
+/**
+ * Default mapping between common oRPC error codes and HTTP status codes.
+ * Handlers use it to determine response status codes; spread it to build a custom `errorStatusMap`.
+ *
+ * @see {@link https://orpc.dev/docs/rpc/handler#custom-error-response | RPC Handler - Custom Error Response}
+ * @see {@link https://orpc.dev/docs/openapi/handler#custom-error-response | OpenAPI Handler - Custom Error Response}
+ */
+export const COMMON_ERROR_STATUS_MAP = {
+  BAD_REQUEST: 400,
+  UNAUTHORIZED: 401,
+  PAYMENT_REQUIRED: 402,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  METHOD_NOT_SUPPORTED: 405,
+  NOT_ACCEPTABLE: 406,
+  TIMEOUT: 408,
+  CONFLICT: 409,
+  GONE: 410,
+  LENGTH_REQUIRED: 411,
+  PRECONDITION_FAILED: 412,
+  PAYLOAD_TOO_LARGE: 413,
+  UNSUPPORTED_MEDIA_TYPE: 415,
+  UNPROCESSABLE_CONTENT: 422,
+  PRECONDITION_REQUIRED: 428,
+  TOO_MANY_REQUESTS: 429,
+  CLIENT_CLOSED_REQUEST: 499,
+  INTERNAL_SERVER_ERROR: 500,
+  NOT_IMPLEMENTED: 501,
+  BAD_GATEWAY: 502,
+  SERVICE_UNAVAILABLE: 503,
+  GATEWAY_TIMEOUT: 504,
 }
 
-export function fallbackORPCErrorMessage(code: ORPCErrorCode, message: string | undefined): string {
-  return message || (COMMON_ORPC_ERROR_DEFS as any)[code]?.message || code
-}
+export type ORPCErrorCode
+  = Registry extends { ORPCErrorCode: infer T extends string }
+    ? T
+    : (keyof typeof COMMON_ERROR_STATUS_MAP) | (string & {})
 
 export type ORPCErrorOptions<TData>
   = & ErrorOptions
-    & { defined?: boolean, status?: number, message?: string }
+    & { message?: string }
     & (undefined extends TData ? { data?: TData } : { data: TData })
 
-let globalORPCErrorConstructors: WeakSet<object>
+let ORPCErrorConstructors: WeakSet<object>
 
+/**
+ * Typed error carrying a `code`, a `message`, and optional `data`.
+ * Throw it from handlers or middleware to produce typed error responses on the client.
+ *
+ * @see {@link https://orpc.dev/docs/error-handling#orpcerror-class | Error Handling - ORPCError Class}
+ */
 export class ORPCError<TCode extends ORPCErrorCode, TData> extends Error {
-  readonly defined: boolean
-  readonly code: TCode
-  readonly status: number
-  readonly data: TData
-
   /**
    * Placed inside a static block (rather than at module level) to ensure this
    * registration is treated as part of the class definition by bundlers.
@@ -127,29 +74,36 @@ export class ORPCError<TCode extends ORPCErrorCode, TData> extends Error {
     /**
      * Store all ORPCError constructors
      * for workaround of instanceof check in case multiple dependency graphs exist
-     *
-     * @info `Symbol.for` is global symbol registry and shared across different dependency graphs
      */
-    const GLOBAL_ORPC_ERROR_CONSTRUCTORS_SYMBOL = Symbol.for(`__${ORPC_CLIENT_PACKAGE_NAME}@${ORPC_CLIENT_PACKAGE_VERSION}/error/ORPC_ERROR_CONSTRUCTORS__`)
-    void ((globalThis as any)[GLOBAL_ORPC_ERROR_CONSTRUCTORS_SYMBOL] ??= new WeakSet())
-    globalORPCErrorConstructors = (globalThis as any)[GLOBAL_ORPC_ERROR_CONSTRUCTORS_SYMBOL]
-    globalORPCErrorConstructors.add(ORPCError)
+    const ORPC_ERROR_CONSTRUCTORS_SYMBOL = Symbol.for('ORPC_ERROR_CONSTRUCTORS')
+    void ((globalThis as any)[ORPC_ERROR_CONSTRUCTORS_SYMBOL] ??= new WeakSet())
+    ORPCErrorConstructors = (globalThis as any)[ORPC_ERROR_CONSTRUCTORS_SYMBOL]
+    ORPCErrorConstructors.add(ORPCError)
   }
+
+  /**
+   * @remarks
+   * **Note**: The `__branch` property is used for type branding, helping TypeScript distinguish
+   * an `ORPCError` instance from plain objects with a similar structure.
+   */
+  override readonly name = 'ORPCError' as 'ORPCError' & { __branch: 'ORPCError' }
+
+  /**
+   * Indicates whether the error matches a definition in the procedure's `.errors` map,
+   * which makes its type inferable on the client.
+   */
+  readonly defined: boolean = false
+
+  code: TCode
+  data: TData
 
   constructor(code: TCode, ...rest: MaybeOptionalOptions<ORPCErrorOptions<TData>>) {
     const options = resolveMaybeOptionalOptions(rest)
-
-    if (options.status !== undefined && !isORPCErrorStatus(options.status)) {
-      throw new Error('[ORPCError] Invalid error status code.')
-    }
-
-    const message = fallbackORPCErrorMessage(code, options.message)
+    const message = options.message ?? codeToMessage(code)
 
     super(message, options)
 
     this.code = code
-    this.status = fallbackORPCErrorStatus(code, options.status)
-    this.defined = options.defined ?? false
     this.data = options.data as TData // data only optional when TData is undefinable so can safely cast here
   }
 
@@ -157,7 +111,6 @@ export class ORPCError<TCode extends ORPCErrorCode, TData> extends Error {
     return {
       defined: this.defined,
       code: this.code,
-      status: this.status,
       message: this.message,
       data: this.data,
     }
@@ -176,65 +129,81 @@ export class ORPCError<TCode extends ORPCErrorCode, TData> extends Error {
    * @todo Remove this and related code if Next.js resolves the multiple dependency graph issue.
    */
   static override[Symbol.hasInstance](instance: unknown): boolean {
-    // not applicable to extended classes
-    if (globalORPCErrorConstructors.has(this)) {
-      const constructor = getConstructor(instance)
-      if (constructor && globalORPCErrorConstructors.has(constructor)) {
+    if (!ORPCErrorConstructors.has(this)) {
+      // not applicable to extended classes
+      return super[Symbol.hasInstance](instance)
+    }
+
+    for (const constructor of getConstructors(instance)) {
+      if (ORPCErrorConstructors.has(constructor)) {
         return true
       }
     }
 
-    // fallback to default instanceof check
-    return super[Symbol.hasInstance](instance)
-  }
-}
-
-export type ORPCErrorJSON<TCode extends string, TData> = Pick<ORPCError<TCode, TData>, 'defined' | 'code' | 'status' | 'message' | 'data'>
-
-export function isDefinedError<T>(error: T): error is Extract<T, ORPCError<any, any>> {
-  return error instanceof ORPCError && error.defined
-}
-
-export function toORPCError(error: unknown): ORPCError<any, any> {
-  return error instanceof ORPCError
-    ? error
-    : new ORPCError('INTERNAL_SERVER_ERROR', {
-        message: 'Internal server error',
-        cause: error,
-      })
-}
-
-export function isORPCErrorStatus(status: number): boolean {
-  return status < 200 || status >= 400
-}
-
-export function isORPCErrorJson(json: unknown): json is ORPCErrorJSON<ORPCErrorCode, unknown> {
-  if (!isObject(json)) {
     return false
   }
-
-  const validKeys = ['defined', 'code', 'status', 'message', 'data']
-  if (Object.keys(json).some(k => !validKeys.includes(k))) {
-    return false
-  }
-
-  return 'defined' in json
-    && typeof json.defined === 'boolean'
-    && 'code' in json
-    && typeof json.code === 'string'
-    && 'status' in json
-    && typeof json.status === 'number'
-    && isORPCErrorStatus(json.status)
-    && 'message' in json
-    && typeof json.message === 'string'
 }
 
-export function createORPCErrorFromJson<TCode extends ORPCErrorCode, TData>(
-  json: ORPCErrorJSON<TCode, TData>,
-  options: ErrorOptions = {},
-): ORPCError <TCode, TData> {
-  return new ORPCError(json.code, {
-    ...options,
-    ...json,
-  })
+export interface ORPCErrorJSON<TCode extends string, TData> extends Pick<ORPCError<TCode, TData>, 'code' | 'message' | 'data'> {
+  /**
+   * remove readonly
+   */
+  defined: boolean
+}
+
+export type AnyORPCError = ORPCError<any, any>
+export type AnyORPCErrorJSON = ORPCErrorJSON<any, any>
+
+export interface MalformedResponseErrorOptions extends ErrorOptions {
+  /**
+   * @default inferred from the response body or status
+   */
+  message?: string
+  response: StandardResponse
+}
+
+/**
+ * Error thrown by links when a response does not follow the expected oRPC format,
+ * for example when a proxy or gateway answers instead of your handler. Carries the
+ * resolved response. Unless overridden via `options.message`, the message is
+ * inferred from the response body or status.
+ *
+ * Unlike `ORPCError`, it reaches a handler's callers as a generic `INTERNAL_SERVER_ERROR`
+ * when thrown from the handler, so an upstream's response is not sent to them.
+ *
+ * @see {@link https://orpc.dev/docs/rpc/link#malformed-responses | RPC Link - Malformed Responses}
+ * @see {@link https://orpc.dev/docs/openapi/link#malformed-responses | OpenAPI Link - Malformed Responses}
+ */
+export class MalformedResponseError extends Error {
+  override readonly name = 'MalformedResponseError'
+
+  response: StandardResponse
+
+  constructor(options: MalformedResponseErrorOptions) {
+    super(options.message ?? inferMalformedResponseMessage(options.response), options)
+
+    this.response = options.response
+  }
+}
+
+/**
+ * Longer body strings are not used as the error message,
+ * e.g. full HTML error pages from a proxy or gateway.
+ */
+const INFERRED_MESSAGE_MAX_LENGTH = 256
+
+function inferMalformedResponseMessage(response: StandardResponse): string {
+  const candidate = isPlainObject(response.body) ? response.body.message : response.body
+
+  if (typeof candidate === 'string' && candidate.length > 0 && candidate.length <= INFERRED_MESSAGE_MAX_LENGTH) {
+    return candidate
+  }
+
+  const commonCode = Object.entries(COMMON_ERROR_STATUS_MAP).find(([, status]) => status === response.status)?.[0]
+
+  return commonCode ? codeToMessage(commonCode) : 'Malformed oRPC Response'
+}
+
+function codeToMessage(code: string): string {
+  return code.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')
 }

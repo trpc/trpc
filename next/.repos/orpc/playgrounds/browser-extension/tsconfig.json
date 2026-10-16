@@ -1,7 +1,0 @@
-{
-  "extends": "./.wxt/tsconfig.json",
-  "compilerOptions": {
-    "jsx": "react-jsx",
-    "allowImportingTsExtensions": true
-  }
-}

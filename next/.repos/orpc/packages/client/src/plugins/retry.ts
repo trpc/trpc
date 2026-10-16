@@ -1,106 +1,132 @@
 import type { Promisable, Value } from '@orpc/shared'
-import type { StandardLinkInterceptorOptions, StandardLinkOptions, StandardLinkPlugin } from '../adapters/standard'
+import type { StandardLinkInterceptor, StandardLinkInterceptorOptions, StandardLinkOptions, StandardLinkPlugin } from '../adapters/standard'
 import type { ClientContext } from '../types'
-import { AsyncIteratorClass, isAsyncIteratorObject, overlayProxy, value } from '@orpc/shared'
-import { getEventMeta } from '@orpc/standard-server'
+import { AsyncIteratorClass, isAsyncIteratorObject, override, sleep, toArray, value } from '@orpc/shared'
+import { getEventMeta } from '@standard-server/core'
 
-export interface ClientRetryPluginAttemptOptions<T extends ClientContext> extends StandardLinkInterceptorOptions<T> {
+export interface RetryLinkPluginAttemptOptions<T extends RetryLinkPluginContext> extends StandardLinkInterceptorOptions<T> {
+  /**
+   * Latest retry delay advertised by the server via event metadata.
+   */
   lastEventRetry: number | undefined
-  attemptIndex: number
+
+  /**
+   * Current retry attempt number, starting at 1.
+   */
+  attempt: number
+
+  /**
+   * Error that triggered this retry attempt.
+   */
   error: unknown
 }
 
-export interface ClientRetryPluginContext {
+/**
+ * Client context options that control retry behavior per call
+ * when the `RetryLinkPlugin` is enabled.
+ *
+ * @see {@link https://orpc.dev/docs/plugins/retry | Retry Plugin}
+ */
+export interface RetryLinkPluginContext {
   /**
-   * Maximum retry attempts before throwing
-   * Use `Number.POSITIVE_INFINITY` for infinite retries (e.g., when handling Server-Sent Events).
+   * Maximum retry attempts before throwing.
+   * Use `Number.POSITIVE_INFINITY` for infinite retries (e.g. for AsyncIteratorObject).
    *
    * @default 0
    */
-  retry?: Value<Promisable<number>, [StandardLinkInterceptorOptions<ClientRetryPluginContext>]>
+  retry?: Value<Promisable<number>, [Omit<StandardLinkInterceptorOptions<RetryLinkPluginContext>, 'next'>]>
 
   /**
    * Delay (in ms) before retrying.
    *
+   * @remarks
+   * **Note**: Why 2000ms? The EventSource spec suggests a default retry delay of 2 seconds if it doesn't specify
+   *
    * @default (o) => o.lastEventRetry ?? 2000
    */
-  retryDelay?: Value<Promisable<number>, [ClientRetryPluginAttemptOptions<ClientRetryPluginContext>]>
+  retryDelay?: Value<Promisable<number>, [RetryLinkPluginAttemptOptions<RetryLinkPluginContext>]>
 
   /**
-   * Determine should retry or not.
+   * Determine whether to retry.
    *
    * @default true
    */
-  shouldRetry?: Value<Promisable<boolean>, [ClientRetryPluginAttemptOptions<ClientRetryPluginContext>]>
+  shouldRetry?: Value<Promisable<boolean>, [RetryLinkPluginAttemptOptions<RetryLinkPluginContext>]>
 
   /**
-   * The hook called when retrying, and return the unsubscribe function.
+   * Hook called before each retry. Can return a cleanup callback.
    */
-  onRetry?: (options: ClientRetryPluginAttemptOptions<ClientRetryPluginContext>) => void | ((isSuccess: boolean) => void)
+  onRetry?: (options: RetryLinkPluginAttemptOptions<RetryLinkPluginContext>) => void | ((isSuccess: boolean) => void)
 }
 
-export class ClientRetryPluginInvalidEventIteratorRetryResponse extends Error { }
-
-export interface ClientRetryPluginOptions {
-  default?: ClientRetryPluginContext
+export interface RetryLinkPluginOptions<_T extends RetryLinkPluginContext> {
+  /**
+   * Default retry options. Can be overridden by individual calls via the context.
+   */
+  default?: RetryLinkPluginContext | undefined
 }
 
 /**
- * The Client Retry Plugin enables retrying client calls when errors occur.
+ * Automatically retries failed requests based on customizable retry strategies,
+ * improving the resilience of your application.
  *
- * @see {@link https://orpc.dev/docs/plugins/client-retry Client Retry Plugin Docs}
+ * @remarks
+ * **Note**: Retry behavior is configured through the client context on each call.
+ *
+ * @see {@link https://orpc.dev/docs/plugins/retry | Retry Plugin}
  */
-export class ClientRetryPlugin<T extends ClientRetryPluginContext> implements StandardLinkPlugin<T> {
-  private readonly defaultRetry: Exclude<ClientRetryPluginContext['retry'], undefined>
-  private readonly defaultRetryDelay: Exclude<ClientRetryPluginContext['retryDelay'], undefined>
-  private readonly defaultShouldRetry: Exclude<ClientRetryPluginContext['shouldRetry'], undefined>
-  private readonly defaultOnRetry: ClientRetryPluginContext['onRetry']
+export class RetryLinkPlugin<T extends RetryLinkPluginContext & ClientContext> implements StandardLinkPlugin<T> {
+  private readonly defaultRetry: Exclude<RetryLinkPluginContext['retry'], undefined>
+  private readonly defaultRetryDelay: Exclude<RetryLinkPluginContext['retryDelay'], undefined>
+  private readonly defaultShouldRetry: Exclude<RetryLinkPluginContext['shouldRetry'], undefined>
+  private readonly defaultOnRetry: RetryLinkPluginContext['onRetry']
 
-  order = 1_800_000
+  name = '~retry'
 
-  constructor(options: ClientRetryPluginOptions = {}) {
+  constructor(options: RetryLinkPluginOptions<T> = {}) {
     this.defaultRetry = options.default?.retry ?? 0
     this.defaultRetryDelay = options.default?.retryDelay ?? (o => o.lastEventRetry ?? 2000)
     this.defaultShouldRetry = options.default?.shouldRetry ?? true
     this.defaultOnRetry = options.default?.onRetry
   }
 
-  init(options: StandardLinkOptions<T>): void {
-    options.interceptors ??= []
-
-    options.interceptors.push(async (interceptorOptions) => {
+  init(options: StandardLinkOptions<T>): StandardLinkOptions<T> {
+    const interceptor: StandardLinkInterceptor<T> = async (interceptorOptions) => {
+      const { next, ...callOptions } = interceptorOptions
       const maxAttempts = await value(
-        interceptorOptions.context.retry ?? this.defaultRetry,
-        interceptorOptions,
+        callOptions.context.retry ?? this.defaultRetry,
+        callOptions,
       )
 
-      const retryDelay = interceptorOptions.context.retryDelay ?? this.defaultRetryDelay
-      const shouldRetry = interceptorOptions.context.shouldRetry ?? this.defaultShouldRetry
-      const onRetry = interceptorOptions.context.onRetry ?? this.defaultOnRetry
+      const retryDelay = callOptions.context.retryDelay ?? this.defaultRetryDelay
+      const shouldRetry = callOptions.context.shouldRetry ?? this.defaultShouldRetry
+      const onRetry = callOptions.context.onRetry ?? this.defaultOnRetry
 
       if (maxAttempts <= 0) {
-        return interceptorOptions.next()
+        return next(callOptions)
       }
 
-      let lastEventId = interceptorOptions.lastEventId
+      let lastEventId = callOptions.lastEventId
       let lastEventRetry: undefined | number
       let callback: void | ((isSuccess: boolean) => void)
-      let attemptIndex = 0
+      let attempt = 1
+      let isIteratorAborted = false
 
-      const next = async (initialError?: { error: unknown }) => {
+      const callNext = async (initialError?: { error: unknown }) => {
         let currentError = initialError
 
         while (true) {
-          const updatedInterceptorOptions = { ...interceptorOptions, lastEventId }
+          const updatedCallOptions = { ...callOptions, lastEventId }
+          let retryDelayMs = 0
 
           if (currentError) {
-            if (attemptIndex >= maxAttempts) {
+            if (isIteratorAborted || attempt > maxAttempts) {
               throw currentError.error
             }
 
-            const attemptOptions: ClientRetryPluginAttemptOptions<ClientRetryPluginContext> = {
-              ...updatedInterceptorOptions,
-              attemptIndex,
+            const attemptOptions: RetryLinkPluginAttemptOptions<RetryLinkPluginContext> = {
+              ...updatedCallOptions,
+              attempt,
               error: currentError.error,
               lastEventRetry,
             }
@@ -114,23 +140,28 @@ export class ClientRetryPlugin<T extends ClientRetryPluginContext> implements St
               throw currentError.error
             }
 
+            retryDelayMs = await value(retryDelay, attemptOptions)
             callback = onRetry?.(attemptOptions)
-
-            const retryDelayMs = await value(retryDelay, attemptOptions)
-
-            await new Promise(resolve => setTimeout(resolve, retryDelayMs))
-
-            attemptIndex++
           }
 
           try {
+            if (currentError) {
+              await sleep(retryDelayMs, { signal: updatedCallOptions.signal })
+
+              if (isIteratorAborted) {
+                throw currentError.error
+              }
+
+              attempt++
+            }
+
             currentError = undefined
-            return await interceptorOptions.next(updatedInterceptorOptions)
+            return await next(updatedCallOptions)
           }
           catch (error) {
             currentError = { error }
 
-            if (updatedInterceptorOptions.signal?.aborted) {
+            if (updatedCallOptions.signal?.aborted) {
               throw error
             }
           }
@@ -141,22 +172,21 @@ export class ClientRetryPlugin<T extends ClientRetryPluginContext> implements St
         }
       }
 
-      const output = await next()
+      const output = await callNext()
 
       if (!isAsyncIteratorObject(output)) {
         return output
       }
 
       let current = output
-      let isIteratorAborted = false
 
-      return overlayProxy(() => current, new AsyncIteratorClass(
+      return override(() => current, new AsyncIteratorClass(
         async () => {
           while (true) {
             try {
               const item = await current.next()
-
               const meta = getEventMeta(item.value)
+
               lastEventId = meta?.id ?? lastEventId
               lastEventRetry = meta?.retry ?? lastEventRetry
 
@@ -164,22 +194,19 @@ export class ClientRetryPlugin<T extends ClientRetryPluginContext> implements St
             }
             catch (error) {
               const meta = getEventMeta(error)
+
               lastEventId = meta?.id ?? lastEventId
               lastEventRetry = meta?.retry ?? lastEventRetry
 
-              const maybeEventIterator = await next({ error })
-
-              if (!isAsyncIteratorObject(maybeEventIterator)) {
-                throw new ClientRetryPluginInvalidEventIteratorRetryResponse(
-                  'RetryPlugin: Expected an Event Iterator, got a non-Event Iterator',
+              const asyncIteratorObject = await callNext({ error })
+              if (!isAsyncIteratorObject(asyncIteratorObject)) {
+                throw new TypeError(
+                  'RetryLinkPlugin: Expected an AsyncIteratorObject, got a different type.',
                 )
               }
 
-              current = maybeEventIterator
+              current = asyncIteratorObject
 
-              /**
-               * If iterator is aborted while retrying, we should cleanup right away
-               */
               if (isIteratorAborted) {
                 await current.return?.()
                 throw error
@@ -187,13 +214,16 @@ export class ClientRetryPlugin<T extends ClientRetryPluginContext> implements St
             }
           }
         },
-        async (reason) => {
+        async ({ kind }) => {
           isIteratorAborted = true
-          if (reason !== 'next') {
+
+          if (kind === 'cancelled') {
             await current.return?.()
           }
         },
       ))
-    })
+    }
+
+    return { ...options, interceptors: [interceptor, ...toArray(options.interceptors)] }
   }
 }

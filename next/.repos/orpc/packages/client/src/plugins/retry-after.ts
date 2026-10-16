@@ -1,12 +1,12 @@
 import type { Value } from '@orpc/shared'
-import type { StandardLazyResponse } from '@orpc/standard-server'
-import type { StandardLinkClientInterceptorOptions, StandardLinkOptions, StandardLinkPlugin } from '../adapters/standard'
+import type { StandardLazyResponse } from '@standard-server/core'
+import type { StandardLinkOptions, StandardLinkPlugin, StandardLinkTransportInterceptor, StandardLinkTransportInterceptorOptions } from '../adapters/standard'
 import type { ClientContext } from '../types'
-import { value } from '@orpc/shared'
-import { flattenHeader } from '@orpc/standard-server'
-import { COMMON_ORPC_ERROR_DEFS } from '../error'
+import { isAsyncIteratorObject, sleep, toArray, value } from '@orpc/shared'
+import { flattenStandardHeader } from '@standard-server/core'
+import { COMMON_ERROR_STATUS_MAP } from '../error'
 
-export interface RetryAfterPluginOptions<T extends ClientContext> {
+export interface RetryAfterLinkPluginOptions<T extends ClientContext> {
   /**
    * Override condition to determine whether to retry or not.
    *
@@ -14,7 +14,7 @@ export interface RetryAfterPluginOptions<T extends ClientContext> {
    */
   condition?: Value<boolean, [
     response: StandardLazyResponse,
-    options: StandardLinkClientInterceptorOptions<T>,
+    options: StandardLinkTransportInterceptorOptions<T>,
   ]>
 
   /**
@@ -24,7 +24,7 @@ export interface RetryAfterPluginOptions<T extends ClientContext> {
    */
   maxAttempts?: Value<number, [
     response: StandardLazyResponse,
-    options: StandardLinkClientInterceptorOptions<T>,
+    options: StandardLinkTransportInterceptorOptions<T>,
   ]>
 
   /**
@@ -34,38 +34,49 @@ export interface RetryAfterPluginOptions<T extends ClientContext> {
    */
   timeout?: Value<number, [
     response: StandardLazyResponse,
-    options: StandardLinkClientInterceptorOptions<T>,
+    options: StandardLinkTransportInterceptorOptions<T>,
   ]>
 }
 
 /**
- * The Retry After Plugin automatically retries requests based on server `Retry-After` headers.
+ * The Retry After Link Plugin automatically retries requests based on server `retry-after` header.
  * This is particularly useful for handling rate limiting and temporary server unavailability.
  *
- * @see {@link https://orpc.dev/docs/plugins/retry-after Retry After Plugin Docs}
+ * @remarks
+ * **Note**: Requests with a stream or async iterator body are never retried, since the body cannot be resent.
+ *
+ * @see {@link https://orpc.dev/docs/plugins/retry-after | Retry After Plugin}
  */
-export class RetryAfterPlugin<T extends ClientContext> implements StandardLinkPlugin<T> {
-  private readonly condition: Exclude<RetryAfterPluginOptions<T>['condition'], undefined>
-  private readonly maxAttempts: Exclude<RetryAfterPluginOptions<T>['maxAttempts'], undefined>
-  private readonly timeout: Exclude<RetryAfterPluginOptions<T>['timeout'], undefined>
+export class RetryAfterLinkPlugin<T extends ClientContext> implements StandardLinkPlugin<T> {
+  private readonly condition: Exclude<RetryAfterLinkPluginOptions<T>['condition'], undefined>
+  private readonly maxAttempts: Exclude<RetryAfterLinkPluginOptions<T>['maxAttempts'], undefined>
+  private readonly timeout: Exclude<RetryAfterLinkPluginOptions<T>['timeout'], undefined>
 
-  order = 1_900_000
+  name = '~retry-after'
 
-  constructor(options: RetryAfterPluginOptions<T> = {}) {
+  constructor(options: RetryAfterLinkPluginOptions<T> = {}) {
     this.condition = options.condition ?? (
       response =>
-        response.status === COMMON_ORPC_ERROR_DEFS.TOO_MANY_REQUESTS.status
-        || response.status === COMMON_ORPC_ERROR_DEFS.SERVICE_UNAVAILABLE.status
+        response.status === COMMON_ERROR_STATUS_MAP.TOO_MANY_REQUESTS
+        || response.status === COMMON_ERROR_STATUS_MAP.SERVICE_UNAVAILABLE
     )
 
     this.maxAttempts = options.maxAttempts ?? 3
     this.timeout = options.timeout ?? 5 * 60 * 1000 // 5 minutes
   }
 
-  init(options: StandardLinkOptions<T>): void {
-    options.clientInterceptors ??= []
+  init(options: StandardLinkOptions<T>): StandardLinkOptions<T> {
+    const interceptor: StandardLinkTransportInterceptor<T> = async (interceptorOptions) => {
+      const { body } = interceptorOptions.request
 
-    options.clientInterceptors.push(async (interceptorOptions) => {
+      /**
+       * A stream or iterator body is consumed by the first attempt and cannot be resent,
+       * so return its response as-is instead of retrying with an empty or locked body.
+       */
+      if (body instanceof ReadableStream || isAsyncIteratorObject(body)) {
+        return interceptorOptions.next()
+      }
+
       const startTime = Date.now()
       let attemptCount = 0
 
@@ -78,8 +89,8 @@ export class RetryAfterPlugin<T extends ClientContext> implements StandardLinkPl
           return response
         }
 
-        const retryAfterHeader = flattenHeader(response.headers['retry-after'])
-        const retryAfterMs = this.parseRetryAfterHeader(retryAfterHeader)
+        const retryAfterHeader = flattenStandardHeader(response.headers['retry-after'])
+        const retryAfterMs = parseRetryAfterHeader(retryAfterHeader)
         if (retryAfterMs === undefined) {
           return response
         }
@@ -94,54 +105,39 @@ export class RetryAfterPlugin<T extends ClientContext> implements StandardLinkPl
           return response
         }
 
-        await this.delayExecution(retryAfterMs, interceptorOptions.signal)
+        try {
+          await sleep(retryAfterMs, { signal: interceptorOptions.signal })
+        }
+        catch {
+          // can throw if the signal is aborted while sleeping
+        }
+
         if (interceptorOptions.signal?.aborted) {
           return response
         }
       }
-    })
+    }
+
+    return { ...options, transportInterceptors: [interceptor, ...toArray(options.transportInterceptors)] }
   }
+}
 
-  private parseRetryAfterHeader(value: string | undefined): number | undefined {
-    value = value?.trim()
+function parseRetryAfterHeader(value: string | undefined): number | undefined {
+  value = value?.trim()
 
-    if (!value) {
-      return undefined
-    }
-
-    const seconds = Number(value)
-    if (Number.isFinite(seconds)) {
-      return Math.max(0, seconds * 1000)
-    }
-
-    const retryDate = Date.parse(value)
-    if (!Number.isNaN(retryDate)) {
-      return Math.max(0, retryDate - Date.now())
-    }
-
+  if (!value) {
     return undefined
   }
 
-  private delayExecution(ms: number, signal?: AbortSignal): Promise<void> {
-    return new Promise((resolve) => {
-      if (signal?.aborted) {
-        resolve()
-        return
-      }
-
-      let timeout: ReturnType<typeof setTimeout> | undefined
-      const onAbort = () => {
-        clearTimeout(timeout)
-        timeout = undefined
-        resolve()
-      }
-
-      signal?.addEventListener('abort', onAbort, { once: true })
-
-      timeout = setTimeout(() => {
-        signal?.removeEventListener('abort', onAbort)
-        resolve()
-      }, ms)
-    })
+  const seconds = Number(value)
+  if (Number.isFinite(seconds)) {
+    return Math.max(0, seconds * 1000)
   }
+
+  const retryDate = Date.parse(value)
+  if (!Number.isNaN(retryDate)) {
+    return Math.max(0, retryDate - Date.now())
+  }
+
+  return undefined
 }

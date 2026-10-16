@@ -1,58 +1,75 @@
-import type { StandardLazyResponse } from '@orpc/standard-server'
+import type { StandardLazyResponse, StandardRequest } from '@standard-server/core'
+import type { StandardLinkCodec, StandardLinkTransport } from '../adapters/standard'
 import { StandardLink } from '../adapters/standard'
-import { RetryAfterPlugin } from './retry-after'
+import { RetryAfterLinkPlugin } from './retry-after'
 
-describe('retryAfterPlugin', () => {
-  const signal1 = AbortSignal.timeout(10000)
+function makeCodec(): StandardLinkCodec<any> {
+  return {
+    encodeInput: vi.fn(async () => ({
+      method: 'POST',
+      url: '/test',
+      headers: {},
+      body: undefined,
+    } satisfies StandardRequest)),
+    decodeResponse: vi.fn(async response => ({
+      kind: 'output' as const,
+      output: await response.resolveBody(),
+    })),
+  }
+}
 
-  const encode = vi.fn(async (path, input, { signal }): Promise<any> => ({
-    url: new URL(`http://localhost/${path.join('/')}`),
-    method: 'GET',
-    headers: {},
-    body: input,
-    signal,
-  }))
+function makeTransport(): StandardLinkTransport<any> {
+  return {
+    send: vi.fn(async () => ({
+      status: 200,
+      headers: {},
+      resolveBody: async () => 'success',
+    } satisfies StandardLazyResponse)),
+  }
+}
 
-  const decode = vi.fn(async (response): Promise<unknown> => response.body())
+beforeEach(() => {
+  vi.clearAllMocks()
+  vi.useFakeTimers()
+})
 
-  beforeEach(() => {
-    vi.clearAllMocks()
-    vi.useFakeTimers()
-  })
+afterEach(() => {
+  expect(vi.getTimerCount()).toBe(0)
+  vi.useRealTimers()
+})
 
-  afterEach(() => {
-    expect(vi.getTimerCount()).toBe(0)
-    vi.useRealTimers()
-  })
-
+describe('retryAfterLinkPlugin', () => {
   describe('core behavior', () => {
-    it('should retry on 429/503 with retry-after header and succeed', async () => {
+    it.each([429, 503])('should retry on %i with retry-after header and succeed', async (status) => {
+      const codec = makeCodec()
+      const transport = makeTransport()
+
       let callCount = 0
-      const clientCall = vi.fn(async () => {
+      vi.mocked(transport.send).mockImplementation(async () => {
         callCount++
         if (callCount === 1) {
           return {
-            status: 429,
+            status,
             headers: { 'retry-after': '2' },
-            body: async () => 'rate limited',
+            resolveBody: async () => 'rate limited',
           } satisfies StandardLazyResponse
         }
         return {
           status: 200,
           headers: {},
-          body: async () => 'success',
+          resolveBody: async () => 'success',
         } satisfies StandardLazyResponse
       })
 
-      const link = new StandardLink({ encode, decode }, { call: clientCall }, {
-        plugins: [new RetryAfterPlugin()],
+      const link = new StandardLink(codec, transport, {
+        plugins: [new RetryAfterLinkPlugin()],
       })
 
-      const promise = link.call(['test'], 'input', { context: {}, signal: signal1 })
+      const promise = link.call(['test'], 'input', { context: {} })
       await vi.runAllTimersAsync()
 
       expect(await promise).toBe('success')
-      expect(clientCall).toHaveBeenCalledTimes(2)
+      expect(transport.send).toHaveBeenCalledTimes(2)
     })
 
     it('should not retry without retry-after header or on non-retryable status', async () => {
@@ -63,215 +80,270 @@ describe('retryAfterPlugin', () => {
       ]
 
       for (const { status, headers, body } of testCases) {
-        const clientCall = vi.fn(async () => ({
+        const codec = makeCodec()
+        const transport = makeTransport()
+
+        vi.mocked(transport.send).mockResolvedValue({
           status,
           headers,
-          body: async () => body,
-        } satisfies StandardLazyResponse))
+          resolveBody: async () => body,
+        } satisfies StandardLazyResponse)
 
-        const link = new StandardLink({ encode, decode }, { call: clientCall }, {
-          plugins: [new RetryAfterPlugin()],
+        const link = new StandardLink(codec, transport, {
+          plugins: [new RetryAfterLinkPlugin()],
         })
 
-        const result = await link.call(['test'], 'input', { context: {}, signal: signal1 })
+        const result = await link.call(['test'], 'input', { context: {} })
 
         expect(result).toBe(body)
-        expect(clientCall).toHaveBeenCalledTimes(1)
+        expect(transport.send).toHaveBeenCalledTimes(1)
         vi.clearAllMocks()
       }
     })
   })
 
   describe('retry-after parsing', () => {
-    it('should parse various retry-after formats', async () => {
-      const testCases = [
-        { value: '3', description: 'seconds' },
-        { value: new Date(Date.now() + 5000).toUTCString(), description: 'HTTP date' },
-        { value: '  2  ', description: 'whitespace' },
-      ]
+    it.each([
+      { value: '3', description: 'seconds' },
+      { value: new Date(Date.now() + 5000).toUTCString(), description: 'HTTP date' },
+      { value: '  2  ', description: 'whitespace' },
+    ])('should parse various retry-after formats: %s', async ({ value }) => {
+      const codec = makeCodec()
+      const transport = makeTransport()
 
-      for (const { value, description } of testCases) {
-        let callCount = 0
-        const clientCall = vi.fn(async () => {
-          callCount++
-          if (callCount === 1) {
-            return {
-              status: 429,
-              headers: { 'retry-after': value },
-              body: async () => 'rate limited',
-            } satisfies StandardLazyResponse
-          }
-          return {
-            status: 200,
-            headers: {},
-            body: async () => 'success',
-          } satisfies StandardLazyResponse
-        })
-
-        const link = new StandardLink({ encode, decode }, { call: clientCall }, {
-          plugins: [new RetryAfterPlugin()],
-        })
-
-        const promise = link.call(['test'], 'input', { context: {}, signal: signal1 })
-        await vi.runAllTimersAsync()
-
-        expect(await promise).toBe('success')
-        expect(clientCall).toHaveBeenCalledTimes(2)
-        vi.clearAllMocks()
-      }
-    })
-
-    it('should not retry on invalid retry-after values', async () => {
-      const invalidValues = ['invalid', '']
-
-      for (const value of invalidValues) {
-        const clientCall = vi.fn(async () => ({
-          status: 429,
-          headers: { 'retry-after': value },
-          body: async () => 'rate limited',
-        } satisfies StandardLazyResponse))
-
-        const link = new StandardLink({ encode, decode }, { call: clientCall }, {
-          plugins: [new RetryAfterPlugin()],
-        })
-
-        const result = await link.call(['test'], 'input', { context: {}, signal: signal1 })
-
-        expect(result).toBe('rate limited')
-        expect(clientCall).toHaveBeenCalledTimes(1)
-        vi.clearAllMocks()
-      }
-    })
-  })
-
-  describe('maxAttempts', () => {
-    it('should respect maxAttempts (static and dynamic)', async () => {
-      const testCases = [
-        { maxAttempts: undefined, expected: 3, description: 'default' },
-        { maxAttempts: 5, expected: 5, description: 'custom' },
-        { maxAttempts: vi.fn(() => 2), expected: 2, description: 'dynamic' },
-      ]
-
-      for (const { maxAttempts, expected, description } of testCases) {
-        const clientCall = vi.fn(async () => ({
-          status: 429,
-          headers: { 'retry-after': '0' },
-          body: async () => 'rate limited',
-        } satisfies StandardLazyResponse))
-
-        const link = new StandardLink({ encode, decode }, { call: clientCall }, {
-          plugins: [new RetryAfterPlugin(maxAttempts !== undefined ? { maxAttempts } : {})],
-        })
-
-        const promise = link.call(['test'], 'input', { context: {}, signal: signal1 })
-        await vi.runAllTimersAsync()
-
-        expect(await promise).toBe('rate limited')
-        expect(clientCall).toHaveBeenCalledTimes(expected)
-
-        if (typeof maxAttempts === 'function') {
-          expect(maxAttempts).toHaveBeenCalledWith(
-            expect.objectContaining({ status: 429 }),
-            expect.objectContaining({ context: {} }),
-          )
-        }
-
-        vi.clearAllMocks()
-      }
-    })
-  })
-
-  describe('timeout and custom condition', () => {
-    it('should stop retrying after timeout', async () => {
-      const clientCall = vi.fn(async () => ({
-        status: 429,
-        headers: { 'retry-after': '3' },
-        body: async () => 'rate limited',
-      } satisfies StandardLazyResponse))
-
-      const link = new StandardLink({ encode, decode }, { call: clientCall }, {
-        plugins: [new RetryAfterPlugin({ timeout: 5000 })],
-      })
-
-      const promise = link.call(['test'], 'input', { context: {}, signal: signal1 })
-      await vi.runAllTimersAsync()
-
-      expect(await promise).toBe('rate limited')
-      expect(clientCall).toHaveBeenCalledTimes(2)
-    })
-
-    it('should support dynamic timeout function', async () => {
-      const clientCall = vi.fn(async () => ({
-        status: 429,
-        headers: { 'retry-after': '2' },
-        body: async () => 'rate limited',
-      } satisfies StandardLazyResponse))
-
-      const timeoutFn = vi.fn(() => 3000)
-
-      const link = new StandardLink({ encode, decode }, { call: clientCall }, {
-        plugins: [new RetryAfterPlugin({ timeout: timeoutFn })],
-      })
-
-      const promise = link.call(['test'], 'input', { context: {}, signal: signal1 })
-      await vi.runAllTimersAsync()
-
-      expect(await promise).toBe('rate limited')
-      expect(clientCall).toHaveBeenCalledTimes(2)
-      expect(timeoutFn).toHaveBeenCalledWith(
-        expect.objectContaining({ status: 429 }),
-        expect.objectContaining({ context: {}, signal: signal1 }),
-      )
-    })
-
-    it('should respect custom condition function', async () => {
       let callCount = 0
-      const clientCall = vi.fn(async () => {
+      vi.mocked(transport.send).mockImplementation(async () => {
         callCount++
         if (callCount === 1) {
           return {
-            status: 400,
-            headers: { 'retry-after': '1' },
-            body: async () => 'bad request',
+            status: 429,
+            headers: { 'retry-after': value },
+            resolveBody: async () => 'rate limited',
           } satisfies StandardLazyResponse
         }
         return {
           status: 200,
           headers: {},
-          body: async () => 'success',
+          resolveBody: async () => 'success',
+        } satisfies StandardLazyResponse
+      })
+
+      const link = new StandardLink(codec, transport, {
+        plugins: [new RetryAfterLinkPlugin()],
+      })
+
+      const promise = link.call(['test'], 'input', { context: {} })
+      await vi.runAllTimersAsync()
+
+      expect(await promise).toBe('success')
+      expect(transport.send).toHaveBeenCalledTimes(2)
+      vi.clearAllMocks()
+    })
+
+    it('should not retry on invalid retry-after values', async () => {
+      const invalidValues = ['invalid', '']
+
+      for (const val of invalidValues) {
+        const codec = makeCodec()
+        const transport = makeTransport()
+
+        vi.mocked(transport.send).mockResolvedValue({
+          status: 429,
+          headers: { 'retry-after': val },
+          resolveBody: async () => 'rate limited',
+        } satisfies StandardLazyResponse)
+
+        const link = new StandardLink(codec, transport, {
+          plugins: [new RetryAfterLinkPlugin()],
+        })
+
+        const result = await link.call(['test'], 'input', { context: {} })
+
+        expect(result).toBe('rate limited')
+        expect(transport.send).toHaveBeenCalledTimes(1)
+        vi.clearAllMocks()
+      }
+    })
+  })
+
+  it('should respect maxAttempts option', async () => {
+    const codec = makeCodec()
+    const transport = makeTransport()
+
+    const maxAttempts = vi.fn(() => 2)
+
+    vi.mocked(transport.send).mockResolvedValue({
+      status: 429,
+      headers: { 'retry-after': '0' },
+      resolveBody: async () => 'rate limited',
+    } satisfies StandardLazyResponse)
+
+    const link = new StandardLink(codec, transport, {
+      plugins: [new RetryAfterLinkPlugin({ maxAttempts })],
+    })
+
+    const promise = link.call(['test'], 'input', { context: { context: true } })
+    await vi.runAllTimersAsync()
+
+    expect(await promise).toBe('rate limited')
+    expect(transport.send).toHaveBeenCalledTimes(2)
+    expect(maxAttempts).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 429 }),
+      expect.objectContaining({ context: { context: true } }),
+    )
+  })
+
+  describe('timeout and custom condition', () => {
+    it('should stop retrying after timeout', async () => {
+      const codec = makeCodec()
+      const transport = makeTransport()
+
+      vi.mocked(transport.send).mockResolvedValue({
+        status: 429,
+        headers: { 'retry-after': '2' },
+        resolveBody: async () => 'rate limited',
+      } satisfies StandardLazyResponse)
+
+      const timeoutFn = vi.fn(() => 3000)
+
+      const link = new StandardLink(codec, transport, {
+        plugins: [new RetryAfterLinkPlugin({ timeout: timeoutFn })],
+      })
+
+      const promise = link.call(['test'], 'input', { context: {} })
+      await vi.runAllTimersAsync()
+
+      expect(await promise).toBe('rate limited')
+      expect(transport.send).toHaveBeenCalledTimes(2)
+      expect(timeoutFn).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 429 }),
+        expect.objectContaining({ context: {} }),
+      )
+    })
+
+    it('should respect custom condition', async () => {
+      const codec = makeCodec()
+      const transport = makeTransport()
+
+      let callCount = 0
+      vi.mocked(transport.send).mockImplementation(async () => {
+        callCount++
+        if (callCount === 1) {
+          return {
+            status: 400,
+            headers: { 'retry-after': '1' },
+            resolveBody: async () => 'bad request',
+          } satisfies StandardLazyResponse
+        }
+        return {
+          status: 200,
+          headers: {},
+          resolveBody: async () => 'success',
         } satisfies StandardLazyResponse
       })
 
       const condition = vi.fn((response: StandardLazyResponse) => response.status === 400)
 
-      const link = new StandardLink({ encode, decode }, { call: clientCall }, {
-        plugins: [new RetryAfterPlugin({ condition })],
+      const link = new StandardLink(codec, transport, {
+        plugins: [new RetryAfterLinkPlugin({ condition })],
       })
 
-      const promise = link.call(['test'], 'input', { context: {}, signal: signal1 })
+      const promise = link.call(['test'], 'input', { context: {} })
       await vi.runAllTimersAsync()
 
       expect(await promise).toBe('success')
-      expect(clientCall).toHaveBeenCalledTimes(2)
+      expect(transport.send).toHaveBeenCalledTimes(2)
       expect(condition).toHaveBeenCalledWith(
         expect.objectContaining({ status: 400 }),
-        expect.objectContaining({ context: {}, signal: signal1 }),
+        expect.objectContaining({ context: {} }),
       )
+    })
+  })
+
+  describe('request body', () => {
+    it.each([
+      ['ReadableStream', () => new Blob(['data']).stream()],
+      ['AsyncIteratorObject', () => (async function* () { yield 'data' })()],
+    ])('should not retry a %s body, since it cannot be resent', async (_, createBody) => {
+      const codec = makeCodec()
+      const transport = makeTransport()
+
+      const body = createBody()
+      vi.mocked(codec.encodeInput).mockResolvedValue({
+        method: 'POST',
+        url: '/test',
+        headers: {},
+        body,
+      })
+
+      vi.mocked(transport.send).mockResolvedValue({
+        status: 429,
+        headers: { 'retry-after': '0' },
+        resolveBody: async () => 'rate limited',
+      } satisfies StandardLazyResponse)
+
+      const link = new StandardLink(codec, transport, {
+        plugins: [new RetryAfterLinkPlugin()],
+      })
+
+      const result = await link.call(['test'], 'input', { context: {} })
+
+      expect(result).toBe('rate limited')
+      expect(transport.send).toHaveBeenCalledTimes(1)
+      expect(transport.send).toHaveBeenCalledWith(expect.objectContaining({ body }), ['test'], expect.anything())
+    })
+
+    it.each([
+      ['Blob', () => new Blob(['data'])],
+      ['FormData', () => {
+        const form = new FormData()
+        form.append('file', new Blob(['data']))
+        return form
+      }],
+    ])('should retry a %s body, since it can be resent', async (_, createBody) => {
+      const codec = makeCodec()
+      const transport = makeTransport()
+
+      vi.mocked(codec.encodeInput).mockResolvedValue({
+        method: 'POST',
+        url: '/test',
+        headers: {},
+        body: createBody(),
+      })
+
+      vi.mocked(transport.send).mockResolvedValueOnce({
+        status: 429,
+        headers: { 'retry-after': '0' },
+        resolveBody: async () => 'rate limited',
+      } satisfies StandardLazyResponse)
+
+      const link = new StandardLink(codec, transport, {
+        plugins: [new RetryAfterLinkPlugin()],
+      })
+
+      const promise = link.call(['test'], 'input', { context: {} })
+      await vi.runAllTimersAsync()
+
+      expect(await promise).toBe('success')
+      expect(transport.send).toHaveBeenCalledTimes(2)
     })
   })
 
   describe('signal handling', () => {
     it('should stop retrying when signal is aborted during delay', async () => {
-      const clientCall = vi.fn(async () => ({
+      const codec = makeCodec()
+      const transport = makeTransport()
+
+      vi.mocked(transport.send).mockResolvedValue({
         status: 429,
         headers: { 'retry-after': '5' },
-        body: async () => 'rate limited',
-      } satisfies StandardLazyResponse))
+        resolveBody: async () => 'rate limited',
+      } satisfies StandardLazyResponse)
 
       const controller = new AbortController()
 
-      const link = new StandardLink({ encode, decode }, { call: clientCall }, {
-        plugins: [new RetryAfterPlugin()],
+      const link = new StandardLink(codec, transport, {
+        plugins: [new RetryAfterLinkPlugin()],
       })
 
       const promise = link.call(['test'], 'input', { context: {}, signal: controller.signal })
@@ -281,27 +353,30 @@ describe('retryAfterPlugin', () => {
       await vi.advanceTimersByTimeAsync(3000)
 
       expect(await promise).toBe('rate limited')
-      expect(clientCall).toHaveBeenCalledTimes(1)
+      expect(transport.send).toHaveBeenCalledTimes(1)
     })
 
     it('should not retry if signal is already aborted', async () => {
-      const clientCall = vi.fn(async () => ({
+      const codec = makeCodec()
+      const transport = makeTransport()
+
+      vi.mocked(transport.send).mockResolvedValue({
         status: 429,
         headers: { 'retry-after': '1' },
-        body: async () => 'rate limited',
-      } satisfies StandardLazyResponse))
+        resolveBody: async () => 'rate limited',
+      } satisfies StandardLazyResponse)
 
       const controller = new AbortController()
       controller.abort()
 
-      const link = new StandardLink({ encode, decode }, { call: clientCall }, {
-        plugins: [new RetryAfterPlugin()],
+      const link = new StandardLink(codec, transport, {
+        plugins: [new RetryAfterLinkPlugin()],
       })
 
       const result = await link.call(['test'], 'input', { context: {}, signal: controller.signal })
 
       expect(result).toBe('rate limited')
-      expect(clientCall).toHaveBeenCalledTimes(1)
+      expect(transport.send).toHaveBeenCalledTimes(1)
     })
   })
 })

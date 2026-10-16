@@ -1,14 +1,25 @@
-import type { Client } from '@orpc/client'
-import type { ErrorFromErrorMap } from '@orpc/contract'
-import type { GetNextPageParamFunction, InfiniteData, InfiniteQueryObserverOptions, MutationObserverOptions, QueryFunction, QueryKey, QueryObserverOptions } from '@tanstack/query-core'
-import type { baseErrorMap } from '../../contract/tests/shared'
-import type { experimental_ProcedureUtilsDefaults, ProcedureUtils } from './procedure-utils'
+import type { Client, ORPCError } from '@orpc/client'
+import type { ORPCErrorFromErrorMap } from '@orpc/contract'
+import type { PromiseWithError } from '@orpc/shared'
+import type { DataTag, GetNextPageParamFunction, InfiniteData, InfiniteQueryObserverOptions, MutationFunctionContext, MutationObserverOptions, QueryFunction, QueryFunctionContext, QueryKey, QueryObserverOptions, SkipToken } from '@tanstack/query-core'
+import type { ProcedureUtils, ProcedureUtilsOptions } from './procedure-utils'
+import type { InfiniteOptionsIn, MutationKeyOptions, MutationOptionsIn, QueryKeyOptions, QueryOptionsIn, StreamedKeyOptions, StreamedOptionsIn } from './types'
 import { QueryClient, skipToken } from '@tanstack/query-core'
+import z from 'zod'
+
+export const outputSchema = z.object({ output: z.number().transform(n => `${n}`) })
+
+const baseErrorMap = {
+  BASE: {
+    data: outputSchema,
+  },
+  OVERRIDE: {},
+}
 
 describe('ProcedureUtils', () => {
   type UtilsInput = { search?: string, cursor?: number } | undefined
   type UtilsOutput = { title: string }[]
-  type UtilsError = ErrorFromErrorMap<typeof baseErrorMap>
+  type UtilsError = ORPCErrorFromErrorMap<typeof baseErrorMap>
 
   const queryClient = new QueryClient()
 
@@ -133,29 +144,61 @@ describe('ProcedureUtils', () => {
       requiredUtils.queryOptions({ input: condition ? skipToken : 123, context: { batch: true } })
     })
 
-    it('return valid query options', () => {
-      expectTypeOf(optionalUtils.queryOptions()).toExtend<QueryObserverOptions<UtilsOutput, UtilsError>>()
-      expectTypeOf(optionalUtils.queryOptions({ context: { batch: true } })).toExtend<QueryObserverOptions<UtilsOutput, UtilsError>>()
-      expectTypeOf(requiredUtils.queryOptions({ input: 'input', context: { batch: true } })).toExtend<QueryObserverOptions<UtilsOutput, UtilsError>>()
+    it('should infer types initialData correctly', () => {
+      optionalUtils.queryOptions({ initialData: [{ title: '' }] })
+      // @ts-expect-error - invalid initialData
+      optionalUtils.queryOptions({ initialData: 'invalid' })
+
+      optionalUtils.queryOptions({ initialData: () => [{ title: '' }] })
+      // @ts-expect-error - invalid initialData
+      optionalUtils.queryOptions({ initialData: () => 'invalid' })
+
+      requiredUtils.queryOptions({ input: 'input', context: { batch: true }, initialData: [{ title: '' }] })
+      // @ts-expect-error - invalid initialData
+      requiredUtils.queryOptions({ input: 'input', context: { batch: true }, initialData: 'invalid' })
     })
 
-    it('allow extend and override query options', () => {
-      expectTypeOf(optionalUtils.queryOptions({
-        queryKey: ['1'], // override
-        maxPages: 1, // extend
-      })).toExtend<{
-        queryKey: string[]
-        maxPages: number
-        queryFn: QueryFunction<UtilsOutput>
-        throwOnError?(error: UtilsError): boolean
-        enabled?: boolean
-      }>()
+    it('return valid query options', () => {
+      expectTypeOf(optionalUtils.queryOptions()).toExtend<QueryObserverOptions<
+        UtilsOutput,
+        UtilsError,
+        UtilsOutput,
+        UtilsOutput,
+        DataTag<QueryKey, UtilsOutput, UtilsError>
+      >>()
+      expectTypeOf(optionalUtils.queryOptions({ context: { batch: true } })).toExtend<QueryObserverOptions<
+        UtilsOutput,
+        UtilsError,
+        UtilsOutput,
+        UtilsOutput,
+        DataTag<QueryKey, UtilsOutput, UtilsError>
+      >>()
+      expectTypeOf(optionalUtils.queryOptions({ initialData: [] })).toExtend<QueryObserverOptions<
+        UtilsOutput,
+        UtilsError,
+        UtilsOutput,
+        UtilsOutput,
+        DataTag<QueryKey, UtilsOutput, UtilsError>
+      >>()
+      expectTypeOf(requiredUtils.queryOptions({ input: 'input', context: { batch: true } })).toExtend<QueryObserverOptions<
+        UtilsOutput,
+        Error,
+        UtilsOutput,
+        UtilsOutput,
+        DataTag<QueryKey, UtilsOutput, Error>
+      >>()
     })
 
     it('can change query data by define select', () => {
       expectTypeOf(optionalUtils.queryOptions({
         select: mapped => ({ mapped }),
-      })).toExtend<QueryObserverOptions<UtilsOutput, UtilsError, { mapped: UtilsOutput }>>()
+      })).toExtend<QueryObserverOptions<
+        UtilsOutput,
+        UtilsError,
+        { mapped: UtilsOutput },
+        UtilsOutput,
+        DataTag<QueryKey, UtilsOutput, UtilsError>
+      >>()
     })
 
     it('.getQueryState is typed correctly', () => {
@@ -167,45 +210,45 @@ describe('ProcedureUtils', () => {
 
   describe('.streamedKey', () => {
     it('should handle optional `input` correctly', () => {
-      optionalUtils.experimental_streamedKey()
-      optionalUtils.experimental_streamedKey({})
-      optionalUtils.experimental_streamedKey({ input: { search: 'search' } })
+      optionalUtils.streamedKey()
+      optionalUtils.streamedKey({})
+      optionalUtils.streamedKey({ input: { search: 'search' } })
     })
 
     it('should handle required `input` correctly', () => {
       // @ts-expect-error - `input` is required
-      requiredUtils.experimental_streamedKey()
+      requiredUtils.streamedKey()
     })
 
     it('should infer types for `input` correctly', () => {
-      optionalUtils.experimental_streamedKey({ input: { cursor: 1 } })
+      optionalUtils.streamedKey({ input: { cursor: 1 } })
       // @ts-expect-error - Should error on invalid input type
-      optionalUtils.experimental_streamedKey({ input: { cursor: 'invalid' } })
+      optionalUtils.streamedKey({ input: { cursor: 'invalid' } })
 
-      requiredUtils.experimental_streamedKey({ input: 'input' })
+      requiredUtils.streamedKey({ input: 'input' })
       // @ts-expect-error - Should error on invalid input type
-      requiredUtils.experimental_streamedKey({ input: 123 })
+      requiredUtils.streamedKey({ input: 123 })
     })
 
     it('allow use skipToken as input', () => {
-      optionalUtils.experimental_streamedKey({ input: condition ? skipToken : { search: 'search' } })
+      optionalUtils.streamedKey({ input: condition ? skipToken : { search: 'search' } })
       // @ts-expect-error - invalid input type
-      optionalUtils.experimental_streamedKey({ input: condition ? skipToken : { cursor: 'invalid' } })
+      optionalUtils.streamedKey({ input: condition ? skipToken : { cursor: 'invalid' } })
 
-      requiredUtils.experimental_streamedKey({ input: condition ? skipToken : 'input' })
+      requiredUtils.streamedKey({ input: condition ? skipToken : 'input' })
       // @ts-expect-error - invalid input type
-      requiredUtils.experimental_streamedKey({ input: condition ? skipToken : 123 })
+      requiredUtils.streamedKey({ input: condition ? skipToken : 123 })
     })
 
     it('allow override query key', () => {
-      optionalUtils.experimental_streamedKey({ queryKey: ['1'] })
+      optionalUtils.streamedKey({ queryKey: ['1'] })
       // @ts-expect-error - invalid query key type
-      optionalUtils.experimental_streamedKey({ queryKey: 1 })
+      optionalUtils.streamedKey({ queryKey: 1 })
     })
 
     it('return valid query key', () => {
-      expectTypeOf(optionalUtils.experimental_streamedKey()).toExtend<QueryKey>()
-      expectTypeOf(optionalUtils.experimental_streamedKey({
+      expectTypeOf(optionalUtils.streamedKey()).toExtend<QueryKey>()
+      expectTypeOf(optionalUtils.streamedKey({
         input: { search: 'search' },
         queryFnOptions: {
           maxChunks: 1,
@@ -215,7 +258,7 @@ describe('ProcedureUtils', () => {
     })
 
     it('.getQueryState is typed correctly', () => {
-      const state = queryClient.getQueryState(streamUtils.experimental_streamedKey())
+      const state = queryClient.getQueryState(streamUtils.streamedKey())
       expectTypeOf(state?.data).toEqualTypeOf<UtilsOutput | undefined>()
       expectTypeOf(state?.error).toEqualTypeOf<UtilsError | null | undefined>()
     })
@@ -223,76 +266,90 @@ describe('ProcedureUtils', () => {
 
   describe('.streamedOptions', () => {
     it('should handle optional `context` and `input` correctly', () => {
-      streamUtils.experimental_streamedOptions()
-      streamUtils.experimental_streamedOptions({ context: { batch: true } })
-      streamUtils.experimental_streamedOptions({ input: { search: 'search' } })
+      streamUtils.streamedOptions()
+      streamUtils.streamedOptions({ context: { batch: true } })
+      streamUtils.streamedOptions({ input: { search: 'search' } })
     })
 
     it('should handle required `context` and `input` correctly', () => {
       // @ts-expect-error - `input` and `context` are required
-      requiredUtils.experimental_streamedOptions()
+      requiredUtils.streamedOptions()
       // @ts-expect-error - `input` is required
-      requiredUtils.experimental_streamedOptions({ context: { batch: true } })
+      requiredUtils.streamedOptions({ context: { batch: true } })
       // @ts-expect-error - `context` is required
-      requiredUtils.experimental_streamedOptions({ input: 'input' })
+      requiredUtils.streamedOptions({ input: 'input' })
     })
 
     it('should infer types for `input` and `context` correctly', () => {
-      streamUtils.experimental_streamedOptions({ input: { cursor: 1 } })
+      streamUtils.streamedOptions({ input: { cursor: 1 } })
       // @ts-expect-error - Should error on invalid input type
-      streamUtils.experimental_streamedOptions({ input: { cursor: 'invalid' } })
+      streamUtils.streamedOptions({ input: { cursor: 'invalid' } })
 
-      streamUtils.experimental_streamedOptions({ context: { batch: true } })
+      streamUtils.streamedOptions({ context: { batch: true } })
       // @ts-expect-error - Should error on invalid context type
-      streamUtils.experimental_streamedOptions({ context: { batch: 'invalid' } })
+      streamUtils.streamedOptions({ context: { batch: 'invalid' } })
 
-      requiredUtils.experimental_streamedOptions({ input: 'input', context: { batch: true } })
+      requiredUtils.streamedOptions({ input: 'input', context: { batch: true } })
       // @ts-expect-error - Should error on invalid input type
-      requiredUtils.experimental_streamedOptions({ input: 123, context: { batch: true } })
+      requiredUtils.streamedOptions({ input: 123, context: { batch: true } })
       // @ts-expect-error - Should error on invalid context type
-      requiredUtils.experimental_streamedOptions({ input: 'input', context: { batch: 'invalid' } })
+      requiredUtils.streamedOptions({ input: 'input', context: { batch: 'invalid' } })
     })
 
     it('allow use skipToken as input', () => {
-      streamUtils.experimental_streamedOptions({ input: condition ? skipToken : { search: 'search' } })
+      streamUtils.streamedOptions({ input: condition ? skipToken : { search: 'search' } })
       // @ts-expect-error - invalid input type
-      streamUtils.experimental_streamedOptions({ input: condition ? skipToken : { cursor: 'invalid' } })
+      streamUtils.streamedOptions({ input: condition ? skipToken : { cursor: 'invalid' } })
 
-      requiredUtils.experimental_streamedOptions({ input: condition ? skipToken : 'input', context: { batch: true } })
+      requiredUtils.streamedOptions({ input: condition ? skipToken : 'input', context: { batch: true } })
       // @ts-expect-error - invalid input type
-      requiredUtils.experimental_streamedOptions({ input: condition ? skipToken : 123, context: { batch: true } })
+      requiredUtils.streamedOptions({ input: condition ? skipToken : 123, context: { batch: true } })
+    })
+
+    it('should infer types for initialData correctly', () => {
+      streamUtils.streamedOptions({ initialData: [{ title: '' }] })
+      // @ts-expect-error - Invalid Initial Data
+      streamUtils.streamedOptions({ initialData: 'invalid' })
+
+      streamUtils.streamedOptions({ initialData: () => [{ title: '' }] })
+      // @ts-expect-error - Invalid Initial Data
+      streamUtils.streamedOptions({ initialData: () => 'invalid' })
+
+      streamUtils.streamedOptions({ initialData: () => [{ title: '' }] })
+      // @ts-expect-error - Invalid Initial Data
+      streamUtils.streamedOptions({ initialData: () => 'invalid' })
     })
 
     it('return valid streamed options', () => {
-      expectTypeOf(streamUtils.experimental_streamedOptions()).toExtend<QueryObserverOptions<UtilsOutput, UtilsError>>()
+      expectTypeOf(streamUtils.streamedOptions()).toExtend<QueryObserverOptions<
+        UtilsOutput,
+        UtilsError,
+        UtilsOutput,
+        UtilsOutput,
+        DataTag<QueryKey, UtilsOutput, UtilsError>
+      >>()
+      expectTypeOf(streamUtils.streamedOptions({ initialData: [] })).toExtend<QueryObserverOptions<
+        UtilsOutput,
+        UtilsError,
+        UtilsOutput,
+        UtilsOutput,
+        DataTag<QueryKey, UtilsOutput, UtilsError>
+      >>()
     })
 
     it('return invalid streamed options if output is not an async iterable', () => {
-      expectTypeOf(optionalUtils.experimental_streamedOptions().queryFn)
-        .toEqualTypeOf<QueryFunction<never>>()
-    })
-
-    it('allow extend and override streamed options', () => {
-      expectTypeOf(streamUtils.experimental_streamedOptions({
-        queryKey: ['1'], // override
-        maxPages: 1, // extend
-      })).toExtend<{
-        queryKey: string[]
-        maxPages: number
-        queryFn: QueryFunction<UtilsOutput>
-        throwOnError?(error: UtilsError): boolean
-        enabled?: boolean
-      }>()
+      expectTypeOf(optionalUtils.streamedOptions().queryFn)
+        .toEqualTypeOf<QueryFunction<never, DataTag<QueryKey, never, UtilsError>>>()
     })
 
     it('can change streamed data by define select', () => {
-      expectTypeOf(streamUtils.experimental_streamedOptions({
+      expectTypeOf(streamUtils.streamedOptions({
         select: mapped => ({ mapped }),
-      })).toExtend<QueryObserverOptions<UtilsOutput, UtilsError, { mapped: UtilsOutput }>>()
+      })).toExtend<QueryObserverOptions<UtilsOutput, UtilsError, { mapped: UtilsOutput }, UtilsOutput, DataTag<QueryKey, UtilsOutput, UtilsError>>>()
     })
 
     it('.getQueryState is typed correctly', () => {
-      const state = queryClient.getQueryState(streamUtils.experimental_streamedOptions().queryKey)
+      const state = queryClient.getQueryState(streamUtils.streamedOptions().queryKey)
       expectTypeOf(state?.data).toEqualTypeOf<UtilsOutput | undefined>()
       expectTypeOf(state?.error).toEqualTypeOf<UtilsError | null | undefined>()
     })
@@ -300,51 +357,51 @@ describe('ProcedureUtils', () => {
 
   describe('.liveKey', () => {
     it('should handle optional `input` correctly', () => {
-      optionalUtils.experimental_liveKey()
-      optionalUtils.experimental_liveKey({})
-      optionalUtils.experimental_liveKey({ input: { search: 'search' } })
+      optionalUtils.liveKey()
+      optionalUtils.liveKey({})
+      optionalUtils.liveKey({ input: { search: 'search' } })
     })
 
     it('should handle required `input` correctly', () => {
       // @ts-expect-error - `input` is required
-      requiredUtils.experimental_liveKey()
+      requiredUtils.liveKey()
     })
 
     it('should infer types for `input` correctly', () => {
-      optionalUtils.experimental_liveKey({ input: { cursor: 1 } })
+      optionalUtils.liveKey({ input: { cursor: 1 } })
       // @ts-expect-error - Should error on invalid input type
-      optionalUtils.experimental_liveKey({ input: { cursor: 'invalid' } })
+      optionalUtils.liveKey({ input: { cursor: 'invalid' } })
 
-      requiredUtils.experimental_liveKey({ input: 'input' })
+      requiredUtils.liveKey({ input: 'input' })
       // @ts-expect-error - Should error on invalid input type
-      requiredUtils.experimental_liveKey({ input: 123 })
+      requiredUtils.liveKey({ input: 123 })
     })
 
     it('allow use skipToken as input', () => {
-      optionalUtils.experimental_liveKey({ input: condition ? skipToken : { search: 'search' } })
+      optionalUtils.liveKey({ input: condition ? skipToken : { search: 'search' } })
       // @ts-expect-error - invalid input type
-      optionalUtils.experimental_liveKey({ input: condition ? skipToken : { cursor: 'invalid' } })
+      optionalUtils.liveKey({ input: condition ? skipToken : { cursor: 'invalid' } })
 
-      requiredUtils.experimental_liveKey({ input: condition ? skipToken : 'input' })
+      requiredUtils.liveKey({ input: condition ? skipToken : 'input' })
       // @ts-expect-error - invalid input type
-      requiredUtils.experimental_liveKey({ input: condition ? skipToken : 123 })
+      requiredUtils.liveKey({ input: condition ? skipToken : 123 })
     })
 
     it('allow override query key', () => {
-      optionalUtils.experimental_liveKey({ queryKey: ['1'] })
+      optionalUtils.liveKey({ queryKey: ['1'] })
       // @ts-expect-error - invalid query key type
-      optionalUtils.experimental_liveKey({ queryKey: 1 })
+      optionalUtils.liveKey({ queryKey: 1 })
     })
 
     it('return valid query key', () => {
-      expectTypeOf(optionalUtils.experimental_liveKey()).toExtend<QueryKey>()
-      expectTypeOf(optionalUtils.experimental_liveKey({
+      expectTypeOf(optionalUtils.liveKey()).toExtend<QueryKey>()
+      expectTypeOf(optionalUtils.liveKey({
         input: { search: 'search' },
       })).toExtend<QueryKey>()
     })
 
     it('.getQueryState is typed correctly', () => {
-      const state = queryClient.getQueryState(streamUtils.experimental_liveKey())
+      const state = queryClient.getQueryState(streamUtils.liveKey())
       expectTypeOf(state?.data).toEqualTypeOf<UtilsOutput[number] | undefined>()
       expectTypeOf(state?.error).toEqualTypeOf<UtilsError | null | undefined>()
     })
@@ -352,76 +409,80 @@ describe('ProcedureUtils', () => {
 
   describe('.liveOptions', () => {
     it('should handle optional `context` and `input` correctly', () => {
-      streamUtils.experimental_liveOptions()
-      streamUtils.experimental_liveOptions({ context: { batch: true } })
-      streamUtils.experimental_liveOptions({ input: { search: 'search' } })
+      streamUtils.liveOptions()
+      streamUtils.liveOptions({ context: { batch: true } })
+      streamUtils.liveOptions({ input: { search: 'search' } })
     })
 
     it('should handle required `context` and `input` correctly', () => {
       // @ts-expect-error - `input` and `context` are required
-      requiredUtils.experimental_liveOptions()
+      requiredUtils.liveOptions()
       // @ts-expect-error - `input` is required
-      requiredUtils.experimental_liveOptions({ context: { batch: true } })
+      requiredUtils.liveOptions({ context: { batch: true } })
       // @ts-expect-error - `context` is required
-      requiredUtils.experimental_liveOptions({ input: 'input' })
+      requiredUtils.liveOptions({ input: 'input' })
     })
 
     it('should infer types for `input` and `context` correctly', () => {
-      streamUtils.experimental_liveOptions({ input: { cursor: 1 } })
+      streamUtils.liveOptions({ input: { cursor: 1 } })
       // @ts-expect-error - Should error on invalid input type
-      streamUtils.experimental_liveOptions({ input: { cursor: 'invalid' } })
+      streamUtils.liveOptions({ input: { cursor: 'invalid' } })
 
-      streamUtils.experimental_liveOptions({ context: { batch: true } })
+      streamUtils.liveOptions({ context: { batch: true } })
       // @ts-expect-error - Should error on invalid context type
-      streamUtils.experimental_liveOptions({ context: { batch: 'invalid' } })
+      streamUtils.liveOptions({ context: { batch: 'invalid' } })
 
-      requiredUtils.experimental_liveOptions({ input: 'input', context: { batch: true } })
+      requiredUtils.liveOptions({ input: 'input', context: { batch: true } })
       // @ts-expect-error - Should error on invalid input type
-      requiredUtils.experimental_liveOptions({ input: 123, context: { batch: true } })
+      requiredUtils.liveOptions({ input: 123, context: { batch: true } })
       // @ts-expect-error - Should error on invalid context type
-      requiredUtils.experimental_liveOptions({ input: 'input', context: { batch: 'invalid' } })
+      requiredUtils.liveOptions({ input: 'input', context: { batch: 'invalid' } })
     })
 
     it('allow use skipToken as input', () => {
-      streamUtils.experimental_liveOptions({ input: condition ? skipToken : { search: 'search' } })
+      streamUtils.liveOptions({ input: condition ? skipToken : { search: 'search' } })
       // @ts-expect-error - invalid input type
-      streamUtils.experimental_liveOptions({ input: condition ? skipToken : { cursor: 'invalid' } })
+      streamUtils.liveOptions({ input: condition ? skipToken : { cursor: 'invalid' } })
 
-      requiredUtils.experimental_liveOptions({ input: condition ? skipToken : 'input', context: { batch: true } })
+      requiredUtils.liveOptions({ input: condition ? skipToken : 'input', context: { batch: true } })
       // @ts-expect-error - invalid input type
-      requiredUtils.experimental_liveOptions({ input: condition ? skipToken : 123, context: { batch: true } })
+      requiredUtils.liveOptions({ input: condition ? skipToken : 123, context: { batch: true } })
+    })
+
+    it('should infer types for initialData correctly', () => {
+      streamUtils.liveOptions({ initialData: { title: '' } })
+      // @ts-expect-error - Invalid initialData
+      streamUtils.liveOptions({ initialData: 'invalid' })
+
+      streamUtils.liveOptions({ initialData: () => ({ title: '' }) })
+      // @ts-expect-error - Invalid initialData
+      streamUtils.liveOptions({ initialData: () => 'invalid' })
     })
 
     it('return valid streamed options', () => {
-      expectTypeOf(streamUtils.experimental_liveOptions()).toExtend<QueryObserverOptions<UtilsOutput[number], UtilsError>>()
+      expectTypeOf(streamUtils.liveOptions()).toExtend<QueryObserverOptions<UtilsOutput[number], UtilsError, UtilsOutput[number], UtilsOutput[number], DataTag<QueryKey, UtilsOutput[number], UtilsError>>>()
+      expectTypeOf(streamUtils.liveOptions({ initialData: { title: '123' } })).toExtend<QueryObserverOptions<UtilsOutput[number], UtilsError, UtilsOutput[number], UtilsOutput[number], DataTag<QueryKey, UtilsOutput[number], UtilsError>>>()
     })
 
     it('return invalid streamed live if output is not an async iterable', () => {
-      expectTypeOf(optionalUtils.experimental_liveOptions().queryFn)
-        .toEqualTypeOf<QueryFunction<never>>()
-    })
-
-    it('allow extend and override live options', () => {
-      expectTypeOf(streamUtils.experimental_liveOptions({
-        queryKey: ['1'], // override
-        maxPages: 1, // extend
-      })).toExtend<{
-        queryKey: string[]
-        maxPages: number
-        queryFn: QueryFunction<UtilsOutput[number]>
-        throwOnError?(error: UtilsError): boolean
-        enabled?: boolean
-      }>()
+      expectTypeOf(optionalUtils.liveOptions().queryFn)
+        .toEqualTypeOf<QueryFunction<never, DataTag<QueryKey, never, UtilsError>>>()
     })
 
     it('can change live data by define select', () => {
-      expectTypeOf(streamUtils.experimental_liveOptions({
+      expectTypeOf(streamUtils.liveOptions({
         select: mapped => ({ mapped }),
-      })).toExtend<QueryObserverOptions<UtilsOutput[number], UtilsError, { mapped: UtilsOutput[number] }>>()
+      })).toExtend<QueryObserverOptions<
+        UtilsOutput[number],
+        UtilsError,
+        { mapped: UtilsOutput[number] },
+        UtilsOutput[number],
+        DataTag<QueryKey, UtilsOutput[number], UtilsError>
+      >>()
     })
 
     it('.getQueryState is typed correctly', () => {
-      const state = queryClient.getQueryState(streamUtils.experimental_liveOptions().queryKey)
+      const state = queryClient.getQueryState(streamUtils.liveOptions().queryKey)
       expectTypeOf(state?.data).toEqualTypeOf<UtilsOutput[number] | undefined>()
       expectTypeOf(state?.error).toEqualTypeOf<UtilsError | null | undefined>()
     })
@@ -499,10 +560,11 @@ describe('ProcedureUtils', () => {
         initialPageParam,
         queryKey: ['1'],
       })
+
+      // @ts-expect-error - invalid query key type
       optionalUtils.infiniteKey({
         input: () => ({}),
         initialPageParam,
-        // @ts-expect-error - invalid query key type
         queryKey: 1,
       })
     })
@@ -628,16 +690,52 @@ describe('ProcedureUtils', () => {
       })
 
       optionalUtils.infiniteOptions({
-        // @ts-expect-error - conflict pageParam type
         input: condition
           ? skipToken
           : (pageParam: number) => {
               return { cursor: pageParam }
             },
-        // @ts-expect-error - conflict pageParam type
         getNextPageParam,
         // @ts-expect-error - conflict pageParam type
         initialPageParam: undefined,
+      })
+    })
+
+    it('should infer `initial` type correctly', () => {
+      optionalUtils.infiniteOptions({
+        input: (pageParam) => {
+          return { cursor: pageParam }
+        },
+        getNextPageParam,
+        initialPageParam,
+        initialData: { pages: [], pageParams: [] },
+      })
+      optionalUtils.infiniteOptions({
+        input: (pageParam) => {
+          return { cursor: pageParam }
+        },
+        getNextPageParam,
+        initialPageParam,
+        // @ts-expect-error Invalid initialData
+        initialData: 'invalid',
+      })
+
+      optionalUtils.infiniteOptions({
+        input: (pageParam) => {
+          return { cursor: pageParam }
+        },
+        getNextPageParam,
+        initialPageParam,
+        initialData: () => ({ pages: [], pageParams: [] }),
+      })
+      optionalUtils.infiniteOptions({
+        input: (pageParam) => {
+          return { cursor: pageParam }
+        },
+        getNextPageParam,
+        initialPageParam,
+        // @ts-expect-error Invalid initialData
+        initialData: () => 'invalid',
       })
     })
 
@@ -646,23 +744,26 @@ describe('ProcedureUtils', () => {
         input: () => ({}),
         getNextPageParam,
         initialPageParam,
-      })).toExtend<InfiniteQueryObserverOptions<UtilsOutput, UtilsError, InfiniteData<UtilsOutput, number>, QueryKey, number>>()
-    })
+      })).toExtend<InfiniteQueryObserverOptions<
+        UtilsOutput,
+        UtilsError,
+        InfiniteData<UtilsOutput, number>,
+        DataTag<QueryKey, InfiniteData<UtilsOutput, number>, UtilsError>,
+        number
+      >>()
 
-    it('allow extend and override infinite options', () => {
       expectTypeOf(optionalUtils.infiniteOptions({
         input: () => ({}),
         getNextPageParam,
         initialPageParam,
-        queryKey: ['1'], // override
-        maxPages: 1, // extend
-      })).toExtend<{
-        queryKey: string[]
-        maxPages: number
-        queryFn: QueryFunction<UtilsOutput>
-        throwOnError?(error: UtilsError): boolean
-        enabled?: boolean
-      }>()
+        initialData: { pageParams: [], pages: [] },
+      })).toExtend<InfiniteQueryObserverOptions<
+        UtilsOutput,
+        UtilsError,
+        InfiniteData<UtilsOutput, number>,
+        DataTag<QueryKey, InfiniteData<UtilsOutput, number>, UtilsError>,
+        number
+      >>()
     })
 
     it('can change infinite data by define select', () => {
@@ -671,7 +772,13 @@ describe('ProcedureUtils', () => {
         getNextPageParam,
         initialPageParam,
         select: mapped => ({ mapped }),
-      })).toExtend<InfiniteQueryObserverOptions<UtilsOutput, UtilsError, { mapped: InfiniteData<UtilsOutput, number> }, QueryKey, number>>()
+      })).toExtend<InfiniteQueryObserverOptions<
+        UtilsOutput,
+        UtilsError,
+        { mapped: InfiniteData<UtilsOutput, number> },
+        DataTag<QueryKey, InfiniteData<UtilsOutput, number>, UtilsError>,
+        number
+      >>()
     })
 
     it('.getQueryState is typed correctly', () => {
@@ -747,145 +854,289 @@ describe('ProcedureUtils', () => {
   })
 })
 
-describe('ProcedureUtilsDefaults', () => {
+describe('ProcedureUtilsOptions', () => {
   type TestClientContext = { batch?: boolean }
   type TestInput = { search?: string }
   type TestOutput = { title: string }
-  type TestError = Error
+  type TestError = ORPCError<'TEST', unknown>
 
-  type TestDefaults = experimental_ProcedureUtilsDefaults<TestClientContext, TestInput, TestOutput, TestError>
+  type TestOptions = ProcedureUtilsOptions<TestClientContext, TestInput, TestOutput, TestError>
 
-  it('should have exact same keys as ProcedureUtils excluding call', () => {
-    // Ensures every utility method in ProcedureUtils (except 'call') has a corresponding key in ProcedureUtilsDefaults
-    type ProcedureUtilsKeys = Exclude<keyof ProcedureUtils<any, any, any, any>, 'call'>
-    type DefaultsKeys = keyof experimental_ProcedureUtilsDefaults<any, any, any, any>
+  type TestStreamedOutput = AsyncIteratorObject<TestOutput>
+  type TestStreamedOptions = ProcedureUtilsOptions<TestClientContext, TestInput, TestStreamedOutput, TestError>
 
-    expectTypeOf<DefaultsKeys>().toEqualTypeOf<ProcedureUtilsKeys>()
+  it('should have all keys that ProcedureUtils provides', () => {
+    // Ensures every utility method in ProcedureUtils (except 'call') has a corresponding key in CreateProcedureUtilsOptions
+    type ProcedureUtilsKeys = Exclude<keyof ProcedureUtils<any, any, any, any>, 'call' | 'key'>
+    type DefaultsKeys = keyof ProcedureUtilsOptions<any, any, any, any>
+
+    expectTypeOf<ProcedureUtilsKeys>().toExtend<DefaultsKeys>()
   })
 
   it('all properties should be optional', () => {
-    const emptyDefaults: TestDefaults = {}
-    expectTypeOf(emptyDefaults).toExtend<TestDefaults>()
+    const emptyDefaults: TestOptions = {}
+    expectTypeOf(emptyDefaults).toExtend<TestOptions>()
   })
 
-  it('queryKey should accept Partial<QueryKeyOptions>', () => {
-    const defaults: TestDefaults = {
+  it('queryKey should accept Partial<QueryKeyOptions> | modifier function', () => {
+    const _defaults: TestOptions = {
       queryKey: {
         input: { search: 'test' },
       },
     }
-    expectTypeOf(defaults).toExtend<TestDefaults>()
 
-    const _invalid: TestDefaults = {
+    const _invalid: TestOptions = {
       queryKey: {
         // @ts-expect-error - invalid input type
         input: { invalid: 'test' },
       },
     }
+
+    const _defaults2: TestOptions = {
+      queryKey: (options) => {
+        expectTypeOf(options).toEqualTypeOf<QueryKeyOptions<TestInput>>()
+
+        return { input: { search: 'test' } }
+      },
+    }
+
+    const _invalid2: TestOptions = {
+      // @ts-expect-error - invalid input type
+      queryKey: (options) => {
+        return { input: { invalid: 'test' } }
+      },
+    }
   })
 
-  it('queryOptions should accept Partial<QueryOptionsIn>', () => {
-    const defaults: TestDefaults = {
+  it('queryInterceptors should infer correct types', () => {
+    const defaults: TestOptions = {
+      queryInterceptors: [
+        (opts) => {
+          expectTypeOf(opts.input).toEqualTypeOf<TestInput | SkipToken>()
+          expectTypeOf(opts.next()).toEqualTypeOf<PromiseWithError<TestOutput, TestError>>()
+          expectTypeOf(opts.fnContext).toEqualTypeOf<QueryFunctionContext>()
+
+          return opts.next()
+        },
+      ],
+    }
+  })
+
+  it('queryOptions should accept Partial<QueryOptionsIn> | modifier function', () => {
+    const _defaults: TestOptions = {
       queryOptions: {
         input: { search: 'test' },
         staleTime: 1000,
         context: { batch: true },
       },
     }
-    expectTypeOf(defaults).toExtend<TestDefaults>()
 
-    const _invalid: TestDefaults = {
+    const _invalid: TestOptions = {
       queryOptions: {
         // @ts-expect-error - invalid input type
         input: { invalid: 'test' },
       },
     }
+
+    const _defaults2: TestOptions = {
+      queryOptions: (options) => {
+        expectTypeOf(options).toEqualTypeOf<QueryOptionsIn<TestClientContext, TestInput, TestOutput, TestError, unknown, unknown>>()
+
+        return {
+          ...options,
+          input: { search: 'test' },
+          staleTime: 1000,
+          context: { batch: true },
+        }
+      },
+    }
+
+    const _invalid2: TestOptions = {
+      // @ts-expect-error - invalid input type
+      queryOptions: options => ({
+        ...options,
+        input: { invalid: 'test' },
+      }),
+    }
   })
 
-  it('experimental_streamedKey should accept Partial<experimental_StreamedKeyOptions>', () => {
-    const defaults: TestDefaults = {
-      experimental_streamedKey: {
+  it('streamedKey should accept Partial<StreamedKeyOptions> | modifier function', () => {
+    const _defaults: TestOptions = {
+      streamedKey: {
         input: { search: 'test' },
         queryFnOptions: { maxChunks: 10 },
       },
     }
-    expectTypeOf(defaults).toExtend<TestDefaults>()
 
-    const _invalid: TestDefaults = {
-      experimental_streamedKey: {
+    const _invalid: TestOptions = {
+      streamedKey: {
         // @ts-expect-error - invalid input type
         input: { invalid: 'test' },
       },
     }
+
+    const _defaults2: TestOptions = {
+      streamedKey: (options) => {
+        expectTypeOf(options).toEqualTypeOf<StreamedKeyOptions<TestInput>>()
+
+        return {
+          input: { search: 'test' },
+          queryFnOptions: { maxChunks: 10 },
+        }
+      },
+    }
+
+    const _invalid2: TestOptions = {
+      // @ts-expect-error - invalid input type
+      streamedKey: () => ({
+        input: { invalid: 'test' },
+      }),
+    }
   })
 
-  it('experimental_streamedOptions should accept Partial<StreamedOptionsIn>', () => {
-    const defaults: TestDefaults = {
-      experimental_streamedOptions: {
+  it('streamedInterceptors should infer correct types', () => {
+    const defaults: TestStreamedOptions = {
+      streamedInterceptors: [
+        (opts) => {
+          expectTypeOf(opts.input).toEqualTypeOf<TestInput | SkipToken>()
+          expectTypeOf(opts.next()).toEqualTypeOf<PromiseWithError<TestOutput[], TestError>>()
+          expectTypeOf(opts.fnContext).toEqualTypeOf<QueryFunctionContext>()
+
+          return opts.next()
+        },
+      ],
+    }
+  })
+
+  it('streamedOptions should accept Partial<StreamedOptionsIn>| modifier function', () => {
+    const _defaults: TestOptions = {
+      streamedOptions: {
         input: { search: 'test' },
         staleTime: 1000,
       },
     }
-    expectTypeOf(defaults).toExtend<TestDefaults>()
 
-    const _invalid: TestDefaults = {
-      experimental_streamedOptions: {
+    const _invalid: TestOptions = {
+      streamedOptions: {
         // @ts-expect-error - invalid input type
         input: { invalid: 'test' },
       },
     }
+
+    const _defaults2: TestOptions = {
+      streamedOptions: (options) => {
+        expectTypeOf(options).toEqualTypeOf<StreamedOptionsIn<TestClientContext, TestInput, never, TestError, unknown, unknown>>()
+
+        return {
+          ...options,
+          input: { search: 'test' },
+          staleTime: 1000,
+        }
+      },
+    }
+
+    const _invalid2: TestOptions = {
+      // @ts-expect-error - invalid input type
+      streamedOptions: options => ({
+        ...options,
+        input: { invalid: 'test' },
+      }),
+    }
   })
 
-  it('experimental_liveKey should accept Partial<QueryKeyOptions>', () => {
-    const defaults: TestDefaults = {
-      experimental_liveKey: {
+  it('liveKey should accept Partial<QueryKeyOptions> | modifier function', () => {
+    const _defaults: TestOptions = {
+      liveKey: {
         input: { search: 'test' },
       },
     }
-    expectTypeOf(defaults).toExtend<TestDefaults>()
 
-    const _invalid: TestDefaults = {
-      experimental_liveKey: {
+    const _invalid: TestOptions = {
+      liveKey: {
         // @ts-expect-error - invalid input type
         input: { invalid: 'test' },
       },
     }
+
+    const _defaults2: TestOptions = {
+      liveKey: (options) => {
+        expectTypeOf(options).toEqualTypeOf<QueryKeyOptions<TestInput>>()
+
+        return {
+          input: { search: 'test' },
+        }
+      },
+    }
+
+    const _invalid2: TestOptions = {
+      // @ts-expect-error - invalid input type
+      liveKey: options => ({
+        ...options,
+        input: { invalid: 'test' },
+      }),
+    }
   })
 
-  it('experimental_liveOptions should accept Partial<QueryOptionsIn>', () => {
-    const defaults: TestDefaults = {
-      experimental_liveOptions: {
+  it('liveInterceptors should infer correct types', () => {
+    const defaults: TestStreamedOptions = {
+      liveInterceptors: [
+        (opts) => {
+          expectTypeOf(opts.input).toEqualTypeOf<TestInput | SkipToken>()
+          expectTypeOf(opts.next()).toEqualTypeOf<PromiseWithError<TestOutput, TestError>>()
+          expectTypeOf(opts.fnContext).toEqualTypeOf<QueryFunctionContext>()
+
+          return opts.next()
+        },
+      ],
+    }
+  })
+
+  it('liveOptions should accept Partial<StreamedOptionsIn> | modifier function', () => {
+    const _defaults: TestOptions = {
+      liveOptions: {
         input: { search: 'test' },
         staleTime: 1000,
       },
     }
-    expectTypeOf(defaults).toExtend<TestDefaults>()
 
-    const _invalid: TestDefaults = {
-      experimental_liveOptions: {
+    const _invalid: TestOptions = {
+      liveOptions: {
         // @ts-expect-error - invalid input type
         input: { invalid: 'test' },
       },
     }
 
-    const _invalidStreamedOption: TestDefaults = {
-      experimental_liveOptions: {
-        // @ts-expect-error - queryFnOptions is only supported by experimental_streamedOptions
-        queryFnOptions: { maxChunks: 10 },
+    const _defaults2: TestOptions = {
+      liveOptions: (options) => {
+        expectTypeOf(options).toEqualTypeOf<QueryOptionsIn<TestClientContext, TestInput, never, TestError, unknown, unknown>>()
+
+        return {
+          ...options,
+          input: { search: 'test' },
+          staleTime: 1000,
+        }
       },
+    }
+
+    const _invalid2: TestOptions = {
+      // @ts-expect-error - invalid input type
+      liveOptions: options => ({
+        ...options,
+        input: { invalid: 'test' },
+      }),
     }
   })
 
   it('infiniteKey should accept Partial input, initialPageParam, queryKey', () => {
-    const defaults: TestDefaults = {
+    const defaults: TestOptions = {
       infiniteKey: {
         initialPageParam: 0,
         queryKey: ['custom-key'],
       },
     }
-    expectTypeOf(defaults).toExtend<TestDefaults>()
+    expectTypeOf(defaults).toExtend<TestOptions>()
 
-    const _invalid: TestDefaults = {
+    const _invalid: TestOptions = {
       infiniteKey: {
         // @ts-expect-error - invalid input type
         input: { invalid: 'test' },
@@ -893,40 +1144,102 @@ describe('ProcedureUtilsDefaults', () => {
     }
   })
 
-  it('infiniteOptions should accept Partial<InfiniteOptionsIn>', () => {
-    const defaults: TestDefaults = {
+  it('infiniteInterceptors should infer correct types', () => {
+    const defaults: TestOptions = {
+      infiniteInterceptors: [
+        (opts) => {
+          expectTypeOf(opts.input).toEqualTypeOf<TestInput | SkipToken>()
+          expectTypeOf(opts.next()).toEqualTypeOf<PromiseWithError<TestOutput, TestError>>()
+          expectTypeOf(opts.fnContext).toExtend<QueryFunctionContext>()
+
+          return opts.next()
+        },
+      ],
+    }
+  })
+
+  it('infiniteOptions should accept Partial<InfiniteOptionsIn> | modifier function', () => {
+    const _defaults: TestOptions = {
       infiniteOptions: {
         staleTime: 1000,
       },
     }
-    expectTypeOf(defaults).toExtend<TestDefaults>()
 
-    const _invalid: TestDefaults = {
+    const _invalid: TestOptions = {
       infiniteOptions: {
         // @ts-expect-error - invalid input type
         input: { invalid: 'test' },
       },
     }
+
+    const _defaults2: TestOptions = {
+      infiniteOptions: (options) => {
+        expectTypeOf(options).toEqualTypeOf<InfiniteOptionsIn<TestClientContext, TestInput, TestOutput, TestError, unknown, unknown, unknown>>()
+
+        return {
+          ...options,
+          staleTime: 1000,
+        }
+      },
+    }
+
+    const _invalid2: TestOptions = {
+      // @ts-expect-error - invalid input type
+      infiniteOptions: options => ({
+        ...options,
+        input: { invalid: 'test' },
+      }),
+    }
   })
 
-  it('mutationKey should accept Partial mutationKey', () => {
-    const defaults: TestDefaults = {
+  it('mutationKey should accept Partial mutationKey | modifier function', () => {
+    const _defaults: TestOptions = {
       mutationKey: {
         mutationKey: ['custom-mutation-key'],
       },
     }
-    expectTypeOf(defaults).toExtend<TestDefaults>()
 
-    const _invalid: TestDefaults = {
+    const _invalid: TestOptions = {
       mutationKey: {
         // @ts-expect-error - invalid mutationKey type
         mutationKey: 1,
       },
     }
+
+    const _defaults2: TestOptions = {
+      mutationKey: (options) => {
+        expectTypeOf(options).toEqualTypeOf<MutationKeyOptions>()
+
+        return {
+          mutationKey: ['custom-mutation-key'],
+        }
+      },
+    }
+
+    const _invalid2: TestOptions = {
+      // @ts-expect-error - invalid mutationKey type
+      mutationKey: options => ({
+        mutationKey: 1,
+      }),
+    }
   })
 
-  it('mutationOptions should accept Partial<MutationOptionsIn>', () => {
-    const defaults: TestDefaults = {
+  it('mutationInterceptors should infer correct types', () => {
+    const defaults: TestOptions = {
+      mutationInterceptors: [
+        (opts) => {
+          expectTypeOf(opts.input).toEqualTypeOf<TestInput>()
+          expectTypeOf(opts.next()).toEqualTypeOf<PromiseWithError<TestOutput, TestError>>()
+          expectTypeOf(opts.fnContext).toExtend<MutationFunctionContext>()
+
+          return opts.next()
+        },
+      ],
+    }
+  })
+
+  it('mutationOptions should accept Partial<MutationOptionsIn> | modifier function', () => {
+    const _defaults: TestOptions = {
       mutationOptions: {
         onSuccess: (output) => {
           expectTypeOf(output).toEqualTypeOf<TestOutput>()
@@ -934,13 +1247,34 @@ describe('ProcedureUtilsDefaults', () => {
         context: { batch: true },
       },
     }
-    expectTypeOf(defaults).toExtend<TestDefaults>()
 
-    const _invalid: TestDefaults = {
+    const _invalid: TestOptions = {
       mutationOptions: {
         // @ts-expect-error - invalid context type
         context: { batch: 'invalid' },
       },
+    }
+
+    const _defaults2: TestOptions = {
+      mutationOptions: (options) => {
+        expectTypeOf(options).toEqualTypeOf<MutationOptionsIn<TestClientContext, TestInput, TestOutput, TestError, unknown>>()
+
+        return {
+          ...options,
+          onSuccess: (output) => {
+            expectTypeOf(output).toEqualTypeOf<TestOutput>()
+          },
+          context: { batch: true },
+        }
+      },
+    }
+
+    const _invalid2: TestOptions = {
+      // @ts-expect-error - invalid context type
+      mutationOptions: options => ({
+        ...options,
+        context: { batch: 'invalid' },
+      }),
     }
   })
 })

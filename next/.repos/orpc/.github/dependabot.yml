@@ -5,6 +5,9 @@ updates:
     directory: /
     schedule:
       interval: daily
+    cooldown:
+      # pnpm requires minimumReleaseAge of 1, so the value below should be 1 or more
+      default-days: 1
     versioning-strategy: increase
     groups:
       eslint:
@@ -12,16 +15,15 @@ updates:
           - eslint
           - '@antfu/eslint-config'
           - 'eslint-plugin-*'
-      hey-api:
+      standard-server:
         patterns:
-          - '@hey-api/*'
+          - '@standard-server/*'
       dev-dependencies-minor-patch:
         dependency-type: development
         exclude-patterns:
           - eslint
           - '@antfu/eslint-config'
           - 'eslint-plugin-*'
-          - '@hey-api/*'
           - compression # inline
         update-types:
           - minor

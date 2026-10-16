@@ -1,0 +1,154 @@
+---
+title: "Stop Making HTTP Requests to Yourself During SSR"
+description: "Most fullstack apps fetch SSR data from their own API over HTTP. Call your API logic in-process with the Fetch API instead, and share one client between server and browser without leaking server code into the bundle."
+type: blog
+date: 2026-08-19
+search:
+  tags:
+    - Engineering
+authors:
+    name: Định Lê
+    role: Creator of oRPC
+    url: https://github.com/dinwwwh
+    avatar: https://github.com/dinwwwh.png
+ai:
+  exclude: true
+---
+
+## The Round Trip to Nowhere
+
+In most fullstack frameworks, server-side rendering fetches data the same way the browser does: over HTTP.
+
+```ts
+export default async function PlanetListPage() {
+  const response = await fetch('https://myapp.com/api/planets')
+  const planets = await response.json()
+  // ...
+}
+```
+
+The server needs data, so it opens a socket, serializes a request, sends it across the network stack, and waits, only to land in an API route running in the very same process.
+
+![Standard SSR: Server calls its own API via HTTP.](/images/standard-ssr-diagram.svg)
+
+This works, but you pay for it on every render:
+
+- A full HTTP round trip: connection handling, header parsing, a second request lifecycle.
+- On serverless platforms, a self-fetch can invoke a *second* function instance: extra cold starts, double billing, and a deadlock risk when concurrency is capped.
+- Cookies and auth headers are not forwarded automatically. Everyone learns this the first time SSR renders the logged-out page for a logged-in user.
+- Relative URLs like `fetch('/api/planets')` fail on the server, so now you maintain a base-URL environment variable per deployment.
+
+The data logic is right there in the same process. SSR should call it directly.
+
+![Optimized SSR: Server calls API logic directly.](/images/optimized-ssr-diagram.svg)
+
+## An API Handler Is Just a Function
+
+The [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) made this fixable. Modern API code, whether plain or built with a fetch-standard framework, boils down to one signature:
+
+```ts api.ts
+export async function handleApi(request: Request): Promise<Response> {
+  const url = new URL(request.url)
+
+  if (url.pathname === '/api/planets' && request.method === 'GET') {
+    return Response.json(await db.planets.list())
+  }
+
+  return new Response('Not Found', { status: 404 })
+}
+```
+
+Nothing in that signature requires a network. `fetch` itself is just a function from a request to a promise of a response, so you can implement it with a direct call:
+
+```ts
+const internalFetch: typeof fetch = async (input, init) =>
+  handleApi(new Request(input, init))
+```
+
+Any code written against `fetch` now runs your API in-process: no socket, no port, no second request lifecycle. The origin in the URL becomes a formality, since it never leaves the process, which also kills the base-URL problem. And because you construct the internal `Request` yourself, passing the incoming request's headers along is one argument, not a forwarding layer.
+
+Write your data-fetching client to accept a `fetch` implementation and it works in both worlds:
+
+```ts client.ts
+export function createClient(fetchFn: typeof fetch, origin: string) {
+  return {
+    async listPlanets(): Promise<Planet[]> {
+      const response = await fetchFn(new URL('/api/planets', origin))
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`)
+      }
+
+      return response.json()
+    },
+  }
+}
+```
+
+This is not a fringe idea. SvelteKit's `load` function [does exactly this](https://svelte.dev/docs/kit/load#Making-fetch-requests) with the `fetch` it hands you: during SSR it invokes your endpoint handler directly, no HTTP request issued.
+
+## The Trap: One Client, Two Environments
+
+You want a single `client` import that every page uses, on the server and in the browser. The obvious version is a runtime check:
+
+```ts
+// ❌ looks fine, ships your database to the browser
+import { handleApi } from './api'
+
+export const client = typeof window === 'undefined'
+  ? createClient(internalFetch, 'http://internal')
+  : createClient(fetch, window.location.origin)
+```
+
+The branch runs at runtime, but bundling happens at build time. The `import { handleApi }` line pulls your entire API, and everything it imports, such as the database driver and secrets handling, into the client module graph. Best case, your framework fails the build. Worst case, server code quietly ships to every visitor.
+
+## The `globalThis` Trick
+
+The fix is to keep the server side of the wiring out of the client bundle. The shared module imports server code only behind a build-time guard, then looks up a well-known global and falls back to the browser client:
+
+```ts client.ts
+if (import.meta.env.SSR) {
+  await import('./client.server')
+}
+
+declare global {
+  var $client: Client | undefined
+}
+
+/**
+ * SSR uses the client registered on globalThis.
+ * The browser falls back to a real fetch against the current origin.
+ */
+export const client: Client = globalThis.$client
+  ?? createClient(fetch, window.location.origin)
+```
+
+A separate server-only module creates the internal client and registers it:
+
+```ts client.server.ts
+import { handleApi } from './api'
+import { createClient } from './client'
+
+globalThis.$client = createClient(
+  (input, init) => handleApi(new Request(input, init)),
+  'http://internal',
+)
+```
+
+This time the guard is resolved at build time: in the client build the branch is statically dead, so the bundler drops it, module and all, and the client bundle contains only the shared module. Load order takes care of itself, since the import runs before the `client` export evaluates. And if registration is ever skipped, the fallback touches `window` on the server and throws immediately, instead of silently fetching from yourself again.
+
+:::tip
+`import.meta.env.SSR` is statically replaced by Vite and by Next.js's Turbopack. On webpack builds, guard with `typeof window === 'undefined'` instead, which Next.js also replaces at build time.
+:::
+
+## Skipping the Fetch Layer Entirely
+
+The internal `fetch` still constructs `Request` and `Response` objects and serializes your data to JSON just to parse it back. If your API logic is reachable as plain functions, SSR can call those directly and skip serialization too. The trade-off: anything living in your HTTP layer, such as middleware, logging, or plugins, no longer runs, so per-request concerns like auth context have to be applied another way.
+
+Both are valid endpoints of the same idea. The fetch-based internal client keeps your whole HTTP pipeline while removing the network; the direct call removes everything but your logic.
+
+## The Takeaway
+
+SSR data fetching has a default shape, HTTP to yourself, that exists only because it is the shortest code. The Fetch API's real gift to servers is that a handler is a callable function, and callable functions do not need sockets to be called. Wire the internal client through `globalThis`, guard the server import with a flag your bundler resolves at build time, and the same one-line `import { client }` does the right thing everywhere.
+
+If you use oRPC, this whole pattern is prepackaged: [Optimizing SSR](/docs/recipes/optimizing-ssr) shows both the internal [RPC Link](/docs/rpc/link) and the even leaner [server-side client](/docs/client/server-side), fully typed end to end. If you are building your own, steal the global.

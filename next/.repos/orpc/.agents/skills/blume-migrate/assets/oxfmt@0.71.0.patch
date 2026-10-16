@@ -1,0 +1,49 @@
+diff --git a/dist/markdown-gizI1LFO.js b/dist/markdown-gizI1LFO.js
+index 95a638402fa6f73b29ebb8d7a7ef229bee68a690..e2e2ea5b443fe10698c49c2ef3dc3d5909335915 100644
+--- a/dist/markdown-gizI1LFO.js
++++ b/dist/markdown-gizI1LFO.js
+@@ -4898,7 +4898,43 @@ function lu(e, t, r) {
+ 		case "sentence": return Oh(e, r);
+ 		case "word": return t.parser !== "mdx" ? zh(e, t) : Uh(e);
+ 		case "whitespace": {
+-			let { next: a } = e, u = a && /^>|^(?:[*+-]|#{1,6}|\d+[).])$/.test(a.value) && !RE(e) && !(t.proseWrap === "preserve" && ME(e)) ? "never" : t.proseWrap;
++			let { next: a, previous: oxfmtFencePrev } = e;
++			// Preserve line breaks that sit directly against a `:::` container
++			// directive fence, so `proseWrap: "never"` keeps the opening/closing
++			// fence on their own lines instead of joining them into the prose (which
++			// breaks the directive). Ordinary prose still wraps per proseWrap.
++			// See prettier/prettier#19040.
++			let oxfmtIsFence = (w) => w != null && typeof w.value === "string" && w.value.startsWith(":::");
++			// A titled directive (`:::warning[Heads up]`) parses its `[title]` as a
++			// linkReference between two sentence nodes at the paragraph level: the
++			// fence word ends the sentence before the reference, and the body's
++			// leading newline opens the sentence after it. So when this whitespace
++			// starts its sentence, climb to the paragraph and check whether the two
++			// preceding siblings are a (link) reference and a sentence ending in a
++			// `:::` fence word.
++			let oxfmtPrevIsTitledFence = !1;
++			if (oxfmtFencePrev == null && e.index === 0 && e.grandparent != null && Array.isArray(e.grandparent.children)) {
++				let oxfmtSibs = e.grandparent.children, oxfmtSentIdx = oxfmtSibs.indexOf(e.parent);
++				if (oxfmtSentIdx >= 2) {
++					let oxfmtLink = oxfmtSibs[oxfmtSentIdx - 1], oxfmtBefore = oxfmtSibs[oxfmtSentIdx - 2];
++					let oxfmtLastWord = oxfmtBefore && oxfmtBefore.type === "sentence" && Array.isArray(oxfmtBefore.children) ? oxfmtBefore.children[oxfmtBefore.children.length - 1] : null;
++					oxfmtPrevIsTitledFence = oxfmtLink != null && (oxfmtLink.type === "linkReference" || oxfmtLink.type === "link") && oxfmtIsFence(oxfmtLastWord);
++				}
++			}
++			// The plain-markdown parser keeps a titled fence's `[title]` as literal
++			// words, so the whole directive is one sentence. For a newline
++			// whitespace, walk back to the start of its visual line within the
++			// sentence; a line led by a `:::` word is a fence whose break must stay.
++			if (!oxfmtPrevIsTitledFence && e.node.value.includes("\n") && e.parent != null && Array.isArray(e.parent.children)) {
++				let oxfmtLineFirst = null;
++				for (let oxfmtJ = e.index - 1; oxfmtJ >= 0; oxfmtJ--) {
++					let oxfmtSib = e.parent.children[oxfmtJ];
++					if (oxfmtSib.type === "whitespace" && typeof oxfmtSib.value === "string" && oxfmtSib.value.includes("\n")) break;
++					oxfmtLineFirst = oxfmtSib;
++				}
++				oxfmtPrevIsTitledFence = oxfmtIsFence(oxfmtLineFirst);
++			}
++			let u = oxfmtIsFence(oxfmtFencePrev) || oxfmtPrevIsTitledFence || oxfmtIsFence(a) ? "preserve" : a && /^>|^(?:[*+-]|#{1,6}|\d+[).])$/.test(a.value) && !RE(e) && !(t.proseWrap === "preserve" && ME(e)) ? "never" : t.proseWrap;
+ 			return ou(e, n.value, u, !1, t);
+ 		}
+ 		case "emphasis": {

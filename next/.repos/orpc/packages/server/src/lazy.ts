@@ -1,46 +1,47 @@
-import type { HTTPPath } from '@orpc/client'
+import type { AnyMetaPlugin, Meta } from '@orpc/contract'
+import { getConstructor, isTypescriptObject } from '@orpc/shared'
 
-export const LAZY_SYMBOL: unique symbol = Symbol('ORPC_LAZY_SYMBOL')
-
-export interface LazyMeta {
-  prefix?: HTTPPath
+export interface LazyDefinition<T> {
+  meta: Meta
+  metaPlugins?: AnyMetaPlugin[] | undefined
+  loader: () => Promise<{ default: T }>
 }
 
-export interface Lazy<T> {
-  [LAZY_SYMBOL]: {
-    loader: () => Promise<{ default: T }>
-    meta: LazyMeta
+export class Lazy<T> {
+  '~orpc': LazyDefinition<T>
+
+  constructor(
+    def: LazyDefinition<T>,
+  ) {
+    this['~orpc'] = def
+  }
+
+  /**
+   * Checks if the given instance satisfies the {@link Lazy} class/interface.
+   */
+  static [Symbol.hasInstance](instance: unknown): boolean {
+    if (this !== Lazy) {
+      // fallback to default instanceof check if this is extended class
+      return Function.prototype[Symbol.hasInstance].call(this, instance)
+    }
+
+    const constructor = getConstructor(instance)
+    if (constructor === Lazy) {
+      return true
+    }
+
+    return (
+      isTypescriptObject(instance)
+      && isTypescriptObject(instance['~orpc'])
+      && isTypescriptObject(instance['~orpc'].meta)
+      && (instance['~orpc'].metaPlugins === undefined || Array.isArray(instance['~orpc'].metaPlugins))
+      && typeof instance['~orpc'].loader === 'function'
+    )
   }
 }
 
 export type Lazyable<T> = T | Lazy<T>
 
-/**
- * Creates a lazy-loaded item.
- *
- * @warning The `prefix` in `meta` only holds metadata and does not apply the prefix to the lazy router, use `os.prefix(...).lazy(...)` instead.
- */
-export function lazy<T>(loader: () => Promise<{ default: T }>, meta: LazyMeta = {}): Lazy<T> {
-  return {
-    [LAZY_SYMBOL]: {
-      loader,
-      meta,
-    },
-  }
-}
-
-export function isLazy(item: unknown): item is Lazy<any> {
-  return (
-    (typeof item === 'object' || typeof item === 'function')
-    && item !== null
-    && LAZY_SYMBOL in item
-  )
-}
-
-export function getLazyMeta(lazied: Lazy<any>): LazyMeta {
-  return lazied[LAZY_SYMBOL].meta
-}
-
-export function unlazy<T extends Lazyable<any>>(lazied: T): Promise<{ default: T extends Lazy<infer U> ? U : T }> {
-  return isLazy(lazied) ? lazied[LAZY_SYMBOL].loader() : Promise.resolve({ default: lazied as T extends Lazy<infer U> ? U : T })
+export function unlazy<T extends Lazyable<any>>(maybeLazy: T): Promise<{ default: T extends Lazy<infer U> ? U : T }> {
+  return maybeLazy instanceof Lazy ? maybeLazy['~orpc'].loader() : Promise.resolve({ default: maybeLazy as T extends Lazy<infer U> ? U : T })
 }

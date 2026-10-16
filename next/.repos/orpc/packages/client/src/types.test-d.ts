@@ -1,40 +1,34 @@
 import type { ORPCError } from './error'
-import type { Client, ClientContext, InferClientBodyInputs, InferClientBodyOutputs, InferClientErrors, InferClientErrorUnion, InferClientInputs, InferClientOutputs } from './types'
+import type { Client, ClientContext, InferClientBodyInputs, InferClientBodyOutputs, InferClientContext, InferClientError, InferClientErrors, InferClientInputs, InferClientOutputs } from './types'
 
 describe('client', () => {
   const client: Client<{ cache?: boolean }, string, number, Error | ORPCError<'OVERRIDE', unknown>> = async (...args) => {
     const [input, options] = args
 
     expectTypeOf(input).toEqualTypeOf<string>()
-    expectTypeOf(options).toMatchTypeOf<{ context?: { cache?: boolean }, signal?: AbortSignal } | undefined>()
+    expectTypeOf(options).toExtend<{ context?: { cache?: boolean }, signal?: AbortSignal } | undefined>()
+
     return 123
   }
 
   it('just a function', () => {
-    expectTypeOf(client).toMatchTypeOf<(input: string, options: { context?: ClientContext, signal?: AbortSignal }) => Promise<number>>()
+    expectTypeOf(client).toExtend<(input: string, options: { context?: ClientContext, signal?: AbortSignal }) => Promise<number>>()
   })
 
   it('infer correct input', () => {
-    client('123')
-    // @ts-expect-error - invalid input
-    client(undefined)
-    // @ts-expect-error - missing input
-    client()
+    expectTypeOf(client).parameter(0).toEqualTypeOf<string>()
 
-    // @ts-expect-error - invalid input
-    client(123)
-    // @ts-expect-error - invalid input
-    client({})
+    // @ts-expect-error - input is required
+    client()
   })
 
   it('optional undefinedable input', () => {
     const client = {} as Client<ClientContext, { val: string } | undefined, { val: number }, Error>
 
-    client({ val: '123' })
+    expectTypeOf(client).parameter(0).toEqualTypeOf<{ val: string } | undefined>()
+
     client(undefined)
     client()
-    // @ts-expect-error - invalid input
-    client({ val: 123 })
   })
 
   it('accept signal', () => {
@@ -95,6 +89,10 @@ describe('infer utilities', () => {
     }
   }
 
+  it('InferClientContext', () => {
+    expectTypeOf<InferClientContext<ORPC>>().toEqualTypeOf<{ cache?: boolean }>()
+  })
+
   it('InferClientInputs', () => {
     expectTypeOf<InferClientInputs<ORPC>>().toEqualTypeOf<{
       ping: string
@@ -150,7 +148,7 @@ describe('infer utilities', () => {
     }>()
   })
 
-  it('InferClientErrorUnion', () => {
-    expectTypeOf<InferClientErrorUnion<ORPC>>().toEqualTypeOf<Error | ORPCError<'PING', unknown> | ORPCError<'NESTED_PING', unknown>>()
+  it('InferClientError', () => {
+    expectTypeOf<InferClientError<ORPC>>().toEqualTypeOf<Error | ORPCError<'PING', unknown> | ORPCError<'NESTED_PING', unknown>>()
   })
 })

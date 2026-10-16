@@ -1,0 +1,177 @@
+---
+import type { SponsorTier } from '../../sponsors/data'
+import { relAttribute, sponsorListingHref } from '../../sponsors/ads'
+import Avatar from '../../sponsors/Avatar.astro'
+import { linkLabel, monthYear, usd } from './format'
+
+interface Props {
+  tiers: SponsorTier[]
+}
+
+const { tiers } = Astro.props
+
+const total = tiers.reduce((sum, tier) => sum + tier.total, 0)
+const count = tiers.reduce((sum, tier) => sum + tier.sponsors.length, 0)
+const percent = new Intl.NumberFormat('en-US', { style: 'percent', maximumFractionDigits: 1 })
+
+const bands = tiers.map((tier, index) => ({
+  ...tier,
+  label: tier.title.replace(/ sponsor$/iu, ''),
+  share: percent.format(tier.total / total),
+  swatch: `background:var(--orpc-tier-${Math.min(index + 1, 5)})`,
+}))
+
+// Every cell of the Since column must use this, or the columns misalign on phones.
+const sinceCell = 'hidden sm:table-cell'
+
+// "New" lasts 30 days from the start date. A prerendered page cannot know
+// today's date, so the inline script at the bottom decides; a row already past
+// the window at build time can never show it, so it gets no badge at all.
+const NEW_WINDOW_MS = 30 * 24 * 60 * 60 * 1000
+const builtAt = Date.now()
+const newUntil = (iso: string): number => Date.parse(iso) + NEW_WINDOW_MS
+---
+
+{/* No overflow hidden/auto on this section or around the table: it would
+    disable the sticky header row. */}
+<section id="sponsors" aria-labelledby="sponsors-heading" class="border-b border-border">
+  <div class="mx-auto max-w-6xl px-6 py-12 sm:py-16">
+    <h2
+      id="sponsors-heading"
+      class="text-xl font-semibold tracking-[-0.03em] text-balance sm:text-2xl"
+    >
+      Active sponsors
+    </h2>
+    <p class="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+      Grouped by tier. Within a tier, larger pledges come first, then the longest-running.
+    </p>
+
+    <div aria-hidden="true" class="mt-6 flex h-2 gap-0.5 overflow-hidden rounded-full">
+      {bands.map(band => (
+        <span
+          class="orpc-tier-swatch min-w-1"
+          style={`${band.swatch};flex:${band.total} 1 0%`}
+          title={`${band.label}: ${usd(band.total)} this month (${band.share})`}
+        />
+      ))}
+    </div>
+    <ul aria-label="Share of this month's total by tier" class="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted-foreground">
+      {bands.map(band => (
+        <li class="flex items-center gap-1.5">
+          <span aria-hidden="true" class="orpc-tier-swatch size-1.5 flex-none rounded-full" style={band.swatch} />
+          {band.label}
+          <span class="font-medium text-foreground tabular-nums">{band.share}</span>
+        </li>
+      ))}
+    </ul>
+
+    {/* `relative` contains the absolutely positioned sr-only spans, which
+        otherwise widen the page on phones. `overflow-clip`, not hidden: a
+        scroll container would unstick the header row. */}
+    <div class="relative mt-6 overflow-clip rounded-blume border border-border">
+      <table class="orpc-sponsors" aria-labelledby="sponsors-heading" aria-describedby="sponsors-note">
+        <thead>
+          <tr>
+            <th scope="col">Sponsor</th>
+            <th scope="col" class:list={[sinceCell, 'sm:w-28 lg:w-36']}>Since</th>
+            <th scope="col" class="orpc-num w-26 sm:w-28 lg:w-36">This month</th>
+          </tr>
+        </thead>
+
+        {bands.map(band => (
+          <tbody>
+            <tr class="orpc-sponsors-band">
+              <th scope="rowgroup">
+                <span class="flex items-center gap-2">
+                  <span aria-hidden="true" class="orpc-tier-swatch size-1.5 flex-none rounded-full" style={band.swatch} />
+                  <span class="text-foreground">{band.label}</span>
+                  <span class="tabular-nums">{band.sponsors.length}</span>
+                  <span class="sr-only">{band.sponsors.length === 1 ? 'sponsor' : 'sponsors'}</span>
+                </span>
+              </th>
+              <td class={sinceCell} />
+              <td class="orpc-num"><span class="sr-only">Subtotal </span>{usd(band.total)}</td>
+            </tr>
+
+            {band.sponsors.map(sponsor => (
+              <tr>
+                <th scope="row">
+                  <a
+                    class="group flex min-h-11 items-center gap-3"
+                    href={sponsor.link}
+                    rel={relAttribute(sponsor.rel)}
+                    target="_blank"
+                  >
+                    <Avatar
+                      class:list={['size-8', sponsor.type === 'Organization' ? 'rounded-md' : 'rounded-full']}
+                      name={sponsor.name}
+                      px={32}
+                      src={sponsor.avatar}
+                    />
+                    <span class="flex-1">
+                      <span class="flex items-center gap-1.5 leading-5">
+                        <bdi
+                          class="font-medium break-words text-foreground decoration-foreground/30 underline-offset-4 group-hover:underline sm:truncate"
+                          title={sponsor.name}
+                        >
+                          {sponsor.name}
+                        </bdi>
+                        {newUntil(sponsor.createdAt) >= builtAt && (
+                          <span
+                            class="flex-none rounded-full border border-transparent bg-accent px-[0.3125rem] text-[0.625rem] leading-3 font-semibold text-accent-foreground"
+                            data-new-until={newUntil(sponsor.createdAt)}
+                            hidden
+                          >
+                            New
+                          </span>
+                        )}
+                      </span>
+                      <span class="block truncate text-xs leading-4 text-muted-foreground sm:hidden">
+                        Since <time datetime={sponsor.createdAt}>{monthYear(sponsor.createdAt)}</time>
+                      </span>
+                      <span class="hidden truncate text-xs leading-4 text-muted-foreground sm:block">
+                        {linkLabel(sponsor.link)}
+                      </span>
+                    </span>
+                  </a>
+                </th>
+                <td class:list={[sinceCell, 'text-muted-foreground tabular-nums']}>
+                  <time datetime={sponsor.createdAt}>{monthYear(sponsor.createdAt)}</time>
+                </td>
+                <td class="orpc-num font-medium text-foreground">{usd(sponsor.amount)}</td>
+              </tr>
+            ))}
+          </tbody>
+        ))}
+
+        <tfoot>
+          <tr>
+            <th scope="row">
+              Total{' '}
+              <span class="ms-1 font-normal text-muted-foreground">{count} sponsors</span>
+            </th>
+            <td class={sinceCell} />
+            <td class="orpc-num">{usd(total)}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <p id="sponsors-note" class="mt-4 text-xs leading-relaxed text-muted-foreground">
+      Pledges this month in US dollars, from public GitHub Sponsors and Open Collective sponsorships,
+      updated daily. Want to change how you are listed?{' '}
+      <a
+        class="underline underline-offset-4 transition-colors hover:text-foreground"
+        href={sponsorListingHref()}>Get in touch</a
+      >.
+    </p>
+  </div>
+</section>
+
+{/* Classic and inline: it runs as soon as the parser reaches it on a full load,
+    and `data-astro-rerun` makes the router repeat it whenever it swaps this page in. */}
+<script is:inline data-astro-rerun>
+  for (const badge of document.querySelectorAll('[data-new-until]')) {
+    badge.hidden = Date.now() > Number(badge.dataset.newUntil)
+  }
+</script>

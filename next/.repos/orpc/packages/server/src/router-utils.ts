@@ -1,15 +1,187 @@
-import type { AnyContractProcedure, AnyContractRouter, EnhanceRouteOptions, ErrorMap, MergedErrorMap } from '@orpc/contract'
+import type { AnyProcedureContract, AugmentContractRouterOptions, ErrorMap, MergedErrorMap, RouterContract } from '@orpc/contract'
+import type { Promisable } from '@orpc/shared'
 import type { Context, MergedInitialContext } from './context'
-import type { Lazy, Lazyable } from './lazy'
+import type { Lazyable } from './lazy'
 import type { AnyMiddleware } from './middleware'
-import type { AnyProcedure } from './procedure'
+import type { AnyProcedure, ProcedureConfig } from './procedure'
 import type { AnyRouter } from './router'
-import { enhanceRoute, isContractProcedure, mergeErrorMap, mergePrefix } from '@orpc/contract'
-import { isTypescriptObject } from '@orpc/shared'
-import { getLazyMeta, isLazy, lazy, unlazy } from './lazy'
-import { mergeMiddlewares } from './middleware-utils'
-import { isProcedure, Procedure } from './procedure'
+import { mergeErrorMap, ProcedureContract, resolveMetaPlugins } from '@orpc/contract'
+import { getOwn, isTypescriptObject, omit } from '@orpc/shared'
+import { Lazy, unlazy } from './lazy'
+import { Procedure } from './procedure'
 import { getHiddenRouterContract } from './router-hidden'
+
+export type AugmentedRouter<
+  T extends AnyRouter,
+  TErrorMap extends ErrorMap,
+> = T extends Procedure<
+  infer $InitialContext,
+  infer $CurrentContext,
+  infer $InputSchema,
+  infer $OutputSchema,
+  infer $ErrorMap
+>
+  ? Procedure<
+    $InitialContext,
+    $CurrentContext,
+    $InputSchema,
+    $OutputSchema,
+    MergedErrorMap<TErrorMap, $ErrorMap>
+  >
+  : {
+      [K in keyof T]: T[K] extends Lazy<infer $ extends AnyRouter>
+        ? Lazy<AugmentedRouter<$, TErrorMap>>
+        : T[K] extends AnyRouter
+          ? AugmentedRouter<T[K], TErrorMap>
+          : never
+    }
+
+export type AugmentedRouterWithMiddlewares<
+  T extends AnyRouter,
+  TInitialContext extends Context,
+  TInjectedContext extends Context,
+  TErrorMap extends ErrorMap,
+>
+  = T extends Procedure<
+    infer $InitialContext,
+    infer $CurrentContext,
+    infer $InputSchema,
+    infer $OutputSchema,
+    infer $ErrorMap
+  >
+    ? Procedure<
+      MergedInitialContext<TInitialContext, TInjectedContext, $InitialContext>,
+      $CurrentContext,
+      $InputSchema,
+      $OutputSchema,
+      MergedErrorMap<TErrorMap, $ErrorMap>
+    >
+    : {
+        [K in keyof T]: T[K] extends Lazy<infer $ extends AnyRouter>
+          ? Lazy<AugmentedRouterWithMiddlewares<$, TInitialContext, TInjectedContext, TErrorMap>>
+          : T[K] extends AnyRouter
+            ? AugmentedRouterWithMiddlewares<T[K], TInitialContext, TInjectedContext, TErrorMap>
+            : never
+      }
+
+export interface AugmentRouterOptions<TErrorMap extends ErrorMap> extends AugmentContractRouterOptions<TErrorMap>, ProcedureConfig {
+  middlewares: AnyMiddleware[]
+}
+
+export function augmentRouter<
+  T extends AnyRouter,
+  TInitialContext extends Context,
+  TCurrentContext extends Context,
+  TErrorMap extends ErrorMap,
+>(
+  router: T,
+  options: AugmentRouterOptions<TErrorMap>,
+): AugmentedRouter<T, TErrorMap> | AugmentedRouterWithMiddlewares<T, TInitialContext, TCurrentContext, TErrorMap> {
+  if (router instanceof Lazy) {
+    const [meta, metaPlugins] = resolveMetaPlugins(
+      options.meta,
+      options.metaPlugins,
+      router['~orpc'].metaPlugins,
+    )
+
+    const enhanced = new Lazy({
+      meta,
+      metaPlugins,
+      async loader() {
+        const { default: unlaziedRouter } = await unlazy(router)
+        const enhanced = augmentRouter(unlaziedRouter, options)
+        return unlazy(enhanced)
+      },
+    })
+
+    return enhanced as any
+  }
+
+  if (router instanceof Procedure) {
+    const [meta, metaPlugins] = resolveMetaPlugins(
+      options.meta,
+      options.metaPlugins,
+      router['~orpc'].metaPlugins,
+    )
+
+    const enhanced = new Procedure({
+      ...omit(options, ['middlewares', 'errorMap', 'meta', 'metaPlugins']),
+      ...router['~orpc'],
+      meta,
+      metaPlugins,
+      errorMap: mergeErrorMap(options.errorMap, router['~orpc'].errorMap),
+      orderedMiddlewares: [
+        ...options.middlewares.map(middleware => ({ middleware, inputSchemasLengthAtUse: 0, outputSchemasLengthAtUse: 0 })),
+        ...router['~orpc'].orderedMiddlewares,
+      ],
+    })
+
+    return enhanced as any
+  }
+
+  if (!isTypescriptObject(router)) {
+    return router as any
+  }
+
+  const enhanced = {} as Record<string, any>
+
+  for (const [key, child] of Object.entries(router as Record<string, AnyRouter>)) {
+    enhanced[key] = augmentRouter(child, options)
+  }
+
+  return enhanced as any
+}
+
+export interface AugmentImplementedRouterOptions extends ProcedureConfig {
+  middlewares: AnyMiddleware[]
+}
+
+export function augmentImplementedRouter<
+  T extends AnyRouter,
+  TInitialContext extends Context,
+  TCurrentContext extends Context,
+>(
+  router: T,
+  options: AugmentImplementedRouterOptions,
+): AugmentedRouter<T, object> | AugmentedRouterWithMiddlewares<T, TInitialContext, TCurrentContext, object> {
+  if (router instanceof Lazy) {
+    const enhanced = new Lazy({
+      ...router['~orpc'],
+      async loader() {
+        const { default: unlaziedRouter } = await unlazy(router)
+        const enhanced = augmentImplementedRouter(unlaziedRouter, options)
+        return unlazy(enhanced)
+      },
+    })
+
+    return enhanced as any
+  }
+
+  if (router instanceof Procedure) {
+    const enhanced = new Procedure({
+      ...omit(options, ['middlewares']),
+      ...router['~orpc'],
+      orderedMiddlewares: [
+        ...options.middlewares.map(middleware => ({ middleware, inputSchemasLengthAtUse: 0, outputSchemasLengthAtUse: 0 })),
+        ...router['~orpc'].orderedMiddlewares,
+      ],
+    })
+
+    return enhanced as any
+  }
+
+  if (!isTypescriptObject(router)) {
+    return router as any
+  }
+
+  const enhanced = {} as Record<string, any>
+
+  for (const [key, child] of Object.entries(router as Record<string, AnyRouter>)) {
+    enhanced[key] = augmentImplementedRouter(child, options)
+  }
+
+  return enhanced as any
+}
 
 export function getRouter<T extends Lazyable<AnyRouter | undefined>>(
   router: T,
@@ -20,20 +192,16 @@ export function getRouter<T extends Lazyable<AnyRouter | undefined>>(
   for (let i = 0; i < path.length; i++) {
     const segment = path[i]!
 
-    if (!current) {
-      return undefined as any
-    }
-
-    if (isProcedure(current)) {
-      return undefined as any
-    }
-
     if (!isTypescriptObject(current)) {
       return undefined as any
     }
 
-    if (!isLazy(current)) {
-      current = current[segment]
+    if (current instanceof Procedure) {
+      return undefined as any
+    }
+
+    if (!(current instanceof Lazy)) {
+      current = getOwn(current, segment)
 
       continue
     }
@@ -41,214 +209,102 @@ export function getRouter<T extends Lazyable<AnyRouter | undefined>>(
     const lazied = current
     const rest = path.slice(i)
 
-    return lazy(async () => {
-      const unwrapped = await unlazy(lazied)
+    return new Lazy({
+      ...lazied['~orpc'],
+      async loader() {
+        const unwrapped = await unlazy(lazied)
 
-      const next = getRouter(unwrapped.default, rest)
+        const next = getRouter(unwrapped.default, rest)
 
-      return unlazy(next)
-    }, getLazyMeta(lazied))
+        return await unlazy(next)
+      },
+    })
+  }
+
+  if (!isTypescriptObject(current)) {
+    return undefined as any
   }
 
   return current as any
 }
 
-export type AccessibleLazyRouter<T extends Lazyable<AnyRouter | undefined>>
-  = T extends Lazy<infer U extends AnyRouter | undefined | Lazy<AnyRouter | undefined>>
-    ? AccessibleLazyRouter<U>
-    : T extends AnyProcedure | undefined
-      ? Lazy<T>
-      : Lazy<T> & {
-        [K in keyof T]: T[K] extends Lazyable<AnyRouter> ? AccessibleLazyRouter<T[K]> : never
-      }
-
-export function createAccessibleLazyRouter<T extends Lazy<AnyRouter | undefined>>(lazied: T): AccessibleLazyRouter<T> {
-  const recursive = new Proxy(lazied, {
-    get(target, key) {
-      if (typeof key !== 'string') {
-        return Reflect.get(target, key)
-      }
-
-      const next = getRouter(lazied, [key])
-
-      return createAccessibleLazyRouter(next)
-    },
-  })
-
-  return recursive as any
-}
-
-export type EnhancedRouter<
-  T extends Lazyable<AnyRouter>,
-  TInitialContext extends Context,
-  TCurrentContext extends Context,
-  TErrorMap extends ErrorMap,
->
-  = T extends Lazy<infer U extends AnyRouter>
-    ? AccessibleLazyRouter<EnhancedRouter<U, TInitialContext, TCurrentContext, TErrorMap>>
-    : T extends Procedure<
-      infer UInitialContext,
-      infer UCurrentContext,
-      infer UInputSchema,
-      infer UOutputSchema,
-      infer UErrorMap,
-      infer UMeta
-    >
-      ? Procedure<
-        MergedInitialContext<TInitialContext, UInitialContext, TCurrentContext>,
-        UCurrentContext,
-        UInputSchema,
-        UOutputSchema,
-        MergedErrorMap<TErrorMap, UErrorMap>,
-        UMeta
-      >
-      : {
-          [K in keyof T]: T[K] extends Lazyable<AnyRouter> ? EnhancedRouter<T[K], TInitialContext, TCurrentContext, TErrorMap> : never
-        }
-
-export interface EnhanceRouterOptions<TErrorMap extends ErrorMap> extends EnhanceRouteOptions {
-  middlewares: readonly AnyMiddleware[]
-  errorMap: TErrorMap
-  dedupeLeadingMiddlewares: boolean
-}
-
-export function enhanceRouter<
-  T extends Lazyable<AnyRouter>,
-  TInitialContext extends Context,
-  TCurrentContext extends Context,
-  TErrorMap extends ErrorMap,
->(
-  router: T,
-  options: EnhanceRouterOptions<TErrorMap>,
-): EnhancedRouter<T, TInitialContext, TCurrentContext, TErrorMap> {
-  if (isLazy(router)) {
-    const laziedMeta = getLazyMeta(router)
-    const enhancedPrefix = laziedMeta?.prefix ? mergePrefix(options.prefix, laziedMeta?.prefix) : options.prefix
-
-    const enhanced = lazy(async () => {
-      const { default: unlaziedRouter } = await unlazy(router)
-      const enhanced = enhanceRouter(unlaziedRouter, options)
-      return unlazy(enhanced)
-    }, {
-      ...laziedMeta,
-      prefix: enhancedPrefix,
-    })
-
-    const accessible = createAccessibleLazyRouter(enhanced)
-
-    return accessible as any
-  }
-
-  if (isProcedure(router)) {
-    const newMiddlewares = mergeMiddlewares(options.middlewares, router['~orpc'].middlewares, { dedupeLeading: options.dedupeLeadingMiddlewares })
-    const newMiddlewareAdded = newMiddlewares.length - router['~orpc'].middlewares.length
-
-    const enhanced = new Procedure({
-      ...router['~orpc'],
-      route: enhanceRoute(router['~orpc'].route, options),
-      errorMap: mergeErrorMap(options.errorMap, router['~orpc'].errorMap),
-      middlewares: newMiddlewares,
-      inputValidationIndex: router['~orpc'].inputValidationIndex + newMiddlewareAdded,
-      outputValidationIndex: router['~orpc'].outputValidationIndex + newMiddlewareAdded,
-    })
-
-    return enhanced as any
-  }
-
-  if (typeof router !== 'object' || router === null) {
-    return router as any
-  }
-
-  const enhanced = {} as Record<string, any>
-
-  for (const key in router) {
-    enhanced[key] = enhanceRouter(router[key]!, options)
-  }
-
-  return enhanced as any
-}
-
-export interface TraverseContractProceduresOptions {
-  router: AnyContractRouter | AnyRouter
-  path: readonly string[]
-}
-
-export interface TraverseContractProcedureCallbackOptions {
-  contract: AnyContractProcedure | AnyProcedure
-  path: readonly string[]
-}
-
-/**
- * @deprecated Use `TraverseContractProcedureCallbackOptions` instead.
- */
-export type ContractProcedureCallbackOptions = TraverseContractProcedureCallbackOptions
-
-export interface LazyTraverseContractProceduresOptions {
+export interface WalkProcedureContractsLazyResult {
   router: Lazy<AnyRouter>
-  path: readonly string[]
+  path: string[]
 }
 
-export function traverseContractProcedures(
-  options: TraverseContractProceduresOptions,
-  callback: (options: TraverseContractProcedureCallbackOptions) => void,
-  lazyOptions: LazyTraverseContractProceduresOptions[] = [],
-): LazyTraverseContractProceduresOptions[] {
-  let currentRouter: AnyContractRouter | Lazyable<AnyRouter> = options.router
+export function walkProcedureContractsSync(
+  router: RouterContract | AnyRouter,
+  callback: (contract: AnyProcedureContract | AnyProcedure, path: string[]) => void,
+  path: string[] = [],
+): WalkProcedureContractsLazyResult[] {
+  const lazyResults: WalkProcedureContractsLazyResult[] = []
 
-  const hiddenContract = isTypescriptObject(options.router)
-    ? getHiddenRouterContract(options.router)
-    : undefined
+  walkProcedureContractsSyncInternal(router, callback, path.slice(), lazyResults)
 
+  return lazyResults
+}
+
+function walkProcedureContractsSyncInternal(
+  router: RouterContract | AnyRouter,
+  callback: (contract: AnyProcedureContract | AnyProcedure, path: string[]) => void,
+  path: string[],
+  lazyResults: WalkProcedureContractsLazyResult[],
+): void {
+  const hiddenContract = getHiddenRouterContract(router)
   if (hiddenContract !== undefined) {
-    currentRouter = hiddenContract
+    router = hiddenContract
   }
 
-  if (isLazy(currentRouter)) {
-    lazyOptions.push({
-      router: currentRouter,
-      path: options.path,
-    })
+  if (router instanceof ProcedureContract) {
+    callback(router, path.slice())
+    return
   }
 
-  else if (isContractProcedure(currentRouter)) {
-    callback({
-      contract: currentRouter,
-      path: options.path,
-    })
+  if (!isTypescriptObject(router)) {
+    return
   }
 
-  else if (typeof currentRouter === 'object' && currentRouter !== null) {
-    for (const key in currentRouter) {
-      traverseContractProcedures(
-        {
-          router: (currentRouter as any)[key],
-          path: [...options.path, key],
-        },
-        callback,
-        lazyOptions,
-      )
+  for (const [key, value] of Object.entries(router)) {
+    path.push(key)
+
+    if (value instanceof Lazy) {
+      lazyResults.push({ router: value, path: path.slice() })
     }
-  }
+    else {
+      walkProcedureContractsSyncInternal(value, callback, path, lazyResults)
+    }
 
-  return lazyOptions
+    path.pop()
+  }
 }
 
-export async function resolveContractProcedures(
-  options: TraverseContractProceduresOptions,
-  callback: (options: TraverseContractProcedureCallbackOptions) => void,
-) {
-  const pending: TraverseContractProceduresOptions[] = [options]
+export async function walkProcedureContractsAsync(
+  router: RouterContract | AnyRouter,
+  callback: (contract: AnyProcedureContract | AnyProcedure, path: string[]) => Promisable<void>,
+  path: string[] = [],
+): Promise<void> {
+  const hiddenContract = getHiddenRouterContract(router)
+  if (hiddenContract !== undefined) {
+    router = hiddenContract
+  }
 
-  for (const options of pending) {
-    const lazyOptions = traverseContractProcedures(options, callback)
+  if (router instanceof ProcedureContract) {
+    await callback(router, path)
+    return
+  }
 
-    for (const options of lazyOptions) {
-      const { default: router } = await unlazy(options.router)
+  if (!isTypescriptObject(router)) {
+    return
+  }
 
-      pending.push({
-        router,
-        path: options.path,
-      })
+  for (const [key, value] of Object.entries(router)) {
+    if (value instanceof Lazy) {
+      const { default: router } = await unlazy(value)
+      await walkProcedureContractsAsync(router, callback, [...path, key])
+    }
+    else {
+      await walkProcedureContractsAsync(value, callback, [...path, key])
     }
   }
 }
@@ -260,18 +316,24 @@ export type UnlaziedRouter<T extends AnyRouter>
         [K in keyof T]: T[K] extends Lazyable<infer U extends AnyRouter> ? UnlaziedRouter<U> : never
       }
 
+/**
+ * Fully resolves all lazy routers inside a router, returning a plain router.
+ * Useful for making a router with lazy parts contract-compatible.
+ *
+ * @see {@link https://orpc.dev/docs/contract/router#router-to-contract | Router Contract - Router to Contract}
+ */
 export async function unlazyRouter<T extends AnyRouter>(router: T): Promise<UnlaziedRouter<T>> {
-  if (isProcedure(router)) {
+  if (router instanceof Procedure) {
     return router as any
   }
 
-  if (typeof router !== 'object' || router === null) {
+  if (!isTypescriptObject(router)) {
     return router as any
   }
 
   const unlazied = {} as Record<string, any>
 
-  for (const key in router) {
+  for (const key of Object.keys(router)) {
     const item: Lazyable<AnyRouter> = router[key]!
 
     const { default: unlaziedRouter } = await unlazy(item)

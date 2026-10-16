@@ -1,3 +1,5 @@
 it('exports Publisher', async () => {
-  expect(Object.keys(await import('./index'))).toContain('Publisher')
+  await expect(import('./index')).resolves.toMatchObject({
+    Publisher: expect.any(Function),
+  })
 })

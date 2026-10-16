@@ -1,44 +1,52 @@
 import type { MaybeOptionalOptions } from '@orpc/shared'
-import type { APIGatewayProxyEventV2, ResponseStream, SendStandardResponseOptions } from '@orpc/standard-server-aws-lambda'
+import type { AnyAPIGatewayProxyEvent, HttpResponseStream, SendStandardResponseOptions } from '@standard-server/aws-lambda'
 import type { Context } from '../../context'
-import type { StandardHandler } from '../standard'
-import type { FriendlyStandardHandleOptions } from '../standard/utils'
+import type { FriendlyStandardHandlerHandleOptions, StandardHandler } from '../standard'
 import { resolveMaybeOptionalOptions } from '@orpc/shared'
-import { sendStandardResponse, toStandardLazyRequest } from '@orpc/standard-server-aws-lambda'
-import { resolveFriendlyStandardHandleOptions } from '../standard/utils'
+import { sendStandardResponse, toStandardLazyRequest } from '@standard-server/aws-lambda'
+import { resolveFriendlyStandardHandlerHandleOptions } from '../standard'
 
-export interface AwsLambdaHandlerOptions extends SendStandardResponseOptions {
+export type AwsLambdaHandlerHandleResult = { matched: true } | { matched: false }
 
+export interface AwsLambdaHandlerOptions<_T extends Context> {
+  /**
+   * Custom options for `sendStandardResponse`, used to send a `Standard Response`
+   */
+  sendStandardResponse?: SendStandardResponseOptions | undefined
 }
 
-export type AwsLambdaHandleResult = { matched: true } | { matched: false }
-
+/**
+ * Requires the AWS Lambda Node.js runtime with response streaming enabled,
+ * handlers should be wrapped with `awslambda.streamifyResponse`.
+ */
 export class AwsLambdaHandler<T extends Context> {
-  private readonly sendStandardResponseOptions: SendStandardResponseOptions
+  private readonly sendStandardResponseOptions: AwsLambdaHandlerOptions<T>['sendStandardResponse']
 
   constructor(
     private readonly standardHandler: StandardHandler<T>,
-    options: AwsLambdaHandlerOptions = {},
+    options: NoInfer<AwsLambdaHandlerOptions<T>> = {},
   ) {
-    this.sendStandardResponseOptions = options
+    this.sendStandardResponseOptions = options.sendStandardResponse
   }
 
   async handle(
-    event: APIGatewayProxyEventV2,
-    responseStream: ResponseStream,
-    ...rest: MaybeOptionalOptions<FriendlyStandardHandleOptions<T>>
-  ): Promise<AwsLambdaHandleResult> {
+    event: AnyAPIGatewayProxyEvent,
+    responseStream: HttpResponseStream,
+    ...rest: MaybeOptionalOptions<FriendlyStandardHandlerHandleOptions<T>>
+  ): Promise<AwsLambdaHandlerHandleResult> {
     const standardRequest = toStandardLazyRequest(event, responseStream)
 
-    const options = resolveFriendlyStandardHandleOptions(resolveMaybeOptionalOptions(rest))
-    const result = await this.standardHandler.handle(standardRequest, options)
+    const result = await this.standardHandler.handle(
+      standardRequest,
+      resolveFriendlyStandardHandlerHandleOptions(resolveMaybeOptionalOptions(rest)),
+    )
 
     if (!result.matched) {
-      return { matched: false }
+      return result
     }
 
     await sendStandardResponse(responseStream, result.response, this.sendStandardResponseOptions)
 
-    return { matched: true }
+    return result
   }
 }

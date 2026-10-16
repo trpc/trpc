@@ -1,68 +1,82 @@
-import type { AnySchema, InferSchemaInput, InferSchemaOutput } from './schema'
+import type { AnySchema, InferSchemaInput, InferSchemaOutput, MergedSchema, Schema } from './schema'
 import { type as arktypeType } from 'arktype'
 import * as v from 'valibot'
-import * as z from 'zod'
-import { type } from './schema'
+import z from 'zod'
 
-const zod = z.object({
-  value: z.string().transform(() => 123),
-})
-
-const valibot = v.object({
-  value: v.pipe(v.string(), v.transform(() => 123)),
-})
-
-// How convert value into number?
-const arktype = arktypeType({
-  value: 'string',
-})
+// Schemas should have distinct TInput and TOutput types to ensure correct inference.
+const inputSchema = z.object({ input: z.number().transform(n => `${n}`) })
+const outputSchema = z.object({ output: z.string().transform(s => Number(s)) })
 
 describe('Schema', () => {
-  it('assignable', () => {
-    const _zod: AnySchema = zod
-    const _valibot: AnySchema = valibot
-    const _arktype: AnySchema = arktype
+  it('supports any standard schema', () => {
+    const _zod: AnySchema = z.object({
+      value: z.string().transform(() => 123),
+    })
+    const _valibot: AnySchema = v.object({
+      value: v.pipe(v.string(), v.transform(() => 123)),
+    })
+    const _arktype: AnySchema = arktypeType({
+      value: 'string',
+    })
   })
 })
 
-describe('SchemaInput', () => {
-  it('inferable', () => {
-    expectTypeOf<InferSchemaInput<typeof zod>>().toEqualTypeOf<{ value: string }>()
-    expectTypeOf<InferSchemaInput<typeof valibot>>().toEqualTypeOf<{ value: string }>()
-    expectTypeOf<InferSchemaInput<typeof arktype>>().toEqualTypeOf<{ value: string }>()
-  })
+it('InferSchemaInput', () => {
+  expectTypeOf<InferSchemaInput<typeof inputSchema>>().toEqualTypeOf<{ input: number }>()
+  expectTypeOf<InferSchemaInput<typeof outputSchema>>().toEqualTypeOf<{ output: string }>()
 })
 
-describe('SchemaOutput', () => {
-  it('inferable', () => {
-    expectTypeOf<InferSchemaOutput<typeof zod>>().toEqualTypeOf<{ value: number }>()
-    expectTypeOf<InferSchemaOutput<typeof valibot>>().toEqualTypeOf<{ value: number }>()
-    expectTypeOf<InferSchemaOutput<typeof arktype>>().toEqualTypeOf<{ value: string }>()
-  })
+it('InferSchemaOutput', () => {
+  expectTypeOf<InferSchemaOutput<typeof inputSchema>>().toEqualTypeOf<{ input: string }>()
+  expectTypeOf<InferSchemaOutput<typeof outputSchema>>().toEqualTypeOf<{ output: number }>()
 })
 
-describe('type', () => {
-  it('without map', () => {
-    const schema = type<string>()
+describe('MergedSchema', () => {
+  it('merges two schemas', () => {
+    type Schema1 = Schema<{ schema1: number }, { schema1: string }>
+    type Schema2 = Schema<{ schema2: string }, { schema2: number }>
 
-    expectTypeOf<InferSchemaInput<typeof schema>>().toEqualTypeOf<string>()
-    expectTypeOf<InferSchemaOutput<typeof schema>>().toEqualTypeOf<string>()
+    type TMerged = MergedSchema<Schema1, Schema2>
+    expectTypeOf<TMerged>().toEqualTypeOf<
+      Schema<{ schema1: number } & { schema2: string }, { schema1: string } & { schema2: number }>
+    >()
   })
 
-  it('with map', () => {
-    const schema2 = type<string, number>((val) => {
-      expectTypeOf(val).toEqualTypeOf<string>()
+  it('merges three schemas', () => {
+    type Schema1 = Schema<{ schema1: number }, { schema1: string }>
+    type Schema2 = Schema<{ schema2: string }, { schema2: number }>
+    type Schema3 = Schema<{ schema3: string }, { schema3: boolean }>
 
-      return Number(val)
+    type TMerged = MergedSchema<Schema1, MergedSchema<Schema2, Schema3>>
+    expectTypeOf<TMerged>().toEqualTypeOf<
+      Schema<{ schema1: number } & { schema2: string } & { schema3: string }, { schema1: string } & { schema2: number } & { schema3: boolean }>
+    >()
+  })
+
+  it('works with zod, valibot, arktype', () => {
+    const schema1 = z.object({
+      schema1: z.number().transform(n => `${n}`),
+    })
+    const schema2 = v.object({
+      schema2: v.pipe(v.string(), v.transform(s => Number(s))),
+    })
+    const schema3 = arktypeType({
+      schema3: 'string',
     })
 
-    expectTypeOf<InferSchemaInput<typeof schema2>>().toEqualTypeOf<string>()
-    expectTypeOf<InferSchemaOutput<typeof schema2>>().toEqualTypeOf<number>()
+    type TMerged = MergedSchema<typeof schema1, MergedSchema<typeof schema2, typeof schema3>>
+    expectTypeOf<TMerged>().toEqualTypeOf<
+      Schema<{ schema1: number } & { schema2: string } & { schema3: string }, { schema1: string } & { schema2: number } & { schema3: string }>
+    >()
+  })
 
-    // @ts-expect-error - map is required when TInput !== TOutput
-    type<string, number>()
+  it('works with InferSchemaInput and InferSchemaOutput', () => {
+    type Schema1 = Schema<{ schema1: number }, { schema1: string }>
+    type Schema2 = Schema<{ schema2: string }, { schema2: number }>
+    type Schema3 = Schema<{ schema3: string }, { schema3: boolean }>
 
-    // @ts-expect-error - output not match number
-    type<string, number>(() => '123')
+    type TMerged = MergedSchema<Schema1, MergedSchema<Schema2, Schema3>>
+    expectTypeOf<InferSchemaInput<TMerged>>().toEqualTypeOf<{ schema1: number } & { schema2: string } & { schema3: string }>()
+    expectTypeOf<InferSchemaOutput<TMerged>>().toEqualTypeOf<{ schema1: string } & { schema2: number } & { schema3: boolean }>()
   })
 })

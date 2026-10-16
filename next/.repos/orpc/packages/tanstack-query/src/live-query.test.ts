@@ -1,5 +1,13 @@
-import { queryClient } from '../tests/shared'
-import { experimental_liveQuery as liveQuery } from './live-query'
+import { QueryClient } from '@tanstack/query-core'
+import { liveQuery } from './live-query'
+
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    },
+  },
+})
 
 beforeEach(() => {
   queryClient.clear()
@@ -77,7 +85,7 @@ describe('liveQuery', async () => {
       queryKey: ['live-query'],
       signal: new AbortController().signal,
       client: queryClient,
-    } as any)).rejects.toThrowError(
+    } as any)).rejects.toThrow(
       'Live query for ["live-query"] did not yield any data. Ensure the query function returns an AsyncIterable with at least one chunk.',
     )
   })

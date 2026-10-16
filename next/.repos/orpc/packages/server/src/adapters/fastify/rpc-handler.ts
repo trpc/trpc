@@ -1,33 +1,25 @@
 import type { Context } from '../../context'
 import type { Router } from '../../router'
-import type { StandardRPCHandlerOptions } from '../standard'
+import type { RPCHandlerCodecOptions, StandardHandlerOptions } from '../standard'
 import type { FastifyHandlerOptions } from './handler'
-import { StrictGetMethodPlugin } from '../../plugins'
-import { StandardRPCHandler } from '../standard'
+import { RPCHandlerCodec, StandardHandler } from '../standard'
 import { FastifyHandler } from './handler'
 
-export interface RPCHandlerOptions<T extends Context> extends FastifyHandlerOptions<T>, StandardRPCHandlerOptions<T> {
-  /**
-   * Enables or disables the StrictGetMethodPlugin.
-   *
-   * @default true
-   */
-  strictGetMethodPluginEnabled?: boolean
-}
+export interface RPCHandlerOptions<T extends Context>
+  extends FastifyHandlerOptions<T>, StandardHandlerOptions<T>, RPCHandlerCodecOptions<T> {}
 
 /**
- * RPC Handler for Fastify Server
+ * Serves an oRPC router over the RPC protocol inside a Fastify server.
  *
- * @see {@link https://orpc.dev/docs/rpc-handler RPC Handler Docs}
- * @see {@link https://orpc.dev/docs/adapters/http HTTP Adapter Docs}
+ * @see {@link https://orpc.dev/docs/adapters/fastify | Fastify Adapter}
  */
 export class RPCHandler<T extends Context> extends FastifyHandler<T> {
-  constructor(router: Router<any, T>, options: NoInfer<RPCHandlerOptions<T>> = {}) {
-    if (options.strictGetMethodPluginEnabled ?? true) {
-      options.plugins ??= []
-      options.plugins.push(new StrictGetMethodPlugin())
-    }
-
-    super(new StandardRPCHandler(router, options), options)
+  constructor(
+    router: Router<T>,
+    options: NoInfer<RPCHandlerOptions<T>> = {},
+  ) {
+    const codec = new RPCHandlerCodec(router, options)
+    const handler = new StandardHandler(codec, options)
+    super(handler, options)
   }
 }

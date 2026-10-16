@@ -1,0 +1,249 @@
+---
+import { getCollection } from 'astro:content'
+import PageLayout from 'blume/components/layout/PageLayout.astro'
+import data from 'blume:data'
+
+export const prerender = true
+
+const { config } = data
+
+// With multiple content.sources, route ids carry a source prefix
+// ("filesystem:blog/…"), so join on entryId, which matches collection ids.
+const routeById = new Map(data.routes.map(route => [route.entryId, route.path]))
+
+interface Author {
+  name: string
+  role?: string
+  url?: string
+  avatar?: string
+}
+
+function normalizeAuthors(raw: unknown): Author[] {
+  if (!raw) {
+    return []
+  }
+  const list = Array.isArray(raw) ? raw : [raw]
+  return list.map(author =>
+    typeof author === 'string' ? { name: author } : (author as Author),
+  )
+}
+
+function readMinutes(body: string | undefined): number {
+  const words = (body ?? '').split(/\s+/).filter(Boolean).length
+  return Math.max(1, Math.round(words / 200))
+}
+
+const dateFormat = new Intl.DateTimeFormat('en-US', { dateStyle: 'long' })
+
+const posts = (await getCollection('docs'))
+  .filter(entry => entry.data.type === 'blog' && !entry.data.draft)
+  .map((entry) => {
+    const href = routeById.get(entry.id)
+    return {
+      href,
+      title: entry.data.title,
+      description: entry.data.description,
+      date: entry.data.date ? new Date(entry.data.date) : undefined,
+      tags: entry.data.search?.tags as string[] | undefined ?? [],
+      authors: normalizeAuthors(entry.data.authors),
+      minutes: readMinutes(entry.body),
+    }
+  })
+  .filter(post => post.href)
+  .sort((a, b) => Number(b.date ?? 0) - Number(a.date ?? 0))
+
+// Tabs come from the tags the posts actually use, most-used first.
+const tagCounts = new Map<string, number>()
+for (const post of posts) {
+  for (const tag of post.tags) {
+    tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1)
+  }
+}
+const tags = [...tagCounts.keys()]
+  .sort((a, b) => (tagCounts.get(b)! - tagCounts.get(a)!) || a.localeCompare(b))
+
+const feed = data.feeds.find(f => f.href.startsWith('/blog'))
+
+// schema.org JSON-LD: the index as a Blog with its posts, absolute when the
+// site URL is known (production); crawlers read JSON-LD from the body fine.
+const siteBase = (config.site ?? '').replace(/\/$/, '')
+const blogJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Blog',
+  'name': `${config.title} Blog`,
+  'url': `${siteBase}/blog`,
+  'description': 'News, announcements, and writing from the oRPC team.',
+  'blogPost': posts.map(post => ({
+    '@type': 'BlogPosting',
+    'headline': post.title,
+    'url': `${siteBase}${post.href}`,
+    ...(post.date ? { datePublished: post.date.toISOString() } : {}),
+  })),
+}
+---
+
+<PageLayout
+  site={{ title: config.title, description: config.description }}
+  logo={config.logo}
+  banner={config.banner}
+  analytics={config.analytics}
+  navigation={data.navigation}
+  favicon={config.favicon}
+  fontCssVars={data.fontCssVars}
+  themeMode={config.theme.mode}
+  searchEnabled={config.search.enabled}
+  siteUrl={config.site}
+  ogEnabled={config.og.enabled}
+  page={{ title: `Blog - ${config.title}`, description: 'News, announcements, and writing from the oRPC team.', route: '/blog' }}
+  x={config.x}
+>
+  <script
+    is:inline
+    type="application/ld+json"
+    set:html={JSON.stringify(blogJsonLd).replaceAll('<', '\\u003c')}
+  />
+  <section class="mx-auto w-full max-w-3xl px-6 py-12">
+    <h1 class="font-display text-3xl font-bold tracking-tight">Blog</h1>
+    <p class="mt-2 text-muted-foreground">
+      News, announcements, and writing from the oRPC team.
+    </p>
+
+    <div class="mt-10 mb-2 flex items-center justify-between gap-4 border-b border-border">
+      <nav
+        class="flex gap-6 overflow-x-auto overflow-y-hidden text-sm [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        aria-label="Blog tags"
+      >
+        <button
+          type="button"
+          data-blog-filter=""
+          class="-mb-px shrink-0 whitespace-nowrap border-b-2 border-foreground pb-3 font-medium text-foreground"
+        >
+          All articles
+        </button>
+        {
+          tags.map(tag => (
+            <button
+              type="button"
+              data-blog-filter={tag}
+              class="-mb-px shrink-0 whitespace-nowrap border-b-2 border-transparent pb-3 text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {tag}
+            </button>
+          ))
+        }
+      </nav>
+      {
+        feed && (
+          <a
+            href={feed.href}
+            title="RSS feed"
+            aria-label="RSS feed"
+            class="pb-3 text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M4 11a9 9 0 0 1 9 9" />
+              <path d="M4 4a16 16 0 0 1 16 16" />
+              <circle cx="5" cy="19" r="1" />
+            </svg>
+          </a>
+        )
+      }
+    </div>
+
+    <div class="divide-y divide-border">
+      {
+        posts.map(post => (
+          <a
+            href={post.href}
+            data-blog-card
+            data-tags={post.tags.join('|')}
+            class="group block py-7"
+          >
+            <p class="flex items-center gap-3 text-sm text-muted-foreground">
+              {post.date && (
+                <time datetime={post.date.toISOString()}>
+                  {dateFormat.format(post.date)}
+                </time>
+              )}
+              <span>·</span>
+              <span>{post.minutes} min read</span>
+              {post.tags.map(tag => (
+                <span class="rounded-blume border border-border px-2 py-0.5 text-xs font-medium whitespace-nowrap">
+                  {tag}
+                </span>
+              ))}
+            </p>
+            <h2 class="font-display mt-2 text-xl font-semibold tracking-tight transition-colors group-hover:text-accent">
+              {post.title}
+            </h2>
+            {post.description && (
+              <p class="mt-1.5 line-clamp-2 text-sm text-muted-foreground">
+                {post.description}
+              </p>
+            )}
+            {post.authors.length > 0 && (
+              <p class="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+                {post.authors[0]!.avatar && (
+                  <img
+                    src={post.authors[0]!.avatar}
+                    alt=""
+                    width="20"
+                    height="20"
+                    class="size-5 rounded-full"
+                    data-no-zoom
+                  />
+                )}
+                {post.authors.map(author => author.name).join(', ')}
+              </p>
+            )}
+          </a>
+        ))
+      }
+    </div>
+  </section>
+</PageLayout>
+
+<script>
+  // Astro's ClientRouter swaps the page body on soft navigation but runs this
+  // module only once per full load, so the buttons are re-resolved in `init`,
+  // which runs again after every swap.
+  function init(): void {
+    const buttons = document.querySelectorAll<HTMLButtonElement>('[data-blog-filter]')
+    const cards = document.querySelectorAll<HTMLElement>('[data-blog-card]')
+
+    for (const button of buttons) {
+      button.addEventListener('click', () => {
+        const active = button.dataset.blogFilter ?? ''
+
+        for (const other of buttons) {
+          const isActive = other === button
+          other.classList.toggle('border-foreground', isActive)
+          other.classList.toggle('font-medium', isActive)
+          other.classList.toggle('text-foreground', isActive)
+          other.classList.toggle('border-transparent', !isActive)
+          other.classList.toggle('text-muted-foreground', !isActive)
+        }
+
+        for (const card of cards) {
+          const cardTags = (card.dataset.tags ?? '').split('|')
+          const visible = !active || cardTags.includes(active)
+          card.style.display = visible ? '' : 'none'
+        }
+      })
+    }
+  }
+
+  init()
+  // Fires once the new body is in place and before any page scripts, so it
+  // covers every re-entry; on pages without the filter `init` finds nothing.
+  document.addEventListener('astro:after-swap', init)
+</script>

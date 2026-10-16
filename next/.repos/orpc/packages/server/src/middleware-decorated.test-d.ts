@@ -1,163 +1,116 @@
-import type { AnySchema, ErrorMap } from '@orpc/contract'
-import type { baseErrorMap, BaseMeta } from '../../contract/tests/shared'
-import type { CurrentContext } from '../tests/shared'
-import type { Context } from './context'
-import type { ORPCErrorConstructorMap } from './error'
-import type { Middleware, MiddlewareOutputFn } from './middleware'
+import type { ErrorMap, MergedErrorMap, ORPCErrorConstructorMap } from '@orpc/contract'
+import type { MergedContext, MergedInitialContext } from './context'
+import type { Middleware, MiddlewareDone } from './middleware'
 import type { DecoratedMiddleware } from './middleware-decorated'
-import type { Procedure } from './procedure'
 
-const decorated = {} as DecoratedMiddleware<
-  CurrentContext,
-  { extra: boolean },
-  { input1: string, input2: string },
-  { output: number },
-  ORPCErrorConstructorMap<typeof baseErrorMap>,
-  BaseMeta
->
+const errorMap = { BASE: { message: 'bad request' } } satisfies ErrorMap
 
 describe('DecoratedMiddleware', () => {
-  it('is a middleware', () => {
-    expectTypeOf(decorated).toMatchTypeOf<
-      Middleware<
-        CurrentContext,
-        { extra: boolean },
-        { input1: string, input2: string },
-        { output: number },
-        ORPCErrorConstructorMap<typeof baseErrorMap>,
-        BaseMeta
-      >
-    >()
-  })
+  const middleware = {} as DecoratedMiddleware<{ a: string }, { b: number }, { x: number }, { y: string }, typeof errorMap>
 
-  it('.mapInput', () => {
-    const mapped = decorated.mapInput((input: 'input') => ({ input1: input, input2: input }))
+  it('.adaptInput', () => {
+    const mapped = middleware.adaptInput((input: string) => ({ x: Number(input) }))
 
     expectTypeOf(mapped).toEqualTypeOf<
-      DecoratedMiddleware<
-        CurrentContext,
-        { extra: boolean },
-        'input',
-        { output: number },
-        ORPCErrorConstructorMap<typeof baseErrorMap>,
-        BaseMeta
-      >
+      DecoratedMiddleware<{ a: string }, { b: number }, string, { y: string }, typeof errorMap>
     >()
 
-    // @ts-expect-error - invalid map input return
-    decorated.mapInput((input: 'input') => ({ input: 123 }))
+    // @ts-expect-error result of adaptInput is invalid
+    middleware.adaptInput((input: string) => ({ x: 'invalid' }))
   })
 
-  describe('.concat', () => {
-    it('without map input', () => {
-      const applied = decorated.concat(({ context, next, path, procedure, errors, signal }, input: { input1: string }, output) => {
-        expectTypeOf(context).toEqualTypeOf<Omit<CurrentContext, 'extra'> & { extra: boolean }>()
-        expectTypeOf(path).toEqualTypeOf<readonly string[]>()
-        expectTypeOf(procedure).toEqualTypeOf<
-          Procedure<Context, Context, AnySchema, AnySchema, ErrorMap, BaseMeta>
-        >()
-        expectTypeOf(output).toEqualTypeOf<MiddlewareOutputFn<{ output: number }>>()
-        expectTypeOf(errors).toEqualTypeOf<ORPCErrorConstructorMap<typeof baseErrorMap>>()
-        expectTypeOf(signal).toEqualTypeOf<undefined | AbortSignal>()
+  it('.errors', () => {
+    const withErrors = middleware.errors({ FORBIDDEN: { message: 'forbidden' } })
 
-        return next({
-          context: {
-            extra2: true,
-          },
-        })
+    expectTypeOf(withErrors).toEqualTypeOf<
+      DecoratedMiddleware<{ a: string }, { b: number }, { x: number }, { y: string }, MergedErrorMap<typeof errorMap, { FORBIDDEN: { message: string } }>>
+    >()
+
+    // @ts-expect-error errors are invalid
+    middleware.errors({ FORBIDDEN: { data: 'invalid' } })
+  })
+
+  describe('.use', () => {
+    it('inline middleware', () => {
+      const decorated = middleware.use(({ next, errors, context }, input, done) => {
+        expectTypeOf(input).toEqualTypeOf<{ x: number }>()
+        expectTypeOf(done).toEqualTypeOf<MiddlewareDone<{ y: string }>>()
+        expectTypeOf(errors).toEqualTypeOf<ORPCErrorConstructorMap<typeof errorMap>>()
+        expectTypeOf(context).toEqualTypeOf<MergedContext<{ a: string }, { b: number }>>()
+
+        return next({ context: { extra: true } })
       })
 
-      expectTypeOf(applied).toEqualTypeOf<
+      expectTypeOf(decorated).toEqualTypeOf<
         DecoratedMiddleware<
-          CurrentContext & Record<never, never>,
-          Omit<{ extra: boolean }, never> & { extra2: boolean },
-          { input1: string, input2: string },
-          { output: number },
-          ORPCErrorConstructorMap<typeof baseErrorMap>,
-          BaseMeta
+          { a: string },
+          MergedContext<{ b: number }, { extra: boolean }>,
+          { x: number },
+          { y: string },
+          typeof errorMap
         >
       >()
 
-      // @ts-expect-error --- invalid TInContext
-      decorated.concat({} as Middleware<{ auth: 'invalid' }, any, any, any, any, any>)
-      // @ts-expect-error --- input is not match
-      decorated.concat(({ next }, input: { invalid: string }) => next({}))
-      // @ts-expect-error --- output is not match
-      decorated.concat(({ next }, input, output: MiddlewareOutputFn<'invalid'>) => next({}))
-      // @ts-expect-error --- conflict context
-      decorated.concat(({ next }) => next({ context: { db: undefined } }))
-    })
-
-    it('with map input', () => {
-      const applied = decorated.concat(({ context, next, path, procedure, errors, signal }, input: { mapped: boolean }, output) => {
-        expectTypeOf(input).toEqualTypeOf<{ mapped: boolean }>()
-        expectTypeOf(context).toEqualTypeOf<Omit<CurrentContext, 'extra'> & { extra: boolean }>()
-        expectTypeOf(path).toEqualTypeOf<readonly string[]>()
-        expectTypeOf(procedure).toEqualTypeOf<
-          Procedure<Context, Context, AnySchema, AnySchema, ErrorMap, BaseMeta>
-        >()
-        expectTypeOf(output).toEqualTypeOf<MiddlewareOutputFn<{ output: number }>>()
-        expectTypeOf(errors).toEqualTypeOf<ORPCErrorConstructorMap<typeof baseErrorMap>>()
-        expectTypeOf(signal).toEqualTypeOf<undefined | AbortSignal>()
-
-        return next({
-          context: {
-            extra2: true,
-          },
-        })
-      }, (input: { input1: string }) => {
-        return { mapped: true }
+      // @ts-expect-error - input is invalid
+      void decorated.use(({ next, errors }, input: 'invalid', done) => {
+        return next()
       })
 
-      expectTypeOf(applied).toEqualTypeOf<
-        DecoratedMiddleware<
-          CurrentContext & Record<never, never>,
-          Omit<{ extra: boolean }, never> & { extra2: boolean },
-          { input1: string, input2: string },
-          { output: number },
-          ORPCErrorConstructorMap<typeof baseErrorMap>,
-          BaseMeta
-        >
-      >()
+      // @ts-expect-error - output is invalid
+      void decorated.use(({ next, errors }, input, done: MiddlewareDone<'invalid'>) => {
+        return next()
+      })
 
-      decorated.concat(
-        ({ context, next, path, procedure, errors, signal }, input: { mapped: boolean }, output) => next(),
-        // @ts-expect-error --- invalid map input
-        input => ({ invalid: true }),
-      )
+      // @ts-expect-error - conflict with TInContext
+      void decorated.use(({ next, errors }) => {
+        return next({ context: { a: true } })
+      })
 
-      // @ts-expect-error --- invalid TInContext
-      decorated.concat({} as Middleware<{ auth: 'invalid' }, any, any, any, any, any>, () => { })
-      // @ts-expect-error --- input is not match
-      decorated.concat(({ next }, input: { mapped: boolean }) => next({}), (input: { invalid: string }) => ({ mapped: true }))
-      // @ts-expect-error --- output is not match
-      decorated.concat(({ next }, input, output: MiddlewareOutputFn<'invalid'>) => next({}), input => ({ mapped: true }))
-      // @ts-expect-error --- conflict context
-      decorated.concat(({ next }) => next({ context: { db: undefined } }), () => { })
+      // @ts-expect-error - conflict with current TOutContext
+      void decorated.use(({ next, errors }) => {
+        return next({ context: { b: 'invalid' } })
+      })
     })
 
-    it('with TInContext', () => {
-      const mid = {} as Middleware<{ cacheable?: boolean } & Record<never, never>, Record<never, never>, unknown, any, ORPCErrorConstructorMap<any>, BaseMeta>
+    it('outline middleware', () => {
+      const middleware2 = {} as Middleware<{ a: string, b: number, g?: number }, { extra: boolean }, unknown, any, { SOME_ERROR: { message: string } }>
 
-      expectTypeOf(decorated.concat(mid)).toEqualTypeOf<
+      expectTypeOf(middleware.use(middleware2)).toEqualTypeOf<
         DecoratedMiddleware<
-          CurrentContext & Omit<{ cacheable?: boolean } & Record<never, never>, 'db' | 'auth' | 'extra'>,
-          Omit<{ extra: boolean }, never> & Record<never, never>,
-          { input1: string, input2: string },
-          { output: number },
-          ORPCErrorConstructorMap<typeof baseErrorMap>,
-          BaseMeta
+          MergedInitialContext<{ a: string }, { b: number }, { a: string, b: number, g?: number }>,
+          MergedContext<{ b: number }, { extra: boolean }>,
+          { x: number },
+          { y: string },
+          MergedErrorMap<{ SOME_ERROR: { message: string } }, typeof errorMap>
         >
       >()
 
-      expectTypeOf(decorated.concat(mid, () => { })).toEqualTypeOf<
+      // @ts-expect-error - input is invalid
+      void middleware.use({} as Middleware<{ a: string, b: number }, object, 'invalid', any, object>)
+
+      // @ts-expect-error - output is invalid
+      void middleware.use({} as Middleware<{ a: string, b: number }, object, unknown, 'invalid', object>)
+
+      // @ts-expect-error - TInContext is not satisfy expected
+      void middleware.use({} as Middleware<{ something: string }, object, unknown, any, object>)
+
+      // @ts-expect-error - conflict with current TInContext
+      void middleware.use({} as Middleware<{ b: number }, { a: true }, unknown, any, object>)
+
+      // @ts-expect-error - conflict with current TOutContext
+      void middleware.use({} as Middleware<{ a: string }, { b: 'invalid' }, unknown, any, object>)
+    })
+
+    it('low-priority mid\'s errors and ignore conflicts', () => {
+      const middleware2 = {} as Middleware<object, object, unknown, any, { BASE: { message: 'CONFLICT' }, EXTRA: { message: string } }>
+
+      expectTypeOf(middleware.use(middleware2)).toEqualTypeOf<
         DecoratedMiddleware<
-          CurrentContext & Omit<{ cacheable?: boolean } & Record<never, never>, 'db' | 'auth' | 'extra'>,
-          Omit<{ extra: boolean }, never> & Record<never, never>,
-          { input1: string, input2: string },
-          { output: number },
-          ORPCErrorConstructorMap<typeof baseErrorMap>,
-          BaseMeta
+          { a: string },
+          { b: number },
+          { x: number },
+          { y: string },
+          MergedErrorMap<{ EXTRA: { message: string } }, typeof errorMap>
         >
       >()
     })

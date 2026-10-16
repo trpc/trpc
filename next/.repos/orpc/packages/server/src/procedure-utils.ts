@@ -1,47 +1,81 @@
-import type { ClientOptions, ClientPromiseResult } from '@orpc/client'
-import type { AnyContractProcedure, AnySchema, ErrorFromErrorMap, ErrorMap, InferSchemaInput, InferSchemaOutput, Meta } from '@orpc/contract'
-import type { MaybeOptionalOptions } from '@orpc/shared'
+import type { ClientOptions } from '@orpc/client'
+import type { AnySchema, ErrorMap, InferSchemaInput, InferSchemaOutput, ORPCErrorFromErrorMap, ProcedureContract } from '@orpc/contract'
+import type { PromiseWithError, ThrowableError } from '@orpc/shared'
 import type { Context } from './context'
-import type { Lazy, Lazyable } from './lazy'
+import type { Lazyable } from './lazy'
 import type { AnyProcedure } from './procedure'
-import type { CreateProcedureClientOptions } from './procedure-client'
-import { resolveMaybeOptionalOptions } from '@orpc/shared'
-import { getLazyMeta, lazy, unlazy } from './lazy'
-import { isProcedure, Procedure } from './procedure'
+import type { ProcedureClientOptions } from './procedure-client'
+import { Lazy, unlazy } from './lazy'
+import { Procedure } from './procedure'
 import { createProcedureClient } from './procedure-client'
 
-export function createAssertedLazyProcedure(lazied: Lazy<any>): Lazy<AnyProcedure> {
-  const lazyProcedure = lazy(async () => {
-    const { default: maybeProcedure } = await unlazy(lazied)
+export function createGuardedProcedureLazy(lazy: Lazy<unknown>): Lazy<AnyProcedure> {
+  const guarded = new Lazy({
+    ...lazy['~orpc'],
+    async loader() {
+      const { default: maybeProcedure } = await unlazy(lazy)
 
-    if (!isProcedure(maybeProcedure)) {
-      throw new Error(`
-            Expected a lazy<procedure> but got lazy<unknown>.
-            This should be caught by TypeScript compilation.
-            Please report this issue if this makes you feel uncomfortable.
+      if (!(maybeProcedure instanceof Procedure)) {
+        throw new TypeError(`
+          Expected a lazy<procedure> but got lazy<unknown>.
+          This should be caught by TypeScript compilation.
+          Please report this issue if you think this is a bug.
         `)
-    }
+      }
 
-    return { default: maybeProcedure }
-  }, getLazyMeta(lazied))
+      return { default: maybeProcedure }
+    },
+  })
 
-  return lazyProcedure
+  return guarded
 }
 
 /**
  * Create a new procedure that ensure the contract is applied to the procedure.
+ *
+ * .input/.output/.handler mismatches are already caught by the `implementer.router`,
+ * but .errors (in case implemented procedure error map is more than enough) and .meta cannot be
+ * validated that way - so they must be overridden here to ensure the client always sees what the contract defines.
  */
-export function createContractedProcedure(procedure: AnyProcedure, contract: AnyContractProcedure): AnyProcedure {
+export function createContractProcedure<
+  TInitialContext extends Context,
+  TInjectedContext extends Context,
+  TInputSchema extends AnySchema,
+  TOutputSchema extends AnySchema,
+  TErrorMap extends ErrorMap,
+>(
+  procedure: Procedure<TInitialContext, TInjectedContext, TInputSchema, TOutputSchema, any>,
+  contract: ProcedureContract<any, any, TErrorMap>,
+): Procedure<TInitialContext, TInjectedContext, TInputSchema, TOutputSchema, TErrorMap> {
   return new Procedure({
     ...procedure['~orpc'],
     errorMap: contract['~orpc'].errorMap,
-    route: contract['~orpc'].route,
     meta: contract['~orpc'].meta,
-  })
+    metaPlugins: contract['~orpc'].metaPlugins,
+  }) as any
 }
 
+export type CallOptions<
+  TInitialContext extends Context,
+  TOutputSchema extends AnySchema,
+  TErrorMap extends ErrorMap,
+>
+  = & ProcedureClientOptions<TInitialContext, TOutputSchema, TErrorMap, object>
+    & Omit<ClientOptions<object>, 'context'>
+
+export type CallRest<
+  TInitialContext extends Context,
+  TInputSchema extends AnySchema,
+  TOutputSchema extends AnySchema,
+  TErrorMap extends ErrorMap,
+> = object extends CallOptions<TInitialContext, TOutputSchema, TErrorMap>
+  ? undefined extends InferSchemaInput<TInputSchema>
+    ? [input?: InferSchemaInput<TInputSchema>, options?: CallOptions<TInitialContext, TOutputSchema, TErrorMap>]
+    : [input: InferSchemaInput<TInputSchema>, options?: CallOptions<TInitialContext, TOutputSchema, TErrorMap>]
+  : [input: InferSchemaInput<TInputSchema>, options: CallOptions<TInitialContext, TOutputSchema, TErrorMap>]
+
 /**
- * Directly call a procedure without creating a client.
+ * Quickly call a procedure without creating a client.
  *
  * @example
  * ```ts
@@ -49,26 +83,19 @@ export function createContractedProcedure(procedure: AnyProcedure, contract: Any
  * const output = await call(getting, 'input', { context: { db: 'postgres' } })
  * ```
  *
+ * @see {@link https://orpc.dev/docs/client/server-side#one-off-calls | Server-Side Clients - One-Off Calls}
  */
 export function call<
   TInitialContext extends Context,
   TInputSchema extends AnySchema,
   TOutputSchema extends AnySchema,
   TErrorMap extends ErrorMap,
-  TMeta extends Meta,
 >(
-  procedure: Lazyable<Procedure<TInitialContext, any, TInputSchema, TOutputSchema, TErrorMap, TMeta>>,
-  input: InferSchemaInput<TInputSchema>,
-  ...rest: MaybeOptionalOptions<
-    CreateProcedureClientOptions<
-      TInitialContext,
-      TOutputSchema,
-      TErrorMap,
-      TMeta,
-      Record<never, never>
-    > & Omit<ClientOptions<Record<never, never>>, 'context'>
-  >
-): ClientPromiseResult<InferSchemaOutput<TOutputSchema>, ErrorFromErrorMap<TErrorMap>> {
-  const options = resolveMaybeOptionalOptions(rest)
-  return createProcedureClient(procedure, options)(input, options)
+  lazyableProcedure: Lazyable<Procedure<TInitialContext, any, TInputSchema, TOutputSchema, TErrorMap>>,
+  ...[
+    input = undefined as InferSchemaInput<TInputSchema>,
+    options = {} as CallOptions<TInitialContext, TOutputSchema, TErrorMap>,
+  ]: CallRest<TInitialContext, TInputSchema, TOutputSchema, TErrorMap>
+): PromiseWithError<InferSchemaOutput<TOutputSchema>, ORPCErrorFromErrorMap<TErrorMap> | ThrowableError> {
+  return createProcedureClient(lazyableProcedure, options)(input, options)
 }

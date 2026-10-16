@@ -49,19 +49,31 @@ describe('createSafeClient', () => {
     expect(client.ping).toHaveBeenCalledWith('input')
   })
 
+  it('returns strictly equal client on repeated access', () => {
+    expect(safeClient.ping).toBe(safeClient.ping)
+    expect(safeClient.nested).toBe(safeClient.nested)
+    expect(safeClient.nested.pong).toBe(safeClient.nested.pong)
+    expect(safeClient.nested.pong).not.toBe(safeClient.ping)
+
+    expect(createSafeClient(client)).not.toBe(safeClient)
+  })
+
   it('not proxy on non-object or symbol properties', () => {
     expect(safeClient.invalid).toBe('invalid')
     expect(safeClient[Symbol('test')]).toEqual(undefined)
     expect(safeClient.nested[Symbol('test')]).toEqual(undefined)
   })
 
-  it('not proxy on unwrap keys', () => {
-    expect(() => String(safeClient)).not.toThrow()
-    expect(() => `${safeClient}`).not.toThrow()
-    expect(JSON.stringify({ safeClient })).toEqual('{}')
-    expect(typeof safeClient.bind).toEqual('function')
+  it('not recursive on unwrap keys', async () => {
+    expect(safeClient.then).toBeUndefined()
+    expect(await safeClient).toBe(safeClient)
+    expect(safeClient.call).toBe(Function.prototype.call)
+    expect(safeClient.apply).toBe(Function.prototype.apply)
 
-    expect(client.ping).not.toBeCalled()
-    expect(client.nested.pong).not.toBeCalled()
+    client.ping.mockResolvedValue(42)
+    const result = await safeClient.ping.call(undefined, 'input')
+    expect(result.error).toBeNull()
+    expect(result.data).toBe(42)
+    expect(client.ping).toHaveBeenCalledWith('input')
   })
 })

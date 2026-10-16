@@ -1,68 +1,42 @@
-import type { AnySchema, ContractProcedure, ErrorMap, MergedErrorMap, Schema } from '@orpc/contract'
-import type { OmitChainMethodDeep } from '@orpc/shared'
-import type { baseErrorMap, BaseMeta, inputSchema, outputSchema } from '../../contract/tests/shared'
-import type { CurrentContext, InitialContext } from '../tests/shared'
-import type { Builder } from './builder'
-import type { BuilderWithMiddlewares, ProcedureBuilder, ProcedureBuilderWithInput, ProcedureBuilderWithInputOutput, ProcedureBuilderWithOutput, RouterBuilder } from './builder-variants'
-import type { Context } from './context'
-import type { ORPCErrorConstructorMap } from './error'
+import type { MergedErrorMap, MergedSchema, MetaPlugin, ORPCErrorConstructorMap, Schema } from '@orpc/contract'
+import type { BuilderWithInput, BuilderWithInputOutput, BuilderWithMiddlewares, BuilderWithOutput } from './builder-variants'
+import type { MergedContext, MergedInitialContext } from './context'
 import type { Lazy } from './lazy'
-import type { Middleware, MiddlewareOutputFn } from './middleware'
+import type { Middleware, MiddlewareDone } from './middleware'
+import type { DecoratedMiddleware } from './middleware-decorated'
 import type { Procedure } from './procedure'
 import type { DecoratedProcedure } from './procedure-decorated'
-import type { EnhancedRouter } from './router-utils'
-import { generalSchema } from '../../contract/tests/shared'
-import { router } from '../tests/shared'
+import type { AugmentedRouterWithMiddlewares } from './router-utils'
+import { expectTypeOf } from 'vitest'
+import { z } from 'zod'
 
-const generalBuilder = {} as Builder<
-  InitialContext,
-  CurrentContext,
-    typeof inputSchema,
-    typeof outputSchema,
-    typeof baseErrorMap,
-    BaseMeta
->
+const errorMap = {
+  BASE: {
+    data: z.object({ id: z.string() }),
+    message: 'base',
+  },
+}
+
+const schema1 = z.object({ schema1: z.number().transform(n => `${n}`) })
+const schema2 = z.object({ schema2: z.number().transform(n => `${n}`) })
 
 describe('BuilderWithMiddlewares', () => {
-  const builder = {} as BuilderWithMiddlewares<
-    InitialContext,
-    CurrentContext,
-      typeof inputSchema,
-      typeof outputSchema,
-      typeof baseErrorMap,
-      BaseMeta
-  >
+  const builder = {} as BuilderWithMiddlewares<{ auth: boolean }, { extra: boolean }, typeof errorMap>
 
-  it('backward compatibility', () => {
-    const expected = {} as OmitChainMethodDeep<
-            typeof generalBuilder,
-            '$config' | '$context' | '$meta' | '$route' | '$input' | 'middleware'
-    >
+  it('.meta', () => {
+    const plugin = { name: 'test', init: (m: any) => m }
+    expectTypeOf(builder.meta(plugin)).toEqualTypeOf<typeof builder>()
 
-    // expectTypeOf(builder).toMatchTypeOf(expected)
-    expectTypeOf<keyof typeof builder>().toEqualTypeOf<keyof typeof expected>()
-  })
-
-  it('is a contract procedure', () => {
-    expectTypeOf(builder).toMatchTypeOf<
-      ContractProcedure<
-          typeof inputSchema,
-          typeof outputSchema,
-          typeof baseErrorMap,
-          BaseMeta
-      >
-    >()
+    // @ts-expect-error - invalid meta
+    builder.meta({} as MetaPlugin<Schema<'invalid'>, any, any>)
   })
 
   it('.errors', () => {
-    expectTypeOf(builder.errors({ INVALID: { message: 'invalid' }, OVERRIDE: { message: 'override' } })).toEqualTypeOf<
+    expectTypeOf(builder.errors({ INVALID: { message: 'invalid' } })).toEqualTypeOf<
       BuilderWithMiddlewares<
-        InitialContext,
-        CurrentContext,
-        typeof inputSchema,
-        typeof outputSchema,
-        MergedErrorMap<typeof baseErrorMap, { INVALID: { message: string }, OVERRIDE: { message: string } }>,
-        BaseMeta
+        { auth: boolean },
+        { extra: boolean },
+        MergedErrorMap<typeof errorMap, { INVALID: { message: string } }>
       >
     >()
 
@@ -71,1200 +45,657 @@ describe('BuilderWithMiddlewares', () => {
   })
 
   describe('.use', () => {
-    it('without map input', () => {
-      const applied = builder.use(({ context, next, path, procedure, errors, signal }, input, output) => {
+    it('inline middleware', () => {
+      const decorated = builder.use(({ next, errors, context }, input, done) => {
         expectTypeOf(input).toEqualTypeOf<unknown>()
-        expectTypeOf(context).toEqualTypeOf<CurrentContext>()
-        expectTypeOf(path).toEqualTypeOf<readonly string[]>()
-        expectTypeOf(procedure).toEqualTypeOf<
-          Procedure<Context, Context, AnySchema, AnySchema, ErrorMap, BaseMeta>
-        >()
-        expectTypeOf(output).toEqualTypeOf<MiddlewareOutputFn<unknown>>()
-        expectTypeOf(errors).toEqualTypeOf<ORPCErrorConstructorMap<typeof baseErrorMap>>()
-        expectTypeOf(signal).toEqualTypeOf<undefined | InstanceType<typeof AbortSignal>>()
+        expectTypeOf(done).toEqualTypeOf<MiddlewareDone<unknown>>()
+        expectTypeOf(errors).toEqualTypeOf<ORPCErrorConstructorMap<typeof errorMap>>()
+        expectTypeOf(context).toEqualTypeOf<MergedContext<{ auth: boolean }, { extra: boolean }>>()
 
-        return next({
-          context: {
-            extra: true,
-          },
-        })
+        return next({ context: { more: 'yes' } })
       })
 
-      expectTypeOf(applied).toEqualTypeOf<
+      expectTypeOf(decorated).toEqualTypeOf<
         BuilderWithMiddlewares<
-        InitialContext & Record<never, never>,
-        Omit<CurrentContext, 'extra'> & { extra: boolean },
-        typeof inputSchema,
-        typeof outputSchema,
-        typeof baseErrorMap,
-        BaseMeta
+          { auth: boolean },
+          { extra: boolean } & { more: string },
+          typeof errorMap
         >
       >()
 
-      // @ts-expect-error --- invalid TInContext
-      builder.use({} as Middleware<{ auth: 'invalid' }, any, any, any, any, any>)
-      // @ts-expect-error --- input is not match
-      builder.use(({ next }, input: 'invalid') => next({}))
-      // @ts-expect-error --- output is not match
-      builder.use(({ next }, input, output: MiddlewareOutputFn<'invalid'>) => next({}))
-      // @ts-expect-error --- conflict context
-      builder.use(({ next }) => next({ context: { db: undefined } }))
+      // @ts-expect-error - input is invalid
+      void builder.use(({ next }, input: 'invalid') => next({}))
+
+      // @ts-expect-error - output is invalid
+      void builder.use(({ next }, input, done: MiddlewareDone<'invalid'>) => next({}))
+
+      // @ts-expect-error - conflict with current TInitialContext
+      void builder.use(({ next }) => next({ context: { auth: 'invalid' } }))
+
+      // @ts-expect-error - conflict with current TInjectedContext
+      void builder.use(({ next }) => next({ context: { extra: 'invalid' } }))
     })
 
-    it('with TInContext', () => {
-      const mid = {} as Middleware<{ cacheable?: boolean } & Record<never, never>, Record<never, never>, unknown, unknown, ORPCErrorConstructorMap<any>, BaseMeta>
+    it('outline middleware', () => {
+      const middleware = {} as Middleware<{ auth: boolean, extra: boolean, g?: boolean }, { more: string }, unknown, any, { SOME_ERROR: { message: string } }>
 
-      expectTypeOf(builder.use(mid)).toEqualTypeOf<
+      expectTypeOf(builder.use(middleware)).toEqualTypeOf<
         BuilderWithMiddlewares<
-        InitialContext & { cacheable?: boolean },
-        Omit<CurrentContext, never> & Record<never, never>,
-        typeof inputSchema,
-        typeof outputSchema,
-        typeof baseErrorMap,
-        BaseMeta
+          MergedInitialContext<{ auth: boolean }, { extra: boolean }, { auth: boolean, extra: boolean, g?: boolean }>,
+          MergedContext<{ extra: boolean }, { more: string }>,
+          MergedErrorMap<{ SOME_ERROR: { message: string } }, typeof errorMap>
+        >
+      >()
+
+      // @ts-expect-error - input is invalid
+      void middleware.use({} as Middleware<object, object, 'invalid', any, object>)
+
+      // @ts-expect-error - output is invalid
+      void middleware.use({} as Middleware<object, object, unknown, 'invalid', object>)
+
+      // @ts-expect-error - TInContext is not satisfy expected
+      void middleware.use({} as Middleware<{ does_not_satisfy: string }, object, unknown, any, object>)
+
+      // @ts-expect-error - conflict with TInitialContext
+      void builder.use({} as Middleware<object, { auth: 'invalid' }, unknown, any, object>)
+
+      // @ts-expect-error - conflict with TInjectedContext
+      void builder.use({} as Middleware<object, { extra: 'invalid' }, unknown, any, object>)
+    })
+
+    it('low-priority mid\'s errors and ignore conflicts', () => {
+      const middleware = {} as Middleware<{ auth: boolean, extra: boolean }, object, unknown, any, { BASE: { message: 'CONFLICT' }, EXTRA: { message: string } }>
+
+      expectTypeOf(builder.use(middleware)).toEqualTypeOf<
+        BuilderWithMiddlewares<
+          { auth: boolean },
+          { extra: boolean },
+          MergedErrorMap<{ EXTRA: { message: string } }, typeof errorMap>
         >
       >()
     })
   })
 
-  it('.meta', () => {
-    expectTypeOf(builder.meta({ log: true })).toEqualTypeOf<
-      BuilderWithMiddlewares<
-        InitialContext,
-        CurrentContext,
-        typeof inputSchema,
-        typeof outputSchema,
-        typeof baseErrorMap,
-        BaseMeta
-      >
-    >()
+  describe('.middleware', () => {
+    it('pure', () => {
+      // default expected TOutput should = any to ensure this middleware can be used in any procedure
 
-    // @ts-expect-error - invalid meta
-    builder.meta({ meta: 'INVALID' })
-  })
+      expectTypeOf(builder.middleware(({ next, context, errors }, input, done) => {
+        expectTypeOf(input).toEqualTypeOf<unknown>()
+        expectTypeOf(done).toEqualTypeOf<MiddlewareDone<any>>()
+        expectTypeOf(context).toEqualTypeOf<MergedContext<{ auth: boolean }, { extra: boolean }>>()
+        expectTypeOf(errors).toEqualTypeOf<ORPCErrorConstructorMap<typeof errorMap>>()
 
-  it('.route', () => {
-    expectTypeOf(builder.route({ method: 'GET' })).toEqualTypeOf<
-      ProcedureBuilder<
-        InitialContext,
-        CurrentContext,
-        typeof inputSchema,
-        typeof outputSchema,
-        typeof baseErrorMap,
-        BaseMeta
-      >
-    >()
+        return next()
+      })).toEqualTypeOf<
+        DecoratedMiddleware<{ auth: boolean }, { extra: boolean }, unknown, any, typeof errorMap>
+      >()
+    })
 
-    // @ts-expect-error - invalid method
-    builder.route({ method: 'INVALID' })
+    it('with TOutContext', () => {
+      expectTypeOf(builder.middleware(({ next }) => next({ context: { more: 'yes' } }))).toEqualTypeOf<
+        DecoratedMiddleware<{ auth: boolean }, MergedContext<{ extra: boolean }, { more: string }>, unknown, any, typeof errorMap>
+      >()
+
+      // @ts-expect-error - conflict with TInitialContext
+      void builder.middleware(({ next }) => next({ context: { auth: 'invalid' } }))
+
+      // @ts-expect-error - conflict with TInjectedContext
+      void builder.middleware(({ next }) => next({ context: { extra: 'invalid' } }))
+    })
+
+    it('with expected input', () => {
+      expectTypeOf(builder.middleware(({ next }, input: { schema1: number }) => next({}))).toEqualTypeOf<
+        DecoratedMiddleware<{ auth: boolean }, { extra: boolean }, { schema1: number }, any, typeof errorMap>
+      >()
+    })
+
+    it('with expected output', () => {
+      expectTypeOf(builder.middleware(({ next }, input, done: MiddlewareDone<{ schema2: number }>) => next({}))).toEqualTypeOf<
+        DecoratedMiddleware<{ auth: boolean }, { extra: boolean }, unknown, { schema2: number }, typeof errorMap>
+      >()
+    })
   })
 
   it('.input', () => {
-    expectTypeOf(builder.input(generalSchema)).toEqualTypeOf<
-      ProcedureBuilderWithInput<
-        InitialContext,
-        CurrentContext,
-                typeof generalSchema,
-                typeof outputSchema,
-                typeof baseErrorMap,
-                BaseMeta
-      >
+    expectTypeOf(builder.input(schema1)).toEqualTypeOf<
+      BuilderWithInput<{ auth: boolean }, { extra: boolean }, typeof schema1, typeof errorMap>
     >()
 
-    // @ts-expect-error - schema is invalid
+    // @ts-expect-error - invalid schema
     builder.input({})
   })
 
   it('.output', () => {
-    expectTypeOf(builder.output(generalSchema)).toEqualTypeOf<
-      ProcedureBuilderWithOutput<
-        InitialContext,
-        CurrentContext,
-                typeof inputSchema,
-                typeof generalSchema,
-                typeof baseErrorMap,
-                BaseMeta
-      >
+    expectTypeOf(builder.output(schema2)).toEqualTypeOf<
+      BuilderWithOutput<{ auth: boolean }, { extra: boolean }, typeof schema2, typeof errorMap>
     >()
 
-    // @ts-expect-error - schema is invalid
+    // @ts-expect-error - invalid schema
     builder.output({})
   })
 
-  it('.handler', () => {
-    const procedure = builder.handler(({ input, context, procedure, path, signal, errors }) => {
-      expectTypeOf(input).toEqualTypeOf<unknown>()
-      expectTypeOf(context).toEqualTypeOf<CurrentContext>()
-      expectTypeOf(path).toEqualTypeOf<readonly string[]>()
-      expectTypeOf(signal).toEqualTypeOf<undefined | InstanceType<typeof AbortSignal>>()
-      expectTypeOf(procedure).toEqualTypeOf<
-        Procedure<Context, Context, AnySchema, AnySchema, ErrorMap, BaseMeta>
+  describe('.handler', () => {
+    it('simple', () => {
+      expectTypeOf(builder.handler(async ({ errors, context }, input) => {
+        expectTypeOf(errors).toEqualTypeOf<ORPCErrorConstructorMap<typeof errorMap>>()
+        expectTypeOf(context).toEqualTypeOf<MergedContext<{ auth: boolean }, { extra: boolean }>>()
+        expectTypeOf(input).toEqualTypeOf<unknown>()
+
+        return 'out'
+      })).toEqualTypeOf<
+        DecoratedProcedure<
+          { auth: boolean },
+          { extra: boolean },
+          Schema<void, unknown>,
+          Schema<string>,
+          typeof errorMap
+        >
       >()
-      expectTypeOf(errors).toEqualTypeOf<ORPCErrorConstructorMap<typeof baseErrorMap>>()
-      expectTypeOf(signal).toEqualTypeOf<undefined | InstanceType<typeof AbortSignal>>()
-
-      return { output: 456 }
     })
-
-    expectTypeOf(procedure).toMatchTypeOf<
-      DecoratedProcedure<
-        InitialContext,
-        CurrentContext,
-        typeof inputSchema,
-        Schema<{ output: number }, { output: number }>,
-        typeof baseErrorMap,
-        BaseMeta
-      >
-    >()
-  })
-
-  it('.prefix', () => {
-    expectTypeOf(builder.prefix('/test')).toEqualTypeOf<
-      RouterBuilder<InitialContext, CurrentContext, typeof baseErrorMap, BaseMeta>
-    >()
-
-    // @ts-expect-error - invalid prefix
-    builder.prefix(123)
-  })
-
-  it('.tag', () => {
-    expectTypeOf(builder.tag('test', 'test2')).toEqualTypeOf<
-      RouterBuilder<InitialContext, CurrentContext, typeof baseErrorMap, BaseMeta>
-    >()
   })
 
   it('.router', () => {
+    const router = {
+      ping: {} as Procedure<{ auth: boolean, extra: boolean }, object, Schema<void, unknown>, Schema<unknown>, object>,
+      ping2: {} as Procedure<{ auth: boolean, extra: boolean, something?: boolean }, object, Schema<void, unknown>, Schema<unknown>, object>,
+    }
+
     expectTypeOf(builder.router(router)).toEqualTypeOf<
-      EnhancedRouter<typeof router, InitialContext, CurrentContext, typeof baseErrorMap>
+      AugmentedRouterWithMiddlewares<typeof router, { auth: boolean }, { extra: boolean }, typeof errorMap>
     >()
 
     builder.router({
-      // @ts-expect-error - initial context is not match
-      ping: {} as Procedure<{ invalid: true }, any, any, any, any, any>,
-    })
-
-    builder.router({
-      // @ts-expect-error - meta def is not match
-      ping: {} as Procedure<
-        any,
-        any,
-        any,
-        any,
-        any,
-        { invalid: true }
-      >,
+      // @ts-expect-error - extra is invalid
+      ping: {} as Procedure<{ auth: boolean, extra: 'invalid' }, object, Schema<void, unknown>, Schema<unknown>, object>,
+      // @ts-expect-error - something is required but missing in builder
+      ping2: {} as Procedure<{ auth: boolean, something: boolean }, object, Schema<void, unknown>, Schema<unknown>, object>,
     })
   })
 
   it('.lazy', () => {
-    expectTypeOf(builder.lazy(() => Promise.resolve({ default: router }))).toEqualTypeOf<
-      EnhancedRouter<Lazy<typeof router>, InitialContext, CurrentContext, typeof baseErrorMap>
+    const router = {
+      ping: {} as Procedure<{ auth: boolean, extra: boolean }, object, Schema<void, unknown>, Schema<unknown>, object>,
+      ping2: {} as Procedure<{ auth: boolean, extra: boolean, something?: boolean }, object, Schema<void, unknown>, Schema<unknown>, object>,
+    }
+
+    expectTypeOf(builder.lazy(async () => ({ default: router }))).toEqualTypeOf<
+      Lazy<AugmentedRouterWithMiddlewares<typeof router, { auth: boolean }, { extra: boolean }, typeof errorMap>>
     >()
 
-    // @ts-expect-error - initial context is not match
-    builder.lazy(() => Promise.resolve({
+    // @ts-expect-error - extra is invalid and something is required but missing in builder
+    builder.lazy(async () => ({
       default: {
-        ping: {} as Procedure<{ invalid: true }, any, any, any, any, any>,
-      },
-    }))
-
-    // @ts-expect-error - meta def is not match
-    builder.lazy(() => Promise.resolve({
-      default: {
-        ping: {} as Procedure<
-          any,
-          any,
-          any,
-          any,
-          any,
-          { invalid: true }
-        >,
+        ping: {} as Procedure<{ auth: boolean, extra: 'invalid' }, object, Schema<void, unknown>, Schema<unknown>, object>,
+        ping2: {} as Procedure<{ auth: boolean, something: boolean }, object, Schema<void, unknown>, Schema<unknown>, object>,
       },
     }))
   })
 })
 
-describe('ProcedureBuilder', () => {
-  const builder = {} as ProcedureBuilder<
-    InitialContext,
-    CurrentContext,
-    typeof inputSchema,
-    typeof outputSchema,
-    typeof baseErrorMap,
-    BaseMeta
-  >
+describe('BuilderWithInput', () => {
+  const builder = {} as BuilderWithInput<{ auth: boolean }, { extra: boolean }, typeof schema1, typeof errorMap>
 
-  it('backward compatibility', () => {
-    const expected = {} as OmitChainMethodDeep<
-        typeof generalBuilder,
-        '$config' | '$context' | '$meta' | '$route' | '$input' | 'middleware' | 'prefix' | 'tag' | 'router' | 'lazy'
-    >
+  it('.meta', () => {
+    const plugin = { name: 'test', init: (m: any) => m }
+    expectTypeOf(builder.meta(plugin)).toEqualTypeOf<typeof builder>()
 
-    expectTypeOf(builder).toMatchTypeOf(expected)
-    expectTypeOf<keyof typeof builder>().toEqualTypeOf<keyof typeof expected>()
-  })
-
-  it('is a contract procedure', () => {
-    expectTypeOf(builder).toMatchTypeOf<
-      ContractProcedure<
-          typeof inputSchema,
-          typeof outputSchema,
-          typeof baseErrorMap,
-          BaseMeta
-      >
-    >()
+    // @ts-expect-error - invalid meta
+    builder.meta({} as MetaPlugin<Schema<'invalid'>, any, any>)
   })
 
   it('.errors', () => {
-    expectTypeOf(builder.errors({ INVALID: { message: 'invalid' }, OVERRIDE: { message: 'override' } })).toEqualTypeOf<
-      ProcedureBuilder<
-        InitialContext,
-        CurrentContext,
-          typeof inputSchema,
-          typeof outputSchema,
-          MergedErrorMap<typeof baseErrorMap, { INVALID: { message: string }, OVERRIDE: { message: string } }>,
-          BaseMeta
+    expectTypeOf(builder.errors({ INVALID: { message: 'invalid' } })).toEqualTypeOf<
+      BuilderWithInput<
+        { auth: boolean },
+        { extra: boolean },
+        typeof schema1,
+        MergedErrorMap<typeof errorMap, { INVALID: { message: string } }>
       >
     >()
 
-    // @ts-expect-error - schema is invalid
-    builder.errors({ TOO_MANY_REQUESTS: { data: {} } })
+    // @ts-expect-error - invalid errors
+    builder.errors({ INTERNAL_SERVER_ERROR: { data: {} } })
   })
 
   describe('.use', () => {
-    it('without map input', () => {
-      const applied = builder.use(({ context, next, path, procedure, errors, signal }, input, output) => {
-        expectTypeOf(input).toEqualTypeOf<unknown>()
-        expectTypeOf(context).toEqualTypeOf<CurrentContext>()
-        expectTypeOf(path).toEqualTypeOf<readonly string[]>()
-        expectTypeOf(procedure).toEqualTypeOf<
-          Procedure<Context, Context, AnySchema, AnySchema, ErrorMap, BaseMeta>
-        >()
-        expectTypeOf(output).toEqualTypeOf<MiddlewareOutputFn<unknown>>()
-        expectTypeOf(errors).toEqualTypeOf<ORPCErrorConstructorMap<typeof baseErrorMap>>()
-        expectTypeOf(signal).toEqualTypeOf<undefined | InstanceType<typeof AbortSignal>>()
+    it('inline', () => {
+      const decorated = builder.use(({ next, errors, context }, input, done) => {
+        expectTypeOf(input).toEqualTypeOf<{ schema1: string }>()
+        expectTypeOf(done).toEqualTypeOf<MiddlewareDone<unknown>>()
+        expectTypeOf(errors).toEqualTypeOf<ORPCErrorConstructorMap<typeof errorMap>>()
+        expectTypeOf(context).toEqualTypeOf<MergedContext<{ auth: boolean }, { extra: boolean }>>()
 
-        return next({
-          context: {
-            extra: true,
-          },
-        })
+        return next({ context: { more: 'yes' } })
       })
 
-      expectTypeOf(applied).toEqualTypeOf<
-        ProcedureBuilder<
-            InitialContext & Record<never, never>,
-            Omit<CurrentContext, 'extra'> & { extra: boolean },
-            typeof inputSchema,
-            typeof outputSchema,
-            typeof baseErrorMap,
-            BaseMeta
+      expectTypeOf(decorated).toEqualTypeOf<
+        BuilderWithInput<
+          { auth: boolean },
+          MergedContext<{ extra: boolean }, { more: string }>,
+          typeof schema1,
+          typeof errorMap
         >
       >()
 
-      // @ts-expect-error --- invalid TInContext
-      builder.use({} as Middleware<{ auth: 'invalid' }, any, any, any, any, any>)
-      // @ts-expect-error --- input is not match
-      builder.use(({ next }, input: 'invalid') => next({}))
-      // @ts-expect-error --- output is not match
-      builder.use(({ next }, input, output: MiddlewareOutputFn<'invalid'>) => next({}))
-      // @ts-expect-error --- conflict context
-      builder.use(({ next }) => next({ context: { db: undefined } }))
+      // @ts-expect-error - input is invalid
+      void builder.use(({ next, errors }, input: 'invalid', done) => {
+        return next()
+      })
+
+      // @ts-expect-error - output is invalid
+      void builder.use(({ next, errors }, input, done: MiddlewareDone<'invalid'>) => {
+        return next()
+      })
+
+      // @ts-expect-error - conflict with TInitialContext
+      void builder.use(({ next }) => next({ context: { auth: 'invalid' } }))
+
+      // @ts-expect-error - conflict with TInjectedContext
+      void builder.use(({ next }) => next({ context: { extra: 'invalid' } }))
     })
 
-    it('with TInContext', () => {
-      const mid = {} as Middleware<{ cacheable?: boolean } & Record<never, never>, Record<never, never>, unknown, unknown, ORPCErrorConstructorMap<any>, BaseMeta>
+    it('outline middleware', () => {
+      const middleware = {} as Middleware<{ auth: boolean, extra: boolean, g?: boolean }, { more: boolean }, unknown, any, { SOME_ERROR: { message: string } }>
 
-      expectTypeOf(builder.use(mid)).toEqualTypeOf<
-        ProcedureBuilder<
-          InitialContext & { cacheable?: boolean },
-          Omit<CurrentContext, never> & Record<never, never>,
-          typeof inputSchema,
-          typeof outputSchema,
-          typeof baseErrorMap,
-          BaseMeta
+      expectTypeOf(builder.use(middleware)).toEqualTypeOf<
+        BuilderWithInput<
+          MergedInitialContext<{ auth: boolean }, { extra: boolean }, { auth: boolean, extra: boolean, g?: boolean }>,
+          MergedContext<{ extra: boolean }, { more: boolean }>,
+          typeof schema1,
+          MergedErrorMap<{ SOME_ERROR: { message: string } }, typeof errorMap>
+        >
+      >()
+
+      // @ts-expect-error - input is invalid
+      void builder.use({} as Middleware<{ auth: boolean }, object, 'invalid', any, object>)
+
+      // @ts-expect-error - output is invalid
+      void builder.use({} as Middleware<{ auth: boolean }, object, unknown, 'invalid', object>)
+
+      // @ts-expect-error - TInContext is not satisfy expected
+      void builder.use({} as Middleware<{ something: string }, object, unknown, any, object>)
+
+      // @ts-expect-error - conflict with TInitialContext
+      void builder.use({} as Middleware<object, { auth: 'invalid' }, unknown, any, object>)
+
+      // @ts-expect-error - conflict with TInjectedContext
+      void builder.use({} as Middleware<object, { extra: 'invalid' }, unknown, any, object>)
+    })
+
+    it('low-priority mid\'s errors and ignore conflicts', () => {
+      const middleware = {} as Middleware<{ auth: boolean }, object, unknown, any, { BASE: { message: 'CONFLICT' }, EXTRA: { message: string } }>
+
+      expectTypeOf(builder.use(middleware)).toEqualTypeOf<
+        BuilderWithInput<
+          { auth: boolean },
+          { extra: boolean },
+          typeof schema1,
+          MergedErrorMap<{ EXTRA: { message: string } }, typeof errorMap>
         >
       >()
     })
-  })
-
-  it('.meta', () => {
-    expectTypeOf(builder.meta({ log: true })).toEqualTypeOf<
-      ProcedureBuilder<
-        InitialContext,
-        CurrentContext,
-          typeof inputSchema,
-          typeof outputSchema,
-          typeof baseErrorMap,
-          BaseMeta
-      >
-    >()
-
-    // @ts-expect-error - invalid meta
-    builder.meta({ meta: 'INVALID' })
-  })
-
-  it('.route', () => {
-    expectTypeOf(builder.route({ method: 'GET' })).toEqualTypeOf<
-      ProcedureBuilder<
-        InitialContext,
-        CurrentContext,
-          typeof inputSchema,
-          typeof outputSchema,
-          typeof baseErrorMap,
-          BaseMeta
-      >
-    >()
-
-    // @ts-expect-error - invalid method
-    builder.route({ method: 'INVALID' })
   })
 
   it('.input', () => {
-    expectTypeOf(builder.input(generalSchema)).toEqualTypeOf<
-      ProcedureBuilderWithInput<
-        InitialContext,
-        CurrentContext,
-          typeof generalSchema,
-          typeof outputSchema,
-          typeof baseErrorMap,
-          BaseMeta
+    expectTypeOf(builder.input(schema2)).toEqualTypeOf<
+      BuilderWithInput<
+        { auth: boolean },
+        { extra: boolean },
+        MergedSchema<typeof schema2, typeof schema1>,
+        typeof errorMap
       >
     >()
 
-    // @ts-expect-error - schema is invalid
+    // @ts-expect-error - invalid schema
     builder.input({})
   })
 
   it('.output', () => {
-    expectTypeOf(builder.output(generalSchema)).toEqualTypeOf<
-      ProcedureBuilderWithOutput<
-        InitialContext,
-        CurrentContext,
-          typeof inputSchema,
-          typeof generalSchema,
-          typeof baseErrorMap,
-          BaseMeta
-      >
+    expectTypeOf(builder.output(schema2)).toEqualTypeOf<
+      BuilderWithInputOutput<{ auth: boolean }, { extra: boolean }, typeof schema1, typeof schema2, typeof errorMap>
     >()
 
-    // @ts-expect-error - schema is invalid
+    // @ts-expect-error - invalid schema
     builder.output({})
   })
 
-  it('.handler', () => {
-    const procedure = builder.handler(({ input, context, procedure, path, signal, errors }) => {
-      expectTypeOf(input).toEqualTypeOf<unknown>()
-      expectTypeOf(context).toEqualTypeOf<CurrentContext>()
-      expectTypeOf(path).toEqualTypeOf<readonly string[]>()
-      expectTypeOf(signal).toEqualTypeOf<undefined | InstanceType<typeof AbortSignal>>()
-      expectTypeOf(procedure).toEqualTypeOf<
-        Procedure<Context, Context, AnySchema, AnySchema, ErrorMap, BaseMeta>
+  describe('.handler', () => {
+    it('simple', () => {
+      expectTypeOf(builder.handler(async ({ errors, context }, input) => {
+        expectTypeOf(errors).toEqualTypeOf<ORPCErrorConstructorMap<typeof errorMap>>()
+        expectTypeOf(context).toEqualTypeOf<MergedContext<{ auth: boolean }, { extra: boolean }>>()
+        expectTypeOf(input).toEqualTypeOf<{ schema1: string }>()
+
+        return 'out'
+      })).toEqualTypeOf<
+        DecoratedProcedure<
+          { auth: boolean },
+          { extra: boolean },
+          typeof schema1,
+          Schema<string>,
+          typeof errorMap
+        >
       >()
-      expectTypeOf(errors).toEqualTypeOf<ORPCErrorConstructorMap<typeof baseErrorMap>>()
-      expectTypeOf(signal).toEqualTypeOf<undefined | InstanceType<typeof AbortSignal>>()
-
-      return { output: 456 }
     })
-
-    expectTypeOf(procedure).toMatchTypeOf<
-      DecoratedProcedure<
-        InitialContext,
-        CurrentContext,
-        typeof inputSchema,
-        Schema<{ output: number }, { output: number }>,
-        typeof baseErrorMap,
-        BaseMeta
-      >
-    >()
   })
 })
 
-describe('ProcedureBuilderWithInput', () => {
-  const builder = {} as ProcedureBuilderWithInput<
-    InitialContext,
-    CurrentContext,
-    typeof inputSchema,
-    typeof outputSchema,
-    typeof baseErrorMap,
-    BaseMeta
-  >
-
-  it('backward compatibility', () => {
-    const expected = {} as OmitChainMethodDeep<
-      typeof generalBuilder,
-      '$config' | '$context' | '$meta' | '$route' | '$input' | 'middleware' | 'prefix' | 'tag' | 'router' | 'lazy' | 'input'
-    >
-
-    expectTypeOf(builder).toMatchTypeOf(expected)
-    expectTypeOf<keyof typeof builder>().toEqualTypeOf<keyof typeof expected>()
-  })
-
-  it('is a contract procedure', () => {
-    expectTypeOf(builder).toMatchTypeOf<
-      ContractProcedure<
-          typeof inputSchema,
-          typeof outputSchema,
-          typeof baseErrorMap,
-          BaseMeta
-      >
-    >()
-  })
-
-  it('.errors', () => {
-    expectTypeOf(builder.errors({ INVALID: { message: 'invalid' }, OVERRIDE: { message: 'override' } })).toEqualTypeOf<
-      ProcedureBuilderWithInput<
-        InitialContext,
-        CurrentContext,
-        typeof inputSchema,
-        typeof outputSchema,
-        MergedErrorMap<typeof baseErrorMap, { INVALID: { message: string }, OVERRIDE: { message: string } }>,
-        BaseMeta
-      >
-    >()
-
-    // @ts-expect-error - schema is invalid
-    builder.errors({ TOO_MANY_REQUESTS: { data: {} } })
-  })
-
-  describe('.use', () => {
-    it('without map input', () => {
-      const applied = builder.use(({ context, next, path, procedure, errors, signal }, input, output) => {
-        expectTypeOf(input).toEqualTypeOf<{ input: string }>()
-        expectTypeOf(context).toEqualTypeOf<CurrentContext>()
-        expectTypeOf(path).toEqualTypeOf<readonly string[]>()
-        expectTypeOf(procedure).toEqualTypeOf<
-          Procedure<Context, Context, AnySchema, AnySchema, ErrorMap, BaseMeta>
-        >()
-        expectTypeOf(output).toEqualTypeOf<MiddlewareOutputFn<unknown>>()
-        expectTypeOf(errors).toEqualTypeOf<ORPCErrorConstructorMap<typeof baseErrorMap>>()
-        expectTypeOf(signal).toEqualTypeOf<undefined | InstanceType<typeof AbortSignal>>()
-
-        return next({
-          context: {
-            extra: true,
-          },
-        })
-      })
-
-      expectTypeOf(applied).toEqualTypeOf<
-        ProcedureBuilderWithInput<
-          InitialContext & Record<never, never>,
-          Omit<CurrentContext, 'extra'> & { extra: boolean },
-          typeof inputSchema,
-          typeof outputSchema,
-          typeof baseErrorMap,
-          BaseMeta
-        >
-      >()
-
-      // @ts-expect-error --- invalid TInContext
-      builder.use({} as Middleware<{ auth: 'invalid' }, any, any, any, any, any>)
-      // @ts-expect-error --- input is not match
-      builder.use(({ next }, input: 'invalid') => next({}))
-      // @ts-expect-error --- output is not match
-      builder.use(({ next }, input, output: MiddlewareOutputFn<'invalid'>) => next({}))
-      // @ts-expect-error --- conflict context
-      builder.use(({ next }) => next({ context: { db: undefined } }))
-    })
-
-    it('with map input', () => {
-      const applied = builder.use(({ context, next, path, procedure, errors, signal }, input: { mapped: boolean }, output) => {
-        expectTypeOf(input).toEqualTypeOf<{ mapped: boolean }>()
-        expectTypeOf(context).toEqualTypeOf<CurrentContext>()
-        expectTypeOf(path).toEqualTypeOf<readonly string[]>()
-        expectTypeOf(procedure).toEqualTypeOf<
-          Procedure<Context, Context, AnySchema, AnySchema, ErrorMap, BaseMeta>
-        >()
-        expectTypeOf(output).toEqualTypeOf<MiddlewareOutputFn<unknown>>()
-        expectTypeOf(errors).toEqualTypeOf<ORPCErrorConstructorMap<typeof baseErrorMap>>()
-        expectTypeOf(signal).toEqualTypeOf<undefined | InstanceType<typeof AbortSignal>>()
-
-        return next({
-          context: {
-            extra: true,
-          },
-        })
-      }, (input) => {
-        expectTypeOf(input).toEqualTypeOf<{ input: string }>()
-
-        return { mapped: true }
-      })
-
-      expectTypeOf(applied).toEqualTypeOf<
-        ProcedureBuilderWithInput<
-          InitialContext & Record<never, never>,
-          Omit<CurrentContext, 'extra'> & { extra: boolean },
-          typeof inputSchema,
-          typeof outputSchema,
-          typeof baseErrorMap,
-          BaseMeta
-        >
-      >()
-
-      builder.use(
-        ({ context, next, path, procedure, errors, signal }, input: { mapped: boolean }, output) => next(),
-        // @ts-expect-error --- invalid map input
-        input => ({ invalid: true }),
-      )
-
-      // @ts-expect-error --- invalid TInContext
-      builder.use({} as Middleware<{ auth: 'invalid' }, any, any, any, any, any>, () => {})
-      // @ts-expect-error --- input is not match
-      builder.use(({ next }, input: 'invalid') => next({}), input => ({ mapped: true }))
-      // @ts-expect-error --- output is not match
-      builder.use(({ next }, input, output: MiddlewareOutputFn<'invalid'>) => next({}), input => ({ mapped: true }))
-      // @ts-expect-error --- conflict context
-      builder.use(({ next }) => next({ context: { db: undefined } }), () => { })
-    })
-
-    it('with TInContext', () => {
-      const mid = {} as Middleware<{ cacheable?: boolean } & Record<never, never>, Record<never, never>, unknown, unknown, ORPCErrorConstructorMap<any>, BaseMeta>
-
-      expectTypeOf(builder.use(mid)).toEqualTypeOf<
-        ProcedureBuilderWithInput<
-          InitialContext & { cacheable?: boolean },
-          Omit<CurrentContext, never> & Record<never, never>,
-          typeof inputSchema,
-          typeof outputSchema,
-          typeof baseErrorMap,
-          BaseMeta
-        >
-      >()
-
-      expectTypeOf(builder.use(mid, () => { })).toEqualTypeOf<
-        ProcedureBuilderWithInput<
-          InitialContext & { cacheable?: boolean },
-          Omit<CurrentContext, never> & Record<never, never>,
-          typeof inputSchema,
-          typeof outputSchema,
-          typeof baseErrorMap,
-          BaseMeta
-        >
-      >()
-    })
-  })
+describe('BuilderWithOutput', () => {
+  const builder = {} as BuilderWithOutput<{ auth: boolean }, { extra: boolean }, typeof schema2, typeof errorMap>
 
   it('.meta', () => {
-    expectTypeOf(builder.meta({ log: true })).toEqualTypeOf<
-      ProcedureBuilderWithInput<
-        InitialContext,
-        CurrentContext,
-        typeof inputSchema,
-        typeof outputSchema,
-        typeof baseErrorMap,
-        BaseMeta
-      >
-    >()
+    const plugin = { name: 'test', init: (m: any) => m }
+    expectTypeOf(builder.meta(plugin)).toEqualTypeOf<typeof builder>()
 
     // @ts-expect-error - invalid meta
-    builder.meta({ meta: 'INVALID' })
-  })
-
-  it('.route', () => {
-    expectTypeOf(builder.route({ method: 'GET' })).toEqualTypeOf<
-      ProcedureBuilderWithInput<
-        InitialContext,
-        CurrentContext,
-        typeof inputSchema,
-        typeof outputSchema,
-        typeof baseErrorMap,
-        BaseMeta
-      >
-    >()
-
-    // @ts-expect-error - invalid method
-    builder.route({ method: 'INVALID' })
-  })
-
-  it('.output', () => {
-    expectTypeOf(builder.output(generalSchema)).toEqualTypeOf<
-      ProcedureBuilderWithInputOutput<
-        InitialContext,
-        CurrentContext,
-        typeof inputSchema,
-        typeof generalSchema,
-        typeof baseErrorMap,
-        BaseMeta
-      >
-    >()
-
-    // @ts-expect-error - schema is invalid
-    builder.output({})
-  })
-
-  it('.handler', () => {
-    const procedure = builder.handler(({ input, context, procedure, path, signal, errors }) => {
-      expectTypeOf(input).toEqualTypeOf<{ input: string }>()
-      expectTypeOf(context).toEqualTypeOf<CurrentContext>()
-      expectTypeOf(path).toEqualTypeOf<readonly string[]>()
-      expectTypeOf(signal).toEqualTypeOf<undefined | InstanceType<typeof AbortSignal>>()
-      expectTypeOf(procedure).toEqualTypeOf<
-        Procedure<Context, Context, AnySchema, AnySchema, ErrorMap, BaseMeta>
-      >()
-      expectTypeOf(errors).toEqualTypeOf<ORPCErrorConstructorMap<typeof baseErrorMap>>()
-      expectTypeOf(signal).toEqualTypeOf<undefined | InstanceType<typeof AbortSignal>>()
-
-      return { output: 456 }
-    })
-
-    expectTypeOf(procedure).toMatchTypeOf<
-      DecoratedProcedure<
-        InitialContext,
-        CurrentContext,
-        typeof inputSchema,
-        Schema<{ output: number }, { output: number }>,
-        typeof baseErrorMap,
-        BaseMeta
-      >
-    >()
-  })
-})
-
-describe('ProcedureBuilderWithOutput', () => {
-  const builder = {} as ProcedureBuilderWithOutput<
-    InitialContext,
-    CurrentContext,
-    typeof inputSchema,
-    typeof outputSchema,
-    typeof baseErrorMap,
-    BaseMeta
-  >
-
-  it('backward compatibility', () => {
-    const expected = {} as OmitChainMethodDeep<
-      typeof generalBuilder,
-      '$config' | '$context' | '$meta' | '$route' | '$input' | 'middleware' | 'prefix' | 'tag' | 'router' | 'lazy' | 'output'
-    >
-
-    // expectTypeOf(builder).toMatchTypeOf(expected)
-    expectTypeOf<keyof typeof builder>().toEqualTypeOf<keyof typeof expected>()
-  })
-
-  it('is a contract procedure', () => {
-    expectTypeOf(builder).toMatchTypeOf<
-      ContractProcedure<
-          typeof inputSchema,
-          typeof outputSchema,
-          typeof baseErrorMap,
-          BaseMeta
-      >
-    >()
+    builder.meta({} as MetaPlugin<Schema<'invalid'>, any, any>)
   })
 
   it('.errors', () => {
-    expectTypeOf(builder.errors({ INVALID: { message: 'invalid' }, OVERRIDE: { message: 'override' } })).toEqualTypeOf<
-      ProcedureBuilderWithOutput<
-        InitialContext,
-        CurrentContext,
-        typeof inputSchema,
-        typeof outputSchema,
-        MergedErrorMap<typeof baseErrorMap, { INVALID: { message: string }, OVERRIDE: { message: string } }>,
-        BaseMeta
+    expectTypeOf(builder.errors({ INVALID: { message: 'invalid' } })).toEqualTypeOf<
+      BuilderWithOutput<
+        { auth: boolean },
+        { extra: boolean },
+        typeof schema2,
+        MergedErrorMap<typeof errorMap, { INVALID: { message: string } }>
       >
     >()
 
-    // @ts-expect-error - schema is invalid
-    builder.errors({ TOO_MANY_REQUESTS: { data: {} } })
+    // @ts-expect-error - invalid errors
+    builder.errors({ INTERNAL_SERVER_ERROR: { data: {} } })
   })
 
   describe('.use', () => {
-    it('without map input', () => {
-      const applied = builder.use(({ context, next, path, procedure, errors, signal }, input, output) => {
+    it('inline', () => {
+      const decorated = builder.use(({ next, errors, context }, input, done) => {
         expectTypeOf(input).toEqualTypeOf<unknown>()
-        expectTypeOf(context).toEqualTypeOf<CurrentContext>()
-        expectTypeOf(path).toEqualTypeOf<readonly string[]>()
-        expectTypeOf(procedure).toEqualTypeOf<
-          Procedure<Context, Context, AnySchema, AnySchema, ErrorMap, BaseMeta>
-        >()
-        expectTypeOf(output).toEqualTypeOf<MiddlewareOutputFn<{ output: number }>>()
-        expectTypeOf(errors).toEqualTypeOf<ORPCErrorConstructorMap<typeof baseErrorMap>>()
-        expectTypeOf(signal).toEqualTypeOf<undefined | InstanceType<typeof AbortSignal>>()
+        expectTypeOf(done).toEqualTypeOf<MiddlewareDone<{ schema2: number }>>()
+        expectTypeOf(errors).toEqualTypeOf<ORPCErrorConstructorMap<typeof errorMap>>()
+        expectTypeOf(context).toEqualTypeOf<MergedContext<{ auth: boolean }, { extra: boolean }>>()
 
-        return next({
-          context: {
-            extra: true,
-          },
-        })
+        return next({ context: { more: 'yes' } })
       })
 
-      expectTypeOf(applied).toEqualTypeOf<
-        ProcedureBuilderWithOutput<
-          InitialContext & Record<never, never>,
-          Omit<CurrentContext, 'extra'> & { extra: boolean },
-          typeof inputSchema,
-          typeof outputSchema,
-          typeof baseErrorMap,
-          BaseMeta
+      expectTypeOf(decorated).toEqualTypeOf<
+        BuilderWithOutput<
+          { auth: boolean },
+          MergedContext<{ extra: boolean }, { more: string }>,
+          typeof schema2,
+          typeof errorMap
         >
       >()
 
-      // @ts-expect-error --- invalid TInContext
-      builder.use({} as Middleware<{ auth: 'invalid' }, any, any, any, any, any>)
-      // @ts-expect-error --- input is not match
-      builder.use(({ next }, input: 'invalid') => next({}))
-      // @ts-expect-error --- output is not match
-      builder.use(({ next }, input, output: MiddlewareOutputFn<'invalid'>) => next({}))
-      // @ts-expect-error --- conflict context
-      builder.use(({ next }) => next({ context: { db: undefined } }))
+      // @ts-expect-error - input is invalid
+      void builder.use(({ next, errors }, input: 'invalid', done) => {
+        return next()
+      })
+
+      // @ts-expect-error - output is invalid
+      void builder.use(({ next, errors }, input, done: MiddlewareDone<'invalid'>) => {
+        return next()
+      })
+
+      // @ts-expect-error - conflict with TInitialContext
+      void builder.use(({ next }) => next({ context: { auth: 'invalid' } }))
+
+      // @ts-expect-error - conflict with TInjectedContext
+      void builder.use(({ next }) => next({ context: { extra: 'invalid' } }))
     })
 
-    it('with TInContext', () => {
-      const mid = {} as Middleware<{ cacheable?: boolean } & Record<never, never>, Record<never, never>, unknown, any, ORPCErrorConstructorMap<any>, BaseMeta>
+    it('outline middleware', () => {
+      const middleware = {} as Middleware<{ auth: boolean, extra: boolean, g?: boolean }, { more: boolean }, unknown, any, { SOME_ERROR: { message: string } }>
 
-      expectTypeOf(builder.use(mid)).toEqualTypeOf<
-        ProcedureBuilderWithOutput<
-              InitialContext & { cacheable?: boolean },
-              Omit<CurrentContext, never> & Record<never, never>,
-              typeof inputSchema,
-              typeof outputSchema,
-              typeof baseErrorMap,
-              BaseMeta
+      expectTypeOf(builder.use(middleware)).toEqualTypeOf<
+        BuilderWithOutput<
+          MergedInitialContext<{ auth: boolean }, { extra: boolean }, { auth: boolean, extra: boolean, g?: boolean }>,
+          MergedContext<{ extra: boolean }, { more: boolean }>,
+          typeof schema2,
+          MergedErrorMap<{ SOME_ERROR: { message: string } }, typeof errorMap>
+        >
+      >()
+
+      // @ts-expect-error - input is invalid
+      void builder.use({} as Middleware<{ auth: boolean }, object, 'invalid', any, object>)
+
+      // @ts-expect-error - output is invalid
+      void builder.use({} as Middleware<{ auth: boolean }, object, unknown, 'invalid', object>)
+
+      // @ts-expect-error - TInContext is not satisfy expected
+      void builder.use({} as Middleware<{ something: string }, object, unknown, any, object>)
+
+      // @ts-expect-error - conflict with TInitialContext
+      void builder.use({} as Middleware<object, { auth: 'invalid' }, unknown, any, object>)
+
+      // @ts-expect-error - conflict with TInjectedContext
+      void builder.use({} as Middleware<object, { extra: 'invalid' }, unknown, any, object>)
+    })
+
+    it('low-priority mid\'s errors and ignore conflicts', () => {
+      const middleware = {} as Middleware<{ auth: boolean }, object, unknown, any, { BASE: { message: 'CONFLICT' }, EXTRA: { message: string } }>
+
+      expectTypeOf(builder.use(middleware)).toEqualTypeOf<
+        BuilderWithOutput<
+          { auth: boolean },
+          { extra: boolean },
+          typeof schema2,
+          MergedErrorMap<{ EXTRA: { message: string } }, typeof errorMap>
         >
       >()
     })
-  })
-
-  it('.meta', () => {
-    expectTypeOf(builder.meta({ log: true })).toEqualTypeOf<
-      ProcedureBuilderWithOutput<
-        InitialContext,
-        CurrentContext,
-        typeof inputSchema,
-        typeof outputSchema,
-        typeof baseErrorMap,
-        BaseMeta
-      >
-    >()
-
-    // @ts-expect-error - invalid meta
-    builder.meta({ meta: 'INVALID' })
-  })
-
-  it('.route', () => {
-    expectTypeOf(builder.route({ method: 'GET' })).toEqualTypeOf<
-      ProcedureBuilderWithOutput<
-        InitialContext,
-        CurrentContext,
-        typeof inputSchema,
-        typeof outputSchema,
-        typeof baseErrorMap,
-        BaseMeta
-      >
-    >()
-
-    // @ts-expect-error - invalid method
-    builder.route({ method: 'INVALID' })
   })
 
   it('.input', () => {
-    expectTypeOf(builder.input(generalSchema)).toEqualTypeOf<
-      ProcedureBuilderWithInputOutput<
-        InitialContext,
-        CurrentContext,
-        typeof generalSchema,
-        typeof outputSchema,
-        typeof baseErrorMap,
-        BaseMeta
-      >
+    expectTypeOf(builder.input(schema1)).toEqualTypeOf<
+      BuilderWithInputOutput<{ auth: boolean }, { extra: boolean }, typeof schema1, typeof schema2, typeof errorMap>
     >()
 
-    // @ts-expect-error - schema is invalid
+    // @ts-expect-error - invalid schema
     builder.input({})
   })
 
-  it('.handler', () => {
-    const procedure = builder.handler(({ input, context, procedure, path, signal, errors }) => {
-      expectTypeOf(input).toEqualTypeOf<unknown>()
-      expectTypeOf(context).toEqualTypeOf<CurrentContext>()
-      expectTypeOf(path).toEqualTypeOf<readonly string[]>()
-      expectTypeOf(signal).toEqualTypeOf<undefined | InstanceType<typeof AbortSignal>>()
-      expectTypeOf(procedure).toEqualTypeOf<
-        Procedure<Context, Context, AnySchema, AnySchema, ErrorMap, BaseMeta>
-      >()
-      expectTypeOf(errors).toEqualTypeOf<ORPCErrorConstructorMap<typeof baseErrorMap>>()
-      expectTypeOf(signal).toEqualTypeOf<undefined | InstanceType<typeof AbortSignal>>()
-
-      return { output: 456 }
-    })
-
-    expectTypeOf(procedure).toMatchTypeOf<
-      DecoratedProcedure<
-        InitialContext,
-        CurrentContext,
-        typeof inputSchema,
-        typeof outputSchema,
-        typeof baseErrorMap,
-        BaseMeta
+  it('.output', () => {
+    expectTypeOf(builder.output(schema1)).toEqualTypeOf<
+      BuilderWithOutput<
+        { auth: boolean },
+        { extra: boolean },
+        MergedSchema<typeof schema1, typeof schema2>,
+        typeof errorMap
       >
     >()
 
-    // @ts-expect-error --- invalid output
-    builder.handler(() => ({ output: 'invalid' }))
+    // @ts-expect-error - invalid schema
+    builder.output({})
+  })
+
+  describe('.handler', () => {
+    it('simple', () => {
+      const procedure = builder.handler(async ({ errors, context }, input) => {
+        expectTypeOf(errors).toEqualTypeOf<ORPCErrorConstructorMap<typeof errorMap>>()
+        expectTypeOf(context).toEqualTypeOf<MergedContext<{ auth: boolean }, { extra: boolean }>>()
+        expectTypeOf(input).toEqualTypeOf<unknown>()
+
+        return { schema2: 123 }
+      })
+
+      expectTypeOf(procedure).toEqualTypeOf<
+        DecoratedProcedure<
+          { auth: boolean },
+          { extra: boolean },
+          Schema<void, unknown>,
+          typeof schema2,
+          typeof errorMap
+        >
+      >()
+
+      // @ts-expect-error - output is invalid
+      void builder.handler(async ({ errors, context }, input) => {
+        return 'invalid'
+      })
+    })
   })
 })
 
-describe('ProcedureBuilderWithInputOutput', () => {
-  const builder = {} as ProcedureBuilderWithInputOutput<
-    InitialContext,
-    CurrentContext,
-    typeof inputSchema,
-    typeof outputSchema,
-    typeof baseErrorMap,
-    BaseMeta
-  >
+describe('BuilderWithInputOutput', () => {
+  const builder = {} as BuilderWithInputOutput<{ auth: boolean }, { extra: boolean }, typeof schema1, typeof schema2, typeof errorMap>
 
-  it('backward compatibility', () => {
-    const expected = {} as OmitChainMethodDeep<
-      typeof generalBuilder,
-      '$config' | '$context' | '$meta' | '$route' | '$input' | 'middleware' | 'prefix' | 'tag' | 'router' | 'lazy' | 'input' | 'output'
-    >
+  it('.meta', () => {
+    const plugin = { name: 'test', init: (m: any) => m }
+    expectTypeOf(builder.meta(plugin)).toEqualTypeOf<typeof builder>()
 
-    // expectTypeOf(builder).toMatchTypeOf(expected)
-    expectTypeOf<keyof typeof builder>().toEqualTypeOf<keyof typeof expected>()
-  })
-
-  it('is a contract procedure', () => {
-    expectTypeOf(builder).toMatchTypeOf<
-      ContractProcedure<
-          typeof inputSchema,
-          typeof outputSchema,
-          typeof baseErrorMap,
-          BaseMeta
-      >
-    >()
+    // @ts-expect-error - invalid meta
+    builder.meta({} as MetaPlugin<Schema<'invalid'>, any, any>)
   })
 
   it('.errors', () => {
-    expectTypeOf(builder.errors({ INVALID: { message: 'invalid' }, OVERRIDE: { message: 'override' } })).toEqualTypeOf<
-      ProcedureBuilderWithInputOutput<
-        InitialContext,
-        CurrentContext,
-        typeof inputSchema,
-        typeof outputSchema,
-        MergedErrorMap<typeof baseErrorMap, { INVALID: { message: string }, OVERRIDE: { message: string } }>,
-        BaseMeta
+    expectTypeOf(builder.errors({ INVALID: { message: 'invalid' } })).toEqualTypeOf<
+      BuilderWithInputOutput<
+        { auth: boolean },
+        { extra: boolean },
+        typeof schema1,
+        typeof schema2,
+        MergedErrorMap<typeof errorMap, { INVALID: { message: string } }>
       >
     >()
 
-    // @ts-expect-error - schema is invalid
-    builder.errors({ TOO_MANY_REQUESTS: { data: {} } })
+    // @ts-expect-error - invalid errors
+    builder.errors({ INTERNAL_SERVER_ERROR: { data: {} } })
   })
 
   describe('.use', () => {
-    it('without map input', () => {
-      const applied = builder.use(({ context, next, path, procedure, errors, signal }, input, output) => {
-        expectTypeOf(input).toEqualTypeOf<{ input: string }>()
-        expectTypeOf(context).toEqualTypeOf<CurrentContext>()
-        expectTypeOf(path).toEqualTypeOf<readonly string[]>()
-        expectTypeOf(procedure).toEqualTypeOf<
-          Procedure<Context, Context, AnySchema, AnySchema, ErrorMap, BaseMeta>
-        >()
-        expectTypeOf(output).toEqualTypeOf<MiddlewareOutputFn<{ output: number }>>()
-        expectTypeOf(errors).toEqualTypeOf<ORPCErrorConstructorMap<typeof baseErrorMap>>()
-        expectTypeOf(signal).toEqualTypeOf<undefined | InstanceType<typeof AbortSignal>>()
+    it('inline', () => {
+      const decorated = builder.use(({ next, errors, context }, input, done) => {
+        expectTypeOf(input).toEqualTypeOf<{ schema1: string }>()
+        expectTypeOf(done).toEqualTypeOf<MiddlewareDone<{ schema2: number }>>()
+        expectTypeOf(errors).toEqualTypeOf<ORPCErrorConstructorMap<typeof errorMap>>()
+        expectTypeOf(context).toEqualTypeOf<MergedContext<{ auth: boolean }, { extra: boolean }>>()
 
-        return next({
-          context: {
-            extra: true,
-          },
-        })
+        return next({ context: { more: 'yes' } })
       })
 
-      expectTypeOf(applied).toEqualTypeOf<
-        ProcedureBuilderWithInputOutput<
-          InitialContext & Record<never, never>,
-          Omit<CurrentContext, 'extra'> & { extra: boolean },
-          typeof inputSchema,
-          typeof outputSchema,
-          typeof baseErrorMap,
-          BaseMeta
+      expectTypeOf(decorated).toEqualTypeOf<
+        BuilderWithInputOutput<
+          { auth: boolean },
+          MergedContext<{ extra: boolean }, { more: string }>,
+          typeof schema1,
+          typeof schema2,
+          typeof errorMap
         >
       >()
 
-      // @ts-expect-error --- invalid TInContext
-      builder.use({} as Middleware<{ auth: 'invalid' }, any, any, any, any, any>)
-      // @ts-expect-error --- input is not match
-      builder.use(({ next }, input: 'invalid') => next({}))
-      // @ts-expect-error --- output is not match
-      builder.use(({ next }, input, output: MiddlewareOutputFn<'invalid'>) => next({}))
-      // @ts-expect-error --- conflict context
-      builder.use(({ next }) => next({ context: { db: undefined } }))
-    })
-
-    it('with map input', () => {
-      const applied = builder.use(({ context, next, path, procedure, errors, signal }, input: { mapped: boolean }, output) => {
-        expectTypeOf(input).toEqualTypeOf<{ mapped: boolean }>()
-        expectTypeOf(context).toEqualTypeOf<CurrentContext>()
-        expectTypeOf(path).toEqualTypeOf<readonly string[]>()
-        expectTypeOf(procedure).toEqualTypeOf<
-          Procedure<Context, Context, AnySchema, AnySchema, ErrorMap, BaseMeta>
-        >()
-        expectTypeOf(output).toEqualTypeOf<MiddlewareOutputFn<{ output: number }>>()
-        expectTypeOf(errors).toEqualTypeOf<ORPCErrorConstructorMap<typeof baseErrorMap>>()
-        expectTypeOf(signal).toEqualTypeOf<undefined | InstanceType<typeof AbortSignal>>()
-
-        return next({
-          context: {
-            extra: true,
-          },
-        })
-      }, (input) => {
-        expectTypeOf(input).toEqualTypeOf<{ input: string }>()
-
-        return { mapped: true }
+      // @ts-expect-error - input is invalid
+      void builder.use(({ next, errors }, input: 'invalid', done) => {
+        return next()
       })
 
-      expectTypeOf(applied).toEqualTypeOf<
-        ProcedureBuilderWithInputOutput<
-          InitialContext & Record<never, never>,
-          Omit<CurrentContext, 'extra'> & { extra: boolean },
-          typeof inputSchema,
-          typeof outputSchema,
-          typeof baseErrorMap,
-          BaseMeta
-        >
-      >()
+      // @ts-expect-error - output is invalid
+      void builder.use(({ next, errors }, input, done: MiddlewareDone<'invalid'>) => {
+        return next()
+      })
 
-      builder.use(
-        ({ context, next, path, procedure, errors, signal }, input: { mapped: boolean }, output) => next(),
-        // @ts-expect-error --- invalid map input
-        input => ({ invalid: true }),
-      )
+      // @ts-expect-error - conflict with TInitialContext
+      void builder.use(({ next }) => next({ context: { auth: 'invalid' } }))
 
-      // @ts-expect-error --- invalid TInContext
-      builder.use({} as Middleware<{ auth: 'invalid' }, any, any, any, any, any>, () => {})
-      // @ts-expect-error --- input is not match
-      builder.use(({ next }, input: 'invalid') => next({}), input => ({ mapped: true }))
-      // @ts-expect-error --- output is not match
-      builder.use(({ next }, input, output: MiddlewareOutputFn<'invalid'>) => next({}), input => ({ mapped: true }))
-      // @ts-expect-error --- conflict context
-      builder.use(({ next }) => next({ context: { db: undefined } }), input => ({ mapped: true }))
+      // @ts-expect-error - conflict with TInjectedContext
+      void builder.use(({ next }) => next({ context: { extra: 'invalid' } }))
     })
 
-    it('with TInContext', () => {
-      const mid = {} as Middleware<{ cacheable?: boolean } & Record<never, never>, Record<never, never>, unknown, any, ORPCErrorConstructorMap<any>, BaseMeta>
+    it('outline middleware', () => {
+      const middleware = {} as Middleware<{ auth: boolean, extra: boolean, g?: boolean }, { more: boolean }, unknown, any, { SOME_ERROR: { message: string } }>
 
-      expectTypeOf(builder.use(mid)).toEqualTypeOf<
-        ProcedureBuilderWithInputOutput<
-          InitialContext & { cacheable?: boolean },
-          Omit<CurrentContext, never> & Record<never, never>,
-          typeof inputSchema,
-          typeof outputSchema,
-          typeof baseErrorMap,
-          BaseMeta
+      expectTypeOf(builder.use(middleware)).toEqualTypeOf<
+        BuilderWithInputOutput<
+          MergedInitialContext<{ auth: boolean }, { extra: boolean }, { auth: boolean, extra: boolean, g?: boolean }>,
+          MergedContext<{ extra: boolean }, { more: boolean }>,
+          typeof schema1,
+          typeof schema2,
+          MergedErrorMap<{ SOME_ERROR: { message: string } }, typeof errorMap>
         >
       >()
 
-      expectTypeOf(builder.use(mid, () => { })).toEqualTypeOf<
-        ProcedureBuilderWithInputOutput<
-          InitialContext & { cacheable?: boolean },
-          Omit<CurrentContext, never> & Record<never, never>,
-          typeof inputSchema,
-          typeof outputSchema,
-          typeof baseErrorMap,
-          BaseMeta
+      // @ts-expect-error - input is invalid
+      void builder.use({} as Middleware<{ auth: boolean }, object, 'invalid', any, object>)
+
+      // @ts-expect-error - output is invalid
+      void builder.use({} as Middleware<{ auth: boolean }, object, unknown, 'invalid', object>)
+
+      // @ts-expect-error - TInContext is not satisfy expected
+      void builder.use({} as Middleware<{ something: string }, object, unknown, any, object>)
+
+      // @ts-expect-error - conflict with TInitialContext
+      void builder.use({} as Middleware<object, { auth: 'invalid' }, unknown, any, object>)
+
+      // @ts-expect-error - conflict with TInjectedContext
+      void builder.use({} as Middleware<object, { extra: 'invalid' }, unknown, any, object>)
+    })
+
+    it('low-priority mid\'s errors and ignore conflicts', () => {
+      const middleware = {} as Middleware<{ auth: boolean }, object, unknown, any, { BASE: { message: 'CONFLICT' }, EXTRA: { message: string } }>
+
+      expectTypeOf(builder.use(middleware)).toEqualTypeOf<
+        BuilderWithInputOutput<
+          { auth: boolean },
+          { extra: boolean },
+          typeof schema1,
+          typeof schema2,
+          MergedErrorMap<{ EXTRA: { message: string } }, typeof errorMap>
         >
       >()
     })
   })
 
-  it('.meta', () => {
-    expectTypeOf(builder.meta({ log: true })).toEqualTypeOf<
-      ProcedureBuilderWithInputOutput<
-        InitialContext,
-        CurrentContext,
-        typeof inputSchema,
-        typeof outputSchema,
-        typeof baseErrorMap,
-        BaseMeta
+  it('.input', () => {
+    expectTypeOf(builder.input(schema2)).toEqualTypeOf<
+      BuilderWithInputOutput<
+        { auth: boolean },
+        { extra: boolean },
+        MergedSchema<typeof schema2, typeof schema1>,
+        typeof schema2,
+        typeof errorMap
       >
     >()
 
-    // @ts-expect-error - invalid meta
-    builder.meta({ meta: 'INVALID' })
+    // @ts-expect-error - invalid schema
+    builder.input({})
   })
 
-  it('.route', () => {
-    expectTypeOf(builder.route({ method: 'GET' })).toEqualTypeOf<
-      ProcedureBuilderWithInputOutput<
-        InitialContext,
-        CurrentContext,
-        typeof inputSchema,
-        typeof outputSchema,
-        typeof baseErrorMap,
-        BaseMeta
+  it('.output', () => {
+    expectTypeOf(builder.output(schema1)).toEqualTypeOf<
+      BuilderWithInputOutput<
+        { auth: boolean },
+        { extra: boolean },
+        typeof schema1,
+        MergedSchema<typeof schema1, typeof schema2>,
+        typeof errorMap
       >
     >()
 
-    // @ts-expect-error - invalid method
-    builder.route({ method: 'INVALID' })
+    // @ts-expect-error - invalid schema
+    builder.output({})
   })
 
-  it('.handler', () => {
-    const procedure = builder.handler(({ input, context, procedure, path, signal, errors }) => {
-      expectTypeOf(input).toEqualTypeOf<{ input: string }>()
-      expectTypeOf(context).toEqualTypeOf<CurrentContext>()
-      expectTypeOf(path).toEqualTypeOf<readonly string[]>()
-      expectTypeOf(signal).toEqualTypeOf<undefined | InstanceType<typeof AbortSignal>>()
+  describe('.handler', () => {
+    it('simple', () => {
+      const procedure = builder.handler(async ({ errors, context }, input) => {
+        expectTypeOf(errors).toEqualTypeOf<ORPCErrorConstructorMap<typeof errorMap>>()
+        expectTypeOf(context).toEqualTypeOf<MergedContext<{ auth: boolean }, { extra: boolean }>>()
+        expectTypeOf(input).toEqualTypeOf<z.output<typeof schema1>>()
+
+        return { schema2: 123 }
+      })
+
       expectTypeOf(procedure).toEqualTypeOf<
-        Procedure<Context, Context, AnySchema, AnySchema, ErrorMap, BaseMeta>
-      >()
-      expectTypeOf(errors).toEqualTypeOf<ORPCErrorConstructorMap<typeof baseErrorMap>>()
-      expectTypeOf(signal).toEqualTypeOf<undefined | InstanceType<typeof AbortSignal>>()
-
-      return { output: 456 }
-    })
-
-    expectTypeOf(procedure).toMatchTypeOf<
-      DecoratedProcedure<
-        InitialContext,
-        CurrentContext,
-        typeof inputSchema,
-        typeof outputSchema,
-        typeof baseErrorMap,
-        BaseMeta
-      >
-    >()
-
-    // @ts-expect-error --- invalid output
-    builder.handler(() => ({ output: 'invalid' }))
-  })
-})
-
-describe('RouterBuilder', () => {
-  const builder = {} as RouterBuilder<
-    InitialContext,
-    CurrentContext,
-    typeof baseErrorMap,
-    BaseMeta
-  >
-
-  it('backward compatibility', () => {
-    const expected = {} as OmitChainMethodDeep<
-      typeof generalBuilder,
-      '$config' | '$context' | '$meta' | '$route' | '$input' | 'middleware' | 'meta' | 'route' | 'input' | 'output' | 'handler'
-    >
-
-    // expectTypeOf(builder).toMatchTypeOf(expected)
-    expectTypeOf<keyof typeof builder>().toEqualTypeOf<keyof typeof expected>()
-  })
-
-  describe('.use', () => {
-    it('without map input', () => {
-      const applied = builder.use(({ context, next, path, procedure, errors, signal }, input, output) => {
-        expectTypeOf(input).toEqualTypeOf<unknown>()
-        expectTypeOf(context).toEqualTypeOf<CurrentContext>()
-        expectTypeOf(path).toEqualTypeOf<readonly string[]>()
-        expectTypeOf(procedure).toEqualTypeOf<
-          Procedure<Context, Context, AnySchema, AnySchema, ErrorMap, BaseMeta>
-        >()
-        expectTypeOf(output).toEqualTypeOf<MiddlewareOutputFn<unknown>>()
-        expectTypeOf(errors).toEqualTypeOf<ORPCErrorConstructorMap<typeof baseErrorMap>>()
-        expectTypeOf(signal).toEqualTypeOf<undefined | InstanceType<typeof AbortSignal>>()
-
-        return next({
-          context: {
-            extra: true,
-          },
-        })
-      })
-
-      expectTypeOf(applied).toEqualTypeOf<
-        RouterBuilder<
-          InitialContext & Record<never, never>,
-          Omit<CurrentContext, 'extra'> & { extra: boolean },
-          typeof baseErrorMap,
-          BaseMeta
+        DecoratedProcedure<
+          { auth: boolean },
+          { extra: boolean },
+          typeof schema1,
+          typeof schema2,
+          typeof errorMap
         >
       >()
 
-      // @ts-expect-error --- invalid TInContext
-      builder.use({} as Middleware<{ auth: 'invalid' }, any, any, any, any, any>)
-      // @ts-expect-error --- input is not match
-      builder.use(({ next }, input: 'invalid') => next({}))
-      // @ts-expect-error --- output is not match
-      builder.use(({ next }, input, output: MiddlewareOutputFn<'invalid'>) => next({}))
-      // @ts-expect-error --- conflict context
-      builder.use(({ next }) => next({ context: { db: undefined } }))
+      // @ts-expect-error invalid return type
+      builder.handler(() => 'invalid')
     })
-
-    it('with TInContext', () => {
-      const mid = {} as Middleware<{ cacheable?: boolean } & Record<never, never>, Record<never, never>, unknown, unknown, ORPCErrorConstructorMap<any>, BaseMeta>
-
-      expectTypeOf(builder.use(mid)).toEqualTypeOf<
-        RouterBuilder<
-              InitialContext & { cacheable?: boolean },
-              Omit<CurrentContext, never> & Record<never, never>,
-              typeof baseErrorMap,
-              BaseMeta
-        >
-      >()
-    })
-  })
-
-  it('.prefix', () => {
-    expectTypeOf(builder.prefix('/test')).toEqualTypeOf<
-      RouterBuilder<InitialContext, CurrentContext, typeof baseErrorMap, BaseMeta>
-    >()
-
-    // @ts-expect-error - invalid prefix
-    builder.prefix(123)
-  })
-
-  it('.tag', () => {
-    expectTypeOf(builder.tag('test', 'test2')).toEqualTypeOf<
-      RouterBuilder<InitialContext, CurrentContext, typeof baseErrorMap, BaseMeta>
-    >()
-  })
-
-  it('.router', () => {
-    expectTypeOf(builder.router(router)).toEqualTypeOf<
-      EnhancedRouter<typeof router, InitialContext, CurrentContext, typeof baseErrorMap>
-    >()
-
-    builder.router({
-      // @ts-expect-error - initial context is not match
-      ping: {} as Procedure<{ invalid: true }, any, any, any, any, any>,
-    })
-
-    builder.router({
-      // @ts-expect-error - meta def is not match
-      ping: {} as Procedure<
-        any,
-        any,
-        any,
-        any,
-        any,
-        { invalid: true }
-      >,
-    })
-  })
-
-  it('.lazy', () => {
-    expectTypeOf(builder.lazy(() => Promise.resolve({ default: router }))).toEqualTypeOf<
-      EnhancedRouter<Lazy<typeof router>, InitialContext, CurrentContext, typeof baseErrorMap>
-    >()
-
-    // @ts-expect-error - initial context is not match
-    builder.lazy(() => Promise.resolve({
-      default: {
-        ping: {} as Procedure<{ invalid: true }, any, any, any, any, any>,
-      },
-    }))
-
-    // @ts-expect-error - meta def is not match
-    builder.lazy(() => Promise.resolve({
-      default: {
-        ping: {} as Procedure<
-          any,
-          any,
-          any,
-          any,
-          any,
-          { invalid: true }
-        >,
-      },
-    }))
   })
 })

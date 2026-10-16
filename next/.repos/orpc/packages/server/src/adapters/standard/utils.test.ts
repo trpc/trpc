@@ -1,7 +1,23 @@
-import { resolveFriendlyStandardHandleOptions } from './utils'
+import { resolveFriendlyStandardHandlerHandleOptions } from './utils'
 
-it('resolveFriendlyStandardHandleOptions', () => {
-  expect(resolveFriendlyStandardHandleOptions({})).toEqual({ context: {} })
-  expect(resolveFriendlyStandardHandleOptions({ context: { a: 1 } })).toEqual({ context: { a: 1 } })
-  expect(resolveFriendlyStandardHandleOptions({ prefix: '/api/v1', context: { a: 1 } })).toEqual({ prefix: '/api/v1', context: { a: 1 } })
+describe('resolveFriendlyStandardHandlerHandleOptions', () => {
+  it('defaults context to empty object', () => {
+    expect(resolveFriendlyStandardHandlerHandleOptions({})).toEqual({ context: {} })
+  })
+
+  it('keeps a context function as is', () => {
+    const context = () => ({ userId: 'u_123' })
+
+    expect(resolveFriendlyStandardHandlerHandleOptions({ context })).toEqual({ context })
+  })
+
+  it('preserves provided context and prefix', () => {
+    expect(resolveFriendlyStandardHandlerHandleOptions({
+      prefix: '/api/v1',
+      context: { userId: 'u_123' },
+    })).toEqual({
+      prefix: '/api/v1',
+      context: { userId: 'u_123' },
+    })
+  })
 })

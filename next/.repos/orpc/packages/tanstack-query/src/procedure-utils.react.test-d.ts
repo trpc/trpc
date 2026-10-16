@@ -1,13 +1,22 @@
+import type { ORPCErrorFromErrorMap } from '@orpc/contract'
 import type { GetNextPageParamFunction, InfiniteData } from '@tanstack/react-query'
-import type { ErrorFromErrorMap } from '../../contract/src/error'
-import type { baseErrorMap } from '../../contract/tests/shared'
 import type { ProcedureUtils } from './procedure-utils'
 import { QueryClient, useInfiniteQuery, useMutation, useQueries, useQuery, useSuspenseInfiniteQuery, useSuspenseQueries, useSuspenseQuery } from '@tanstack/react-query'
+import z from 'zod'
+
+export const outputSchema = z.object({ output: z.number().transform(n => `${n}`) })
+
+const baseErrorMap = {
+  BASE: {
+    data: outputSchema,
+  },
+  OVERRIDE: {},
+}
 
 describe('ProcedureUtils', () => {
   type UtilsInput = { search?: string, cursor?: number } | undefined
   type UtilsOutput = { title: string }[]
-  type UtilsError = ErrorFromErrorMap<typeof baseErrorMap>
+  type UtilsError = ORPCErrorFromErrorMap<typeof baseErrorMap>
 
   const queryClient = new QueryClient()
 
@@ -142,13 +151,13 @@ describe('ProcedureUtils', () => {
   describe('.streamedOptions', () => {
     describe('useQuery', () => {
       it('without args', () => {
-        const query = useQuery(streamUtils.experimental_streamedOptions())
+        const query = useQuery(streamUtils.streamedOptions())
         expectTypeOf(query.data).toEqualTypeOf<UtilsOutput | undefined>()
         expectTypeOf(query.error).toEqualTypeOf<UtilsError | null>()
       })
 
       it('can infer errors inside options', () => {
-        const query = useQuery(streamUtils.experimental_streamedOptions({
+        const query = useQuery(streamUtils.streamedOptions({
           throwOnError(error) {
             expectTypeOf(error).toEqualTypeOf<UtilsError>()
             return false
@@ -159,7 +168,7 @@ describe('ProcedureUtils', () => {
       })
 
       it('with initial data & select', () => {
-        const query = useQuery(streamUtils.experimental_streamedOptions({
+        const query = useQuery(streamUtils.streamedOptions({
           select: data => ({ mapped: data }),
           initialData: [{ title: 'title' }],
         }))
@@ -171,13 +180,13 @@ describe('ProcedureUtils', () => {
 
     describe('useSuspenseQuery', () => {
       it('without args', () => {
-        const query = useSuspenseQuery(streamUtils.experimental_streamedOptions())
+        const query = useSuspenseQuery(streamUtils.streamedOptions())
         expectTypeOf(query.data).toEqualTypeOf<UtilsOutput>()
         expectTypeOf(query.error).toEqualTypeOf<UtilsError | null>()
       })
 
       it('can infer errors inside options', () => {
-        const query = useSuspenseQuery(streamUtils.experimental_streamedOptions({
+        const query = useSuspenseQuery(streamUtils.streamedOptions({
           throwOnError(error) {
             expectTypeOf(error).toEqualTypeOf<UtilsError>()
             return false
@@ -189,7 +198,7 @@ describe('ProcedureUtils', () => {
       })
 
       it('with select', () => {
-        const query = useSuspenseQuery(streamUtils.experimental_streamedOptions({
+        const query = useSuspenseQuery(streamUtils.streamedOptions({
           select: data => ({ mapped: data }),
         }))
 
@@ -201,12 +210,12 @@ describe('ProcedureUtils', () => {
     it('useQueries', () => {
       const queries = useQueries({
         queries: [
-          streamUtils.experimental_streamedOptions(),
-          streamUtils.experimental_streamedOptions({
+          streamUtils.streamedOptions(),
+          streamUtils.streamedOptions({
             input: { search: 'search' },
             context: { batch: true },
           }),
-          streamUtils.experimental_streamedOptions({
+          streamUtils.streamedOptions({
             select: data => ({ mapped: data }),
           }),
         ],
@@ -224,12 +233,12 @@ describe('ProcedureUtils', () => {
     it('useSuspenseQueries', () => {
       const queries = useSuspenseQueries({
         queries: [
-          streamUtils.experimental_streamedOptions(),
-          streamUtils.experimental_streamedOptions({
+          streamUtils.streamedOptions(),
+          streamUtils.streamedOptions({
             input: { search: 'search' },
             context: { batch: true },
           }),
-          streamUtils.experimental_streamedOptions({
+          streamUtils.streamedOptions({
             select: data => ({ mapped: data }),
           }),
         ],
@@ -246,7 +255,7 @@ describe('ProcedureUtils', () => {
 
     it('fetchQuery', () => {
       expectTypeOf(
-        queryClient.fetchQuery(streamUtils.experimental_streamedOptions()),
+        queryClient.fetchQuery(streamUtils.streamedOptions()),
       ).toEqualTypeOf<
         Promise<UtilsOutput>
       >()
@@ -256,13 +265,13 @@ describe('ProcedureUtils', () => {
   describe('.liveOptions', () => {
     describe('useQuery', () => {
       it('without args', () => {
-        const query = useQuery(streamUtils.experimental_liveOptions())
+        const query = useQuery(streamUtils.liveOptions())
         expectTypeOf(query.data).toEqualTypeOf<UtilsOutput[number] | undefined>()
         expectTypeOf(query.error).toEqualTypeOf<UtilsError | null>()
       })
 
       it('can infer errors inside options', () => {
-        const query = useQuery(streamUtils.experimental_liveOptions({
+        const query = useQuery(streamUtils.liveOptions({
           throwOnError(error) {
             expectTypeOf(error).toEqualTypeOf<UtilsError>()
             return false
@@ -273,7 +282,7 @@ describe('ProcedureUtils', () => {
       })
 
       it('with initial data & select', () => {
-        const query = useQuery(streamUtils.experimental_liveOptions({
+        const query = useQuery(streamUtils.liveOptions({
           select: data => ({ mapped: data }),
           initialData: { title: 'title' },
         }))
@@ -285,13 +294,13 @@ describe('ProcedureUtils', () => {
 
     describe('useSuspenseQuery', () => {
       it('without args', () => {
-        const query = useSuspenseQuery(streamUtils.experimental_liveOptions())
+        const query = useSuspenseQuery(streamUtils.liveOptions())
         expectTypeOf(query.data).toEqualTypeOf<UtilsOutput[number]>()
         expectTypeOf(query.error).toEqualTypeOf<UtilsError | null>()
       })
 
       it('can infer errors inside options', () => {
-        const query = useSuspenseQuery(streamUtils.experimental_liveOptions({
+        const query = useSuspenseQuery(streamUtils.liveOptions({
           throwOnError(error) {
             expectTypeOf(error).toEqualTypeOf<UtilsError>()
             return false
@@ -303,7 +312,7 @@ describe('ProcedureUtils', () => {
       })
 
       it('with select', () => {
-        const query = useSuspenseQuery(streamUtils.experimental_liveOptions({
+        const query = useSuspenseQuery(streamUtils.liveOptions({
           select: data => ({ mapped: data }),
         }))
 
@@ -315,12 +324,12 @@ describe('ProcedureUtils', () => {
     it('useQueries', () => {
       const queries = useQueries({
         queries: [
-          streamUtils.experimental_liveOptions(),
-          streamUtils.experimental_liveOptions({
+          streamUtils.liveOptions(),
+          streamUtils.liveOptions({
             input: { search: 'search' },
             context: { batch: true },
           }),
-          streamUtils.experimental_liveOptions({
+          streamUtils.liveOptions({
             select: data => ({ mapped: data }),
           }),
         ],
@@ -338,12 +347,12 @@ describe('ProcedureUtils', () => {
     it('useSuspenseQueries', () => {
       const queries = useSuspenseQueries({
         queries: [
-          streamUtils.experimental_liveOptions(),
-          streamUtils.experimental_liveOptions({
+          streamUtils.liveOptions(),
+          streamUtils.liveOptions({
             input: { search: 'search' },
             context: { batch: true },
           }),
-          streamUtils.experimental_liveOptions({
+          streamUtils.liveOptions({
             select: data => ({ mapped: data }),
           }),
         ],
@@ -360,7 +369,7 @@ describe('ProcedureUtils', () => {
 
     it('fetchQuery', () => {
       expectTypeOf(
-        queryClient.fetchQuery(streamUtils.experimental_liveOptions()),
+        queryClient.fetchQuery(streamUtils.liveOptions()),
       ).toEqualTypeOf<
         Promise<UtilsOutput[number]>
       >()

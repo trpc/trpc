@@ -1,103 +1,297 @@
-import { isObject, onError } from '@orpc/shared'
-import { decodeRequestMessage, deserializeResponseMessage, encodeRequestMessage, MessageType, serializeRequestMessage } from '@orpc/standard-server-peer'
+import { decodePeerMessage, encodePeerMessage } from '@standard-server/peer'
 import { os } from '../../builder'
 import { RPCHandler } from './rpc-handler'
 
-beforeEach(() => {
-  vi.clearAllMocks()
-})
-
-describe('rpcHandler', async () => {
-  let signal: AbortSignal | undefined
-  let serverPort: any
-  let clientPort: any
-  let receivedMessages: any[]
-  let transfer: ReturnType<typeof vi.fn>
-  let handler: ReturnType<typeof vi.fn>
-
+describe('rpcHandler', () => {
   beforeEach(() => {
-    signal = undefined
+    vi.clearAllMocks()
+  })
+
+  const createHandler = (options: ConstructorParameters<typeof RPCHandler>[1] = {}) => {
+    return new RPCHandler({
+      ping: os.handler(async ({ signal }) => {
+        await new Promise(resolve => setTimeout(resolve, 10))
+        signal?.throwIfAborted()
+
+        return 'pong'
+      }),
+    }, options)
+  }
+
+  const createPort = () => {
     const channel = new MessageChannel()
-    clientPort = channel.port1
-    serverPort = channel.port2
+    const clientPort = channel.port1
+    const serverPort = channel.port2
 
-    receivedMessages = []
-    clientPort.addEventListener('message', (event: any) => {
-      receivedMessages.push(event.data)
+    return {
+      clientPort,
+      serverPort,
+    }
+  }
+
+  const createRequestMessage = async ({
+    prefix,
+    url = '/ping',
+  }: { prefix?: string, url?: `/${string}` } = {}) => {
+    return encodePeerMessage({
+      id: '19',
+      kind: 'request',
+      json: {
+        url,
+        body: { json: 'input' },
+        headers: {},
+        method: 'POST',
+      },
+    }, prefix ? { prefix } : undefined)
+  }
+
+  it('accepts context and prefix option in message method', async () => {
+    const handler = new RPCHandler({
+      ping: os
+        .$context<{ userId: string }>()
+        .handler(({ context }) => context.userId),
     })
 
-    transfer = vi.fn()
-    handler = vi.fn(async ({ signal: _signal }) => {
-      signal = _signal!
-      await new Promise(resolve => setTimeout(resolve, 10))
-      return 'pong'
+    const { serverPort } = createPort()
+    const message = await createRequestMessage({ url: '/api/ping' })
+
+    const posted: unknown[] = []
+    vi.spyOn(serverPort, 'postMessage').mockImplementation((message) => {
+      posted.push(message)
     })
 
-    const handlerClass = new RPCHandler({
-      ping: os.handler(handler),
-    }, {
+    const result = await handler.message(serverPort as any, message, {
+      context: { userId: 'u_123' },
+      prefix: '/api',
+    })
+
+    expect(result.matched).toBe(true)
+    expect(posted).toHaveLength(1)
+
+    const decoded = decodePeerMessage(posted[0] as any) as any
+
+    expect(decoded.matched).toBe(true)
+    expect(decoded.message.kind).toBe('response')
+    expect(decoded.message.json.status).toBe(undefined)
+    expect(decoded.message.json.body).toEqual({ json: 'u_123' })
+  })
+
+  it.each([
+    ['string', () => createRequestMessage()],
+    ['bytes', async () => {
+      const message = await createRequestMessage()
+      return new TextEncoder().encode(message as string)
+    }],
+  ])('handles %s request', async (_type, createMessage) => {
+    const handler = createHandler()
+    const { serverPort } = createPort()
+    const message = await createMessage()
+
+    const posted: unknown[] = []
+    vi.spyOn(serverPort, 'postMessage').mockImplementation((message) => {
+      posted.push(message)
+    })
+
+    const result = await handler.message(serverPort as any, message)
+
+    expect(result.matched).toBe(true)
+    expect(posted).toHaveLength(1)
+
+    const decoded = decodePeerMessage(posted[0] as any) as any
+
+    expect(decoded.matched).toBe(true)
+    expect(decoded.message.kind).toBe('response')
+    expect(decoded.message.json.status).toBe(undefined)
+  })
+
+  it('can decode messages with prefix', async () => {
+    const handler = createHandler({
+      decodePeerMessage: { prefix: 'orpc:' },
+    })
+
+    const { serverPort } = createPort()
+    const posted: unknown[] = []
+    vi.spyOn(serverPort, 'postMessage').mockImplementation((message) => {
+      posted.push(message)
+    })
+
+    const message = await createRequestMessage()
+
+    const result = await handler.message(serverPort as any, message)
+
+    expect(result).toEqual({ matched: false })
+    expect(posted).toHaveLength(0)
+
+    const prefixedMessage = await createRequestMessage({ prefix: 'orpc:' })
+
+    const result2 = await handler.message(serverPort as any, prefixedMessage)
+
+    expect(result2.matched).toBe(true)
+    expect(posted).toHaveLength(1)
+  })
+
+  it('can encode messages with prefix', async () => {
+    const handler = createHandler({
+      encodePeerMessage: { prefix: 'orpc:' },
+    })
+
+    const { serverPort } = createPort()
+    const posted: unknown[] = []
+    vi.spyOn(serverPort, 'postMessage').mockImplementation((message) => {
+      posted.push(message)
+    })
+
+    const message = await createRequestMessage()
+
+    const result = await handler.message(serverPort as any, message)
+
+    expect(result.matched).toBe(true)
+    expect(posted).toHaveLength(1)
+
+    const decoded = decodePeerMessage(posted[0] as any, { prefix: 'orpc:' }) as any
+
+    expect(decoded.matched).toBe(true)
+    expect(decoded.message.kind).toBe('response')
+    expect(decoded.message.json.status).toBe(undefined)
+  })
+
+  it('aborts in-flight request on close before response is sent', async () => {
+    let signal: AbortSignal | undefined
+    let releaseProcedure: (() => void) | undefined
+
+    const procedureBlock = new Promise<void>((resolve) => {
+      releaseProcedure = resolve
+    })
+
+    const handler = new RPCHandler({
+      ping: os.handler(async ({ signal: procedureSignal }) => {
+        signal = procedureSignal
+        await procedureBlock
+        signal?.throwIfAborted()
+
+        return 'pong'
+      }),
+    })
+
+    const { serverPort } = createPort()
+    const postMessage = vi.spyOn(serverPort, 'postMessage').mockImplementation(() => {
+      // noop
+    })
+
+    const message = await createRequestMessage()
+    void handler.message(serverPort as any, message)
+
+    await vi.waitFor(() => {
+      expect(signal).toBeDefined()
+    })
+
+    expect(signal!.aborted).toBe(false)
+    expect(postMessage).not.toHaveBeenCalled()
+
+    await handler.close(serverPort as any)
+    releaseProcedure!()
+
+    await vi.waitFor(() => {
+      expect(signal?.aborted).toBe(true)
+    })
+
+    expect(postMessage).not.toHaveBeenCalled()
+
+    await handler.close(serverPort as any) // safe to invoke multiple times
+  })
+
+  it('can receive and send un-encoded messages with transfer option (structured clone)', async () => {
+    const transferable = new Uint8Array([1, 2, 3]).buffer
+
+    const transfer = vi.fn(async () => {
+      return [transferable]
+    })
+
+    const handler = createHandler({
       experimental_transfer: transfer,
-      interceptors: [onError(e => console.error(e))],
     })
 
-    handlerClass.upgrade(serverPort)
-  })
+    const { serverPort } = createPort()
 
-  const string_request_message = await encodeRequestMessage('19', MessageType.REQUEST, {
-    url: new URL('http://orpc/ping'),
-    body: { json: 'input' },
-    headers: {},
-    method: 'POST',
-  }) as string
+    const postMessage = vi.spyOn(serverPort, 'postMessage').mockImplementation(() => {
+      // noop
+    })
 
-  const buffer_request_message = new TextEncoder().encode(string_request_message)
+    const result = await handler.message(serverPort as any, {
+      id: '19',
+      kind: 'request',
+      json: {
+        url: '/ping',
+        body: { json: 'input' },
+        headers: {},
+        method: 'POST',
+      },
+    })
 
-  it('work with string event', async () => {
-    clientPort.postMessage(string_request_message)
-    await vi.waitFor(() => expect(receivedMessages.length).toBe(1))
-  })
-
-  it('works with file/buffer data', async () => {
-    clientPort.postMessage(buffer_request_message)
-    await vi.waitFor(() => expect(receivedMessages.length).toBe(1))
-  })
-
-  it('works with transfer', async () => {
-    const array = new Uint8Array([1, 2, 3])
-    transfer.mockResolvedValueOnce([array.buffer])
-    handler.mockResolvedValueOnce(array)
-
-    clientPort.postMessage(serializeRequestMessage(...await decodeRequestMessage(string_request_message) as [any, any, any]))
-    await vi.waitFor(() => expect(receivedMessages.length).toBe(1))
-    expect(receivedMessages[0]).toSatisfy(isObject)
-    const [id, type, payload] = deserializeResponseMessage(receivedMessages[0])
-
-    expect(array.byteLength).toBe(0) // transferred so length is 0
-
+    expect(result.matched).toBe(true)
     expect(transfer).toHaveBeenCalledTimes(1)
-    expect(transfer).toHaveBeenCalledWith([id, type, expect.objectContaining({
-      body: { json: expect.toBeOneOf([array]) },
-      headers: {},
-    })], expect.toBeOneOf([serverPort]))
-
-    expect(id).toBeTypeOf('string')
-    expect(payload).toEqual({
-      status: 200,
-      body: { json: expect.toSatisfy(v => v !== array && v instanceof Uint8Array && v.byteLength === 3) },
-      headers: {},
-    })
+    expect(postMessage).toHaveBeenCalledTimes(1)
+    expect(postMessage).toHaveBeenCalledWith(expect.objectContaining({ kind: 'response' }), [transferable])
   })
 
-  it('abort on close', { retry: 3 }, async () => {
-    clientPort.postMessage(string_request_message)
+  it('wires message and close events via upgrade', async () => {
+    let onMessage: ((event: { data: string }) => void) | undefined
+    let onClose: (() => void) | undefined
+    let signal: AbortSignal | undefined
+    let releaseProcedure: (() => void) | undefined
 
-    await new Promise(resolve => setTimeout(resolve, 0))
+    const procedureBlock = new Promise<void>((resolve) => {
+      releaseProcedure = resolve
+    })
 
-    expect(signal?.aborted).toBe(false)
-    expect(receivedMessages).toHaveLength(0)
+    const handler = new RPCHandler({
+      ping: os.handler(async ({ signal: procedureSignal }) => {
+        signal = procedureSignal
+        await procedureBlock
+        signal?.throwIfAborted()
 
-    clientPort.close()
-    await vi.waitFor(() => expect(signal?.aborted).toBe(true))
-    expect(receivedMessages).toHaveLength(0)
+        return 'pong'
+      }),
+    })
+
+    const ws = {
+      addEventListener: vi.fn((event: string, callback: any) => {
+        if (event === 'message') {
+          onMessage = callback
+        }
+
+        if (event === 'close') {
+          onClose = callback
+        }
+      }),
+      send: vi.fn(() => undefined),
+    }
+
+    handler.upgrade(ws as any)
+
+    const request = await createRequestMessage()
+    onMessage?.({ data: request as string })
+
+    await vi.waitFor(() => {
+      expect(signal).toBeDefined()
+    })
+
+    expect(ws.send).not.toHaveBeenCalled()
+
+    onClose?.()
+    releaseProcedure!()
+
+    await vi.waitFor(() => {
+      expect(signal?.aborted).toBe(true)
+    })
+
+    expect(ws.send).not.toHaveBeenCalled()
+  })
+
+  it('ignore invalid message format', async () => {
+    const handler = createHandler()
+    const { serverPort } = createPort()
+    const result = await handler.message(serverPort as any, { invalid: true })
+    expect(result.matched).toBe(false)
   })
 })

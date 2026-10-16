@@ -1,212 +1,163 @@
-import type { HTTPPath } from '@orpc/client'
-import type { ContractProcedureBuilder, ContractProcedureBuilderWithInput, ContractProcedureBuilderWithOutput, ContractRouterBuilder } from './builder-variants'
-import type { ErrorMap, MergedErrorMap } from './error'
-import type { Meta } from './meta'
-import type { ContractProcedureDef } from './procedure'
-import type { Route } from './route'
-import type { ContractRouter } from './router'
-import type { EnhanceContractRouterOptions, EnhancedContractRouter } from './router-utils'
+import type { ProcedureContractBuilderWithInput, ProcedureContractBuilderWithOutput } from './builder-variants'
+import type { ErrorMap } from './error'
+import type { MergedErrorMap } from './error-utils'
+import type { MetaPlugin } from './meta'
+import type { ProcedureContractDefinition } from './procedure'
+import type { RouterContract } from './router'
+import type { AugmentedContractRouter } from './router-utils'
 import type { AnySchema, Schema } from './schema'
-import { mergeErrorMap } from './error'
-import { mergeMeta } from './meta'
-import { ContractProcedure } from './procedure'
-import { mergePrefix, mergeRoute, mergeTags } from './route'
-import { enhanceContractRouter } from './router-utils'
+import { toArray } from '@orpc/shared'
+import { mergeErrorMap } from './error-utils'
+import { getHiddenMetaPlugins } from './meta'
+import { resolveMetaPlugins } from './meta-utils'
+import { ProcedureContract } from './procedure'
+import { augmentContractRouter } from './router-utils'
 
-export interface ContractBuilderDef<
-  TInputSchema extends AnySchema,
-  TOutputSchema extends AnySchema,
-  TErrorMap extends ErrorMap,
-  TMeta extends Meta,
-> extends ContractProcedureDef<TInputSchema, TOutputSchema, TErrorMap, TMeta>, EnhanceContractRouterOptions<TErrorMap> {
-}
+/**
+ * The input schema type used before `.input` is called.
+ * Input is `void` for better compatibility with third-party libraries,
+ * such as TanStack Query, which allow calling mutations without input.
+ */
+export type InitialInputSchema = Schema<void, unknown>
 
+/**
+ * The output schema type used before `.output` is called.
+ */
+export type InitialOutputSchema = Schema<unknown>
+
+/**
+ * The contract builder behind `oc`. Chain its methods to define procedure
+ * contracts — metadata, errors, and input/output schemas — without any
+ * business logic.
+ *
+ * @see {@link https://orpc.dev/docs/contract/procedure | Procedure Contract}
+ */
 export class ContractBuilder<
-  TInputSchema extends AnySchema,
-  TOutputSchema extends AnySchema,
   TErrorMap extends ErrorMap,
-  TMeta extends Meta,
-> extends ContractProcedure<TInputSchema, TOutputSchema, TErrorMap, TMeta> {
+> extends ProcedureContract<InitialInputSchema, InitialOutputSchema, TErrorMap> {
   /**
-   * This property holds the defined options for the contract.
+   * Private constructor to prevent direct instantiation.
+   * Use the static `create` method to initialize a new instance with a safe initial definition.
    */
-  declare '~orpc': ContractBuilderDef<TInputSchema, TOutputSchema, TErrorMap, TMeta>
-
-  constructor(def: ContractBuilderDef<TInputSchema, TOutputSchema, TErrorMap, TMeta>) {
-    super(def)
-
-    this['~orpc'].prefix = def.prefix
-    this['~orpc'].tags = def.tags
+  private constructor(definition: ProcedureContractDefinition<InitialInputSchema, InitialOutputSchema, TErrorMap>) {
+    super(definition)
   }
 
   /**
-   * Sets or overrides the initial meta.
+   * Creates a fresh contract builder with an empty definition.
+   * Prefer the exported `oc` instance over calling this directly.
    *
-   * @see {@link https://orpc.dev/docs/metadata Metadata Docs}
+   * @see {@link https://orpc.dev/docs/contract/procedure | Procedure Contract}
    */
-  $meta<U extends Meta>(
-    initialMeta: U,
-  ): ContractBuilder<TInputSchema, TOutputSchema, TErrorMap, U & Record<never, never>> {
-    /**
-     * We need `& Record<never, never>` to deal with `has no properties in common with type` error
-     */
-
+  static create(): ContractBuilder<object> {
     return new ContractBuilder({
-      ...this['~orpc'],
-      meta: initialMeta,
+      errorMap: {},
+      meta: {},
     })
   }
 
   /**
-   * Sets or overrides the initial route.
-   * This option is typically relevant when integrating with OpenAPI.
+   * Applies metadata plugins to contracts built from this builder.
    *
-   * @see {@link https://orpc.dev/docs/openapi/routing OpenAPI Routing Docs}
-   * @see {@link https://orpc.dev/docs/openapi/input-output-structure OpenAPI Input/Output Structure Docs}
+   * @see {@link https://orpc.dev/docs/contract/procedure#metadata | Procedure Contract - Metadata}
    */
-  $route(
-    initialRoute: Route,
-  ): ContractBuilder<TInputSchema, TOutputSchema, TErrorMap, TMeta> {
+  meta(
+    ...plugins: MetaPlugin<InitialInputSchema, InitialOutputSchema, TErrorMap>[]
+  ): ContractBuilder<TErrorMap> {
+    const [meta, metaPlugins] = resolveMetaPlugins(
+      this['~orpc'].meta,
+      this['~orpc'].metaPlugins,
+      plugins,
+    )
+
     return new ContractBuilder({
       ...this['~orpc'],
-      route: initialRoute,
-    })
+      meta,
+      metaPlugins,
+    }) as any
   }
 
   /**
-   * Sets or overrides the initial input schema.
+   * Defines typesafe errors that implementations of this contract can throw.
    *
-   * @see {@link https://orpc.dev/docs/procedure#initial-configuration Initial Procedure Configuration Docs}
+   * @see {@link https://orpc.dev/docs/contract/procedure#typesafe-errors | Procedure Contract - Typesafe Errors}
    */
-  $input<U extends AnySchema>(
-    initialInputSchema?: U,
-  ): ContractBuilder<U, TOutputSchema, TErrorMap, TMeta> {
-    return new ContractBuilder({
-      ...this['~orpc'],
-      inputSchema: initialInputSchema,
-    })
-  }
-
-  /**
-   * Adds type-safe custom errors to the contract.
-   * The provided errors are spared-merged with any existing errors in the contract.
-   *
-   * @see {@link https://orpc.dev/docs/error-handling#type%E2%80%90safe-error-handling Type-Safe Error Handling Docs}
-   */
-  errors<U extends ErrorMap>(
-    errors: U,
-  ): ContractBuilder<TInputSchema, TOutputSchema, MergedErrorMap<TErrorMap, U>, TMeta> {
-    return new ContractBuilder({
+  errors<T extends ErrorMap>(
+    errors: T,
+  ): ContractBuilder<MergedErrorMap<TErrorMap, T>> {
+    let result = new ContractBuilder({
       ...this['~orpc'],
       errorMap: mergeErrorMap(this['~orpc'].errorMap, errors),
     })
+
+    const plugins = getHiddenMetaPlugins(errors)
+    if (plugins) {
+      result = result.meta(...plugins) as any
+    }
+
+    return result as any
   }
 
   /**
-   * Sets or updates the metadata for the contract.
-   * The provided metadata is spared-merged with any existing metadata in the contract.
+   * Defines the input schema used to validate and type the procedure input.
    *
-   * @see {@link https://orpc.dev/docs/metadata Metadata Docs}
+   * @see {@link https://orpc.dev/docs/contract/procedure#inputoutput-validation | Procedure Contract - Input/Output Validation}
    */
-  meta(
-    meta: TMeta,
-  ): ContractProcedureBuilder<TInputSchema, TOutputSchema, TErrorMap, TMeta> {
-    return new ContractBuilder({
+  input<T extends AnySchema>(
+    schema: T,
+  ): ProcedureContractBuilderWithInput<T, TErrorMap> {
+    let result = new ContractBuilder({
       ...this['~orpc'],
-      meta: mergeMeta(this['~orpc'].meta, meta),
+      inputSchemas: [...toArray(this['~orpc'].inputSchemas), schema],
     })
+
+    const plugins = getHiddenMetaPlugins(schema)
+    if (plugins) {
+      result = result.meta(...plugins) as any
+    }
+
+    return result as any
   }
 
   /**
-   * Sets or updates the route definition for the contract.
-   * The provided route is spared-merged with any existing route in the contract.
-   * This option is typically relevant when integrating with OpenAPI.
+   * Defines the output schema used to validate and type the procedure output.
    *
-   * @see {@link https://orpc.dev/docs/openapi/routing OpenAPI Routing Docs}
-   * @see {@link https://orpc.dev/docs/openapi/input-output-structure OpenAPI Input/Output Structure Docs}
+   * @see {@link https://orpc.dev/docs/contract/procedure#inputoutput-validation | Procedure Contract - Input/Output Validation}
    */
-  route(
-    route: Route,
-  ): ContractProcedureBuilder<TInputSchema, TOutputSchema, TErrorMap, TMeta> {
-    return new ContractBuilder({
+  output<T extends AnySchema>(
+    schema: T,
+  ): ProcedureContractBuilderWithOutput<T, TErrorMap> {
+    let result = new ContractBuilder({
       ...this['~orpc'],
-      route: mergeRoute(this['~orpc'].route, route),
+      outputSchemas: [...toArray(this['~orpc'].outputSchemas), schema],
     })
+
+    const plugins = getHiddenMetaPlugins(schema)
+    if (plugins) {
+      result = result.meta(...plugins) as any
+    }
+
+    return result as any
   }
 
   /**
-   * Defines the input validation schema for the contract.
+   * Applies the builder's errors and metadata to every procedure contract in
+   * the given router contract.
    *
-   * @see {@link https://orpc.dev/docs/procedure#input-output-validation Input Validation Docs}
+   * @see {@link https://orpc.dev/docs/contract/router#extending-router | Router Contract - Extending Router}
    */
-  input<U extends AnySchema>(
-    schema: U,
-  ): ContractProcedureBuilderWithInput<U, TOutputSchema, TErrorMap, TMeta> {
-    return new ContractBuilder({
-      ...this['~orpc'],
-      inputSchema: schema,
-    })
-  }
-
-  /**
-   * Defines the output validation schema for the contract.
-   *
-   * @see {@link https://orpc.dev/docs/procedure#input-output-validation Output Validation Docs}
-   */
-  output<U extends AnySchema>(
-    schema: U,
-  ): ContractProcedureBuilderWithOutput<TInputSchema, U, TErrorMap, TMeta> {
-    return new ContractBuilder({
-      ...this['~orpc'],
-      outputSchema: schema,
-    })
-  }
-
-  /**
-   * Prefixes all procedures in the contract router.
-   * The provided prefix is post-appended to any existing router prefix.
-   *
-   * @note This option does not affect procedures that do not define a path in their route definition.
-   *
-   * @see {@link https://orpc.dev/docs/openapi/routing#route-prefixes OpenAPI Route Prefixes Docs}
-   */
-  prefix(prefix: HTTPPath): ContractRouterBuilder<TErrorMap, TMeta> {
-    return new ContractBuilder({
-      ...this['~orpc'],
-      prefix: mergePrefix(this['~orpc'].prefix, prefix),
-    })
-  }
-
-  /**
-   * Adds tags to all procedures in the contract router.
-   * This helpful when you want to group procedures together in the OpenAPI specification.
-   *
-   * @see {@link https://orpc.dev/docs/openapi/openapi-specification#operation-metadata OpenAPI Operation Metadata Docs}
-   */
-  tag(...tags: string[]): ContractRouterBuilder<TErrorMap, TMeta> {
-    return new ContractBuilder({
-      ...this['~orpc'],
-      tags: mergeTags(this['~orpc'].tags, tags),
-    })
-  }
-
-  /**
-   * Applies all of the previously defined options to the specified contract router.
-   *
-   * @see {@link https://orpc.dev/docs/router#extending-router Extending Router Docs}
-   */
-  router<T extends ContractRouter<TMeta>>(router: T): EnhancedContractRouter<T, TErrorMap> {
-    return enhanceContractRouter(router, this['~orpc'])
+  router<T extends RouterContract>(
+    router: T,
+  ): AugmentedContractRouter<T, TErrorMap> {
+    return augmentContractRouter(router, this['~orpc'])
   }
 }
 
-export const oc = new ContractBuilder<
-  Schema<unknown, unknown>,
-  Schema<unknown, unknown>,
-  Record<never, never>,
-  Record<never, never>
->({
-  errorMap: {},
-  route: {},
-  meta: {},
-})
+/**
+ * The oRPC contract builder. Chain methods like `.input`, `.errors`, and
+ * `.output` to define procedure contracts, then compose them into router
+ * contracts.
+ *
+ * @see {@link https://orpc.dev/docs/contract/procedure | Procedure Contract}
+ */
+export const oc = ContractBuilder.create()

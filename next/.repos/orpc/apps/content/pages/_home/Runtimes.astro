@@ -1,0 +1,71 @@
+---
+// Every entry links to the page that documents it, so the strip doubles as a
+// jump list into the adapter and integration docs.
+const rows = [
+  {
+    id: 'runs-on',
+    label: 'Runs on',
+    items: [
+      { name: 'Node.js', href: '/docs/adapters/node-http' },
+      { name: 'Bun', href: '/docs/adapters/fetch-api' },
+      { name: 'Deno', href: '/docs/adapters/fetch-api' },
+      { name: 'Cloudflare Workers', href: '/docs/adapters/fetch-api' },
+      { name: 'AWS Lambda', href: '/docs/adapters/aws-lambda' },
+      { name: 'Fastify', href: '/docs/adapters/fastify' },
+      { name: 'Fetch API', href: '/docs/adapters/fetch-api' },
+      { name: 'WebSocket', href: '/docs/adapters/websocket' },
+      { name: 'MessagePort', href: '/docs/adapters/message-port' },
+      { name: 'Browser', href: '/docs/adapters/browser' },
+      { name: 'Expo', href: '/docs/adapters/expo' },
+    ],
+  },
+  {
+    id: 'works-with',
+    label: 'Works with',
+    items: [
+      { name: 'TanStack Query', href: '/docs/integrations/tanstack-query' },
+      { name: 'SWR', href: '/docs/integrations/swr' },
+      { name: 'Pinia Colada', href: '/docs/integrations/pinia-colada' },
+      { name: 'Next.js', href: '/docs/integrations/next' },
+      { name: 'NestJS', href: '/docs/integrations/nest' },
+      { name: 'Effect', href: '/docs/integrations/effect' },
+      { name: 'AI SDK', href: '/docs/integrations/ai-sdk' },
+      { name: 'tRPC', href: '/docs/integrations/trpc' },
+      // One entry rather than Zod/Valibot/ArkType: the integration is with the
+      // Standard Schema spec, so any library implementing it works.
+      { name: 'Standard Schema', href: '/docs/integrations/standard-schema' },
+      { name: 'OpenTelemetry', href: '/docs/integrations/opentelemetry' },
+      { name: 'Pino', href: '/docs/integrations/pino' },
+    ],
+  },
+]
+---
+
+<section class="border-b border-border">
+  <div class="mx-auto max-w-6xl divide-y divide-border px-6">
+    {
+      rows.map(row => (
+        <div class="flex flex-col gap-3 py-7 sm:flex-row sm:items-baseline sm:gap-10">
+          <p
+            class="shrink-0 font-mono text-[0.6875rem] tracking-[0.18em] text-muted-foreground uppercase sm:w-24"
+            id={row.id}
+          >
+            {row.label}
+          </p>
+          <ul aria-labelledby={row.id} class="flex flex-wrap gap-x-6 gap-y-2.5">
+            {row.items.map(item => (
+              <li>
+                <a
+                  class="text-sm font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+                  href={item.href}
+                >
+                  {item.name}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))
+    }
+  </div>
+</section>

@@ -1,0 +1,162 @@
+---
+title: "MSW Integration"
+description: "Mock oRPC procedures at the network level with typed MSW request handlers, reusing the real RPC or OpenAPI runtime for serialization and validation."
+sidebar:
+  label: "MSW"
+---
+
+:::warning
+This guide assumes you are already familiar with [MSW](https://mswjs.io/). If you need a refresher, review the official MSW documentation before continuing.
+:::
+
+## Installation
+
+```package-install
+npm install @orpc/experimental-msw@beta
+```
+
+:::info
+Both MSW v2 and v3 are supported.
+:::
+
+## Setup
+
+Create MSW utils from a [router contract](/docs/contract/router) or an implemented [router](/docs/router) (convert [lazy routers](/docs/router#lazy-router) with [`unlazyRouter`](/docs/contract/router#router-to-contract) first). The `handler` option creates the fetch handler that serves each mock. Configure it like your production handler, so serialization, validation, and error envelopes behave exactly like your real server.
+
+```ts
+import { createHTTPUtils } from '@orpc/experimental-msw'
+import { RPCHandler } from '@orpc/server/fetch'
+
+export const mock = createHTTPUtils(contract, {
+  prefix: '/rpc',
+  handler: router => new RPCHandler(router),
+})
+```
+
+Set `prefix` to the prefix your link sends requests to. Any origin matches by default; narrow it with the `origin` option, which supports MSW wildcards.
+
+:::tip
+Any protocol works: pair the [RPCLink](/docs/rpc/link) with a [RPCHandler](/docs/rpc/handler), or the [OpenAPILink](/docs/openapi/link) with an [OpenAPIHandler](/docs/openapi/handler).
+:::
+
+## Mocking Procedures
+
+The `.handler` method creates an MSW request handler that resolves a procedure. The input your mock receives and the output it returns are validated and serialized by the created fetch handler, exactly like on a real server.
+
+```ts
+import { setupServer } from 'msw/node'
+
+const server = setupServer(
+  mock.planet.list.handler(({ input }) => [
+    { id: 1, name: 'Earth' },
+  ]),
+)
+
+server.listen()
+```
+
+To access request details, such as the raw `request`, expose them through the [`context` option](#advanced-configuration).
+
+:::info
+[AsyncIteratorObject](/docs/async-iterator-object) outputs work too: return an async generator and the client receives a streamed response.
+:::
+
+## Mocking Errors
+
+The `.error` method creates an MSW request handler that rejects a procedure with one of its [defined errors](/docs/contract/procedure#typesafe-errors), serialized exactly like a server-thrown error. For dynamic or arbitrary errors, use `.handler` and throw the `errors` constructors or any [`ORPCError`](/docs/error-handling#orpcerror-class):
+
+```ts
+import { ORPCError } from '@orpc/client'
+
+const handlers = [
+  mock.planet.find.error('NOT_FOUND', { data: { id: 123 } }),
+  mock.planet.update.handler(({ input, errors }) => {
+    throw errors.CONFLICT({ data: { id: input.id } })
+  }),
+  mock.planet.delete.handler(() => {
+    throw new ORPCError('SERVICE_UNAVAILABLE')
+  }),
+]
+```
+
+## Mocking Loading States
+
+The `.loading` method creates an MSW request handler that never resolves, useful for testing loading states, for example in [Storybook](https://storybook.js.org/docs/writing-stories/mocking-data-and-modules/mocking-network-requests) stories:
+
+```ts
+export const Loading: Story = {
+  parameters: {
+    msw: {
+      handlers: [mock.planet.list.loading()],
+    },
+  },
+}
+```
+
+## Passthrough
+
+The `.passthrough` method creates an MSW request handler that performs matching requests against the real server as-is, useful to exempt specific procedures from mocking, for example while [onUnhandledFrame](https://mswjs.io/docs/api/setup-server/listen) (`onUnhandledRequest` in MSW v2) treats everything else as an error:
+
+```ts
+const handlers = [
+  mock.planet.list.handler(() => []),
+  mock.planet.find.passthrough(), // hits the real server
+]
+```
+
+## Advanced Configuration
+
+All handler behavior is configured through the `handler` option, so mocks can mirror your production setup exactly, such as plugins, a custom serializer, or `allowMethods` if your client sends [GET requests](/docs/rpc/handler#supported-http-methods) over the RPC protocol:
+
+```ts
+import { RPCHandler } from '@orpc/server/fetch'
+import { ResponseHeadersHandlerPlugin } from '@orpc/server/plugins'
+
+const mock = createHTTPUtils(contract, {
+  prefix: '/rpc',
+  handler: router => new RPCHandler(router, {
+    plugins: [new ResponseHeadersHandlerPlugin()],
+  }),
+})
+```
+
+The `context` option controls the [context](/docs/context) passed to the created handler on each request, and mock handlers receive it as `context`, enabling context-driven behaviors such as the [Response Headers Plugin](/docs/plugins/response-headers).
+
+```ts
+import { ResponseHeadersHandlerPlugin, type ResponseHeadersHandlerPluginContext } from '@orpc/server/plugins'
+
+interface MockServerContext extends ResponseHeadersHandlerPluginContext {
+  reqHeaders: Headers
+}
+
+const mock = createHTTPUtils(contract, {
+  context: (info): MockServerContext => ({ reqHeaders: info.request.headers }),
+  handler: router => new RPCHandler(router, {
+    plugins: [new ResponseHeadersHandlerPlugin()],
+  }),
+})
+
+const handlers = [
+  mock.planet.list.handler(({ context }) => {
+    const locale = context.reqHeaders.get('accept-language') ?? 'en'
+    context.resHeaders?.set('content-language', locale)
+    return []
+  }),
+]
+```
+
+You can also disable input or output validation of the mocked data:
+
+```ts
+const mock = createHTTPUtils(contract, {
+  handler: router => new RPCHandler(router),
+  disableInputValidation: true,
+  disableOutputValidation: true,
+})
+```
+
+Each mock serves a router containing only the procedure being mocked. Requests the created handler does not match simply fall through to other MSW handlers.
+
+## Limitations
+
+Requests sent through the [Batch Requests Plugin](/docs/plugins/batch) cannot be mocked. Each mock serves a router containing only its own procedure, so even a `handler` configured with the batch plugin cannot resolve the other procedures bundled into the same HTTP request. Disable batching when mocking with MSW.

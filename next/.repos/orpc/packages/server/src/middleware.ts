@@ -1,71 +1,75 @@
-import type { AnySchema, ErrorMap, Meta } from '@orpc/contract'
+import type { AnyMetaPlugin, ErrorMap, ORPCErrorConstructorMap } from '@orpc/contract'
 import type { MaybeOptionalOptions, Promisable } from '@orpc/shared'
 import type { Context } from './context'
-import type { ORPCErrorConstructorMap } from './error'
-import type { Procedure } from './procedure'
+import type { AnyProcedure } from './procedure'
 
 export type MiddlewareResult<TOutContext extends Context, TOutput> = Promisable<{
   output: TOutput
   context: TOutContext
 }>
 
-export type MiddlewareNextFnOptions<TOutContext extends Context> = Record<never, never> extends TOutContext
+export type MiddlewareNextOptions<TOutContext extends Context> = object extends TOutContext
   ? { context?: TOutContext }
   : { context: TOutContext }
 
-export interface MiddlewareNextFn<TOutput> {
-  <U extends Context = Record<never, never>>(
-    ...rest: MaybeOptionalOptions<MiddlewareNextFnOptions<U>>
-  ): MiddlewareResult<U, TOutput>
+export interface MiddlewareNext<TOutput> {
+  <T extends Context = object>(
+    ...rest: MaybeOptionalOptions<MiddlewareNextOptions<T>>
+  ): MiddlewareResult<T, TOutput>
 }
 
-export interface MiddlewareOutputFn<TOutput> {
-  (output: TOutput): MiddlewareResult<Record<never, never>, TOutput>
+export type MiddlewareDoneOptions<TOutContext, TOutput>
+  = & (object extends TOutContext ? { context?: TOutContext } : { context: TOutContext })
+    & { output: TOutput }
+
+export interface MiddlewareDone<TOutput> {
+  /**
+   * Create a successful result and terminate the middleware chain early.
+   */
+  <TOutContext extends Context = object>(
+    ...rest: MaybeOptionalOptions<MiddlewareDoneOptions<TOutContext, TOutput>>
+  ): MiddlewareResult<TOutContext, TOutput>
 }
 
 export interface MiddlewareOptions<
   TInContext extends Context,
   TOutput,
   TErrorConstructorMap extends ORPCErrorConstructorMap<any>,
-  TMeta extends Meta,
 > {
   context: TInContext
-  path: readonly string[]
-  procedure: Procedure<Context, Context, AnySchema, AnySchema, ErrorMap, TMeta>
-  signal?: AbortSignal
+  path: string[]
+  procedure: AnyProcedure
+  signal?: AbortSignal | undefined
   lastEventId: string | undefined
-  next: MiddlewareNextFn<TOutput>
+  /**
+   * Invoke to continue the middleware chain.
+   */
+  next: MiddlewareNext<TOutput>
   errors: TErrorConstructorMap
 }
 
-/**
- * A function that represents a middleware.
- *
- * @see {@link https://orpc.dev/docs/middleware Middleware Docs}
- */
+export interface MiddlewareDefinition<TErrorMap extends ErrorMap> {
+  errorMap?: TErrorMap | undefined
+  metaPlugins?: AnyMetaPlugin[] | undefined
+}
+
 export interface Middleware<
   TInContext extends Context,
   TOutContext extends Context,
   TInput,
   TOutput,
-  TErrorConstructorMap extends ORPCErrorConstructorMap<any>,
-  TMeta extends Meta,
+  TErrorMap extends ErrorMap,
 > {
+  /** this property should be optional to support inline middleware */
+  '~orpc'?: MiddlewareDefinition<TErrorMap> | undefined
+
   (
-    options: MiddlewareOptions<TInContext, TOutput, TErrorConstructorMap, TMeta>,
+    opts: MiddlewareOptions<TInContext, TOutput, ORPCErrorConstructorMap<TErrorMap>>,
     input: TInput,
-    output: MiddlewareOutputFn<TOutput>,
+    done: MiddlewareDone<TOutput>,
   ): Promisable<
     MiddlewareResult<TOutContext, TOutput>
   >
 }
 
-export type AnyMiddleware = Middleware<any, any, any, any, any, any>
-
-export interface MapInputMiddleware<TInput, TMappedInput> {
-  (input: TInput): TMappedInput
-}
-
-export function middlewareOutputFn<TOutput>(output: TOutput): MiddlewareResult<Record<never, never>, TOutput> {
-  return { output, context: {} }
-}
+export type AnyMiddleware = Middleware<any, any, any, any, any>

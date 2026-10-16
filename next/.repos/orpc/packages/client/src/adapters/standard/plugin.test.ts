@@ -2,36 +2,40 @@ import type { StandardLinkPlugin } from './plugin'
 import { CompositeStandardLinkPlugin } from './plugin'
 
 describe('compositeStandardLinkPlugin', () => {
-  it('forward init and sort plugins', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('sorts plugins by before/after dependencies and forwards transformed options', () => {
     const plugin1 = {
-      init: vi.fn(),
-      order: 1,
+      name: 'plugin-1',
+      after: ['plugin-2'],
+      init: vi.fn((options: any) => ({ ...options, marks: [...options.marks, '1'] })),
     } satisfies StandardLinkPlugin<any>
+
     const plugin2 = {
-      init: vi.fn(),
+      name: 'plugin-2',
+      init: vi.fn((options: any) => ({ ...options, marks: [...options.marks, '2'] })),
     } satisfies StandardLinkPlugin<any>
+
     const plugin3 = {
-      init: vi.fn(),
-      order: -1,
+      name: 'plugin-3',
+      before: ['plugin-2'],
+      init: vi.fn((options: any) => ({ ...options, marks: [...options.marks, '3'] })),
     } satisfies StandardLinkPlugin<any>
 
-    const compositePlugin = new CompositeStandardLinkPlugin([plugin1, plugin2, plugin3])
+    const composite = new CompositeStandardLinkPlugin([plugin1, plugin2, plugin3])
 
-    const interceptor = vi.fn()
-
-    const options = { interceptors: [interceptor] }
-
-    compositePlugin.init(options)
+    const result = composite.init({ marks: [] } as any)
 
     expect(plugin1.init).toHaveBeenCalledOnce()
     expect(plugin2.init).toHaveBeenCalledOnce()
     expect(plugin3.init).toHaveBeenCalledOnce()
 
-    expect(plugin1.init.mock.calls[0]![0]).toBe(options)
-    expect(plugin2.init.mock.calls[0]![0]).toBe(options)
-    expect(plugin3.init.mock.calls[0]![0]).toBe(options)
+    expect(plugin3.init).toHaveBeenCalledWith({ marks: [] })
+    expect(plugin2.init).toHaveBeenCalledWith({ marks: ['3'] })
+    expect(plugin1.init).toHaveBeenCalledWith({ marks: ['3', '2'] })
 
-    expect(plugin3.init).toHaveBeenCalledBefore(plugin2.init)
-    expect(plugin2.init).toHaveBeenCalledBefore(plugin1.init)
+    expect(result).toEqual({ marks: ['3', '2', '1'] })
   })
 })

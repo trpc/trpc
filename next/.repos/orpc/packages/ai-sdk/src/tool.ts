@@ -1,49 +1,163 @@
 import type { ClientOptions } from '@orpc/client'
-import type { AnySchema, ContractProcedure, ErrorMap, InferSchemaInput, InferSchemaOutput, Meta, Schema } from '@orpc/contract'
-import type { Context, CreateProcedureClientOptions } from '@orpc/server'
-import type { MaybeOptionalOptions, SetOptional } from '@orpc/shared'
-import type { Tool } from 'ai'
+import type { AnySchema, InferSchemaInput, InferSchemaOutput, ProcedureContract, Schema } from '@orpc/contract'
+import type { JsonSchema } from '@orpc/json-schema'
+import type { Context, ProcedureClientOptions } from '@orpc/server'
+import type { MaybeOptionalOptions } from '@orpc/shared'
+import type { FlexibleSchema, Tool } from 'ai'
+import type { FunctionTool } from './tool-meta'
+import { getAsyncIteratorObjectSchemaDetails } from '@orpc/contract'
+import { combineJsonSchemasWithComposition } from '@orpc/json-schema'
 import { call, Procedure } from '@orpc/server'
-import { resolveMaybeOptionalOptions } from '@orpc/shared'
+import { isAsyncGeneratorFunction, mergeTwoLevels, ORPC_NAME, resolveMaybeOptionalOptions, toArray } from '@orpc/shared'
 import { tool } from 'ai'
+import { getAiSdkToolMeta } from './tool-meta'
 
-export const AI_SDK_TOOL_META_SYMBOL: unique symbol = Symbol('ORPC_AI_SDK_TOOL_META')
-
-export interface AiSdkToolMeta extends Meta {
-  [AI_SDK_TOOL_META_SYMBOL]?: Partial<Tool<unknown, unknown>>
+const ANY_SCHEMA: FlexibleSchema = {
+  '~standard': {
+    vendor: ORPC_NAME,
+    version: 1,
+    validate: (value: unknown) => ({ value }),
+    jsonSchema: {
+      input: () => ({}),
+      output: () => ({}),
+    },
+  },
 }
 
-export class CreateToolError extends Error {}
+function combineJsonSchemas(jsonSchemas: Record<string, unknown>[]): Record<string, unknown> {
+  let $schema: unknown
+
+  const branches = jsonSchemas.map((jsonSchema) => {
+    if ('$schema' in jsonSchema) {
+      const { $schema: branch$schema, ...rest } = jsonSchema
+      $schema ??= branch$schema
+      return rest
+    }
+
+    return jsonSchema
+  })
+
+  const combined = combineJsonSchemasWithComposition('allOf', branches as JsonSchema[]) as Record<string, unknown>
+
+  return { $schema, ...combined }
+}
+
+function combineSchemas(schemas: AnySchema[], merge: boolean): undefined | FlexibleSchema {
+  if (schemas.length === 0) {
+    return undefined
+  }
+
+  if (schemas.length === 1) {
+    return schemas[0]!
+  }
+
+  type MaybeStandardJsonSchema = AnySchema & Extract<FlexibleSchema, { '~standard': { jsonSchema?: object } }>
+
+  const standardJsonSchemas = (schemas as MaybeStandardJsonSchema[])
+    .filter(schema => schema['~standard'].jsonSchema)
+
+  const jsonSchema: MaybeStandardJsonSchema['~standard']['jsonSchema'] = standardJsonSchemas.length
+    ? {
+        input: options => combineJsonSchemas(standardJsonSchemas.map(schema => schema['~standard'].jsonSchema!.input(options))),
+        output: options => combineJsonSchemas(standardJsonSchemas.map(schema => schema['~standard'].jsonSchema!.output(options))),
+      }
+    : undefined
+
+  return {
+    '~standard': {
+      vendor: ORPC_NAME,
+      version: 1,
+      async validate(value: unknown) {
+        let current = value
+
+        // Mirrors the server's stacked input validation, output schemas stay piped.
+        for (const [index, schema] of schemas.entries()) {
+          const merging = merge && index !== 0
+          const result = await schema['~standard'].validate(merging ? mergeTwoLevels(value, current) : current)
+
+          if (result.issues) {
+            return result
+          }
+
+          current = merging ? mergeTwoLevels(current, result.value) : result.value
+        }
+
+        return { value: current }
+      },
+      jsonSchema,
+    },
+  }
+}
+
+function getIteratorYieldSchemas(schemas: AnySchema[]): AnySchema[] | undefined {
+  if (schemas.length === 0) {
+    return undefined
+  }
+
+  const yieldSchemas: AnySchema[] = []
+
+  for (const schema of schemas) {
+    const details = getAsyncIteratorObjectSchemaDetails(schema)
+
+    if (!details) {
+      return undefined
+    }
+
+    yieldSchemas.push(details.yieldSchema)
+  }
+
+  return yieldSchemas
+}
+
+function combineOutputSchemas(outputSchemas: AnySchema[]): FlexibleSchema | undefined {
+  const yieldSchemas = getIteratorYieldSchemas(outputSchemas)
+  return combineSchemas([...(yieldSchemas ?? outputSchemas)].reverse(), false)
+}
 
 /**
- * Implements [procedure contract](https://orpc.dev/docs/contract-first/define-contract#procedure-contract)
- * as an [AI SDK Tool](https://ai-sdk.dev/docs/foundations/tools) by leveraging existing contract definitions.
+ * Infers the value an AI SDK tool outputs for a given oRPC output type.
  *
- * @warning Requires a contract with an `input` schema defined.
- * @info Standard [procedures](https://orpc.dev/docs/procedure) are also compatible with [procedure contracts](https://orpc.dev/docs/contract-first/define-contract).
+ * For [AsyncIteratorObject](https://orpc.dev/docs/async-iterator-object) outputs, the tool streams
+ * each yielded event as a [preliminary result](https://ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling#preliminary-tool-results)
+ * and the last event becomes the final result, so the tool output is the yield type.
+ *
+ * @see {@link https://orpc.dev/docs/integrations/ai-sdk#streaming-tool-outputs | AI SDK Integration - Streaming Tool Outputs}
+ */
+export type ToolOutput<T> = T extends AsyncIteratorObject<infer TYield, any, any>
+  ? TYield
+  : T
+
+export interface ImplementToolFactoryOptions {
+  // TODO: add a `converter` option after JSON Schema converters support synchronous conversion,
+  // because the AI SDK reads JSON Schemas synchronously
+}
+
+export interface ToolImplementer {
+  <TInputSchema extends AnySchema, TOutputSchema extends AnySchema>(
+    contract: ProcedureContract<TInputSchema, TOutputSchema, any>,
+    ...rest: MaybeOptionalOptions<Omit<FunctionTool<InferSchemaOutput<TInputSchema>, ToolOutput<InferSchemaInput<TOutputSchema>>>, 'inputSchema' | 'outputSchema'>>
+  ): Tool<InferSchemaOutput<TInputSchema>, ToolOutput<InferSchemaInput<TOutputSchema>>>
+}
+
+/**
+ * Creates a builder that implements [procedure contracts](https://orpc.dev/docs/contract/procedure)
+ * as [AI SDK Tools](https://ai-sdk.dev/docs/foundations/tools) by leveraging existing contract definitions.
+ *
+ * The factory accepts oRPC related options, and the resulting builder
+ * accepts a contract alongside AI SDK tool options.
+ *
+ * @remarks
+ * **Note**: [Procedures](https://orpc.dev/docs/procedure) are also compatible with [procedure contracts](https://orpc.dev/docs/contract/procedure).
  *
  * @example
  * ```ts
+ * import { aiSdkTool, implementToolFactory } from '@orpc/ai-sdk'
  * import { oc } from '@orpc/contract'
- * import {
- *   AI_SDK_TOOL_META_SYMBOL,
- *   AiSdkToolMeta,
- *   implementTool,
- * } from '@orpc/ai-sdk'
- * import { z } from 'zod'
  *
- * interface ORPCMeta extends AiSdkToolMeta {} // optional extend meta
- * const base = oc.$meta<ORPCMeta>({})
- *
- * const getWeatherContract = base
- *   .meta({
- *     [AI_SDK_TOOL_META_SYMBOL]: {
- *       title: 'Get Weather', // AI SDK tool title
- *     },
- *   })
- *   .route({
- *     summary: 'Get the weather in a location', // AI SDK tool description
- *   })
+ * const getWeatherContract = oc
+ *   .meta(
+ *     aiSdkTool({ description: 'Get the weather in a location' }), // default AI SDK tool options
+ *   )
  *   .input(
  *     z.object({
  *       location: z.string().describe('The location to get the weather for'),
@@ -56,6 +170,8 @@ export class CreateToolError extends Error {}
  *     }),
  *   )
  *
+ * const implementTool = implementToolFactory()
+ *
  * const getWeatherTool = implementTool(getWeatherContract, {
  *   execute: async ({ location }) => ({
  *     location,
@@ -63,54 +179,57 @@ export class CreateToolError extends Error {}
  *   }),
  * })
  * ```
+ *
+ * @see {@link https://orpc.dev/docs/integrations/ai-sdk#tool-implementer | AI SDK Integration - Tool Implementer}
  */
-export function implementTool<TOutInput, TInOutput>(
-  contract: ContractProcedure<Schema<any, TOutInput>, Schema<TInOutput, any>, any, AiSdkToolMeta>,
-  ...rest: MaybeOptionalOptions<SetOptional<Tool<TOutInput, TInOutput>, 'inputSchema' | 'outputSchema'>>
-): Tool<TOutInput, TInOutput> {
-  if (contract['~orpc'].inputSchema === undefined) {
-    throw new CreateToolError('Cannot implement tool from a contract procedure without input schema.')
+export function implementToolFactory(_options: ImplementToolFactoryOptions = {}): ToolImplementer {
+  const factory: ToolImplementer = (contract, ...rest) => {
+    const toolOptions = resolveMaybeOptionalOptions(rest)
+
+    const inputSchemas = toArray(contract['~orpc'].inputSchemas)
+    const outputSchemas = toArray(contract['~orpc'].outputSchemas)
+
+    const defaults = getAiSdkToolMeta(contract)
+
+    return tool({
+      ...defaults,
+      ...toolOptions,
+      inputSchema: combineSchemas(inputSchemas, true) ?? ANY_SCHEMA,
+      outputSchema: combineOutputSchemas(outputSchemas),
+    })
   }
 
-  const options = resolveMaybeOptionalOptions(rest)
+  return factory
+}
 
-  return tool<TOutInput, TInOutput>({
-    inputSchema: contract['~orpc'].inputSchema,
-    outputSchema: contract['~orpc'].outputSchema,
-    description: contract['~orpc'].route.summary ?? contract['~orpc'].route.description,
-    ...contract['~orpc'].meta[AI_SDK_TOOL_META_SYMBOL],
-    ...options,
-  } as any)
+export type CreateToolFactoryOptions<TInitialContext extends Context>
+  = & ImplementToolFactoryOptions
+    & ProcedureClientOptions<TInitialContext, Schema<unknown>, object, object>
+    & Omit<ClientOptions<object>, 'context' | 'signal'>
+
+export interface ToolFactory<TInitialContext extends Context> {
+  <TInputSchema extends AnySchema, TOutputSchema extends AnySchema>(
+    procedure: Procedure<TInitialContext, any, TInputSchema, TOutputSchema, any>,
+    ...rest: MaybeOptionalOptions<Omit<FunctionTool<InferSchemaOutput<TInputSchema>, ToolOutput<InferSchemaInput<TOutputSchema>>>, 'inputSchema' | 'outputSchema' | 'execute'>>
+  ): Tool<InferSchemaOutput<TInputSchema>, ToolOutput<InferSchemaInput<TOutputSchema>>>
 }
 
 /**
- * Converts a [procedure](https://orpc.dev/docs/procedure) into an [AI SDK Tool](https://ai-sdk.dev/docs/foundations/tools)
- * by leveraging existing procedure definitions.
+ * Creates a builder that converts [procedures](https://orpc.dev/docs/procedure)
+ * into [AI SDK Tools](https://ai-sdk.dev/docs/foundations/tools) by leveraging existing procedure definitions.
  *
- * @warning Requires a contract with an `input` schema defined.
+ * The factory accepts oRPC related options, and the resulting builder
+ * accepts a procedure alongside AI SDK tool options.
  *
  * @example
  * ```ts
+ * import { aiSdkTool, createToolFactory } from '@orpc/ai-sdk'
  * import { os } from '@orpc/server'
- * import {
- *   AI_SDK_TOOL_META_SYMBOL,
- *   AiSdkToolMeta,
- *   createTool
- * } from '@orpc/ai-sdk'
- * import { z } from 'zod'
  *
- * interface ORPCMeta extends AiSdkToolMeta {} // optional extend meta
- * const base = os.$meta<ORPCMeta>({})
- *
- * const getWeatherProcedure = base
- *   .meta({
- *     [AI_SDK_TOOL_META_SYMBOL]: {
- *       title: 'Get Weather', // AI SDK tool title
- *     },
- *   })
- *   .route({
- *     summary: 'Get the weather in a location',
- *   })
+ * const getWeatherProcedure = os
+ *   .meta(
+ *     aiSdkTool({ description: 'Get the weather in a location' }), // default AI SDK tool options
+ *   )
  *   .input(z.object({
  *     location: z.string().describe('The location to get the weather for'),
  *   }))
@@ -123,41 +242,60 @@ export function implementTool<TOutInput, TInOutput>(
  *     temperature: 72 + Math.floor(Math.random() * 21) - 10,
  *   }))
  *
- * const getWeatherTool = createTool(getWeatherProcedure, {
+ * const createTool = createToolFactory({
  *   context: {}, // provide initial context if needed
  * })
+ *
+ * const getWeatherTool = createTool(getWeatherProcedure, {
+ *   // ...AI SDK tool options/overrides here if needed
+ * })
  * ```
+ *
+ * @see {@link https://orpc.dev/docs/integrations/ai-sdk#tool-factory | AI SDK Integration - Tool Factory}
  */
-export function createTool<
-  TInitialContext extends Context,
-  TInputSchema extends AnySchema,
-  TOutputSchema extends AnySchema,
-  TErrorMap extends ErrorMap,
-  TMeta extends AiSdkToolMeta,
->(
-  procedure: Procedure<TInitialContext, any, TInputSchema, TOutputSchema, TErrorMap, TMeta>,
-  ...rest: MaybeOptionalOptions<
-    & SetOptional<Tool<InferSchemaOutput<TInputSchema>, InferSchemaInput<TOutputSchema>>, 'inputSchema' | 'outputSchema' | 'execute'>
-    & CreateProcedureClientOptions<TInitialContext, TOutputSchema, TErrorMap, TMeta, Record<never, never>>
-    & Omit<ClientOptions<Record<never, never>>, 'context'>
-  >
-): Tool<InferSchemaOutput<TInputSchema>, InferSchemaInput<TOutputSchema>> {
+export function createToolFactory<TInitialContext extends Context = object>(
+  ...rest: MaybeOptionalOptions<CreateToolFactoryOptions<TInitialContext>>
+): ToolFactory<TInitialContext> {
   const options = resolveMaybeOptionalOptions(rest)
+  const implementTool = implementToolFactory(options)
 
-  return implementTool(procedure, {
-    execute: ((input, callingOptions) => {
-      const disabledValidation = new Procedure({
-        ...procedure['~orpc'],
-        inputValidationIndex: Number.NaN, // disable input validation
-        outputValidationIndex: Number.NaN, // disable output validation
-      })
+  const factory: ToolFactory<TInitialContext> = (procedure, ...rest) => {
+    const toolOptions = resolveMaybeOptionalOptions(rest)
 
-      return call(
-        disabledValidation,
-        input as InferSchemaInput<TInputSchema>,
-        { signal: callingOptions.abortSignal, ...options },
-      ) as Promise<InferSchemaInput<TOutputSchema>>
-    }) satisfies (Tool<InferSchemaOutput<TInputSchema>, InferSchemaInput<TOutputSchema>>['execute']),
-    ...options,
-  } as any)
+    /**
+     * The AI SDK already validates input against the tool's `inputSchema`,
+     * so input validation is disabled at the oRPC level to avoid validating twice.
+     * Output validation stays enabled because the AI SDK does not validate
+     * the value returned from `execute` against the tool's `outputSchema`.
+     */
+    const disabledValidation = new Procedure({
+      ...procedure['~orpc'],
+      disableInputValidation: true,
+    })
+
+    /**
+     * Output schemas are the source of truth, but an `async function*` handler always
+     * returns an async iterator, so it streams even without an `asyncIteratorObject` schema.
+     */
+    const isIteratorOutput = getIteratorYieldSchemas(toArray(procedure['~orpc'].outputSchemas)) !== undefined
+      || isAsyncGeneratorFunction(procedure['~orpc'].handler)
+
+    return implementTool(procedure, {
+      ...toolOptions as any,
+      /**
+       * For async iterator outputs, the tool streams each event as a
+       * [preliminary result](https://ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling#preliminary-tool-results),
+       * and the last event becomes the final result.
+       */
+      execute: isIteratorOutput
+        ? async function* (input, callingOptions) {
+          yield* await call(disabledValidation, input as any, { ...options, signal: callingOptions.abortSignal }) as AsyncIterable<any>
+        }
+        : (input, callingOptions) => {
+            return call(disabledValidation, input as any, { ...options, signal: callingOptions.abortSignal })
+          },
+    }) as any
+  }
+
+  return factory
 }

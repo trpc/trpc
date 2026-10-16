@@ -1,9 +1,9 @@
-import type { ThrowableError, Value } from '@orpc/shared'
-import type { StandardHandlerInterceptorOptions, StandardHandlerOptions, StandardHandlerPlugin } from '../adapters/standard'
+import type { ThrowableError } from '@orpc/shared'
+import type { StandardHandlerInterceptor, StandardHandlerInterceptorOptions, StandardHandlerOptions, StandardHandlerPlugin, StandardHandlerRoutingInterceptor } from '../adapters/standard'
 import type { Context } from '../context'
-import { value } from '@orpc/shared'
+import { toArray } from '@orpc/shared'
 
-export interface experimental_RethrowHandlerPluginOptions<T extends Context> {
+export interface RethrowHandlerPluginOptions<T extends Context> {
   /**
    * Decide which errors should be rethrown.
    *
@@ -17,37 +17,31 @@ export interface experimental_RethrowHandlerPluginOptions<T extends Context> {
    * })
    * ```
    */
-  filter: Value<boolean, [error: ThrowableError, options: StandardHandlerInterceptorOptions<T>]>
-}
-
-interface RethrowHandlerPluginContext {
-  error?: { value: ThrowableError }
+  filter: (error: ThrowableError, options: StandardHandlerInterceptorOptions<T>) => boolean
 }
 
 /**
- * The plugin allows you to catch and rethrow specific errors that occur during request handling.
- * This is particularly useful when your framework has its own error handling mechanism
- * (e.g., global exception filters in NestJS, error middleware in Express)
- * and you want certain errors to be processed by that mechanism instead of being handled by the
- * oRPC error handling flow.
+ * The plugin can bypass oRPC's built-in error handling
+ * and rethrow matching errors directly to your framework's error handling mechanism
+ * (e.g., NestJS exception filters, Express error middleware).
  *
- * @see {@link https://orpc.dev/docs/plugins/rethrow-handler Rethrow Handler Plugin Docs}
+ * @see {@link https://orpc.dev/docs/plugins/rethrow | Rethrow Handler Plugin}
  */
-export class experimental_RethrowHandlerPlugin<T extends Context> implements StandardHandlerPlugin<T> {
-  private readonly filter: experimental_RethrowHandlerPluginOptions<T>['filter']
+export class RethrowHandlerPlugin<T extends Context> implements StandardHandlerPlugin<T> {
+  name = '~rethrow'
 
-  CONTEXT_SYMBOL = Symbol('ORPC_RETHROW_HANDLER_PLUGIN_CONTEXT')
+  private readonly filter: RethrowHandlerPluginOptions<T>['filter']
+  private readonly CONTEXT_SYMBOL = Symbol('ORPC_RETHROW_HANDLER_PLUGIN_CONTEXT')
 
-  constructor(options: experimental_RethrowHandlerPluginOptions<T>) {
+  constructor(options: RethrowHandlerPluginOptions<T>) {
     this.filter = options.filter
   }
 
-  init(options: StandardHandlerOptions<T>): void {
-    options.rootInterceptors ??= []
-    options.interceptors ??= []
+  init(options: StandardHandlerOptions<T>): StandardHandlerOptions<T> {
+    type PluginContext = { error?: { value: ThrowableError } }
 
-    options.rootInterceptors.push(async (options) => {
-      const pluginContext: RethrowHandlerPluginContext = {}
+    const routingInterceptor: StandardHandlerRoutingInterceptor<T> = async (options) => {
+      const pluginContext: PluginContext = {}
 
       const result = await options.next({
         ...options,
@@ -62,10 +56,10 @@ export class experimental_RethrowHandlerPlugin<T extends Context> implements Sta
       }
 
       return result
-    })
+    }
 
-    options.interceptors.unshift(async (options) => {
-      const pluginContext = options.context[this.CONTEXT_SYMBOL] as RethrowHandlerPluginContext | undefined
+    const interceptor: StandardHandlerInterceptor<T> = async (options) => {
+      const pluginContext = options.context[this.CONTEXT_SYMBOL] as PluginContext | undefined
 
       if (!pluginContext) {
         throw new TypeError('[RethrowHandlerPlugin] Rethrow handler context has been corrupted or modified by another plugin or interceptor')
@@ -76,13 +70,24 @@ export class experimental_RethrowHandlerPlugin<T extends Context> implements Sta
         return await options.next()
       }
       catch (error) {
-        if (value(this.filter, error as ThrowableError, options)) {
+        if (this.filter(error as ThrowableError, options)) {
           pluginContext.error = { value: error as ThrowableError }
-          return { matched: false, response: undefined }
         }
 
         throw error
       }
-    })
+    }
+
+    return {
+      ...options,
+      routingInterceptors: [
+        ...toArray(options.routingInterceptors),
+        routingInterceptor, // rethrow as early as possible and keep it close to `interceptor` to avoid a corrupted or modified context
+      ],
+      interceptors: [
+        interceptor, // catch as many errors as possible
+        ...toArray(options.interceptors),
+      ],
+    }
   }
 }

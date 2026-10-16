@@ -1,0 +1,11 @@
+[test]
+coverageReporter = [
+  "text",
+  "lcov"
+]
+coveragePathIgnorePatterns = [
+  # Exclude other packages to prevent overlap in the final merged coverage report.
+  "../**",
+  "**/*.test.*",
+  "**/tests/**",
+]

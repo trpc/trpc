@@ -1,80 +1,178 @@
-import type { MergedErrorMap, Meta, Schema } from '@orpc/contract'
-import type { baseErrorMap, BaseMeta, inputSchema, outputSchema } from '../../contract/tests/shared'
-import type { CurrentContext, InitialContext, router } from '../tests/shared'
-import type { Context, MergedInitialContext } from './context'
+import type { MergedErrorMap, Schema } from '@orpc/contract'
+import type { MergedInitialContext } from './context'
 import type { Lazy } from './lazy'
 import type { Procedure } from './procedure'
-import type { AccessibleLazyRouter, EnhancedRouter, UnlaziedRouter } from './router-utils'
-import { ping, pong } from '../tests/shared'
+import type { AugmentedRouter, AugmentedRouterWithMiddlewares, UnlaziedRouter } from './router-utils'
 
-it('AccessibleLazyRouter', () => {
-  type Accessible = AccessibleLazyRouter<Lazy<typeof router>>
+describe('AugmentedRouter', () => {
+  const router = {
+    ping: {} as Procedure<{ i: 1 }, { c: 2 }, Schema<number>, Schema<string>, { E1: { message: string } }>,
+    nested: {
+      pong: {} as Procedure<{ i: 1 }, object, Schema<number>, Schema<string>, object>,
+    },
+  }
 
-  expectTypeOf<Accessible['ping']>().toEqualTypeOf<Lazy<typeof ping>>()
-  expectTypeOf<Accessible['nested']['ping']>().toEqualTypeOf<Lazy<typeof ping>>()
+  it('signal procedure', () => {
+    type ErrorMap = { E2: { message: string } }
 
-  expectTypeOf<Accessible['pong']>().toEqualTypeOf<Lazy<typeof pong>>()
-  expectTypeOf<Accessible['nested']['pong']>().toEqualTypeOf<Lazy<typeof pong>>()
+    expectTypeOf<AugmentedRouter<typeof router.ping, ErrorMap>>().toEqualTypeOf<
+      Procedure<
+        { i: 1 },
+        { c: 2 },
+        Schema<number>,
+        Schema<string>,
+        MergedErrorMap<ErrorMap, { E1: { message: string } }>
+      >
+    >()
+  })
+
+  it('nested router', () => {
+    type ErrorMap = { E2: { message: string } }
+
+    expectTypeOf<AugmentedRouter<typeof router, ErrorMap>>().toEqualTypeOf<{
+      ping: Procedure<
+        { i: 1 },
+        { c: 2 },
+        Schema<number>,
+        Schema<string>,
+        MergedErrorMap<ErrorMap, { E1: { message: string } }>
+      >
+      nested: {
+        pong: Procedure<
+          { i: 1 },
+          object,
+          Schema<number>,
+          Schema<string>,
+          MergedErrorMap<ErrorMap, object>
+        >
+      }
+    }>()
+  })
+
+  it('lazy router', () => {
+    type ErrorMap = { E2: { message: string } }
+
+    const lazyRouter = {
+      lazy: {} as Lazy<typeof router>,
+    }
+
+    expectTypeOf<AugmentedRouter<typeof lazyRouter, ErrorMap>>().toEqualTypeOf<{
+      lazy: Lazy<{
+        ping: Procedure<
+          { i: 1 },
+          { c: 2 },
+          Schema<number>,
+          Schema<string>,
+          MergedErrorMap<ErrorMap, { E1: { message: string } }>
+        >
+        nested: {
+          pong: Procedure<
+            { i: 1 },
+            object,
+            Schema<number>,
+            Schema<string>,
+            MergedErrorMap<ErrorMap, object>
+          >
+        }
+      }>
+    }>()
+  })
 })
 
-it('EnhancedRouter', () => {
-  type TErrorMap = { INVALID: { message: string }, OVERRIDE: { message: string } }
-  type InitialContext2 = { auth?: boolean, user?: string }
-  type CurrentContext2 = { auth?: boolean, user?: string, db?: string, extra?: string }
-  type Enhanced = EnhancedRouter<typeof router, InitialContext2, CurrentContext2, TErrorMap>
+describe('AugmentedRouterWithMiddlewares', () => {
+  const router = {
+    ping: {} as Procedure<{ i: 1 }, { c: 2 }, Schema<number>, Schema<string>, { E1: { message: string } }>,
+    nested: {
+      pong: {} as Procedure<{ i: 1 }, object, Schema<number>, Schema<string>, object>,
+    },
+  }
 
-  expectTypeOf<Enhanced['ping']>().toEqualTypeOf<
-    Lazy<
+  it('signal procedure', () => {
+    type ErrorMap = { E2: { message: string } }
+    type TInitialContext = { baseI: string }
+    type TInjectedContext = { baseC: number }
+
+    expectTypeOf<AugmentedRouterWithMiddlewares<typeof router.ping, TInitialContext, TInjectedContext, ErrorMap>>().toEqualTypeOf<
       Procedure<
-        MergedInitialContext<InitialContext2, InitialContext, CurrentContext2>,
-        CurrentContext,
-        typeof inputSchema,
-        typeof outputSchema,
-        MergedErrorMap<TErrorMap, typeof baseErrorMap>,
-        BaseMeta
+        MergedInitialContext<TInitialContext, TInjectedContext, { i: 1 }>,
+        { c: 2 },
+        Schema<number>,
+        Schema<string>,
+        MergedErrorMap<ErrorMap, { E1: { message: string } }>
       >
-    >
-  >()
+    >()
+  })
 
-  expectTypeOf<Enhanced['nested']['ping']>().toEqualTypeOf<
-    Lazy<
-      Procedure<
-        MergedInitialContext<InitialContext2, InitialContext, CurrentContext2>,
-        CurrentContext,
-        typeof inputSchema,
-        typeof outputSchema,
-        MergedErrorMap<TErrorMap, typeof baseErrorMap>,
-        BaseMeta
+  it('nested router', () => {
+    type ErrorMap = { E2: { message: string } }
+    type TInitialContext = { baseI: string }
+    type TInjectedContext = { baseC: number }
+
+    expectTypeOf<AugmentedRouterWithMiddlewares<typeof router, TInitialContext, TInjectedContext, ErrorMap>>().toEqualTypeOf<{
+      ping: Procedure<
+        MergedInitialContext<TInitialContext, TInjectedContext, { i: 1 }>,
+        { c: 2 },
+        Schema<number>,
+        Schema<string>,
+        MergedErrorMap<ErrorMap, { E1: { message: string } }>
       >
-    >
-  >()
+      nested: {
+        pong: Procedure<
+          MergedInitialContext<TInitialContext, TInjectedContext, { i: 1 }>,
+          object,
+          Schema<number>,
+          Schema<string>,
+          MergedErrorMap<ErrorMap, object>
+        >
+      }
+    }>()
+  })
 
-  expectTypeOf<Enhanced['pong']>().toEqualTypeOf<
-    Procedure<
-      MergedInitialContext<InitialContext2, Context, CurrentContext2>,
-      Context,
-      Schema<unknown, unknown>,
-      Schema<unknown, unknown>,
-      MergedErrorMap<TErrorMap, Record<never, never>>,
-      Meta
-    >
-  >()
+  it('lazy router', () => {
+    type ErrorMap = { E2: { message: string } }
+    type TInitialContext = { baseI: string }
+    type TInjectedContext = { baseC: number }
 
-  expectTypeOf<Enhanced['nested']['pong']>().toEqualTypeOf<
-    Lazy<
-      Procedure<
-        MergedInitialContext<InitialContext2, Context, CurrentContext2>,
-        Context,
-        Schema<unknown, unknown>,
-        Schema<unknown, unknown>,
-        MergedErrorMap<TErrorMap, Record<never, never>>,
-        Meta
-      >
-    >
-  >()
+    const lazyRouter = {
+      lazy: {} as Lazy<typeof router>,
+    }
+
+    expectTypeOf<AugmentedRouterWithMiddlewares<typeof lazyRouter, TInitialContext, TInjectedContext, ErrorMap>>().toEqualTypeOf<{
+      lazy: Lazy<{
+        ping: Procedure<
+          MergedInitialContext<TInitialContext, TInjectedContext, { i: 1 }>,
+          { c: 2 },
+          Schema<number>,
+          Schema<string>,
+          MergedErrorMap<ErrorMap, { E1: { message: string } }>
+        >
+        nested: {
+          pong: Procedure<
+            MergedInitialContext<TInitialContext, TInjectedContext, { i: 1 }>,
+            object,
+            Schema<number>,
+            Schema<string>,
+            MergedErrorMap<ErrorMap, object>
+          >
+        }
+      }>
+    }>()
+  })
 })
 
 it('UnlaziedRouter', () => {
+  const ping = {} as Procedure<{ i: 1 }, { c: 2 }, Schema<number>, Schema<string>, { E1: { message: string } }>
+  const pong = {} as Procedure<{ i: 1 }, object, Schema<number>, Schema<string>, object>
+
+  const router = {
+    ping,
+    pong: {} as Lazy<typeof pong>,
+    nested: {} as Lazy<{
+      ping: typeof ping
+      pong: Lazy<typeof pong>
+    }>,
+  }
+
   type Unlazied = UnlaziedRouter<typeof router>
 
   expectTypeOf<Unlazied>().toEqualTypeOf({

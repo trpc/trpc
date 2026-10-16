@@ -1,27 +1,17 @@
 import * as z from 'zod'
-import { UserSchema } from './user'
 
-export type NewPlanet = z.infer<typeof NewPlanetSchema>
-export type UpdatePlanet = z.infer<typeof UpdatePlanetSchema>
+export type CreatingPlanet = z.infer<typeof CreatingPlanetSchema>
 export type Planet = z.infer<typeof PlanetSchema>
 
-export const NewPlanetSchema = z.object({
-  name: z.string(),
+export const CreatingPlanetSchema = z.object({
+  name: z.string().min(4),
   description: z.string().optional(),
   image: z.file().mime(['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml', 'image/gif']).optional(),
-})
-
-export const UpdatePlanetSchema = z.object({
-  id: z.number().int().min(1),
-  name: z.string(),
-  description: z.string().optional(),
-  image: z.file().mime(['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml', 'image/gif']).optional(),
-})
+}).meta({ id: 'CreatingPlanet' })
 
 export const PlanetSchema = z.object({
-  id: z.number().int().min(1),
+  id: z.uuid(),
   name: z.string(),
   description: z.string().optional(),
-  imageUrl: z.url().optional(),
-  creator: UserSchema,
-})
+  image: z.uuid().optional(),
+}).meta({ id: 'Planet' })

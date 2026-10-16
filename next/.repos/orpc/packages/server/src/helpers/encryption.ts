@@ -26,6 +26,8 @@ const CRYPTO_CONSTANTS = {
  * const decrypted = await decrypt(encrypted, "test-secret-key")
  * expect(decrypted).toBe("Hello, World!")
  * ```
+ *
+ * @see {@link https://orpc.dev/docs/helpers/encryption | Encryption Helpers}
  */
 export async function encrypt(value: string, secret: string): Promise<string> {
   const encoder = new TextEncoder()
@@ -74,6 +76,8 @@ export async function encrypt(value: string, secret: string): Promise<string> {
  * const decrypted = await decrypt(encrypted, "test-secret-key")
  * expect(decrypted).toBe("Hello, World!")
  * ```
+ *
+ * @see {@link https://orpc.dev/docs/helpers/encryption | Encryption Helpers}
  */
 export async function decrypt(encrypted: string | undefined | null, secret: string): Promise<string | undefined> {
   try {

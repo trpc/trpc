@@ -22,7 +22,7 @@ export interface BrowserPortLike {
 export type SupportedMessagePort = Pick<MessagePort, 'addEventListener' | 'postMessage'> | MessagePortMainLike | BrowserPortLike
 
 /**
- *  Message port can support [The structured clone algorithm](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm)
+ * Message port can support [The structured clone algorithm](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm)
  */
 export type SupportedMessagePortData = any
 
@@ -70,12 +70,12 @@ export function onMessagePortClose(port: SupportedMessagePort, callback: () => v
    * So we need check "addEventListener" before "on"
    */
   if ('addEventListener' in port) {
-    port.addEventListener('close', async () => {
+    port.addEventListener('close', () => {
       callback()
     })
   }
   else if ('on' in port) {
-    port.on('close', async () => {
+    port.on('close', () => {
       callback()
     })
   }

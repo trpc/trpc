@@ -1,0 +1,543 @@
+---
+title: "Next.js SSR with oRPC and TanStack Query: From Zero to Live Queries"
+description: "A step-by-step tutorial for building a server-rendered Next.js app with oRPC and TanStack Query, including streamed and live queries that render on the server and resume in the browser."
+type: blog
+date: 2026-08-19
+search:
+  tags:
+    - Tutorials
+authors:
+    name: Định Lê
+    role: Creator of oRPC
+    url: https://github.com/dinwwwh
+    avatar: https://github.com/dinwwwh.png
+ai:
+  exclude: true
+---
+
+## What We're Building
+
+A small "mission control" page in Next.js with three widgets, each showing a different kind of data flow:
+
+- **A planet list**: a regular query, rendered on the server so the HTML arrives with data already in it.
+- **A discovery feed**: a [streamed query](/docs/integrations/tanstack-query#streamed-query-options) that appends events as the server pushes them.
+- **Live telemetry**: a [live query](/docs/integrations/tanstack-query#live-query-options) that always shows the latest reading, rendered on the server first and resumed in the browser.
+
+Everything is typesafe end to end: the server defines plain TypeScript functions, and the client calls them with full autocompletion, no code generation, no shared type files to maintain. Three libraries make this work:
+
+- [oRPC](/docs/getting-started) turns your functions into an API and gives you a typed client.
+- [TanStack Query](https://tanstack.com/query/latest) caches the results and manages loading, errors, and refetching.
+- [`@orpc/tanstack-query`](/docs/integrations/tanstack-query) glues them together: it builds query options from your oRPC client so you never write a query key or fetch function by hand.
+
+:::tip[Prefer a complete project?]
+Everything in this tutorial is already set up in the [Next.js playground](/docs/playgrounds). Open it in StackBlitz or clone it locally, and use this post as the guided tour.
+:::
+
+## Create the Project
+
+You need [Node.js](https://nodejs.org/) 20.9 or newer. Scaffold a Next.js app and accept the defaults, which include TypeScript, the App Router, and the `@/*` import alias for imports from the project root:
+
+```bash
+npx create-next-app@latest mission-control
+```
+
+Then move into the project and install the oRPC and TanStack Query packages:
+
+```package-install
+npm install @orpc/server@beta @orpc/client@beta @orpc/tanstack-query@beta @tanstack/react-query @tanstack/react-query-next-experimental zod
+```
+
+Two of these deserve a word:
+
+- `@tanstack/react-query-next-experimental` streams server-rendered query data into the browser cache, so nothing is fetched twice. It is covered in the official [Advanced SSR guide](https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr) and removes all per-page prefetch boilerplate.
+- [Zod](https://zod.dev/) validates procedure input at runtime. Any [Standard Schema](https://standardschema.dev/) library works the same way.
+
+## Define Your API
+
+An oRPC API is a **router**: a plain object of **procedures**, and a procedure is just a function built with the `os` builder. Create `router.ts` in the project root:
+
+```ts router.ts
+import { os } from '@orpc/server'
+import * as z from 'zod'
+
+const PLANETS = [
+  { id: 1, name: 'Earth', description: 'Home, for now' },
+  { id: 2, name: 'Mars', description: 'The backup plan' },
+  { id: 3, name: 'Venus', description: 'Pretty from a distance' },
+]
+
+const listPlanets = os
+  .handler(async () => {
+    // replace with your database query
+    return PLANETS
+  })
+
+const planetFeed = os
+  .handler(async function* ({ signal }) {
+    const names = ['Kepler-186f', 'TRAPPIST-1e', 'Proxima b', 'Gliese 581g']
+
+    for (let i = 0; ; i++) {
+      signal?.throwIfAborted()
+      yield { id: i, name: names[i % names.length], at: new Date() }
+      await new Promise(resolve => setTimeout(resolve, 2000))
+    }
+  })
+
+const planetTelemetry = os
+  .input(z.object({ planet: z.string() }))
+  .handler(async function* ({ input, signal }) {
+    while (true) {
+      signal?.throwIfAborted()
+      yield {
+        planet: input.planet,
+        temperature: Math.round(15 + Math.random() * 10),
+        at: new Date(),
+      }
+      await new Promise(resolve => setTimeout(resolve, 1000))
+    }
+  })
+
+export const router = {
+  planet: {
+    list: listPlanets,
+    feed: planetFeed,
+    telemetry: planetTelemetry,
+  },
+}
+```
+
+The interesting part is the [async generator functions](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function*) (`async function*`). Every `yield` sends one event to the client over [Server-Sent Events](/docs/async-iterator-object), and `signal` aborts the loop when the client disconnects. The client decides how to consume the stream: the feed will *append* events into a list, telemetry will *replace* the previous value.
+
+Also notice `at: new Date()`. oRPC's [RPC protocol](/docs/rpc/serializer) preserves types that plain JSON cannot represent, such as `Date`, `Map`, `Set`, and `BigInt`, so the client receives a real `Date` object.
+
+## Serve the Router
+
+Next.js exposes HTTP endpoints through [Route Handlers](https://nextjs.org/docs/app/api-reference/file-conventions/route). A single catch-all handler serves the whole router. Create `app/rpc/[[...rest]]/route.ts`:
+
+```ts app/rpc/[[...rest]]/route.ts
+import { RPCHandler } from '@orpc/server/fetch'
+import { router } from '@/router'
+
+const handler = new RPCHandler(router)
+
+async function handleRequest(request: Request) {
+  const { response } = await handler.handle(request, {
+    prefix: '/rpc',
+  })
+
+  return response ?? new Response('Not found', { status: 404 })
+}
+
+export const HEAD = handleRequest
+export const GET = handleRequest
+export const POST = handleRequest
+export const PUT = handleRequest
+export const PATCH = handleRequest
+export const DELETE = handleRequest
+```
+
+Every procedure is now reachable under `/rpc`, and you never think about this file again: new procedures added to the router are served automatically.
+
+## Create the Client
+
+Now the other side: a typed client that calls those procedures, and the TanStack Query utilities built on top of it. Create `lib/orpc.ts`:
+
+```ts lib/orpc.ts
+import type { RouterClient } from '@orpc/server'
+import { createORPCClient } from '@orpc/client'
+import { RPCLink } from '@orpc/client/fetch'
+import { createTanstackQueryUtils } from '@orpc/tanstack-query'
+import type { router } from '@/router'
+
+const link = new RPCLink({
+  // In the browser, requests go to the page's own origin.
+  // During SSR there is no window, so point at the server itself.
+  origin: typeof window !== 'undefined' ? undefined : 'http://localhost:3000',
+  url: '/rpc', // <- must match the route handler's prefix
+  headers: async () => {
+    if (typeof window !== 'undefined') {
+      return {}
+    }
+
+    // During SSR, forward the incoming request's headers (cookies, auth, ...)
+    const { headers } = await import('next/headers')
+    return await headers()
+  },
+})
+
+export const client: RouterClient<typeof router> = createORPCClient(link)
+
+export const orpc = createTanstackQueryUtils(client)
+```
+
+Three things happen here:
+
+1. `RPCLink` sends procedure calls over HTTP to the route handler you just created.
+2. `createORPCClient` wraps the link in a client typed after your router. `client.planet.list()` is a fully typed function call.
+3. `createTanstackQueryUtils` wraps that client in TanStack Query helpers. `orpc.planet.list.queryOptions()` returns ready-made options, query key and fetch function included, for `useQuery` and friends.
+
+The same client works on the server and in the browser. The `typeof window` checks only pick the right origin and headers for each side.
+
+:::info
+Calling your own HTTP endpoint during SSR works fine for this tutorial, but it does a needless network round trip inside one process. Once things click, see [Optimizing SSR](/docs/recipes/optimizing-ssr) for calling the router directly in-process, with zero HTTP involved.
+:::
+
+## A Query Client That Survives SSR
+
+Here is the 30-second version of how TanStack Query SSR works: the server renders your components, runs their queries, and serializes the query cache into the HTML. The browser then *hydrates* that cache and takes over, without refetching anything. For the full picture, read the [TanStack Query SSR guide](https://tanstack.com/query/latest/docs/framework/react/guides/ssr).
+
+That handoff needs a carefully configured `QueryClient`. Create `lib/query-client.ts`:
+
+```ts lib/query-client.ts
+import { RPCJsonSerializer } from '@orpc/client'
+import { environmentManager, hashKey, QueryClient } from '@tanstack/react-query'
+
+let browserQueryClient: QueryClient | undefined
+
+/**
+ * A fresh query client per request on the server, a shared singleton in the browser.
+ */
+export function getQueryClient(): QueryClient {
+  if (environmentManager.isServer()) {
+    return createQueryClient()
+  }
+
+  browserQueryClient ??= createQueryClient()
+  return browserQueryClient
+}
+
+const serializer = new RPCJsonSerializer()
+
+function createQueryClient(): QueryClient {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 60 * 1000, // > 0 to prevent immediate refetching on mount
+
+        queryKeyHashFn: (queryKey) => {
+          const { json, meta } = serializer.serialize(queryKey)
+
+          return hashKey([
+            json,
+            meta?.map(entry => JSON.stringify(entry)).sort(),
+          ])
+        },
+      },
+      dehydrate: {
+        serializeData: (data) => {
+          const { json, meta } = serializer.serialize(data)
+          return { json, meta }
+        },
+      },
+      hydrate: {
+        deserializeData(data) {
+          return serializer.deserialize(data)
+        },
+      },
+    },
+  })
+
+  if (environmentManager.isServer()) {
+    cancelStreamsOnSuccess(queryClient)
+  }
+
+  return queryClient
+}
+
+/**
+ * Streamed and live queries can stay open indefinitely and would block SSR
+ * forever. Only active streams hold `success` status while still `fetching`,
+ * so silently cancel queries in that state: the data received so far is kept,
+ * prefetching settles, and dehydration works as usual.
+ *
+ * Server-side query clients only. In the browser this would cancel active
+ * streams and background refetches.
+ */
+function cancelStreamsOnSuccess(queryClient: QueryClient): void {
+  const cancelled = new Set<string>()
+
+  queryClient.getQueryCache().subscribe(({ query }) => {
+    if (
+      query.state.status !== 'success' // no successful snapshot yet
+      || query.state.fetchStatus !== 'fetching' // already settled
+      || cancelled.has(query.queryHash)
+    ) {
+      return
+    }
+
+    cancelled.add(query.queryHash)
+    void query.cancel({ silent: true })
+  })
+}
+```
+
+A lot is going on, but each piece has one job:
+
+- **`getQueryClient`** creates a fresh client for every server request, so one user's data can never leak into another user's HTML, while the browser reuses a singleton.
+- **The serializer options** teach the cache handoff about oRPC's extra types. Dehydration normally goes through plain JSON, which would turn our `Date` objects into strings. `RPCJsonSerializer` round-trips them intact. See [Custom Serializers](/docs/integrations/tanstack-query#custom-serializers) to extend it with your own types.
+- **`staleTime: 60 * 1000`** marks hydrated data as fresh, so the browser doesn't immediately refetch what the server just rendered.
+- **`cancelStreamsOnSuccess`** solves a problem specific to streaming: SSR waits for every query to finish, and our generators never finish. Cancelling a stream once it has a successful snapshot lets the server render what has arrived so far and move on. It matters the moment we server-render the telemetry widget, and the [Streamed and Live Queries](/docs/integrations/tanstack-query#streamed-and-live-queries) docs cover it in depth.
+
+## Wire Up the Providers
+
+Make the query client available to your components. Create `app/providers.tsx`:
+
+```tsx app/providers.tsx
+'use client'
+
+import { QueryClientProvider } from '@tanstack/react-query'
+import { ReactQueryStreamedHydration } from '@tanstack/react-query-next-experimental'
+import { getQueryClient } from '@/lib/query-client'
+
+export function Providers(props: { children: React.ReactNode }) {
+  const queryClient = getQueryClient()
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ReactQueryStreamedHydration>
+        {props.children}
+      </ReactQueryStreamedHydration>
+    </QueryClientProvider>
+  )
+}
+```
+
+`ReactQueryStreamedHydration` is the piece that makes SSR effortless: any suspense query that runs during server rendering is automatically streamed into the browser's cache, with no manual `prefetchQuery` or `HydrationBoundary` per page.
+
+Then wrap your app with it in `app/layout.tsx`:
+
+```tsx app/layout.tsx
+import { Providers } from './providers'
+import './globals.css'
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode
+}>) {
+  return (
+    <html lang="en">
+      <body>
+        <Providers>{children}</Providers>
+      </body>
+    </html>
+  )
+}
+```
+
+Setup done. Time to render some data.
+
+## Server-Rendered Data: The Planet List
+
+Create `components/planet-list.tsx`:
+
+```tsx components/planet-list.tsx
+'use client'
+
+import { useSuspenseQuery } from '@tanstack/react-query'
+import { orpc } from '@/lib/orpc'
+
+export function PlanetList() {
+  const { data: planets } = useSuspenseQuery(orpc.planet.list.queryOptions())
+
+  return (
+    <ul>
+      {planets.map(planet => (
+        <li key={planet.id}>
+          <strong>{planet.name}</strong>
+          {' '}
+          {planet.description}
+        </li>
+      ))}
+    </ul>
+  )
+}
+```
+
+Note what you did *not* write: no query key, no fetch function, no response parsing, no result type. `orpc.planet.list.queryOptions()` derives all of it from the router, and `planets` is typed exactly as `listPlanets` returns.
+
+`useSuspenseQuery` (rather than `useQuery`) is what opts this component into SSR: suspense queries execute during server rendering, while plain `useQuery` stays browser-only. Now replace `app/page.tsx` with:
+
+```tsx app/page.tsx
+import { Suspense } from 'react'
+import { PlanetList } from '@/components/planet-list'
+
+export default function Home() {
+  return (
+    <main>
+      <h1>Mission Control</h1>
+
+      <h2>Planets</h2>
+      <Suspense fallback={<p>Loading planets...</p>}>
+        <PlanetList />
+      </Suspense>
+    </main>
+  )
+}
+```
+
+Start the dev server and open `http://localhost:3000`:
+
+```bash
+npm run dev
+```
+
+The planets are there, but the interesting proof is in **View Page Source**: Earth, Mars, and Venus appear in the raw HTML. The server ran the query and rendered the result. Check the network tab too: the browser never requests `planet/list`, because the hydrated cache already has it.
+
+## Streamed Queries: The Discovery Feed
+
+Now the feed. Create `components/discovery-feed.tsx`:
+
+```tsx components/discovery-feed.tsx
+'use client'
+
+import { useQuery } from '@tanstack/react-query'
+import { orpc } from '@/lib/orpc'
+
+export function DiscoveryFeed() {
+  const { data: events = [] } = useQuery(orpc.planet.feed.streamedOptions({
+    queryFnOptions: { maxChunks: 10 }, // keep only the 10 newest events
+    retry: true, // reconnect forever if the stream drops
+  }))
+
+  if (events.length === 0) {
+    return <p>Scanning the sky...</p>
+  }
+
+  return (
+    <ul>
+      {events.map(event => (
+        <li key={event.id}>
+          Discovered
+          {' '}
+          <strong>{event.name}</strong>
+          {' '}
+          at
+          {' '}
+          {event.at.toISOString()}
+        </li>
+      ))}
+    </ul>
+  )
+}
+```
+
+`.streamedOptions` consumes the async generator and hands you the events as a growing array: every `yield` on the server appends one entry and re-renders the component. This component uses plain `useQuery`, so it skips SSR entirely and opens its stream in the browser, which is a perfectly fine choice for a feed that starts empty anyway.
+
+Add it to the page:
+
+```tsx app/page.tsx
+<h2>Discovery Feed</h2>
+<DiscoveryFeed />
+```
+
+Reload, and a new discovery blinks in every two seconds. Note `event.at.toISOString()`: that works because `at` is a real `Date`, delivered by the RPC protocol, not a string you have to re-parse.
+
+## Live Queries: Telemetry Rendered on the Server
+
+The finale combines everything: a never-ending stream that still renders on the server. Create `components/telemetry.tsx`:
+
+```tsx components/telemetry.tsx
+'use client'
+
+import { useSuspenseQuery } from '@tanstack/react-query'
+import { orpc } from '@/lib/orpc'
+
+export function Telemetry() {
+  const { data: reading } = useSuspenseQuery(orpc.planet.telemetry.liveOptions({
+    input: { planet: 'earth' },
+    retry: true, // reconnect forever if the stream drops
+  }))
+
+  return (
+    <p>
+      {reading.planet}
+      {' '}
+      surface:
+      {' '}
+      <strong>
+        {reading.temperature}
+        °C
+      </strong>
+      {' '}
+      (updated
+      {' '}
+      {reading.at.toISOString()}
+      )
+    </p>
+  )
+}
+```
+
+Where a streamed query accumulates events, `.liveOptions` keeps only the latest one: each `yield` *replaces* `data`. And since this is a `useSuspenseQuery`, it runs during SSR.
+
+Wire it into the page, inside its own suspense boundary:
+
+```tsx app/page.tsx
+<h2>Telemetry</h2>
+<Suspense fallback={<p>Connecting telemetry...</p>}>
+  <Telemetry />
+</Suspense>
+```
+
+Think about what SSR means for a query that never completes. Two problems, and you already solved half of them:
+
+1. **On the server**, waiting for the stream to end would block rendering forever. `cancelStreamsOnSuccess` in your query client cancels it right after the first reading arrives, so the HTML ships with a real temperature in it.
+2. **In the browser**, the hydrated reading is a static snapshot, and `staleTime` marks it fresh, so TanStack Query sees no reason to refetch. Nothing reopens the stream, and the widget silently freezes at the SSR value.
+
+The fix for the second problem is `refetchOnMount: 'always'` on streamed and live queries. Instead of remembering to pass it at every call site, register it once as a [plugin](/docs/integrations/tanstack-query#plugins) in `lib/orpc.ts`:
+
+```ts lib/orpc.ts
+import type { RouterUtilsPlugin } from '@orpc/tanstack-query'
+
+/**
+ * Streamed and live queries dehydrate as static snapshots during SSR, so the
+ * client must always refetch on mount to open a new stream after hydration.
+ */
+const streamingSSRPlugin: RouterUtilsPlugin<typeof client> = {
+  name: 'streaming-ssr',
+  initProcedureOptions(_path, options) {
+    return {
+      ...options,
+      streamedOptions: {
+        ...options.streamedOptions,
+        initialData: [],
+        refetchOnMount: 'always',
+      },
+      liveOptions: {
+        ...options.liveOptions,
+        refetchOnMount: 'always',
+      },
+    }
+  },
+}
+
+export const orpc = createTanstackQueryUtils(client, {
+  plugins: [streamingSSRPlugin],
+})
+```
+
+The plugin also gives streamed queries `initialData: []`, so they render an empty list instead of suspending or reporting `pending` before their stream connects. Per-call options still override anything the plugin sets.
+
+Reload the page one last time and check your work:
+
+- **View Page Source** contains a real temperature reading: the live query rendered on the server.
+- The value keeps ticking every second in the browser: the client reopened the stream on mount.
+- The network tab shows exactly one `planet/telemetry` request and one `planet/feed` request after load, and still no `planet/list` request.
+
+That is the full loop: server-rendered HTML with live data in it, hydrated without duplicate fetches, and streams that resume where the server left off.
+
+## Where to Go Next
+
+You now have the complete architecture: typed procedures, one catch-all route handler, TanStack Query utilities, and SSR that handles even infinite streams. Some directions to grow from here:
+
+- **Explore the [Next.js playground](/docs/playgrounds)**, which extends this exact setup with mutations, infinite queries, file uploads, a multi-tab chat built on the [Publisher](/docs/helpers/publisher) helper, and OpenAPI generation. Open it in StackBlitz, or grab it locally:
+
+```bash
+npx giget gh:middleapi/orpc/playgrounds/next orpc-next-playground
+```
+
+- **Skip HTTP during SSR** with the in-process client from the [Optimizing SSR](/docs/recipes/optimizing-ssr) guide.
+- **Add mutations and cache invalidation** with the [TanStack Query integration](/docs/integrations/tanstack-query) docs.
+- **Use server functions and form actions** through the dedicated [Next.js integration](/docs/integrations/next).
+- **Resume streams reliably** after disconnects with [event metadata and last event IDs](/docs/async-iterator-object#last-event-id--event-metadata).

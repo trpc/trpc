@@ -1,0 +1,49 @@
+---
+import type { Sponsor } from '../../sponsors/data'
+import { relAttribute } from '../../sponsors/ads'
+import Avatar from '../../sponsors/Avatar.astro'
+
+interface Props {
+  sponsors: Sponsor[]
+}
+
+const { sponsors } = Astro.props
+---
+
+<section id="past-sponsors" aria-labelledby="past-sponsors-heading" class="border-b border-border">
+  <div class="mx-auto max-w-6xl px-6 py-12 sm:py-16">
+    <h2
+      id="past-sponsors-heading"
+      class="text-xl font-semibold tracking-[-0.03em] text-balance sm:text-2xl"
+    >
+      Past sponsors
+    </h2>
+    <p class="mt-1.5 max-w-2xl text-sm leading-relaxed text-balance text-muted-foreground">
+      Their sponsorships have ended, but the work they funded ships in every release. Thanks to all{' '}
+      {sponsors.length}.
+    </p>
+
+    <ul class="mt-6 grid grid-cols-2 gap-x-6 gap-y-1 sm:grid-cols-3 lg:grid-cols-4">
+      {
+        sponsors.map(sponsor => (
+          <li>
+            <a
+              class="flex min-h-11 items-center gap-3 text-sm text-muted-foreground transition-colors hover:text-foreground"
+              href={sponsor.link}
+              rel={relAttribute(sponsor.rel)}
+              target="_blank"
+            >
+              <Avatar
+                class:list={['size-7', sponsor.type === 'Organization' ? 'rounded-md' : 'rounded-full']}
+                name={sponsor.name}
+                px={28}
+                src={sponsor.avatar}
+              />
+              <bdi class="line-clamp-2 leading-snug break-words">{sponsor.name}</bdi>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>

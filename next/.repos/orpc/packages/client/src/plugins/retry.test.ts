@@ -1,557 +1,518 @@
-import type { RouterClient } from '../../../server/src/router-client'
-import type { ClientRetryPluginContext } from './retry'
-import * as Shared from '@orpc/shared'
-import { getEventMeta, withEventMeta } from '@orpc/standard-server'
-import { RPCHandler } from '../../../server/src/adapters/fetch/rpc-handler'
-import { os } from '../../../server/src/builder'
-import { RPCLink } from '../adapters/fetch'
-import { createORPCClient } from '../client'
-import { ORPCError } from '../error'
-import { ClientRetryPlugin } from './retry'
+import type { StandardLazyResponse, StandardRequest } from '@standard-server/core'
+import type { StandardLinkCodec, StandardLinkTransport } from '../adapters/standard'
+import type { RetryLinkPluginContext } from './retry'
+import { promiseWithResolvers } from '@orpc/shared'
+import { withEventMeta } from '@standard-server/core'
+import { StandardLink } from '../adapters/standard'
+import { RetryLinkPlugin } from './retry'
 
-const overlayProxySpy = vi.spyOn(Shared, 'overlayProxy')
+interface TestContext extends RetryLinkPluginContext {
+  tag?: string
+}
 
-interface ORPCClientContext extends ClientRetryPluginContext {
+function makeCodec(): StandardLinkCodec<TestContext> {
+  return {
+    encodeInput: vi.fn(async () => ({
+      method: 'POST',
+      url: '/test',
+      headers: {},
+      body: undefined,
+    } satisfies StandardRequest)),
+    decodeResponse: vi.fn(),
+  }
+}
 
+function makeTransport(): StandardLinkTransport<TestContext> {
+  return {
+    send: vi.fn(async () => ({
+      status: 200,
+      headers: {},
+      resolveBody: async () => undefined,
+    } satisfies StandardLazyResponse)),
+  }
 }
 
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.useRealTimers()
 })
 
-describe('clientRetryPlugin', () => {
-  const handlerFn = vi.fn()
+describe('retryLinkPlugin', () => {
+  it('does not retry by default', async () => {
+    const codec = makeCodec()
+    const transport = makeTransport()
 
-  const router = os.handler(handlerFn)
+    vi.mocked(codec.decodeResponse).mockRejectedValue(new Error('FAIL'))
 
-  const handler = new RPCHandler(router)
-
-  const link = new RPCLink<ORPCClientContext>({
-    url: 'http://localhost:3000',
-    fetch: async (request) => {
-      if (request.signal?.aborted === true) {
-        // fake real fetch abort behavior
-        throw new Error('AbortError')
-      }
-
-      const { response } = await handler.handle(request)
-      return response ?? new Response('fail', { status: 500 })
-    },
-    plugins: [
-      new ClientRetryPlugin(),
-    ],
-  })
-
-  const client: RouterClient<typeof router, ORPCClientContext> = createORPCClient(link)
-
-  it('should not retry by default', async () => {
-    handlerFn.mockRejectedValueOnce(new Error('fail'))
-
-    await expect(client('hello')).rejects.toThrow('Internal server error')
-
-    expect(handlerFn).toHaveBeenCalledTimes(1)
-  })
-
-  it('should retry', async () => {
-    handlerFn.mockRejectedValue(new Error('fail'))
-
-    const retry = vi.fn(() => 3)
-
-    await expect(client('hello', { context: { retry, retryDelay: 0 } })).rejects.toThrow('Internal server error')
-
-    expect(handlerFn).toHaveBeenCalledTimes(4)
-    expect(retry).toHaveBeenCalledTimes(1)
-    expect(retry).toHaveBeenCalledWith(expect.objectContaining({ context: { retry, retryDelay: 0 }, path: [], input: 'hello' }))
-  })
-
-  it('should not retry if success', async () => {
-    handlerFn.mockResolvedValue('success')
-
-    const output = await client('hello', { context: { retry: 3, retryDelay: 0 } })
-
-    expect(output).toBe('success')
-    expect(handlerFn).toHaveBeenCalledTimes(1)
-    expect(handlerFn).toHaveBeenCalledWith(expect.objectContaining({ input: 'hello' }))
-  })
-
-  it('should retry with delay', { retry: 5 }, async () => {
-    handlerFn.mockRejectedValue(new Error('fail'))
-
-    const start = Date.now()
-    await expect(client('hello', { context: { retry: 4, retryDelay: 50 } })).rejects.toThrow('Internal server error')
-
-    expect(Date.now() - start).toBeGreaterThanOrEqual(200)
-    expect(Date.now() - start).toBeLessThanOrEqual(249)
-
-    expect(handlerFn).toHaveBeenCalledTimes(5)
-  })
-
-  it('should not retry if shouldRetry=false', { retry: 5 }, async () => {
-    handlerFn.mockRejectedValue(new Error('fail'))
-
-    let times = 0
-    const shouldRetry = vi.fn(() => {
-      times++
-
-      return times < 2
+    const link = new StandardLink(codec, transport, {
+      plugins: [new RetryLinkPlugin()],
     })
 
-    await expect(client('hello', { context: { retry: 3, shouldRetry, retryDelay: 0 } })).rejects.toThrow('Internal server error')
+    await expect(link.call(['planet', 'create'], { name: 'Earth' }, { context: {} })).rejects.toThrow('FAIL')
 
-    expect(handlerFn).toHaveBeenCalledTimes(2)
-
-    expect(shouldRetry).toHaveBeenCalledTimes(2)
-    expect(shouldRetry).toHaveBeenNthCalledWith(
-      1,
-      expect.objectContaining({
-        attemptIndex: 0,
-        error: expect.any(ORPCError),
-        context: { retry: 3, shouldRetry, retryDelay: 0 },
-        input: 'hello',
-        path: [],
-      }),
-    )
-
-    expect(shouldRetry).toHaveBeenNthCalledWith(
-      2,
-      expect.objectContaining({
-        attemptIndex: 1,
-        error: expect.any(ORPCError),
-        context: { retry: 3, shouldRetry, retryDelay: 0 },
-        input: 'hello',
-        path: [],
-      }),
-    )
+    expect(codec.decodeResponse).toHaveBeenCalledTimes(1)
   })
 
-  it('onRetry', async () => {
+  it('retries until max attempts and then throws', async () => {
+    const codec = makeCodec()
+    const transport = makeTransport()
+
+    vi.mocked(codec.decodeResponse).mockRejectedValue(new Error('FAIL'))
+
+    const link = new StandardLink(codec, transport, {
+      plugins: [new RetryLinkPlugin()],
+    })
+
+    await expect(link.call(['planet', 'create'], { name: 'Earth' }, { context: { retry: 1, retryDelay: 0 } })).rejects.toThrow('FAIL')
+
+    expect(codec.decodeResponse).toHaveBeenCalledTimes(2)
+  })
+
+  it('respects shouldRetry=false', async () => {
+    const codec = makeCodec()
+    const transport = makeTransport()
+
+    vi.mocked(codec.decodeResponse).mockRejectedValue(new Error('FAIL'))
+
+    const shouldRetry = vi.fn(async () => false)
+
+    const link = new StandardLink(codec, transport, {
+      plugins: [new RetryLinkPlugin()],
+    })
+
+    await expect(link.call(['planet', 'create'], { name: 'Earth' }, { context: { retry: 5, retryDelay: 0, shouldRetry } })).rejects.toThrow('FAIL')
+
+    expect(shouldRetry).toHaveBeenCalledTimes(1)
+    expect(codec.decodeResponse).toHaveBeenCalledTimes(1)
+  })
+
+  it('calls onRetry cleanup with success/failure state', async () => {
+    const codec = makeCodec()
+    const transport = makeTransport()
+
     let count = 0
-    handlerFn.mockImplementation(() => {
+    vi.mocked(codec.decodeResponse).mockImplementation(async () => {
       count++
 
-      if (count === 4) {
-        return 'success'
+      if (count < 3) {
+        throw new Error(`FAIL_${count}`)
       }
 
-      throw new Error('fail')
+      return { kind: 'output', output: 'OK' }
     })
 
     const clean = vi.fn()
     const onRetry = vi.fn(() => clean)
 
-    await expect(client('hello', { context: { retry: 3, retryDelay: 0, onRetry } })).resolves.toEqual('success')
+    const link = new StandardLink(codec, transport, {
+      plugins: [new RetryLinkPlugin()],
+    })
 
-    expect(handlerFn).toHaveBeenCalledTimes(4)
+    await expect(link.call(['planet', 'create'], { name: 'Earth' }, { context: { retry: 3, retryDelay: 0, onRetry } })).resolves.toBe('OK')
 
-    expect(onRetry).toHaveBeenCalledTimes(3)
-    expect(onRetry).toHaveBeenNthCalledWith(
-      1,
-      expect.objectContaining({
-        attemptIndex: 0,
-        error: expect.any(ORPCError),
-        context: { retry: 3, retryDelay: 0, onRetry },
-        input: 'hello',
-        path: [],
-      }),
-    )
-    expect(onRetry).toHaveBeenNthCalledWith(
-      2,
-      expect.objectContaining({
-        attemptIndex: 1,
-        error: expect.any(ORPCError),
-        context: { retry: 3, retryDelay: 0, onRetry },
-        input: 'hello',
-        path: [],
-      }),
-    )
-    expect(onRetry).toHaveBeenNthCalledWith(
-      3,
-      expect.objectContaining({
-        attemptIndex: 2,
-        error: expect.any(ORPCError),
-        context: { retry: 3, retryDelay: 0, onRetry },
-        input: 'hello',
-        path: [],
-      }),
-    )
-
-    expect(clean).toHaveBeenCalledTimes(3)
+    expect(onRetry).toHaveBeenCalledTimes(2)
+    expect(clean).toHaveBeenCalledTimes(2)
     expect(clean).toHaveBeenNthCalledWith(1, false)
-    expect(clean).toHaveBeenNthCalledWith(2, false)
-    expect(clean).toHaveBeenNthCalledWith(3, true)
+    expect(clean).toHaveBeenNthCalledWith(2, true)
   })
 
-  it('should not retry if signal aborted', async () => {
-    handlerFn.mockRejectedValue(new Error('fail'))
+  it('does not retry when signal is aborted', async () => {
+    const codec = makeCodec()
+    const transport = makeTransport()
+
+    const controller = new AbortController()
+    controller.abort()
+
+    vi.mocked(transport.send).mockRejectedValue(new Error('AbortError'))
+
+    const link = new StandardLink(codec, transport, {
+      plugins: [new RetryLinkPlugin()],
+    })
+
+    await expect(link.call(['planet', 'create'], { name: 'Earth' }, { context: { retry: 3, retryDelay: 0 }, signal: controller.signal })).rejects.toThrow('AbortError')
+
+    expect(transport.send).toHaveBeenCalledTimes(1)
+  })
+
+  it('uses constructor defaults', async () => {
+    const codec = makeCodec()
+    const transport = makeTransport()
+
+    vi.mocked(codec.decodeResponse)
+      .mockRejectedValueOnce(new Error('FAIL_1'))
+      .mockResolvedValueOnce({ kind: 'output', output: 'OK' })
+
+    const link = new StandardLink(codec, transport, {
+      plugins: [new RetryLinkPlugin({ default: { retry: 1, retryDelay: 0 } })],
+    })
+
+    await expect(link.call(['planet', 'create'], { name: 'Earth' }, { context: {} })).resolves.toBe('OK')
+
+    expect(codec.decodeResponse).toHaveBeenCalledTimes(2)
+  })
+
+  it('uses default retryDelay fallback when lastEventRetry is undefined', async () => {
+    vi.useFakeTimers()
+
+    const codec = makeCodec()
+    const transport = makeTransport()
+
+    vi.mocked(codec.decodeResponse)
+      .mockRejectedValueOnce(new Error('FAIL_1'))
+      .mockResolvedValueOnce({ kind: 'output', output: 'OK' })
+
+    const link = new StandardLink(codec, transport, {
+      plugins: [new RetryLinkPlugin({ default: { retry: 1 } })],
+    })
+
+    const callPromise = link.call(['planet', 'create'], { name: 'Earth' }, { context: {} })
+
+    await vi.advanceTimersByTimeAsync(1999)
+    await Promise.resolve()
+    expect(codec.decodeResponse).toHaveBeenCalledTimes(1)
+
+    await vi.advanceTimersByTimeAsync(1)
+    await expect(callPromise).resolves.toBe('OK')
+    expect(codec.decodeResponse).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not wait full retry delay when signal is aborted mid-delay', async () => {
+    vi.useFakeTimers()
+
+    const codec = makeCodec()
+    const transport = makeTransport()
+
+    vi.mocked(codec.decodeResponse).mockRejectedValue(new Error('FAIL'))
 
     const controller = new AbortController()
 
+    const link = new StandardLink(codec, transport, {
+      plugins: [new RetryLinkPlugin()],
+    })
+
+    const clean = vi.fn()
+    const onRetry = vi.fn(() => clean)
+
+    const callPromise = link.call(
+      ['planet', 'create'],
+      { name: 'Earth' },
+      { context: { retry: 3, retryDelay: 5000, onRetry }, signal: controller.signal },
+    )
+
+    await vi.advanceTimersByTimeAsync(1)
     controller.abort()
 
-    await expect(client('hello', { context: { retry: 3, retryDelay: 0 }, signal: controller.signal })).rejects.toThrow('AbortError')
+    await expect(callPromise).rejects.toThrow()
 
-    expect(handlerFn).toHaveBeenCalledTimes(0)
+    expect(codec.decodeResponse).toHaveBeenCalledTimes(1)
+
+    expect(onRetry).toHaveBeenCalledTimes(1)
+    expect(clean).toHaveBeenCalledTimes(1)
+    expect(clean).toHaveBeenCalledWith(false)
   })
 
-  describe('event iterator', () => {
-    it('should not retry by default', async () => {
-      handlerFn.mockImplementation(async function* () {
-        throw new Error('fail')
-      })
+  it('throws the retryDelay error without retrying it', async () => {
+    const codec = makeCodec()
+    const transport = makeTransport()
 
-      const iterator = await client('hello')
+    vi.mocked(codec.decodeResponse).mockRejectedValue(new Error('FAIL'))
 
-      await expect(iterator.next()).rejects.toThrow('Internal server error')
+    const retryDelay = vi.fn(() => 0).mockRejectedValueOnce(new Error('DELAY_FAIL'))
+    const onRetry = vi.fn()
 
-      expect(handlerFn).toHaveBeenCalledTimes(1)
-      expect(overlayProxySpy).toHaveBeenCalledTimes(1)
+    const link = new StandardLink(codec, transport, {
+      plugins: [new RetryLinkPlugin()],
     })
 
-    it('should retry', async () => {
-      handlerFn.mockImplementation(async function* () {
-        throw new Error('fail')
-      })
+    await expect(link.call(['planet', 'create'], { name: 'Earth' }, { context: { retry: 1, retryDelay, onRetry } })).rejects.toThrow('DELAY_FAIL')
 
-      const iterator = await client('hello', { context: { retry: 3, retryDelay: 0 } })
+    expect(retryDelay).toHaveBeenCalledTimes(1)
+    expect(onRetry).not.toHaveBeenCalled()
+    expect(codec.decodeResponse).toHaveBeenCalledTimes(1)
+  })
 
-      await expect(iterator.next()).rejects.toThrow('Internal server error')
+  describe('asyncIteratorObject', () => {
+    it('retries AsyncIteratorObject and forwards lastEventId from metadata', async () => {
+      const codec = makeCodec()
+      const transport = makeTransport()
 
-      expect(handlerFn).toHaveBeenCalledTimes(4)
-      expect(overlayProxySpy).toHaveBeenCalledTimes(5) // handler 4, plugin 1
-      expect(overlayProxySpy).toHaveBeenNthCalledWith(2, expect.any(Function), expect.any(Shared.AsyncIteratorClass))
-      expect(iterator).toBe(overlayProxySpy.mock.results[1]?.value)
-    })
+      let callCount = 0
+      vi.mocked(codec.decodeResponse).mockImplementation(async () => {
+        callCount++
 
-    it('should not retry if success', async () => {
-      handlerFn.mockImplementation(async function* () {
-        yield 1
-        yield withEventMeta({ order: 2 }, { id: '5' })
-        return withEventMeta({ order: 3 }, { retry: 6000 })
-      })
+        if (callCount === 1) {
+          return {
+            kind: 'output',
+            output: (async function* () {
+              yield withEventMeta({ phase: 'first' }, { id: 'evt-1', retry: 0 })
+              throw withEventMeta(new Error('ITER_FAIL'), { id: 'evt-2', retry: 0 })
+            })(),
+          }
+        }
 
-      const iterator = await client('hello', { context: { retry: 3, retryDelay: 0 } })
-
-      expect(await iterator.next()).toSatisfy(({ done, value }) => {
-        expect(done).toEqual(false)
-        expect(value).toEqual(1)
-        return true
-      })
-
-      expect(await iterator.next()).toSatisfy(({ done, value }) => {
-        expect(done).toEqual(false)
-        expect(value).toEqual({ order: 2 })
-        expect(getEventMeta(value)).toMatchObject({ id: '5' })
-        return true
-      })
-
-      expect(await iterator.next()).toSatisfy(({ done, value }) => {
-        expect(done).toEqual(true)
-        expect(value).toEqual({ order: 3 })
-        expect(getEventMeta(value)).toMatchObject({ retry: 6000 })
-        return true
-      })
-
-      expect(await iterator.next()).toSatisfy(({ done, value }) => {
-        expect(done).toEqual(true)
-        expect(value).toEqual(undefined)
-        return true
-      })
-
-      expect(handlerFn).toHaveBeenCalledTimes(1)
-    })
-
-    it('should retry with meta data', async () => {
-      handlerFn.mockImplementation(async function* () {
-        yield 1
-        yield withEventMeta({ order: 2 }, { id: '5', retry: 5678 })
-        throw new Error('fail')
+        return {
+          kind: 'output',
+          output: (async function* () {
+            yield { phase: 'second' }
+          })(),
+        }
       })
 
       const shouldRetry = vi.fn(() => true)
 
-      const iterator = await client('hello', { context: { retry: 3, retryDelay: 0, shouldRetry }, lastEventId: '1' })
-
-      expect(await iterator.next()).toSatisfy(({ done, value }) => {
-        expect(done).toEqual(false)
-        expect(value).toEqual(1)
-        return true
+      const link = new StandardLink(codec, transport, {
+        plugins: [new RetryLinkPlugin()],
       })
 
-      expect(await iterator.next()).toSatisfy(({ done, value }) => {
-        expect(done).toEqual(false)
-        expect(value).toEqual({ order: 2 })
-        expect(getEventMeta(value)).toMatchObject({ id: '5', retry: 5678 })
-        return true
-      })
+      const iterator = await link.call(['planet', 'create'], { name: 'Earth' }, { context: { retry: 1, shouldRetry }, lastEventId: 'init-id' }) as AsyncIterator<any>
 
-      expect(await iterator.next()).toSatisfy(({ done, value }) => {
-        expect(done).toEqual(false)
-        expect(value).toEqual(1)
-        return true
-      })
+      await expect(iterator.next()).resolves.toEqual({ done: false, value: { phase: 'first' } })
+      await expect(iterator.next()).resolves.toEqual({ done: false, value: { phase: 'second' } })
 
-      expect(handlerFn).toHaveBeenCalledTimes(2)
-      expect(handlerFn).toHaveBeenNthCalledWith(1, expect.objectContaining({ input: 'hello', lastEventId: '1' }))
-      expect(handlerFn).toHaveBeenNthCalledWith(2, expect.objectContaining({ input: 'hello', lastEventId: '5' }))
+      expect(vi.mocked(codec.encodeInput).mock.calls[0]?.[2]).toMatchObject({ lastEventId: 'init-id' })
+      expect(vi.mocked(codec.encodeInput).mock.calls[1]?.[2]).toMatchObject({ lastEventId: 'evt-2' })
 
       expect(shouldRetry).toHaveBeenCalledTimes(1)
-      expect(shouldRetry).toHaveBeenNthCalledWith(
-        1,
-        expect.objectContaining({
-          error: expect.any(Error),
-          lastEventId: '5',
-          lastEventRetry: 5678,
-          input: 'hello',
-          path: [],
-        }),
-      )
+      expect(shouldRetry).toHaveBeenCalledWith(expect.objectContaining({ lastEventRetry: 0 }))
     })
 
-    it('should retry with meta in error', async () => {
-      handlerFn.mockImplementation(async function* () {
-        yield 1
-        yield { order: 2 }
-        throw withEventMeta(new Error('fail'), { id: '10', retry: 1234 })
+    it('throws when retry response is not an AsyncIteratorObject', async () => {
+      const codec = makeCodec()
+      const transport = makeTransport()
+
+      let callCount = 0
+      vi.mocked(codec.decodeResponse).mockImplementation(async () => {
+        callCount++
+
+        if (callCount === 1) {
+          return {
+            kind: 'output',
+            output: (async function* () {
+              throw new Error('ITER_FAIL')
+            })(),
+          }
+        }
+
+        return { kind: 'output', output: 'NOT_ITERATOR' }
       })
 
-      const shouldRetry = vi.fn(() => true)
-
-      const iterator = await client('hello', { context: { retry: 1, retryDelay: 0, shouldRetry }, lastEventId: '1' })
-
-      expect(await iterator.next()).toSatisfy(({ done, value }) => {
-        expect(done).toEqual(false)
-        expect(value).toEqual(1)
-        return true
+      const link = new StandardLink(codec, transport, {
+        plugins: [new RetryLinkPlugin()],
       })
 
-      expect(await iterator.next()).toSatisfy(({ done, value }) => {
-        expect(done).toEqual(false)
-        expect(value).toEqual({ order: 2 })
-        return true
-      })
+      const iterator = await link.call(['planet', 'create'], { name: 'Earth' }, { context: { retry: 1, retryDelay: 0 } }) as AsyncIterator<any>
 
-      expect(await iterator.next()).toSatisfy(({ done, value }) => {
-        expect(done).toEqual(false)
-        expect(value).toEqual(1)
-        return true
-      })
-
-      expect(await iterator.next()).toSatisfy(({ done, value }) => {
-        expect(done).toEqual(false)
-        expect(value).toEqual({ order: 2 })
-        return true
-      })
-
-      await expect(iterator.next()).rejects.toSatisfy((error) => {
-        expect(error).toBeInstanceOf(ORPCError)
-        expect(getEventMeta(error)).toMatchObject({ id: '10', retry: 1234 })
-        return true
-      })
-
-      expect(handlerFn).toHaveBeenCalledTimes(2)
-      expect(handlerFn).toHaveBeenNthCalledWith(1, expect.objectContaining({ input: 'hello', lastEventId: '1' }))
-      expect(handlerFn).toHaveBeenNthCalledWith(2, expect.objectContaining({ input: 'hello', lastEventId: '10' }))
-
-      expect(shouldRetry).toHaveBeenCalledTimes(1)
-      expect(shouldRetry).toHaveBeenNthCalledWith(
-        1,
-        expect.objectContaining({
-          error: expect.any(Error),
-          lastEventId: '10',
-          lastEventRetry: 1234,
-          input: 'hello',
-          path: [],
-        }),
-      )
+      await expect(iterator.next()).rejects.toBeInstanceOf(TypeError)
     })
 
-    it('should retry with delay', { retry: 5 }, async () => {
-      handlerFn.mockImplementation(async function* () {
-        throw new Error('fail')
+    it('support manually cleanup', async () => {
+      const codec = makeCodec()
+      const transport = makeTransport()
+
+      const cleanup = vi.fn()
+
+      vi.mocked(codec.decodeResponse).mockResolvedValue({
+        kind: 'output',
+        output: (async function* () {
+          try {
+            yield 1
+            yield 2
+          }
+          finally {
+            cleanup()
+          }
+        })(),
       })
 
-      const start = Date.now()
-      const iterator = await client('hello', { context: { retry: 4, retryDelay: 50 } })
+      const link = new StandardLink(codec, transport, {
+        plugins: [new RetryLinkPlugin()],
+      })
 
-      await expect(iterator.next()).rejects.toThrow('Internal server error')
+      const iterator = await link.call(['planet', 'create'], { name: 'Earth' }, { context: { retry: 1, retryDelay: 0 } }) as AsyncIterator<any>
 
-      expect(Date.now() - start).toBeGreaterThanOrEqual(200)
-      expect(Date.now() - start).toBeLessThanOrEqual(249)
+      await iterator.next()
+      await iterator.return?.()
 
-      expect(handlerFn).toHaveBeenCalledTimes(5)
+      expect(cleanup).toHaveBeenCalledTimes(1)
     })
 
-    it('should not retry if shouldRetry=false', { retry: 5 }, async () => {
-      handlerFn.mockImplementation(async function* () {
-        throw new Error('fail')
+    it('automatically cleanup retried iterator when cleanup during retry', async () => {
+      vi.useFakeTimers()
+
+      const codec = makeCodec()
+      const transport = makeTransport()
+
+      const cleanup = vi.fn()
+
+      const retriedReturn = vi.fn(async () => ({ done: true as const, value: undefined }))
+
+      const reconnect = promiseWithResolvers<void>()
+
+      let callCount = 0
+      vi.mocked(codec.decodeResponse).mockImplementation(async () => {
+        callCount++
+
+        if (callCount === 1) {
+          return {
+            kind: 'output',
+            output: (async function* () {
+              try {
+                throw new Error('ITER_FAIL')
+              }
+              finally {
+                cleanup()
+              }
+            })(),
+          }
+        }
+
+        await reconnect.promise
+
+        return {
+          kind: 'output',
+          output: {
+            async next() {
+              return { done: false as const, value: 'RETRIED' }
+            },
+            return: retriedReturn,
+            [Symbol.asyncIterator]() {
+              return this
+            },
+          },
+        }
       })
 
-      let times = 0
-      const shouldRetry = vi.fn(() => {
-        times++
-
-        return times < 2
+      const link = new StandardLink(codec, transport, {
+        plugins: [new RetryLinkPlugin()],
       })
 
-      const iterator = await client('hello', { context: { retry: 3, shouldRetry, retryDelay: 0 } })
+      const iterator = await link.call(['planet', 'create'], { name: 'Earth' }, { context: { retry: 1, retryDelay: 50 } }) as AsyncIterator<any>
 
-      await expect(iterator.next()).rejects.toThrow('Internal server error')
+      const nextPromise = iterator.next()
+      const nextExpectation = expect(nextPromise).resolves.toEqual({ done: true, value: undefined })
 
-      expect(handlerFn).toHaveBeenCalledTimes(2)
+      await vi.advanceTimersByTimeAsync(60)
+      expect(codec.decodeResponse).toHaveBeenCalledTimes(2) // reconnect request is in flight
 
-      expect(shouldRetry).toHaveBeenCalledTimes(2)
-      expect(shouldRetry).toHaveBeenNthCalledWith(
-        1,
-        expect.objectContaining({
-          attemptIndex: 0,
-          error: expect.any(ORPCError),
-          context: { retry: 3, shouldRetry, retryDelay: 0 },
-          input: 'hello',
-          path: [],
-        }),
-      )
-      expect(shouldRetry).toHaveBeenNthCalledWith(
-        2,
-        expect.objectContaining({
-          attemptIndex: 1,
-          error: expect.any(ORPCError),
-          context: { retry: 3, shouldRetry, retryDelay: 0 },
-          input: 'hello',
-          path: [],
-        }),
-      )
+      await iterator.return?.()
+      reconnect.resolve()
+
+      await nextExpectation
+
+      expect(cleanup).toHaveBeenCalledTimes(1)
+      expect(retriedReturn).toHaveBeenCalledTimes(1)
     })
 
-    it('onRetry', async () => {
-      let time = 0
-      handlerFn.mockImplementation(async function* () {
-        throw withEventMeta(new Error('fail'), { id: `${time++}` })
+    it('stops reconnecting once the iterator is closed', async () => {
+      vi.useFakeTimers()
+
+      const codec = makeCodec()
+      const transport = makeTransport()
+
+      const onRetry = vi.fn()
+
+      vi.mocked(codec.decodeResponse)
+        .mockResolvedValueOnce({
+          kind: 'output',
+          output: (async function* () {
+            throw new Error('DISCONNECTED')
+          })(),
+        })
+        .mockRejectedValue(new Error('SERVER_DOWN'))
+
+      const link = new StandardLink(codec, transport, {
+        plugins: [new RetryLinkPlugin()],
+      })
+
+      const iterator = await link.call(['stream'], undefined, { context: { retry: Number.POSITIVE_INFINITY, retryDelay: 10, onRetry } }) as AsyncIterator<any>
+
+      const nextPromise = iterator.next()
+
+      await vi.advanceTimersByTimeAsync(35)
+      expect(vi.mocked(codec.decodeResponse).mock.calls.length).toBeGreaterThan(1)
+
+      await iterator.return?.()
+
+      const callsAtReturn = vi.mocked(codec.decodeResponse).mock.calls.length
+      const onRetryCallsAtReturn = onRetry.mock.calls.length
+
+      await vi.advanceTimersByTimeAsync(1000)
+
+      expect(codec.decodeResponse).toHaveBeenCalledTimes(callsAtReturn)
+      expect(onRetry).toHaveBeenCalledTimes(onRetryCallsAtReturn)
+      await expect(nextPromise).resolves.toEqual({ done: true, value: undefined })
+    })
+
+    it('does not send further requests when closed during the retry delay', async () => {
+      vi.useFakeTimers()
+
+      const codec = makeCodec()
+      const transport = makeTransport()
+
+      vi.mocked(codec.decodeResponse).mockResolvedValue({
+        kind: 'output',
+        output: (async function* () {
+          throw new Error('DISCONNECTED')
+        })(),
       })
 
       const clean = vi.fn()
       const onRetry = vi.fn(() => clean)
 
-      const iterator = await client('hello', { context: { retry: 3, retryDelay: 0, onRetry } })
-
-      await expect(iterator.next()).rejects.toThrow('Internal server error')
-
-      expect(handlerFn).toHaveBeenCalledTimes(4)
-
-      expect(onRetry).toHaveBeenCalledTimes(3)
-      expect(onRetry).toHaveBeenNthCalledWith(
-        1,
-        expect.objectContaining({
-          attemptIndex: 0,
-          error: expect.any(ORPCError),
-          lastEventId: '0',
-          context: { retry: 3, retryDelay: 0, onRetry },
-          input: 'hello',
-          path: [],
-        }),
-      )
-      expect(onRetry).toHaveBeenNthCalledWith(
-        2,
-        expect.objectContaining({
-          attemptIndex: 1,
-          error: expect.any(ORPCError),
-          lastEventId: '1',
-          context: { retry: 3, retryDelay: 0, onRetry },
-          input: 'hello',
-          path: [],
-        }),
-      )
-      expect(onRetry).toHaveBeenNthCalledWith(
-        3,
-        expect.objectContaining({
-          attemptIndex: 2,
-          error: expect.any(ORPCError),
-          lastEventId: '2',
-          context: { retry: 3, retryDelay: 0, onRetry },
-          input: 'hello',
-          path: [],
-        }),
-      )
-
-      expect(clean).toHaveBeenCalledTimes(3)
-    })
-
-    it('should not retry if signal aborted', async () => {
-      handlerFn.mockImplementation(async function* () {
-        throw new Error('fail')
+      const link = new StandardLink(codec, transport, {
+        plugins: [new RetryLinkPlugin()],
       })
 
-      const controller = new AbortController()
+      const iterator = await link.call(['stream'], undefined, { context: { retry: 3, retryDelay: 1000, onRetry } }) as AsyncIterator<any>
 
-      controller.abort()
+      const nextPromise = iterator.next()
 
-      await expect(client('hello', { context: { retry: 3, retryDelay: 0 }, signal: controller.signal })).rejects.toThrow('AbortError')
+      await vi.advanceTimersByTimeAsync(10)
+      expect(onRetry).toHaveBeenCalledTimes(1)
 
-      expect(handlerFn).toHaveBeenCalledTimes(0)
+      await iterator.return?.()
+      await vi.advanceTimersByTimeAsync(5000)
+
+      await expect(nextPromise).resolves.toEqual({ done: true, value: undefined })
+
+      expect(transport.send).toHaveBeenCalledTimes(1)
+      expect(onRetry).toHaveBeenCalledTimes(1)
+      expect(clean).toHaveBeenCalledTimes(1)
+      expect(clean).toHaveBeenCalledWith(false)
     })
 
-    it('throw right away if retry invalid event iterator response', async () => {
-      let times = 0
-      handlerFn.mockImplementation(async () => {
-        times++
+    it('reset special AsyncIteratorObject properties after retry', async () => {
+      const codec = makeCodec()
+      const transport = makeTransport()
 
-        if (times === 2) {
-          return 'not-an-event-iterator'
-        }
+      let callCount = 0
+      vi.mocked(codec.decodeResponse).mockImplementation(async () => {
+        callCount++
 
-        return (async function* () {
-          throw new Error('fail')
+        const gen = (async function* () {
+          throw new Error('ITER_FAIL')
         })()
-      })
 
-      const iterator = await client('hello', { context: { retry: 3, retryDelay: 0 } })
+        Object.defineProperty(gen, 'specialProperty', {
+          value: `specialValue:${callCount}`,
+          configurable: true,
+        })
 
-      await expect(iterator.next()).rejects.toThrow('RetryPlugin: Expected an Event Iterator, got a non-Event Iterator')
-
-      expect(handlerFn).toHaveBeenCalledTimes(2)
-    })
-
-    it('manually .return still works', async () => {
-      const cleanup = vi.fn()
-
-      handlerFn.mockImplementation(async function* () {
-        try {
-          while (true) {
-            yield 1
-          }
-        }
-        finally {
-          cleanup()
+        return {
+          kind: 'output',
+          output: gen,
         }
       })
 
-      const iterator = await client('hello', { context: { retry: 3, retryDelay: 0 } })
-
-      await iterator.next()
-
-      await iterator.return()
-
-      await vi.waitFor(() => expect(cleanup).toHaveBeenCalledTimes(1))
-    })
-
-    it('cleanup correctly if throw and retry after .return', async () => {
-      const cleanup = vi.fn()
-
-      handlerFn.mockImplementation(async function* () {
-        try {
-          throw new Error('fail')
-        }
-        finally {
-          cleanup()
-        }
+      const link = new StandardLink(codec, transport, {
+        plugins: [new RetryLinkPlugin()],
       })
 
-      const iterator = await client('hello', { context: { retry: 1, retryDelay: 0 } })
+      const iterator = await link.call(['planet', 'create'], { name: 'Earth' }, { context: { retry: 1, retryDelay: 0 } }) as AsyncIterator<any>
 
-      const promise = expect(iterator.next()).rejects.toThrow('Internal server error')
-      await new Promise(r => setTimeout(r, 1))
-      await iterator.return()
-      await promise
-      expect(cleanup).toHaveBeenCalledTimes(2)
+      expect((iterator as any).specialProperty).toEqual('specialValue:1')
+      await expect(iterator.next()).rejects.toThrow('ITER_FAIL')
+      expect((iterator as any).specialProperty).toEqual('specialValue:2')
     })
   })
 })

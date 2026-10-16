@@ -1,0 +1,51 @@
+---
+import type { Sponsor, SponsorTier } from '../../sponsors/data'
+import { monthYear, usd } from './format'
+
+interface Props {
+  tiers: SponsorTier[]
+  past: Sponsor[]
+}
+
+const { tiers, past } = Astro.props
+
+const active = tiers.flatMap(tier => tier.sponsors)
+const amounts = active.map(sponsor => sponsor.amount).sort((a, b) => a - b)
+const middle = Math.floor(amounts.length / 2)
+
+// The median needs at least one active sponsor.
+const stats = active.length === 0
+  ? []
+  : [
+      { value: usd(tiers.reduce((sum, tier) => sum + tier.total, 0)), label: 'Pledged this month', href: '#sponsors' },
+      { value: active.length, label: 'Active sponsors', href: '#sponsors' },
+      {
+        value: usd(amounts.length % 2 === 1 ? amounts[middle]! : (amounts[middle - 1]! + amounts[middle]!) / 2),
+        label: 'Median pledge',
+        href: '#sponsors',
+      },
+      {
+        value: active.length + past.length,
+        label: `Sponsors since ${monthYear([...active, ...past].map(sponsor => sponsor.createdAt).sort()[0]!)}`,
+        // The past list only renders when there is someone in it.
+        href: past.length > 0 ? '#past-sponsors' : '#sponsors',
+      },
+    ]
+---
+
+{
+  stats.length > 0 && (
+    <div class="border-b border-border">
+      <ul class="orpc-stats mx-auto max-w-6xl px-6" style={`--orpc-stat-count:${stats.length}`}>
+        {stats.map(stat => (
+          <li class="orpc-stat">
+            <a href={stat.href}>
+              <span class="orpc-stat-value">{stat.value}</span>
+              <span class="orpc-stat-label">{stat.label}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}

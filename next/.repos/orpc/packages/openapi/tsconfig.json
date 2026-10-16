@@ -2,14 +2,12 @@
   "extends": "../../tsconfig.lib.json",
   "references": [
     { "path": "../client" },
-    { "path": "../openapi-client" },
     { "path": "../contract" },
+    { "path": "../json-schema" },
     { "path": "../server" },
-    { "path": "../standard-server" },
-    { "path": "../interop" },
     { "path": "../shared" }
   ],
-  "include": ["src"],
+  "include": ["package.json", "src"],
   "exclude": [
     "**/*.bench.*",
     "**/*.test.*",

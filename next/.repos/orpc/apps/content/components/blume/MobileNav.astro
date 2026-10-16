@@ -1,0 +1,26 @@
+---
+import type { UIStrings } from "blume/core/i18n-ui.ts";
+import type { NavNode } from "blume/core/types.ts";
+import NavTree from "./NavTree.astro";
+import SectionsNav from "./SectionsNav.astro";
+
+// The nav shown inside the docs mobile drawer. RootLayout's own drawer tab
+// list renders dropdown tabs (`items`) as dead links, so it is hidden in
+// theme.css and this component lists the sections itself — expanding a
+// dropdown tab (the "More" menu) into a labeled group — above the page tree.
+interface Props {
+  items: NavNode[];
+  currentRoute: string;
+  strings?: UIStrings["nav"];
+}
+
+const { items, currentRoute, strings } = Astro.props;
+---
+
+{/* Below `lg` the header has no inline tab bar, so the drawer lists the
+    sections above the page tree. RootLayout hides this component from `lg`. */}
+<SectionsNav
+  class="mb-4 border-border border-b pb-4"
+  currentRoute={currentRoute}
+/>
+<NavTree currentRoute={currentRoute} items={items} strings={strings} />

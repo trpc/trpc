@@ -1,0 +1,54 @@
+---
+// Shell of the inner pages (experts, sponsors): Blume's PageLayout with the
+// site-wide props, a left-aligned header over the corner dot field, and the
+// shared footer. `name` is both the eyebrow and the document title prefix.
+import PageLayout from 'blume/components/layout/PageLayout.astro'
+import data from 'blume:data'
+import Footer from './Footer.astro'
+
+interface Props {
+  name: string
+  route: string
+  /** Meta description; the visible intro is `lede`. */
+  description: string
+  heading: string
+  lede: string
+}
+
+const { name, route, description, heading, lede } = Astro.props
+const { config } = data
+---
+
+<PageLayout
+  site={{ title: config.title, description: config.description }}
+  logo={config.logo}
+  banner={config.banner}
+  analytics={config.analytics}
+  navigation={data.navigation}
+  favicon={config.favicon}
+  fontCssVars={data.fontCssVars}
+  themeMode={config.theme.mode}
+  searchEnabled={config.search.enabled}
+  siteUrl={config.site}
+  ogEnabled={config.og.enabled}
+  page={{ title: `${name} - ${config.title}`, description, route }}
+  x={config.x}
+>
+  <section class="relative isolate overflow-hidden border-b border-border">
+    <div aria-hidden="true" class="orpc-dots orpc-dots-corner"></div>
+    <div
+      class="relative mx-auto grid max-w-6xl gap-x-12 gap-y-6 px-6 pt-10 pb-10 sm:pt-14 sm:pb-12 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end"
+    >
+      <div class="lg:col-span-2">
+        <p class="font-mono text-[0.6875rem] tracking-[0.18em] text-muted-foreground uppercase">{name}</p>
+        <h1 class="mt-3 text-3xl leading-[1.1] font-bold text-balance sm:text-4xl">{heading}</h1>
+      </div>
+      <p class="-mt-1 max-w-2xl text-base leading-relaxed text-pretty text-muted-foreground sm:text-lg">{lede}</p>
+      <div class="flex flex-wrap gap-3">
+        <slot name="actions" />
+      </div>
+    </div>
+  </section>
+  <slot />
+  <Footer slot="footer" />
+</PageLayout>

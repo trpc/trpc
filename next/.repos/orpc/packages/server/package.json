@@ -1,8 +1,13 @@
 {
   "name": "@orpc/server",
   "type": "module",
-  "version": "1.15.5",
+  "version": "2.0.0-beta.44",
+  "description": "Build typesafe APIs with oRPC: RPC and OpenAPI support, middleware, and adapters for Node.js, Bun, Deno, Fetch, Fastify, WebSocket, AWS Lambda, and more",
   "license": "MIT",
+  "funding": [
+    "https://github.com/sponsors/dinwwwh",
+    "https://opencollective.com/middleapi"
+  ],
   "homepage": "https://orpc.dev",
   "repository": {
     "type": "git",
@@ -10,11 +15,27 @@
     "directory": "packages/server"
   },
   "keywords": [
-    "orpc"
+    "orpc",
+    "rpc",
+    "api",
+    "typescript",
+    "typesafe",
+    "server",
+    "openapi",
+    "middleware",
+    "nodejs",
+    "bun",
+    "deno",
+    "fastify",
+    "websocket",
+    "aws-lambda"
   ],
-  "sideEffects": false,
+  "sideEffects": [
+    "./dist/extensions/callable.mjs"
+  ],
   "publishConfig": {
     "exports": {
+      "./package.json": "./package.json",
       ".": {
         "types": "./dist/index.d.mts",
         "import": "./dist/index.mjs",
@@ -29,11 +50,6 @@
         "types": "./dist/plugins/index.d.mts",
         "import": "./dist/plugins/index.mjs",
         "default": "./dist/plugins/index.mjs"
-      },
-      "./hibernation": {
-        "types": "./dist/hibernation/index.d.mts",
-        "import": "./dist/hibernation/index.mjs",
-        "default": "./dist/hibernation/index.mjs"
       },
       "./standard": {
         "types": "./dist/adapters/standard/index.d.mts",
@@ -55,101 +71,90 @@
         "import": "./dist/adapters/node/index.mjs",
         "default": "./dist/adapters/node/index.mjs"
       },
-      "./fastify": {
-        "types": "./dist/adapters/fastify/index.d.mts",
-        "import": "./dist/adapters/fastify/index.mjs",
-        "default": "./dist/adapters/fastify/index.mjs"
-      },
       "./aws-lambda": {
         "types": "./dist/adapters/aws-lambda/index.d.mts",
         "import": "./dist/adapters/aws-lambda/index.mjs",
         "default": "./dist/adapters/aws-lambda/index.mjs"
+      },
+      "./fastify": {
+        "types": "./dist/adapters/fastify/index.d.mts",
+        "import": "./dist/adapters/fastify/index.mjs",
+        "default": "./dist/adapters/fastify/index.mjs"
       },
       "./websocket": {
         "types": "./dist/adapters/websocket/index.d.mts",
         "import": "./dist/adapters/websocket/index.mjs",
         "default": "./dist/adapters/websocket/index.mjs"
       },
+      "./message-port": {
+        "types": "./dist/adapters/message-port/index.d.mts",
+        "import": "./dist/adapters/message-port/index.mjs",
+        "default": "./dist/adapters/message-port/index.mjs"
+      },
       "./crossws": {
         "types": "./dist/adapters/crossws/index.d.mts",
         "import": "./dist/adapters/crossws/index.mjs",
         "default": "./dist/adapters/crossws/index.mjs"
       },
-      "./ws": {
-        "types": "./dist/adapters/ws/index.d.mts",
-        "import": "./dist/adapters/ws/index.mjs",
-        "default": "./dist/adapters/ws/index.mjs"
-      },
-      "./bun-ws": {
-        "types": "./dist/adapters/bun-ws/index.d.mts",
-        "import": "./dist/adapters/bun-ws/index.mjs",
-        "default": "./dist/adapters/bun-ws/index.mjs"
-      },
-      "./message-port": {
-        "types": "./dist/adapters/message-port/index.d.mts",
-        "import": "./dist/adapters/message-port/index.mjs",
-        "default": "./dist/adapters/message-port/index.mjs"
+      "./extensions/callable": {
+        "types": "./dist/extensions/callable.d.mts",
+        "import": "./dist/extensions/callable.mjs",
+        "default": "./dist/extensions/callable.mjs"
       }
     }
   },
   "exports": {
+    "./package.json": "./package.json",
     ".": "./src/index.ts",
     "./helpers": "./src/helpers/index.ts",
     "./plugins": "./src/plugins/index.ts",
-    "./hibernation": "./src/hibernation/index.ts",
     "./standard": "./src/adapters/standard/index.ts",
     "./standard-peer": "./src/adapters/standard-peer/index.ts",
     "./fetch": "./src/adapters/fetch/index.ts",
     "./node": "./src/adapters/node/index.ts",
-    "./fastify": "./src/adapters/fastify/index.ts",
     "./aws-lambda": "./src/adapters/aws-lambda/index.ts",
+    "./fastify": "./src/adapters/fastify/index.ts",
     "./websocket": "./src/adapters/websocket/index.ts",
+    "./message-port": "./src/adapters/message-port/index.ts",
     "./crossws": "./src/adapters/crossws/index.ts",
-    "./ws": "./src/adapters/ws/index.ts",
-    "./bun-ws": "./src/adapters/bun-ws/index.ts",
-    "./message-port": "./src/adapters/message-port/index.ts"
+    "./extensions/callable": "./src/extensions/callable.ts"
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "unbuild",
-    "build:watch": "pnpm run build --watch",
+    "prepack": "unbuild",
     "type:check": "tsc -b"
   },
   "peerDependencies": {
     "crossws": ">=0.3.4",
-    "ws": ">=8.18.1"
+    "fastify": ">=5.6.1"
   },
   "peerDependenciesMeta": {
     "crossws": {
       "optional": true
     },
-    "ws": {
+    "fastify": {
       "optional": true
     }
   },
   "dependencies": {
     "@orpc/client": "workspace:*",
     "@orpc/contract": "workspace:*",
-    "@orpc/interop": "workspace:*",
     "@orpc/shared": "workspace:*",
-    "@orpc/standard-server": "workspace:*",
-    "@orpc/standard-server-aws-lambda": "workspace:*",
-    "@orpc/standard-server-fastify": "workspace:*",
-    "@orpc/standard-server-fetch": "workspace:*",
-    "@orpc/standard-server-node": "workspace:*",
-    "@orpc/standard-server-peer": "workspace:*",
-    "cookie": "^1.1.1"
+    "@standard-server/aws-lambda": "~0.10.3",
+    "@standard-server/core": "~0.10.3",
+    "@standard-server/fastify": "~0.10.3",
+    "@standard-server/fetch": "~0.10.3",
+    "@standard-server/node": "~0.10.3",
+    "@standard-server/peer": "~0.10.3",
+    "cookie": "^2.0.1"
   },
   "devDependencies": {
-    "@tanstack/router-core": "^1.166.7",
-    "@types/ws": "^8.18.1",
-    "crossws": "^0.4.4",
-    "fastify": "^5.8.3",
-    "next": "^16.2.3",
-    "supertest": "^7.1.4",
-    "ws": "^8.18.3",
-    "zod": "^4.6.2"
+    "crossws": "^0.4.15",
+    "fastify": "^5.12.5",
+    "supertest": "^7.3.1",
+    "ws": "^8.22.0",
+    "zod": "^4.6.5"
   }
 }

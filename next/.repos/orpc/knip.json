@@ -1,4 +1,0 @@
-{
-  "$schema": "https://unpkg.com/knip@latest/schema.json",
-  "ignore": ["*/*/*.ts"]
-}

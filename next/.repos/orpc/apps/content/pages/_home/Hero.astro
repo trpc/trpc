@@ -1,0 +1,149 @@
+---
+import Icon from 'blume/components/Icon.astro'
+import Showcase from './Showcase.astro'
+import Stats from './Stats.astro'
+import { githubStars } from './stats'
+
+// Shared with the stats band: one request, one formatter, so the two places the
+// star count appears can never disagree. Resolves to null if GitHub is
+// unreachable, and the button simply loses its count.
+const stars = await githubStars()
+
+const install = 'npx skills add middleapi/orpc'
+---
+
+<section class="relative isolate overflow-hidden border-b border-border">
+  <div aria-hidden="true" class="orpc-dots"></div>
+
+  <div class="relative mx-auto max-w-6xl px-6 pt-16 pb-14 sm:pt-24 sm:pb-20">
+    <div class="mx-auto max-w-3xl text-center">
+      <a
+        href="https://github.com/middleapi/orpc/releases"
+        rel="noopener"
+        target="_blank"
+        class="inline-flex items-center gap-2 rounded-full border border-border bg-background/60 py-1 pr-3 pl-1.5 text-xs font-medium text-muted-foreground backdrop-blur transition-colors hover:border-foreground/25 hover:text-foreground"
+      >
+        <span class="rounded-full bg-accent px-2 py-0.5 text-[0.6875rem] text-accent-foreground">v2 beta</span>
+        Follow the releases on GitHub
+        <Icon name="arrow-right" size={12} />
+      </a>
+
+      <h1
+        class="font-display mt-7 text-4xl leading-[1.05] font-bold tracking-[-0.045em] text-balance sm:text-6xl"
+      >
+        Typesafe APIs,<br class="hidden sm:block" /> made simple.
+      </h1>
+
+      <p class="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-balance text-muted-foreground sm:text-lg">
+        Write your API once. oRPC turns it into a fully typed client, a REST API with an OpenAPI
+        document, and typed realtime streams. No code generation, no lock-in to a runtime.
+      </p>
+
+      <div class="mt-9 flex flex-wrap items-center justify-center gap-3">
+        <a href="/docs/getting-started" class="orpc-btn orpc-btn-primary">
+          Get started
+          <Icon name="arrow-right" size={15} />
+        </a>
+        <a href="/docs/playgrounds" class="orpc-btn orpc-btn-ghost">
+          <Icon name="joystick" size={15} />
+          Playgrounds
+        </a>
+        <a
+          href="https://github.com/middleapi/orpc"
+          class="orpc-btn orpc-btn-ghost"
+          rel="noopener"
+          target="_blank"
+        >
+          <Icon name="github" size={15} />
+          GitHub
+          {
+            stars && (
+              <span class="orpc-btn-count">
+                <Icon name="star" size={12} />
+                {stars}
+              </span>
+            )
+          }
+        </a>
+      </div>
+
+      <div class="mt-6 flex justify-center">
+        {/* The command itself has to be in the accessible name: an aria-label of
+            just "Copy install command" would replace it, leaving screen-reader
+            and speech-input users with no way to read or target the command. */}
+        <button type="button" class="orpc-install" data-copy={install} aria-label={`Copy ${install}`}>
+          <span class="text-muted-foreground select-none">$</span>
+          <code>{install}</code>
+          <span class="orpc-install-icon">
+            <Icon name="copy" size={14} class="orpc-icon-idle" />
+            <Icon name="check" size={14} class="orpc-icon-done" />
+          </span>
+        </button>
+        {/* The icon swap is the only visual confirmation, and it is aria-hidden;
+            this announces the outcome (including a failed copy) to AT. */}
+        <span aria-live="polite" class="sr-only" data-copy-status></span>
+      </div>
+    </div>
+
+    <div class="mt-14 sm:mt-16">
+      <Showcase />
+    </div>
+  </div>
+
+  <div class="relative border-t border-border">
+    <Stats />
+  </div>
+</section>
+
+<script>
+  // Astro's ClientRouter swaps the page body on soft navigation but runs this
+  // module only once per full load, so listeners bound per button are lost when
+  // the home page is re-entered from another page. A single delegated listener
+  // survives the swap and resolves the button and status node at click time.
+  const resetTimers = new WeakMap<HTMLButtonElement, number>()
+
+  document.addEventListener('click', async (event) => {
+    if (!(event.target instanceof Element)) {
+      return
+    }
+
+    const button = event.target.closest<HTMLButtonElement>('button[data-copy]')
+
+    if (!button) {
+      return
+    }
+
+    const status = document.querySelector<HTMLElement>('[data-copy-status]')
+
+    // A second click inside the reset window would otherwise be cleared early
+    // by the first click's timer, and announce nothing.
+    clearTimeout(resetTimers.get(button))
+
+    try {
+      await navigator.clipboard.writeText(button.dataset.copy ?? '')
+    }
+    catch {
+      if (status) {
+        status.textContent = 'Copy failed'
+      }
+      return
+    }
+
+    button.classList.add('is-copied')
+
+    if (status) {
+      // Cleared first so a repeat copy is announced again rather than being
+      // treated as unchanged text.
+      status.textContent = ''
+      status.textContent = 'Copied'
+    }
+
+    resetTimers.set(button, window.setTimeout(() => {
+      button.classList.remove('is-copied')
+
+      if (status) {
+        status.textContent = ''
+      }
+    }, 1600))
+  })
+</script>

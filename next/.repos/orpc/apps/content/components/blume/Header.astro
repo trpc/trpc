@@ -1,0 +1,350 @@
+---
+import Ask from "blume:ask";
+import data from "blume:data";
+import { withBase } from "blume/components/islands/base-path.ts";
+import type { ComponentOverride } from "blume/core/define-components.ts";
+import { EN_UI } from "blume/core/i18n-ui.ts";
+import type { UIStrings } from "blume/core/i18n-ui.ts";
+import type { LocaleSwitchOption, Navigation } from "blume/core/types.ts";
+import { GITHUB_MARK } from "blume/components/github-mark.ts";
+import Icon from "blume/components/Icon.astro";
+import LanguageSwitcher from "blume/components/layout/LanguageSwitcher.astro";
+import Logo from "blume/components/layout/Logo.astro";
+import { activeTabForRoute } from "blume/components/layout/nav-utils.ts";
+import NavSelector from "blume/components/layout/NavSelector.astro";
+import { resolveSlot } from "blume/components/layout/overrides.ts";
+import Search from "blume/components/layout/Search.astro";
+import SectionsNav from "./SectionsNav.astro";
+
+interface Props {
+  site: { title: string };
+  logo?: {
+    svg?: string;
+    light?: string;
+    dark?: string;
+    alt: string;
+    href: string;
+    text?: string;
+  } | null;
+  navigation: Navigation;
+  route: string;
+  searchEnabled: boolean;
+  /**
+   * Active locale of the page, forwarded to the `Logo` slot so the brand link
+   * resolves to the locale's root like the tabs beside it.
+   */
+  locale?: string;
+  /**
+   * Whether the search modal offers a hand-off to the assistant. Defaults to
+   * whether the assistant is configured, so no page has to pass it; a layout
+   * can still opt a shell out explicitly.
+   */
+  assistantEnabled?: boolean;
+  /** Localized assistant strings for the active locale. */
+  assistantStrings?: UIStrings["assistant"];
+  // The mobile menu button toggles the docs sidebar drawer; custom pages
+  // without a sidebar (e.g. a landing page) pass `false` to hide it.
+  hasSidebar?: boolean;
+  /**
+   * Whether the layout renders a drawer for the nav toggle to open. A shell
+   * with no drawer at all (the Scalar reference layout) passes `false`, else
+   * the hamburger would lock page scroll with nothing appearing.
+   */
+  hasDrawer?: boolean;
+  searchStrings?: UIStrings["search"];
+  switcherStrings?: UIStrings["languageSwitcher"];
+  /** Localized chrome labels (nav toggle, sections, GitHub, theme toggle). */
+  navStrings?: UIStrings["nav"];
+  localeSwitch?: LocaleSwitchOption[];
+  /** Active locale for per-language search filtering. */
+  searchLocale?: string;
+  /** Viewed docs version for search filtering (`""` = current; `null`/absent = off). */
+  searchVersion?: string | null;
+  /**
+   * Layout-slot overrides forwarded from the root layout. The header honors
+   * `Logo` and `Search` here so those pieces can be replaced without swapping
+   * the whole header.
+   */
+  layout?: Record<string, ComponentOverride>;
+}
+
+const {
+  site,
+  logo,
+  navigation,
+  route,
+  searchEnabled,
+  locale,
+  // `config.assistant` is null whenever the assistant is off, so the header is
+  // the one place that has to know — the Ask trigger below and the search
+  // modal's hand-off to it both switch on this, and every page gets both for
+  // free.
+  assistantEnabled = Boolean(data.config.assistant),
+  assistantStrings,
+  hasSidebar = true,
+  hasDrawer = true,
+  searchStrings,
+  switcherStrings,
+  navStrings,
+  localeSwitch,
+  searchLocale,
+  searchVersion = null,
+  layout = {},
+} = Astro.props;
+
+// Merge over the English defaults so a label missing from a translation (or
+// from a not-yet-regenerated snapshot) still renders instead of coming out
+// blank — the PageActions pattern.
+const n = { ...EN_UI.nav, ...navStrings };
+
+const LogoSlot = resolveSlot(layout.Logo, Logo);
+const SearchSlot = resolveSlot(layout.Search, Search);
+
+// The mobile nav-toggle opens a drawer of navigation. On docs pages that drawer
+// is the sidebar tree (`hasSidebar`); on chrome-only pages (a landing page via
+// PageLayout) it's a tabs-only drawer the layout renders — so the button is also
+// needed whenever there are tabs to reveal.
+const showNavToggle = hasDrawer && (hasSidebar || navigation.tabs.length > 0);
+const activeTab = activeTabForRoute(navigation.tabs, route);
+// Where the header's inline tab bar appears: from `lg` on every page, since
+// below it the tabs crowd out the logo and icon buttons. The drawers list them
+// until then (SectionsNav). The gaps stay tight until `xl` for the same reason.
+const tabsNavClass = "hidden items-center gap-5 self-stretch ms-3 lg:flex xl:gap-6";
+
+// VitePress-style tab link: full-height, with a 2px accent underline
+// reserved via `after` so the active state doesn't shift the layout.
+const tabLinkClass =
+  "relative flex h-full items-center whitespace-nowrap font-medium text-muted-foreground text-sm transition-colors after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:bg-transparent after:content-[''] hover:text-accent aria-[current=page]:text-accent aria-[current=page]:after:bg-accent";
+
+const iconButton =
+  "inline-flex size-9 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground";
+
+// Delegated handlers for the theme toggle, mobile nav drawer, and banner
+// dismiss. Living with the header means every page that renders it — docs pages
+// and custom pages alike — gets identical behavior from one source. Kept in
+// step with Blume's built-in header script.
+//
+// Toggling the theme flips colors; without suppressing transitions the animated
+// styles fade while the non-animated ones snap, so we disable all transitions
+// for the swap (next-themes' disableTransitionOnChange trick), force a
+// synchronous style flush, then restore them on the next tick.
+//
+// Both the theme toggle and the banner dismiss change the page first and only
+// then remember the choice: localStorage throws where storage is blocked
+// (Safari "Block All Cookies", sandboxed iframes), and a throw before the DOM
+// change would leave the toggle dead with transitions switched off for good.
+//
+// The mobile drawer sits below the sticky header, but the banner above the
+// header has no fixed height (its text wraps), so the drawer's top offset can't
+// be static: on open we measure the header's on-screen bottom edge into
+// `--blume-drawer-top` (read by the drawer's `top`/`height`), and re-measure
+// when a banner dismiss or a resize/rotation moves the header. Crossing into
+// the desktop breakpoint (64rem, Tailwind `lg`) closes the drawer. Blume's
+// stylesheet locks page scroll while `data-blume-nav-open` is set, and its
+// drawer-inert.ts follows the same attribute for the toggle's `aria-expanded`,
+// Escape to close, and the inert page behind the drawer.
+const clickScript = `(()=>{const dr=()=>{const h=document.querySelector("[data-blume-header]");if(h){document.documentElement.style.setProperty("--blume-drawer-top",h.getBoundingClientRect().bottom+"px");}};const save=(k,v)=>{try{localStorage.setItem(k,v);}catch{}};document.addEventListener("click",(e)=>{const t=e.target.closest("[data-blume-theme-toggle]");if(t){const d=document.documentElement;const next=d.dataset.theme==="dark"?"light":"dark";const s=document.createElement("style");s.appendChild(document.createTextNode("*,*::before,*::after{transition:none!important}"));document.head.appendChild(s);d.dataset.theme=next;window.getComputedStyle(d).opacity;setTimeout(()=>document.head.removeChild(s),1);save("blume-theme",next);}const n=e.target.closest("[data-blume-nav-toggle]");if(n){const d=document.documentElement;const open=d.toggleAttribute("data-blume-nav-open");if(open){dr();}}const b=e.target.closest("[data-blume-banner-dismiss]");if(b){document.documentElement.setAttribute("data-blume-banner-hidden","");requestAnimationFrame(dr);const bar=b.closest("[data-blume-banner]");const k=bar&&bar.getAttribute("data-banner-key");if(k){save("blume-banner:"+k,"1");}}});addEventListener("resize",()=>{const d=document.documentElement;if(!d.hasAttribute("data-blume-nav-open")){return;}if(matchMedia("(min-width:64rem)").matches){d.removeAttribute("data-blume-nav-open");}else{dr();}});})();`;
+
+// Blume's search trigger is an icon button; this header keeps the wide
+// "Search  ⌘K" field instead and hands its clicks to that button, which
+// theme.css hides inside <blume-search>. Blume still owns the dialog and the
+// ⌘K / Ctrl K shortcut. The hint swaps to Ctrl K off Apple devices, as
+// Blume's own hints do.
+const searchScript = `(()=>{const apple=/mac|iphone|ipad|ipod/iu.test(navigator.platform);for(const k of document.querySelectorAll("[data-orpc-search-kbd]")){k.textContent=apple?"⌘K":"Ctrl K";}if(window.__orpcSearchField){return;}window.__orpcSearchField=true;document.addEventListener("click",(e)=>{const f=e.target.closest("[data-orpc-search-field]");if(f){f.parentElement?.querySelector("[data-blume-search-open]")?.click();}});})();`;
+---
+
+<header
+  class="sticky top-0 z-40 border-border border-b bg-background/85 backdrop-blur"
+  data-blume-header
+>
+<div
+  class="mx-auto flex h-14 w-[min(100%,var(--docs-frame-width))] items-center gap-3 px-5"
+>
+  {
+    showNavToggle && (
+      <button
+        aria-controls="blume-nav-drawer"
+        aria-expanded="false"
+        aria-label={n.toggleNavigation}
+        class={`${iconButton} lg:hidden`}
+        data-blume-nav-toggle
+        type="button"
+      >
+        <Icon name="menu" size={20} />
+      </button>
+    )
+  }
+  <LogoSlot locale={locale} logo={logo} site={site} />
+  {
+    navigation.tabs.length > 0 && (
+      <nav aria-label={n.sections} class={tabsNavClass}>
+        {navigation.tabs.map((tab) =>
+          tab.items && tab.items.length > 0 ? (
+            <details class="group/tab relative flex h-full items-center">
+              <summary class="flex h-full cursor-pointer list-none items-center gap-1 font-medium text-muted-foreground text-sm transition-colors hover:text-accent [&::-webkit-details-marker]:hidden">
+                {tab.label}
+                <Icon
+                  class="transition-transform group-open/tab:rotate-180"
+                  name="chevron-down"
+                  size={13}
+                />
+              </summary>
+              <div class="absolute end-0 top-full z-50 mt-1 w-max min-w-44 rounded-blume border border-border bg-background p-1 shadow-xl">
+                {tab.items.map((item) => {
+                  const external = /^https?:\/\//u.test(item.path);
+                  return (
+                    <a
+                      class="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-muted-foreground text-sm transition-colors hover:bg-muted hover:text-foreground"
+                      href={withBase(item.path)}
+                      rel={external ? "noreferrer" : undefined}
+                      target={external ? "_blank" : undefined}
+                    >
+                      {item.icon && <Icon name={item.icon} size={15} />}
+                      <span class="flex-1">{item.label}</span>
+                      {external && (
+                        <Icon
+                          class="opacity-60"
+                          name="arrow-up-right"
+                          size={13}
+                        />
+                      )}
+                    </a>
+                  );
+                })}
+              </div>
+            </details>
+          ) : (
+            <a
+              aria-current={tab === activeTab ? "page" : undefined}
+              class={tabLinkClass}
+              href={withBase(tab.href ?? tab.path)}
+            >
+              {tab.label}
+            </a>
+          )
+        )}
+      </nav>
+    )
+  }
+  <div class="flex-1"></div>
+  {
+    navigation.selectors.length > 0 && (
+      <div class="flex items-center gap-1.5">
+        {navigation.selectors.map((selector) => (
+          <NavSelector route={route} selector={selector} />
+        ))}
+      </div>
+    )
+  }
+  {
+    localeSwitch && localeSwitch.length > 1 && (
+      <LanguageSwitcher
+        label={switcherStrings?.label ?? "Language"}
+        options={localeSwitch}
+        untranslatedLabel={switcherStrings?.untranslated ?? "Not translated"}
+      />
+    )
+  }
+  {
+    searchEnabled && (
+      <div class="flex shrink-0 items-center" data-orpc-search>
+        <button
+          aria-keyshortcuts="Meta+K Control+K"
+          aria-label={searchStrings?.button ?? "Search"}
+          class="inline-flex h-9 cursor-pointer items-center gap-2 rounded-full border border-border bg-background px-3 text-muted-foreground text-sm transition-colors hover:border-foreground hover:text-foreground lg:min-w-40"
+          data-orpc-search-field
+          type="button"
+        >
+          <Icon name="search" size={16} />
+          <span class="flex-1 text-start max-lg:hidden">
+            {searchStrings?.button ?? "Search"}
+          </span>
+          <kbd class="font-mono text-[0.7rem] max-lg:hidden" data-orpc-search-kbd
+            >⌘K</kbd
+          >
+        </button>
+        <SearchSlot
+          assistantEnabled={assistantEnabled}
+          locale={searchLocale}
+          navigation={navigation}
+          popularPages={data.config.search.popular}
+          strings={searchStrings}
+          version={searchVersion}
+        />
+      </div>
+    )
+  }
+  <div class="flex items-center gap-2">
+    <a
+      aria-label="oRPC on X"
+      class={iconButton}
+      href="https://x.com/middleapi"
+      rel="noreferrer"
+      target="_blank"
+    >
+      <svg
+        aria-hidden="true"
+        fill="currentColor"
+        height="16"
+        viewBox="0 0 16 16"
+        width="16"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M9.294 6.775 14.463 1h-1.224L8.75 6.014 5.163 1H1.025l5.42 7.583L1.025 14.64H2.25l4.74-5.295 3.786 5.295h4.138L9.294 6.775Zm-1.678 1.874-.55-.764-4.369-6.07h1.881l3.527 4.9.549.763 4.583 6.368h-1.881L7.616 8.65Z"
+        />
+      </svg>
+    </a>
+    {
+      data.config.repoUrl && (
+        <a
+          aria-label={n.githubRepository}
+          class={iconButton}
+          href={data.config.repoUrl}
+          rel="noreferrer"
+          target="_blank"
+        >
+          <svg
+            aria-hidden="true"
+            fill="currentColor"
+            height="18"
+            set:html={GITHUB_MARK}
+            viewBox="0 0 16 16"
+            width="18"
+            xmlns="http://www.w3.org/2000/svg"
+          />
+        </a>
+      )
+    }
+    <button
+      aria-label={n.toggleTheme}
+      class={iconButton}
+      data-blume-theme-toggle
+      type="button"
+    >
+      <span class="inline-flex dark:hidden"><Icon name="sun" size={18} /></span>
+      <span class="hidden dark:inline-flex"><Icon name="moon" size={18} /></span>
+    </button>
+    {assistantEnabled && <Ask strings={assistantStrings} />}
+  </div>
+</div>
+</header>
+{
+  // Chrome-only pages (blog, custom landings via PageLayout) have no sidebar
+  // drawer, and PageLayout's built-in tabs drawer can't render dropdown-tab
+  // items (the "More" menu) — it's hidden in theme.css and this drawer, using
+  // the same nav-toggle machinery, takes its place. `data-orpc-drawer` keeps
+  // it exempt from that hiding rule.
+  hasDrawer && !hasSidebar && navigation.tabs.length > 0 && (
+    <aside
+      aria-label={n.navigation}
+      class="fixed top-[var(--blume-drawer-top,4rem)] start-0 z-[35] h-[calc(100dvh-var(--blume-drawer-top,4rem))] w-64 max-w-[80vw] -translate-x-[105%] overflow-y-auto border-border border-e bg-background px-5 pt-4 pb-6 transition-transform rtl:translate-x-[105%] [:where([data-blume-nav-open])_&]:translate-x-0! lg:hidden"
+      data-blume-nav-drawer
+      data-orpc-drawer
+    >
+      <SectionsNav currentRoute={route} />
+    </aside>
+  )
+}
+<script is:inline set:html={clickScript} />
+{searchEnabled && <script is:inline set:html={searchScript} />}

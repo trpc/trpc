@@ -1,10 +1,10 @@
 import pino from 'pino'
-import { CONTEXT_LOGGER_SYMBOL, getLogger } from './context'
+import { getLogger, LOGGER_CONTEXT_SYMBOL } from './context'
 
 it('getLogger', async () => {
   expect(getLogger({})).toBeUndefined()
   expect(getLogger({ something: true } as any)).toBeUndefined()
 
   const logger = pino()
-  expect(getLogger({ [CONTEXT_LOGGER_SYMBOL]: logger })).toBe(logger)
+  expect(getLogger({ [LOGGER_CONTEXT_SYMBOL]: logger })).toBe(logger)
 })

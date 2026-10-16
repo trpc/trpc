@@ -1,205 +1,287 @@
-import { getEventMeta, withEventMeta } from '@orpc/standard-server'
+import { getEventMeta, withEventMeta } from '@standard-server/core'
 import { MemoryPublisher } from './memory'
 
+type TestEvents = {
+  message: { text: string }
+  notice: { text: string }
+}
+
+async function delayMicrotasks(count: number): Promise<void> {
+  for (let i = 0; i <= count; i++) {
+    await Promise.resolve()
+  }
+}
+
 describe('memoryPublisher', () => {
-  it('without resume: can pub/sub but not resume', async () => {
-    const publisher = new MemoryPublisher() // resume is disabled by default
+  it('delivers live events without resume when resume is disabled', async () => {
+    const publisher = new MemoryPublisher<TestEvents>()
+    const listener = vi.fn()
 
-    const listener1 = vi.fn()
-    const listener2 = vi.fn()
+    const unsubscribe = await publisher.subscribe('message', listener)
+    const payload = { text: 'live event' }
 
-    const unsub1 = await publisher.subscribe('event1', listener1)
-    const unsub2 = await publisher.subscribe('event2', listener2)
+    await publisher.publish('notice', { text: 'ignored event' })
+    await publisher.publish('message', payload)
 
-    const payload1 = { order: 1 }
-    const payload2 = { order: 2 }
+    expect(listener).toHaveBeenCalledTimes(1)
+    expect(listener).toHaveBeenCalledWith(payload)
+    expect(listener.mock.calls[0]![0]).toBe(payload)
 
-    publisher.publish('event1', payload1)
-    publisher.publish('event3', payload2)
+    await unsubscribe()
 
-    expect(listener1).toHaveBeenCalledTimes(1)
-    expect(listener1.mock.calls[0]![0]).toBe(payload1) // ensure without proxy
-    expect(listener2).toHaveBeenCalledTimes(0)
+    const resumed = vi.fn()
+    const unsubscribeResumed = await publisher.subscribe('message', resumed, { lastEventId: '0' })
 
-    await unsub1()
+    expect(resumed).not.toHaveBeenCalled()
 
-    publisher.publish('event1', payload2)
-    publisher.publish('event2', payload2)
-
-    expect(listener1).toHaveBeenCalledTimes(1)
-    expect(listener2).toHaveBeenCalledTimes(1)
-    expect(listener2.mock.calls[0]![0]).toBe(payload2) // ensure without proxy
-
-    await unsub2()
-
-    const unsub11 = await publisher.subscribe('event1', listener1, { lastEventId: '0' })
-    expect(listener1).toHaveBeenCalledTimes(1) // resume not happens
-    await unsub11()
-
-    expect(publisher.size).toEqual(0) // ensure no memory leak
+    await unsubscribeResumed()
   })
 
-  describe('with resume', () => {
+  describe('with resume enabled', () => {
     beforeEach(() => {
       vi.useFakeTimers()
+      vi.setSystemTime(new Date('2026-01-01T00:00:00.000Z'))
     })
 
     afterEach(() => {
       vi.useRealTimers()
     })
 
-    it('can pub/sub and resume', async () => {
-      const publisher = new MemoryPublisher({ resumeRetentionSeconds: 1 })
+    it('resumes only events after lastEventId and rewrites event ids', async () => {
+      const publisher = new MemoryPublisher<TestEvents>({
+        resume: {
+          enabled: true,
+        },
+      })
+
+      const liveListener = vi.fn()
+      const unsubscribeLive = await publisher.subscribe('message', liveListener)
+
+      const firstPayload = { text: 'first' }
+      const secondPayload = withEventMeta({ text: 'second' }, { id: 'client-id' })
+      const thirdPayload = { text: 'third' }
+
+      await publisher.publish('message', firstPayload)
+      await publisher.publish('message', secondPayload)
+      await publisher.publish('message', thirdPayload)
+
+      expect(liveListener).toHaveBeenCalledTimes(3)
+
+      const firstDelivered = liveListener.mock.calls[0]![0]
+      const secondDelivered = liveListener.mock.calls[1]![0]
+      const thirdDelivered = liveListener.mock.calls[2]![0]
+
+      expect(firstDelivered).toEqual(firstPayload)
+      expect(firstDelivered).not.toBe(firstPayload)
+      expect(getEventMeta(firstDelivered)?.id).toBe('1')
+
+      expect(secondDelivered).toEqual(secondPayload)
+      expect(secondDelivered).not.toBe(secondPayload)
+      expect(getEventMeta(secondDelivered)?.id).toBe('2')
+
+      expect(thirdDelivered).toEqual(thirdPayload)
+      expect(getEventMeta(thirdDelivered)?.id).toBe('3')
+
+      const resumed = vi.fn()
+      const unsubscribeResume = await publisher.subscribe('message', resumed, {
+        lastEventId: getEventMeta(secondDelivered)?.id,
+      })
+
+      expect(resumed).toHaveBeenCalledTimes(1)
+      expect(resumed).toHaveBeenCalledWith(thirdDelivered)
+
+      const emptyResume = vi.fn()
+      const unsubscribeEmptyResume = await publisher.subscribe('notice', emptyResume, {
+        lastEventId: '0',
+      })
+
+      expect(emptyResume).not.toHaveBeenCalled()
+
+      const afterTail = vi.fn()
+      const unsubscribeAfterTail = await publisher.subscribe('message', afterTail, {
+        lastEventId: getEventMeta(thirdDelivered)?.id,
+      })
+
+      expect(afterTail).not.toHaveBeenCalled()
+
+      await unsubscribeLive()
+      await unsubscribeResume()
+      await unsubscribeEmptyResume()
+      await unsubscribeAfterTail()
+    })
+
+    it('expires old events lazily for AsyncIteratorObject subscribers', async () => {
+      const publisher = new MemoryPublisher<TestEvents>({
+        resume: {
+          enabled: true,
+          seconds: 1,
+        },
+      })
+
+      await publisher.publish('message', { text: 'stale message' })
+      await publisher.publish('notice', { text: 'stale notice' })
+
+      vi.advanceTimersByTime(500)
+
+      await publisher.publish('notice', { text: 'fresh notice' })
+
+      const beforeExpiry = publisher.subscribe('notice', { lastEventId: '0' })
+
+      expect((await beforeExpiry.next()).value?.text).toBe('stale notice')
+      expect((await beforeExpiry.next()).value?.text).toBe('fresh notice')
+
+      await beforeExpiry.return()
+
+      vi.advanceTimersByTime(500)
+
+      await publisher.publish('message', { text: 'fresh message' })
+
+      const messageIterator = publisher.subscribe('message', { lastEventId: '0' })
+      const noticeIterator = publisher.subscribe('notice', { lastEventId: '0' })
+
+      expect((await messageIterator.next()).value?.text).toBe('fresh message')
+      expect((await noticeIterator.next()).value?.text).toBe('fresh notice')
+
+      await messageIterator.return()
+      await noticeIterator.return()
+    })
+
+    it('stays consistent under heavy interleaving of publishes and repeated unsubscriptions', async () => {
+      const publisher = new MemoryPublisher<TestEvents>({
+        resume: {
+          enabled: true,
+          seconds: 1,
+        },
+      })
+
+      const listener = vi.fn()
+      const unsubscribeFns = await Promise.all(
+        Array.from({ length: 50 }, () => publisher.subscribe('message', listener)),
+      )
+
+      const operations: Promise<void>[] = []
+      let expectedCalls = 0
+      let activeRegistrations = unsubscribeFns.length
+
+      unsubscribeFns.forEach((unsubscribe, index) => {
+        operations.push((async () => {
+          await delayMicrotasks(index * 2)
+          await publisher.publish('message', { text: `burst-${index}` })
+        })())
+
+        expectedCalls += activeRegistrations
+        activeRegistrations -= 1
+
+        operations.push((async () => {
+          await delayMicrotasks(index * 2 + 1)
+          await Promise.all([unsubscribe(), unsubscribe(), unsubscribe(), unsubscribe()])
+        })())
+      })
+
+      await Promise.all(operations)
+
+      expect(listener).toHaveBeenCalledTimes(expectedCalls)
+
+      await publisher.publish('message', { text: 'after-race' })
+
+      expect(listener).toHaveBeenCalledTimes(expectedCalls)
+
+      const probe = vi.fn()
+      const unsubscribeProbe = await publisher.subscribe('message', probe)
+
+      await publisher.publish('message', { text: 'probe' })
+
+      expect(listener).toHaveBeenCalledTimes(expectedCalls)
+      expect(probe).toHaveBeenCalledTimes(1)
+
+      await unsubscribeProbe()
+    })
+  })
+
+  describe('edge cases', () => {
+    it('allows the same listener to be registered multiple times', async () => {
+      const publisher = new MemoryPublisher<TestEvents>({
+        resume: {
+          enabled: true,
+          seconds: 1,
+        },
+      })
+
+      const listener = vi.fn()
+      const unsubscribeFirst = await publisher.subscribe('message', listener)
+      const unsubscribeSecond = await publisher.subscribe('message', listener)
+      const unsubscribeThird = await publisher.subscribe('message', listener)
+
+      await publisher.publish('message', { text: 'first' })
+
+      expect(listener).toHaveBeenCalledTimes(3)
+
+      await unsubscribeSecond()
+
+      await publisher.publish('message', { text: 'second' })
+
+      expect(listener).toHaveBeenCalledTimes(5)
+
+      await unsubscribeFirst()
+      await unsubscribeThird()
+
+      await publisher.publish('message', { text: 'third' })
+
+      expect(listener).toHaveBeenCalledTimes(5)
+    })
+
+    it('lets each unsubscribe function be called multiple times safely', async () => {
+      const publisher = new MemoryPublisher<TestEvents>({
+        resume: {
+          enabled: true,
+          seconds: 1,
+        },
+      })
 
       const listener1 = vi.fn()
+      const unsub1 = await publisher.subscribe('message', listener1)
+
       const listener2 = vi.fn()
+      const unsub2 = await publisher.subscribe('message', listener2)
 
-      const unsub1 = await publisher.subscribe('event1', listener1)
-      const unsub2 = await publisher.subscribe('event2', listener2)
-
-      const payload1 = { order: 1 }
-      const payload2 = { order: 2 }
-
-      publisher.publish('event1', payload1)
-      publisher.publish('event3', payload2)
-
-      expect(listener1).toHaveBeenCalledTimes(1)
-      expect(listener1).toHaveBeenCalledWith(payload1)
-      expect(listener2).toHaveBeenCalledTimes(0)
-
-      await unsub1()
-
-      publisher.publish('event1', payload2)
-      publisher.publish('event2', payload2)
+      await publisher.publish('message', { text: 'first' })
 
       expect(listener1).toHaveBeenCalledTimes(1)
       expect(listener2).toHaveBeenCalledTimes(1)
-      expect(listener2).toHaveBeenCalledWith(payload2)
 
-      await unsub2()
+      await Promise.all(Array.from({ length: 10 }, () => unsub1()))
 
-      const listener3 = vi.fn()
-      const unsub3 = await publisher.subscribe('event1', listener3, { lastEventId: '0' })
-      expect(listener3).toHaveBeenCalledTimes(2) // resume happens
-      expect(listener3).toHaveBeenNthCalledWith(1, payload1)
-      expect(listener3).toHaveBeenNthCalledWith(2, payload2)
+      await publisher.publish('message', { text: 'second' })
 
-      await unsub3()
-      expect(publisher.size).toEqual(4) // 4 events are stored
-    })
-
-    it('control event.id', async () => {
-      const publisher = new MemoryPublisher({ resumeRetentionSeconds: 1 })
-
-      const listener1 = vi.fn()
-      const unsub1 = await publisher.subscribe('event1', listener1)
-
-      const payload1 = { order: 1 }
-      const payload2 = withEventMeta({ order: 2 }, { id: 'some-id', comments: ['hello'] })
-
-      publisher.publish('event1', payload1)
-      publisher.publish('event1', payload2)
-
-      expect(listener1).toHaveBeenCalledTimes(2)
-      expect(listener1).toHaveBeenNthCalledWith(1, expect.toSatisfy((p) => {
-        expect(p).not.toBe(payload1)
-        expect(p).toEqual(payload1)
-        expect(getEventMeta(p)).toEqual({ id: '1' })
-        return true
-      }))
-      expect(listener1).toHaveBeenNthCalledWith(2, expect.toSatisfy((p) => {
-        expect(p).not.toBe(payload2)
-        expect(p).toEqual(payload2)
-        expect(getEventMeta(p)).toEqual({ id: '2', comments: ['hello'] }) // id is overridden
-        return true
-      }))
-
-      const listener2 = vi.fn()
-      const unsub2 = await publisher.subscribe('event1', listener2, { lastEventId: '0' })
+      expect(listener1).toHaveBeenCalledTimes(1)
       expect(listener2).toHaveBeenCalledTimes(2)
-      expect(listener2).toHaveBeenNthCalledWith(1, expect.toSatisfy((p) => {
-        expect(p).not.toBe(payload1)
-        expect(p).toEqual(payload1)
-        expect(getEventMeta(p)).toEqual({ id: '1' })
-        return true
-      }))
-      expect(listener2).toHaveBeenNthCalledWith(2, expect.toSatisfy((p) => {
-        expect(p).not.toBe(payload2)
-        expect(p).toEqual(payload2)
-        expect(getEventMeta(p)).toEqual({ id: '2', comments: ['hello'] }) // id is overridden
-        return true
-      }))
-
-      await unsub1()
-      await unsub2()
-      expect(publisher.size).toEqual(2) // 2 events are stored
-    })
-
-    it('resume event.id > lastEventId and in order', async () => {
-      const publisher = new MemoryPublisher({ resumeRetentionSeconds: 1 })
-
-      for (let i = 1; i <= 1000; i++) {
-        publisher.publish('event', { order: i })
-      }
-
-      for (let i = 0; i < 10; i++) {
-        const lastEventId = Math.floor(Math.random() * 990)
-        const listener1 = vi.fn()
-        const unsub = await publisher.subscribe('event', listener1, { lastEventId: lastEventId.toString(36) })
-        expect(listener1).toHaveBeenCalledTimes(1000 - lastEventId)
-        expect(listener1).toHaveBeenNthCalledWith(1, { order: lastEventId + 1 })
-        expect(listener1).toHaveBeenNthCalledWith(2, { order: lastEventId + 2 })
-        expect(listener1).toHaveBeenNthCalledWith(10, { order: lastEventId + 10 })
-        await unsub()
-      }
-    })
-
-    it('remove expired events on publish', async () => {
-      const publisher = new MemoryPublisher({ resumeRetentionSeconds: 1 })
-
-      publisher.publish('event1', { order: 1 })
-      publisher.publish('event2', { order: 2 })
-      publisher.publish('event3', { order: 3 })
-      publisher.publish('event1', { order: 4 })
-      expect(publisher.size).toEqual(4) // 4 events are stored
-
-      vi.advanceTimersByTime(500) // not expired yet
-      publisher.publish('event1', { order: 5 })
-      expect(publisher.size).toEqual(5) // 5 events are stored
-
-      vi.advanceTimersByTime(500) // expired
-      publisher.publish('event2', { order: 6 })
-      expect(publisher.size).toEqual(2) // 2 events are stored
-
-      vi.advanceTimersByTime(1000) // expired
-      publisher.publish('event10', { order: 7 })
-      expect(publisher.size).toEqual(1) // 1 event is stored
-    })
-
-    it('support reuse same listener and unsub multiple times', async () => {
-      const publisher = new MemoryPublisher({ resumeRetentionSeconds: 1 })
-
-      const listener = vi.fn()
-      const unsub1 = await publisher.subscribe('event1', listener)
-      const unsub2 = await publisher.subscribe('event1', listener)
-
-      await publisher.publish('event1', { order: 1 })
-
-      await vi.waitFor(() => {
-        expect(listener).toHaveBeenCalledTimes(2)
-      })
-
-      await unsub1()
-      await unsub1()
-      await unsub1()
-
-      await publisher.publish('event1', { order: 2 })
-
-      await vi.waitFor(() => {
-        expect(listener).toHaveBeenCalledTimes(3)
-      })
 
       await unsub2()
+    })
+
+    it('delivers to every listener even when one unsubscribes itself while receiving', async () => {
+      const publisher = new MemoryPublisher<TestEvents>()
+
+      let unsubscribeFirst: () => Promise<void>
+      const first = vi.fn(() => {
+        void unsubscribeFirst()
+      })
+      const second = vi.fn()
+
+      unsubscribeFirst = await publisher.subscribe('message', first)
+      const unsubscribeSecond = await publisher.subscribe('message', second)
+
+      await publisher.publish('message', { text: 'first' })
+
+      expect(first).toHaveBeenCalledTimes(1)
+      expect(second).toHaveBeenCalledTimes(1)
+
+      await publisher.publish('message', { text: 'second' })
+
+      expect(first).toHaveBeenCalledTimes(1)
+      expect(second).toHaveBeenCalledTimes(2)
+
+      await unsubscribeSecond()
     })
   })
 })

@@ -1,8 +1,13 @@
 {
   "name": "@orpc/client",
   "type": "module",
-  "version": "1.15.5",
+  "version": "2.0.0-beta.44",
+  "description": "Consume oRPC and OpenAPI APIs with end-to-end type safety over HTTP, WebSocket, or message ports",
   "license": "MIT",
+  "funding": [
+    "https://github.com/sponsors/dinwwwh",
+    "https://opencollective.com/middleapi"
+  ],
   "homepage": "https://orpc.dev",
   "repository": {
     "type": "git",
@@ -10,11 +15,20 @@
     "directory": "packages/client"
   },
   "keywords": [
-    "orpc"
+    "orpc",
+    "rpc",
+    "api",
+    "typescript",
+    "typesafe",
+    "client",
+    "fetch",
+    "websocket",
+    "openapi"
   ],
   "sideEffects": false,
   "publishConfig": {
     "exports": {
+      "./package.json": "./package.json",
       ".": {
         "types": "./dist/index.d.mts",
         "import": "./dist/index.mjs",
@@ -48,6 +62,7 @@
     }
   },
   "exports": {
+    "./package.json": "./package.json",
     ".": "./src/index.ts",
     "./plugins": "./src/plugins/index.ts",
     "./standard": "./src/adapters/standard/index.ts",
@@ -59,17 +74,18 @@
     "dist"
   ],
   "scripts": {
-    "build": "unbuild",
-    "build:watch": "pnpm run build --watch",
+    "prepack": "unbuild",
     "type:check": "tsc -b"
   },
   "dependencies": {
     "@orpc/shared": "workspace:*",
-    "@orpc/standard-server": "workspace:*",
-    "@orpc/standard-server-fetch": "workspace:*",
-    "@orpc/standard-server-peer": "workspace:*"
+    "@standard-server/core": "~0.10.3",
+    "@standard-server/fetch": "~0.10.3",
+    "@standard-server/peer": "~0.10.3"
   },
   "devDependencies": {
-    "zod": "^4.6.2"
+    "@types/ws": "^8.18.2",
+    "ws": "^8.22.0",
+    "zod": "^4.6.5"
   }
 }

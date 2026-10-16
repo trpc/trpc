@@ -1,13 +1,14 @@
-import type { Context } from '@orpc/server'
-import type { StandardHandlerInterceptorOptions, StandardHandlerOptions, StandardHandlerPlugin } from '@orpc/server/standard'
+import type { Context, ErrorMap, ProcedureClientInterceptor, Schema } from '@orpc/server'
+import type { StandardHandlerInterceptor, StandardHandlerOptions, StandardHandlerPlugin, StandardHandlerRoutingInterceptor, StandardHandlerRoutingInterceptorOptions } from '@orpc/server/standard'
 import type { Logger } from 'pino'
 import type { LoggerContext } from './context'
-import { mapEventIterator } from '@orpc/client'
-import { isAsyncIteratorObject, ORPC_NAME, overlayProxy } from '@orpc/shared'
+import { ORPCError, wrapAsyncIteratorPreservingEventMeta } from '@orpc/client'
+import { isAbortError, isAsyncIteratorObject, ORPC_NAME, override, toArray, wrapReadableStream } from '@orpc/shared'
+import { flattenStandardHeader } from '@standard-server/core'
 import pino from 'pino'
-import { CONTEXT_LOGGER_SYMBOL, getLogger } from './context'
+import { getLogger, LOGGER_CONTEXT_SYMBOL } from './context'
 
-export interface LoggingHandlerPluginOptions<T extends Context> {
+export interface PinoHandlerPluginOptions<T extends Context> {
   /**
    * Logger instance to use for logging.
    *
@@ -18,61 +19,77 @@ export interface LoggingHandlerPluginOptions<T extends Context> {
   /**
    * Function to generate a unique ID for each request.
    *
-   * @default () => crypto.randomUUID()
+   * @default ({ request }) => flattenStandardHeader(request.headers['x-request-id']) ?? crypto.randomUUID()
    */
-  generateId?: (options: StandardHandlerInterceptorOptions<T>) => string
+  generateRequestId?: (options: StandardHandlerRoutingInterceptorOptions<T>) => string
 
   /**
-   * Enables logging for request/response events.
-   *
-   * @example
-   * - request received
-   * - request handled
-   * - no matching procedure found
+   * If true, this plugin will log information about request lifecycle,
+   * including when a request is received, handled, or no matching procedure is found.
    *
    * @default false
    */
-  logRequestResponse?: boolean
+  logLifecycle?: boolean
 
   /**
-   * Enables logging when requests are aborted.
-   *
-   * @example
-   * - request is aborted (reason)
-   *
-   * @remarks If a signal is used for multiple requests, this may lead to un-efficient memory usage (listeners never removed).
+   * If true, this plugin will log when a request signal is aborted.
    *
    * @default false
    */
-  logRequestAbort?: boolean
+  logAbort?: boolean
+
+  /**
+   * Customizes the log level for errors thrown from procedures;
+   * internal handler failures are always logged at error level.
+   * Receives the level applied by default; return it to keep the default behavior:
+   * 'info' for abort errors, 'warn' for ORPCError except INTERNAL_SERVER_ERROR, 'error' otherwise.
+   *
+   * @default (error, level) => level
+   */
+  procedureErrorLevel?: (error: unknown, level: pino.Level) => pino.Level
 }
 
-export class LoggingHandlerPlugin<T extends Context> implements StandardHandlerPlugin<T> {
-  private readonly logger: Exclude<LoggingHandlerPluginOptions<T>['logger'], undefined>
-  private readonly generateId: Exclude<LoggingHandlerPluginOptions<T>['generateId'], undefined>
-  private readonly logRequestResponse: Exclude<LoggingHandlerPluginOptions<T>['logRequestResponse'], undefined>
-  private readonly logRequestAbort: Exclude<LoggingHandlerPluginOptions<T>['logRequestAbort'], undefined>
+/**
+ * Instruments an oRPC handler with Pino structured logging, request tracking,
+ * and error monitoring.
+ *
+ * @see {@link https://orpc.dev/docs/integrations/pino | Pino Integration}
+ */
+export class PinoHandlerPlugin<T extends Context> implements StandardHandlerPlugin<T> {
+  name = '~pino'
+
+  /**
+   * - Logging interceptors should run after tracing interceptors
+   *   so they execute within the active request span.
+   * - Logging interceptors should run after batch interceptors
+   *   so they log each individual request instead of the batch request.
+   */
+  before = ['~tracing', '~batch', '~hibernation']
+
+  private readonly logger: Exclude<PinoHandlerPluginOptions<T>['logger'], undefined>
+  private readonly generateRequestId: Exclude<PinoHandlerPluginOptions<T>['generateRequestId'], undefined>
+  private readonly logLifecycle: Exclude<PinoHandlerPluginOptions<T>['logLifecycle'], undefined>
+  private readonly logAbort: Exclude<PinoHandlerPluginOptions<T>['logAbort'], undefined>
+  private readonly procedureErrorLevel: Exclude<PinoHandlerPluginOptions<T>['procedureErrorLevel'], undefined>
 
   constructor(
-    options: LoggingHandlerPluginOptions<T> = {},
+    options: PinoHandlerPluginOptions<T> = {},
   ) {
     this.logger = options.logger ?? pino()
-    this.generateId = options.generateId ?? (() => crypto.randomUUID())
-    this.logRequestResponse = options.logRequestResponse ?? false
-    this.logRequestAbort = options.logRequestAbort ?? false
+    this.generateRequestId = options.generateRequestId
+      ?? (({ request }) => flattenStandardHeader(request.headers['x-request-id']) ?? crypto.randomUUID())
+    this.logLifecycle = options.logLifecycle ?? false
+    this.logAbort = options.logAbort ?? false
+    this.procedureErrorLevel = options.procedureErrorLevel ?? ((_, level) => level)
   }
 
-  init(options: StandardHandlerOptions<T>): void {
-    options.rootInterceptors ??= []
-    options.interceptors ??= []
-    options.clientInterceptors ??= []
+  init(options: StandardHandlerOptions<T>): StandardHandlerOptions<T> {
+    const routingInterceptor: StandardHandlerRoutingInterceptor<T> = async ({ next, ...interceptorOptions }) => {
+      const startMs = Date.now()
 
-    options.rootInterceptors.unshift(async (interceptorOptions) => {
       const logger = (
-        (interceptorOptions.context as LoggerContext)[CONTEXT_LOGGER_SYMBOL] ?? this.logger
-      ).child({
-        rpc: { id: this.generateId(interceptorOptions), system: ORPC_NAME },
-      })
+        (interceptorOptions.context as LoggerContext)[LOGGER_CONTEXT_SYMBOL] ?? this.logger
+      ).child({})
 
       /**
        * pino-http might have already set req info in bindings
@@ -80,50 +97,40 @@ export class LoggingHandlerPlugin<T extends Context> implements StandardHandlerP
       if (!logger.bindings().req) {
         logger.setBindings({
           req: {
+            id: this.generateRequestId(interceptorOptions),
             url: interceptorOptions.request.url,
             method: interceptorOptions.request.method,
             headers: {
               'content-type': interceptorOptions.request.headers['content-type'],
               'content-length': interceptorOptions.request.headers['content-length'],
               'content-disposition': interceptorOptions.request.headers['content-disposition'],
+              'standard-server': interceptorOptions.request.headers['standard-server'],
             },
           },
         })
       }
 
-      if (this.logRequestAbort) {
-        const signal = interceptorOptions.request.signal
-
-        if (signal?.aborted) {
-          logger?.info(`request was aborted before handling (${String(signal.reason)})`)
-        }
-        else {
-          signal?.addEventListener('abort', () => {
-            logger?.info(`request is aborted (${String(signal.reason)})`)
-          }, { once: true })
-        }
-      }
-
       try {
-        if (this.logRequestResponse) {
+        if (this.logLifecycle) {
           logger?.info('request received')
         }
 
-        const result = await interceptorOptions.next({
+        const result = await next({
           ...interceptorOptions,
           context: {
             ...interceptorOptions.context,
-            [CONTEXT_LOGGER_SYMBOL]: logger,
+            [LOGGER_CONTEXT_SYMBOL]: logger,
           },
         })
 
-        if (this.logRequestResponse) {
+        if (this.logLifecycle) {
           if (result.matched) {
             logger?.info({
               msg: 'request handled',
               res: {
                 status: result.response.status,
               },
+              responseTime: Date.now() - startMs,
             })
           }
           else {
@@ -141,57 +148,105 @@ export class LoggingHandlerPlugin<T extends Context> implements StandardHandlerP
         logger.error(error)
         throw error
       }
-    })
+    }
 
-    options.interceptors.unshift(async ({ next, context, request }) => {
+    const interceptor: StandardHandlerInterceptor<T> = async ({ next, context, path, request }) => {
+      const logger = getLogger(context)
+      logger?.setBindings({ rpc: { system: ORPC_NAME, method: path.join('.') } })
+
+      if (this.logAbort) {
+        const signal = request.signal
+
+        if (signal?.aborted) {
+          logger?.info(`request was aborted before handling (${String(signal.reason)})`)
+        }
+        else {
+          signal?.addEventListener('abort', () => {
+            logger?.info(`request is aborted (${String(signal.reason)})`)
+          }, { once: true })
+        }
+      }
+
       try {
         return await next()
       }
       catch (error) {
-        const logger = getLogger(context)
-
-        /**
-         * DON'T treat aborted signal as error if happen during business logic
-         */
-        if (request.signal?.aborted && request.signal.reason === error) {
-          logger?.info(error)
-        }
-        else {
-          logger?.error(error)
-        }
+        logProcedureError(logger, error, this.procedureErrorLevel)
         throw error
       }
-    })
+    }
 
-    options.clientInterceptors.unshift(async ({ next, path, context, signal }) => {
-      const logger = getLogger(context)
-      logger?.setBindings({ rpc: { ...logger.bindings().rpc, method: path.join('.') } })
-
+    const clientInterceptor: ProcedureClientInterceptor<T, Schema<unknown>, ErrorMap> = async ({ next, context }) => {
       const output = await next()
 
       if (isAsyncIteratorObject(output)) {
-        return overlayProxy(output, mapEventIterator(
-          output,
-          {
-            value: v => v,
-            error: async (error) => {
-              /**
-               * DON'T treat aborted signal as error if happen during business logic,
-               * Because this is streaming response, so the error can't catch by `interceptors` above.
-               */
-              if (signal?.aborted && signal.reason === error) {
-                logger?.info(error)
-              }
-              else {
-                logger?.error(error)
-              }
-              return error
-            },
+        /**
+         * @remarks
+         * **Warning**: Remember use `override` for AsyncIteratorObject to remain other special properties
+         */
+        return override(output, wrapAsyncIteratorPreservingEventMeta(output, {
+          onError: (error) => {
+            logProcedureError(getLogger(context), error, this.procedureErrorLevel)
           },
-        ))
+        }))
+      }
+
+      if (output instanceof ReadableStream) {
+        /**
+         * @remarks
+         * **Warning**: Remember use `override` for ReadableStream to remain other special properties
+         */
+        return override(output, wrapReadableStream(output, {
+          onError: (error) => {
+            logProcedureError(getLogger(context), error, this.procedureErrorLevel)
+          },
+        }))
       }
 
       return output
-    })
+    }
+
+    return {
+      ...options,
+      routingInterceptors: [
+        routingInterceptor,
+        ...toArray(options.routingInterceptors),
+      ],
+      interceptors: [
+        interceptor,
+        ...toArray(options.interceptors),
+      ],
+      clientInterceptors: [
+        clientInterceptor,
+        ...toArray(options.clientInterceptors),
+      ],
+    }
   }
+}
+
+function logProcedureError(
+  logger: Logger | undefined,
+  error: unknown,
+  procedureErrorLevel: Exclude<PinoHandlerPluginOptions<any>['procedureErrorLevel'], undefined>,
+) {
+  logger?.[procedureErrorLevel(error, defaultProcedureErrorLevel(error))](error)
+}
+
+function defaultProcedureErrorLevel(error: unknown): pino.Level {
+  // An abort means the client withdrew the request, not that something failed,
+  // so record it as normal operation.
+  if (isAbortError(error)) {
+    return 'info'
+  }
+
+  // A thrown ORPCError is a deliberate business rejection delivered to the client,
+  // so keep it reviewable without treating it as a failure. INTERNAL_SERVER_ERROR
+  // is the exception: it signals a server-side failure (oRPC itself throws it for
+  // failures like output validation), so it stays at error level along with
+  // anything unexpected.
+  if (error instanceof ORPCError && error.code !== 'INTERNAL_SERVER_ERROR') {
+    return 'warn'
+  }
+
+  return 'error'
 }

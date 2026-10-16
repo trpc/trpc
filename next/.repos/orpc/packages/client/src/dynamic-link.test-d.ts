@@ -10,7 +10,7 @@ describe('dynamicLink', () => {
     })
   })
 
-  it('required return a another link', () => {
+  it('required return a valid link', () => {
     void new DynamicLink(() => ({} as ClientLink<any>))
     void new DynamicLink<{ batch?: boolean }>(() => ({} as ClientLink<{ batch?: boolean }>))
     // @ts-expect-error - context is mismatch

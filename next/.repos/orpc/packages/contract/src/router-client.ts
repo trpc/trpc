@@ -1,11 +1,17 @@
 import type { ClientContext } from '@orpc/client'
-import type { ContractProcedure } from './procedure'
-import type { ContractProcedureClient } from './procedure-client'
-import type { AnyContractRouter } from './router'
+import type { ProcedureContract } from './procedure'
+import type { ProcedureContractClient } from './procedure-client'
+import type { RouterContract } from './router'
 
-export type ContractRouterClient<TRouter extends AnyContractRouter, TClientContext extends ClientContext = Record<never, never>>
-  = TRouter extends ContractProcedure<infer UInputSchema, infer UOutputSchema, infer UErrorMap, any>
-    ? ContractProcedureClient<TClientContext, UInputSchema, UOutputSchema, UErrorMap>
+/**
+ * Client type inferred from a router contract, preserving its shape.
+ * Useful for typing a client without importing the server router.
+ *
+ * @see {@link https://orpc.dev/docs/client/client-side | Client-Side Clients}
+ */
+export type RouterContractClient<TRouter extends RouterContract, TClientContext extends ClientContext = object>
+  = TRouter extends ProcedureContract<infer UInputSchema, infer UOutputSchema, infer UErrorMap>
+    ? ProcedureContractClient<TClientContext, UInputSchema, UOutputSchema, UErrorMap>
     : {
-        [K in keyof TRouter]: TRouter[K] extends AnyContractRouter ? ContractRouterClient<TRouter[K], TClientContext> : never
+        [K in keyof TRouter]: TRouter[K] extends RouterContract ? RouterContractClient<TRouter[K], TClientContext> : never
       }

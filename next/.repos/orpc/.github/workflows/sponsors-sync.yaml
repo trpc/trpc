@@ -1,0 +1,28 @@
+name: Sponsors Sync
+
+on:
+  schedule:
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - run: pnpm i
+
+      - run: pnpm run sponsors:sync
+
+      - uses: EndBug/add-and-commit@v10
+        with:
+          author_name: GitHub Actions
+          author_email: 41898282+github-actions[bot]@users.noreply.github.com
+          message: 'chore: sync sponsors'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

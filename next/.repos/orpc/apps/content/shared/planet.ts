@@ -11,11 +11,6 @@ export const PlanetSchema = z.object({
 })
 
 export const listPlanetContract = oc
-  .route({
-    method: 'GET',
-    path: '/planets',
-    summary: 'List all planets',
-  })
   .input(
     z.object({
       limit: z.number().int().min(1).max(100).optional(),
@@ -25,20 +20,10 @@ export const listPlanetContract = oc
   .output(z.array(PlanetSchema))
 
 export const findPlanetContract = oc
-  .route({
-    method: 'GET',
-    path: '/planets/{id}',
-    summary: 'Find a planet',
-  })
   .input(PlanetSchema.pick({ id: true }))
   .output(PlanetSchema)
 
 export const createPlanetContract = oc
-  .route({
-    method: 'POST',
-    path: '/planets',
-    summary: 'Create a planet',
-  })
   .input(PlanetSchema.omit({ id: true }))
   .output(PlanetSchema)
 
@@ -65,4 +50,4 @@ export const createPlanet = os.planet.create
 
 export const router = os.router({ planet: { list: listPlanet, find: findPlanet, create: createPlanet } })
 
-export const orpc = {} as RouterClient<typeof router>
+export const client = {} as RouterClient<typeof router>

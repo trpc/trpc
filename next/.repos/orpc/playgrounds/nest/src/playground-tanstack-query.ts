@@ -1,23 +1,23 @@
-import { orpc } from './lib/orpc'
 import { isDefinedError } from '@orpc/client'
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { orpc } from './lib/orpc'
+
+const queryClient = useQueryClient()
 
 const query = useInfiniteQuery(
   orpc.planet.list.infiniteOptions({
-    input: cursor => ({ cursor }),
-    getNextPageParam: lastPage => (lastPage.at(-1)?.id ?? -1) + 1,
+    input: cursor => ({ cursor, limit: 5 }),
+    getNextPageParam: (lastPage, _, lastCursor) => lastPage.length === 5 ? lastCursor + 5 : null,
     initialPageParam: 0,
   }),
 )
-
-const queryClient = useQueryClient()
 
 const mutation = useMutation(
   orpc.planet.update.mutationOptions({
     onError(error) {
       if (isDefinedError(error)) {
-        const id = error.data.id
-        //    ^    type-safe
+        const code = error.code
+        //    ^    typesafe
       }
     },
     onSuccess() {

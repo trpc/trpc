@@ -1,0 +1,162 @@
+---
+title: "Smart Coercion Plugin"
+description: "Automatically coerce request and response values to match your schema types without writing manual coercion logic."
+sidebar:
+  label: "Smart Coercion"
+---
+
+:::warning
+This plugin improves developer experience, but it adds runtime overhead. For performance sensitive applications or complex schemas, manual coercion in your validation layer is usually more efficient.
+:::
+
+## Installation
+
+```package-install
+npm install @orpc/json-schema@beta
+```
+
+## Setup
+
+Use `SmartCoercionHandlerPlugin` in your handler to coerce incoming request data to the expected `.input` schema:
+
+```ts
+import { SmartCoercionHandlerPlugin } from '@orpc/json-schema'
+
+const handler = new OpenAPIHandler(router, {
+  plugins: [
+    new SmartCoercionHandlerPlugin({
+      converters: [
+        new ZodToJsonSchemaConverter(),
+        // Add other schema converters as needed
+      ],
+    })
+  ]
+})
+```
+
+Use `SmartCoercionLinkPlugin` in your link to coerce server responses to the expected `.output` or `.errors` schemas:
+
+```ts
+import { SmartCoercionLinkPlugin } from '@orpc/json-schema'
+
+const link = new OpenAPILink(contract, {
+  plugins: [
+    new SmartCoercionLinkPlugin(contract, {
+      converters: [
+        new ZodToJsonSchemaConverter(),
+        // Add other schema converters as needed
+      ],
+    }),
+  ]
+})
+```
+
+:::info
+Both plugins accept `maxBigIntDigits` (default 4300), the maximum digits of a string coerced to `BigInt`.
+:::
+
+:::info
+This plugin relies on [JSON Schema Converters](/docs/openapi/specification#json-schema-converters) to determine how values should be coerced. Configure the appropriate converter for each validation library you use. If a required converter is unavailable, it automatically falls back to [Standard Json Schema](https://standardschema.dev/json-schema) conversion.
+:::
+
+## How It Works
+
+The plugin coerces values safely by following these rules:
+
+1. **Schema-driven:** Converts only when the schema defines the target type
+2. **Safe only:** Converts only values with an unambiguous, lossless representation, such as `'123'` to `123`
+3. **Preserve original values:** Leaves the original value unchanged when conversion would be unsafe
+4. **Union-aware:** Tries to determine the best union branch to use for conversion
+5. **Deep conversion:** Applies recursively inside nested objects and arrays
+
+:::info
+JSON Schema does not natively represent `BigInt`, `Date`, `URL`, `Set`, or `Map`. For these types, oRPC relies on `x-native-type` metadata in your schema:
+
+- `x-native-type: 'bigint'` for BigInt
+- `x-native-type: 'date'` for Date
+- `x-native-type: 'url'` for URL
+- `x-native-type: 'set'` for Set
+- `x-native-type: 'map'` for Map
+
+Since this field is not part of the official JSON Schema specification, custom converters must set it themselves. The built-in [ZodToJsonSchemaConverter](/docs/integrations/zod#json-schema-converter), [ValibotToJsonSchemaConverter](/docs/integrations/valibot#json-schema-converter), and [ArkTypeToJsonSchemaConverter](/docs/integrations/arktype#json-schema-converter) already handle it for you.
+:::
+
+## Conversion Rules
+
+### String → Boolean
+
+Supports these specific string values, case-insensitively:
+
+- `'true'`, `'on'` → `true`
+- `'false'`, `'off'` → `false`
+
+:::info
+HTML `<input type="checkbox">` elements commonly submit `'on'` or `'off'`, so this conversion is especially useful for form handling.
+:::
+
+### String → Number
+
+Supports valid numeric strings:
+
+- `'123'` → `123`
+- `'3.14'` → `3.14`
+
+### String/Number → BigInt
+
+Supports integer strings and whole numbers:
+
+- `'12345678901234567890'` → `12345678901234567890n`
+- `123` → `123n`
+
+Strings longer than `maxBigIntDigits` digits are left unchanged.
+
+### String → Date
+
+Supports ISO 8601 date and datetime strings:
+
+- `'2023-10-01'` → `new Date('2023-10-01')`
+- `'2020-01-01T06:15'` → `new Date('2020-01-01T06:15')`
+- `'2020-01-01T06:15Z'` → `new Date('2020-01-01T06:15Z')`
+- `'2020-01-01T06:15:00Z'` → `new Date('2020-01-01T06:15:00Z')`
+- `'2020-01-01T06:15:00.123Z'` → `new Date('2020-01-01T06:15:00.123Z')`
+- `'2020-01-01T06:15:00-07:00'` → `new Date('2020-01-01T06:15:00-07:00')`
+
+### String → URL
+
+Supports valid URL strings:
+
+- `'https://example.com'` → `new URL('https://example.com')`
+
+### Array → Set
+
+Supports arrays of **unique values**:
+
+- `['apple', 'banana']` → `new Set(['apple', 'banana'])`
+
+### Array → Object
+
+Converts arrays into objects with numeric keys:
+
+- `['apple', 'banana']` → `{ 0: 'apple', 1: 'banana' }`
+
+:::info
+This is particularly useful for [Bracket Notation](/docs/openapi/bracket-notation#limitations) when you need objects with numeric keys.
+:::
+
+### Array → Map
+
+Supports arrays of key-value pairs with **unique keys**:
+
+- `[['key1', 'value1'], ['key2', 'value2']]` → `new Map([['key1', 'value1'], ['key2', 'value2']])`
+
+## Step Budget
+
+Both plugins accept `maxStepsPerValue` (default 1000), the maximum coercion steps per input value, where a step applies one schema to one value. Past it, the whole input is left uncoerced and validation still runs. Raise it if large inputs fail validation while smaller ones of the same shape pass.
+
+## Advanced Usage
+
+You can also use this plugin in guides such as [Expanding Type Support for OpenAPI Link](/docs/openapi/expanding-type-support-for-link).
+
+## Learn More
+
+For implementation details, see the [SmartCoercionHandlerPlugin source code](https://github.com/middleapi/orpc/blob/main/packages/json-schema/src/smart-coercion-handler-plugin.ts), the [SmartCoercionLinkPlugin source code](https://github.com/middleapi/orpc/blob/main/packages/json-schema/src/smart-coercion-link-plugin.ts), or the [coercer source code](https://github.com/middleapi/orpc/blob/main/packages/json-schema/src/coercer.ts).

@@ -1,221 +1,308 @@
-import type { RedisRatelimiterOptions } from './redis'
-import { Redis } from 'ioredis'
-import { RedisRatelimiter } from './redis'
+import { sleep } from '@orpc/shared'
+import { createClient } from 'redis'
+import { RedisRateLimiter } from './redis'
 
 const REDIS_URL = process.env.REDIS_URL
 
-/**
- * These tests depend on a real Redis server — make sure to set the `REDIS_URL` env.
- * When writing new tests, always use unique keys to avoid conflicts with other test cases.
- */
-describe.concurrent('ioredis ratelimiter', { skip: !REDIS_URL, timeout: 20000 }, () => {
-  let redis: Redis
+describe.concurrent('redis rate limiter integration', {
+  skip: !REDIS_URL,
+  timeout: 20_000,
+}, async () => {
+  const redis = createClient({
+    url: REDIS_URL,
+  })
 
-  function createTestingRatelimiter(options: Partial<RedisRatelimiterOptions> = {}) {
-    const ratelimiter = new RedisRatelimiter({
-      eval: redis.eval.bind(redis),
-      prefix: `test:${crypto.randomUUID()}:`, // isolated from other tests
-      maxRequests: 10,
-      window: 60000,
+  beforeAll(async () => {
+    await redis.connect()
+  })
+
+  async function createTestingRateLimiter(
+    options: ConstructorParameters<typeof RedisRateLimiter>[1] = {
+      maxRequests: 3,
+      window: 10_000,
+    },
+  ) {
+    return new RedisRateLimiter(redis, {
+      prefix: `orpc-redis-rate-limiter-${crypto.randomUUID()}:`,
       ...options,
     })
-    return ratelimiter
   }
 
-  beforeAll(() => {
-    redis = new Redis(REDIS_URL!)
-  })
+  it('accepts weighted requests', async () => {
+    const limiter = await createTestingRateLimiter()
+    const key = 'weighted'
 
-  afterAll(async () => {
-    await redis.quit()
-    expect(redis.listenerCount('error')).toEqual(0)
-  })
-
-  describe('without blocking', () => {
-    it('allows requests within the limit', async () => {
-      const ratelimiter = createTestingRatelimiter({ maxRequests: 2, window: 5000 })
-      const key = 'user1'
-
-      const result1 = await ratelimiter.limit(key)
-      expect(result1.success).toBe(true)
-      expect(result1.limit).toBe(2)
-      expect(result1.remaining).toBe(1)
-      expect(result1.reset).toBeGreaterThan(Date.now())
-
-      const result2 = await ratelimiter.limit(key)
-      expect(result2.success).toBe(true)
-      expect(result2.limit).toBe(2)
-      expect(result2.remaining).toBe(0)
-      expect(result2.reset).toEqual(result1.reset)
-    })
-
-    it('denies requests exceeding the limit', async () => {
-      const ratelimiter = createTestingRatelimiter({ maxRequests: 1, window: 5000 })
-      const key = 'user2'
-
-      // reach the limit
-      const result1 = await ratelimiter.limit(key)
-      expect(result1.remaining).toBe(0)
-
-      const result2 = await ratelimiter.limit(key)
-      expect(result2.success).toBe(false)
-    })
-
-    it('resets the limit after the window expires', async () => {
-      const ratelimiter = createTestingRatelimiter({ maxRequests: 1, window: 2000 })
-      const key = 'user3'
-
-      // reach the limit
-      const result1 = await ratelimiter.limit(key)
-      expect(result1.remaining).toBe(0)
-      const result2 = await ratelimiter.limit(key)
-      expect(result2.success).toBe(false)
-
-      // wait for the window to expire
-      await new Promise(resolve => setTimeout(resolve, 2000))
-
-      const result3 = await ratelimiter.limit(key)
-      expect(result3.success).toBe(true)
+    await expect(
+      limiter.limit(key, { weight: 2 }),
+    ).resolves.toMatchObject({
+      success: true,
+      limit: 3,
+      remaining: 1,
     })
   })
 
-  it('handles concurrent requests correctly', async () => {
-    const ratelimiter = createTestingRatelimiter({
+  it('tracks counters independently for each key', async () => {
+    const limiter = await createTestingRateLimiter()
+
+    const aliceKey = 'alice'
+    const bobKey = 'bob'
+
+    await expect(
+      limiter.limit(aliceKey),
+    ).resolves.toMatchObject({
+      success: true,
+      limit: 3,
+      remaining: 2,
+    })
+
+    await expect(
+      limiter.limit(bobKey),
+    ).resolves.toMatchObject({
+      success: true,
+      limit: 3,
+      remaining: 2,
+    })
+  })
+
+  it('returns a stable reset timestamp within the same window', async () => {
+    const window = 2000
+    const limiter = await createTestingRateLimiter({
+      maxRequests: 2,
+      window,
+    })
+    const key = 'reset'
+    const tolerance = 500
+
+    const firstStartedAt = Date.now()
+    const first = await limiter.limit(key)
+    const firstCompletedAt = Date.now()
+
+    expect(first).toMatchObject({
+      success: true,
+      limit: 2,
+      remaining: 1,
+    })
+    expect(first.reset).toBeGreaterThanOrEqual(firstStartedAt + window - tolerance)
+    expect(first.reset).toBeLessThanOrEqual(firstCompletedAt + window)
+
+    await sleep(100)
+
+    const second = await limiter.limit(key)
+
+    expect(second).toMatchObject({
+      success: true,
+      limit: 2,
+      remaining: 0,
+    })
+    expect(Math.abs(second.reset - first.reset)).toBeLessThanOrEqual(tolerance)
+
+    const denied = await limiter.limit(key)
+
+    expect(denied).toMatchObject({
+      success: false,
+      limit: 2,
+      remaining: 0,
+    })
+    expect(Math.abs(denied.reset - first.reset)).toBeLessThanOrEqual(tolerance)
+  })
+
+  it('uses an empty prefix when none is provided', async () => {
+    const limiter = await createTestingRateLimiter({
+      prefix: undefined,
       maxRequests: 3,
-      window: 5000,
+      window: 10_000,
     })
 
-    const test = async (key: string) => {
-      const results = await Promise.all(
-        Array.from({ length: 5 }, () => ratelimiter.limit(key)),
-      )
+    await expect(
+      limiter.limit(`no-prefix-${crypto.randomUUID()}`),
+    ).resolves.toMatchObject({
+      success: true,
+      limit: 3,
+      remaining: 2,
+    })
+  })
 
-      // Count successful and failed requests
-      const successful = results.filter(r => r.success).length
-      const failed = results.filter(r => !r.success).length
+  it('propagates client errors', async () => {
+    const disconnectedRedis = createClient({
+      url: 'rediss://invalid',
+    })
+    const limiter = new RedisRateLimiter(disconnectedRedis, {
+      maxRequests: 3,
+      window: 10_000,
+    })
 
-      // Should have exactly maxRequests successful requests
-      expect(successful).toBe(3)
-      expect(failed).toBe(2)
+    await expect(
+      limiter.limit('closed-client'),
+    ).rejects.toThrow()
+  })
 
-      // Verify remaining counts are consistent
-      const successfulResults = results.filter(r => r.success)
-      expect(successfulResults[0]!.remaining).toBe(2)
-      expect(successfulResults[1]!.remaining).toBe(1)
-      expect(successfulResults[2]!.remaining).toBe(0)
-    }
+  it('rejects invalid weights', async () => {
+    const limiter = await createTestingRateLimiter()
+    const key = 'invalid-weight'
 
-    await Promise.all(
-      Array.from({ length: 5 }, (_, i) => test(`test${i}`)),
+    await expect(
+      limiter.limit(key, { weight: 0 }),
+    ).rejects.toThrow(TypeError)
+
+    await expect(
+      limiter.limit(key, { weight: -1 }),
+    ).rejects.toThrow(TypeError)
+
+    await expect(
+      limiter.limit(key, { weight: 1.5 }),
+    ).rejects.toThrow(
+      'Rate limit weight must be an integer greater than 0',
     )
   })
 
-  describe('with blocking', () => {
-    it('blocks until the rate limit resets', async () => {
-      const ratelimiter = createTestingRatelimiter({
-        maxRequests: 1,
-        window: 2000,
-        blockingUntilReady: { enabled: true, timeout: 2000 },
+  it('consumes quota across multiple requests', async () => {
+    const limiter = await createTestingRateLimiter()
+    const key = 'quota'
+
+    await expect(limiter.limit(key))
+      .resolves
+      .toMatchObject({
+        success: true,
+        remaining: 2,
       })
-      const key = 'user-blocking-1'
 
-      // reach the limit
-      const result1 = await ratelimiter.limit(key)
-      expect(result1.remaining).toBe(0)
-
-      const startTime = Date.now()
-      const result2 = await ratelimiter.limit(key)
-      const endTime = Date.now()
-
-      expect(result2.success).toBe(true)
-      expect(endTime - startTime).toBeGreaterThanOrEqual(500) // actually waited
-      expect(endTime - startTime).toBeLessThanOrEqual(2000)
-    })
-
-    it('times out if the reset time is beyond the timeout', async () => {
-      const ratelimiter = createTestingRatelimiter({
-        maxRequests: 1,
-        window: 60_000,
-        blockingUntilReady: { enabled: true, timeout: 2000 },
+    await expect(limiter.limit(key))
+      .resolves
+      .toMatchObject({
+        success: true,
+        remaining: 1,
       })
-      const key = 'user-blocking-2'
 
-      await ratelimiter.limit(key) // Consume the first request
-
-      const startTime = Date.now()
-      const result = await ratelimiter.limit(key)
-      const endTime = Date.now()
-
-      expect(result.success).toBe(false) // Should fail as it times out
-      expect(endTime - startTime).toBeLessThan(2000)
-    })
-
-    it('handles concurrent blocking requests correctly', async () => {
-      const ratelimiter = createTestingRatelimiter({
-        maxRequests: 2,
-        window: 1000,
-        blockingUntilReady: { enabled: true, timeout: 2000 },
+    await expect(limiter.limit(key))
+      .resolves
+      .toMatchObject({
+        success: true,
+        remaining: 0,
       })
-      const key = 'user-concurrent-blocking'
+  })
 
-      const promises = [
-        ratelimiter.limit(key),
-        ratelimiter.limit(key),
-        ratelimiter.limit(key), // This one should block
-      ]
+  it('rejects requests that exceed the limit', async () => {
+    const limiter = await createTestingRateLimiter()
+    const key = 'exceeded'
 
-      const results = await Promise.all(promises)
-      expect(results.filter(r => r.success).length).toBe(3)
+    await limiter.limit(key)
+    await limiter.limit(key)
+    await limiter.limit(key)
+
+    await expect(
+      limiter.limit(key),
+    ).resolves.toMatchObject({
+      success: false,
+      limit: 3,
+      remaining: 0,
     })
   })
 
-  describe('edge cases', () => {
-    it('uses the correct prefix for keys & auto expiration', async () => {
-      const prefix = `custom-prefix:${crypto.randomUUID()}:`
-      const ratelimiter = createTestingRatelimiter({
+  describe('blockingUntilReady', () => {
+    it('waits until the next window when capacity is unavailable', async () => {
+      const limiter = await createTestingRateLimiter({
+        maxRequests: 2,
         window: 1000,
-        prefix,
-        maxRequests: 1,
+        blockingUntilReady: {
+          enabled: true,
+          timeout: 4000,
+        },
       })
-      const key = 'user4'
 
-      await ratelimiter.limit(key)
+      const key = 'blocking'
 
-      const keys = await redis.keys(`${prefix}${key}`)
-      expect(keys).toHaveLength(1)
+      await limiter.limit(key)
+      await limiter.limit(key)
 
-      // Wait until the key is auto-expired
-      await vi.waitFor(async () => {
-        const keysAfterExpiry = await redis.keys(`${prefix}${key}`)
-        expect(keysAfterExpiry).toHaveLength(0)
-      }, { timeout: 20_000, interval: 1000 })
+      const start = Date.now()
+
+      const result = await limiter.limit(key)
+
+      expect(result).toMatchObject({
+        success: true,
+        limit: 2,
+      })
+
+      expect(Date.now() - start).toBeGreaterThanOrEqual(900)
+      expect(result.reset - Date.now()).toBeGreaterThanOrEqual(700)
     })
 
-    it('handles Redis errors gracefully', async () => {
-      const ratelimiter = new RedisRatelimiter({
-        eval: async () => { throw new Error('Redis error') },
-        maxRequests: 10,
-        window: 60000,
+    it('waits until enough quota is available for weighted requests', async () => {
+      const limiter = await createTestingRateLimiter({
+        maxRequests: 2,
+        window: 1000,
+        blockingUntilReady: {
+          enabled: true,
+          timeout: 4000,
+        },
       })
-      await expect(ratelimiter.limit('some-key')).rejects.toThrow('Redis error')
+
+      const key = 'blocking-weighted'
+
+      await expect(
+        limiter.limit(key),
+      ).resolves.toMatchObject({
+        success: true,
+        remaining: 1,
+      })
+
+      await sleep(100)
+
+      await expect(
+        limiter.limit(key, { weight: 2 }),
+      ).resolves.toMatchObject({
+        success: true,
+        limit: 2,
+        remaining: 0,
+      })
     })
 
-    it('handles invalid script response', async () => {
-      const ratelimiter = new RedisRatelimiter({
-        eval: async () => [1, 2, 3], // Invalid response, should have 4 elements
-        maxRequests: 10,
-        window: 60000,
+    it('returns denial when reset exceeds timeout', async () => {
+      const limiter = await createTestingRateLimiter({
+        maxRequests: 2,
+        window: 10_000,
+        blockingUntilReady: {
+          enabled: true,
+          timeout: 100,
+        },
       })
-      await expect(ratelimiter.limit('some-key')).rejects.toThrow('Invalid response from rate limit script')
+
+      const key = 'blocking-timeout'
+
+      await limiter.limit(key)
+
+      await sleep(100)
+
+      await expect(
+        limiter.limit(key, { weight: 2 }),
+      ).resolves.toMatchObject({
+        success: false,
+        limit: 2,
+        remaining: 0,
+      })
+    })
+  })
+
+  it('lazily connects to Redis once under concurrent limit calls', async () => {
+    const redis = createClient({
+      url: REDIS_URL,
     })
 
-    it('handles invalid script response 2', async () => {
-      const ratelimiter = new RedisRatelimiter({
-        eval: async () => ['a', 'b', 'c', 'd'], // should be integers
-        maxRequests: 10,
-        window: 60000,
-      })
-      await expect(ratelimiter.limit('some-key')).rejects.toThrow('Invalid response from rate limit script')
+    const limiter = new RedisRateLimiter(redis, {
+      prefix: `orpc-redis-rate-limiter-${crypto.randomUUID()}:`,
+      maxRequests: 4,
+      window: 10,
     })
+
+    expect(redis.isOpen).toBe(false)
+
+    await Promise.all([
+      expect(limiter.limit('key')).resolves.toMatchObject({ success: true }),
+      expect(limiter.limit('key')).resolves.toMatchObject({ success: true }),
+      expect(limiter.limit('key')).resolves.toMatchObject({ success: true }),
+      expect(limiter.limit('key')).resolves.toMatchObject({ success: true }),
+    ])
+
+    expect(redis.isOpen).toBe(true)
   })
 })

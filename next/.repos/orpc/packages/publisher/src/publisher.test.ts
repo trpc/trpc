@@ -1,4 +1,5 @@
 import type { PublisherSubscribeListenerOptions } from './publisher'
+import { promiseWithResolvers, sleep } from '@orpc/shared'
 import { Publisher } from './publisher'
 
 // Concrete implementation for testing
@@ -13,7 +14,7 @@ class TestPublisher<T extends Record<string, object>> extends Publisher<T> {
     }
   }
 
-  protected async subscribeListener<K extends keyof T>(
+  async subscribeListener<K extends keyof T>(
     event: K,
     listener: (payload: T[K]) => void,
     options?: PublisherSubscribeListenerOptions,
@@ -42,9 +43,11 @@ type TestEvents = {
 
 describe('publisher', () => {
   let publisher: TestPublisher<TestEvents>
+  let subscribeListenerSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
     publisher = new TestPublisher<TestEvents>()
+    subscribeListenerSpy = vi.spyOn(publisher, 'subscribeListener')
   })
 
   afterEach(() => {
@@ -52,62 +55,29 @@ describe('publisher', () => {
     for (const listeners of publisher.listenersMap.values()) {
       size += listeners.size
     }
+
     expect(size).toBe(0) // ensure all listeners are unsubscribed correctly
   })
 
-  describe('subscribe with callback', () => {
-    it('should subscribe and receive events', async () => {
-      const listener = vi.fn()
-      const unsub = await publisher.subscribe('message', listener)
+  it('passes resume metadata and error hooks to direct listeners', async () => {
+    const listener = vi.fn()
+    const lastEventId = '__last__'
+    const onError = vi.fn()
 
-      await publisher.publish('message', { text: 'hello' })
+    const unsubscribe = await publisher.subscribe('message', listener, { lastEventId, onError })
+    expect(subscribeListenerSpy).toHaveBeenCalledTimes(1)
+    expect(subscribeListenerSpy).toHaveBeenNthCalledWith(1, 'message', listener, { lastEventId, onError })
 
-      expect(listener).toHaveBeenCalledWith({ text: 'hello' })
-      expect(listener).toHaveBeenCalledTimes(1)
+    const iterator = publisher.subscribe('message', { lastEventId })
+    expect(subscribeListenerSpy).toHaveBeenCalledTimes(2)
+    expect(subscribeListenerSpy).toHaveBeenNthCalledWith(2, 'message', expect.any(Function), { lastEventId, onError: expect.any(Function) })
 
-      await unsub()
-    })
-
-    it('should handle multiple subscribers', async () => {
-      const listener1 = vi.fn()
-      const listener2 = vi.fn()
-
-      const unsub1 = await publisher.subscribe('message', listener1)
-      const unsub2 = await publisher.subscribe('message', listener2)
-
-      await publisher.publish('message', { text: 'hello' })
-
-      expect(listener1).toHaveBeenCalledWith({ text: 'hello' })
-      expect(listener2).toHaveBeenCalledWith({ text: 'hello' })
-
-      await unsub1()
-      await unsub2()
-    })
-
-    it('should unsubscribe correctly', async () => {
-      const listener = vi.fn()
-      const unsubscribe = await publisher.subscribe('message', listener)
-
-      await publisher.publish('message', { text: 'first' })
-      await unsubscribe()
-      await publisher.publish('message', { text: 'second' })
-
-      expect(listener).toHaveBeenCalledTimes(1)
-      expect(listener).toHaveBeenCalledWith({ text: 'first' })
-    })
-
-    it('should forward options to subscribeListener', async () => {
-      const listener = vi.fn()
-      const options = { lastEventId: '123' }
-      const unsubscribe = await publisher.subscribe('message', listener, options)
-      expect(publisher.optionsMap.get('message')![0]).toBe(options)
-
-      await unsubscribe()
-    })
+    await unsubscribe()
+    await iterator.return()
   })
 
-  describe('subscribe with async iterator', () => {
-    it('should iterate over events', async () => {
+  describe('asyncIteratorObject subscriptions', () => {
+    it('streams messages in the order they are published', async () => {
       const events: string[] = []
       const iterator = publisher.subscribe('message')
 
@@ -125,125 +95,7 @@ describe('publisher', () => {
       expect(events).toEqual(['first', 'second', 'third'])
     })
 
-    it('should buffer events when consumer is slow', async () => {
-      const iterator = publisher.subscribe('message', { maxBufferedEvents: 3 })
-
-      // Publish events before consuming
-      await publisher.publish('message', { text: 'first' })
-      await publisher.publish('message', { text: 'second' })
-      await publisher.publish('message', { text: 'third' })
-
-      const result1 = await iterator.next()
-      const result2 = await iterator.next()
-      const result3 = await iterator.next()
-
-      expect(result1.value?.text).toBe('first')
-      expect(result2.value?.text).toBe('second')
-      expect(result3.value?.text).toBe('third')
-
-      await iterator.return()
-    })
-
-    it('should drop oldest events when buffer exceeds maxBufferedEvents', async () => {
-      const iterator = publisher.subscribe('message', { maxBufferedEvents: 2 })
-
-      // Publish 4 events, buffer can only hold 2
-      await publisher.publish('message', { text: 'first' })
-      await publisher.publish('message', { text: 'second' })
-      await publisher.publish('message', { text: 'third' })
-      await publisher.publish('message', { text: 'fourth' })
-
-      const result1 = await iterator.next()
-      const result2 = await iterator.next()
-
-      // First two should be dropped, we get third and fourth
-      expect(result1.value?.text).toBe('third')
-      expect(result2.value?.text).toBe('fourth')
-
-      await iterator.return()
-    })
-
-    it('should handle maxBufferedEvents of 0', async () => {
-      const iterator = publisher.subscribe('message', { maxBufferedEvents: 0 })
-
-      // Publish event before consuming - should be dropped
-      await publisher.publish('message', { text: 'dropped' })
-
-      // Start consuming
-      const nextPromise = iterator.next()
-      await new Promise(resolve => setTimeout(resolve, 1))
-
-      // Publish while waiting
-      await publisher.publish('message', { text: 'received' })
-
-      const result = await nextPromise
-      expect(result.value?.text).toBe('received')
-
-      await iterator.return()
-    })
-
-    it('should handle maxBufferedEvents of 1', async () => {
-      const iterator = publisher.subscribe('message', { maxBufferedEvents: 1 })
-
-      await publisher.publish('message', { text: 'first' })
-      await publisher.publish('message', { text: 'second' })
-
-      const result = await iterator.next()
-      // Only the latest event is kept
-      expect(result.value?.text).toBe('second')
-
-      await iterator.return()
-    })
-
-    it('should abort with signal', async () => {
-      const controller = new AbortController()
-      const iterator = publisher.subscribe('message', { signal: controller.signal })
-
-      const nextPromise = iterator.next()
-      controller.abort(new Error('Aborted'))
-
-      await expect(nextPromise).rejects.toThrow('Aborted')
-    })
-
-    it('should throw if signal is already aborted', () => {
-      const controller = new AbortController()
-      controller.abort(new Error('Already aborted'))
-
-      expect(() => {
-        publisher.subscribe('message', { signal: controller.signal })
-      }).toThrow('Already aborted')
-    })
-
-    it('should cleanup on abort', async () => {
-      const controller = new AbortController()
-      const iterator = publisher.subscribe('message', { signal: controller.signal })
-
-      const nextPromise = iterator.next()
-      controller.abort()
-      await expect(nextPromise).rejects.toThrow('This operation was aborted')
-
-      // Publishing after abort should not affect the iterator
-      await publisher.publish('message', { text: 'after abort' })
-
-      const result = await iterator.next()
-      expect(result.done).toBe(true)
-    })
-
-    it('should cleanup on return', async () => {
-      const iterator = publisher.subscribe('message')
-
-      await publisher.publish('message', { text: 'first' })
-      await iterator.next()
-
-      const returnResult = await iterator.return()
-      expect(returnResult.done).toBe(true)
-
-      // Further iterations should be done
-      const result = await iterator.next()
-      expect(result.done).toBe(true)
-    })
-
-    it('should handle concurrent consumers', async () => {
+    it('broadcasts the same live message to multiple subscribers', async () => {
       const iterator1 = publisher.subscribe('message')
       const iterator2 = publisher.subscribe('message')
 
@@ -261,36 +113,7 @@ describe('publisher', () => {
       await iterator2.return()
     })
 
-    it('should use instance maxBufferedEvents by default', async () => {
-      const pub = new TestPublisher<TestEvents>({ maxBufferedEvents: 1 })
-      const iterator = pub.subscribe('message')
-
-      await pub.publish('message', { text: 'first' })
-      await pub.publish('message', { text: 'second' })
-
-      const result = await iterator.next()
-      expect(result.value?.text).toBe('second')
-
-      await iterator.return()
-    })
-
-    it('should override instance maxBufferedEvents with options', async () => {
-      const pub = new TestPublisher<TestEvents>({ maxBufferedEvents: 1 })
-      const iterator = pub.subscribe('message', { maxBufferedEvents: 3 })
-
-      await pub.publish('message', { text: 'first' })
-      await pub.publish('message', { text: 'second' })
-
-      const result1 = await iterator.next()
-      const result2 = await iterator.next()
-
-      expect(result1.value?.text).toBe('first')
-      expect(result2.value?.text).toBe('second')
-
-      await iterator.return()
-    })
-
-    it('should handle rapid publishing and consuming', async () => {
+    it('keeps up with a burst of sequential counter updates', async () => {
       const iterator = publisher.subscribe('count')
       const received: number[] = []
 
@@ -313,24 +136,260 @@ describe('publisher', () => {
       expect(received).toHaveLength(100)
     })
 
-    it('should forward lastEventId to subscribeListener', async () => {
-      const unsub = publisher.subscribe('message', { lastEventId: '__test__' })
-      expect(publisher.optionsMap.get('message')?.[0]?.lastEventId).toBe('__test__')
-      await unsub.return()
+    it('keeps order while a large buffer is drained and refilled', async () => {
+      const iterator = publisher.subscribe('count', { maxBufferedEvents: Infinity })
+
+      for (let i = 0; i < 100; i++) {
+        await publisher.publish('count', { value: i })
+      }
+
+      for (let i = 0; i < 50; i++) {
+        expect((await iterator.next()).value?.value).toBe(i)
+      }
+
+      for (let i = 100; i < 200; i++) {
+        await publisher.publish('count', { value: i })
+      }
+
+      for (let i = 50; i < 200; i++) {
+        expect((await iterator.next()).value?.value).toBe(i)
+      }
+
+      await iterator.return()
     })
 
-    describe('should stop onError trigger', async () => {
-      it('error happen before pull', async () => {
+    describe('when a subscriber falls behind', () => {
+      it('delivers queued messages once the subscriber catches up', async () => {
+        const iterator = publisher.subscribe('message', { maxBufferedEvents: 3 })
+
+        await publisher.publish('message', { text: 'first' })
+        await publisher.publish('message', { text: 'second' })
+        await publisher.publish('message', { text: 'third' })
+
+        const result1 = await iterator.next()
+        const result2 = await iterator.next()
+        const result3 = await iterator.next()
+
+        expect(result1.value?.text).toBe('first')
+        expect(result2.value?.text).toBe('second')
+        expect(result3.value?.text).toBe('third')
+
+        await iterator.return()
+      })
+
+      it('keeps the newest queued messages when the backlog limit is exceeded', async () => {
+        const iterator = publisher.subscribe('message', { maxBufferedEvents: 2 })
+
+        await publisher.publish('message', { text: 'first' })
+        await publisher.publish('message', { text: 'second' })
+        await publisher.publish('message', { text: 'third' })
+        await publisher.publish('message', { text: 'fourth' })
+
+        const result1 = await iterator.next()
+        const result2 = await iterator.next()
+
+        expect(result1.value?.text).toBe('third')
+        expect(result2.value?.text).toBe('fourth')
+
+        await iterator.return()
+      })
+
+      it('waits for a live message when backlog storage is disabled', async () => {
+        const iterator = publisher.subscribe('message', { maxBufferedEvents: 0 })
+
+        await publisher.publish('message', { text: 'dropped' })
+
+        const nextPromise = iterator.next()
+        await new Promise(resolve => setTimeout(resolve, 1))
+
+        await publisher.publish('message', { text: 'received' })
+
+        const result = await nextPromise
+        expect(result.value?.text).toBe('received')
+
+        await iterator.return()
+      })
+
+      it('keeps only the freshest queued message when capacity is one', async () => {
+        const iterator = publisher.subscribe('message', { maxBufferedEvents: 1 })
+
+        await publisher.publish('message', { text: 'first' })
+        await publisher.publish('message', { text: 'second' })
+
+        const result = await iterator.next()
+        expect(result.value?.text).toBe('second')
+
+        await iterator.return()
+      })
+
+      it('uses the publisher default backlog when a subscriber does not override it', async () => {
+        const pub = new TestPublisher<TestEvents>({ maxBufferedEvents: 1 })
+        const iterator = pub.subscribe('message')
+
+        await pub.publish('message', { text: 'first' })
+        await pub.publish('message', { text: 'second' })
+
+        const result = await iterator.next()
+        expect(result.value?.text).toBe('second')
+
+        await iterator.return()
+      })
+
+      it('lets a subscriber keep a larger backlog than the publisher default', async () => {
+        const pub = new TestPublisher<TestEvents>({ maxBufferedEvents: 1 })
+        const iterator = pub.subscribe('message', { maxBufferedEvents: 3 })
+
+        await pub.publish('message', { text: 'first' })
+        await pub.publish('message', { text: 'second' })
+
+        const result1 = await iterator.next()
+        const result2 = await iterator.next()
+
+        expect(result1.value?.text).toBe('first')
+        expect(result2.value?.text).toBe('second')
+
+        await iterator.return()
+      })
+    })
+
+    describe('when subscriptions end', () => {
+      it('rejects a pending read if the subscriber aborts mid-stream', async () => {
+        const controller = new AbortController()
+        const iterator = publisher.subscribe('message', { signal: controller.signal })
+
+        const nextPromise = iterator.next()
+        controller.abort(new Error('Aborted'))
+
+        await expect(nextPromise).rejects.toThrow('Aborted')
+      })
+
+      it('drops buffered messages when the subscriber aborts before reading them', async () => {
+        const controller = new AbortController()
+        const iterator = publisher.subscribe('message', {
+          signal: controller.signal,
+          maxBufferedEvents: 2,
+        })
+
+        await publisher.publish('message', { text: 'first' })
+        await publisher.publish('message', { text: 'second' })
+        controller.abort(new Error('Aborted'))
+        await publisher.publish('message', { text: 'third' })
+
+        await expect(iterator.next()).rejects.toThrow('Aborted')
+        await expect(iterator.next()).resolves.toEqual({ done: true, value: undefined })
+      })
+
+      it('fails fast when a subscriber is already aborted', () => {
+        const controller = new AbortController()
+        controller.abort(new Error('Already aborted'))
+
+        expect(() => {
+          publisher.subscribe('message', { signal: controller.signal })
+        }).toThrow('Already aborted')
+
+        expect(subscribeListenerSpy).toHaveBeenCalledTimes(0)
+      })
+
+      it('unsubscribes after an abort so later messages are ignored', async () => {
+        const controller = new AbortController()
+        const iterator = publisher.subscribe('message', { signal: controller.signal })
+
+        const nextPromise = iterator.next()
+        controller.abort()
+        await expect(nextPromise).rejects.toThrow('This operation was aborted')
+
+        await publisher.publish('message', { text: 'after abort' })
+
+        const result = await iterator.next()
+        expect(result.done).toBe(true)
+      })
+
+      it('closes cleanly when the subscriber leaves the stream', async () => {
+        const iterator = publisher.subscribe('message')
+
+        await publisher.publish('message', { text: 'first' })
+        await iterator.next()
+
+        const returnResult = await iterator.return()
+        expect(returnResult.done).toBe(true)
+
+        const result = await iterator.next()
+        expect(result.done).toBe(true)
+      })
+    })
+
+    describe('when the event source reports an error', () => {
+      it('surfaces an error that arrives before the subscriber starts reading', async () => {
         const iterator = publisher.subscribe('message')
         publisher.optionsMap.get('message')?.[0]?.onError?.(new Error('Test error'))
         await expect(iterator.next()).rejects.toThrow('Test error')
       })
 
-      it('error happen after pull', async () => {
+      it('surfaces an error while the subscriber is waiting for the next message', async () => {
         const iterator = publisher.subscribe('message', { signal: AbortSignal.timeout(100) })
         const promise = expect(iterator.next()).rejects.toThrow('Test error')
+        await sleep(0)
+
         publisher.optionsMap.get('message')?.[0]?.onError?.(new Error('Test error'))
         await promise
+      })
+
+      it('drains buffered messages before surfacing a terminal error', async () => {
+        const iterator = publisher.subscribe('message', { maxBufferedEvents: 3 })
+
+        await publisher.publish('message', { text: 'first' })
+        await publisher.publish('message', { text: 'second' })
+        publisher.optionsMap.get('message')?.[0]?.onError?.(new Error('Test error'))
+        await publisher.publish('message', { text: 'third' })
+
+        await expect(iterator.next()).resolves.toMatchObject({ done: false, value: { text: 'first' } })
+        await expect(iterator.next()).resolves.toMatchObject({ done: false, value: { text: 'second' } })
+        await expect(iterator.next()).resolves.toMatchObject({ done: false, value: { text: 'third' } })
+        await expect(iterator.next()).rejects.toThrow('Test error')
+      })
+    })
+
+    describe('when the backing listener fails during setup', () => {
+      it('fails the first read if subscription setup breaks immediately', async () => {
+        const { promise, reject } = promiseWithResolvers<any>()
+        subscribeListenerSpy.mockReturnValueOnce(promise)
+        const iterator = publisher.subscribe('message')
+        reject(new Error('__TEST__'))
+        await expect(iterator.next()).rejects.toThrow('__TEST__')
+      })
+
+      it('fails a pending read if subscription setup breaks after the stream starts', async () => {
+        const { promise, reject } = promiseWithResolvers<any>()
+        subscribeListenerSpy.mockReturnValueOnce(promise)
+        const iterator = publisher.subscribe('message')
+        const nextPromise = expect(iterator.next()).rejects.toThrow('__TEST__')
+        await sleep(0)
+
+        reject(new Error('__TEST__'))
+        await nextPromise
+      })
+
+      it('drains buffered messages before surfacing a setup failure', async () => {
+        const { promise, reject } = promiseWithResolvers<() => Promise<void>>()
+        let listener: ((payload: TestEvents['message']) => void) | undefined
+
+        subscribeListenerSpy.mockImplementationOnce(async (_event: any, innerListener: any) => {
+          listener = innerListener
+          return promise
+        })
+
+        const iterator = publisher.subscribe('message', { maxBufferedEvents: 10 })
+
+        listener?.({ text: 'first' })
+        listener?.({ text: 'second' })
+        reject(new Error('__TEST__'))
+        listener?.({ text: 'third' })
+        await sleep(0)
+
+        await expect(iterator.next()).resolves.toMatchObject({ done: false, value: { text: 'first' } })
+        await expect(iterator.next()).resolves.toMatchObject({ done: false, value: { text: 'second' } })
+        await expect(iterator.next()).resolves.toMatchObject({ done: false, value: { text: 'third' } })
+        await expect(iterator.next()).rejects.toThrow('__TEST__')
       })
     })
   })

@@ -1,0 +1,63 @@
+---
+title: "CORS Handler Plugin"
+description: "Configure CORS policy for your oRPC API with CORSHandlerPlugin, including allowed origins, methods, and exposed headers."
+sidebar:
+  label: "CORS"
+---
+
+## Basic
+
+```ts twoslash
+import { RPCHandler } from '@orpc/server/fetch'
+import { router } from './shared/planet'
+// ---cut---
+import { CORSHandlerPlugin } from '@orpc/server/plugins'
+
+const handler = new RPCHandler(router, {
+  plugins: [
+    new CORSHandlerPlugin({
+      origin: ['https://app.example.com', 'https://admin.example.com'],
+      allowMethods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE', 'PATCH', 'QUERY'],
+      // ...
+    }),
+  ],
+})
+```
+
+:::info
+The `handler` can be any supported oRPC handler, such as [RPCHandler](/docs/rpc/handler), [OpenAPIHandler](/docs/openapi/handler), or a custom one.
+:::
+
+:::warning
+By default, `origin` is `*`, which allows any origin. The wildcard is rejected by browsers for [credentialed requests](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS#requests_with_credentials), so list your allowed origins explicitly when you enable `credentials`.
+:::
+
+## Dynamic Origin
+
+The `origin` and `timingOrigin` options also accept a function (optionally async) that receives the request origin and the interceptor options, including the [handler context](/docs/context). This lets you resolve the allowed origin per request:
+
+```ts
+const handler = new RPCHandler(router, {
+  plugins: [
+    new CORSHandlerPlugin({
+      origin: async (origin, { context }) => context.tenant?.allowedOrigins.includes(origin) ? origin : null,
+    }),
+  ],
+})
+```
+
+:::warning
+To better support `Blob`, `File`, and `ReadableStream<Uint8Array>` at the root level in cross-origin scenarios,
+extend your [CORS allowlist](https://developer.mozilla.org/en-US/docs/Glossary/CORS-safelisted_response_header) to allow clients to read the `Content-Disposition` and `Standard-Server` response headers. Learn more in the [Standard Server documentation](https://github.com/middleapi/standard-server#how-body-parsing-works). If you use the [CORS Plugin](/docs/plugins/cors), include them in `exposeHeaders`:
+
+```ts
+const cors = new CORSHandlerPlugin({
+  exposeHeaders: ['Content-Disposition', 'Standard-Server'],
+})
+```
+
+:::
+
+## Learn More
+
+For implementation details, see the [source code](https://github.com/middleapi/orpc/blob/main/packages/server/src/plugins/cors.ts).

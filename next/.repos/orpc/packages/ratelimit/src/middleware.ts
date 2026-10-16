@@ -1,36 +1,44 @@
-import type { Context, Meta, Middleware, MiddlewareOptions } from '@orpc/server'
+import type { Context, Middleware, MiddlewareOptions } from '@orpc/server'
 import type { Promisable, Value } from '@orpc/shared'
-import type { RatelimitHandlerPluginContext } from './handler-plugin'
-import type { Ratelimiter } from './types'
+import type { RateLimitHandlerPluginContext } from './handler-plugin'
+import type { RateLimiter } from './types'
 import { ORPCError } from '@orpc/server'
 import { toArray, value } from '@orpc/shared'
-import { RATELIMIT_HANDLER_CONTEXT_SYMBOL } from './handler-plugin'
+import { RATELIMIT_HANDLER_PLUGIN_CONTEXT_SYMBOL } from './handler-plugin'
 
-export const RATELIMIT_MIDDLEWARE_CONTEXT_SYMBOL: unique symbol = Symbol('ORPC_RATE_LIMIT_MIDDLEWARE_CONTEXT')
+export const RATELIMIT_MIDDLEWARE_CONTEXT_SYMBOL: unique symbol = Symbol.for('ORPC_RATELIMIT_MIDDLEWARE_CONTEXT')
 
-export interface RatelimiterMiddlewareContext {
+export interface RateLimitMiddlewareContext {
   [RATELIMIT_MIDDLEWARE_CONTEXT_SYMBOL]?: {
     /**
      * The applied limits in this request, mainly for deduplication purposes
      */
-    limits: { limiter: Ratelimiter, key: string }[]
+    applied: { limiter: RateLimiter, key: string }[]
   }
 }
 
-export interface CreateRatelimitMiddlewareOptions<
+export interface RateLimitMiddlewareOptions<
   TInContext extends Context,
   TInput,
-  TMeta extends Meta,
 > {
   /**
    * The rule set to use for rate limiting
    */
-  limiter: Value<Promisable<Ratelimiter>, [middlewareOptions: MiddlewareOptions<TInContext, unknown, Record<never, never>, TMeta>, input: TInput]>
+  limiter: Value<Promisable<RateLimiter>, [options: MiddlewareOptions<TInContext, unknown, Record<never, never>>, input: TInput]>
 
   /**
    * The key to identify the user/requester
    */
-  key: Value<Promisable<string>, [middlewareOptions: MiddlewareOptions<TInContext, unknown, Record<never, never>, TMeta>, input: TInput]>
+  key: Value<Promisable<string>, [options: MiddlewareOptions<TInContext, unknown, Record<never, never>>, input: TInput]>
+
+  /**
+   * The weight of the request. Determines how many tokens or quota
+   * units are consumed by this request. Must be an integer greater than 0.
+   *
+   * @default 1
+   */
+  weight?: Value<Promisable<number>, [options: MiddlewareOptions<TInContext, unknown, Record<never, never>>, input: TInput]>
+
   /**
    * If your ratelimit middleware is used multiple times
    * or you invoke a procedure inside another procedure (shared the same context) that also has
@@ -46,31 +54,31 @@ export interface CreateRatelimitMiddlewareOptions<
  * Creates a middleware that enforces rate limits in oRPC procedures.
  * Supports per-request deduplication and integrates with the ratelimit handler plugin.
  *
- * @see {@link https://orpc.dev/docs/helpers/ratelimit#createratelimitmiddleware Ratelimit middleware}
+ * @see {@link https://orpc.dev/docs/helpers/ratelimit#ratelimit-middleware | Rate Limit Helpers - Ratelimit Middleware}
  */
-export function createRatelimitMiddleware<
+export function ratelimit<
   TInContext extends Context,
-  TInput = unknown,
-  TMeta extends Meta = Record<never, never>,
+  TInput,
 >(
-  { dedupe = true, ...options }: CreateRatelimitMiddlewareOptions<TInContext, TInput, TMeta>,
-): Middleware<TInContext, Record<never, never>, TInput, any, any, TMeta> {
+  { dedupe = true, ...options }: RateLimitMiddlewareOptions<TInContext, TInput>,
+): Middleware<TInContext, object, TInput, any, object> {
   return async function ratelimit(middlewareOptions, input) {
-    const [limiter, key] = await Promise.all([
+    const [limiter, key, weight] = await Promise.all([
       value(options.limiter, middlewareOptions, input),
       value(options.key, middlewareOptions, input),
+      value(options.weight, middlewareOptions, input),
     ])
 
-    const middlewareContext = (middlewareOptions.context as RatelimiterMiddlewareContext)[RATELIMIT_MIDDLEWARE_CONTEXT_SYMBOL]
-    if (dedupe && middlewareContext?.limits.some(l => l.key === key && l.limiter === limiter)) {
+    const middlewareContext = (middlewareOptions.context as RateLimitMiddlewareContext)[RATELIMIT_MIDDLEWARE_CONTEXT_SYMBOL]
+    if (dedupe && middlewareContext?.applied.some(l => l.key === key && l.limiter === limiter)) {
       return middlewareOptions.next()
     }
 
-    const result = await limiter.limit(key)
+    const result = await limiter.limit(key, { weight })
 
-    const pluginContext = (middlewareOptions.context as RatelimitHandlerPluginContext)[RATELIMIT_HANDLER_CONTEXT_SYMBOL]
+    const pluginContext = (middlewareOptions.context as RateLimitHandlerPluginContext)[RATELIMIT_HANDLER_PLUGIN_CONTEXT_SYMBOL]
     if (pluginContext) {
-      pluginContext.ratelimitResult = result
+      pluginContext.checks.push({ path: middlewareOptions.path, procedure: middlewareOptions.procedure, result })
     }
 
     if (!result.success) {
@@ -87,12 +95,12 @@ export function createRatelimitMiddleware<
       context: {
         [RATELIMIT_MIDDLEWARE_CONTEXT_SYMBOL]: {
           ...middlewareContext,
-          limits: [
-            ...toArray(middlewareContext?.limits),
+          applied: [
+            ...toArray(middlewareContext?.applied),
             { limiter, key },
           ],
         },
-      },
+      } satisfies RateLimitMiddlewareContext,
     })
   }
 }

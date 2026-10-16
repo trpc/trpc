@@ -1,9 +1,18 @@
 export type AnyFunction = (...args: any[]) => any
 
-export function once<T extends () => any>(fn: T): () => ReturnType<T> {
-  let cached: { result: ReturnType<T> } | undefined
+const AsyncGeneratorFunction = Object.getPrototypeOf(async function* () {}).constructor
 
-  return (): ReturnType<T> => {
+/**
+ * Checks whether a value is an async generator function (`async function*`).
+ */
+export function isAsyncGeneratorFunction(value: unknown): value is (...args: any[]) => AsyncGenerator {
+  return value instanceof AsyncGeneratorFunction
+}
+
+export function once<T>(fn: () => T): () => T {
+  let cached: { result: T } | undefined
+
+  return (): T => {
     if (cached) {
       return cached.result
     }
@@ -15,29 +24,27 @@ export function once<T extends () => any>(fn: T): () => ReturnType<T> {
   }
 }
 
-export function sequential<A extends any[], R>(
-  fn: (...args: A) => Promise<R>,
-): (...args: A) => Promise<R> {
-  let lastOperationPromise: Promise<any> = Promise.resolve()
-
-  return (...args: A): Promise<R> => {
-    return lastOperationPromise = lastOperationPromise.catch(() => { }).then(() => {
-      return fn(...args)
-    })
-  }
-}
-
 /**
- * Executes the callback function after the current call stack has been cleared.
+ * Executes the callback function after the current call stack has been cleared,
+ * waiting at least `delay` ms when `setTimeout` is available.
  */
-export function defer(callback: () => void): void {
+export function defer(callback: () => void, delay = 0): void {
   if (typeof setTimeout === 'function') {
-    setTimeout(callback, 0)
+    setTimeout(callback, delay)
   }
   else {
     Promise.resolve()
       .then(() => Promise.resolve()
         .then(() => Promise.resolve()
           .then(callback)))
+  }
+}
+
+export function tryOrUndefined<T>(fn: () => T): undefined | T {
+  try {
+    return fn()
+  }
+  catch {
+    return undefined
   }
 }

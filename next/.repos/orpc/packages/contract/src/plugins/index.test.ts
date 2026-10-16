@@ -1,3 +1,6 @@
-it('exports something', async () => {
-  expect(await import('./index')).toHaveProperty('ResponseValidationPlugin')
+it('exports RequestValidationLinkPlugin, ResponseValidationLinkPlugin', async () => {
+  await expect(import('.')).resolves.toMatchObject({
+    RequestValidationLinkPlugin: expect.any(Function),
+    ResponseValidationLinkPlugin: expect.any(Function),
+  })
 })

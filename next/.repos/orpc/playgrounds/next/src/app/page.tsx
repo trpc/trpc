@@ -1,32 +1,34 @@
-import { client } from '@/lib/orpc'
-import { redirectToScalarForm } from './actions'
-import { CreatePlanetMutationForm } from './orpc-mutation'
-import { ListPlanetsQuery } from './orpc-query'
-import { OrpcServerAction } from './orpc-server-action'
-import { EventIteratorQueries } from './orpc-stream'
+import { Suspense } from 'react'
+import { ChatRoom } from '@/components/chat-room'
+import { CreatePlanetForm } from '@/components/create-planet-form'
+import { PlanetTable } from '@/components/planet-table'
+import { TopBar } from '@/components/top-bar'
+import { ReferenceLinks } from '@/components/reference-links'
+import { ServerFunction } from '@/components/server-function'
+import { PlanetTableSkeleton } from '@/components/planet-table-skeleton'
 
-export default async function Home() {
-  console.log('---------', await client.auth.me())
+export default function Home() {
   return (
-    <div>
-      <h1>ORPC Playground</h1>
-      You can visit the
-      {' '}
-      <form action={redirectToScalarForm}>
-        <input type="text" name="user[name]" defaultValue="testing" hidden />
-        <input type="text" name="user[age]" defaultValue="18" hidden />
-        <button type="submit">Redirect to Scalar API Reference</button>
-      </form>
-      {' '}
-      page.
-      <hr />
-      <OrpcServerAction />
-      <hr />
-      <CreatePlanetMutationForm />
-      <hr />
-      <ListPlanetsQuery />
-      <hr />
-      <EventIteratorQueries />
-    </div>
+    <main>
+      <div className="wrap">
+        <TopBar />
+
+        <header className="hero">
+          <h1>oRPC Playground - Typesafe APIs Made Simple 🪄</h1>
+        </header>
+
+        <ReferenceLinks />
+
+        <CreatePlanetForm />
+
+        <Suspense fallback={<PlanetTableSkeleton />}>
+          <PlanetTable />
+        </Suspense>
+
+        <ChatRoom />
+
+        <ServerFunction />
+      </div>
+    </main>
   )
 }

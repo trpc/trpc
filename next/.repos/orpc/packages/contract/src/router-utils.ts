@@ -1,154 +1,127 @@
-import type { ErrorMap, MergedErrorMap } from './error'
-import type { AnyContractProcedure } from './procedure'
-import type { EnhanceRouteOptions } from './route'
-import type { AnyContractRouter } from './router'
-import { toHttpPath } from '@orpc/client/standard'
-import { toArray } from '@orpc/shared'
-import { mergeErrorMap } from './error'
-import { ContractProcedure, isContractProcedure } from './procedure'
-import { enhanceRoute } from './route'
+import type { ErrorMap } from './error'
+import type { MergedErrorMap } from './error-utils'
+import type { AnyMetaPlugin, Meta } from './meta'
+import type { AnyProcedureContract } from './procedure'
+import type { RouterContract } from './router'
+import { getOwn, isTypescriptObject } from '@orpc/shared'
+import { mergeErrorMap } from './error-utils'
+import { resolveMetaPlugins } from './meta-utils'
+import { ProcedureContract } from './procedure'
 
-export function getContractRouter(router: AnyContractRouter, path: readonly string[]): AnyContractRouter | undefined {
-  let current: AnyContractRouter | undefined = router
-
-  for (let i = 0; i < path.length; i++) {
-    const segment = path[i]!
-
-    if (!current) {
-      return undefined
-    }
-
-    if (isContractProcedure(current)) {
-      return undefined
-    }
-
-    if (typeof current !== 'object') {
-      return undefined
-    }
-
-    current = current[segment]
-  }
-
-  return current
-}
-
-export type EnhancedContractRouter<T extends AnyContractRouter, TErrorMap extends ErrorMap>
-  = T extends ContractProcedure<infer UInputSchema, infer UOutputSchema, infer UErrors, infer UMeta>
-    ? ContractProcedure<UInputSchema, UOutputSchema, MergedErrorMap<TErrorMap, UErrors>, UMeta>
+export type AugmentedContractRouter<T extends RouterContract, TErrorMap extends ErrorMap>
+  = T extends ProcedureContract<infer $InputSchema, infer $OutputSchema, infer $Errors>
+    ? ProcedureContract<$InputSchema, $OutputSchema, MergedErrorMap<TErrorMap, $Errors>>
     : {
-        [K in keyof T]: T[K] extends AnyContractRouter ? EnhancedContractRouter<T[K], TErrorMap> : never
+        [K in keyof T]: T[K] extends RouterContract ? AugmentedContractRouter<T[K], TErrorMap> : never
       }
 
-export interface EnhanceContractRouterOptions<TErrorMap extends ErrorMap> extends EnhanceRouteOptions {
+export interface AugmentContractRouterOptions<TErrorMap extends ErrorMap> {
+  meta: Meta
+  metaPlugins?: AnyMetaPlugin[] | undefined
   errorMap: TErrorMap
 }
 
-export function enhanceContractRouter<T extends AnyContractRouter, TErrorMap extends ErrorMap>(
+/**
+ * Add capabilities without changing identity of the router contract
+ */
+export function augmentContractRouter<T extends RouterContract, TErrorMap extends ErrorMap>(
   router: T,
-  options: EnhanceContractRouterOptions<TErrorMap>,
-): EnhancedContractRouter<T, TErrorMap> {
-  if (isContractProcedure(router)) {
-    const enhanced = new ContractProcedure({
+  options: AugmentContractRouterOptions<TErrorMap>,
+): AugmentedContractRouter<T, TErrorMap> {
+  if (router instanceof ProcedureContract) {
+    const [meta, metaPlugins] = resolveMetaPlugins(
+      options.meta,
+      options.metaPlugins,
+      router['~orpc'].metaPlugins,
+    )
+
+    const enhanced = new ProcedureContract({
       ...router['~orpc'],
       errorMap: mergeErrorMap(options.errorMap, router['~orpc'].errorMap),
-      route: enhanceRoute(router['~orpc'].route, options),
+      meta,
+      metaPlugins,
     })
 
     return enhanced as any
   }
 
-  if (typeof router !== 'object' || router === null) {
+  if (!isTypescriptObject(router)) {
     return router as any
   }
 
   const enhanced: Record<string, any> = {}
 
-  for (const key in router) {
-    enhanced[key] = enhanceContractRouter(router[key]!, options)
+  for (const key of Object.keys(router)) {
+    enhanced[key] = augmentContractRouter(router[key]!, options)
   }
 
   return enhanced as any
 }
 
+export function getRouterContract(router: RouterContract, path: readonly string[]): RouterContract | undefined {
+  let current: RouterContract | undefined = router
+
+  for (let i = 0; i < path.length; i++) {
+    const segment = path[i]!
+
+    if (!isTypescriptObject(current)) {
+      return undefined
+    }
+
+    if (current instanceof ProcedureContract) {
+      return undefined
+    }
+
+    current = getOwn(current, segment)
+  }
+
+  if (!isTypescriptObject(current)) {
+    return undefined
+  }
+
+  return current
+}
+
+export function getProcedureContractOrThrow(router: RouterContract, path: readonly string[]): AnyProcedureContract {
+  const procedure = getRouterContract(router, path)
+
+  if (!(procedure instanceof ProcedureContract)) {
+    throw new TypeError(`No valid procedure found at path "${path.join('.')}", this may happen when the router contract is not properly configured.`)
+  }
+
+  return procedure
+}
+
 /**
- * Minify a contract router into a smaller object.
+ * Minifies a router contract so it can be safely exported to the client
+ * without exposing internal logic.
  *
- * You should export the result to a JSON file. On the client side, you can import this JSON file and use it as a contract router.
- * This reduces the size of the contract and helps prevent leaking internal details of the router to the client.
+ * @remarks
+ * **Note**: Only the metadata needed by the client is preserved; all other data is stripped out.
  *
- * @see {@link https://orpc.dev/docs/contract-first/router-to-contract#minify-export-the-contract-router-for-the-client Router to Contract Docs}
+ * @see {@link https://orpc.dev/docs/contract/router | Router Contract}
  */
-export function minifyContractRouter(router: AnyContractRouter): AnyContractRouter {
-  if (isContractProcedure(router)) {
-    const procedure: AnyContractProcedure = {
+export function minifyRouterContract(router: RouterContract): RouterContract {
+  if (router instanceof ProcedureContract) {
+    const procedure: AnyProcedureContract = {
       '~orpc': {
         errorMap: {},
         meta: router['~orpc'].meta,
-        route: router['~orpc'].route,
       },
     }
 
     return procedure
   }
 
-  if (typeof router !== 'object' || router === null) {
-    return router as any
+  if (!isTypescriptObject(router)) {
+    return router
   }
 
-  const json: Record<string, AnyContractRouter> = {}
+  const json: Record<string, RouterContract> = {}
 
-  for (const key in router) {
-    json[key] = minifyContractRouter(router[key]!)
+  for (const [key, child] of Object.entries(router)) {
+    json[key] = minifyRouterContract(child)
   }
 
   return json
-}
-
-export type PopulatedContractRouterPaths<T extends AnyContractRouter>
-  = T extends ContractProcedure<infer UInputSchema, infer UOutputSchema, infer UErrors, infer UMeta>
-    ? ContractProcedure<UInputSchema, UOutputSchema, UErrors, UMeta>
-    : {
-        [K in keyof T]: T[K] extends AnyContractRouter ? PopulatedContractRouterPaths<T[K]> : never
-      }
-
-export interface PopulateContractRouterPathsOptions {
-  path?: readonly string[]
-}
-
-/**
- * Automatically populates missing route paths using the router's nested keys.
- *
- * Constructs paths by joining router keys with `/`.
- * Useful for NestJS integration that require explicit route paths.
- *
- * @see {@link https://orpc.dev/docs/openapi/integrations/implement-contract-in-nest#define-your-contract NestJS Implement Contract Docs}
- */
-export function populateContractRouterPaths<T extends AnyContractRouter>(router: T, options: PopulateContractRouterPathsOptions = {}): PopulatedContractRouterPaths<T> {
-  const path = toArray(options.path)
-
-  if (isContractProcedure(router)) {
-    if (router['~orpc'].route.path === undefined) {
-      return new ContractProcedure({
-        ...router['~orpc'],
-        route: {
-          ...router['~orpc'].route,
-          path: toHttpPath(path),
-        },
-      }) as any
-    }
-
-    return router as any
-  }
-
-  if (typeof router !== 'object' || router === null) {
-    return router as any
-  }
-
-  const populated: Record<string, any> = {}
-
-  for (const key in router) {
-    populated[key] = populateContractRouterPaths(router[key]!, { ...options, path: [...path, key] })
-  }
-
-  return populated as any
 }

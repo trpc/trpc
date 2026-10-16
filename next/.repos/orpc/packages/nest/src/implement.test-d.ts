@@ -1,10 +1,15 @@
 import { oc } from '@orpc/contract'
-import { implement, lazy } from '@orpc/server'
-import { inputSchema, outputSchema } from '../../contract/tests/shared'
+import { implement, os } from '@orpc/server'
+import { describe, it } from 'vitest'
+import { z } from 'zod'
 import { Implement } from './implement'
 
+export const inputSchema = z.object({ input: z.number().transform(n => `${n}`) })
+
+export const outputSchema = z.object({ output: z.number().transform(n => `${n}`) })
+
 describe('@Implement', () => {
-  it('require return an implemented procedure and without initial context', () => {
+  it('require return an implemented procedure that satisfy default initial context', () => {
     const contract = oc.input(inputSchema).output(outputSchema)
 
     class _ImplProcedureController {
@@ -38,7 +43,7 @@ describe('@Implement', () => {
     }
   })
 
-  it('require return an implemented router and without initial context', () => {
+  it('require return an implemented router that satisfy default initial context', () => {
     const contract = {
       ping: oc.input(inputSchema).output(outputSchema),
     }
@@ -61,7 +66,7 @@ describe('@Implement', () => {
       @Implement(contract)
       ping_with_lazy() {
         return {
-          ping: lazy(() => Promise.resolve({ default: implement(contract.ping).handler(() => ({}) as any) })),
+          ping: os.lazy(() => Promise.resolve({ default: implement(contract.ping).handler(() => ({}) as any) })),
         }
       }
 
@@ -83,7 +88,7 @@ describe('@Implement', () => {
       @Implement(contract)
       ping_invalid_initial_context_lazy() {
         return {
-          ping: lazy(() => Promise.resolve({ default: implement(contract.ping).$context<{ a: string }>().handler(() => ({}) as any) })),
+          ping: os.lazy(() => Promise.resolve({ default: implement(contract.ping).$context<{ a: string }>().handler(() => ({}) as any) })),
         }
       }
 
@@ -99,7 +104,7 @@ describe('@Implement', () => {
       @Implement(contract)
       ping_wrong_implement_lazy() {
         return {
-          ping: lazy(() => Promise.resolve({ default: implement(oc.input(inputSchema)).handler(() => ({}) as any) })),
+          ping: os.lazy(() => Promise.resolve({ default: implement(oc.input(inputSchema)).handler(() => ({}) as any) })),
         }
       }
     }

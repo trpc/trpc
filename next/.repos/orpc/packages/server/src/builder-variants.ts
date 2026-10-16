@@ -1,662 +1,418 @@
-import type { HTTPPath } from '@orpc/client'
-import type { AnySchema, ContractRouter, ErrorMap, InferSchemaInput, InferSchemaOutput, MergedErrorMap, Meta, Route, Schema } from '@orpc/contract'
+import type { AnySchema, ErrorMap, InferSchemaInput, InferSchemaOutput, InitialInputSchema, InitialOutputSchema, MergedErrorMap, MergedSchema, MetaPlugin, ORPCErrorConstructorMap, Schema } from '@orpc/contract'
 import type { IntersectPick } from '@orpc/shared'
-import type { BuilderDef } from './builder'
-import type { Context, MergedCurrentContext, MergedInitialContext } from './context'
-import type { ORPCErrorConstructorMap } from './error'
+import type { BuilderDefinition } from './builder'
+import type { Context, MergedContext, MergedInitialContext } from './context'
 import type { Lazy } from './lazy'
-import type { MapInputMiddleware, Middleware } from './middleware'
+import type { Middleware } from './middleware'
+import type { DecoratedMiddleware } from './middleware-decorated'
 import type { ProcedureHandler } from './procedure'
 import type { DecoratedProcedure } from './procedure-decorated'
 import type { Router } from './router'
-import type { EnhancedRouter, EnhanceRouterOptions } from './router-utils'
+import type { AugmentedRouterWithMiddlewares } from './router-utils'
 
+/**
+ * The builder variant returned after `.use` is called.
+ * `.$context` and `.$config` are no longer available once middleware is applied.
+ *
+ * @see {@link https://orpc.dev/docs/procedure | Procedure}
+ */
 export interface BuilderWithMiddlewares<
   TInitialContext extends Context,
-  TCurrentContext extends Context,
-  TInputSchema extends AnySchema,
-  TOutputSchema extends AnySchema,
+  TInjectedContext extends Context,
   TErrorMap extends ErrorMap,
-  TMeta extends Meta,
 > {
-  /**
-   * This property holds the defined options.
-   */
-  '~orpc': BuilderDef<TInputSchema, TOutputSchema, TErrorMap, TMeta>
+  '~orpc': BuilderDefinition<InitialInputSchema, InitialOutputSchema, TErrorMap>
 
   /**
-   * Adds type-safe custom errors.
-   * The provided errors are spared-merged with any existing errors.
+   * Applies metadata plugins to procedures built from this builder.
    *
-   * @see {@link https://orpc.dev/docs/error-handling#type%E2%80%90safe-error-handling Type-Safe Error Handling Docs}
+   * @see {@link https://orpc.dev/docs/metadata | Metadata}
    */
-  'errors'<U extends ErrorMap>(
-    errors: U,
-  ): BuilderWithMiddlewares<
-    TInitialContext,
-    TCurrentContext,
-    TInputSchema,
-    TOutputSchema,
-    MergedErrorMap<TErrorMap, U>,
-    TMeta
-  >
+  'meta'(
+    ...plugins: MetaPlugin<InitialInputSchema, InitialOutputSchema, TErrorMap>[]
+  ): BuilderWithMiddlewares<TInitialContext, TInjectedContext, TErrorMap>
 
   /**
-   * Uses a middleware to modify the context or improve the pipeline.
+   * Defines typesafe errors that procedures built from this builder can throw
+   * via the `errors` utility in handlers and middleware.
    *
-   * @info Supports both normal middleware and inline middleware implementations.
-   * @note The current context must be satisfy middleware dependent-context
-   * @see {@link https://orpc.dev/docs/middleware Middleware Docs}
+   * @see {@link https://orpc.dev/docs/error-handling#typesafe-errors | Error Handling - Typesafe Errors}
    */
-  'use'<UOutContext extends IntersectPick<TCurrentContext, UOutContext>, UInContext extends Context = TCurrentContext>(
+  'errors'<T extends ErrorMap>(
+    errors: T,
+  ): BuilderWithMiddlewares<TInitialContext, TInjectedContext, MergedErrorMap<TErrorMap, T>>
+
+  /**
+   * Applies a middleware that runs before the handler of every procedure
+   * built from this builder.
+   *
+   * @see {@link https://orpc.dev/docs/middleware | Middleware}
+   */
+  'use'<
+    $OutContext extends IntersectPick<MergedContext<TInitialContext, TInjectedContext>, $OutContext>,
+    $InContext extends Context = MergedContext<TInitialContext, TInjectedContext>,
+    $ErrorMap extends ErrorMap = TErrorMap,
+  >(
     middleware: Middleware<
-      UInContext | TCurrentContext,
-      UOutContext,
-      unknown,
-      unknown,
-      ORPCErrorConstructorMap<TErrorMap>,
-      TMeta
+      $InContext | MergedContext<TInitialContext, TInjectedContext>,
+      $OutContext,
+      InferSchemaOutput<InitialInputSchema>,
+      InferSchemaInput<InitialOutputSchema>,
+      $ErrorMap
     >,
   ): BuilderWithMiddlewares<
-    MergedInitialContext<TInitialContext, UInContext, TCurrentContext>,
-    MergedCurrentContext<TCurrentContext, UOutContext>,
-    TInputSchema,
-    TOutputSchema,
-    TErrorMap,
-    TMeta
+    MergedInitialContext<TInitialContext, TInjectedContext, $InContext>,
+    MergedContext<TInjectedContext, $OutContext>,
+    MergedErrorMap<$ErrorMap, TErrorMap>
   >
 
   /**
-   * Sets or updates the metadata.
-   * The provided metadata is spared-merged with any existing metadata.
+   * Creates a standalone middleware that can be composed and applied to any
+   * compatible builder or procedure with `.use`.
    *
-   * @see {@link https://orpc.dev/docs/metadata Metadata Docs}
+   * @see {@link https://orpc.dev/docs/middleware | Middleware}
    */
-  'meta'(
-    meta: TMeta,
-  ): BuilderWithMiddlewares<TInitialContext, TCurrentContext, TInputSchema, TOutputSchema, TErrorMap, TMeta>
-
-  /**
-   * Sets or updates the route definition.
-   * The provided route is spared-merged with any existing route.
-   * This option is typically relevant when integrating with OpenAPI.
-   *
-   * @see {@link https://orpc.dev/docs/openapi/routing OpenAPI Routing Docs}
-   * @see {@link https://orpc.dev/docs/openapi/input-output-structure OpenAPI Input/Output Structure Docs}
-   */
-  'route'(
-    route: Route,
-  ): ProcedureBuilder<TInitialContext, TCurrentContext, TInputSchema, TOutputSchema, TErrorMap, TMeta>
-
-  /**
-   * Defines the input validation schema.
-   *
-   * @see {@link https://orpc.dev/docs/procedure#input-output-validation Input Validation Docs}
-   */
-  'input'<USchema extends AnySchema>(
-    schema: USchema,
-  ): ProcedureBuilderWithInput<TInitialContext, TCurrentContext, USchema, TOutputSchema, TErrorMap, TMeta>
-
-  /**
-   * Defines the output validation schema.
-   *
-   * @see {@link https://orpc.dev/docs/procedure#input-output-validation Output Validation Docs}
-   */
-  'output'<USchema extends AnySchema>(
-    schema: USchema,
-  ): ProcedureBuilderWithOutput<TInitialContext, TCurrentContext, TInputSchema, USchema, TErrorMap, TMeta>
-
-  /**
-   * Defines the handler of the procedure.
-   *
-   * @see {@link https://orpc.dev/docs/procedure Procedure Docs}
-   */
-  'handler'<UFuncOutput>(
-    handler: ProcedureHandler<TCurrentContext, unknown, UFuncOutput, TErrorMap, TMeta>,
-  ): DecoratedProcedure<TInitialContext, TCurrentContext, TInputSchema, Schema<UFuncOutput, UFuncOutput>, TErrorMap, TMeta>
-
-  /**
-   * Prefixes all procedures in the router.
-   * The provided prefix is post-appended to any existing router prefix.
-   *
-   * @note This option does not affect procedures that do not define a path in their route definition.
-   *
-   * @see {@link https://orpc.dev/docs/openapi/routing#route-prefixes OpenAPI Route Prefixes Docs}
-   */
-  'prefix'(prefix: HTTPPath): RouterBuilder<TInitialContext, TCurrentContext, TErrorMap, TMeta>
-
-  /**
-   * Adds tags to all procedures in the router.
-   * This helpful when you want to group procedures together in the OpenAPI specification.
-   *
-   * @see {@link https://orpc.dev/docs/openapi/openapi-specification#operation-metadata OpenAPI Operation Metadata Docs}
-   */
-  'tag'(...tags: string[]): RouterBuilder<TInitialContext, TCurrentContext, TErrorMap, TMeta>
-
-  /**
-   * Applies all of the previously defined options to the specified router.
-   *
-   * @see {@link https://orpc.dev/docs/router#extending-router Extending Router Docs}
-   */
-  'router'<U extends Router<ContractRouter<TMeta>, TCurrentContext>>(
-    router: U
-  ): EnhancedRouter<U, TInitialContext, TCurrentContext, TErrorMap>
-
-  /**
-   * Create a lazy router
-   * And applies all of the previously defined options to the specified router.
-   *
-   * @see {@link https://orpc.dev/docs/router#extending-router Extending Router Docs}
-   */
-  'lazy'<U extends Router<ContractRouter<TMeta>, TCurrentContext>>(
-    loader: () => Promise<{ default: U }>,
-  ): EnhancedRouter<Lazy<U>, TInitialContext, TCurrentContext, TErrorMap>
-}
-
-export interface ProcedureBuilder<
-  TInitialContext extends Context,
-  TCurrentContext extends Context,
-  TInputSchema extends AnySchema,
-  TOutputSchema extends AnySchema,
-  TErrorMap extends ErrorMap,
-  TMeta extends Meta,
-> {
-  /**
-   * This property holds the defined options.
-   */
-  '~orpc': BuilderDef<TInputSchema, TOutputSchema, TErrorMap, TMeta>
-
-  /**
-   * Adds type-safe custom errors.
-   * The provided errors are spared-merged with any existing errors.
-   *
-   * @see {@link https://orpc.dev/docs/error-handling#type%E2%80%90safe-error-handling Type-Safe Error Handling Docs}
-   */
-  'errors'<U extends ErrorMap>(
-    errors: U,
-  ): ProcedureBuilder<
-    TInitialContext,
-    TCurrentContext,
-    TInputSchema,
-    TOutputSchema,
-    MergedErrorMap<TErrorMap, U>,
-    TMeta
-  >
-
-  /**
-   * Uses a middleware to modify the context or improve the pipeline.
-   *
-   * @info Supports both normal middleware and inline middleware implementations.
-   * @note The current context must be satisfy middleware dependent-context
-   * @see {@link https://orpc.dev/docs/middleware Middleware Docs}
-   */
-  'use'<UOutContext extends IntersectPick<TCurrentContext, UOutContext>, UInContext extends Context = TCurrentContext>(
+  'middleware'<
+    $OutContext extends IntersectPick<MergedContext<TInitialContext, TInjectedContext>, $OutContext>,
+    $Input,
+    $InContext extends Context = MergedContext<TInitialContext, TInjectedContext>,
+    $Output = any, // $Output = any by default is important to make middleware can be used in any output by default,
+  >(
     middleware: Middleware<
-      UInContext | TCurrentContext,
-      UOutContext,
-      unknown,
-      unknown,
-      ORPCErrorConstructorMap<TErrorMap>,
-      TMeta
+      $InContext | MergedContext<TInitialContext, TInjectedContext>,
+      $OutContext,
+      $Input,
+      $Output,
+      TErrorMap
     >,
-  ): ProcedureBuilder<
-    MergedInitialContext<TInitialContext, UInContext, TCurrentContext>,
-    MergedCurrentContext<TCurrentContext, UOutContext>,
-    TInputSchema,
-    TOutputSchema,
-    TErrorMap,
-    TMeta
+  ): DecoratedMiddleware<
+    MergedInitialContext<TInitialContext, TInjectedContext, $InContext>,
+    MergedContext<TInjectedContext, $OutContext>,
+    $Input,
+    $Output,
+    TErrorMap
   >
 
   /**
-   * Sets or updates the metadata.
-   * The provided metadata is spared-merged with any existing metadata.
+   * Defines the input schema used to validate and type the procedure input.
    *
-   * @see {@link https://orpc.dev/docs/metadata Metadata Docs}
+   * @see {@link https://orpc.dev/docs/procedure#inputoutput-validation | Procedure - Input/Output Validation}
    */
-  'meta'(
-    meta: TMeta,
-  ): ProcedureBuilder<TInitialContext, TCurrentContext, TInputSchema, TOutputSchema, TErrorMap, TMeta>
+  'input'<T extends AnySchema>(
+    schema: T
+  ): BuilderWithInput<TInitialContext, TInjectedContext, T, TErrorMap>
 
   /**
-   * Sets or updates the route definition.
-   * The provided route is spared-merged with any existing route.
-   * This option is typically relevant when integrating with OpenAPI.
+   * Defines the output schema used to validate and type the procedure output.
    *
-   * @see {@link https://orpc.dev/docs/openapi/routing OpenAPI Routing Docs}
-   * @see {@link https://orpc.dev/docs/openapi/input-output-structure OpenAPI Input/Output Structure Docs}
+   * @see {@link https://orpc.dev/docs/procedure#inputoutput-validation | Procedure - Input/Output Validation}
    */
-  'route'(
-    route: Route,
-  ): ProcedureBuilder<TInitialContext, TCurrentContext, TInputSchema, TOutputSchema, TErrorMap, TMeta>
+  'output'<T extends AnySchema>(
+    schema: T
+  ): BuilderWithOutput<TInitialContext, TInjectedContext, T, TErrorMap>
 
   /**
-   * Defines the input validation schema.
+   * Defines the function that implements the procedure and completes the
+   * chain, returning a callable procedure.
    *
-   * @see {@link https://orpc.dev/docs/procedure#input-output-validation Input Validation Docs}
+   * @see {@link https://orpc.dev/docs/procedure | Procedure}
    */
-  'input'<USchema extends AnySchema>(
-    schema: USchema,
-  ): ProcedureBuilderWithInput<TInitialContext, TCurrentContext, USchema, TOutputSchema, TErrorMap, TMeta>
+  'handler'<T>(
+    handler: ProcedureHandler<MergedContext<TInitialContext, TInjectedContext>, InferSchemaOutput<InitialInputSchema>, T, ORPCErrorConstructorMap<TErrorMap>>,
+  ): DecoratedProcedure<
+    TInitialContext,
+    TInjectedContext,
+    InitialInputSchema,
+    Schema<T>,
+    TErrorMap
+  >
 
   /**
-   * Defines the output validation schema.
+   * Applies the builder's middleware, errors, and metadata to every procedure
+   * in the given router.
    *
-   * @see {@link https://orpc.dev/docs/procedure#input-output-validation Output Validation Docs}
+   * @see {@link https://orpc.dev/docs/router#extending-router | Router - Extending Router}
    */
-  'output'<USchema extends AnySchema>(
-    schema: USchema,
-  ): ProcedureBuilderWithOutput<TInitialContext, TCurrentContext, TInputSchema, USchema, TErrorMap, TMeta>
+  'router'<T extends Router<MergedContext<TInitialContext, TInjectedContext>>>(
+    router: T,
+  ): AugmentedRouterWithMiddlewares<T, TInitialContext, TInjectedContext, TErrorMap>
 
   /**
-   * Defines the handler of the procedure.
+   * Like `.router`, but loads the router lazily on first access, which helps
+   * reduce startup time for large applications.
    *
-   * @see {@link https://orpc.dev/docs/procedure Procedure Docs}
+   * @see {@link https://orpc.dev/docs/router#lazy-router | Router - Lazy Router}
    */
-  'handler'<UFuncOutput>(
-    handler: ProcedureHandler<TCurrentContext, unknown, UFuncOutput, TErrorMap, TMeta>,
-  ): DecoratedProcedure<TInitialContext, TCurrentContext, TInputSchema, Schema<UFuncOutput, UFuncOutput>, TErrorMap, TMeta>
+  'lazy'<T extends Router<MergedContext<TInitialContext, TInjectedContext>>>(
+    loader: () => Promise<{ default: T }>,
+  ): Lazy<AugmentedRouterWithMiddlewares<T, TInitialContext, TInjectedContext, TErrorMap>>
 }
 
-export interface ProcedureBuilderWithInput<
+/**
+ * The builder variant returned after `.input` is called.
+ * Only procedure-level methods remain available once an input schema is defined.
+ *
+ * @see {@link https://orpc.dev/docs/procedure | Procedure}
+ */
+export interface BuilderWithInput<
   TInitialContext extends Context,
-  TCurrentContext extends Context,
+  TInjectedContext extends Context,
   TInputSchema extends AnySchema,
-  TOutputSchema extends AnySchema,
   TErrorMap extends ErrorMap,
-  TMeta extends Meta,
 > {
-  /**
-   * This property holds the defined options.
-   */
-  '~orpc': BuilderDef<TInputSchema, TOutputSchema, TErrorMap, TMeta>
+  '~orpc': BuilderDefinition<TInputSchema, InitialOutputSchema, TErrorMap>
 
   /**
-   * Adds type-safe custom errors.
-   * The provided errors are spared-merged with any existing errors.
+   * Applies metadata plugins to procedures built from this builder.
    *
-   * @see {@link https://orpc.dev/docs/error-handling#type%E2%80%90safe-error-handling Type-Safe Error Handling Docs}
+   * @see {@link https://orpc.dev/docs/metadata | Metadata}
    */
-  'errors'<U extends ErrorMap>(
-    errors: U,
-  ): ProcedureBuilderWithInput<TInitialContext, TCurrentContext, TInputSchema, TOutputSchema, MergedErrorMap<TErrorMap, U>, TMeta>
+  'meta'(
+    ...plugins: MetaPlugin<TInputSchema, InitialOutputSchema, TErrorMap>[]
+  ): BuilderWithInput<TInitialContext, TInjectedContext, TInputSchema, TErrorMap>
 
   /**
-   * Uses a middleware to modify the context or improve the pipeline.
+   * Defines typesafe errors that procedures built from this builder can throw
+   * via the `errors` utility in handlers and middleware.
    *
-   * @info Supports both normal middleware and inline middleware implementations.
-   * @info Pass second argument to map the input.
-   * @note The current context must be satisfy middleware dependent-context
-   * @see {@link https://orpc.dev/docs/middleware Middleware Docs}
+   * @see {@link https://orpc.dev/docs/error-handling#typesafe-errors | Error Handling - Typesafe Errors}
    */
-  'use'<UOutContext extends IntersectPick<TCurrentContext, UOutContext>, UInContext extends Context = TCurrentContext>(
+  'errors'<T extends ErrorMap>(
+    errors: T,
+  ): BuilderWithInput<TInitialContext, TInjectedContext, TInputSchema, MergedErrorMap<TErrorMap, T>>
+
+  /**
+   * Applies a middleware that runs before the handler and can access the
+   * validated input.
+   *
+   * @see {@link https://orpc.dev/docs/middleware | Middleware}
+   */
+  'use'<
+    $OutContext extends IntersectPick<MergedContext<TInitialContext, TInjectedContext>, $OutContext>,
+    $InContext extends Context = MergedContext<TInitialContext, TInjectedContext>,
+    $ErrorMap extends ErrorMap = TErrorMap,
+  >(
     middleware: Middleware<
-      UInContext | TCurrentContext,
-      UOutContext,
+      $InContext | MergedContext<TInitialContext, TInjectedContext>,
+      $OutContext,
       InferSchemaOutput<TInputSchema>,
-      unknown,
-      ORPCErrorConstructorMap<TErrorMap>,
-      TMeta
+      InferSchemaInput<InitialOutputSchema>,
+      $ErrorMap
     >,
-  ): ProcedureBuilderWithInput<
-    MergedInitialContext<TInitialContext, UInContext, TCurrentContext>,
-    MergedCurrentContext<TCurrentContext, UOutContext>,
+  ): BuilderWithInput<
+    MergedInitialContext<TInitialContext, TInjectedContext, $InContext>,
+    MergedContext<TInjectedContext, $OutContext>,
     TInputSchema,
-    TOutputSchema,
-    TErrorMap,
-    TMeta
+    MergedErrorMap<$ErrorMap, TErrorMap>
   >
 
   /**
-   * Uses a middleware to modify the context or improve the pipeline.
+   * Adds an additional input schema, merged with the previously defined one.
    *
-   * @info Supports both normal middleware and inline middleware implementations.
-   * @info Pass second argument to map the input.
-   * @note The current context must be satisfy middleware dependent-context
-   * @see {@link https://orpc.dev/docs/middleware Middleware Docs}
+   * @see {@link https://orpc.dev/docs/procedure#multiple-schemas | Procedure - Multiple Schemas}
    */
-  'use'<UOutContext extends IntersectPick<TCurrentContext, UOutContext>, UInput, UInContext extends Context = TCurrentContext>(
-    middleware: Middleware<
-      UInContext | TCurrentContext,
-      UOutContext,
-      UInput,
-      unknown,
-      ORPCErrorConstructorMap<TErrorMap>,
-      TMeta
-    >,
-    mapInput: MapInputMiddleware<InferSchemaOutput<TInputSchema>, UInput>,
-  ): ProcedureBuilderWithInput<
-    MergedInitialContext<TInitialContext, UInContext, TCurrentContext>,
-    MergedCurrentContext<TCurrentContext, UOutContext>,
-    TInputSchema,
-    TOutputSchema,
-    TErrorMap,
-    TMeta
-  >
+  'input'<T extends AnySchema>(
+    schema: T
+  ): BuilderWithInput<TInitialContext, TInjectedContext, MergedSchema<T, TInputSchema>, TErrorMap>
 
   /**
-   * Sets or updates the metadata.
-   * The provided metadata is spared-merged with any existing metadata.
+   * Defines the output schema used to validate and type the procedure output.
    *
-   * @see {@link https://orpc.dev/docs/metadata Metadata Docs}
+   * @see {@link https://orpc.dev/docs/procedure#inputoutput-validation | Procedure - Input/Output Validation}
    */
-  'meta'(
-    meta: TMeta,
-  ): ProcedureBuilderWithInput<TInitialContext, TCurrentContext, TInputSchema, TOutputSchema, TErrorMap, TMeta>
+  'output'<T extends AnySchema>(
+    schema: T
+  ): BuilderWithInputOutput<TInitialContext, TInjectedContext, TInputSchema, T, TErrorMap>
 
   /**
-   * Sets or updates the route definition.
-   * The provided route is spared-merged with any existing route.
-   * This option is typically relevant when integrating with OpenAPI.
+   * Defines the function that implements the procedure and completes the
+   * chain, returning a callable procedure.
    *
-   * @see {@link https://orpc.dev/docs/openapi/routing OpenAPI Routing Docs}
-   * @see {@link https://orpc.dev/docs/openapi/input-output-structure OpenAPI Input/Output Structure Docs}
+   * @see {@link https://orpc.dev/docs/procedure | Procedure}
    */
-  'route'(
-    route: Route,
-  ): ProcedureBuilderWithInput<TInitialContext, TCurrentContext, TInputSchema, TOutputSchema, TErrorMap, TMeta>
-
-  /**
-   * Defines the output validation schema.
-   *
-   * @see {@link https://orpc.dev/docs/procedure#input-output-validation Output Validation Docs}
-   */
-  'output'<USchema extends AnySchema>(
-    schema: USchema,
-  ): ProcedureBuilderWithInputOutput<TInitialContext, TCurrentContext, TInputSchema, USchema, TErrorMap, TMeta>
-
-  /**
-   * Defines the handler of the procedure.
-   *
-   * @see {@link https://orpc.dev/docs/procedure Procedure Docs}
-   */
-  'handler'<UFuncOutput>(
-    handler: ProcedureHandler<TCurrentContext, InferSchemaOutput<TInputSchema>, UFuncOutput, TErrorMap, TMeta>,
-  ): DecoratedProcedure<TInitialContext, TCurrentContext, TInputSchema, Schema<UFuncOutput, UFuncOutput>, TErrorMap, TMeta>
-}
-
-export interface ProcedureBuilderWithOutput<
-  TInitialContext extends Context,
-  TCurrentContext extends Context,
-  TInputSchema extends AnySchema,
-  TOutputSchema extends AnySchema,
-  TErrorMap extends ErrorMap,
-  TMeta extends Meta,
-> {
-  /**
-   * This property holds the defined options.
-   */
-  '~orpc': BuilderDef<TInputSchema, TOutputSchema, TErrorMap, TMeta>
-
-  /**
-   * Adds type-safe custom errors.
-   * The provided errors are spared-merged with any existing errors.
-   *
-   * @see {@link https://orpc.dev/docs/error-handling#type%E2%80%90safe-error-handling Type-Safe Error Handling Docs}
-   */
-  'errors'<U extends ErrorMap>(
-    errors: U,
-  ): ProcedureBuilderWithOutput<
+  'handler'<T>(
+    handler: ProcedureHandler<MergedContext<TInitialContext, TInjectedContext>, InferSchemaOutput<TInputSchema>, T, ORPCErrorConstructorMap<TErrorMap>>,
+  ): DecoratedProcedure<
     TInitialContext,
-    TCurrentContext,
+    TInjectedContext,
     TInputSchema,
-    TOutputSchema,
-    MergedErrorMap<TErrorMap, U>,
-    TMeta
+    Schema<T>,
+    TErrorMap
   >
-
-  /**
-   * Uses a middleware to modify the context or improve the pipeline.
-   *
-   * @info Supports both normal middleware and inline middleware implementations.
-   * @note The current context must be satisfy middleware dependent-context
-   * @see {@link https://orpc.dev/docs/middleware Middleware Docs}
-   */
-  'use'<UOutContext extends IntersectPick<TCurrentContext, UOutContext>, UInContext extends Context = TCurrentContext>(
-    middleware: Middleware<
-      UInContext | TCurrentContext,
-      UOutContext,
-      unknown,
-      InferSchemaInput<TOutputSchema>,
-      ORPCErrorConstructorMap<TErrorMap>,
-      TMeta
-    >,
-  ): ProcedureBuilderWithOutput<
-    MergedInitialContext<TInitialContext, UInContext, TCurrentContext>,
-    MergedCurrentContext<TCurrentContext, UOutContext>,
-    TInputSchema,
-    TOutputSchema,
-    TErrorMap,
-    TMeta
-  >
-
-  /**
-   * Sets or updates the metadata.
-   * The provided metadata is spared-merged with any existing metadata.
-   *
-   * @see {@link https://orpc.dev/docs/metadata Metadata Docs}
-   */
-  'meta'(
-    meta: TMeta,
-  ): ProcedureBuilderWithOutput<TInitialContext, TCurrentContext, TInputSchema, TOutputSchema, TErrorMap, TMeta>
-
-  /**
-   * Sets or updates the route definition.
-   * The provided route is spared-merged with any existing route.
-   * This option is typically relevant when integrating with OpenAPI.
-   *
-   * @see {@link https://orpc.dev/docs/openapi/routing OpenAPI Routing Docs}
-   * @see {@link https://orpc.dev/docs/openapi/input-output-structure OpenAPI Input/Output Structure Docs}
-   */
-  'route'(
-    route: Route,
-  ): ProcedureBuilderWithOutput<TInitialContext, TCurrentContext, TInputSchema, TOutputSchema, TErrorMap, TMeta>
-
-  /**
-   * Defines the input validation schema.
-   *
-   * @see {@link https://orpc.dev/docs/procedure#input-output-validation Input Validation Docs}
-   */
-  'input'<USchema extends AnySchema>(
-    schema: USchema,
-  ): ProcedureBuilderWithInputOutput<TInitialContext, TCurrentContext, USchema, TOutputSchema, TErrorMap, TMeta>
-
-  /**
-   * Defines the handler of the procedure.
-   *
-   * @see {@link https://orpc.dev/docs/procedure Procedure Docs}
-   */
-  'handler'(
-    handler: ProcedureHandler<TCurrentContext, unknown, InferSchemaInput<TOutputSchema>, TErrorMap, TMeta>,
-  ): DecoratedProcedure<TInitialContext, TCurrentContext, TInputSchema, TOutputSchema, TErrorMap, TMeta>
 }
 
-export interface ProcedureBuilderWithInputOutput<
+/**
+ * The builder variant returned after `.output` is called.
+ * Only procedure-level methods remain available once an output schema is defined.
+ *
+ * @see {@link https://orpc.dev/docs/procedure | Procedure}
+ */
+export interface BuilderWithOutput<
   TInitialContext extends Context,
-  TCurrentContext extends Context,
+  TInjectedContext extends Context,
+  TOutputSchema extends AnySchema,
+  TErrorMap extends ErrorMap,
+> {
+  '~orpc': BuilderDefinition<InitialInputSchema, TOutputSchema, TErrorMap>
+
+  /**
+   * Applies metadata plugins to procedures built from this builder.
+   *
+   * @see {@link https://orpc.dev/docs/metadata | Metadata}
+   */
+  'meta'(
+    ...plugins: MetaPlugin<InitialInputSchema, TOutputSchema, TErrorMap>[]
+  ): BuilderWithOutput<TInitialContext, TInjectedContext, TOutputSchema, TErrorMap>
+
+  /**
+   * Defines typesafe errors that procedures built from this builder can throw
+   * via the `errors` utility in handlers and middleware.
+   *
+   * @see {@link https://orpc.dev/docs/error-handling#typesafe-errors | Error Handling - Typesafe Errors}
+   */
+  'errors'<T extends ErrorMap>(
+    errors: T,
+  ): BuilderWithOutput<TInitialContext, TInjectedContext, TOutputSchema, MergedErrorMap<TErrorMap, T>>
+
+  /**
+   * Applies a middleware that runs before the handler and can access the
+   * typed output.
+   *
+   * @see {@link https://orpc.dev/docs/middleware | Middleware}
+   */
+  'use'<
+    $OutContext extends IntersectPick<MergedContext<TInitialContext, TInjectedContext>, $OutContext>,
+    $InContext extends Context = MergedContext<TInitialContext, TInjectedContext>,
+    $ErrorMap extends ErrorMap = TErrorMap,
+  >(
+    middleware: Middleware<
+      $InContext | MergedContext<TInitialContext, TInjectedContext>,
+      $OutContext,
+      InferSchemaOutput<InitialInputSchema>,
+      InferSchemaInput<TOutputSchema>,
+      $ErrorMap
+    >,
+  ): BuilderWithOutput<
+    MergedInitialContext<TInitialContext, TInjectedContext, $InContext>,
+    MergedContext<TInjectedContext, $OutContext>,
+    TOutputSchema,
+    MergedErrorMap<$ErrorMap, TErrorMap>
+  >
+
+  /**
+   * Defines the input schema used to validate and type the procedure input.
+   *
+   * @see {@link https://orpc.dev/docs/procedure#inputoutput-validation | Procedure - Input/Output Validation}
+   */
+  'input'<T extends AnySchema>(
+    schema: T
+  ): BuilderWithInputOutput<TInitialContext, TInjectedContext, T, TOutputSchema, TErrorMap>
+
+  /**
+   * Adds an additional output schema, merged with the previously defined one.
+   *
+   * @see {@link https://orpc.dev/docs/procedure#multiple-schemas | Procedure - Multiple Schemas}
+   */
+  'output'<T extends AnySchema>(
+    schema: T
+  ): BuilderWithOutput<TInitialContext, TInjectedContext, MergedSchema<T, TOutputSchema>, TErrorMap>
+
+  /**
+   * Defines the function that implements the procedure and completes the
+   * chain, returning a callable procedure.
+   *
+   * @see {@link https://orpc.dev/docs/procedure | Procedure}
+   */
+  'handler'<T extends InferSchemaInput<TOutputSchema>>(
+    handler: ProcedureHandler<MergedContext<TInitialContext, TInjectedContext>, InferSchemaOutput<InitialInputSchema>, T, ORPCErrorConstructorMap<TErrorMap>>,
+  ): DecoratedProcedure<TInitialContext, TInjectedContext, InitialInputSchema, TOutputSchema, TErrorMap>
+}
+
+/**
+ * The builder variant returned after both `.input` and `.output` are called.
+ * Only procedure-level methods remain available.
+ *
+ * @see {@link https://orpc.dev/docs/procedure | Procedure}
+ */
+export interface BuilderWithInputOutput<
+  TInitialContext extends Context,
+  TInjectedContext extends Context,
   TInputSchema extends AnySchema,
   TOutputSchema extends AnySchema,
   TErrorMap extends ErrorMap,
-  TMeta extends Meta,
 > {
-  /**
-   * This property holds the defined options.
-   */
-  '~orpc': BuilderDef<TInputSchema, TOutputSchema, TErrorMap, TMeta>
+  '~orpc': BuilderDefinition<TInputSchema, TOutputSchema, TErrorMap>
 
   /**
-   * Adds type-safe custom errors.
-   * The provided errors are spared-merged with any existing errors.
+   * Applies metadata plugins to procedures built from this builder.
    *
-   * @see {@link https://orpc.dev/docs/error-handling#type%E2%80%90safe-error-handling Type-Safe Error Handling Docs}
+   * @see {@link https://orpc.dev/docs/metadata | Metadata}
    */
-  'errors'<U extends ErrorMap>(
-    errors: U,
-  ): ProcedureBuilderWithInputOutput<TInitialContext, TCurrentContext, TInputSchema, TOutputSchema, MergedErrorMap<TErrorMap, U>, TMeta>
+  'meta'(
+    ...plugins: MetaPlugin<TInputSchema, TOutputSchema, TErrorMap>[]
+  ): BuilderWithInputOutput<TInitialContext, TInjectedContext, TInputSchema, TOutputSchema, TErrorMap>
 
   /**
-   * Uses a middleware to modify the context or improve the pipeline.
+   * Defines typesafe errors that procedures built from this builder can throw
+   * via the `errors` utility in handlers and middleware.
    *
-   * @info Supports both normal middleware and inline middleware implementations.
-   * @info Pass second argument to map the input.
-   * @note The current context must be satisfy middleware dependent-context
-   * @see {@link https://orpc.dev/docs/middleware Middleware Docs}
+   * @see {@link https://orpc.dev/docs/error-handling#typesafe-errors | Error Handling - Typesafe Errors}
    */
-  'use'<UOutContext extends IntersectPick<TCurrentContext, UOutContext>, UInContext extends Context = TCurrentContext>(
+  'errors'<T extends ErrorMap>(
+    errors: T,
+  ): BuilderWithInputOutput<TInitialContext, TInjectedContext, TInputSchema, TOutputSchema, MergedErrorMap<TErrorMap, T>>
+
+  /**
+   * Applies a middleware that runs before the handler and can access the
+   * validated input and typed output.
+   *
+   * @see {@link https://orpc.dev/docs/middleware | Middleware}
+   */
+  'use'<
+    $OutContext extends IntersectPick<MergedContext<TInitialContext, TInjectedContext>, $OutContext>,
+    $InContext extends Context = MergedContext<TInitialContext, TInjectedContext>,
+    $ErrorMap extends ErrorMap = TErrorMap,
+  >(
     middleware: Middleware<
-      UInContext | TCurrentContext,
-      UOutContext,
+      $InContext | MergedContext<TInitialContext, TInjectedContext>,
+      $OutContext,
       InferSchemaOutput<TInputSchema>,
       InferSchemaInput<TOutputSchema>,
-      ORPCErrorConstructorMap<TErrorMap>,
-      TMeta
+      $ErrorMap
     >,
-  ): ProcedureBuilderWithInputOutput<
-    MergedInitialContext<TInitialContext, UInContext, TCurrentContext>,
-    MergedCurrentContext<TCurrentContext, UOutContext>,
+  ): BuilderWithInputOutput<
+    MergedInitialContext<TInitialContext, TInjectedContext, $InContext>,
+    MergedContext<TInjectedContext, $OutContext>,
     TInputSchema,
     TOutputSchema,
-    TErrorMap,
-    TMeta
+    MergedErrorMap<$ErrorMap, TErrorMap>
   >
 
   /**
-   * Uses a middleware to modify the context or improve the pipeline.
+   * Adds an additional input schema, merged with the previously defined one.
    *
-   * @info Supports both normal middleware and inline middleware implementations.
-   * @info Pass second argument to map the input.
-   * @note The current context must be satisfy middleware dependent-context
-   * @see {@link https://orpc.dev/docs/middleware Middleware Docs}
+   * @see {@link https://orpc.dev/docs/procedure#multiple-schemas | Procedure - Multiple Schemas}
    */
-  'use'<UOutContext extends IntersectPick<TCurrentContext, UOutContext>, UInput, UInContext extends Context = TCurrentContext>(
-    middleware: Middleware<
-      UInContext | TCurrentContext,
-      UOutContext,
-      UInput,
-      InferSchemaInput<TOutputSchema>,
-      ORPCErrorConstructorMap<TErrorMap>,
-      TMeta
-    >,
-    mapInput: MapInputMiddleware<InferSchemaOutput<TInputSchema>, UInput>,
-  ): ProcedureBuilderWithInputOutput<
-    MergedInitialContext<TInitialContext, UInContext, TCurrentContext>,
-    MergedCurrentContext<TCurrentContext, UOutContext>,
-    TInputSchema,
-    TOutputSchema,
-    TErrorMap,
-    TMeta
-  >
+  'input'<T extends AnySchema>(
+    schema: T
+  ): BuilderWithInputOutput<TInitialContext, TInjectedContext, MergedSchema<T, TInputSchema>, TOutputSchema, TErrorMap>
 
   /**
-   * Sets or updates the metadata.
-   * The provided metadata is spared-merged with any existing metadata.
+   * Adds an additional output schema, merged with the previously defined one.
    *
-   * @see {@link https://orpc.dev/docs/metadata Metadata Docs}
+   * @see {@link https://orpc.dev/docs/procedure#multiple-schemas | Procedure - Multiple Schemas}
    */
-  'meta'(
-    meta: TMeta,
-  ): ProcedureBuilderWithInputOutput<TInitialContext, TCurrentContext, TInputSchema, TOutputSchema, TErrorMap, TMeta>
+  'output'<T extends AnySchema>(
+    schema: T
+  ): BuilderWithInputOutput<TInitialContext, TInjectedContext, TInputSchema, MergedSchema<T, TOutputSchema>, TErrorMap>
 
   /**
-   * Sets or updates the route definition.
-   * The provided route is spared-merged with any existing route.
-   * This option is typically relevant when integrating with OpenAPI.
+   * Defines the function that implements the procedure and completes the
+   * chain, returning a callable procedure.
    *
-   * @see {@link https://orpc.dev/docs/openapi/routing OpenAPI Routing Docs}
-   * @see {@link https://orpc.dev/docs/openapi/input-output-structure OpenAPI Input/Output Structure Docs}
+   * @see {@link https://orpc.dev/docs/procedure | Procedure}
    */
-  'route'(
-    route: Route,
-  ): ProcedureBuilderWithInputOutput<TInitialContext, TCurrentContext, TInputSchema, TOutputSchema, TErrorMap, TMeta>
-
-  /**
-   * Defines the handler of the procedure.
-   *
-   * @see {@link https://orpc.dev/docs/procedure Procedure Docs}
-   */
-  'handler'(
-    handler: ProcedureHandler<TCurrentContext, InferSchemaOutput<TInputSchema>, InferSchemaInput<TOutputSchema>, TErrorMap, TMeta>,
-  ): DecoratedProcedure<TInitialContext, TCurrentContext, TInputSchema, TOutputSchema, TErrorMap, TMeta>
-}
-
-export interface RouterBuilder<
-  TInitialContext extends Context,
-  TCurrentContext extends Context,
-  TErrorMap extends ErrorMap,
-  TMeta extends Meta,
-> {
-  /**
-   * This property holds the defined options.
-   */
-  '~orpc': EnhanceRouterOptions<TErrorMap>
-
-  /**
-   * Adds type-safe custom errors.
-   * The provided errors are spared-merged with any existing errors.
-   *
-   * @see {@link https://orpc.dev/docs/error-handling#type%E2%80%90safe-error-handling Type-Safe Error Handling Docs}
-   */
-  'errors'<U extends ErrorMap>(
-    errors: U,
-  ): RouterBuilder<TInitialContext, TCurrentContext, MergedErrorMap<TErrorMap, U>, TMeta>
-
-  /**
-   * Uses a middleware to modify the context or improve the pipeline.
-   *
-   * @info Supports both normal middleware and inline middleware implementations.
-   * @note The current context must be satisfy middleware dependent-context
-   * @see {@link https://orpc.dev/docs/middleware Middleware Docs}
-   */
-  'use'<UOutContext extends IntersectPick<TCurrentContext, UOutContext>, UInContext extends Context = TCurrentContext>(
-    middleware: Middleware<
-      UInContext | TCurrentContext,
-      UOutContext,
-      unknown,
-      unknown,
-      ORPCErrorConstructorMap<TErrorMap>,
-      TMeta
-    >,
-  ): RouterBuilder<
-    MergedInitialContext<TInitialContext, UInContext, TCurrentContext>,
-    MergedCurrentContext<TCurrentContext, UOutContext>,
-    TErrorMap,
-    TMeta
-  >
-
-  /**
-   * Prefixes all procedures in the router.
-   * The provided prefix is post-appended to any existing router prefix.
-   *
-   * @note This option does not affect procedures that do not define a path in their route definition.
-   *
-   * @see {@link https://orpc.dev/docs/openapi/routing#route-prefixes OpenAPI Route Prefixes Docs}
-   */
-  'prefix'(prefix: HTTPPath): RouterBuilder<TInitialContext, TCurrentContext, TErrorMap, TMeta>
-
-  /**
-   * Adds tags to all procedures in the router.
-   * This helpful when you want to group procedures together in the OpenAPI specification.
-   *
-   * @see {@link https://orpc.dev/docs/openapi/openapi-specification#operation-metadata OpenAPI Operation Metadata Docs}
-   */
-  'tag'(...tags: string[]): RouterBuilder<TInitialContext, TCurrentContext, TErrorMap, TMeta>
-
-  /**
-   * Applies all of the previously defined options to the specified router.
-   *
-   * @see {@link https://orpc.dev/docs/router#extending-router Extending Router Docs}
-   */
-  'router'<U extends Router<ContractRouter<TMeta>, TCurrentContext>>(
-    router: U
-  ): EnhancedRouter<U, TInitialContext, TCurrentContext, TErrorMap>
-
-  /**
-   * Create a lazy router
-   * And applies all of the previously defined options to the specified router.
-   *
-   * @see {@link https://orpc.dev/docs/router#extending-router Extending Router Docs}
-   */
-  'lazy'<U extends Router<ContractRouter<TMeta>, TCurrentContext>>(
-    loader: () => Promise<{ default: U }>,
-  ): EnhancedRouter<Lazy<U>, TInitialContext, TCurrentContext, TErrorMap>
+  'handler'<T extends InferSchemaInput<TOutputSchema>>(
+    handler: ProcedureHandler<MergedContext<TInitialContext, TInjectedContext>, InferSchemaOutput<TInputSchema>, T, ORPCErrorConstructorMap<TErrorMap>>,
+  ): DecoratedProcedure<TInitialContext, TInjectedContext, TInputSchema, TOutputSchema, TErrorMap>
 }

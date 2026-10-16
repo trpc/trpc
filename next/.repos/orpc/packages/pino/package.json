@@ -1,8 +1,13 @@
 {
-  "name": "@orpc/experimental-pino",
+  "name": "@orpc/pino",
   "type": "module",
-  "version": "1.15.5",
+  "version": "2.0.0-beta.44",
+  "description": "Pino integration for oRPC: structured logging for typesafe APIs",
   "license": "MIT",
+  "funding": [
+    "https://github.com/sponsors/dinwwwh",
+    "https://opencollective.com/middleapi"
+  ],
   "homepage": "https://orpc.dev",
   "repository": {
     "type": "git",
@@ -11,11 +16,16 @@
   },
   "keywords": [
     "orpc",
-    "pino"
+    "pino",
+    "logging",
+    "logger",
+    "observability",
+    "typescript"
   ],
   "sideEffects": false,
   "publishConfig": {
     "exports": {
+      "./package.json": "./package.json",
       ".": {
         "types": "./dist/index.d.mts",
         "import": "./dist/index.mjs",
@@ -24,14 +34,14 @@
     }
   },
   "exports": {
+    "./package.json": "./package.json",
     ".": "./src/index.ts"
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "unbuild",
-    "build:watch": "pnpm run build --watch",
+    "prepack": "unbuild",
     "type:check": "tsc -b"
   },
   "peerDependencies": {
@@ -40,9 +50,10 @@
   "dependencies": {
     "@orpc/client": "workspace:*",
     "@orpc/server": "workspace:*",
-    "@orpc/shared": "workspace:*"
+    "@orpc/shared": "workspace:*",
+    "@standard-server/core": "~0.10.3"
   },
   "devDependencies": {
-    "pino": "^10.3.1"
+    "pino": "^10.4.0"
   }
 }

@@ -1,0 +1,63 @@
+---
+import type { Expert } from '../../experts/data'
+import Callout from 'blume/components/content/Callout.astro'
+import AddCard from './AddCard.astro'
+import ExpertCard from './ExpertCard.astro'
+
+interface Props {
+  experts: Expert[]
+}
+
+const { experts } = Astro.props
+
+const count = experts.length
+
+// The add card fills whatever the last row leaves free, and a whole row when
+// that row is full. Written out in full so Tailwind sees every class.
+const addSpan = [
+  count % 2 === 0 && 'md:col-span-2',
+  ['lg:col-span-3', 'lg:col-span-2', 'lg:col-span-1'][count % 3],
+]
+---
+
+<section id="experts" aria-labelledby="experts-heading" class="border-b border-border">
+  <div class="mx-auto max-w-6xl px-6 py-12 sm:py-16">
+    <h2
+      id="experts-heading"
+      class="text-xl font-semibold tracking-[-0.03em] text-balance sm:text-2xl"
+    >
+      {count > 0 ? 'Available for hire' : 'No one listed yet'}
+    </h2>
+    {
+      count > 0 && (
+        <p class="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+          Each sets their own rates and availability.
+        </p>
+      )
+    }
+
+    <Callout type="warning">
+      <strong class="font-semibold text-foreground">oRPC does not guarantee anyone listed here.</strong>
+      {' '}Agreements are between you and the expert.
+    </Callout>
+
+    <div class="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {/* `contents` makes the cards grid items while the add card stays out of
+          the list; the explicit role keeps list semantics Safari drops. */}
+      {
+        count > 0 && (
+          <ul role="list" class="contents">
+            {experts.map(expert => (
+              <li>
+                <ExpertCard expert={expert} />
+              </li>
+            ))}
+          </ul>
+        )
+      }
+      <div class:list={addSpan}>
+        <AddCard />
+      </div>
+    </div>
+  </div>
+</section>

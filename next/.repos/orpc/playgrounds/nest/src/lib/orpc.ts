@@ -1,17 +1,14 @@
+import type { RouterContractClient } from '@orpc/contract'
 import { createORPCClient } from '@orpc/client'
-import { OpenAPILink } from '@orpc/openapi-client/fetch'
+import { JsonifiedClient } from '@orpc/openapi'
+import { OpenAPILink } from '@orpc/openapi/fetch'
 import { createTanstackQueryUtils } from '@orpc/tanstack-query'
-import type { ContractRouterClient } from '@orpc/contract'
-import { contract } from '../contract'
-import { JsonifiedClient } from '@orpc/openapi-client'
+import { contract } from '../contracts'
 
 const link = new OpenAPILink(contract, {
-  url: 'http://localhost:3000',
-  headers: () => ({
-    Authorization: 'Bearer default-token',
-  }),
+  origin: 'http://localhost:3000',
 })
 
-export const client: JsonifiedClient<ContractRouterClient<typeof contract>> = createORPCClient(link)
+export const client: JsonifiedClient<RouterContractClient<typeof contract>> = createORPCClient(link)
 
 export const orpc = createTanstackQueryUtils(client)

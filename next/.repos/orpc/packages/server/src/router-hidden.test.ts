@@ -1,9 +1,19 @@
-import { contract, router } from '../tests/shared'
-import { getHiddenRouterContract, setHiddenRouterContract } from './router-hidden'
+import { oc } from '@orpc/contract'
+import { os } from './builder'
+import { getHiddenRouterContract, withHiddenRouterContract } from './router-hidden'
 
-it('setHiddenRouterContract & getHiddenRouterContract', () => {
-  const applied = setHiddenRouterContract(router, contract)
+const contract = {
+  ping: oc.errors({ BAD_GATEWAY: {} }),
+}
 
+const router = {
+  ping: os.handler(() => 'output'),
+}
+
+it('withHiddenRouterContract & getHiddenRouterContract', () => {
+  const applied = withHiddenRouterContract(router, contract)
+
+  expect(applied).not.toBe(router)
   expect(applied).toEqual(router)
   expect(getHiddenRouterContract(applied)).toEqual(contract)
 })

@@ -1,11 +1,22 @@
-import type { ORPCError } from './error'
-import { isDefinedError } from './error'
+import { ORPCError } from './error'
 
-it('isDefinedError', () => {
-  const orpcError = {} as ORPCError<'CODE', { value: string }> | ORPCError<'BASE', { value: number }>
-  const error = {} as Error | typeof orpcError
+describe('ORPCError', () => {
+  it('constructor', () => {
+    const _error11: ORPCError<'CODE', undefined | 'optional'> = new ORPCError('CODE')
+    const _error12: ORPCError<'CODE', undefined | 'optional'> = new ORPCError('CODE', { data: 'optional' })
+    // @ts-expect-error - data is invalid
+    const _error13: ORPCError<'CODE', undefined | 'optional'> = new ORPCError('CODE', { data: 'invalid' })
 
-  if (isDefinedError(error)) {
-    expectTypeOf(error).toEqualTypeOf(orpcError)
-  }
+    // @ts-expect-error - data is required
+    const _error21: ORPCError<'CODE', 'required'> = new ORPCError('CODE')
+    const _error22: ORPCError<'CODE', 'required'> = new ORPCError('CODE', { data: 'required' })
+    // @ts-expect-error - data is invalid
+    const _error23: ORPCError<'CODE', 'required'> = new ORPCError('CODE', { data: 'invalid' })
+  })
+
+  it('not allow write .defined property', () => {
+    const error = new ORPCError('CODE')
+    // @ts-expect-error - not allow write
+    error.defined = true as any
+  })
 })

@@ -1,157 +1,188 @@
-import * as z from 'zod'
-import { ping } from '../tests/shared'
-import { isProcedure } from './procedure'
-import { createActionableClient } from './procedure-action'
-import { createProcedureClient } from './procedure-client'
+import type { AnyMetaPlugin, ErrorMap } from '@orpc/contract'
+import type { AnyMiddleware } from './middleware'
+import { setHiddenMetaPlugins } from '@orpc/contract'
+import * as ContractModule from '@orpc/contract'
+import z from 'zod'
+import { Procedure } from './procedure'
 import { DecoratedProcedure } from './procedure-decorated'
 
-vi.mock('./middleware-decorated', () => ({
-  decorateMiddleware: vi.fn(mid => ({
-    mapInput: vi.fn(map => [mid, map]),
-  })),
-}))
-
-vi.mock('./procedure-client', async original => ({
-  ...await original(),
-  createProcedureClient: vi.fn(() => vi.fn()),
-}))
-
-vi.mock('./procedure-action', async original => ({
-  ...await original(),
-  createActionableClient: vi.fn(() => vi.fn()),
-}))
+const resolveMetaPluginsSpy = vi.spyOn(ContractModule, 'resolveMetaPlugins')
+const mergeErrorMapSpy = vi.spyOn(ContractModule, 'mergeErrorMap')
 
 beforeEach(() => {
   vi.clearAllMocks()
 })
 
-const def = ping['~orpc']
-
-const decorated = new DecoratedProcedure(def)
-
 describe('decoratedProcedure', () => {
-  it('.error', () => {
-    const errors = {
-      BAD_GATEWAY: {
-        data: z.object({
-          why: z.string(),
-        }),
-      },
-    }
+  const procedure = new DecoratedProcedure({
+    errorMap: {
+      BASE: { },
+    },
+    inputSchemas: [z.object({})],
+    outputSchemas: [z.object({})],
+    meta: { base: true },
+    metaPlugins: [{ name: 'test1', init: m => m }],
+    orderedMiddlewares: [],
+    handler: async () => {},
+  })
 
-    const applied = decorated.errors(errors)
-    expect(applied).not.toBe(decorated)
-    expect(applied).toBeInstanceOf(DecoratedProcedure)
+  const metaPlugin: AnyMetaPlugin = {
+    name: 'test2',
+    init: m => ({ ...m, metaPlugin: true }),
+  }
 
-    expect(applied['~orpc']).toEqual({
-      ...def,
-      errorMap: { ...def.errorMap, ...errors },
-    })
+  it('is a procedure', () => {
+    expect(procedure).toBeInstanceOf(Procedure)
   })
 
   it('.meta', () => {
-    const meta = { mode: 'test' } as const
-
-    const applied = decorated.meta(meta)
-    expect(applied).not.toBe(decorated)
+    const applied = procedure.meta(metaPlugin)
     expect(applied).toBeInstanceOf(DecoratedProcedure)
+    expect(applied).not.toBe(procedure)
+
+    expect(resolveMetaPluginsSpy).toHaveBeenCalledOnce()
+    expect(resolveMetaPluginsSpy).toHaveBeenCalledWith(
+      procedure['~orpc'].meta,
+      procedure['~orpc'].metaPlugins,
+      [metaPlugin],
+    )
 
     expect(applied['~orpc']).toEqual({
-      ...def,
-      meta: { ...def.meta, ...meta },
+      ...procedure['~orpc'],
+      meta: resolveMetaPluginsSpy.mock.results[0]?.value[0],
+      metaPlugins: resolveMetaPluginsSpy.mock.results[0]?.value[1],
     })
   })
 
-  it('.route', () => {
-    const route = { path: '/test', method: 'GET', tags: ['hiu'] } as const
+  describe('.errors', () => {
+    it('without meta plugins', () => {
+      const errors = {
+        OVERRIDE: { message: 'override' },
+      } satisfies ErrorMap
 
-    const applied = decorated.route(route)
-    expect(applied).not.toBe(decorated)
-    expect(applied).toBeInstanceOf(DecoratedProcedure)
+      const applied = procedure.errors(errors)
+      expect(applied).toBeInstanceOf(DecoratedProcedure)
+      expect(applied).not.toBe(procedure)
 
-    expect(applied['~orpc']).toEqual({
-      ...def,
-      route: { ...def.route, ...route },
+      expect(mergeErrorMapSpy).toHaveBeenCalledOnce()
+      expect(mergeErrorMapSpy).toHaveBeenCalledWith(
+        procedure['~orpc'].errorMap,
+        errors,
+      )
+
+      expect(applied['~orpc']).toEqual({
+        ...procedure['~orpc'],
+        errorMap: mergeErrorMapSpy.mock.results[0]?.value,
+      })
+    })
+
+    it('with meta plugins', () => {
+      const errors = {
+        OVERRIDE: { message: 'override' },
+      } satisfies ErrorMap
+
+      setHiddenMetaPlugins(errors, [metaPlugin])
+
+      const applied = procedure.errors(errors)
+      expect(applied).toBeInstanceOf(DecoratedProcedure)
+      expect(applied).not.toBe(procedure)
+
+      expect(mergeErrorMapSpy).toHaveBeenCalledOnce()
+      expect(mergeErrorMapSpy).toHaveBeenCalledWith(
+        procedure['~orpc'].errorMap,
+        errors,
+      )
+
+      expect(resolveMetaPluginsSpy).toHaveBeenCalledOnce()
+      expect(resolveMetaPluginsSpy).toHaveBeenCalledWith(
+        procedure['~orpc'].meta,
+        procedure['~orpc'].metaPlugins,
+        [metaPlugin],
+      )
+
+      expect(applied['~orpc']).toEqual({
+        ...procedure['~orpc'],
+        errorMap: mergeErrorMapSpy.mock.results[0]?.value,
+        meta: resolveMetaPluginsSpy.mock.results[0]?.value[0],
+        metaPlugins: resolveMetaPluginsSpy.mock.results[0]?.value[1],
+      })
     })
   })
 
   describe('.use', () => {
-    it('without map input', () => {
-      const mid = vi.fn()
+    it('with middleware error map', () => {
+      const middleware: AnyMiddleware = ({ next }) => next()
+      middleware['~orpc'] = {
+        errorMap: {
+          PAYMENT_REQUIRED: {
+            status: 402,
+          },
+        },
+      }
 
-      const applied = decorated.use(mid)
-      expect(applied).not.toBe(decorated)
+      const applied = procedure.use(middleware)
+
       expect(applied).toBeInstanceOf(DecoratedProcedure)
+      expect(applied).not.toBe(procedure)
+
+      expect(mergeErrorMapSpy).toHaveBeenCalledOnce()
+      expect(mergeErrorMapSpy).toHaveBeenCalledWith(
+        middleware['~orpc'].errorMap,
+        procedure['~orpc'].errorMap,
+      )
 
       expect(applied['~orpc']).toEqual({
-        ...def,
-        middlewares: [...def.middlewares, mid],
+        ...procedure['~orpc'],
+        errorMap: mergeErrorMapSpy.mock.results[0]?.value,
+        orderedMiddlewares: [
+          ...procedure['~orpc'].orderedMiddlewares,
+          {
+            middleware,
+            inputSchemasLengthAtUse: 1,
+            outputSchemasLengthAtUse: 1,
+          },
+        ],
       })
     })
 
-    it('with map input', () => {
-      const mid = vi.fn()
-      const map = vi.fn()
+    it('with meta plugins', () => {
+      const middleware: AnyMiddleware = ({ next }) => next()
+      middleware['~orpc'] = {
+        metaPlugins: [metaPlugin],
+      }
 
-      const applied = decorated.use(mid, map)
-      expect(applied).not.toBe(decorated)
+      const applied = procedure.use(middleware)
+
       expect(applied).toBeInstanceOf(DecoratedProcedure)
+      expect(applied).not.toBe(procedure)
+
+      expect(mergeErrorMapSpy).toHaveBeenCalledOnce()
+      expect(mergeErrorMapSpy).toHaveBeenCalledWith(
+        middleware['~orpc']?.errorMap,
+        procedure['~orpc'].errorMap,
+      )
+
+      expect(resolveMetaPluginsSpy).toHaveBeenCalledOnce()
+      expect(resolveMetaPluginsSpy).toHaveBeenCalledWith(
+        procedure['~orpc'].meta,
+        procedure['~orpc'].metaPlugins,
+        [metaPlugin],
+      )
 
       expect(applied['~orpc']).toEqual({
-        ...def,
-        middlewares: [...def.middlewares, [mid, map]],
+        ...procedure['~orpc'],
+        errorMap: mergeErrorMapSpy.mock.results[0]?.value,
+        meta: resolveMetaPluginsSpy.mock.results[0]?.value[0],
+        metaPlugins: resolveMetaPluginsSpy.mock.results[0]?.value[1],
+        orderedMiddlewares: [
+          ...procedure['~orpc'].orderedMiddlewares,
+          {
+            middleware,
+            inputSchemasLengthAtUse: 1,
+            outputSchemasLengthAtUse: 1,
+          },
+        ],
       })
     })
-  })
-
-  it('.callable', () => {
-    const options = { context: { db: 'postgres' } }
-
-    const applied = decorated.callable(options)
-    expect(applied).toBeInstanceOf(Function)
-    expect(applied).toSatisfy(isProcedure)
-
-    expect(createProcedureClient).toBeCalledTimes(1)
-    expect(createProcedureClient).toBeCalledWith(decorated, options)
-
-    // can access to function properties
-    expect('name' in applied).toBe(true)
-    expect(typeof applied.name).toBe('string')
-    expect('length' in applied).toBe(true)
-    expect(typeof applied.length).toBe('number')
-
-    expect('use' in applied).toBe(true)
-    expect('route' in applied).toBe(true)
-    expect('meta' in applied).toBe(true)
-
-    expect(applied.route({})).toBeInstanceOf(DecoratedProcedure)
-    expect(applied.route({})).toEqual(decorated)
-  })
-
-  it('.actionable', () => {
-    const options = { context: { db: 'postgres' } }
-
-    const applied = decorated.actionable(options)
-    expect(applied).toBeInstanceOf(Function)
-    expect(applied).toSatisfy(isProcedure)
-
-    expect(createProcedureClient).toBeCalledTimes(1)
-    expect(createProcedureClient).toBeCalledWith(decorated, options)
-
-    expect(createActionableClient).toBeCalledTimes(1)
-    expect(createActionableClient).toBeCalledWith(vi.mocked(createProcedureClient).mock.results[0]!.value)
-
-    // can access to function properties
-    expect('name' in applied).toBe(true)
-    expect(typeof applied.name).toBe('string')
-    expect('length' in applied).toBe(true)
-    expect(typeof applied.length).toBe('number')
-
-    expect('use' in applied).toBe(true)
-    expect('route' in applied).toBe(true)
-    expect('meta' in applied).toBe(true)
-
-    expect(applied.route({})).toBeInstanceOf(DecoratedProcedure)
-    expect(applied.route({})).toEqual(decorated)
   })
 })

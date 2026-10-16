@@ -1,114 +1,117 @@
-import type { ResponseHeadersPluginContext } from './response-headers'
-import { OpenAPIHandler } from '../../../openapi/src/adapters/fetch/openapi-handler'
+import type { ResponseHeadersHandlerPluginContext } from './response-headers'
+import { RPCHandler } from '../adapters/fetch/rpc-handler'
 import { os } from '../builder'
-import { ResponseHeadersPlugin } from './response-headers'
+import { ResponseHeadersHandlerPlugin } from './response-headers'
 
-describe('responseHeadersPlugin', () => {
-  it('works', async () => {
-    const router = os
-      .$context<ResponseHeadersPluginContext>()
+beforeEach(() => {
+  vi.clearAllMocks()
+})
+
+describe('responseHeadersHandlerPlugin', () => {
+  it('applies resHeaders set in middleware to the response', async () => {
+    const procedure = os
+      .$context<ResponseHeadersHandlerPluginContext>()
       .use(({ context, next }) => {
-        context.resHeaders?.set('x-custom-1', 'mid')
-        context.resHeaders?.set('x-custom-2', 'mid')
-        context.resHeaders?.set('x-custom-3', 'mid')
-        context.resHeaders?.set('x-custom-4', 'mid')
-
+        context.resHeaders?.set('x-custom-1', 'value1')
+        context.resHeaders?.set('x-custom-2', 'value2')
         return next()
       })
-      .route({
-        method: 'GET',
-        path: '/ping',
-        outputStructure: 'detailed',
+      .handler(() => 'pong')
+
+    const handler = new RPCHandler(procedure, {
+      plugins: [new ResponseHeadersHandlerPlugin()],
+    })
+
+    const { response } = await handler.handle(new Request('https://example.com', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ json: null }),
+    }))
+
+    expect(response).toBeDefined()
+    expect(response!.headers.get('x-custom-1')).toBe('value1')
+    expect(response!.headers.get('x-custom-2')).toBe('value2')
+  })
+
+  it('merges resHeaders into response headers', async () => {
+    const procedure = os
+      .$context<ResponseHeadersHandlerPluginContext>()
+      .use(({ context, next }) => {
+        context.resHeaders?.set('x-custom', 'from-middleware')
+        return next()
       })
-      .handler(() => {
+      .handler(() => 'pong')
+
+    const handler = new RPCHandler(procedure, {
+      plugins: [new ResponseHeadersHandlerPlugin()],
+      routingInterceptors: [async ({ next }) => {
+        const result = await next()
+
+        if (!result.response) {
+          return result
+        }
+
         return {
-          headers: {
-            'x-custom-1': 'value',
-            'x-custom-2': ['1', '2'],
-            'x-custom-3': undefined,
+          ...result,
+          response: {
+            ...result.response,
+            headers: { 'x-custom': 'from-routing-interceptor' },
           },
         }
-      })
-
-    const handler = new OpenAPIHandler(router, {
-      plugins: [
-        new ResponseHeadersPlugin(),
-      ],
+      }],
     })
 
-    const { response } = await handler.handle(new Request('https://example.com/ping'))
-
-    if (!response) {
-      throw new Error('response is undefined')
-    }
-
-    expect(response.headers.get('x-custom-1')).toBe('value, mid')
-    expect(response.headers.get('x-custom-2')).toBe('1, 2, mid')
-    expect(response.headers.get('x-custom-3')).toBe('mid')
-    expect(response.headers.get('x-custom-4')).toBe('mid')
-
-    await handler.handle(new Request('https://example.com/not_found'))
-  })
-
-  it('should clone the context to avoid reference issues', async () => {
-    const router = os
-      .$context<ResponseHeadersPluginContext>()
-      .route({
-        method: 'GET',
-        path: '/ping',
-      })
-      .handler(() => 'ping')
-
-    const interceptor = vi.fn(({ next }) => next())
-
-    const handler = new OpenAPIHandler(router, {
-      plugins: [
-        new ResponseHeadersPlugin(),
-      ],
-      interceptors: [
-        interceptor,
-      ],
-    })
-
-    const context = { a: 'value' }
-    await handler.handle(new Request('https://example.com/ping'), { context })
-
-    expect(interceptor).toHaveBeenCalledOnce()
-    expect(interceptor).toHaveBeenCalledWith(expect.objectContaining({
-      context: { ...context, resHeaders: expect.any(Headers) },
+    const { response } = await handler.handle(new Request('https://example.com', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ json: null }),
     }))
 
-    expect(interceptor.mock.calls[0]![0].context).not.toBe(context)
+    expect(response).toBeDefined()
+    expect(response!.headers.get('x-custom')).toBe('from-routing-interceptor, from-middleware')
   })
 
-  it('should use the provided resHeaders when already defined', async () => {
-    const router = os
-      .$context<ResponseHeadersPluginContext>()
-      .route({
-        method: 'GET',
-        path: '/ping',
+  it('copy resHeaders when it provided in context', async () => {
+    const existingHeaders = new Headers({ 'existing-header': 'existing-value' })
+
+    const procedure = os
+      .$context<ResponseHeadersHandlerPluginContext>()
+      .handler(({ context }) => {
+        expect(context.resHeaders).not.toBe(existingHeaders)
+        expect(context.resHeaders).toEqual(existingHeaders)
+        context.resHeaders?.set('x-added-header', 'added-value')
+
+        return 'pong'
       })
-      .handler(() => 'ping')
 
-    const interceptor = vi.fn(({ next }) => next())
-
-    const handler = new OpenAPIHandler(router, {
-      plugins: [
-        new ResponseHeadersPlugin(),
-      ],
-      interceptors: [
-        interceptor,
-      ],
+    const handler = new RPCHandler(procedure, {
+      plugins: [new ResponseHeadersHandlerPlugin()],
     })
 
-    const context = { a: 'value', resHeaders: new Headers() }
-    await handler.handle(new Request('https://example.com/ping'), { context })
+    const { response } = await handler.handle(new Request('https://example.com', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ json: null }),
+    }), { context: { resHeaders: existingHeaders } })
 
-    expect(interceptor).toHaveBeenCalledOnce()
-    expect(interceptor).toHaveBeenCalledWith(expect.objectContaining({
-      context,
-    }))
+    expect(response!.headers.get('existing-header')).toBe('existing-value')
+    expect(response!.headers.get('x-added-header')).toBe('added-value')
+  })
 
-    expect(interceptor.mock.calls[0]![0].context.resHeaders).toBe(context.resHeaders)
+  it('does not interfere with unmatched requests', async () => {
+    const procedure = os
+      .$context<ResponseHeadersHandlerPluginContext>()
+      .use(({ context, next }) => {
+        context.resHeaders?.set('x-custom', 'value')
+        return next()
+      })
+      .handler(() => 'pong')
+
+    const handler = new RPCHandler(procedure, {
+      plugins: [new ResponseHeadersHandlerPlugin()],
+    })
+
+    const { response } = await handler.handle(new Request('https://example.com/not-found'))
+    expect(response).toBeUndefined()
   })
 })

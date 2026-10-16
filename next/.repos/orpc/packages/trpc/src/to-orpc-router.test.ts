@@ -1,75 +1,183 @@
-import { call, createRouterClient, getEventMeta, isLazy, isProcedure, ORPCError, Procedure, unlazy } from '@orpc/server'
+import type { OpenAPIMeta } from '@orpc/openapi'
+import { getOpenAPIMeta } from '@orpc/openapi'
+import { call, createRouterClient, getEventMeta, Lazy, ORPCError, Procedure, unlazy } from '@orpc/server'
 import { isAsyncIteratorObject } from '@orpc/shared'
-import { tracked, TRPCError } from '@trpc/server'
+import { initTRPC, lazy, tracked, TRPCError } from '@trpc/server'
 import * as z from 'zod'
-import { inputSchema, outputSchema } from '../../contract/tests/shared'
-import { t, trpcRouter } from '../tests/shared'
 import { toORPCRouter } from './to-orpc-router'
+
+const inputSchema = z.object({ input: z.number().transform(n => `${n}`) })
+
+const outputSchema = z.object({ output: z.number().transform(n => `${n}`) })
+
+interface TRPCMeta {
+  '~openapi'?: OpenAPIMeta
+  'meta1'?: string
+}
+
+const t = initTRPC.context<(req: Request) => ({ a: string })>().meta<TRPCMeta>().create()
 
 beforeEach(() => {
   vi.clearAllMocks()
 })
 
-describe('toORPCRouter', async () => {
-  const orpcRouter = toORPCRouter(trpcRouter)
-
+describe('toORPCRouter', () => {
   it('shape', async () => {
-    expect(orpcRouter.ping).toSatisfy(isProcedure)
-    expect(orpcRouter.throw).toSatisfy(isProcedure)
-    expect(orpcRouter.nested.ping).toSatisfy(isProcedure)
+    const orpcRouter = toORPCRouter(t.router({
+      ping: t.procedure.query(() => 'pong'),
 
-    const unlazy1 = await unlazy(orpcRouter.lazy)
-    const unlazy2 = await unlazy(unlazy1.default.lazy)
+      lazy: lazy(() => Promise.resolve({ default: t.router({
+        ping: t.procedure.query(() => 'pong'),
 
-    expect(orpcRouter.lazy).toSatisfy(isLazy)
-    expect(unlazy1.default.subscribe).toSatisfy(isProcedure)
-    expect(unlazy1.default.lazy).toSatisfy(isLazy)
-    expect(unlazy2.default.throw).toSatisfy(isProcedure)
+        lazy: lazy(() => Promise.resolve({ default: t.router({
+          ping: t.procedure.query(() => 'pong'),
+        }) })),
+      }) })),
 
-    // accessible lazy router
-    expect(await unlazy(orpcRouter.lazy.subscribe)).toEqual({ default: expect.toSatisfy(isProcedure) })
-    expect(await unlazy(orpcRouter.lazy.lazy.throw)).toEqual({ default: expect.toSatisfy(isProcedure) })
+      nested: {
+        ping: t.procedure.query(() => 'pong'),
+
+        lazy: lazy(() => Promise.resolve({ default: t.router({
+          ping: t.procedure.query(() => 'pong'),
+
+          lazy: lazy(() => Promise.resolve({ default: t.router({
+            ping: t.procedure.query(() => 'pong'),
+          }) })),
+        }) })),
+      },
+    }))
+
+    expect(orpcRouter.ping).toBeInstanceOf(Procedure)
+    expect(orpcRouter.nested.ping).toBeInstanceOf(Procedure)
+
+    expect(orpcRouter.lazy).toBeInstanceOf(Lazy)
+    const unlazyLazy = await unlazy(orpcRouter.lazy)
+    expect(unlazyLazy.default.ping).toBeInstanceOf(Procedure)
+
+    expect(unlazyLazy.default.lazy).toBeInstanceOf(Lazy)
+    const unlazyLazyLazy = await unlazy(unlazyLazy.default.lazy)
+    expect(unlazyLazyLazy.default.ping).toBeInstanceOf(Procedure)
+
+    expect(orpcRouter.nested.lazy).toBeInstanceOf(Lazy)
+    const unlazyNestedLazy = await unlazy(orpcRouter.nested.lazy)
+    expect(unlazyNestedLazy.default.ping).toBeInstanceOf(Procedure)
+
+    expect(unlazyNestedLazy.default.lazy).toBeInstanceOf(Lazy)
+    const unlazyNestedLazyUnlazy = await unlazy(unlazyNestedLazy.default.lazy)
+    expect(unlazyNestedLazyUnlazy.default.ping).toBeInstanceOf(Procedure)
   })
 
   it('with input/output schema and validation happen inside handler only', async () => {
-    expect((orpcRouter as any).ping['~orpc'].inputSchema['~standard'].vendor).toBe('zod')
-    expect((orpcRouter as any).ping['~orpc'].inputSchema._def).toBe(inputSchema._def)
-    expect((orpcRouter as any).ping['~orpc'].inputValidationIndex).toBe(Number.NaN) // input validation is disabled
+    const orpcRouter = toORPCRouter(t.router({
+      ping: t.procedure
+        .input(inputSchema)
+        .output(outputSchema)
+        .query(({ input }) => {
+          return { output: Number(input.input) }
+        }),
+    }))
 
-    expect((orpcRouter as any).ping['~orpc'].outputSchema['~standard'].vendor).toBe('zod')
-    expect((orpcRouter as any).ping['~orpc'].outputSchema._def).toBe(outputSchema._def)
-    expect((orpcRouter as any).ping['~orpc'].outputValidationIndex).toBe(Number.NaN) // output validation is disabled
+    expect((orpcRouter as any).ping['~orpc'].inputSchemas[0]['~standard'].vendor).toBe('zod')
+    expect((orpcRouter as any).ping['~orpc'].inputSchemas[0]._def).toBe(inputSchema._def)
+    expect((orpcRouter as any).ping['~orpc'].disableInputValidation).toBe(true)
+
+    expect((orpcRouter as any).ping['~orpc'].outputSchemas[0]['~standard'].vendor).toBe('zod')
+    expect((orpcRouter as any).ping['~orpc'].outputSchemas[0]._def).toBe(outputSchema._def)
+    expect((orpcRouter as any).ping['~orpc'].disableOutputValidation).toBe(true)
 
     const withoutHandlerProcedure = new Procedure({
       ...(orpcRouter as any).ping['~orpc'],
-      handler: async ({ input }) => input,
+      handler: async ({ input }: any) => input,
     })
 
-    await expect(call(withoutHandlerProcedure, 'invalid')).resolves.toEqual('invalid') // validation not happen at oRPC level
+    await expect(call(withoutHandlerProcedure as any, 'invalid')).resolves.toEqual('invalid') // validation not happen at oRPC level
     await expect(call((orpcRouter as any).ping, 'invalid')).rejects.toThrow('Invalid input') // validation happen at tRPC level
   })
 
-  it('meta/route', async () => {
+  it('meta', async () => {
+    const orpcRouter = toORPCRouter(t.router({
+      ping: t.procedure
+        .meta({ meta1: 'test' })
+        .query(() => 'pong'),
+
+      openapi: t.procedure
+        .meta({ '~openapi': { path: '/openapi', description: 'OpenAPI procedure' } })
+        .query(() => 'pong'),
+    }))
+
     expect(orpcRouter.ping['~orpc'].meta).toEqual({ meta1: 'test' })
-    expect(orpcRouter.nested.ping['~orpc'].route).toEqual({ path: '/nested/ping', description: 'Nested ping procedure' })
-    expect(orpcRouter.nested.ping['~orpc'].meta).toEqual({ route: { path: '/nested/ping', description: 'Nested ping procedure' } })
+    expect(orpcRouter.openapi['~orpc'].meta).toEqual({ '~openapi': { path: '/openapi', description: 'OpenAPI procedure' } })
+    expect(getOpenAPIMeta(orpcRouter.openapi)).toEqual({ path: '/openapi', description: 'OpenAPI procedure' })
   })
 
   describe('calls', () => {
+    const handler = vi.fn()
+    const router = toORPCRouter(t.router({
+      procedure: t.procedure.input(z.object({ input: z.number() })).query(handler),
+    }))
+
     it('on success', async () => {
-      const result = await call(orpcRouter.ping, { input: 1234 }, { context: { a: 'test' } })
+      handler.mockResolvedValueOnce({ output: '1234' })
+      const controller = new AbortController()
+
+      const result = await call(router.procedure, { input: 1234 } as any, {
+        context: { a: 'test' },
+        signal: controller.signal,
+        path: ['nested', 'procedure'],
+      })
+
       expect(result).toEqual({ output: '1234' })
+      expect(handler).toHaveBeenCalledTimes(1)
+      expect(handler).toHaveBeenCalledWith(expect.objectContaining({
+        ctx: { a: 'test' },
+        input: { input: 1234 },
+        path: 'nested.procedure',
+        type: 'query',
+        signal: controller.signal,
+      }))
+    })
+
+    it('strips keys the input schema does not declare', async () => {
+      const orpcRouter = toORPCRouter(t.router({
+        update: t.procedure
+          .input(z.object({ name: z.string() }))
+          .input(z.object({ age: z.number() }))
+          .mutation(({ input }) => input),
+      }))
+
+      await expect(
+        call(orpcRouter.update, { name: 'n', age: 1, role: 'admin' } as any, { context: { a: 'test' } }),
+      ).resolves.toEqual({ name: 'n', age: 1 })
     })
 
     it('async iterator', async () => {
-      const result = await call(orpcRouter.subscribe, { u: 'u' }, { context: { a: 'test' } })
+      const orpcRouter = toORPCRouter(t.router({
+        subscribe: t.procedure.subscription(async function* () {
+          yield 'pong'
+        }),
+      }))
+
+      const result = await call(orpcRouter.subscribe, undefined, { context: { a: 'test' } })
       expect(result).toSatisfy(isAsyncIteratorObject)
       expect(await (result as any).next()).toEqual({ done: false, value: 'pong' })
     })
 
     it('error', async () => {
+      const orpcRouter = toORPCRouter(t.router({
+        throw: t.procedure.query(() => {
+          throw new TRPCError({
+            code: 'PARSE_ERROR',
+            message: 'throw',
+          })
+        }),
+
+        ping: t.procedure
+          .input(inputSchema)
+          .query(({ input }) => input),
+      }))
+
       await expect(
-        call(orpcRouter.throw, { b: 42, c: 'test' }, { context: { a: 'test' } }),
+        call(orpcRouter.throw, undefined, { context: { a: 'test' } }),
       ).rejects.toSatisfy((err: any) => {
         return err instanceof ORPCError && err.code === 'PARSE_ERROR' && err.message === 'throw'
       })
@@ -85,7 +193,61 @@ describe('toORPCRouter', async () => {
       })
     })
 
+    it('converts TRPCError thrown while iterating', async () => {
+      const orpcRouter = toORPCRouter(t.router({
+        subscribe: t.procedure.subscription(async function* () {
+          yield 'pong'
+          throw new TRPCError({ code: 'UNAUTHORIZED', message: 'login required' })
+        }),
+      }))
+
+      const output = await call(orpcRouter.subscribe, undefined, { context: { a: 'test' } }) as any
+      await expect(output.next()).resolves.toEqual({ done: false, value: 'pong' })
+      await expect(output.next()).rejects.toSatisfy((err: any) => {
+        expect(err).toBeInstanceOf(ORPCError)
+        expect(err.code).toBe('UNAUTHORIZED')
+        expect(err.message).toBe('login required')
+        expect(err.cause).toBeInstanceOf(TRPCError)
+
+        return true
+      })
+    })
+
+    it('rethrows non-TRPCError errors as-is', async () => {
+      const error = new Error('broken')
+      const orpcRouter = toORPCRouter(t.router({
+        // tRPC wraps resolver errors in TRPCError, so a plain query cannot
+        // produce a non-TRPCError - only errors thrown while consuming the
+        // returned value can escape unwrapped
+        broken: t.procedure.mutation(() => ({
+          [Symbol.asyncIterator]: () => {
+            throw error
+          },
+        } as AsyncIterable<unknown>)),
+      }))
+
+      await expect(
+        call(orpcRouter.broken, undefined, { context: { a: 'test' } }),
+      ).rejects.toBe(error)
+    })
+
     it('deep lazy', async () => {
+      const orpcRouter = toORPCRouter(t.router({
+        lazy: lazy(() => Promise.resolve({ default: t.router({
+          subscribe: t.procedure.subscription(async function* () {
+            yield 'pong'
+          }),
+
+          lazy: lazy(() => Promise.resolve({ default: t.router({
+            throw: t.procedure
+              .input(inputSchema)
+              .query(() => {
+                throw new Error('lazy.lazy.throw')
+              }),
+          }) })),
+        }) })),
+      }))
+
       const client = createRouterClient(orpcRouter, {
         context: { a: 'test' },
       })
@@ -104,7 +266,15 @@ describe('toORPCRouter', async () => {
 
   describe('event iterators', () => {
     it('subscribe & tracked', async () => {
-      const output = await call(orpcRouter.subscribe, { u: '2' }, { lastEventId: 'id-1', context: { a: 'test' } }) as any
+      const orpcRouter = toORPCRouter(t.router({
+        subscribe: t.procedure.subscription(async function* () {
+          yield 'pong'
+          yield tracked('id-1', { order: 1 })
+          yield tracked('id-2', { order: 2 })
+        }),
+      }))
+
+      const output = await call(orpcRouter.subscribe, undefined, { context: { a: 'test' } }) as any
       expect(output).toSatisfy(isAsyncIteratorObject)
       await expect(output.next()).resolves.toEqual({ done: false, value: 'pong' })
       await expect(output.next()).resolves.toSatisfy((result) => {
@@ -130,13 +300,11 @@ describe('toORPCRouter', async () => {
         yield tracked('id-2', { order: 2 })
       })
 
-      const trpcRouter = t.router({
+      const orpcRouter = toORPCRouter(t.router({
         tracked: t.procedure
           .input(z.any())
           .subscription(trackedSubscription),
-      })
-
-      const orpcRouter = toORPCRouter(trpcRouter)
+      }))
 
       await call(orpcRouter.tracked, { u: 'u' }, { lastEventId: 'id-1', context: { a: 'test' } })
       expect(trackedSubscription).toHaveBeenNthCalledWith(1, expect.objectContaining({
@@ -171,13 +339,11 @@ describe('toORPCRouter', async () => {
         }
       })
 
-      const trpcRouter = t.router({
+      const orpcRouter = toORPCRouter(t.router({
         tracked: t.procedure
           .input(z.any())
           .subscription(trackedSubscription),
-      })
-
-      const orpcRouter = toORPCRouter(trpcRouter)
+      }))
 
       const output = await call(orpcRouter.tracked, { u: 'u' }, { lastEventId: 'id-1', context: { a: 'test' } })
 

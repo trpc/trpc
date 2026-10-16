@@ -4,23 +4,10 @@
   "compilerOptions": {
     "types": ["node", "vitest/globals"]
   },
-  "references": [
-    { "path": "./packages/contract" },
-    { "path": "./packages/openapi" },
-    { "path": "./packages/server" },
-    { "path": "./packages/client" },
-    { "path": "./packages/react-query" },
-    { "path": "./packages/vue-query" },
-    { "path": "./packages/vue-colada" },
-    { "path": "./packages/zod" },
-    { "path": "./packages/standard-server" },
-    { "path": "./packages/standard-server-fetch" },
-    { "path": "./packages/standard-server-node" },
-    { "path": "./packages/standard-server-aws-lambda" },
-    { "path": "./packages/standard-server-peer" }
-  ],
   "include": [
     "playground",
+    "scripts",
+    "benches",
     "tests",
     "*",
 
@@ -32,13 +19,14 @@
     "*/*/src/**/__snapshots__",
     "*/*/playground",
     "*/*/scripts",
+    "*/*/benches",
     "*/*/tests",
     "*/*/*"
   ],
   "exclude": [
+    "packages/bun/**",
+    "packages/cloudflare/**",
     "packages/nest/**",
-    "packages/durable-iterator/**",
-    "packages/publisher-durable-object/**",
     "playgrounds/**"
   ]
 }

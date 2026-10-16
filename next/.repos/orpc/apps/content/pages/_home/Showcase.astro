@@ -1,0 +1,554 @@
+---
+// The landing page's single code demo: one framed panel whose contents swap
+// between the capabilities worth proving with code. Every tab shows two files
+// side by side, so each one reads as a definition and its payoff.
+import CodePane from './CodePane.astro'
+
+const tabs = [
+  {
+    id: 'client',
+    title: 'Typed client',
+    desc: 'Define a procedure on the server, call it like a local function. No codegen, no drift.',
+    panes: [
+      { file: 'router.ts', lang: 'ts', code: `
+import { os } from '@orpc/server'
+import * as z from 'zod'
+
+export const router = {
+  planet: {
+    find: os
+      .input(z.object({ id: z.number() }))
+      .handler(({ input }) => db.planets.get(input.id)),
+    // no output schema needed: the handler's return
+    // type flows straight to the client
+  },
+}
+` },
+      { file: 'client.ts', lang: 'ts', code: `
+import { createORPCClient } from '@orpc/client'
+import { RPCLink } from '@orpc/client/fetch'
+import type { RouterClient } from '@orpc/server'
+import type { router } from './router'
+
+const link = new RPCLink({
+  origin: 'https://example.com',
+  url: '/rpc',
+})
+
+const client: RouterClient<typeof router>
+  = createORPCClient(link)
+
+const planet = await client.planet.find({ id: 1 })
+//    ^ typed from the handler's return, nothing generated
+` },
+    ],
+  },
+  {
+    id: 'errors',
+    title: 'Typed errors',
+    desc: 'Failures are part of the API. Declare them once, and the client knows every case.',
+    panes: [
+      { file: 'router.ts', lang: 'ts', code: `
+import { os } from '@orpc/server'
+import * as z from 'zod'
+
+export const findPlanet = os
+  .input(z.object({ id: z.number() }))
+  .errors({
+    NOT_FOUND: { message: 'Planet not found' },
+    RATE_LIMIT: { data: z.object({ retryAfter: z.number() }) },
+  })
+  .handler(({ input, errors }) => {
+    const planet = db.planets.get(input.id)
+
+    if (!planet) {
+      throw errors.NOT_FOUND()
+    }
+
+    return planet
+  })
+` },
+      { file: 'client.ts', lang: 'ts', code: `
+import { isDefinedError, safe } from '@orpc/client'
+
+const [error, planet] = await safe(client.planet.find({ id: 1 }))
+
+if (isDefinedError(error) && error.code === 'RATE_LIMIT') {
+  error.data.retryAfter // number, straight from the schema
+}
+else if (error) {
+  // anything undeclared, still kept out of the success path
+}
+else {
+  planet // only reachable when there is no error
+}
+` },
+    ],
+  },
+  {
+    id: 'contract',
+    title: 'Contract-first',
+    desc: 'Agree on the API before building it. The compiler keeps the server honest.',
+    panes: [
+      { file: 'contract.ts', lang: 'ts', code: `
+import { oc } from '@orpc/contract'
+import * as z from 'zod'
+
+export const contract = {
+  planet: {
+    find: oc
+      .input(z.object({ id: z.number() }))
+      .output(z.object({ id: z.number(), name: z.string() })),
+  },
+}
+` },
+      { file: 'server.ts', lang: 'ts', code: `
+import { implement } from '@orpc/server'
+import { contract } from './contract'
+
+const os = implement(contract)
+
+export const router = os.router({
+  planet: {
+    find: os.planet.find.handler(({ input }) =>
+      db.planets.get(input.id),
+    ),
+    // return the wrong shape and this stops compiling
+  },
+})
+` },
+    ],
+  },
+  {
+    id: 'middleware',
+    title: 'Middleware',
+    desc: 'Check auth once, not in every handler. Whatever middleware injects arrives fully typed.',
+    panes: [
+      { file: 'middleware.ts', lang: 'ts', code: `
+import { ORPCError, os } from '@orpc/server'
+
+export const authed = os
+  .use(async ({ context, next }) => {
+    const session = await auth()
+
+    if (!session) {
+      throw new ORPCError('UNAUTHORIZED')
+    }
+
+    return next({
+      context: { user: session.user }, // <- injected, typed
+    })
+  })
+` },
+      { file: 'router.ts', lang: 'ts', code: `
+import * as z from 'zod'
+import { authed } from './middleware'
+
+export const createPlanet = authed
+  .input(z.object({ name: z.string() }))
+  .handler(({ input, context }) => {
+    context.user // non-null, guarded by the middleware
+    return db.planets.create({
+      ...input,
+      ownerId: context.user.id,
+    })
+  })
+` },
+    ],
+  },
+  {
+    id: 'openapi',
+    title: 'REST & OpenAPI',
+    desc: 'Your router is also a REST API. The OpenAPI document comes free.',
+    panes: [
+      { file: 'router.ts', lang: 'ts', code: `
+import { OpenAPIGenerator, openapi } from '@orpc/openapi'
+import { os } from '@orpc/server'
+import { ZodToJsonSchemaConverter } from '@orpc/zod'
+import * as z from 'zod'
+
+export const router = {
+  planet: {
+    find: os
+      .meta(openapi({ method: 'GET', path: '/planets/{id}' }))
+      .input(z.object({ id: z.number() }))
+      .output(z.object({ id: z.number(), name: z.string() }))
+      .handler(({ input }) => db.planets.get(input.id)),
+  },
+}
+
+const spec = await new OpenAPIGenerator({
+  converters: [new ZodToJsonSchemaConverter()],
+}).generate(router, {
+  base: { info: { title: 'Planets', version: '1.0.0' } },
+})
+` },
+      { file: 'request.http', lang: 'http', code: `
+GET /planets/1 HTTP/1.1
+Accept: application/json
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{ "id": 1, "name": "Earth" }
+
+# the same procedure the typed client calls, served as a
+# REST endpoint and described by the generated document
+` },
+    ],
+  },
+  {
+    id: 'native',
+    title: 'Native types',
+    desc: 'Return a Date, get a Date. Send a File, get a File. The wire format is oRPC’s problem.',
+    panes: [
+      { file: 'router.ts', lang: 'ts', code: `
+import { os } from '@orpc/server'
+import * as z from 'zod'
+
+export const planet = {
+  stats: os.handler(() => ({
+    discoveredAt: new Date('1846-09-23'),
+    distanceKm: 4_500_000_000n,
+    moons: new Set(['Triton', 'Nereid']),
+  })),
+
+  uploadAvatar: os
+    .input(z.object({ image: z.file() }))
+    .handler(({ input }) => resize(input.image, 128)),
+}
+` },
+      { file: 'client.ts', lang: 'ts', code: `
+const stats = await client.planet.stats()
+
+stats.discoveredAt.getFullYear() // a real Date
+stats.distanceKm + 100n          // a real BigInt
+stats.moons.has('Triton')        // a real Set
+
+const thumbnail = await client.planet.uploadAvatar({
+  image: fileInput.files[0],     // a File goes up
+})
+
+thumbnail.name                   // a File comes back
+
+// nothing stringified, no FormData, no base64
+` },
+    ],
+  },
+  {
+    id: 'realtime',
+    title: 'Realtime',
+    desc: 'Stream events with a plain yield. Add the Retry plugin and clients resume from the last event.',
+    panes: [
+      { file: 'router.ts', lang: 'ts', code: `
+import { os, withEventMeta } from '@orpc/server'
+
+export const liveUpdates = os
+  .handler(async function* ({ signal, lastEventId }) {
+    const updates = db.planets.watch({
+      since: lastEventId,
+      signal,
+    })
+
+    for await (const update of updates) {
+      yield withEventMeta(update, { id: update.id })
+    }
+  })
+` },
+      { file: 'client.ts', lang: 'ts', code: `
+import { RetryLinkPlugin } from '@orpc/client/plugins'
+
+const link = new RPCLink({
+  url: '/rpc',
+  plugins: [new RetryLinkPlugin()],
+})
+
+const updates = await client.liveUpdates(undefined, {
+  context: { retry: Number.POSITIVE_INFINITY },
+})
+
+for await (const update of updates) {
+  render(update) // each event typed like any other output
+}
+// on disconnect, the plugin reconnects with lastEventId,
+// and the handler resumes the stream where it left off
+` },
+    ],
+  },
+  {
+    id: 'query',
+    title: 'TanStack Query',
+    desc: 'Your router becomes your query layer. Keys, options, and invalidation, all derived.',
+    panes: [
+      { file: 'orpc.ts', lang: 'ts', code: `
+import { createTanstackQueryUtils } from '@orpc/tanstack-query'
+import { client } from './client'
+
+export const orpc = createTanstackQueryUtils(client)
+` },
+      { file: 'planet.tsx', lang: 'tsx', code: `
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { orpc } from './orpc'
+
+export function Planet({ id }: { id: number }) {
+  const queryClient = useQueryClient()
+
+  const { data } = useQuery(
+    orpc.planet.find.queryOptions({ input: { id } }),
+  )
+
+  const refresh = () => queryClient.invalidateQueries({
+    queryKey: orpc.planet.key(),
+  })
+  // keys derived from the router, typed input included
+
+  return <h1>{data?.name}</h1>
+}
+` },
+    ],
+  },
+  {
+    id: 'action',
+    title: 'Server functions',
+    desc: 'The same procedure, now a Next.js Server Function. Same input, same typed errors.',
+    panes: [
+      { file: 'actions.ts', lang: 'ts', code: `
+'use server'
+
+import { createServerFunction } from '@orpc/next'
+import { findPlanet } from './router'
+
+export const findPlanetAction = createServerFunction(
+  findPlanet,
+  { context: async () => ({ user: await auth() }) },
+)
+` },
+      { file: 'find.tsx', lang: 'tsx', code: `
+'use client'
+
+import { findPlanetAction } from './actions'
+
+export async function find(id: number) {
+  const [error, planet] = await findPlanetAction({ id })
+
+  if (error?.defined && error.code === 'NOT_FOUND') {
+    // a declared failure, serialized and typed, no try/catch
+  }
+  else if (error) {
+    // anything unexpected, still kept out of the success path
+  }
+
+  return planet
+}
+` },
+    ],
+  },
+  {
+    id: 'server',
+    title: 'In-process',
+    desc: 'Call your API without running a server. Built for SSR and tests.',
+    panes: [
+      { file: 'page.tsx', lang: 'tsx', code: `
+import { createRouterClient } from '@orpc/server'
+import { router } from './router'
+
+const serverClient = createRouterClient(router, {
+  context: { user: { id: 1 } },
+})
+
+export default async function Page() {
+  const planet = await serverClient.planet.find({ id: 1 })
+  // direct invocation, zero network hops
+
+  return <h1>{planet.name}</h1>
+}
+` },
+      { file: 'find.test.ts', lang: 'ts', code: `
+import { call } from '@orpc/server'
+import { findPlanet } from './router'
+
+it('finds a planet', async () => {
+  const planet = await call(findPlanet, { id: 1 }, {
+    context: { user: { id: 1 } },
+  })
+
+  expect(planet.name).toBe('Earth')
+})
+// input validation and middleware still run, no server started
+` },
+    ],
+  }
+]
+---
+
+{/* The showcase absorbed four former <h2> sections; without a heading of its
+    own the page's centerpiece would be invisible to heading navigation. It is
+    visually hidden because the hero above it already sets the scene. */}
+<h2 class="sr-only">What oRPC gives you</h2>
+
+{/* Tabs, caption, and code share one frame so the strip reads as the window's
+    own tab bar rather than a row of buttons floating above it. */}
+<div class="orpc-showcase">
+  <div class="orpc-tablist" role="tablist" aria-label="oRPC capabilities">
+    {
+      tabs.map((tab, index) => (
+        <button
+          type="button"
+          role="tab"
+          class="orpc-tab"
+          id={`orpc-tab-${tab.id}`}
+          data-tab={tab.id}
+          aria-controls={`orpc-panel-${tab.id}`}
+          aria-selected={index === 0 ? 'true' : 'false'}
+          tabindex={index === 0 ? 0 : -1}
+        >
+          {tab.title}
+        </button>
+      ))
+    }
+  </div>
+
+  <div class="orpc-panels">
+    {
+      tabs.map((tab, index) => (
+        <div
+          class="orpc-panel"
+          role="tabpanel"
+          id={`orpc-panel-${tab.id}`}
+          aria-labelledby={`orpc-tab-${tab.id}`}
+          data-panel={tab.id}
+          data-state={index === 0 ? 'active' : 'inactive'}
+          tabindex="0"
+        >
+          <p class="orpc-panel-desc">{tab.desc}</p>
+          {/* Two panes only once each one can hold a ~65 character line; below
+              that they stack full-width instead of scrolling sideways. */}
+          <div class="orpc-showcase-body grid xl:grid-cols-2">
+            {tab.panes.map(pane => (
+              <CodePane
+                code={pane.code}
+                file={pane.file}
+                lang={pane.lang}
+                class="orpc-split-pane"
+              />
+            ))}
+          </div>
+        </div>
+      ))
+    }
+  </div>
+</div>
+
+<script>
+  // Astro's ClientRouter swaps the page body on soft navigation but runs this
+  // module only once per full load, so everything bound to the showcase's own
+  // elements is re-resolved in `init`, which runs again after every swap.
+  let tabs: HTMLButtonElement[] = []
+  let panels: HTMLElement[] = []
+  let tablist: HTMLElement | null = null
+
+  // WAI-ARIA tabs pattern: one tab stop for the whole list, arrows move between
+  // tabs and select as they go (https://www.w3.org/WAI/ARIA/apg/patterns/tabs/).
+  function select(tab: HTMLButtonElement): void {
+    for (const other of tabs) {
+      const isActive = other === tab
+      other.setAttribute('aria-selected', String(isActive))
+      other.tabIndex = isActive ? 0 : -1
+    }
+
+    for (const panel of panels) {
+      panel.dataset.state = panel.dataset.panel === tab.dataset.tab ? 'active' : 'inactive'
+    }
+  }
+
+  // The strip hides its scrollbar, so a fade marks the edge that still has tabs
+  // behind it. Flagging each side separately keeps the hint honest: it clears
+  // once you reach that end, and never shows at all when everything fits.
+  function syncOverflowHints(): void {
+    if (!tablist) {
+      return
+    }
+
+    const max = tablist.scrollWidth - tablist.clientWidth
+    // Sub-pixel layout leaves a fraction of scroll room on strips that fit.
+    const slack = 1
+
+    tablist.dataset.overflowStart = String(tablist.scrollLeft > slack)
+    tablist.dataset.overflowEnd = String(tablist.scrollLeft < max - slack)
+  }
+
+  const overflowObserver = new ResizeObserver(syncOverflowHints)
+
+  function init(): void {
+    tabs = [...document.querySelectorAll<HTMLButtonElement>('[data-tab]')]
+    panels = [...document.querySelectorAll<HTMLElement>('[data-panel]')]
+    tablist = document.querySelector<HTMLElement>('.orpc-tablist')
+
+    // The previous strip left with the old body; watch the current one only.
+    overflowObserver.disconnect()
+
+    if (tablist) {
+      syncOverflowHints()
+      tablist.addEventListener('scroll', syncOverflowHints, { passive: true })
+      overflowObserver.observe(tablist)
+
+      // A trackpad swipes sideways and a touchscreen drags, but a plain mouse has
+      // no way to reach the tabs past the fold. Translate a vertical wheel into
+      // horizontal scroll, and only while the strip can still move that way — at
+      // either end the event is left alone so the page scrolls as usual.
+      tablist.addEventListener('wheel', (event) => {
+        if (!tablist || event.deltaY === 0 || Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
+          return
+        }
+
+        const max = tablist.scrollWidth - tablist.clientWidth
+        const next = Math.min(Math.max(tablist.scrollLeft + event.deltaY, 0), max)
+
+        if (next === tablist.scrollLeft) {
+          return
+        }
+
+        event.preventDefault()
+        tablist.scrollLeft = next
+      })
+    }
+
+    for (const [index, tab] of tabs.entries()) {
+      tab.addEventListener('click', () => {
+        select(tab)
+        // Keeps the active pill in view when the strip scrolls on narrow screens.
+        tab.scrollIntoView({
+          behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+          block: 'nearest',
+          inline: 'nearest',
+        })
+      })
+
+      tab.addEventListener('keydown', (event) => {
+        // Horizontal only: the strip lays out as a row at every width, so
+        // ArrowUp/ArrowDown must stay with the page for scrolling.
+        const offset = { ArrowRight: 1, ArrowLeft: -1 }[event.key]
+        const next = offset !== undefined
+          ? tabs[(index + offset + tabs.length) % tabs.length]
+          : event.key === 'Home'
+            ? tabs[0]
+            : event.key === 'End'
+              ? tabs.at(-1)
+              : undefined
+
+        if (!next) {
+          return
+        }
+
+        event.preventDefault()
+        select(next)
+        next.focus()
+      })
+    }
+  }
+
+  init()
+  // Fires once the new body is in place and before any page scripts, so it
+  // covers every re-entry; on pages without the showcase `init` finds nothing.
+  document.addEventListener('astro:after-swap', init)
+</script>

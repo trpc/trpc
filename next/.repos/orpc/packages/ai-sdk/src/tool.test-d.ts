@@ -1,26 +1,13 @@
-import { oc } from '@orpc/contract'
+import type { InferToolInput, InferToolOutput } from 'ai'
+import { asyncIteratorObject, oc } from '@orpc/contract'
 import { os } from '@orpc/server'
-import { generateText, tool } from 'ai'
+import { generateText } from 'ai'
 import { z } from 'zod'
-import { createTool, implementTool } from './tool'
+import { createToolFactory, implementToolFactory } from './tool'
 
-describe('tool', () => {
-  it('throw on missing inputSchema is correct, because tool require inputSchema', () => {
-    tool({
-      inputSchema: z.object({}),
-    })
-
-    // @ts-expect-error inputSchema is required
-    tool({})
-  })
-})
-
-describe('implementTool', () => {
+describe('implementToolFactory', () => {
   it('can use as a tool', () => {
     const contract = oc
-      .route({
-        summary: 'Get the weather in a location',
-      })
       .input(z.object({
         location: z.string().describe('The location to get the weather for'),
       }))
@@ -29,7 +16,7 @@ describe('implementTool', () => {
         temperature: z.number().describe('The temperature in Fahrenheit'),
       }))
 
-    const weatherTool = implementTool(contract, {
+    const weatherTool = implementToolFactory()(contract, {
       execute: async ({ location }) => ({
         location,
         temperature: 72 + Math.floor(Math.random() * 21) - 10,
@@ -47,9 +34,6 @@ describe('implementTool', () => {
 
   it('infer correct input & output', () => {
     const contract = oc
-      .route({
-        summary: 'Get the weather in a location',
-      })
       .input(z.object({
         stringToNumber: z.string().transform(val => Number(val)),
       }))
@@ -57,7 +41,7 @@ describe('implementTool', () => {
         numberToBoolean: z.number().transform(val => Boolean(val)),
       }))
 
-    const tool = implementTool(contract, {
+    const tool = implementToolFactory()(contract, {
       execute: async ({ stringToNumber }) => {
         expectTypeOf(stringToNumber).toEqualTypeOf<number>()
 
@@ -67,7 +51,7 @@ describe('implementTool', () => {
       },
     })
 
-    const tool2 = implementTool(contract, {
+    const tool2 = implementToolFactory()(contract, {
       // @ts-expect-error invalid numberToBoolean
       execute: async ({ stringToNumber }) => {
         return {
@@ -78,12 +62,9 @@ describe('implementTool', () => {
   })
 })
 
-describe('createTool', () => {
+describe('createToolFactory', () => {
   it('can use as a tool', () => {
     const procedure = os
-      .route({
-        summary: 'Get the weather in a location',
-      })
       .input(z.object({
         location: z.string().describe('The location to get the weather for'),
       }))
@@ -98,7 +79,7 @@ describe('createTool', () => {
         }
       })
 
-    const weatherTool = createTool(procedure)
+    const weatherTool = createToolFactory()(procedure)
 
     void generateText({
       model: 'openai/gpt-4o',
@@ -111,9 +92,6 @@ describe('createTool', () => {
 
   it('infer correct input & output', () => {
     const procedure = os
-      .route({
-        summary: 'Get the weather in a location',
-      })
       .input(z.object({
         stringToNumber: z.string().transform(val => Number(val)),
       }))
@@ -126,23 +104,22 @@ describe('createTool', () => {
         }
       })
 
-    const tool = createTool(procedure, {
-      execute: async ({ stringToNumber }) => {
-        expectTypeOf(stringToNumber).toEqualTypeOf<number>()
+    const tool = createToolFactory()(procedure)
 
-        return {
-          numberToBoolean: stringToNumber,
-        }
-      },
-    })
+    expectTypeOf<InferToolInput<typeof tool>>().toEqualTypeOf<{ stringToNumber: number }>()
+    expectTypeOf<InferToolOutput<typeof tool>>().toEqualTypeOf<{ numberToBoolean: number }>()
+  })
 
-    const tool2 = createTool(procedure, {
-      // @ts-expect-error invalid numberToBoolean
-      execute: async ({ stringToNumber }) => {
-        return {
-          numberToBoolean: true,
-        }
-      },
+  it('execute is managed by the factory', () => {
+    const procedure = os
+      .input(z.object({
+        location: z.string(),
+      }))
+      .handler(async () => 'output')
+
+    void createToolFactory()(procedure, {
+      // @ts-expect-error execute is managed by the factory
+      execute: async () => 'output',
     })
   })
 
@@ -154,11 +131,49 @@ describe('createTool', () => {
       }))
       .handler(async ({ context, input }) => {})
 
-    void createTool(procedure, {
+    void createToolFactory({
       context: { authToken: '' },
-    })
+    })(procedure)
 
     // @ts-expect-error missing context
-    void createTool(procedure, {})
+    void createToolFactory()(procedure)
+
+    // @ts-expect-error mismatched context
+    void createToolFactory({ context: { other: '' } })(procedure)
+  })
+
+  it('does not accept a signal, the AI SDK provides one per tool call', () => {
+    // @ts-expect-error signal is not a factory option
+    void createToolFactory({ signal: AbortSignal.timeout(1000) })
+  })
+
+  it('infer output as yield type for async iterator outputs', () => {
+    const procedure = os
+      .input(z.object({ location: z.string() }))
+      .output(asyncIteratorObject(
+        z.object({ status: z.string() }),
+        z.object({ url: z.string() }),
+      ))
+      .handler(async function* () {
+        yield { status: 'building' }
+        return { url: 'https://example.com' }
+      })
+
+    const tool = createToolFactory()(procedure)
+
+    expectTypeOf<InferToolOutput<typeof tool>>().toEqualTypeOf<{ status: string }>()
+  })
+
+  it('infer output as yield type for async generator handlers without an output schema', () => {
+    const procedure = os
+      .input(z.object({ location: z.string() }))
+      .handler(async function* () {
+        yield { status: 'building' }
+        return { url: 'https://example.com' }
+      })
+
+    const tool = createToolFactory()(procedure)
+
+    expectTypeOf<InferToolOutput<typeof tool>>().toEqualTypeOf<{ status: string }>()
   })
 })

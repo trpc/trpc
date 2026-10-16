@@ -1,117 +1,192 @@
-import { MessageChannel } from 'node:worker_threads'
-import { isObject } from '@orpc/shared'
-import { decodeRequestMessage, deserializeRequestMessage, encodeResponseMessage, MessageType, serializeResponseMessage } from '@orpc/standard-server-peer'
+import { AbortError, sleep } from '@orpc/shared'
+import { decodePeerMessage, encodePeerMessage } from '@standard-server/peer'
 import { createORPCClient } from '../../client'
 import { RPCLink } from './rpc-link'
 
 describe('rpcLink', () => {
-  let orpc: any
-  let receivedMessages: any[]
-  let clientPort: any
-  let serverPort: any
-  let transfer: ReturnType<typeof vi.fn>
-
   beforeEach(() => {
-    const channel = new MessageChannel()
-    clientPort = channel.port1
-    serverPort = channel.port2
-
-    clientPort.start()
-    serverPort.start()
-
-    receivedMessages = []
-    serverPort.addEventListener('message', (event: any) => {
-      receivedMessages.push(event.data)
-    })
-
-    transfer = vi.fn()
-    orpc = createORPCClient(new RPCLink({
-      port: clientPort,
-      experimental_transfer: transfer,
-    }))
+    vi.clearAllMocks()
   })
 
-  it('on success', async () => {
-    expect(orpc.ping('input')).resolves.toEqual('pong')
+  let onMessage: any
+  let onClose: any
 
-    await vi.waitFor(() => expect(receivedMessages.length).toBe(1))
+  const createPort = () => {
+    const port = {
+      addEventListener: vi.fn((event: string, callback: any) => {
+        if (event === 'message')
+          onMessage = callback
+        if (event === 'close')
+          onClose = callback
+      }),
+      postMessage: vi.fn(),
+    }
 
-    const [id, , payload] = (await decodeRequestMessage(receivedMessages[0]))
+    return port
+  }
 
-    expect(id).toBeTypeOf('string')
-    expect(payload).toEqual({
-      url: new URL('http://orpc/ping'),
+  const createResponseMessage = async ({
+    id,
+    body = { json: 'pong' },
+    status = 200,
+    prefix,
+  }: { id: string, body?: unknown, status?: number, prefix?: string }) => {
+    return encodePeerMessage({
+      id,
+      kind: 'response',
+      json: { body, status, headers: {} },
+    }, prefix ? { prefix } : undefined)
+  }
+
+  const decodeRequest = (sent: any, prefix?: string) => {
+    return decodePeerMessage(sent, prefix ? { prefix } : undefined) as {
+      matched: true
+      message: { id: string, kind: string, json: any }
+    }
+  }
+
+  it.each([
+    ['string', async (encoded: string | Uint8Array) => encoded],
+    ['bytes', async (encoded: string | Uint8Array) => new TextEncoder().encode(encoded as string)],
+  ])('handles %s response', async (_type, transform) => {
+    const port = createPort()
+    const orpc = createORPCClient(new RPCLink({ port })) as any
+
+    const promise = expect(orpc.ping('input')).resolves.toEqual('pong')
+
+    await vi.waitFor(() => expect(port.postMessage).toHaveBeenCalledTimes(1))
+
+    const decoded = decodeRequest(port.postMessage.mock.calls[0]![0])
+
+    expect(decoded.matched).toBe(true)
+    expect(decoded.message.kind).toBe('request')
+    expect(decoded.message.id).toBeTypeOf('string')
+    expect(decoded.message.json).toEqual({
+      url: '/ping',
       body: { json: 'input' },
-      headers: {},
-      method: 'POST',
     })
 
-    serverPort.postMessage(
-      await encodeResponseMessage(id, MessageType.RESPONSE, { body: { json: 'pong' }, status: 200, headers: {} }),
-    )
-  })
-
-  it('on success with blob', async () => {
-    expect(orpc.ping(new Blob(['input']))).resolves.toEqual('pong')
-
-    await vi.waitFor(() => expect(receivedMessages.length).toBe(1))
-
-    const [id, , payload] = (await decodeRequestMessage(receivedMessages[0]))
-
-    expect(id).toBeTypeOf('string')
-    expect(payload).toEqual({
-      url: new URL('http://orpc/ping'),
-      body: expect.any(FormData),
-      headers: expect.any(Object),
-      method: 'POST',
-    })
-
-    serverPort.postMessage(
-      await encodeResponseMessage(id, MessageType.RESPONSE, { body: { json: 'pong' }, status: 200, headers: {} }),
-    )
-  })
-
-  it('on success with transfer', async () => {
-    const array = new Uint8Array([1, 2, 3])
-
-    transfer.mockResolvedValueOnce([array.buffer])
-
-    const promise = expect(orpc.ping(array)).resolves.toEqual('pong')
-
-    await vi.waitFor(() => expect(receivedMessages.length).toBe(1))
-    expect(receivedMessages[0]).toSatisfy(isObject)
-    const [id, type, payload] = deserializeRequestMessage(receivedMessages[0])
-
-    expect(array.byteLength).toBe(0) // transferred so length is 0
-
-    expect(transfer).toHaveBeenCalledTimes(1)
-    expect(transfer).toHaveBeenCalledWith([id, type, expect.objectContaining({
-      url: new URL('http://orpc/ping'),
-      body: { json: expect.toBeOneOf([array]) },
-      headers: {},
-      method: 'POST',
-    })], expect.toBeOneOf([clientPort]))
-
-    expect(id).toBeTypeOf('string')
-    expect(payload).toEqual({
-      url: new URL('http://orpc/ping'),
-      body: { json: expect.toSatisfy(v => v !== array && v instanceof Uint8Array && v.byteLength === 3) },
-      headers: {},
-      method: 'POST',
-    })
-
-    serverPort.postMessage(
-      serializeResponseMessage(id, MessageType.RESPONSE, { body: { json: 'pong' }, status: 200, headers: {} }),
-    )
+    const raw = await createResponseMessage({ id: decoded.message.id })
+    onMessage({ data: await transform(raw) })
 
     await promise
   })
 
-  it('on close', async () => {
-    expect(orpc.ping('input')).rejects.toThrow(/aborted/)
+  it('aborts pending requests on close', async () => {
+    const port = createPort()
+    const orpc = createORPCClient(new RPCLink({ port })) as any
 
-    await new Promise(resolve => setTimeout(resolve, 0))
+    const promise = expect(orpc.ping('input')).rejects.toThrow(new AbortError('MessagePort closed'))
 
-    serverPort.close()
+    await sleep(0)
+
+    onClose()
+
+    await promise
+  })
+
+  it('rejects calls made after close', async () => {
+    const port = createPort()
+    const orpc = createORPCClient(new RPCLink({ port })) as any
+
+    onClose()
+
+    await expect(orpc.ping('input')).rejects.toThrow(new AbortError('MessagePort closed'))
+    expect(port.postMessage).not.toHaveBeenCalled()
+  })
+
+  it('can encode messages with prefix', async () => {
+    const port = createPort()
+    const orpc = createORPCClient(new RPCLink({
+      port,
+      encodePeerMessage: { prefix: 'orpc:' },
+    })) as any
+
+    const promise = expect(orpc.ping('input')).resolves.toEqual('pong')
+
+    await vi.waitFor(() => expect(port.postMessage).toHaveBeenCalledTimes(1))
+
+    const decoded = decodeRequest(port.postMessage.mock.calls[0]![0], 'orpc:')
+
+    expect(decoded.matched).toBe(true)
+    expect(decoded.message.kind).toBe('request')
+
+    onMessage({ data: await createResponseMessage({ id: decoded.message.id }) })
+
+    await promise
+  })
+
+  it('can decode messages with prefix and ignore messages with mismatched prefix', async () => {
+    const port = createPort()
+    const orpc = createORPCClient(new RPCLink({
+      port,
+      decodePeerMessage: { prefix: 'orpc:' },
+    })) as any
+
+    const promise = expect(orpc.ping('input')).resolves.toEqual('pong')
+
+    await vi.waitFor(() => expect(port.postMessage).toHaveBeenCalledTimes(1))
+
+    const decoded = decodeRequest(port.postMessage.mock.calls[0]![0])
+    const id = decoded.message.id
+
+    // Message with wrong prefix — should be ignored
+    onMessage({ data: await createResponseMessage({ id, prefix: 'wrong:' }) })
+
+    // Correct message — should be processed
+    onMessage({ data: await createResponseMessage({ id, prefix: 'orpc:' }) })
+
+    await promise
+  })
+
+  it('can receive and send un-encoded messages with transfer option (structured clone)', async () => {
+    const port = createPort()
+    const transferable = new Uint8Array([1, 2, 3]).buffer
+    const transfer = vi.fn(async () => [transferable])
+    const orpc = createORPCClient(new RPCLink({
+      port,
+      experimental_transfer: transfer,
+    })) as any
+
+    const promise = expect(orpc.ping('input')).resolves.toEqual('pong')
+
+    await vi.waitFor(() => expect(port.postMessage).toHaveBeenCalledTimes(1))
+
+    const message = port.postMessage.mock.calls[0]![0]
+
+    expect(port.postMessage).toHaveBeenCalledWith(
+      message,
+      [transferable],
+    )
+
+    onMessage({
+      data: {
+        id: message.id,
+        kind: 'response',
+        json: { body: { json: 'pong' }, status: 200, headers: {} },
+      },
+    })
+
+    await promise
+  })
+
+  it('ignore invalid messages', async () => {
+    const port = createPort()
+    const orpc = createORPCClient(new RPCLink({ port })) as any
+
+    const promise = expect(orpc.ping('input')).resolves.toEqual('pong')
+
+    await vi.waitFor(() => expect(port.postMessage).toHaveBeenCalledTimes(1))
+
+    const decoded = decodeRequest(port.postMessage.mock.calls[0]![0])
+    const id = decoded.message.id
+
+    // Invalid message — should be ignored
+    onMessage({ data: { invalid: true } })
+
+    // Correct message — should be processed
+    onMessage({ data: await createResponseMessage({ id }) })
+
+    await promise
   })
 })

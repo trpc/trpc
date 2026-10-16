@@ -1,0 +1,35 @@
+---
+import Icon from 'blume/components/Icon.astro'
+import { GITHUB_SPONSORS_URL, OPEN_COLLECTIVE_URL, pastSponsors, sponsorTiers } from '../sponsors/data'
+import InnerPage from './_home/InnerPage.astro'
+import PastSponsors from './_sponsors/PastSponsors.astro'
+import SponsorTable from './_sponsors/SponsorTable.astro'
+import Stats from './_sponsors/Stats.astro'
+
+export const prerender = true
+
+const tiers = sponsorTiers()
+const past = pastSponsors()
+---
+
+<InnerPage
+  name="Sponsors"
+  route="/sponsors"
+  description="Everyone who funds oRPC, what each sponsor pledges this month, and the past sponsors who helped get it here."
+  heading="The people who keep oRPC going."
+  lede="oRPC is MIT licensed and built in the open. Sponsors pay for the time that goes into it: fixes, features, reviews, and the docs you are reading."
+>
+  <Fragment slot="actions">
+    <a class="orpc-btn orpc-btn-primary" href={GITHUB_SPONSORS_URL} rel="noopener" target="_blank">
+      <Icon name="heart" size={15} />
+      Sponsor on GitHub
+    </a>
+    <a class="orpc-btn orpc-btn-ghost bg-background" href={OPEN_COLLECTIVE_URL} rel="noopener" target="_blank">
+      <Icon name="hand-coins" size={15} />
+      Open Collective
+    </a>
+  </Fragment>
+  <Stats tiers={tiers} past={past} />
+  {tiers.length > 0 && <SponsorTable tiers={tiers} />}
+  {past.length > 0 && <PastSponsors sponsors={past} />}
+</InnerPage>

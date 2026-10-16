@@ -1,20 +1,26 @@
 import type { Context, Router } from '@orpc/server'
 import type { FastifyHandlerOptions } from '@orpc/server/fastify'
-import type { StandardOpenAPIHandlerOptions } from '../standard'
+import type { StandardHandlerOptions } from '@orpc/server/standard'
+import type { OpenAPIHandlerCodecOptions } from '../standard'
 import { FastifyHandler } from '@orpc/server/fastify'
-import { StandardOpenAPIHandler } from '../standard'
+import { StandardHandler } from '@orpc/server/standard'
+import { OpenAPIHandlerCodec } from '../standard'
 
-export interface OpenAPIHandlerOptions<T extends Context> extends FastifyHandlerOptions<T>, StandardOpenAPIHandlerOptions<T> {
-}
+export interface OpenAPIHandlerOptions<T extends Context>
+  extends FastifyHandlerOptions<T>, StandardHandlerOptions<T>, OpenAPIHandlerCodecOptions<T> {}
 
 /**
- * OpenAPI Handler for Fastify Server
+ * Serves oRPC procedures over the OpenAPI (RESTful) protocol as part of a Fastify server.
  *
- * @see {@link https://orpc.dev/docs/openapi/openapi-handler OpenAPI Handler Docs}
- * @see {@link https://orpc.dev/docs/adapters/http HTTP Adapter Docs}
+ * @see {@link https://orpc.dev/docs/adapters/fastify | Fastify Adapter}
  */
 export class OpenAPIHandler<T extends Context> extends FastifyHandler<T> {
-  constructor(router: Router<any, T>, options: NoInfer<OpenAPIHandlerOptions<T>> = {}) {
-    super(new StandardOpenAPIHandler(router, options), options)
+  constructor(
+    router: Router<T>,
+    options: NoInfer<OpenAPIHandlerOptions<T>> = {},
+  ) {
+    const codec = new OpenAPIHandlerCodec(router, options)
+    const handler = new StandardHandler(codec, options)
+    super(handler, options)
   }
 }

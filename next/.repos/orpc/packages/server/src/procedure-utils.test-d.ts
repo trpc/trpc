@@ -1,38 +1,60 @@
-import type { ORPCError } from '@orpc/contract'
-import { safe } from '@orpc/client'
-import { ping, pong } from '../tests/shared'
+import z from 'zod'
+import { os } from './builder'
 import { call } from './procedure-utils'
 
-it('call', async () => {
-  const [error, data, isDefined] = await safe(call(ping, { input: 123 }, { context: { db: 'postgres' } }))
+describe('call', () => {
+  it('requires input, options if context is required', async () => {
+    const procedure = os
+      .$context<{ auth: boolean }>()
+      .handler(() => 'output')
 
-  if (!error) {
-    expectTypeOf(data).toEqualTypeOf<{ output: string }>()
-  }
+    // @ts-expect-error require input & options
+    call(procedure)
+    // @ts-expect-error require options
+    call(procedure, undefined)
 
-  if (isDefined) {
-    expectTypeOf(error).toEqualTypeOf<ORPCError<'BASE', { output: string }> | ORPCError<'OVERRIDE', unknown>>()
-  }
+    const output = await call(procedure, undefined, { context: { auth: true } })
+    expectTypeOf(output).toEqualTypeOf<string>()
+  })
 
-  // support signal and lastEventId
-  call(ping, { input: 123 }, { context: { db: 'postgres' }, signal: AbortSignal.timeout(1000) })
-  call(ping, { input: 123 }, { context: { db: 'postgres' }, lastEventId: '123' })
+  it('requires input if input is required', async () => {
+    const procedure = os
+      .input(z.string())
+      .handler(() => 'output')
 
-  // can call without context if all field is optional
-  call(pong, undefined)
-  call(pong, undefined, { context: {}, signal: AbortSignal.timeout(1000), lastEventId: '123' })
+    // @ts-expect-error require input & options
+    call(procedure)
 
-  // @ts-expect-error - invalid input
-  call(ping, { input: '123' }, { context: { db: 'postgres' } })
+    const output = await call(procedure, 'input')
+    expectTypeOf(output).toEqualTypeOf<string>()
+  })
 
-  // can call without third argument if all context fields is optional
-  call(pong, { input: 123 })
-  // @ts-expect-error - context is required
-  call(ping, { input: 123 })
-  // @ts-expect-error - invalid context
-  call(ping, { input: 123 }, { context: { db: 123 } })
-  // @ts-expect-error - invalid signal
-  call(ping, { input: 123 }, { context: { db: 'postgres' }, signal: 'invalid' })
-  // @ts-expect-error - invalid lastEventId
-  call(ping, { input: 123 }, { context: { db: 'postgres' }, lastEventId: 123 })
+  it('optional input & context if both is optional', async () => {
+    const procedure = os
+      .input(z.string().optional())
+      .handler(() => 'output')
+
+    const output = await call(procedure)
+    expectTypeOf(output).toEqualTypeOf<string>()
+  })
+
+  it('infer correct input types', () => {
+    const procedure = os
+      .input(z.number())
+      .handler(() => 'output')
+
+    // @ts-expect-error require input is invalid
+    call(procedure, 'invalid')
+    call(procedure, 123)
+  })
+
+  it('infer correct context types', () => {
+    const procedure = os
+      .$context<{ auth: boolean }>()
+      .handler(() => 'output')
+
+    // @ts-expect-error require input is invalid
+    call(procedure, undefined, { context: { auth: 'invalid' } })
+    call(procedure, undefined, { context: { auth: true } })
+  })
 })

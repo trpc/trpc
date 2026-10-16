@@ -1,19 +1,26 @@
 import type { Context } from '../../context'
 import type { Router } from '../../router'
-import type { StandardRPCHandlerOptions } from '../standard'
-import { StandardRPCHandler } from '../standard'
-import { WebsocketHandler } from './handler'
+import type { RPCHandlerCodecOptions, StandardHandlerOptions } from '../standard'
+import type { WebSocketHandlerOptions } from './handler'
+import { RPCHandlerCodec, StandardHandler } from '../standard'
+import { WebSocketHandler } from './handler'
 
-export interface RPCHandlerOptions<T extends Context> extends StandardRPCHandlerOptions<T> {}
+export interface RPCHandlerOptions<T extends Context>
+  extends StandardHandlerOptions<T>, RPCHandlerCodecOptions<T>, WebSocketHandlerOptions<T> {}
 
 /**
- * RPC Handler for Websocket adapter
+ * Serves an oRPC router over the RPC protocol on a standard WebSocket
+ * connection (Deno, Bun, Cloudflare Durable Objects, and more).
  *
- * @see {@link https://orpc.dev/docs/rpc-handler RPC Handler Docs}
- * @see {@link https://orpc.dev/docs/adapters/websocket Websocket Adapter Docs}
+ * @see {@link https://orpc.dev/docs/adapters/websocket | WebSocket Adapters}
  */
-export class RPCHandler<T extends Context> extends WebsocketHandler<T> {
-  constructor(router: Router<any, T>, options: NoInfer<RPCHandlerOptions<T>> = {}) {
-    super(new StandardRPCHandler(router, options))
+export class RPCHandler<T extends Context> extends WebSocketHandler<T> {
+  constructor(
+    router: Router<T>,
+    options: NoInfer<RPCHandlerOptions<T>> = {},
+  ) {
+    const codec = new RPCHandlerCodec(router, options)
+    const handler = new StandardHandler(codec, options)
+    super(handler, options)
   }
 }

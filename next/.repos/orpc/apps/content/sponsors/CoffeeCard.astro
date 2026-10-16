@@ -1,0 +1,59 @@
+---
+// The "Keep it brewing" card pinned to the bottom of the desktop on-this-page
+// aside. Opening it reveals the two places to sponsor — the GitHub Sponsors
+// profile and the Open Collective page — so the sponsor picks their platform
+// and the tier there. Same `<details>` dropdown pattern as the header's
+// "More" menu, popping upward since the card sits at the rail's bottom.
+//
+// Pinning without owning RootLayout: the aside flex rule in theme.css plus
+// `order-1` place the card after Blume's non-overridable PageActions, `mt-auto`
+// rests it at the rail's bottom when the content is short, and `sticky
+// bottom-0` keeps it in view once the rail scrolls. The wrapper owns the
+// rail's bottom padding (theme.css zeroes the aside's) so the resting and
+// stuck positions coincide; its solid background and `z-10` keep the actions
+// (positioned dropdown containers, later in the DOM) from showing through.
+import Icon from 'blume/components/Icon.astro'
+
+const SPONSOR_PAGES = [
+  { label: 'GitHub Sponsors', icon: 'github', href: 'https://github.com/sponsors/dinwwwh' },
+  { label: 'Open Collective', icon: 'hand-coins', href: 'https://opencollective.com/middleapi' },
+]
+---
+
+<div class="sticky bottom-0 z-10 order-1 mt-auto bg-background py-4">
+  <details class="group relative">
+    <summary
+      class="group/card flex cursor-pointer list-none items-center gap-3 rounded-blume border border-border px-3 py-2.5 transition hover:border-accent/50 hover:bg-accent/10 focus-visible:border-accent/50 focus-visible:bg-accent/10 [&::-webkit-details-marker]:hidden"
+      title="Choose GitHub Sponsors or Open Collective"
+    >
+      <span class="flex size-8 flex-none items-center justify-center rounded-md bg-accent/15 text-accent transition-transform group-hover/card:-rotate-6">
+        <Icon name="coffee" size={16} />
+      </span>
+      <span class="flex flex-col gap-0.5">
+        <span class="text-sm leading-tight font-semibold text-foreground">Keep it brewing</span>
+        <span class="text-xs leading-tight text-muted-foreground">Become a sponsor</span>
+      </span>
+      <Icon
+        class="ms-auto text-muted-foreground transition-transform group-open:rotate-180"
+        name="chevron-up"
+        size={13}
+      />
+    </summary>
+    <div class="absolute inset-x-0 bottom-full z-10 mb-1 rounded-blume border border-border bg-background p-1 shadow-xl">
+      {
+        SPONSOR_PAGES.map(page => (
+          <a
+            class="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            href={page.href}
+            rel="noopener"
+            target="_blank"
+          >
+            <Icon name={page.icon} size={15} />
+            <span class="flex-1">{page.label}</span>
+            <Icon class="opacity-60" name="arrow-up-right" size={13} />
+          </a>
+        ))
+      }
+    </div>
+  </details>
+</div>

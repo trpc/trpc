@@ -1,0 +1,22 @@
+---
+import Icon from 'blume/components/Icon.astro'
+import { experts, feedbackHref } from '../experts/data'
+import Directory from './_experts/Directory.astro'
+import InnerPage from './_home/InnerPage.astro'
+
+export const prerender = true
+---
+
+<InnerPage
+  name="Experts"
+  route="/experts"
+  description="Independent developers and teams you can hire for oRPC work. Each gives oRPC a share of what clients pay them. oRPC does not guarantee their work."
+  heading="Hire help for your oRPC project."
+  lede="Independent developers and teams who do paid oRPC work. Hiring one also funds the project."
+>
+  <a slot="actions" class="orpc-btn orpc-btn-ghost bg-background" href={feedbackHref()}>
+    <Icon name="message-square-warning" size={15} />
+    Send feedback
+  </a>
+  <Directory experts={experts} />
+</InnerPage>

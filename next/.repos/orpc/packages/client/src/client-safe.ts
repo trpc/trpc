@@ -1,14 +1,14 @@
-import type { Client, ClientRest, NestedClient } from './types'
+import type { AnyNestedClient, Client, ClientRest } from './types'
 import type { SafeResult } from './utils'
 import { isTypescriptObject } from '@orpc/shared'
 import { RECURSIVE_CLIENT_UNWRAP_KEYS } from './consts'
 import { safe } from './utils'
 
-export type SafeClient<T extends NestedClient<any>>
+export type SafeClient<T extends AnyNestedClient>
   = T extends Client<infer UContext, infer UInput, infer UOutput, infer UError>
     ? (...rest: ClientRest<UContext, UInput>) => Promise<SafeResult<UOutput, UError>>
     : {
-        [K in keyof T]: T[K] extends NestedClient<any> ? SafeClient<T[K]> : never
+        [K in keyof T]: T[K] extends AnyNestedClient ? SafeClient<T[K]> : never
       }
 
 /**
@@ -17,25 +17,35 @@ export type SafeClient<T extends NestedClient<any>>
  * @example
  * ```ts
  * const safeClient = createSafeClient(client)
- * const { error, data, isDefined } = await safeClient.doSomething({ id: '123' })
+ * const { error, data, definedError, isSuccess } = await safeClient.doSomething({ id: '123' })
+ * // or const [error, data, definedError, isSuccess] = await safeClient.doSomething({ id: '123' })
  * ```
  *
- * @see {@link https://orpc.dev/docs/client/error-handling#using-createsafeclient Safe Client Docs}
+ * @see {@link https://orpc.dev/docs/client/error-handling#safe-client | Client Error Handling - Safe Client}
  */
-export function createSafeClient<T extends NestedClient<any>>(client: T): SafeClient<T> {
+export function createSafeClient<T extends AnyNestedClient>(client: T): SafeClient<T> {
+  const cache = new Map<string, SafeClient<AnyNestedClient>>()
+
   const proxy = new Proxy((...args: any[]) => safe((client as any)(...args)), {
-    get(target, prop, receiver) {
+    get(target, prop) {
       if (typeof prop !== 'string' || RECURSIVE_CLIENT_UNWRAP_KEYS.has(prop)) {
         return Reflect.get(target, prop)
       }
 
-      const value = Reflect.get(client, prop, receiver)
+      let safeClient = cache.get(prop)
 
-      if (!isTypescriptObject(value)) {
-        return value
+      if (safeClient === undefined) {
+        const value = (client as Record<string, unknown>)[prop]
+
+        if (!isTypescriptObject(value)) {
+          return value
+        }
+
+        safeClient = createSafeClient(value as AnyNestedClient)
+        cache.set(prop, safeClient)
       }
 
-      return createSafeClient(value as NestedClient<any>)
+      return safeClient
     },
   })
 

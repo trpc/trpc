@@ -1,8 +1,13 @@
 {
   "name": "@orpc/contract",
   "type": "module",
-  "version": "1.15.5",
+  "version": "2.0.0-beta.44",
+  "description": "Define typesafe API contracts as the single source of truth for oRPC, powered by Standard Schema",
   "license": "MIT",
+  "funding": [
+    "https://github.com/sponsors/dinwwwh",
+    "https://opencollective.com/middleapi"
+  ],
   "homepage": "https://orpc.dev",
   "repository": {
     "type": "git",
@@ -10,11 +15,20 @@
     "directory": "packages/contract"
   },
   "keywords": [
-    "orpc"
+    "orpc",
+    "rpc",
+    "api",
+    "typescript",
+    "typesafe",
+    "contract",
+    "contract-first",
+    "standard-schema",
+    "openapi"
   ],
   "sideEffects": false,
   "publishConfig": {
     "exports": {
+      "./package.json": "./package.json",
       ".": {
         "types": "./dist/index.d.mts",
         "import": "./dist/index.mjs",
@@ -28,6 +42,7 @@
     }
   },
   "exports": {
+    "./package.json": "./package.json",
     ".": "./src/index.ts",
     "./plugins": "./src/plugins/index.ts"
   },
@@ -35,19 +50,17 @@
     "dist"
   ],
   "scripts": {
-    "build": "unbuild",
-    "build:watch": "pnpm run build --watch",
+    "prepack": "unbuild",
     "type:check": "tsc -b"
   },
   "dependencies": {
     "@orpc/client": "workspace:*",
     "@orpc/shared": "workspace:*",
-    "@standard-schema/spec": "^1.1.0",
-    "openapi-types": "^12.1.3"
+    "@standard-schema/spec": "^1.1.0"
   },
   "devDependencies": {
-    "arktype": "2.2.0",
-    "valibot": "^1.2.0",
-    "zod": "^4.6.2"
+    "arktype": "^2.2.8",
+    "valibot": "^1.5.0",
+    "zod": "^4.6.5"
   }
 }

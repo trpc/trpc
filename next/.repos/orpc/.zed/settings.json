@@ -1,0 +1,55 @@
+{
+  "format_on_save": "on",
+  // Use ESLint's --fix:
+  "code_actions_on_format": {
+    "source.fixAll.eslint": true
+  },
+  "formatter": [],
+  // Enable eslint for all supported languages
+  // Defaults only include https://github.com/search?q=repo%3Azed-industries%2Fzed%20eslint_languages&type=code
+  "languages": {
+    "HTML": {
+      "language_servers": ["...", "eslint"]
+    },
+    "Markdown": {
+      "language_servers": ["...", "eslint"]
+    },
+    "Markdown-Inline": {
+      "language_servers": ["...", "eslint"]
+    },
+    "JSON": {
+      "language_servers": ["...", "eslint"]
+    },
+    "JSONC": {
+      "language_servers": ["...", "eslint"]
+    },
+    "YAML": {
+      "language_servers": ["...", "eslint"]
+    },
+    "CSS": {
+      "language_servers": ["...", "eslint"]
+    }
+    // Add other languages as needed
+  },
+  "lsp": {
+    "eslint": {
+      "settings": {
+        "workingDirectories": ["./"],
+
+        // Silent the stylistic rules in your IDE, but still auto fix them
+        "rulesCustomizations": [
+          { "rule": "style/*", "severity": "off", "fixable": true },
+          { "rule": "format/*", "severity": "off", "fixable": true },
+          { "rule": "*-indent", "severity": "off", "fixable": true },
+          { "rule": "*-spacing", "severity": "off", "fixable": true },
+          { "rule": "*-spaces", "severity": "off", "fixable": true },
+          { "rule": "*-order", "severity": "off", "fixable": true },
+          { "rule": "*-dangle", "severity": "off", "fixable": true },
+          { "rule": "*-newline", "severity": "off", "fixable": true },
+          { "rule": "*quotes", "severity": "off", "fixable": true },
+          { "rule": "*semi", "severity": "off", "fixable": true }
+        ]
+      }
+    }
+  }
+}

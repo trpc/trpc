@@ -3,10 +3,15 @@ import pluginBan from 'eslint-plugin-ban'
 
 export default antfu({
   formatters: true,
-  ignores: ['packages/hey-api/tests/client/**'],
+  ignores: [
+    'packages/cloudflare/worker-configuration.d.ts',
+    'playgrounds/cloudflare/worker-configuration.d.ts',
+  ],
   rules: {
     'pnpm/yaml-enforce-settings': 'off',
     'yaml/sort-keys': 'off',
+    'jsdoc/no-defaults': 'off',
+    'guard-for-in': 'error',
   },
 }, {
   plugins: { ban: pluginBan },
@@ -24,40 +29,47 @@ export default antfu({
         message: 'Request/Blob/Response/... .bytes is not widely supported, use readAsBuffer instead',
       },
       {
-        name: 'decodeURIComponent',
-        message: 'decodeURIComponent can throw an error, use tryDecodeURIComponent instead',
+        name: ['AbortSignal', 'any'],
+        message: 'Use anyAbortSignal instead',
+      },
+      {
+        name: ['*', 'throwIfAborted'],
+        message: 'React Native\'s AbortSignal polyfill has no throwIfAborted, use throwIfAborted from @orpc/shared instead',
       },
     ],
     'no-restricted-imports': ['error', {
       patterns: [{
         group: [
-          '/json-schema-typed',
-          '/openapi-types',
+          '/@openapi-spec/types',
           '/@standard-schema/spec',
           '/compression',
         ],
         message: 'Please import from @orpc/* instead',
       }],
-      paths: [
-        {
-          name: '@opentelemetry/api',
-          allowImportNames: [
-            'AttributeValue',
-            'Context',
-            'ContextAPI',
-            'Exception',
-            'PropagationAPI',
-            'Span',
-            'SpanOptions',
-            'SpanStatusCode',
-            'TraceAPI',
-            'Tracer',
-          ],
-          message: 'Require explicit runtime import from @orpc/opentelemetry',
-        },
-      ],
     }],
     'pnpm/json-enforce-catalog': 'off',
+  },
+}, {
+  files: ['packages/*/src/**'],
+  rules: {
+    // a scoped block replaces the base rule rather than extending it,
+    // so the first two names repeat what @antfu/eslint-config already bans
+    'no-restricted-globals': ['error', {
+      name: 'global',
+      message: 'Use `globalThis` instead.',
+    }, {
+      name: 'self',
+      message: 'Use `globalThis` instead.',
+    }, {
+      name: 'AbortSignal',
+      message: 'AbortSignal is not a global in every runtime, read it only behind a typeof guard',
+    }, {
+      name: 'encodeURIComponent',
+      message: 'encodeURIComponent throws on lone surrogates, use safeEncodeURIComponent from @orpc/shared instead',
+    }, {
+      name: 'decodeURIComponent',
+      message: 'decodeURIComponent throws on malformed input, use safeDecodeURIComponent from @orpc/shared instead',
+    }],
   },
 }, {
   files: ['**/*.test.ts', '**/*.test.tsx', '**/*.test-d.ts', '**/*.test-d.tsx', 'apps/content/shared/**', 'playgrounds/**', 'packages/*/playground/**'],
@@ -66,6 +78,7 @@ export default antfu({
     'antfu/no-top-level-await': 'off',
     'no-alert': 'off',
     'ban/ban': 'off',
+    'no-restricted-globals': 'off',
   },
 }, {
   files: [
@@ -73,9 +86,9 @@ export default antfu({
     'apps/content/blog/**',
     'apps/content/docs/**',
     'apps/content/examples/**',
-    'apps/content/learn-and-contribute/**',
     'playgrounds/**',
     'packages/*/playground/**',
+    'skills/**',
   ],
   rules: {
     'no-restricted-imports': 'off',
@@ -88,6 +101,7 @@ export default antfu({
     'unicorn/prefer-type-error': 'off',
     'antfu/no-import-node-modules-by-path': 'off',
     'no-restricted-globals': 'off',
+    'import/no-duplicates': 'off',
   },
 }, {
   files: ['apps/content/examples/**'],

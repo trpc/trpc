@@ -37,26 +37,30 @@ jobs:
     permissions:
       contents: write
       id-token: write
+    env:
+      VERSION: ${{ inputs.version }}
     steps:
       - id: version
+        env:
+          TAG_INPUT: ${{ inputs.tag }}
         run: |
-          VERSION="${{ github.event.inputs.version }}"
-
-          if [[ $VERSION =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-([a-z]+)\.([1-9][0-9]*))?$ ]]; then
-            if [[ "${BASH_REMATCH[5]}" == "latest" ]]; then
-              echo "INVALID VERSION FORMAT ('latest' is not allowed): $VERSION" >&2
-              exit 1
-            fi
-
-            echo "major=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
-            echo "minor=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
-            echo "patch=${BASH_REMATCH[3]}" >> $GITHUB_OUTPUT
-            echo "preid=${BASH_REMATCH[5]}" >> $GITHUB_OUTPUT
-            echo "number=${BASH_REMATCH[6]}" >> $GITHUB_OUTPUT
-          else
+          if [[ ! $VERSION =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-([a-z]+)\.([1-9][0-9]*))?$ ]]; then
             echo "INVALID VERSION FORMAT: $VERSION" >&2
             exit 1
           fi
+
+          PREID="${BASH_REMATCH[5]}"
+          if [[ $PREID == "latest" ]]; then
+            echo "INVALID VERSION FORMAT ('latest' is not allowed): $VERSION" >&2
+            exit 1
+          fi
+
+          TAG="${TAG_INPUT:-${PREID:-latest}}"
+          if [[ ! $TAG =~ ^[a-z][a-z0-9._-]*$ ]]; then
+            echo "INVALID TAG FORMAT: $TAG" >&2
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
       - uses: actions/checkout@v7
         with:
@@ -70,14 +74,15 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      - run: pnpm exec bumpp -r ${{ github.event.inputs.version }} --yes
-        if: ${{ github.event.inputs.skip_bump != 'true' }}
+      - run: pnpm exec bumpp -r "$VERSION" --yes
+        if: ${{ !inputs.skip_bump }}
 
       - run: pnpm exec changelogithub --draft
-        if: ${{ github.event.inputs.skip_changelog != 'true' }}
+        if: ${{ !inputs.skip_changelog }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - run: pnpm --filter='./packages/*' run -r build
-
-      - run: pnpm --filter='./packages/*' publish -r --provenance --access=public --tag=${{ github.event.inputs.tag || steps.version.outputs.preid || 'latest' }} ${{ github.event.inputs.skip_git_check == 'true' && '--no-git-checks' || '' }}
+      - run: pnpm --filter='./packages/*' publish -r --provenance --access=public --tag="$TAG" $NO_GIT_CHECKS
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+          NO_GIT_CHECKS: ${{ inputs.skip_git_check && '--no-git-checks' || '' }}

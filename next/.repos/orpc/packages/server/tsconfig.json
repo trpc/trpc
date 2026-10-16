@@ -3,15 +3,9 @@
   "references": [
     { "path": "../client" },
     { "path": "../contract" },
-    { "path": "../standard-server" },
-    { "path": "../standard-server-fetch" },
-    { "path": "../standard-server-node" },
-    { "path": "../standard-server-aws-lambda" },
-    { "path": "../standard-server-peer" },
-    { "path": "../shared" },
-    { "path": "../interop" }
+    { "path": "../shared" }
   ],
-  "include": ["src"],
+  "include": ["package.json", "src"],
   "exclude": [
     "**/*.test.*",
     "**/*.bench.*",

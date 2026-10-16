@@ -1,3 +1,3 @@
-import { ORPCInstrumentation } from './packages/otel/src'
+import { ORPCInstrumentation } from '@orpc/opentelemetry'
 
 void new ORPCInstrumentation()

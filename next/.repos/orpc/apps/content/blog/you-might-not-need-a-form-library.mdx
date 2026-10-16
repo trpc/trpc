@@ -1,0 +1,113 @@
+---
+title: "You Might Not Need a Form Library"
+description: "Your API schema already knows what valid input looks like. Run that same schema in the browser, parse plain HTML forms into structured data, and display field errors, all without a form validation library."
+type: blog
+date: 2026-08-22
+search:
+  tags:
+    - Engineering
+authors:
+    name: Định Lê
+    role: Creator of oRPC
+    url: https://github.com/dinwwwh
+    avatar: https://github.com/dinwwwh.png
+ai:
+  exclude: true
+---
+
+## The Same Rules, Written Twice
+
+Every form has rules: the email must be an email, the name cannot be empty. If your API is typesafe, those rules already exist as a schema on the server. Then a form library asks you to write them again on the client: a resolver here, a rules object there, one more dependency in the bundle.
+
+Now the rules live in two places. When the server starts requiring a longer password, the form happily submits the short one, and the user finds out from a failed request instead of the field under their cursor.
+
+The fix is not a better form library. It is not writing the rules twice. Your schema can do all three jobs: validate on the server, validate in the browser, and produce the error messages your form displays.
+
+## Start With a Plain HTML Form
+
+A form submits flat key-value pairs. Your schema wants nested objects and arrays. That gap is most of the reason form state libraries exist, and it closes with one function.
+
+[`parseFormData`](/docs/helpers/form-data) reads field names written in [bracket notation](/docs/openapi/bracket-notation) and builds the structure for you:
+
+```ts
+import { parseFormData } from '@orpc/openapi/helpers'
+
+const form = new FormData()
+form.append('name', 'John')
+form.append('user[email]', 'john@example.com')
+form.append('user[hobbies][]', 'reading')
+form.append('user[hobbies][]', 'gaming')
+
+const parsed = parseFormData(form)
+// {
+//   name: 'John',
+//   user: {
+//     email: 'john@example.com',
+//     hobbies: ['reading', 'gaming']
+//   }
+// }
+```
+
+No controlled inputs, no field registration, no form state. The `name` attributes on your inputs are the single description of the form's shape.
+
+## Let the Contract Validate
+
+The parsed object goes straight into your oRPC client, and the server validates it against the procedure's schema. That part you get for free. The interesting part is doing the same check in the browser, before the request leaves.
+
+The [Request Validation Plugin](/docs/plugins/request-validation) runs your contract's input schemas on the client:
+
+```ts
+import { RequestValidationLinkPlugin } from '@orpc/contract/plugins'
+
+const link = new RPCLink({
+  plugins: [
+    new RequestValidationLinkPlugin(contract),
+  ],
+})
+```
+
+Invalid input now fails instantly, with no server round trip. And because the plugin throws the exact same error shape the server does, a `BAD_REQUEST` carrying [standard schema](https://standardschema.dev/) issues, your error handling code cannot tell the difference. Client-side validation becomes an optimization you bolt on, not a second system you maintain.
+
+## Show the Errors
+
+The last job of a form library is mapping errors back to fields. [`getIssueMessage`](/docs/helpers/form-data#getissuemessage) does that lookup with the same bracket notation your inputs already use:
+
+```tsx
+import { getIssueMessage, parseFormData } from '@orpc/openapi/helpers'
+
+export function ContactForm() {
+  const [error, setError] = useState()
+
+  const handleSubmit = async (form: FormData) => {
+    try {
+      const output = await client.contact.send(parseFormData(form))
+      console.log(output)
+    }
+    catch (error) {
+      setError(error)
+    }
+  }
+
+  return (
+    <form action={handleSubmit}>
+      <input name="user[name]" type="text" />
+      <span>{getIssueMessage(error, 'user[name]')}</span>
+
+      <input name="user[emails][]" type="email" />
+      <span>{getIssueMessage(error, 'user[emails][]')}</span>
+
+      <button type="submit">Submit</button>
+    </form>
+  )
+}
+```
+
+That is the whole form. Trace where the rules live: only in the contract. The form does not import a schema, and the client does not restate a single rule. Add a field to the schema and the same code path validates it in the browser, validates it on the server, and hands you its error message.
+
+Note what `error` holds. It works whether the plugin caught the input locally or the server rejected it, because both produce the same issues. Remove the plugin entirely and the form still works, it just pays a round trip to find out.
+
+## When You Do Want a Form Library
+
+Form libraries earn their keep when the form itself is the hard part: per-keystroke validation, dirty and touched tracking, multi-step wizards, dynamic field arrays with reordering. If that is your form, use one, and pair it with your schema through its standard schema resolver so the rules still live in one place.
+
+But most forms are a handful of fields and a submit button. For those, the platform gives you `FormData`, your contract gives you the rules, and two small helpers bridge them. The validation library you might not need is the one restating what your API already knows.

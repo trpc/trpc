@@ -1,12 +1,11 @@
-import type { Ratelimiter } from './types'
+import type { RateLimiter } from './types'
 import { os, type } from '@orpc/server'
-import { createRatelimitMiddleware } from './middleware'
+import { ratelimit } from './middleware'
 
-describe('createRatelimitMiddleware', () => {
+describe('ratelimit', () => {
   it('can infer context & input & meta types', () => {
     const procedure = os
-      .$context<{ userId: string, ratelimiter: Ratelimiter }>()
-      .$meta<{ meta?: string }>({})
+      .$context<{ userId: string, rateLimiter: RateLimiter }>()
       .input(type<{ amount: number }>())
       .use(({ next }) => {
         return next({
@@ -16,29 +15,36 @@ describe('createRatelimitMiddleware', () => {
         })
       })
       .use(
-        createRatelimitMiddleware({
-          limiter: async ({ context, procedure }, input) => {
+        ratelimit({
+          limiter: async ({ context }, input) => {
             expectTypeOf(input.amount).toBeNumber()
             expectTypeOf(context.userId).toBeString()
             expectTypeOf(context.db).toBeString()
-            expectTypeOf(procedure['~orpc'].meta.meta).toEqualTypeOf<string | undefined>()
-            return context.ratelimiter
+
+            return context.rateLimiter
           },
-          key: ({ context, procedure }, input) => {
+          key: ({ context }, input) => {
             expectTypeOf(input.amount).toBeNumber()
             expectTypeOf(context.userId).toBeString()
             expectTypeOf(context.db).toBeString()
-            expectTypeOf(procedure['~orpc'].meta.meta).toEqualTypeOf<string | undefined>()
+
             return context.userId
+          },
+          weight: ({ context }, input) => {
+            expectTypeOf(input.amount).toBeNumber()
+            expectTypeOf(context.userId).toBeString()
+            expectTypeOf(context.db).toBeString()
+
+            return 1
           },
         }),
       )
-      .handler(({ context, input, procedure }) => {
-        expectTypeOf(context.ratelimiter).toEqualTypeOf<Ratelimiter>()
+      .handler(({ context, input }) => {
+        expectTypeOf(context.rateLimiter).toEqualTypeOf<RateLimiter>()
         expectTypeOf(context.userId).toBeString()
         expectTypeOf(context.db).toBeString()
         expectTypeOf(input.amount).toBeNumber()
-        expectTypeOf(procedure['~orpc'].meta.meta).toEqualTypeOf<string | undefined>()
+
         return 'ok'
       })
   })

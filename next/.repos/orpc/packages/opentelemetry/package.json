@@ -1,0 +1,59 @@
+{
+  "name": "@orpc/opentelemetry",
+  "type": "module",
+  "version": "2.0.0-beta.44",
+  "description": "OpenTelemetry integration for oRPC: distributed tracing for typesafe APIs",
+  "license": "MIT",
+  "funding": [
+    "https://github.com/sponsors/dinwwwh",
+    "https://opencollective.com/middleapi"
+  ],
+  "homepage": "https://orpc.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/middleapi/orpc.git",
+    "directory": "packages/opentelemetry"
+  },
+  "keywords": [
+    "orpc",
+    "opentelemetry",
+    "otel",
+    "tracing",
+    "observability",
+    "typescript"
+  ],
+  "sideEffects": false,
+  "publishConfig": {
+    "exports": {
+      "./package.json": "./package.json",
+      ".": {
+        "types": "./dist/index.d.mts",
+        "import": "./dist/index.mjs",
+        "default": "./dist/index.mjs"
+      }
+    }
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "prepack": "unbuild",
+    "type:check": "tsc -b"
+  },
+  "peerDependencies": {
+    "@opentelemetry/api": ">=1.9.0",
+    "@opentelemetry/instrumentation": ">=0.203.0"
+  },
+  "dependencies": {
+    "@orpc/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/instrumentation": "^0.223.0",
+    "@opentelemetry/sdk-trace-node": "^2.12.0"
+  }
+}

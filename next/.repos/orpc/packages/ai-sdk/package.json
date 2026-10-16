@@ -1,8 +1,13 @@
 {
   "name": "@orpc/ai-sdk",
   "type": "module",
-  "version": "1.15.5",
+  "version": "2.0.0-beta.44",
+  "description": "AI SDK integration for oRPC: turn contracts and procedures into typesafe AI SDK tools",
   "license": "MIT",
+  "funding": [
+    "https://github.com/sponsors/dinwwwh",
+    "https://opencollective.com/middleapi"
+  ],
   "homepage": "https://orpc.dev",
   "repository": {
     "type": "git",
@@ -10,12 +15,19 @@
     "directory": "packages/ai-sdk"
   },
   "keywords": [
+    "orpc",
+    "ai",
     "ai-sdk",
-    "orpc"
+    "tools",
+    "llm",
+    "agents",
+    "typescript",
+    "typesafe"
   ],
   "sideEffects": false,
   "publishConfig": {
     "exports": {
+      "./package.json": "./package.json",
       ".": {
         "types": "./dist/index.d.mts",
         "import": "./dist/index.mjs",
@@ -24,27 +36,28 @@
     }
   },
   "exports": {
+    "./package.json": "./package.json",
     ".": "./src/index.ts"
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "unbuild",
-    "build:watch": "pnpm run build --watch",
+    "prepack": "unbuild",
     "type:check": "tsc -b"
   },
   "peerDependencies": {
-    "ai": ">=5.0.76"
+    "ai": ">=7.0.31"
   },
   "dependencies": {
     "@orpc/client": "workspace:*",
     "@orpc/contract": "workspace:*",
+    "@orpc/json-schema": "workspace:*",
     "@orpc/server": "workspace:*",
     "@orpc/shared": "workspace:*"
   },
   "devDependencies": {
-    "ai": "^6.0.116",
-    "zod": "^4.6.2"
+    "ai": "^7.0.70",
+    "zod": "^4.6.5"
   }
 }

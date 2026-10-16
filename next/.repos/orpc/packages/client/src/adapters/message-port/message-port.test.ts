@@ -1,186 +1,144 @@
 import { onMessagePortClose, onMessagePortMessage, postMessagePortMessage } from './message-port'
 
 describe('postMessagePortMessage', () => {
-  it('calls postMessage on the port', () => {
-    const mockPort = {
-      addEventListener: vi.fn(),
-      postMessage: vi.fn(),
-    }
-    const data = 'hello'
-    postMessagePortMessage(mockPort, data)
-    expect(mockPort.postMessage).toBeCalledTimes(1)
-    expect(mockPort.postMessage).toHaveBeenCalledWith(data)
+  it('posts message without transfer', () => {
+    const port = { postMessage: vi.fn() } as any
+
+    postMessagePortMessage(port, 'hello')
+
+    expect(port.postMessage).toHaveBeenCalledTimes(1)
+    expect(port.postMessage).toHaveBeenCalledWith('hello')
   })
 
-  it('calls postMessage on the port with transfer', () => {
-    const mockPort = {
-      addEventListener: vi.fn(),
-      postMessage: vi.fn(),
-    }
-    const data = new Uint8Array([1, 2, 3])
-    const transfer = [data.buffer]
-    postMessagePortMessage(mockPort, data, transfer)
-    expect(mockPort.postMessage).toBeCalledTimes(1)
-    expect(mockPort.postMessage).toHaveBeenCalledWith(data, transfer)
+  it('posts message with transfer', () => {
+    const port = { postMessage: vi.fn() } as any
+    const transferable = new Uint8Array([1, 2, 3]).buffer
+
+    postMessagePortMessage(port, 'hello', [transferable])
+
+    expect(port.postMessage).toHaveBeenCalledTimes(1)
+    expect(port.postMessage).toHaveBeenCalledWith('hello', [transferable])
   })
 })
 
 describe('onMessagePortMessage', () => {
-  it('uses addEventListener if available', () => {
+  it('uses addEventListener for MessagePort', () => {
+    const callback = vi.fn()
     const port = {
       addEventListener: vi.fn(),
-      postMessage: vi.fn(),
-    }
+    } as any
 
-    const callback = vi.fn()
     onMessagePortMessage(port, callback)
 
-    expect(port.addEventListener).toBeCalledTimes(1)
-    const [event, handler] = port.addEventListener.mock.calls[0]!
-    expect(event).toBe('message')
+    expect(port.addEventListener).toHaveBeenCalledWith('message', expect.any(Function))
 
-    handler({ data: 'test-data' })
-    expect(callback).toHaveBeenCalledWith('test-data')
+    const handler = port.addEventListener.mock.calls[0]![1]
+    handler({ data: 'hello' })
+
+    expect(callback).toHaveBeenCalledWith('hello')
   })
 
-  it('uses on if available', () => {
+  it('uses on for MessagePortMainLike', () => {
+    const callback = vi.fn()
     const port = {
       on: vi.fn(),
-      postMessage: vi.fn(),
-    }
+    } as any
 
-    const callback = vi.fn()
     onMessagePortMessage(port, callback)
 
-    expect(port.on).toBeCalledTimes(1)
-    const [event, handler] = port.on.mock.calls[0]!
-    expect(event).toBe('message')
+    expect(port.on).toHaveBeenCalledWith('message', expect.any(Function))
 
-    handler({ data: 'test-data' })
-    expect(callback).toHaveBeenCalledWith('test-data')
+    const handler = port.on.mock.calls[0]![1]
+
+    handler({ data: 'hello' })
+    expect(callback).toHaveBeenCalledWith('hello')
+
+    // event?.data handles undefined event
+    handler(undefined)
+    expect(callback).toHaveBeenCalledWith(undefined)
   })
 
-  it('uses onMessage if available', () => {
+  it('uses onMessage.addListener for BrowserPortLike', () => {
+    const callback = vi.fn()
     const port = {
-      onMessage: {
-        addListener: vi.fn(),
-      },
-      onDisconnect: {
-        addListener: vi.fn(),
-      },
-      postMessage: vi.fn(),
-    }
+      onMessage: { addListener: vi.fn() },
+    } as any
 
-    const callback = vi.fn()
     onMessagePortMessage(port, callback)
 
-    expect(port.onMessage.addListener).toBeCalledTimes(1)
-    const listener = port.onMessage.addListener.mock.calls[0]![0]
+    expect(port.onMessage.addListener).toHaveBeenCalledWith(expect.any(Function))
 
-    listener('test-data')
-    expect(callback).toHaveBeenCalledWith('test-data')
+    const handler = port.onMessage.addListener.mock.calls[0]![0]
+    handler('hello')
+
+    expect(callback).toHaveBeenCalledWith('hello')
   })
 
-  it('prefer addEventListener over on', () => {
-    const port = {
-      on: vi.fn(),
-      addEventListener: vi.fn(),
-      postMessage: vi.fn(),
-    }
-
+  it('throws on unsupported port', () => {
     const callback = vi.fn()
-    onMessagePortMessage(port, callback)
+    const port = {} as any
 
-    expect(port.on).toBeCalledTimes(0)
-    expect(port.addEventListener).toBeCalledTimes(1)
-    const [event, handler] = port.addEventListener.mock.calls[0]!
-    expect(event).toBe('message')
-
-    handler({ data: 'test-data' })
-    expect(callback).toHaveBeenCalledWith('test-data')
-  })
-
-  it('throws if invalid port', () => {
-    expect(() => onMessagePortMessage({} as any, () => {})).toThrowError()
+    expect(() => onMessagePortMessage(port, callback)).toThrow(
+      'Cannot find a addEventListener/on/onMessage method on the port',
+    )
   })
 })
 
 describe('onMessagePortClose', () => {
-  it('uses addEventListener if available', () => {
+  it('uses addEventListener for MessagePort', () => {
+    const callback = vi.fn()
     const port = {
       addEventListener: vi.fn(),
-      postMessage: vi.fn(),
-    }
+    } as any
 
-    const callback = vi.fn()
     onMessagePortClose(port, callback)
 
-    expect(port.addEventListener).toBeCalledTimes(1)
-    const [event, handler] = port.addEventListener.mock.calls[0]!
-    expect(event).toBe('close')
+    expect(port.addEventListener).toHaveBeenCalledWith('close', expect.any(Function))
 
+    const handler = port.addEventListener.mock.calls[0]![1]
     handler()
-    expect(callback).toHaveBeenCalled()
+
+    expect(callback).toHaveBeenCalledTimes(1)
   })
 
-  it('uses on if available', () => {
+  it('uses on for MessagePortMainLike', () => {
+    const callback = vi.fn()
     const port = {
       on: vi.fn(),
-      postMessage: vi.fn(),
-    }
+    } as any
 
-    const callback = vi.fn()
     onMessagePortClose(port, callback)
 
-    expect(port.on).toBeCalledTimes(1)
-    const [event, handler] = port.on.mock.calls[0]!
-    expect(event).toBe('close')
+    expect(port.on).toHaveBeenCalledWith('close', expect.any(Function))
 
-    handler({})
-    expect(callback).toHaveBeenCalled()
+    const handler = port.on.mock.calls[0]![1]
+    handler()
+
+    expect(callback).toHaveBeenCalledTimes(1)
   })
 
-  it('uses onDisconnect if available', () => {
+  it('uses onDisconnect.addListener for BrowserPortLike', () => {
+    const callback = vi.fn()
     const port = {
-      onMessage: {
-        addListener: vi.fn(),
-      },
-      onDisconnect: {
-        addListener: vi.fn(),
-      },
-      postMessage: vi.fn(),
-    }
+      onDisconnect: { addListener: vi.fn() },
+    } as any
 
-    const callback = vi.fn()
     onMessagePortClose(port, callback)
 
-    expect(port.onDisconnect.addListener).toBeCalledTimes(1)
-    const listener = port.onDisconnect.addListener.mock.calls[0]![0]
+    expect(port.onDisconnect.addListener).toHaveBeenCalledWith(expect.any(Function))
 
-    listener()
-    expect(callback).toHaveBeenCalled()
+    const handler = port.onDisconnect.addListener.mock.calls[0]![0]
+    handler()
+
+    expect(callback).toHaveBeenCalledTimes(1)
   })
 
-  it('prefer addEventListener over on', () => {
-    const port = {
-      on: vi.fn(),
-      addEventListener: vi.fn(),
-      postMessage: vi.fn(),
-    }
-
+  it('throws on unsupported port', () => {
     const callback = vi.fn()
-    onMessagePortClose(port, callback)
+    const port = {} as any
 
-    expect(port.on).toBeCalledTimes(0)
-    expect(port.addEventListener).toBeCalledTimes(1)
-    const [event, handler] = port.addEventListener.mock.calls[0]!
-    expect(event).toBe('close')
-
-    handler({})
-    expect(callback).toHaveBeenCalled()
-  })
-
-  it('throws if invalid port', () => {
-    expect(() => onMessagePortClose({} as any, () => {})).toThrowError()
+    expect(() => onMessagePortClose(port, callback)).toThrow(
+      'Cannot find a addEventListener/on/onDisconnect method on the port',
+    )
   })
 })

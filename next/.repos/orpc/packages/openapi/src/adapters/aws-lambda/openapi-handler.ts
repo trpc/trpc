@@ -1,17 +1,29 @@
 import type { Context, Router } from '@orpc/server'
 import type { AwsLambdaHandlerOptions } from '@orpc/server/aws-lambda'
-import type { StandardOpenAPIHandlerOptions } from '../standard'
+import type { StandardHandlerOptions } from '@orpc/server/standard'
+import type { OpenAPIHandlerCodecOptions } from '../standard'
 import { AwsLambdaHandler } from '@orpc/server/aws-lambda'
-import { StandardOpenAPIHandler } from '../standard'
+import { StandardHandler } from '@orpc/server/standard'
+import { OpenAPIHandlerCodec } from '../standard'
+
+export interface OpenAPIHandlerOptions<T extends Context>
+  extends AwsLambdaHandlerOptions<T>, StandardHandlerOptions<T>, OpenAPIHandlerCodecOptions<T> {}
 
 /**
- * OpenAPI Handler for AWS Lambda.
+ * Serves oRPC procedures over the OpenAPI (RESTful) protocol on AWS Lambda.
  *
- * @see {@link https://orpc.dev/docs/openapi/openapi-handler OpenAPI Handler Docs}
- * @see {@link https://orpc.dev/docs/adapters/http HTTP Adapter Docs}
+ * @remarks
+ * **Warning**: Requires the AWS Lambda Node.js runtime with response streaming enabled — handlers should be wrapped with `awslambda.streamifyResponse`.
+ *
+ * @see {@link https://orpc.dev/docs/adapters/aws-lambda | AWS Lambda Adapter}
  */
 export class OpenAPIHandler<T extends Context> extends AwsLambdaHandler<T> {
-  constructor(router: Router<any, T>, options: NoInfer<StandardOpenAPIHandlerOptions<T> & AwsLambdaHandlerOptions> = {}) {
-    super(new StandardOpenAPIHandler(router, options), options)
+  constructor(
+    router: Router<T>,
+    options: NoInfer<OpenAPIHandlerOptions<T>> = {},
+  ) {
+    const codec = new OpenAPIHandlerCodec(router, options)
+    const handler = new StandardHandler(codec, options)
+    super(handler, options)
   }
 }

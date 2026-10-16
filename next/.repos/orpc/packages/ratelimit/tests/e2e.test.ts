@@ -1,17 +1,17 @@
-import type { Ratelimiter } from '../src'
+import type { RateLimiter } from '../src'
 import { os } from '@orpc/server'
 import { RPCHandler } from '@orpc/server/fetch'
 import { z } from 'zod'
-import { createRatelimitMiddleware, RatelimitHandlerPlugin } from '../src'
-import { MemoryRatelimiter } from '../src/adapters/memory'
+import { ratelimit, RateLimitHandlerPlugin } from '../src'
+import { MemoryRateLimiter } from '../src/adapters/memory'
 
 it('works', async () => {
   const router = {
     login: os
-      .$context<{ limiter: Ratelimiter }>()
+      .$context<{ limiter: RateLimiter }>()
       .input(z.object({ email: z.email() }))
       .use(
-        createRatelimitMiddleware({
+        ratelimit({
           limiter: ({ context }) => context.limiter,
           key: (_, input) => `ping:${input.email}`,
         }),
@@ -23,7 +23,7 @@ it('works', async () => {
 
   const handler = new RPCHandler(router, {
     plugins: [
-      new RatelimitHandlerPlugin(),
+      new RateLimitHandlerPlugin(),
     ],
   })
 
@@ -35,7 +35,7 @@ it('works', async () => {
     },
   })
 
-  const limiter = new MemoryRatelimiter({
+  const limiter = new MemoryRateLimiter({
     maxRequests: 5,
     window: 1000,
   })

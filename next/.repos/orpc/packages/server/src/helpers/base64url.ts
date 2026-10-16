@@ -9,6 +9,8 @@
  * const decoded = decodeBase64url(encoded)
  * expect(new TextDecoder().decode(decoded)).toEqual(text)
  * ```
+ *
+ * @see {@link https://orpc.dev/docs/helpers/base64url | Base64Url Helpers}
  */
 export function encodeBase64url(data: Uint8Array): string {
   const chunkSize = 8192 // 8KB chunks to stay well below call stack limits
@@ -28,7 +30,8 @@ export function encodeBase64url(data: Uint8Array): string {
 
 /**
  * Decodes a base64url string to Uint8Array
- * Returns undefined if the input is invalid
+ * Only accepts canonical, unpadded base64url (the form produced by `encodeBase64url`),
+ * returns undefined for anything else, including padded or standard base64 input
  *
  * @example
  * ```ts
@@ -37,8 +40,10 @@ export function encodeBase64url(data: Uint8Array): string {
  * const decoded = decodeBase64url(encoded)
  * expect(new TextDecoder().decode(decoded)).toEqual(text)
  * ```
+ *
+ * @see {@link https://orpc.dev/docs/helpers/base64url | Base64Url Helpers}
  */
-export function decodeBase64url(base64url: string | undefined | null): Uint8Array | undefined {
+export function decodeBase64url(base64url: string | undefined | null): Uint8Array<ArrayBuffer> | undefined {
   try {
     if (typeof base64url !== 'string') {
       return undefined
@@ -57,7 +62,7 @@ export function decodeBase64url(base64url: string | undefined | null): Uint8Arra
       bytes[i] = binaryString.charCodeAt(i)
     }
 
-    return bytes
+    return encodeBase64url(bytes) === base64url ? bytes : undefined
   }
   catch {
     return undefined

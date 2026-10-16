@@ -1,39 +1,43 @@
 import { ORPCError } from '@orpc/client'
 import { StandardLink } from '@orpc/client/standard'
 import * as z from 'zod'
-import { validateORPCError, ValidationError } from '../error'
-import { ContractProcedure } from '../procedure'
-import { ResponseValidationPlugin } from './response-validation'
+import { ValidationError } from '../error'
+import { reconcileORPCError } from '../error-utils'
+import { ProcedureContract } from '../procedure'
+import { ResponseValidationLinkPlugin } from './response-validation'
 
-vi.mock('../error', async original => ({
+vi.mock('../error-utils', async original => ({
   ...await original(),
-  validateORPCError: vi.fn(),
+  reconcileORPCError: vi.fn(),
 }))
 
 beforeEach(() => {
   vi.clearAllMocks()
 })
 
-describe('responseValidationPlugin', () => {
-  const schema = z.object({
-    value: z.string().or(z.number()).transform(v => Number.parseInt(v.toString())),
-  })
-
-  const procedure = new ContractProcedure({
-    outputSchema: schema,
+describe('responseValidationLinkPlugin', () => {
+  const procedure = new ProcedureContract({
+    outputSchemas: [
+      z.object({
+        value: z.number().transform(value => value + 1),
+      }),
+      z.object({
+        value: z.string().transform(value => Number.parseInt(value)),
+      }),
+    ],
     errorMap: {
       TEST: {
-        data: schema,
+        data: z.object({
+          value: z.string().transform(value => Number.parseInt(value)),
+        }),
       },
     },
     meta: {},
-    route: {},
   })
 
-  const withoutOutputSchemaProcedure = new ContractProcedure({
+  const withoutOutputSchemaProcedure = new ProcedureContract({
     errorMap: {},
     meta: {},
-    route: {},
   })
 
   const contract = {
@@ -45,93 +49,151 @@ describe('responseValidationPlugin', () => {
   }
 
   const codec = {
-    decode: vi.fn(),
-    encode: vi.fn(),
+    encodeInput: vi.fn(),
+    decodeResponse: vi.fn(),
   }
 
-  const client = {
-    call: vi.fn(),
+  const transport = {
+    send: vi.fn(),
   }
 
   const interceptor = vi.fn(({ next }) => next())
 
-  const link = new StandardLink(codec, client, {
+  const link = new StandardLink(codec, transport, {
     plugins: [
-      new ResponseValidationPlugin(contract),
+      new ResponseValidationLinkPlugin(contract),
     ],
-    // ResponseValidationPlugin should execute before user defined interceptors
     interceptors: [interceptor],
   })
 
-  describe('validate output', async () => {
-    it('procedure with output schema', async () => {
-      codec.decode.mockResolvedValueOnce({ value: '123' })
-
-      const output = await link.call(['procedure'], {}, { context: {} })
-
-      expect(output).toEqual({ value: 123 })
-      expect(await interceptor.mock.results[0]?.value).toEqual({ value: 123 })
+  it('validates output using the output schema pipeline', async () => {
+    codec.encodeInput.mockResolvedValueOnce({
+      method: 'POST',
+      url: '/procedure',
+      headers: {},
+      body: '__encoded__',
+    })
+    transport.send.mockResolvedValueOnce({
+      status: 200,
+      headers: {},
+      resolveBody: () => Promise.resolve('__body__'),
+    })
+    codec.decodeResponse.mockResolvedValueOnce({
+      kind: 'output',
+      output: { value: '123' },
     })
 
-    it('procedure without output schema', async () => {
-      codec.decode.mockResolvedValueOnce('anything')
+    const output = await link.call(['procedure'], {}, { context: {} })
 
-      const output = await link.call(['withoutOutputSchema'], {}, { context: {} })
-
-      expect(output).toEqual('anything')
-      expect(await interceptor.mock.results[0]?.value).toEqual('anything')
-    })
-
-    it('on error case', async () => {
-      codec.decode.mockResolvedValueOnce('invalid')
-
-      await expect(link.call(['procedure'], {}, { context: {} })).rejects.toSatisfy((e) => {
-        expect(e).toBeInstanceOf(ValidationError)
-        expect(e.message).toBe('Server response output does not match expected schema')
-        expect(e.issues).toBeDefined()
-        expect(e.data).toEqual('invalid')
-
-        return true
-      })
-
-      await expect(interceptor.mock.results[0]?.value).rejects.toSatisfy((e) => {
-        expect(e).toBeInstanceOf(ValidationError)
-        expect(e.message).toBe('Server response output does not match expected schema')
-        expect(e.issues).toBeDefined()
-        expect(e.data).toEqual('invalid')
-
-        return true
-      })
-    })
+    expect(output).toEqual({ value: 124 })
+    expect(await interceptor.mock.results[0]?.value).toEqual({ value: 124 })
   })
 
-  describe('validate error', () => {
-    it('with ORPCError', async () => {
-      const error = new ORPCError('TEST', { message: 'test', defined: true })
-      codec.decode.mockRejectedValueOnce(error)
-
-      const error2 = new ORPCError('TEST', { message: 'test' })
-      vi.mocked(validateORPCError).mockResolvedValueOnce(error2)
-
-      await expect(link.call(['nested', 'procedure'], {}, { context: {} })).rejects.toBe(error2)
-      await expect(interceptor.mock.results[0]?.value).rejects.toBe(error2)
-
-      expect(validateORPCError).toHaveBeenCalledWith(contract.nested.procedure['~orpc'].errorMap, error)
+  it('skips validation when the procedure has no output schemas', async () => {
+    codec.encodeInput.mockResolvedValueOnce({
+      method: 'POST',
+      url: '/withoutOutputSchema',
+      headers: {},
+      body: '__encoded__',
+    })
+    transport.send.mockResolvedValueOnce({
+      status: 200,
+      headers: {},
+      resolveBody: () => Promise.resolve('__body__'),
+    })
+    codec.decodeResponse.mockResolvedValueOnce({
+      kind: 'output',
+      output: 'anything',
     })
 
-    it('without ORPCError', async () => {
-      const error = new Error('test')
-      codec.decode.mockRejectedValueOnce(error)
+    const output = await link.call(['withoutOutputSchema'], {}, { context: {} })
 
-      await expect(link.call(['nested', 'procedure'], {}, { context: {} })).rejects.toBe(error)
-      await expect(interceptor.mock.results[0]?.value).rejects.toBe(error)
-
-      expect(validateORPCError).not.toHaveBeenCalled()
-    })
+    expect(output).toBe('anything')
+    expect(await interceptor.mock.results[0]?.value).toBe('anything')
   })
 
-  it('throw if not find matching contract', async () => {
-    await expect(link.call(['not', 'found'], {}, { context: {} })).rejects.toThrow('[ResponseValidationPlugin] no valid procedure found at path "not.found", this may happen when the contract router is not properly configured.')
-    await expect(interceptor.mock.results[0]?.value).rejects.toThrow('[ResponseValidationPlugin] no valid procedure found at path "not.found", this may happen when the contract router is not properly configured.')
+  it('throws INTERNAL_SERVER_ERROR when output validation fails', async () => {
+    codec.encodeInput.mockResolvedValueOnce({
+      method: 'POST',
+      url: '/procedure',
+      headers: {},
+      body: '__encoded__',
+    })
+    transport.send.mockResolvedValueOnce({
+      status: 200,
+      headers: {},
+      resolveBody: () => Promise.resolve('__body__'),
+    })
+    codec.decodeResponse.mockResolvedValueOnce({
+      kind: 'output',
+      output: 'invalid',
+    })
+
+    const expectedError = new ORPCError('INTERNAL_SERVER_ERROR', {
+      message: 'Output validation failed',
+      cause: expect.any(ValidationError),
+    })
+
+    vi.mocked(reconcileORPCError).mockImplementationOnce(async (map, error) => {
+      expect(map).toBe(contract.procedure['~orpc'].errorMap)
+      expect(error).toBeInstanceOf(ORPCError)
+      expect(error.code).toBe('INTERNAL_SERVER_ERROR')
+      expect(error.message).toBe('Output validation failed')
+      expect(error.cause).toBeInstanceOf(ValidationError)
+      expect((error.cause as ValidationError).invalidData).toBe('invalid')
+
+      return expectedError
+    })
+
+    await expect(link.call(['procedure'], {}, { context: {} })).rejects.toBe(expectedError)
+    await expect(interceptor.mock.results[0]?.value).rejects.toEqual(expectedError)
+  })
+
+  it('reconciles thrown ORPCError instances against the contract', async () => {
+    codec.encodeInput.mockResolvedValueOnce({
+      method: 'POST',
+      url: '/nested/procedure',
+      headers: {},
+      body: '__encoded__',
+    })
+    transport.send.mockResolvedValueOnce({
+      status: 400,
+      headers: {},
+      resolveBody: () => Promise.resolve('__body__'),
+    })
+
+    const error = new ORPCError('TEST', { message: 'test', data: { value: '123' } })
+    const reconciled = new ORPCError('TEST', { message: 'test', data: { value: 123 } })
+
+    codec.decodeResponse.mockResolvedValueOnce({ kind: 'error', error })
+    vi.mocked(reconcileORPCError).mockResolvedValueOnce(reconciled)
+
+    await expect(link.call(['nested', 'procedure'], {}, { context: {} })).rejects.toBe(reconciled)
+    await expect(interceptor.mock.results[0]?.value).rejects.toBe(error)
+
+    expect(reconcileORPCError).toHaveBeenCalledWith(contract.nested.procedure['~orpc'].errorMap, error)
+  })
+
+  it('rethrows non-ORPCError failures without reconciliation', async () => {
+    codec.encodeInput.mockResolvedValueOnce({
+      method: 'POST',
+      url: '/nested/procedure',
+      headers: {},
+      body: '__encoded__',
+    })
+    transport.send.mockResolvedValueOnce({
+      status: 500,
+      headers: {},
+      resolveBody: () => Promise.resolve('__body__'),
+    })
+
+    const error = new Error('plain failure')
+
+    codec.decodeResponse.mockRejectedValueOnce(error)
+
+    await expect(link.call(['nested', 'procedure'], {}, { context: {} })).rejects.toBe(error)
+    await expect(interceptor.mock.results[0]?.value).rejects.toBe(error)
+
+    expect(reconcileORPCError).not.toHaveBeenCalled()
   })
 })

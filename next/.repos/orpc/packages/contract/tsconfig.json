@@ -4,7 +4,7 @@
     { "path": "../client" },
     { "path": "../shared" }
   ],
-  "include": ["src"],
+  "include": ["package.json", "src"],
   "exclude": [
     "**/*.test.*",
     "**/*.test-d.ts",

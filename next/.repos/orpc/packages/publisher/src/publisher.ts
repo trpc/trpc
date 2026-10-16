@@ -1,9 +1,9 @@
 import type { ThrowableError } from '@orpc/shared'
-import { AsyncIteratorClass } from '@orpc/shared'
+import { AsyncIteratorClass, throwIfAborted } from '@orpc/shared'
 
 export interface PublisherOptions {
   /**
-   * Maximum number of events to buffer for async iterator subscribers.
+   * Maximum number of events to buffer for AsyncIteratorObject subscribers.
    *
    * If the buffer exceeds this limit, the oldest event is dropped.
    * This prevents unbounded memory growth if consumers process events slowly.
@@ -86,7 +86,7 @@ export abstract class Publisher<T extends Record<string, object>> {
    */
   subscribe<K extends keyof T & string>(event: K, listener: (payload: T[K]) => void, options?: PublisherSubscribeListenerOptions): Promise<() => Promise<void>>
   /**
-   * Subscribes to a specific event using an async iterator.
+   * Subscribes to a specific event using an AsyncIteratorObject.
    * Useful for `for await...of` loops with optional buffering and abort support.
    *
    * @example
@@ -109,75 +109,122 @@ export abstract class Publisher<T extends Record<string, object>> {
     const signal = listenerOrOptions?.signal
     const maxBufferedEvents = listenerOrOptions?.maxBufferedEvents ?? this.maxBufferedEvents
 
-    signal?.throwIfAborted()
+    throwIfAborted(signal)
 
-    const bufferedEvents: T[K][] = []
-    const pullResolvers: [(result: IteratorResult<T[K]>) => void, (error: Error) => void][] = []
-    let subscriptionError: { error: ThrowableError } | undefined
+    const bufferedEvents = new Queue<T[K]>()
+    const pullResolvers: { resolve: (result: IteratorResult<T[K]>) => void, reject: (error: Error) => void }[] = []
 
-    const unsubscribePromise = this.subscribe(event, (payload) => {
-      const resolver = pullResolvers.shift()
+    const unsubscribePromise = this
+      .subscribeListener(event, (payload) => {
+        if (signal?.aborted) {
+          return
+        }
 
-      if (resolver) {
-        resolver[0]({ done: false, value: payload })
+        const resolver = pullResolvers.shift()
+
+        if (resolver) {
+          resolver.resolve({ done: false, value: payload })
+        }
+        else {
+          bufferedEvents.push(payload)
+
+          if (bufferedEvents.length > maxBufferedEvents) {
+            bufferedEvents.shift()
+          }
+        }
+      }, {
+        lastEventId: listenerOrOptions?.lastEventId,
+        onError: error => terminate({ kind: 'error', error }),
+      })
+      .catch(error => terminate({ kind: 'error', error }))
+
+    const abortListener = () => terminate({ kind: 'error', error: signal!.reason })
+    signal?.addEventListener('abort', abortListener)
+
+    let terminalState: { kind: 'error', error: ThrowableError } | { kind: 'cancelled' } | undefined
+    async function terminate(state: Exclude<typeof terminalState, undefined>) {
+      if (terminalState) {
+        return
+      }
+
+      terminalState = state
+      signal?.removeEventListener('abort', abortListener)
+
+      if (state.kind === 'error') {
+        pullResolvers.forEach(resolver => resolver.reject(state.error))
       }
       else {
-        bufferedEvents.push(payload)
-
-        if (bufferedEvents.length > maxBufferedEvents) {
-          bufferedEvents.shift()
-        }
-      }
-    }, {
-      lastEventId: listenerOrOptions?.lastEventId,
-      onError: (error) => {
-        subscriptionError = { error }
-        pullResolvers.forEach(resolver => resolver[1](error))
-        signal?.removeEventListener('abort', abortListener)
-        pullResolvers.length = 0
-        bufferedEvents.length = 0
-        unsubscribePromise.then(unsubscribe => unsubscribe()).catch(() => {
-          // TODO: log error
-        })
-      },
-    })
-
-    function abortListener(event: any) {
-      pullResolvers.forEach(resolver => resolver[1](event.target.reason))
-      pullResolvers.length = 0
-      bufferedEvents.length = 0
-      unsubscribePromise.then(unsubscribe => unsubscribe()).catch(() => {
-        // TODO: log error
-      })
-    }
-
-    signal?.addEventListener('abort', abortListener, { once: true })
-
-    return new AsyncIteratorClass(async () => {
-      if (subscriptionError) {
-        throw subscriptionError.error
+        pullResolvers.forEach(resolver => resolver.resolve({ done: true, value: undefined }))
       }
 
       if (signal?.aborted) {
-        throw signal.reason
+        pullResolvers.length = 0
+        bufferedEvents.clear()
       }
 
-      await unsubscribePromise // make sure subscription is ready
+      // Keep this async call at the end to avoid race conditions.
+      await unsubscribePromise.then(unsubscribe => unsubscribe?.())
+    }
 
-      if (bufferedEvents.length > 0) {
-        return { done: false, value: bufferedEvents.shift()! }
-      }
+    return new AsyncIteratorClass(
+      async () => {
+        /* v8 ignore next 3 - AsyncIteratorClass already covers this, but we keep this check for safety. */
+        if (terminalState?.kind === 'cancelled') {
+          return { done: true, value: undefined }
+        }
 
-      return new Promise((resolve, reject) => {
-        pullResolvers.push([resolve, reject])
-      })
-    }, async () => {
-      pullResolvers.forEach(resolver => resolver[0]({ done: true, value: undefined }))
-      signal?.removeEventListener('abort', abortListener)
-      pullResolvers.length = 0
-      bufferedEvents.length = 0
+        const value = bufferedEvents.shift()
 
-      await unsubscribePromise.then(unsubscribe => unsubscribe())
-    })
+        if (value !== undefined) {
+          return { done: false, value }
+        }
+
+        if (terminalState?.kind === 'error') {
+          throw terminalState.error
+        }
+
+        return new Promise((resolve, reject) => {
+          pullResolvers.push({ resolve, reject })
+        })
+      },
+      () => terminate({ kind: 'cancelled' }),
+    )
+  }
+}
+
+/**
+ * FIFO queue with O(1) `shift`, since `Array.prototype.shift` copies large arrays on every call.
+ */
+class Queue<T extends object> {
+  private readonly items: (T | undefined)[] = []
+  private head = 0
+
+  get length(): number {
+    return this.items.length - this.head
+  }
+
+  push(item: T): void {
+    this.items.push(item)
+  }
+
+  shift(): T | undefined {
+    if (this.head === this.items.length) {
+      return undefined
+    }
+
+    const item = this.items[this.head]
+    this.items[this.head++] = undefined
+
+    if (this.head >= 32 && this.head * 2 >= this.items.length) {
+      this.items.splice(0, this.head)
+      this.head = 0
+    }
+
+    return item
+  }
+
+  clear(): void {
+    this.items.length = 0
+    this.head = 0
   }
 }

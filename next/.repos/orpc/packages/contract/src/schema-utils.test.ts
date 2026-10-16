@@ -1,7 +1,23 @@
-import { type } from 'arktype'
+import * as arktype from 'arktype'
 import * as v from 'valibot'
-import * as z from 'zod'
-import { isSchemaIssue } from './schema-utils'
+import z from 'zod'
+import { isSchemaIssue, type } from './schema-utils'
+
+describe('type', async () => {
+  it('without map', async () => {
+    const schema = type()
+    const val = {}
+    expect((await schema['~standard'].validate(val) as any).value).toBe(val)
+  })
+
+  it('with map', async () => {
+    const val = {}
+    const check = vi.fn().mockReturnValueOnce('__mapped__')
+    const schema = type(check)
+    expect((await schema['~standard'].validate(val) as any).value).toBe('__mapped__')
+    expect(check).toHaveBeenCalledWith(val)
+  })
+})
 
 describe('isSchemaIssue', async () => {
   it('works', () => {
@@ -20,7 +36,7 @@ describe('isSchemaIssue', async () => {
   it.each([
     ['zod', z.object({ a: z.number() })],
     ['valibot', v.object({ a: v.number() })],
-    ['arktype', type({ a: 'number' })],
+    ['arktype', arktype.type({ a: 'number' })],
   ])('with schema: $0', async (name, schema) => {
     const { issues } = await schema['~standard'].validate({ a: 'invalid' })
     expect(issues?.every(isSchemaIssue)).toBe(true)

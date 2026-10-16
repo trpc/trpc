@@ -40,7 +40,7 @@ describe('setCookie', () => {
     expect(() => setCookie(undefined, 'test', 'value')).not.toThrow()
   })
 
-  it('should support all SerializeOptions', () => {
+  it('should support all SetCookie options', () => {
     const headers = new Headers()
     setCookie(headers, 'test', 'value', {
       domain: 'example.com',
@@ -60,6 +60,15 @@ describe('setCookie', () => {
     expect(cookieValue).toContain('Path=/custom')
     expect(cookieValue).toContain('Secure')
     expect(cookieValue).toContain('SameSite=Strict')
+  })
+
+  it('should support custom encode function', () => {
+    const headers = new Headers()
+    setCookie(headers, 'test', 'value with spaces', {
+      encode: str => str.replace(/ /g, '_'),
+    })
+
+    expect(headers.get('Set-Cookie')).toContain('test=value_with_spaces')
   })
 })
 

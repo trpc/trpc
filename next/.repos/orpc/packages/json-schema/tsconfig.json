@@ -3,11 +3,10 @@
   "references": [
     { "path": "../shared" },
     { "path": "../server" },
-    { "path": "../openapi" },
-    { "path": "../contract" },
-    { "path": "../interop" }
+    { "path": "../client" },
+    { "path": "../contract" }
   ],
-  "include": ["src"],
+  "include": ["package.json", "src"],
   "exclude": [
     "**/*.test.*",
     "**/*.test-d.ts",

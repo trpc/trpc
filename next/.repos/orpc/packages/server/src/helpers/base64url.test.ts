@@ -54,3 +54,22 @@ describe('encodeBase64url / decodeBase64url', () => {
     expect(decodeBase64url('invalid base64!')).toBeUndefined()
   })
 })
+
+describe('decodeBase64url canonical form', () => {
+  it('rejects non-canonical and non-base64url input', () => {
+    expect(decodeBase64url('')).toEqual(new Uint8Array([]))
+    expect(decodeBase64url('QQ')).toEqual(new Uint8Array([0x41]))
+    expect(decodeBase64url('-_-_')).toEqual(new Uint8Array([0xFB, 0xFF, 0xBF]))
+
+    for (const input of ['QR', 'QS', 'QT', 'QQ=', 'QQ==', ' QQ ', 'QQ\n\n', '+/+/', 'A', 'AAAAA']) {
+      expect(decodeBase64url(input), JSON.stringify(input)).toBeUndefined()
+    }
+  })
+
+  it('round-trips every length', () => {
+    for (let n = 0; n < 64; n++) {
+      const bytes = crypto.getRandomValues(new Uint8Array(n))
+      expect(decodeBase64url(encodeBase64url(bytes))).toEqual(bytes)
+    }
+  })
+})

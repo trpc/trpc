@@ -1,0 +1,31 @@
+---
+// A remote avatar that turns into a first-letter tile when its host refuses it
+// (see avatar-fallback.ts). Callers set the size and shape classes; `px` is the
+// rendered size, and the request asks for twice that.
+import { avatarSrc } from './data'
+
+interface Props {
+  src: string
+  name: string
+  px: number
+  class?: string
+}
+
+const { src, name, px, class: className } = Astro.props
+---
+
+<img
+  alt=""
+  class:list={['flex-none bg-muted object-cover ring-1 ring-border', className]}
+  data-monogram={name}
+  decoding="async"
+  height={px}
+  loading="lazy"
+  src={avatarSrc(src, px)}
+  width={px}
+/>
+
+{/* Astro emits this once per page, and only on pages that render an avatar. */}
+<script>
+  import './avatar-fallback'
+</script>

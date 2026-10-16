@@ -1,68 +1,48 @@
-import type { Interceptor, MaybeOptionalOptions } from '@orpc/shared'
-import type { ToFetchResponseOptions } from '@orpc/standard-server-fetch'
+import type { MaybeOptionalOptions } from '@orpc/shared'
+import type { ToFetchResponseOptions } from '@standard-server/fetch'
 import type { Context } from '../../context'
-import type { StandardHandleOptions, StandardHandler } from '../standard'
-import type { FriendlyStandardHandleOptions } from '../standard/utils'
-import type { FetchHandlerPlugin } from './plugin'
-import { intercept, resolveMaybeOptionalOptions, toArray } from '@orpc/shared'
-import { toFetchResponse, toStandardLazyRequest } from '@orpc/standard-server-fetch'
-import { resolveFriendlyStandardHandleOptions } from '../standard/utils'
-import { CompositeFetchHandlerPlugin } from './plugin'
+import type { FriendlyStandardHandlerHandleOptions, StandardHandler } from '../standard'
+import { resolveMaybeOptionalOptions } from '@orpc/shared'
+import { toFetchResponse, toStandardLazyRequest } from '@standard-server/fetch'
+import { resolveFriendlyStandardHandlerHandleOptions } from '../standard'
 
-export type FetchHandleResult = { matched: true, response: Response } | { matched: false, response: undefined }
+export type FetchHandlerHandleResult = { matched: true, response: Response } | { matched: false, response?: undefined }
 
-export interface FetchHandlerInterceptorOptions<T extends Context> extends StandardHandleOptions<T> {
-  request: Request
-  toFetchResponseOptions: ToFetchResponseOptions
-}
-
-export interface FetchHandlerOptions<T extends Context> extends ToFetchResponseOptions {
-  adapterInterceptors?: Interceptor<FetchHandlerInterceptorOptions<T>, Promise<FetchHandleResult>>[]
-
-  plugins?: FetchHandlerPlugin<T>[]
+export interface FetchHandlerOptions<_T extends Context> {
+  /**
+   * Options for how to convert the Fetch Response to a Standard Response, like event stream options, etc.
+   */
+  toFetchResponse?: undefined | ToFetchResponseOptions
 }
 
 export class FetchHandler<T extends Context> {
-  private readonly toFetchResponseOptions: ToFetchResponseOptions
-  private readonly adapterInterceptors: Exclude<FetchHandlerOptions<T>['adapterInterceptors'], undefined>
+  private readonly toFetchResponseOptions: FetchHandlerOptions<T>['toFetchResponse']
 
   constructor(
     private readonly standardHandler: StandardHandler<T>,
     options: NoInfer<FetchHandlerOptions<T>> = {},
   ) {
-    const plugin = new CompositeFetchHandlerPlugin(options.plugins)
-
-    plugin.initRuntimeAdapter(options)
-
-    this.adapterInterceptors = toArray(options.adapterInterceptors)
-    this.toFetchResponseOptions = options
+    this.toFetchResponseOptions = options.toFetchResponse
   }
 
   async handle(
     request: Request,
-    ...rest: MaybeOptionalOptions<FriendlyStandardHandleOptions<T>>
-  ): Promise<FetchHandleResult> {
-    return intercept(
-      this.adapterInterceptors,
-      {
-        ...resolveFriendlyStandardHandleOptions(resolveMaybeOptionalOptions(rest)),
-        request,
-        toFetchResponseOptions: this.toFetchResponseOptions,
-      },
-      async ({ request, toFetchResponseOptions, ...options }) => {
-        const standardRequest = toStandardLazyRequest(request)
+    ...rest: MaybeOptionalOptions<FriendlyStandardHandlerHandleOptions<T>>
+  ): Promise<FetchHandlerHandleResult> {
+    const standardRequest = toStandardLazyRequest(request)
 
-        const result = await this.standardHandler.handle(standardRequest, options)
-
-        if (!result.matched) {
-          return result
-        }
-
-        return {
-          matched: true,
-          response: toFetchResponse(result.response, toFetchResponseOptions),
-        }
-      },
+    const result = await this.standardHandler.handle(
+      standardRequest,
+      resolveFriendlyStandardHandlerHandleOptions(resolveMaybeOptionalOptions(rest)),
     )
+
+    if (!result.matched) {
+      return result
+    }
+
+    return {
+      matched: true,
+      response: toFetchResponse(result.response, this.toFetchResponseOptions),
+    }
   }
 }

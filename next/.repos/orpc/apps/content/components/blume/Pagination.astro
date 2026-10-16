@@ -1,0 +1,63 @@
+---
+import { withBase } from "blume/components/islands/base-path.ts";
+import { EN_UI } from "blume/core/i18n-ui.ts";
+import type { UIStrings } from "blume/core/i18n-ui.ts";
+import type { FlatPage } from "blume/components/layout/nav-utils.ts";
+import Icon from "blume/components/Icon.astro";
+
+interface Props {
+  /** Previous page in reading order, or `null` at the start. */
+  prev: FlatPage | null;
+  /** Next page in reading order, or `null` at the end. */
+  next: FlatPage | null;
+  /** Localized page-level strings (`previous`, `next`, the landmark label). */
+  strings: UIStrings["page"];
+}
+
+const { prev, next, strings } = Astro.props;
+
+// Merge over the English defaults so a label missing from a translation (or
+// from a not-yet-regenerated snapshot) still renders instead of coming out
+// blank — the PageActions pattern.
+const s = { ...EN_UI.page, ...strings };
+---
+
+{
+  (prev || next) && (
+    <nav
+      aria-label={s.pagination}
+      class="mx-auto mt-12 flex max-w-content justify-between gap-4 border-border border-t pt-6 max-md:flex-col"
+    >
+      {prev ? (
+        <a
+          class="flex max-w-[48%] flex-1 items-center gap-2 rounded-blume border border-border px-4 py-3 text-foreground transition-colors hover:border-foreground max-md:max-w-full"
+          href={withBase(prev.route)}
+        >
+          <Icon class="rtl:-scale-x-100" name="arrow-left" size={16} />
+          <span class="min-w-0">
+            <span class="block text-muted-foreground text-xs max-md:hidden">
+              {s.previous}
+            </span>
+            <span class="block truncate font-medium">{prev.label}</span>
+          </span>
+        </a>
+      ) : (
+        <span />
+      )}
+      {next && (
+        <a
+          class="ms-auto flex max-w-[48%] flex-1 items-center justify-end gap-2 rounded-blume border border-border px-4 py-3 text-end text-foreground transition-colors hover:border-foreground max-md:ms-0 max-md:max-w-full"
+          href={withBase(next.route)}
+        >
+          <span class="min-w-0">
+            <span class="block text-muted-foreground text-xs max-md:hidden">
+              {s.next}
+            </span>
+            <span class="block truncate font-medium">{next.label}</span>
+          </span>
+          <Icon class="rtl:-scale-x-100" name="arrow-right" size={16} />
+        </a>
+      )}
+    </nav>
+  )
+}

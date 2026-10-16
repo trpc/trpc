@@ -1,69 +1,83 @@
-import type { ClientContext } from '@orpc/client'
-import type { ErrorMap, Meta, Schema } from '@orpc/contract'
+import type { AnyNestedClient, ClientContext } from '@orpc/client'
+import type { ErrorMap, Schema } from '@orpc/contract'
 import type { MaybeOptionalOptions } from '@orpc/shared'
 import type { Lazyable } from './lazy'
-import type { Procedure } from './procedure'
-import type { CreateProcedureClientOptions, ProcedureClient } from './procedure-client'
+import type { ProcedureClient, ProcedureClientOptions } from './procedure-client'
 import type { AnyRouter, InferRouterInitialContext } from './router'
-import { resolveMaybeOptionalOptions } from '@orpc/shared'
-import { isLazy } from './lazy'
-import { isProcedure } from './procedure'
+import { RECURSIVE_CLIENT_UNWRAP_KEYS } from '@orpc/client'
+import { resolveMaybeOptionalOptions, toArray } from '@orpc/shared'
+import { Lazy } from './lazy'
+import { Procedure } from './procedure'
 import { createProcedureClient } from './procedure-client'
-import { createAssertedLazyProcedure } from './procedure-utils'
+import { createGuardedProcedureLazy } from './procedure-utils'
 import { getRouter } from './router-utils'
 
-export type RouterClient<TRouter extends AnyRouter, TClientContext extends ClientContext = Record<never, never>>
-  = TRouter extends Procedure<any, any, infer UInputSchema, infer UOutputSchema, infer UErrorMap, any>
-    ? ProcedureClient<TClientContext, UInputSchema, UOutputSchema, UErrorMap>
+/**
+ * The client type derived from a router, exposing every procedure as a callable
+ * function while preserving the router's shape.
+ *
+ * @see {@link https://orpc.dev/docs/client/client-side#creating-a-client | Client-Side Clients - Creating a Client}
+ */
+export type RouterClient<TRouter extends AnyRouter, TClientContext extends ClientContext = object>
+  = TRouter extends Procedure<any, any, infer $InputSchema, infer $OutputSchema, infer $ErrorMap>
+    ? ProcedureClient<TClientContext, $InputSchema, $OutputSchema, $ErrorMap>
     : {
         [K in keyof TRouter]: TRouter[K] extends Lazyable<infer U extends AnyRouter> ? RouterClient<U, TClientContext> : never
       }
 
 /**
- * Create Server-side client from a router.
+ * Creates a server-side client that calls the router's procedures directly,
+ * within the same process, without any network layer.
  *
- * @see {@link https://orpc.dev/docs/client/server-side Server-side Client Docs}
+ * @see {@link https://orpc.dev/docs/client/server-side#router-clients | Server-Side Clients - Router Clients}
  */
-export function createRouterClient<T extends AnyRouter, TClientContext extends ClientContext>(
+export function createRouterClient<T extends AnyRouter, TClientContext extends ClientContext = object>(
   router: Lazyable<T | undefined>,
   ...rest: MaybeOptionalOptions<
-    CreateProcedureClientOptions<
+    ProcedureClientOptions<
       InferRouterInitialContext<T>,
-      Schema<unknown, unknown>,
+      Schema<unknown>,
       ErrorMap,
-      Meta,
       TClientContext
     >
   >
 ): RouterClient<T, TClientContext> {
   const options = resolveMaybeOptionalOptions(rest)
 
-  if (isProcedure(router)) {
-    const caller = createProcedureClient(router, options)
-
-    return caller as any
+  if (router instanceof Procedure) {
+    return createProcedureClient(router, options) as any
   }
 
-  const procedureCaller = isLazy(router)
-    ? createProcedureClient(createAssertedLazyProcedure(router), options)
+  const procedureCaller = router instanceof Lazy
+    ? createProcedureClient(createGuardedProcedureLazy(router), options)
     : {}
+
+  const cache = new Map<string, AnyNestedClient>()
 
   const recursive = new Proxy(procedureCaller, {
     get(target, key) {
-      if (typeof key !== 'string') {
+      if (typeof key !== 'string' || (router instanceof Lazy && RECURSIVE_CLIENT_UNWRAP_KEYS.has(key))) {
         return Reflect.get(target, key)
       }
 
-      const next = getRouter(router, [key])
+      let nextClient = cache.get(key)
 
-      if (!next) {
-        return Reflect.get(target, key)
+      if (nextClient === undefined) {
+        const next = getRouter(router, [key])
+
+        if (!next) {
+          return Reflect.get(target, key)
+        }
+
+        nextClient = createRouterClient(next as any, {
+          ...options,
+          path: [...toArray(options.path), key],
+        })
+
+        cache.set(key, nextClient)
       }
 
-      return createRouterClient(next, {
-        ...rest[0],
-        path: [...(rest[0]?.path ?? []), key],
-      } as any)
+      return nextClient
     },
   })
 

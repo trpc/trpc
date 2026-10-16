@@ -1,0 +1,68 @@
+{
+  "name": "@orpc/cloudflare",
+  "type": "module",
+  "version": "2.0.0-beta.44",
+  "description": "Cloudflare integration for oRPC: Durable Object pub/sub and locking, Workers rate limiting, and Workers Traces adapters",
+  "license": "MIT",
+  "funding": [
+    "https://github.com/sponsors/dinwwwh",
+    "https://opencollective.com/middleapi"
+  ],
+  "homepage": "https://orpc.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/middleapi/orpc.git",
+    "directory": "packages/cloudflare"
+  },
+  "keywords": [
+    "orpc",
+    "cloudflare",
+    "cloudflare-workers",
+    "durable-objects",
+    "ratelimit",
+    "lock",
+    "pubsub",
+    "tracing",
+    "observability",
+    "typescript"
+  ],
+  "sideEffects": false,
+  "publishConfig": {
+    "exports": {
+      "./package.json": "./package.json",
+      ".": {
+        "types": "./dist/index.d.mts",
+        "import": "./dist/index.mjs",
+        "default": "./dist/index.mjs"
+      }
+    }
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "prepare": "wrangler types",
+    "prepack": "unbuild",
+    "type:check": "wrangler types && tsc -b",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@orpc/client": "workspace:*",
+    "@orpc/experimental-lock": "workspace:*",
+    "@orpc/publisher": "workspace:*",
+    "@orpc/ratelimit": "workspace:*",
+    "@orpc/shared": "workspace:*",
+    "@standard-server/core": "~0.10.3"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.23.0",
+    "@vitest/coverage-istanbul": "^4.1.11",
+    "vitest": "^4.1.11",
+    "wrangler": "^4.149.0"
+  }
+}

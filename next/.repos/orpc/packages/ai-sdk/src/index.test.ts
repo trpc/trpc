@@ -1,3 +1,3 @@
-it('exports createTool', async () => {
-  expect(Object.keys(await import('./index'))).toContain('createTool')
+it('exports createToolFactory', async () => {
+  expect(Object.keys(await import('./index'))).toContain('createToolFactory')
 })

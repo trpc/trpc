@@ -1,251 +1,290 @@
-import { AsyncIteratorClass, asyncIteratorWithSpan, isAsyncIteratorObject, replicateAsyncIterator } from './iterator'
-import * as trace from './otel'
+import { AsyncLocalStorage } from 'node:async_hooks'
+import { AsyncIteratorClass, sleep } from '@standard-server/shared'
+import { consumeAsyncIterator, replicateAsyncIterator, traceAsyncIterator, wrapAsyncIterator } from './iterator'
+import { promiseWithResolvers } from './promise'
+import * as Tracing from './tracing'
 
-const runInSpanContextSpy = vi.spyOn(trace, 'runInSpanContext')
+const runInSpanContextSpy = vi.spyOn(Tracing, 'runInSpanContext')
+const startSpanSpy = vi.spyOn(Tracing, 'startSpan')
 
 beforeEach(() => {
   vi.clearAllMocks()
 })
 
-it('isAsyncIteratorObject', () => {
-  expect(isAsyncIteratorObject(null)).toBe(false)
-  expect(isAsyncIteratorObject({})).toBe(false)
-  expect(isAsyncIteratorObject(() => {})).toBe(false)
-  expect(isAsyncIteratorObject({ [Symbol.asyncIterator]: 123 })).toBe(false)
+describe('wrapAsyncIterator', () => {
+  it('runs next calls inside runWith, maps results, and finishes once after completion', async () => {
+    const calls: string[] = []
+    const stores: string[] = []
+    const storage = new AsyncLocalStorage<string>()
+    let step = 0
+    let finishCount = 0
+    let returnCount = 0
 
-  expect(isAsyncIteratorObject({ [Symbol.asyncIterator]: () => { } })).toBe(false)
-  expect(isAsyncIteratorObject({ next: () => {} })).toBe(false)
+    const iterator: AsyncIterator<number, number> = {
+      async next() {
+        calls.push(`next:${step}`)
+        stores.push(storage.getStore() ?? 'missing')
 
-  async function* gen() { }
-  expect(isAsyncIteratorObject(gen())).toBe(true)
+        if (step === 0) {
+          step += 1
+          return { done: false as const, value: 1 }
+        }
 
-  function* gen2() { }
-  expect(isAsyncIteratorObject(gen2())).toBe(false)
+        step += 1
+        return { done: true as const, value: 2 }
+      },
+      async return() {
+        returnCount += 1
+        calls.push('return')
+        return { done: true as const, value: 99 }
+      },
+    }
+
+    const wrapped = wrapAsyncIterator(iterator, {
+      runWith: run => storage.run('iterator-context', run),
+      mapResult: (result) => {
+        calls.push(`map:${result.done ? 'done' : 'yield'}`)
+        return { done: result.done, value: `mapped:${result.value}` }
+      },
+      onFinish: () => {
+        finishCount += 1
+        calls.push('finish')
+      },
+    })
+
+    expect(await wrapped.next()).toEqual({ done: false, value: 'mapped:1' })
+    expect(await wrapped.next()).toEqual({ done: true, value: 'mapped:2' })
+    expect(await wrapped.next()).toEqual({ done: true, value: undefined })
+
+    expect(calls).toEqual([
+      'next:0',
+      'map:yield',
+      'next:1',
+      'map:done',
+      'finish',
+    ])
+    expect(stores).toEqual(['iterator-context', 'iterator-context'])
+    expect(returnCount).toBe(0)
+    expect(finishCount).toBe(1)
+  })
+
+  it('maps next errors and finishes without cancelling a failed iterator', async () => {
+    let returnCount = 0
+    let finishCount = 0
+    const seen: string[] = []
+
+    const iterator: AsyncIterator<number, void> = {
+      async next() {
+        throw new Error('next failed')
+      },
+      async return() {
+        returnCount += 1
+        return { done: true as const, value: undefined }
+      },
+    }
+
+    const wrapped = wrapAsyncIterator(iterator, {
+      onError: (error) => {
+        seen.push((error as Error).message)
+      },
+      mapError: error => new TypeError(`mapped:${(error as Error).message}`),
+      onFinish: () => {
+        finishCount += 1
+      },
+    })
+
+    await expect(wrapped.next()).rejects.toThrow('mapped:next failed')
+    expect(seen).toEqual(['next failed'])
+    expect(returnCount).toBe(0)
+    expect(finishCount).toBe(1)
+  })
+
+  it('cancels unfinished iterators when returned early', async () => {
+    const calls: string[] = []
+
+    const iterator: AsyncIterator<number, string> = {
+      async next() {
+        calls.push('next')
+        return { done: false as const, value: 1 }
+      },
+      async return() {
+        calls.push('return')
+        return { done: true as const, value: 'inner' }
+      },
+    }
+
+    const wrapped = wrapAsyncIterator(iterator, {})
+
+    expect(await wrapped.next()).toEqual({ done: false, value: 1 })
+    expect(await wrapped.return('outer')).toEqual({ done: true, value: 'outer' })
+    expect(calls).toEqual(['next', 'return'])
+  })
+
+  it('propagates cleanup errors after reporting them and still finishes', async () => {
+    const calls: string[] = []
+    const storage = new AsyncLocalStorage<string>()
+    let finishCount = 0
+    let cleanupStore: string | undefined
+
+    const iterator: AsyncIterator<number, void> = {
+      async next() {
+        calls.push('next')
+        return { done: false as const, value: 1 }
+      },
+      async return() {
+        cleanupStore = storage.getStore()
+        calls.push('return')
+        throw new Error('cleanup failed')
+      },
+    }
+
+    const wrapped = wrapAsyncIterator(iterator, {
+      runWith: run => storage.run('cleanup-context', run),
+      onError: (error) => {
+        calls.push(`error:${(error as Error).message}`)
+      },
+      onFinish: () => {
+        finishCount += 1
+        calls.push('finish')
+      },
+    })
+
+    expect(await wrapped.next()).toEqual({ done: false, value: 1 })
+    await expect(wrapped.return()).rejects.toThrow('cleanup failed')
+
+    expect(calls).toEqual([
+      'next',
+      'return',
+      'error:cleanup failed',
+      'finish',
+    ])
+    expect(cleanupStore).toBe('cleanup-context')
+    expect(finishCount).toBe(1)
+  })
+
+  it('rethrows mapping errors and closes the source iterator when mapping fails', async () => {
+    const calls: string[] = []
+    let finishCount = 0
+
+    const iterator: AsyncIterator<number, void> = {
+      async next() {
+        calls.push('next')
+        return { done: false as const, value: 1 }
+      },
+      async return() {
+        calls.push('return')
+        return { done: true as const, value: undefined }
+      },
+    }
+
+    const wrapped = wrapAsyncIterator(iterator, {
+      mapResult: () => {
+        calls.push('map')
+        throw new Error('map failed')
+      },
+      onFinish: () => {
+        finishCount += 1
+        calls.push('finish')
+      },
+    })
+
+    await expect(wrapped.next()).rejects.toThrow('map failed')
+    expect(calls).toEqual(['next', 'map', 'return', 'finish'])
+    expect(finishCount).toBe(1)
+  })
 })
 
-describe('asyncIteratorClass', () => {
-  const next = vi.fn()
-  const cleanup = vi.fn()
-  let iterator: AsyncGenerator
+describe('traceAsyncIterator', () => {
+  it('when success', async () => {
+    const iterator = (async function* () {
+      yield 1
+      yield 2
+    }())
 
-  beforeEach(() => {
-    next.mockReset()
-    cleanup.mockReset()
-    iterator = new AsyncIteratorClass(next, cleanup)
+    const withSpan = traceAsyncIterator('name', iterator)
+
+    expect(await withSpan.next()).toEqual({ done: false, value: 1 })
+    expect(await withSpan.next()).toEqual({ done: false, value: 2 })
+    expect(await withSpan.next()).toEqual({ done: true, value: undefined })
+
+    expect(startSpanSpy).toHaveBeenCalledTimes(1)
+    expect(startSpanSpy).toHaveBeenCalledWith('name')
+
+    expect(runInSpanContextSpy).toHaveBeenCalledTimes(3)
   })
 
-  afterEach(async () => {
-    expect(cleanup).toHaveBeenCalledTimes(1)
-    await expect(iterator.next()).resolves.toEqual({ done: true, value: undefined })
-    expect(cleanup).toHaveBeenCalledTimes(1)
-  })
+  it('when cancelled', async () => {
+    let cleanup = false
 
-  it('should create an object conforming to AsyncIterator protocol', async () => {
-    expect(iterator).toBeDefined()
-    expect(iterator).toSatisfy(isAsyncIteratorObject)
-    expect(typeof iterator.next).toBe('function')
-    expect(typeof iterator.return).toBe('function')
-    expect(typeof iterator.throw).toBe('function')
-    expect(typeof iterator[Symbol.asyncIterator]).toBe('function')
-    expect(typeof (iterator as any)[Symbol.asyncDispose]).toBe('function')
-
-    await expect(iterator.return(undefined)).resolves.toEqual({ done: true, value: undefined })
-  })
-
-  it('should return itself when [Symbol.asyncIterator] is called', async () => {
-    expect(iterator[Symbol.asyncIterator]()).toBe(iterator)
-
-    await expect(iterator.return(undefined)).resolves.toEqual({ done: true, value: undefined })
-  })
-
-  describe('next()', () => {
-    it('should call the provided next function and return its result', async () => {
-      const expectedResult = { done: true, value: 42 }
-      next.mockResolvedValue(expectedResult)
-
-      const result = await iterator.next()
-
-      expect(next).toHaveBeenCalledTimes(1)
-      expect(result).toEqual(expectedResult)
-    })
-
-    it('should handle multiple calls correctly', async () => {
-      let time = 0
-      next.mockImplementation(async () => {
-        await new Promise(resolve => setTimeout(resolve, 10))
-        return {
-          done: time === 2,
-          value: time++,
-        }
-      })
-
-      await Promise.all([
-        expect(iterator.next()).resolves.toEqual({ done: false, value: 0 }),
-        expect(iterator.next()).resolves.toEqual({ done: false, value: 1 }),
-        expect(iterator.next()).resolves.toEqual({ done: true, value: 2 }),
-        expect(iterator.next()).resolves.toEqual({ done: true, value: undefined }),
-      ])
-
-      expect(next).toHaveBeenCalledTimes(3)
-    })
-
-    it('should propagate errors from the provided next function', async () => {
-      const error = new Error('Something went wrong')
-      next.mockRejectedValue(error)
-
-      await expect(iterator.next()).rejects.toThrow(error)
-      expect(next).toHaveBeenCalledTimes(1)
-    })
-
-    it('should call cleanup("next") when next() resolves (done: true)', async () => {
-      next.mockResolvedValue({ done: true, value: undefined })
-      await iterator.next()
-      await iterator.next()
-      await iterator.next()
-      expect(cleanup).toHaveBeenCalledTimes(1)
-      expect(cleanup).toHaveBeenCalledWith('next')
-    })
-
-    it('should call cleanup("next") when next() rejects', async () => {
-      const error = new Error('Failed')
-      next.mockRejectedValue(error)
-
-      await Promise.all([
-        expect(iterator.next()).rejects.toThrow(error),
-        iterator.next(),
-        iterator.next(),
-        iterator.next(),
-      ])
-
-      expect(cleanup).toHaveBeenCalledTimes(1)
-      expect(cleanup).toHaveBeenCalledWith('next')
-    })
-  })
-
-  describe('return()', () => {
-    it('should return { done: true, value } with the provided value', async () => {
-      const returnValue = 'Iterator terminated'
-      expect(await iterator.return(returnValue)).toEqual({ done: true, value: returnValue })
-      expect(next).toHaveBeenCalledTimes(0)
-    })
-
-    it('should call cleanup("return")', async () => {
-      await Promise.all([
-        iterator.return('done'),
-        iterator.return('done'),
-        iterator.return('done'),
-      ])
-
-      expect(cleanup).toHaveBeenCalledTimes(1)
-      expect(cleanup).toHaveBeenCalledWith('return')
-    })
-  })
-
-  describe('throw()', () => {
-    it('should re-throw the provided error', async () => {
-      const error = new Error('Forced error')
-      await expect(iterator.throw(error)).rejects.toThrow(error)
-      expect(next).toHaveBeenCalledTimes(0)
-    })
-
-    it('should call cleanup("throw")', async () => {
-      const error = new Error('Forced error')
-
-      await Promise.all([
-        expect(iterator.throw(error)).rejects.toThrow(error),
-        expect(iterator.throw(error)).rejects.toThrow(error),
-        expect(iterator.throw(error)).rejects.toThrow(error),
-      ])
-
-      expect(cleanup).toHaveBeenCalledTimes(1)
-      expect(cleanup).toHaveBeenCalledWith('throw')
-    })
-  })
-
-  describe('dispose()', () => {
-    it('should implement Symbol.asyncDispose', async () => {
-      expect(typeof (iterator as any)[Symbol.asyncDispose]).toBe('function')
-
-      await iterator.return(undefined)
-    })
-
-    it('should call cleanup("dispose") when disposed', async () => {
-      await Promise.all([
-        (iterator as any)[Symbol.asyncDispose](),
-        (iterator as any)[Symbol.asyncDispose](),
-        (iterator as any)[Symbol.asyncDispose](),
-      ])
-
-      expect(next).toHaveBeenCalledTimes(0)
-      expect(cleanup).toHaveBeenCalledTimes(1)
-      expect(cleanup).toHaveBeenCalledWith('dispose')
-    })
-  })
-
-  describe('integration with for await...of', () => {
-    it('should work correctly in a for await...of loop', async () => {
-      let counter = 0
-      const limit = 3
-      next.mockImplementation(async () => {
-        if (counter < limit) {
-          return { done: false, value: counter++ }
-        }
-        else {
-          return { done: true, value: undefined }
-        }
-      })
-      const collectedValues: any[] = []
-      for await (const value of iterator) {
-        collectedValues.push(value)
-      }
-
-      expect(collectedValues).toEqual([0, 1, 2])
-      expect(next).toHaveBeenCalledTimes(limit + 1)
-      expect(cleanup).toHaveBeenCalledTimes(1)
-      expect(cleanup).toHaveBeenCalledWith('next')
-    })
-
-    it('should call cleanup("return") when breaking a for await...of loop', async () => {
-      let counter = 0
-      next.mockImplementation(async () => ({ done: false, value: counter++ }))
-
-      const collectedValues = []
-      for await (const value of iterator) {
-        collectedValues.push(value)
-        if (value === 1) {
-          break // Explicitly break the loop
-        }
-      }
-
-      expect(collectedValues).toEqual([0, 1])
-      expect(next).toHaveBeenCalledTimes(2)
-      expect(cleanup).toHaveBeenCalledTimes(1)
-      expect(cleanup).toHaveBeenCalledWith('return')
-    })
-
-    it('should call cleanup("return") when throwing inside a for await...of loop', async () => {
-      let counter = 0
-      next.mockImplementation(async () => ({ done: false, value: counter++ }))
-      const error = new Error('Loop error')
-
-      const collectedValues = []
+    const iterator = (async function* () {
       try {
-        for await (const value of iterator) {
-          collectedValues.push(value)
-          if (value === 1) {
-            throw error
-          }
-        }
+        yield 1
+        yield 2
       }
-      catch (e) {
-        expect(e).toBe(error)
+      finally {
+        cleanup = true
       }
+    }())
 
-      expect(collectedValues).toEqual([0, 1])
-      expect(next).toHaveBeenCalledTimes(2)
-      expect(cleanup).toHaveBeenCalledTimes(1)
-      expect(cleanup).toHaveBeenCalledWith('return')
-    })
+    const withSpan = traceAsyncIterator({ name: 'name' }, iterator)
+
+    expect(await withSpan.next()).toEqual({ done: false, value: 1 })
+    expect(await withSpan.return()).toEqual({ done: true, value: undefined })
+    expect(cleanup).toBe(true)
+    expect(runInSpanContextSpy).toHaveBeenCalledTimes(2)
+  })
+
+  it('when error while yielding', async () => {
+    const iterator = (async function* () {
+      throw new Error('Forced error')
+    }())
+
+    const withSpan = traceAsyncIterator({ name: 'name' }, iterator)
+
+    await expect(withSpan.next()).rejects.toThrow('Forced error')
+    expect(runInSpanContextSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('on error while cleanup', async () => {
+    const iterator = (async function* () {
+      try {
+        yield 1
+      }
+      finally {
+        // eslint-disable-next-line no-unsafe-finally
+        throw new Error('Forced error')
+      }
+    }())
+
+    const withSpan = traceAsyncIterator({ name: 'name' }, iterator)
+
+    await expect(withSpan.next()).resolves.toEqual({ done: false, value: 1 })
+    await expect(withSpan.return()).rejects.toThrow('Forced error')
+    expect(runInSpanContextSpy).toHaveBeenCalledTimes(2)
+  })
+
+  it('can be cancelled while an iteration is pending', async () => {
+    const cleanup = vi.fn()
+    const pull = promiseWithResolvers<void>()
+    const iterator = new AsyncIteratorClass(
+      async () => {
+        await pull.promise
+        return { done: true, value: 'done' }
+      },
+      cleanup,
+    )
+
+    const withSpan = traceAsyncIterator({ name: 'name' }, iterator)
+
+    const nextPromise = withSpan.next()
+    await sleep(10)
+    await withSpan.return() // would hang if it waited for the pending pull
+
+    expect(cleanup).toHaveBeenCalledTimes(1)
+    expect(cleanup).toHaveBeenCalledWith({ kind: 'cancelled' })
+
+    pull.resolve()
+    await expect(nextPromise).resolves.toEqual({ done: true, value: undefined })
   })
 })
 
@@ -358,68 +397,263 @@ describe('replicateAsyncIterator', async () => {
   })
 })
 
-describe('asyncIteratorWithSpan', () => {
+describe('consumeAsyncIterator', () => {
   it('on success', async () => {
     const iterator = (async function* () {
       yield 1
       yield 2
+      return 3
     }())
 
-    const withSpan = asyncIteratorWithSpan({ name: 'name' }, iterator)
+    const onEvent = vi.fn()
+    const onError = vi.fn()
+    const onSuccess = vi.fn()
+    const onFinish = vi.fn()
 
-    expect(await withSpan.next()).toEqual({ done: false, value: 1 })
-    expect(await withSpan.next()).toEqual({ done: false, value: 2 })
-    expect(await withSpan.next()).toEqual({ done: true, value: undefined })
-    expect(runInSpanContextSpy).toHaveBeenCalledTimes(3)
+    void consumeAsyncIterator(iterator, {
+      onEvent,
+      onError,
+      onSuccess,
+      onFinish,
+    })
+
+    await vi.waitFor(() => {
+      expect(onEvent).toHaveBeenCalledTimes(2)
+      expect(onEvent).toHaveBeenNthCalledWith(1, 1)
+      expect(onEvent).toHaveBeenNthCalledWith(2, 2)
+
+      expect(onSuccess).toHaveBeenCalledTimes(1)
+      expect(onSuccess).toHaveBeenNthCalledWith(1, 3)
+      expect(onFinish).toHaveBeenCalledTimes(1)
+      expect(onFinish).toHaveBeenNthCalledWith(1, [null, 3, true])
+
+      expect(onError).toHaveBeenCalledTimes(0)
+    })
   })
 
-  it('on cancel', async () => {
-    let cleanup = false
+  it('on error', async () => {
+    const error = new Error('TEST')
+    const iterator = (async function* () {
+      yield 1
+      yield 2
+      throw error
+    }())
 
+    const onEvent = vi.fn()
+    const onError = vi.fn()
+    const onSuccess = vi.fn()
+    const onFinish = vi.fn()
+
+    void consumeAsyncIterator(iterator, {
+      onEvent,
+      onError,
+      onSuccess,
+      onFinish,
+    })
+
+    await vi.waitFor(() => {
+      expect(onEvent).toHaveBeenCalledTimes(2)
+      expect(onEvent).toHaveBeenNthCalledWith(1, 1)
+      expect(onEvent).toHaveBeenNthCalledWith(2, 2)
+
+      expect(onError).toHaveBeenCalledTimes(1)
+      expect(onError).toHaveBeenNthCalledWith(1, error)
+
+      expect(onFinish).toHaveBeenCalledTimes(1)
+      expect(onFinish).toHaveBeenNthCalledWith(1, [error, undefined, false])
+
+      expect(onSuccess).toHaveBeenCalledTimes(0)
+    })
+  })
+
+  it('closes the iterator when onEvent throws', async () => {
+    const error = new Error('TEST')
+    let cleanup = false
     const iterator = (async function* () {
       try {
         yield 1
         yield 2
+        return 3
       }
       finally {
         cleanup = true
       }
     }())
 
-    const withSpan = asyncIteratorWithSpan({ name: 'name' }, iterator)
+    const onEvent = vi.fn(() => {
+      throw error
+    })
+    const onError = vi.fn()
+    const onSuccess = vi.fn()
+    let cleanupBeforeFinish: boolean | undefined
+    const onFinish = vi.fn(() => {
+      cleanupBeforeFinish = cleanup
+    })
 
-    expect(await withSpan.next()).toEqual({ done: false, value: 1 })
-    expect(await withSpan.return()).toEqual({ done: true, value: undefined })
-    expect(cleanup).toBe(true)
-    expect(runInSpanContextSpy).toHaveBeenCalledTimes(2)
+    void consumeAsyncIterator(iterator, {
+      onEvent,
+      onError,
+      onSuccess,
+      onFinish,
+    })
+
+    await vi.waitFor(() => {
+      expect(onFinish).toHaveBeenCalledTimes(1)
+    })
+
+    expect(cleanupBeforeFinish).toBe(true)
+    expect(onFinish).toHaveBeenNthCalledWith(1, [error, undefined, false])
+
+    expect(onEvent).toHaveBeenCalledTimes(1)
+    expect(onEvent).toHaveBeenNthCalledWith(1, 1)
+
+    expect(onError).toHaveBeenCalledTimes(1)
+    expect(onError).toHaveBeenNthCalledWith(1, error)
+
+    expect(onSuccess).toHaveBeenCalledTimes(0)
   })
 
-  it('on error while yielding', async () => {
-    const iterator = (async function* () {
-      throw new Error('Forced error')
-    }())
+  it('reports the return error when closing the iterator fails', async () => {
+    const returnError = new Error('RETURN')
+    const iterator: AsyncIterator<number> = {
+      next: async () => ({ done: false, value: 1 }),
+      return: vi.fn(async () => {
+        throw returnError
+      }),
+    }
 
-    const withSpan = asyncIteratorWithSpan({ name: 'name' }, iterator)
+    const onError = vi.fn()
+    const onFinish = vi.fn()
 
-    await expect(withSpan.next()).rejects.toThrow('Forced error')
-    expect(runInSpanContextSpy).toHaveBeenCalledTimes(1)
+    void consumeAsyncIterator(iterator, {
+      onEvent: () => {
+        throw new Error('TEST')
+      },
+      onError,
+      onFinish,
+    })
+
+    await vi.waitFor(() => {
+      expect(onFinish).toHaveBeenCalledTimes(1)
+    })
+
+    expect(iterator.return).toHaveBeenCalledTimes(1)
+    expect(onError).toHaveBeenCalledTimes(1)
+    expect(onError).toHaveBeenNthCalledWith(1, returnError)
+    expect(onFinish).toHaveBeenNthCalledWith(1, [returnError, undefined, false])
   })
 
-  it('on error while cleanup', async () => {
+  it('unsubscribe', async () => {
+    let cleanup = false
     const iterator = (async function* () {
       try {
+        await new Promise(resolve => setTimeout(resolve, 10))
         yield 1
+        yield 2
+        return 3
       }
       finally {
-        // eslint-disable-next-line no-unsafe-finally
-        throw new Error('Forced error')
+        cleanup = true
       }
     }())
 
-    const withSpan = asyncIteratorWithSpan({ name: 'name' }, iterator)
+    const onEvent = vi.fn()
+    const onSuccess = vi.fn()
+    const onFinish = vi.fn()
+    const onError = vi.fn()
 
-    await expect(withSpan.next()).resolves.toEqual({ done: false, value: 1 })
-    await expect(withSpan.return()).rejects.toThrow('Forced error')
-    expect(runInSpanContextSpy).toHaveBeenCalledTimes(2)
+    const unsubscribe = consumeAsyncIterator(iterator, {
+      onEvent,
+      onError,
+      onSuccess,
+      onFinish,
+    })
+
+    await new Promise(resolve => setTimeout(resolve, 1))
+    await unsubscribe()
+    expect(cleanup).toBe(true)
+    // side-effect of async generator - waiting for .next resolve before .return effect
+    expect(onEvent).toHaveBeenCalledTimes(1)
+    expect(onEvent).toHaveBeenNthCalledWith(1, 1)
+
+    expect(onError).toHaveBeenCalledTimes(0)
+    expect(onSuccess).toHaveBeenCalledTimes(1)
+    expect(onFinish).toHaveBeenCalledTimes(1)
+    // undefined can be passed on success because iterator can be canceled
+    expect(onSuccess).toHaveBeenNthCalledWith(1, undefined)
+    expect(onFinish).toHaveBeenNthCalledWith(1, [null, undefined, true])
+  })
+
+  it('error on unsubscribe', async () => {
+    const error = new Error('TEST')
+    let cleanup = false
+    const iterator = (async function* () {
+      try {
+        await new Promise(resolve => setTimeout(resolve, 10))
+        yield 1
+        yield 2
+        return 3
+      }
+      finally {
+        cleanup = true
+        // eslint-disable-next-line no-unsafe-finally
+        throw error
+      }
+    }())
+
+    const onEvent = vi.fn()
+    const onError = vi.fn()
+    const onSuccess = vi.fn()
+    const onFinish = vi.fn()
+
+    const unsubscribe = consumeAsyncIterator(iterator, {
+      onEvent,
+      onError,
+      onSuccess,
+      onFinish,
+    })
+
+    await new Promise(resolve => setTimeout(resolve, 1))
+    await expect(unsubscribe()).rejects.toThrow(error)
+    expect(cleanup).toBe(true)
+    // side-effect of async generator - waiting for .next resolve before .return effect
+    expect(onEvent).toHaveBeenCalledTimes(1)
+    expect(onEvent).toHaveBeenNthCalledWith(1, 1)
+
+    expect(onError).toHaveBeenCalledTimes(0)
+    expect(onSuccess).toHaveBeenCalledTimes(1)
+    expect(onFinish).toHaveBeenCalledTimes(1)
+    // undefined can be passed on success because iterator can be canceled
+    expect(onSuccess).toHaveBeenNthCalledWith(1, undefined)
+    expect(onFinish).toHaveBeenNthCalledWith(1, [null, undefined, true])
+  })
+
+  it('on iterator promise rejection', async () => {
+    const error = new Error('TEST')
+    const iterator = Promise.reject(error)
+
+    const onEvent = vi.fn()
+    const onError = vi.fn()
+    const onSuccess = vi.fn()
+    const onFinish = vi.fn()
+
+    void consumeAsyncIterator(iterator, {
+      onEvent,
+      onError,
+      onSuccess,
+      onFinish,
+    })
+
+    await vi.waitFor(() => {
+      expect(onEvent).toHaveBeenCalledTimes(0)
+
+      expect(onError).toHaveBeenCalledTimes(1)
+      expect(onError).toHaveBeenNthCalledWith(1, error)
+
+      expect(onFinish).toHaveBeenCalledTimes(1)
+      expect(onFinish).toHaveBeenNthCalledWith(1, [error, undefined, false])
+
+      expect(onSuccess).toHaveBeenCalledTimes(0)
+    })
   })
 })

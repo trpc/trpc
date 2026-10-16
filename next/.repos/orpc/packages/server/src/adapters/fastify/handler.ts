@@ -1,62 +1,48 @@
-import type { Interceptor, MaybeOptionalOptions } from '@orpc/shared'
-import type { FastifyReply, FastifyRequest, SendStandardResponseOptions } from '@orpc/standard-server-fastify'
+import type { MaybeOptionalOptions } from '@orpc/shared'
+import type { AnyFastifyReply, AnyFastifyRequest, SendStandardResponseOptions } from '@standard-server/fastify'
 import type { Context } from '../../context'
-import type { StandardHandleOptions, StandardHandler } from '../standard'
-import type { FriendlyStandardHandleOptions } from '../standard/utils'
-import { intercept, resolveMaybeOptionalOptions, toArray } from '@orpc/shared'
-import { sendStandardResponse, toStandardLazyRequest } from '@orpc/standard-server-fastify'
-import { resolveFriendlyStandardHandleOptions } from '../standard/utils'
+import type { FriendlyStandardHandlerHandleOptions, StandardHandler } from '../standard'
+import { resolveMaybeOptionalOptions } from '@orpc/shared'
+import { sendStandardResponse, toStandardLazyRequest } from '@standard-server/fastify'
+import { resolveFriendlyStandardHandlerHandleOptions } from '../standard'
 
-export type FastifyHandleResult = { matched: true } | { matched: false }
+export type FastifyHandlerHandleResult = { matched: true } | { matched: false }
 
-export interface FastifyInterceptorOptions<T extends Context> extends StandardHandleOptions<T> {
-  request: FastifyRequest
-  reply: FastifyReply
-  sendStandardResponseOptions: SendStandardResponseOptions
-}
-
-export interface FastifyHandlerOptions<T extends Context> extends SendStandardResponseOptions {
-  adapterInterceptors?: Interceptor<FastifyInterceptorOptions<T>, Promise<FastifyHandleResult>>[]
+export interface FastifyHandlerOptions<_T extends Context> {
+  /**
+   * Custom options for `sendStandardResponse`, used to send a `Standard Response`
+   */
+  sendStandardResponse?: SendStandardResponseOptions | undefined
 }
 
 export class FastifyHandler<T extends Context> {
-  private readonly sendStandardResponseOptions: SendStandardResponseOptions
-  private readonly adapterInterceptors: Exclude<FastifyHandlerOptions<T>['adapterInterceptors'], undefined>
+  private readonly sendStandardResponseOptions: FastifyHandlerOptions<T>['sendStandardResponse']
 
   constructor(
     private readonly standardHandler: StandardHandler<T>,
     options: NoInfer<FastifyHandlerOptions<T>> = {},
   ) {
-    this.adapterInterceptors = toArray(options.adapterInterceptors)
-    this.sendStandardResponseOptions = options
+    this.sendStandardResponseOptions = options.sendStandardResponse
   }
 
   async handle(
-    request: FastifyRequest,
-    reply: FastifyReply,
-    ...rest: MaybeOptionalOptions<FriendlyStandardHandleOptions<T>>
-  ): Promise<FastifyHandleResult> {
-    return intercept(
-      this.adapterInterceptors,
-      {
-        ...resolveFriendlyStandardHandleOptions(resolveMaybeOptionalOptions(rest)),
-        request,
-        reply,
-        sendStandardResponseOptions: this.sendStandardResponseOptions,
-      },
-      async ({ request, reply, sendStandardResponseOptions, ...options }) => {
-        const standardRequest = toStandardLazyRequest(request, reply)
+    request: AnyFastifyRequest,
+    reply: AnyFastifyReply,
+    ...rest: MaybeOptionalOptions<FriendlyStandardHandlerHandleOptions<T>>
+  ): Promise<FastifyHandlerHandleResult> {
+    const standardRequest = toStandardLazyRequest(request, reply)
 
-        const result = await this.standardHandler.handle(standardRequest, options)
-
-        if (!result.matched) {
-          return { matched: false }
-        }
-
-        await sendStandardResponse(reply, result.response, sendStandardResponseOptions)
-
-        return { matched: true }
-      },
+    const result = await this.standardHandler.handle(
+      standardRequest,
+      resolveFriendlyStandardHandlerHandleOptions(resolveMaybeOptionalOptions(rest)),
     )
+
+    if (!result.matched) {
+      return result
+    }
+
+    await sendStandardResponse(reply, result.response, this.sendStandardResponseOptions)
+
+    return result
   }
 }

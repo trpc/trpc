@@ -1,0 +1,91 @@
+---
+// Each card is one capability in one plain sentence; the vendor names live in
+// the "Runs on" and "Works with" strip above, so the grid stays capability-led.
+import Icon from 'blume/components/Icon.astro'
+
+const features = [
+  {
+    icon: 'shield-check',
+    title: 'End-to-end types',
+    body: 'Inputs and outputs keep their types from server to client, with no code generation.',
+  },
+  {
+    icon: 'list-checks',
+    title: 'Any schema library',
+    body: 'Validate with Zod, Valibot, ArkType, or any library that follows Standard Schema.',
+  },
+  {
+    icon: 'triangle-alert',
+    title: 'Typed errors',
+    body: 'Declare what a procedure can fail with, and the client handles each case by name.',
+  },
+  {
+    icon: 'braces',
+    title: 'Real JavaScript types',
+    body: 'Date, BigInt, Set, and Map arrive as the type you sent, not as strings.',
+  },
+  {
+    icon: 'file-up',
+    title: 'Files and binary data',
+    body: 'Send a File up and stream bytes back, typed in both directions.',
+  },
+  {
+    icon: 'radio-tower',
+    title: 'Live event streams',
+    body: 'An async generator becomes a typed event stream, and dropped clients resume from the last event.',
+  },
+  {
+    icon: 'route',
+    title: 'REST and OpenAPI',
+    body: 'The same router answers REST calls and writes its own OpenAPI document.',
+  },
+  {
+    icon: 'file-pen',
+    title: 'Contract first',
+    body: 'Write the contract first, then let TypeScript check that the server matches it.',
+  },
+  {
+    icon: 'blocks',
+    title: 'Middleware and plugins',
+    body: 'Extend any layer with middleware, plugins, and interceptors, all fully typed.',
+  },
+  {
+    icon: 'plug',
+    title: 'Works with your stack',
+    body: 'TanStack Query, SWR, Pinia Colada, NestJS, and Next.js Server Actions work out of the box.',
+  },
+  {
+    icon: 'activity',
+    title: 'Tracing and logging',
+    body: 'Trace with OpenTelemetry or Cloudflare Workers and log with Pino or Evlog, without touching your procedures.',
+  },
+  {
+    icon: 'server',
+    title: 'Runs anywhere',
+    body: 'One router runs on Node, Bun, Deno, Cloudflare Workers, and AWS Lambda.',
+  },
+]
+---
+
+<section class="border-b border-border">
+  <div class="mx-auto max-w-6xl px-6 py-20 sm:py-28">
+    <p class="font-mono text-[0.6875rem] tracking-[0.18em] text-muted-foreground uppercase">
+      Features
+    </p>
+    <h2 class="font-display mt-4 max-w-2xl text-3xl font-semibold tracking-[-0.03em] text-balance sm:text-4xl">
+      Everything you need to build an API.
+    </h2>
+
+    <div class="mt-12 grid border-t border-l border-border sm:grid-cols-2 lg:grid-cols-3">
+      {
+        features.map(feature => (
+          <div class="group border-r border-b border-border p-7 transition-colors hover:bg-muted/60">
+            <Icon name={feature.icon} size={18} class="text-muted-foreground transition-colors group-hover:text-foreground" />
+            <h3 class="font-display mt-4 text-[0.9375rem] font-semibold tracking-tight">{feature.title}</h3>
+            <p class="mt-2 text-sm leading-relaxed text-muted-foreground">{feature.body}</p>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>

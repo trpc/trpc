@@ -1,56 +1,110 @@
-import type { AnySchema, ErrorMap } from '@orpc/contract'
-import type { baseErrorMap, BaseMeta } from '../../contract/tests/shared'
-import type { Context } from './context'
-import type { ORPCErrorConstructorMap } from './error'
-import type { Middleware, MiddlewareNextFn, MiddlewareOutputFn } from './middleware'
-import type { Procedure } from './procedure'
+import type { ErrorMap, ORPCErrorConstructorMap } from '@orpc/contract'
+import type { Middleware } from './middleware'
+import z from 'zod'
 
-describe('middleware', () => {
-  it('just a function', () => {
-    const mid: Middleware<
-      { auth: boolean },
-      Record<never, never>,
-      { input: number },
-      { output: string },
-      ORPCErrorConstructorMap<typeof baseErrorMap>,
-      BaseMeta
-    > = ({ context, path, procedure, signal, next, errors }, input, output) => {
-      expectTypeOf(input).toEqualTypeOf<{ input: number }>()
-      expectTypeOf(context).toEqualTypeOf<{ auth: boolean }>()
-      expectTypeOf(path).toEqualTypeOf<readonly string[]>()
-      expectTypeOf(procedure).toEqualTypeOf<
-        Procedure<Context, Context, AnySchema, AnySchema, ErrorMap, BaseMeta>
-      >()
-      expectTypeOf(signal).toEqualTypeOf<undefined | InstanceType<typeof AbortSignal>>()
-      expectTypeOf(output).toEqualTypeOf<MiddlewareOutputFn<{ output: string }>>()
-      expectTypeOf(next).toEqualTypeOf<MiddlewareNextFn<{ output: string }>>()
-      expectTypeOf(errors).toEqualTypeOf<ORPCErrorConstructorMap<typeof baseErrorMap>>()
+const errorMap = {
+  BASE: {
+    data: z.object({ output: z.number() }),
+  },
+} satisfies ErrorMap
+
+describe('Middleware', () => {
+  it('can be a regular function', () => {
+    type T = Middleware<
+      { in: string },
+      object,
+      { input: boolean },
+      string,
+      typeof errorMap
+    >
+
+    const mid: T = ({ next, context, errors }, input, done) => {
+      expectTypeOf(context).toEqualTypeOf<{ in: string }>()
+      expectTypeOf(input).toEqualTypeOf<{ input: boolean }>()
+      expectTypeOf(errors).toEqualTypeOf<ORPCErrorConstructorMap<typeof errorMap>>()
+
+      if (Math.random() > 0.5) {
+        return done({ output: '123' })
+      }
 
       return next()
-    }
-
-    // @ts-expect-error - missing return type
-    const mid3: Middleware<{ auth: boolean }, undefined, unknown, unknown> = () => {
     }
   })
 
-  it('require return valid extra context', () => {
-    const mid0: Middleware<Context, Record<never, never>, unknown, unknown, Record<never, never>, BaseMeta> = ({ next }) => {
+  it('can stop by using done function', () => {
+    type T = Middleware<
+      { in: string },
+      object,
+      { input: boolean },
+      number,
+      typeof errorMap
+    >
+
+    const mid: T = ({ next, context, errors }, input, done) => {
+      return done({ output: 123 })
+    }
+
+    const mid2: T = ({ next, context, errors }, input, done) => {
+      if (Math.random() > 0.5) {
+        // @ts-expect-error - missing output
+        return done()
+      }
+
+      // @ts-expect-error - invalid data
+      return done({ output: 'invalid' })
+    }
+  })
+
+  it('require return context', () => {
+    type T = Middleware<
+      { in: string },
+      { out: number },
+      { input: boolean },
+      string,
+      typeof errorMap
+    >
+
+    const mid: T = ({ next }) => {
+      return next({ context: { out: 123 } })
+    }
+
+    // @ts-expect-error - invalid out context
+    const mid2: T = ({ next }) => {
+      return next({ context: { out: 'invalid' } })
+    }
+
+    const mid3: T = ({ next }) => {
+      // @ts-expect-error - missing out context
       return next()
     }
 
-    const mid: Middleware<Context, { userId: string }, unknown, unknown, Record<never, never>, BaseMeta> = ({ next }) => {
-      return next({ context: { userId: '1' } })
+    const midDone: T = ({ next }, input, done) => {
+      return done({ output: '123', context: { out: 123 } })
     }
 
-    // @ts-expect-error invalid extra context
-    const mid2: Middleware<Context, { userId: string }, unknown, unknown, BaseMeta> = ({ next }) => {
-      return next({ context: { userId: 1 } })
+    // @ts-expect-error - invalid out context
+    const midDone2: T = ({ next }, input, done) => {
+      return done({ output: '123', context: { out: 'invalid' } })
     }
 
-    // @ts-expect-error require return extra context
-    const mid3: Middleware<Context, { userId: string }, unknown, unknown, BaseMeta> = ({ next }) => {
+    const midDone3: T = ({ next }, input, done) => {
+      // @ts-expect-error - missing out context
+      return done({ output: '123' })
+    }
+  })
+
+  it('can infer back error map', async () => {
+    const mid: Middleware<
+      { in: string },
+      object,
+      { input: boolean },
+      string,
+      typeof errorMap
+    > = ({ next }) => {
       return next()
     }
+
+    expectTypeOf(mid['~orpc']?.errorMap).toEqualTypeOf<typeof errorMap | undefined>()
+    expectTypeOf<typeof mid extends Middleware<any, any, any, any, infer TErrorMap> ? TErrorMap : never>().toEqualTypeOf<typeof errorMap>()
   })
 })

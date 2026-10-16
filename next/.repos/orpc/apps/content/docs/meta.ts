@@ -1,0 +1,31 @@
+import { defineMeta } from 'blume'
+
+export default defineMeta({
+  pages: [
+    'getting-started',
+    'contract-first',
+    'comparison',
+    'requirements',
+    'ecosystem',
+    'playgrounds',
+    'api-reference',
+    'procedure',
+    'router',
+    'middleware',
+    'context',
+    'error-handling',
+    'binary-data',
+    'async-iterator-object',
+    'metadata',
+    'rpc',
+    'openapi',
+    'contract',
+    'client',
+    'adapters',
+    'plugins',
+    'helpers',
+    'integrations',
+    'recipes',
+    'migrations',
+  ],
+})

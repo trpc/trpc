@@ -1,33 +1,29 @@
 import type { Context } from '../../context'
 import type { Router } from '../../router'
-import type { StandardRPCHandlerOptions } from '../standard'
+import type { RPCHandlerCodecOptions, StandardHandlerOptions } from '../standard'
 import type { AwsLambdaHandlerOptions } from './handler'
-import { StrictGetMethodPlugin } from '../../plugins'
-import { StandardRPCHandler } from '../standard'
+import { RPCHandlerCodec, StandardHandler } from '../standard'
 import { AwsLambdaHandler } from './handler'
 
-export type RPCHandlerOptions<T extends Context> = AwsLambdaHandlerOptions & StandardRPCHandlerOptions<T> & {
-  /**
-   * Enables or disables the StrictGetMethodPlugin.
-   *
-   * @default true
-   */
-  strictGetMethodPluginEnabled?: boolean
-}
+export interface RPCHandlerOptions<T extends Context>
+  extends AwsLambdaHandlerOptions<T>, StandardHandlerOptions<T>, RPCHandlerCodecOptions<T> {}
 
 /**
- * RPC Handler for AWS Lambda.
+ * Serves an oRPC router over the RPC protocol on AWS Lambda,
+ * behind API Gateway or Lambda Function URLs.
  *
- * @see {@link https://orpc.dev/docs/rpc-handler RPC Handler Docs}
- * @see {@link https://orpc.dev/docs/adapters/http HTTP Adapter Docs}
+ * @remarks
+ * **Warning**: Requires the Lambda Node.js runtime with response streaming enabled, so handlers must be wrapped with `awslambda.streamifyResponse`.
+ *
+ * @see {@link https://orpc.dev/docs/adapters/aws-lambda | AWS Lambda Adapter}
  */
 export class RPCHandler<T extends Context> extends AwsLambdaHandler<T> {
-  constructor(router: Router<any, T>, options: NoInfer<RPCHandlerOptions<T>> = {}) {
-    if (options.strictGetMethodPluginEnabled ?? true) {
-      options.plugins ??= []
-      options.plugins.push(new StrictGetMethodPlugin())
-    }
-
-    super(new StandardRPCHandler(router, options), options)
+  constructor(
+    router: Router<T>,
+    options: NoInfer<RPCHandlerOptions<T>> = {},
+  ) {
+    const codec = new RPCHandlerCodec(router, options)
+    const handler = new StandardHandler(codec, options)
+    super(handler, options)
   }
 }

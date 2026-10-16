@@ -1,0 +1,62 @@
+---
+// The last cell of the experts grid: a faded preview of the card an expert
+// gets, which opens the prefilled application email. It stacks in a single
+// column and puts the preview beside the call to action when it spans more.
+import Icon from 'blume/components/Icon.astro'
+import { joinHref } from '../../experts/data'
+---
+
+<a
+  class="group @container flex h-full flex-col rounded-blume border border-dashed border-border bg-background p-5 transition-colors hover:border-foreground/30 hover:bg-muted/40 sm:p-6"
+  href={joinHref()}
+>
+  <span class="flex flex-1 flex-col gap-5 @xl:grid @xl:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] @xl:items-center @xl:gap-0">
+    {/* Hidden from assistive tech: the call to action alone names the link. */}
+    <span
+      aria-hidden="true"
+      class="flex flex-col opacity-60 transition-opacity group-hover:opacity-90 @xl:rounded-blume @xl:border @xl:border-border @xl:p-5"
+    >
+      <span class="flex items-center gap-3">
+        <span class="flex size-12 flex-none items-center justify-center rounded-full border border-dashed border-border text-muted-foreground">
+          <Icon name="user-round" size={20} />
+        </span>
+        <span class="flex-1">
+          <span class="font-display block text-base leading-snug font-semibold tracking-tight">Your name</span>
+          <span class="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+            <Icon name="map-pin" size={12} class="flex-none" />
+            City, country
+          </span>
+        </span>
+      </span>
+
+      <span class="mt-4 inline-flex items-center gap-1.5 self-start rounded-full bg-accent/10 px-2.5 py-1 text-xs font-medium">
+        <Icon name="heart-handshake" size={13} class="flex-none text-accent" />
+        <span>Gives X% back to oRPC</span>
+      </span>
+
+      <span class="mt-3 text-sm leading-relaxed text-muted-foreground">What you do, in one line.</span>
+
+      <span class="mt-4 flex flex-wrap gap-1.5">
+        <span class="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">Your skill</span>
+        <span class="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">Another skill</span>
+      </span>
+    </span>
+
+    <span
+      class="mt-auto flex items-center justify-between gap-4 border-dashed border-border @xl:mt-0 @xl:self-stretch @xl:border-s @xl:ms-8 @xl:ps-8"
+    >
+      <span>
+        <span class="block text-sm font-semibold @xl:text-base">Add your card</span>
+        <span class="mt-0.5 block text-xs leading-relaxed text-pretty text-muted-foreground @xl:text-sm">
+          Apply by email. You might need to pass a test.
+        </span>
+      </span>
+      <span
+        aria-hidden="true"
+        class="flex size-9 flex-none items-center justify-center rounded-full bg-action text-action-foreground transition-transform group-hover:scale-105 @xl:size-10"
+      >
+        <Icon name="plus" size={16} />
+      </span>
+    </span>
+  </span>
+</a>

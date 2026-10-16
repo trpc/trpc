@@ -1,122 +1,169 @@
-import * as StandardServer from '@orpc/standard-server'
-import * as ErrorModule from '../../error'
-import { StandardRPCJsonSerializer } from './rpc-json-serializer'
-import { StandardRPCLinkCodec } from './rpc-link-codec'
-import { StandardRPCSerializer } from './rpc-serializer'
-import * as UtilsModule from './utils'
-
-const ORPCError = ErrorModule.ORPCError
-const isORPCErrorStatusSpy = vi.spyOn(ErrorModule, 'isORPCErrorStatus')
-const mergeStandardHeadersSpy = vi.spyOn(StandardServer, 'mergeStandardHeaders')
-const getMalformedResponseErrorCodeSpy = vi.spyOn(UtilsModule, 'getMalformedResponseErrorCode')
+import type { StandardUrl } from '@standard-server/core'
+import { MalformedResponseError, ORPCError } from '../../error'
+import { RPCSerializer } from '../../rpc-serializer'
+import { RPCLinkCodec } from './rpc-link-codec'
 
 beforeEach(() => {
   vi.clearAllMocks()
 })
 
-describe('standardRPCLinkCodec', () => {
-  const serializer = new StandardRPCSerializer(new StandardRPCJsonSerializer())
-
+describe('rpcLinkCodec', () => {
+  const serializer = new RPCSerializer()
   const serializeSpy = vi.spyOn(serializer, 'serialize')
   const deserializeSpy = vi.spyOn(serializer, 'deserialize')
 
-  describe('encode', () => {
-    const method = vi.fn()
-    const codec = new StandardRPCLinkCodec(serializer, {
-      url: 'http://localhost:3000',
-      method,
-      headers: () => ({ 'x-custom-header': 'custom-value' }),
-    })
+  it('uses sensible defaults when no options provided', async () => {
+    const codec = new RPCLinkCodec({})
 
-    it('with method=GET', async () => {
-      method.mockResolvedValueOnce('GET')
+    const request = await codec.encodeInput('input', ['ping'], { context: {} })
 
+    expect(request.url).toBe('/ping')
+    expect(request.method).toBe('POST')
+    expect(request.headers).toEqual({})
+    expect(request.body).toBeDefined()
+  })
+
+  describe('.encodeInput', () => {
+    it('with method=POST (default)', async () => {
+      const codec = new RPCLinkCodec({ url: '/api', serializer })
       const signal = AbortSignal.timeout(100)
-      const output = await codec.encode(['test'], 'input', { context: {}, signal })
 
-      expect(output).toEqual(expect.objectContaining({
-        url: new URL(`http://localhost:3000/test?data=${encodeURIComponent(JSON.stringify(serializeSpy.mock.results[0]!.value))}`),
-        method: 'GET',
-        headers: {
-          'x-custom-header': 'custom-value',
-        },
-        body: undefined,
-        signal,
-      }))
-    })
+      const request = await codec.encodeInput('input', ['ping'], { context: {}, signal })
 
-    it('with method=POST', async () => {
-      method.mockResolvedValueOnce('POST')
-
-      const signal = AbortSignal.timeout(100)
-      const output = await codec.encode(['test'], 'input', { context: {}, signal })
-
-      expect(output).toEqual(expect.objectContaining({
-        url: new URL(`http://localhost:3000/test`),
+      expect(request).toEqual({
+        url: '/api/ping',
         method: 'POST',
-        headers: {
-          'x-custom-header': 'custom-value',
-        },
+        headers: {},
         body: serializeSpy.mock.results[0]!.value,
         signal,
-      }))
+      })
+      expect(serializeSpy).toHaveBeenCalledWith('input')
+    })
+
+    it('with method=GET serializes input as query param', async () => {
+      const codec = new RPCLinkCodec({ url: '/api', method: 'GET', serializer })
+      const signal = AbortSignal.timeout(100)
+
+      const request = await codec.encodeInput('input', ['ping'], { context: {}, signal })
+
+      expect(request.method).toBe('GET')
+      expect(request.body).toBeUndefined()
+      expect(request.url).toContain('/api/ping?data=')
+      expect(request.signal).toBe(signal)
+    })
+
+    it('with method=GET falls back dataParam to empty string when serializer returns undefined', async () => {
+      const codec = new RPCLinkCodec({ url: '/api', method: 'GET', serializer })
+      serializeSpy.mockReturnValueOnce(undefined as any)
+
+      const request = await codec.encodeInput(undefined, ['ping'], { context: {} })
+
+      expect(request.method).toBe('GET')
+      expect(request.url).toBe('/api/ping?data=')
+    })
+
+    it('with method=PUT sends body', async () => {
+      const codec = new RPCLinkCodec({ url: '/api', method: 'PUT', serializer })
+
+      const request = await codec.encodeInput({ data: 123 }, ['test'], { context: {} })
+
+      expect(request.method).toBe('PUT')
+      expect(request.body).toBe(serializeSpy.mock.results[0]!.value)
+      expect(request.url).toBe('/api/test')
+    })
+
+    it('falls back to fallbackMethod when GET url exceeds maxUrlLength', async () => {
+      const codec = new RPCLinkCodec({
+        url: '/api',
+        method: 'GET',
+        maxUrlLength: 10,
+        fallbackMethod: 'PATCH',
+        serializer,
+      })
+
+      const request = await codec.encodeInput('input', ['ping'], { context: {} })
+
+      expect(request.method).toBe('PATCH')
+      expect(request.body).toBe(serializeSpy.mock.results[0]!.value)
+      expect(request.url).toBe('/api/ping')
+    })
+
+    it('falls back to QUERY with a body when GET url exceeds maxUrlLength', async () => {
+      const codec = new RPCLinkCodec({
+        url: '/api',
+        method: 'GET',
+        maxUrlLength: 10,
+        fallbackMethod: 'QUERY',
+        serializer,
+      })
+
+      const request = await codec.encodeInput('input', ['ping'], { context: {} })
+
+      expect(request.method).toBe('QUERY')
+      expect(request.body).toBe(serializeSpy.mock.results[0]!.value)
+      expect(request.url).toBe('/api/ping')
+    })
+
+    it('falls back to POST by default when GET url exceeds maxUrlLength', async () => {
+      const codec = new RPCLinkCodec({
+        url: '/api',
+        method: 'GET',
+        maxUrlLength: 10,
+        serializer,
+      })
+
+      const request = await codec.encodeInput('input', ['ping'], { context: {} })
+
+      expect(request.method).toBe('POST')
+      expect(request.body).toBe(serializeSpy.mock.results[0]!.value)
+      expect(request.url).toBe('/api/ping')
     })
 
     it.each([
-      ['exceeds max length', '_'.repeat(100)],
-      ['blob', new Blob(['blob'], { type: 'text/plain' })],
-      ['blob inside', { blob: new Blob(['blob'], { type: 'text/plain' }) }],
-      ['event-iterator', (async function* () { })()],
-    ])('fallback method when method=GET: %s', async (_, input) => {
-      const codec = new StandardRPCLinkCodec(serializer, {
-        url: 'http://localhost:3000',
-        method: 'GET',
-        maxUrlLength: 100,
-        fallbackMethod: 'PATCH',
-      })
+      ['FormData', () => {
+        const f = new FormData()
+        f.set('k', 'v')
+        return f
+      }],
+      ['Blob', () => new Blob(['data'])],
+      ['ReadableStream', () => new ReadableStream()],
+      ['AsyncIteratorObject', () => (async function* () { yield 1 })()],
+    ] as const)('falls back to POST when GET with %s', async (_, factory) => {
+      const codec = new RPCLinkCodec({ url: '/api', method: 'GET', serializer })
+      const value = factory()
+      serializeSpy.mockReturnValueOnce(value as any)
 
-      const output = await codec.encode(['test'], input, { context: {} })
+      const request = await codec.encodeInput(value, ['test'], { context: {} })
 
-      expect(output).toEqual(expect.objectContaining({
-        url: new URL(`http://localhost:3000/test`),
-        method: 'PATCH',
-        headers: {},
-        body: serializeSpy.mock.results[0]!.value,
-      }))
-
-      expect(serializeSpy).toBeCalledTimes(1)
-      expect(serializeSpy).toBeCalledWith(input)
+      expect(request.method).toBe('POST')
+      expect(request.body).toBe(value)
     })
 
-    it('last-event-id', async () => {
-      const codec = new StandardRPCLinkCodec(serializer, {
-        url: 'http://localhost:3000',
-        method,
-        headers: () => ({ 'x-custom-header': 'custom-value' }),
-      })
+    it('merges last-event-id header when present', async () => {
+      const codec = new RPCLinkCodec({ url: '/api', headers: { 'x-custom': 'value' }, serializer })
 
-      const request = await codec.encode(['test'], 'input', { context: {}, lastEventId: '1' })
+      const request = await codec.encodeInput('input', ['ping'], { context: {}, lastEventId: '' })
 
-      expect(request.headers['last-event-id']).toEqual('1')
-
-      expect(mergeStandardHeadersSpy).toBeCalledWith({ 'x-custom-header': 'custom-value' }, { 'last-event-id': '1' })
-      expect(mergeStandardHeadersSpy).toBeCalledTimes(1)
-      expect(request.headers).toBe(mergeStandardHeadersSpy.mock.results[0]!.value)
+      expect(request.headers).toEqual({ 'x-custom': 'value', 'last-event-id': '' })
     })
 
-    it('support fetch headers', async () => {
+    it('does not merge last-event-id when absent', async () => {
+      const codec = new RPCLinkCodec({ url: '/api', headers: { 'x-custom': 'value' }, serializer })
+
+      const request = await codec.encodeInput('input', ['ping'], { context: {} })
+
+      expect(request.headers).toEqual({ 'x-custom': 'value' })
+    })
+
+    it('supports fetch Headers', async () => {
       const headers = new Headers()
       headers.append('cookie', 'a=1')
       headers.append('cookie', 'b=2')
       headers.append('set-cookie', 'a1=1')
       headers.append('set-cookie', 'b1=2')
 
-      const codec = new StandardRPCLinkCodec(serializer, {
-        url: 'http://localhost:3000',
-        headers,
-      })
-
-      const request = await codec.encode(['test'], 'input', { context: {} })
+      const codec = new RPCLinkCodec({ url: '/api', headers, serializer })
+      const request = await codec.encodeInput('input', ['ping'], { context: {} })
 
       expect(request.headers).toEqual({
         'cookie': 'a=1; b=2',
@@ -124,151 +171,163 @@ describe('standardRPCLinkCodec', () => {
       })
     })
 
-    describe('base url', () => {
-      it('works with /prefix', async () => {
-        const codec = new StandardRPCLinkCodec(serializer, {
-          url: 'http://localhost:3000/prefix',
-          method: 'GET',
-        })
+    it('supports headers as a function', async () => {
+      const headersFn = vi.fn(() => ({ 'x-dynamic': 'yes' }))
+      const codec = new RPCLinkCodec({ url: '/api', headers: headersFn, serializer })
+      const options = { context: {} }
 
-        const request = await codec.encode(['test'], 'input', { context: {} })
+      await codec.encodeInput('input', ['ping'], options)
 
-        expect(request.url.toString()).toEqual('http://localhost:3000/prefix/test?data=%7B%22json%22%3A%22input%22%7D')
+      expect(headersFn).toHaveBeenCalledWith(options, ['ping'], 'input')
+    })
+
+    it('strips trailing slash from base url', async () => {
+      const codec = new RPCLinkCodec({ url: '/prefix/', serializer })
+
+      const request = await codec.encodeInput('input', ['test'], { context: {} })
+
+      expect(request.url).toBe('/prefix/test')
+    })
+
+    it('appends data param to existing query string on GET', async () => {
+      const codec = new RPCLinkCodec({ url: '/prefix?existing=1', method: 'GET', serializer })
+
+      const request = await codec.encodeInput('input', ['test'], { context: {} })
+
+      expect(request.url).toMatch(/\/prefix\/test\?existing=1&data=/)
+    })
+
+    it('preserves hash in url', async () => {
+      const codec = new RPCLinkCodec({ url: '/prefix#frag', serializer })
+
+      const request = await codec.encodeInput('input', ['test'], { context: {} })
+
+      expect(request.url).toBe('/prefix/test#frag')
+    })
+
+    it('handles nested paths', async () => {
+      const codec = new RPCLinkCodec({ url: '/api', serializer })
+
+      const request = await codec.encodeInput('input', ['nested', 'path', 'here'], { context: {} })
+
+      expect(request.url).toBe('/api/nested/path/here')
+    })
+
+    it('encodes path segments', async () => {
+      const codec = new RPCLinkCodec({ url: '/api', serializer })
+
+      const request = await codec.encodeInput('input', ['with/slash'], { context: {} })
+
+      expect(request.url).toBe('/api/with%2Fslash')
+    })
+
+    it('supports url as a function', async () => {
+      const urlFn = vi.fn(() => '/dynamic' as StandardUrl)
+      const codec = new RPCLinkCodec({ url: urlFn, serializer })
+      const options = { context: {} }
+
+      await codec.encodeInput('input', ['ping'], options)
+
+      expect(urlFn).toHaveBeenCalledWith(options, ['ping'], 'input')
+    })
+
+    it('supports method as a function', async () => {
+      const methodFn = vi.fn(() => 'DELETE' as const)
+      const codec = new RPCLinkCodec({ url: '/api', method: methodFn, serializer })
+      const options = { context: {} }
+
+      const request = await codec.encodeInput('input', ['ping'], options)
+
+      expect(request.method).toBe('DELETE')
+      expect(methodFn).toHaveBeenCalledWith(options, ['ping'], 'input')
+    })
+
+    it('supports maxUrlLength as a function', async () => {
+      const maxUrlLengthFn = vi.fn(() => 10)
+      const codec = new RPCLinkCodec({
+        url: '/api',
+        method: 'GET',
+        maxUrlLength: maxUrlLengthFn,
+        fallbackMethod: 'PATCH',
+        serializer,
       })
 
-      it('works with /prefix/', async () => {
-        const codec = new StandardRPCLinkCodec(serializer, {
-          url: 'http://localhost:3000/prefix/',
-          method: 'GET',
-        })
+      const request = await codec.encodeInput('input', ['ping'], { context: {} })
 
-        const request = await codec.encode(['test'], 'input', { context: {} })
-
-        expect(request.url.toString()).toEqual('http://localhost:3000/prefix/test?data=%7B%22json%22%3A%22input%22%7D')
-      })
-
-      it('works with /prefix/?a=5', async () => {
-        const codec = new StandardRPCLinkCodec(serializer, {
-          url: 'http://localhost:3000/prefix/?a=5',
-          method: 'GET',
-        })
-
-        const request = await codec.encode(['test'], 'input', { context: {} })
-
-        expect(request.url.toString()).toEqual('http://localhost:3000/prefix/test?a=5&data=%7B%22json%22%3A%22input%22%7D')
-      })
+      expect(request.method).toBe('PATCH')
+      expect(maxUrlLengthFn).toHaveBeenCalledOnce()
     })
   })
 
-  describe('decode', () => {
-    const codec = new StandardRPCLinkCodec(serializer, {
-      url: 'http://localhost:3000',
-    })
+  describe('.decodeResponse', () => {
+    const codec = new RPCLinkCodec({ url: '/api', serializer })
 
-    it('should decode output', async () => {
-      const serialized = serializer.serialize({
-        data: 'hello world',
-      })
+    it.each([100, 199, 200, 204, 301, 302, 399])('treats status %i as success', async (status) => {
+      const serialized = serializer.serialize({ data: 'hello' })
 
-      const output = await codec.decode({
-        status: 200,
+      const result = await codec.decodeResponse({
+        status,
         headers: {},
-        body: () => Promise.resolve(serialized),
+        resolveBody: () => Promise.resolve(serialized),
       })
 
-      expect(output).toEqual(deserializeSpy.mock.results[0]!.value)
-
-      expect(deserializeSpy).toBeCalledTimes(1)
-      expect(deserializeSpy).toBeCalledWith(serialized)
-
-      expect(isORPCErrorStatusSpy).toBeCalledTimes(1)
-      expect(isORPCErrorStatusSpy).toBeCalledWith(200)
+      expect(result).toEqual({ kind: 'output', output: deserializeSpy.mock.results[0]!.value })
     })
 
-    it('should decode error', async () => {
-      const error = new ORPCError('TEST', {
-        data: {
-          message: 'hello world',
-        },
-      })
-
+    it.each([400, 401, 403, 404, 500, 599, 600])('treats status %i as error', async (status) => {
+      const error = new ORPCError('BAD_REQUEST')
       const serialized = serializer.serialize(error.toJSON())
 
-      await expect(codec.decode({
-        status: 499,
+      const result = await codec.decodeResponse({
+        status,
         headers: {},
-        body: () => Promise.resolve(serialized),
-      })).rejects.toSatisfy((e) => {
-        expect(e).toEqual(error)
-
-        return true
+        resolveBody: () => Promise.resolve(serialized),
       })
 
-      expect(deserializeSpy).toBeCalledTimes(1)
-      expect(deserializeSpy).toBeCalledWith(serialized)
-
-      expect(isORPCErrorStatusSpy).toBeCalledTimes(1)
-      expect(isORPCErrorStatusSpy).toBeCalledWith(499)
+      expect(result.kind).toBe('error')
     })
 
-    it('error: Cannot parse response body', async () => {
-      await expect(codec.decode({
-        status: 200,
+    it('decodes ORPCError JSON from error response', async () => {
+      const error = new ORPCError('NOT_FOUND', { message: 'Resource not found', data: { id: '123' } })
+      const serialized = serializer.serialize(error.toJSON())
+
+      const result = await codec.decodeResponse({
+        status: 404,
         headers: {},
-        body: () => {
-          throw new Error('test')
-        },
-      })).rejects.toThrow('Cannot parse response body, please check the response body and content-type.')
-
-      expect(deserializeSpy).toBeCalledTimes(0)
-    })
-
-    it('error: Invalid RPC response format.', async () => {
-      await expect(codec.decode({
-        status: 200,
-        headers: {},
-        body: () => Promise.resolve({ meta: 123 }),
-      })).rejects.toThrow('Invalid RPC response format.')
-
-      expect(deserializeSpy).toBeCalledTimes(1)
-      expect(deserializeSpy).toBeCalledWith({ meta: 123 })
-    })
-
-    it('error: Malformed Response Error', async () => {
-      const error = new ORPCError('TEST', {
-        data: {
-          message: 'hello world',
-        },
+        resolveBody: () => Promise.resolve(serialized),
       })
 
-      const serialized = serializer.serialize({ something: 'value' }) as any
+      expect(result).toEqual({
+        kind: 'error',
+        error: expect.objectContaining({ code: 'NOT_FOUND', message: 'Resource not found', data: { id: '123' } }),
+      })
+    })
 
-      getMalformedResponseErrorCodeSpy.mockReturnValueOnce('__MOCKED_CODE__')
+    it('throws MalformedResponseError on non-ORPCError error responses', async () => {
+      const serialized = serializer.serialize({ something: 'unexpected' })
 
-      await expect(codec.decode({
+      const error: any = await codec.decodeResponse({
         status: 403,
+        headers: { 'x-header': 'value' },
+        resolveBody: () => Promise.resolve(serialized),
+      }).then(() => null, e => e)
+
+      expect(error).toBeInstanceOf(MalformedResponseError)
+      expect(error.message).toBe('Forbidden')
+      expect(error.response).toEqual({ status: 403, headers: { 'x-header': 'value' }, body: serialized })
+    })
+
+    it('throws MalformedResponseError on invalid RPC response format', async () => {
+      const error: any = await codec.decodeResponse({
+        status: 200,
         headers: {},
-        body: () => Promise.resolve(serialized),
-      })).rejects.toSatisfy((e) => {
-        expect(e).toBeInstanceOf(ORPCError)
-        expect(e.defined).toBe(false)
-        expect(e.code).toEqual('__MOCKED_CODE__')
-        expect(e.data).toEqual({
-          body: {
-            something: 'value',
-          },
-          headers: {},
-          status: 403,
-        })
+        resolveBody: () => Promise.resolve({ meta: 123 }),
+      }).then(() => null, e => e)
 
-        return true
-      })
-
-      expect(deserializeSpy).toBeCalledTimes(1)
-      expect(deserializeSpy).toBeCalledWith(serialized)
-
-      expect(getMalformedResponseErrorCodeSpy).toBeCalledTimes(1)
-      expect(getMalformedResponseErrorCodeSpy).toBeCalledWith(403)
+      expect(error).toBeInstanceOf(MalformedResponseError)
+      expect(error.message).toBe('Invalid RPC response format.')
+      expect(error.response).toEqual({ status: 200, headers: {}, body: { meta: 123 } })
+      expect(error.cause).toBeInstanceOf(Error)
     })
   })
 })

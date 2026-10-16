@@ -1,100 +1,93 @@
-import type { SetSpanErrorOptions } from './otel'
-import { once, sequential } from './function'
-import { runInSpanContext, setSpanError, startSpan } from './otel'
+import type { Promisable } from 'type-fest'
+import type { StartSpanOptions } from './tracing'
+import type { PromiseWithError, ThrowableError } from './types'
+import { AsyncIteratorClass } from '@standard-server/shared'
+import { once } from './function'
 import { AsyncIdQueue } from './queue'
+import { recordSpanError, runInSpanContext, startSpan } from './tracing'
 
-export function isAsyncIteratorObject(maybe: unknown): maybe is AsyncIteratorObject<any, any, any> {
-  if (!maybe || typeof maybe !== 'object') {
-    return false
-  }
-
-  return 'next' in maybe && typeof maybe.next === 'function' && Symbol.asyncIterator in maybe && typeof maybe[Symbol.asyncIterator] === 'function'
-}
-
-export interface AsyncIteratorClassNextFn<T, TReturn> {
-  (): Promise<IteratorResult<T, TReturn>>
-}
-
-export interface AsyncIteratorClassCleanupFn {
-  (reason: 'return' | 'throw' | 'next' | 'dispose'): Promise<void>
-}
-
-const fallbackAsyncDisposeSymbol: unique symbol = Symbol.for('asyncDispose')
-const asyncDisposeSymbol: typeof Symbol extends { asyncDispose: infer T } ? T : typeof fallbackAsyncDisposeSymbol = (Symbol as any).asyncDispose ?? fallbackAsyncDisposeSymbol
-
-export class AsyncIteratorClass<T, TReturn = unknown, TNext = unknown> implements AsyncIteratorObject<T, TReturn, TNext>, AsyncGenerator<T, TReturn, TNext> {
-  #isDone = false
-  #isExecuteComplete = false
-  #cleanup: AsyncIteratorClassCleanupFn
-  #next: AsyncIteratorClassNextFn<T, TReturn>
-
-  constructor(next: AsyncIteratorClassNextFn<T, TReturn>, cleanup: AsyncIteratorClassCleanupFn) {
-    this.#cleanup = cleanup
-    this.#next = sequential(async () => {
-      if (this.#isDone) {
-        return { done: true, value: undefined as any }
-      }
-
-      try {
-        const result = await next()
-
-        if (result.done) {
-          this.#isDone = true
-        }
-
-        return result
-      }
-      catch (err) {
-        this.#isDone = true
-        throw err
-      }
-      finally {
-        if (this.#isDone && !this.#isExecuteComplete) {
-          this.#isExecuteComplete = true
-          await this.#cleanup('next')
-        }
-      }
-    })
-  }
-
-  next(): Promise<IteratorResult<T, TReturn>> {
-    return this.#next()
-  }
-
-  async return(value?: any): Promise<IteratorResult<T, TReturn>> {
-    this.#isDone = true
-    if (!this.#isExecuteComplete) {
-      this.#isExecuteComplete = true
-      await this.#cleanup('return')
-    }
-
-    return { done: true, value }
-  }
-
-  async throw(err: any): Promise<IteratorResult<T, TReturn>> {
-    this.#isDone = true
-    if (!this.#isExecuteComplete) {
-      this.#isExecuteComplete = true
-      await this.#cleanup('throw')
-    }
-
-    throw err
-  }
+export interface WrapAsyncIteratorOptions<TYield, TReturn, TMappedYield, TMappedReturn> {
+  /**
+   * Any call to the original iterator will be executed inside this function.
+   * Useful when you want execution to happen within a specific context,
+   * such as AsyncLocalStorage.
+   */
+  runWith?: <T>(run: () => Promise<T>) => Promisable<T>
+  mapResult?: (result: IteratorResult<TYield, TReturn>) => Promisable<IteratorResult<TMappedYield, TMappedReturn>>
+  mapError?: (error: ThrowableError) => Promisable<ThrowableError>
+  onError?: (error: ThrowableError) => Promisable<void>
 
   /**
-   * asyncDispose symbol only available in esnext, we should fallback to Symbol.for('asyncDispose')
+   * Execute after the stream finishes or is cancelled.
    */
-  async [asyncDisposeSymbol](): Promise<void> {
-    this.#isDone = true
-    if (!this.#isExecuteComplete) {
-      this.#isExecuteComplete = true
-      await this.#cleanup('dispose')
-    }
-  }
+  onFinish?: () => Promisable<void>
+}
 
-  [Symbol.asyncIterator](): this {
-    return this
-  }
+export function wrapAsyncIterator<TYield, TReturn, TMappedYield = TYield, TMappedReturn = TReturn>(
+  iterator: AsyncIterator<TYield, TReturn>,
+  { runWith, mapResult, mapError, onError, onFinish }: WrapAsyncIteratorOptions<TYield, TReturn, TMappedYield, TMappedReturn>,
+): NoInfer<AsyncIteratorClass<TMappedYield, TMappedReturn>> {
+  runWith ??= run => run()
+
+  let isDone: boolean | undefined
+
+  return new AsyncIteratorClass<TMappedYield, TMappedReturn>(async () => {
+    try {
+      let result
+      try {
+        result = await runWith(() => iterator.next())
+        isDone = result.done
+      }
+      catch (error) {
+        isDone = true
+        throw error
+      }
+
+      return mapResult ? await mapResult(result) : result as any
+    }
+    catch (error) {
+      await onError?.(error as ThrowableError)
+      throw mapError ? await mapError(error as ThrowableError) : error
+    }
+  }, async (_state) => {
+    try {
+      // Only cancel the original iterator if it has not finished yet.
+      // Do not rely on _state because the user's options may throw errors.
+      if (!isDone) {
+        try {
+          await runWith(async () => iterator.return?.())
+        }
+        catch (error) {
+          await onError?.(error as ThrowableError)
+          throw error
+        }
+      }
+    }
+    finally {
+      await onFinish?.()
+    }
+  })
+}
+
+export function traceAsyncIterator<T, TReturn, TNext>(
+  options: StartSpanOptions | string,
+  iterator: AsyncIterator<T, TReturn, TNext>,
+): AsyncIteratorClass<T, TReturn, TNext> {
+  const getSpan = once(() => startSpan(options))
+
+  return wrapAsyncIterator(iterator, {
+    runWith: run => runInSpanContext(getSpan(), run),
+    mapResult(result) {
+      getSpan()?.addEvent(result.done ? 'completed' : 'yielded')
+      return result
+    },
+    onError(error) {
+      recordSpanError(getSpan(), error)
+    },
+    onFinish() {
+      getSpan()?.end()
+    },
+  })
 }
 
 export function replicateAsyncIterator<T, TReturn, TNext>(
@@ -151,10 +144,10 @@ export function replicateAsyncIterator<T, TReturn, TNext>(
 
         throw item.error
       },
-      async (reason) => {
-        queue.close({ id })
+      async ({ kind, error }) => {
+        queue.close({ id, reason: error })
 
-        if (reason !== 'next' && !queue.length && !isSourceFinished) {
+        if (kind === 'cancelled' && !queue.size && !isSourceFinished) {
           isSourceFinished = true
           await source?.return?.()
         }
@@ -165,46 +158,87 @@ export function replicateAsyncIterator<T, TReturn, TNext>(
   return replicated
 }
 
-export interface AsyncIteratorWithSpanOptions extends SetSpanErrorOptions {
+export interface ConsumeAsyncIteratorOptions<T, TReturn, TError> {
   /**
-   * The name of the span to create.
+   * Called on each event
    */
-  name: string
+  onEvent: (event: T) => void
+  /**
+   * Called once error happens
+   */
+  onError?: (error: TError) => void
+  /**
+   * Called once AsyncIteratorObject is done
+   *
+   * @remarks
+   * **Note**: If iterator is canceled, `undefined` can be passed on success
+   */
+  onSuccess?: (value: TReturn | undefined) => void
+  /**
+   * Called once after onError or onSuccess
+   *
+   * @remarks
+   * **Note**: If iterator is canceled, `undefined` can be passed on success
+   */
+  onFinish?: (state: [error: TError, data: undefined, isSuccess: false] | [error: null, data: TReturn | undefined, isSuccess: true]) => void
 }
 
-export function asyncIteratorWithSpan<T, TReturn, TNext>(
-  { name, ...options }: AsyncIteratorWithSpanOptions,
-  iterator: AsyncIterator<T, TReturn, TNext>,
-): AsyncIteratorClass<T, TReturn, TNext> {
-  let span: ReturnType<typeof startSpan> | undefined
+/**
+ * Consumes an AsyncIteratorObject with lifecycle callbacks.
+ *
+ * @remarks
+ * **Warning**: If no `onError` or `onFinish` is provided, errors are thrown into the unhandled rejection channel.
+ *
+ * @returns An unsubscribe callback that stops consuming and cleans up the iterator.
+ * @see {@link https://orpc.dev/docs/client/async-iterator-object#using-consumeasynciterator | AsyncIteratorObject in Client - Using consumeAsyncIterator}
+ */
+export function consumeAsyncIterator<T, TReturn, TError = ThrowableError>(
+  iterator: AsyncIterator<T, TReturn> | PromiseWithError<AsyncIterator<T, TReturn>, TError>,
+  options: ConsumeAsyncIteratorOptions<T, TReturn, TError | ThrowableError>,
+): () => Promise<void> {
+  // The typed error should always be combined with `ThrowableError`
+  // because an AsyncIterator can throw any error during iteration,
+  // while TError only represents errors from the initial promise.
+  // In oRPC client/server usage, initial and iteration errors are usually the same,
+  // but this utility is shared, so it needs to support the general case.
 
-  return new AsyncIteratorClass(
-    async () => {
-      span ??= startSpan(name)
+  void (async () => {
+    let onFinishState: [error: TError | ThrowableError, data: undefined, isSuccess: false] | [error: null, data: TReturn | undefined, isSuccess: true]
 
-      try {
-        const result = await runInSpanContext(span, () => iterator.next())
-        span?.addEvent(result.done ? 'completed' : 'yielded')
-        return result
-      }
-      catch (err) {
-        setSpanError(span, err, options)
-        throw err
-      }
-    },
-    async (reason) => {
-      try {
-        if (reason !== 'next') {
-          await runInSpanContext(span, () => iterator.return?.())
+    try {
+      const resolvedIterator = await iterator
+
+      while (true) {
+        const { done, value } = await resolvedIterator.next()
+
+        if (done) {
+          // if iterator is canceled, value can be undefined
+          const realValue = value as typeof value | undefined
+          onFinishState = [null, realValue, true]
+          options.onSuccess?.(realValue)
+          break
+        }
+
+        try {
+          options.onEvent(value)
+        }
+        catch (error) {
+          // Close the source before reporting the onEvent error
+          await resolvedIterator.return?.()
+          throw error
         }
       }
-      catch (err) {
-        setSpanError(span, err, options)
-        throw err
-      }
-      finally {
-        span?.end()
-      }
-    },
-  )
+    }
+    catch (error) {
+      onFinishState = [error as ThrowableError, undefined, false]
+      options.onError?.(error as ThrowableError)
+    }
+    finally {
+      options.onFinish?.(onFinishState!)
+    }
+  })()
+
+  return async () => {
+    await (await iterator)?.return?.()
+  }
 }

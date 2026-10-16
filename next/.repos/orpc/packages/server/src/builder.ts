@@ -1,352 +1,327 @@
-import type { HTTPPath } from '@orpc/client'
-import type { AnySchema, ContractProcedureDef, ContractRouter, ErrorMap, MergedErrorMap, Meta, Route, Schema } from '@orpc/contract'
+import type { AnySchema, ErrorMap, InferSchemaInput, InferSchemaOutput, InitialInputSchema, InitialOutputSchema, MergedErrorMap, MetaPlugin, ORPCErrorConstructorMap, ProcedureContractDefinition, Schema } from '@orpc/contract'
 import type { IntersectPick } from '@orpc/shared'
-import type { BuilderWithMiddlewares, ProcedureBuilder, ProcedureBuilderWithInput, ProcedureBuilderWithOutput, RouterBuilder } from './builder-variants'
-import type { Context, MergedCurrentContext, MergedInitialContext } from './context'
-import type { ORPCErrorConstructorMap } from './error'
-import type { Lazy } from './lazy'
-import type { AnyMiddleware, MapInputMiddleware, Middleware } from './middleware'
+import type { BuilderWithInput, BuilderWithMiddlewares, BuilderWithOutput } from './builder-variants'
+import type { Context, MergedInitialContext } from './context'
+import type { Middleware } from './middleware'
 import type { DecoratedMiddleware } from './middleware-decorated'
-import type { ProcedureHandler } from './procedure'
-import type { Router } from './router'
-import type { EnhancedRouter, EnhanceRouterOptions } from './router-utils'
-import { mergeErrorMap, mergeMeta, mergePrefix, mergeRoute, mergeTags } from '@orpc/contract'
-import { fallbackConfig } from './config'
-import { lazy } from './lazy'
+import type { OrderedMiddleware, ProcedureConfig, ProcedureHandler } from './procedure'
+import type { AnyRouter } from './router'
+import type { AugmentedRouter } from './router-utils'
+import { getHiddenMetaPlugins, mergeErrorMap, resolveMetaPlugins } from '@orpc/contract'
+import { toArray } from '@orpc/shared'
+import { Lazy } from './lazy'
 import { decorateMiddleware } from './middleware-decorated'
-import { addMiddleware } from './middleware-utils'
 import { DecoratedProcedure } from './procedure-decorated'
-import { enhanceRouter } from './router-utils'
+import { augmentRouter } from './router-utils'
 
-export interface BuilderConfig {
-  initialInputValidationIndex?: number
-  initialOutputValidationIndex?: number
-  dedupeLeadingMiddlewares?: boolean
+/**
+ * The initial context type used when `.$context` is not called.
+ * Augment this interface with `declare module '@orpc/server'` to define
+ * a default initial context type globally.
+ *
+ * @see {@link https://orpc.dev/docs/context#default-initial-context | Context - Default Initial Context}
+ */
+export interface DefaultInitialContext {
 }
 
-export interface BuilderDef<
+export interface BuilderDefinition<
   TInputSchema extends AnySchema,
-  TOutputSchema extends AnySchema,
+  TInjectedContext extends AnySchema,
   TErrorMap extends ErrorMap,
-  TMeta extends Meta,
-> extends ContractProcedureDef<TInputSchema, TOutputSchema, TErrorMap, TMeta>, EnhanceRouterOptions<TErrorMap> {
-  middlewares: readonly AnyMiddleware[]
-  inputValidationIndex: number
-  outputValidationIndex: number
-  config: BuilderConfig
+>extends ProcedureContractDefinition<TInputSchema, TInjectedContext, TErrorMap>, ProcedureConfig {
+  orderedMiddlewares: OrderedMiddleware[]
 }
 
+/**
+ * The procedure builder behind `os`. Chain its methods to gradually define
+ * context, middleware, errors, schemas, and finally a handler or router.
+ *
+ * @see {@link https://orpc.dev/docs/procedure | Procedure}
+ */
 export class Builder<
   TInitialContext extends Context,
-  TCurrentContext extends Context,
-  TInputSchema extends AnySchema,
-  TOutputSchema extends AnySchema,
   TErrorMap extends ErrorMap,
-  TMeta extends Meta,
 > {
-  /**
-   * This property holds the defined options.
-   */
-  '~orpc': BuilderDef<TInputSchema, TOutputSchema, TErrorMap, TMeta>
+  '~orpc': BuilderDefinition<InitialInputSchema, InitialOutputSchema, TErrorMap>
 
-  constructor(def: BuilderDef<TInputSchema, TOutputSchema, TErrorMap, TMeta>) {
-    this['~orpc'] = def
+  /**
+   * Private constructor to prevent direct instantiation.
+   * Use the static `create` method to initialize a new instance with a safe initial definition.
+   */
+  private constructor(definition: BuilderDefinition<InitialInputSchema, InitialOutputSchema, TErrorMap>) {
+    this['~orpc'] = definition
   }
 
   /**
-   * Sets or overrides the config.
+   * Creates a fresh builder with an empty definition.
+   * Prefer the exported `os` instance over calling this directly.
    *
-   * @see {@link https://orpc.dev/docs/client/server-side#middlewares-order Middlewares Order Docs}
-   * @see {@link https://orpc.dev/docs/best-practices/dedupe-middleware#configuration Dedupe Middleware Docs}
+   * @see {@link https://orpc.dev/docs/procedure | Procedure}
    */
-  $config(config: BuilderConfig): Builder<TInitialContext, TCurrentContext, TInputSchema, TOutputSchema, TErrorMap, TMeta> {
-    const inputValidationCount = this['~orpc'].inputValidationIndex - fallbackConfig('initialInputValidationIndex', this['~orpc'].config.initialInputValidationIndex)
-    const outputValidationCount = this['~orpc'].outputValidationIndex - fallbackConfig('initialOutputValidationIndex', this['~orpc'].config.initialOutputValidationIndex)
+  static create<T extends Context = DefaultInitialContext>(): Builder<T & object, Record<never, never>> {
+    // Using `& object` avoids "has no properties in common with type" errors
+    // when combining procedures or routers with compatible but non-overlapping contexts.
 
     return new Builder({
-      ...this['~orpc'],
-      config,
-      dedupeLeadingMiddlewares: fallbackConfig('dedupeLeadingMiddlewares', config.dedupeLeadingMiddlewares),
-      inputValidationIndex: fallbackConfig('initialInputValidationIndex', config.initialInputValidationIndex) + inputValidationCount,
-      outputValidationIndex: fallbackConfig('initialOutputValidationIndex', config.initialOutputValidationIndex) + outputValidationCount,
+      errorMap: {},
+      meta: {},
+      orderedMiddlewares: [],
     })
   }
 
   /**
-   * Set or override the initial context.
+   * Declares the initial context type that must be provided when executing
+   * procedures built from this builder.
    *
-   * @see {@link https://orpc.dev/docs/context Context Docs}
+   * @see {@link https://orpc.dev/docs/context#initial-context | Context - Initial Context}
    */
-  $context<U extends Context>(): Builder<U & Record<never, never>, U, TInputSchema, TOutputSchema, TErrorMap, TMeta> {
-    /**
-     * We need `& Record<never, never>` to deal with `has no properties in common with type` error
-     */
+  $context<T extends Context = DefaultInitialContext>(): Builder<T & object, TErrorMap> {
+    // Using `& object` avoids "has no properties in common with type" errors
+    // when combining procedures or routers with compatible but non-overlapping contexts.
 
+    // because we can't call $context after .use method so we don't need reset middlewares here
+    return this as any
+  }
+
+  /**
+   * Overrides the procedure configuration, such as disabling runtime
+   * input/output validation.
+   *
+   * @see {@link https://orpc.dev/docs/recipes/validation-customization | Validation Customization}
+   */
+  $config(config: ProcedureConfig): Builder<TInitialContext, TErrorMap> {
     return new Builder({
       ...this['~orpc'],
-      middlewares: [],
-      inputValidationIndex: fallbackConfig('initialInputValidationIndex', this['~orpc'].config.initialInputValidationIndex),
-      outputValidationIndex: fallbackConfig('initialOutputValidationIndex', this['~orpc'].config.initialOutputValidationIndex),
+      ...config,
     })
   }
 
   /**
-   * Sets or overrides the initial meta.
+   * Applies metadata plugins to procedures built from this builder.
    *
-   * @see {@link https://orpc.dev/docs/metadata Metadata Docs}
+   * @see {@link https://orpc.dev/docs/metadata | Metadata}
    */
-  $meta<U extends Meta>(
-    initialMeta: U,
-  ): Builder<TInitialContext, TCurrentContext, TInputSchema, TOutputSchema, TErrorMap, U & Record<never, never>> {
-    /**
-     * We need `& Record<never, never>` to deal with `has no properties in common with type` error
-     */
+  meta(
+    ...plugins: MetaPlugin<InitialInputSchema, InitialOutputSchema, TErrorMap>[]
+  ): Builder<TInitialContext, TErrorMap> {
+    const [meta, metaPlugins] = resolveMetaPlugins(
+      this['~orpc'].meta,
+      this['~orpc'].metaPlugins,
+      plugins,
+    )
 
     return new Builder({
       ...this['~orpc'],
-      meta: initialMeta,
+      meta,
+      metaPlugins,
     })
   }
 
   /**
-   * Sets or overrides the initial route.
-   * This option is typically relevant when integrating with OpenAPI.
+   * Defines typesafe errors that procedures built from this builder can throw
+   * via the `errors` utility in handlers and middleware.
    *
-   * @see {@link https://orpc.dev/docs/openapi/routing OpenAPI Routing Docs}
-   * @see {@link https://orpc.dev/docs/openapi/input-output-structure OpenAPI Input/Output Structure Docs}
-   */
-  $route(
-    initialRoute: Route,
-  ): Builder<TInitialContext, TCurrentContext, TInputSchema, TOutputSchema, TErrorMap, TMeta> {
-    return new Builder({
-      ...this['~orpc'],
-      route: initialRoute,
-    })
-  }
-
-  /**
-   * Sets or overrides the initial input schema.
-   *
-   * @see {@link https://orpc.dev/docs/procedure#initial-configuration Initial Procedure Configuration Docs}
-   */
-  $input<U extends AnySchema>(
-    initialInputSchema?: U,
-  ): Builder<TInitialContext, TCurrentContext, U, TOutputSchema, TErrorMap, TMeta> {
-    return new Builder({
-      ...this['~orpc'],
-      inputSchema: initialInputSchema,
-    })
-  }
-
-  /**
-   * Creates a middleware.
-   *
-   * @see {@link https://orpc.dev/docs/middleware Middleware Docs}
-   */
-  middleware<UOutContext extends IntersectPick<TCurrentContext, UOutContext>, TInput, TOutput = any>( // = any here is important to make middleware can be used in any output by default
-    middleware: Middleware<TInitialContext, UOutContext, TInput, TOutput, ORPCErrorConstructorMap<TErrorMap>, TMeta>,
-  ): DecoratedMiddleware<TInitialContext, UOutContext, TInput, TOutput, any, TMeta> { // any ensures middleware can used in any procedure
-    return decorateMiddleware(middleware)
-  }
-
-  /**
-   * Adds type-safe custom errors.
-   * The provided errors are spared-merged with any existing errors.
-   *
-   * @see {@link https://orpc.dev/docs/error-handling#type%E2%80%90safe-error-handling Type-Safe Error Handling Docs}
+   * @see {@link https://orpc.dev/docs/error-handling#typesafe-errors | Error Handling - Typesafe Errors}
    */
   errors<U extends ErrorMap>(
     errors: U,
-  ): Builder<TInitialContext, TCurrentContext, TInputSchema, TOutputSchema, MergedErrorMap<TErrorMap, U>, TMeta> {
-    return new Builder({
+  ): Builder<TInitialContext, MergedErrorMap<TErrorMap, U>> {
+    let builder = new Builder({
       ...this['~orpc'],
       errorMap: mergeErrorMap(this['~orpc'].errorMap, errors),
     })
+
+    const plugins = getHiddenMetaPlugins(errors)
+    if (plugins) {
+      builder = builder.meta(...plugins) as any
+    }
+
+    return builder as any
   }
 
   /**
-   * Uses a middleware to modify the context or improve the pipeline.
+   * Applies a middleware that runs before the handler of every procedure
+   * built from this builder.
    *
-   * @info Supports both normal middleware and inline middleware implementations.
-   * @note The current context must be satisfy middleware dependent-context
-   * @see {@link https://orpc.dev/docs/middleware Middleware Docs}
+   * @see {@link https://orpc.dev/docs/middleware | Middleware}
    */
-  use<UOutContext extends IntersectPick<TCurrentContext, UOutContext>, UInContext extends Context = TCurrentContext>(
+  use<
+    $OutContext extends IntersectPick<TInitialContext, $OutContext>,
+    $InContext extends Context = TInitialContext,
+    $ErrorMap extends ErrorMap = TErrorMap,
+  >(
     middleware: Middleware<
-      UInContext | TCurrentContext,
-      UOutContext,
-      unknown,
-      unknown,
-      ORPCErrorConstructorMap<TErrorMap>,
-      TMeta
+      $InContext | TInitialContext,
+      $OutContext,
+      InferSchemaOutput<InitialInputSchema>,
+      InferSchemaInput<InitialOutputSchema>,
+      $ErrorMap
     >,
   ): BuilderWithMiddlewares<
-    MergedInitialContext<TInitialContext, UInContext, TCurrentContext>,
-    MergedCurrentContext<TCurrentContext, UOutContext>,
-    TInputSchema,
-    TOutputSchema,
-    TErrorMap,
-    TMeta
-  >
-
-  use(
-    middleware: AnyMiddleware,
-    mapInput?: MapInputMiddleware<any, any>,
-  ): BuilderWithMiddlewares<any, any, any, any, any, any> {
-    const mapped = mapInput
-      ? decorateMiddleware(middleware).mapInput(mapInput)
-      : middleware
-
-    return new Builder({
+    MergedInitialContext<TInitialContext, object, $InContext>,
+    $OutContext,
+    MergedErrorMap<$ErrorMap, TErrorMap>
+  > {
+    let builder = new Builder({
       ...this['~orpc'],
-      middlewares: addMiddleware(this['~orpc'].middlewares, mapped),
-    }) as any
-  }
-
-  /**
-   * Sets or updates the metadata.
-   * The provided metadata is spared-merged with any existing metadata.
-   *
-   * @see {@link https://orpc.dev/docs/metadata Metadata Docs}
-   */
-  meta(
-    meta: TMeta,
-  ): ProcedureBuilder<TInitialContext, TCurrentContext, TInputSchema, TOutputSchema, TErrorMap, TMeta> {
-    return new Builder({
-      ...this['~orpc'],
-      meta: mergeMeta(this['~orpc'].meta, meta),
+      errorMap: mergeErrorMap(middleware['~orpc']?.errorMap ?? {}, this['~orpc'].errorMap),
+      orderedMiddlewares: [...this['~orpc'].orderedMiddlewares, {
+        middleware,
+        inputSchemasLengthAtUse: this['~orpc'].inputSchemas?.length,
+        outputSchemasLengthAtUse: this['~orpc'].outputSchemas?.length,
+      }],
     })
+
+    if (middleware['~orpc']?.metaPlugins) {
+      builder = builder.meta(...middleware['~orpc']?.metaPlugins) as any
+    }
+
+    return builder as any
   }
 
   /**
-   * Sets or updates the route definition.
-   * The provided route is spared-merged with any existing route.
-   * This option is typically relevant when integrating with OpenAPI.
+   * Creates a standalone middleware that can be composed and applied to any
+   * compatible builder or procedure with `.use`.
    *
-   * @see {@link https://orpc.dev/docs/openapi/routing OpenAPI Routing Docs}
-   * @see {@link https://orpc.dev/docs/openapi/input-output-structure OpenAPI Input/Output Structure Docs}
+   * @see {@link https://orpc.dev/docs/middleware | Middleware}
    */
-  route(
-    route: Route,
-  ): ProcedureBuilder<TInitialContext, TCurrentContext, TInputSchema, TOutputSchema, TErrorMap, TMeta> {
-    return new Builder({
+  middleware<
+    $OutContext extends IntersectPick<TInitialContext, $OutContext>,
+    $Input,
+    $Output = any, // $Output = any by default is important to make middleware can be used in any output by default
+  >(
+    middleware: Middleware<TInitialContext, $OutContext, $Input, $Output, TErrorMap>,
+  ): DecoratedMiddleware<TInitialContext, $OutContext, $Input, $Output, TErrorMap> {
+    const allMiddlewares = [
+      ...this['~orpc'].orderedMiddlewares.map(({ middleware }) => middleware),
+      middleware,
+    ]
+
+    let current = decorateMiddleware(allMiddlewares.shift()!)
+
+    for (const mid of allMiddlewares) {
+      current = current.use(mid) as any
+    }
+
+    current['~orpc'] = {
+      ...current['~orpc'],
+      errorMap: this['~orpc'].errorMap,
+      metaPlugins: [
+        ...toArray(this['~orpc'].metaPlugins),
+        ...toArray(middleware['~orpc']?.metaPlugins),
+      ],
+    }
+
+    return current
+  }
+
+  /**
+   * Defines the input schema used to validate and type the procedure input.
+   *
+   * @see {@link https://orpc.dev/docs/procedure#inputoutput-validation | Procedure - Input/Output Validation}
+   */
+  input<$ extends AnySchema>(schema: $): BuilderWithInput<TInitialContext, object, $, TErrorMap> {
+    let builder = new Builder({
       ...this['~orpc'],
-      route: mergeRoute(this['~orpc'].route, route),
+      inputSchemas: [...toArray(this['~orpc'].inputSchemas), schema],
     })
+
+    const plugins = getHiddenMetaPlugins(schema)
+    if (plugins) {
+      builder = builder.meta(...plugins) as any
+    }
+
+    return builder as any
   }
 
   /**
-   * Defines the input validation schema.
+   * Defines the output schema used to validate and type the procedure output.
    *
-   * @see {@link https://orpc.dev/docs/procedure#input-output-validation Input Validation Docs}
+   * @see {@link https://orpc.dev/docs/procedure#inputoutput-validation | Procedure - Input/Output Validation}
    */
-  input<USchema extends AnySchema>(
-    schema: USchema,
-  ): ProcedureBuilderWithInput<TInitialContext, TCurrentContext, USchema, TOutputSchema, TErrorMap, TMeta> {
-    return new Builder({
+  output<$ extends AnySchema>(schema: $): BuilderWithOutput<TInitialContext, object, $, TErrorMap> {
+    let builder = new Builder({
       ...this['~orpc'],
-      inputSchema: schema,
-      inputValidationIndex: fallbackConfig('initialInputValidationIndex', this['~orpc'].config.initialInputValidationIndex) + this['~orpc'].middlewares.length,
-    }) as any
+      outputSchemas: [...toArray(this['~orpc'].outputSchemas), schema],
+    })
+
+    const plugins = getHiddenMetaPlugins(schema)
+    if (plugins) {
+      builder = builder.meta(...plugins) as any
+    }
+
+    return builder as any
   }
 
   /**
-   * Defines the output validation schema.
+   * Defines the function that implements the procedure and completes the
+   * chain, returning a callable procedure.
    *
-   * @see {@link https://orpc.dev/docs/procedure#input-output-validation Output Validation Docs}
+   * @see {@link https://orpc.dev/docs/procedure | Procedure}
    */
-  output<USchema extends AnySchema>(
-    schema: USchema,
-  ): ProcedureBuilderWithOutput<TInitialContext, TCurrentContext, TInputSchema, USchema, TErrorMap, TMeta> {
-    return new Builder({
-      ...this['~orpc'],
-      outputSchema: schema,
-      outputValidationIndex: fallbackConfig('initialOutputValidationIndex', this['~orpc'].config.initialOutputValidationIndex) + this['~orpc'].middlewares.length,
-    }) as any
-  }
-
-  /**
-   * Defines the handler of the procedure.
-   *
-   * @see {@link https://orpc.dev/docs/procedure Procedure Docs}
-   */
-  handler<UFuncOutput>(
-    handler: ProcedureHandler<TCurrentContext, unknown, UFuncOutput, TErrorMap, TMeta>,
-  ): DecoratedProcedure<TInitialContext, TCurrentContext, TInputSchema, Schema<UFuncOutput, UFuncOutput>, TErrorMap, TMeta> {
-    return new DecoratedProcedure({
+  handler<T>(
+    handler: ProcedureHandler<TInitialContext, InferSchemaOutput<InitialInputSchema>, T, ORPCErrorConstructorMap<TErrorMap>>,
+  ): DecoratedProcedure<
+    TInitialContext,
+    object,
+    InitialInputSchema,
+    Schema<T>,
+    TErrorMap
+  > {
+    let procedure = new DecoratedProcedure({
       ...this['~orpc'],
       handler,
     })
+
+    const plugins = getHiddenMetaPlugins(handler)
+    if (plugins) {
+      procedure = procedure.meta(...plugins)
+    }
+
+    return procedure as any
   }
 
   /**
-   * Prefixes all procedures in the router.
-   * The provided prefix is post-appended to any existing router prefix.
+   * Applies the builder's middleware, errors, and metadata to every procedure
+   * in the given router.
    *
-   * @note This option does not affect procedures that do not define a path in their route definition.
-   *
-   * @see {@link https://orpc.dev/docs/openapi/routing#route-prefixes OpenAPI Route Prefixes Docs}
+   * @see {@link https://orpc.dev/docs/router#extending-router | Router - Extending Router}
    */
-  prefix(
-    prefix: HTTPPath,
-  ): RouterBuilder<TInitialContext, TCurrentContext, TErrorMap, TMeta> {
-    return new Builder({
+  router<T extends AnyRouter>(
+    router: T,
+  ): AugmentedRouter<T, TErrorMap> {
+    return augmentRouter(router, {
       ...this['~orpc'],
-      prefix: mergePrefix(this['~orpc'].prefix, prefix),
+      middlewares: this['~orpc'].orderedMiddlewares.map(({ middleware }) => middleware),
     }) as any
   }
 
   /**
-   * Adds tags to all procedures in the router.
-   * This helpful when you want to group procedures together in the OpenAPI specification.
+   * Like `.router`, but loads the router lazily on first access, which helps
+   * reduce startup time for large applications.
    *
-   * @see {@link https://orpc.dev/docs/openapi/openapi-specification#operation-metadata OpenAPI Operation Metadata Docs}
+   * @see {@link https://orpc.dev/docs/router#lazy-router | Router - Lazy Router}
    */
-  tag(...tags: string[]): RouterBuilder<TInitialContext, TCurrentContext, TErrorMap, TMeta> {
-    return new Builder({
-      ...this['~orpc'],
-      tags: mergeTags(this['~orpc'].tags, tags),
-    }) as any
-  }
-
-  /**
-   * Applies all of the previously defined options to the specified router.
-   *
-   * @see {@link https://orpc.dev/docs/router#extending-router Extending Router Docs}
-   */
-  router<U extends Router<ContractRouter<TMeta>, TCurrentContext>>(
-    router: U,
-  ): EnhancedRouter<U, TInitialContext, TCurrentContext, TErrorMap> {
-    return enhanceRouter(router, this['~orpc']) as any // Type instantiation is excessively deep and possibly infinite
-  }
-
-  /**
-   * Create a lazy router
-   * And applies all of the previously defined options to the specified router.
-   *
-   * @see {@link https://orpc.dev/docs/router#extending-router Extending Router Docs}
-   */
-  lazy<U extends Router<ContractRouter<TMeta>, TCurrentContext>>(
-    loader: () => Promise<{ default: U }>,
-  ): EnhancedRouter<Lazy<U>, TInitialContext, TCurrentContext, TErrorMap> {
-    return enhanceRouter(lazy(loader), this['~orpc']) as any // Type instantiation is excessively deep and possibly infinite
+  lazy<T extends AnyRouter>(
+    loader: () => Promise<{ default: T }>,
+  ): Lazy<AugmentedRouter<T, TErrorMap>> {
+    return new Lazy({
+      loader: async () => {
+        const { default: router } = await loader()
+        return {
+          default: this.router(router),
+        }
+      },
+      meta: this['~orpc'].meta,
+      metaPlugins: this['~orpc'].metaPlugins,
+    })
   }
 }
 
-export const os = new Builder<
-  Record<never, never>,
-  Record<never, never>,
-  Schema<unknown, unknown>,
-  Schema<unknown, unknown>,
-  Record<never, never>,
-  Record<never, never>
->({
-  config: {},
-  route: {},
-  meta: {},
-  errorMap: {},
-  inputValidationIndex: fallbackConfig('initialInputValidationIndex'),
-  outputValidationIndex: fallbackConfig('initialOutputValidationIndex'),
-  middlewares: [],
-  dedupeLeadingMiddlewares: true,
-})
+/**
+ * The oRPC procedure builder. Chain methods like `.input`, `.use`, and `.handler`
+ * to define procedures, then compose them into routers.
+ *
+ * @see {@link https://orpc.dev/docs/procedure | Procedure}
+ */
+export const os = Builder.create()
