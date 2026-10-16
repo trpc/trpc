@@ -26,22 +26,32 @@ Before the first question, say in one line how many items there are and where th
 
 ## 2. Ask one at a time
 
-Send each item as its own short message, then stop and wait for the reply:
+Send each item as its own short message, then stop and wait for the reply. Write it as markdown, not inside a code block, so the title renders as a heading on a phone:
 
-```
-Decision 3 of 12 · 2 answered · 0 skipped
-Q12.1 Platform core: own web core or effect/http?   [platforms-through-effect-layers.md]
+````md
+### 🗳️ 3/12: Should the platform core be our own web core or effect/http?
 
-Today: @trpc12/trpc serves on Effect's HttpServer through layers (built, agent's call).
-A) Keep effect/http as the core (current, recommended: Effect-native, already built)
-B) Own web-standard core, with Effect layers only for platforms
-C) Something else, in your words
+`Q12.1` · [platforms-through-effect-layers.md] · 2 answered · 0 skipped
+
+**Today:** `@trpc12/trpc` serves on Effect's `HttpServer` through layers (built, agent's call).
+
+- **A)** ⭐ **Recommended:** keep effect/http as the core
+  - ✅ Effect-native, already built
+  - ❌ Effect's HTTP types show up in adapter code
+- **B)** Own web-standard core, with Effect layers only for platforms
+  - ✅ No Effect in the request path
+  - ❌ Two cores to keep in step
+- **C)** Something else, in your words
 
 Reply with a letter or your own words, `skip`, or `done`.
-```
+````
 
+- The title is the question itself, in plain words, readable without the rest of the message. Never title an item with an internal label ("Spike C", "option D"): name the thing ("a plain React `use()` hook package").
+- Spell out every name in the options the first time it appears in the item, even if an earlier item explained it.
 - Keep context to two to four lines: what exists today and what each option costs. Read the proposal and decision before writing, so the options match what is actually built.
-- When the choice is about API shape, show each option as a short code excerpt. If the human says they're on a phone, keep to prose; on a desktop, use code freely.
+- Use bullet points, always. Give each option short pros and cons (✅ / ❌), and make the recommended pick easy to spot: put ⭐ **Recommended** on it. Emojis are welcome where they help scanning.
+- When the choice is about API shape, show each option as a short code excerpt, on a phone too.
+- On a phone, be concise: one short code excerpt, a few bullets. On a desktop, be more thorough: link the spike, note and decision files, and show more code.
 - Point out when an earlier answer in the round changes this item (for example a new default), and adjust the options and the recommendation to it.
 - Mark one option as recommended. Choose it Effect-native first, v11's way second (`decisions/effect-native-by-default.md`).
 - For an agent call under review, option A is "Keep" and the others are real alternatives.
