@@ -5,7 +5,7 @@ import type { ProcedureType } from './types.ts';
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export const PROTOCOL_VERSION = '1';
+export const PROTOCOL_VERSION = '12';
 
 /**
  * Header names the protocol uses.

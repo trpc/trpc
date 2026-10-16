@@ -104,7 +104,7 @@ test('calls work, and still see the connection after the object wakes', async ()
 
   send(sockets, socket, {
     type: 'init',
-    version: '1',
+    version: '12',
     connectionParams: { token: 'kim' },
   });
   send(sockets, socket, {

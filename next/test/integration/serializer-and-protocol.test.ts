@@ -166,7 +166,7 @@ test('responses are `{ json }` documents', async () => {
   const res = await fetch(`${server.url}/greet?name=you`);
   expect(res.status).toBe(200);
   expect(res.headers.get('content-type')).toBe('application/json');
-  expect(res.headers.get('trpc-version')).toBe('1');
+  expect(res.headers.get('trpc-version')).toBe('12');
   expect(await res.json()).toEqual({ json: 'hello you' });
 });
 
