@@ -11,4 +11,6 @@
 - (agent) Each depends on `trpcdev: workspace:*` and runs in CI with a typecheck and a smoke run, like `pnpm example` does for `minimal` today.
 - Why: one example per distinct runtime or feature; docs snippets already come from tested code.
 - Lost: a plain React single-page-app example (`react-vite`); `next-app` covers TanStack Query.
-- Lives in: `next/examples/` (only `minimal/` built).
+- (agent) Built: `pnpm example` runs each example's `smoke` script in CI. `cloudflare/` runs on workerd through Wrangler's `unstable_startWorker`. `realtime/` runs two servers against a real Redis (a CI service). `next-app/` runs `next build` and `next start`, then checks the server-rendered page and calls the route with a Node client.
+- (agent) What the `next-app` smoke found: RSC refused the serializer's null-prototype objects, so `serialize` now emits plain objects; batches POST to the bare endpoint, so the Next route is `app/api/trpc/[[...trpc]]/route.ts`.
+- Lives in: `next/examples/{minimal,effect,next-app,openapi,realtime,cloudflare}/`, root `pnpm example`, `.github/workflows/next.yml`.

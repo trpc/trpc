@@ -112,7 +112,7 @@ Cloudflare Workers, Next.js route handlers, Lambda function URLs and other fetch
 // Cloudflare Workers
 export default { fetch: handler.fetch };
 
-// Next.js: app/api/trpc/[trpc]/route.ts, with createFetchHandler({ router, endpoint: '/api/trpc' })
+// Next.js: app/api/trpc/[[...trpc]]/route.ts (batches POST to /api/trpc itself), with createFetchHandler({ router, endpoint: '/api/trpc' })
 export const GET = handler.fetch;
 export const POST = handler.fetch;
 ```

@@ -11,7 +11,7 @@
     "lint": "vp lint",
     "test": "vp test run",
     "test:watch": "vp test watch",
-    "example": "node examples/minimal/index.ts",
+    "example": "pnpm -r --workspace-concurrency=1 --filter './examples/*' run smoke",
     "build": "pnpm -r run build",
     "postinstall": "vendor-src check",
     "vendor:sync": "vendor-src sync"

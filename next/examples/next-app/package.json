@@ -1,0 +1,27 @@
+{
+  "name": "@example/next-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "dev": "next dev",
+    "build": "next build",
+    "smoke": "node smoke.ts"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "5.104.1",
+    "@trpcdev/tanstack-react-query": "workspace:*",
+    "next": "16.4.1",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "server-only": "0.0.1",
+    "trpcdev": "workspace:*",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.1",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "^7.0.2"
+  }
+}

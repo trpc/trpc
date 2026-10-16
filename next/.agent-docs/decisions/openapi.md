@@ -15,4 +15,5 @@
 - Q18.5: the `openApiReference({ path, specPath, docsProvider: 'scalar' | 'swagger', specGenerateOptions })` plugin serves the UI from a CDN and generates the document on first request.
 - Open: errors that are only inferred (returned, not declared) aren't in the document; no `.route({ spec })` override for procedures without static schemas; no response validation in `openApiLink`; no OpenAPI-to-contract (Hey API) tool.
 - (agent) Round 3 ([`openapi-type-generator-v1.md`](./openapi-type-generator-v1.md)): `plugins` became `middleware` and `openApiReference` is Effect HTTP middleware; inferred errors and schema-less procedures are documented by `trpcdev/openapi/typescript`.
+- (agent) Open: `openApiLink`'s client types show the server types (`createdAt: Date`), but REST sends JSON (a string); the JSON-form types don't apply to REST yet.
 - Lives in: `packages/trpcdev/src/openapi/`, `test/integration/openapi.test.ts`, `test/integration/openapi-typescript.test.ts`.

@@ -1,0 +1,18 @@
+{
+  "name": "@example/effect",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "smoke": "node index.ts"
+  },
+  "dependencies": {
+    "@effect/platform-node": "4.0.2",
+    "effect": "4.0.2",
+    "trpcdev": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^7.0.2"
+  }
+}

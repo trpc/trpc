@@ -1,0 +1,21 @@
+{
+  "name": "@example/cloudflare",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "dev": "wrangler dev",
+    "smoke": "node smoke.ts"
+  },
+  "dependencies": {
+    "effect": "4.0.2",
+    "trpcdev": "workspace:*",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20261014.1",
+    "@types/node": "^24.19.1",
+    "typescript": "^7.0.2",
+    "wrangler": "4.151.0"
+  }
+}

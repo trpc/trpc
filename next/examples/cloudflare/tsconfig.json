@@ -1,0 +1,7 @@
+{
+  "extends": "../../tsconfig.json",
+  "include": ["src", "smoke.ts"],
+  "compilerOptions": {
+    "types": ["@cloudflare/workers-types", "node"]
+  }
+}

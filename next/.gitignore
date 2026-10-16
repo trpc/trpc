@@ -3,3 +3,6 @@ dist
 *.tsbuildinfo
 .turbo
 coverage
+.next
+next-env.d.ts
+.wrangler

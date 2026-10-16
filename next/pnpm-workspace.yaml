@@ -17,4 +17,6 @@ peerDependencyRules:
     vite: '1.1.0'
 
 allowBuilds:
+  esbuild: true
   vue-demi: true
+  workerd: true

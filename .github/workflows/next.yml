@@ -25,6 +25,14 @@ jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    services:
+      # The realtime example fans events out through Redis.
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 2s
+          --health-timeout 2s --health-retries 10
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -42,3 +50,5 @@ jobs:
       - run: pnpm check
       - run: pnpm test
       - run: pnpm example
+        env:
+          REDIS_URL: redis://127.0.0.1:6379

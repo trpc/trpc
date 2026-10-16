@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.json",
+  "include": ["src", "*.ts"],
+  "compilerOptions": {
+    "jsx": "preserve",
+    "types": ["node"],
+    "plugins": [{ "name": "next" }]
+  }
+}
