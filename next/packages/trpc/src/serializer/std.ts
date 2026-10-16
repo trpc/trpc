@@ -30,9 +30,21 @@ const negativeInfinity = placeholder('-Infinity', -Infinity);
 const negativeZero = placeholder('-0', -0);
 const nan = placeholder('NaN', NaN);
 
+const dateToJson: unknown = Object.getOwnPropertyDescriptor(
+  Date.prototype,
+  'toJSON',
+)?.value;
+// Same result as `toJSON` (null when invalid) without its generic lookups.
+const dateToString = (v: Date) =>
+  v.toJSON !== dateToJson
+    ? v.toJSON()
+    : Number.isFinite(v.getTime())
+      ? v.toISOString()
+      : null;
+
 export const serializers: SerializeRecord = {
   BigInt: (v) => (typeof v === 'bigint' ? v.toString() : false),
-  Date: instancesOnly((v) => (v instanceof Date ? v.toJSON() : false)),
+  Date: instancesOnly((v) => (v instanceof Date ? dateToString(v) : false)),
   Headers: instancesOnly((v) =>
     v instanceof Headers ? Array.from(v.entries()) : false,
   ),
