@@ -59,7 +59,7 @@ oRPC's table compares oRPC v2 with v11 (and Hono). `pnpm bench` measures the sam
 
 | Metric                                    | oRPC v2           | v11               | v12                 |
 | ----------------------------------------- | ----------------- | ----------------- | ------------------- |
-| RPC over HTTP (req/s avg)                 | 58,707            | 13,181            | 41,600              |
+| RPC over HTTP (req/s avg)                 | 59,940            | 13,165            | 46,576              |
 | Type-check, 3,000 procedures (check time) | 0.70s             | 0.92s             | 0.83s               |
 | Type-check, 3,000 procedures (memory)     | 237 MB            | 262 MB            | 322 MB              |
 | Client bundle (minified / gzip)           | 27.1 kB / 9.6 kB  | 36.4 kB / 11.8 kB | 91.4 kB / 30.5 kB   |
