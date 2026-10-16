@@ -80,3 +80,7 @@ useAtomSuspense(post).value; // @effect/atom-react
 - C needs both a core change (the promise hook) and a React store for invalidation. D needs neither: the registry is the store, and `effect/reactivity` already has keys, TTL and serialization.
 - D ties the integration to Effect's atom packages and their release cadence. C needs nothing beyond React.
 - Suggestion for Q20.2, for a human to decide: a React store. Either D, if an Effect-first React package is wanted, or C's cache behind `useSyncExternalStore`. A bare link isn't enough on its own.
+
+## After the spikes: both shipped as experimental packages
+
+2026-10-16, decision [react-use-package](../decisions/react-use-package.md). D became `@trpc12/experimental-react-atom`, with hydration through a `Schema` that encodes with the links' serializer. C's ideas became `@trpc12/experimental-react`, after raf-query (`.repos/raf-query`), without C's core hook: the React client owns its promises (`createReactClient`'s store), so `request()` stays as it is. C's finding that a link alone isn't enough still holds. The query links (`cacheLink()` and the rest) are tRPC links in the chain that register cache behavior with the store; invalidation re-renders through `useSyncExternalStore` in `useQuery`. The spikes stay as the record of the experiment.

@@ -10,6 +10,7 @@ User docs for vNext, kept in step with the code. Design notes and decisions live
 - [Subscriptions](./subscriptions.md): `tracked()`, resuming, `Publisher`.
 - [Server Actions and RSC](./actions-and-rsc.md): `@trpc12/trpc/actions`, `@trpc12/tanstack-react-query/rsc`.
 - [TanStack Query](./tanstack-query.md): query helpers and hydration.
+- [React without TanStack Query](./react.md): the experimental `use()` packages, `@trpc12/experimental-react` and `@trpc12/experimental-react-atom`.
 - [OpenAPI](./openapi.md): the REST handler, the document.
 - [Platforms](./platforms.md): Node, Bun, Deno, Express, Fastify, fetch runtimes.
 - [Integrations](./integrations.md): AI SDK chats and tools, Better Auth sessions.
@@ -34,6 +35,6 @@ Entry points of `@trpc12/trpc`:
 | `@trpc12/trpc/serializer` | `jsonSerializer`, danSON, `createSyncSerializer`           |
 | `@trpc12/trpc/extend`     | building blocks for integrations                           |
 
-An export whose name starts with `experimental_` (such as `experimental_durableLink`) may still change in a minor release. When one becomes stable, it gets its name without the prefix, and the `experimental_` name stays as a deprecated alias until the next major. `npx @trpc12/upgrade` rewrites those imports. Every export's JSDoc carries `@stability` (`stable` or `experimental`) and `@since`. Until 12.0.0, prereleases promise nothing; `@stability` says how the export is planned to ship.
+An export whose name starts with `experimental_` (such as `experimental_durableLink`) may still change in a minor release, and so may every export of a package whose name starts with `experimental-` (such as `@trpc12/experimental-react`), whose exports have no prefix. When one becomes stable, it gets its name without the prefix, and the `experimental_` name stays as a deprecated alias until the next major. `npx @trpc12/upgrade` rewrites those imports. Every export's JSDoc carries `@stability` (`stable` or `experimental`) and `@since`. Until 12.0.0, prereleases promise nothing; `@stability` says how the export is planned to ship.
 
 `@trpc12/trpc/internal` holds types that declaration emit refers to. Don't import it; it has no semver. `@trpc12/trpc/internal/testing` is a semi-public `TestServer` Effect layer for real-server tests (with `@effect/vitest`'s `it.layer`); it has no compatibility promise either. Test in process with `createRouterClient` or `localLink`.

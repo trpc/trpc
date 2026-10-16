@@ -12,11 +12,14 @@ next/
   packages/trpc/     core package (the brief: single `@trpc12/trpc` package)
   packages/tanstack-query/  `@trpc12/tanstack-query`: framework-agnostic TanStack Query helpers
   packages/tanstack-*-query/  `@trpc12/tanstack-{react,preact,vue,solid,svelte,angular,lit}-query`: one package per TanStack adapter
+  packages/experimental-react/       `@trpc12/experimental-react`: stable `use()` promises, features as links
+  packages/experimental-react-atom/  `@trpc12/experimental-react-atom`: queries and mutations as Effect Atoms
   packages/upgrade/     `@trpc12/upgrade`: the v11 → v12 codemod (`trpc12-upgrade` bin)
   packages/nest/        `@trpc12/nest`: contracts implemented in NestJS controllers (`@experimental_Implement`, `experimental_TrpcModule`)
   examples/             workspace-linked examples
   test/integration/     integration tests: real clients against real HTTP servers
   test/tanstack-query/  TanStack Query tests: real components per adapter (happy-dom) against real servers
+  test/react/           tests of the two experimental React packages
   test/portability/     TS2742/TS2883 fixture (emits declarations)
   spikes/               throwaway experiments; results in .agent-docs/notes/
   docs/                 Markdown user docs (later)
@@ -50,6 +53,8 @@ pnpm example
 `@trpc12/trpc` entry points: `/server` (builder, routers, `t.implement`, the fetch handler with `.websocket()` and `.messagePort()`, callers), `/client` (typed client and links, including `wsLink`, `experimental_messagePortLink` and `dedupeLink`), `/contract` (`contract.create`, `toContract`), `/openapi` (REST handler, `generateOpenApi`, reference UI, `openApiLink`), `/effect` (Effect client), `/serializer` (danSON), `/http` (`serve`/`toHttpEffect`: the handler and WebSocket upgrades on Effect's `HttpServer`), `/middleware` (`onStart`, `onSuccess`, `onError`, `onFinish`), `/actions` (`experimental_createAction`, `experimental_createCallable`: procedures as plain functions for React Server Actions, taking `FormData` too), `/testing` (`createTestServer({ http })`), `/extend` (building blocks for integrations: `createUntypedClient`, `runLinks`, `callProcedure`, the wire format) and `/internal` (types declaration emit refers to; no semver). `@trpc12/trpc` imports no `node:*`: Node comes from `NodeHttpServer.layer` in `@effect/platform-node` ([decision](./.agent-docs/decisions/platforms-through-effect-layers.md)). Run one test file with `pnpm vp test run test/integration/<name>`.
 
 `@trpc12/tanstack-query` (`createTrpcQueryUtils({ client })` for query, infinite, mutation, streamed and live options, keys and filters; `SubscriptionObserver`; `hydrationOptions`) plus one package per official TanStack adapter, re-exporting it with context helpers and a subscription primitive: `@trpc12/tanstack-react-query`, `-preact-query`, `-vue-query`, `-solid-query`, `-svelte-query`, `-angular-query` and `-lit-query` ([decision](./.agent-docs/decisions/integration-packages.md)). `@trpc12/tanstack-react-query/rsc` has `createTrpcRsc` for React Server Components: a per-request caller and query client, `prefetch`, and a server `HydrationBoundary`. Solid and Svelte tests run as their own Vitest projects with browser conditions (`--project solid`, `--project svelte`).
+
+React without TanStack, both experimental as whole packages ([docs](./docs/react.md), [decision](./.agent-docs/decisions/react-use-package.md)): `@trpc12/experimental-react` (`createReactClient`: loaders call `.query()` for stable, `use()`-ready promises; `useQuery`, `useQueryState`; caching, structural sharing, refetching and retries as opt-in links, all of them in `standardLinks()`; `dehydrate`/`hydrate`) and `@trpc12/experimental-react-atom` (`createAtomClient`: query, mutation and subscription atoms on `effect/reactivity`, hydrated through the links' serializer).
 
 **Pre-commit:** `.vite-hooks/pre-commit` runs `vp staged` (see `staged` in `vite.config.ts`): `vp check --fix` on staged files under `next/`, plus `vp test related` for staged `.ts` files. `pnpm install` enables it via `vp config` unless `core.hooksPath` is already set to something else. Skip once with `VP_GIT_HOOKS=0 git commit …`.
 
