@@ -71,8 +71,8 @@ type Leaf =
   | ((...args: any[]) => unknown);
 
 /** Data without thenables or iterables, which arrives as it is sent. */
-/** What a procedure returns to send its own response: `HttpServerResponse` or a web `Response`. */
-type ProcedureResponse =
+/** What a procedure returns to send its own response: `HttpServerResponse` or a web `Response`. @internal */
+export type ProcedureResponse =
   | { readonly '~effect/http/HttpServerResponse': unknown }
   | globalThis.Response;
 

@@ -32,6 +32,11 @@ export interface TrpcClientContext {
    */
   init?: TrpcRequestInit;
   /**
+   * `false` sends this call alone, outside a batch. Read by `httpLink`. On
+   * a batching link, procedures that may return a `Response` require it.
+   */
+  batch?: false;
+  /**
    * `false` ends a subscription with `NETWORK_ERROR` when its connection
    * drops, instead of subscribing again. Read by `httpLink` and `wsLink`.
    */
@@ -131,6 +136,11 @@ export interface LinkDecl {
    * them: with `'subscription'`, procedures have no `.subscribe()`.
    */
   unsupported?: ProcedureType;
+  /**
+   * The link batches calls, so calls to procedures that may return a
+   * `Response` must pass `{ batch: false }`.
+   */
+  batches?: true;
 }
 
 /**

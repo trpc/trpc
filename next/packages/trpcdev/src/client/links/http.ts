@@ -155,7 +155,26 @@ function initKey(op: Operation): string | undefined {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function httpLink(opts: HttpLinkOptions): TrpcLink {
+export function httpLink(
+  opts: HttpLinkOptions & { batch: true | { maxItems?: number } },
+): TrpcLink<{ batches: true }>;
+/**
+ * Sends calls over HTTP (17: one link for every HTTP transport). Queries use
+ * `GET` with legible params, mutations `POST`, subscriptions SSE. Outputs
+ * with nested `Promise`s or `AsyncIterable`s stream as JSONL. A call whose
+ * input holds a `File` or `Blob` is sent alone as `multipart/form-data`.
+ *
+ * @example
+ * ```ts
+ * createTrpcClient<AppRouter>({
+ *   links: [httpLink({ url: 'http://localhost:3000/trpc', batch: true })],
+ * });
+ * ```
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export function httpLink(opts: HttpLinkOptions): TrpcLink;
+export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
   const serializer = opts.serializer ?? defaultSerializer;
   const baseUrl = String(opts.url).replace(/\/+$/, '');
   const maxUrlLength = opts.maxUrlLength ?? 2048;
@@ -225,6 +244,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink {
   };
   /** Blobs need a multipart request of their own; a bad input fails alone. */
   const unbatchable = (op: Operation) => {
+    if (op.context.batch === false) return true;
     try {
       return encode(op).parts.length > 0 || initKey(op) === undefined;
     } catch {
@@ -664,8 +684,11 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink {
       },
     ).pipe(Stream.mapEffect((value) => value));
 
-  return withSerializer(({ op }) => {
-    if (op.type === 'subscription') return subscription(op);
-    return maxItems > 0 && !unbatchable(op) ? batched(op) : single(op);
-  }, serializer);
+  return withSerializer(
+    (({ op }) => {
+      if (op.type === 'subscription') return subscription(op);
+      return maxItems > 0 && !unbatchable(op) ? batched(op) : single(op);
+    }) as TrpcLink<any>,
+    serializer,
+  );
 }

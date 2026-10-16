@@ -41,6 +41,7 @@ import type {
   DuplicateSwitchCheck,
   LinksContext,
   LinksTypes,
+  ProcedureCallArgs,
   RouterOf,
   SubscribeOptions,
 } from '../client/types.ts';
@@ -70,6 +71,7 @@ export type DecorateEffectProcedure<
       : DecorateEffectCarried<
           D,
           TContext,
+          TLinks,
           TLinks extends { errors: infer E } ? E : never
         >
     : never;
@@ -77,11 +79,17 @@ export type DecorateEffectProcedure<
 type DecorateEffectCarried<
   D extends ProcedureDef,
   TContext extends object,
+  TLinks extends ChainTypes,
   TLinkErrors,
 > = D['type'] extends 'query'
   ? {
       query(
-        ...args: CallArgs<D['input'], CallOptions<TContext>>
+        ...args: ProcedureCallArgs<
+          D['input'],
+          D['output'],
+          CallOptions<TContext>,
+          TLinks
+        >
       ): Effect.Effect<
         ClientValue<D['output'], FormOf<D>>,
         ClientError<D['errors'] | TLinkErrors>
@@ -90,7 +98,12 @@ type DecorateEffectCarried<
   : D['type'] extends 'mutation'
     ? {
         mutate(
-          ...args: CallArgs<D['input'], CallOptions<TContext>>
+          ...args: ProcedureCallArgs<
+            D['input'],
+            D['output'],
+            CallOptions<TContext>,
+            TLinks
+          >
         ): Effect.Effect<
           ClientValue<D['output'], FormOf<D>>,
           ClientError<D['errors'] | TLinkErrors>

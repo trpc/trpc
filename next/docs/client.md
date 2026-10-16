@@ -25,7 +25,7 @@ await client.post.byId.query(
 );
 ```
 
-`headers` and `init` are read by `httpLink`, and `dedupe` by `dedupeLink`. A link of your own declares what it reads:
+`headers`, `init` and `batch: false` (send this call alone) are read by `httpLink`, and `dedupe` by `dedupeLink`. A link of your own declares what it reads:
 
 ```ts
 const traceLink = link<{ context: { traceId?: string } }>(

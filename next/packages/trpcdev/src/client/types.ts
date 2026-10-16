@@ -4,6 +4,7 @@ import type {
   FormOf,
   IsAny,
   OutputForm,
+  ProcedureResponse,
   ProcedureType,
 } from '../internal/types.ts';
 import type {
@@ -107,7 +108,27 @@ export type CallArgs<TInput, TOpts> = undefined extends TInput
 export interface ChainTypes {
   readonly errors?: unknown;
   readonly unsupported?: ProcedureType;
+  readonly batches?: true;
 }
+
+/**
+ * The arguments of `query()`/`mutate()`. A procedure that may return a
+ * `Response` can't be batched, so on a batching chain its calls must pass
+ * `{ batch: false }`.
+ * @internal
+ */
+export type ProcedureCallArgs<
+  TInput,
+  TOutput,
+  TOpts,
+  TLinks extends ChainTypes,
+> = TLinks extends { batches: infer B }
+  ? [B] extends [never]
+    ? CallArgs<TInput, TOpts>
+    : [Extract<TOutput, ProcedureResponse>] extends [never]
+      ? CallArgs<TInput, TOpts>
+      : [input: TInput, opts: TOpts & { batch: false }]
+  : CallArgs<TInput, TOpts>;
 
 type ChainErrors<T extends ChainTypes> = T extends { errors: infer E }
   ? E
@@ -136,18 +157,24 @@ export type DecorateProcedure<
   P extends Procedure<infer D>
     ? Carries<D['type'], TLinks> extends false
       ? {}
-      : DecorateCarried<D, TContext, TForm, ChainErrors<TLinks>>
+      : DecorateCarried<D, TContext, TForm, TLinks>
     : never;
 
 type DecorateCarried<
   D extends ProcedureDef,
   TContext extends object,
   TForm extends OutputForm | undefined,
-  TLinkErrors,
+  TLinks extends ChainTypes,
+  TLinkErrors = ChainErrors<TLinks>,
 > = D['type'] extends 'query'
   ? {
       query(
-        ...args: CallArgs<D['input'], CallOptions<TContext>>
+        ...args: ProcedureCallArgs<
+          D['input'],
+          D['output'],
+          CallOptions<TContext>,
+          TLinks
+        >
       ): TrpcPromise<
         ClientValue<D['output'], TForm extends OutputForm ? TForm : FormOf<D>>,
         ClientError<D['errors'] | TLinkErrors>
@@ -156,7 +183,12 @@ type DecorateCarried<
   : D['type'] extends 'mutation'
     ? {
         mutate(
-          ...args: CallArgs<D['input'], CallOptions<TContext>>
+          ...args: ProcedureCallArgs<
+            D['input'],
+            D['output'],
+            CallOptions<TContext>,
+            TLinks
+          >
         ): TrpcPromise<
           ClientValue<
             D['output'],
@@ -278,6 +310,11 @@ export type LinksTypes<TLinks extends ReadonlyArray<AnyLink>> = {
   unsupported: DeclOf<TLinks[number]> extends infer D
     ? D extends { unsupported: infer U }
       ? U
+      : never
+    : never;
+  batches: DeclOf<TLinks[number]> extends infer D
+    ? D extends { batches: true }
+      ? true
       : never
     : never;
 };

@@ -161,6 +161,7 @@ test('a procedure can return its own response on unbatched HTTP calls (04 Q4.3)'
   });
   const [ok, raw] = await Promise.allSettled([
     batched.whoami.query(),
+    // @ts-expect-error -- on a batching link, a Response needs { batch: false }
     batched.csv.query(),
   ]);
   expect(ok.status).toBe('fulfilled');
@@ -171,6 +172,14 @@ test('a procedure can return its own response on unbatched HTTP calls (04 Q4.3)'
       message: expect.stringContaining('only an unbatched HTTP call'),
     },
   });
+  const before = server.requests.length;
+  const [, alone] = await Promise.all([
+    batched.whoami.query(),
+    batched.csv.query(undefined, { batch: false }),
+  ]);
+  expectTypeOf(alone).toEqualTypeOf<Response>();
+  expect(await alone.text()).toBe('a,b\n1,2\n');
+  expect(server.requests.length - before).toBe(2);
 
   const caller = createRouterClient(router, {
     ctx: { cookie: null, web: false },
