@@ -1,7 +1,12 @@
 import { Context, Effect } from 'effect';
-import { createTrpcClient, httpLink, safe, routerType } from 'trpcdev/client';
-import { contract } from 'trpcdev/contract';
-import { createRouterClient, error, initTrpc } from 'trpcdev/server';
+import {
+  createTrpcClient,
+  httpLink,
+  safe,
+  routerType,
+} from '@trpc12/trpc/client';
+import { contract } from '@trpc12/trpc/contract';
+import { createRouterClient, error, initTrpc } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 import { createTestServer } from './fixtures/server.ts';

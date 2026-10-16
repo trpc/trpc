@@ -6,15 +6,15 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@trpcdev/tanstack-angular-query": "workspace:*",
-    "@trpcdev/tanstack-lit-query": "workspace:*",
-    "@trpcdev/tanstack-preact-query": "workspace:*",
-    "@trpcdev/tanstack-query": "workspace:*",
-    "@trpcdev/tanstack-react-query": "workspace:*",
-    "@trpcdev/tanstack-solid-query": "workspace:*",
-    "@trpcdev/tanstack-svelte-query": "workspace:*",
-    "@trpcdev/tanstack-vue-query": "workspace:*",
-    "trpcdev": "workspace:*"
+    "@trpc12/tanstack-angular-query": "workspace:*",
+    "@trpc12/tanstack-lit-query": "workspace:*",
+    "@trpc12/tanstack-preact-query": "workspace:*",
+    "@trpc12/tanstack-query": "workspace:*",
+    "@trpc12/tanstack-react-query": "workspace:*",
+    "@trpc12/tanstack-solid-query": "workspace:*",
+    "@trpc12/tanstack-svelte-query": "workspace:*",
+    "@trpc12/tanstack-vue-query": "workspace:*",
+    "@trpc12/trpc": "workspace:*"
   },
   "devDependencies": {
     "@angular/common": "22.2.2",

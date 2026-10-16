@@ -45,7 +45,7 @@
   - "Document API suggestions in bespoke files in a structured manner"
   - "Me: I go through and picks ideas and make decisions about APIs"
   - "Also document the approach"
-- (agent) Superseded or refined since, among others: transformers on endpoints ([`replaceable-serializers.md`](./replaceable-serializers.md)); danSON as an opt-in, not the default ([`serializer.md`](./serializer.md)); stability through `unstable_` prefixes plus tags ([`stability-jsdoc-tags.md`](./stability-jsdoc-tags.md)); the process in [`../approach.md`](../approach.md).
+- (agent) Superseded or refined since, among others: transformers on endpoints ([`replaceable-serializers.md`](./replaceable-serializers.md)); danSON as an opt-in, not the default ([`serializer.md`](./serializer.md)); stability through `unstable_` prefixes plus tags ([`stability-jsdoc-tags.md`](./stability-jsdoc-tags.md)); `@trpc12/*` instead of `@trpcdev` and `trpcdev` ([`npm-names.md`](./npm-names.md)); the process in [`../approach.md`](../approach.md).
 - Why: one place for the founding constraints, searchable with `pnpm decisions brief`.
 - Lost: nothing; this is the brief moved, not changed.
 - Lives in: all of `next/`; the process in `.agent-docs/approach.md`.

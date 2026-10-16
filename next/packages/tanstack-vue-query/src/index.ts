@@ -6,7 +6,7 @@
  *
  * @example
  * ```ts
- * import { createTrpcContext } from '@trpcdev/tanstack-vue-query';
+ * import { createTrpcContext } from '@trpc12/tanstack-vue-query';
  *
  * export const { TrpcPlugin, useTrpc } = createTrpcContext<AppRouter>();
  * app.use(VueQueryPlugin).use(TrpcPlugin, { client });
@@ -32,7 +32,7 @@ import {
   type MaybeRefOrGetter,
   type Plugin,
 } from 'vue';
-import type { ChainTypes, RouterOf, TrpcClient } from 'trpcdev/client';
+import type { ChainTypes, RouterOf, TrpcClient } from '@trpc12/trpc/client';
 import {
   createTrpcQueryUtils,
   SubscriptionObserver,
@@ -43,9 +43,9 @@ import {
   type SourceLinks,
   type SourceRouter,
   type TrpcContextOptions,
-} from '@trpcdev/tanstack-query';
+} from '@trpc12/tanstack-query';
 
-export * from '@trpcdev/tanstack-query';
+export * from '@trpc12/tanstack-query';
 
 /**
  * Options of the `TrpcPlugin` from {@link createTrpcContext}.

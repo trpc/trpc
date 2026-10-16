@@ -1,7 +1,7 @@
 import { createElement, Suspense, use } from 'react';
 import { prerender } from 'react-dom/static';
-import { createTrpcClient, localLink, routerType } from 'trpcdev/client';
-import { error, initTrpc } from 'trpcdev/server';
+import { createTrpcClient, localLink, routerType } from '@trpc12/trpc/client';
+import { error, initTrpc } from '@trpc12/trpc/server';
 import { expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 import { cacheLink, createQueryCache, stablePromises } from './cache-link.ts';

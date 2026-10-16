@@ -7,15 +7,15 @@ import {
   safe,
   experimental_socketLink,
   routerType,
-} from 'trpcdev/client';
+} from '@trpc12/trpc/client';
 import {
   createFetchHandler,
   error,
   initTrpc,
   tracked,
   type CreateContextOpts,
-} from 'trpcdev/server';
-import { serveSocket } from 'trpcdev/socket';
+} from '@trpc12/trpc/server';
+import { serveSocket } from '@trpc12/trpc/socket';
 import { expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 

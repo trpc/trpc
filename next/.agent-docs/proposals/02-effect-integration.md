@@ -233,7 +233,7 @@ await handler.dispose(); // releases the layer's resources
 ### (f) Effect client
 
 ```ts
-import { TRPCClient } from 'trpcdev/effect';
+import { TRPCClient } from '@trpc12/trpc/effect';
 
 const program = Effect.gen(function* () {
   const client = yield* TRPCClient.make<AppRouter>({
@@ -244,7 +244,7 @@ const program = Effect.gen(function* () {
 });
 ```
 
-It lives in `trpcdev/effect`. Per the [brief](../decisions/brief.md), anything without an external dependency other than Effect belongs in `trpcdev` (01).
+It lives in `@trpc12/trpc/effect`. Per the [brief](../decisions/brief.md), anything without an external dependency other than Effect belongs in `@trpc12/trpc` (01).
 
 ### (g) Bundle size
 
@@ -262,7 +262,7 @@ It lives in `trpcdev/effect`. Per the [brief](../decisions/brief.md), anything w
 - Internal use of `@stability unstable` modules (`effect/http`, `effect/rpc`, …) is allowed only behind our own abstractions, with a CI job that tests against the latest Effect minor.
 
 ```jsonc
-// trpcdev/package.json
+// @trpc12/trpc/package.json
 { "dependencies": { "effect": "^4.0.0" } }
 ```
 
@@ -271,7 +271,7 @@ It lives in `trpcdev/effect`. Per the [brief](../decisions/brief.md), anything w
 - **A1** (same builder, runtime detection), with dedicated overload signatures so that Promise-only usage never surfaces Effect in hovers. Revisit A3 after v1.
 - **S2** (declared services). It keeps types cheap and wiring explicit.
 - Strict `E` mapping (**d.ii**). A typed failure that is not mapped is a compile error, because silently dropping typed errors defeats the point of Effect.
-- An Effect client in `trpcdev/effect`.
+- An Effect client in `@trpc12/trpc/effect`.
 - Bundle budget and Effect-version CI job as described above.
 
 ## Questions

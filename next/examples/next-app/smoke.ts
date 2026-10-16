@@ -4,7 +4,7 @@
  */
 import { spawn, spawnSync } from 'node:child_process';
 import { createServer } from 'node:net';
-import { createTrpcClient, httpLink, routerType } from 'trpcdev/client';
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import type { AppRouter } from './src/server/router.ts';
 import { serializer } from './src/trpc/serializer.ts';
 

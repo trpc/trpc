@@ -6,9 +6,19 @@ import { createServer } from 'node:http';
 import { NodeHttpServer } from '@effect/platform-node';
 import { Effect, Layer, ManagedRuntime } from 'effect';
 import { HttpServer } from 'effect/http';
-import { createTrpcClient, httpLink, safe, routerType } from 'trpcdev/client';
-import { serve } from 'trpcdev/http';
-import { createFetchHandler, error, initTrpc, tracked } from 'trpcdev/server';
+import {
+  createTrpcClient,
+  httpLink,
+  safe,
+  routerType,
+} from '@trpc12/trpc/client';
+import { serve } from '@trpc12/trpc/http';
+import {
+  createFetchHandler,
+  error,
+  initTrpc,
+  tracked,
+} from '@trpc12/trpc/server';
 import { z } from 'zod';
 
 // --- server --------------------------------------------------------------------------

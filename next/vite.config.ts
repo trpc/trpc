@@ -40,14 +40,14 @@ export default defineConfig({
     },
     jsPlugins: ['./tooling/oxlint-plugin/index.ts'],
     rules: {
-      'trpcdev/acronym-case': 'error',
+      'trpc/acronym-case': 'error',
     },
     overrides: [
       {
         files: ['packages/*/src/**'],
         excludeFiles: ['**/*.test.ts', '**/*.test.tsx', '**/*.test-d.ts'],
         rules: {
-          'trpcdev/jsdoc': 'error',
+          'trpc/jsdoc': 'error',
         },
       },
       {
@@ -95,8 +95,8 @@ export default defineConfig({
         ...browserBuild('svelte', [
           'svelte',
           '@tanstack/svelte-query',
-          '@trpcdev/tanstack-query',
-          '@trpcdev/tanstack-svelte-query',
+          '@trpc12/tanstack-query',
+          '@trpc12/tanstack-svelte-query',
         ]),
         plugins: [svelte({ configFile: false })],
       },
@@ -111,8 +111,8 @@ export default defineConfig({
               inline: [
                 'svelte',
                 '@tanstack/svelte-query',
-                '@trpcdev/tanstack-query',
-                '@trpcdev/tanstack-svelte-query',
+                '@trpc12/tanstack-query',
+                '@trpc12/tanstack-svelte-query',
               ],
             },
           },

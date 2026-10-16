@@ -94,7 +94,7 @@ consume(client.onPost.subscribe({ channel }), { onData, onError, onComplete });
 - **Open:** a single rule for both kinds (always via `stream()`).
 
 ```ts
-import { stream } from 'trpcdev/server';
+import { stream } from '@trpc12/trpc/server';
 
 // per kind: .output() validates each subscription event
 const onPost = t.procedure.output(Post).subscription(async function* () { … });

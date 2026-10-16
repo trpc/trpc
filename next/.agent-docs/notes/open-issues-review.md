@@ -26,15 +26,15 @@ Method: `gh issue list --repo trpc/trpc --state open --limit 1000 --json number,
 
 | Issue                                    | Ask                                                   | vNext                                                                                                        |
 | ---------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| #3297 (314 reactions)                    | RSC                                                   | `@trpcdev/tanstack-react-query/rsc`                                                                          |
+| #3297 (314 reactions)                    | RSC                                                   | `@trpc12/tanstack-react-query/rsc`                                                                           |
 | #3438, #6947                             | typed errors; handled vs unhandled                    | `.errors()`, `defined`, masking of unexpected errors                                                         |
 | #1963                                    | `ctx` in input parsers                                | `.input(({ ctx }) => schema)`                                                                                |
 | #3958                                    | dependency injection                                  | Effect services, `.provide()`, `layer`                                                                       |
 | #4066                                    | middleware overrides the result                       | `ok(value)` short-circuits                                                                                   |
 | #4191, #5110                             | typed standalone middleware                           | `t.middleware()`, `middleware.effect<{ input }>()`                                                           |
 | #6978                                    | resolver returns the output schema's input (codecs)   | default `.output()` typing; `{ validate: false }`                                                            |
-| #5004, #6835, #5933, #6998               | publish `AppRouter`, portable types                   | contracts, `toContract()` JSON, `trpcdev/internal` for declaration emit                                      |
-| #7030, #2468                             | testing harness, mocks                                | `trpcdev/testing`; `implement()` a contract with stubs and use `localLink`                                   |
+| #5004, #6835, #5933, #6998               | publish `AppRouter`, portable types                   | contracts, `toContract()` JSON, `@trpc12/trpc/internal` for declaration emit                                 |
+| #7030, #2468                             | testing harness, mocks                                | `@trpc12/trpc/testing`; `implement()` a contract with stubs and use `localLink`                              |
 | #4757, #7091                             | call one procedure; caller shaped like the client     | `call()`; `createRouterClient()` has the client's shape                                                      |
 | #3629, #6779                             | TanStack adapters beyond React                        | core plus React, Preact, Solid, Svelte, Vue, Angular and Lit packages                                        |
 | #6154, #6232, #6364, #4889, #5940, #5493 | more `useUtils` helpers                               | none needed: `queryKey()`, `queryFilter()`, `mutationKey()` with TanStack's own `QueryClient` APIs and hooks |
@@ -46,11 +46,11 @@ Method: `gh issue list --repo trpc/trpc --state open --limit 1000 --json number,
 | #7439                                    | `wsLink` ignores `signal`                             | aborts send `abort`; tested in `websockets.test.ts`                                                          |
 | #4774                                    | WebSocket retry storm when `createContext` fails      | backoff with 5 attempts, and connection errors fail every call                                               |
 | #6819                                    | stream content type                                   | `application/jsonl`                                                                                          |
-| #6999, #6708                             | custom HTTP shapes, `x-www-form-urlencoded`           | `trpcdev/openapi` (routes, forms, bracket notation)                                                          |
+| #6999, #6708                             | custom HTTP shapes, `x-www-form-urlencoded`           | `@trpc12/trpc/openapi` (routes, forms, bracket notation)                                                     |
 | #5752                                    | `.` blocked by firewalls                              | decided: `.` stays (Q10.2); OpenAPI routes use `/`                                                           |
 | #6325                                    | `Deno.serve`                                          | `handler.fetch` and `handler.websocket` (`docs/platforms.md`)                                                |
-| #5484, #4257                             | no unstable imports; inspect routers                  | `trpcdev/extend` (`flattenRoutes`, `resolveProcedure`)                                                       |
-| #6467                                    | next-safe-action                                      | `trpcdev/actions` (`createAction`, `createCallable`)                                                         |
+| #5484, #4257                             | no unstable imports; inspect routers                  | `@trpc12/trpc/extend` (`flattenRoutes`, `resolveProcedure`)                                                  |
+| #6467                                    | next-safe-action                                      | `@trpc12/trpc/actions` (`createAction`, `createCallable`)                                                    |
 | #5876                                    | prefetch without blocking                             | `hydrationOptions()` dehydrates pending queries; async iterables still can't cross into Client Components    |
 | #5581                                    | proxies answering with non-tRPC JSON                  | a `PARSE_ERROR` that keeps the status and the cause                                                          |
 | #6895                                    | Safari and streamed uploads                           | the client never streams request bodies                                                                      |
@@ -72,7 +72,7 @@ A human answered the "Worth considering" list; each answer is a `decisions/` fil
 ## Still worth considering
 
 1. **TanStack DB** (#6891). `queryOptions()` should plug into `queryCollectionOptions` as it is; worth a test and a docs example. Built since: `test/tanstack-query/db.test.ts`, `docs/tanstack-query.md` (TanStack DB), `tanstack-db-collections.md`.
-2. **Adapters, recorded as later**: Lambda API Gateway and Lambda@Edge (#4978, built since: `trpcdev/aws-lambda`, `aws-lambda-adapter.md`), Firebase callable (#6388, built since as a recipe: `firebase-callable-recipe.md`), WebTransport (#6971, not built: `webtransport-not-yet.md`), raw TCP (#5995, built since: `trpcdev/socket`, `socketLink`, `raw-socket-transport.md`). The socket core is generic over connections, so the last two are a transport each.
+2. **Adapters, recorded as later**: Lambda API Gateway and Lambda@Edge (#4978, built since: `@trpc12/trpc/aws-lambda`, `aws-lambda-adapter.md`), Firebase callable (#6388, built since as a recipe: `firebase-callable-recipe.md`), WebTransport (#6971, not built: `webtransport-not-yet.md`), raw TCP (#5995, built since: `@trpc12/trpc/socket`, `socketLink`, `raw-socket-transport.md`). The socket core is generic over connections, so the last two are a transport each.
 
 ## Not pursuing
 

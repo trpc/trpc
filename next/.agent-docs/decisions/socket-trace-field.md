@@ -6,4 +6,4 @@
 - (agent) The server treats the field as untrusted: non-object values and non-string entries are ignored, and a malformed `traceparent` gives no parent.
 - Why: Effect-native propagation through Effect's own trace-context codec, reusing the `op.trace` the client already computes; no new option.
 - Lost: nothing; old clients don't send it and old servers ignore it.
-- Lives in: `packages/trpcdev/src/internal/protocol.ts` (`ClientMessage`), `src/client/links/socket.ts` (`request`), `src/server/socket.ts` (`traceParent`), `test/integration/tracing.test.ts`, `docs/client.md` (Tracing), `docs/procedures.md` (Tracing).
+- Lives in: `packages/trpc/src/internal/protocol.ts` (`ClientMessage`), `src/client/links/socket.ts` (`request`), `src/server/socket.ts` (`traceParent`), `test/integration/tracing.test.ts`, `docs/client.md` (Tracing), `docs/procedures.md` (Tracing).

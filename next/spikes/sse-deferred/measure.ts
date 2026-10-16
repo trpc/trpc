@@ -1,7 +1,7 @@
 /** Bytes of one streamed output framed as JSONL and as SSE: `node sse-deferred/measure.ts [items]`. */
 import { Console, Effect, Stream } from 'effect';
 import { Command } from 'effect/cli';
-import { createSerializer, jsonSerializer } from 'trpcdev/serializer';
+import { createSerializer, jsonSerializer } from '@trpc12/trpc/serializer';
 import { intArg, runScript } from '../kit.ts';
 import { framesOf, toJsonl, toSse } from './sse.ts';
 

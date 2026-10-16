@@ -5,10 +5,19 @@ import {
   safe,
   type TrpcClient,
   routerType,
-} from 'trpcdev/client';
-import { contract, toContract, type inferContract } from 'trpcdev/contract';
-import { openapi } from 'trpcdev/openapi';
-import { error, initTrpc, tracked, type TrackedEnvelope } from 'trpcdev/server';
+} from '@trpc12/trpc/client';
+import {
+  contract,
+  toContract,
+  type inferContract,
+} from '@trpc12/trpc/contract';
+import { openapi } from '@trpc12/trpc/openapi';
+import {
+  error,
+  initTrpc,
+  tracked,
+  type TrackedEnvelope,
+} from '@trpc12/trpc/server';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { appContract, type AppContract } from './fixtures/contract.ts';

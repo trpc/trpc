@@ -3,7 +3,12 @@
  * the worker's `parentPort`.
  */
 import { parentPort, threadId } from 'node:worker_threads';
-import { createFetchHandler, error, initTrpc, tracked } from 'trpcdev/server';
+import {
+  createFetchHandler,
+  error,
+  initTrpc,
+  tracked,
+} from '@trpc12/trpc/server';
 import { z } from 'zod';
 
 const t = initTrpc<{ ctx: { token: string | undefined; transport: string } }>();

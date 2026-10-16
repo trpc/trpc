@@ -1,5 +1,5 @@
 {
-  "name": "@trpcdev/tanstack-lit-query",
+  "name": "@trpc12/tanstack-lit-query",
   "version": "0.0.0",
   "private": true,
   "files": [
@@ -25,20 +25,20 @@
     "build": "node ../../tooling/pack/pack.ts"
   },
   "dependencies": {
-    "@trpcdev/tanstack-query": "workspace:*"
+    "@trpc12/tanstack-query": "workspace:*"
   },
   "devDependencies": {
     "@lit/context": "1.1.6",
     "@tanstack/lit-query": "0.2.26",
     "@tanstack/query-core": "5.104.1",
+    "@trpc12/trpc": "workspace:*",
     "lit": "3.3.3",
-    "trpcdev": "workspace:*",
     "typescript": "^7.0.2"
   },
   "peerDependencies": {
     "@lit/context": "^1.1",
     "@tanstack/lit-query": "^0.2.26",
-    "lit": "^3",
-    "trpcdev": "workspace:*"
+    "@trpc12/trpc": "workspace:*",
+    "lit": "^3"
   }
 }

@@ -4,8 +4,8 @@ import {
   safe,
   TrpcError,
   routerType,
-} from 'trpcdev/client';
-import { error, initTrpc } from 'trpcdev/server';
+} from '@trpc12/trpc/client';
+import { error, initTrpc } from '@trpc12/trpc/server';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { z } from 'zod';

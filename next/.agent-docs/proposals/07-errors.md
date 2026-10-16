@@ -236,11 +236,11 @@ The class choice in Q7.7:
 
 ```ts
 // one class: the same TRPCError on server and client
-import { TRPCError } from 'trpcdev/client';
+import { TRPCError } from '@trpc12/trpc/client';
 if (err instanceof TRPCError && err.defined) err.code;
 
 // two classes (v11): the client wraps server errors
-import { TRPCClientError } from 'trpcdev/client';
+import { TRPCClientError } from '@trpc12/trpc/client';
 if (err instanceof TRPCClientError) err.data;
 ```
 

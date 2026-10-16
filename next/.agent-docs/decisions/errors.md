@@ -10,4 +10,4 @@
 - (agent, Q16.4; human: "Revisit later. Pick something for now") Client-side failures are new codes in the same union (`NETWORK_ERROR`, `CLIENT_CLOSED_REQUEST`), not a flag.
 - Masking is [`mask-unexpected-errors.md`](./mask-unexpected-errors.md).
 - (agent) The Open here (tag errors by code for `Effect.catchTag`) is done: [`error-tags.md`](./error-tags.md).
-- Lives in: `packages/trpcdev/src/internal/error.ts`, `src/server/declared.ts`, `test/integration/errors.test.ts`.
+- Lives in: `packages/trpc/src/internal/error.ts`, `src/server/declared.ts`, `test/integration/errors.test.ts`.

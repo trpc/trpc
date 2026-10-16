@@ -4,4 +4,4 @@
 - `createTrpcRsc`'s `HydrationBoundary` doesn't redact errors with a `digest` (#6771), unless the query client sets `shouldRedactErrors`.
 - Why: this covers proposal 15 (c)'s `rethrow: isNextControlFlowError` with no option and no Next import.
 - Lost: an `onError` hook that sees redirects.
-- Lives in: `packages/trpcdev/src/internal/error.ts`, `src/actions/`, `src/client/client.ts`, `src/server/caller.ts`, `packages/tanstack-react-query/src/rsc.ts`.
+- Lives in: `packages/trpc/src/internal/error.ts`, `src/actions/`, `src/client/client.ts`, `src/server/caller.ts`, `packages/tanstack-react-query/src/rsc.ts`.

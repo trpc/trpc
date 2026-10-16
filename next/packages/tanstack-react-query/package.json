@@ -1,5 +1,5 @@
 {
-  "name": "@trpcdev/tanstack-react-query",
+  "name": "@trpc12/tanstack-react-query",
   "version": "0.0.0",
   "private": true,
   "files": [
@@ -33,19 +33,19 @@
     "build": "node ../../tooling/pack/pack.ts"
   },
   "dependencies": {
-    "@trpcdev/tanstack-query": "workspace:*"
+    "@trpc12/tanstack-query": "workspace:*"
   },
   "devDependencies": {
     "@tanstack/query-core": "5.104.1",
     "@tanstack/react-query": "5.104.1",
+    "@trpc12/trpc": "workspace:*",
     "@types/react": "19.3.0",
     "react": "19.3.0",
-    "trpcdev": "workspace:*",
     "typescript": "^7.0.2"
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.104.0",
-    "react": "^19",
-    "trpcdev": "workspace:*"
+    "@trpc12/trpc": "workspace:*",
+    "react": "^19"
   }
 }

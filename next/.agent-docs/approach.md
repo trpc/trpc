@@ -64,7 +64,7 @@ This folder is the agents' docs folder that the [brief](./decisions/brief.md) as
 Taken from the [brief](./decisions/brief.md). Every proposal is judged against them.
 
 1. **Effect inside, Promises outside.** All internal logic is Effect. Effect is first-class but never required: "You shouldn't need to know Effect to use tRPC."
-2. **One dependency:** `effect`. Integrations with third-party peers (React, TanStack, Next) are separate packages; everything else is in `trpcdev`.
+2. **One dependency:** `effect`. Integrations with third-party peers (React, TanStack, Next) are separate packages; everything else is in `@trpc12/trpc`.
 3. **Familiar, not compatible.** The procedure builder stays recognisable. Breaking changes are allowed; back-compat can come later via a protocol version header.
 4. **Option bags** over multiple positional arguments, in values and in type parameters.
 5. **Brutal deletion.** Start from scratch. Anything not deliberately kept is gone (`reference/v11-inventory.md`).
@@ -72,7 +72,7 @@ Taken from the [brief](./decisions/brief.md). Every proposal is judged against t
 7. **Parity with oRPC** is the bar, and blocking it requires sign-off.
 8. **Portable types.** No TS2742, ever. CI proves it.
 9. **Clear stability.** JSDoc on every public export, explicit stability tiers, and an `experimental_` prefix on experimental values (21, [decision](./decisions/stability-jsdoc-tags.md)).
-10. **Integration tests first.** Test through real handlers and clients, like `smoke.test.ts`. Packages may export test helpers (`trpcdev/testing`).
+10. **Integration tests first.** Test through real handlers and clients, like `smoke.test.ts`. Packages may export test helpers (`@trpc12/trpc/testing`).
 
 ## 4. Technical approach
 
@@ -104,7 +104,7 @@ Some recommendations depend on measurements. These are run as throwaway spikes, 
 
 ### Testing
 
-- **Integration tests** spin up a real handler and client in-process (`trpcdev/testing` provides `createTestServer`/`createTestClient`, using `await using` for cleanup). They cover HTTP, WebSocket and MessagePort.
+- **Integration tests** spin up a real handler and client in-process (`@trpc12/trpc/testing` provides `createTestServer`/`createTestClient`, using `await using` for cleanup). They cover HTTP, WebSocket and MessagePort.
 - **Type tests:** `expectTypeOf` in Vitest for inference (inputs, outputs, errors, context, link options).
 - **Benchmarks:** Vitest `bench` for the serializer and routing; tsgo traces for type performance.
 - **Portability fixture** for TS2742 (01).
@@ -122,19 +122,19 @@ Some recommendations depend on measurements. These are run as throwaway spikes, 
 - **Code root:** all new implementation under `next/` (see `next/README.md`). `next/.agent-docs/` is design docs only.
 - **Commits:** YOLO semantic commits straight to `v12` (`feat(server): …`, `docs(agent-docs): …`). No PRs for now.
 - **Precommit hook** formats, lints and runs related tests on staged files (22).
-- **Publishing:** none for now. Packages use the `trpcdev` name and `@trpcdev/*` scope, and examples consume linked local packages.
+- **Publishing:** none for now. Packages use the `@trpc12/trpc` name and `@trpc12/*` scope, and examples consume linked local packages.
 
 ## 6. Phases
 
-| Phase | Goal                        | Exit criteria                                                                                                                                                                             |
-| ----- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0     | **Proposals** (this folder) | A human has decided 01, 02, 03, 07, 11 and 22 (the foundations); spikes are scheduled for the rest                                                                                        |
-| 1     | Foundations                 | Implementation under `next/` (own pnpm workspace); Vite+ toolchain, CI and hook; `trpcdev` skeleton + portability fixture. Root v11 tree remains until a human decides to delete it (22). |
-| 2     | Core server                 | Builder, procedures, validation, middleware, errors, routers, `createRouterClient`; Effect handlers; integration tests in-process                                                         |
-| 3     | Protocol and transport      | Serializer, fetch/Node handlers, batching, streaming/SSE, WebSocket; plugins with secure defaults                                                                                         |
-| 4     | Client                      | Proxy client, Effect link chain, `httpLink`, `wsLink`, typed link options; Effect client                                                                                                  |
-| 5     | Integrations                | TanStack Query (agnostic), actions, contract-first, OpenAPI handler/generator/link                                                                                                        |
-| 6     | Parity review and polish    | Every row in `reference/orpc-parity.md` is ✅ or explicitly deferred by a human; docs and examples complete                                                                               |
+| Phase | Goal                        | Exit criteria                                                                                                                                                                                  |
+| ----- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0     | **Proposals** (this folder) | A human has decided 01, 02, 03, 07, 11 and 22 (the foundations); spikes are scheduled for the rest                                                                                             |
+| 1     | Foundations                 | Implementation under `next/` (own pnpm workspace); Vite+ toolchain, CI and hook; `@trpc12/trpc` skeleton + portability fixture. Root v11 tree remains until a human decides to delete it (22). |
+| 2     | Core server                 | Builder, procedures, validation, middleware, errors, routers, `createRouterClient`; Effect handlers; integration tests in-process                                                              |
+| 3     | Protocol and transport      | Serializer, fetch/Node handlers, batching, streaming/SSE, WebSocket; plugins with secure defaults                                                                                              |
+| 4     | Client                      | Proxy client, Effect link chain, `httpLink`, `wsLink`, typed link options; Effect client                                                                                                       |
+| 5     | Integrations                | TanStack Query (agnostic), actions, contract-first, OpenAPI handler/generator/link                                                                                                             |
+| 6     | Parity review and polish    | Every row in `reference/orpc-parity.md` is ✅ or explicitly deferred by a human; docs and examples complete                                                                                    |
 
 ### Decision order
 

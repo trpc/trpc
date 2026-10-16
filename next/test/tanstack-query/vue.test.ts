@@ -14,8 +14,8 @@ import {
   createTrpcQueryUtils,
   hydrationOptions,
   useSubscription,
-} from '@trpcdev/tanstack-vue-query';
-import { createRouterClient } from 'trpcdev/server';
+} from '@trpc12/tanstack-vue-query';
+import { createRouterClient } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import {
   createApp as createVueApp,

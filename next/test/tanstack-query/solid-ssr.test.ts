@@ -8,7 +8,7 @@ import {
   createTrpcQueryUtils,
   hydrationOptions,
   useSubscription,
-} from '@trpcdev/tanstack-solid-query';
+} from '@trpc12/tanstack-solid-query';
 import {
   createComponent,
   escape,
@@ -17,7 +17,7 @@ import {
   ssr,
 } from 'solid-js/web';
 import type { JSX } from 'solid-js';
-import { createRouterClient } from 'trpcdev/server';
+import { createRouterClient } from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
 import {
   appRouter,

@@ -1,6 +1,6 @@
 import { QueryClient } from '@tanstack/query-core';
-import { createTrpcClient, httpLink, routerType } from 'trpcdev/client';
-import { createFetchHandler, initTrpc } from 'trpcdev/server';
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import { afterAll, expect, test } from 'vite-plus/test';
 import { z } from 'zod';
 import {

@@ -13,8 +13,8 @@
  */
 import type { QueryClient } from '@tanstack/query-core';
 import { Effect, Stream } from 'effect';
-import { link, type TrpcLink } from 'trpcdev/client';
-import { initTrpc } from 'trpcdev/server';
+import { link, type TrpcLink } from '@trpc12/trpc/client';
+import { initTrpc } from '@trpc12/trpc/server';
 
 /** A path (`'post.list'`), or a path and the input of the one query. */
 export type Target =

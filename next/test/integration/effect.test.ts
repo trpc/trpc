@@ -1,13 +1,13 @@
 import { Context, Effect, Exit, Layer, Option, Stream, Tracer } from 'effect';
-import { httpLink, routerType, type ClientError } from 'trpcdev/client';
-import { createEffectClient } from 'trpcdev/effect';
+import { httpLink, routerType, type ClientError } from '@trpc12/trpc/client';
+import { createEffectClient } from '@trpc12/trpc/effect';
 import {
   createFetchHandler,
   createRouterClient,
   error,
   initTrpc,
   type TrpcError,
-} from 'trpcdev/server';
+} from '@trpc12/trpc/server';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
@@ -158,7 +158,7 @@ test('typed errors land in the Effect error channel', async () => {
         | TrpcError<'NOT_FOUND', { id: string }>
         | TrpcError<
             'BAD_REQUEST',
-            import('trpcdev/server').InputValidationErrorData
+            import('@trpc12/trpc/server').InputValidationErrorData
           >
       >
     >

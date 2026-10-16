@@ -5,7 +5,7 @@ import {
   jsonSerializer,
   type AnySerializer,
   type Frame,
-} from 'trpcdev/serializer';
+} from '@trpc12/trpc/serializer';
 import { expect, test } from 'vite-plus/test';
 import { makeStreamLog } from './resume.ts';
 

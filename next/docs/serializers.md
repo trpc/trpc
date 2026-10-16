@@ -15,7 +15,7 @@ Every serializer streams deferred values: a procedure can return promises, gener
 The serializer lives on the handler and the links, not on `initTrpc`:
 
 ```ts
-import { createSerializer } from 'trpcdev/serializer';
+import { createSerializer } from '@trpc12/trpc/serializer';
 
 export const serializer = createSerializer();
 

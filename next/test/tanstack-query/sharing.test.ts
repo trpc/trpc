@@ -1,4 +1,4 @@
-import { structuralSharing } from '@trpcdev/tanstack-query';
+import { structuralSharing } from '@trpc12/tanstack-query';
 import { expect, test } from 'vite-plus/test';
 
 const make = () => ({

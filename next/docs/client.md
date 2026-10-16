@@ -102,7 +102,7 @@ await client.report.query(input, { transport: 'http' });
 
 A branch can be a chain (an array of links), including another `switchLink`. The name can't be `signal`, `lastEventId`, `init`, `headers` or `reconnect`, and two switch links on one chain can't share a name; both are type errors and throw when the link is made.
 
-`link(({ op, next }) => stream)` writes a link: it gets the operation and the rest of the chain, and returns an Effect `Stream` (a query or mutation is a one-element stream). Links written for v11 run unchanged through [`fromV11Link`](./migrating-from-v11.md#links) from `trpcdev/interop`.
+`link(({ op, next }) => stream)` writes a link: it gets the operation and the rest of the chain, and returns an Effect `Stream` (a query or mutation is a one-element stream). Links written for v11 run unchanged through [`fromV11Link`](./migrating-from-v11.md#links) from `@trpc12/trpc/interop`.
 
 A link can change the operation it passes on. That lets one client cover routers served by different backends, even ones with different contexts:
 
@@ -155,7 +155,7 @@ Results are checked against the output's type side, so Effect Schema transformat
 
 ## The Effect client
 
-`createEffectClient` from `trpcdev/effect` returns an `Effect` per call and a `Stream` per subscription. Typed errors are in the error channel, and interrupting the fiber aborts the request.
+`createEffectClient` from `@trpc12/trpc/effect` returns an `Effect` per call and a `Stream` per subscription. Typed errors are in the error channel, and interrupting the fiber aborts the request.
 
 ```ts
 const client = createEffectClient({
@@ -182,4 +182,4 @@ With no tracer (the Promise client, or Effect's default), no headers or `trace` 
 
 ## Integrations
 
-`trpcdev/extend` has what integrations build on: `createUntypedClient` (its options keep link fields in a `context` bag, beside `type`, `path` and `input`), `runLinks`, `runOperation` (`runLinks` in a client span, with trace propagation), `callProcedure`, the wire format and JSON Schema helpers.
+`@trpc12/trpc/extend` has what integrations build on: `createUntypedClient` (its options keep link fields in a `context` bag, beside `type`, `path` and `input`), `runLinks`, `runOperation` (`runLinks` in a client span, with trace propagation), `callProcedure`, the wire format and JSON Schema helpers.

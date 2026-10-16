@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 import { createElement, Suspense, use } from 'react';
 import { createRoot } from 'react-dom/client';
-import { createTrpcClient, localLink, routerType } from 'trpcdev/client';
-import { initTrpc } from 'trpcdev/server';
+import { createTrpcClient, localLink, routerType } from '@trpc12/trpc/client';
+import { initTrpc } from '@trpc12/trpc/server';
 import { expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 import { cacheLink, createQueryCache, stablePromises } from './cache-link.ts';

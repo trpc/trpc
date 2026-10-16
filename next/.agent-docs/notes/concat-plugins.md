@@ -48,19 +48,19 @@ All of it types, and every failure is pinned with `@ts-expect-error`.
 - **The published `.d.ts` is readable.** With a mapped bag, the plugin's type lists its requirements and contributions by name:
 
   ```ts
-  export declare const auditPlugin: import('trpcdev/server').ProcedureBuilder<{
+  export declare const auditPlugin: import('@trpc12/trpc/server').ProcedureBuilder<{
     ctx: { db: AuditDb; user: { id: string } }; // requirements
     ctxAdded: { auditedBy: string }; // contributions
     meta: { audit?: boolean };
-    inputIn: typeof import('trpcdev/server').unset;
-    inputOut: typeof import('trpcdev/server').unset;
+    inputIn: typeof import('@trpc12/trpc/server').unset;
+    inputOut: typeof import('@trpc12/trpc/server').unset;
   }>;
   ```
 
 ## Constraints for the real builder
 
 - **Every type a builder can contain must be exported.** The first run failed declaration emit with TS2527 ("references an inaccessible 'unique symbol' type"), because the "no input yet" sentinel was a private `unique symbol`. A plugin package can't publish a builder whose type it can't name. This belongs in 01's portability rules, and the portability fixture should include a plugin package.
-- **Plugins must take `trpcdev` as a peer dependency** (01 already says so for integrations). Sentinels and brands are `unique symbol`s, so two copies of `trpcdev` make the app's and the plugin's builders incompatible.
+- **Plugins must take `@trpc12/trpc` as a peer dependency** (01 already says so for integrations). Sentinels and brands are `unique symbol`s, so two copies of `@trpc12/trpc` make the app's and the plugin's builders incompatible.
 
 ## Not covered
 

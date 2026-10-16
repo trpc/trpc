@@ -24,7 +24,7 @@ import {
 import {
   createTrpcContext,
   injectSubscription,
-} from '@trpcdev/tanstack-angular-query';
+} from '@trpc12/tanstack-angular-query';
 import { afterEach, expect, expectTypeOf, test } from 'vite-plus/test';
 import {
   createApp,

@@ -1,13 +1,13 @@
 # Migrating from v11
 
-Move the server first. `createV11Handler` serves the new router to `@trpc/client` 11 apps on the endpoint they already call, so you can deploy before every client (a mobile app in the stores, a tab left open) updates. Then move the clients to `trpcdev/client` and drop the old endpoint.
+Move the server first. `createV11Handler` serves the new router to `@trpc/client` 11 apps on the endpoint they already call, so you can deploy before every client (a mobile app in the stores, a tab left open) updates. Then move the clients to `@trpc12/trpc/client` and drop the old endpoint.
 
 ## Serve old clients while you migrate
 
 ```ts
 import superjson from 'superjson';
-import { createV11Handler } from 'trpcdev/interop';
-import { createFetchHandler } from 'trpcdev/server';
+import { createV11Handler } from '@trpc12/trpc/interop';
+import { createFetchHandler } from '@trpc12/trpc/server';
 
 // Old apps: @trpc/client 11, on /trpc, with the transformer they were built with.
 const legacy = createV11Handler({
@@ -30,7 +30,7 @@ export default {
 };
 ```
 
-Under `serve()` from `trpcdev/http`, the v11 handler runs as its own Effect HTTP app, and WebSocket upgrades on its endpoint reach `legacy.websocket()`.
+Under `serve()` from `@trpc12/trpc/http`, the v11 handler runs as its own Effect HTTP app, and WebSocket upgrades on its endpoint reach `legacy.websocket()`.
 
 It speaks every v11 link:
 
@@ -68,8 +68,8 @@ What differs from a v11 server:
 ## Run the codemod
 
 ```sh
-npx @trpcdev/upgrade src          # dry run: what would change, what's left
-npx @trpcdev/upgrade src --write
+npx @trpc12/upgrade src          # dry run: what would change, what's left
+npx @trpc12/upgrade src --write
 ```
 
 It rewrites what has one v12 form (imports, `initTRPC`, `TRPCError`, `mergeRouters`, `createCaller`, `fetchRequestHandler`, the HTTP links and their `transformer`, `createTRPCContext`'s names) and keeps your formatting. The rest it prints as `file:line:column` steps, with the v12 way:
@@ -85,7 +85,7 @@ src/server/index.ts:1:1 observable() subscriptions: return an async generator or
 Your own v11 links (`TRPCLink`s) run in a v12 chain through `fromV11Link`, so you can move them over one at a time:
 
 ```ts
-import { fromV11Link } from 'trpcdev/interop';
+import { fromV11Link } from '@trpc12/trpc/interop';
 
 createTrpcClient({
   router: routerType<AppRouter>(),
@@ -115,7 +115,7 @@ const authLink = link(({ op, next }) =>
 
 | v11                                                                | v12                                                                                                                               |
 | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
-| `@trpc/server`, `@trpc/client`                                     | `trpcdev/server`, `trpcdev/client`                                                                                                |
+| `@trpc/server`, `@trpc/client`                                     | `@trpc12/trpc/server`, `@trpc12/trpc/client`                                                                                      |
 | `initTRPC.context<Ctx>().meta<Meta>().create()`                    | `initTrpc<{ ctx: Ctx; meta: Meta }>()`                                                                                            |
 | `t.router({ … })`, `t.mergeRouters(a, b)`                          | a plain object, `{ ...a, ...b }` (`router()` and `mergeRouters()` still exist)                                                    |
 | `throw new TRPCError({ code })`                                    | `return error({ code })`, or `throw new TrpcError({ code })`                                                                      |
@@ -132,4 +132,4 @@ const authLink = link(({ op, next }) =>
 | subscriptions returning `observable()`                             | an async generator or an Effect `Stream`                                                                                          |
 | `input.lastEventId` in a subscription                              | the resolver's `lastEventId` option                                                                                               |
 | `.subscribe(input, { onData, onError })`                           | `for await (const event of client.x.subscribe(input))`                                                                            |
-| `@trpc/react-query`, `@trpc/tanstack-react-query`                  | `@trpcdev/tanstack-react-query` (and Solid, Svelte, Vue, Angular, Preact, Lit)                                                    |
+| `@trpc/react-query`, `@trpc/tanstack-react-query`                  | `@trpc12/tanstack-react-query` (and Solid, Svelte, Vue, Angular, Preact, Lit)                                                     |

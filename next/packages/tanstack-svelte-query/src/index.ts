@@ -7,7 +7,7 @@
  * @example
  * ```ts
  * // trpc.ts
- * import { createTrpcContext } from '@trpcdev/tanstack-svelte-query';
+ * import { createTrpcContext } from '@trpc12/tanstack-svelte-query';
  *
  * export const { setTrpcContext, useTrpc } = createTrpcContext<AppRouter>();
  * ```
@@ -24,7 +24,7 @@
  * @module
  */
 import { getContext, setContext } from 'svelte';
-import type { ChainTypes, RouterOf, TrpcClient } from 'trpcdev/client';
+import type { ChainTypes, RouterOf, TrpcClient } from '@trpc12/trpc/client';
 import {
   createTrpcQueryUtils,
   type TrpcQueryUtilsFor,
@@ -32,9 +32,9 @@ import {
   type SourceLinks,
   type SourceRouter,
   type TrpcContextOptions,
-} from '@trpcdev/tanstack-query';
+} from '@trpc12/tanstack-query';
 
-export * from '@trpcdev/tanstack-query';
+export * from '@trpc12/tanstack-query';
 
 export {
   createSubscription,

@@ -1,4 +1,4 @@
-import { cacheTags, revalidationTag } from '@trpcdev/tanstack-query';
+import { cacheTags, revalidationTag } from '@trpc12/tanstack-query';
 import { expect, test } from 'vite-plus/test';
 import { createApp, db } from './fixtures/app.ts';
 

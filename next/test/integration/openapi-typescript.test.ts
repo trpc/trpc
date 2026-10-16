@@ -5,8 +5,8 @@ import {
   generateOpenApi,
   openApiReference,
   type OpenApiDocument,
-} from 'trpcdev/openapi';
-import { experimental_generateOpenApiFromTypes } from 'trpcdev/openapi/typescript';
+} from '@trpc12/trpc/openapi';
+import { experimental_generateOpenApiFromTypes } from '@trpc12/trpc/openapi/typescript';
 import { beforeAll, expect, test } from 'vite-plus/test';
 import { appRouter } from './fixtures/typed-router.ts';
 

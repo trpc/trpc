@@ -1,19 +1,19 @@
 /**
- * TS2742 portability for `@trpcdev/tanstack-query` and every adapter: the
+ * TS2742 portability for `@trpc12/tanstack-query` and every adapter: the
  * exported helpers and contexts must be nameable in emitted `.d.ts` files.
  */
-import { createTrpcContext as createAngularContext } from '@trpcdev/tanstack-angular-query';
+import { createTrpcContext as createAngularContext } from '@trpc12/tanstack-angular-query';
 import {
   createTrpcQueryUtils,
   hydrationOptions,
   SubscriptionObserver,
-} from '@trpcdev/tanstack-query';
-import { createTrpcContext as createLitContext } from '@trpcdev/tanstack-lit-query';
-import { createTrpcContext as createPreactContext } from '@trpcdev/tanstack-preact-query';
-import { createTrpcContext as createReactContext } from '@trpcdev/tanstack-react-query';
-import { createTrpcContext as createSolidContext } from '@trpcdev/tanstack-solid-query';
-import { createTrpcContext as createSvelteContext } from '@trpcdev/tanstack-svelte-query';
-import { createTrpcContext as createVueContext } from '@trpcdev/tanstack-vue-query';
+} from '@trpc12/tanstack-query';
+import { createTrpcContext as createLitContext } from '@trpc12/tanstack-lit-query';
+import { createTrpcContext as createPreactContext } from '@trpc12/tanstack-preact-query';
+import { createTrpcContext as createReactContext } from '@trpc12/tanstack-react-query';
+import { createTrpcContext as createSolidContext } from '@trpc12/tanstack-solid-query';
+import { createTrpcContext as createSvelteContext } from '@trpc12/tanstack-svelte-query';
+import { createTrpcContext as createVueContext } from '@trpc12/tanstack-vue-query';
 import { caller, typedClient, type AppRouter } from './index.ts';
 
 export const trpc = createTrpcQueryUtils({ client: typedClient });

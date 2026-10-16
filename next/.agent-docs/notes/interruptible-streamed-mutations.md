@@ -1,6 +1,6 @@
 # Interruptible streamed mutations
 
-2026-10-15. Question (human, issues review Q7, #5846): can a streamed mutation be stopped from the UI, and should it hand back a subscription instead? Measured against `@tanstack/query-core` 5.104.1 and trpcdev `httpLink`, in a throwaway test (deleted after; the prototype is below).
+2026-10-15. Question (human, issues review Q7, #5846): can a streamed mutation be stopped from the UI, and should it hand back a subscription instead? Measured against `@tanstack/query-core` 5.104.1 and @trpc12/trpc `httpLink`, in a throwaway test (deleted after; the prototype is below).
 
 ## What TanStack gives us
 
@@ -9,7 +9,7 @@
 - A pending mutation's `data` can't be updated from outside: `Mutation#dispatch` is private. So `streamedMutationOptions()` writes the chunks so far to a query (`streamedMutationKey()`), and `data` is set once, when the stream ends.
 - Public and usable: `queryClient.getQueryCache().subscribe()` emits `observerRemoved`, and `query.getObserversCount()`.
 
-## What trpcdev gives us
+## What @trpc12/trpc gives us
 
 - `client.x.mutate(input, { signal })` over `httpLink`: aborting the signal mid-stream ends the response, the server's generator `finally` runs (checked: 3 values yielded, then `finally`), and the client's iterator rejects with `CLIENT_CLOSED_REQUEST`.
 - Before this spike the rejection was inconsistent (sometimes a quiet end, sometimes a `DansonError('Stream failed')` wrapping the abort). `serializer/stream.ts` now passes the source's typed failure through as is. Locked by `test/integration/batching-and-streaming.test.ts` ("aborting a streamed output ...").

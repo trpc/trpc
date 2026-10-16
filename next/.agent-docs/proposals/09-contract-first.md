@@ -27,8 +27,8 @@ There is no contract-first support; a procedure only exists once it has a resolv
 ## Proposed API
 
 ```ts
-// contract package: depends only on trpcdev/contract + a schema library
-import { contract } from 'trpcdev/contract';
+// contract package: depends only on @trpc12/trpc/contract + a schema library
+import { contract } from '@trpc12/trpc/contract';
 
 const c = contract.create<{ meta: Meta }>();
 
@@ -142,7 +142,7 @@ const client = createTRPCClient<typeof appContract>({
 
   ```ts
   // K-B
-  import { oc } from 'trpcdev/contract';
+  import { oc } from '@trpc12/trpc/contract';
 
   export const postContract = {
     byId: oc.input(z.object({ id: z.string() })).output(Post),

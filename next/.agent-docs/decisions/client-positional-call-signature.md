@@ -5,4 +5,4 @@
 - Lost: one object for everything, which oRPC also doesn't use.
 - Human, 2026-10-16 (Q16.1, decision round): "A, might change my mind".
 - Tentative (human): "might change my mind". Challenge it when it gets in the way.
-- Lives in: `packages/trpcdev/src/client/types.ts`, `src/client/index.ts`.
+- Lives in: `packages/trpc/src/client/types.ts`, `src/client/index.ts`.

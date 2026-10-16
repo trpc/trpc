@@ -1,17 +1,17 @@
 import { createServer } from 'node:http';
 import { NodeHttpServer } from '@effect/platform-node';
 import { Context, Effect, Exit, Layer, Scope } from 'effect';
-import { createTrpcQueryUtils } from '@trpcdev/tanstack-query';
+import { createTrpcQueryUtils } from '@trpc12/tanstack-query';
 import {
   createTrpcClient,
   dedupeLink,
   httpLink,
   routerType,
   type TrpcClient,
-} from 'trpcdev/client';
-import { createSerializer, type DansonForm } from 'trpcdev/serializer';
-import { error, initTrpc } from 'trpcdev/server';
-import { TestServer } from 'trpcdev/internal/testing';
+} from '@trpc12/trpc/client';
+import { createSerializer, type DansonForm } from '@trpc12/trpc/serializer';
+import { error, initTrpc } from '@trpc12/trpc/server';
+import { TestServer } from '@trpc12/trpc/internal/testing';
 import { z } from 'zod';
 
 export interface Post {

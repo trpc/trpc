@@ -6,4 +6,4 @@
 - (agent) Unknown thrown errors still become `INTERNAL_SERVER_ERROR` (500), so a 5xx keeps meaning "something broke".
 - Why: a returned or declared custom code is an expected domain outcome (out of stock, quota hit), not a server failure; 5xx alerts and dashboards stay meaningful.
 - Lost: a typo'd or accidental code no longer looks like a server error.
-- Lives in: `packages/trpcdev/src/internal/error.ts`; `test/integration/errors.test.ts`.
+- Lives in: `packages/trpc/src/internal/error.ts`; `test/integration/errors.test.ts`.

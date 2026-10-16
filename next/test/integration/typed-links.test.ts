@@ -10,9 +10,9 @@ import {
   switchLink,
   TrpcError,
   type Operation,
-} from 'trpcdev/client';
-import { createEffectClient } from 'trpcdev/effect';
-import { initTrpc } from 'trpcdev/server';
+} from '@trpc12/trpc/client';
+import { createEffectClient } from '@trpc12/trpc/effect';
+import { initTrpc } from '@trpc12/trpc/server';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { z } from 'zod';

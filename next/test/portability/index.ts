@@ -15,16 +15,20 @@ import {
   routerType,
   splitLink,
   wsLink,
-} from 'trpcdev/client';
-import { contract, toContract, type inferContract } from 'trpcdev/contract';
-import { createEffectClient } from 'trpcdev/effect';
+} from '@trpc12/trpc/client';
+import {
+  contract,
+  toContract,
+  type inferContract,
+} from '@trpc12/trpc/contract';
+import { createEffectClient } from '@trpc12/trpc/effect';
 import {
   createOpenApiHandler,
   generateOpenApi,
   openapi,
   openApiLink,
   openApiReference,
-} from 'trpcdev/openapi';
+} from '@trpc12/trpc/openapi';
 import {
   createFetchHandler,
   createRouterClient,
@@ -34,9 +38,9 @@ import {
   middleware,
   ok,
   tracked,
-} from 'trpcdev/server';
-import { onFinish } from 'trpcdev/middleware';
-import { createSerializer } from 'trpcdev/serializer';
+} from '@trpc12/trpc/server';
+import { onFinish } from '@trpc12/trpc/middleware';
+import { createSerializer } from '@trpc12/trpc/serializer';
 import { z } from 'zod';
 
 export interface User {

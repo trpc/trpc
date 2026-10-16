@@ -6,7 +6,7 @@
  *
  * @example
  * ```ts
- * import { createTrpcContext } from '@trpcdev/tanstack-angular-query';
+ * import { createTrpcContext } from '@trpc12/tanstack-angular-query';
  *
  * export const { provideTrpc, injectTrpc } = createTrpcContext<AppRouter>();
  *
@@ -36,7 +36,7 @@ import {
   type Provider,
   type Signal,
 } from '@angular/core';
-import type { ChainTypes, RouterOf, TrpcClient } from 'trpcdev/client';
+import type { ChainTypes, RouterOf, TrpcClient } from '@trpc12/trpc/client';
 import {
   createTrpcQueryUtils,
   SubscriptionObserver,
@@ -47,9 +47,9 @@ import {
   type SourceLinks,
   type SourceRouter,
   type TrpcContextOptions,
-} from '@trpcdev/tanstack-query';
+} from '@trpc12/tanstack-query';
 
-export * from '@trpcdev/tanstack-query';
+export * from '@trpc12/tanstack-query';
 
 /**
  * What {@link createTrpcContext} returns.

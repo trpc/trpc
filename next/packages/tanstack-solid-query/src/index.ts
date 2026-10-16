@@ -6,7 +6,7 @@
  *
  * @example
  * ```tsx
- * import { createTrpcContext } from '@trpcdev/tanstack-solid-query';
+ * import { createTrpcContext } from '@trpc12/tanstack-solid-query';
  *
  * export const { TrpcProvider, useTrpc } = createTrpcContext<AppRouter>();
  *
@@ -30,7 +30,7 @@ import {
   type Accessor,
   type JSX,
 } from 'solid-js';
-import type { ChainTypes, RouterOf, TrpcClient } from 'trpcdev/client';
+import type { ChainTypes, RouterOf, TrpcClient } from '@trpc12/trpc/client';
 import {
   createTrpcQueryUtils,
   SubscriptionObserver,
@@ -41,9 +41,9 @@ import {
   type SourceLinks,
   type SourceRouter,
   type TrpcContextOptions,
-} from '@trpcdev/tanstack-query';
+} from '@trpc12/tanstack-query';
 
-export * from '@trpcdev/tanstack-query';
+export * from '@trpc12/tanstack-query';
 
 /**
  * Props of the `TrpcProvider` from {@link createTrpcContext}.

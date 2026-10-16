@@ -9,8 +9,8 @@
     "smoke": "node smoke.ts"
   },
   "dependencies": {
+    "@trpc12/trpc": "workspace:*",
     "effect": "4.0.2",
-    "trpcdev": "workspace:*",
     "zod": "4.6.5"
   },
   "devDependencies": {

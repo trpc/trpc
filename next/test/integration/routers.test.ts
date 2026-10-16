@@ -1,11 +1,11 @@
-import { createTrpcClient, httpLink, routerType } from 'trpcdev/client';
-import { toContract } from 'trpcdev/contract';
-import { getProcedure } from 'trpcdev/extend';
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import { toContract } from '@trpc12/trpc/contract';
+import { getProcedure } from '@trpc12/trpc/extend';
 import {
   createOpenApiHandler,
   generateOpenApi,
   openapi,
-} from 'trpcdev/openapi';
+} from '@trpc12/trpc/openapi';
 import {
   createRouterClient,
   initTrpc,
@@ -13,7 +13,7 @@ import {
   lazy,
   loadRouter,
   type AnyRouter,
-} from 'trpcdev/server';
+} from '@trpc12/trpc/server';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';

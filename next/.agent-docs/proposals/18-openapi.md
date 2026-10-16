@@ -156,8 +156,8 @@ const doc = await generateOpenAPIDocument('./router.ts');
 - `openAPILink({ url, contract })` calls the REST endpoints with the same `createTRPCClient`. It needs a runtime contract (09 `toContract`) for methods and paths.
 
   ```ts
-  import { createTRPCClient } from 'trpcdev/client';
-  import { openAPILink } from 'trpcdev/openapi';
+  import { createTRPCClient } from '@trpc12/trpc/client';
+  import { openAPILink } from '@trpc12/trpc/openapi';
   import contract from './contract.json' with { type: 'json' }; // emitted with toContract(appRouter), or a contract-first appContract (09)
 
   const client = createTRPCClient<AppRouter>({
@@ -173,7 +173,7 @@ const doc = await generateOpenAPIDocument('./router.ts');
 An `openAPIReference()` handler plugin serves Scalar (or Swagger UI) from a CDN at `/docs`, plus `/openapi.json`.
 
 ```ts
-import { createOpenAPIHandler, openAPIReference } from 'trpcdev/openapi';
+import { createOpenAPIHandler, openAPIReference } from '@trpc12/trpc/openapi';
 
 const openapi = createOpenAPIHandler({
   router: appRouter,

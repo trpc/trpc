@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createQuery } from '@tanstack/svelte-query';
-  import { createSubscription } from '@trpcdev/tanstack-svelte-query';
+  import { createSubscription } from '@trpc12/tanstack-svelte-query';
   import { useTrpc } from './trpc.ts';
 
   const trpc = useTrpc();

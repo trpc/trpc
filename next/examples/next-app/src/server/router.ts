@@ -1,4 +1,4 @@
-import { initTrpc } from 'trpcdev/server';
+import { initTrpc } from '@trpc12/trpc/server';
 import { z } from 'zod';
 
 export interface Post {

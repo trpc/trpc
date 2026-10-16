@@ -2,14 +2,14 @@ import { Context, Effect, Layer } from 'effect';
 import {
   experimental_createAction,
   experimental_createCallable,
-} from 'trpcdev/actions';
+} from '@trpc12/trpc/actions';
 import {
   call,
   createRouterClient,
   error,
   initTrpc,
   TrpcError,
-} from 'trpcdev/server';
+} from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 

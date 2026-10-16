@@ -6,12 +6,12 @@
  */
 import { Effect, Stream } from 'effect';
 import { Redis } from 'effect/persistence';
-import { createSerializer } from 'trpcdev/serializer';
+import { createSerializer } from '@trpc12/trpc/serializer';
 import {
   tracked,
   type PublisherEvents,
   type PublisherShape,
-} from 'trpcdev/server';
+} from '@trpc12/trpc/server';
 
 // --- recipe: shared ---------------------------------------------------------
 

@@ -2,9 +2,14 @@ import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { NodeHttpServer } from '@effect/platform-node';
 import { Context, Effect, Exit, Layer, Schema, Scope } from 'effect';
-import { createTrpcClient, httpLink, routerType, safe } from 'trpcdev/client';
-import { toContract } from 'trpcdev/contract';
-import { serve as serveHttp } from 'trpcdev/http';
+import {
+  createTrpcClient,
+  httpLink,
+  routerType,
+  safe,
+} from '@trpc12/trpc/client';
+import { toContract } from '@trpc12/trpc/contract';
+import { serve as serveHttp } from '@trpc12/trpc/http';
 import {
   createOpenApiHandler,
   generateOpenApi,
@@ -14,13 +19,13 @@ import {
   openApiReference,
   parseBracketNotation,
   toBracketNotation,
-} from 'trpcdev/openapi';
+} from '@trpc12/trpc/openapi';
 import {
   createFetchHandler,
   initTrpc,
   tracked,
   type TrackedEnvelope,
-} from 'trpcdev/server';
+} from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 import { appContract } from './fixtures/contract.ts';

@@ -4,7 +4,7 @@ A router is a plain object of procedures. A handler serves it; a client calls it
 
 ```ts
 // server.ts
-import { createFetchHandler, error, initTrpc } from 'trpcdev/server';
+import { createFetchHandler, error, initTrpc } from '@trpc12/trpc/server';
 import { z } from 'zod';
 
 const t = initTrpc<{ ctx: { user: string | null } }>();
@@ -41,7 +41,7 @@ export const handler = createFetchHandler({
 import { createServer } from 'node:http';
 import { NodeHttpServer, NodeRuntime } from '@effect/platform-node';
 import { Layer } from 'effect';
-import { serve } from 'trpcdev/http';
+import { serve } from '@trpc12/trpc/http';
 
 serve(handler).pipe(
   Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 })),
@@ -53,7 +53,12 @@ serve(handler).pipe(
 The client imports only the type:
 
 ```ts
-import { createTrpcClient, httpLink, routerType, safe } from 'trpcdev/client';
+import {
+  createTrpcClient,
+  httpLink,
+  routerType,
+  safe,
+} from '@trpc12/trpc/client';
 import type { AppRouter } from './server';
 
 const client = createTrpcClient({

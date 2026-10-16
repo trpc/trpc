@@ -5,10 +5,10 @@ import {
   experimental_durableLink,
   httpLink,
   safe,
-} from 'trpcdev/client';
-import { experimental_durable } from 'trpcdev/middleware';
-import { createOpenApiHandler } from 'trpcdev/openapi';
-import { createFetchHandler, initTrpc, TrpcError } from 'trpcdev/server';
+} from '@trpc12/trpc/client';
+import { experimental_durable } from '@trpc12/trpc/middleware';
+import { createOpenApiHandler } from '@trpc12/trpc/openapi';
+import { createFetchHandler, initTrpc, TrpcError } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { createTestServer } from './fixtures/server.ts';
 

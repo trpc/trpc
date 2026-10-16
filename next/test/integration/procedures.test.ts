@@ -5,7 +5,7 @@ import {
   safe,
   type ClientError,
   routerType,
-} from 'trpcdev/client';
+} from '@trpc12/trpc/client';
 import {
   call,
   error,
@@ -16,13 +16,17 @@ import {
   TrpcError,
   type InputValidationErrorData,
   type TrackedEnvelope,
-} from 'trpcdev/server';
-import { callProcedure } from 'trpcdev/extend';
-import { onError, onFinish, onStart, onSuccess } from 'trpcdev/middleware';
+} from '@trpc12/trpc/server';
+import { callProcedure } from '@trpc12/trpc/extend';
+import { onError, onFinish, onStart, onSuccess } from '@trpc12/trpc/middleware';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
-import { openapi, type OpenApiMeta, type OperationSpec } from 'trpcdev/openapi';
+import {
+  openapi,
+  type OpenApiMeta,
+  type OperationSpec,
+} from '@trpc12/trpc/openapi';
 
 interface Ctx {
   user: string | null;

@@ -82,4 +82,4 @@ export const upgradeFiles = (
         }),
       { concurrency: 8 },
     );
-  }).pipe(Effect.withSpan('trpcdev.upgradeFiles'));
+  }).pipe(Effect.withSpan('trpc.upgradeFiles'));

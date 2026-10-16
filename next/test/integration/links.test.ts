@@ -10,16 +10,16 @@ import {
   splitLink,
   type LoggerEvent,
   routerType,
-} from 'trpcdev/client';
-import { createUntypedClient } from 'trpcdev/extend';
-import { createV11Handler } from 'trpcdev/interop';
+} from '@trpc12/trpc/client';
+import { createUntypedClient } from '@trpc12/trpc/extend';
+import { createV11Handler } from '@trpc12/trpc/interop';
 import {
   call,
   createFetchHandler,
   createRouterClient,
   error,
   initTrpc,
-} from 'trpcdev/server';
+} from '@trpc12/trpc/server';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { z } from 'zod';

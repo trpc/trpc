@@ -6,4 +6,4 @@
 - (agent) The callback runs once per HTTP request. The merge is shallow, except `headers` and `next`, which merge one level deeper. A call whose `init` differs from the rest of the batch leaves the batch.
 - Why: SSR cookie forwarding and Next's data cache need per-request fetch options, and a callback sees which operations a request carries.
 - Lost: a custom `fetch` that inspects operations; use the `init` callback or a link.
-- Lives in: `packages/trpcdev/src/client/links/http.ts`.
+- Lives in: `packages/trpc/src/client/links/http.ts`.

@@ -7,4 +7,4 @@
 - (agent) The version tracks tRPC's major version, so a future breaking wire change ships as a new major with its own number; old clients are served by interop handlers ([`no-backwards-compatibility-yet.md`](./no-backwards-compatibility-yet.md)).
 - Why: the wrapper keeps every body unambiguous; the version number says which tRPC a client speaks.
 - Lost: plain unwrapped JSON bodies.
-- Lives in: `packages/trpcdev/src/internal/protocol.ts` (`PROTOCOL_VERSION = '12'`).
+- Lives in: `packages/trpc/src/internal/protocol.ts` (`PROTOCOL_VERSION = '12'`).

@@ -1,6 +1,6 @@
 # Platforms
 
-`createFetchHandler()` returns a web-standard `fetch(request)`. Anything that speaks `Request` and `Response` can serve it directly. On Effect's `HttpServer`, `trpcdev/http` adds WebSockets, client-disconnect aborts, and Effect's platform layers.
+`createFetchHandler()` returns a web-standard `fetch(request)`. Anything that speaks `Request` and `Response` can serve it directly. On Effect's `HttpServer`, `@trpc12/trpc/http` adds WebSockets, client-disconnect aborts, and Effect's platform layers.
 
 ```ts
 const handler = createFetchHandler({ router, createContext, layer });
@@ -17,7 +17,7 @@ Procedures are served under `endpoint`, `/trpc` by default.
 import { createServer } from 'node:http';
 import { NodeHttpServer, NodeRuntime } from '@effect/platform-node';
 import { Layer } from 'effect';
-import { serve } from 'trpcdev/http';
+import { serve } from '@trpc12/trpc/http';
 
 serve(handler).pipe(
   Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 })),
@@ -53,7 +53,7 @@ Request-level concerns are Effect `HttpMiddleware` in the handler's `middleware`
 
 ```ts
 import { HttpMiddleware } from 'effect/http';
-import { cors } from 'trpcdev/http';
+import { cors } from '@trpc12/trpc/http';
 
 const handler = createFetchHandler({
   router,
@@ -68,7 +68,7 @@ const handler = createFetchHandler({
 
 ### Compression
 
-trpcdev doesn't compress. Your CDN or proxy (Cloudflare, Vercel, nginx) already negotiates `Accept-Encoding`, and does it better. If you add a compressing `HttpMiddleware`, skip `application/jsonl`, `application/vnd.trpc.frames` and `text/event-stream` responses: a gzip stream buffers until its window fills, which stalls subscriptions and streamed results.
+@trpc12/trpc doesn't compress. Your CDN or proxy (Cloudflare, Vercel, nginx) already negotiates `Accept-Encoding`, and does it better. If you add a compressing `HttpMiddleware`, skip `application/jsonl`, `application/vnd.trpc.frames` and `text/event-stream` responses: a gzip stream buffers until its window fills, which stalls subscriptions and streamed results.
 
 ## Express, Fastify and `node:http`
 
@@ -180,10 +180,10 @@ const fetch = HttpEffect.toWebHandler(toHttpEffect(handler));
 
 ## AWS Lambda
 
-`trpcdev/aws-lambda` turns a fetch handler into a Lambda handler for API Gateway REST APIs (payload 1.0), HTTP APIs and function URLs (payload 2.0), Application Load Balancers and Lambda@Edge. The event becomes a web `Request` and the response becomes that event's result shape. `{ event, context }` is the platform argument:
+`@trpc12/trpc/aws-lambda` turns a fetch handler into a Lambda handler for API Gateway REST APIs (payload 1.0), HTTP APIs and function URLs (payload 2.0), Application Load Balancers and Lambda@Edge. The event becomes a web `Request` and the response becomes that event's result shape. `{ event, context }` is the platform argument:
 
 ```ts
-import { toLambdaHandler, type LambdaPlatform } from 'trpcdev/aws-lambda';
+import { toLambdaHandler, type LambdaPlatform } from '@trpc12/trpc/aws-lambda';
 
 const handler = createFetchHandler<AppRouter, LambdaPlatform>({
   router,
@@ -202,7 +202,7 @@ export const main = toLambdaHandler(handler);
 A buffered result only arrives once the response ends, so subscriptions and streamed outputs reach the client all at once. With response streaming (function URLs with `InvokeMode: RESPONSE_STREAM`, or API Gateway REST streaming), `toLambdaStreamingHandler` writes the status and headers first and then the body as it is produced:
 
 ```ts
-import { toLambdaStreamingHandler } from 'trpcdev/aws-lambda';
+import { toLambdaStreamingHandler } from '@trpc12/trpc/aws-lambda';
 
 export const main = awslambda.streamifyResponse(
   toLambdaStreamingHandler(handler),
@@ -211,12 +211,12 @@ export const main = awslambda.streamifyResponse(
 
 ## Cloudflare Durable Objects
 
-A Durable Object can accept WebSockets with hibernation, so idle connections don't keep it in memory (or on the bill). `experimental_createHibernatingWebSockets()` from `trpcdev/cloudflare` serves a handler's router that way, from the object's `fetch`, `webSocketMessage` and `webSocketClose`:
+A Durable Object can accept WebSockets with hibernation, so idle connections don't keep it in memory (or on the bill). `experimental_createHibernatingWebSockets()` from `@trpc12/trpc/cloudflare` serves a handler's router that way, from the object's `fetch`, `webSocketMessage` and `webSocketClose`:
 
 ```ts
 import { DurableObject } from 'cloudflare:workers';
-import { experimental_createHibernatingWebSockets } from 'trpcdev/cloudflare';
-import { createFetchHandler } from 'trpcdev/server';
+import { experimental_createHibernatingWebSockets } from '@trpc12/trpc/cloudflare';
+import { createFetchHandler } from '@trpc12/trpc/server';
 
 const handler = createFetchHandler<AppRouter, { env: Env }>({
   router,
@@ -259,7 +259,7 @@ Provide the object's [publisher](./subscriptions.md#publisher) with `hibernating
 import {
   experimental_createHibernatingWebSockets,
   hibernatingPublisher,
-} from 'trpcdev/cloudflare';
+} from '@trpc12/trpc/cloudflare';
 
 class Posts extends Publisher.Service<Posts, { created: Post }>()('Posts') {}
 
@@ -306,7 +306,7 @@ layer: Layer.mergeAll(
 The Worker in front of the object usually authenticates the user already. `connectionToken(schema, { secret })` lets it hand that over: a procedure on the Worker signs claims, the client sends the token as a connection param, and the object's `createContext` verifies it (HMAC-SHA256 with WebCrypto) instead of looking up the session again:
 
 ```ts
-import { connectionToken } from 'trpcdev/cloudflare';
+import { connectionToken } from '@trpc12/trpc/cloudflare';
 
 const RoomToken = connectionToken(
   Schema.Struct({ room: Schema.String, tags: Schema.Array(Schema.String) }),
@@ -366,7 +366,7 @@ import {
   onCall,
   type FunctionsErrorCode,
 } from 'firebase-functions/v2/https';
-import { call, isTrpcError } from 'trpcdev/server';
+import { call, isTrpcError } from '@trpc12/trpc/server';
 
 const firebaseCode: Record<string, FunctionsErrorCode> = {
   BAD_REQUEST: 'invalid-argument',
@@ -401,12 +401,12 @@ The input is validated by the procedure as usual. Firebase's wire format is plai
 
 ## Raw sockets (TCP)
 
-Between services, or where there is no HTTP stack, `serveSocket(handler)` from `trpcdev/socket` serves the router on Effect's `SocketServer`. The platform layer picks the socket: `NodeSocketServer.layer({ port })` for TCP, `NodeSocketServer.layerTls` for TLS, or `{ path }` for a Unix socket.
+Between services, or where there is no HTTP stack, `serveSocket(handler)` from `@trpc12/trpc/socket` serves the router on Effect's `SocketServer`. The platform layer picks the socket: `NodeSocketServer.layer({ port })` for TCP, `NodeSocketServer.layerTls` for TLS, or `{ path }` for a Unix socket.
 
 ```ts
 import { NodeRuntime, NodeSocketServer } from '@effect/platform-node';
 import { Layer } from 'effect';
-import { serveSocket } from 'trpcdev/socket';
+import { serveSocket } from '@trpc12/trpc/socket';
 
 serveSocket(handler).pipe(
   Layer.provide(NodeSocketServer.layer({ port: 4000 })),
@@ -419,7 +419,7 @@ The client is `experimental_socketLink` with an Effect `Socket`:
 
 ```ts
 import { NodeSocket } from '@effect/platform-node';
-import { experimental_socketLink } from 'trpcdev/client';
+import { experimental_socketLink } from '@trpc12/trpc/client';
 
 const link = experimental_socketLink({
   socket: NodeSocket.makeNet({ host: 'localhost', port: 4000 }),

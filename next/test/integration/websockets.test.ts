@@ -1,6 +1,6 @@
 import { request as httpRequest } from 'node:http';
 import { Stream } from 'effect';
-import { cors } from 'trpcdev/http';
+import { cors } from '@trpc12/trpc/http';
 import {
   createTrpcClient,
   httpLink,
@@ -8,13 +8,13 @@ import {
   safe,
   splitLink,
   wsLink,
-} from 'trpcdev/client';
+} from '@trpc12/trpc/client';
 import {
   error,
   initTrpc,
   tracked,
   type CreateContextOpts,
-} from 'trpcdev/server';
+} from '@trpc12/trpc/server';
 import {
   createTestServer,
   type NodeTestServer as TestServer,

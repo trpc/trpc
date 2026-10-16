@@ -1,14 +1,14 @@
 import { Schema } from 'effect';
-import { createTrpcClient, safe } from 'trpcdev/client';
-import { toContract } from 'trpcdev/contract';
+import { createTrpcClient, safe } from '@trpc12/trpc/client';
+import { toContract } from '@trpc12/trpc/contract';
 import {
   createOpenApiHandler,
   generateContractFromOpenApi,
   generateOpenApi,
   openApiLink,
   openapi,
-} from 'trpcdev/openapi';
-import { error, initTrpc, tracked } from 'trpcdev/server';
+} from '@trpc12/trpc/openapi';
+import { error, initTrpc, tracked } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { appContract } from './fixtures/contract.ts';
 
@@ -32,7 +32,7 @@ const router = impl.router({
   },
 });
 
-test('a trpcdev document round-trips into a contract openApiLink can call', async () => {
+test('a @trpc12/trpc document round-trips into a contract openApiLink can call', async () => {
   const doc = generateOpenApi(router, { info: { title: 'x', version: '1' } });
   const source = generateContractFromOpenApi(doc, {
     prefix: '/api',

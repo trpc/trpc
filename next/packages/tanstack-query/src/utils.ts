@@ -20,7 +20,7 @@ import type {
   ClientTypes,
   RouterOf,
   TrpcClient,
-} from 'trpcdev/client';
+} from '@trpc12/trpc/client';
 import {
   pathKey,
   procedureKey,

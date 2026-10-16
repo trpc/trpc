@@ -1,9 +1,9 @@
 {
-  "name": "@trpcdev/upgrade",
+  "name": "@trpc12/upgrade",
   "version": "0.0.0",
   "private": true,
   "bin": {
-    "trpcdev-upgrade": "./dist/bin.js"
+    "trpc12-upgrade": "./dist/bin.js"
   },
   "files": [
     "dist"

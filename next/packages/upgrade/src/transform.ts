@@ -49,11 +49,11 @@ interface ModuleMap {
 }
 
 const GUIDE = 'see docs/migrating-from-v11.md';
-const TRPCDEV = /^(@trpcdev\/[^/]+|trpcdev)(\/|$)/;
+const TRPC12 = /^@trpc12\/[^/]+(\/|$)/;
 
 const MODULES: Readonly<Record<string, ModuleMap>> = {
   '@trpc/server': {
-    to: 'trpcdev/server',
+    to: '@trpc12/trpc/server',
     names: {
       initTRPC: 'initTrpc',
       TRPCError: 'TrpcError',
@@ -64,14 +64,14 @@ const MODULES: Readonly<Record<string, ModuleMap>> = {
     },
   },
   '@trpc/server/adapters/fetch': {
-    to: 'trpcdev/server',
+    to: '@trpc12/trpc/server',
     names: {
       fetchRequestHandler: 'createFetchHandler',
       FetchCreateContextFnOptions: 'CreateContextOpts',
     },
   },
   '@trpc/client': {
-    to: 'trpcdev/client',
+    to: '@trpc12/trpc/client',
     names: {
       createTRPCClient: 'createTrpcClient',
       createTRPCProxyClient: 'createTrpcClient',
@@ -84,7 +84,7 @@ const MODULES: Readonly<Record<string, ModuleMap>> = {
     },
   },
   '@trpc/tanstack-react-query': {
-    to: '@trpcdev/tanstack-react-query',
+    to: '@trpc12/tanstack-react-query',
     names: {
       createTRPCContext: 'createTrpcContext',
       createTRPCOptionsProxy: 'createTrpcQueryUtils',
@@ -103,20 +103,20 @@ const MODULE_NOTES: Readonly<Record<string, string>> = {
   '@trpc/server/observable':
     'observable() subscriptions: return an async generator or an Effect Stream',
   '@trpc/server/adapters/standalone':
-    'adapters: serve createFetchHandler() with serve() from trpcdev/http (docs/platforms.md)',
+    'adapters: serve createFetchHandler() with serve() from @trpc12/trpc/http (docs/platforms.md)',
   '@trpc/server/adapters/express':
-    'adapters: mount createFetchHandler() with toNodeHandler from trpcdev/http (docs/platforms.md)',
+    'adapters: mount createFetchHandler() with toNodeHandler from @trpc12/trpc/http (docs/platforms.md)',
   '@trpc/server/adapters/ws':
-    'adapters: handler.websocket(socket, { request }) or serve() from trpcdev/http (docs/platforms.md)',
+    'adapters: handler.websocket(socket, { request }) or serve() from @trpc12/trpc/http (docs/platforms.md)',
   '@trpc/react-query':
-    '@trpc/react-query has no v12 version: move to @trpcdev/tanstack-react-query',
+    '@trpc/react-query has no v12 version: move to @trpc12/tanstack-react-query',
   '@trpc/next':
     '@trpc/next has no v12 version: use createFetchHandler in a route handler',
 };
 
 const NAME_NOTES: Readonly<Record<string, string>> = {
   TRPCLink:
-    'TRPCLink: keep the link with fromV11Link(link) from trpcdev/interop, or rewrite it with link() as an Effect Stream function',
+    'TRPCLink: keep the link with fromV11Link(link) from @trpc12/trpc/interop, or rewrite it with link() as an Effect Stream function',
 };
 
 const ROOT_OPTION_NOTES: Readonly<Record<string, string>> = {
@@ -274,7 +274,7 @@ export function upgradeSource(
       statement.type === 'ExportNamedDeclaration' && statement['source'];
     if (!isImport && !isReexport) continue;
     const from = statement['source'].value as string;
-    if (TRPCDEV.test(from)) {
+    if (TRPC12.test(from)) {
       for (const spec of statement['specifiers'] as Node[]) {
         const key = isImport ? spec['imported'] : spec['local'];
         const next = key?.type === 'Identifier' && own(promoted, key.name);
@@ -392,7 +392,7 @@ export function upgradeSource(
     for (const prop of object['properties'] as Node[]) {
       const name = keyName(prop);
       if (name === 'transformer') {
-        ensure('trpcdev/serializer', 'createSyncSerializer');
+        ensure('@trpc12/trpc/serializer', 'createSyncSerializer');
         if (prop['shorthand']) {
           take(
             prop.start,
@@ -446,7 +446,7 @@ export function upgradeSource(
       return;
     }
     take(typeArgs.start, typeArgs.end, '');
-    ensure('trpcdev/client', 'routerType');
+    ensure('@trpc12/trpc/client', 'routerType');
   };
 
   const rootChain = (call: Node) => {
@@ -519,7 +519,7 @@ export function upgradeSource(
         node['arguments'].length === 1
       ) {
         const arg = node['arguments'][0] as Node;
-        ensure('trpcdev/server', 'createRouterClient');
+        ensure('@trpc12/trpc/server', 'createRouterClient');
         take(
           node.start,
           arg.start,

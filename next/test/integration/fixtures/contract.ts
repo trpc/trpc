@@ -1,6 +1,6 @@
-import { contract } from 'trpcdev/contract';
+import { contract } from '@trpc12/trpc/contract';
 import { z } from 'zod';
-import { openapi } from 'trpcdev/openapi';
+import { openapi } from '@trpc12/trpc/openapi';
 
 const c = contract.create<{ meta: { auth?: boolean } }>().with(openapi());
 

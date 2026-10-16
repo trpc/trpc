@@ -4,9 +4,9 @@ import {
   httpLink,
   TrpcError,
   routerType,
-} from 'trpcdev/client';
-import { contract } from 'trpcdev/contract';
-import { initTrpc, stream, tracked } from 'trpcdev/server';
+} from '@trpc12/trpc/client';
+import { contract } from '@trpc12/trpc/contract';
+import { initTrpc, stream, tracked } from '@trpc12/trpc/server';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';

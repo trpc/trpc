@@ -1,5 +1,5 @@
 {
-  "name": "@trpcdev/tanstack-solid-query",
+  "name": "@trpc12/tanstack-solid-query",
   "version": "0.0.0",
   "private": true,
   "files": [
@@ -25,18 +25,18 @@
     "build": "node ../../tooling/pack/pack.ts"
   },
   "dependencies": {
-    "@trpcdev/tanstack-query": "workspace:*"
+    "@trpc12/tanstack-query": "workspace:*"
   },
   "devDependencies": {
     "@tanstack/query-core": "5.104.1",
     "@tanstack/solid-query": "5.104.1",
+    "@trpc12/trpc": "workspace:*",
     "solid-js": "1.9.17",
-    "trpcdev": "workspace:*",
     "typescript": "^7.0.2"
   },
   "peerDependencies": {
     "@tanstack/solid-query": "^5.104.0",
-    "solid-js": "^1.9",
-    "trpcdev": "workspace:*"
+    "@trpc12/trpc": "workspace:*",
+    "solid-js": "^1.9"
   }
 }

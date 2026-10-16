@@ -83,7 +83,7 @@ const cache = t.middleware(async ({ path, input, next, ok }) => {
 ### (d) Standalone, dependency-declaring middleware
 
 ```ts
-import { middleware } from 'trpcdev/server';
+import { middleware } from '@trpc12/trpc/server';
 
 export const withOrg = middleware<{
   ctx: { db: Db };
@@ -157,7 +157,7 @@ t.procedure.use(withOrg); // type error: requires input.orgId and ctx.db
 `onStart`, `onSuccess`, `onError` and `onFinish` as middleware factories, as in oRPC. They are trivial to provide and remove a lot of boilerplate.
 
 ```ts
-import { onError, onFinish, onStart, onSuccess } from 'trpcdev/server';
+import { onError, onFinish, onStart, onSuccess } from '@trpc12/trpc/server';
 
 const loggedProcedure = t.procedure
   .use(onStart(({ path }) => log.info('start', path)))
@@ -240,6 +240,6 @@ const loggedProcedure = t.procedure
 - **Q6.2:** [ ] yes · [ ] no
 - **Q6.3:** [ ] yes · [ ] no · `mapInput`: [ ] yes · [ ] no
 - **Q6.4:** [x] never · [ ] later · [ ] v1 → [middleware](../decisions/middleware.md)
-- **Q6.5:** [x] yes, in `trpcdev/middleware` · [ ] no → [middleware](../decisions/middleware.md)
+- **Q6.5:** [x] yes, in `@trpc12/trpc/middleware` · [ ] no → [middleware](../decisions/middleware.md)
 - **Q6.6:** [ ] M-A · [ ] M-B · services in v1: [ ] yes · [ ] no
 - **Notes:**

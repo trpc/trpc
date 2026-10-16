@@ -14,20 +14,23 @@ import {
   hydrationOptions,
   SubscriptionObserver,
   type SubscriptionResult,
-} from '@trpcdev/tanstack-query';
+} from '@trpc12/tanstack-query';
 import superjson from 'superjson';
 import {
   createTrpcClient,
   localLink,
   type ClientError,
   routerType,
-} from 'trpcdev/client';
-import { createSerializer, createSyncSerializer } from 'trpcdev/serializer';
+} from '@trpc12/trpc/client';
+import {
+  createSerializer,
+  createSyncSerializer,
+} from '@trpc12/trpc/serializer';
 import {
   createRouterClient,
   type InputValidationErrorData,
   type TrpcError,
-} from 'trpcdev/server';
+} from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { appRouter, createApp, db, sleep, type Post } from './fixtures/app.ts';
 

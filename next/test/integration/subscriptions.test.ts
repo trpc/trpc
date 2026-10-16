@@ -5,8 +5,13 @@ import {
   httpLink,
   type TrpcClient,
   routerType,
-} from 'trpcdev/client';
-import { error, initTrpc, tracked, type TrackedEnvelope } from 'trpcdev/server';
+} from '@trpc12/trpc/client';
+import {
+  error,
+  initTrpc,
+  tracked,
+  type TrackedEnvelope,
+} from '@trpc12/trpc/server';
 import {
   createTestServer,
   type NodeTestServer as TestServer,

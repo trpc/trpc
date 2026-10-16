@@ -12,14 +12,11 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from '@tanstack/react-query';
-import {
-  createTrpcQueryUtils,
-  hydrationOptions,
-} from '@trpcdev/tanstack-query';
+import { createTrpcQueryUtils, hydrationOptions } from '@trpc12/tanstack-query';
 import {
   createTrpcContext,
   useSubscription,
-} from '@trpcdev/tanstack-react-query';
+} from '@trpc12/tanstack-react-query';
 import { Suspense, useContext, useState, type ReactNode } from 'react';
 import { createRoot, hydrateRoot } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
@@ -31,8 +28,8 @@ import {
   TrpcError,
   type LinksContext,
   type LinksTypes,
-} from 'trpcdev/client';
-import { createRouterClient } from 'trpcdev/server';
+} from '@trpc12/trpc/client';
+import { createRouterClient } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import {
   appRouter,

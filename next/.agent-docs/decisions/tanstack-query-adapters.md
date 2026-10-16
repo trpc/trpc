@@ -1,17 +1,17 @@
 # TanStack Query: one core, a thin adapter per framework (agent)
 
-- `@trpcdev/tanstack-query` holds the framework-agnostic core on `@tanstack/query-core`. Each adapter package ([`integration-packages.md`](./integration-packages.md)) adds only what can't be agnostic, context and a subscription primitive, so the type mapping and key format live in one place:
+- `@trpc12/tanstack-query` holds the framework-agnostic core on `@tanstack/query-core`. Each adapter package ([`integration-packages.md`](./integration-packages.md)) adds only what can't be agnostic, context and a subscription primitive, so the type mapping and key format live in one place:
 
-  | Package                           | Context helpers                                                                 | Subscription primitive                        |
-  | --------------------------------- | ------------------------------------------------------------------------------- | --------------------------------------------- |
-  | `@trpcdev/tanstack-query`         | —                                                                               | `SubscriptionObserver`                        |
-  | `@trpcdev/tanstack-react-query`   | `createTrpcContext()` → `{ TrpcProvider, useTrpc, useTrpcClient }`              | `useSubscription(options)`                    |
-  | `@trpcdev/tanstack-preact-query`  | same as React                                                                   | `useSubscription(options)`                    |
-  | `@trpcdev/tanstack-vue-query`     | `{ TrpcPlugin, provideTrpc, useTrpc, useTrpcClient }`                           | `useSubscription(MaybeRefOrGetter)` → refs    |
-  | `@trpcdev/tanstack-solid-query`   | `{ TrpcProvider, useTrpc, useTrpcClient }`                                      | `useSubscription(accessor)` → getters         |
-  | `@trpcdev/tanstack-svelte-query`  | `{ setTrpcContext, useTrpc, useTrpcClient }` (Svelte 5 runes)                   | `createSubscription(getter)` → getters        |
-  | `@trpcdev/tanstack-angular-query` | `{ provideTrpc, injectTrpc, injectTrpcClient }`                                 | `injectSubscription(fn)` → signals            |
-  | `@trpcdev/tanstack-lit-query`     | `TrpcProvider` element class, `useTrpc(host)`, `useTrpcClient(host)`, `context` | `createSubscriptionController(host, options)` |
+  | Package                          | Context helpers                                                                 | Subscription primitive                        |
+  | -------------------------------- | ------------------------------------------------------------------------------- | --------------------------------------------- |
+  | `@trpc12/tanstack-query`         | —                                                                               | `SubscriptionObserver`                        |
+  | `@trpc12/tanstack-react-query`   | `createTrpcContext()` → `{ TrpcProvider, useTrpc, useTrpcClient }`              | `useSubscription(options)`                    |
+  | `@trpc12/tanstack-preact-query`  | same as React                                                                   | `useSubscription(options)`                    |
+  | `@trpc12/tanstack-vue-query`     | `{ TrpcPlugin, provideTrpc, useTrpc, useTrpcClient }`                           | `useSubscription(MaybeRefOrGetter)` → refs    |
+  | `@trpc12/tanstack-solid-query`   | `{ TrpcProvider, useTrpc, useTrpcClient }`                                      | `useSubscription(accessor)` → getters         |
+  | `@trpc12/tanstack-svelte-query`  | `{ setTrpcContext, useTrpc, useTrpcClient }` (Svelte 5 runes)                   | `createSubscription(getter)` → getters        |
+  | `@trpc12/tanstack-angular-query` | `{ provideTrpc, injectTrpc, injectTrpcClient }`                                 | `injectSubscription(fn)` → signals            |
+  | `@trpc12/tanstack-lit-query`     | `TrpcProvider` element class, `useTrpc(host)`, `useTrpcClient(host)`, `context` | `createSubscriptionController(host, options)` |
 
 - `createTrpcContext<TRouter, TContext>()` takes a router type, a `routerType()` value's type or a contract, plus the context the client's links declare. Names follow each adapter: `use*` (React, Preact, Vue, Solid), `create*` (Svelte), `inject*`/`provide*` (Angular), controllers (Lit).
 - (agent) It also takes a client type, `createTrpcContext<ReturnType<typeof makeClient>>()`, and reads the router, link context and link types from it ([`replaceable-serializers.md`](./replaceable-serializers.md)).

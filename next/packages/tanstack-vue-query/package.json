@@ -1,5 +1,5 @@
 {
-  "name": "@trpcdev/tanstack-vue-query",
+  "name": "@trpc12/tanstack-vue-query",
   "version": "0.0.0",
   "private": true,
   "files": [
@@ -25,18 +25,18 @@
     "build": "node ../../tooling/pack/pack.ts"
   },
   "dependencies": {
-    "@trpcdev/tanstack-query": "workspace:*"
+    "@trpc12/tanstack-query": "workspace:*"
   },
   "devDependencies": {
     "@tanstack/query-core": "5.104.1",
     "@tanstack/vue-query": "5.104.1",
-    "trpcdev": "workspace:*",
+    "@trpc12/trpc": "workspace:*",
     "typescript": "^7.0.2",
     "vue": "3.5.43"
   },
   "peerDependencies": {
     "@tanstack/vue-query": "^5.104.0",
-    "trpcdev": "workspace:*",
+    "@trpc12/trpc": "workspace:*",
     "vue": "^3.5"
   }
 }

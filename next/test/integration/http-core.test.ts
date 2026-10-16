@@ -1,13 +1,13 @@
 import { Effect, Layer } from 'effect';
 import { HttpMiddleware, HttpRouter, HttpServerResponse } from 'effect/http';
-import { createTrpcClient, httpLink, routerType } from 'trpcdev/client';
-import { cors } from 'trpcdev/http';
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import { cors } from '@trpc12/trpc/http';
 import {
   createFetchHandler,
   createRouterClient,
   initTrpc,
   Response as TrpcResponse,
-} from 'trpcdev/server';
+} from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { createTestServer } from './fixtures/server.ts';
 

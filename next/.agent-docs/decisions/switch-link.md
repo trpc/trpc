@@ -15,4 +15,4 @@
 - Reserved names are type errors (`signal`, `lastEventId`, `init`, `headers`, `reconnect`), and so are two switch links with the same name.
 - Branches can be chains (arrays of links). `splitLink` stays.
 - Lost: nothing; `splitLink` covers the two-way case.
-- Lives in: `packages/trpcdev/src/client/links/switch.ts`.
+- Lives in: `packages/trpc/src/client/links/switch.ts`.

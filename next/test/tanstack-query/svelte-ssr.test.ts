@@ -2,9 +2,9 @@ import { QueryClient } from '@tanstack/svelte-query';
 import {
   createTrpcQueryUtils,
   hydrationOptions,
-} from '@trpcdev/tanstack-svelte-query';
+} from '@trpc12/tanstack-svelte-query';
 import { render } from 'svelte/server';
-import { createRouterClient } from 'trpcdev/server';
+import { createRouterClient } from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
 import { appRouter, createApp, db, serializer } from './fixtures/app.ts';
 import Root from './svelte/Root.svelte';

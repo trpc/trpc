@@ -2,8 +2,11 @@ import { createServer, type Server } from 'node:http';
 import type { Duplex } from 'node:stream';
 import { NodeHttpServer } from '@effect/platform-node';
 import { Context, Effect, Exit, Layer, Scope } from 'effect';
-import { TestServer, type TestServerShape } from 'trpcdev/internal/testing';
-import type { AnyRouter, FetchHandlerOptions } from 'trpcdev/server';
+import {
+  TestServer,
+  type TestServerShape,
+} from '@trpc12/trpc/internal/testing';
+import type { AnyRouter, FetchHandlerOptions } from '@trpc12/trpc/server';
 
 export interface NodeTestServer extends TestServerShape, AsyncDisposable {
   readonly server: Server;

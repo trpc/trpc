@@ -8,13 +8,13 @@ import {
   safe,
   wsLink,
   type Deserialized,
-} from 'trpcdev/client';
-import { createRouterClient, initTrpc, TrpcError } from 'trpcdev/server';
+} from '@trpc12/trpc/client';
+import { createRouterClient, initTrpc, TrpcError } from '@trpc12/trpc/server';
 import {
   createSerializer,
   createSyncSerializer,
   type JsonOf,
-} from 'trpcdev/serializer';
+} from '@trpc12/trpc/serializer';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 import { createTestServer } from './fixtures/server.ts';

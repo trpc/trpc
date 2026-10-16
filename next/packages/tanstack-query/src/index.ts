@@ -1,13 +1,13 @@
 /**
  * TanStack Query helpers for tRPC that work with every TanStack adapter.
  * They produce plain options objects. The framework packages
- * (`@trpcdev/tanstack-react-query`, `-preact-`, `-vue-`, `-solid-`,
+ * (`@trpc12/tanstack-react-query`, `-preact-`, `-vue-`, `-solid-`,
  * `-svelte-`, `-angular-` and `-lit-query`) re-export them and add context
  * helpers and a subscription primitive.
  *
  * @example
  * ```ts
- * import { createTrpcQueryUtils } from '@trpcdev/tanstack-query';
+ * import { createTrpcQueryUtils } from '@trpc12/tanstack-query';
  *
  * export const trpc = createTrpcQueryUtils({ client });
  *

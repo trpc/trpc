@@ -14,15 +14,15 @@ import {
   routerType,
   splitLink,
   wsLink,
-} from 'trpcdev/client';
-import { serve } from 'trpcdev/http';
-import { createSerializer } from 'trpcdev/serializer';
+} from '@trpc12/trpc/client';
+import { serve } from '@trpc12/trpc/http';
+import { createSerializer } from '@trpc12/trpc/serializer';
 import {
   createFetchHandler,
   initTrpc,
   Publisher,
   type TrackedEnvelope,
-} from 'trpcdev/server';
+} from '@trpc12/trpc/server';
 import { z } from 'zod';
 import { redisPublisher } from './publisher.ts';
 

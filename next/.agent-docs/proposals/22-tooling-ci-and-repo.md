@@ -122,8 +122,8 @@ next/                         ← code root (cd here to work)
   AGENTS.md                   agent instructions (root AGENTS.md only points here)
   .agent-docs/                proposals, decisions, reference and notes (this folder)
   .repos/                     vendored sources (vendor-src, read-only; config in ../vendor-src.json)
-  packages/trpcdev/           core package (01)
-  packages/tanstack-query/    @trpcdev/tanstack-query (19, later)
+  packages/trpc/           core package (01)
+  packages/tanstack-query/    @trpc12/tanstack-query (19, later)
   examples/minimal/           …
   examples/effect/            …
   examples/next-app/          Next.js app (name is the framework, not this folder)
@@ -135,7 +135,7 @@ next/                         ← code root (cd here to work)
 packages/, examples/, www/    leftover v11 — do not extend; delete when a human says (Q22.5)
 ```
 
-- Examples depend on `trpcdev: workspace:*` inside the `next/` workspace. No `subtree` syncing.
+- Examples depend on `@trpc12/trpc: workspace:*` inside the `next/` workspace. No `subtree` syncing.
 
   ```jsonc
   // next/examples/minimal/package.json
@@ -143,7 +143,7 @@ packages/, examples/, www/    leftover v11 — do not extend; delete when a huma
     "name": "@example/minimal",
     "private": true,
     "scripts": { "typecheck": "tsc --noEmit -p tsconfig.json" },
-    "dependencies": { "trpcdev": "workspace:*" },
+    "dependencies": { "@trpc12/trpc": "workspace:*" },
   }
   ```
 

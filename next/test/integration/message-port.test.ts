@@ -4,9 +4,9 @@ import {
   experimental_messagePortLink,
   routerType,
   safe,
-} from 'trpcdev/client';
-import { createSerializer } from 'trpcdev/serializer';
-import { createFetchHandler, initTrpc } from 'trpcdev/server';
+} from '@trpc12/trpc/client';
+import { createSerializer } from '@trpc12/trpc/serializer';
+import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import type { WorkerRouter } from './fixtures/worker-server.ts';
 

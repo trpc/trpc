@@ -7,4 +7,4 @@
 - (agent) Hibernating Durable Object sockets don't get the timer: it would wake the object, and Cloudflare already handles dead sockets there.
 - Why: dead clients' subscriptions are cleaned up from the pings clients already send, with no new wire message.
 - Lost: server-initiated pings for clients that never ping (a non-browser client must ping, or set its own idle handling).
-- Lives in: `packages/trpcdev/src/server/socket.ts` (`serveConnection`), `src/server/fetch.ts` (`websocket.idleTimeoutMs`); `test/integration/websockets.test.ts`.
+- Lives in: `packages/trpc/src/server/socket.ts` (`serveConnection`), `src/server/fetch.ts` (`websocket.idleTimeoutMs`); `test/integration/websockets.test.ts`.

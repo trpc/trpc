@@ -42,7 +42,7 @@ source.addEventListener('done', () => source.close());
 `Publisher` is typed publish/subscribe as an Effect service. Declare a key with its channels, then provide a layer:
 
 ```ts
-import { Publisher } from 'trpcdev/server';
+import { Publisher } from '@trpc12/trpc/server';
 
 class Posts extends Publisher.Service<
   Posts,
@@ -96,12 +96,12 @@ No backend packages ship; these recipes are yours to copy and adapt. Both serial
 
 ```ts
 import { Effect, Layer, Stream } from 'effect';
-import { createSerializer } from 'trpcdev/serializer';
+import { createSerializer } from '@trpc12/trpc/serializer';
 import {
   tracked,
   type PublisherEvents,
   type PublisherShape,
-} from 'trpcdev/server';
+} from '@trpc12/trpc/server';
 
 const danson = createSerializer();
 const encode = (data: unknown) => JSON.stringify(danson.serialize(data));
@@ -306,4 +306,4 @@ export default {
 } satisfies ExportedHandler<Env>;
 ```
 
-Open SSE streams keep the object in memory; kept events are lost when it's evicted. To let it sleep between events, serve WebSockets with the [hibernation adapter](./platforms.md#cloudflare-durable-objects) and provide `hibernatingPublisher(Posts, { state: this.ctx })` from `trpcdev/cloudflare` instead of `Posts.memory()` ([subscriptions that hibernate](./platforms.md#subscriptions-that-hibernate)).
+Open SSE streams keep the object in memory; kept events are lost when it's evicted. To let it sleep between events, serve WebSockets with the [hibernation adapter](./platforms.md#cloudflare-durable-objects) and provide `hibernatingPublisher(Posts, { state: this.ctx })` from `@trpc12/trpc/cloudflare` instead of `Posts.memory()` ([subscriptions that hibernate](./platforms.md#subscriptions-that-hibernate)).

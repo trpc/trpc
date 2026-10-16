@@ -1,13 +1,13 @@
 # OpenAPI
 
-`trpcdev/openapi` serves the same router over REST, generates an OpenAPI 3.1 document from its schemas, and calls REST endpoints with the tRPC client. RPC and REST run side by side; neither changes the other.
+`@trpc12/trpc/openapi` serves the same router over REST, generates an OpenAPI 3.1 document from its schemas, and calls REST endpoints with the tRPC client. RPC and REST run side by side; neither changes the other.
 
 ## Routes
 
 The `openapi()` root extension adds a `route` meta key. A procedure without one is served at its path: `GET /api/post/byId` for queries, `POST /api/post/create` for mutations. `route` picks the method, path and status.
 
 ```ts
-import { openapi } from 'trpcdev/openapi';
+import { openapi } from '@trpc12/trpc/openapi';
 
 const t = initTrpc<{ ctx: Context }>().with(openapi());
 
@@ -44,8 +44,8 @@ const me = authed
 ## The handler
 
 ```ts
-import { cors } from 'trpcdev/http';
-import { createOpenApiHandler, openApiReference } from 'trpcdev/openapi';
+import { cors } from '@trpc12/trpc/http';
+import { createOpenApiHandler, openApiReference } from '@trpc12/trpc/openapi';
 
 const openapi = createOpenApiHandler({
   router: appRouter,
@@ -116,8 +116,8 @@ createOpenApiHandler({ router: appRouter, contract });
 ## The document
 
 ```ts
-import { generateOpenApi } from 'trpcdev/openapi';
-import { loadRouter } from 'trpcdev/server';
+import { generateOpenApi } from '@trpc12/trpc/openapi';
+import { loadRouter } from '@trpc12/trpc/server';
 
 const doc = generateOpenApi(await loadRouter(appRouter), {
   info: { title: 'API', version: '1.0.0' },
@@ -129,14 +129,14 @@ The document has schemas for input, output and each declared error. `filter({ pa
 
 ### From the types
 
-`generateOpenApi` only sees runtime schemas. `experimental_generateOpenApiFromTypes` from `trpcdev/openapi/typescript` also reads the router's types with the TypeScript 7 compiler, so it documents:
+`generateOpenApi` only sees runtime schemas. `experimental_generateOpenApiFromTypes` from `@trpc12/trpc/openapi/typescript` also reads the router's types with the TypeScript 7 compiler, so it documents:
 
 - errors that are only inferred (returned with `error()`, failed or yielded in an Effect), never declared, with their status: a `TrpcError.Tagged` class's literal `status`, the built-in code's status, or `400`;
 - the input and output of procedures without static schemas (no `.output()`, or a ctx-callback input).
 
 ```ts
 // scripts/openapi.ts, run at build time
-import { experimental_generateOpenApiFromTypes } from 'trpcdev/openapi/typescript';
+import { experimental_generateOpenApiFromTypes } from '@trpc12/trpc/openapi/typescript';
 import { appRouter } from '../src/router.ts';
 
 const doc = await experimental_generateOpenApiFromTypes(appRouter, {
@@ -168,8 +168,8 @@ An output declared with `.output(schema, { validate: false })` isn't validated. 
 `openApiLink` sends each call to its REST route. It needs the routes, so it takes a contract; it never needs the router.
 
 ```ts
-import { toContract } from 'trpcdev/contract';
-import { openApiLink } from 'trpcdev/openapi';
+import { toContract } from '@trpc12/trpc/contract';
+import { openApiLink } from '@trpc12/trpc/openapi';
 
 const contract = toContract(appRouter); // or the JSON, shipped to the client
 const client = createTrpcClient({
@@ -199,10 +199,10 @@ links: [
 
 ## A contract from an OpenAPI document
 
-`generateContractFromOpenApi(document, { prefix?, exportName?, patterns? })` turns an OpenAPI 3.0 or 3.1 document into the source of a `trpcdev/contract` module. Schemas are Effect Schemas, translated by Effect's `SchemaRepresentation`; each operation becomes a procedure with its `route` meta (under `.with(openapi())`), so the contract works with `openApiLink` and `validationLink` against any REST API:
+`generateContractFromOpenApi(document, { prefix?, exportName?, patterns? })` turns an OpenAPI 3.0 or 3.1 document into the source of a `@trpc12/trpc/contract` module. Schemas are Effect Schemas, translated by Effect's `SchemaRepresentation`; each operation becomes a procedure with its `route` meta (under `.with(openapi())`), so the contract works with `openApiLink` and `validationLink` against any REST API:
 
 ```ts
-import { generateContractFromOpenApi } from 'trpcdev/openapi';
+import { generateContractFromOpenApi } from '@trpc12/trpc/openapi';
 
 const document = await (
   await fetch('https://petstore.example/openapi.json')
@@ -235,15 +235,15 @@ export const petstore = {
 - `GET` is a query, a `text/event-stream` response a subscription, anything else a mutation. The first 2xx status becomes `successStatus`.
 - Path and query parameters merge with the JSON body into one input, like `inputStructure: 'compact'`.
 - Objects that don't mention `additionalProperties` become closed structs (extra keys are still ignored when decoding), except where `allOf` merges them.
-- Error responses in trpcdev's own shape (`code` and `data`) become `.errors()`, so a document from `generateOpenApi` round-trips with typed errors. Other APIs' errors stay unexpected errors.
+- Error responses in @trpc12/trpc's own shape (`code` and `data`) become `.errors()`, so a document from `generateOpenApi` round-trips with typed errors. Other APIs' errors stay unexpected errors.
 - `pattern`s are ignored unless `patterns: 'apply'`; only use that with documents you trust.
 
 ## NestJS
 
-`@trpcdev/nest` serves a contract from Nest controllers. `@Implement(contract)` adds the Nest route for the contract's REST mapping; the method returns the procedure, so the controller's injected services reach the resolver through `this`.
+`@trpc12/nest` serves a contract from Nest controllers. `@Implement(contract)` adds the Nest route for the contract's REST mapping; the method returns the procedure, so the controller's injected services reach the resolver through `this`.
 
 ```ts
-import { Implement, TrpcModule } from '@trpcdev/nest';
+import { Implement, TrpcModule } from '@trpc12/nest';
 
 const impl = t.implement(appContract);
 

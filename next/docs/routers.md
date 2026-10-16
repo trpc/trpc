@@ -29,7 +29,7 @@ The prefix goes before every route below the group: before an explicit `.meta({ 
 `lazy()` loads a subtree on its first call, for large routers that should start fast (serverless cold starts). The client types it as if it were inline.
 
 ```ts
-import { lazy } from 'trpcdev/server';
+import { lazy } from '@trpc12/trpc/server';
 
 export const appRouter = {
   post: postRouter,
@@ -63,7 +63,7 @@ createOpenApiHandler({ router: appRouter, contract });
 A contract describes procedures without implementing them. It lives in its own package, and clients and the OpenAPI generator accept it like a router.
 
 ```ts
-import { contract } from 'trpcdev/contract';
+import { contract } from '@trpc12/trpc/contract';
 
 const c = contract.create<{ meta: Meta }>().errors({ UNAUTHORIZED: {} });
 

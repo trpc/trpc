@@ -1,6 +1,6 @@
-# AWS Lambda events through `trpcdev/aws-lambda` (agent)
+# AWS Lambda events through `@trpc12/trpc/aws-lambda` (agent)
 
-- (agent) Built for the human Q12.3 answer ("provide adapters for the rest", [`platforms-through-effect-layers.md`](./platforms-through-effect-layers.md)): Effect has no Lambda event adapter, so `trpcdev/aws-lambda` is ours, a dependency-free subpath ([`flat-entry-points.md`](./flat-entry-points.md)).
+- (agent) Built for the human Q12.3 answer ("provide adapters for the rest", [`platforms-through-effect-layers.md`](./platforms-through-effect-layers.md)): Effect has no Lambda event adapter, so `@trpc12/trpc/aws-lambda` is ours, a dependency-free subpath ([`flat-entry-points.md`](./flat-entry-points.md)).
 - (agent) It wraps a fetch handler rather than the router. `toLambdaHandler(handler, { timeoutMarginMs? })` converts the event to a web `Request`, calls `handler.fetch(request, { event, context })` and converts the response back. The handler core stays platform-free; Lambda is the platform argument ([`handler-platform.md`](./handler-platform.md)), typed with `createFetchHandler<AppRouter, LambdaPlatform>`.
 - (agent) One function for every event shape: REST APIs and ALB (payload 1.0), HTTP APIs and function URLs (payload 2.0), and Lambda@Edge. The event's own shape picks the result shape, so there is no `format` option.
 - (agent) Bodies: text content types (JSON, JSONL, forms, XML, `text/*`, `+json`) stay text. Everything else is base64. Set-cookie goes to `multiValueHeaders` (1.0), `cookies` (2.0) or CloudFront headers (Edge).
@@ -8,4 +8,4 @@
 - (agent) Response streaming is a second function, `toLambdaStreamingHandler`, wrapped by the app with `awslambda.streamifyResponse`. It writes the HTTP integration prelude (status, headers and cookies as JSON, then 8 null bytes) and then the body with drain backpressure. It's separate because buffered and streamed Lambdas are configured differently (`InvokeMode`), and `awslambda` is a runtime global we don't import.
 - Why: the most common serverless target, and a fetch-handler wrapper keeps middleware, platform typing and the whole HTTP protocol identical to Workers and Node.
 - Lost: API Gateway WebSocket APIs (connection-per-invocation, needs an external connection store). Use a WebSocket server elsewhere or SSE over response streaming.
-- Lives in: `packages/trpcdev/src/aws-lambda/index.ts`, `packages/trpcdev/src/server/fetch.ts` (`Effect.interruptible`), `packages/trpcdev/src/interop/handler.ts`, `test/integration/aws-lambda.test.ts`, `test/integration/links.test.ts` (aborted `request.signal`), `docs/platforms.md` (AWS Lambda).
+- Lives in: `packages/trpc/src/aws-lambda/index.ts`, `packages/trpc/src/server/fetch.ts` (`Effect.interruptible`), `packages/trpc/src/interop/handler.ts`, `test/integration/aws-lambda.test.ts`, `test/integration/links.test.ts` (aborted `request.signal`), `docs/platforms.md` (AWS Lambda).

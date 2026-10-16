@@ -4,7 +4,7 @@
  *
  * @example
  * ```tsx
- * import { createTrpcContext } from '@trpcdev/tanstack-preact-query';
+ * import { createTrpcContext } from '@trpc12/tanstack-preact-query';
  *
  * export const { TrpcProvider, useTrpc } = createTrpcContext<AppRouter>();
  *
@@ -24,7 +24,7 @@ import {
   type VNode,
 } from 'preact';
 import { useContext, useEffect, useMemo, useState } from 'preact/hooks';
-import type { ChainTypes, RouterOf, TrpcClient } from 'trpcdev/client';
+import type { ChainTypes, RouterOf, TrpcClient } from '@trpc12/trpc/client';
 import {
   createTrpcQueryUtils,
   SubscriptionObserver,
@@ -35,9 +35,9 @@ import {
   type SourceLinks,
   type SourceRouter,
   type TrpcContextOptions,
-} from '@trpcdev/tanstack-query';
+} from '@trpc12/tanstack-query';
 
-export * from '@trpcdev/tanstack-query';
+export * from '@trpc12/tanstack-query';
 
 /**
  * Props of the `TrpcProvider` from {@link createTrpcContext}.

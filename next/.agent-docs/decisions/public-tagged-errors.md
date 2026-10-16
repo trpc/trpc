@@ -17,4 +17,4 @@
 - (agent) The class's statics (`code`, `status`, `message`, `data`) make it an error spec, so `.errors({ POST_NOT_FOUND: PostNotFound })` documents it in OpenAPI. Thrown instances are typed too, like declared errors' constructors.
 - Why: Effect code fails with tagged errors; marking the public ones avoids `catchTag` boilerplate without leaking internals like `SqlError` (query text, causes).
 - Lost: passing every tagged error through without marking it.
-- Lives in: `packages/trpcdev/src/internal/error.ts` (`TrpcError.Tagged`, `taggedSpec`), `src/server/execute.ts`; `test/integration/tagged-errors.test.ts`.
+- Lives in: `packages/trpc/src/internal/error.ts` (`TrpcError.Tagged`, `taggedSpec`), `src/server/execute.ts`; `test/integration/tagged-errors.test.ts`.

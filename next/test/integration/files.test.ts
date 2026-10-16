@@ -5,9 +5,9 @@ import {
   safe,
   wsLink,
   routerType,
-} from 'trpcdev/client';
-import { initTrpc } from 'trpcdev/server';
-import { createSerializer, type Frame } from 'trpcdev/serializer';
+} from '@trpc12/trpc/client';
+import { initTrpc } from '@trpc12/trpc/server';
+import { createSerializer, type Frame } from '@trpc12/trpc/serializer';
 import { Effect, Stream } from 'effect';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';

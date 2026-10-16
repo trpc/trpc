@@ -26,7 +26,7 @@ t.procedure
 A query or mutation can return an async generator or an Effect `Stream`. To validate each item, wrap the item schema in `stream()`; a second schema validates the generator's return value, which the client gets as the iterator's final value:
 
 ```ts
-import { stream } from 'trpcdev/server';
+import { stream } from '@trpc12/trpc/server';
 
 const chat = t.procedure
   .output(stream(Token, Summary))
@@ -167,10 +167,10 @@ const withDb = middleware<{ ctx: { db?: Db } }>()(async ({ ctx, next }) =>
 );
 ```
 
-`trpcdev/middleware` has lifecycle helpers, each an ordinary middleware:
+`@trpc12/trpc/middleware` has lifecycle helpers, each an ordinary middleware:
 
 ```ts
-import { onError, onFinish } from 'trpcdev/middleware';
+import { onError, onFinish } from '@trpc12/trpc/middleware';
 
 const observed = t.procedure
   .use(onFinish((result, { path }) => metrics.count(path, result.ok)))
@@ -181,7 +181,7 @@ const observed = t.procedure
 
 ```ts
 import { RateLimiter } from 'effect/persistence';
-import { rateLimit } from 'trpcdev/middleware';
+import { rateLimit } from '@trpc12/trpc/middleware';
 
 const login = t.procedure
   .use(rateLimit<{ ctx: { ip: string } }>({
@@ -203,8 +203,8 @@ On the client, `retryLink({ retry, delayMs })` gets the error, so it can wait `e
 
 ```ts
 import { Persistence } from 'effect/persistence';
-import { experimental_durableLink, httpLink } from 'trpcdev/client';
-import { experimental_durable } from 'trpcdev/middleware';
+import { experimental_durableLink, httpLink } from '@trpc12/trpc/client';
+import { experimental_durable } from '@trpc12/trpc/middleware';
 
 const checkout = t.procedure
   .input(Cart)
@@ -265,7 +265,7 @@ Meta keys a root doesn't declare are a type error, and a later `.meta()` replace
 `response` sets the call's headers and status; Effect code uses the `Response` service over the same handle:
 
 ```ts
-import { Response } from 'trpcdev/server';
+import { Response } from '@trpc12/trpc/server';
 
 t.procedure.mutation(({ response }) => {
   response.headers.append('set-cookie', 'session=…; HttpOnly');
@@ -363,7 +363,7 @@ Serverless runtimes may freeze the instance once the response is sent. There, ha
 ## Calling procedures on the server
 
 ```ts
-import { call, createRouterClient } from 'trpcdev/server';
+import { call, createRouterClient } from '@trpc12/trpc/server';
 
 const caller = createRouterClient(appRouter, { ctx: { user } });
 await caller.post.byId.query({ id: '1' });

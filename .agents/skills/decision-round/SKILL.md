@@ -32,7 +32,7 @@ Send each item as its own short message, then stop and wait for the reply:
 Decision 3 of 12 · 2 answered · 0 skipped
 Q12.1 Platform core: own web core or effect/http?   [platforms-through-effect-layers.md]
 
-Today: trpcdev serves on Effect's HttpServer through layers (built, agent's call).
+Today: @trpc12/trpc serves on Effect's HttpServer through layers (built, agent's call).
 A) Keep effect/http as the core (current, recommended: Effect-native, already built)
 B) Own web-standard core, with Effect layers only for platforms
 C) Something else, in your words

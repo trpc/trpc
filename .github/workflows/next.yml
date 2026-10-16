@@ -57,7 +57,7 @@ jobs:
           REDIS_URL: redis://127.0.0.1:6379
 
   effect-latest:
-    # `trpcdev` depends on `effect@^4`; users get the latest 4.x, the lockfile pins one.
+    # `@trpc12/trpc` depends on `effect@^4`; users get the latest 4.x, the lockfile pins one.
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

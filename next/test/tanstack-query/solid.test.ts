@@ -10,7 +10,7 @@ import {
 import {
   createTrpcContext,
   useSubscription,
-} from '@trpcdev/tanstack-solid-query';
+} from '@trpc12/tanstack-solid-query';
 import { createSignal, type JSX } from 'solid-js';
 import h from 'solid-js/h';
 import { isServer, render } from 'solid-js/web';

@@ -167,7 +167,7 @@ The [brief](../decisions/brief.md) says: "a generic builder becomes the basis of
 
   ```ts
   // E-A, library author: register a terminal (augmentation form; #6027 also tried a module registry)
-  declare module 'trpcdev/server' {
+  declare module '@trpc12/trpc/server' {
     interface BuilderModules<TDef extends BuilderDef> {
       action: (resolver: Resolver<TDef>) => ActionProcedure<TDef>; // names TBD
     }
@@ -195,20 +195,20 @@ The [brief](../decisions/brief.md) says: "a generic builder becomes the basis of
   export const getPost = callable(byId, { ctx: createContext });
   ```
 
-- **E-C — Standalone middleware/builder package** (`@trpcdev/procedure`?) that tRPC itself builds on. This goes against the [brief](../decisions/brief.md)'s single `trpcdev` package, unless it is only a subpath (`trpcdev/procedure`).
+- **E-C — Standalone middleware/builder package** (`@trpc12/procedure`?) that tRPC itself builds on. This goes against the [brief](../decisions/brief.md)'s single `@trpc12/trpc` package, unless it is only a subpath (`@trpc12/trpc/procedure`).
   - Reuse outside tRPC.
   - ❌ Another package to version; benefit unclear without concrete consumers.
 
   ```ts
   // E-C: a non-RPC library (for example RSC-only) builds on the core directly
-  import { createBuilder } from 'trpcdev/procedure'; // or @trpcdev/procedure; name TBD
+  import { createBuilder } from '@trpc12/trpc/procedure'; // or @trpc12/procedure; name TBD
 
   const base = createBuilder<{ ctx: { user: User } }>().use(authed);
   export const createPost = base
     .input(NewPost)
     .handler(async ({ ctx, input }) => db.post.create(ctx.user, input));
 
-  // trpcdev/server's t.procedure is the same core plus query/mutation/subscription terminals
+  // @trpc12/trpc/server's t.procedure is the same core plus query/mutation/subscription terminals
   ```
 
 ### (d) Data model: contract versus implementation

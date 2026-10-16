@@ -18,8 +18,8 @@ import {
   createTrpcQueryUtils,
   hydrationOptions,
   injectSubscription,
-} from '@trpcdev/tanstack-angular-query';
-import { createRouterClient } from 'trpcdev/server';
+} from '@trpc12/tanstack-angular-query';
+import { createRouterClient } from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
 import {
   appRouter,

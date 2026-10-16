@@ -3,7 +3,7 @@ import {
   SubscriptionObserver,
   type SubscriptionStatus,
   type TrpcSubscriptionOptions,
-} from '@trpcdev/tanstack-query';
+} from '@trpc12/tanstack-query';
 
 /**
  * What {@link createSubscription} returns. The fields are reactive getters,

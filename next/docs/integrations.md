@@ -55,7 +55,7 @@ AI SDK takes Standard Schema as a tool's `inputSchema`, so a tool reuses the pro
 
 ```ts
 import { tool } from 'ai';
-import { call } from 'trpcdev/server';
+import { call } from '@trpc12/trpc/server';
 
 const WeatherInput = z.object({ city: z.string() });
 const weatherProcedure = t.procedure

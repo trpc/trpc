@@ -7,9 +7,9 @@
  */
 import { Duration, Layer, type Cause, type Effect, type Stream } from 'effect';
 import { AsyncResult, Atom, Reactivity } from 'effect/reactivity';
-import type { AnyLink, RouterOf } from 'trpcdev/client';
-import { createEffectClient, type EffectClient } from 'trpcdev/effect';
-import { createSerializer } from 'trpcdev/serializer';
+import type { AnyLink, RouterOf } from '@trpc12/trpc/client';
+import { createEffectClient, type EffectClient } from '@trpc12/trpc/effect';
+import { createSerializer } from '@trpc12/trpc/serializer';
 
 /** Keys use danSON, so inputs with `Date`s and `Map`s key apart. */
 const keySerializer = createSerializer();

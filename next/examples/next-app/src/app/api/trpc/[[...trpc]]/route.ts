@@ -1,4 +1,4 @@
-import { createFetchHandler } from 'trpcdev/server';
+import { createFetchHandler } from '@trpc12/trpc/server';
 import { appRouter } from '../../../../server/router.ts';
 import { serializer } from '../../../../trpc/serializer.ts';
 

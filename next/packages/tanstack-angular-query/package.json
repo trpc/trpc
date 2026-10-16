@@ -1,5 +1,5 @@
 {
-  "name": "@trpcdev/tanstack-angular-query",
+  "name": "@trpc12/tanstack-angular-query",
   "version": "0.0.0",
   "private": true,
   "files": [
@@ -25,19 +25,19 @@
     "build": "node ../../tooling/pack/pack.ts"
   },
   "dependencies": {
-    "@trpcdev/tanstack-query": "workspace:*"
+    "@trpc12/tanstack-query": "workspace:*"
   },
   "devDependencies": {
     "@angular/core": "22.2.2",
     "@tanstack/angular-query-experimental": "5.104.1",
     "@tanstack/query-core": "5.104.1",
+    "@trpc12/trpc": "workspace:*",
     "rxjs": "7.8.2",
-    "trpcdev": "workspace:*",
     "typescript": "^7.0.2"
   },
   "peerDependencies": {
     "@angular/core": ">=19",
     "@tanstack/angular-query-experimental": "^5.104.0",
-    "trpcdev": "workspace:*"
+    "@trpc12/trpc": "workspace:*"
   }
 }

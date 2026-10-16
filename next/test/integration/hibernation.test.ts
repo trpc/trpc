@@ -5,9 +5,9 @@ import {
   experimental_createHibernatingWebSockets,
   hibernatingPublisher,
   type HibernatableWebSocket,
-} from 'trpcdev/cloudflare';
-import { createFetchHandler, initTrpc, Publisher } from 'trpcdev/server';
-import { jsonSerializer } from 'trpcdev/serializer';
+} from '@trpc12/trpc/cloudflare';
+import { createFetchHandler, initTrpc, Publisher } from '@trpc12/trpc/server';
+import { jsonSerializer } from '@trpc12/trpc/serializer';
 import { afterEach, expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 

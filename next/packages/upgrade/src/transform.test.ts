@@ -35,7 +35,7 @@ const caller = appRouter.createCaller({ user: null });
 `);
     expect(changed).toBe(true);
     expect(code).toMatchInlineSnapshot(`
-      "import { initTrpc, TrpcError, createRouterClient } from 'trpcdev/server';
+      "import { initTrpc, TrpcError, createRouterClient } from '@trpc12/trpc/server';
       import type { Context } from './context';
 
       const t = initTrpc<{ ctx: Context; meta: { auth: boolean } }>();
@@ -61,7 +61,7 @@ const t = init.create();
 type Code = TRPC_ERROR_CODE_KEY;
 `).code,
     ).toMatchInlineSnapshot(`
-      "import { initTrpc as init, type BuiltinErrorCode } from 'trpcdev/server';
+      "import { initTrpc as init, type BuiltinErrorCode } from '@trpc12/trpc/server';
       const t = init();
       type Code = BuiltinErrorCode;
       "
@@ -102,7 +102,7 @@ export default {
 };
 `;
     expect(upgrade(source).code).toMatchInlineSnapshot(`
-      "import { createFetchHandler } from 'trpcdev/server';
+      "import { createFetchHandler } from '@trpc12/trpc/server';
       import { appRouter } from './router';
 
       export default {
@@ -131,7 +131,7 @@ import { something } from '@trpc/unknown';
     ).toMatchInlineSnapshot(`
       [
         "1:1 observable() subscriptions: return an async generator or an Effect Stream",
-        "2:1 adapters: serve createFetchHandler() with serve() from trpcdev/http (docs/platforms.md)",
+        "2:1 adapters: serve createFetchHandler() with serve() from @trpc12/trpc/http (docs/platforms.md)",
         "3:1 @trpc/unknown: no v12 module, see docs/migrating-from-v11.md",
       ]
     `);
@@ -166,10 +166,10 @@ export const client = createTRPCClient<AppRouter>({
 export const isTrpcError = (e: unknown) => e instanceof TRPCClientError;
 `).code,
     ).toMatchInlineSnapshot(`
-      "import { createTrpcClient, httpLink, splitLink, TrpcError, routerType } from 'trpcdev/client';
+      "import { createTrpcClient, httpLink, splitLink, TrpcError, routerType } from '@trpc12/trpc/client';
       import superjson from 'superjson';
       import type { AppRouter } from './server';
-      import { createSyncSerializer } from 'trpcdev/serializer';
+      import { createSyncSerializer } from '@trpc12/trpc/serializer';
 
       const transformer = superjson;
 
@@ -196,7 +196,7 @@ export const authLink: TRPCLink<AppRouter> = () => ({ op, next }) => next(op);
 `),
     ).toMatchInlineSnapshot(`
       [
-        "1:15 TRPCLink: keep the link with fromV11Link(link) from trpcdev/interop, or rewrite it with link() as an Effect Stream function",
+        "1:15 TRPCLink: keep the link with fromV11Link(link) from @trpc12/trpc/interop, or rewrite it with link() as an Effect Stream function",
       ]
     `);
   });
@@ -207,7 +207,7 @@ export const authLink: TRPCLink<AppRouter> = () => ({ op, next }) => next(op);
 const client = createTRPCProxyClient<AppRouter>(options);
 `).code,
     ).toMatchInlineSnapshot(`
-      "import { createTrpcClient, routerType } from 'trpcdev/client';
+      "import { createTrpcClient, routerType } from '@trpc12/trpc/client';
       const client = createTrpcClient({ router: routerType<AppRouter>(), ...options });
       "
     `);
@@ -219,7 +219,7 @@ const client = createTRPCProxyClient<AppRouter>(options);
 const link = httpBatchLink(options);
 `).code,
     ).toMatchInlineSnapshot(`
-      "import { httpLink } from 'trpcdev/client';
+      "import { httpLink } from '@trpc12/trpc/client';
       const link = httpLink({ ...options, batch: true });
       "
     `);
@@ -239,7 +239,7 @@ export const { TRPCProvider, useTRPC, useTRPCClient } =
         'trpc.ts',
       ).code,
     ).toMatchInlineSnapshot(`
-      "import { createTrpcContext } from '@trpcdev/tanstack-react-query';
+      "import { createTrpcContext } from '@trpc12/tanstack-react-query';
       import type { AppRouter } from './server';
 
       export const { TrpcProvider, useTrpc, useTrpcClient } =
@@ -292,18 +292,18 @@ describe('promoted experimental_ names', () => {
     const promoted = { experimental_durableLink: 'durableLink' };
     expect(
       upgradeSource(
-        `import { experimental_durableLink, httpLink } from 'trpcdev/client';
-import { experimental_durableLink as retry } from 'trpcdev/client';
-export { experimental_durableLink } from 'trpcdev/client';
+        `import { experimental_durableLink, httpLink } from '@trpc12/trpc/client';
+import { experimental_durableLink as retry } from '@trpc12/trpc/client';
+export { experimental_durableLink } from '@trpc12/trpc/client';
 const links = [experimental_durableLink(), retry(), httpLink({ url })];
 `,
         'file.ts',
         { promoted },
       ).code,
     ).toMatchInlineSnapshot(`
-      "import { durableLink, httpLink } from 'trpcdev/client';
-      import { durableLink as retry } from 'trpcdev/client';
-      export { durableLink as experimental_durableLink } from 'trpcdev/client';
+      "import { durableLink, httpLink } from '@trpc12/trpc/client';
+      import { durableLink as retry } from '@trpc12/trpc/client';
+      export { durableLink as experimental_durableLink } from '@trpc12/trpc/client';
       const links = [durableLink(), retry(), httpLink({ url })];
       "
     `);
@@ -328,7 +328,7 @@ const o = { initTRPC: 1 };
 o.initTRPC;
 `).code,
     ).toMatchInlineSnapshot(`
-      "import { initTrpc } from 'trpcdev/server';
+      "import { initTrpc } from '@trpc12/trpc/server';
       const t = initTrpc();
       const o = { initTRPC: 1 };
       o.initTRPC;
@@ -343,7 +343,7 @@ export { initTRPC as init } from '@trpc/server';
 `).code,
     ).toMatchInlineSnapshot(`
       "export { useTrpc, toString } from './trpc';
-      export { initTrpc as init } from 'trpcdev/server';
+      export { initTrpc as init } from '@trpc12/trpc/server';
       "
     `);
   });
@@ -357,7 +357,7 @@ export { initTRPC as init } from '@trpc/server';
 
 describe('files and CLI', () => {
   const project = async () => {
-    const root = await mkdtemp(join(tmpdir(), 'trpcdev-upgrade-'));
+    const root = await mkdtemp(join(tmpdir(), 'trpc-upgrade-'));
     await mkdir(join(root, 'src'));
     await mkdir(join(root, 'node_modules', 'dep'), { recursive: true });
     await writeFile(
@@ -424,7 +424,7 @@ describe('files and CLI', () => {
       '1 file(s) upgraded, 0 step(s) by hand',
     );
     expect(await readFile(join(root, 'src', 'trpc.ts'), 'utf8')).toBe(
-      `import { initTrpc } from 'trpcdev/server';\nexport const t = initTrpc();\n`,
+      `import { initTrpc } from '@trpc12/trpc/server';\nexport const t = initTrpc();\n`,
     );
   });
 });

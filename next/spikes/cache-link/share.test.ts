@@ -1,7 +1,7 @@
 import { createElement, Suspense, use } from 'react';
 import { renderToString } from 'react-dom/server';
-import { createTrpcClient, localLink, routerType } from 'trpcdev/client';
-import { initTrpc } from 'trpcdev/server';
+import { createTrpcClient, localLink, routerType } from '@trpc12/trpc/client';
+import { initTrpc } from '@trpc12/trpc/server';
 import { expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 import {

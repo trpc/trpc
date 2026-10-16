@@ -139,7 +139,7 @@ createTRPCClient<AppRouter>({
 `createUntypedClient({ links }).request({ path, type, input })` remains as an advanced, stable API. Integrations use it.
 
 ```ts
-import { createUntypedClient, httpLink } from 'trpcdev/client';
+import { createUntypedClient, httpLink } from '@trpc12/trpc/client';
 
 const untyped = createUntypedClient({ links: [httpLink({ url })] });
 const post = await untyped.request({
@@ -173,6 +173,6 @@ const post = await untyped.request({
 - **Q16.2:** [x] yes, directly on the call options (no `context`) · [ ] no → [client](../decisions/client.md)
 - **Q16.3:** [x] yes, ship both · [ ] no → [client](../decisions/client.md)
 - **Q16.4:** [x] new codes (agent call, revisit later) · [ ] flag → [errors](../decisions/errors.md)
-- **Q16.5:** [ ] yes · [x] not in `trpcdev/client`; in `trpcdev/extend` → [entry-points](../decisions/entry-points.md)
+- **Q16.5:** [ ] yes · [x] not in `@trpc12/trpc/client`; in `@trpc12/trpc/extend` → [entry-points](../decisions/entry-points.md)
 - **Q16.6:** [x] array, with inferred link options · [ ] single link · [ ] both → [client](../decisions/client.md)
 - **Notes:**

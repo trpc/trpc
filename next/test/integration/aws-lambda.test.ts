@@ -7,8 +7,8 @@ import {
   type LambdaV1Result,
   type LambdaV2Result,
   type LambdaEdgeResult,
-} from 'trpcdev/aws-lambda';
-import { createFetchHandler, initTrpc } from 'trpcdev/server';
+} from '@trpc12/trpc/aws-lambda';
+import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 
 const t = initTrpc<{

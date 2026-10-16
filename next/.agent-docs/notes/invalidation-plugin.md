@@ -42,4 +42,4 @@ await client.post.rename.mutate({ id: '1', title: 'Hi' });
 
 ## Lean
 
-Keep it out of v1 as decided. If it comes, ship the server half as `invalidation()` and the link in `@trpcdev/tanstack-query`, after links can read response metadata, so the `fetch` wrapper and ref header go away.
+Keep it out of v1 as decided. If it comes, ship the server half as `invalidation()` and the link in `@trpc12/tanstack-query`, after links can read response metadata, so the `fetch` wrapper and ref header go away.

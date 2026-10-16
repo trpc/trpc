@@ -1,6 +1,6 @@
 import { Effect } from 'effect';
-import { experimental_durable } from 'trpcdev/middleware';
-import { initTrpc, Publisher } from 'trpcdev/server';
+import { experimental_durable } from '@trpc12/trpc/middleware';
+import { initTrpc, Publisher } from '@trpc12/trpc/server';
 import { z } from 'zod';
 
 export interface Message {

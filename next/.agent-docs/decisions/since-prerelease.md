@@ -4,4 +4,4 @@
 - Why: `@since 12.0.0` would claim a stable release that doesn't exist, and the real prerelease tells readers which one introduced an API.
 - Open: the tag (`alpha`, `next`, …) once releases start.
 - (agent) Lean on the tag: `alpha`, which every `@since` already uses (`12.0.0-alpha.0`); `next` stays the npm dist-tag name.
-- Lives in: `tooling/oxlint-plugin/jsdoc.ts` (the `trpcdev/jsdoc` rule checks `@since`).
+- Lives in: `tooling/oxlint-plugin/jsdoc.ts` (the `trpc/jsdoc` rule checks `@since`).

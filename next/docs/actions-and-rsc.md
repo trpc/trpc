@@ -4,11 +4,11 @@ Nothing here is Next-specific: it works with any React Server Components setup.
 
 ## Server Actions
 
-`experimental_createAction` from `trpcdev/actions` makes a factory that sets the ctx, layer and result mode once. `action(procedure)` is then an async function that takes the input or a form's `FormData`:
+`experimental_createAction` from `@trpc12/trpc/actions` makes a factory that sets the ctx, layer and result mode once. `action(procedure)` is then an async function that takes the input or a form's `FormData`:
 
 ```ts
 'use server';
-import { experimental_createAction } from 'trpcdev/actions';
+import { experimental_createAction } from '@trpc12/trpc/actions';
 
 const action = experimental_createAction({
   ctx: async () => ({ user: await auth() }),
@@ -79,12 +79,12 @@ const post = await callable(appRouter.post.byId)({ id: '1' });
 
 ## React Server Components
 
-`createTrpcRsc` from `@trpcdev/tanstack-react-query/rsc` gives server components query helpers over the router itself, a per-request query client, and a server `HydrationBoundary`:
+`createTrpcRsc` from `@trpc12/tanstack-react-query/rsc` gives server components query helpers over the router itself, a per-request query client, and a server `HydrationBoundary`:
 
 ```ts
 // trpc/server.ts
 import 'server-only';
-import { createTrpcRsc } from '@trpcdev/tanstack-react-query/rsc';
+import { createTrpcRsc } from '@trpc12/tanstack-react-query/rsc';
 
 export const { trpc, caller, getQueryClient, prefetch, HydrationBoundary } =
   createTrpcRsc({
@@ -112,11 +112,11 @@ export default async function Page({ params }) {
 
 ## Next.js data cache
 
-`cacheTags(key)` from `@trpcdev/tanstack-query` (re-exported by the framework packages) turns a query key into data-cache tags, broad to narrow: `trpc`, each path prefix (`trpc:post`, `trpc:post.byId`), then the path with its input (`trpc:post.byId:{"id":"1"}`, keys sorted). `revalidationTag(key)` is the one tag that covers a key, so revalidating works like `invalidateQueries`:
+`cacheTags(key)` from `@trpc12/tanstack-query` (re-exported by the framework packages) turns a query key into data-cache tags, broad to narrow: `trpc`, each path prefix (`trpc:post`, `trpc:post.byId`), then the path with its input (`trpc:post.byId:{"id":"1"}`, keys sorted). `revalidationTag(key)` is the one tag that covers a key, so revalidating works like `invalidateQueries`:
 
 ```ts
 import { cacheTag, revalidateTag } from 'next/cache';
-import { cacheTags, revalidationTag } from '@trpcdev/tanstack-react-query';
+import { cacheTags, revalidationTag } from '@trpc12/tanstack-react-query';
 
 async function getPost(id: string) {
   'use cache';

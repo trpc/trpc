@@ -55,7 +55,7 @@ const { matched, response } = await handler.handle(request, {
 });
 
 // Node
-import { toNodeListener } from 'trpcdev/server/node';
+import { toNodeListener } from '@trpc12/trpc/server/node';
 http.createServer(toNodeListener(handler, { prefix: '/trpc' })).listen(3000);
 ```
 
@@ -101,7 +101,7 @@ export default { fetch: handler };
 P-A for the core, plus `toHttpApp(handler)` / `HttpRouter` interop in `./effect` for Effect users.
 
 ```ts
-import { toHttpApp } from 'trpcdev/effect';
+import { toHttpApp } from '@trpc12/trpc/effect';
 
 const handler = createHandler({ router: appRouter, createContext }); // P-A, unchanged
 
@@ -148,7 +148,7 @@ app.all('/trpc/*', (c) => handler.fetch(c.req.raw, { prefix: '/trpc' }));
 Node and serverless adapters wrap the same handler:
 
 ```ts
-import { createServer, toNodeListener } from 'trpcdev/server/node';
+import { createServer, toNodeListener } from '@trpc12/trpc/server/node';
 
 app.use('/trpc', toNodeListener(handler)); // Express / Connect: plain middleware
 createServer(handler, { port: 3000 }); // standalone
@@ -182,7 +182,7 @@ const client = createTRPCClient<AppRouter>({
 });
 ```
 
-> **Build (2026-10-11):** `trpcdev` no longer imports `node:*`. `trpcdev/http` serves the fetch handler (and WebSocket upgrades) on Effect's `HttpServer`, and the app provides the platform layer, e.g. `NodeHttpServer.layer` from `@effect/platform-node`: [platforms-through-effect-layers](../decisions/platforms-through-effect-layers.md). Q12.1 is still for a human to answer.
+> **Build (2026-10-11):** `@trpc12/trpc` no longer imports `node:*`. `@trpc12/trpc/http` serves the fetch handler (and WebSocket upgrades) on Effect's `HttpServer`, and the app provides the platform layer, e.g. `NodeHttpServer.layer` from `@effect/platform-node`: [platforms-through-effect-layers](../decisions/platforms-through-effect-layers.md). Q12.1 is still for a human to answer.
 
 ## Recommendation
 

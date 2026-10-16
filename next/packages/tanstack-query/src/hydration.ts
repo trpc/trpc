@@ -3,12 +3,12 @@ import {
   type DehydrateOptions,
   type HydrateOptions,
 } from '@tanstack/query-core';
-import { getClientSerializer } from 'trpcdev/client';
+import { getClientSerializer } from '@trpc12/trpc/client';
 import {
   jsonSerializer,
   type AnySerializer,
   type SerializeReturn,
-} from 'trpcdev/serializer';
+} from '@trpc12/trpc/serializer';
 
 /**
  * Options for {@link hydrationOptions}.

@@ -1,0 +1,170 @@
+{
+  "name": "@trpc12/trpc",
+  "version": "0.0.0",
+  "private": true,
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "exports": {
+    "./server": {
+      "types": "./src/server/index.ts",
+      "default": "./src/server/index.ts"
+    },
+    "./middleware": {
+      "types": "./src/middleware/index.ts",
+      "default": "./src/middleware/index.ts"
+    },
+    "./client": {
+      "types": "./src/client/index.ts",
+      "default": "./src/client/index.ts"
+    },
+    "./actions": {
+      "types": "./src/actions/index.ts",
+      "default": "./src/actions/index.ts"
+    },
+    "./contract": {
+      "types": "./src/contract/index.ts",
+      "default": "./src/contract/index.ts"
+    },
+    "./serializer": {
+      "types": "./src/serializer/index.ts",
+      "default": "./src/serializer/index.ts"
+    },
+    "./openapi": {
+      "types": "./src/openapi/index.ts",
+      "default": "./src/openapi/index.ts"
+    },
+    "./openapi/typescript": {
+      "types": "./src/openapi/typescript.ts",
+      "default": "./src/openapi/typescript.ts"
+    },
+    "./interop": {
+      "types": "./src/interop/index.ts",
+      "default": "./src/interop/index.ts"
+    },
+    "./effect": {
+      "types": "./src/effect/index.ts",
+      "default": "./src/effect/index.ts"
+    },
+    "./http": {
+      "types": "./src/http/index.ts",
+      "default": "./src/http/index.ts"
+    },
+    "./cloudflare": {
+      "types": "./src/cloudflare/index.ts",
+      "default": "./src/cloudflare/index.ts"
+    },
+    "./aws-lambda": {
+      "types": "./src/aws-lambda/index.ts",
+      "default": "./src/aws-lambda/index.ts"
+    },
+    "./socket": {
+      "types": "./src/socket/index.ts",
+      "default": "./src/socket/index.ts"
+    },
+    "./extend": {
+      "types": "./src/extend/index.ts",
+      "default": "./src/extend/index.ts"
+    },
+    "./internal": {
+      "types": "./src/internal/index.ts",
+      "default": "./src/internal/index.ts"
+    },
+    "./internal/testing": {
+      "types": "./src/internal/testing/index.ts",
+      "default": "./src/internal/testing/index.ts"
+    }
+  },
+  "publishConfig": {
+    "exports": {
+      "./server": {
+        "types": "./dist/server/index.d.ts",
+        "default": "./dist/server/index.js"
+      },
+      "./middleware": {
+        "types": "./dist/middleware/index.d.ts",
+        "default": "./dist/middleware/index.js"
+      },
+      "./client": {
+        "types": "./dist/client/index.d.ts",
+        "default": "./dist/client/index.js"
+      },
+      "./actions": {
+        "types": "./dist/actions/index.d.ts",
+        "default": "./dist/actions/index.js"
+      },
+      "./contract": {
+        "types": "./dist/contract/index.d.ts",
+        "default": "./dist/contract/index.js"
+      },
+      "./serializer": {
+        "types": "./dist/serializer/index.d.ts",
+        "default": "./dist/serializer/index.js"
+      },
+      "./openapi": {
+        "types": "./dist/openapi/index.d.ts",
+        "default": "./dist/openapi/index.js"
+      },
+      "./openapi/typescript": {
+        "types": "./dist/openapi/typescript.d.ts",
+        "default": "./dist/openapi/typescript.js"
+      },
+      "./interop": {
+        "types": "./dist/interop/index.d.ts",
+        "default": "./dist/interop/index.js"
+      },
+      "./effect": {
+        "types": "./dist/effect/index.d.ts",
+        "default": "./dist/effect/index.js"
+      },
+      "./http": {
+        "types": "./dist/http/index.d.ts",
+        "default": "./dist/http/index.js"
+      },
+      "./cloudflare": {
+        "types": "./dist/cloudflare/index.d.ts",
+        "default": "./dist/cloudflare/index.js"
+      },
+      "./aws-lambda": {
+        "types": "./dist/aws-lambda/index.d.ts",
+        "default": "./dist/aws-lambda/index.js"
+      },
+      "./socket": {
+        "types": "./dist/socket/index.d.ts",
+        "default": "./dist/socket/index.js"
+      },
+      "./extend": {
+        "types": "./dist/extend/index.d.ts",
+        "default": "./dist/extend/index.js"
+      },
+      "./internal": {
+        "types": "./dist/internal/index.d.ts",
+        "default": "./dist/internal/index.js"
+      },
+      "./internal/testing": {
+        "types": "./dist/internal/testing/index.d.ts",
+        "default": "./dist/internal/testing/index.js"
+      }
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build": "node ../../tooling/pack/pack.ts"
+  },
+  "dependencies": {
+    "effect": "^4.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite-plus": "1.1.0"
+  },
+  "peerDependencies": {
+    "typescript": "^7.0.2"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  }
+}

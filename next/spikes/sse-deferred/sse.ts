@@ -2,7 +2,7 @@
  * Spike (decision streamed-outputs-are-jsonl): a streamed query output, with
  * deferred values at any depth, framed as SSE instead of JSONL.
  *
- * The frames are trpcdev's async format (danSON's: a head, then `[index,
+ * The frames are @trpc12/trpc's async format (danSON's: a head, then `[index,
  * status, value]` chunks; plain JSON uses the same frames), one SSE event
  * each, with the frame's position as its `id`. `devalue-async` writes the same
  * shape of lines, so the framing is the same for it.
@@ -13,7 +13,7 @@
  * live.
  */
 import { Effect, Option, PubSub, Semaphore, Stream } from 'effect';
-import type { AnySerializer, Frame } from 'trpcdev/serializer';
+import type { AnySerializer, Frame } from '@trpc12/trpc/serializer';
 
 /** A value's frames: the head, then each chunk as its deferred parts settle. */
 export const framesOf = (

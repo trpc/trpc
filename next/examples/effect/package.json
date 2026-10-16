@@ -8,8 +8,8 @@
   },
   "dependencies": {
     "@effect/platform-node": "4.0.2",
-    "effect": "4.0.2",
-    "trpcdev": "workspace:*"
+    "@trpc12/trpc": "workspace:*",
+    "effect": "4.0.2"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

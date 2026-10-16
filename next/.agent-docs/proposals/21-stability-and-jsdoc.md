@@ -54,7 +54,7 @@ The [brief](../decisions/brief.md) asks for two things:
    */
   export function localLink(opts: LocalLinkOptions): TRPCLink { … }
 
-  import { localLink } from 'trpcdev/client';
+  import { localLink } from '@trpc12/trpc/client';
   ```
 
 - **ST-B — Name prefixes** (v11).
@@ -68,10 +68,10 @@ The [brief](../decisions/brief.md) asks for two things:
    */
   export function unstable_localLink(opts: LocalLinkOptions): TRPCLink { … }
 
-  import { unstable_localLink } from 'trpcdev/client';
+  import { unstable_localLink } from '@trpc12/trpc/client';
   ```
 
-- **ST-C — Entry-point tiers.** Experimental APIs only live under `…/experimental` (for example `trpcdev/server/experimental`), so the import path shows the tier.
+- **ST-C — Entry-point tiers.** Experimental APIs only live under `…/experimental` (for example `@trpc12/trpc/server/experimental`), so the import path shows the tier.
 
   ```ts
   // ST-C: src/client/experimental.ts, the only place localLink is exported from
@@ -82,7 +82,7 @@ The [brief](../decisions/brief.md) asks for two things:
    */
   export function localLink(opts: LocalLinkOptions): TRPCLink { … }
 
-  import { localLink } from 'trpcdev/client/experimental';
+  import { localLink } from '@trpc12/trpc/client/experimental';
   ```
 
 - **ST-A + ST-C:** both. The entry point gives a coarse signal, the JSDoc gives precision.
@@ -107,8 +107,8 @@ The [brief](../decisions/brief.md) asks for two things:
 2. **No `unstable_` / `experimental_` name prefixes.** Experimental APIs live in `/experimental` entry points. Graduating an API moves its export, while the old path keeps re-exporting it with `@deprecated` for one minor version.
 
    ```ts
-   // trpcdev/client/experimental, for one minor after localLink graduates to trpcdev/client
-   /** @deprecated Import `localLink` from `trpcdev/client`. */
+   // @trpc12/trpc/client/experimental, for one minor after localLink graduates to @trpc12/trpc/client
+   /** @deprecated Import `localLink` from `@trpc12/trpc/client`. */
    export { localLink } from './links/localLink.ts';
    ```
 
@@ -117,7 +117,7 @@ The [brief](../decisions/brief.md) asks for two things:
    ```ts
    // src/internal/index.ts
    /**
-    * Internal glue (`trpcdev/internal`) for first-party `@trpcdev/*` packages. No semver guarantees.
+    * Internal glue (`@trpc12/trpc/internal`) for first-party `@trpc12/*` packages. No semver guarantees.
     *
     * @internal
     */
@@ -146,7 +146,7 @@ The [brief](../decisions/brief.md) asks for two things:
 
 - **Q21.1:** [ ] yes · [ ] prefixes · [ ] other
 - **Q21.2:** `@since` = the v12 prerelease version (not `12.0.0`) → [since-prerelease](../decisions/since-prerelease.md)
-- **Q21.3:** [x] yes, only for portability types; extensions use `trpcdev/extend` · [ ] no → [entry-points](../decisions/entry-points.md)
+- **Q21.3:** [x] yes, only for portability types; extensions use `@trpc12/trpc/extend` · [ ] no → [entry-points](../decisions/entry-points.md)
 - **Q21.4:** [x] yes (oxlint plugin) · [ ] no → [acronym-casing](../decisions/acronym-casing.md)
 - **Q21.5:** [ ] yes · [ ] no · [x] later; hand-written docs in `next/docs/` for now → [repo-and-tooling](../decisions/repo-and-tooling.md)
 - **Notes:**

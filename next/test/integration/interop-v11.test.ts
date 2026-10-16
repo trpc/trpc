@@ -18,14 +18,14 @@ import { initTRPC } from '@trpc/server';
 import { Effect, Exit, Layer, Scope, Stream } from 'effect';
 import superjson from 'superjson';
 import { EventSource } from 'undici';
-import { serve } from 'trpcdev/http';
-import { createTrpcClient, routerType } from 'trpcdev/client';
+import { serve } from '@trpc12/trpc/http';
+import { createTrpcClient, routerType } from '@trpc12/trpc/client';
 import {
   createV11Handler,
   fromV11Link,
   type V11HandlerOptions,
-} from 'trpcdev/interop';
-import { error, initTrpc, tracked } from 'trpcdev/server';
+} from '@trpc12/trpc/interop';
+import { error, initTrpc, tracked } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 

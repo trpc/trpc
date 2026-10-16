@@ -3,10 +3,10 @@ import {
   QueryClientProvider,
   useQuery,
 } from '@tanstack/react-query';
-import { hydrationOptions } from '@trpcdev/tanstack-query';
-import { createTrpcRsc } from '@trpcdev/tanstack-react-query/rsc';
+import { hydrationOptions } from '@trpc12/tanstack-query';
+import { createTrpcRsc } from '@trpc12/tanstack-react-query/rsc';
 import { renderToString } from 'react-dom/server';
-import { initTrpc } from 'trpcdev/server';
+import { initTrpc } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import {
   appRouter,

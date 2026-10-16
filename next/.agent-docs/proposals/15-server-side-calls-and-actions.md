@@ -114,11 +114,11 @@ const result = await createPost({ title }); // { data: Post } | { error: TypedEr
 
 ### (d) Framework specifics
 
-- Next.js: `isNextControlFlowError` and a `headers()`-aware context helper. They could live in a tiny `@trpcdev/next` package or in documentation (Q15.4).
+- Next.js: `isNextControlFlowError` and a `headers()`-aware context helper. They could live in a tiny `@trpc12/next` package or in documentation (Q15.4).
 
   ```ts
   // Q15.4 package
-  import { isNextControlFlowError } from '@trpcdev/next';
+  import { isNextControlFlowError } from '@trpc12/next';
 
   // Q15.4 docs: a snippet users copy (digest check as in v11's rethrowNextErrors)
   const isNextControlFlowError = (error: unknown) =>
@@ -143,12 +143,12 @@ const result = await createPost({ title }); // { data: Post } | { error: TypedEr
 - **Q15.1** Router client shape: direct calls (SC-A) or remote-client shape (SC-B)?
 - **Q15.2** `callable()`/`action()` wrappers instead of builder methods?
 - **Q15.3** Action result shape: `{ data } | { error }`, a tuple matching `safe()`, or throw?
-- **Q15.4** Next.js helpers: a `@trpcdev/next` package, or documented snippets?
+- **Q15.4** Next.js helpers: a `@trpc12/next` package, or documented snippets?
 
 ## Decision
 
 - **Q15.1:** [x] both: SC-A and `localLink` → [server-side-calls](../decisions/server-side-calls.md)
 - **Q15.2:** [x] wrappers · [ ] builder methods → [actions-and-rsc](../decisions/actions-and-rsc.md)
 - **Q15.3:** [x] configurable on a `createAction({ ctx, result })` factory, `safe()`-style by default → [actions-and-rsc](../decisions/actions-and-rsc.md)
-- **Q15.4:** [x] neither: `trpcdev/actions` plus `@trpcdev/tanstack-react-query/rsc` → [actions-and-rsc](../decisions/actions-and-rsc.md)
+- **Q15.4:** [x] neither: `@trpc12/trpc/actions` plus `@trpc12/tanstack-react-query/rsc` → [actions-and-rsc](../decisions/actions-and-rsc.md)
 - **Notes:**

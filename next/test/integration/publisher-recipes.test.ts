@@ -4,15 +4,15 @@ import { NodeRedis } from '@effect/platform-node';
 import { Effect, Layer, Redacted, Stream } from 'effect';
 import type { SqlError } from 'effect/sql/SqlError';
 import { Redis } from 'effect/persistence';
-import { createTrpcClient, httpLink, routerType } from 'trpcdev/client';
-import { createSerializer } from 'trpcdev/serializer';
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import { createSerializer } from '@trpc12/trpc/serializer';
 import {
   initTrpc,
   Publisher,
   tracked,
   type PublisherEvents,
   type PublisherShape,
-} from 'trpcdev/server';
+} from '@trpc12/trpc/server';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';

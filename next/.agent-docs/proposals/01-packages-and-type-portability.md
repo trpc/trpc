@@ -12,7 +12,7 @@ The [brief](../decisions/brief.md) already sets the package layout:
 
 This proposal works out the details:
 
-- The subpath layout of `trpcdev`.
+- The subpath layout of `@trpc12/trpc`.
 - How integration packages are named.
 - How `effect` is depended on.
 - The portability rules, plus a CI fixture, that make sure our types never trigger TS2742 ("The inferred type of X cannot be named without a reference to Y. This is likely not portable.").
@@ -41,10 +41,10 @@ This proposal works out the details:
 
 ## Proposed layout
 
-`trpcdev` is unscoped and not yet taken on npm (checked 2026-10-09). Its only runtime dependency is `effect`.
+`@trpc12/trpc` is unscoped and not yet taken on npm (checked 2026-10-09). Its only runtime dependency is `effect`.
 
 ```text
-trpcdev
+@trpc12/trpc
   ./server          initTRPC, TRPCError, procedure/router/middleware APIs, createRouterClient, call, callable, action
   ./server/fetch    createHandler → { fetch, handle }   (could fold into ./server, see Q1.2)
   ./server/node     toNodeListener, createServer      (node:* built-ins only)
@@ -58,9 +58,9 @@ trpcdev
   ./testing         in-memory server/client pairs and other test helpers
   ./internal        no-semver glue for first-party integration packages (21)
 
-@trpcdev/tanstack-query   peer: @tanstack/query-core, trpcdev    (19)
-@trpcdev/react            peer: react, trpcdev                   (20, only if pursued)
-@trpcdev/next             peer: next, trpcdev                    (15, only if needed)
+@trpc12/tanstack-query   peer: @tanstack/query-core, @trpc12/trpc   (19)
+@trpc12/react            peer: react, @trpc12/trpc                  (20, only if pursued)
+@trpc12/next             peer: next, @trpc12/trpc                   (15, only if needed)
 ```
 
 - ✅ One install and one version, so server/client skew is impossible. Every type lives in one package, which removes most TS2742 cases.
@@ -72,29 +72,29 @@ Imports under each Q1.2 granularity:
 
 ```ts
 // Q1.2 as proposed
-import { initTRPC, TRPCError } from 'trpcdev/server';
-import { createHandler } from 'trpcdev/server/fetch';
-import { toNodeListener } from 'trpcdev/server/node';
-import { cors, bodyLimit } from 'trpcdev/server/plugins';
-import { createTRPCClient, httpLink } from 'trpcdev/client';
+import { initTRPC, TRPCError } from '@trpc12/trpc/server';
+import { createHandler } from '@trpc12/trpc/server/fetch';
+import { toNodeListener } from '@trpc12/trpc/server/node';
+import { cors, bodyLimit } from '@trpc12/trpc/server/plugins';
+import { createTRPCClient, httpLink } from '@trpc12/trpc/client';
 
 // Q1.2 flatter: the fetch handler is part of ./server; platforms are top-level
-import { initTRPC, TRPCError, createHandler } from 'trpcdev/server';
-import { toNodeListener } from 'trpcdev/node';
-import { createTRPCClient, httpLink } from 'trpcdev/client';
+import { initTRPC, TRPCError, createHandler } from '@trpc12/trpc/server';
+import { toNodeListener } from '@trpc12/trpc/node';
+import { createTRPCClient, httpLink } from '@trpc12/trpc/client';
 ```
 
 Integration packages under each Q1.3 naming:
 
 ```ts
-import { createTRPCQueryUtils } from '@trpcdev/tanstack-query'; // scoped (recommended)
-import { createTRPCQueryUtils } from 'trpcdev-tanstack-query'; // unscoped
+import { createTRPCQueryUtils } from '@trpc12/tanstack-query'; // scoped (recommended)
+import { createTRPCQueryUtils } from 'trpc12-tanstack-query'; // unscoped
 ```
 
 `./testing` (Q1.4), with the helpers named in `approach.md`:
 
 ```ts
-import { createTestServer, createTestClient } from 'trpcdev/testing';
+import { createTestServer, createTestClient } from '@trpc12/trpc/testing';
 
 await using server = createTestServer({ router: appRouter, createContext }); // option shapes TBD
 const client = createTestClient<AppRouter>({ server });
@@ -104,7 +104,7 @@ expect(await client.post.byId.query({ id: '1' })).toEqual(post);
 ## Portability rules
 
 1. **Every type that is reachable from a public signature is exported from a public entry point.** No exceptions for "internal" helper types. They go in `./internal` with a stability tag (21), but they are exported.
-2. Integration packages declare `trpcdev` as a **peer dependency** and re-export nothing from it.
+2. Integration packages declare `@trpc12/trpc` as a **peer dependency** and re-export nothing from it.
 3. Client-facing generics accept **contract types**, not full routers. A router type can be reduced to its client-visible shape with `inferContract<typeof appRouter>`, which strips `ctx`, middleware and services (09). This also shrinks emitted `.d.ts` files and speeds up type checking.
 4. We author our own source with **`isolatedDeclarations: true`**. Exported functions must have explicit return types, which forces us to name and export every type. It also makes `.d.ts` emit fast and parallelisable (tsdown/oxc).
 5. Either do not bundle declarations across entry points, or verify that each shared chunk's types are re-exported from a public entry.
@@ -113,7 +113,7 @@ expect(await client.post.byId.query({ id: '1' })).toEqual(post);
 Rules 1 and 4 in library source:
 
 ```ts
-// ✅ explicit return type; TRPCClient is exported from trpcdev/client
+// ✅ explicit return type; TRPCClient is exported from @trpc12/trpc/client
 export function createTRPCClient<TRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
 ): TRPCClient<TRouter> {
@@ -132,18 +132,18 @@ export function createTRPCClient<TRouter>(
 Rule 2 in an integration package:
 
 ```ts
-// @trpcdev/tanstack-query/src/index.ts
-import type { TRPCClient } from 'trpcdev/client'; // ✅ use the peer's types
+// @trpc12/tanstack-query/src/index.ts
+import type { TRPCClient } from '@trpc12/trpc/client'; // ✅ use the peer's types
 export { createTRPCQueryUtils } from './createTRPCQueryUtils';
-// ❌ export type { TRPCClient } from 'trpcdev/client';
+// ❌ export type { TRPCClient } from '@trpc12/trpc/client';
 ```
 
 ```jsonc
-// @trpcdev/tanstack-query/package.json
+// @trpc12/tanstack-query/package.json
 {
   "peerDependencies": {
     "@tanstack/query-core": "^5",
-    "trpcdev": "workspace:^",
+    "@trpc12/trpc": "workspace:^",
   },
 }
 ```
@@ -156,8 +156,8 @@ export const appRouter = { post: { byId, create } };
 export type AppContract = inferContract<typeof appRouter>; // no ctx, middleware or services
 
 // test/portability/ui/src/index.ts (declaration: true; TS2742 fails the build)
-import { createTRPCClient, httpLink } from 'trpcdev/client';
-import { createTRPCQueryUtils } from '@trpcdev/tanstack-query';
+import { createTRPCClient, httpLink } from '@trpc12/trpc/client';
+import { createTRPCQueryUtils } from '@trpc12/tanstack-query';
 import type { AppContract } from 'portability-server'; // fixture package name TBD
 
 export const client = createTRPCClient<AppContract>({
@@ -172,29 +172,29 @@ export const utils = createTRPCQueryUtils({ client });
 - **Recommendation:** `effect` is a **peer dependency** (`^4`). npm, pnpm and Bun auto-install peers, so non-Effect users still get it for free. This mirrors how Effect's own `@effect/platform-*` packages depend on `effect`.
 
 ```jsonc
-// trpcdev/package.json, Q1.1 peer dependency (recommended)
+// @trpc12/trpc/package.json, Q1.1 peer dependency (recommended)
 { "peerDependencies": { "effect": "^4" } }
 ```
 
 ```jsonc
-// trpcdev/package.json, Q1.1 regular dependency
+// @trpc12/trpc/package.json, Q1.1 regular dependency
 { "dependencies": { "effect": "^4" } }
 ```
 
 ## Recommendation
 
 - The layout above.
-- Integrations as `@trpcdev/<name>`.
+- Integrations as `@trpc12/<name>`.
 - `effect` as a peer dependency.
 - The portability rules, including the CI fixture and `isolatedDeclarations`.
-- Adapters stay subpaths of `trpcdev`, because they only use platform built-ins (12).
+- Adapters stay subpaths of `@trpc12/trpc`, because they only use platform built-ins (12).
 - `./testing` ships first-class test helpers. The [brief](../decisions/brief.md) says packages can export things that exist only for testing.
 
 ## Questions
 
 - **Q1.1** `effect` as a peer dependency (recommended) or a regular dependency?
 - **Q1.2** Subpath granularity: as above (`./server/fetch`, `./server/node`, …), or flatter (`./server` includes the fetch handler; `./node`, `./ws` at the top level)?
-- **Q1.3** Integration package naming: `@trpcdev/tanstack-query` (recommended), or unscoped `trpcdev-tanstack-query`?
+- **Q1.3** Integration package naming: `@trpc12/tanstack-query` (recommended), or unscoped `trpc12-tanstack-query`?
 - **Q1.4** Ship `./testing` helpers publicly?
 - **Q1.5** Adopt `isolatedDeclarations` in our own source?
 
@@ -204,7 +204,7 @@ export const utils = createTRPCQueryUtils({ client });
 
 - **Q1.1:** [ ] peer dependency · [x] dependency (`^4.0.0`) → [effect-dependency](../decisions/effect-dependency.md)
 - **Q1.2:** [ ] as proposed · [ ] flatter · other: `____`
-- **Q1.3:** [x] `@trpcdev/*` · [ ] unscoped → [integration-packages](../decisions/integration-packages.md)
+- **Q1.3:** [x] `@trpc12/*` · [ ] unscoped → [integration-packages](../decisions/integration-packages.md)
 - **Q1.4:** [ ] yes · [ ] no
 - **Q1.5:** [ ] yes · [ ] no
 - **Notes:**

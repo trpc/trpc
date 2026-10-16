@@ -1,7 +1,7 @@
 /**
- * Serve contract-first procedures from NestJS controllers (`@trpcdev/nest`).
+ * Serve contract-first procedures from NestJS controllers (`@trpc12/nest`).
  * `@Implement(contract)` routes a controller method by the contract's REST
- * mapping, and the procedure it returns runs on `trpcdev/openapi`'s handler,
+ * mapping, and the procedure it returns runs on `@trpc12/trpc/openapi`'s handler,
  * so the controller's injected services reach the resolver through `this`.
  *
  * @example
@@ -47,8 +47,8 @@ import {
 import { Effect, Exit, Scope, type Layer } from 'effect';
 import { HttpServerRequest } from 'effect/http';
 import { mergeMap, type Observable } from 'rxjs';
-import { toContract } from 'trpcdev/contract';
-import { toHttpEffect } from 'trpcdev/http';
+import { toContract } from '@trpc12/trpc/contract';
+import { toHttpEffect } from '@trpc12/trpc/http';
 import {
   createOpenApiHandler,
   resolveRoute,
@@ -57,8 +57,8 @@ import {
   type HttpMethod,
   type OpenApiCall,
   type OpenApiHandler,
-} from 'trpcdev/openapi';
-import type { AnyProcedure, CreateContextOpts } from 'trpcdev/server';
+} from '@trpc12/trpc/openapi';
+import type { AnyProcedure, CreateContextOpts } from '@trpc12/trpc/server';
 
 /**
  * The options of {@link TrpcModule.forRoot}: the OpenAPI handler's, with
@@ -120,7 +120,7 @@ export interface TrpcModuleAsyncOptions extends Pick<
  * @stability stable
  */
 export const TRPC_MODULE_OPTIONS: unique symbol = Symbol(
-  'trpcdev/nest/options',
+  '@trpc12/nest/options',
 );
 
 interface Target {

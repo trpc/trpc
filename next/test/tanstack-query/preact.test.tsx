@@ -11,7 +11,7 @@ import {
 import {
   createTrpcContext,
   useSubscription,
-} from '@trpcdev/tanstack-preact-query';
+} from '@trpc12/tanstack-preact-query';
 import { render, type ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import { expect, expectTypeOf, test } from 'vite-plus/test';

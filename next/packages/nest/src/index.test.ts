@@ -10,10 +10,10 @@ import {
 } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { Context, Effect, Layer, Schema } from 'effect';
-import { createTrpcClient, safe } from 'trpcdev/client';
-import { contract, toContract } from 'trpcdev/contract';
-import { openapi, openApiLink } from 'trpcdev/openapi';
-import { initTrpc } from 'trpcdev/server';
+import { createTrpcClient, safe } from '@trpc12/trpc/client';
+import { contract, toContract } from '@trpc12/trpc/contract';
+import { openapi, openApiLink } from '@trpc12/trpc/openapi';
+import { initTrpc } from '@trpc12/trpc/server';
 import { afterAll, beforeAll, expect, test } from 'vite-plus/test';
 import { Implement, TrpcModule } from './index.ts';
 

@@ -2,11 +2,11 @@
 import {
   createTrpcContext,
   hydrationOptions,
-} from '@trpcdev/tanstack-react-query';
+} from '@trpc12/tanstack-react-query';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
-import { createTrpcClient, httpLink, routerType } from 'trpcdev/client';
-import type { FormOfSerializer } from 'trpcdev/serializer';
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import type { FormOfSerializer } from '@trpc12/trpc/serializer';
 import type { AppRouter } from '../server/router.ts';
 import { serializer } from './serializer.ts';
 

@@ -8,4 +8,4 @@
   - (agent) Built, 2026-10-16. Opt-outs on the link: `batch` (off by default), `subscriptions: false` (procedures lose `.subscribe()`), `binary` (off by default) and `reconnect.attempts`. Per call: `{ batch: false }` and `{ reconnect: false }`.
   - Open: there is no way to opt out of streamed results, because the server streams whenever an output holds deferred values. An opt-out would need the server to settle them when the client doesn't accept JSONL.
 - Tentative (human): "Might be changed in the future for simple use cases". Challenge it when it gets in the way.
-- Lives in: `packages/trpcdev/src/client/links/http.ts`, `packages/upgrade/src/transform.ts`.
+- Lives in: `packages/trpc/src/client/links/http.ts`, `packages/upgrade/src/transform.ts`.

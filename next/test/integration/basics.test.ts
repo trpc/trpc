@@ -1,6 +1,15 @@
 import { Schema } from 'effect';
-import { createTrpcClient, httpLink, safe, routerType } from 'trpcdev/client';
-import { error, initTrpc, type InputValidationErrorData } from 'trpcdev/server';
+import {
+  createTrpcClient,
+  httpLink,
+  safe,
+  routerType,
+} from '@trpc12/trpc/client';
+import {
+  error,
+  initTrpc,
+  type InputValidationErrorData,
+} from '@trpc12/trpc/server';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';

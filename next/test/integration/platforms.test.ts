@@ -9,13 +9,13 @@ import {
   httpLink,
   experimental_messagePortLink,
   routerType,
-} from 'trpcdev/client';
-import { toHttpEffect } from 'trpcdev/http';
+} from '@trpc12/trpc/client';
+import { toHttpEffect } from '@trpc12/trpc/http';
 import {
   createFetchHandler,
   initTrpc,
   type WebSocketLike,
-} from 'trpcdev/server';
+} from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 

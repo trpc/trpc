@@ -1,5 +1,5 @@
 import 'server-only';
-import { createTrpcRsc } from '@trpcdev/tanstack-react-query/rsc';
+import { createTrpcRsc } from '@trpc12/tanstack-react-query/rsc';
 import { appRouter } from '../server/router.ts';
 import { serializer } from './serializer.ts';
 

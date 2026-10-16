@@ -6,7 +6,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "trpcdev": "workspace:*"
+    "@trpc12/trpc": "workspace:*"
   },
   "devDependencies": {
     "@effect/platform-node": "4.0.2",

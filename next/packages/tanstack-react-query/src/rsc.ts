@@ -33,16 +33,16 @@ import {
   createTrpcQueryUtils,
   hydrationOptions,
   type TrpcQueryUtils,
-} from '@trpcdev/tanstack-query';
+} from '@trpc12/tanstack-query';
 import { cache as reactCache, createElement, type ReactNode } from 'react';
-import type { TrpcClient } from 'trpcdev/client';
-import type { AnySerializer, DansonForm } from 'trpcdev/serializer';
+import type { TrpcClient } from '@trpc12/trpc/client';
+import type { AnySerializer, DansonForm } from '@trpc12/trpc/serializer';
 import {
   createRouterClient,
   type AnyRouter,
   type RouterClientOptions,
   type SerializerOption,
-} from 'trpcdev/server';
+} from '@trpc12/trpc/server';
 
 /** Next's `redirect()`, `notFound()` and dynamic-API errors carry a `digest`. */
 const hasDigest = (error: unknown) =>

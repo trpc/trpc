@@ -163,7 +163,7 @@ import {
   retryLink,
   splitLink,
   wsLink,
-} from 'trpcdev/client';
+} from '@trpc12/trpc/client';
 
 const client = createTRPCClient({
   router: type<AppRouter>(),

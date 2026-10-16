@@ -7,8 +7,8 @@
   - `next-app/`: Next.js with TanStack Query, streamed mutations and files.
   - `openapi/`: `.route()`, the generated document and a REST call.
   - `realtime/`: WebSockets with a Redis-backed Publisher and `tracked()` resume.
-  - `cloudflare/`: a Worker with a hibernating Durable Object via `trpcdev/cloudflare`.
-- (agent) Each depends on `trpcdev: workspace:*` and runs in CI with a typecheck and a smoke run, like `pnpm example` does for `minimal` today.
+  - `cloudflare/`: a Worker with a hibernating Durable Object via `@trpc12/trpc/cloudflare`.
+- (agent) Each depends on `@trpc12/trpc: workspace:*` and runs in CI with a typecheck and a smoke run, like `pnpm example` does for `minimal` today.
 - Why: one example per distinct runtime or feature; docs snippets already come from tested code.
 - Lost: a plain React single-page-app example (`react-vite`); `next-app` covers TanStack Query.
 - (agent) Built: `pnpm example` runs each example's `smoke` script in CI. `cloudflare/` runs on workerd through Wrangler's `unstable_startWorker`, and on Cloudflare itself once deployed ([`deployed-cloudflare-examples.md`](./deployed-cloudflare-examples.md)). `realtime/` runs two servers against a real Redis (a CI service). `next-app/` runs `next build` and `next start`, then checks the server-rendered page and calls the route with a Node client.

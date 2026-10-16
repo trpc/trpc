@@ -1,9 +1,9 @@
 # TanStack Query
 
-`@trpcdev/tanstack-query` makes plain TanStack options objects, so it works with every adapter. Each adapter package (`@trpcdev/tanstack-react-query`, `-preact-`, `-vue-`, `-solid-`, `-svelte-`, `-angular-`, `-lit-query`) re-exports it and adds context helpers and `useSubscription`.
+`@trpc12/tanstack-query` makes plain TanStack options objects, so it works with every adapter. Each adapter package (`@trpc12/tanstack-react-query`, `-preact-`, `-vue-`, `-solid-`, `-svelte-`, `-angular-`, `-lit-query`) re-exports it and adds context helpers and `useSubscription`.
 
 ```ts
-import { createTrpcQueryUtils } from '@trpcdev/tanstack-query';
+import { createTrpcQueryUtils } from '@trpc12/tanstack-query';
 
 export const trpc = createTrpcQueryUtils({ client });
 

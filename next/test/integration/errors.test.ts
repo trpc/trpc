@@ -7,8 +7,8 @@ import {
   safe,
   TrpcError,
   routerType,
-} from 'trpcdev/client';
-import { error, initTrpc, type OnErrorOpts } from 'trpcdev/server';
+} from '@trpc12/trpc/client';
+import { error, initTrpc, type OnErrorOpts } from '@trpc12/trpc/server';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';

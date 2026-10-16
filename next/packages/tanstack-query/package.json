@@ -1,5 +1,5 @@
 {
-  "name": "@trpcdev/tanstack-query",
+  "name": "@trpc12/tanstack-query",
   "version": "0.0.0",
   "private": true,
   "files": [
@@ -26,12 +26,12 @@
   },
   "devDependencies": {
     "@tanstack/query-core": "5.104.1",
-    "trpcdev": "workspace:*",
+    "@trpc12/trpc": "workspace:*",
     "typescript": "^7.0.2",
     "vite-plus": "1.1.0"
   },
   "peerDependencies": {
     "@tanstack/query-core": "^5.104.0",
-    "trpcdev": "workspace:*"
+    "@trpc12/trpc": "workspace:*"
   }
 }

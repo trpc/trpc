@@ -4,7 +4,7 @@ import type { PlatformError } from 'effect/PlatformError';
 import { upgradeFiles } from './files.ts';
 
 /**
- * `trpcdev-upgrade <paths…> [--write]`: a dry run by default, listing
+ * `trpc12-upgrade <paths…> [--write]`: a dry run by default, listing
  * the files it would change and the steps left to do by hand.
  *
  * @example
@@ -15,13 +15,13 @@ import { upgradeFiles } from './files.ts';
  * @stability stable
  */
 export const upgradeCommand: Command.Command<
-  'trpcdev-upgrade',
+  'trpc12-upgrade',
   { readonly paths: ReadonlyArray<string>; readonly write: boolean },
   {},
   PlatformError,
   FileSystem.FileSystem | Path.Path
 > = Command.make(
-  'trpcdev-upgrade',
+  'trpc12-upgrade',
   {
     paths: Argument.String('paths').pipe(
       Argument.variadic({ min: 1 }),
@@ -53,4 +53,4 @@ export const upgradeCommand: Command.Command<
         `${changed} file(s) ${write ? 'upgraded' : 'to upgrade'}, ${notes} step(s) by hand`,
       );
     }),
-).pipe(Command.withDescription('Upgrade a tRPC v11 codebase to trpcdev v12'));
+).pipe(Command.withDescription('Upgrade a tRPC v11 codebase to v12'));

@@ -1,5 +1,5 @@
 {
-  "name": "@trpcdev/spikes",
+  "name": "@trpc12/spikes",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,7 +8,7 @@
     "bundle": "node effect-bundle/measure.ts"
   },
   "dependencies": {
-    "trpcdev": "workspace:*"
+    "@trpc12/trpc": "workspace:*"
   },
   "devDependencies": {
     "@effect/atom-react": "4.0.2",

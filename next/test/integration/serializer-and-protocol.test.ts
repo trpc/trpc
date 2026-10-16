@@ -6,13 +6,13 @@ import {
   safe,
   routerType,
   wsLink,
-} from 'trpcdev/client';
-import { createFetchHandler, initTrpc } from 'trpcdev/server';
+} from '@trpc12/trpc/client';
+import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import {
   createSerializer,
   jsonSerializer,
   type CustomType,
-} from 'trpcdev/serializer';
+} from '@trpc12/trpc/serializer';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';

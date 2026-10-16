@@ -10,12 +10,12 @@
   },
   "dependencies": {
     "@tanstack/react-query": "5.104.1",
-    "@trpcdev/tanstack-react-query": "workspace:*",
+    "@trpc12/tanstack-react-query": "workspace:*",
+    "@trpc12/trpc": "workspace:*",
     "next": "16.4.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "server-only": "0.0.1",
-    "trpcdev": "workspace:*",
     "zod": "4.6.5"
   },
   "devDependencies": {

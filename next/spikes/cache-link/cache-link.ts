@@ -17,8 +17,8 @@ import {
   type AnyTrpcError,
   type Operation,
   type TrpcLink,
-} from 'trpcdev/client';
-import { createSerializer } from 'trpcdev/serializer';
+} from '@trpc12/trpc/client';
+import { createSerializer } from '@trpc12/trpc/serializer';
 import {
   fulfilled,
   replaceEqualDeep,

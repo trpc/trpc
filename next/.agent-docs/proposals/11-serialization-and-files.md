@@ -14,7 +14,7 @@ The [brief](../decisions/brief.md) makes three points about serialization:
 
 **Recommendation:**
 
-- **Port danSON into `trpcdev/serializer`** as the default RPC serializer. It covers rich types, refs and circular references, and streaming of Promises, AsyncIterables and ReadableStreams at any depth. Its async internals are rewritten on Effect `Stream`.
+- **Port danSON into `@trpc12/trpc/serializer`** as the default RPC serializer. It covers rich types, refs and circular references, and streaming of Promises, AsyncIterables and ReadableStreams at any depth. Its async internals are rewritten on Effect `Stream`.
 - Serializers are configured on endpoints and links.
 - Add a **legible query-param encoding** for GET inputs: bracket notation with typed leaves.
 - Files are a serializer type backed by multipart parts.
@@ -67,7 +67,7 @@ The last row matters less for us because naive consumers use the OpenAPI endpoin
 Serializers are an option on endpoints and links, never on the router:
 
 ```ts
-import { serializer } from 'trpcdev/serializer';
+import { serializer } from '@trpc12/trpc/serializer';
 
 export const appSerializer = serializer({ types: { Decimal: decimalPair } }); // shared module
 
@@ -78,7 +78,7 @@ createOpenAPIHandler({ router }); // always plain JSON + bracket notation + coer
 
 ### (b) The default serializer
 
-- **S-A — danSON, ported into `trpcdev/serializer`.**
+- **S-A — danSON, ported into `@trpc12/trpc/serializer`.**
   - Sync functions stay plain, pure functions for speed.
   - Async (streaming) functions are reimplemented on Effect `Stream`, following "all logic in Effect".
   - The same format is used for request bodies, responses, JSONL, SSE, WebSocket and MessagePort.
@@ -111,7 +111,7 @@ httpLink({ url, serializer: superjson });
 **How danSON gets in:** porting the code (KATT owns it) keeps the "only Effect" dependency rule. Depending on the `danson` npm package would be simpler but adds a dependency. **Open:** keep wire compatibility with standalone `danson`, so it can decode tRPC payloads.
 
 ```ts
-// wire-compatible: a consumer without trpcdev decodes a response with danson
+// wire-compatible: a consumer without @trpc12/trpc decodes a response with danson
 import { parseSync } from 'danson';
 
 const post = parseSync(await (await fetch(`${base}/post/byId?id=1`)).text());
@@ -232,7 +232,7 @@ content-disposition: attachment; filename="avatar.png"
 
 ## Recommendation
 
-- **S-A** (danSON ported into `trpcdev/serializer`, async parts on Effect).
+- **S-A** (danSON ported into `@trpc12/trpc/serializer`, async parts on Effect).
 - **QP-C** legible params, prototyped behind the serializer spike, with QP-A as fallback.
 - **CT-A** (native RPC types).
 - Hardening with separate input and output allow-lists.
@@ -245,7 +245,7 @@ Adopting danSON also makes nested deferred values (14 (e)) nearly free.
 ## Questions
 
 - **Q11.1** Default serializer: danSON ported in (S-A), oRPC-style (S-B), plain JSON (S-C) or bring your own (S-D)?
-- **Q11.2** Port danSON's code into `trpcdev/serializer` (recommended), or depend on the `danson` package? Keep wire compatibility with standalone danSON?
+- **Q11.2** Port danSON's code into `@trpc12/trpc/serializer` (recommended), or depend on the `danson` package? Keep wire compatibility with standalone danSON?
 - **Q11.3** GET input encoding: QP-A, QP-B or QP-C? Is the `$Type:value` scalar syntax acceptable?
 - **Q11.4** Allow replacing the RPC serializer entirely (for example superjson), or only extending the built-in with custom types?
 - **Q11.5** Client types: always native (CT-A), a client type parameter (CT-B), or a router capability flag (CT-C)?

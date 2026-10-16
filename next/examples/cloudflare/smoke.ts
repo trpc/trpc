@@ -11,7 +11,7 @@ import {
   splitLink,
   wsLink,
   routerType,
-} from 'trpcdev/client';
+} from '@trpc12/trpc/client';
 import { unstable_startWorker } from 'wrangler';
 import type { AppRouter } from './src/router.ts';
 

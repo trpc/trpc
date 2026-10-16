@@ -8,9 +8,9 @@ import {
   link,
   routerType,
   type Operation,
-} from 'trpcdev/client';
-import { fromV11Link } from 'trpcdev/interop';
-import { error, initTrpc } from 'trpcdev/server';
+} from '@trpc12/trpc/client';
+import { fromV11Link } from '@trpc12/trpc/interop';
+import { error, initTrpc } from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
 import { z } from 'zod';
 import { createTestServer } from './fixtures/server.ts';

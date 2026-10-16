@@ -4,10 +4,14 @@ import {
   httpLink,
   safe,
   validationLink,
-} from 'trpcdev/client';
-import { contract, toContract } from 'trpcdev/contract';
-import { createOpenApiHandler, openapi, openApiLink } from 'trpcdev/openapi';
-import { initTrpc, tracked } from 'trpcdev/server';
+} from '@trpc12/trpc/client';
+import { contract, toContract } from '@trpc12/trpc/contract';
+import {
+  createOpenApiHandler,
+  openapi,
+  openApiLink,
+} from '@trpc12/trpc/openapi';
+import { initTrpc, tracked } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 import { createTestServer } from './fixtures/server.ts';

@@ -6,9 +6,9 @@ import {
   retryLink,
   safe,
   routerType,
-} from 'trpcdev/client';
-import { RateLimited, rateLimit } from 'trpcdev/middleware';
-import { createFetchHandler, initTrpc } from 'trpcdev/server';
+} from '@trpc12/trpc/client';
+import { RateLimited, rateLimit } from '@trpc12/trpc/middleware';
+import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { createTestServer } from './fixtures/server.ts';
 

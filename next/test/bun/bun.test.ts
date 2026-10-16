@@ -1,10 +1,18 @@
 import { afterAll, beforeAll, expect, test } from 'bun:test';
 import { BunHttpServer } from '@effect/platform-bun';
 import { Context, Effect, Exit, Layer, Scope } from 'effect';
-import { createTrpcClient, httpLink, wsLink, routerType } from 'trpcdev/client';
-import { TestServer, type TestServerShape } from 'trpcdev/internal/testing';
-import { createSerializer } from 'trpcdev/serializer';
-import { initTrpc, tracked } from 'trpcdev/server';
+import {
+  createTrpcClient,
+  httpLink,
+  wsLink,
+  routerType,
+} from '@trpc12/trpc/client';
+import {
+  TestServer,
+  type TestServerShape,
+} from '@trpc12/trpc/internal/testing';
+import { createSerializer } from '@trpc12/trpc/serializer';
+import { initTrpc, tracked } from '@trpc12/trpc/server';
 import { z } from 'zod';
 
 /** Dates, Maps and Files round-trip, so both ends use danSON. */

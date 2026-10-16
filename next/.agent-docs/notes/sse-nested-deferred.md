@@ -8,7 +8,7 @@ The value under test: a post whose `comments` iterable yields comments with a de
 
 ## How the formats frame deferred values
 
-- trpcdev's async format (the danSON port, and plain JSON's head `d` slots) is a head frame, then `[index, status, value]` chunks as each deferred value settles. A deferred value inside a chunk gets a new index while that chunk is serialized.
+- @trpc12/trpc's async format (the danSON port, and plain JSON's head `d` slots) is a head frame, then `[index, status, value]` chunks as each deferred value settles. A deferred value inside a chunk gets a new index while that chunk is serialized.
 - `devalue-async` is the same shape: a head line, then `[index, status, flattened]` lines. Its reducers register nested promises, iterables and `ReadableStream`s during the same `stringify` call, so nothing is walked twice. danSON does the same. This is the "shorter path" the human mentioned.
 - Each frame is one line of JSON with no newlines in it, so one frame is one SSE event (`id: n\ndata: <frame>\n\n`). Nothing about nesting depends on the framing.
 

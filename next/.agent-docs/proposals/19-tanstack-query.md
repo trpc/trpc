@@ -10,7 +10,7 @@ The [brief](../decisions/brief.md): "`@trpc/react-query` is dead; `@trpc/tanstac
 
 **Recommendation:**
 
-- Make `@trpcdev/tanstack-query` **framework-agnostic**. It produces plain options objects (`queryOptions`, `mutationOptions`, `infiniteOptions`, keys and filters) that work with every TanStack adapter.
+- Make `@trpc12/tanstack-query` **framework-agnostic**. It produces plain options objects (`queryOptions`, `mutationOptions`, `infiniteOptions`, keys and filters) that work with every TanStack adapter.
 - Optional React context helpers live in a `./react` subpath.
 - Option bags, explicit infinite-query inputs, streamed/live query helpers, and a hydration serializer.
 
@@ -31,7 +31,7 @@ The [brief](../decisions/brief.md): "`@trpc/react-query` is dead; `@trpc/tanstac
 ## Proposed API
 
 ```ts
-import { createTRPCQueryUtils } from '@trpcdev/tanstack-query';
+import { createTRPCQueryUtils } from '@trpc12/tanstack-query';
 
 export const trpc = createTRPCQueryUtils({ client }); // the client from 16
 
@@ -57,10 +57,10 @@ trpc.post.pathKey();
 trpc.post.byId.queryOptions({ input: skipToken });
 ```
 
-- **React helpers** (`@trpcdev/tanstack-query/react`): `createTRPCContext()` → `{ TRPCProvider, useTRPC }`, for people who want React context instead of module singletons.
+- **React helpers** (`@trpc12/tanstack-query/react`): `createTRPCContext()` → `{ TRPCProvider, useTRPC }`, for people who want React context instead of module singletons.
 
   ```tsx
-  import { createTRPCContext } from '@trpcdev/tanstack-query/react';
+  import { createTRPCContext } from '@trpc12/tanstack-query/react';
 
   export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 
@@ -97,8 +97,8 @@ The alternatives in the questions below look like this.
 
 ```ts
 // Q19.1 per-framework packages (oRPC's former layout)
-import { createTRPCReactQueryUtils } from '@trpcdev/react-query'; // name TBD
-import { createTRPCVueQueryUtils } from '@trpcdev/vue-query'; // name TBD
+import { createTRPCReactQueryUtils } from '@trpc12/react-query'; // name TBD
+import { createTRPCVueQueryUtils } from '@trpc12/vue-query'; // name TBD
 
 export const trpc = createTRPCVueQueryUtils({ client }); // one package and factory per adapter
 ```
@@ -126,7 +126,7 @@ useInfiniteQuery(
 > - Against `@tanstack/query-core` 5.90 types, the option bag types identically to v11's positional form. That covers `select` inference, `skipToken`, `DataTag` keys for `getQueryData`, and excess-property errors on misspelled options.
 > - Explicit infinite `input: (pageParam) => …` has TanStack's usual pitfall: with `initialPageParam: undefined` and no annotation, the page param infers as `undefined`. v11's `cursor` convention avoids that.
 
-> **Build (2026-10-11):** `next/packages/tanstack-query` implements this proposal with agent judgement calls for the open questions, recorded in the `decisions/tanstack-query-*.md` files ([adapters](../decisions/tanstack-query-adapters.md), [types](../decisions/tanstack-query-types.md), [keys](../decisions/tanstack-query-keys.md), [subscriptions](../decisions/tanstack-query-subscriptions.md), [hydration](../decisions/tanstack-query-hydration.md)). It ships a package for every official TanStack adapter (`@trpcdev/tanstack-{react,preact,vue,solid,svelte,angular,lit}-query`, [integration-packages](../decisions/integration-packages.md)) on top of the framework-agnostic `@trpcdev/tanstack-query`, each tested in `next/test/tanstack-query/`.
+> **Build (2026-10-11):** `next/packages/tanstack-query` implements this proposal with agent judgement calls for the open questions, recorded in the `decisions/tanstack-query-*.md` files ([adapters](../decisions/tanstack-query-adapters.md), [types](../decisions/tanstack-query-types.md), [keys](../decisions/tanstack-query-keys.md), [subscriptions](../decisions/tanstack-query-subscriptions.md), [hydration](../decisions/tanstack-query-hydration.md)). It ships a package for every official TanStack adapter (`@trpc12/tanstack-{react,preact,vue,solid,svelte,angular,lit}-query`, [integration-packages](../decisions/integration-packages.md)) on top of the framework-agnostic `@trpc12/tanstack-query`, each tested in `next/test/tanstack-query/`.
 
 ## Recommendation
 
