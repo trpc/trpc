@@ -114,7 +114,7 @@ oRPC ships these beyond the comparison rows. They are not parity requirements, b
 | Request/response validation on the client (with contract)       | `plugins/request-validation.md`, `response-validation.md`  | done (`validationLink`)                                                                                                                                 | 13, 17   |
 | `.callable()` procedures, `call()` helper                       | `client/server-side.md`                                    | v1                                                                                                                                                      | 15       |
 | `createFormAction`, `useServerAction`, optimistic actions       | `server-action.md`                                         | done (`action()` takes `FormData` and `useActionState`'s call; React's `useOptimistic`)                                                                 | 15, 20   |
-| AI SDK and Better Auth integrations                             | `integrations/*`                                           | later (docs/recipes)                                                                                                                                    | —        |
+| AI SDK and Better Auth integrations                             | `integrations/*`                                           | done as tested recipes in `docs/integrations.md` ([ai-sdk-and-better-auth-recipes](../decisions/ai-sdk-and-better-auth-recipes.md))                     | —        |
 
 ## Maintenance
 

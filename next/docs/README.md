@@ -12,6 +12,7 @@ User docs for vNext, kept in step with the code. Design notes and decisions live
 - [TanStack Query](./tanstack-query.md): query helpers and hydration.
 - [OpenAPI](./openapi.md): the REST handler, the document.
 - [Platforms](./platforms.md): Node, Bun, Deno, Express, Fastify, fetch runtimes.
+- [Integrations](./integrations.md): AI SDK chats and tools, Better Auth sessions.
 - [Migrating from v11](./migrating-from-v11.md): serving old clients with `createV11Handler`, API changes.
 
 Entry points of `trpcdev`:

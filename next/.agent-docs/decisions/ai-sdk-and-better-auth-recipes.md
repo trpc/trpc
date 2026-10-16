@@ -1,0 +1,10 @@
+# AI SDK and Better Auth are recipes, tested against the real libraries (agent)
+
+- (agent) For the parity row "AI SDK and Better Auth integrations: later (docs/recipes)" ([`../reference/orpc-parity.md`](../reference/orpc-parity.md)). Both are sections of `docs/integrations.md`, with no `trpcdev` code: trpcdev depends only on Effect ([`effect-dependency.md`](./effect-dependency.md)), and neither library needs glue.
+- (agent) AI SDK: a procedure returns `toUIMessageStream({ stream: result.stream })`, a `ReadableStream`, and the client gets a `ReadableStream` of plain chunk objects back, which is what `useChat`'s `ChatTransport.sendMessages` returns. oRPC needs `streamToEventIterator` and `eventIteratorToUnproxiedDataStream` because its event iterators proxy events for metadata; trpcdev streams `ReadableStream` outputs as they are, so there is nothing to convert or unproxy.
+- (agent) Tools: AI SDK 7 takes Standard Schema as `inputSchema`, so a tool reuses the procedure's input schema and calls it with `call()`, middleware and validation included. No `createTool(procedure)` helper (oRPC's `@orpc/ai-sdk`): it would need the `ai` package's types, and the recipe is three lines.
+- (agent) Better Auth: the headers go in the ctx and a middleware calls `auth.api.getSession({ headers })`, as oRPC's page does; `ctx.user` takes Better Auth's user type. The test signs up a real user on Better Auth's memory adapter and calls with its cookie.
+- (agent) `ai` and `better-auth` are dev dependencies of `test/integration` only, pinned to versions past pnpm's `minimumReleaseAge` rather than excluded from it.
+- (agent) The recipe found a type bug, fixed with it: the client typed a `ReadableStream` output as an `AsyncIterable` (it arrives as a `ReadableStream`), and `unknown` fields as `{}`.
+- Lost: a typed `createTool` that reads the description from `.meta()`; with a contract, `implementTool`.
+- Lives in: `docs/integrations.md`, `test/integration/ai-sdk.test.ts`, `test/integration/better-auth.test.ts`, `test/integration/package.json`.
