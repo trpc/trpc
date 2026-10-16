@@ -5,8 +5,9 @@
 - Spikes wanted, not shipped:
   - **C**, a `cacheLink()` that returns the same promise for the same key while cached, so `use(client.post.byId.query({ id }))` works, with `ignoreCache` as a call option.
   - **D**, an `AtomTrpc` modeled on Effect's `AtomRpc` (`effect/reactivity`): query and mutation atoms with reactivity keys, time-to-live and hydration, read with `useAtomSuspense` from `@effect/atom-react`.
-- (agent) Guardrail: in-flight calls keep a stable promise identity and links can carry call options, so either spike can land without core changes.
+- (agent) Guardrail: links can carry call options, so `ignoreCache` is typed without core changes. In-flight calls do not keep a stable promise identity: `request()` makes a new promise per call, so C needs a core hook (see the spike note).
 - (agent) Passing server-started promises from React Server Components to `use()` on the client is not a v1 goal (Q20.3).
 - Why: TanStack covers v1; a second cache is a maintenance cost until a spike shows it pays off.
 - Open: Q20.2 (link or React store) is settled by the spikes.
-- Lives in: spikes under `next/.agent-docs/notes/` plus throwaway code (not built yet).
+- (agent) Spikes built ([note](../notes/react-use-spikes.md)). C needs a core hook for promise identity, plus a React store for invalidation. D works on `effect/reactivity` as is, except for hydration (no result `Schema`).
+- Lives in: `next/.agent-docs/notes/react-use-spikes.md`, `next/spikes/cache-link/`, `next/spikes/atom-trpc/`.
