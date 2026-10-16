@@ -12,7 +12,7 @@ import { error, initTrpc, tracked } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { appContract } from './fixtures/contract.ts';
 
-const t = initTrpc<{ ctx: {}; meta: { auth?: boolean } }>().with(openapi());
+const t = initTrpc<{ ctx: {}; meta: { auth?: boolean } }>().concat(openapi());
 const impl = t.implement(appContract);
 const router = impl.router({
   health: impl.health.query(() => 'ok' as const),

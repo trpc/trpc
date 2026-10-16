@@ -37,7 +37,7 @@ export {
   type RootMiddleware,
   type RootOptions,
   type TrpcRoot,
-  type WithCheck,
+  type RootConcatCheck,
 } from './init.ts';
 export type {
   AnyProcedureBuilder,

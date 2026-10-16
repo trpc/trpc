@@ -213,7 +213,7 @@ export interface ContractSubscriptionOptions<TTracked extends boolean> {
  *
  * @example
  * ```ts
- * const c = contract.create<{ meta: Meta }>().with(openapi());
+ * const c = contract.create<{ meta: Meta }>().concat(openapi());
  * export const byId = c
  *   .meta({ route: { method: 'GET', path: '/posts/{id}' } })
  *   .input(z.object({ id: z.string() }))
@@ -287,15 +287,15 @@ export interface ContractBuilder<TDef extends ContractDef> {
 
   /**
    * Adds a root extension's meta keys, their merges and default meta, as
-   * `t.with()` does. Contracts hold no middleware, so an extension with
+   * `t.concat()` does. Contracts hold no middleware, so an extension with
    * middleware throws; its errors and ctx don't apply.
    *
    * @example
    * ```ts
-   * const c = contract.create().with(openapi());
+   * const c = contract.create().concat(openapi());
    * ```
    */
-  with<$Ext extends BuilderDef>(
+  concat<$Ext extends BuilderDef>(
     extension: ProcedureBuilder<$Ext>,
   ): ContractBuilder<
     ContractWith<TDef, { meta: Simplify<TDef['meta'] & $Ext['meta']> }>
@@ -344,11 +344,11 @@ function createContractBuilder(
       next({ errors: { ...internals.errors, ...map } }),
     meta: (meta: object) =>
       next({ meta: mergeMeta(internals.mergeMeta, internals.meta, meta) }),
-    with: (extension: ProcedureBuilder<any>) => {
+    concat: (extension: ProcedureBuilder<any>) => {
       const ext = extension['~trpc'];
       if (ext.steps.length > 0) {
         throw new Error(
-          'contract.with(): the extension has middleware or inputs, which contracts cannot hold',
+          'contract.concat(): the extension has middleware or inputs, which contracts cannot hold',
         );
       }
       const merge = { ...ext.mergeMeta, ...internals.mergeMeta };

@@ -17,7 +17,7 @@ import { initTrpc } from '@trpc12/trpc/server';
 import { afterAll, beforeAll, expect, test } from 'vite-plus/test';
 import { experimental_Implement, experimental_TrpcModule } from './index.ts';
 
-const c = contract.create().with(openapi());
+const c = contract.create().concat(openapi());
 const Post = Schema.Struct({ id: Schema.String, title: Schema.String });
 
 const appContract = {
@@ -52,7 +52,7 @@ class Counter extends Context.Service<
   { next: Effect.Effect<number> }
 >()('Counter') {}
 
-const t = initTrpc<{ ctx: { user: string | null } }>().with(openapi());
+const t = initTrpc<{ ctx: { user: string | null } }>().concat(openapi());
 const impl = t.implement(appContract);
 
 @Injectable()

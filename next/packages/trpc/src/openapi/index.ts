@@ -7,7 +7,7 @@
  * ```ts
  * import { createOpenApiHandler, generateOpenApi, openapi, openApiReference } from '@trpc12/trpc/openapi';
  *
- * const t = initTrpc().with(openapi());
+ * const t = initTrpc().concat(openapi());
  * const byId = t.procedure
  *   .meta({ route: { method: 'GET', path: '/posts/{id}', tags: ['posts'] } })
  *   .input(z.object({ id: z.string() }))

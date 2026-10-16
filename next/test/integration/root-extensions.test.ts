@@ -54,8 +54,8 @@ const audit = () => {
 
 const audited = audit();
 const t = initTrpc<{ ctx: { ip: string; user: string | null } }>()
-  .with(rateLimit({ max: 2 }))
-  .with(audited.extension);
+  .concat(rateLimit({ max: 2 }))
+  .concat(audited.extension);
 
 const authed = t.middleware(({ ctx, next }) => {
   expectTypeOf(ctx.requestCount).toEqualTypeOf<number>();
@@ -123,18 +123,18 @@ test('an extension adds ctx, meta, errors and middleware to every procedure (03 
 test('extensions are checked against the root', () => {
   const needsTenant = initTrpc<{ ctx: { tenant: string } }>().procedure;
   // @ts-expect-error the root has no `tenant` in its ctx
-  initTrpc<{ ctx: { ip: string } }>().with(needsTenant);
+  initTrpc<{ ctx: { ip: string } }>().concat(needsTenant);
 
   const numeric = initTrpc<{ meta: { rateLimit?: number } }>().procedure;
   // @ts-expect-error `rateLimit` meta has another type here
-  t.with(numeric);
+  t.concat(numeric);
 });
 
 test('implement() on an extended root runs the extension', async () => {
   const c = contract.create();
   const appContract = { ping: c.input(z.string()).query() };
   const impl = initTrpc<{ ctx: { ip: string } }>()
-    .with(rateLimit({ max: 1 }))
+    .concat(rateLimit({ max: 1 }))
     .implement(appContract);
   const router = impl.router({
     ping: impl.ping.query(({ input, ctx }) => `${input}:${ctx.requestCount}`),

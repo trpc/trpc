@@ -34,7 +34,7 @@ export interface InvalidationMeta {
 export const HEADER = 'trpc-invalidate';
 export const REF_HEADER = 'trpc-invalidation-ref';
 
-/** The server half: `initTrpc().with(invalidation())`. */
+/** The server half: `initTrpc().concat(invalidation())`. */
 export const invalidation = () => {
   const r = initTrpc<{ meta: InvalidationMeta }>({
     mergeMeta: { invalidates: (before, next) => [...before, ...next] },

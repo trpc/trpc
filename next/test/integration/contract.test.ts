@@ -25,7 +25,7 @@ import { appContract, type AppContract } from './fixtures/contract.ts';
 interface Ctx {
   user: string | null;
 }
-const t = initTrpc<{ ctx: Ctx; meta: { auth?: boolean } }>().with(openapi());
+const t = initTrpc<{ ctx: Ctx; meta: { auth?: boolean } }>().concat(openapi());
 const posts = new Map([['1', { id: '1', title: 'Hello' }]]);
 
 const authed = t.middleware(({ ctx, next }) =>

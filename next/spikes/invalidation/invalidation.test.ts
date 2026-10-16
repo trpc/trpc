@@ -10,7 +10,7 @@ import {
   REF_HEADER,
 } from './invalidation.ts';
 
-const t = initTrpc().with(invalidation());
+const t = initTrpc().concat(invalidation());
 const titles = new Map([
   ['1', 'Hello'],
   ['2', 'World'],

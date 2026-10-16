@@ -25,7 +25,7 @@ class PostMissing extends TrpcError.Tagged('POST_NOT_FOUND', {
   data: Schema.Struct({ id: Schema.String }),
 }) {}
 
-const t = initTrpc<{ ctx: { user: string | null } }>().with(openapi());
+const t = initTrpc<{ ctx: { user: string | null } }>().concat(openapi());
 const posts = new Map<string, Post>();
 
 export const appRouter = {

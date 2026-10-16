@@ -6,7 +6,7 @@ Code: `next/spikes/invalidation/`; run with `pnpm test` from `next/`. `@tanstack
 
 ```ts
 // server
-const t = initTrpc<{ ctx: Context }>().with(invalidation());
+const t = initTrpc<{ ctx: Context }>().concat(invalidation());
 const rename = t.procedure
   .meta({ invalidates: ['post.list'] })
   .meta({

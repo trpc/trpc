@@ -66,7 +66,7 @@ const META = '~meta';
  *
  * @example
  * ```ts
- * const t = initTrpc().with(openapi());
+ * const t = initTrpc().concat(openapi());
  * const appRouter = {
  *   admin: t.router({ meta: { route: { prefix: '/admin', tags: ['admin'] } } }, { users, ban }),
  * };

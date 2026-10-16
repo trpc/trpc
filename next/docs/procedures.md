@@ -162,7 +162,7 @@ createFetchHandler({
 
 `.concat(plugin)` stays strict: a plugin builder's ctx must already be there.
 
-When the plugin starts with the same middleware as the builder (the same function, in the same order), `.concat()` runs it once; `t.with()` goes through `.concat()` too. Elsewhere, middleware applied twice runs twice. For work that should happen once per request, an Effect service in the handler's `layer` is built once, and a middleware can reuse what ctx already has, so nested `call(other, input, { ctx })`s skip it:
+When the plugin starts with the same middleware as the builder (the same function, in the same order), `.concat()` runs it once, on a builder or on `t`. Elsewhere, middleware applied twice runs twice. For work that should happen once per request, an Effect service in the handler's `layer` is built once, and a middleware can reuse what ctx already has, so nested `call(other, input, { ctx })`s skip it:
 
 ```ts
 const withDb = middleware<{ ctx: { db?: Db } }>()(async ({ ctx, next }) =>
@@ -230,7 +230,7 @@ Results are stored with danSON (`serializer` to change it), whatever the wire se
 
 ### Root extensions
 
-A package can add middleware, ctx, meta keys, declared errors and Effect services to every procedure of an app. An extension is a procedure builder from the package's own `initTrpc`: its root ctx is what it needs from the app's, its meta type joins the app's (its default meta goes underneath), and the app adds it with `.with()`:
+A package can add middleware, ctx, meta keys, declared errors and Effect services to every procedure of an app. An extension is a procedure builder from the package's own `initTrpc`: its root ctx is what it needs from the app's, its meta type joins the app's (its default meta goes underneath), and the app adds it with `t.concat()`, the same method a procedure builder takes a plugin with:
 
 ```ts
 // in a package
@@ -251,17 +251,17 @@ export const rateLimit = () =>
 
 // in the app
 const t = initTrpc<{ ctx: { ip: string; user: User | null } }>()
-  .with(rateLimit())
-  .with(audit());
+  .concat(rateLimit())
+  .concat(audit());
 
 t.procedure
   .meta({ rateLimit: { max: 5 } })
   .mutation(({ ctx }) => ctx.remaining);
 ```
 
-Extensions chain, and `t.middleware` and `t.implement()` see what they add. `.with()` is a type error when the root lacks ctx the extension needs, or declares one of its meta keys with another type. Services an extension provides with `.provide()` don't need the handler's `layer`; services it only uses do.
+Extensions chain, and `t.middleware` and `t.implement()` see what they add. `t.concat()` is a type error when the root lacks ctx the extension needs, or declares one of its meta keys with another type. Services an extension provides with `.provide()` don't need the handler's `layer`; services it only uses do.
 
-Meta keys a root doesn't declare are a type error, and a later `.meta()` replaces a key unless its root says how to merge it. An extension sets that for its own keys with `initTrpc({ mergeMeta })`, which is how OpenAPI's `openapi()` merges `route` key by key ([OpenAPI](./openapi.md)). Contracts take extensions too, for their meta: `contract.create().with(openapi())`.
+Meta keys a root doesn't declare are a type error, and a later `.meta()` replaces a key unless its root says how to merge it. An extension sets that for its own keys with `initTrpc({ mergeMeta })`, which is how OpenAPI's `openapi()` merges `route` key by key ([OpenAPI](./openapi.md)). Contracts take extensions too, for their meta: `contract.create().concat(openapi())`.
 
 ## Responses
 

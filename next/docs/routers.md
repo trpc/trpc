@@ -16,7 +16,7 @@ Merge routers with `mergeRouters(a, b)`. A key in both is a type error and a run
 Under the [`openapi()` extension](./openapi.md), `t.router({ meta: { route: { prefix, tags } } }, routes)` groups routes for OpenAPI. Types and RPC paths don't change, and it takes no middleware.
 
 ```ts
-const t = initTrpc<{ ctx: Context }>().with(openapi());
+const t = initTrpc<{ ctx: Context }>().concat(openapi());
 
 const appRouter = {
   admin: t.router(

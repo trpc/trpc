@@ -11,7 +11,7 @@ export const PostCreateInput = Schema.Struct({ "title": Schema.String.check(Sche
 export const PostCreateOutput = Schema.Struct({ "id": Schema.String, "title": Schema.String })
 export const PostOnAddOutput = Schema.Struct({ "id": Schema.String, "title": Schema.String })
 
-const c = trpcContract.create().with(openapi());
+const c = trpcContract.create().concat(openapi());
 
 export const generated = {
   health: c.output(HealthOutput).meta({ route: { method: 'GET', path: "/health" } }).query(),

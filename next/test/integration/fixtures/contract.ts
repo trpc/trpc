@@ -2,7 +2,7 @@ import { contract } from '@trpc12/trpc/contract';
 import { z } from 'zod';
 import { openapi } from '@trpc12/trpc/openapi';
 
-const c = contract.create<{ meta: { auth?: boolean } }>().with(openapi());
+const c = contract.create<{ meta: { auth?: boolean } }>().concat(openapi());
 
 export const Post = z.object({ id: z.string(), title: z.string() });
 

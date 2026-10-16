@@ -13,7 +13,7 @@ const posts = new Map<string, Post>([
   ['1', { id: '1', title: 'Hello REST', createdAt: new Date(0) }],
 ]);
 
-const t = initTrpc<{ ctx: { user: string | null } }>().with(openapi());
+const t = initTrpc<{ ctx: { user: string | null } }>().concat(openapi());
 
 export const appRouter = t.router(
   { meta: { route: { tags: ['posts'] } } },

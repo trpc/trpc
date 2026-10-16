@@ -418,7 +418,7 @@ export function generateContractFromOpenApi(
       .join('');
 
   lines.push(
-    'const c = trpcContract.create().with(openapi());',
+    'const c = trpcContract.create().concat(openapi());',
     '',
     `export const ${opts.exportName ?? 'contract'} = {\n${render(tree, '  ')}};`,
     '',

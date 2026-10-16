@@ -126,12 +126,12 @@ export interface TrpcRoot<
    *     );
    *
    * // in the app
-   * const t = initTrpc<{ ctx: { ip: string; user: User | null } }>().with(rateLimit());
+   * const t = initTrpc<{ ctx: { ip: string; user: User | null } }>().concat(rateLimit());
    * t.procedure.meta({ rateLimit: { max: 5 } }).mutation(…);
    * ```
    */
-  with<$Ext extends BuilderDef>(
-    extension: ProcedureBuilder<$Ext> & WithCheck<TDef, $Ext>,
+  concat<$Ext extends BuilderDef>(
+    extension: ProcedureBuilder<$Ext> & RootConcatCheck<TDef, $Ext>,
   ): TrpcRoot<TCtx, Simplify<TMeta & $Ext['meta']>, ExtendedDef<TDef, $Ext>>;
   /**
    * Types a middleware against this root, for reuse across procedures.
@@ -177,7 +177,7 @@ export interface TrpcRoot<
    *
    * @example
    * ```ts
-   * const t = initTrpc().with(openapi());
+   * const t = initTrpc().concat(openapi());
    * const appRouter = {
    *   admin: t.router({ meta: { route: { prefix: '/admin', tags: ['admin'] } } }, { users, ban }),
    * };
@@ -211,17 +211,18 @@ export interface TrpcRoot<
  * @since 0.1.0
  * @stability stable
  */
-export type WithCheck<TDef extends BuilderDef, TExt extends BuilderDef> = [
-  Missing<CurrentCtx<TDef>, TExt['ctx']>,
-] extends [never]
+export type RootConcatCheck<
+  TDef extends BuilderDef,
+  TExt extends BuilderDef,
+> = [Missing<CurrentCtx<TDef>, TExt['ctx']>] extends [never]
   ? [MetaConflicts<TDef['meta'], TExt['meta']>] extends [never]
     ? unknown
     : TypeError<
-        'with: the extension declares meta keys with other types',
+        'concat: the extension declares meta keys with other types',
         MetaConflicts<TDef['meta'], TExt['meta']>
       >
   : TypeError<
-      'with: the extension needs ctx this root does not have',
+      'concat: the extension needs ctx this root does not have',
       Missing<CurrentCtx<TDef>, TExt['ctx']>
     >;
 
@@ -234,7 +235,7 @@ type MetaConflicts<A, B> = {
 }[keyof A & keyof B];
 
 /**
- * A root's builder state after `.with(extension)`.
+ * A root's builder state after `.concat(extension)`.
  * @since 0.1.0
  * @stability stable
  */
@@ -327,7 +328,7 @@ export function initTrpc<TConfig extends RootConfig = {}>(
 function makeRoot(procedure: AnyProcedureBuilder): TrpcRoot<any, any, any> {
   return {
     procedure,
-    with: (extension: AnyProcedureBuilder) => {
+    concat: (extension: AnyProcedureBuilder) => {
       const ext = extension['~trpc'];
       const own = procedure['~trpc'];
       const merge = { ...ext.mergeMeta, ...own.mergeMeta };

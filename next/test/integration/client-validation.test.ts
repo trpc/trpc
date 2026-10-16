@@ -22,7 +22,7 @@ const Post = Schema.Struct({
   at: Schema.Date,
 });
 
-const c = contract.create().with(openapi());
+const c = contract.create().concat(openapi());
 const appContract = {
   post: {
     byId: c
@@ -34,7 +34,7 @@ const appContract = {
   },
 };
 
-const t = initTrpc().with(openapi());
+const t = initTrpc().concat(openapi());
 const at = new Date('2026-10-16T00:00:00.000Z');
 const impl = t.implement(appContract);
 const router = impl.router({

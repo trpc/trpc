@@ -60,7 +60,7 @@ export const PostRepoLive = Layer.succeed(PostRepo, {
 export const t = initTrpc<{
   ctx: { user: User | null };
   meta: { scope?: string };
-}>().with(openapi());
+}>().concat(openapi());
 
 export const publicProcedure = t.procedure;
 
@@ -198,7 +198,7 @@ export const typedEffectClient = createEffectClient({
   links: [traceLink, httpLink({ url: '/trpc' })],
 });
 
-const c = contract.create<{ meta: { scope?: string } }>().with(openapi());
+const c = contract.create<{ meta: { scope?: string } }>().concat(openapi());
 
 export const userContract = {
   me: c

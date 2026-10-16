@@ -33,7 +33,7 @@ import { appContract } from './fixtures/contract.ts';
 interface Ctx {
   user: string | null;
 }
-const t = initTrpc<{ ctx: Ctx }>().with(openapi());
+const t = initTrpc<{ ctx: Ctx }>().concat(openapi());
 
 class Clock extends Context.Service<Clock, { now: () => number }>()('Clock') {}
 
@@ -658,7 +658,7 @@ test('bracket notation round-trips', () => {
 });
 
 test('an unvalidated output is documented by its schema input side', () => {
-  const t = initTrpc().with(openapi());
+  const t = initTrpc().concat(openapi());
   const router = {
     when: t.procedure
       .meta({ route: { method: 'GET', path: '/when' } })

@@ -31,7 +31,7 @@ import {
 interface Ctx {
   user: string | null;
 }
-const t = initTrpc<{ ctx: Ctx }>().with(openapi());
+const t = initTrpc<{ ctx: Ctx }>().concat(openapi());
 
 class CurrentUser extends Context.Service<CurrentUser, { name: string }>()(
   'CurrentUser',

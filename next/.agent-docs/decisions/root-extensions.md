@@ -1,4 +1,4 @@
-# Root extensions via `t.with(ext)` ship in v1 (human)
+# Root extensions via `t.concat(ext)` ship in v1 (human)
 
 - Human, 2026-10-15 (decisions round 3, Q12 = proposal 03 Q3.6): "A".
 - `initTrpc<{ ctx: Ctx }>().with(ext)` adds what an extension brings from values: meta keys, ctx, error codes and Effect services. Extensions chain: `.with(openapi()).with(rateLimit({ per: 'user' }))`.
@@ -18,4 +18,9 @@
 - Human, 2026-10-16 (decision round, meta after oRPC v2): "A". Keep root-declared meta: every key is declared at the root (`initTrpc<{ meta }>()` or an extension), `.meta()` rejects undeclared keys, and resolvers and middleware see one typed `meta` ([`meta-in-resolvers.md`](./meta-in-resolvers.md)).
   - Options were: A) this; B) oRPC v2's meta plugins, `defineMeta(name, merge)` returning `[metaPlugin, getMeta]`, set with `.meta(cacheMeta(true))` and declared nowhere; C) both. Source: `.repos/orpc/apps/content/docs/metadata.mdx`, `.repos/orpc/packages/contract/src/meta-utils.ts`.
   - Lost: a package that only adds a meta key still needs the root to take its extension.
-- Lives in: `packages/trpc/src/server/init.ts` (`with`, `WithCheck`, `ExtendedDef`, `mergeMeta`), `src/server/procedure.ts` (`MetaMerge`, `mergeMeta`), `src/openapi/extension.ts` (`openapi()`), `src/openapi/routes.ts` (`Route`, `OpenApiMeta`, `routeOf`), `src/contract/index.ts` (`with`); tests in `test/integration/root-extensions.test.ts`; docs in `docs/procedures.md` (Root extensions).
+- Human, 2026-10-16 (decision round, composition): "C (or it could just be `use` everywhere too with overloads? Spike that)". One composition method at both levels, `.concat()`, v11's name: `initTrpc<{ ctx }>().concat(openapi())` replaces `.with()`, as `authed.concat(plugin)` already did, and `contract.create().concat(openapi())` too. The `.with()` spellings in the bullets above are now `.concat()`.
+  - Options were: A) keep both `.with()` and `.concat()`; B) `.with()` everywhere; C) `.concat()` everywhere.
+  - Human, 2026-10-16 (same round, after the spike [`../notes/use-overloads.md`](../notes/use-overloads.md)): "Maybe call it `.plugin` or something? What does orpc call it?", then "A" for keeping `.concat()` over `.use()` everywhere (oRPC v2's way, its v1 `.concat` became `.use`) and `.plugin()`. The spike showed `.use()` overloads infer fine, but a failed call explains only the last overload, so plugin or Effect-middleware errors lose their explanation.
+  - (agent) The root's check is `RootConcatCheck` (it adds meta keys); a builder's is `ConcatCheck` (it requires them).
+  - Lost: oRPC v2's single `.use()`; v11 has no root-level composition, so `t.concat()` is new for v11 users anyway.
+- Lives in: `packages/trpc/src/server/init.ts` (`concat`, `RootConcatCheck`, `ExtendedDef`, `mergeMeta`), `src/server/procedure.ts` (`MetaMerge`, `mergeMeta`), `src/openapi/extension.ts` (`openapi()`), `src/openapi/routes.ts` (`Route`, `OpenApiMeta`, `routeOf`), `src/contract/index.ts` (`concat`); tests in `test/integration/root-extensions.test.ts`; docs in `docs/procedures.md` (Root extensions).

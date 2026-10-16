@@ -7,11 +7,11 @@ import { mergeRoute, type OpenApiMeta } from './routes.ts';
  * mapping the OpenAPI handler, generator and link read. `.meta({ route })`
  * calls merge by key, and `spec` functions compose, so a base procedure can
  * set tags or `security` that its leaves extend. Contracts take it too:
- * `contract.create().with(openapi())`.
+ * `contract.create().concat(openapi())`.
  *
  * @example
  * ```ts
- * const t = initTrpc<{ ctx: Context }>().with(openapi());
+ * const t = initTrpc<{ ctx: Context }>().concat(openapi());
  *
  * export const byId = t.procedure
  *   .meta({ route: { method: 'GET', path: '/posts/{id}', tags: ['posts'] } })

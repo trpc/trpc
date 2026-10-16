@@ -9,7 +9,7 @@ The `openapi()` root extension adds a `route` meta key. A procedure without one 
 ```ts
 import { openapi } from '@trpc12/trpc/openapi';
 
-const t = initTrpc<{ ctx: Context }>().with(openapi());
+const t = initTrpc<{ ctx: Context }>().concat(openapi());
 
 const byId = t.procedure
   .meta({ route: { method: 'GET', path: '/posts/{id}', tags: ['posts'] } })
@@ -199,7 +199,7 @@ links: [
 
 ## A contract from an OpenAPI document
 
-`generateContractFromOpenApi(document, { prefix?, exportName?, patterns? })` turns an OpenAPI 3.0 or 3.1 document into the source of a `@trpc12/trpc/contract` module. Schemas are Effect Schemas, translated by Effect's `SchemaRepresentation`; each operation becomes a procedure with its `route` meta (under `.with(openapi())`), so the contract works with `openApiLink` and `validationLink` against any REST API:
+`generateContractFromOpenApi(document, { prefix?, exportName?, patterns? })` turns an OpenAPI 3.0 or 3.1 document into the source of a `@trpc12/trpc/contract` module. Schemas are Effect Schemas, translated by Effect's `SchemaRepresentation`; each operation becomes a procedure with its `route` meta (under `.concat(openapi())`), so the contract works with `openApiLink` and `validationLink` against any REST API:
 
 ```ts
 import { generateContractFromOpenApi } from '@trpc12/trpc/openapi';
@@ -219,7 +219,7 @@ export const Pet = Schema.Struct({
   id: Schema.Number.check(Schema.isInt()),
   name: Schema.String,
 });
-const c = trpcContract.create().with(openapi());
+const c = trpcContract.create().concat(openapi());
 export const petstore = {
   pets: {
     list: c

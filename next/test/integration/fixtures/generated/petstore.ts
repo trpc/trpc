@@ -13,7 +13,7 @@ export const PetsAddInput = NewPet
 export const PetsAddOutput = Pet
 export const DeletePetsPetIdInput = Schema.Struct({ "petId": Schema.Number.check(Schema.isInt().annotate({ "expected": "an integer" })) })
 
-const c = trpcContract.create().with(openapi());
+const c = trpcContract.create().concat(openapi());
 
 export const petstore = {
   pets: {

@@ -18,7 +18,7 @@ import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 
-const t = initTrpc().with(openapi());
+const t = initTrpc().concat(openapi());
 
 const users = t.procedure.query(() => ['ada']);
 const ban = t.procedure
@@ -153,7 +153,7 @@ test('with a contract, the OpenAPI handler loads lazy subtrees only when called'
 });
 
 test('router-level meta takes only the keys an extension gives a router form', () => {
-  const app = initTrpc<{ meta: { auth?: 'admin' } }>().with(openapi());
+  const app = initTrpc<{ meta: { auth?: 'admin' } }>().concat(openapi());
   app.router({ meta: { route: { prefix: '/a', tags: ['a'] } } }, { users });
   // @ts-expect-error -- `auth` applies to procedures only
   app.router({ meta: { auth: 'admin' } }, { users });
