@@ -4,14 +4,14 @@ import type { Route } from '../server/procedure.ts';
 /**
  * An HTTP method `.route()` accepts.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type HttpMethod = NonNullable<Route['method']>;
 
 /**
  * A procedure's REST mapping, with defaults applied (Q18.2).
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface ResolvedRoute {
   readonly method: HttpMethod;
@@ -40,7 +40,7 @@ export const normalizePrefix = (prefix: string | undefined): string => {
  * // { method: 'GET', path: '/api/post/byId', params: [], successStatus: 200, … }
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function resolveRoute(
   path: string,

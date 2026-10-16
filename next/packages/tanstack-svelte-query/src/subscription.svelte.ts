@@ -9,7 +9,7 @@ import {
  * What {@link createSubscription} returns. The fields are reactive getters,
  * like `createQuery`'s result: don't destructure them.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface CreateSubscriptionResult<TEvent, TError> {
   readonly status: SubscriptionStatus;
@@ -36,7 +36,7 @@ export interface CreateSubscriptionResult<TEvent, TError> {
  * <p>{sub.data}</p>
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function createSubscription<TEvent, TError>(
   options: () => TrpcSubscriptionOptions<TEvent, TError>,

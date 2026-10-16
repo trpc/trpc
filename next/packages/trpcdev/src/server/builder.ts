@@ -49,7 +49,7 @@ import type { TrackedEnvelope } from './tracked.ts';
 /**
  * The builder's state: one mapped bag (03 G-A).
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface BuilderDef {
   /** The root ctx. For a plugin, what it requires. */
@@ -75,7 +75,7 @@ export interface BuilderDef {
 /**
  * Part of inferred procedure types; exported so they stay nameable.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type With<TDef extends BuilderDef, P extends Partial<BuilderDef>> = {
   [K in keyof BuilderDef]: K extends keyof P ? P[K] : TDef[K];
@@ -84,7 +84,7 @@ export type With<TDef extends BuilderDef, P extends Partial<BuilderDef>> = {
 /**
  * The ctx at this point of the chain.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type CurrentCtx<TDef extends BuilderDef> = Overwrite<
   TDef['ctx'],
@@ -94,7 +94,7 @@ export type CurrentCtx<TDef extends BuilderDef> = Overwrite<
 /**
  * What a context-aware input callback receives (05 D-A).
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface InputOpts<TCtx, TMeta> {
   readonly ctx: TCtx;
@@ -106,7 +106,7 @@ export interface InputOpts<TCtx, TMeta> {
 /**
  * The input of a declared error's constructor.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type ErrorConstructorOpts<TData> = {
   message?: string;
@@ -117,7 +117,7 @@ export type ErrorConstructorOpts<TData> = {
  * Typed constructors for the errors declared with `.errors()` (07 A). The
  * errors they make are `defined` even when thrown from deep helper code.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type ErrorConstructors<TDeclared> = {
   readonly [K in keyof TDeclared]: TDeclared[K] extends TrpcError<any, infer D>
@@ -130,7 +130,7 @@ export type ErrorConstructors<TDeclared> = {
 /**
  * What a resolver receives.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface ResolverOpts<TDef extends BuilderDef> {
   readonly ctx: CurrentCtx<TDef>;
@@ -149,7 +149,7 @@ export interface ResolverOpts<TDef extends BuilderDef> {
 /**
  * What a subscription resolver receives.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface SubscriptionResolverOpts<
   TDef extends BuilderDef,
@@ -161,7 +161,7 @@ export interface SubscriptionResolverOpts<
 /**
  * What `.provide()`'s factory receives.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface ProvideOpts<TDef extends BuilderDef> {
   readonly ctx: CurrentCtx<TDef>;
@@ -195,7 +195,7 @@ type ServicesOf<R> = R extends AnyTrpcError
 /**
  * Part of inferred procedure types; exported so they stay nameable.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface Split {
   output: unknown;
@@ -205,7 +205,7 @@ export interface Split {
 /**
  * Part of inferred procedure types; exported so they stay nameable.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type SplitReturn<R> =
   IsAny<Awaited<R>> extends true
@@ -231,7 +231,7 @@ type StreamErrorsOf<R> = R extends AnyTrpcError
 /**
  * Part of inferred procedure types; exported so they stay nameable.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type SplitStream<R> =
   IsAny<Awaited<R>> extends true
@@ -271,7 +271,7 @@ type EventConstraint<TDef extends BuilderDef> = TDef['outputIn'] extends Unset
  * A query or mutation that streams needs `.output(stream(Item))`: a plain
  * schema would be checked against the whole iterable.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type StreamOutputCheck<
   TDef extends BuilderDef,
@@ -302,7 +302,7 @@ type UnmappedOf<R> =
  * 02 d.ii: an Effect or Stream that can fail with something other than a
  * `TrpcError` is a type error until the failure is mapped.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type StrictErrors<R> =
   IsAny<Awaited<R>> extends true
@@ -317,7 +317,7 @@ export type StrictErrors<R> =
 /**
  * Checks values from `ok()` short-circuits against the procedure's output.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type ShortsCheck<TDef extends BuilderDef, TOutput> = [
   TDef['shorts'],
@@ -340,7 +340,7 @@ type ResolvedOutput<
 /**
  * Part of inferred procedure types; exported so they stay nameable.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type BuildProcedure<
   TDef extends BuilderDef,
@@ -373,7 +373,7 @@ type NeedsConflict<TCtx, TNeeds> = {
  * has with another type. Keys the procedure lacks are fine: see
  * {@link WithNeeds}.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type NeedsCheck<TCtx, TNeeds> = [NeedsConflict<TCtx, TNeeds>] extends [
   never,
@@ -389,7 +389,7 @@ export type NeedsCheck<TCtx, TNeeds> = [NeedsConflict<TCtx, TNeeds>] extends [
  * become requirements on the root ctx, so `createContext` (or an
  * in-process caller's `ctx`) must supply them, like an Effect requirement.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type WithNeeds<TDef extends BuilderDef, TNeeds> = [
   Exclude<keyof TNeeds, keyof CurrentCtx<TDef>>,
@@ -404,7 +404,7 @@ export type WithNeeds<TDef extends BuilderDef, TNeeds> = [
 /**
  * `unknown` when `plugin` may be concatenated onto a builder with `TDef`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type ConcatCheck<TDef extends BuilderDef, TPlugin extends BuilderDef> = [
   Missing<CurrentCtx<TDef>, TPlugin['ctx']>,
@@ -425,14 +425,14 @@ export type ConcatCheck<TDef extends BuilderDef, TPlugin extends BuilderDef> = [
 /**
  * The `.errors()` argument.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type ErrorMapInput = Record<string, ErrorSpec>;
 
 /**
  * The `TrpcError` types an error map declares, by code.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type DeclaredErrors<M> = {
   [K in keyof M & string]: TrpcError<
@@ -446,7 +446,7 @@ export type DeclaredErrors<M> = {
 /**
  * The runtime state under `'~trpc'`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface BuilderInternals {
   readonly steps: ReadonlyArray<Step>;
@@ -474,7 +474,7 @@ export interface BuilderInternals {
  * };
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface ProcedureBuilder<TDef extends BuilderDef> {
   readonly '~trpc': BuilderInternals & { readonly '~types'?: TDef };
@@ -812,7 +812,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
 /**
  * Part of inferred procedure types; exported so they stay nameable.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type InputDef<TDef extends BuilderDef, $S extends AnySchema> = With<
   TDef,
@@ -827,7 +827,7 @@ export type InputDef<TDef extends BuilderDef, $S extends AnySchema> = With<
 /**
  * Any procedure builder.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type AnyProcedureBuilder = ProcedureBuilder<any>;
 

@@ -57,7 +57,7 @@ export const isUnexpectedError = (err: AnyTrpcError): boolean =>
  * keeps its code but is `defined: false` (unless it came from a declared
  * error's constructor), anything else is unexpected.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function normalizeCause(cause: Cause.Cause<unknown>): AnyTrpcError {
   for (const reason of cause.reasons) {
@@ -110,7 +110,7 @@ const fail = (err: AnyTrpcError) => Effect.fail(withDefined(err, true));
 
 /**
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface CallOpts {
   readonly procedure: AnyProcedure;
@@ -234,7 +234,7 @@ const checkDeclared = (
  * output validation. Fails with typed `TrpcError`s; thrown values are
  * defects. A subscription succeeds with a `Stream` of events.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function callProcedure(
   opts: CallOpts,

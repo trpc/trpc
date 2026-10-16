@@ -1,7 +1,12 @@
 import { Effect, Layer, Schema } from 'effect';
 import { Persistence } from 'effect/persistence';
-import { createTrpcClient, durableLink, httpLink, safe } from 'trpcdev/client';
-import { durable } from 'trpcdev/middleware';
+import {
+  createTrpcClient,
+  unstable_durableLink,
+  httpLink,
+  safe,
+} from 'trpcdev/client';
+import { unstable_durable } from 'trpcdev/middleware';
 import { createOpenApiHandler } from 'trpcdev/openapi';
 import { createFetchHandler, initTrpc, TrpcError } from 'trpcdev/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
@@ -18,17 +23,17 @@ const makeRouter = () => {
   const router = {
     order: t.procedure
       .input(Schema.Struct({ sku: Schema.String }))
-      .use(durable())
+      .use(unstable_durable())
       .mutation(({ input }) => {
         runs.order++;
         if (input.sku === 'gone') return new OutOfStock({ sku: input.sku });
         return { id: runs.order, sku: input.sku, at: new Date(0) };
       }),
-    fail: t.procedure.use(durable()).mutation(() => {
+    fail: t.procedure.use(unstable_durable()).mutation(() => {
       runs.fail++;
       throw new Error('boom');
     }),
-    slow: t.procedure.use(durable()).mutation(async () => {
+    slow: t.procedure.use(unstable_durable()).mutation(async () => {
       await new Promise((r) => setTimeout(r, 50));
       return ++runs.slow;
     }),
@@ -157,7 +162,7 @@ test('instances sharing a store wait for the one running the call', async () => 
   await b.dispose();
 });
 
-test('durableLink retries a lost response with the same id', async () => {
+test('unstable_durableLink retries a lost response with the same id', async () => {
   const { router, runs } = makeRouter();
   await using http = await createTestServer({
     router,
@@ -168,7 +173,7 @@ test('durableLink retries a lost response with the same id', async () => {
   const client = createTrpcClient({
     router,
     links: [
-      durableLink({ delayMs: () => 0 }),
+      unstable_durableLink({ delayMs: () => 0 }),
       httpLink({
         url: http.url,
         batch: true,
@@ -224,7 +229,7 @@ test('a call id is kept over REST too', async () => {
   await handler.dispose();
 });
 
-test('durable() requires BackingPersistence', () => {
+test('unstable_durable() requires BackingPersistence', () => {
   const { router } = makeRouter();
   expectTypeOf<
     Parameters<typeof createFetchHandler<typeof router>>[0]['layer']

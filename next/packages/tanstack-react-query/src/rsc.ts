@@ -54,7 +54,7 @@ const hasDigest = (error: unknown) =>
  * Options for {@link createTrpcRsc}: the router and its ctx (a function is
  * called once per request) and layer, as for `createRouterClient`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type TrpcRscOptions<TRouter extends AnyRouter> = {
   router: TRouter;
@@ -74,7 +74,7 @@ export type TrpcRscOptions<TRouter extends AnyRouter> = {
 /**
  * What {@link createTrpcRsc} returns.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface TrpcRsc<TRouter extends AnyRouter> {
   /** Query helpers whose calls go straight to the router. */
@@ -107,7 +107,7 @@ export interface TrpcRsc<TRouter extends AnyRouter> {
  * );
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function createTrpcRsc<TRouter extends AnyRouter>(
   opts: TrpcRscOptions<TRouter>,

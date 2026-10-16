@@ -29,7 +29,7 @@ const RateLimitedBase: TaggedErrorClass<
  * The error {@link rateLimit} fails with: `429`, with the limit and the
  * milliseconds until a retry can pass.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export class RateLimited extends RateLimitedBase {}
 
@@ -37,7 +37,7 @@ export class RateLimited extends RateLimitedBase {}
  * Options for {@link rateLimit}. `limit`, `window`, `algorithm` and `tokens`
  * are Effect's `RateLimiter.consume` options.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface RateLimitOptions<TCtx, TInput, TMeta> {
   /** The bucket a call counts against, e.g. `({ ctx }) => \`login:${ctx.ip}\``. */
@@ -81,7 +81,7 @@ const seconds = (d: Duration.Duration) =>
  * });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function rateLimit<TReq extends MiddlewareRequirements = {}>(
   options: RateLimitOptions<ReqCtx<TReq>, ReqInput<TReq>, ReqMeta<TReq>>,

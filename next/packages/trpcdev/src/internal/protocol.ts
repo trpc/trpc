@@ -3,7 +3,7 @@ import type { ProcedureType } from './types.ts';
 /**
  * The wire protocol version this build speaks.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export const PROTOCOL_VERSION = '12';
 
@@ -53,7 +53,7 @@ export function fromInputSearch(
 /**
  * Header names the protocol uses.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export const HEADER = {
   version: 'trpc-version',
@@ -66,7 +66,7 @@ export const HEADER = {
   blob: 'trpc-blob',
   /** On a response a procedure returned itself: the client hands it over as is. */
   response: 'trpc-response',
-  /** On a request: the call's id, which `durable()` keeps its result under. */
+  /** On a request: the call's id, which `unstable_durable()` keeps its result under. */
   callId: 'trpc-call-id',
   /** On a response: the name of the serializer the handler uses. */
   serializer: 'trpc-serializer',
@@ -75,7 +75,7 @@ export const HEADER = {
 /**
  * Content types the protocol uses.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export const CONTENT_TYPE = {
   json: 'application/json',
@@ -88,7 +88,7 @@ export const CONTENT_TYPE = {
 /**
  * One call in a batch request body.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface BatchCall {
   path: string;
@@ -98,7 +98,7 @@ export interface BatchCall {
 /**
  * One JSONL line of a batch response.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type BatchLine =
   | { i: number; status: number; body: unknown }

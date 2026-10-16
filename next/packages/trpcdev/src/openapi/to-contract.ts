@@ -4,7 +4,7 @@ import { JsonSchema, SchemaRepresentation } from 'effect';
  * An OpenAPI 3.0 or 3.1 document, as {@link generateContractFromOpenApi}
  * reads it.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface OpenApiSource {
   readonly openapi: string;
@@ -17,7 +17,7 @@ export interface OpenApiSource {
 /**
  * Options for {@link generateContractFromOpenApi}.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface GenerateContractOptions {
   /**
@@ -234,7 +234,7 @@ const nonEmpty = (s: JsonSchema.JsonSchema | undefined) =>
  * await writeFile('src/petstore.ts', source);
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function generateContractFromOpenApi(
   document: OpenApiSource,

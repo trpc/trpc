@@ -6,7 +6,7 @@ import type { AnySchema, OutOf } from '../server/schema.ts';
  * Built-in error codes and their default HTTP status.
  *
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export const ERROR_STATUS = {
   PARSE_ERROR: 400,
@@ -41,14 +41,14 @@ export const ERROR_STATUS = {
 /**
  * A built-in error code.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type BuiltinErrorCode = keyof typeof ERROR_STATUS;
 
 /**
  * Options for {@link TrpcError} and {@link error}.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface TrpcErrorOptions<TCode extends string, TData> {
   /** A built-in code (`'NOT_FOUND'`) or a custom one (`'PAYMENT_REQUIRED'`). */
@@ -92,7 +92,7 @@ const YieldableBase: new (args: {
  * if (err?.defined && err.code === 'NOT_FOUND') err.data.id; // typed
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export class TrpcError<
   TCode extends string = string,
@@ -179,7 +179,7 @@ const TAGGED: unique symbol = Symbol.for('trpcdev/TaggedError');
 /**
  * The options of a {@link TrpcError.Tagged} class.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface TaggedErrorSpec<
   TSchema,
@@ -195,7 +195,7 @@ export interface TaggedErrorSpec<
 /**
  * What a {@link TrpcError.Tagged} instance takes besides its `data`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface TaggedErrorOptions {
   readonly message?: string | undefined;
@@ -206,7 +206,7 @@ export interface TaggedErrorOptions {
 /**
  * The `data` type of a {@link TrpcError.Tagged} class.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type TaggedData<TSchema> = [TSchema] extends [AnySchema]
   ? OutOf<TSchema>
@@ -216,7 +216,7 @@ export type TaggedData<TSchema> = [TSchema] extends [AnySchema]
  * A class made by {@link TrpcError.Tagged}. Its statics make it an error
  * spec, so `.errors({ POST_NOT_FOUND: PostNotFound })` documents it too.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface TaggedErrorClass<
   TCode extends string,
@@ -247,7 +247,7 @@ export function taggedSpec(
 /**
  * Any {@link TrpcError}.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type AnyTrpcError = TrpcError<string, any>;
 
@@ -268,7 +268,7 @@ export type AnyTrpcError = TrpcError<string, any>;
  * );
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function error<const TCode extends string, TData = undefined>(
   opts: Omit<TrpcErrorOptions<TCode, TData>, 'defined'>,
@@ -284,7 +284,7 @@ export function error<const TCode extends string, TData = undefined>(
  * if (isTrpcError(cause)) cause.code;
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function isTrpcError(value: unknown): value is AnyTrpcError {
   return value instanceof TrpcError;
@@ -315,7 +315,7 @@ export function frameworkError(err: AnyTrpcError): unknown {
  * if (isDefinedError(err)) err.code; // the procedure's codes only
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function isDefinedError<E>(
   value: E,
@@ -342,7 +342,7 @@ export function withDefined<E extends AnyTrpcError>(
 /**
  * The JSON shape of an error on the wire.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface WireError {
   error: { code: string; message: string; data?: unknown; defined: boolean };
@@ -350,7 +350,7 @@ export interface WireError {
 
 /**
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function toWireError(err: AnyTrpcError): WireError {
   return {
@@ -369,7 +369,7 @@ const isRecord = (v: unknown): v is Record<string, unknown> =>
 /**
  * Rebuilds a {@link TrpcError} from a deserialized error body.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function fromWireError(body: unknown, status?: number): TrpcError {
   const inner = isRecord(body) && isRecord(body['error']) ? body['error'] : {};

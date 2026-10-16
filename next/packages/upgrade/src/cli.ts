@@ -12,7 +12,7 @@ import { upgradeFiles } from './files.ts';
  * Command.run(upgradeCommand, { version: '12.0.0' });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export const upgradeCommand: Command.Command<
   'trpcdev-upgrade',

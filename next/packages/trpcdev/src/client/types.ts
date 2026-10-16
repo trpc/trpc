@@ -26,7 +26,7 @@ import type {
  * An error's `data` as it arrives under a serializer's form, like outputs:
  * its JSON form unless the serializer keeps the types.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type ErrorData<
   D,
@@ -41,7 +41,7 @@ export type ErrorData<
  * A typed (`defined`) error from a procedure's union, its `data` in the
  * serializer's form `F`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type DefinedError<E, F extends OutputForm = DansonForm> =
   E extends TrpcError<infer C, infer D>
@@ -52,7 +52,7 @@ export type DefinedError<E, F extends OutputForm = DansonForm> =
  * Anything outside the typed union: thrown errors, masked internal errors,
  * network failures (`NETWORK_ERROR`) and aborts (`CLIENT_CLOSED_REQUEST`).
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type UnexpectedError = TrpcError<
   BuiltinErrorCode | (string & {}),
@@ -62,7 +62,7 @@ export type UnexpectedError = TrpcError<
 /**
  * What a call can fail with. Narrow with `error.defined` first, then `code`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type ClientError<E, F extends OutputForm = DansonForm> =
   | DefinedError<E, F>
@@ -76,7 +76,7 @@ type CallError<D extends ProcedureDef, F extends OutputForm, TLinkErrors> =
 /**
  * A call's `Promise`, carrying its error type for `safe()`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface TrpcPromise<T, E> extends Promise<T> {
   readonly '~error'?: E;
@@ -86,7 +86,7 @@ export interface TrpcPromise<T, E> extends Promise<T> {
  * A subscription: iterate it with `for await`. Breaking out of the loop, or
  * aborting `signal`, closes the connection.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface TrpcSubscription<T, E> extends AsyncIterable<T> {
   readonly '~error'?: E;
@@ -101,7 +101,7 @@ export interface TrpcSubscription<T, E> extends AsyncIterable<T> {
  * await client.post.byId.query({ id }, { signal, headers, dedupe: false });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type CallOptions<TContext extends object = {}> = {
   signal?: AbortSignal | undefined;
@@ -111,7 +111,7 @@ export type CallOptions<TContext extends object = {}> = {
 /**
  * Options for `subscribe()`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type SubscribeOptions<TContext extends object = {}> =
   CallOptions<TContext> & {
@@ -128,7 +128,7 @@ export type CallArgs<TInput, TOpts> = undefined extends TInput
  * What a client's links declare besides call options: their own errors,
  * and the operation types none of them carries.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface ChainTypes {
   readonly errors?: unknown;
@@ -193,7 +193,7 @@ export type Carries<T, TLinks extends ChainTypes> = TLinks extends {
 /**
  * The client methods for one procedure.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type DecorateProcedure<
   P,
@@ -255,7 +255,7 @@ type DecorateCarried<
  * declares; `TForm` overrides it, as in-process callers do (values by
  * reference keep their types).
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type TrpcClient<
   TRouter,
@@ -274,7 +274,7 @@ declare const routerTypeBrand: unique symbol;
  * A value that carries a router type and nothing else (17 D-C). Made by
  * {@link routerType}.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface RouterType<TRouter> {
   readonly [routerTypeBrand]: TRouter;
@@ -294,7 +294,7 @@ export interface RouterType<TRouter> {
  * await client.post.byId.query({ id: '1' }, { dedupe: false });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function routerType<TRouter>(): RouterType<TRouter> {
   return {} as RouterType<TRouter>;
@@ -304,7 +304,7 @@ export function routerType<TRouter>(): RouterType<TRouter> {
  * The router a `router:` value describes: a {@link RouterType}, a contract
  * or a router.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type RouterOf<TSource> =
   TSource extends RouterType<infer TRouter> ? TRouter : TSource;
@@ -325,7 +325,7 @@ type DeclOf<TLink> =
 /**
  * The call option fields every link in `TLinks` declares, merged.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type LinksContext<TLinks extends ReadonlyArray<AnyLink>> = [
   DeclOf<TLinks[number]>,
@@ -340,7 +340,7 @@ export type LinksContext<TLinks extends ReadonlyArray<AnyLink>> = [
 /**
  * The errors and unsupported operation types the links in `TLinks` declare.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type LinksTypes<TLinks extends ReadonlyArray<AnyLink>> = {
   errors: DeclOf<TLinks[number]> extends infer D
@@ -408,7 +408,7 @@ export type DuplicateSwitchCheck<TLinks> = [DuplicateSwitch<TLinks>] extends [
 /**
  * Every procedure path of a router, `'post.byId'`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type RouterPaths<TRouter, TPrefix extends string = ''> =
   IsAny<TRouter> extends true

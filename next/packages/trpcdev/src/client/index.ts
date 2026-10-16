@@ -41,7 +41,7 @@ export {
 } from './link.ts';
 export {
   dedupeLink,
-  durableLink,
+  unstable_durableLink,
   loggerLink,
   retryLink,
   splitLink,

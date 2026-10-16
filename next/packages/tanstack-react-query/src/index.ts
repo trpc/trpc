@@ -42,7 +42,7 @@ export * from '@trpcdev/tanstack-query';
 /**
  * Props of the `TrpcProvider` from {@link createTrpcContext}.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface TrpcProviderProps<
   TRouter,
@@ -56,7 +56,7 @@ export interface TrpcProviderProps<
 /**
  * What {@link createTrpcContext} returns.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface TrpcReactContext<
   TRouter,
@@ -100,7 +100,7 @@ export interface TrpcReactContext<
  * </QueryClientProvider>;
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function createTrpcContext<
   TRouter,
@@ -134,7 +134,7 @@ export function createTrpcContext<
 /**
  * What {@link useSubscription} returns: the latest event and status.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type UseSubscriptionResult<TEvent, TError> = SubscriptionResult<
   TEvent,
@@ -156,7 +156,7 @@ export type UseSubscriptionResult<TEvent, TError> = SubscriptionResult<
  * if (sub.status === 'error') return <button onClick={sub.reset}>Retry</button>;
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function useSubscription<TEvent, TError>(
   options: TrpcSubscriptionOptions<TEvent, TError>,

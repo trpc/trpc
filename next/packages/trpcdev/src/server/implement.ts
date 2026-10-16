@@ -41,7 +41,7 @@ import type { TrackedEnvelope } from './tracked.ts';
  * The builder state of an implementer leaf: the root's ctx and meta, the
  * contract's input, output and errors.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type ImplementerDef<
   TRoot extends BuilderDef,
@@ -62,7 +62,7 @@ export type ImplementerDef<
 /**
  * Q9.3: an implementation may only return errors its contract declares.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type UndeclaredCheck<TDef extends BuilderDef, $Errors> = [
   Exclude<$Errors, TDef['errors']>,
@@ -106,7 +106,7 @@ type EventsConstraint<
  * A procedure made from a contract leaf: the contract's client-facing types,
  * the implementation's ctx and services.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type ImplementedProcedure<
   TDef extends BuilderDef,
@@ -153,7 +153,7 @@ type Terminals<TDef extends BuilderDef, TContract extends AnyProcedure> = {
  * route come from the contract, so `.input()`, `.output()`, `.errors()` and
  * `.route()` are not available.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface ImplementerMethods<
   TDef extends BuilderDef,
@@ -247,7 +247,7 @@ export interface ImplementerMethods<
  * A leaf of `t.implement(contract)`: `.use()`, `.provide()` and the terminal
  * the contract declares.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type ProcedureImplementer<
   TDef extends BuilderDef,
@@ -258,7 +258,7 @@ export type ProcedureImplementer<
 /**
  * The mirror tree `t.implement(contract)` returns.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type Implementer<
   TRoot extends BuilderDef,
@@ -274,7 +274,7 @@ export type Implementer<
  * What `impl.router()` accepts at each contract leaf: a procedure with the
  * contract's type, input, output and errors.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type ImplementedRouter<TContract> = TContract extends AnyProcedure
   ? Procedure<{
@@ -291,7 +291,7 @@ export type ImplementedRouter<TContract> = TContract extends AnyProcedure
 /**
  * Rejects keys the contract does not have, at any depth.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type ExactRouter<TRouter, TContract> = TContract extends AnyProcedure
   ? unknown
@@ -305,7 +305,7 @@ export type ExactRouter<TRouter, TContract> = TContract extends AnyProcedure
  * `impl.router()`: checks that a router implements every procedure of the
  * contract and nothing else.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface ImplementRouter<TContract> {
   /**
@@ -381,7 +381,7 @@ type LeafPaths<
  * `unknown` when every procedure of the contract declares `$Errors`: an
  * implementer-wide `.use()` or `.provide()` runs for all of them (Q9.3).
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type EveryLeafDeclares<TContract, $Errors> = [
   LeafPaths<TContract, $Errors>,
@@ -396,7 +396,7 @@ export type EveryLeafDeclares<TContract, $Errors> = [
  * Implementer-wide steps: `impl.use()` and `impl.provide()` run before every
  * leaf's own steps.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface ImplementerRoot<
   TRoot extends BuilderDef,
@@ -500,7 +500,7 @@ type MetaMismatch<TMeta, TContractMeta> = TContractMeta extends object
  * types the root accepts, so middleware reading `meta` sees what the
  * contract set.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type ImplementMetaCheck<TMeta, TContract> = [
   MetaMismatch<TMeta, ContractMeta<TContract>>,
@@ -563,7 +563,7 @@ export function implement(
 /**
  * What `t.implement(contract)` returns.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type ImplementResult<
   TRoot extends BuilderDef,

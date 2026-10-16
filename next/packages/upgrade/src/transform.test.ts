@@ -287,6 +287,29 @@ function Posts() {
   });
 });
 
+describe('promoted unstable_ names', () => {
+  test('imports and re-exports of a promoted name are rewritten', () => {
+    const promoted = { unstable_durableLink: 'durableLink' };
+    expect(
+      upgradeSource(
+        `import { unstable_durableLink, httpLink } from 'trpcdev/client';
+import { unstable_durableLink as retry } from 'trpcdev/client';
+export { unstable_durableLink } from 'trpcdev/client';
+const links = [unstable_durableLink(), retry(), httpLink({ url })];
+`,
+        'file.ts',
+        { promoted },
+      ).code,
+    ).toMatchInlineSnapshot(`
+      "import { durableLink, httpLink } from 'trpcdev/client';
+      import { durableLink as retry } from 'trpcdev/client';
+      export { durableLink as unstable_durableLink } from 'trpcdev/client';
+      const links = [durableLink(), retry(), httpLink({ url })];
+      "
+    `);
+  });
+});
+
 describe('untouched', () => {
   test('files without tRPC', () => {
     const source = `export const x = 1;\n`;

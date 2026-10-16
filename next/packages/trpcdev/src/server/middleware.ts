@@ -20,7 +20,7 @@ import type {
  * });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface ResponseHandle {
   readonly headers: Headers;
@@ -34,7 +34,7 @@ export interface ResponseHandle {
  * passed the input unchanged), so the builder can infer them.
  *
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type MiddlewareResult<TCtx, TInput = Unset> = (
   | { readonly ok: true; readonly data: unknown }
@@ -45,7 +45,7 @@ export type MiddlewareResult<TCtx, TInput = Unset> = (
  * The input after a middleware: the one it passed to `next({ input })`, or
  * the current one.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type NextInput<TCurrent, $Input> = [$Input] extends [Unset]
   ? TCurrent
@@ -54,7 +54,7 @@ export type NextInput<TCurrent, $Input> = [$Input] extends [Unset]
 /**
  * A short-circuit result from {@link ok}.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface OkResult<T> {
   readonly ok: true;
@@ -77,7 +77,7 @@ export interface OkResult<T> {
  * });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function ok<const T>(data: T): OkResult<T> {
   return { ok: true, data, '~ok': true };
@@ -88,7 +88,7 @@ export function ok<const T>(data: T): OkResult<T> {
  * input. A replaced input is what later steps and the resolver get, typed as
  * passed.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface NextFn {
   (): Promise<MiddlewareResult<{}>>;
@@ -102,7 +102,7 @@ export interface NextFn {
 /**
  * The options a middleware receives.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface MiddlewareOpts<TCtx, TInput, TMeta> {
   readonly ctx: TCtx;
@@ -124,7 +124,7 @@ export interface MiddlewareOpts<TCtx, TInput, TMeta> {
  * A returned error joins the procedure's typed error union.
  *
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type MiddlewareFunction<
   TCtx,
@@ -141,7 +141,7 @@ export type MiddlewareFunction<
 /**
  * What a standalone middleware needs from the procedure it is used on.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface MiddlewareRequirements {
   ctx?: object;
@@ -169,7 +169,7 @@ export type ReqInput<T extends MiddlewareRequirements> = 'input' extends keyof T
  * declares in `provides`, so a body that forgets to provide them is a type
  * error.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface EffectNextFn<TProvides> {
   (): Effect.Effect<MiddlewareResult<{}>, never, TProvides>;
@@ -185,7 +185,7 @@ export interface EffectNextFn<TProvides> {
 /**
  * The options an Effect middleware receives.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface EffectMiddlewareOpts<
   TCtx,
@@ -201,7 +201,7 @@ export interface EffectMiddlewareOpts<
  * its requirements join the procedure's services, and the services it
  * `provides` are removed from what later steps require.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface EffectMiddleware<
   TCtx,
@@ -238,7 +238,7 @@ export type EffectBodyCheck<$E, $R, $Provides> = [
 /**
  * What an Effect middleware declares.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface EffectMiddlewareDecl extends MiddlewareRequirements {
   /** Services the middleware provides to everything after it. */
@@ -354,7 +354,7 @@ interface MiddlewareFactory {
 /**
  * Declares a middleware outside any `t`. See the call signatures.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export const middleware: MiddlewareFactory = Object.assign(
   () => (fn: unknown) => fn,
@@ -373,7 +373,7 @@ type AnyOpts = MiddlewareOpts<unknown, unknown, unknown>;
  * t.procedure.use(onStart(({ path }) => log.info('start', path)));
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function onStart(
   fn: (opts: AnyOpts) => MaybePromise<void>,
@@ -393,7 +393,7 @@ export function onStart(
  * t.procedure.use(onSuccess((data, { path }) => log.info('ok', path)));
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function onSuccess(
   fn: (data: unknown, opts: AnyOpts) => MaybePromise<void>,
@@ -413,7 +413,7 @@ export function onSuccess(
  * t.procedure.use(onError((error, { path }) => report(error, path)));
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function onError(
   fn: (error: AnyTrpcError, opts: AnyOpts) => MaybePromise<void>,
@@ -433,7 +433,7 @@ export function onError(
  * t.procedure.use(onFinish((result) => metrics.increment(result.ok ? 'ok' : 'error')));
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function onFinish(
   fn: (

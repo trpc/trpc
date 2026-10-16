@@ -26,7 +26,7 @@ import { Effect, Stream } from 'effect';
  * const event: LambdaV1Event = { httpMethod: 'GET', path: '/trpc/health', headers: {}, body: null };
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface LambdaV1Event {
   readonly httpMethod: string;
@@ -59,7 +59,7 @@ export interface LambdaV1Event {
  * };
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface LambdaV2Event {
   readonly version: '2.0';
@@ -92,7 +92,7 @@ interface CloudFrontHeaders {
  * };
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface LambdaEdgeEvent {
   readonly Records: ReadonlyArray<{
@@ -118,7 +118,7 @@ export interface LambdaEdgeEvent {
  * export const main = (event: LambdaEvent, context: LambdaContext) => lambda(event, context);
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type LambdaEvent = LambdaV1Event | LambdaV2Event | LambdaEdgeEvent;
 
@@ -130,7 +130,7 @@ export type LambdaEvent = LambdaV1Event | LambdaV2Event | LambdaEdgeEvent;
  * createContext: ({ platform }) => ({ requestId: platform.context.awsRequestId })
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface LambdaContext {
   readonly awsRequestId?: string;
@@ -145,7 +145,7 @@ export interface LambdaContext {
  * createFetchHandler<AppRouter, LambdaPlatform>({ router, createContext: ({ platform }) => ({ event: platform.event }) });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface LambdaPlatform {
   readonly event: LambdaEvent;
@@ -159,7 +159,7 @@ export interface LambdaPlatform {
  * const result: LambdaV1Result = { statusCode: 200, headers: {}, body: '"ok"', isBase64Encoded: false };
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface LambdaV1Result {
   readonly statusCode: number;
@@ -177,7 +177,7 @@ export interface LambdaV1Result {
  * const result: LambdaV2Result = { statusCode: 200, headers: {}, cookies: [], body: '"ok"', isBase64Encoded: false };
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface LambdaV2Result {
   readonly statusCode: number;
@@ -194,7 +194,7 @@ export interface LambdaV2Result {
  * const result: LambdaEdgeResult = { status: '200', headers: {}, body: '"ok"', bodyEncoding: 'text' };
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface LambdaEdgeResult {
   readonly status: string;
@@ -210,7 +210,7 @@ export interface LambdaEdgeResult {
  * const result: LambdaResult = await lambda(event, context);
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type LambdaResult = LambdaV1Result | LambdaV2Result | LambdaEdgeResult;
 
@@ -223,7 +223,7 @@ export type LambdaResult = LambdaV1Result | LambdaV2Result | LambdaEdgeResult;
  * const handler: LambdaFetchHandler = createFetchHandler({ router });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface LambdaFetchHandler {
   fetch(request: Request, platform: LambdaPlatform): Promise<Response>;
@@ -236,7 +236,7 @@ export interface LambdaFetchHandler {
  * toLambdaHandler(handler, { timeoutMarginMs: 500 });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface LambdaHandlerOptions {
   /**
@@ -455,7 +455,7 @@ const toResult = (
  * export const main = toLambdaHandler(createFetchHandler({ router }));
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function toLambdaHandler(
   handler: LambdaFetchHandler,
@@ -481,7 +481,7 @@ export function toLambdaHandler(
  * export const main = awslambda.streamifyResponse(toLambdaStreamingHandler(handler));
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface LambdaResponseStream {
   write(chunk: Uint8Array): boolean;
@@ -512,7 +512,7 @@ const write = (stream: LambdaResponseStream, chunk: Uint8Array) =>
  * );
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function toLambdaStreamingHandler(
   handler: LambdaFetchHandler,

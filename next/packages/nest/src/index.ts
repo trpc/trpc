@@ -71,7 +71,7 @@ import type { AnyProcedure, CreateContextOpts } from 'trpcdev/server';
  * });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface TrpcModuleOptions extends Omit<
   BaseOpenApiHandlerOptions<never>,
@@ -98,7 +98,7 @@ export interface TrpcModuleOptions extends Omit<
  * });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface TrpcModuleAsyncOptions extends Pick<
   ModuleMetadata,
@@ -117,7 +117,7 @@ export interface TrpcModuleAsyncOptions extends Pick<
  * constructor(@Inject(TRPC_MODULE_OPTIONS) options: TrpcModuleOptions) {}
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export const TRPC_MODULE_OPTIONS: unique symbol = Symbol(
   'trpcdev/nest/options',
@@ -146,7 +146,7 @@ const isProcedure = (value: unknown): value is AnyProcedure =>
  * app.get(TrpcHost).handler; // the OpenApiHandler behind every route
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 @Injectable()
 export class TrpcHost implements OnApplicationShutdown {
@@ -221,7 +221,7 @@ export class TrpcHost implements OnApplicationShutdown {
  * @UseInterceptors(ImplementInterceptor)
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 @Injectable()
 export class ImplementInterceptor implements NestInterceptor {
@@ -306,7 +306,7 @@ const route = (
  * }
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function Implement(
   contract: object,
@@ -364,7 +364,7 @@ export function Implement(
  * class AppModule {}
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 @Module({})
 export class TrpcModule {

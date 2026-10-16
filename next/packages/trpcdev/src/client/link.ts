@@ -12,7 +12,7 @@ import type { AnySerializer } from '../serializer/index.ts';
  * Call option fields the built-in links read from `op.context` (17 F-B).
  * Your own links declare theirs with `link<{ context: … }>()`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type BuiltinCallOptions = {
   /** Extra request headers, read by `httpLink`. */
@@ -39,7 +39,7 @@ export type BuiltinCallOptions = {
  * `fetch` options `httpLink` lets calls set: `RequestInit` without what the
  * link sets itself, plus Next's data-cache options.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type TrpcRequestInit = Omit<
   RequestInit,
@@ -53,7 +53,7 @@ export type TrpcRequestInit = Omit<
  * One call, as links see it. `TContext` types the `context` fields a link
  * declares it reads.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface Operation<TContext extends object = {}> {
   readonly id: number;
@@ -76,14 +76,14 @@ export interface Operation<TContext extends object = {}> {
  * The result of an operation (17 OR-A): a query or mutation is a
  * one-element stream, a subscription is a stream of events.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type OperationStream = Stream.Stream<unknown, AnyTrpcError>;
 
 /**
  * What an Effect link receives.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface EffectLinkOpts<TContext extends object = {}> {
   readonly op: Operation<TContext>;
@@ -94,7 +94,7 @@ export interface EffectLinkOpts<TContext extends object = {}> {
 /**
  * Call option names links can't declare: the client reads them itself.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface ReservedCallOptions {
   signal?: never;
@@ -106,7 +106,7 @@ export interface ReservedCallOptions {
  * call options of clients created with `router:` (F-B), and arrive in
  * `op.context`. `signal` and `lastEventId` are reserved.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface LinkDecl {
   context?: object & ReservedCallOptions;
@@ -141,7 +141,7 @@ export interface LinkDecl {
  * sends the request. `TDecl` is what it reads from `context`; `TRouter` is
  * set on router-aware links like a typed `splitLink`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface TrpcLink<TDecl extends LinkDecl = {}, TRouter = any> {
   (opts: EffectLinkOpts): OperationStream;
@@ -158,7 +158,7 @@ export interface TrpcLink<TDecl extends LinkDecl = {}, TRouter = any> {
 /**
  * Any link, whatever it declares.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type AnyLink = TrpcLink<any, any>;
 
@@ -181,7 +181,7 @@ export function toClientError(cause: unknown): AnyTrpcError {
 
 /**
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function clientErrorFromCause(
   cause: Cause.Cause<unknown>,
@@ -201,7 +201,7 @@ export function clientErrorFromCause(
 /**
  * The single value of a query or mutation.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export const firstValue = (
   stream: OperationStream,
@@ -239,7 +239,7 @@ export const firstValue = (
  * );
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export const link = <TDecl extends LinkDecl = {}>(
   fn: (opts: EffectLinkOpts<DeclContext<TDecl>>) => OperationStream,
@@ -297,7 +297,7 @@ export function chainSwitchNames(links: ReadonlyArray<AnyLink>): Set<string> {
  * requests get no extra headers, so simple cross-origin requests stay
  * simple (no CORS preflight).
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function runOperation(
   links: ReadonlyArray<AnyLink>,
@@ -334,7 +334,7 @@ export function runOperation(
 /**
  * Runs an operation through a link chain.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function runLinks(
   links: ReadonlyArray<AnyLink>,

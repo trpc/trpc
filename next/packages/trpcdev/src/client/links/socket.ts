@@ -78,7 +78,7 @@ interface Call {
 /**
  * Options shared by {@link wsLink} and {@link messagePortLink}.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface SocketLinkOptions {
   /** Must match the server's; client types follow it. @default jsonSerializer */
@@ -96,7 +96,7 @@ export interface SocketLinkOptions {
 /**
  * A link that also owns a connection.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface SocketLink<TDecl extends LinkDecl = {}>
   extends TrpcLink<TDecl>, AsyncDisposable {
@@ -483,7 +483,7 @@ function makeSocketLink(
  * Reconnect, idle and keep-alive options of {@link wsLink} and
  * {@link socketLink}.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface ConnectionLinkOptions {
   /**
@@ -535,7 +535,7 @@ const connectionOptions = (
 /**
  * Options for {@link wsLink}.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface WebSocketLinkOptions
   extends SocketLinkOptions, ConnectionLinkOptions {
@@ -568,7 +568,7 @@ export interface WebSocketLinkOptions
  * });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function wsLink<TOpts extends WebSocketLinkOptions>(
   opts: TOpts,
@@ -630,7 +630,7 @@ export function wsLink(opts: WebSocketLinkOptions): SocketLink<any> {
 /**
  * Options for {@link messagePortLink}.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface MessagePortLinkOptions extends SocketLinkOptions {
   /** A `MessagePort`, `Worker`, `worker_threads` port, or window-like object. */
@@ -649,7 +649,7 @@ export interface MessagePortLinkOptions extends SocketLinkOptions {
  * createTrpcClient({ router: routerType<AppRouter>(), links: [messagePortLink({ port: worker })] });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function messagePortLink<TOpts extends MessagePortLinkOptions>(
   opts: TOpts,
@@ -703,7 +703,7 @@ export function messagePortLink(opts: MessagePortLinkOptions): SocketLink<any> {
 /**
  * Options for {@link socketLink}.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface RawSocketLinkOptions
   extends SocketLinkOptions, ConnectionLinkOptions {
@@ -731,7 +731,7 @@ export interface RawSocketLinkOptions
  * });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function socketLink(opts: RawSocketLinkOptions): SocketLink {
   const connect = Effect.gen(function* () {

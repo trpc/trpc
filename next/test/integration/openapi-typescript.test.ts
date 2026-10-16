@@ -6,7 +6,7 @@ import {
   openApiReference,
   type OpenApiDocument,
 } from 'trpcdev/openapi';
-import { generateOpenApiFromTypes } from 'trpcdev/openapi/typescript';
+import { unstable_generateOpenApiFromTypes } from 'trpcdev/openapi/typescript';
 import { beforeAll, expect, test } from 'vite-plus/test';
 import { appRouter } from './fixtures/typed-router.ts';
 
@@ -24,7 +24,7 @@ const json = (o: Op, status: string) =>
 
 let doc: OpenApiDocument;
 beforeAll(async () => {
-  doc = await generateOpenApiFromTypes(appRouter, {
+  doc = await unstable_generateOpenApiFromTypes(appRouter, {
     file: new URL('./fixtures/typed-router.ts', import.meta.url),
     tsconfig: new URL('./tsconfig.json', import.meta.url),
     info: { title: 'Posts', version: '1.0.0' },

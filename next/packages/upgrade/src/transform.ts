@@ -1,10 +1,11 @@
 import MagicString from 'magic-string';
 import { parseSync } from 'oxc-parser';
+import { PROMOTED } from './promoted.ts';
 
 /**
  * Something the codemod couldn't rewrite: a manual step, at a position.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface UpgradeNote {
   /** 1-based. */
@@ -15,9 +16,19 @@ export interface UpgradeNote {
 }
 
 /**
+ * Options for {@link upgradeSource}.
+ * @since 12.0.0-alpha.0
+ * @stability stable
+ */
+export interface UpgradeOptions {
+  /** `unstable_*` names promoted to stable, old to new. @default PROMOTED */
+  readonly promoted?: Readonly<Record<string, string>> | undefined;
+}
+
+/**
  * What {@link upgradeSource} returns.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface UpgradeResult {
   readonly code: string;
@@ -38,6 +49,7 @@ interface ModuleMap {
 }
 
 const GUIDE = 'see docs/migrating-from-v11.md';
+const TRPCDEV = /^(@trpcdev\/[^/]+|trpcdev)(\/|$)/;
 
 const MODULES: Readonly<Record<string, ModuleMap>> = {
   '@trpc/server': {
@@ -188,12 +200,18 @@ const isReference = (parent: Node | undefined, key: string) => {
  * const { code, notes } = upgradeSource(source, 'server.ts');
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
-export function upgradeSource(source: string, filename: string): UpgradeResult {
+export function upgradeSource(
+  source: string,
+  filename: string,
+  opts: UpgradeOptions = {},
+): UpgradeResult {
+  const promoted = opts.promoted ?? PROMOTED;
   const unchanged: UpgradeResult = { code: source, changed: false, notes: [] };
   if (
     !source.includes('@trpc/') &&
+    !Object.keys(promoted).some((name) => source.includes(name)) &&
     !Object.keys(PROJECT_RENAMES).some((name) => source.includes(name))
   ) {
     return unchanged;
@@ -256,6 +274,22 @@ export function upgradeSource(source: string, filename: string): UpgradeResult {
       statement.type === 'ExportNamedDeclaration' && statement['source'];
     if (!isImport && !isReexport) continue;
     const from = statement['source'].value as string;
+    if (TRPCDEV.test(from)) {
+      for (const spec of statement['specifiers'] as Node[]) {
+        const key = isImport ? spec['imported'] : spec['local'];
+        const next = key?.type === 'Identifier' && own(promoted, key.name);
+        if (!next) continue;
+        const sameName =
+          spec[isImport ? 'local' : 'exported'].start === key.start;
+        if (isImport && sameName) renames.set(key.name, next);
+        s.overwrite(
+          key.start,
+          key.end,
+          !isImport && sameName ? `${next} as ${key.name}` : next,
+        );
+      }
+      continue;
+    }
     if (!from.startsWith('@trpc/')) continue;
     const map = own(MODULES, from);
     if (!map) {

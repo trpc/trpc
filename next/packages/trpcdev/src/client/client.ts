@@ -26,7 +26,7 @@ import type {
 
 /**
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function createRecursiveProxy(
   callback: (path: readonly string[], args: unknown[]) => unknown,
@@ -53,7 +53,7 @@ let nextId = 0;
 
 /**
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function makeOperation(
   type: ProcedureType,
@@ -76,7 +76,7 @@ export function makeOperation(
  * Splits typed call options into `signal`, `lastEventId` and the fields
  * links read.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function splitCallOptions(
   opts: SubscribeOptions<object> | undefined,
@@ -90,7 +90,7 @@ export function splitCallOptions(
  * Call options as the untyped client takes them: what links read is in
  * `context`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface UntypedCallOptions {
   signal?: AbortSignal | undefined;
@@ -119,7 +119,7 @@ export function untilAborted(
 /**
  * Options for {@link createTrpcClient}.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface TrpcClientOptions {
   /** The request chain. The last link sends the request. */
@@ -129,7 +129,7 @@ export interface TrpcClientOptions {
 /**
  * Options for a client typed from a `router:` value (17 D-C).
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface TypedClientOptions<
   TSource,
@@ -144,7 +144,7 @@ export interface TypedClientOptions<
 /**
  * The untyped client that typed clients and integrations are built on.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface TrpcUntypedClient {
   /** Runs a query or mutation. */
@@ -170,7 +170,7 @@ export interface TrpcUntypedClient {
  * const post = await untyped.request({ type: 'query', path: 'post.byId', input: { id: '1' } });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function createUntypedClient(
   opts: TrpcClientOptions,
@@ -220,7 +220,7 @@ export function createUntypedClient(
  * for await (const event of client.onPost.subscribe()) render(event);
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function createTrpcClient<
   TSource,
@@ -270,7 +270,7 @@ const clientSerializers = new WeakMap<object, AnySerializer>();
  * const serializer = getClientSerializer(client) ?? jsonSerializer;
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function getClientSerializer(client: object): AnySerializer | undefined {
   return clientSerializers.get(client);
@@ -280,7 +280,7 @@ export function getClientSerializer(client: object): AnySerializer | undefined {
  * The result of `safe()`: a `[data, error]` tuple that also has `data` and
  * `error` properties (07 Q7.3).
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type SafeResult<T, E> =
   | ([data: T, error: undefined] & {
@@ -303,7 +303,7 @@ export type SafeResult<T, E> =
  * const { data, error } = await safe(client.post.create.mutate(input));
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export async function safe<T, E = unknown>(
   promise: PromiseLike<T> & { readonly '~error'?: E },
@@ -326,7 +326,7 @@ export async function safe<T, E = unknown>(
 /**
  * A client whose queries and mutations resolve to `safe()` results.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type SafeClient<TClient> = {
   [K in keyof TClient]: TClient[K] extends (
@@ -347,7 +347,7 @@ export type SafeClient<TClient> = {
  * const [post, error] = await safeClient.post.byId.query({ id });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function createSafeClient<TClient extends object>(
   client: TClient,

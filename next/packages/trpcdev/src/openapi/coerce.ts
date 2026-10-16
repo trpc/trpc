@@ -87,7 +87,7 @@ const matches = (value: unknown, schema: Schema): boolean => {
  * // { limit: 10, tags: ['a'] }
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function coerceBySchema(
   value: unknown,

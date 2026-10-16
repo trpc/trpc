@@ -5,7 +5,7 @@ import { hashKey, skipToken } from '@tanstack/query-core';
  * (`'infinite'`), a subscription's `streamedOptions`/`liveOptions`, or the
  * chunks of a `streamedMutationOptions` mutation (`'mutation'`).
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type TrpcQueryKeyType =
   | 'query'
@@ -18,7 +18,7 @@ export type TrpcQueryKeyType =
  * A tRPC query key: `[['post', 'byId'], { input, type }]`. The path is an
  * array so `[['post']]` partially matches every key under `post`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type TrpcQueryKey = readonly [
   path: readonly string[],
@@ -28,7 +28,7 @@ export type TrpcQueryKey = readonly [
 /**
  * A tRPC mutation key: `[['post', 'create']]`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type TrpcMutationKey = readonly [path: readonly string[]];
 
@@ -82,7 +82,7 @@ const inputTag = (key: TrpcQueryKey): string | undefined => {
  * }
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function cacheTags(key: TrpcQueryKey): string[] {
   const path = key[0];
@@ -104,7 +104,7 @@ export function cacheTags(key: TrpcQueryKey): string[] {
  * revalidateTag(revalidationTag(trpc.post.byId.queryKey({ input: { id } })));
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function revalidationTag(key: TrpcQueryKey): string {
   return inputTag(key) ?? pathTag(key[0]);

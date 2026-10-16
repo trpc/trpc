@@ -62,7 +62,7 @@ export { link };
 /**
  * The Effect client methods for one procedure.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type DecorateEffectProcedure<
   P,
@@ -125,7 +125,7 @@ type DecorateEffectCarried<
 /**
  * The Effect client for a router.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type EffectClient<
   TRouter,
@@ -158,7 +158,7 @@ const METHODS = {
  * );
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function createEffectClient<
   TSource,

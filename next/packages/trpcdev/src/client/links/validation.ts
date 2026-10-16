@@ -15,7 +15,7 @@ import { link, type TrpcLink } from '../link.ts';
 /**
  * Options for {@link validationLink}.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface ValidationLinkOptions {
   /** Where the schemas come from: a contract (`trpcdev/contract`) or a router. */
@@ -99,7 +99,7 @@ const isEnvelope = (value: unknown): value is { id: string; data: unknown } =>
  * });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function validationLink(
   opts: ValidationLinkOptions & { output: 'json' },

@@ -4,7 +4,7 @@ import type { AnySchema } from '../server/schema.ts';
 /**
  * A JSON Schema (draft 2020-12, which OpenAPI 3.1 uses).
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type JsonSchema = { readonly [key: string]: unknown } | boolean;
 
@@ -26,7 +26,7 @@ interface StandardJsonSchema {
  * the library can't describe the schema. Values JSON Schema can't represent
  * (a `Date`) become `{}`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function toJsonSchema(
   schema: AnySchema,

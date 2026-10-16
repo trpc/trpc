@@ -9,7 +9,7 @@ import { TrpcError } from '../internal/error.ts';
  * connectionToken(RoomClaims, { secret: env.TOKEN_SECRET, ttlSeconds: 600 });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface ConnectionTokenOptions {
   /** The HMAC-SHA256 key, shared by the code that signs and the object that verifies. */
@@ -29,7 +29,7 @@ export interface ConnectionTokenOptions {
  * const claims = yield* RoomToken.verify(token);
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface ConnectionToken<A> {
   /** A token with `claims` that expires after `ttlSeconds`. */
@@ -69,7 +69,7 @@ const unauthorized = (message: string) =>
  *   Effect.runPromise(RoomToken.verify(info.connectionParams?.['token'])),
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function connectionToken<S extends Schema.Codec<any, any>>(
   schema: S,

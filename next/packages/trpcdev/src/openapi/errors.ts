@@ -3,7 +3,7 @@ import { TrpcError, type AnyTrpcError } from '../internal/error.ts';
 /**
  * The JSON body of an OpenAPI error response.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface OpenApiErrorBody {
   /** Whether the error is part of the procedure's typed union. */

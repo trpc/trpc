@@ -42,7 +42,7 @@ import { socketCores, type WebSocketLike } from '../server/socket.ts';
 /**
  * Anything with a web-standard `fetch` method, like `createFetchHandler()`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface FetchLike {
   fetch(request: Request): Promise<Response>;
@@ -51,7 +51,7 @@ export interface FetchLike {
 /**
  * Something that serves WebSockets, like `createFetchHandler()`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface WebSocketHandlerLike {
   websocket(socket: WebSocketLike, opts: { request: Request }): void;
@@ -60,7 +60,7 @@ export interface WebSocketHandlerLike {
 /**
  * Options for {@link toHttpEffect} and {@link serve}.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface HttpOptions {
   /**
@@ -73,7 +73,7 @@ export interface HttpOptions {
 /**
  * Options for {@link cors}: Effect's `HttpMiddleware.cors` options.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type CorsOptions = NonNullable<
   Parameters<typeof HttpMiddleware.cors>[0]
@@ -97,7 +97,7 @@ const isUpgrade = (request: HttpServerRequest.HttpServerRequest) =>
  * });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function cors(options: CorsOptions = {}): HttpMiddleware.HttpMiddleware {
   const origins = options.allowedOrigins ?? [];
@@ -130,7 +130,7 @@ export function cors(options: CorsOptions = {}): HttpMiddleware.HttpMiddleware {
  * const app = toHttpEffect(handler);
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function toHttpEffect(
   handler: FetchLike | (FetchLike & WebSocketHandlerLike),
@@ -219,7 +219,7 @@ export function toHttpEffect(
  * );
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function serve(
   handler: FetchLike | (FetchLike & WebSocketHandlerLike),

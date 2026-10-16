@@ -13,7 +13,7 @@ import {
 /**
  * Options for {@link hydrationOptions}.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface HydrationOptionsOptions {
   /** The tRPC client whose links' serializer hydration uses. */
@@ -39,7 +39,7 @@ export interface HydrationOptionsOptions {
  * });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function hydrationOptions(opts: HydrationOptionsOptions = {}): {
   dehydrate: DehydrateOptions;

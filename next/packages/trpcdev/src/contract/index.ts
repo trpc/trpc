@@ -78,7 +78,7 @@ export type { JsonSchema } from '../internal/json-schema.ts';
 /**
  * A contract builder's state.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface ContractDef {
   meta: object;
@@ -98,7 +98,7 @@ export interface ContractDef {
 /**
  * The initial contract builder state.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface ContractRootDef<TMeta extends object> {
   meta: TMeta;
@@ -115,7 +115,7 @@ export interface ContractRootDef<TMeta extends object> {
 /**
  * Part of inferred contract types; exported so they stay nameable.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type ContractWith<
   TDef extends ContractDef,
@@ -127,7 +127,7 @@ export type ContractWith<
 /**
  * What clients receive from a contract procedure.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type ContractOutput<
   TDef extends ContractDef,
@@ -144,7 +144,7 @@ export type ContractOutput<
  * The definition of a contract procedure: a {@link ProcedureDef} with the
  * contract's builder state under `contract`, which `t.implement()` reads.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface ContractProcedureDef<
   TType extends ProcedureType,
@@ -164,7 +164,7 @@ export interface ContractProcedureDef<
  * A procedure without a resolver (09). Clients accept it like any procedure;
  * a handler answers it with `NOT_IMPLEMENTED` until it's implemented.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type ContractProcedure<
   TType extends ProcedureType,
@@ -174,7 +174,7 @@ export type ContractProcedure<
 /**
  * Any contract procedure.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type AnyContractProcedure = Procedure<
   ProcedureDef & { contract: ContractDef }
@@ -183,7 +183,7 @@ export type AnyContractProcedure = Procedure<
 /**
  * A contract: a plain object of contract procedures and nested contracts.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface AnyContractRouter {
   readonly [key: string]: AnyContractProcedure | AnyContractRouter;
@@ -192,7 +192,7 @@ export interface AnyContractRouter {
 /**
  * Options for a contract subscription.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface ContractSubscriptionOptions<TTracked extends boolean> {
   /**
@@ -217,7 +217,7 @@ export interface ContractSubscriptionOptions<TTracked extends boolean> {
  *   .query();
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface ContractBuilder<TDef extends ContractDef> {
   readonly '~trpc': ContractInternals & { readonly '~types'?: TDef };
@@ -295,7 +295,7 @@ export interface ContractBuilder<TDef extends ContractDef> {
 /**
  * The runtime state of a contract builder.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface ContractInternals {
   readonly steps: ReadonlyArray<Step>;
@@ -332,7 +332,7 @@ function createContractBuilder(
 /**
  * The type-level config of `contract.create`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface ContractConfig {
   /** The shape of procedure meta. */
@@ -342,7 +342,7 @@ export interface ContractConfig {
 /**
  * Entry point for contract builders.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export const contract = {
   /**
@@ -370,7 +370,7 @@ export const contract = {
 /**
  * Whether `value` is a procedure without a resolver.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function isContractProcedure(
   value: unknown,
@@ -389,7 +389,7 @@ export function isContractProcedure(
  * createTrpcClient({ router: routerType<AppContract>(), links: [httpLink({ url })] });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type inferContract<TRouter> = TRouter extends AnyProcedure
   ? Procedure<{
@@ -406,7 +406,7 @@ export type inferContract<TRouter> = TRouter extends AnyProcedure
 /**
  * One procedure of a {@link ContractJson}.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface ProcedureJson {
   readonly type: ProcedureType;
@@ -432,7 +432,7 @@ export interface ProcedureJson {
  * Schemas by path. It carries the router's client type, so
  * `createTrpcClient({ router: contractJSON })` is typed.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface ContractJson<TRouter = unknown> extends RouterType<
   inferContract<TRouter>
@@ -457,7 +457,7 @@ export interface ContractJson<TRouter = unknown> extends RouterType<
  * });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function toContract<TRouter extends object>(
   router: TRouter,

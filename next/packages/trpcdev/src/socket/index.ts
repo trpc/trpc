@@ -39,7 +39,7 @@ import {
  * serveSocket(handler, { idleTimeoutMs: false });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface SocketOptions {
   /**
@@ -57,7 +57,7 @@ export interface SocketOptions {
  * const handler: SocketHandlerLike = createFetchHandler({ router });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface SocketHandlerLike {
   fetch(request: Request, ...platform: never[]): Promise<Response>;
@@ -118,7 +118,7 @@ const serveOne = (
  * serveSocket(handler).pipe(Layer.provide(NodeSocketServer.layer({ port: 4000 })));
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function serveSocket(
   handler: SocketHandlerLike,

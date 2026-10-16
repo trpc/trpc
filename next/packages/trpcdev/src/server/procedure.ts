@@ -7,7 +7,7 @@ import type { OutputSchema } from './stream-schema.ts';
 /**
  * A declared error (07 A): its status, default message and `data` schema.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface ErrorSpec {
   readonly status?: number | undefined;
@@ -18,7 +18,7 @@ export interface ErrorSpec {
 /**
  * Declared errors by code.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type ErrorMap = Readonly<Record<string, ErrorSpec>>;
 
@@ -26,7 +26,7 @@ export type ErrorMap = Readonly<Record<string, ErrorSpec>>;
  * REST metadata (04 (g)). The RPC endpoint ignores it; the OpenAPI handler,
  * generator and link use it (18).
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface Route {
   /** @default 'GET' for queries and subscriptions, 'POST' for mutations */
@@ -63,7 +63,7 @@ export interface Route {
 /**
  * An OpenAPI operation object, as `.route({ spec })` sees it.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface OperationSpec {
   readonly [key: string]: unknown;
@@ -96,7 +96,7 @@ export function mergeRoute(
 /**
  * Everything the type system knows about a procedure.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface ProcedureDef {
   type: ProcedureType;
@@ -134,7 +134,7 @@ export type Step =
 /**
  * The runtime definition under `'~trpc'`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface ProcedureInternals {
   readonly type: ProcedureType;
@@ -152,7 +152,7 @@ export interface ProcedureInternals {
 /**
  * A procedure: a leaf of a router.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface Procedure<TDef extends ProcedureDef> {
   readonly '~trpc': ProcedureInternals & { readonly '~types'?: TDef };
@@ -161,7 +161,7 @@ export interface Procedure<TDef extends ProcedureDef> {
 /**
  * Any procedure.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type AnyProcedure = Procedure<any>;
 
@@ -171,26 +171,26 @@ export type ProcedureDefOf<P> = P extends Procedure<infer D> ? D : never;
 /**
  * What the client sends to a procedure.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type inferProcedureInput<P> = ProcedureDefOf<P>['input'];
 /**
  * What the client receives from a procedure.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type inferProcedureOutput<P> = ProcedureDefOf<P>['output'];
 /**
  * A procedure's typed error union.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type inferProcedureErrors<P> = ProcedureDefOf<P>['errors'];
 
 /**
  * Whether `value` is a procedure.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function isProcedure(value: unknown): value is AnyProcedure {
   return (

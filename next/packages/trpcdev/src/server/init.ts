@@ -32,7 +32,7 @@ import {
 /**
  * The type-level config of `initTrpc`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface RootConfig {
   /** What `createContext` returns. */
@@ -44,7 +44,7 @@ export interface RootConfig {
 /**
  * The runtime options of `initTrpc`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface RootOptions<TMeta> {
   /** Meta every procedure starts with. */
@@ -54,7 +54,7 @@ export interface RootOptions<TMeta> {
 /**
  * The initial builder state for a root ctx and meta.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface RootDef<TCtx extends object, TMeta extends object> {
   ctx: TCtx;
@@ -74,7 +74,7 @@ export interface RootDef<TCtx extends object, TMeta extends object> {
 /**
  * What `initTrpc()` returns, conventionally named `t`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface TrpcRoot<
   TCtx extends object,
@@ -167,7 +167,7 @@ export interface TrpcRoot<
  * `unknown` when an extension fits a root: the root has the ctx it needs and
  * no meta key with a different type.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type WithCheck<TDef extends BuilderDef, TExt extends BuilderDef> = [
   Missing<CurrentCtx<TDef>, TExt['ctx']>,
@@ -194,7 +194,7 @@ type MetaConflicts<A, B> = {
 /**
  * A root's builder state after `.with(extension)`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type ExtendedDef<
   TDef extends BuilderDef,
@@ -217,7 +217,7 @@ export type ExtendedDef<
 /**
  * `t.middleware`, with `t.middleware.effect` for Effect middleware.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface RootMiddleware<TCtx extends object, TMeta extends object> {
   <
@@ -263,7 +263,7 @@ export interface RootMiddleware<TCtx extends object, TMeta extends object> {
  * export const publicProcedure = t.procedure;
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function initTrpc<TConfig extends RootConfig = {}>(
   opts: RootOptions<TConfig['meta'] extends object ? TConfig['meta'] : {}> = {},

@@ -4,7 +4,7 @@ import { tracked, type TrackedEnvelope } from './tracked.ts';
 /**
  * Event types by channel: `{ created: Post; deleted: { id: string } }`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type PublisherEvents = Record<string, unknown>;
 
@@ -15,7 +15,7 @@ export type PublisherEvents = Record<string, unknown>;
  * Posts.publish('created', post, { tags: [`user:${post.authorId}`] });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface PublishOptions {
   /**
@@ -32,7 +32,7 @@ export interface PublishOptions {
  * Posts.subscribe('created', { lastEventId, tags: [`user:${ctx.user.id}`] });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface SubscribeOptions {
   /** Kept events after this id come first. */
@@ -48,7 +48,7 @@ export interface SubscribeOptions {
  * What a publisher service does. Events carry ids, so subscribers resume
  * from `lastEventId` when the backend keeps history.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface PublisherShape<TEvents extends PublisherEvents> {
   /** Sends an event to the channel's subscribers. Succeeds with its id. */
@@ -69,7 +69,7 @@ export interface PublisherShape<TEvents extends PublisherEvents> {
 /**
  * Options for the in-memory layer.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface MemoryPublisherOptions {
   /**
@@ -84,7 +84,7 @@ export interface MemoryPublisherOptions {
  * The class `Publisher.Service` makes: a `Context` key for the publisher,
  * with an in-memory layer and accessors.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface PublisherClass<
   Self,
@@ -153,7 +153,7 @@ interface Event {
 /**
  * The in-memory publisher, for a layer of your own key.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export const makeMemoryPublisher = <TEvents extends PublisherEvents>(
   opts: MemoryPublisherOptions = {},
@@ -256,7 +256,7 @@ export const memoryPublisher = (
  * createFetchHandler({ router, layer: Posts.memory({ buffer: 100 }) });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export const Publisher = {
   Service:

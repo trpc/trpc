@@ -23,7 +23,7 @@ type ServicesOption<TServices> = [TServices] extends [never]
 /**
  * Options for {@link createRouterClient}.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type RouterClientOptions<TRouter extends AnyRouter> = CtxOption<
   inferRouterContext<TRouter>
@@ -40,7 +40,7 @@ export type RouterClientOptions<TRouter extends AnyRouter> = CtxOption<
  * const post = await caller.post.byId.query({ id: '1' });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function createRouterClient<TRouter extends AnyRouter>(
   router: TRouter,
@@ -72,7 +72,7 @@ export function createRouterClient<TRouter extends AnyRouter>(
  * The options of {@link call}. `layer` is required when the procedure needs
  * Effect services.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type CallOptions<TDef extends ProcedureDef> = {
   ctx: TDef['ctx'];
@@ -90,7 +90,7 @@ export type CallOptions<TDef extends ProcedureDef> = {
  * const post = await call(byId, { id: '1' }, { ctx: { user }, layer: PostRepo.Live });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export async function call<TDef extends ProcedureDef>(
   procedure: Procedure<TDef>,

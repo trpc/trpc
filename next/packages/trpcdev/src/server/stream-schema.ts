@@ -5,7 +5,7 @@ import type { AnySchema, InOf, OutOf, SchemaServices } from './schema.ts';
 /**
  * A streamed output's schemas, made by {@link stream}.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface StreamSchema<
   TItem extends AnySchema = AnySchema,
@@ -20,14 +20,14 @@ export interface StreamSchema<
 /**
  * What `.output()` accepts: a schema, or {@link stream} for streamed outputs.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type OutputSchema = AnySchema | StreamSchema;
 
 /**
  * The builder's view of a streamed output: item and return types.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface StreamOutput<TItem, TReturn> {
   readonly '~trpc.streamOutput': [TItem, TReturn];
@@ -49,7 +49,7 @@ export interface StreamOutput<TItem, TReturn> {
  * // client: AsyncIterable<Token, Summary>
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function stream<
   TItem extends AnySchema,

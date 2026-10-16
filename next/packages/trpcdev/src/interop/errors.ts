@@ -53,7 +53,7 @@ const CODE_BY_STATUS: Record<number, string> = {
 /**
  * An error as a v11 client reads it: `TRPCClientError`'s `shape`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface V11ErrorShape {
   readonly message: string;
@@ -71,7 +71,7 @@ export interface V11ErrorShape {
 /**
  * What `errorFormatter` receives.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface V11ErrorFormatterOpts {
   /** The v12 error, with its own `code`, `data` and `cause`. */

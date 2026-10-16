@@ -11,7 +11,7 @@ import { deliveries, type HibernationState } from './hibernation.ts';
 
 /**
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface HibernatingPublisherOptions {
   /** The Durable Object's `ctx`, the same one `createHibernatingWebSockets` gets. */
@@ -46,7 +46,7 @@ export interface HibernatingPublisherOptions {
  * }
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function hibernatingPublisher<
   Self,

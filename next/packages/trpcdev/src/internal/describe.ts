@@ -15,7 +15,7 @@ import { toJsonSchema, type JsonSchema } from './json-schema.ts';
  * sent as the resolver returns it, so it is described by the schema's input
  * side.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function outputJsonSchema(
   def: ProcedureInternals,
@@ -30,7 +30,7 @@ export function outputJsonSchema(
 /**
  * The input JSON Schema of a procedure's steps: chained inputs are `allOf`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function inputJsonSchema(
   def: Pick<ProcedureInternals, 'steps'>,
@@ -52,7 +52,7 @@ export function inputJsonSchema(
  * Where a procedure sits among `t.router({ prefix, tags })` groups and
  * prefixed `lazy()` subtrees.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface RouteScope {
   /** The groups' prefixes, joined: `/admin`. */
@@ -68,7 +68,7 @@ const ROOT_SCOPE: RouteScope = { prefix: '', tags: [], base: '' };
  * A router's procedures with their {@link RouteScope}, and the lazy subtrees
  * that haven't loaded.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface FlatRoutes {
   readonly procedures: Array<{
@@ -97,7 +97,7 @@ const within = (
  * Every procedure of a router with its OpenAPI scope. Loaded lazy subtrees
  * are walked; the others are listed in `lazies`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function flattenRoutes(
   router: object,
@@ -127,7 +127,7 @@ export function flattenRoutes(
  * A procedure's `.route()` with its scope applied: the group prefix before
  * its path (or before the path derived below the group), group tags first.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function scopedRoute(
   path: string,
@@ -148,7 +148,7 @@ export function scopedRoute(
  * Every procedure of a router, by dotted path. Throws on a lazy subtree
  * that hasn't loaded: pass `await loadRouter(router)`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function flattenRouter(
   router: object,
@@ -160,7 +160,7 @@ export function flattenRouter(
 /**
  * Throws if a lazy subtree hasn't loaded.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function assertLoaded(flat: FlatRoutes): FlatRoutes {
   const first = flat.lazies[0];
@@ -181,7 +181,7 @@ const withoutSpec = (route: Route): Route => {
 
 /**
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function procedureJson(def: ProcedureInternals): ProcedureJson {
   const input = inputJsonSchema(def);

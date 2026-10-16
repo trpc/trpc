@@ -27,7 +27,7 @@ import { DansonError, type JsonValue } from './utils.ts';
  * const devalueTransformer: SyncTransformer = { serialize: devalue.stringify, deserialize: devalue.parse };
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface SyncTransformer {
   serialize(value: unknown): unknown;
@@ -268,7 +268,7 @@ function framedSerializer(
 /**
  * Options for {@link createSyncSerializer}.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface SyncSerializerOptions {
   /**
@@ -296,7 +296,7 @@ export interface SyncSerializerOptions {
  * httpLink({ url, serializer }); // client types keep Date, Map, Set, bigint
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function createSyncSerializer<TKeeps = never>(
   transformer: SyncTransformer,
@@ -316,7 +316,7 @@ export function createSyncSerializer<TKeeps = never>(
  * httpLink({ url }); // jsonSerializer
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export const jsonSerializer: Serializer<JsonForm> = framedSerializer(
   'json',

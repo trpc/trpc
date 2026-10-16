@@ -16,7 +16,7 @@ import type { ProcedureType } from '../internal/types.ts';
 /**
  * The operation a v11 link receives.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface V11Operation {
   id: number;
@@ -31,7 +31,7 @@ export interface V11Operation {
  * What a v11 link's observable emits: a result, or for subscriptions a
  * `started`, `stopped` or connection `state` event.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface V11ResultEnvelope {
   result: {
@@ -45,7 +45,7 @@ export interface V11ResultEnvelope {
 /**
  * The observable v11 links return and receive from `next`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface V11Observable<T> {
   subscribe(observer: {
@@ -59,7 +59,7 @@ export interface V11Observable<T> {
 /**
  * A v11 link, `TRPCLink` from `@trpc/client`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type V11Link = (runtime: {}) => (opts: {
   op: V11Operation;
@@ -145,7 +145,7 @@ const fromV11Error = (error: unknown): AnyTrpcError => {
  * });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function fromV11Link(v11Link: V11Link): TrpcLink {
   const operationLink = v11Link({});

@@ -5,7 +5,7 @@ import type { TrpcQueryKey } from './keys.ts';
  * Callbacks for a subscription. They always run with the latest options, so
  * changing them doesn't restart the subscription.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface SubscriptionCallbacks<TEvent, TError> {
   /** Every event, in order. */
@@ -19,7 +19,7 @@ export interface SubscriptionCallbacks<TEvent, TError> {
  * What `subscriptionOptions()` returns, for a framework's `useSubscription`
  * or a {@link SubscriptionObserver}.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface TrpcSubscriptionOptions<
   TEvent,
@@ -45,14 +45,14 @@ export interface TrpcSubscriptionOptions<
  * - `active`: at least one event arrived and the subscription is open.
  * - `error`: it failed; `reset()` starts it again.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type SubscriptionStatus = 'idle' | 'connecting' | 'active' | 'error';
 
 /**
  * A subscription's state. `data` is the latest event.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type SubscriptionResult<TEvent, TError> =
   | { status: 'idle'; data: TEvent | undefined; error: null }
@@ -147,7 +147,7 @@ class SharedSubscription<TEvent, TError> {
  * key share its connection, state and events; each keeps its own callbacks.
  * The subscription closes when its last observer leaves.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export class SubscriptionCache {
   readonly #entries = new Map<string, SharedSubscription<any, any>>();
@@ -190,7 +190,7 @@ export class SubscriptionCache {
  * const unsubscribe = observer.subscribe((result) => render(result.data));
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export class SubscriptionObserver<TEvent, TError> {
   #options: AnyOptions<TEvent, TError>;

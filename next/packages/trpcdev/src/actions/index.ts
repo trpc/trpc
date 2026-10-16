@@ -44,14 +44,14 @@ import type {
  * `'safe'` returns `safe()`'s `[data, error]` / `{ data, error }` result;
  * `'throw'` returns the data and throws `TrpcError`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type ActionResultMode = 'safe' | 'throw';
 
 /**
  * Options for {@link createAction} and {@link createCallable}.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface CreateActionOptions<
   TCtx extends object,
@@ -77,7 +77,7 @@ export interface CreateActionOptions<
 /**
  * What a wrapped procedure resolves to.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type ActionResult<
   TDef extends ProcedureDef,
@@ -100,7 +100,7 @@ type Args<TInput> = undefined extends TInput
  * // <form action={submit}>
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface Action<
   TDef extends ProcedureDef,
@@ -120,7 +120,7 @@ export interface Action<
 /**
  * A procedure as a function, for calls with typed input.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type Callable<
   TDef extends ProcedureDef,
@@ -241,7 +241,7 @@ function makeFactory<TMode extends ActionResultMode>(
  * const strict = createAction({ ctx: createContext, result: 'throw' });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function createAction<
   TCtx extends object = {},
@@ -267,7 +267,7 @@ export function createAction<
  * const post = await byId({ id: '1' });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function createCallable<
   TCtx extends object = {},

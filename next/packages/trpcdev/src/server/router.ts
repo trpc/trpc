@@ -23,7 +23,7 @@ import {
  * export type AppRouter = typeof appRouter;
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface AnyRouter {
   readonly [key: string]: AnyProcedure | AnyRouter | AnyLazyRouter;
@@ -33,7 +33,7 @@ export interface AnyRouter {
  * OpenAPI grouping for a subtree (08 Q8.3): a path prefix and tags. Only
  * the OpenAPI handler and generator read it.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface RouterGroup {
   /** Prepended to every route below: `/admin`. */
@@ -57,7 +57,7 @@ const GROUP = '~group';
  * // RPC: admin.users; OpenAPI: GET /api/admin/users, tagged admin
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function router<const TRoutes extends AnyRouter>(
   group: RouterGroup,
@@ -75,7 +75,7 @@ export const groupOf = (node: object): RouterGroup | undefined =>
 /**
  * Options for {@link lazy}.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface LazyOptions {
   /**
@@ -97,7 +97,7 @@ export interface LazyDef {
 /**
  * A subtree that loads on first use (08 Q8.4). Made by {@link lazy}.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface LazyRouter<TRouter> {
   readonly '~lazy': LazyDef;
@@ -107,14 +107,14 @@ export interface LazyRouter<TRouter> {
 /**
  * Any lazy subtree.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type AnyLazyRouter = LazyRouter<any>;
 
 /**
  * A router type with its lazy subtree loaded.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type Unlazy<T> = T extends LazyRouter<infer TRouter> ? TRouter : T;
 
@@ -132,7 +132,7 @@ export type Unlazy<T> = T extends LazyRouter<infer TRouter> ? TRouter : T;
  * };
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function lazy<TRouter extends AnyRouter>(
   load: () => Promise<TRouter | { default: TRouter }>,
@@ -162,7 +162,7 @@ const isLazyModule = (mod: object): mod is { default: AnyRouter } =>
 /**
  * Whether a router node is a {@link lazy} subtree.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export const isLazy = (node: unknown): node is AnyLazyRouter =>
   typeof node === 'object' && node !== null && Object.hasOwn(node, '~lazy');
@@ -183,7 +183,7 @@ type DuplicateKeys<T extends readonly unknown[], Seen = never> = T extends [
  * export const appRouter = mergeRouters(postRouter, userRouter);
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function mergeRouters<const T extends readonly AnyRouter[]>(
   ...routers: T &
@@ -208,7 +208,7 @@ export function mergeRouters<const T extends readonly AnyRouter[]>(
  * subtree that hasn't loaded yet is not searched: use
  * {@link resolveProcedure}.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function getProcedure(
   router: AnyRouter,
@@ -252,7 +252,7 @@ function walk(node: unknown, segments: ReadonlyArray<string>): unknown {
  * Finds the procedure at a dotted path, loading lazy subtrees on the way.
  * Synchronous when nothing needs loading.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function resolveProcedure(
   router: AnyRouter,
@@ -283,7 +283,7 @@ export function resolveProcedure(
  * const doc = generateOpenApi(await loadRouter(appRouter), { info });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export async function loadRouter<TRouter extends AnyRouter>(
   router: TRouter,
@@ -307,13 +307,13 @@ type RouterMap<R, F extends 'input' | 'output' | 'errors'> = {
 /**
  * Every procedure's input, by path.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type inferRouterInputs<R> = RouterMap<R, 'input'>;
 /**
  * Every procedure's output, by path.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type inferRouterOutputs<R> = RouterMap<R, 'output'>;
 
@@ -326,19 +326,19 @@ type DefField<R, F extends keyof ProcedureDef> =
 /**
  * The union of every procedure's typed errors.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type inferRouterErrors<R> = DefField<R, 'errors'>;
 /**
  * The Effect services the handler's `layer` must provide (02 S1).
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type inferRouterServices<R> = DefField<R, 'services'>;
 /**
  * The ctx `createContext` must return: every procedure's root ctx.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type inferRouterContext<R> = Simplify<
   UnionToIntersection<DefField<R, 'ctx'>>

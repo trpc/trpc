@@ -41,7 +41,7 @@ export {
 /**
  * What {@link createTrpcContext} returns.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface TrpcSvelteContext<
   TRouter,
@@ -85,7 +85,7 @@ export interface TrpcSvelteContext<
  * </QueryClientProvider>
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function createTrpcContext<
   TRouter,

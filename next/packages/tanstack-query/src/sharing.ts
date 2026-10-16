@@ -75,7 +75,7 @@ function share(prev: unknown, next: unknown): unknown {
  * new QueryClient({ defaultOptions: { queries: { structuralSharing } } });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export const structuralSharing = <T>(prev: unknown, next: T): T =>
   share(prev, next) as T;

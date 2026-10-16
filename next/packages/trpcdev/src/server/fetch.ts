@@ -74,7 +74,7 @@ const encoder = new TextEncoder();
 /**
  * What `createContext` receives.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface CreateContextOpts<TPlatform = undefined> {
   /**
@@ -104,7 +104,7 @@ export interface CreateContextOpts<TPlatform = undefined> {
 /**
  * What `onError` receives. `error.cause` holds the original thrown value.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface OnErrorOpts {
   readonly error: AnyTrpcError;
@@ -116,7 +116,7 @@ export interface OnErrorOpts {
 /**
  * `createContext`, required when the router's procedures need ctx.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type ContextOption<TCtx, TPlatform = undefined> = {} extends TCtx
   ? {
@@ -135,7 +135,7 @@ export type ContextOption<TCtx, TPlatform = undefined> = {} extends TCtx
  * `handler.fetch` fits Next's route handler type), optional when the type
  * allows `undefined`, required otherwise.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type PlatformArgs<TPlatform> = [TPlatform] extends [undefined]
   ? []
@@ -146,7 +146,7 @@ export type PlatformArgs<TPlatform> = [TPlatform] extends [undefined]
 /**
  * The `platform` field of `websocket()` and `messagePort()` options.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type PlatformField<TPlatform> = undefined extends TPlatform
   ? { platform?: TPlatform }
@@ -155,7 +155,7 @@ export type PlatformField<TPlatform> = undefined extends TPlatform
 /**
  * `layer`, required when the router's procedures need Effect services.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type LayerOption<TServices> = [TServices] extends [never]
   ? { layer?: Layer.Layer<never, any, never> }
@@ -167,7 +167,7 @@ export type LayerOption<TServices> = [TServices] extends [never]
 /**
  * The handler's `serializer` option.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface SerializerOption {
   /**
@@ -182,7 +182,7 @@ export interface SerializerOption {
 /**
  * Options shared by every handler.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface BaseHandlerOptions<TRouter extends AnyRouter> {
   router: TRouter;
@@ -244,7 +244,7 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter> {
 /**
  * The options of {@link createFetchHandler}.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type FetchHandlerOptions<
   TRouter extends AnyRouter,
@@ -257,7 +257,7 @@ export type FetchHandlerOptions<
 /**
  * A web-standard request handler.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface FetchHandler<TPlatform = undefined> {
   /**
@@ -385,7 +385,7 @@ export const parentSpan = (
  * export default { fetch: handler.fetch };
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function createFetchHandler<
   TRouter extends AnyRouter,

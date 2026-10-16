@@ -3,7 +3,7 @@ const trackedSymbol = Symbol.for('trpc.tracked');
 /**
  * A subscription event with an id the client can resume from.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface TrackedEnvelope<TData> {
   readonly id: string;
@@ -21,7 +21,7 @@ export interface TrackedEnvelope<TData> {
  * });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function tracked<TData>(
   id: string,

@@ -73,7 +73,7 @@ export type { JsonValue } from './utils.ts';
  * createSerializer({ types: { Decimal: decimal } });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface CustomType<T, TSerialized = unknown> {
   /** Whether `value` is of this type. */
@@ -91,7 +91,7 @@ export interface CustomType<T, TSerialized = unknown> {
 
 /**
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface SerializerOptions {
   /** Custom types, keyed by the name used on the wire. */
@@ -105,7 +105,7 @@ export interface SerializerOptions {
 
 /**
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface DeserializeOpts {
   /**
@@ -119,7 +119,7 @@ export interface DeserializeOpts {
 
 /**
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface SerializeOpts {
   /**
@@ -135,7 +135,7 @@ export interface SerializeOpts {
  * client types.
  *
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface Serializer<TForm extends OutputForm = DansonForm> {
   /**
@@ -183,7 +183,7 @@ export interface Serializer<TForm extends OutputForm = DansonForm> {
  * httpLink({ url, serializer });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function createSerializer(opts: SerializerOptions = {}): Serializer {
   const customSerializers: SerializeRecord = {};
@@ -292,6 +292,6 @@ function partDeserializers(parts: ReadonlyArray<Blob>): DeserializeRecord {
 /**
  * Any serializer, whatever its output form.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type AnySerializer = Serializer<OutputForm>;

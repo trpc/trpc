@@ -30,7 +30,7 @@ function segmentsOf(key: string): string[] {
  * // { a: { b: '1' }, tags: ['x', 'y'] }
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function parseBracketNotation(
   entries: Iterable<[string, Leaf]>,
@@ -89,7 +89,7 @@ export function parseBracketNotation(
  * // a[b]=1&tags[]=x&tags[]=y
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function toBracketNotation(
   value: unknown,

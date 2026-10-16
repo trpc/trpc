@@ -19,7 +19,7 @@ import type { ResponseHandle } from './middleware.ts';
  * );
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface Response {
   readonly _: unique symbol;
@@ -28,7 +28,7 @@ export interface Response {
 /**
  * The `Response` key and its accessors.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface ResponseService extends Context.ServiceClass<
   Response,
@@ -53,7 +53,7 @@ const update = (f: (handle: ResponseHandle) => void) =>
 
 /**
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export const Response: ResponseService = Object.assign(Key, {
   setHeader: (name: string, value: string) =>

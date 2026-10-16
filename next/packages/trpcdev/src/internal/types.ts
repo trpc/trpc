@@ -2,7 +2,7 @@
  * Marks a builder slot that has not been set. An interface rather than a
  * `unique symbol`, so a published plugin's `.d.ts` can always name it.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface Unset {
   readonly '~unset': true;
@@ -34,7 +34,7 @@ export type UnionToIntersection<U> = (
 /**
  * Shows up in a type error when a builder check fails.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface TypeError<TMessage extends string, TDetail = never> {
   readonly '~typeError': TMessage;
@@ -85,7 +85,7 @@ type Plain =
  * A value as the client receives it: generators arrive as plain
  * `AsyncIterable`s and thenables as `Promise`s, at any depth.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type Deserialized<T> =
   IsAny<T> extends true
@@ -114,7 +114,7 @@ export type Deserialized<T> =
  * Which output types a serializer keeps, at the type level. A link declares
  * its serializer's form, so client types follow it.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface OutputForm {
   /** Types a sync serializer rebuilds; everything else arrives as JSON. */
@@ -126,7 +126,7 @@ export interface OutputForm {
 /**
  * danSON's form, and in-process callers': native types, deferred values at any depth.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface DansonForm extends OutputForm {
   readonly keeps: unknown;
@@ -137,7 +137,7 @@ export interface DansonForm extends OutputForm {
  * A sync serializer's form: `TKeeps` survive, the rest arrives in its JSON
  * form. Root generators and promises are still framed by the transport.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface SyncForm<TKeeps> extends OutputForm {
   readonly keeps: TKeeps;
@@ -147,7 +147,7 @@ export interface SyncForm<TKeeps> extends OutputForm {
 /**
  * Plain JSON's form: every value arrives as `JSON.parse(JSON.stringify(v))`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type JsonForm = SyncForm<never>;
 
@@ -216,7 +216,7 @@ type Deferred<T, K> =
  * `undefined` array items become `null`. With `D`, promises and streams in
  * plain objects and arrays stay deferred, as the transport streams them.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type JsonOf<T, K = never, D extends boolean = false> =
   IsAny<T> extends true
@@ -272,7 +272,7 @@ type Framed<T, K> =
 /**
  * A procedure's output as the client receives it under a serializer's form.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type ClientValue<
   T,
@@ -282,7 +282,7 @@ export type ClientValue<
 /**
  * The output form of a serializer type; plain JSON's for `undefined`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type FormOfSerializer<S> = S extends { readonly '~form'?: infer F }
   ? NonNullable<F> extends infer G extends OutputForm
@@ -298,6 +298,6 @@ export type FormOfOptions<TOpts> = FormOfSerializer<
 /**
  * `query`, `mutation` or `subscription`.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type ProcedureType = 'query' | 'mutation' | 'subscription';

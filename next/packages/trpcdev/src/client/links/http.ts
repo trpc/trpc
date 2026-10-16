@@ -43,7 +43,7 @@ import {
 /**
  * Options for {@link httpLink}.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export interface HttpLinkOptions<
   TSerializer extends AnySerializer = AnySerializer,
@@ -124,7 +124,7 @@ export interface HttpLinkOptions<
  * What `httpLink` declares: its serializer's form, batching when on, and no
  * subscriptions when they're off.
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export type HttpLinkDecl<TOpts> = {
   form: FormOfOptions<TOpts>;
@@ -191,7 +191,7 @@ function initKey(op: Operation): string | undefined {
  * });
  * ```
  * @since 12.0.0-alpha.0
- * @stability experimental
+ * @stability stable
  */
 export function httpLink<TOpts extends HttpLinkOptions>(
   opts: TOpts,
