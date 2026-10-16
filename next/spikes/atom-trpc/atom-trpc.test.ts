@@ -39,7 +39,7 @@ function setup() {
   titles.clear();
   titles.set('1', 'Hello');
   return {
-    trpc: make<typeof router>({ links: [localLink({ router })] }),
+    trpc: make({ router, links: [localLink({ router })] }),
     registry: AtomRegistry.make(),
   };
 }

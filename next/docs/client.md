@@ -37,7 +37,7 @@ const traceLink = link<{ context: { traceId?: string } }>(
 // client.post.byId.query(input, { traceId: 'abc' })
 ```
 
-Links receive the fields in `op.context`. `signal` and `lastEventId` are reserved: a link declaring either is a type error. With `createTrpcClient<AppRouter>({ links })` (no `router:`), the fields come from the `TrpcClientContext` interface, which you can augment.
+Links receive the fields in `op.context`. `signal` and `lastEventId` are reserved: a link declaring either is a type error. The built-in fields (`headers`, `init`, `batch`, `reconnect`) are always there; anything else comes from what your links declare.
 
 A link can also declare the errors it fails calls with, and the operation types it can't carry. Declared errors join every call's typed union (`defined: true`). Procedures of an unsupported type lose their method:
 
@@ -114,7 +114,8 @@ const unprefix = (prefix: string) =>
     next({ ...op, path: op.path.slice(prefix.length + 1) }),
   );
 
-createTrpcClient<{ blog: BlogRouter; shop: ShopRouter }>({
+createTrpcClient({
+  router: routerType<{ blog: BlogRouter; shop: ShopRouter }>(),
   links: [
     splitLink({
       condition: (op) => op.path.startsWith('shop.'),

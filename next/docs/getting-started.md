@@ -66,6 +66,6 @@ const [created, err] = await safe(client.post.create.mutate({ title: '' }));
 if (err?.defined && err.code === 'BAD_REQUEST') err.data.issues; // typed
 ```
 
-`routerType<AppRouter>()` lets the client also type what its links read (see [Client](./client.md)). `createTrpcClient<AppRouter>({ links })` works too.
+`routerType<AppRouter>()` types the client from the router type alone, and the client also types what its links read (see [Client](./client.md)).
 
 Names case acronyms as words: `TrpcError`, `initTrpc`, `createTrpcClient`, `OpenApi…`, `Json…`.

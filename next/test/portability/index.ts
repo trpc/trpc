@@ -164,7 +164,8 @@ export const localClient = createTrpcClient({
   links: [localLink({ router: appRouter, layer: PostRepoLive })],
 });
 
-export const effectClient = createEffectClient<AppRouter>({
+export const effectClient = createEffectClient({
+  router: routerType<AppRouter>(),
   links: [httpLink({ url: '/trpc' })],
 });
 

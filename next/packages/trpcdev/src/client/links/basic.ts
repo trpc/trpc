@@ -313,7 +313,8 @@ const defaultRetry: NonNullable<RetryLinkOptions['retry']> = ({ op, error }) =>
  *
  * @example
  * ```ts
- * createTrpcClient<AppRouter>({
+ * createTrpcClient({
+ *   router: routerType<AppRouter>(),
  *   links: [retryLink({ retries: 3 }), httpLink({ url })],
  * });
  * ```
@@ -380,7 +381,8 @@ const lostResponse = (error: AnyTrpcError) =>
  *
  * @example
  * ```ts
- * createTrpcClient<AppRouter>({
+ * createTrpcClient({
+ *   router: routerType<AppRouter>(),
  *   links: [durableLink(), httpLink({ url, batch: true })],
  * });
  * ```

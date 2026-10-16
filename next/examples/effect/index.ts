@@ -7,7 +7,7 @@ import { createServer } from 'node:http';
 import { NodeHttpServer } from '@effect/platform-node';
 import { Context, Effect, Layer, Schema, Stream } from 'effect';
 import { HttpServer } from 'effect/http';
-import { httpLink } from 'trpcdev/client';
+import { httpLink, routerType } from 'trpcdev/client';
 import { createEffectClient } from 'trpcdev/effect';
 import { serve } from 'trpcdev/http';
 import { createFetchHandler, initTrpc, TrpcError } from 'trpcdev/server';
@@ -116,7 +116,8 @@ const ServerLive = serve(handler).pipe(
 
 const program = Effect.gen(function* () {
   const url = yield* HttpServer.addressFormattedWith(Effect.succeed);
-  const client = createEffectClient<AppRouter>({
+  const client = createEffectClient({
+    router: routerType<AppRouter>(),
     links: [
       httpLink({ url: `${url}/trpc`, headers: { authorization: 'alex' } }),
     ],

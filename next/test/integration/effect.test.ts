@@ -1,5 +1,5 @@
 import { Context, Effect, Exit, Layer, Option, Stream, Tracer } from 'effect';
-import { httpLink, type ClientError } from 'trpcdev/client';
+import { httpLink, routerType, type ClientError } from 'trpcdev/client';
 import { createEffectClient } from 'trpcdev/effect';
 import {
   createFetchHandler,
@@ -105,7 +105,8 @@ async function setup(user: string | null = 'alex') {
     layer: PostRepoLive,
     exposeUnexpectedErrors: false,
   });
-  const client = createEffectClient<AppRouter>({
+  const client = createEffectClient({
+    router: routerType<AppRouter>(),
     links: [httpLink({ url: server.url })],
   });
   return { server, client, [Symbol.asyncDispose]: () => server.close() };

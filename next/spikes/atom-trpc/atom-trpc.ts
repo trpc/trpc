@@ -7,7 +7,7 @@
  */
 import { Duration, Layer, type Cause, type Effect, type Stream } from 'effect';
 import { AsyncResult, Atom, Reactivity } from 'effect/reactivity';
-import type { TrpcClientOptions } from 'trpcdev/client';
+import type { AnyLink, RouterOf } from 'trpcdev/client';
 import { createEffectClient, type EffectClient } from 'trpcdev/effect';
 import { createSerializer } from 'trpcdev/serializer';
 
@@ -90,8 +90,11 @@ const keyString = (key: Key): string =>
 const at = (client: unknown, path: string): any =>
   path.split('.').reduce((node: any, segment) => node[segment], client);
 
-export function make<TRouter>(opts: TrpcClientOptions): AtomTrpc<TRouter> {
-  const client = createEffectClient<TRouter>(opts);
+export function make<TSource>(opts: {
+  readonly router: TSource;
+  readonly links: ReadonlyArray<AnyLink>;
+}): AtomTrpc<RouterOf<TSource>> {
+  const client = createEffectClient(opts) as EffectClient<RouterOf<TSource>>;
   const runtime = Atom.runtime(Layer.empty);
   const keys = new Map<string, Key>();
 

@@ -1,7 +1,7 @@
 import { Effect, Exit, type Layer } from 'effect';
 import { createTrpcClient } from '../client/client.ts';
 import { localLink } from '../client/links/local.ts';
-import type { TrpcClient } from '../client/types.ts';
+import { routerType, type TrpcClient } from '../client/types.ts';
 import { frameworkError } from '../internal/error.ts';
 import type { DansonForm, MaybePromise } from '../internal/types.ts';
 import { callProcedure, normalizeCause } from './execute.ts';
@@ -53,7 +53,8 @@ export function createRouterClient<TRouter extends AnyRouter>(
     layer?: Layer.Layer<never, any, never>;
   };
   const ctx = o.ctx;
-  return createTrpcClient<TRouter>({
+  return createTrpcClient({
+    router: routerType<TRouter>(),
     links: [
       localLink({
         router,

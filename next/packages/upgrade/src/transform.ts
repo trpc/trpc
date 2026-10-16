@@ -383,6 +383,31 @@ export function upgradeSource(source: string, filename: string): UpgradeResult {
     }
   };
 
+  /** `createTRPCClient<R>({ links })` → `createTrpcClient({ router: routerType<R>(), links })`. */
+  const clientRouter = (call: Node) => {
+    const typeArgs = call['typeArguments'] as Node;
+    const router = `router: routerType<${text(typeArgs['params'][0])}>()`;
+    const arg = call['arguments'][0] as Node | undefined;
+    const object = objectArg(call);
+    const first = object?.['properties'][0] as Node | undefined;
+    if (arg && !object) {
+      s.appendLeft(arg.start, `{ ${router}, ...`);
+      s.appendRight(arg.end, ' }');
+    } else if (first) {
+      const gap = source.slice(object!.start + 1, first.start);
+      s.appendLeft(
+        first.start,
+        `${router},${gap.includes('\n') ? gap.slice(gap.lastIndexOf('\n')) : ' '}`,
+      );
+    } else if (object) {
+      take(object.start, object.end, `{ ${router} }`);
+    } else {
+      return;
+    }
+    take(typeArgs.start, typeArgs.end, '');
+    ensure('trpcdev/client', 'routerType');
+  };
+
   const rootChain = (call: Node) => {
     const segments: Record<string, Node | undefined> = {};
     let current: Node = call['callee']['object'];
@@ -484,6 +509,11 @@ export function upgradeSource(source: string, filename: string): UpgradeResult {
               'createFetchHandler: make the handler once, outside the request function; createContext gets { request, info }',
             );
           }
+        } else if (
+          (v11 === 'createTRPCClient' || v11 === 'createTRPCProxyClient') &&
+          node['typeArguments']?.['params']?.length === 1
+        ) {
+          clientRouter(node);
         } else if (v11?.endsWith('Link')) {
           linkOptions(node, v11);
         } else if (v11 === 'createWSClient') {

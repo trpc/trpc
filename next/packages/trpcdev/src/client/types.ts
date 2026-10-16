@@ -18,7 +18,7 @@ import type { Unlazy } from '../server/router.ts';
 import type {
   AnyLink,
   DeclContext,
-  TrpcClientContext,
+  BuiltinCallOptions,
   TrpcLink,
 } from './link.ts';
 
@@ -105,7 +105,7 @@ export interface TrpcSubscription<T, E> extends AsyncIterable<T> {
  */
 export type CallOptions<TContext extends object = {}> = {
   signal?: AbortSignal | undefined;
-} & TrpcClientContext &
+} & BuiltinCallOptions &
   TContext;
 
 /**

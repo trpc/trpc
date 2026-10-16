@@ -139,7 +139,7 @@ const conflict = () =>
  * const checkout = t.procedure.use(durable()).mutation(…);
  *
  * createFetchHandler({ router, layer: Persistence.layerBackingMemory });
- * createTrpcClient<AppRouter>({ links: [durableLink(), httpLink({ url })] });
+ * createTrpcClient({ router: routerType<AppRouter>(), links: [durableLink(), httpLink({ url })] });
  * ```
  * @since 12.0.0-alpha.0
  * @stability experimental

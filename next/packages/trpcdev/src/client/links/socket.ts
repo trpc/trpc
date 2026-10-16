@@ -562,7 +562,8 @@ export interface WebSocketLinkOptions
  *   url: 'ws://localhost:3000/trpc',
  *   connectionParams: async () => ({ token: await getToken() }),
  * });
- * createTrpcClient<AppRouter>({
+ * createTrpcClient({
+ *   router: routerType<AppRouter>(),
  *   links: [splitLink({ condition: (op) => op.type === 'subscription', true: ws, false: httpLink({ url }) })],
  * });
  * ```
@@ -645,7 +646,7 @@ export interface MessagePortLinkOptions extends SocketLinkOptions {
  * @example
  * ```ts
  * const worker = new Worker(new URL('./server.ts', import.meta.url), { type: 'module' });
- * createTrpcClient<AppRouter>({ links: [messagePortLink({ port: worker })] });
+ * createTrpcClient({ router: routerType<AppRouter>(), links: [messagePortLink({ port: worker })] });
  * ```
  * @since 12.0.0-alpha.0
  * @stability experimental
@@ -724,7 +725,8 @@ export interface RawSocketLinkOptions
  * ```ts
  * import { NodeSocket } from '@effect/platform-node';
  *
- * createTrpcClient<AppRouter>({
+ * createTrpcClient({
+ *   router: routerType<AppRouter>(),
  *   links: [socketLink({ socket: NodeSocket.makeNet({ host: 'localhost', port: 4000 }) })],
  * });
  * ```

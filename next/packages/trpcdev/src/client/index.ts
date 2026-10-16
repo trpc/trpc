@@ -3,10 +3,11 @@
  *
  * @example
  * ```ts
- * import { createTrpcClient, httpLink, safe } from 'trpcdev/client';
+ * import { createTrpcClient, httpLink, routerType, safe } from 'trpcdev/client';
  * import type { AppRouter } from './server';
  *
- * const client = createTrpcClient<AppRouter>({
+ * const client = createTrpcClient({
+ *   router: routerType<AppRouter>(),
  *   links: [httpLink({ url: 'http://localhost:3000/trpc' })],
  * });
  * const [post, error] = await safe(client.post.byId.query({ id: '1' }));
@@ -35,7 +36,7 @@ export {
   type Operation,
   type OperationStream,
   type PromiseLinkOpts,
-  type TrpcClientContext,
+  type BuiltinCallOptions,
   type TrpcRequestInit,
   type TrpcLink,
 } from './link.ts';

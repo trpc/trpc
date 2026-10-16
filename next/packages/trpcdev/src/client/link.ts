@@ -9,21 +9,12 @@ import type { OutputForm, ProcedureType } from '../internal/types.ts';
 import type { AnySerializer } from '../serializer/index.ts';
 
 /**
- * Call option fields that links read from `op.context` (17 F-B). Built-in
- * links read `headers` and `reconnect`. Augment it to type your own links' fields:
- *
- * @example
- * ```ts
- * declare module 'trpcdev/client' {
- *   interface TrpcClientContext {
- *     transport?: 'http' | 'local';
- *   }
- * }
- * ```
+ * Call option fields the built-in links read from `op.context` (17 F-B).
+ * Your own links declare theirs with `link<{ context: … }>()`.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface TrpcClientContext {
+export type BuiltinCallOptions = {
   /** Extra request headers, read by `httpLink`. */
   headers?: HeadersInit;
   /**
@@ -42,7 +33,7 @@ export interface TrpcClientContext {
    * drops, instead of subscribing again. Read by `httpLink` and `wsLink`.
    */
   reconnect?: false;
-}
+};
 
 /**
  * `fetch` options `httpLink` lets calls set: `RequestInit` without what the
@@ -70,7 +61,7 @@ export interface Operation<TContext extends object = {}> {
   /** `'post.byId'` */
   readonly path: string;
   readonly input: unknown;
-  readonly context: TrpcClientContext & Partial<TContext>;
+  readonly context: BuiltinCallOptions & Partial<TContext>;
   readonly signal: AbortSignal | undefined;
   /** Subscriptions: resume after this event id. */
   readonly lastEventId?: string | undefined;

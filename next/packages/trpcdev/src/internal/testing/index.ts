@@ -15,7 +15,7 @@
  *   it.effect('health', () =>
  *     Effect.gen(function* () {
  *       const { url } = yield* TestServer;
- *       const client = createTrpcClient<AppRouter>({ links: [httpLink({ url })] });
+ *       const client = createTrpcClient({ router: routerType<AppRouter>(), links: [httpLink({ url })] });
  *       expect(yield* Effect.promise(() => client.health.query())).toBe('ok');
  *     }),
  *   );

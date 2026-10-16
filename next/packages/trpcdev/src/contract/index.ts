@@ -386,7 +386,7 @@ export function isContractProcedure(
  * @example
  * ```ts
  * export type AppContract = inferContract<typeof appRouter>;
- * createTrpcClient<AppContract>({ links: [httpLink({ url })] });
+ * createTrpcClient({ router: routerType<AppContract>(), links: [httpLink({ url })] });
  * ```
  * @since 12.0.0-alpha.0
  * @stability experimental

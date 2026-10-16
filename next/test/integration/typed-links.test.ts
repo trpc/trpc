@@ -154,9 +154,9 @@ test('splitLink sees typed paths, and merges both branches', async () => {
   });
 
   createTrpcClient({
-    // @ts-expect-error -- the splitLink below is typed for another router
     router: routerType<AppRouter>(),
     links: [
+      // @ts-expect-error -- typed for another router
       splitLink<typeof otherRouter>({
         condition: () => true,
         true: httpLink({ url: server.url }),
@@ -277,8 +277,8 @@ test('switchLink names are checked', () => {
   });
   expect(() =>
     createTrpcClient({
-      // @ts-expect-error -- two switchLinks named `region` on one chain
       router: routerType<AppRouter>(),
+      // @ts-expect-error -- two switchLinks named `region` on one chain
       links: [
         outer,
         switchLink({ name: 'region', links: { x: http }, pick: () => 'x' }),

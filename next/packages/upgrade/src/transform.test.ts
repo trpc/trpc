@@ -166,14 +166,15 @@ export const client = createTRPCClient<AppRouter>({
 export const isTrpcError = (e: unknown) => e instanceof TRPCClientError;
 `).code,
     ).toMatchInlineSnapshot(`
-      "import { createTrpcClient, httpLink, splitLink, TrpcError } from 'trpcdev/client';
+      "import { createTrpcClient, httpLink, splitLink, TrpcError, routerType } from 'trpcdev/client';
       import superjson from 'superjson';
       import type { AppRouter } from './server';
       import { createSyncSerializer } from 'trpcdev/serializer';
 
       const transformer = superjson;
 
-      export const client = createTrpcClient<AppRouter>({
+      export const client = createTrpcClient({
+        router: routerType<AppRouter>(),
         links: [
           splitLink({
             condition: (op) => op.type === 'subscription',
@@ -184,6 +185,18 @@ export const isTrpcError = (e: unknown) => e instanceof TRPCClientError;
       });
 
       export const isTrpcError = (e: unknown) => e instanceof TrpcError;
+      "
+    `);
+  });
+
+  test('a client with options from a variable', () => {
+    expect(
+      upgrade(`import { createTRPCProxyClient } from '@trpc/client';
+const client = createTRPCProxyClient<AppRouter>(options);
+`).code,
+    ).toMatchInlineSnapshot(`
+      "import { createTrpcClient, routerType } from 'trpcdev/client';
+      const client = createTrpcClient({ router: routerType<AppRouter>(), ...options });
       "
     `);
   });

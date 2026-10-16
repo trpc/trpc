@@ -48,7 +48,8 @@ export interface LocalLinkOptions<TRouter extends AnyRouter> {
  *
  * @example
  * ```ts
- * const client = createTrpcClient<AppRouter>({
+ * const client = createTrpcClient({
+ *   router: routerType<AppRouter>(),
  *   links: [localLink({ router: appRouter, createContext: () => ({ user }) })],
  * });
  * ```

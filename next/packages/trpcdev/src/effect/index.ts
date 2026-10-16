@@ -7,7 +7,10 @@
  * ```ts
  * import { createEffectClient } from 'trpcdev/effect';
  *
- * const client = createEffectClient<AppRouter>({ links: [httpLink({ url })] });
+ * const client = createEffectClient({
+ *   router: routerType<AppRouter>(),
+ *   links: [httpLink({ url })],
+ * });
  * const program = Effect.gen(function* () {
  *   const post = yield* client.post.byId.query({ id: '1' });
  * });
@@ -163,19 +166,6 @@ export function createEffectClient<
 >(
   opts: TypedClientOptions<TSource, TLinks> & DuplicateSwitchCheck<TLinks>,
 ): EffectClient<RouterOf<TSource>, LinksContext<TLinks>, LinksTypes<TLinks>>;
-/**
- * Creates an Effect client from an explicit router type.
- *
- * @example
- * ```ts
- * const client = createEffectClient<AppRouter>({ links: [httpLink({ url })] });
- * ```
- * @since 12.0.0-alpha.0
- * @stability experimental
- */
-export function createEffectClient<TRouter>(
-  opts: TrpcClientOptions,
-): EffectClient<TRouter>;
 export function createEffectClient(opts: TrpcClientOptions): unknown {
   chainSwitchNames(opts.links);
   return createRecursiveProxy((path, args) => {

@@ -11,7 +11,7 @@ import {
   type Operation,
   type AnyLink,
   type OperationStream,
-  type TrpcClientContext,
+  type BuiltinCallOptions,
   type TrpcLink,
 } from './link.ts';
 import type {
@@ -94,7 +94,7 @@ export function splitCallOptions(
  */
 export interface UntypedCallOptions {
   signal?: AbortSignal | undefined;
-  context?: TrpcClientContext | undefined;
+  context?: BuiltinCallOptions | undefined;
   /** Subscriptions: resume after this event id. */
   lastEventId?: string | undefined;
 }
@@ -233,20 +233,6 @@ export function createTrpcClient<
   undefined,
   LinksTypes<TLinks>
 >;
-/**
- * Creates a typed client from an explicit router type. Link fields on the
- * call options come from the open {@link TrpcClientContext} interface.
- *
- * @example
- * ```ts
- * const client = createTrpcClient<AppRouter>({ links: [httpLink({ url })] });
- * ```
- * @since 12.0.0-alpha.0
- * @stability experimental
- */
-export function createTrpcClient<TRouter>(
-  opts: TrpcClientOptions,
-): TrpcClient<TRouter>;
 export function createTrpcClient(opts: TrpcClientOptions): unknown {
   const untyped = createUntypedClient(opts);
   const client = createRecursiveProxy((path, args) => {
