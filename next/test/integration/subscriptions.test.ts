@@ -165,6 +165,13 @@ test('tracked() events reconnect from the last event id', async () => {
   expect(ctx.server.requests.at(-1)!.headers.get('last-event-id')).toBe('2');
 });
 
+test('tracked() rejects ids that would split an SSE frame', () => {
+  expect(() => tracked('1\ndata: forged', null)).toThrow(/line breaks/);
+  expect(() => tracked('1\r2', null)).toThrow(/line breaks/);
+  expect(() => tracked('a\0', null)).toThrow(/NUL/);
+  expect(tracked('post:1', null).id).toBe('post:1');
+});
+
 test('reconnect: false ends the subscription when the connection drops', async () => {
   await using ctx = await setup();
   state.lastEventIds = [];

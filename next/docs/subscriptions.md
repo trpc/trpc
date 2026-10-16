@@ -14,7 +14,7 @@ for await (const post of client.onPost.subscribe()) render(post);
 
 ## Resuming
 
-Yield `tracked(id, data)` to give events ids. SSE sends them as `id:`, and on reconnect the resolver gets `lastEventId` in its options (not in its input):
+Yield `tracked(id, data)` to give events ids. SSE sends them as `id:`, and on reconnect the resolver gets `lastEventId` in its options (not in its input). An id can't be empty or hold a line break or NUL, which would end the SSE field:
 
 ```ts
 const onPost = t.procedure.subscription(async function* ({ lastEventId }) {

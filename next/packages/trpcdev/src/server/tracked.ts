@@ -28,6 +28,10 @@ export function tracked<TData>(
   data: TData,
 ): TrackedEnvelope<TData> {
   if (id === '') throw new Error('tracked(): id must be non-empty');
+  // An SSE `id:` field ends at a line break, so the rest would become new fields.
+  if (/[\r\n\0]/.test(id)) {
+    throw new Error('tracked(): id must not contain line breaks or NUL');
+  }
   return { id, data, [trackedSymbol]: true } as TrackedEnvelope<TData>;
 }
 
