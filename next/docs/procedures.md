@@ -139,6 +139,39 @@ const observed = t.procedure
   .use(onError((err, { path }) => log.warn(path, err.code)));
 ```
 
+### Root extensions
+
+A package can add middleware, ctx, meta keys, declared errors and Effect services to every procedure of an app. An extension is a procedure builder from the package's own `initTrpc`: its root ctx is what it needs from the app's, its meta type joins the app's (its default meta goes underneath), and the app adds it with `.with()`:
+
+```ts
+// in a package
+interface RateLimitMeta {
+  rateLimit?: { max: number };
+}
+const r = initTrpc<{ ctx: { ip: string }; meta: RateLimitMeta }>({
+  defaultMeta: { rateLimit: { max: 100 } },
+});
+export const rateLimit = () =>
+  r.procedure
+    .errors({ TOO_MANY_REQUESTS: {} })
+    .use(({ ctx, meta, next }) =>
+      limiter.allow(ctx.ip, meta.rateLimit)
+        ? next({ ctx: { remaining: limiter.remaining(ctx.ip) } })
+        : error({ code: 'TOO_MANY_REQUESTS' }),
+    );
+
+// in the app
+const t = initTrpc<{ ctx: { ip: string; user: User | null } }>()
+  .with(rateLimit())
+  .with(audit());
+
+t.procedure
+  .meta({ rateLimit: { max: 5 } })
+  .mutation(({ ctx }) => ctx.remaining);
+```
+
+Extensions chain, and `t.middleware` and `t.implement()` see what they add. `.with()` is a type error when the root lacks ctx the extension needs, or declares one of its meta keys with another type. Services an extension provides with `.provide()` don't need the handler's `layer`; services it only uses do.
+
 ## Responses
 
 `response` sets the call's headers and status; Effect code uses the `Response` service over the same handle:
