@@ -9,6 +9,7 @@ import {
 import { experimental_generateOpenApiFromTypes } from '@trpc12/trpc/openapi/typescript';
 import { beforeAll, expect, test } from 'vite-plus/test';
 import { appRouter } from './fixtures/typed-router.ts';
+import { shapesRouter } from './fixtures/typed-shapes.ts';
 
 type Op = {
   responses: Record<
@@ -170,3 +171,105 @@ test('openApiReference serves a document generated at build time (21)', async ()
     await (await handler(new Request('http://localhost:4000/other'))).text(),
   ).toBe('app');
 });
+
+test('types document as JSON.stringify sends them (21)', async () => {
+  const shapes = await experimental_generateOpenApiFromTypes(shapesRouter, {
+    file: 'test/integration/fixtures/typed-shapes.ts',
+    exportName: 'shapesRouter',
+    info: { title: 'Shapes', version: '1.0.0' },
+  });
+  const binary = {
+    type: 'string',
+    contentMediaType: 'application/octet-stream',
+  };
+  expect(json(op(shapes, 'get', '/api/shapes'), '200')).toEqual({
+    type: 'object',
+    properties: {
+      flag: { type: 'boolean' },
+      either: { anyOf: [{ type: 'null' }, { type: 'boolean' }] },
+      anything: {},
+      loose: {},
+      nothing: { not: {} },
+      // `undefined` in an array is sent as `null`.
+      pair: {
+        type: 'array',
+        prefixItems: [{ type: 'string' }, { type: 'number' }, { type: 'null' }],
+        minItems: 3,
+        maxItems: 3,
+      },
+      file: binary,
+      upload: binary,
+      tags: { type: 'object' },
+      lookup: { type: 'object' },
+      failure: { type: 'object' },
+      // A class with `toJSON` is what `toJSON` returns.
+      price: {
+        type: 'object',
+        properties: { amount: { type: 'string' }, currency: { const: 'EUR' } },
+        required: ['amount', 'currency'],
+      },
+      counts: {
+        type: 'object',
+        properties: {},
+        additionalProperties: { type: 'number' },
+      },
+      mixed: { enum: ['a', 1, true] },
+      maybe: { type: 'string' },
+      voided: { type: 'string' },
+      holes: { type: 'array', items: { type: 'null' } },
+      when: { type: 'string' },
+      upper: { type: 'string' },
+    },
+    // Functions, methods, symbol keys, `undefined` and `bigint` aren't sent.
+    required: [
+      'flag',
+      'either',
+      'anything',
+      'loose',
+      'nothing',
+      'pair',
+      'file',
+      'upload',
+      'tags',
+      'lookup',
+      'failure',
+      'price',
+      'counts',
+      'mixed',
+      'holes',
+      'when',
+      'upper',
+    ],
+  });
+  expect(json(op(shapes, 'get', '/api/empty'), '200')).toEqual({});
+  expect(json(op(shapes, 'get', '/api/callable'), '200')).toEqual({});
+  const failing = op(shapes, 'get', '/api/failing');
+  expect(Object.keys(failing.responses)).toEqual([
+    '200',
+    '403',
+    '429',
+    'default',
+  ]);
+  expect(json(failing, '200')).toEqual({ const: 'ok' });
+  // Lazy subtrees are read through their types.
+  expect(json(op(shapes, 'get', '/api/later'), '200')).toEqual({
+    type: 'number',
+  });
+}, 60_000);
+
+test('a file outside a project, or without the export, is an error (21)', async () => {
+  const info = { title: 'Shapes', version: '1.0.0' };
+  await expect(
+    experimental_generateOpenApiFromTypes(shapesRouter, {
+      file: new URL('./fixtures/typed-shapes.ts', import.meta.url),
+      exportName: 'missingRouter',
+      info,
+    }),
+  ).rejects.toThrow(`doesn't export "missingRouter"`);
+  await expect(
+    experimental_generateOpenApiFromTypes(shapesRouter, {
+      file: '/nowhere/router.ts',
+      info,
+    }),
+  ).rejects.toThrow('is not in a TypeScript project');
+}, 60_000);
