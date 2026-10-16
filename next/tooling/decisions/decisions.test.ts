@@ -1,6 +1,11 @@
 import { existsSync } from 'node:fs';
 import { expect, test } from 'vite-plus/test';
-import { decisionsDir, parseDecision, readDecisions } from './decisions.ts';
+import {
+  decisionsDir,
+  parseDecision,
+  questionIndex,
+  readDecisions,
+} from './decisions.ts';
 
 const decisions = readDecisions();
 
@@ -23,6 +28,14 @@ test('links between decisions and notes resolve', () => {
       ).toBe(true);
     }
   }
+});
+
+test('every proposal question is cited by a decision', () => {
+  const index = questionIndex(decisions);
+  expect(index.length).toBeGreaterThan(100);
+  expect(
+    index.filter((q) => q.decisions.length === 0).map((q) => q.question),
+  ).toEqual([]);
 });
 
 test('parses who, questions, open items and agent bullets', () => {

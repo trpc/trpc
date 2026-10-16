@@ -6,6 +6,7 @@
  *   pnpm decisions --who agent     only agent calls (`human`, `asked`, `agent`)
  *   pnpm decisions --open          only decisions with an `Open:` bullet, printing it
  *   pnpm decisions --agent-bullets agent calls inside human decisions too
+ *   pnpm decisions --questions     every proposal question and the decisions citing it
  */
 import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -76,6 +77,44 @@ export function readDecisions(dir: URL = decisionsDir): Decision[] {
     .map((f) => parseDecision(f, readFileSync(new URL(f, dir), 'utf8')));
 }
 
+export const proposalsDir: URL = new URL(
+  '../../.agent-docs/proposals/',
+  import.meta.url,
+);
+
+/** The `- **Q7.2**` questions each proposal asks, in order. */
+export function readQuestions(
+  dir: URL = proposalsDir,
+): Array<{ question: string; proposal: string; text: string }> {
+  return readdirSync(dir)
+    .filter((f) => /^\d+-.*\.md$/.test(f))
+    .sort()
+    .flatMap((proposal) =>
+      [
+        ...readFileSync(new URL(proposal, dir), 'utf8').matchAll(
+          /^- \*\*(Q\d+\.\d+)\*\* (.*)$/gm,
+        ),
+      ].map(([, question, text]) => ({
+        question: question!,
+        proposal,
+        text: text!,
+      })),
+    );
+}
+
+/** Each proposal question with the decisions that cite it. */
+export function questionIndex(
+  decisions: ReadonlyArray<Decision> = readDecisions(),
+): Array<{ question: string; proposal: string; decisions: string[] }> {
+  return readQuestions().map(({ question, proposal }) => ({
+    question,
+    proposal,
+    decisions: decisions
+      .filter((d) => d.questions.includes(question))
+      .map((d) => `${d.file} (${d.who})`),
+  }));
+}
+
 const WHO_FLAG: Record<string, Who> = {
   human: 'human',
   asked: 'human asked',
@@ -83,6 +122,13 @@ const WHO_FLAG: Record<string, Who> = {
 };
 
 function main(args: string[]): void {
+  if (args[0] === '--questions') {
+    for (const q of questionIndex()) {
+      const where = q.decisions.length > 0 ? q.decisions.join(', ') : '—';
+      console.log(`${q.question.padEnd(7)} ${q.proposal.padEnd(40)} ${where}`);
+    }
+    return;
+  }
   let who: Who | undefined;
   let open = false;
   let agentBullets = false;
