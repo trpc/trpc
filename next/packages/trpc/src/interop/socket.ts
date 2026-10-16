@@ -89,6 +89,7 @@ export function serveV11Socket(
         ? params['lastEventId']
         : inputEventId(params['input']);
     const head = envelope(id, jsonrpc);
+    const callParams = connectionParams;
     return Effect.gen(function* () {
       const procedure = yield* Effect.promise(async () =>
         resolveProcedure(router, path),
@@ -130,7 +131,7 @@ export function serveV11Socket(
             calls: [{ path, type }],
             signal,
             transport: 'websocket',
-            connectionParams,
+            connectionParams: callParams,
           });
           return base.run({
             request,

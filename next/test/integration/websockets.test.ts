@@ -380,6 +380,44 @@ test('a client with another protocol version gets a connection error', async () 
   expect((await closed).code).toBe(1002);
 });
 
+test('a call keeps the connectionParams it arrived under, despite a later init', async () => {
+  await using ctx = await setup();
+  const socket = new WebSocket(ctx.server.wsUrl);
+  await new Promise((resolve) => socket.addEventListener('open', resolve));
+  const results: unknown[] = [];
+  const two = new Promise<void>((resolve) =>
+    socket.addEventListener('message', (e) => {
+      const message = JSON.parse(String(e.data)) as { type: string };
+      if (message.type === 'result') results.push(message);
+      if (results.length === 2) resolve();
+    }),
+  );
+  const init = (token: string) =>
+    socket.send(
+      JSON.stringify({
+        type: 'init',
+        version: '12',
+        connectionParams: { token },
+      }),
+    );
+  const whoami = (id: number) =>
+    socket.send(
+      JSON.stringify({ id, type: 'request', method: 'query', path: 'whoami' }),
+    );
+  init('ada');
+  whoami(1);
+  init('grace');
+  whoami(2);
+  await two;
+  socket.close();
+  expect(results).toEqual(
+    expect.arrayContaining([
+      { id: 1, type: 'result', body: { json: 'ada' } },
+      { id: 2, type: 'result', body: { json: 'grace' } },
+    ]),
+  );
+});
+
 test('the Node upgrade handles large messages and enforces maxPayload', async () => {
   const echoRouter = {
     length: t.procedure.input(z.string()).query(({ input }) => input.length),

@@ -386,6 +386,7 @@ export function connectionReceiver(
     message: Extract<ClientMessage, { type: 'request' }>,
   ): Promise<void> {
     const { id, path } = message;
+    const callParams = connectionParams;
     const controller = new AbortController();
     calls.set(id, controller);
     const { signal } = controller;
@@ -414,7 +415,7 @@ export function connectionReceiver(
         calls: [{ path, type }],
         signal,
         transport,
-        connectionParams,
+        connectionParams: callParams,
       });
       const { hibernate } = opts;
       const services =
