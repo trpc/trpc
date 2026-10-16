@@ -22,6 +22,7 @@ Entry points of `trpcdev`:
 | `trpcdev/actions`    | `createAction`, `createCallable`                         |
 | `trpcdev/effect`     | `createEffectClient`                                     |
 | `trpcdev/http`       | `serve`, `toHttpEffect` on Effect's `HttpServer`         |
+| `trpcdev/cloudflare` | hibernating WebSockets and publisher on Durable Objects  |
 | `trpcdev/openapi`    | `createOpenApiHandler`, `generateOpenApi`, `openApiLink` |
 | `trpcdev/contract`   | contract-first routers, `toContract`                     |
 | `trpcdev/serializer` | danSON, custom types                                     |

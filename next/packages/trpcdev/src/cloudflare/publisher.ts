@@ -1,0 +1,97 @@
+import { Context, Effect, Layer, Stream } from 'effect';
+import { HibernationSlot } from '../internal/hibernation.ts';
+import {
+  memoryPublisher,
+  type PublisherClass,
+  type PublisherEvents,
+  type PublisherShape,
+} from '../server/publisher.ts';
+import { tracked } from '../server/tracked.ts';
+import { deliveries, type HibernationState } from './hibernation.ts';
+
+/**
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export interface HibernatingPublisherOptions {
+  /** The Durable Object's `ctx`, the same one `createHibernatingWebSockets` gets. */
+  readonly state: HibernationState;
+  /**
+   * Events kept per channel for subscribers that resume with `lastEventId`.
+   * They're in memory, so they're lost when the object is evicted.
+   * @default 0
+   */
+  readonly buffer?: number;
+}
+
+/**
+ * A publisher layer for a Durable Object that serves hibernating WebSockets.
+ * A subscription that returns `Posts.subscribe(...)` over such a socket is
+ * kept in the socket's attachment instead of a running fiber, and
+ * `publish` sends events straight to the matching sockets, so the object
+ * sleeps between events. Event ids are timestamps, so they keep growing
+ * after the object wakes. Subscribers over SSE, or past the attachment
+ * limit, get a running stream as with `Posts.memory()`.
+ *
+ * @example
+ * ```ts
+ * class Posts extends Publisher.Service<Posts, { created: Post }>()('Posts') {}
+ *
+ * export class Room extends DurableObject<Env> {
+ *   handler = createFetchHandler({
+ *     router,
+ *     layer: hibernatingPublisher(Posts, { state: this.ctx, buffer: 100 }),
+ *   });
+ *   sockets = createHibernatingWebSockets(this.handler, { state: this.ctx });
+ * }
+ * ```
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export function hibernatingPublisher<
+  Self,
+  Key extends string,
+  TEvents extends PublisherEvents,
+>(
+  publisher: PublisherClass<Self, Key, TEvents>,
+  opts: HibernatingPublisherOptions,
+): Layer.Layer<Self> {
+  const tag = publisher as unknown as Context.Key<
+    Self,
+    PublisherShape<TEvents>
+  >;
+  const key = publisher.key;
+  return Layer.effect(tag)(
+    Effect.map(
+      memoryPublisher({
+        buffer: opts.buffer ?? 0,
+        nextId: (last) => Math.max(Date.now() * 1000, last + 1),
+      }),
+      (memory) => {
+        const shape: PublisherShape<PublisherEvents> = {
+          publish: (channel, data) =>
+            Effect.tap(memory.shape.publish(channel, data), (id) =>
+              Effect.promise(
+                async () =>
+                  await deliveries.get(opts.state)?.(
+                    key,
+                    channel,
+                    tracked(id, data),
+                  ),
+              ),
+            ),
+          subscribe: (channel, o) =>
+            Stream.unwrap(
+              Effect.gen(function* () {
+                const slot = yield* HibernationSlot;
+                return slot?.park({ key, channel })
+                  ? Stream.fromIterable(memory.replay(channel, o?.lastEventId))
+                  : memory.shape.subscribe(channel, o);
+              }),
+            ) as never,
+        };
+        return shape as PublisherShape<TEvents>;
+      },
+    ),
+  );
+}

@@ -84,8 +84,28 @@ interface Event {
 export const makeMemoryPublisher = <TEvents extends PublisherEvents>(
   opts: MemoryPublisherOptions = {},
 ): Effect.Effect<PublisherShape<TEvents>, never, Scope.Scope> =>
+  Effect.map(memoryPublisher(opts), (p) => p.shape as PublisherShape<TEvents>);
+
+/** What a memory publisher keeps, for layers built on it. @internal */
+export interface MemoryPublisher {
+  readonly shape: PublisherShape<PublisherEvents>;
+  /** Kept events of `channel` after `lastEventId`, as `tracked()` envelopes. */
+  readonly replay: (
+    channel: string,
+    lastEventId: string | undefined,
+  ) => TrackedEnvelope<unknown>[];
+}
+
+/** @internal */
+export const memoryPublisher = (
+  opts: MemoryPublisherOptions & {
+    /** The id after `last`; ids compare as numbers. */
+    readonly nextId?: (last: number) => number;
+  } = {},
+): Effect.Effect<MemoryPublisher, never, Scope.Scope> =>
   Effect.gen(function* () {
     const size = opts.buffer ?? 0;
+    const nextId = opts.nextId ?? ((last) => last + 1);
     const pubsub = yield* Effect.acquireRelease(
       PubSub.unbounded<Event>(),
       PubSub.shutdown,
@@ -93,9 +113,15 @@ export const makeMemoryPublisher = <TEvents extends PublisherEvents>(
     const kept = new Map<string, Event[]>();
     let seq = 0;
 
+    const keptAfter = (channel: string, after: number) =>
+      Number.isFinite(after)
+        ? (kept.get(channel) ?? []).filter((e) => e.id > after)
+        : [];
+
     const publish = (channel: string, data: unknown) =>
       Effect.suspend(() => {
-        const event: Event = { channel, id: ++seq, data };
+        seq = nextId(seq);
+        const event: Event = { channel, id: seq, data };
         if (size > 0) {
           const list = kept.get(channel) ?? [];
           list.push(event);
@@ -113,9 +139,7 @@ export const makeMemoryPublisher = <TEvents extends PublisherEvents>(
         Effect.gen(function* () {
           const subscription = yield* PubSub.subscribe(pubsub);
           const after = o?.lastEventId ? Number(o.lastEventId) : Number.NaN;
-          const replay = Number.isFinite(after)
-            ? (kept.get(channel) ?? []).filter((e) => e.id > after)
-            : [];
+          const replay = keptAfter(channel, after);
           const seen =
             replay.at(-1)?.id ?? (Number.isFinite(after) ? after : 0);
           const live = Stream.fromSubscription(subscription).pipe(
@@ -127,7 +151,13 @@ export const makeMemoryPublisher = <TEvents extends PublisherEvents>(
         }),
       );
 
-    return { publish, subscribe } as PublisherShape<TEvents>;
+    return {
+      shape: { publish, subscribe } as PublisherShape<PublisherEvents>,
+      replay: (channel, lastEventId) =>
+        keptAfter(channel, lastEventId ? Number(lastEventId) : Number.NaN).map(
+          (e) => tracked(String(e.id), e.data),
+        ),
+    };
   });
 
 /**

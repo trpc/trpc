@@ -24,6 +24,8 @@ export interface RunOpts {
   signal: AbortSignal;
   response: ResponseHandle;
   lastEventId?: string | undefined;
+  /** Added to the layer's services for this call. */
+  services?: Context.Context<never> | undefined;
 }
 
 /** @internal */
@@ -72,7 +74,8 @@ export function createHandlerCore(opts: CoreOptions): HandlerCore {
   const platforms = new WeakMap<Request, unknown>();
   return {
     run: async (o) => {
-      const context = await getServices();
+      const base = await getServices();
+      const context = o.services ? Context.merge(base, o.services) : base;
       return Effect.runPromiseExitWith(context)(callProcedure(o), {
         signal: o.signal,
       });

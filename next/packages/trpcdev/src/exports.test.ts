@@ -10,6 +10,7 @@ const entries = {
   openapi: () => import('trpcdev/openapi'),
   effect: () => import('trpcdev/effect'),
   http: () => import('trpcdev/http'),
+  cloudflare: () => import('trpcdev/cloudflare'),
   testing: () => import('trpcdev/testing'),
   extend: () => import('trpcdev/extend'),
   internal: () => import('trpcdev/internal'),

@@ -1,4 +1,8 @@
-import { Effect, Exit, Stream } from 'effect';
+import { Context, Effect, Exit, Stream } from 'effect';
+import {
+  HibernationSlot,
+  type ParkedSubscription,
+} from '../internal/hibernation.ts';
 import {
   isTrpcError,
   toWireError,
@@ -12,7 +16,7 @@ import {
 } from '../internal/protocol.ts';
 import type { ProcedureType } from '../internal/types.ts';
 import type { Serializer } from '../serializer/index.ts';
-import { emitEvents } from './events.ts';
+import { emitEvents, type EventFrame } from './events.ts';
 import {
   createResponseHandle,
   normalizeCause,
@@ -70,6 +74,7 @@ export interface SocketCore {
     signal: AbortSignal;
     response: ResponseHandle;
     lastEventId?: string | undefined;
+    services?: Context.Context<never> | undefined;
   }): Promise<Exit.Exit<unknown, AnyTrpcError>>;
   makeContext(opts: {
     request: Request;
@@ -158,6 +163,24 @@ export function messagePortConnection(port: MessagePortLike): Connection {
   };
 }
 
+/** A subscription's event frame as the message for call `id`. @internal */
+export function frameMessage(id: number, frame: EventFrame): ServerMessage {
+  switch (frame.kind) {
+    case 'event':
+      return {
+        id,
+        type: 'event',
+        body: frame.body,
+        ...(frame.eventId === undefined ? {} : { eventId: frame.eventId }),
+        ...(frame.deferred === undefined ? {} : { deferred: frame.deferred }),
+      };
+    case 'chunk':
+      return { id, type: 'chunk', event: frame.event, chunk: frame.chunk };
+    case 'chunkEnd':
+      return { id, type: 'chunkEnd', event: frame.event };
+  }
+}
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
@@ -220,6 +243,15 @@ export function connectionReceiver(
     /** Params from an earlier `init`, for a connection served before. */
     connectionParams?: Record<string, unknown> | undefined;
     onInit?: (connectionParams: Record<string, unknown> | undefined) => void;
+    /**
+     * Keeps a publisher subscription on the connection instead of running
+     * it. `false` runs it as usual.
+     */
+    hibernate?: (
+      call: ParkedSubscription & { id: number; path: string },
+    ) => boolean;
+    /** The client aborted, or the parked call failed. */
+    unpark?: (id: number) => void;
   },
 ): ConnectionReceiver {
   const { request, transport } = opts;
@@ -279,6 +311,7 @@ export function connectionReceiver(
       case 'abort': {
         calls.get(message.id)?.abort();
         calls.delete(message.id);
+        opts.unpark?.(message.id);
         return;
       }
       case 'request': {
@@ -312,6 +345,7 @@ export function connectionReceiver(
     const { signal } = controller;
     const live = () => !signal.aborted && !closed;
     let type: ProcedureType | undefined;
+    let parked = false;
     try {
       const procedure = await resolveProcedure(core.router, path);
       type = procedure?.['~trpc'].type;
@@ -335,6 +369,13 @@ export function connectionReceiver(
         transport,
         connectionParams,
       });
+      const { hibernate } = opts;
+      const services =
+        hibernate && type === 'subscription'
+          ? Context.make(HibernationSlot, {
+              park: (sub) => (parked = hibernate({ ...sub, id, path })),
+            })
+          : undefined;
       const exit = await core.run({
         procedure,
         path,
@@ -343,6 +384,7 @@ export function connectionReceiver(
         signal,
         response: createResponseHandle(),
         lastEventId: message.lastEventId,
+        services,
       });
       if (!live()) return;
       if (Exit.isFailure(exit)) {
@@ -358,41 +400,20 @@ export function connectionReceiver(
             core.serializer,
             coerceError(path, type),
             (frame) => {
-              if (!live()) return;
-              if (frame.kind === 'event') {
-                conn.send({
-                  id,
-                  type: 'event',
-                  body: frame.body,
-                  ...(frame.eventId === undefined
-                    ? {}
-                    : { eventId: frame.eventId }),
-                  ...(frame.deferred === undefined
-                    ? {}
-                    : { deferred: frame.deferred }),
-                });
-              } else if (frame.kind === 'chunk') {
-                conn.send({
-                  id,
-                  type: 'chunk',
-                  event: frame.event,
-                  chunk: frame.chunk,
-                });
-              } else {
-                conn.send({ id, type: 'chunkEnd', event: frame.event });
-              }
+              if (live()) conn.send(frameMessage(id, frame));
             },
           ),
           { signal },
         );
         if (!live()) return;
         if (Exit.isFailure(done)) {
+          if (parked) opts.unpark?.(id);
           const err = normalizeCause(done.cause);
           core.report(err, request, path, type);
           sendError(id, err);
           return;
         }
-        conn.send({ id, type: 'done' });
+        if (!parked) conn.send({ id, type: 'done' });
         return;
       }
       const { head, chunks } = core.serializer.serializeDeferred(exit.value, {

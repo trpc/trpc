@@ -276,4 +276,4 @@ export default {
 } satisfies ExportedHandler<Env>;
 ```
 
-Open SSE streams keep the object in memory; kept events are lost when it's evicted. To let it sleep between messages, serve WebSockets with the [hibernation adapter](./platforms.md#cloudflare-durable-objects).
+Open SSE streams keep the object in memory; kept events are lost when it's evicted. To let it sleep between events, serve WebSockets with the [hibernation adapter](./platforms.md#cloudflare-durable-objects) and provide `hibernatingPublisher(Posts, { state: this.ctx })` from `trpcdev/cloudflare` instead of `Posts.memory()` ([subscriptions that hibernate](./platforms.md#subscriptions-that-hibernate)).

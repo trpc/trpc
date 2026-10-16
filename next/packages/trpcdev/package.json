@@ -40,6 +40,10 @@
       "types": "./src/http/index.ts",
       "default": "./src/http/index.ts"
     },
+    "./cloudflare": {
+      "types": "./src/cloudflare/index.ts",
+      "default": "./src/cloudflare/index.ts"
+    },
     "./testing": {
       "types": "./src/testing/index.ts",
       "default": "./src/testing/index.ts"

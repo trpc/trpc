@@ -453,6 +453,22 @@ export function callProcedure(
   );
 }
 
+/**
+ * `events` as the subscription at `procedure` would emit them: validated
+ * by its event schema. For events that skip the resolver (a hibernated
+ * publisher subscription).
+ * @internal
+ */
+export const procedureEvents = (
+  procedure: AnyProcedure,
+  events: Stream.Stream<unknown>,
+): Stream.Stream<unknown, AnyTrpcError> =>
+  toEventStream(
+    events,
+    Context.empty(),
+    eventSchema(validated(procedure['~trpc'])),
+  );
+
 function toEventStream(
   value: unknown,
   services: Context.Context<never>,

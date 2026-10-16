@@ -140,14 +140,12 @@ Not built yet: an adapter for Lambda behind API Gateway (event in, result out).
 
 ## Cloudflare Durable Objects
 
-A Durable Object can accept WebSockets with hibernation, so idle connections don't keep it in memory (or on the bill). `createHibernatingWebSockets()` serves a handler's router that way, from the object's `fetch`, `webSocketMessage` and `webSocketClose`:
+A Durable Object can accept WebSockets with hibernation, so idle connections don't keep it in memory (or on the bill). `createHibernatingWebSockets()` from `trpcdev/cloudflare` serves a handler's router that way, from the object's `fetch`, `webSocketMessage` and `webSocketClose`:
 
 ```ts
 import { DurableObject } from 'cloudflare:workers';
-import {
-  createFetchHandler,
-  createHibernatingWebSockets,
-} from 'trpcdev/server';
+import { createHibernatingWebSockets } from 'trpcdev/cloudflare';
+import { createFetchHandler } from 'trpcdev/server';
 
 const handler = createFetchHandler<AppRouter, { env: Env }>({
   router,
@@ -175,10 +173,46 @@ export class Room extends DurableObject<Env> {
 }
 ```
 
-- When the object wakes, each socket's request URL, its `cookie` and `authorization` headers (`keepHeaders` to choose others) and its `connectionParams` are rebuilt from the socket's attachment, so `createContext` sees the same connection. They must fit Cloudflare's 2 KB attachment limit.
+- When the object wakes, each socket's request URL, its `cookie` and `authorization` headers (`keepHeaders` to choose others) and its `connectionParams` are rebuilt from the socket's attachment, so `createContext` sees the same connection. The attachment has a 2 KB limit; past it, the headers are dropped with a `console.warn` (the connection stays). Browsers can't set WebSocket headers, so same-origin apps authenticate with cookies.
 - `wsLink`'s keep-alive pings are answered by the runtime (`setWebSocketAutoResponse`) without waking the object. The handler's `websocket.idleTimeoutMs` doesn't apply here: a timer would wake it.
-- A running subscription keeps the object awake until it ends; hibernation saves idle connections, not open streams. Pair it with a [publisher](./subscriptions.md#cloudflare-durable-objects) inside the object so subscribers resume with `lastEventId` after a reconnect.
+- A generator or `Stream` subscription keeps the object awake until it ends. Subscriptions to a `hibernatingPublisher` don't (below).
 - Already created the `WebSocketPair` yourself? `sockets.accept(server, request, platform)` instead of `upgrade()`.
+
+### Subscriptions that hibernate
+
+Provide the object's [publisher](./subscriptions.md#publisher) with `hibernatingPublisher(Posts, { state })`. A subscription that returns `Posts.subscribe(...)` over a hibernating socket is then kept in the socket's attachment (call id, channel, path) instead of a running fiber, and `Posts.publish()` sends each event straight to the matching sockets, validated by the subscription's `.output()`. The object sleeps between events.
+
+```ts
+import {
+  createHibernatingWebSockets,
+  hibernatingPublisher,
+} from 'trpcdev/cloudflare';
+
+class Posts extends Publisher.Service<Posts, { created: Post }>()('Posts') {}
+
+const router = {
+  create: t.procedure
+    .input(PostInput)
+    .mutation(({ input }) => Effect.as(Posts.publish('created', input), input)),
+  onCreated: t.procedure.subscription(({ lastEventId }) =>
+    Posts.subscribe('created', { lastEventId }),
+  ),
+};
+
+export class Room extends DurableObject<Env> {
+  handler = createFetchHandler({
+    router,
+    layer: hibernatingPublisher(Posts, { state: this.ctx, buffer: 100 }),
+  });
+  sockets = createHibernatingWebSockets(this.handler, { state: this.ctx });
+  // fetch, webSocketMessage and webSocketClose as above
+}
+```
+
+- Event ids are timestamps, so they keep growing across wakes. Kept events (`buffer`) are in memory: a reconnect with `lastEventId` replays the ones the object still has.
+- The subscription runs its resolver once, when it starts. Anything the resolver does per event (filtering, mapping the stream) is skipped; filter in the channel name instead (`'room:42'`).
+- One adapter per object: the latest `createHibernatingWebSockets` for a `state` gets the events.
+- A subscription that doesn't fit the attachment runs as a normal stream, with a warning. SSE subscribers in the same object get a normal stream too.
 
 ## Workers and message ports
 

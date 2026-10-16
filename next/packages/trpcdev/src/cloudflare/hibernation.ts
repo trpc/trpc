@@ -1,10 +1,27 @@
-import type { FetchHandler, PlatformArgs } from './fetch.ts';
+import { Effect, Exit, Stream } from 'effect';
+import {
+  isTrpcError,
+  toWireError,
+  type AnyTrpcError,
+} from '../internal/error.ts';
+import type { ServerMessage } from '../internal/protocol.ts';
+import { emitEvents } from '../server/events.ts';
+import {
+  normalizeCause,
+  procedureEvents,
+  unexpectedError,
+} from '../server/execute.ts';
+import type { FetchHandler, PlatformArgs } from '../server/fetch.ts';
+import { resolveProcedure } from '../server/router.ts';
 import {
   connectionReceiver,
+  frameMessage,
   parseSocketMessage,
   socketCores,
   type ConnectionReceiver,
-} from './socket.ts';
+  type SocketCore,
+} from '../server/socket.ts';
+import type { TrackedEnvelope } from '../server/tracked.ts';
 
 /**
  * The server-side `WebSocket` a Durable Object gets from
@@ -28,6 +45,8 @@ export interface HibernatableWebSocket {
 export interface HibernationState {
   acceptWebSocket(socket: never, tags?: string[]): void;
   setWebSocketAutoResponse?(pair?: unknown): void;
+  /** The object's accepted sockets. `hibernatingPublisher` sends events to them. */
+  getWebSockets?(tag?: string): HibernatableWebSocket[];
 }
 
 /**
@@ -39,8 +58,8 @@ export interface HibernatingWebSocketsOptions {
   state: HibernationState;
   /**
    * Request headers kept with each socket, so `createContext` sees them
-   * after the object wakes. Everything kept, with the connection params,
-   * must fit Cloudflare's 2 KB attachment limit.
+   * after the object wakes. When the attachment would pass Cloudflare's
+   * 2 KB limit, they're dropped with a warning.
    * @default ['authorization', 'cookie']
    */
   keepHeaders?: string[] | undefined;
@@ -71,20 +90,80 @@ export interface HibernatingWebSockets<TPlatform> {
   close(socket: HibernatableWebSocket, code?: number, reason?: string): void;
 }
 
+/** A parked publisher subscription: call id, publisher key, channel, path. */
+interface Parked {
+  c: number;
+  k: string;
+  ch: string;
+  p: string;
+}
+
 interface Attachment {
   trpc: 1;
   url: string;
   headers: [string, string][];
   connectionParams?: Record<string, unknown> | undefined;
+  subs?: Parked[] | undefined;
 }
 
 const OPEN = 1;
+/** Cloudflare's limit for `serializeAttachment()`. */
+const ATTACHMENT_LIMIT = 2048;
 
 const isAttachment = (value: unknown): value is Attachment =>
   typeof value === 'object' &&
   value !== null &&
   (value as Attachment).trpc === 1 &&
   typeof (value as Attachment).url === 'string';
+
+const encoder = new TextEncoder();
+const fits = (attachment: Attachment) =>
+  encoder.encode(JSON.stringify(attachment)).length <= ATTACHMENT_LIMIT;
+
+const warn = (message: string) => {
+  console.warn(`[trpcdev/cloudflare] ${message}`);
+};
+
+/**
+ * Stores `next` on the socket, dropping the kept headers if that's what
+ * it takes to fit. `undefined` when it doesn't fit even without them.
+ */
+function store(
+  socket: HibernatableWebSocket,
+  next: Attachment,
+): Attachment | undefined {
+  if (fits(next)) {
+    socket.serializeAttachment(next);
+    return next;
+  }
+  if (next.headers.length > 0) {
+    const slim: Attachment = { ...next, headers: [] };
+    if (fits(slim)) {
+      warn(
+        `Dropped the kept headers (${next.headers.map(([n]) => n).join(', ')}) of a socket: with them its attachment passes Cloudflare's 2 KB limit. createContext won't see them after the object wakes.`,
+      );
+      socket.serializeAttachment(slim);
+      return slim;
+    }
+  }
+  return undefined;
+}
+
+type Deliver = (
+  key: string,
+  channel: string,
+  event: TrackedEnvelope<unknown>,
+) => Promise<void>;
+
+/**
+ * The adapter serving each Durable Object, for `hibernatingPublisher`. The
+ * latest one wins: a woken instance replaces the evicted one.
+ * @internal
+ */
+export const deliveries: WeakMap<HibernationState, Deliver> = new WeakMap();
+
+const requestOf = (attachment: Attachment) =>
+  new Request(attachment.url, { headers: attachment.headers });
 
 /**
  * Serves `handler`'s router over WebSockets that a Cloudflare Durable Object
@@ -93,7 +172,9 @@ const isAttachment = (value: unknown): value is Attachment =>
  * socket's attachment and are rebuilt when the object wakes. Keep-alive
  * pings are answered without waking it.
  *
- * A running subscription keeps the object awake until it ends.
+ * Subscriptions to a `hibernatingPublisher` are kept in the attachment
+ * too, and its events are sent straight to the sockets, so the object
+ * sleeps between them. Other subscriptions keep it awake until they end.
  *
  * @example
  * ```ts
@@ -147,17 +228,28 @@ export function createHibernatingWebSockets<TPlatform>(
     );
   }
 
+  const current = (socket: HibernatableWebSocket) => {
+    const attachment = socket.deserializeAttachment();
+    return isAttachment(attachment) ? attachment : undefined;
+  };
+
+  const unpark = (socket: HibernatableWebSocket, id: number) => {
+    const attachment = current(socket);
+    if (!attachment?.subs?.some((s) => s.c === id)) return;
+    const { subs: all, ...rest } = attachment;
+    const subs = all.filter((s) => s.c !== id);
+    store(socket, subs.length ? { ...rest, subs } : rest);
+  };
+
   const receiverFor = (
     socket: HibernatableWebSocket,
     platform: unknown,
   ): ConnectionReceiver | undefined => {
-    const attachment = socket.deserializeAttachment();
-    if (!isAttachment(attachment)) return undefined;
+    const attachment = current(socket);
+    if (!attachment) return undefined;
     let receiver = receivers.get(socket);
     if (!receiver) {
-      const request = new Request(attachment.url, {
-        headers: attachment.headers,
-      });
+      const request = requestOf(attachment);
       receiver = connectionReceiver(
         core,
         {
@@ -174,7 +266,32 @@ export function createHibernatingWebSockets<TPlatform>(
           transport: 'websocket',
           connectionParams: attachment.connectionParams,
           onInit(connectionParams) {
-            socket.serializeAttachment({ ...attachment, connectionParams });
+            const now = current(socket) ?? attachment;
+            if (!store(socket, { ...now, connectionParams })) {
+              warn(
+                "A socket's connection params pass Cloudflare's 2 KB attachment limit; createContext won't see them after the object wakes.",
+              );
+              store(socket, {
+                ...now,
+                headers: [],
+                connectionParams: undefined,
+              });
+            }
+          },
+          hibernate({ id, path, key, channel }) {
+            const now = current(socket) ?? attachment;
+            const subs = [
+              ...(now.subs ?? []),
+              { c: id, k: key, ch: channel, p: path },
+            ];
+            if (store(socket, { ...now, subs })) return true;
+            warn(
+              `The subscription "${path}" doesn't fit the socket's 2 KB attachment, so it keeps the object awake.`,
+            );
+            return false;
+          },
+          unpark(id) {
+            unpark(socket, id);
           },
         },
       );
@@ -183,6 +300,57 @@ export function createHibernatingWebSockets<TPlatform>(
     }
     return receiver;
   };
+
+  const deliver: Deliver = async (key, channel, event) => {
+    const sockets = opts.state.getWebSockets?.() ?? [];
+    await Promise.all(
+      sockets.flatMap((socket) => {
+        const attachment = current(socket);
+        return (attachment?.subs ?? [])
+          .filter((s) => s.k === key && s.ch === channel)
+          .map((sub) => sendEvent(core, socket, attachment!, sub, event));
+      }),
+    );
+  };
+
+  const sendEvent = async (
+    core: SocketCore,
+    socket: HibernatableWebSocket,
+    attachment: Attachment,
+    sub: Parked,
+    event: TrackedEnvelope<unknown>,
+  ) => {
+    const send = (message: ServerMessage) => {
+      if (socket.readyState === OPEN) socket.send(JSON.stringify(message));
+    };
+    const request = requestOf(attachment);
+    const procedure = await resolveProcedure(core.router, sub.p);
+    if (!procedure) return;
+    const report = (err: AnyTrpcError) => {
+      core.report(err, request, sub.p, 'subscription');
+      return toWireError(core.publicError(err));
+    };
+    const exit = await Effect.runPromiseExit(
+      emitEvents(
+        procedureEvents(procedure, Stream.make(event)),
+        core.serializer,
+        (cause) => report(isTrpcError(cause) ? cause : unexpectedError(cause)),
+        (frame) => send(frameMessage(sub.c, frame)),
+      ),
+    );
+    if (Exit.isFailure(exit)) {
+      const err = normalizeCause(exit.cause);
+      send({
+        id: sub.c,
+        type: 'error',
+        status: err.status,
+        body: core.serializer.serialize(report(err)),
+      });
+      unpark(socket, sub.c);
+    }
+  };
+
+  deliveries.set(opts.state, deliver);
 
   const sockets: HibernatingWebSockets<unknown> = {
     upgrade(request, ...platform) {
@@ -212,7 +380,12 @@ export function createHibernatingWebSockets<TPlatform>(
         url: request.url,
         headers: [...request.headers].filter(([name]) => keep.has(name)),
       };
-      socket.serializeAttachment(attachment);
+      if (!store(socket, attachment)) {
+        warn(
+          "A socket's request URL passes Cloudflare's 2 KB attachment limit.",
+        );
+        socket.serializeAttachment({ ...attachment, headers: [] });
+      }
       opts.state.acceptWebSocket(socket as never);
       receiverFor(socket, platform[0]);
     },
