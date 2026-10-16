@@ -1,4 +1,5 @@
 import { Effect } from 'effect';
+import { experimental_durable } from 'trpcdev/middleware';
 import { initTrpc, Publisher } from 'trpcdev/server';
 import { z } from 'zod';
 
@@ -27,5 +28,21 @@ export const appRouter = {
   onMessage: t.procedure.subscription(({ lastEventId }) =>
     Messages.subscribe('message', { lastEventId }),
   ),
+  // The streamed output is kept in the object's storage as it's sent, so a
+  // client whose connection drops picks up where it stopped.
+  digest: t.procedure
+    .input(z.object({ topics: z.array(z.string()).min(1) }))
+    .use(experimental_durable())
+    .mutation(({ input }) => ({
+      topics: input.topics.length,
+      summaries: (async function* () {
+        for (const topic of input.topics) {
+          await sleep(20);
+          yield { topic, words: sleep(10).then(() => topic.length * 7) };
+        }
+      })(),
+    })),
 };
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export type AppRouter = typeof appRouter;

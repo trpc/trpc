@@ -5,6 +5,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
     "smoke": "node smoke.ts"
   },
   "dependencies": {

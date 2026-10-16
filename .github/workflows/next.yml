@@ -104,3 +104,54 @@ jobs:
         env:
           VP_GIT_HOOKS: '0'
       - run: pnpm test:bun
+
+  cloudflare-deploy:
+    # Deploys examples/cloudflare and runs its smoke against the deployed
+    # Worker. Skipped until the repo has the CLOUDFLARE_API_TOKEN and
+    # CLOUDFLARE_ACCOUNT_ID secrets.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/v12'
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: cloudflare-deploy
+      cancel-in-progress: false
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: Check for credentials
+        id: credentials
+        working-directory: .
+        run: echo "present=${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' }}" >> "$GITHUB_OUTPUT"
+      - if: steps.credentials.outputs.present == 'true'
+        uses: actions/checkout@v7
+      - if: steps.credentials.outputs.present == 'true'
+        uses: pnpm/action-setup@v6
+        with:
+          package_json_file: next/package.json
+      - if: steps.credentials.outputs.present == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: next/pnpm-lock.yaml
+      - if: steps.credentials.outputs.present == 'true'
+        run: pnpm install --frozen-lockfile
+        env:
+          VP_GIT_HOOKS: '0'
+      - if: steps.credentials.outputs.present == 'true'
+        name: Deploy
+        id: deploy
+        working-directory: next/examples/cloudflare
+        run: |
+          pnpm run deploy 2>&1 | tee deploy.log
+          url=$(grep -oE 'https://[a-z0-9.-]+\.workers\.dev' deploy.log | head -1)
+          test -n "$url"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+      - if: steps.credentials.outputs.present == 'true'
+        name: Smoke the deployed Worker
+        working-directory: next/examples/cloudflare
+        run: pnpm smoke
+        env:
+          SMOKE_URL: ${{ steps.deploy.outputs.url }}

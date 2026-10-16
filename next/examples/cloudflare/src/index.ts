@@ -1,15 +1,18 @@
 /**
  * A Worker that routes `/rooms/:name/trpc` to one Durable Object per room.
  * Each object serves tRPC over hibernating WebSockets: idle connections and
- * open subscriptions don't keep it in memory.
+ * open subscriptions don't keep it in memory. Durable calls keep their
+ * results, streamed ones too, in the object's storage.
  */
 import { DurableObject } from 'cloudflare:workers';
 import {
   experimental_createHibernatingWebSockets,
   hibernatingPublisher,
 } from 'trpcdev/cloudflare';
+import { Layer } from 'effect';
 import { createFetchHandler } from 'trpcdev/server';
 import { appRouter, Messages } from './router.ts';
+import { durableObjectPersistence } from './storage.ts';
 
 export interface Env {
   ROOMS: DurableObjectNamespace<Room>;
@@ -19,7 +22,10 @@ export interface Env {
 export class Room extends DurableObject<Env> {
   handler = createFetchHandler<typeof appRouter, { env: Env }>({
     router: appRouter,
-    layer: hibernatingPublisher(Messages, { state: this.ctx, buffer: 100 }),
+    layer: Layer.mergeAll(
+      hibernatingPublisher(Messages, { state: this.ctx, buffer: 100 }),
+      durableObjectPersistence(this.ctx.storage),
+    ),
     createContext: ({ request, platform }) => ({
       room: request.headers['x-room'] ?? 'unknown',
       greeting: platform?.env.GREETING ?? 'hello',

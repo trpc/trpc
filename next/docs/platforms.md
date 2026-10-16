@@ -290,6 +290,17 @@ export class Room extends DurableObject<Env> {
 - A subscription that doesn't fit the attachment runs as a normal stream, with a warning. SSE subscribers in the same object get a normal stream too.
 - [Tags](./subscriptions.md#tags) are kept with the parked subscription, so `Notes.publish('note', data, { tags: ['user:1'] })` only wakes the sockets subscribed with that tag.
 
+### Durable calls in an object
+
+[`experimental_durable()`](./procedures.md) needs Effect's `BackingPersistence`. In an object, back it with the object's storage, so kept results and streamed frames outlive an eviction: Effect's `KeyValueStore.makeStringOnly` over `ctx.storage`, under `Persistence.layerBackingKvs`. [`examples/cloudflare/src/storage.ts`](../examples/cloudflare/src/storage.ts) has one, which the example merges with its publisher layer:
+
+```ts
+layer: Layer.mergeAll(
+  hibernatingPublisher(Messages, { state: this.ctx, buffer: 100 }),
+  durableObjectPersistence(this.ctx.storage),
+),
+```
+
 ### Signed connection tokens
 
 The Worker in front of the object usually authenticates the user already. `connectionToken(schema, { secret })` lets it hand that over: a procedure on the Worker signs claims, the client sends the token as a connection param, and the object's `createContext` verifies it (HMAC-SHA256 with WebCrypto) instead of looking up the session again:
