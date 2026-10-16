@@ -1,0 +1,14 @@
+# `createTrpcContext<typeof makeClient>()` takes one type argument and returns each framework's usual shape (human)
+
+- Human, 2026-10-16: "i feel like how we create `createTrpcContext` doesn't match with our rule about preferring bags, is that something we should change?", then "i'm a bit surprised it doesn't look more like `const createClient => .. .something` / `const [TrpcProvider, useTrpc] = createTrpcContext<typeof createClient>()`", then "B - follow the standard for each framework, i only really know react which uses tuples tho" (B: one type argument, a tuple return).
+- One type argument, in all seven adapters: the type of the function that makes the client (`typeof makeClient`), of a client, or a router type. The client's type carries the router, its links' context and their types (the serializer's form included), so the old `TContext` and `TLinks` positional arguments are gone and nothing is left for a type bag ([`root-init-option-bag.md`](./root-init-option-bag.md)). A router type alone types no link context and the default JSON form.
+- React and Preact return a tuple, `[TrpcProvider, useTrpc, useTrpcClient, context]`, named at the call site: `const [BillingProvider, useBilling] = createTrpcContext<typeof makeBillingClient>({ keyPrefix: 'billing' })`.
+- (agent, tentative) The other frameworks, picked by the agent from each one's convention:
+  - Solid: `[TrpcProvider, useTrpc, useTrpcClient]`, like `@solid-primitives/context`'s `createContextProvider` (`[Provider, useContext]`).
+  - Svelte: `[useTrpc, setTrpcContext, useTrpcClient]`, in the order of Svelte 5's `createContext()` (`[get, set, has]`).
+  - Vue, Angular and Lit keep named objects. Vue libraries ship a plugin plus `use*` composables (`VueQueryPlugin`, `useQueryClient`); Angular ships `provide*`/`inject*` functions; Lit has a provider element and controllers.
+- Tentative (human): "i only really know react which uses tuples tho". Challenge the non-React shapes when they get in the way.
+- (agent) The codemod rewrites v11's `const { TRPCProvider, useTRPC, useTRPCClient } = createTRPCContext<AppRouter>()` to the tuple, keeping renamed bindings (`{ useTRPC: useApi }` → `[, useApi]`), and leaves a note for a pattern it can't map (a rest element).
+- Why: the client factory already exists in most apps, so its type is the one thing to pass; a tuple lets a second context be named without `{ TrpcProvider: BillingProvider }`.
+- Lost: v11's `{ TRPCProvider, useTRPC }` object shape in React; spelling out link context and types next to a router type; one shape across all adapters.
+- Lives in: `packages/tanstack-query/src/utils.ts` (`SourceRouter`, `SourceContext`, `SourceLinks`), `packages/tanstack-*-query/src/index.ts`, `packages/upgrade/src/transform.ts` (`contextTuple`), `test/tanstack-query/`, `docs/tanstack-query.md`, `examples/next-app/src/trpc/client.tsx`.

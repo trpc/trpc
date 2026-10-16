@@ -26,17 +26,10 @@ import {
   injectSubscription,
 } from '@trpc12/tanstack-angular-query';
 import { afterEach, expect, expectTypeOf, test } from 'vite-plus/test';
-import {
-  createApp,
-  db,
-  type AppRouter,
-  type Post,
-  type Links,
-  type AppClient,
-} from './fixtures/app.ts';
+import { createApp, db, type Post, type AppClient } from './fixtures/app.ts';
 import { click, text, waitFor } from './fixtures/dom.ts';
 
-const { provideTrpc, injectTrpc } = createTrpcContext<AppRouter, {}, Links>();
+const { provideTrpc, injectTrpc } = createTrpcContext<AppClient>();
 
 TestBed.initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
 afterEach(() => TestBed.resetTestingModule());

@@ -94,10 +94,9 @@ const makeClient = () =>
     router: routerType<AppRouter>(),
     links: [httpLink({ url, serializer })],
   });
-export const { TrpcProvider, useTrpc } =
-  createTrpcContext<ReturnType<typeof makeClient>>();
+export const [TrpcProvider, useTrpc] = createTrpcContext<typeof makeClient>();
 ```
 
-Without a client type, pass the form as the third type argument: `createTrpcContext<AppRouter, {}, { form: FormOfSerializer<typeof serializer> }>()`.
+A router type alone (`createTrpcContext<AppRouter>()`) has no links, so it types the default JSON form.
 
 See [TanStack Query](./tanstack-query.md#hydration).

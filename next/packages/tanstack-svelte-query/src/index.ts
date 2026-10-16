@@ -9,7 +9,7 @@
  * // trpc.ts
  * import { createTrpcContext } from '@trpc12/tanstack-svelte-query';
  *
- * export const { setTrpcContext, useTrpc } = createTrpcContext<AppRouter>();
+ * export const [useTrpc, setTrpcContext] = createTrpcContext<AppRouter>();
  * ```
  *
  * ```svelte
@@ -42,40 +42,37 @@ export {
 } from './subscription.svelte.ts';
 
 /**
- * What {@link createTrpcContext} returns.
+ * What {@link createTrpcContext} returns, as a tuple in the order of
+ * Svelte's `createContext()` (`[get, set]`): the helpers for the client in
+ * context; the setter, which puts the client on the current component's
+ * context for its descendants (call it during component init, next to
+ * `QueryClientProvider` or `setQueryClientContext`) and returns its
+ * helpers; and the client in context, for calls outside TanStack Query.
  * @since 0.0.1
  * @stability stable
  */
-export interface TrpcSvelteContext<
+export type TrpcSvelteContext<
   TRouter,
   TContext extends object = {},
   TLinks extends ChainTypes = {},
-> {
-  /**
-   * Sets the client on the current component's context, for its
-   * descendants. Call it during component init, next to
-   * `QueryClientProvider` or `setQueryClientContext`.
-   */
+> = readonly [
+  useTrpc: () => TrpcQueryUtilsFor<TRouter, TContext, TLinks>,
   setTrpcContext: (
     client: TrpcClient<RouterOf<TRouter>, TContext, undefined, TLinks>,
-  ) => TrpcQueryUtilsFor<TRouter, TContext, TLinks>;
-  /** The helpers for the client in context. */
-  useTrpc: () => TrpcQueryUtilsFor<TRouter, TContext, TLinks>;
-  /** The client in context, for calls outside TanStack Query. */
+  ) => TrpcQueryUtilsFor<TRouter, TContext, TLinks>,
   useTrpcClient: () => TrpcClient<
     RouterOf<TRouter>,
     TContext,
     undefined,
     TLinks
-  >;
-}
+  >,
+];
 
 /**
  * Creates a context key and helpers for a client and its helpers.
  *
- * `TSource` is the client's type (`ReturnType<typeof makeClient>`), which
- * brings its links' context and types too, or a router type with
- * `TContext` and `TLinks` spelled out.
+ * `TSource` is the client factory's type (`typeof makeClient`) or the
+ * client's, which bring its links' context and types too, or a router type.
  *
  * @example
  * ```svelte
@@ -93,14 +90,16 @@ export interface TrpcSvelteContext<
  * @since 0.0.1
  * @stability stable
  */
-export function createTrpcContext<
-  TSource,
-  TContext extends object = SourceContext<TSource>,
-  TLinks extends ChainTypes = SourceLinks<TSource>,
->(
+export function createTrpcContext<TSource>(
   opts: TrpcContextOptions = {},
-): TrpcSvelteContext<SourceRouter<TSource>, TContext, TLinks> {
+): TrpcSvelteContext<
+  SourceRouter<TSource>,
+  SourceContext<TSource>,
+  SourceLinks<TSource>
+> {
   type TRouter = SourceRouter<TSource>;
+  type TContext = SourceContext<TSource>;
+  type TLinks = SourceLinks<TSource>;
   type Value = {
     client: TrpcClient<RouterOf<TRouter>, TContext, undefined, TLinks>;
     utils: TrpcQueryUtilsFor<TRouter, TContext, TLinks>;
@@ -111,13 +110,13 @@ export function createTrpcContext<
     if (!value) throw new Error('Call setTrpcContext() in a parent first');
     return value;
   };
-  return {
-    setTrpcContext: (client) =>
+  return [
+    () => use().utils,
+    (client) =>
       setContext<Value>(key, {
         client,
         utils: createTrpcQueryUtils({ ...opts, client }),
       }).utils,
-    useTrpc: () => use().utils,
-    useTrpcClient: () => use().client,
-  };
+    () => use().client,
+  ];
 }

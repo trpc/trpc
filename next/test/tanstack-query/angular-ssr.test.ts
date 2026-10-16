@@ -25,12 +25,11 @@ import {
   appRouter,
   createApp,
   db,
-  type AppRouter,
-  type Links,
+  type AppClient,
   serializer,
 } from './fixtures/app.ts';
 
-const { provideTrpc, injectTrpc } = createTrpcContext<AppRouter, {}, Links>();
+const { provideTrpc, injectTrpc } = createTrpcContext<AppClient>();
 
 const Page = Component({
   selector: 'app-root',

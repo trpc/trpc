@@ -28,6 +28,7 @@ import {
   TrpcError,
   type LinksContext,
   type LinksTypes,
+  type TrpcClient,
 } from '@trpc12/trpc/client';
 import { createRouterClient } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
@@ -37,18 +38,13 @@ import {
   db,
   type AppRouter,
   type Post,
-  type Links,
   type AppClient,
   serializer,
 } from './fixtures/app.ts';
 import { click, container, text, waitFor } from './fixtures/dom.ts';
 
-const {
-  TrpcProvider,
-  useTrpc,
-  useTrpcClient,
-  context: TrpcContext,
-} = createTrpcContext<AppClient>();
+const [TrpcProvider, useTrpc, useTrpcClient, TrpcContext] =
+  createTrpcContext<AppClient>();
 
 function mount(ui: ReactNode, client: AppClient) {
   const queryClient = new QueryClient({
@@ -379,39 +375,22 @@ test('the context can be bridged into another tree', () => {
 });
 
 test('createTrpcContext({ keyPrefix }) prefixes the provided helpers', () => {
-  const billing = createTrpcContext<AppRouter, {}, Links>({
+  const [BillingProvider, useBilling] = createTrpcContext<AppClient>({
     keyPrefix: 'billing',
   });
   const client = createRouterClient(appRouter, { ctx: { locale: null } });
   function Key() {
-    return <p>{JSON.stringify(billing.useTrpc().post.pathKey())}</p>;
+    return <p>{JSON.stringify(useBilling().post.pathKey())}</p>;
   }
   const html = renderToString(
-    <billing.TrpcProvider client={client}>
+    <BillingProvider client={client}>
       <Key />
-    </billing.TrpcProvider>,
+    </BillingProvider>,
   );
   expect(html).toBe('<p>[[&quot;billing&quot;,&quot;post&quot;]]</p>');
 });
 
-test("a context typed with the links' types takes a client whose links declare errors", () => {
-  class Offline extends TrpcError.Tagged('OFFLINE') {}
-  const links = [
-    link<{ errors: Offline }>(({ op, next }) => next(op)),
-    httpLink({ url: 'http://localhost' }),
-  ] as const;
-  const client = createTrpcClient({ router: routerType<AppRouter>(), links });
-  const typed = createTrpcContext<
-    AppRouter,
-    LinksContext<typeof links>,
-    LinksTypes<typeof links>
-  >();
-  expectTypeOf(client).toExtend<
-    Parameters<typeof typed.TrpcProvider>[0]['client']
-  >();
-});
-
-test("a context typed from a client type takes its router, its links' context and their types", () => {
+test("a context typed from a client factory takes its router, its links' context and their types", () => {
   class Offline extends TrpcError.Tagged('OFFLINE') {}
   const links = [
     link<{ context: { priority?: 'high' }; errors: Offline }>(({ op, next }) =>
@@ -421,22 +400,24 @@ test("a context typed from a client type takes its router, its links' context an
   ] as const;
   const makeClient = () =>
     createTrpcClient({ router: routerType<AppRouter>(), links });
-  const fromClient = createTrpcContext<ReturnType<typeof makeClient>>();
-  const spelled = createTrpcContext<
-    AppRouter,
-    LinksContext<typeof links>,
-    LinksTypes<typeof links>
+  const [FactoryProvider, useFromFactory, useFactoryClient] =
+    createTrpcContext<typeof makeClient>();
+  const [, useFromClient, useClient] =
+    createTrpcContext<ReturnType<typeof makeClient>>();
+  expectTypeOf(useFromFactory).toEqualTypeOf(useFromClient);
+  expectTypeOf(useFactoryClient).toEqualTypeOf(useClient);
+  expectTypeOf(useFactoryClient).returns.toEqualTypeOf<
+    TrpcClient<
+      AppRouter,
+      LinksContext<typeof links>,
+      undefined,
+      LinksTypes<typeof links>
+    >
   >();
-  expectTypeOf(fromClient.useTrpc).toEqualTypeOf(spelled.useTrpc);
-  expectTypeOf(fromClient.useTrpcClient).toEqualTypeOf(spelled.useTrpcClient);
-  expectTypeOf(fromClient.useTrpc).not.toEqualTypeOf(
-    createTrpcContext<AppRouter>().useTrpc,
+  expectTypeOf(useFromFactory).not.toEqualTypeOf(
+    createTrpcContext<AppRouter>()[1],
   );
   expectTypeOf(makeClient()).toExtend<
-    Parameters<typeof fromClient.TrpcProvider>[0]['client']
+    Parameters<typeof FactoryProvider>[0]['client']
   >();
-  // A router type still works as before.
-  expectTypeOf(createTrpcContext<AppRouter>().useTrpc).toEqualTypeOf(
-    createTrpcContext<AppRouter, {}, {}>().useTrpc,
-  );
 });

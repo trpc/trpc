@@ -30,7 +30,7 @@ A refetch that returns equal data keeps the old reference, `Date`s, `Map`s and `
 
 Pass what links read in `context`, kept apart from TanStack's own options: `trpc.post.byId.queryOptions({ input, context: { dedupe: false } })`.
 
-With React, a client made per request or per test goes through context. Typed from the client's type, the helpers get what its links declare (call-option context, errors, the serializer's form); a router type works too, `createTrpcContext<AppRouter>()`:
+With React, a client made per request or per test goes through context. `createTrpcContext` takes one type argument: the type of the function that makes the client (or of the client itself), so the helpers get what its links declare (call-option context, errors, the serializer's form). A router type works too, `createTrpcContext<AppRouter>()`. React and Preact return `[TrpcProvider, useTrpc, useTrpcClient, context]`, to name as you like:
 
 ```tsx
 const makeClient = () =>
@@ -38,8 +38,7 @@ const makeClient = () =>
     router: routerType<AppRouter>(),
     links: [httpLink({ url })],
   });
-export const { TrpcProvider, useTrpc } =
-  createTrpcContext<ReturnType<typeof makeClient>>();
+export const [TrpcProvider, useTrpc] = createTrpcContext<typeof makeClient>();
 
 <QueryClientProvider client={queryClient}>
   <TrpcProvider client={client}>
@@ -61,7 +60,7 @@ billing.post.byId.queryKey({ input: { id } }); // [['billing', 'post', 'byId'], 
 billing.pathFilter(); // matches only billing's queries
 ```
 
-`createTrpcContext<BillingRouter>({ keyPrefix: 'billing' })` and `createTrpcRsc({ keyPrefix })` take it too; the server and browser must use the same one.
+`const [BillingProvider, useBilling] = createTrpcContext<typeof makeBillingClient>({ keyPrefix: 'billing' })` and `createTrpcRsc({ keyPrefix })` take it too; the server and browser must use the same one.
 
 ## Streamed mutations
 

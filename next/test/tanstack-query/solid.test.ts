@@ -15,17 +15,10 @@ import { createSignal, type JSX } from 'solid-js';
 import h from 'solid-js/h';
 import { isServer, render } from 'solid-js/web';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
-import {
-  createApp,
-  db,
-  type AppRouter,
-  type Post,
-  type Links,
-  type AppClient,
-} from './fixtures/app.ts';
+import { createApp, db, type Post, type AppClient } from './fixtures/app.ts';
 import { click, container, text, waitFor } from './fixtures/dom.ts';
 
-const { TrpcProvider, useTrpc } = createTrpcContext<AppRouter, {}, Links>();
+const [TrpcProvider, useTrpc] = createTrpcContext<AppClient>();
 
 function mount(App: () => JSX.Element, client: AppClient) {
   const queryClient = new QueryClient({

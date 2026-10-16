@@ -92,6 +92,9 @@ const MODULES: Readonly<Record<string, ModuleMap>> = {
   },
 };
 
+/** The v11 names of what React's `createTrpcContext()` returns, in tuple order. */
+const CONTEXT_TUPLE = ['TRPCProvider', 'useTRPC', 'useTRPCClient'];
+
 /** What `createTRPCContext()` returns, renamed wherever a file uses them. */
 const PROJECT_RENAMES: Readonly<Record<string, string>> = {
   TRPCProvider: 'TrpcProvider',
@@ -465,8 +468,40 @@ export function upgradeSource(
       : undefined;
   };
 
+  /** `{ TRPCProvider, useTRPC }` → `[TrpcProvider, useTrpc]`, the tuple React's context returns. */
+  const contextTuple = (pattern: Node) => {
+    const slots: string[] = [];
+    for (const prop of pattern['properties'] as Node[]) {
+      const name = prop.type === 'Property' ? keyName(prop) : undefined;
+      const at = name === undefined ? -1 : CONTEXT_TUPLE.indexOf(name);
+      if (at === -1) {
+        note(
+          prop.start,
+          'createTrpcContext returns [TrpcProvider, useTrpc, useTrpcClient, context]: destructure it as a tuple',
+        );
+        return;
+      }
+      slots[at] = prop['shorthand']
+        ? own(PROJECT_RENAMES, name!)!
+        : text(prop['value']);
+    }
+    take(
+      pattern.start,
+      pattern.end,
+      `[${Array.from(slots, (slot) => slot ?? '').join(', ')}]`,
+    );
+  };
+
   walk(program, (node, parent, key) => {
     if (isTaken(node)) return false;
+    if (
+      node.type === 'VariableDeclarator' &&
+      node['id'].type === 'ObjectPattern' &&
+      node['init']?.type === 'CallExpression' &&
+      isImportedAs(node['init']['callee'], 'createTRPCContext')
+    ) {
+      contextTuple(node['id']);
+    }
     if (node.type === 'CallExpression') {
       const callee = node['callee'] as Node;
       const method =

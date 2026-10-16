@@ -6,7 +6,7 @@
  * ```tsx
  * import { createTrpcContext } from '@trpc12/tanstack-preact-query';
  *
- * export const { TrpcProvider, useTrpc } = createTrpcContext<AppRouter>();
+ * export const [TrpcProvider, useTrpc] = createTrpcContext<AppRouter>();
  *
  * function Post({ id }: { id: string }) {
  *   const trpc = useTrpc();
@@ -54,44 +54,43 @@ export interface TrpcProviderProps<
 }
 
 /**
- * What {@link createTrpcContext} returns.
+ * What {@link createTrpcContext} returns, as a tuple to name freely: the
+ * provider (render it inside `QueryClientProvider`), the hook for the
+ * provided client's helpers, the hook for the client itself (calls outside
+ * TanStack Query), and the Preact context, for bridging it into another
+ * render tree: read it with `useContext`, then provide that value on the
+ * other side.
  * @since 0.0.1
  * @stability stable
  */
-export interface TrpcPreactContext<
+export type TrpcPreactContext<
   TRouter,
   TContext extends object = {},
   TLinks extends ChainTypes = {},
-> {
-  /** Provides the client. Render it inside `QueryClientProvider`. */
+> = readonly [
   TrpcProvider: (
     props: TrpcProviderProps<TRouter, TContext, TLinks>,
-  ) => VNode<any>;
-  /** The helpers for the provided client. */
-  useTrpc: () => TrpcQueryUtilsFor<TRouter, TContext, TLinks>;
-  /** The provided client, for calls outside TanStack Query. */
+  ) => VNode<any>,
+  useTrpc: () => TrpcQueryUtilsFor<TRouter, TContext, TLinks>,
   useTrpcClient: () => TrpcClient<
     RouterOf<TRouter>,
     TContext,
     undefined,
     TLinks
-  >;
-  /**
-   * The Preact context itself, for bridging it into another render tree:
-   * read it with `useContext`, then provide that value on the other side.
-   */
-  context: PreactContext<unknown>;
-}
+  >,
+  context: PreactContext<unknown>,
+];
 
 /**
  * Creates a Preact context for a client and its helpers.
- * `TSource` is the client's type (`ReturnType<typeof makeClient>`), which
- * brings its links' context and types too, or a router type with
- * `TContext` and `TLinks` spelled out.
+ * `TSource` is the client factory's type (`typeof makeClient`) or the
+ * client's, which bring its links' context and types too, or a router type.
  *
  * @example
  * ```tsx
- * const { TrpcProvider, useTrpc } = createTrpcContext<AppRouter>();
+ * const makeClient = () =>
+ *   createTrpcClient({ router: routerType<AppRouter>(), links: [httpLink({ url })] });
+ * const [TrpcProvider, useTrpc] = createTrpcContext<typeof makeClient>();
  *
  * <QueryClientProvider client={queryClient}>
  *   <TrpcProvider client={client}>
@@ -102,14 +101,16 @@ export interface TrpcPreactContext<
  * @since 0.0.1
  * @stability stable
  */
-export function createTrpcContext<
-  TSource,
-  TContext extends object = SourceContext<TSource>,
-  TLinks extends ChainTypes = SourceLinks<TSource>,
->(
+export function createTrpcContext<TSource>(
   opts: TrpcContextOptions = {},
-): TrpcPreactContext<SourceRouter<TSource>, TContext, TLinks> {
+): TrpcPreactContext<
+  SourceRouter<TSource>,
+  SourceContext<TSource>,
+  SourceLinks<TSource>
+> {
   type TRouter = SourceRouter<TSource>;
+  type TContext = SourceContext<TSource>;
+  type TLinks = SourceLinks<TSource>;
   type Value = {
     client: TrpcClient<RouterOf<TRouter>, TContext, undefined, TLinks>;
     utils: TrpcQueryUtilsFor<TRouter, TContext, TLinks>;
@@ -120,18 +121,22 @@ export function createTrpcContext<
     if (!value) throw new Error('Wrap your component in <TrpcProvider>');
     return value;
   };
-  return {
-    TrpcProvider: ({ client, children }) => {
-      const value = useMemo(
-        () => ({ client, utils: createTrpcQueryUtils({ ...opts, client }) }),
-        [client],
-      );
-      return h(Context.Provider, { value }, children);
-    },
-    useTrpc: () => use().utils,
-    useTrpcClient: () => use().client,
-    context: Context as PreactContext<unknown>,
+  const TrpcProvider = ({
+    client,
+    children,
+  }: TrpcProviderProps<TRouter, TContext, TLinks>) => {
+    const value = useMemo(
+      () => ({ client, utils: createTrpcQueryUtils({ ...opts, client }) }),
+      [client],
+    );
+    return h(Context.Provider, { value }, children);
   };
+  return [
+    TrpcProvider,
+    () => use().utils,
+    () => use().client,
+    Context as PreactContext<unknown>,
+  ];
 }
 
 /**

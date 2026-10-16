@@ -79,9 +79,8 @@ export interface TrpcAngularContext<
 /**
  * Creates an injection token and helpers for a client and its helpers.
  *
- * `TSource` is the client's type (`ReturnType<typeof makeClient>`), which
- * brings its links' context and types too, or a router type with
- * `TContext` and `TLinks` spelled out.
+ * `TSource` is the client factory's type (`typeof makeClient`) or the
+ * client's, which bring its links' context and types too, or a router type.
  *
  * @example
  * ```ts
@@ -91,14 +90,16 @@ export interface TrpcAngularContext<
  * @since 0.0.1
  * @stability stable
  */
-export function createTrpcContext<
-  TSource,
-  TContext extends object = SourceContext<TSource>,
-  TLinks extends ChainTypes = SourceLinks<TSource>,
->(
+export function createTrpcContext<TSource>(
   opts: TrpcContextOptions = {},
-): TrpcAngularContext<SourceRouter<TSource>, TContext, TLinks> {
+): TrpcAngularContext<
+  SourceRouter<TSource>,
+  SourceContext<TSource>,
+  SourceLinks<TSource>
+> {
   type TRouter = SourceRouter<TSource>;
+  type TContext = SourceContext<TSource>;
+  type TLinks = SourceLinks<TSource>;
   type Value = {
     client: TrpcClient<RouterOf<TRouter>, TContext, undefined, TLinks>;
     utils: TrpcQueryUtilsFor<TRouter, TContext, TLinks>;

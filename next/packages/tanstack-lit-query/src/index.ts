@@ -119,9 +119,8 @@ function lazy<T extends object>(resolve: () => T): T {
 /**
  * Creates a `@lit/context` key, a provider element and consumers for a
  * client and its helpers.
- * `TSource` is the client's type (`ReturnType<typeof makeClient>`), which
- * brings its links' context and types too, or a router type with
- * `TContext` and `TLinks` spelled out.
+ * `TSource` is the client factory's type (`typeof makeClient`) or the
+ * client's, which bring its links' context and types too, or a router type.
  *
  * @example
  * ```ts
@@ -135,14 +134,16 @@ function lazy<T extends object>(resolve: () => T): T {
  * @since 0.0.1
  * @stability stable
  */
-export function createTrpcContext<
-  TSource,
-  TContext extends object = SourceContext<TSource>,
-  TLinks extends ChainTypes = SourceLinks<TSource>,
->(
+export function createTrpcContext<TSource>(
   opts: TrpcContextOptions = {},
-): TrpcLitContext<SourceRouter<TSource>, TContext, TLinks> {
+): TrpcLitContext<
+  SourceRouter<TSource>,
+  SourceContext<TSource>,
+  SourceLinks<TSource>
+> {
   type TRouter = SourceRouter<TSource>;
+  type TContext = SourceContext<TSource>;
+  type TLinks = SourceLinks<TSource>;
   type Client = TrpcClient<RouterOf<TRouter>, TContext, undefined, TLinks>;
   type Value = {
     client: Client;

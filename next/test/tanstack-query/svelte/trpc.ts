@@ -1,8 +1,5 @@
 import { createTrpcContext } from '@trpc12/tanstack-svelte-query';
-import type { AppRouter, Links } from '../fixtures/app.ts';
+import type { AppClient } from '../fixtures/app.ts';
 
-export const { setTrpcContext, useTrpc, useTrpcClient } = createTrpcContext<
-  AppRouter,
-  {},
-  Links
->();
+export const [useTrpc, setTrpcContext, useTrpcClient] =
+  createTrpcContext<AppClient>();

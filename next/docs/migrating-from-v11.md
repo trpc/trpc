@@ -72,7 +72,7 @@ npx @trpc12/upgrade src          # dry run: what would change, what's left
 npx @trpc12/upgrade src --write
 ```
 
-It rewrites what has one v12 form (imports, `initTRPC`, `TRPCError`, `mergeRouters`, `createCaller`, `fetchRequestHandler`, the HTTP links and their `transformer`, `createTRPCContext`'s names) and keeps your formatting. The rest it prints as `file:line:column` steps, with the v12 way:
+It rewrites what has one v12 form (imports, `initTRPC`, `TRPCError`, `mergeRouters`, `createCaller`, `fetchRequestHandler`, the HTTP links and their `transformer`, `createTRPCContext`, whose names it renames and whose result it destructures as a tuple) and keeps your formatting. The rest it prints as `file:line:column` steps, with the v12 way:
 
 ```
 would upgrade src/server/trpc.ts

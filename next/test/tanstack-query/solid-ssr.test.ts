@@ -23,12 +23,11 @@ import {
   appRouter,
   createApp,
   db,
-  type AppRouter,
-  type Links,
+  type AppClient,
   serializer,
 } from './fixtures/app.ts';
 
-const { TrpcProvider, useTrpc } = createTrpcContext<AppRouter, {}, Links>();
+const [TrpcProvider, useTrpc] = createTrpcContext<AppClient>();
 
 test('runs with the server build', () => {
   expect(isServer).toBe(true);

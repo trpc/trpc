@@ -29,15 +29,13 @@ import {
   appRouter,
   createApp,
   db,
-  type AppRouter,
   type Post,
-  type Links,
   type AppClient,
   serializer,
 } from './fixtures/app.ts';
 import { click, container, text, waitFor } from './fixtures/dom.ts';
 
-const { TrpcPlugin, useTrpc } = createTrpcContext<AppRouter, {}, Links>();
+const { TrpcPlugin, useTrpc } = createTrpcContext<AppClient>();
 
 function mount(setup: () => () => unknown, client: AppClient) {
   const queryClient = new QueryClient({

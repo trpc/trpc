@@ -572,29 +572,32 @@ export type TrpcContextOptions = Omit<
   'client'
 >;
 
-type KnownClient<T> = [ClientTypes<T>] extends [never]
+/** A client factory's client; anything else as is. */
+type Unwrapped<T> = T extends (...args: any) => infer C ? C : T;
+
+type KnownClient<T> = [ClientTypes<Unwrapped<T>>] extends [never]
   ? undefined
-  : ClientTypes<T>;
+  : ClientTypes<Unwrapped<T>>;
 
 /**
- * The router a framework's `createTrpcContext<T>()` types: a client type's
- * router, else `T` itself (a router type, a `routerType()` value's type or
- * a contract).
+ * The router a framework's `createTrpcContext<T>()` types: the router of a
+ * client factory's or a client's type, else `T` itself (a router type, a
+ * `routerType()` value's type or a contract).
  *
  * @example
  * ```ts
- * type AppClient = ReturnType<typeof makeClient>;
- * export const { TrpcProvider, useTrpc } = createTrpcContext<AppClient>();
+ * const makeClient = () => createTrpcClient({ router: routerType<AppRouter>(), links });
+ * export const [TrpcProvider, useTrpc] = createTrpcContext<typeof makeClient>();
  * ```
  * @since 0.0.1
  * @stability stable
  */
 export type SourceRouter<T> =
-  KnownClient<T> extends { router: infer R } ? R : T;
+  KnownClient<T> extends { router: infer R } ? R : Unwrapped<T>;
 
 /**
- * The context a client type's links declare, for `createTrpcContext<T>()`;
- * `{}` when `T` isn't a client type.
+ * The context a client's links declare, for `createTrpcContext<T>()`; `{}`
+ * when `T` isn't a client factory's or a client's type.
  * @since 0.0.1
  * @stability stable
  */
@@ -602,8 +605,9 @@ export type SourceContext<T> =
   KnownClient<T> extends { context: infer C extends object } ? C : {};
 
 /**
- * A client type's link types (errors, unsupported operations, result form),
- * for `createTrpcContext<T>()`; `{}` when `T` isn't a client type.
+ * A client's link types (errors, unsupported operations, result form), for
+ * `createTrpcContext<T>()`; `{}` when `T` isn't a client factory's or a
+ * client's type.
  * @since 0.0.1
  * @stability stable
  */

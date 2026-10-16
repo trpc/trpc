@@ -18,12 +18,11 @@ import {
   db,
   type AppRouter,
   type Post,
-  type Links,
   type AppClient,
 } from './fixtures/app.ts';
 import { click, container, text, waitFor } from './fixtures/dom.ts';
 
-const { TrpcProvider, useTrpc } = createTrpcContext<AppRouter, {}, Links>();
+const { TrpcProvider, useTrpc } = createTrpcContext<AppClient>();
 customElements.define('lit-query-provider', QueryClientProvider);
 customElements.define('lit-trpc-provider', TrpcProvider);
 

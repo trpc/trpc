@@ -242,8 +242,20 @@ export const { TRPCProvider, useTRPC, useTRPCClient } =
       "import { createTrpcContext } from '@trpc12/tanstack-react-query';
       import type { AppRouter } from './server';
 
-      export const { TrpcProvider, useTrpc, useTrpcClient } =
+      export const [TrpcProvider, useTrpc, useTrpcClient] =
         createTrpcContext<AppRouter>();
+      "
+    `);
+    expect(
+      upgrade(
+        `import { createTRPCContext } from '@trpc/tanstack-react-query';
+export const { useTRPC: useApi, TRPCProvider } = createTRPCContext<AppRouter>();
+`,
+        'trpc.ts',
+      ).code,
+    ).toMatchInlineSnapshot(`
+      "import { createTrpcContext } from '@trpc12/tanstack-react-query';
+      export const [TrpcProvider, useApi] = createTrpcContext<AppRouter>();
       "
     `);
 

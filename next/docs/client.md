@@ -55,7 +55,7 @@ if (err?.defined && err.code === 'RATE_LIMITED') retryIn(err.data.retryAfter);
 client.onPost.subscribe; // type error: no link carries subscriptions
 ```
 
-`splitLink` and `switchLink` lack an operation type only when every branch does. Built-in links carry every type, and their failures (`NETWORK_ERROR`, `CLIENT_CLOSED_REQUEST`) stay in the untyped part of the union. TanStack context helpers read them from the client's type, `createTrpcContext<ReturnType<typeof makeClient>>()` (`ClientTypes<T>` gives a client type's router, link context and link types), or take them spelled out: `createTrpcContext<AppRouter, LinksContext<typeof links>, LinksTypes<typeof links>>()`.
+`splitLink` and `switchLink` lack an operation type only when every branch does. Built-in links carry every type, and their failures (`NETWORK_ERROR`, `CLIENT_CLOSED_REQUEST`) stay in the untyped part of the union. TanStack context helpers read them from the client factory's or the client's type, `createTrpcContext<typeof makeClient>()` (`ClientTypes<T>` gives a client type's router, link context and link types).
 
 ## Links
 
