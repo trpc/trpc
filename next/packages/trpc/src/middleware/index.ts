@@ -17,6 +17,19 @@ export {
   experimental_durable,
   type DurableOptions,
 } from '../server/durable.ts';
+export {
+  experimental_lock,
+  experimental_LockConflict,
+  experimental_Locker,
+  experimental_LockTimeout,
+  experimental_memoryLocker,
+  experimental_redisLocker,
+  type experimental_Lock,
+  type experimental_LockerShape,
+  type experimental_LockMiddlewareOptions,
+  type experimental_LockOptions,
+  type experimental_RedisLockerOptions,
+} from '../server/lock.ts';
 export { onError, onFinish, onStart, onSuccess } from '../server/middleware.ts';
 export {
   RateLimited,

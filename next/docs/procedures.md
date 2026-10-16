@@ -202,6 +202,36 @@ createFetchHandler({
 
 On the client, `retryLink({ retry, delayMs })` gets the error, so it can wait `error.data.retryAfter`.
 
+`experimental_lock()` runs the rest of the call under a lock, so calls with the same key never overlap: the second waits for the first, and fails with `experimental_LockConflict` (`CONFLICT`, 409) if `timeout` (10 seconds) passes first. The resolver gets `ctx.lock.waited`. A holder loses the lock after `ttl` (30 seconds), so a crashed instance can't hold it forever. The locker is an Effect service, `experimental_Locker`, provided as a layer: `experimental_memoryLocker()` for one process, `experimental_redisLocker()` over Effect's `Redis` for many, [`experimental_durableLocker()`](./platforms.md#locks-in-durable-objects) on Workers. A key the call already holds, from an earlier `experimental_lock()` in its chain, isn't taken twice. The lock covers the resolver; a streamed output or a subscription keeps running after it's released:
+
+```ts
+import { NodeRedis } from '@effect/platform-node';
+import {
+  experimental_lock,
+  experimental_redisLocker,
+} from '@trpc12/trpc/middleware';
+
+const pay = t.procedure
+  .input(z.object({ invoice: z.string() }))
+  .use(
+    experimental_lock<{ input: { invoice: string } }>({
+      key: ({ input }) => `invoice:${input.invoice}`,
+    }),
+  )
+  .mutation(({ input, ctx }) =>
+    charge(input.invoice, { retried: ctx.lock.waited }),
+  );
+
+createFetchHandler({
+  router,
+  layer: experimental_redisLocker().pipe(
+    Layer.provide(NodeRedis.layer({ url: process.env.REDIS_URL })),
+  ),
+});
+```
+
+Outside a procedure, take a lock with the service: `yield* (yield* experimental_Locker).acquire(key)` holds it until the surrounding `Effect.scoped` ends. Any Redis Effect's `Redis.make({ send, subscribe })` can wrap works, Upstash's REST client included.
+
 `experimental_durable()` keeps a call's result, so a client that lost the response (a dropped connection, a closed tab) calls again and gets it instead of running the mutation twice. The call runs detached from its request: the client going away doesn't interrupt it. Results live in Effect's `BackingPersistence`: `Persistence.layerBackingMemory` for one instance, `layerBackingRedis`, `layerBackingSql` or `layerBackingKvs` for many. Put it after `.input()`, so a reused call id with a different input fails with `CONFLICT`:
 
 ```ts

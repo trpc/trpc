@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     services:
-      # The realtime example fans events out through Redis.
+      # The realtime example fans events out through Redis; the Redis locker test locks in it.
       redis:
         image: redis:7
         ports: ['6379:6379']
@@ -52,6 +52,8 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm check
       - run: pnpm test
+        env:
+          REDIS_URL: redis://127.0.0.1:6379
       - run: pnpm example
         env:
           REDIS_URL: redis://127.0.0.1:6379
