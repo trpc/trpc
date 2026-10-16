@@ -1,0 +1,15 @@
+"@effect/platform/HttpApi#Api":
+  replacement: "none"
+  note: "The Context tag carrying the API was removed. Pass the HttpApi value explicitly to builders and clients."
+"@effect/platform/HttpApi#HttpApi.Any":
+  replacement: "effect/http-api/HttpApi#Constraint"
+  note: "Use the erased marker constraint when only HttpApi identity is needed."
+"@effect/platform/HttpApi#HttpApi.AnyWithProps":
+  replacement: "effect/http-api/HttpApi#Top"
+  note: "Use the widened HttpApi type that retains runtime properties."
+"@effect/platform/HttpApi#make":
+  replacement: "effect/http-api/HttpApi#make"
+  note: "The constructor remains, but API-wide error and service parameters were removed; declare errors on endpoints and attach middleware."
+"@effect/platform/HttpApi#TypeId":
+  replacement: "none"
+  note: "The marker is private in v4; use HttpApi.isHttpApi for runtime narrowing and Constraint or Top for types."

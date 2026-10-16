@@ -1,0 +1,15 @@
+"@effect/rpc/RpcGroup#HandlerContext":
+  replacement: "effect/rpc/RpcGroup#HandlerServices"
+  note: "Renamed for v4 service terminology and now includes explicit RPC requirements after removing middleware-provided services."
+"@effect/rpc/RpcGroup#HandlersContext":
+  replacement: "effect/rpc/RpcGroup#HandlersServices"
+  note: "Renamed; it unions HandlerServices across the handler object."
+"@effect/rpc/RpcGroup#make":
+  replacement: "effect/rpc/RpcGroup#make"
+  note: "Retained for explicit Rpc definitions; passing TaggedRequest schema classes for implicit conversion is no longer supported."
+"@effect/rpc/RpcGroup#TypeId":
+  replacement: "none"
+  note: "The group marker is private in v4; use RpcGroup.Any for an erased group constraint."
+"@effect/rpc/RpcGroup#Any":
+  replacement: "effect/rpc/RpcGroup#Any"
+  note: "Moved unchanged as the erased RpcGroup constraint."

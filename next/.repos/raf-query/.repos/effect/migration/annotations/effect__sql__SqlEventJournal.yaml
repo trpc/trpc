@@ -1,0 +1,6 @@
+"@effect/sql/SqlEventJournal#layer":
+  replacement: "effect/eventlog/SqlEventJournal#layer"
+  note: "Moved; rename the eventLogTable layer option to entryTable."
+"@effect/sql/SqlEventJournal#make":
+  replacement: "effect/eventlog/SqlEventJournal#make"
+  note: "Moved with the same entryTable and remotesTable options."

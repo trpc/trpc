@@ -1,0 +1,3 @@
+"@effect/sql-kysely/Mssql":
+  replacement: none
+  note: The integration was removed; use native Kysely with MssqlDialect and wrap promises, or rewrite against @effect/sql-mssql for Effect-native queries.

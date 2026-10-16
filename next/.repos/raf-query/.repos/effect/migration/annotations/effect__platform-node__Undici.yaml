@@ -1,0 +1,117 @@
+"@effect/platform-node/Undici#Agent":
+  replacement: "undici.Agent"
+  note: "Import the upstream Agent directly. Undici 8 removes maxRedirections and option-level interceptors, adds maxOrigins, and enables HTTP/2 negotiation unless allowH2 is false."
+"@effect/platform-node/Undici#Agent.DispatchOptions":
+  replacement: "undici.Agent.DispatchOptions"
+  note: "Import the same Agent namespace type from undici; Undici 8 removes maxRedirections."
+"@effect/platform-node/Undici#Agent.Options":
+  replacement: "undici.Agent.Options"
+  note: "Import the same Agent namespace type; Undici 8 removes maxRedirections and option-level interceptors, adds maxOrigins, and uses dispatcher.compose for interceptors."
+"@effect/platform-node/Undici#buildConnector":
+  replacement: "undici.buildConnector"
+  note: "Import the upstream function directly; Undici 8 expands connector options with preferH2, typeOfService, and socketPath handling."
+"@effect/platform-node/Undici#buildConnector.BuildOptions":
+  replacement: "undici.buildConnector.BuildOptions"
+  note: "Import the same buildConnector namespace type; Undici 8 adds preferH2 and typeOfService."
+"@effect/platform-node/Undici#Client":
+  replacement: "undici.Client"
+  note: "Import the upstream Client directly; custom handlers must use Undici 8's controller-based v2 handler API."
+"@effect/platform-node/Undici#Client.Options":
+  replacement: "undici.Client.Options"
+  note: "Import the same Client namespace type; Undici 8 removes maxRedirections and option-level interceptors and adds WebSocket and HTTP/2 options."
+"@effect/platform-node/Undici#Client.OptionsInterceptors":
+  replacement: "undici.Dispatcher.DispatcherComposeInterceptor + dispatcher.compose"
+  note: "Undici 8 removed option-level interceptor tuples; keep DispatcherComposeInterceptor functions and apply them after construction with dispatcher.compose(...)."
+"@effect/platform-node/Undici#default.cacheStores":
+  replacement: "undici.cacheStores"
+  note: "Use Undici 8's named cacheStores export instead of reaching through the default aggregate."
+"@effect/platform-node/Undici#deleteCookie":
+  replacement: "undici.deleteCookie"
+  note: "Import the upstream function directly; its optional attributes use path and domain and no longer include name."
+"@effect/platform-node/Undici#DiagnosticsChannel":
+  replacement: "undici.DiagnosticsChannel"
+  note: "Import this type-only namespace from undici; subscribe at runtime through node:diagnostics_channel using Undici's channel names."
+"@effect/platform-node/Undici#DiagnosticsChannel.ClientConnectErrorMessage":
+  replacement: "undici.DiagnosticsChannel.ClientConnectErrorMessage"
+  note: "Import the same type-only namespace member from undici; runtime delivery uses node:diagnostics_channel."
+"@effect/platform-node/Undici#DiagnosticsChannel.Error":
+  replacement: "Error"
+  note: "Undici 8 removed this unknown alias; diagnostic error fields now use the built-in Error type."
+"@effect/platform-node/Undici#DiagnosticsChannel.RequestErrorMessage":
+  replacement: "undici.DiagnosticsChannel.RequestErrorMessage"
+  note: "Import the same type-only namespace member; its error field is the built-in Error type in Undici 8."
+"@effect/platform-node/Undici#Dispatcher":
+  replacement: "undici.Dispatcher"
+  note: "Import the upstream Dispatcher directly; custom dispatchers must adopt Undici 8's controller-based v2 handler API."
+"@effect/platform-node/Undici#Dispatcher.ConnectOptions":
+  replacement: "undici.Dispatcher.ConnectOptions"
+  note: "Import the same Dispatcher namespace type; Undici 8 removes maxRedirections and redirectionLimitReached."
+"@effect/platform-node/Undici#Dispatcher.DispatchHandler":
+  replacement: "undici.Dispatcher.DispatchHandler"
+  note: "Use Undici 8's onRequestStart/onResponseStart/onResponseData/onResponseEnd/onResponseError callbacks and controller pause/resume/abort methods."
+"@effect/platform-node/Undici#Dispatcher.DispatchOptions":
+  replacement: "undici.Dispatcher.DispatchOptions"
+  note: "Import the same namespace type; Undici 8 removes throwOnError, adds typeOfService, and handles redirects through composed interceptors."
+"@effect/platform-node/Undici#Dispatcher.RequestOptions":
+  replacement: "undici.Dispatcher.RequestOptions"
+  note: "Import the same namespace type; Undici 8 removes maxRedirections and redirectionLimitReached, so compose a redirect interceptor when needed."
+"@effect/platform-node/Undici#Dispatcher.UpgradeOptions":
+  replacement: "undici.Dispatcher.UpgradeOptions"
+  note: "Import the same namespace type; Undici 8 removes maxRedirections and redirectionLimitReached."
+"@effect/platform-node/Undici#errors":
+  replacement: "undici.errors"
+  note: "Import the upstream errors object directly; individual classes follow the Undici 8 API."
+"@effect/platform-node/Undici#errors.ResponseStatusCodeError":
+  replacement: "undici.errors.ResponseError"
+  note: "Undici 8 replaced ResponseStatusCodeError with ResponseError; construct it with message, statusCode, and the headers/body object."
+"@effect/platform-node/Undici#H2CClient":
+  replacement: "undici.H2CClient"
+  note: "Import the upstream cleartext HTTP/2 client directly; callbacks follow Undici 8's handler API."
+"@effect/platform-node/Undici#H2CClient.Options":
+  replacement: "undici.H2CClient.Options"
+  note: "Import the same H2CClient namespace type; Undici 8 removes maxRedirections."
+"@effect/platform-node/Undici#interceptors":
+  replacement: "undici.interceptors"
+  note: "Import the upstream interceptors object and apply returned interceptors with dispatcher.compose(...)."
+"@effect/platform-node/Undici#interceptors.DNSInterceptorOpts":
+  replacement: "undici.interceptors.DNSInterceptorOpts"
+  note: "Import the same namespace type; Undici 8 lookup receives an origin URL and supports optional DNS storage."
+"@effect/platform-node/Undici#interceptors.DNSInterceptorOriginRecords":
+  replacement: "undici.interceptors.DNSInterceptorOriginRecords"
+  note: "Import the same namespace type, but adopt Undici 8's shape with IPv4 and IPv6 entries nested under records."
+"@effect/platform-node/Undici#interceptors.RedirectInterceptorOpts":
+  replacement: "undici.interceptors.RedirectInterceptorOpts"
+  note: "Import the same namespace type; Undici 8 adds throwOnMaxRedirect and redirect header-stripping options."
+"@effect/platform-node/Undici#MessageEvent":
+  replacement: "undici.MessageEvent"
+  note: "Import Undici's named constructor/type directly to preserve the installed package identity."
+"@effect/platform-node/Undici#MessageEventInit":
+  replacement: "undici.MessageEventInit"
+  note: "Import the upstream type directly; message ports and source use MessagePort instances in Undici 8."
+"@effect/platform-node/Undici#Pool":
+  replacement: "undici.Pool"
+  note: "Import the upstream Pool directly and apply interceptors after construction with pool.compose(...)."
+"@effect/platform-node/Undici#Pool.Options":
+  replacement: "undici.Pool.Options"
+  note: "Import the same Pool namespace type; Undici 8 removes the interceptors option in favor of pool.compose(...)."
+"@effect/platform-node/Undici#ProxyAgent":
+  replacement: "undici.ProxyAgent"
+  note: "Import the upstream ProxyAgent directly; inherited Agent options and handlers follow Undici 8."
+"@effect/platform-node/Undici#ProxyAgent.Options":
+  replacement: "undici.ProxyAgent.Options"
+  note: "Import the same ProxyAgent namespace type; Undici 8 types proxy headers as OutgoingHttpHeaders."
+"@effect/platform-node/Undici#RedirectHandler":
+  replacement: "undici.RedirectHandler"
+  note: "Import the upstream class; Undici 8 removes redirectionLimitReached from the constructor and adds static buildDispatch."
+"@effect/platform-node/Undici#Request":
+  replacement: "undici.Request"
+  note: "Import Undici's named Request directly; clone is a method in Undici 8."
+"@effect/platform-node/Undici#Response":
+  replacement: "undici.Response"
+  note: "Import Undici's named Response directly; clone is a method and Response.redirect status is optional in Undici 8."
+"@effect/platform-node/Undici#SpecIterable":
+  replacement: "undici.SpecIterable"
+  note: "Import the upstream type directly; its iterator returns SpecIterableIterator in Undici 8."
+"@effect/platform-node/Undici#SpecIterableIterator":
+  replacement: "undici.SpecIterableIterator"
+  note: "Import the upstream type directly; it extends SpecIteratorObject and includes iterator-helper methods in Undici 8."

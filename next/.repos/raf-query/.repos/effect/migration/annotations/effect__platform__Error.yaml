@@ -1,0 +1,15 @@
+"@effect/platform/Error#Module":
+  replacement: "string"
+  note: "The closed module-name Schema was removed; PlatformError reason records accept any module string."
+"@effect/platform/Error#PlatformError":
+  replacement: "PlatformError.PlatformError"
+  note: "The module moved to effect/PlatformError and PlatformError became a wrapper class around BadArgument or SystemError."
+"@effect/platform/Error#SystemErrorReason":
+  replacement: "PlatformError.SystemErrorTag"
+  note: "The normalized system-error reason union was renamed."
+"@effect/platform/Error#TypeId":
+  replacement: "none"
+  note: "The PlatformError runtime marker is internal in v4; use the PlatformError class/tag."
+"@effect/platform/Error#TypeIdError":
+  replacement: "Data.TaggedError or Schema.Error"
+  note: "The platform-specific error-class factory was removed; define tagged data errors or schema-backed error classes directly."

@@ -1,0 +1,9 @@
+"@effect/cluster/SqlRunnerStorage#layer":
+  replacement: "effect/cluster/SqlRunnerStorage#layer"
+  note: "Moved into core Effect with the same default-prefix SQL runner storage layer."
+"@effect/cluster/SqlRunnerStorage#layerWith":
+  replacement: "effect/cluster/SqlRunnerStorage#layerWith"
+  note: "Moved into core Effect with the same optional table prefix."
+"@effect/cluster/SqlRunnerStorage#make":
+  replacement: "effect/cluster/SqlRunnerStorage#make"
+  note: "Moved into core Effect with the same prefix option and service requirements."

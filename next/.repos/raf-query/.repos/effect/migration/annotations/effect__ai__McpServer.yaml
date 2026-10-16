@@ -1,0 +1,36 @@
+"@effect/ai/McpServer#layer":
+  replacement: "McpServer.layer"
+  note: "Moved to effect/ai/McpServer. Pass a non-empty protocols array of adapters, such as [McpProtocol.v2025_06_18], imported with McpProtocol from effect/ai; it still runs over a caller-provided RpcServer.Protocol."
+"@effect/ai/McpServer#layerHttp":
+  replacement: "McpServer.layerHttp"
+  note: "Moved to effect/ai/McpServer and the unified HttpRouter. Pass a non-empty protocols array of adapters, such as [McpProtocol.v2025_06_18], imported with McpProtocol from effect/ai."
+"@effect/ai/McpServer#layerHttpRouter":
+  replacement: "McpServer.layerHttp"
+  note: "Renamed and consolidated. V4 layerHttp registers the Streamable HTTP endpoint in the unified HttpRouter; pass a non-empty protocols array of adapters, such as [McpProtocol.v2025_06_18], imported with McpProtocol from effect/ai."
+"@effect/ai/McpServer#layerStdio":
+  replacement: "McpServer.layerStdio"
+  note: "Moved to effect/ai/McpServer. Pass a non-empty protocols array of adapters, such as [McpProtocol.v2025_06_18], imported with McpProtocol from effect/ai."
+"@effect/ai/McpServer#run":
+  replacement: "McpServer.run"
+  note: "Moved to effect/ai/McpServer. Pass a non-empty protocols array of adapters, such as [McpProtocol.v2025_06_18], imported with McpProtocol from effect/ai; it remains the Effect-level runner over RpcServer.Protocol."
+"@effect/ai/McpServer#McpServer":
+  replacement: "McpServer.McpServer"
+  note: "The service is now a Context.Service. initializedClients and notificationsMailbox are no longer exposed. Registration callbacks use McpSchema.McpRequestContext; McpServerClient is only supplied for initialized stateful requests. Prefer registerToolkit, registerResource, and registerPrompt over implementing the registry shape directly."
+"@effect/ai/McpServer#registerToolkit":
+  replacement: "McpServer.registerToolkit"
+  note: "Moved to effect/ai/McpServer. Handler requirements now exclude McpSchema.McpRequestContext instead of McpServerClient. Strict tools reject excess input properties; raw JSON Schema dynamic tools cannot use strict mode. Declared handler failures produce isError results, while parameter validation fails with InvalidParams."
+"@effect/ai/McpServer#toolkit":
+  replacement: "McpServer.toolkit"
+  note: "Moved to effect/ai/McpServer. The registration layer supplies McpSchema.McpRequestContext to handlers instead of excluding McpServerClient from requirements. Strict tools reject excess properties and require an Effect Schema rather than raw dynamic JSON Schema."
+"@effect/ai/McpServer#registerResource":
+  replacement: "McpServer.registerResource"
+  note: "Moved to effect/ai/McpServer. Resource and completion handler requirements now exclude McpSchema.McpRequestContext instead of McpServerClient; use the request context for protocol-neutral client metadata."
+"@effect/ai/McpServer#resource":
+  replacement: "McpServer.resource"
+  note: "Moved to effect/ai/McpServer. The registration layer excludes McpSchema.McpRequestContext from resource and completion handler requirements instead of McpServerClient."
+"@effect/ai/McpServer#registerPrompt":
+  replacement: "McpServer.registerPrompt"
+  note: "Moved to effect/ai/McpServer. Prompt decoding and handler requirements now exclude McpSchema.McpRequestContext instead of McpServerClient; use the request context for protocol-neutral client metadata."
+"@effect/ai/McpServer#prompt":
+  replacement: "McpServer.prompt"
+  note: "Moved to effect/ai/McpServer. The registration layer excludes McpSchema.McpRequestContext from prompt decoding and handler requirements instead of McpServerClient."

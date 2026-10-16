@@ -1,0 +1,3 @@
+"@effect/printer-ansi/AnsiDoc":
+  replacement: none
+  note: The @effect/printer-ansi package and its annotated document algebra were removed in v4. Use strings or another pretty-printing library; for Effect CLI help only, use HelpDoc with CliOutput from effect/cli.

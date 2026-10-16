@@ -1,0 +1,21 @@
+"effect/Readable#isReadable":
+  replacement: "Effect.isEffect"
+  note: "Readable was removed; after representing reads directly as Effect, use the Effect guard."
+"effect/Readable#make":
+  replacement: "Effect.Effect"
+  note: "Use the supplied Effect directly; the v3 constructor only wrapped it as a get property."
+"effect/Readable#map":
+  replacement: "Effect.map"
+  note: "Represent Readable as Effect and map it directly."
+"effect/Readable#mapEffect":
+  replacement: "Effect.flatMap"
+  note: "Represent Readable as Effect and flatMap it directly."
+"effect/Readable#Readable":
+  replacement: "Effect.Effect"
+  note: "The branded wrapper was removed; represent read access directly as Effect.Effect<A, E, R>."
+"effect/Readable#TypeId":
+  replacement: "Effect.TypeId"
+  note: "The Readable brand was removed; use Effect.TypeId only when branding checks remain necessary after collapsing to Effect."
+"effect/Readable#unwrap":
+  replacement: "Effect.flatten"
+  note: "After replacing the inner Readable with Effect, flatten the nested Effect directly."

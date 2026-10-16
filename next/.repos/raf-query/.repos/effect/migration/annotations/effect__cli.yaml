@@ -1,0 +1,3 @@
+"@effect/cli":
+  replacement: "effect/cli"
+  note: "The @effect/cli package was merged into the effect package; import the effect/cli barrel or import specific modules directly (e.g. effect/cli/<Module>)."

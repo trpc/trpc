@@ -1,0 +1,6 @@
+"@effect/cluster/SocketRunner#layer":
+  replacement: "effect/cluster/SocketRunner#layer"
+  note: "Moved into core Effect with the same full socket runner composition."
+"@effect/cluster/SocketRunner#layerClientOnly":
+  replacement: "effect/cluster/SocketRunner#layerClientOnly"
+  note: "Moved into core Effect; it remains the client-only runner layer and does not start a socket server."

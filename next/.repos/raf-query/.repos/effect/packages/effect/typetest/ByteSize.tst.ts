@@ -1,0 +1,81 @@
+import { ByteSize, type ByteSize as ByteSizeType, type Config, type Option, type Schema } from "effect"
+import { describe, expect, it } from "tstyche"
+
+declare const value: ByteSizeType.ByteSize
+
+describe("ByteSize", () => {
+  it("accepts only canonical integral string inputs", () => {
+    expect("0B").type.toBeAssignableTo<ByteSizeType.Input>()
+    expect("4MB").type.toBeAssignableTo<ByteSizeType.Input>()
+    expect("100 kB").type.toBeAssignableTo<ByteSizeType.Input>()
+    expect("12KiB").type.toBeAssignableTo<ByteSizeType.Input>()
+    expect("9007199254740993 B").type.toBeAssignableTo<ByteSizeType.Input>()
+    expect("1 byte").type.toBeAssignableTo<ByteSizeType.Input>()
+    expect("2 megabytes").type.toBeAssignableTo<ByteSizeType.Input>()
+    expect("3 mebibytes").type.toBeAssignableTo<ByteSizeType.Input>()
+    expect("1QB").type.toBeAssignableTo<ByteSizeType.Input>()
+    expect("1YiB").type.toBeAssignableTo<ByteSizeType.Input>()
+    expect("").type.not.toBeAssignableTo<ByteSizeType.Input>()
+    expect("hello").type.not.toBeAssignableTo<ByteSizeType.Input>()
+    expect("4Mb").type.not.toBeAssignableTo<ByteSizeType.Input>()
+    expect("100Kb").type.not.toBeAssignableTo<ByteSizeType.Input>()
+    expect("1 KB").type.not.toBeAssignableTo<ByteSizeType.Input>()
+    expect("1mb").type.not.toBeAssignableTo<ByteSizeType.Input>()
+    expect("1b").type.not.toBeAssignableTo<ByteSizeType.Input>()
+    expect("1").type.not.toBeAssignableTo<ByteSizeType.Input>()
+    expect("-1B").type.not.toBeAssignableTo<ByteSizeType.Input>()
+    expect("+1B").type.not.toBeAssignableTo<ByteSizeType.Input>()
+    expect("01B").type.not.toBeAssignableTo<ByteSizeType.Input>()
+    expect("00B").type.not.toBeAssignableTo<ByteSizeType.Input>()
+    expect("1.5MB").type.not.toBeAssignableTo<ByteSizeType.Input>()
+    expect("0.1KiB").type.not.toBeAssignableTo<ByteSizeType.Input>()
+    expect("1e3B").type.not.toBeAssignableTo<ByteSizeType.Input>()
+    expect("0x10B").type.not.toBeAssignableTo<ByteSizeType.Input>()
+    expect("0X10 B").type.not.toBeAssignableTo<ByteSizeType.Input>()
+    expect("0b10B").type.not.toBeAssignableTo<ByteSizeType.Input>()
+    expect("0o10B").type.not.toBeAssignableTo<ByteSizeType.Input>()
+    expect("1_000B").type.not.toBeAssignableTo<ByteSizeType.Input>()
+    expect("NaNB").type.not.toBeAssignableTo<ByteSizeType.Input>()
+    expect("InfinityB").type.not.toBeAssignableTo<ByteSizeType.Input>()
+    expect(" 1B").type.not.toBeAssignableTo<ByteSizeType.Input>()
+    expect("1B ").type.not.toBeAssignableTo<ByteSizeType.Input>()
+    expect("1  B").type.not.toBeAssignableTo<ByteSizeType.Input>()
+    expect("1\tB").type.not.toBeAssignableTo<ByteSizeType.Input>()
+    expect("1\nB").type.not.toBeAssignableTo<ByteSizeType.Input>()
+    expect("1 B trailing").type.not.toBeAssignableTo<ByteSizeType.Input>()
+    expect<string>().type.not.toBeAssignableTo<ByteSizeType.Input>()
+    expect(ByteSize.fromInputUnsafe("4MB")).type.toBe<ByteSizeType.ByteSize>()
+    expect(ByteSize.fromString("1.5 MB")).type.toBe<Option.Option<ByteSizeType.ByteSize>>()
+  })
+
+  it("distinguishes decimal and binary units", () => {
+    expect("B").type.toBeAssignableTo<ByteSizeType.DecimalUnit>()
+    expect("B").type.toBeAssignableTo<ByteSizeType.BinaryUnit>()
+    expect("kB").type.toBeAssignableTo<ByteSizeType.DecimalUnit>()
+    expect("kB").type.not.toBeAssignableTo<ByteSizeType.BinaryUnit>()
+    expect("KiB").type.toBeAssignableTo<ByteSizeType.BinaryUnit>()
+    expect("KiB").type.not.toBeAssignableTo<ByteSizeType.DecimalUnit>()
+  })
+
+  it("requires the format unit to match the system", () => {
+    expect({ system: "decimal", unit: "kB" } as const).type.toBeAssignableTo<ByteSizeType.FormatOptions>()
+    expect({ system: "binary", unit: "KiB" } as const).type.toBeAssignableTo<ByteSizeType.FormatOptions>()
+    expect({ unit: "kB" } as const).type.toBeAssignableTo<ByteSizeType.FormatOptions>()
+    expect({ unit: "KiB" } as const).type.toBeAssignableTo<ByteSizeType.FormatOptions>()
+    expect({ system: "decimal", unit: "KiB" } as const).type.not.toBeAssignableTo<ByteSizeType.FormatOptions>()
+    expect({ system: "binary", unit: "kB" } as const).type.not.toBeAssignableTo<ByteSizeType.FormatOptions>()
+  })
+
+  it("infers data-last arithmetic", () => {
+    expect(value).type.toBeAssignableTo<bigint>()
+    expect<bigint>().type.not.toBeAssignableTo<ByteSizeType.ByteSize>()
+    expect(ByteSize.sum(value)(value)).type.toBe<ByteSizeType.ByteSize>()
+    expect(ByteSize.times(2)(value)).type.toBe<Option.Option<ByteSizeType.ByteSize>>()
+  })
+
+  it("integrates with Schema and Config", () => {
+    expect<Schema.Schema.Type<typeof Schema.ByteSize>>().type.toBe<ByteSizeType.ByteSize>()
+    expect<Schema.Codec.Encoded<typeof Schema.ByteSizeFromString>>().type.toBe<string>()
+    expect<ReturnType<typeof Config.ByteSize>>().type.toBe<Config.Config<ByteSizeType.ByteSize>>()
+  })
+})

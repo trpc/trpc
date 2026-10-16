@@ -1,0 +1,60 @@
+"@effect/platform/OpenApiJsonSchema#Any":
+  replacement: "effect/JsonSchema#JsonSchema"
+  note: "The narrow node interfaces were consolidated into the open, dialect-neutral JSON Schema object model."
+"@effect/platform/OpenApiJsonSchema#AnyObject":
+  replacement: "effect/JsonSchema#JsonSchema"
+  note: "The narrow node interfaces were consolidated; construct the required object directly."
+"@effect/platform/OpenApiJsonSchema#AnyOf":
+  replacement: "effect/JsonSchema#JsonSchema"
+  note: "The narrow node interfaces were consolidated into the general object model."
+"@effect/platform/OpenApiJsonSchema#Array":
+  replacement: "effect/JsonSchema#JsonSchema"
+  note: "The narrow node interfaces were consolidated into the general object model."
+"@effect/platform/OpenApiJsonSchema#Boolean":
+  replacement: "effect/JsonSchema#JsonSchema"
+  note: "The narrow boolean interface was consolidated into the open, dialect-neutral JSON Schema object model."
+"@effect/platform/OpenApiJsonSchema#Empty":
+  replacement: "effect/JsonSchema#JsonSchema"
+  note: "The narrow node interfaces and special id shapes were removed."
+"@effect/platform/OpenApiJsonSchema#Enum":
+  replacement: "effect/JsonSchema#JsonSchema"
+  note: "The narrow node interfaces were consolidated into the general object model."
+"@effect/platform/OpenApiJsonSchema#Enums":
+  replacement: "effect/JsonSchema#JsonSchema"
+  note: "The Effect-specific comment enum shape has no named v4 interface; use the general object model."
+"@effect/platform/OpenApiJsonSchema#Integer":
+  replacement: "effect/JsonSchema#JsonSchema"
+  note: "The narrow numeric interfaces were consolidated into the general object model."
+"@effect/platform/OpenApiJsonSchema#JsonSchema":
+  replacement: "effect/JsonSchema#JsonSchema"
+  note: "Use the dialect-neutral open JSON Schema object model."
+"@effect/platform/OpenApiJsonSchema#make":
+  replacement: "effect/Schema#toJsonSchemaDocument + effect/JsonSchema#toMultiDocumentOpenApi3_1"
+  note: "Generate Draft 2020-12, wrap the root in a multi-document, then convert references and definitions to OpenAPI 3.1."
+"@effect/platform/OpenApiJsonSchema#makeWithDefs":
+  replacement: "effect/SchemaRepresentation#toJsonSchemaMultiDocument + effect/JsonSchema#toMultiDocumentOpenApi3_1"
+  note: "Definitions are returned separately; build a multi-document representation and convert it to OpenAPI 3.1."
+"@effect/platform/OpenApiJsonSchema#Never":
+  replacement: "effect/JsonSchema#JsonSchema"
+  note: "The special never-schema interface was consolidated into the open JSON Schema object model; represent it with a not constraint."
+"@effect/platform/OpenApiJsonSchema#Number":
+  replacement: "effect/JsonSchema#JsonSchema"
+  note: "The narrow number interface was consolidated into the open, dialect-neutral JSON Schema object model."
+"@effect/platform/OpenApiJsonSchema#Numeric":
+  replacement: "effect/JsonSchema#JsonSchema"
+  note: "The narrow numeric interfaces were consolidated into the general object model."
+"@effect/platform/OpenApiJsonSchema#Object":
+  replacement: "effect/JsonSchema#JsonSchema"
+  note: "The narrow node interfaces were consolidated into the general object model."
+"@effect/platform/OpenApiJsonSchema#Ref":
+  replacement: "effect/JsonSchema#JsonSchema"
+  note: "The narrow ref interface was consolidated; OpenAPI conversion rewrites definition references."
+"@effect/platform/OpenApiJsonSchema#Root":
+  replacement: "effect/JsonSchema#MultiDocument"
+  note: "OpenAPI generation keeps roots in schemas and shared components in definitions; the inline-definitions root model is gone."
+"@effect/platform/OpenApiJsonSchema#String":
+  replacement: "effect/JsonSchema#JsonSchema"
+  note: "The narrow string interface was consolidated into the open, dialect-neutral JSON Schema object model."
+"@effect/platform/OpenApiJsonSchema#Void":
+  replacement: "effect/JsonSchema#JsonSchema"
+  note: "The special void-schema interface was consolidated into the open JSON Schema object model."

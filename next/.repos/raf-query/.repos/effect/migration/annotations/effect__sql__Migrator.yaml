@@ -1,0 +1,3 @@
+"@effect/sql/Migrator#make":
+  replacement: "effect/sql/Migrator#make"
+  note: "Moved with the same curried make({ dumpSchema })(options) pattern."

@@ -1,0 +1,6 @@
+"@effect/experimental/DevTools#layer":
+  replacement: effect/devtools/DevTools#layer
+  note: Import layer from the v4 unstable DevTools module.
+"@effect/experimental/DevTools#layerWebSocket":
+  replacement: effect/devtools/DevTools#layerWebSocket
+  note: Import layerWebSocket from the v4 unstable DevTools module.

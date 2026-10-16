@@ -1,0 +1,15 @@
+"@effect/cluster/Entity#Any":
+  replacement: "effect/cluster/Entity#Any"
+  note: "Moved into core Effect with the same erased entity type."
+"@effect/cluster/Entity#makeTestClient":
+  replacement: "effect/cluster/Entity#makeTestClient"
+  note: "Moved into core Effect; adapt its inputs and requirements to the v4 RPC, Layer, Scope, and Context APIs."
+"@effect/cluster/Entity#TypeId":
+  replacement: "none"
+  note: "The entity marker is private in v4. Use Entity.isEntity for runtime refinement."
+"@effect/cluster/Entity#HandlersFrom":
+  replacement: "effect/cluster/Entity#HandlersFrom"
+  note: "Moved into core Effect; handler results now use Rpc.WrapperOr, which accepts either the raw RPC result or its wrapper."
+"@effect/cluster/Entity#Replier.Success":
+  replacement: "effect/cluster/Entity#Replier.Success"
+  note: "Moved into core Effect; streaming replies may use Queue.Dequeue with Cause.Done instead of the removed Mailbox type."

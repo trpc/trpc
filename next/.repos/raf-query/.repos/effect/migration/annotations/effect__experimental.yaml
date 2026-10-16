@@ -1,0 +1,3 @@
+"@effect/experimental":
+  replacement: "none"
+  note: "The @effect/experimental package was folded into the effect package, split across effect/* (devtools, eventlog, persistence, reactivity, ...); follow the Import Map for each module."

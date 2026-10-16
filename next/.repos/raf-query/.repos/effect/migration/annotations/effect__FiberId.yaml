@@ -1,0 +1,63 @@
+effect/FiberId#combine:
+  replacement: "none"
+  note: "Composite FiberId values were removed; v4 uses a single numeric fiber id."
+effect/FiberId#combineAll:
+  replacement: "none"
+  note: "Composite FiberId values were removed; v4 uses a single numeric fiber id."
+effect/FiberId#composite:
+  replacement: "none"
+  note: "Composite FiberId values were removed; v4 uses a single numeric fiber id."
+effect/FiberId#Composite:
+  replacement: "none"
+  note: "Composite FiberId values were removed; v4 uses a single numeric fiber id."
+effect/FiberId#FiberId:
+  replacement: "number"
+  note: "V4 represents a fiber identity as the numeric Fiber.id field."
+effect/FiberId#FiberIdTypeId:
+  replacement: "none"
+  note: "Fiber IDs are primitive numbers in v4 and have no type-id symbol."
+effect/FiberId#getOrElse:
+  replacement: "fiberId ?? fallback"
+  note: "Represent absence as undefined when migrating code that previously used FiberId.none."
+effect/FiberId#ids:
+  replacement: "new Set([fiberId])"
+  note: "A v4 fiber has one numeric id; composite-id flattening is no longer required."
+effect/FiberId#isComposite:
+  replacement: "none"
+  note: "Composite FiberId values do not exist in v4."
+effect/FiberId#isFiberId:
+  replacement: "Number.isNumber"
+  note: "Fiber IDs are primitive numbers in v4."
+effect/FiberId#isNone:
+  replacement: "fiberId === undefined"
+  note: "Use undefined for an absent optional interruptor id; there is no sentinel FiberId.none."
+effect/FiberId#isRuntime:
+  replacement: "Number.isNumber"
+  note: "Every v4 fiber id is a runtime numeric id."
+effect/FiberId#make:
+  replacement: "id"
+  note: "Use the numeric id directly; startTimeSeconds is no longer part of fiber identity."
+effect/FiberId#none:
+  replacement: "undefined"
+  note: "Optional interruptor IDs use undefined rather than a sentinel FiberId value."
+effect/FiberId#None:
+  replacement: "undefined"
+  note: "Optional interruptor IDs use undefined rather than a sentinel FiberId type."
+effect/FiberId#runtime:
+  replacement: "id"
+  note: "Use the numeric id directly; startTimeMillis is no longer part of fiber identity."
+effect/FiberId#Runtime:
+  replacement: "number"
+  note: "Runtime fiber IDs are primitive numbers in v4."
+effect/FiberId#Single:
+  replacement: "number | undefined"
+  note: "Use a number, with undefined only where the old None case was meaningful."
+effect/FiberId#threadName:
+  replacement: "String(fiberId)"
+  note: "There is no built-in thread-name formatter; format the numeric id at the presentation boundary."
+effect/FiberId#toSet:
+  replacement: "new Set([fiberId])"
+  note: "A v4 fiber has one numeric id, so composite-id flattening is unnecessary."
+effect/FiberId#unsafeMake:
+  replacement: "none"
+  note: "There is no public fiber-id allocator; obtain the current id with Effect.fiberId or from Fiber.id."

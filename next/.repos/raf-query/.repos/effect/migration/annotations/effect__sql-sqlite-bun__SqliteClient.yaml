@@ -1,0 +1,3 @@
+"@effect/sql-sqlite-bun/SqliteClient#SqliteClient":
+  replacement: "@effect/sql-sqlite-bun/SqliteClient#SqliteClient"
+  note: "Retained; the service value is now a Context.Service."

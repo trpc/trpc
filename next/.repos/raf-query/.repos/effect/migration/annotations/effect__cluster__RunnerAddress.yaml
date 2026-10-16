@@ -1,0 +1,6 @@
+"@effect/cluster/RunnerAddress#make":
+  replacement: "effect/cluster/RunnerAddress#make"
+  note: "Moved into core Effect with the same host and port constructor; the host schema is now Schema.String."
+"@effect/cluster/RunnerAddress#TypeId":
+  replacement: "none"
+  note: "The runner-address marker is private in v4. Use the exported RunnerAddress class and schema."

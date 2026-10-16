@@ -1,0 +1,3 @@
+"@effect/cluster/Runner#TypeId":
+  replacement: "none"
+  note: "The runner marker is private in v4. Use the exported Runner class and schema."

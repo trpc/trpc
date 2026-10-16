@@ -1,0 +1,15 @@
+"@effect/platform/HttpApiSecurity#annotate":
+  replacement: "effect/http-api/HttpApiSecurity#annotate"
+  note: "The combinator remains; its key is now the v4 Context.Key abstraction."
+"@effect/platform/HttpApiSecurity#annotateContext":
+  replacement: "effect/http-api/HttpApiSecurity#annotateMerge"
+  note: "Renamed; it still merges a Context into existing OpenAPI annotations."
+"@effect/platform/HttpApiSecurity#Bearer":
+  replacement: "effect/http-api/HttpApiSecurity#Http"
+  note: "Bearer was generalized to Http with scheme Bearer; the value-level bearer singleton remains."
+"@effect/platform/HttpApiSecurity#HttpApiSecurity.Type":
+  replacement: "effect/http-api/HttpApiSecurity#HttpApiSecurity.Type"
+  note: "Unchanged after the module move; still extracts the credential type."
+"@effect/platform/HttpApiSecurity#TypeId":
+  replacement: "none"
+  note: "The marker is private; use the public union or specific Http, ApiKey, and Basic types."

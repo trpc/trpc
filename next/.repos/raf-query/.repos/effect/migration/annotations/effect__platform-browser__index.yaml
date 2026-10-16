@@ -1,0 +1,3 @@
+"@effect/platform-browser/index":
+  replacement: "@effect/platform-browser"
+  note: "The explicit /index entrypoint was removed; import the same namespaces from the @effect/platform-browser package root or import specific modules directly."

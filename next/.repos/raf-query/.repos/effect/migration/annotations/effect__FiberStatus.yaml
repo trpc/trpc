@@ -1,0 +1,33 @@
+effect/FiberStatus#Done:
+  replacement: "Exit.Exit"
+  note: "FiberStatus was removed; a defined fiber.pollUnsafe() result indicates completion and contains the Exit."
+effect/FiberStatus#FiberStatus:
+  replacement: "Exit.Exit | undefined"
+  note: "Use fiber.pollUnsafe(); undefined means incomplete and Exit means completed, with no running/suspended distinction."
+effect/FiberStatus#FiberStatusTypeId:
+  replacement: "none"
+  note: "FiberStatus and its type-id symbol were removed."
+effect/FiberStatus#isDone:
+  replacement: "fiber.pollUnsafe() !== undefined"
+  note: "Completion is observable by synchronously polling the Fiber."
+effect/FiberStatus#isFiberStatus:
+  replacement: "none"
+  note: "FiberStatus values no longer exist; inspect a Fiber with pollUnsafe instead."
+effect/FiberStatus#isRunning:
+  replacement: "fiber.pollUnsafe() === undefined"
+  note: "V4 only exposes incomplete versus completed; it does not distinguish running from suspended."
+effect/FiberStatus#isSuspended:
+  replacement: "none"
+  note: "The public runtime no longer exposes suspended status."
+effect/FiberStatus#running:
+  replacement: "none"
+  note: "FiberStatus constructors were removed; keep the Fiber and poll it instead."
+effect/FiberStatus#Running:
+  replacement: "none"
+  note: "The public runtime no longer models running status as a value."
+effect/FiberStatus#suspended:
+  replacement: "none"
+  note: "FiberStatus constructors and public suspended status were removed."
+effect/FiberStatus#Suspended:
+  replacement: "none"
+  note: "The public runtime no longer models suspended status as a value."

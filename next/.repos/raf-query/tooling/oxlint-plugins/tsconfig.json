@@ -1,0 +1,16 @@
+{
+	"compilerOptions": {
+		"module": "nodenext",
+		"moduleResolution": "nodenext",
+		"noEmit": true,
+		// Oxlint visitor APIs are untyped; typed wrappers would be fiction.
+		"noImplicitAny": false,
+		"rewriteRelativeImportExtensions": true,
+		"skipLibCheck": true,
+		"strict": true,
+		"target": "ES2023",
+		"types": ["node"]
+	},
+	"include": ["**/*.ts"],
+	"exclude": ["**/*.test.ts", "dist", "node_modules"]
+}

@@ -1,0 +1,27 @@
+"@effect/platform/HttpMiddleware#cors":
+  replacement: "HttpMiddleware.cors"
+  note: "Retained with the same CORS options and behavior."
+"@effect/platform/HttpMiddleware#currentTracerDisabledWhen":
+  replacement: "HttpMiddleware.TracerDisabledWhen"
+  note: "The FiberRef became a Context.Reference containing the request predicate."
+"@effect/platform/HttpMiddleware#loggerDisabled":
+  replacement: "HttpMiddleware.withLoggerDisabled"
+  note: "The FiberRef was removed; locally wrap an effect or use HttpRouter.disableLogger."
+"@effect/platform/HttpMiddleware#make":
+  replacement: "HttpMiddleware.make"
+  note: "Retained as the precise middleware constructor."
+"@effect/platform/HttpMiddleware#SpanNameGenerator":
+  replacement: "HttpMiddleware.SpanNameGenerator"
+  note: "The branded interface became a Context.Reference containing the generator."
+"@effect/platform/HttpMiddleware#withSpanNameGenerator":
+  replacement: "Layer.provide(layer, Layer.succeed(HttpMiddleware.SpanNameGenerator)(f))"
+  note: "Provide the SpanNameGenerator reference to the target layer."
+"@effect/platform/HttpMiddleware#withTracerDisabledForUrls":
+  replacement: "Layer.provide(layer, HttpMiddleware.layerTracerDisabledForUrls(urls))"
+  note: "Provide the new URL-predicate layer to the target layer."
+"@effect/platform/HttpMiddleware#withTracerDisabledWhen":
+  replacement: "Layer.provide(layer, Layer.succeed(HttpMiddleware.TracerDisabledWhen)(predicate))"
+  note: "Provide the TracerDisabledWhen reference to the target layer."
+"@effect/platform/HttpMiddleware#withTracerDisabledWhenEffect":
+  replacement: "Effect.provideService(effect, HttpMiddleware.TracerDisabledWhen, predicate)"
+  note: "Provide the TracerDisabledWhen reference locally to the effect."

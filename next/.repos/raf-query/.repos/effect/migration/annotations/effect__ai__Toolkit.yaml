@@ -1,0 +1,9 @@
+"@effect/ai/Toolkit#HandlersFrom":
+  replacement: "Toolkit.HandlersFrom"
+  note: "Moved to effect/ai/Toolkit. V4 handlers receive a HandlerContext argument and may fail with the declared failure, AiError, or AiErrorReason while requiring Tool.HandlerServices."
+"@effect/ai/Toolkit#make":
+  replacement: "Toolkit.make"
+  note: "Moved to effect/ai/Toolkit. It now accepts Tool.Any values only and no longer converts TaggedRequest schemas; create each tool explicitly with Tool.make first."
+"@effect/ai/Toolkit#TypeId":
+  replacement: "Toolkit.Toolkit / Toolkit.Any"
+  note: "The toolkit nominal id is private in v4. Use Toolkit.Toolkit or Toolkit.Any for typing instead of importing or inspecting the marker."

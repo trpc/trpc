@@ -1,0 +1,54 @@
+"@effect/platform/Command#Command":
+  replacement: "ChildProcess.Command"
+  note: "Commands moved to effect/process/ChildProcess and are now directly Effectable to spawn a ChildProcessHandle."
+"@effect/platform/Command#Command.Input":
+  replacement: "ChildProcess.CommandInput"
+  note: "The standard-input configuration type was flattened out of the Command namespace."
+"@effect/platform/Command#Command.Proto":
+  replacement: "ChildProcess.StandardCommand | ChildProcess.PipedCommand"
+  note: "The public command prototype was removed; narrow the Command union to its StandardCommand or PipedCommand interfaces."
+"@effect/platform/Command#CommandTypeId":
+  replacement: "none"
+  note: "The command type-id alias is internal in v4; use ChildProcess.Command or ChildProcess.isCommand instead."
+"@effect/platform/Command#env":
+  replacement: "ChildProcess.setEnv"
+  note: "Use the renamed command combinator."
+"@effect/platform/Command#exitCode":
+  replacement: "ChildProcessSpawner.ChildProcessSpawner.exitCode"
+  note: "Obtain the ChildProcessSpawner service and call exitCode, or spawn the Effectable command and read the handle exitCode."
+"@effect/platform/Command#feed":
+  replacement: "ChildProcess.CommandOptions[\"stdin\"]"
+  note: "The feed combinator was removed; pass a Stream as stdin when constructing the command."
+"@effect/platform/Command#flatten":
+  replacement: "none"
+  note: "No flatten helper remains; inspect StandardCommand and PipedCommand recursively when command structure is required."
+"@effect/platform/Command#lines":
+  replacement: "ChildProcessSpawner.ChildProcessSpawner.lines"
+  note: "Output collection moved onto the ChildProcessSpawner service."
+"@effect/platform/Command#runInShell":
+  replacement: "ChildProcess.CommandOptions[\"shell\"]"
+  note: "Set shell when calling ChildProcess.make; there is no post-construction shell combinator."
+"@effect/platform/Command#start":
+  replacement: "ChildProcessSpawner.ChildProcessSpawner.spawn"
+  note: "Use the spawner service, or yield the Effectable ChildProcess.Command directly, to obtain a ChildProcessHandle."
+"@effect/platform/Command#stderr":
+  replacement: "ChildProcess.CommandOptions[\"stderr\"]"
+  note: "Configure stderr in ChildProcess.make options; the standalone combinator was removed."
+"@effect/platform/Command#stdin":
+  replacement: "ChildProcess.CommandOptions[\"stdin\"]"
+  note: "Configure stdin in ChildProcess.make options; the standalone combinator was removed."
+"@effect/platform/Command#stdout":
+  replacement: "ChildProcess.CommandOptions[\"stdout\"]"
+  note: "Configure stdout in ChildProcess.make options; the standalone combinator was removed."
+"@effect/platform/Command#stream":
+  replacement: "ChildProcessSpawner.ChildProcessSpawner.spawn + ChildProcessHandle.stdout"
+  note: "Spawn within a scope and consume the returned handle's stdout stream."
+"@effect/platform/Command#streamLines":
+  replacement: "ChildProcessSpawner.ChildProcessSpawner.streamLines"
+  note: "Text-line streaming moved onto the ChildProcessSpawner service."
+"@effect/platform/Command#string":
+  replacement: "ChildProcessSpawner.ChildProcessSpawner.string"
+  note: "Output collection moved onto the ChildProcessSpawner service."
+"@effect/platform/Command#workingDirectory":
+  replacement: "ChildProcess.setCwd"
+  note: "Use the renamed command combinator."

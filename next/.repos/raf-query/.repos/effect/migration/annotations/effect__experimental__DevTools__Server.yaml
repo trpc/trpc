@@ -1,0 +1,3 @@
+"@effect/experimental/DevTools/Server#run":
+  replacement: effect/devtools/DevToolsServer#run
+  note: Import run from the v4 unstable DevToolsServer module.

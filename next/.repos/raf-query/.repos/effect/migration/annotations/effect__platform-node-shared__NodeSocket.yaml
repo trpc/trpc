@@ -1,0 +1,3 @@
+"@effect/platform-node-shared/NodeSocket#NetSocket":
+  replacement: "NodeSocket.NetSocket"
+  note: "The identifier remains, but the old interface/tag pair is now one Context.Service; use NodeSocket.NetSocket[\"Service\"] for the node:net.Socket value type."

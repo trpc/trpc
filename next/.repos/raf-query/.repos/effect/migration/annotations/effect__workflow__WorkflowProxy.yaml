@@ -1,0 +1,6 @@
+"@effect/workflow/WorkflowProxy#ConvertHttpApi":
+  replacement: "effect/workflow/WorkflowProxy#ConvertHttpApi"
+  note: "Moved into core Effect and updated to v4 HttpApiEndpoint types and the consolidated HttpApi architecture."
+"@effect/workflow/WorkflowProxy#ConvertRpcs":
+  replacement: "effect/workflow/WorkflowProxy#ConvertRpcs"
+  note: "Moved into core Effect; generated execute, discard, and resume RPCs are now keyed from workflow _tag."

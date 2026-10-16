@@ -1,0 +1,57 @@
+"@effect/platform/HttpBody#empty":
+  replacement: "HttpBody.empty"
+  note: "Retained as the singleton Empty body."
+"@effect/platform/HttpBody#Empty":
+  replacement: "HttpBody.Empty"
+  note: "Retained with the same tag, but v4 exports a class rather than an interface."
+"@effect/platform/HttpBody#ErrorReason":
+  replacement: "HttpBody.ErrorReason"
+  note: "Retained but reshaped; original causes now live on HttpBodyError.cause."
+"@effect/platform/HttpBody#ErrorTypeId":
+  replacement: "HttpBody.HttpBodyError"
+  note: "The error type-id is private in v4; identify the exported error class instead."
+"@effect/platform/HttpBody#file":
+  replacement: "HttpBody.file"
+  note: "Retained; bufferSize was replaced by numeric chunkSize. Offset and bytesToRead accept ByteSize.Input. Invalid ranges and a final EOF-clamped content length above Number.MAX_SAFE_INTEGER fail with PlatformError / BadArgument."
+"@effect/platform/HttpBody#fileInfo":
+  replacement: "HttpBody.fileFromInfo"
+  note: "Renamed; it uses supplied File.Info with ByteSize size metadata and requires FileSystem. Offset and bytesToRead accept ByteSize.Input, while chunkSize is numeric. Invalid ranges and a final EOF-clamped content length above Number.MAX_SAFE_INTEGER fail with PlatformError / BadArgument."
+"@effect/platform/HttpBody#formData":
+  replacement: "HttpBody.formData"
+  note: "Retained with the same Web FormData input."
+"@effect/platform/HttpBody#HttpBodyError":
+  replacement: "HttpBody.HttpBodyError"
+  note: "Changed from a factory/interface to a class constructed with reason and optional cause."
+"@effect/platform/HttpBody#json":
+  replacement: "HttpBody.json"
+  note: "Retained as the safe Effect-returning JSON serializer."
+"@effect/platform/HttpBody#raw":
+  replacement: "HttpBody.raw"
+  note: "Retained with optional contentType and contentLength metadata."
+"@effect/platform/HttpBody#Raw":
+  replacement: "HttpBody.Raw"
+  note: "Retained with the same tag and payload, but v4 exports a class."
+"@effect/platform/HttpBody#stream":
+  replacement: "HttpBody.stream"
+  note: "Retained with the same byte stream and optional content metadata."
+"@effect/platform/HttpBody#Stream":
+  replacement: "HttpBody.Stream"
+  note: "Retained with the same tag and byte stream, but v4 exports a class."
+"@effect/platform/HttpBody#text":
+  replacement: "HttpBody.text"
+  note: "Retained; it UTF-8 encodes and defaults to text/plain."
+"@effect/platform/HttpBody#TypeId":
+  replacement: "HttpBody.isHttpBody"
+  note: "The body brand is private in v4; use the public refinement instead."
+"@effect/platform/HttpBody#uint8Array":
+  replacement: "HttpBody.uint8Array"
+  note: "Retained with the same bytes and optional content type."
+"@effect/platform/HttpBody#Uint8Array":
+  replacement: "HttpBody.Uint8Array"
+  note: "Retained with the same fields and tag, but v4 exports a class."
+"@effect/platform/HttpBody#unsafeJson":
+  replacement: "HttpBody.jsonUnsafe"
+  note: "Renamed to put Unsafe last; serialization failures still throw."
+"@effect/platform/HttpBody#urlParams":
+  replacement: "HttpBody.urlParams"
+  note: "Retained and widened to accept UrlParams.Input."

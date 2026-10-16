@@ -1,0 +1,192 @@
+"effect/Layer#annotateLogs":
+  replacement: "Layer.fromBuild((memoMap, scope) => Effect.annotateLogs(Layer.buildWithMemoMap(self, memoMap, scope), ...annotations))"
+  note: "Apply Effect.annotateLogs to the layer acquisition effect."
+"effect/Layer#annotateSpans":
+  replacement: "Layer.fromBuild((memoMap, scope) => Effect.annotateSpans(Layer.buildWithMemoMap(self, memoMap, scope), ...annotations))"
+  note: "Apply Effect.annotateSpans to the layer acquisition effect."
+"effect/Layer#catchAll":
+  replacement: "Layer.catch"
+  note: "The typed-error handler was renamed."
+"effect/Layer#catchAllCause":
+  replacement: "Layer.catchCause"
+  note: "The cause handler was renamed."
+"effect/Layer#context":
+  replacement: "Layer.effectContext(Effect.context<R>())"
+  note: "Capture and return the current service context."
+"effect/Layer#CurrentMemoMap":
+  replacement: "Layer.CurrentMemoMap"
+  note: "The service remains but is now a Context.Service class with forkOrCreate."
+"effect/Layer#die":
+  replacement: "Layer.unwrap(Effect.die(defect))"
+  note: "Lift the Effect defect constructor."
+"effect/Layer#dieSync":
+  replacement: "Layer.unwrap(Effect.suspend(() => Effect.die(evaluate())))"
+  note: "Suspend evaluation and lift Effect.die; Effect.dieSync was also removed."
+"effect/Layer#discard":
+  replacement: "Layer.flatMap(self, () => Layer.empty)"
+  note: "Build the layer while dropping its output context."
+"effect/Layer#ensureErrorType":
+  replacement: "Layer.satisfiesErrorType"
+  note: "The type constraint helper was renamed."
+"effect/Layer#ensureRequirementsType":
+  replacement: "Layer.satisfiesServicesType"
+  note: "The requirements type constraint was renamed to services."
+"effect/Layer#ensureSuccessType":
+  replacement: "Layer.satisfiesSuccessType"
+  note: "The type constraint helper was renamed."
+"effect/Layer#extendScope":
+  replacement: "Layer.buildWithScope(self, outerScope) and Effect.provideContext(program, context)"
+  note: "Explicitly build against the desired outer scope and provide the resulting context."
+"effect/Layer#fail":
+  replacement: "Layer.unwrap(Effect.fail(error))"
+  note: "Lift the Effect failure constructor."
+"effect/Layer#failCause":
+  replacement: "Layer.unwrap(Effect.failCause(cause))"
+  note: "Lift the Effect cause-failure constructor."
+"effect/Layer#failCauseSync":
+  replacement: "Layer.unwrap(Effect.failCauseSync(evaluate))"
+  note: "Lift the retained Effect constructor."
+"effect/Layer#failSync":
+  replacement: "Layer.unwrap(Effect.failSync(evaluate))"
+  note: "Lift the retained Effect constructor."
+"effect/Layer#fiberRefLocallyScopedWith":
+  replacement: "Layer.effect(reference, Effect.map(reference, f))"
+  note: "FiberRef was removed; compute and provide a transformed Context.Reference value."
+"effect/Layer#flatten":
+  replacement: "Layer.flatMap(self, (context) => Context.get(context, key))"
+  note: "Expand the removed convenience combinator with flatMap and Context.get."
+"effect/Layer#function":
+  replacement: "Layer.effect(keyB, Effect.map(keyA, f))"
+  note: "Read the input service through its Context.Key and provide the transformed service."
+"effect/Layer#isFresh":
+  replacement: "none"
+  note: "Layer.fresh remains, but its wrapper has no public freshness predicate."
+"effect/Layer#Layer":
+  replacement: "Layer.Layer"
+  note: "The type remains with Layer<ROut, E, RIn> parameter order."
+"effect/Layer#Layer.Context":
+  replacement: "Layer.Services<T>"
+  note: "The input-services extractor moved to the module level and was renamed."
+"effect/Layer#LayerTypeId":
+  replacement: "none"
+  note: "The marker is private in v4; use Layer.Any or Layer.Variance for type constraints."
+"effect/Layer#locally":
+  replacement: "Layer.updateService(self, reference, () => value)"
+  note: "Replace FiberRef-local configuration with Context.Reference provision."
+"effect/Layer#locallyEffect":
+  replacement: "Layer.fromBuild((memoMap, scope) => f(Layer.buildWithMemoMap(self, memoMap, scope)))"
+  note: "Transform the public layer acquisition effect directly."
+"effect/Layer#locallyScoped":
+  replacement: "Layer.succeed(reference, value)"
+  note: "Provide a v4 Context.Reference value as a configuration layer."
+"effect/Layer#locallyWith":
+  replacement: "Layer.updateService(self, reference, f)"
+  note: "Transform a Context.Reference during layer acquisition."
+"effect/Layer#map":
+  replacement: "Layer.flatMap(self, (context) => Layer.succeedContext(f(context)))"
+  note: "Expand the removed output-context mapping combinator."
+"effect/Layer#mapError":
+  replacement: "Layer.fromBuild((memoMap, scope) => Effect.mapError(Layer.buildWithMemoMap(self, memoMap, scope), f))"
+  note: "Transform the typed error of layer acquisition."
+"effect/Layer#match":
+  replacement: "Layer.fromBuild with Effect.matchEffect over Layer.buildWithMemoMap"
+  note: "Fold the source acquisition effect, then build the selected failure or success layer."
+"effect/Layer#matchCause":
+  replacement: "Layer.fromBuild with Effect.matchCauseEffect over Layer.buildWithMemoMap"
+  note: "Fold the source acquisition cause, then build the selected failure or success layer."
+"effect/Layer#memoize":
+  replacement: "automatic shared memoization under Effect.provide"
+  note: "Reuse the same Layer value; use { local: true } or Layer.fresh to opt out, or MemoMap APIs for manual control."
+"effect/Layer#MemoMap":
+  replacement: "Layer.MemoMap"
+  note: "The interface remains and now supports parent-child ambient maps."
+"effect/Layer#MemoMapTypeId":
+  replacement: "none"
+  note: "The MemoMap marker is private in v4."
+"effect/Layer#orElse":
+  replacement: "Layer.catch(self, () => fallback())"
+  note: "Expand the removed lazy fallback alias with Layer.catch."
+"effect/Layer#passthrough":
+  replacement: "Layer.merge(Layer.effectContext(Effect.context<RIn>()), self)"
+  note: "Capture required input services and merge them into the layer output."
+"effect/Layer#project":
+  replacement: "Layer.flatMap(self, (context) => Layer.succeed(keyB, f(Context.get(context, keyA))))"
+  note: "Project one derived service and drop the other outputs."
+"effect/Layer#retry":
+  replacement: "Effect.retry(acquire, schedule) before Layer.effect or Layer.effectContext"
+  note: "Retry the acquisition Effect; for an arbitrary layer, rebuild a fresh layer for each attempt through Layer.fromBuild."
+"effect/Layer#scope":
+  replacement: "Layer.effect(Scope.Scope, Effect.acquireRelease(Scope.make(), Scope.close))"
+  note: "Construct and close a child scope explicitly."
+"effect/Layer#scoped":
+  replacement: "Layer.effect"
+  note: "Scoped acquisition was merged into Layer.effect, which supplies and excludes the layer Scope."
+"effect/Layer#scopedContext":
+  replacement: "Layer.effectContext"
+  note: "Scoped context acquisition was merged into Layer.effectContext."
+"effect/Layer#scopedDiscard":
+  replacement: "Layer.effectDiscard"
+  note: "Scoped discard acquisition was merged into Layer.effectDiscard."
+"effect/Layer#service":
+  replacement: "Layer.effect(key, key)"
+  note: "A Context.Key is an Effect that reads and passes through its service."
+"effect/Layer#setClock":
+  replacement: "Layer.succeed(Clock.Clock, clock)"
+  note: "Clock.Clock is now a Context.Reference; provide it directly."
+"effect/Layer#setConfigProvider":
+  replacement: "ConfigProvider.layer(configProvider)"
+  note: "Use the dedicated ConfigProvider layer constructor."
+"effect/Layer#setRandom":
+  replacement: "Layer.succeed(Random.Random, random)"
+  note: "Random.Random is now a Context.Reference; provide it directly."
+"effect/Layer#setRequestBatching":
+  replacement: "none"
+  note: "Requests now use resolver-driven batching and expose no batching switch."
+"effect/Layer#setRequestCache":
+  replacement: "none"
+  note: "The public Request.Cache and its configuration API were removed."
+"effect/Layer#setRequestCaching":
+  replacement: "none"
+  note: "The public request-caching toggle was removed."
+"effect/Layer#setScheduler":
+  replacement: "Layer.succeed(Scheduler.Scheduler, scheduler)"
+  note: "Scheduler.Scheduler is now a Context.Reference; provide it directly."
+"effect/Layer#setTracer":
+  replacement: "Layer.succeed(Tracer.Tracer, tracer)"
+  note: "Tracer.Tracer is now a Context.Reference; provide it directly."
+"effect/Layer#setTracerEnabled":
+  replacement: "Layer.succeed(References.TracerEnabled, enabled)"
+  note: "Provide the v4 Reference instead of setting a FiberRef."
+"effect/Layer#setTracerTiming":
+  replacement: "Layer.succeed(References.TracerTimingEnabled, enabled)"
+  note: "Provide the renamed v4 Reference instead of setting a FiberRef."
+"effect/Layer#setUnhandledErrorLogLevel":
+  replacement: "Layer.succeed(References.UnhandledLogLevel, severityOrUndefined)"
+  note: "Provide LogLevel.Severity or undefined instead of Option<LogLevel>."
+"effect/Layer#setVersionMismatchErrorLogLevel":
+  replacement: "none"
+  note: "No version-mismatch log-level Reference or public replacement exists."
+"effect/Layer#tapErrorCause":
+  replacement: "Layer.tapCause"
+  note: "The cause observer was renamed. Its callback must accept the source layer's full error cause; a callback narrowed to only part of the error union is rejected."
+"effect/Layer#toRuntime":
+  replacement: "Layer.build(self), then Effect.runForkWith, Effect.runPromiseWith, or Effect.runSyncWith"
+  note: "Runtime<R> was removed; build a Context, or use ManagedRuntime.make for a reusable managed runner."
+"effect/Layer#toRuntimeWithMemoMap":
+  replacement: "Layer.buildWithMemoMap(self, memoMap, scope), then Effect.run*With(context)"
+  note: "Explicit memo-map building now yields a Context rather than a Runtime."
+"effect/Layer#unwrapEffect":
+  replacement: "Layer.unwrap"
+  note: "The Effect-based unwrap constructor was renamed and generalized."
+"effect/Layer#unwrapScoped":
+  replacement: "Layer.unwrap"
+  note: "Scoped and unscoped unwrap were merged; Layer.unwrap supplies and excludes the layer Scope."
+"effect/Layer#updateService":
+  replacement: "Layer.updateService"
+  note: "The combinator remains and now accepts any Context.Key."
+"effect/Layer#zipWith":
+  replacement: "Layer.fromBuild with concurrent Effect.zipWith over Layer.buildWithMemoMap"
+  note: "Combine acquisition effects directly; use Layer.merge when the function only merged Context values."
+"effect/Layer#tapError":
+  replacement: "Layer.tapError"
+  note: "The observer must accept the source layer's full error union. Widen callbacks that handled only a subtype; saved curried observers preserve the source error type."

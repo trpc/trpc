@@ -1,0 +1,9 @@
+"@effect/experimental/PersistedQueue/Redis#layerStore":
+  replacement: effect/persistence/PersistedQueue#layerStoreRedis
+  note: The Redis adapter was merged into PersistedQueue and now requires the generic Redis.Redis service.
+"@effect/experimental/PersistedQueue/Redis#layerStoreConfig":
+  replacement: none
+  note: Configure a Redis provider such as NodeRedis.layerConfig separately, then compose it with PersistedQueue.layerStoreRedis.
+"@effect/experimental/PersistedQueue/Redis#make":
+  replacement: effect/persistence/PersistedQueue#makeStoreRedis
+  note: The Redis adapter was merged into PersistedQueue and now requires the generic Redis.Redis service.

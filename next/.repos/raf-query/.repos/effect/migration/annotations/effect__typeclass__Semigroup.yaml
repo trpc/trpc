@@ -1,0 +1,51 @@
+"@effect/typeclass/Semigroup#array":
+  replacement: "Array.makeReducerConcat"
+  note: "The v4 concatenation Reducer is also a Combiner and replaces the array Semigroup."
+"@effect/typeclass/Semigroup#constant":
+  replacement: "Combiner.constant"
+  note: "Combiner replaces Semigroup in v4."
+"@effect/typeclass/Semigroup#first":
+  replacement: "Combiner.first"
+  note: "Combiner replaces Semigroup in v4."
+"@effect/typeclass/Semigroup#imap":
+  replacement: "Combiner.make"
+  note: "V4 has no generic invariant instance; build a Combiner that maps both inputs with from, combines them, then maps the result with to."
+"@effect/typeclass/Semigroup#intercalate":
+  replacement: "Combiner.intercalate"
+  note: "Combiner replaces Semigroup; v4 takes the separator first and then the Combiner."
+"@effect/typeclass/Semigroup#Invariant":
+  replacement: "none"
+  note: "The @effect/typeclass package was removed in v4 with no generic typeclass layer replacement. Rewrite this abstraction against the concrete v4 data type and its module functions."
+"@effect/typeclass/Semigroup#last":
+  replacement: "Combiner.last"
+  note: "Combiner replaces Semigroup in v4."
+"@effect/typeclass/Semigroup#make":
+  replacement: "Combiner.make"
+  note: "Combiner replaces Semigroup. V4 accepts only the binary combine function and has no combineMany override."
+"@effect/typeclass/Semigroup#max":
+  replacement: "Combiner.max"
+  note: "Combiner replaces Semigroup; pass the same Order to retain last-maximum tie behavior."
+"@effect/typeclass/Semigroup#min":
+  replacement: "Combiner.min"
+  note: "Combiner replaces Semigroup; pass the same Order to retain last-minimum tie behavior."
+"@effect/typeclass/Semigroup#Product":
+  replacement: "none"
+  note: "The @effect/typeclass package was removed in v4 with no generic typeclass layer replacement. Rewrite this abstraction against the concrete v4 data type and its module functions."
+"@effect/typeclass/Semigroup#reverse":
+  replacement: "Combiner.flip"
+  note: "Use the v4 Combiner combinator to reverse combine argument order."
+"@effect/typeclass/Semigroup#Semigroup":
+  replacement: "Combiner.Combiner"
+  note: "Combiner replaces Semigroup in v4 and retains the binary combine method; combineMany was removed."
+"@effect/typeclass/Semigroup#SemigroupTypeLambda":
+  replacement: "none"
+  note: "The @effect/typeclass package was removed in v4 with no generic typeclass layer replacement. Rewrite this abstraction against the concrete v4 data type and its module functions."
+"@effect/typeclass/Semigroup#SemiProduct":
+  replacement: "none"
+  note: "The @effect/typeclass package was removed in v4 with no generic typeclass layer replacement. Rewrite this abstraction against the concrete v4 data type and its module functions."
+"@effect/typeclass/Semigroup#struct":
+  replacement: "Struct.makeCombiner"
+  note: "Pass a record of v4 Combiners to derive a field-wise Combiner."
+"@effect/typeclass/Semigroup#tuple":
+  replacement: "Tuple.makeCombiner"
+  note: "Pass one array of v4 Combiners instead of rest Semigroup arguments."

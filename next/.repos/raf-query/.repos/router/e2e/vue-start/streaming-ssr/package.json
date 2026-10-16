@@ -1,0 +1,59 @@
+{
+  "name": "tanstack-vue-start-e2e-streaming-ssr",
+  "private": true,
+  "sideEffects": false,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev --port 3000",
+    "dev:e2e": "vite dev",
+    "build": "vite build && tsc --noEmit",
+    "start": "pnpx srvx --prod -s ../client dist/server/server.js",
+    "preview": "vite preview",
+    "test:e2e": "playwright test --project=chromium",
+    "test:e2e:preview": "MODE=preview playwright test preview-streaming.spec.ts --project=chromium"
+  },
+  "dependencies": {
+    "@tanstack/vue-query": "^5.90.0",
+    "@tanstack/vue-router": "workspace:^",
+    "@tanstack/vue-router-ssr-query": "workspace:^",
+    "@tanstack/vue-start": "workspace:^",
+    "vue": "^3.5.16"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.0",
+    "@tanstack/router-e2e-utils": "workspace:^",
+    "@types/node": "^22.10.2",
+    "@vitejs/plugin-vue-jsx": "^5.1.5",
+    "srvx": "^0.11.9",
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "vite": "^8.0.14"
+  },
+  "nx": {
+    "targets": {
+      "build": {
+        "inputs": [
+          "buildProduction",
+          "^buildProduction",
+          "dependentTaskOutputs",
+          "streamingSsrTests"
+        ]
+      },
+      "test:e2e": {
+        "inputs": [
+          "default",
+          "^production",
+          "dependentTaskOutputs",
+          "streamingSsrTests"
+        ]
+      },
+      "test:e2e:preview": {
+        "inputs": [
+          "default",
+          "^production",
+          "streamingSsrTests"
+        ]
+      }
+    }
+  }
+}

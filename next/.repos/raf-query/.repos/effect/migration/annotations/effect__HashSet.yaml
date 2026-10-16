@@ -1,0 +1,33 @@
+"effect/HashSet#beginMutation":
+  replacement: "none"
+  note: "Transient mutation mode was removed; reassign immutable add/remove results or build a batch with HashSet.fromIterable."
+"effect/HashSet#endMutation":
+  replacement: "none"
+  note: "There is no mutation window to finalize; remove this call and use the latest immutable HashSet value."
+"effect/HashSet#flatMap":
+  replacement: "HashSet.fromIterable + Iterable.flatMap"
+  note: "Preserve set deduplication with HashSet.fromIterable(Iterable.flatMap(self, f)); no direct flatMap remains."
+"effect/HashSet#forEach":
+  replacement: "Iterable.forEach"
+  note: "HashSet remains Iterable, so Iterable.forEach(self, f) preserves eager side-effecting traversal."
+"effect/HashSet#HashSet":
+  replacement: "HashSet.HashSet"
+  note: "The immutable model remains, but the brand is private and transient mutation helpers were removed."
+"effect/HashSet#partition":
+  replacement: "HashSet.filter"
+  note: "Build [excluded, satisfying] with complementary HashSet.filter calls, or use one reduction when the predicate is expensive."
+"effect/HashSet#toggle":
+  replacement: "HashSet.has + HashSet.remove / HashSet.add"
+  note: "Use HashSet.has(self, value) ? HashSet.remove(self, value) : HashSet.add(self, value)."
+"effect/HashSet#toValues":
+  replacement: "Array.from"
+  note: "HashSet remains iterable; Array.from(self) produces the former Array result."
+"effect/HashSet#TypeId":
+  replacement: "HashSet.isHashSet"
+  note: "The brand is private; use HashSet.isHashSet for runtime refinement and HashSet.HashSet<A> in type positions."
+"effect/HashSet#values":
+  replacement: "none"
+  note: "The HashSet itself is iterable; iterate it directly or call self[Symbol.iterator]() when an iterator object is required."
+"effect/HashSet#mutate":
+  replacement: "none"
+  note: "Transient mutation was removed; reassign immutable HashSet.add/remove results or build a complete replacement with HashSet.fromIterable."

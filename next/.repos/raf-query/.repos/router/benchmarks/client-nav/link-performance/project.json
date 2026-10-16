@@ -1,0 +1,103 @@
+{
+  "name": "@benchmarks/react-link-performance",
+  "projectType": "application",
+  "tags": ["optional-benchmark"],
+  "targets": {
+    "build:client": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [
+        {
+          "projects": ["@tanstack/react-router"],
+          "target": "build"
+        }
+      ],
+      "options": {
+        "command": "NODE_ENV=production vite build --config ./link-performance/vite.client.config.ts",
+        "cwd": "benchmarks/client-nav"
+      }
+    },
+    "build:ssr": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": [
+        {
+          "projects": ["@tanstack/react-router"],
+          "target": "build"
+        }
+      ],
+      "options": {
+        "command": "NODE_ENV=production vite build --config ./link-performance/vite.ssr.config.ts",
+        "cwd": "benchmarks/client-nav"
+      }
+    },
+    "test:perf:client": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": ["build:client"],
+      "options": {
+        "command": "NODE_ENV=production vitest bench --config ./link-performance/vite.client.config.ts",
+        "cwd": "benchmarks/client-nav"
+      }
+    },
+    "test:perf:ssr": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": ["build:ssr"],
+      "options": {
+        "command": "NODE_ENV=production vitest bench --config ./link-performance/vite.ssr.config.ts",
+        "cwd": "benchmarks/client-nav"
+      }
+    },
+    "test:perf:stable": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": ["build:client", "build:ssr"],
+      "options": {
+        "command": "NODE_ENV=production node --import=@swc-node/register/esm-register benchmarks/client-nav/link-performance/stable-runner.ts"
+      }
+    },
+    "test:unit": {
+      "executor": "nx:run-commands",
+      "inputs": [
+        "...",
+        "{workspaceRoot}/benchmarks/client-nav/scenarios/harness.ts",
+        "{workspaceRoot}/benchmarks/client-nav/scenarios/links/shared.ts",
+        "{workspaceRoot}/benchmarks/client-nav/setup-helpers.ts",
+        "{workspaceRoot}/benchmarks/client-nav/tsconfig.json"
+      ],
+      "dependsOn": [
+        {
+          "projects": ["@tanstack/history"],
+          "target": "build"
+        }
+      ],
+      "options": {
+        "command": "vitest run --config ./link-performance/vitest.config.ts",
+        "cwd": "benchmarks/client-nav"
+      }
+    },
+    "test:types": {
+      "executor": "nx:run-commands",
+      "inputs": [
+        "...",
+        "{workspaceRoot}/benchmarks/client-nav/jsdom.ts",
+        "{workspaceRoot}/benchmarks/client-nav/scenarios/harness.ts",
+        "{workspaceRoot}/benchmarks/client-nav/scenarios/links/shared.ts",
+        "{workspaceRoot}/benchmarks/client-nav/setup-helpers.ts",
+        "{workspaceRoot}/benchmarks/client-nav/tsconfig.json",
+        "{workspaceRoot}/benchmarks/client-nav/vitest.setup.ts"
+      ],
+      "dependsOn": [
+        {
+          "projects": ["@tanstack/react-router"],
+          "target": "build"
+        }
+      ],
+      "options": {
+        "command": "tsc -p ./link-performance/tsconfig.json --noEmit",
+        "cwd": "benchmarks/client-nav"
+      }
+    }
+  }
+}

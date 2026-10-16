@@ -1,0 +1,75 @@
+effect/TSet#TSet:
+  replacement: "TxHashSet.TxHashSet"
+  note: "Rename the type and import from \"effect/TxHashSet\". V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TSet#TSet.Variance:
+  replacement: "none"
+  note: "TxHashSet exposes no public variance marker."
+effect/TSet#TSetTypeId:
+  replacement: "TxHashSet.isTxHashSet"
+  note: "The type id is internal in v4; use the public runtime guard."
+effect/TSet#difference:
+  replacement: "TxHashSet.difference"
+  note: "The name remains, but v4 returns a new set instead of mutating self."
+effect/TSet#empty:
+  replacement: "TxHashSet.empty"
+  note: "Import TxHashSet from \"effect/TxHashSet\"; the operation keeps its name. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TSet#fromIterable:
+  replacement: "TxHashSet.fromIterable"
+  note: "Import TxHashSet from \"effect/TxHashSet\"; the operation keeps its name. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TSet#has:
+  replacement: "TxHashSet.has"
+  note: "Import TxHashSet from \"effect/TxHashSet\"; the operation keeps its name. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TSet#intersection:
+  replacement: "TxHashSet.intersection"
+  note: "The name remains, but v4 returns a new set instead of mutating self."
+effect/TSet#isEmpty:
+  replacement: "TxHashSet.isEmpty"
+  note: "Import TxHashSet from \"effect/TxHashSet\"; the operation keeps its name. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TSet#make:
+  replacement: "TxHashSet.make"
+  note: "Import TxHashSet from \"effect/TxHashSet\"; the operation keeps its name. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TSet#reduce:
+  replacement: "TxHashSet.reduce"
+  note: "Import TxHashSet from \"effect/TxHashSet\"; the operation keeps its name. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TSet#reduceSTM:
+  replacement: "TxHashSet.toHashSet + Effect.reduce"
+  note: "Snapshot the set and reduce effectfully inside the surrounding Effect.tx transaction."
+effect/TSet#remove:
+  replacement: "TxHashSet.remove"
+  note: "The name remains, but v4 returns whether the value existed."
+effect/TSet#removeAll:
+  replacement: "Effect.forEach(values, (value) => TxHashSet.remove(self, value))"
+  note: "No bulk removal helper remains; remove each value inside one outer Effect.tx transaction."
+effect/TSet#size:
+  replacement: "TxHashSet.size"
+  note: "Import TxHashSet from \"effect/TxHashSet\"; the operation keeps its name. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TSet#takeFirst:
+  replacement: "none"
+  note: "No atomic take-and-match helper exists in TxHashSet; select and remove explicitly inside Effect.tx."
+effect/TSet#takeFirstSTM:
+  replacement: "none"
+  note: "No effectful atomic take-and-match helper exists; traverse and remove explicitly inside Effect.tx."
+effect/TSet#takeSome:
+  replacement: "none"
+  note: "No atomic multi-take helper exists in TxHashSet; select and remove explicitly inside Effect.tx."
+effect/TSet#takeSomeSTM:
+  replacement: "none"
+  note: "No effectful atomic multi-take helper exists; traverse and remove explicitly inside Effect.tx."
+effect/TSet#toArray:
+  replacement: "Effect.map(TxHashSet.toHashSet(self), Array.from)"
+  note: "Convert the immutable HashSet snapshot to an Array explicitly."
+effect/TSet#toChunk:
+  replacement: "Effect.map(TxHashSet.toHashSet(self), (set) => Chunk.fromIterable(set))"
+  note: "Convert the immutable HashSet snapshot to Chunk explicitly."
+effect/TSet#toReadonlySet:
+  replacement: "Effect.map(TxHashSet.toHashSet(self), (set) => new Set(set))"
+  note: "Convert the immutable HashSet snapshot to a JavaScript ReadonlySet explicitly."
+effect/TSet#transform:
+  replacement: "TxHashSet.map"
+  note: "The closest helper returns a new set instead of mutating self."
+effect/TSet#transformSTM:
+  replacement: "TxHashSet.toHashSet + Effect traversal + TxHashSet.fromIterable"
+  note: "No effectful transform remains; traverse a snapshot and rebuild inside Effect.tx."
+effect/TSet#union:
+  replacement: "TxHashSet.union"
+  note: "The name remains, but v4 returns a new set instead of mutating self."

@@ -1,0 +1,3 @@
+"@effect/platform/index":
+  replacement: "none"
+  note: "The package barrel was removed along with the package; import each module from its new effect location (e.g. effect/FileSystem, effect/http/HttpClient) per the Import Map."

@@ -1,0 +1,15 @@
+{
+	"compilerOptions": {
+		"allowImportingTsExtensions": true,
+		"jsx": "react-jsx",
+		"lib": ["ES2024", "DOM", "DOM.Iterable"],
+		"module": "preserve",
+		"moduleResolution": "bundler",
+		"noEmit": true,
+		"skipLibCheck": true,
+		"strict": true,
+		"target": "ES2024",
+		"types": ["node"]
+	},
+	"include": ["src", "fixtures"]
+}

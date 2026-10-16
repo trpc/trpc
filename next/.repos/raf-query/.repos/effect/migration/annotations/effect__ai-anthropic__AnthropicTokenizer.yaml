@@ -1,0 +1,6 @@
+"@effect/ai-anthropic/AnthropicTokenizer#layer":
+  replacement: "Tokenizer.make"
+  note: "The provider-specific tokenizer module was removed; build and provide an effect/ai/Tokenizer service explicitly, using @anthropic-ai/tokenizer if equivalent Anthropic counting is required."
+"@effect/ai-anthropic/AnthropicTokenizer#make":
+  replacement: "Tokenizer.make"
+  note: "The provider-specific tokenizer module was removed; build and provide an effect/ai/Tokenizer service explicitly, using @anthropic-ai/tokenizer if equivalent Anthropic counting is required."

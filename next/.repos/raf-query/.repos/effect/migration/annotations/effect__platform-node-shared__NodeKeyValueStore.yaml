@@ -1,0 +1,3 @@
+"@effect/platform-node-shared/NodeKeyValueStore":
+  replacement: "effect/persistence/KeyValueStore"
+  note: "layerFileSystem is now platform-neutral as KeyValueStore.layerFileSystem(directory); provide FileSystem and Path via NodeServices.layer or NodeFileSystem.layer with NodePath.layer."

@@ -1,0 +1,90 @@
+"@effect/platform/FileSystem#AccessFileOptions":
+  replacement: "NonNullable<Parameters<FileSystem.FileSystem[\"access\"]>[1]>"
+  note: "Operation option interfaces are inline in the v4 FileSystem service."
+"@effect/platform/FileSystem#CopyOptions":
+  replacement: "NonNullable<Parameters<FileSystem.FileSystem[\"copy\"]>[2]>"
+  note: "Operation option interfaces are inline in the v4 FileSystem service."
+"@effect/platform/FileSystem#File.Descriptor":
+  replacement: "none"
+  note: "Native file descriptors are no longer part of the portable File interface; use the File methods and keep any platform handle private in custom implementations."
+"@effect/platform/FileSystem#FileDescriptor":
+  replacement: "none"
+  note: "The descriptor branding constructor was removed with the public fd field; use File operations instead of exposing a native descriptor."
+"@effect/platform/FileSystem#FileTypeId":
+  replacement: "typeof FileSystem.FileTypeId"
+  note: "The runtime marker remains exported, but the separate type alias was removed."
+"@effect/platform/FileSystem#GiB":
+  replacement: "ByteSize.gibibytes"
+  note: "Use the ByteSize binary unit constructor."
+"@effect/platform/FileSystem#isFile":
+  replacement: "FileSystem.isFile"
+  note: "The guard remains after moving the module to effect/FileSystem."
+"@effect/platform/FileSystem#KiB":
+  replacement: "ByteSize.kibibytes"
+  note: "Use the ByteSize binary unit constructor."
+"@effect/platform/FileSystem#layerNoop":
+  replacement: "FileSystem.layerNoop"
+  note: "The helper remains after moving the module to effect/FileSystem."
+"@effect/platform/FileSystem#make":
+  replacement: "FileSystem.make"
+  note: "The constructor remains after moving the module to effect/FileSystem; adapt the implementation to the v4 service shape."
+"@effect/platform/FileSystem#MakeDirectoryOptions":
+  replacement: "NonNullable<Parameters<FileSystem.FileSystem[\"makeDirectory\"]>[1]>"
+  note: "Operation option interfaces are inline in the v4 FileSystem service."
+"@effect/platform/FileSystem#makeNoop":
+  replacement: "FileSystem.makeNoop"
+  note: "The helper remains after moving the module to effect/FileSystem."
+"@effect/platform/FileSystem#MakeTempDirectoryOptions":
+  replacement: "NonNullable<Parameters<FileSystem.FileSystem[\"makeTempDirectory\"]>[0]>"
+  note: "Operation option interfaces are inline in the v4 FileSystem service."
+"@effect/platform/FileSystem#MakeTempFileOptions":
+  replacement: "NonNullable<Parameters<FileSystem.FileSystem[\"makeTempFile\"]>[0]>"
+  note: "Operation option interfaces are inline in the v4 FileSystem service."
+"@effect/platform/FileSystem#MiB":
+  replacement: "ByteSize.mebibytes"
+  note: "Use the ByteSize binary unit constructor."
+"@effect/platform/FileSystem#OpenFileOptions":
+  replacement: "NonNullable<Parameters<FileSystem.FileSystem[\"open\"]>[1]>"
+  note: "Operation option interfaces are inline in the v4 FileSystem service."
+"@effect/platform/FileSystem#PiB":
+  replacement: "ByteSize.pebibytes"
+  note: "Use the ByteSize binary unit constructor."
+"@effect/platform/FileSystem#ReadDirectoryOptions":
+  replacement: "NonNullable<Parameters<FileSystem.FileSystem[\"readDirectory\"]>[1]>"
+  note: "Operation option interfaces are inline in the v4 FileSystem service."
+"@effect/platform/FileSystem#RemoveOptions":
+  replacement: "NonNullable<Parameters<FileSystem.FileSystem[\"remove\"]>[1]>"
+  note: "Operation option interfaces are inline in the v4 FileSystem service."
+"@effect/platform/FileSystem#SinkOptions":
+  replacement: "NonNullable<Parameters<FileSystem.FileSystem[\"sink\"]>[1]>"
+  note: "Operation option interfaces are inline in the v4 FileSystem service."
+"@effect/platform/FileSystem#Size":
+  replacement: "ByteSize.ByteSize"
+  note: "Use ByteSize.bytes or unit constructors for file sizes. Truncation lengths, buffer sizes, and read/write counts use number. File.seek takes and returns signed bigint positions; it can fail with PlatformError, including BadArgument when seeking before the start."
+"@effect/platform/FileSystem#SizeInput":
+  replacement: "ByteSize.Input"
+  note: "File-size and path-backed range inputs use ByteSize.Input. String inputs must be non-negative decimal integers without leading zeros, followed by a canonical unit symbol or lowercase unit name, with at most one separating space. Parse external strings or fractional quantities with ByteSize.fromString (Option) or ByteSize.fromStringUnsafe (throws), then pass the resulting ByteSize. Truncation lengths, Web File ranges, and buffer sizes use number."
+"@effect/platform/FileSystem#StreamOptions":
+  replacement: "NonNullable<Parameters<FileSystem.FileSystem[\"stream\"]>[1]>"
+  note: "Stream options are inline; bufferSize was removed, bytesToRead and offset accept ByteSize inputs, and chunkSize uses number."
+"@effect/platform/FileSystem#TiB":
+  replacement: "ByteSize.tebibytes"
+  note: "Use the ByteSize binary unit constructor."
+"@effect/platform/FileSystem#WatchEventCreate":
+  replacement: "FileSystem.WatchEvent.Create"
+  note: "The constructor was removed; construct a tagged object with _tag: \"Create\" and path."
+"@effect/platform/FileSystem#WatchEventRemove":
+  replacement: "FileSystem.WatchEvent.Remove"
+  note: "The constructor was removed; construct a tagged object with _tag: \"Remove\" and path."
+"@effect/platform/FileSystem#WatchEventUpdate":
+  replacement: "FileSystem.WatchEvent.Update"
+  note: "The constructor was removed; construct a tagged object with _tag: \"Update\" and path."
+"@effect/platform/FileSystem#WatchOptions":
+  replacement: "FileSystem.WatchOptions"
+  note: "Retained after moving the module to effect/FileSystem; pass `{ recursive: true }` as the optional second argument to FileSystem.watch."
+"@effect/platform/FileSystem#WriteFileOptions":
+  replacement: "NonNullable<Parameters<FileSystem.FileSystem[\"writeFile\"]>[2]>"
+  note: "Operation option interfaces are inline in the v4 FileSystem service."
+"@effect/platform/FileSystem#WriteFileStringOptions":
+  replacement: "NonNullable<Parameters<FileSystem.FileSystem[\"writeFileString\"]>[2]>"
+  note: "Operation option interfaces are inline in the v4 FileSystem service."

@@ -1,0 +1,42 @@
+effect/Scheduler#ControlledScheduler:
+  replacement: "none"
+  note: "No public step-controlled scheduler remains; implement Scheduler and SchedulerDispatcher for exact controlled stepping."
+effect/Scheduler#defaultScheduler:
+  replacement: "Scheduler.Scheduler"
+  note: "The default scheduler is now a Context.Reference; yield it to read or provide it to override the current scheduler."
+effect/Scheduler#defaultShouldYield:
+  replacement: "Scheduler.MixedScheduler#shouldYield"
+  note: "The standalone function was removed; yielding is implemented by each Scheduler instance."
+effect/Scheduler#make:
+  replacement: "none"
+  note: "Implement the redesigned Scheduler interface and return task dispatch through makeDispatcher."
+effect/Scheduler#makeBatched:
+  replacement: "new Scheduler.MixedScheduler(\"async\", schedule)"
+  note: "Pass a cancellable scheduling function; the dispatcher performs priority batching."
+effect/Scheduler#makeMatrix:
+  replacement: "none"
+  note: "Matrix routing was removed; implement routing in a custom Scheduler and SchedulerDispatcher if still required."
+effect/Scheduler#MixedScheduler:
+  replacement: "Scheduler.MixedScheduler"
+  note: "The class remains with a redesigned constructor and makeDispatcher-based task API."
+effect/Scheduler#PriorityBuckets:
+  replacement: "none"
+  note: "Priority buckets are now an internal Scheduler implementation detail."
+effect/Scheduler#Scheduler:
+  replacement: "Scheduler.Scheduler"
+  note: "The interface remains but dispatch moved to SchedulerDispatcher returned by makeDispatcher."
+effect/Scheduler#SchedulerRunner:
+  replacement: "Scheduler.SchedulerDispatcher"
+  note: "Task scheduling and flushing moved to the dispatcher returned by Scheduler.makeDispatcher."
+effect/Scheduler#SyncScheduler:
+  replacement: "new Scheduler.MixedScheduler(\"sync\")"
+  note: "Use a synchronous MixedScheduler and its dispatcher; call flush when directly driving queued tasks."
+effect/Scheduler#Task:
+  replacement: "() => void"
+  note: "The named alias was removed; dispatcher APIs inline the task callback type."
+effect/Scheduler#timer:
+  replacement: "Effect.delay"
+  note: "Use Effect delay or sleep for effect timing; implement a custom dispatcher for exact per-task scheduler timing."
+effect/Scheduler#timerBatched:
+  replacement: "new Scheduler.MixedScheduler(\"async\", scheduleWithTimer)"
+  note: "Use a setTimeout-based cancellable scheduling function; the dispatcher batches queued tasks."

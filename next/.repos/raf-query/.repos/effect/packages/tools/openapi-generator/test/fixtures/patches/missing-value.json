@@ -1,0 +1,6 @@
+[
+  {
+    "op": "add",
+    "path": "/info/x-missing"
+  }
+]

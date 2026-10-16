@@ -1,0 +1,39 @@
+"@effect/typeclass/data/Predicate#Contravariant":
+  replacement: "effect/Predicate"
+  note: "The @effect/typeclass package and its Predicate instance dictionaries were removed in v4. Use the concrete effect/Predicate operations directly."
+"@effect/typeclass/data/Predicate#getMonoidEqv":
+  replacement: "Reducer.make(Predicate.eqv, Predicate.isUnknown)"
+  note: "Rebuild the removed predicate instance as a v4 Reducer with the always-true predicate as initialValue."
+"@effect/typeclass/data/Predicate#getMonoidEvery":
+  replacement: "Reducer.make(Predicate.and, Predicate.isUnknown)"
+  note: "Rebuild the removed predicate instance as a v4 Reducer with the always-true predicate as initialValue."
+"@effect/typeclass/data/Predicate#getMonoidSome":
+  replacement: "Reducer.make(Predicate.or, Predicate.isNever)"
+  note: "Rebuild the removed predicate instance as a v4 Reducer with the always-false predicate as initialValue."
+"@effect/typeclass/data/Predicate#getMonoidXor":
+  replacement: "Reducer.make(Predicate.xor, Predicate.isNever)"
+  note: "Rebuild the removed predicate instance as a v4 Reducer with the always-false predicate as initialValue."
+"@effect/typeclass/data/Predicate#getSemigroupEqv":
+  replacement: "Combiner.make(Predicate.eqv)"
+  note: "Rebuild the removed predicate instance as a v4 Combiner."
+"@effect/typeclass/data/Predicate#getSemigroupEvery":
+  replacement: "Combiner.make(Predicate.and)"
+  note: "Rebuild the removed predicate instance as a v4 Combiner."
+"@effect/typeclass/data/Predicate#getSemigroupSome":
+  replacement: "Combiner.make(Predicate.or)"
+  note: "Rebuild the removed predicate instance as a v4 Combiner."
+"@effect/typeclass/data/Predicate#getSemigroupXor":
+  replacement: "Combiner.make(Predicate.xor)"
+  note: "Rebuild the removed predicate instance as a v4 Combiner."
+"@effect/typeclass/data/Predicate#Invariant":
+  replacement: "effect/Predicate"
+  note: "The @effect/typeclass package and its Predicate instance dictionaries were removed in v4. Use the concrete effect/Predicate operations directly."
+"@effect/typeclass/data/Predicate#Of":
+  replacement: "effect/Predicate"
+  note: "The @effect/typeclass package and its Predicate instance dictionaries were removed in v4. Use the concrete effect/Predicate operations directly."
+"@effect/typeclass/data/Predicate#Product":
+  replacement: "effect/Predicate"
+  note: "The @effect/typeclass package and its Predicate instance dictionaries were removed in v4. Use the concrete effect/Predicate operations directly."
+"@effect/typeclass/data/Predicate#SemiProduct":
+  replacement: "effect/Predicate"
+  note: "The @effect/typeclass package and its Predicate instance dictionaries were removed in v4. Use the concrete effect/Predicate operations directly."

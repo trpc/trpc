@@ -1,0 +1,6 @@
+"@effect/ai/Chat#Chat":
+  replacement: "Chat.Chat"
+  note: "Use the Chat interface for implementations and the Context.Service value as the service key; it is no longer a class. Chat.empty and Chat.fromPrompt construct branded chat sessions."
+"@effect/ai/Chat#Service":
+  replacement: "Chat.Chat"
+  note: "Service was renamed to Chat. Implementations require [Chat.TypeId]: Chat.TypeId; use Chat.empty or Chat.fromPrompt to create a session."

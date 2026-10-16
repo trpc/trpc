@@ -1,0 +1,36 @@
+"effect/MutableList#empty":
+  replacement: "MutableList.make"
+  note: "Constructor rename; MutableList.Empty is the take sentinel, not a constructor."
+"effect/MutableList#forEach":
+  replacement: "MutableList.toArray + Array.forEach"
+  note: "No direct traversal helper remains; iterate a snapshot produced by MutableList.toArray."
+"effect/MutableList#fromIterable":
+  replacement: "MutableList.make + MutableList.appendAll"
+  note: "Create an empty list with MutableList.make, then append the iterable with MutableList.appendAll."
+"effect/MutableList#head":
+  replacement: "MutableList.toArrayN"
+  note: "Use MutableList.toArrayN(self, 1)[0]; the redesigned FIFO exposes buckets rather than the old Option-returning accessor."
+"effect/MutableList#isEmpty":
+  replacement: "none"
+  note: "Read self.length === 0; no named isEmpty helper remains."
+"effect/MutableList#length":
+  replacement: "none"
+  note: "Read the public self.length field; no named length helper remains."
+"effect/MutableList#MutableList":
+  replacement: "MutableList.MutableList"
+  note: "The model remains but was redesigned from an iterable doubly linked list into a bucketed FIFO structure."
+"effect/MutableList#pop":
+  replacement: "none"
+  note: "The bucketed FIFO has no remove-last operation; migrate code to front draining or use a different mutable collection."
+"effect/MutableList#reset":
+  replacement: "MutableList.clear"
+  note: "Direct behavioral replacement; the return type is now void."
+"effect/MutableList#shift":
+  replacement: "MutableList.take"
+  note: "Front removal remains synchronous, but emptiness is reported with MutableList.Empty instead of undefined."
+"effect/MutableList#tail":
+  replacement: "MutableList.toArray"
+  note: "Use MutableList.toArray(self).at(-1); the public self.tail field is an internal bucket, not the old last-element accessor."
+"effect/MutableList#TypeId":
+  replacement: "none"
+  note: "V4 MutableList has no public runtime marker."

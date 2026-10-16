@@ -1,0 +1,9 @@
+"@effect/platform/HttpApiScalar#layer":
+  replacement: "effect/http-api/HttpApiScalar#layer"
+  note: "Pass the HttpApi as the first argument; the layer now contributes directly to HttpRouter."
+"@effect/platform/HttpApiScalar#layerHttpLayerRouter":
+  replacement: "effect/http-api/HttpApiScalar#layer"
+  note: "The duplicate was removed. Pass options.api as the first layer argument and the remaining Scalar options second."
+"@effect/platform/HttpApiScalar#layerHttpLayerRouterCdn":
+  replacement: "effect/http-api/HttpApiScalar#layerCdn"
+  note: "Use the explicit-api CDN layer with path, version, and Scalar options."

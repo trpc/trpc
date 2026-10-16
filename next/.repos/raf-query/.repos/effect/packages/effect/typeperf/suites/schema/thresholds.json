@@ -1,0 +1,90 @@
+{
+  "struct-required": {
+    "maxInstantiationsDelta": 457,
+    "maxTypesDelta": 50
+  },
+  "struct-optional-only": {
+    "maxInstantiationsDelta": 742,
+    "maxTypesDelta": 110
+  },
+  "struct-mutable-only": {
+    "maxInstantiationsDelta": 725,
+    "maxTypesDelta": 101
+  },
+  "struct-mixed": {
+    "maxInstantiationsDelta": 1056,
+    "maxTypesDelta": 169
+  },
+  "union": {
+    "maxInstantiationsDelta": 935,
+    "maxTypesDelta": 156
+  },
+  "tagged-union": {
+    "maxInstantiationsDelta": 967,
+    "maxTypesDelta": 223
+  },
+  "record": {
+    "maxInstantiationsDelta": 319,
+    "maxTypesDelta": 94
+  },
+  "struct-with-rest": {
+    "maxInstantiationsDelta": 762,
+    "maxTypesDelta": 152
+  },
+  "tuple": {
+    "maxInstantiationsDelta": 453,
+    "maxTypesDelta": 116
+  },
+  "tuple-with-rest": {
+    "maxInstantiationsDelta": 450,
+    "maxTypesDelta": 112
+  },
+  "array": {
+    "maxInstantiationsDelta": 227,
+    "maxTypesDelta": 44
+  },
+  "non-empty-array": {
+    "maxInstantiationsDelta": 227,
+    "maxTypesDelta": 44
+  },
+  "to-type": {
+    "maxInstantiationsDelta": 231,
+    "maxTypesDelta": 64
+  },
+  "to-encoded": {
+    "maxInstantiationsDelta": 59,
+    "maxTypesDelta": 13
+  },
+  "to-codec-json": {
+    "maxInstantiationsDelta": 145,
+    "maxTypesDelta": 30
+  },
+  "to-codec-string-tree": {
+    "maxInstantiationsDelta": 89,
+    "maxTypesDelta": 19
+  },
+  "to-codec-array-from-single": {
+    "maxInstantiationsDelta": 163,
+    "maxTypesDelta": 60
+  },
+  "brand": {
+    "maxInstantiationsDelta": 690,
+    "maxTypesDelta": 169
+  },
+  "decode-unknown-effect": {
+    "maxInstantiationsDelta": 30,
+    "maxTypesDelta": 16
+  },
+  "encode-unknown-effect": {
+    "maxInstantiationsDelta": 30,
+    "maxTypesDelta": 16
+  },
+  "to-standard-json-schema": {
+    "maxInstantiationsDelta": 156,
+    "maxTypesDelta": 41
+  },
+  "exit": {
+    "maxInstantiationsDelta": 411,
+    "maxTypesDelta": 77
+  }
+}

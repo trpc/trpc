@@ -1,0 +1,12 @@
+"@effect/platform/HttpApiError#Forbidden":
+  replacement: "effect/http-api/HttpApiError#ForbiddenNoContent"
+  note: "Use ForbiddenNoContent to preserve the empty 403 wire schema; Forbidden now has a JSON-tagged body."
+"@effect/platform/HttpApiError#HttpApiDecodeError":
+  replacement: "effect/http-api/HttpApiError#HttpApiSchemaError"
+  note: "Validation now stores kind and a SchemaError cause and is a defect unless transformed by schema-error middleware."
+"@effect/platform/HttpApiError#Issue":
+  replacement: "effect/SchemaIssue#Issue"
+  note: "Structured failures now live at HttpApiSchemaError.cause.issue; format them explicitly when a flat external list is needed."
+"@effect/platform/HttpApiError#TypeId":
+  replacement: "effect/http-api/HttpApiError#HttpApiSchemaErrorTypeId"
+  note: "The old module symbol is gone; prefer HttpApiSchemaError.is for runtime narrowing."

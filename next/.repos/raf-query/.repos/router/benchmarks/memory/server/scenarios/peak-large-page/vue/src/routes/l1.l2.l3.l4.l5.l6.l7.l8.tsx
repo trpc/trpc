@@ -1,0 +1,34 @@
+import { defineComponent } from 'vue'
+import { createFileRoute } from '@tanstack/vue-router'
+import {
+  makeLargePageHead,
+  makeLargePageLevelData,
+} from '../../../large-page-data'
+
+const LevelEightComponent = defineComponent({
+  setup() {
+    const data = Route.useLoaderData()
+
+    return () => {
+      const first = data.value.records[0]!
+
+      return (
+        <section data-bench={data.value.marker}>
+          <h2>{data.value.marker}</h2>
+          <p>records: {data.value.records.length}</p>
+          <article>
+            <h3>{first.name}</h3>
+            <p>{first.id}</p>
+            <p>{first.description}</p>
+          </article>
+        </section>
+      )
+    }
+  },
+})
+
+export const Route = createFileRoute('/l1/l2/l3/l4/l5/l6/l7/l8')({
+  loader: () => makeLargePageLevelData(8, 0x5eed_1008),
+  head: ({ loaderData }) => makeLargePageHead(loaderData),
+  component: LevelEightComponent,
+})

@@ -1,0 +1,15 @@
+"@effect/vitest/utils#assertFailure":
+  replacement: "assertExitFailure"
+  note: "For v3 Exit values, rename to assertExitFailure. In v4, assertFailure instead asserts Result.Failure."
+"@effect/vitest/utils#assertLeft":
+  replacement: "assertFailure"
+  note: "Either became Result in v4: migrate Left to Result.Failure, then use assertFailure; narrowed payload access changes from .left to .failure."
+"@effect/vitest/utils#assertMatch":
+  replacement: "assertMatch"
+  note: "Unchanged positional helper and behavior; only the parameter spelling changed, so call sites need no change."
+"@effect/vitest/utils#assertRight":
+  replacement: "assertSuccess"
+  note: "Either became Result in v4: migrate Right to Result.Success, then use assertSuccess; narrowed payload access changes from .right to .success."
+"@effect/vitest/utils#assertSuccess":
+  replacement: "assertExitSuccess"
+  note: "For v3 Exit values, rename to assertExitSuccess. In v4, assertSuccess instead asserts Result.Success."

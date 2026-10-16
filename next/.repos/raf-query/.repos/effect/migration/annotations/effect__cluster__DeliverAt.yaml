@@ -1,0 +1,3 @@
+"@effect/cluster/DeliverAt#symbol":
+  replacement: "effect/cluster/DeliverAt#symbol"
+  note: "Moved into core Effect; the protocol key is now the string literal ~effect/cluster/DeliverAt rather than a global symbol."

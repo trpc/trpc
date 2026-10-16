@@ -1,0 +1,36 @@
+effect/TSubscriptionRef#TSubscriptionRef:
+  replacement: "TxSubscriptionRef.TxSubscriptionRef"
+  note: "Rename the type; it no longer extends TxRef. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TSubscriptionRef#TSubscriptionRef.Variance:
+  replacement: "none"
+  note: "TxSubscriptionRef exposes no public variance marker."
+effect/TSubscriptionRef#TSubscriptionRefTypeId:
+  replacement: "TxSubscriptionRef.isTxSubscriptionRef"
+  note: "The type id is internal in v4; use the public runtime guard."
+effect/TSubscriptionRef#changes:
+  replacement: "none"
+  note: "The old unscoped transactional subscription was removed; use scoped TxSubscriptionRef.changes."
+effect/TSubscriptionRef#changesScoped:
+  replacement: "TxSubscriptionRef.changes"
+  note: "The scoped changes operation lost its Scoped suffix and returns a scoped TxQueue."
+effect/TSubscriptionRef#get:
+  replacement: "TxSubscriptionRef.get"
+  note: "Import TxSubscriptionRef from \"effect/TxSubscriptionRef\"; the operation keeps its name. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TSubscriptionRef#getAndUpdateSome:
+  replacement: "TxSubscriptionRef.modify"
+  note: "Use one atomic modify so successful updates are still published; retain the old value for None."
+effect/TSubscriptionRef#make:
+  replacement: "TxSubscriptionRef.make"
+  note: "Import TxSubscriptionRef from \"effect/TxSubscriptionRef\"; the operation keeps its name. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TSubscriptionRef#modifySome:
+  replacement: "TxSubscriptionRef.modify"
+  note: "Use one atomic modify so successful updates are still published; use the fallback result for None."
+effect/TSubscriptionRef#setAndGet:
+  replacement: "TxSubscriptionRef.modify"
+  note: "Use one atomic modify that publishes and returns the newly stored value."
+effect/TSubscriptionRef#updateSome:
+  replacement: "TxSubscriptionRef.modify"
+  note: "Use one atomic modify so updates are published, retaining the old value for None."
+effect/TSubscriptionRef#updateSomeAndGet:
+  replacement: "TxSubscriptionRef.modify"
+  note: "Use one atomic modify that publishes and returns the resulting value, retaining the old value for None."

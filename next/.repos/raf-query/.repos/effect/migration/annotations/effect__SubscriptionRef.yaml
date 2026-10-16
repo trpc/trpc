@@ -1,0 +1,15 @@
+effect/SubscriptionRef#SubscriptionRef:
+  replacement: "SubscriptionRef.SubscriptionRef"
+  note: "The model remains but no longer extends SynchronizedRef or Subscribable; use SubscriptionRef.get and SubscriptionRef.changes explicitly."
+effect/SubscriptionRef#SubscriptionRef.Variance:
+  replacement: "SubscriptionRef.SubscriptionRef.Variance"
+  note: "The marker remains under SubscriptionRef.SubscriptionRef, but its brand uses an internal type id."
+effect/SubscriptionRef#SubscriptionRefTypeId:
+  replacement: "SubscriptionRef.isSubscriptionRef"
+  note: "The type id is internal in v4; use the public runtime guard instead."
+effect/SubscriptionRef#SubscriptionRefUnify:
+  replacement: "none"
+  note: "SubscriptionRef is no longer an Effect subtype, so its unification helper was removed; call SubscriptionRef.get explicitly."
+effect/SubscriptionRef#SubscriptionRefUnifyIgnore:
+  replacement: "none"
+  note: "SubscriptionRef is no longer a SynchronizedRef or Effect subtype, so its unification ignore marker was removed."

@@ -1,0 +1,27 @@
+"@effect/experimental/EventLog#group":
+  replacement: effect/eventlog/EventLog#group
+  note: Import group from the v4 EventLog module; it now requires the shared Registry service.
+"@effect/experimental/EventLog#Handlers":
+  replacement: effect/eventlog/EventLog#Handlers
+  note: Import Handlers from the v4 EventLog module; handlers now also receive storeId.
+"@effect/experimental/EventLog#Handlers.Error":
+  replacement: effect/eventlog/EventLog#Handlers.Error
+  note: Import the retained Handlers.Error type from the v4 EventLog module.
+"@effect/experimental/EventLog#Handlers.ValidateReturn":
+  replacement: effect/eventlog/EventLog#Handlers.ValidateReturn
+  note: Import the retained Handlers.ValidateReturn type from the v4 EventLog module.
+"@effect/experimental/EventLog#HandlersTypeId":
+  replacement: effect/eventlog/EventLog#HandlersTypeId
+  note: Import HandlersTypeId from the v4 EventLog module.
+"@effect/experimental/EventLog#layer":
+  replacement: effect/eventlog/EventLog#layer
+  note: The v4 layer takes both the schema and handler layer; use layerEventLog for runtime only.
+"@effect/experimental/EventLog#layerIdentityKvs":
+  replacement: none
+  note: Compose KeyValueStore.toSchemaStore, EventLog.IdentitySchema, EventLog.makeIdentity, and Layer.effect manually.
+"@effect/experimental/EventLog#schema":
+  replacement: effect/eventlog/EventLog#schema
+  note: Import schema from the v4 EventLog module.
+"@effect/experimental/EventLog#SchemaTypeId":
+  replacement: effect/eventlog/EventLog#SchemaTypeId
+  note: Import SchemaTypeId from the v4 EventLog module.

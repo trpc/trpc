@@ -1,0 +1,17 @@
+{
+	"$schema": "./node_modules/oxfmt/configuration_schema.json",
+	"useTabs": true,
+	"printWidth": 80,
+	"sortPackageJson": false,
+	"embeddedLanguageFormatting": "auto",
+	"ignorePatterns": [
+		".husky/**",
+		"coverage/**",
+		"**/dist/**",
+		"pnpm-lock.yaml",
+		".repos/**",
+		"**/routeTree.gen.ts",
+		"**/.next/**",
+		"**/.tanstack/**"
+	]
+}

@@ -1,0 +1,30 @@
+effect/Deferred#await:
+  replacement: "Deferred.await"
+  note: "The function remains; call it explicitly because Deferred is no longer an Effect subtype in v4."
+effect/Deferred#Deferred:
+  replacement: "Deferred.Deferred"
+  note: "The model remains but is now Pipeable rather than an Effect subtype; replace yielding the Deferred itself with Deferred.await."
+effect/Deferred#Deferred.Variance:
+  replacement: "Deferred.Deferred.Variance"
+  note: "The marker remains under Deferred.Deferred, but its brand uses an internal type id; ordinary code should use Deferred.Deferred directly."
+effect/Deferred#DeferredTypeId:
+  replacement: "none"
+  note: "The Deferred type id is internal in v4; do not inspect or construct the brand directly."
+effect/Deferred#DeferredUnify:
+  replacement: "none"
+  note: "Deferred is no longer an Effect subtype, so its Effect unification helper was removed; call Deferred.await explicitly."
+effect/Deferred#DeferredUnifyIgnore:
+  replacement: "none"
+  note: "Deferred is no longer an Effect subtype, so its Effect unification ignore marker was removed."
+effect/Deferred#makeAs:
+  replacement: "Deferred.makeUnsafe"
+  note: "Use the synchronous v4 constructor; it no longer accepts or records a FiberId."
+effect/Deferred#poll:
+  replacement: "Deferred.poll"
+  note: "The function remains and returns an Option containing the stored completion Effect."
+effect/Deferred#unsafeDone:
+  replacement: "Deferred.doneUnsafe"
+  note: "The unsafe suffix moved to the end; the v4 function returns whether this call completed the Deferred."
+effect/Deferred#unsafeMake:
+  replacement: "Deferred.makeUnsafe"
+  note: "The unsafe suffix moved to the end, and the v4 constructor takes no FiberId argument."

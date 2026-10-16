@@ -1,0 +1,19 @@
+{
+	"name": "@tooling/pr-title",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Validates pull request titles against conventional commits for release-it",
+	"type": "module",
+	"sideEffects": false,
+	"scripts": {
+		"check": "node src/cli.ts",
+		"test": "vp test",
+		"typecheck": "tsc"
+	},
+	"devDependencies": {
+		"@effect/vitest": "catalog:",
+		"@types/node": "26.6.4",
+		"typescript": "7.0.2",
+		"vite-plus": "1.0.0"
+	}
+}

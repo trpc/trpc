@@ -1,0 +1,444 @@
+"effect/SchemaAST#Annotated":
+  replacement: "SchemaAST.AST"
+  note: "The public base type was removed. Use the AST union; every variant still exposes annotations, checks, encoding, and context."
+"effect/SchemaAST#annotations":
+  replacement: "SchemaAST.annotate"
+  note: "Use the v4 annotation helper and string-keyed Schema.Annotations."
+"effect/SchemaAST#anyKeyword":
+  replacement: "SchemaAST.any"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#AnyKeyword":
+  replacement: "SchemaAST.Any"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#ArbitraryAnnotationId":
+  replacement: "Schema.Annotations.ToArbitrary"
+  note: "Symbol annotation IDs were removed. Declarations use the toCodecArbitrary annotation; filters use arbitraryConstraint."
+"effect/SchemaAST#AST":
+  replacement: "SchemaAST.AST"
+  note: "The name remains, but its constructor and fields changed in the v4 Base/check/context/encoding model."
+"effect/SchemaAST#BatchingAnnotation":
+  replacement: "none"
+  note: "Per-schema batching annotations were removed. They have no direct replacement. ParseOptions.concurrency controls product child parsing only; configure request batching separately."
+"effect/SchemaAST#BatchingAnnotationId":
+  replacement: "none"
+  note: "Symbol annotation IDs were removed and batching is no longer a schema annotation."
+"effect/SchemaAST#bigIntKeyword":
+  replacement: "SchemaAST.bigInt"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#BigIntKeyword":
+  replacement: "SchemaAST.BigInt"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#booleanKeyword":
+  replacement: "SchemaAST.boolean"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#BooleanKeyword":
+  replacement: "SchemaAST.Boolean"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#BrandAnnotation":
+  replacement: "none"
+  note: "Runtime brand annotations were removed. Schema.brand adds a TypeScript-only nominal distinction and does not store brand metadata in the AST."
+"effect/SchemaAST#BrandAnnotationId":
+  replacement: "Schema.brand"
+  note: "Use Schema.brand for a TypeScript-only nominal distinction. V4 does not store brand metadata in the AST."
+"effect/SchemaAST#Compiler":
+  replacement: "none"
+  note: "The generic AST compiler abstraction was removed; traverse the discriminated SchemaAST.AST union directly or use a higher-level Schema derivation API."
+"effect/SchemaAST#pick":
+  replacement: "none"
+  note: "The low-level AST picker was removed. Keep field selection at the Schema.Struct level with mapFields and Struct.pick, or discriminate and rebuild custom AST nodes explicitly."
+"effect/SchemaAST#composeTransformation":
+  replacement: "SchemaAST.Encoding"
+  note: "V4 transformations are SchemaAST.Link values in an encoding chain; compose by adding links with SchemaAST.decodeTo."
+"effect/SchemaAST#ComposeTransformation":
+  replacement: "SchemaAST.Encoding"
+  note: "The marker transformation was replaced by explicit SchemaAST.Link encoding chains."
+"effect/SchemaAST#ConcurrencyAnnotation":
+  replacement: "SchemaAST.ParseOptions"
+  note: "Per-schema concurrency annotations were removed. Pass concurrency in runtime ParseOptions when creating or calling a decoder, encoder, or constructor. It applies independently to each tuple, array, struct, record, or struct-with-rest node and does not make Union candidates concurrent."
+"effect/SchemaAST#ConcurrencyAnnotationId":
+  replacement: "SchemaAST.ParseOptions"
+  note: "The annotation ID was removed. Pass concurrency in runtime ParseOptions; product parsing follows Effect.forEach concurrency semantics while Union candidates remain sequential."
+"effect/SchemaAST#Declaration":
+  replacement: "SchemaAST.Declaration"
+  note: "The name remains, but its constructor and fields changed in the v4 Base/check/context/encoding model."
+"effect/SchemaAST#DecodingFallbackAnnotation":
+  replacement: "Schema.catchDecoding"
+  note: "Fallbacks are now encoding middleware added with Schema.catchDecoding."
+"effect/SchemaAST#DecodingFallbackAnnotationId":
+  replacement: "Schema.catchDecoding"
+  note: "The symbol annotation was removed; attach decoding recovery with Schema.catchDecoding."
+"effect/SchemaAST#DefaultAnnotation":
+  replacement: "Schema.Annotations.Documentation[\"default\"]"
+  note: "Defaults are string-keyed schema annotations in v4."
+"effect/SchemaAST#DefaultAnnotationId":
+  replacement: "Schema.Annotations.Documentation[\"default\"]"
+  note: "Symbol annotation IDs were removed; use the default key."
+"effect/SchemaAST#defaultParseOption":
+  replacement: "SchemaAST.defaultParseOptions"
+  note: "The default parse options constant was pluralized."
+"effect/SchemaAST#DescriptionAnnotation":
+  replacement: "Schema.Annotations.Augment[\"description\"]"
+  note: "Descriptions are string-keyed schema annotations in v4."
+"effect/SchemaAST#DescriptionAnnotationId":
+  replacement: "Schema.Annotations.Augment[\"description\"]"
+  note: "Symbol annotation IDs were removed; use the description key."
+"effect/SchemaAST#DocumentationAnnotation":
+  replacement: "Schema.Annotations.Augment[\"documentation\"]"
+  note: "Documentation is a string-keyed schema annotation in v4."
+"effect/SchemaAST#DocumentationAnnotationId":
+  replacement: "Schema.Annotations.Augment[\"documentation\"]"
+  note: "Symbol annotation IDs were removed; use the documentation key."
+"effect/SchemaAST#encodedAST":
+  replacement: "SchemaAST.toEncoded"
+  note: "The encoded projection helper was renamed."
+"effect/SchemaAST#encodedBoundAST":
+  replacement: "SchemaAST.toEncoded"
+  note: "The separate encoded-bound projection was removed; use the encoded projection and v4 encoding links."
+"effect/SchemaAST#Enums":
+  replacement: "SchemaAST.Enum"
+  note: "Renamed to Enum in the v4 AST model. Numeric enum members must be finite; NaN and positive or negative Infinity throw at construction."
+"effect/SchemaAST#EquivalenceAnnotation":
+  replacement: "Schema.Annotations.ToEquivalence.Declaration"
+  note: "Equivalence derivation annotations now use the toEquivalence key in Schema.Annotations."
+"effect/SchemaAST#EquivalenceAnnotationId":
+  replacement: "Schema.overrideToEquivalence"
+  note: "The symbol annotation was removed; attach custom equivalence derivation with Schema.overrideToEquivalence."
+"effect/SchemaAST#ExamplesAnnotation":
+  replacement: "Schema.Annotations.Documentation[\"examples\"]"
+  note: "Examples are string-keyed schema annotations in v4."
+"effect/SchemaAST#ExamplesAnnotationId":
+  replacement: "Schema.Annotations.Documentation[\"examples\"]"
+  note: "Symbol annotation IDs were removed; use the examples key."
+"effect/SchemaAST#FinalTransformation":
+  replacement: "SchemaTransformation.Transformation"
+  note: "Transformations moved to SchemaTransformation and are stored in SchemaAST.Link values."
+"effect/SchemaAST#getAnnotation":
+  replacement: "SchemaAST.resolveAt"
+  note: "Resolve string-keyed annotations with resolveAt, or use resolveIdentifier, resolveTitle, and resolveDescription."
+"effect/SchemaAST#getBatchingAnnotation":
+  replacement: "none"
+  note: "Batching annotations were removed. ParseOptions.concurrency controls product child parsing only; configure request batching separately."
+"effect/SchemaAST#getBrandAnnotation":
+  replacement: "none"
+  note: "Runtime brand inspection was removed because Schema.brand is type-only and does not store brand metadata in the AST."
+"effect/SchemaAST#getCompiler":
+  replacement: "none"
+  note: "The Match-based compiler was removed; traverse SchemaAST.AST directly or use the relevant Schema derivation API."
+"effect/SchemaAST#getConcurrencyAnnotation":
+  replacement: "SchemaAST.ParseOptions"
+  note: "Concurrency is no longer read from schema annotations. Pass it in runtime ParseOptions when creating or calling a parser. It applies to product children, not Union candidates."
+"effect/SchemaAST#getDecodingFallbackAnnotation":
+  replacement: "none"
+  note: "Fallbacks are encoding middleware in v4, not readable annotations; attach them with Schema.catchDecoding."
+"effect/SchemaAST#getDefaultAnnotation":
+  replacement: "SchemaAST.resolveAt(\"default\")"
+  note: "Resolve the string-keyed default annotation."
+"effect/SchemaAST#getDescriptionAnnotation":
+  replacement: "SchemaAST.resolveDescription"
+  note: "Use the dedicated resolved-description helper."
+"effect/SchemaAST#getDocumentationAnnotation":
+  replacement: "SchemaAST.resolveAt(\"documentation\")"
+  note: "Resolve the string-keyed documentation annotation."
+"effect/SchemaAST#getExamplesAnnotation":
+  replacement: "SchemaAST.resolveAt(\"examples\")"
+  note: "Resolve the string-keyed examples annotation."
+"effect/SchemaAST#getIdentifierAnnotation":
+  replacement: "SchemaAST.resolveIdentifier"
+  note: "Use the dedicated resolved-identifier helper."
+"effect/SchemaAST#getJSONIdentifier":
+  replacement: "SchemaAST.resolveIdentifier"
+  note: "JSON Schema references now use the normal resolved identifier."
+"effect/SchemaAST#getJSONIdentifierAnnotation":
+  replacement: "SchemaAST.resolveIdentifier"
+  note: "The separate JSON identifier annotation was removed; use identifier."
+"effect/SchemaAST#getJSONSchemaAnnotation":
+  replacement: "SchemaAST.resolveAt(\"toJsonSchema\")"
+  note: "JSON Schema generation hooks use the string-keyed toJsonSchema annotation on checks."
+"effect/SchemaAST#getMessageAnnotation":
+  replacement: "SchemaAST.resolveAt(\"message\")"
+  note: "Resolve the string-keyed message annotation."
+"effect/SchemaAST#getMissingMessageAnnotation":
+  replacement: "SchemaAST.resolveAt(\"messageMissingKey\")"
+  note: "Missing-key messages use the messageMissingKey key."
+"effect/SchemaAST#getParseIssueTitleAnnotation":
+  replacement: "none"
+  note: "Issue-title callbacks were removed; use message or expected annotations and SchemaIssue formatters."
+"effect/SchemaAST#getParseOptionsAnnotation":
+  replacement: "none"
+  note: "Parse options are no longer schema annotations. Pass options when creating or calling a decoder or encoder; there is no annotation-based override for nested schemas."
+"effect/SchemaAST#getPropertySignatures":
+  replacement: "SchemaAST.Objects.propertySignatures"
+  note: "Narrow to Objects and read propertySignatures directly."
+"effect/SchemaAST#getSchemaIdAnnotation":
+  replacement: "SchemaAST.resolveIdentifier"
+  note: "Schema IDs were consolidated into the identifier annotation."
+"effect/SchemaAST#getSurrogateAnnotation":
+  replacement: "SchemaAST.resolveAt(\"representation\")"
+  note: "Surrogate AST annotations were replaced by representation annotations and declaration codec hooks."
+"effect/SchemaAST#getTemplateLiteralCapturingRegExp":
+  replacement: "none"
+  note: "The low-level RegExp compiler was removed; use Schema.TemplateLiteral and schema parsing instead."
+"effect/SchemaAST#getTemplateLiteralRegExp":
+  replacement: "none"
+  note: "The low-level RegExp compiler was removed; use Schema.TemplateLiteral and schema parsing instead."
+"effect/SchemaAST#getTitleAnnotation":
+  replacement: "SchemaAST.resolveTitle"
+  note: "Use the dedicated resolved-title helper."
+"effect/SchemaAST#getTypeConstructorAnnotation":
+  replacement: "SchemaAST.resolveAt(\"toCodec\")"
+  note: "Type-constructor behavior moved to declaration codec annotations."
+"effect/SchemaAST#IdentifierAnnotation":
+  replacement: "Schema.Annotations.Bottom[\"identifier\"]"
+  note: "Identifiers are string-keyed schema annotations in v4."
+"effect/SchemaAST#IdentifierAnnotationId":
+  replacement: "Schema.Annotations.Bottom[\"identifier\"]"
+  note: "Symbol annotation IDs were removed; use the identifier key."
+"effect/SchemaAST#IndexSignature":
+  replacement: "SchemaAST.IndexSignature"
+  note: "The name remains, but its constructor and fields changed in the v4 Base/check/context/encoding model."
+"effect/SchemaAST#isAnyKeyword":
+  replacement: "SchemaAST.isAny"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#isBigIntKeyword":
+  replacement: "SchemaAST.isBigInt"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#isBooleanKeyword":
+  replacement: "SchemaAST.isBoolean"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#isComposeTransformation":
+  replacement: "none"
+  note: "Compose transformation markers were replaced by explicit SchemaAST.Link encoding chains."
+"effect/SchemaAST#isEnums":
+  replacement: "SchemaAST.isEnum"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#isFinalTransformation":
+  replacement: "SchemaTransformation.Transformation"
+  note: "Use SchemaTransformation guards or the transformation object stored on a SchemaAST.Link."
+"effect/SchemaAST#isNeverKeyword":
+  replacement: "SchemaAST.isNever"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#isNumberKeyword":
+  replacement: "SchemaAST.isNumber"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#isParameter":
+  replacement: "SchemaAST.isString"
+  note: "The Parameter union was removed; inspect the v4 key AST variants directly."
+"effect/SchemaAST#isRefinement":
+  replacement: "SchemaAST.Check"
+  note: "Refinement AST nodes became checks attached to Base.checks."
+"effect/SchemaAST#isStringKeyword":
+  replacement: "SchemaAST.isString"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#isSymbolKeyword":
+  replacement: "SchemaAST.isSymbol"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#isTransformation":
+  replacement: "SchemaAST.Encoding"
+  note: "Transformation AST nodes became encoding links attached to Base.encoding."
+"effect/SchemaAST#isTupleType":
+  replacement: "SchemaAST.isArrays"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#isTypeLiteral":
+  replacement: "SchemaAST.isObjects"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#isTypeLiteralTransformation":
+  replacement: "Schema.encodeKeys"
+  note: "Property-key transformations are represented by encoding links and normally built with Schema.encodeKeys."
+"effect/SchemaAST#isUndefinedKeyword":
+  replacement: "SchemaAST.isUndefined"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#isUnknownKeyword":
+  replacement: "SchemaAST.isUnknown"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#isVoidKeyword":
+  replacement: "SchemaAST.isVoid"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#JSONIdentifierAnnotationId":
+  replacement: "Schema.Annotations.Bottom[\"identifier\"]"
+  note: "The separate JSON identifier symbol was removed; use identifier."
+"effect/SchemaAST#JSONSchemaAnnotation":
+  replacement: "JsonSchema.JsonSchema"
+  note: "JSON Schema values use the v4 JsonSchema model; generation hooks use Schema representation annotations."
+"effect/SchemaAST#JSONSchemaAnnotationId":
+  replacement: "Schema.Annotations.Filter[\"toJsonSchema\"]"
+  note: "The symbol annotation was replaced by the toJsonSchema key on check annotations."
+"effect/SchemaAST#keyof":
+  replacement: "none"
+  note: "Low-level SchemaAST.keyof was removed; model the desired key literals explicitly."
+"effect/SchemaAST#Literal":
+  replacement: "SchemaAST.Literal"
+  note: "The name remains, but its constructor and fields changed in the v4 Base/check/context/encoding model."
+"effect/SchemaAST#LiteralValue":
+  replacement: "SchemaAST.LiteralValue"
+  note: "The name remains, but its constructor and fields changed in the v4 Base/check/context/encoding model."
+"effect/SchemaAST#Match":
+  replacement: "none"
+  note: "The Match compiler table was removed; traverse the discriminated SchemaAST.AST union directly."
+"effect/SchemaAST#Members":
+  replacement: "ReadonlyArray<SchemaAST.AST>"
+  note: "Union members are ordinary readonly arrays in v4."
+"effect/SchemaAST#MessageAnnotation":
+  replacement: "Schema.Annotations.Bottom[\"message\"]"
+  note: "Messages are string-keyed annotations and no longer receive the old ParseIssue callback shape."
+"effect/SchemaAST#MessageAnnotationId":
+  replacement: "Schema.Annotations.Bottom[\"message\"]"
+  note: "Symbol annotation IDs were removed; use the message key."
+"effect/SchemaAST#MissingMessageAnnotation":
+  replacement: "Schema.Annotations.Key[\"messageMissingKey\"]"
+  note: "Missing-key messages use the messageMissingKey key."
+"effect/SchemaAST#MissingMessageAnnotationId":
+  replacement: "Schema.Annotations.Key[\"messageMissingKey\"]"
+  note: "Symbol annotation IDs were removed; use messageMissingKey."
+"effect/SchemaAST#mutable":
+  replacement: "Schema.mutable"
+  note: "Apply mutability at the Schema level; AST property mutability is represented by Context."
+"effect/SchemaAST#neverKeyword":
+  replacement: "SchemaAST.never"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#NeverKeyword":
+  replacement: "SchemaAST.Never"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#null":
+  replacement: "SchemaAST.null"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#numberKeyword":
+  replacement: "SchemaAST.number"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#NumberKeyword":
+  replacement: "SchemaAST.Number"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#ObjectKeyword":
+  replacement: "SchemaAST.ObjectKeyword"
+  note: "The name remains, but its constructor and fields changed in the v4 Base/check/context/encoding model."
+"effect/SchemaAST#omit":
+  replacement: "Schema.mapFields + Struct.omit"
+  note: "Object projection moved to schema field transforms."
+"effect/SchemaAST#OptionalType":
+  replacement: "SchemaAST.Context"
+  note: "Element and property optionality moved into per-node Context."
+"effect/SchemaAST#Parameter":
+  replacement: "SchemaAST.AST"
+  note: "The dedicated index-parameter union was removed; v4 validates supported key AST variants when building an IndexSignature."
+"effect/SchemaAST#ParseIssueTitleAnnotation":
+  replacement: "none"
+  note: "Issue-title callbacks were removed; use message or expected annotations and SchemaIssue formatters."
+"effect/SchemaAST#ParseIssueTitleAnnotationId":
+  replacement: "none"
+  note: "The symbol annotation was removed; use message or expected annotations."
+"effect/SchemaAST#ParseJsonSchemaId":
+  replacement: "Schema.fromJsonString(Schema.Unknown)"
+  note: "Use the built-in JSON string codec instead of checking the old schema ID."
+"effect/SchemaAST#ParseOptions":
+  replacement: "SchemaAST.ParseOptions"
+  note: "Pass parsing options at runtime. onExcessProperty supports ignore or error, not preserve; model extra values with an explicit Record or StructWithRest. propertyOrder was removed. concurrency follows Effect.forEach semantics for tuple, array, struct, record, and struct-with-rest children, applies independently at each nested product, and does not make Union candidates concurrent. Output key order is unspecified, including in values passed to checks. Handle required presentation or serialization order explicitly outside the parser."
+"effect/SchemaAST#ParseOptionsAnnotationId":
+  replacement: "none"
+  note: "Parse options are no longer schema annotations. Pass options when creating or calling a decoder or encoder; there is no annotation-based override for nested schemas."
+"effect/SchemaAST#partial":
+  replacement: "Schema.mapFields + Struct.map(Schema.optional)"
+  note: "Partial object transforms moved to schema field transforms."
+"effect/SchemaAST#PrettyAnnotationId":
+  replacement: "Schema.overrideToFormatter"
+  note: "The symbol annotation was removed; attach custom formatters with Schema.overrideToFormatter."
+"effect/SchemaAST#PropertySignature":
+  replacement: "SchemaAST.PropertySignature"
+  note: "The name remains, but its constructor and fields changed in the v4 Base/check/context/encoding model."
+"effect/SchemaAST#PropertySignatureTransformation":
+  replacement: "Schema.encodeKeys"
+  note: "Property-key transformations are now encoding links, normally built with Schema.encodeKeys."
+"effect/SchemaAST#Refinement":
+  replacement: "SchemaAST.Check"
+  note: "Refinements became Filter or FilterGroup checks attached to an AST node."
+"effect/SchemaAST#required":
+  replacement: "Schema.mapFields + Struct.map(Schema.requiredKey)"
+  note: "Required object transforms moved to schema field transforms."
+"effect/SchemaAST#SchemaIdAnnotation":
+  replacement: "Schema.Annotations.Bottom[\"identifier\"]"
+  note: "Schema IDs were consolidated into identifier annotations."
+"effect/SchemaAST#SchemaIdAnnotationId":
+  replacement: "Schema.Annotations.Bottom[\"identifier\"]"
+  note: "Symbol annotation IDs were removed; use identifier."
+"effect/SchemaAST#stringKeyword":
+  replacement: "SchemaAST.string"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#StringKeyword":
+  replacement: "SchemaAST.String"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#SurrogateAnnotation":
+  replacement: "SchemaRepresentation.RepresentationAnnotation"
+  note: "Surrogate AST metadata was replaced by schema representation annotations and declaration codec hooks."
+"effect/SchemaAST#SurrogateAnnotationId":
+  replacement: "Schema.Annotations.Declaration[\"representation\"]"
+  note: "The symbol annotation was replaced by the representation key."
+"effect/SchemaAST#Suspend":
+  replacement: "SchemaAST.Suspend"
+  note: "The name remains, but its constructor and fields changed in the v4 Base/check/context/encoding model."
+"effect/SchemaAST#symbolKeyword":
+  replacement: "SchemaAST.symbol"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#SymbolKeyword":
+  replacement: "SchemaAST.Symbol"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#TemplateLiteral":
+  replacement: "SchemaAST.TemplateLiteral"
+  note: "The name remains, but its constructor and fields changed in the v4 Base/check/context/encoding model. Parts must not contain encodings, including inside unions or nested templates; use Schema.TemplateLiteralParser for transformed parts."
+"effect/SchemaAST#TemplateLiteralSpan":
+  replacement: "SchemaAST.TemplateLiteral"
+  note: "Template literal parts are represented directly as AST values in v4."
+"effect/SchemaAST#TitleAnnotation":
+  replacement: "Schema.Annotations.Augment[\"title\"]"
+  note: "Titles are string-keyed schema annotations in v4."
+"effect/SchemaAST#TitleAnnotationId":
+  replacement: "Schema.Annotations.Augment[\"title\"]"
+  note: "Symbol annotation IDs were removed; use title."
+"effect/SchemaAST#Transformation":
+  replacement: "SchemaAST.Link"
+  note: "Transformations are links in the Base.encoding chain in v4."
+"effect/SchemaAST#TransformationKind":
+  replacement: "SchemaTransformation.Transformation"
+  note: "Transformation implementations moved to SchemaTransformation and are stored on SchemaAST.Link."
+"effect/SchemaAST#TupleType":
+  replacement: "SchemaAST.Arrays"
+  note: "Use Arrays(isMutable, elements, rest, annotations?, checks?, encoding?, context?, encodingChecks?)."
+"effect/SchemaAST#Type":
+  replacement: "SchemaAST.AST"
+  note: "The tuple-element Type wrapper was removed; optionality and mutability moved to Context."
+"effect/SchemaAST#typeAST":
+  replacement: "SchemaAST.toType"
+  note: "The type-side projection helper was renamed."
+"effect/SchemaAST#TypeConstructorAnnotation":
+  replacement: "Schema.Annotations.Declaration[\"toCodec\"]"
+  note: "Type-constructor behavior moved to declaration codec annotations."
+"effect/SchemaAST#TypeConstructorAnnotationId":
+  replacement: "Schema.Annotations.Declaration[\"toCodec\"]"
+  note: "Symbol annotation IDs were removed; use declaration codec annotation keys."
+"effect/SchemaAST#TypeLiteral":
+  replacement: "SchemaAST.Objects"
+  note: "Use Objects(propertySignatures, indexSignatures, annotations?, checks?, encoding?, context?, encodingChecks?). Output key order is unspecified."
+"effect/SchemaAST#TypeLiteralTransformation":
+  replacement: "SchemaAST.Encoding"
+  note: "Object transformations are encoding links; use Schema.encodeKeys for key mappings."
+"effect/SchemaAST#undefinedKeyword":
+  replacement: "SchemaAST.undefined"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#UndefinedKeyword":
+  replacement: "SchemaAST.Undefined"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#Union":
+  replacement: "SchemaAST.Union"
+  note: "Pass member ASTs and an optional options object: new SchemaAST.Union(types, { mode: 'oneOf' }). Read options?.mode ?? 'anyOf' instead of a direct mode field."
+"effect/SchemaAST#UniqueSymbol":
+  replacement: "SchemaAST.UniqueSymbol"
+  note: "The name remains, but its constructor and fields changed in the v4 Base/check/context/encoding model."
+"effect/SchemaAST#unknownKeyword":
+  replacement: "SchemaAST.unknown"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#UnknownKeyword":
+  replacement: "SchemaAST.Unknown"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#voidKeyword":
+  replacement: "SchemaAST.void"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."
+"effect/SchemaAST#VoidKeyword":
+  replacement: "SchemaAST.Void"
+  note: "The v4 SchemaAST redesign renamed this primitive, collection, or guard while preserving its role."

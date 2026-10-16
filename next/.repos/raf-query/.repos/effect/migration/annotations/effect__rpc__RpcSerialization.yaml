@@ -1,0 +1,15 @@
+"@effect/rpc/RpcSerialization#RpcSerializationError":
+  replacement: "effect/rpc/RpcSerialization#MaxBufferSizeExceeded"
+  note: "Buffer-limit failures now use MaxBufferSizeExceeded. MessagePack-specific decode errors have no counterpart."
+"@effect/rpc/RpcSerialization#layerMsgPack":
+  replacement: "effect/rpc/RpcSerialization#layerSchemaBinary"
+  note: "MessagePack RPC serialization was removed. Use SchemaBinary, or layerNdjson when you need newline-delimited JSON framing."
+"@effect/rpc/RpcSerialization#layerMsgPackWith":
+  replacement: "effect/rpc/RpcSerialization#layerSchemaBinary"
+  note: "MessagePack RPC serialization was removed. Pass maxFrameSize to layerSchemaBinary; NDJSON buffer limits remain on layerNdjsonWith."
+"@effect/rpc/RpcSerialization#makeMsgPack":
+  replacement: "effect/rpc/RpcSerialization#layerSchemaBinary"
+  note: "MessagePack RPC serialization was removed. Construct SchemaBinary serialization with layerSchemaBinary."
+"@effect/rpc/RpcSerialization#msgPack":
+  replacement: "effect/rpc/RpcSerialization#layerSchemaBinary"
+  note: "The MessagePack RpcSerialization service value was removed. Provide layerSchemaBinary instead."

@@ -1,0 +1,3 @@
+"@effect/sql-sqlite-do/SqliteClient#SqliteClientConfig":
+  replacement: "@effect/sql-sqlite-do/SqliteClient#SqliteClientConfig"
+  note: "Retained; db is optional and storage may be supplied, but one of db or storage is required at runtime."

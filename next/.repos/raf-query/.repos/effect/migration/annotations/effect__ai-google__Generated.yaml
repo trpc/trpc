@@ -1,0 +1,3 @@
+"@effect/ai-google/Generated":
+  replacement: none
+  note: The @effect/ai-google package was removed from v4, so this generated Google API schema has no Effect v4 replacement. Use Google's current SDK/API types directly or route supported Gemini models through another v4 provider integration.

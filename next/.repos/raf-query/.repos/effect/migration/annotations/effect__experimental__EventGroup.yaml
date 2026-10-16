@@ -1,0 +1,15 @@
+"@effect/experimental/EventGroup#EventGroup.Any":
+  replacement: effect/eventlog/EventGroup#Any
+  note: This type moved from the EventGroup namespace to a top-level export.
+"@effect/experimental/EventGroup#EventGroup.AnyWithProps":
+  replacement: effect/eventlog/EventGroup#AnyWithProps
+  note: This type moved from the EventGroup namespace to a top-level export.
+"@effect/experimental/EventGroup#EventGroup.Context":
+  replacement: effect/eventlog/EventGroup#ServicesClient | effect/eventlog/EventGroup#ServicesServer
+  note: Choose the client or server schema services for the required direction.
+"@effect/experimental/EventGroup#EventGroup.ToService":
+  replacement: effect/eventlog/EventGroup#ToService
+  note: This type moved from the EventGroup namespace to a top-level export.
+"@effect/experimental/EventGroup#TypeId":
+  replacement: effect/eventlog/EventGroup#TypeId
+  note: Import TypeId from the v4 unstable EventGroup module; its runtime representation is now a string brand.

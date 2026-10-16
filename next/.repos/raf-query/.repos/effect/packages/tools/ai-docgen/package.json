@@ -1,0 +1,57 @@
+{
+  "name": "@effect/ai-docgen",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "description": "Generates docs for the clankers",
+  "homepage": "https://effect.website",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Effect-TS/effect.git",
+    "directory": "packages/tools/ai-docgen"
+  },
+  "sideEffects": [],
+  "bin": {
+    "effect-ai-docgen": "./src/main.ts"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    "./*": "./src/*.ts",
+    "./bin": null,
+    "./main": null
+  },
+  "files": [
+    "src/**/*.ts",
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "dist/**/*.d.ts",
+    "dist/**/*.d.ts.map"
+  ],
+  "publishConfig": {
+    "provenance": true,
+    "bin": {
+      "effect-ai-codegen": "./dist/bin.js"
+    },
+    "exports": {
+      "./package.json": "./package.json",
+      "./*": "./dist/*.js",
+      "./bin": null,
+      "./main": null
+    }
+  },
+  "scripts": {
+    "build": "tsc -b tsconfig.json && pnpm babel",
+    "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+    "check": "tsc -b tsconfig.json"
+  },
+  "dependencies": {
+    "@effect/platform-node": "workspace:^",
+    "effect": "workspace:^",
+    "glob": "^13.0.6",
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3"
+  }
+}

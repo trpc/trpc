@@ -1,0 +1,78 @@
+"@effect/cli/HelpDoc#blocks":
+  replacement: "none"
+  note: "The v3 document-node ADT was removed; v4 uses a structured HelpDoc record rendered by CliOutput."
+"@effect/cli/HelpDoc#descriptionList":
+  replacement: "none"
+  note: "The v3 document-node ADT was removed; v4 uses a structured HelpDoc record rendered by CliOutput."
+"@effect/cli/HelpDoc#DescriptionList":
+  replacement: "none"
+  note: "The v3 document-node ADT was removed; v4 uses a structured HelpDoc record rendered by CliOutput."
+"@effect/cli/HelpDoc#empty":
+  replacement: "none"
+  note: "The v3 document-node ADT was removed; v4 uses a structured HelpDoc record rendered by CliOutput."
+"@effect/cli/HelpDoc#Empty":
+  replacement: "none"
+  note: "The v3 document-node ADT was removed; v4 uses a structured HelpDoc record rendered by CliOutput."
+"@effect/cli/HelpDoc#enumeration":
+  replacement: "none"
+  note: "The v3 document-node ADT was removed; v4 uses a structured HelpDoc record rendered by CliOutput."
+"@effect/cli/HelpDoc#Enumeration":
+  replacement: "none"
+  note: "The v3 document-node ADT was removed; v4 uses a structured HelpDoc record rendered by CliOutput."
+"@effect/cli/HelpDoc#getSpan":
+  replacement: "none"
+  note: "The Span ADT and document-to-span conversion were removed; v4 help fields are strings."
+"@effect/cli/HelpDoc#h1":
+  replacement: "none"
+  note: "The v3 document-node ADT was removed; v4 uses a structured HelpDoc record rendered by CliOutput."
+"@effect/cli/HelpDoc#h2":
+  replacement: "none"
+  note: "The v3 document-node ADT was removed; v4 uses a structured HelpDoc record rendered by CliOutput."
+"@effect/cli/HelpDoc#h3":
+  replacement: "none"
+  note: "The v3 document-node ADT was removed; v4 uses a structured HelpDoc record rendered by CliOutput."
+"@effect/cli/HelpDoc#Header":
+  replacement: "none"
+  note: "The v3 document-node ADT was removed; v4 uses a structured HelpDoc record rendered by CliOutput."
+"@effect/cli/HelpDoc#HelpDoc":
+  replacement: "HelpDoc.HelpDoc"
+  note: "The name remains, but v4 is a structured command-help record rather than a tagged document AST."
+"@effect/cli/HelpDoc#isDescriptionList":
+  replacement: "none"
+  note: "The v3 document-node ADT was removed; v4 uses a structured HelpDoc record rendered by CliOutput."
+"@effect/cli/HelpDoc#isEnumeration":
+  replacement: "none"
+  note: "The v3 document-node ADT was removed; v4 uses a structured HelpDoc record rendered by CliOutput."
+"@effect/cli/HelpDoc#isHeader":
+  replacement: "none"
+  note: "The v3 document-node ADT was removed; v4 uses a structured HelpDoc record rendered by CliOutput."
+"@effect/cli/HelpDoc#isParagraph":
+  replacement: "none"
+  note: "The v3 document-node ADT was removed; v4 uses a structured HelpDoc record rendered by CliOutput."
+"@effect/cli/HelpDoc#isSequence":
+  replacement: "none"
+  note: "The v3 document-node ADT was removed; v4 uses a structured HelpDoc record rendered by CliOutput."
+"@effect/cli/HelpDoc#mapDescriptionList":
+  replacement: "none"
+  note: "The v3 document-node ADT was removed; v4 uses a structured HelpDoc record rendered by CliOutput."
+"@effect/cli/HelpDoc#orElse":
+  replacement: "none"
+  note: "The v3 document-node ADT was removed; v4 uses a structured HelpDoc record rendered by CliOutput."
+"@effect/cli/HelpDoc#p":
+  replacement: "none"
+  note: "The v3 document-node ADT was removed; v4 uses a structured HelpDoc record rendered by CliOutput."
+"@effect/cli/HelpDoc#Paragraph":
+  replacement: "none"
+  note: "The v3 document-node ADT was removed; v4 uses a structured HelpDoc record rendered by CliOutput."
+"@effect/cli/HelpDoc#Sequence":
+  replacement: "none"
+  note: "The v3 document-node ADT was removed; v4 uses a structured HelpDoc record rendered by CliOutput."
+"@effect/cli/HelpDoc#toAnsiDoc":
+  replacement: "none"
+  note: "CliOutput owns rendering and exposes formatted text rather than an AnsiDoc."
+"@effect/cli/HelpDoc#toAnsiText":
+  replacement: "CliOutput.defaultFormatter().formatHelpDoc"
+  note: "Format the structured help record; inside Effect code prefer the CliOutput.Formatter service."
+"@effect/cli/HelpDoc#isEmpty":
+  replacement: "none"
+  note: "The Empty variant was removed when HelpDoc became a structured record; inspect the relevant flags, args, subcommands, and examples arrays when an application-specific emptiness test is needed."

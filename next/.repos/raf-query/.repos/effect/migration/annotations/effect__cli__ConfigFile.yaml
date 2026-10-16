@@ -1,0 +1,12 @@
+"@effect/cli/ConfigFile#ConfigErrorTypeId":
+  replacement: "none"
+  note: "ConfigProvider.SourceError has no public type-id export."
+"@effect/cli/ConfigFile#ConfigFileError":
+  replacement: "ConfigProvider.SourceError"
+  note: "Use the general source error when implementing a custom file-backed provider."
+"@effect/cli/ConfigFile#layer":
+  replacement: "ConfigProvider.layerAdd(customProviderEffect)"
+  note: "Build the provider explicitly and add it as fallback to preserve the v3 composition order."
+"@effect/cli/ConfigFile#makeProvider":
+  replacement: "none"
+  note: "V4 has no API that discovers, parses, and composes config files; use FileSystem, a format parser, and ConfigProvider.fromUnknown explicitly."

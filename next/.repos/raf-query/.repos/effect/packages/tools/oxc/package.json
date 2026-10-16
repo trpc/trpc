@@ -1,0 +1,69 @@
+{
+  "name": "@effect/oxc",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "description": "Opinionated linting and formatting configuration for Effect",
+  "homepage": "https://effect.website",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Effect-TS/effect.git",
+    "directory": "packages/tools/oxc"
+  },
+  "sideEffects": [],
+  "bugs": {
+    "url": "https://github.com/Effect-TS/effect/issues"
+  },
+  "tags": [
+    "typescript",
+    "formatting",
+    "linting",
+    "oxc"
+  ],
+  "keywords": [
+    "typescript",
+    "formatting",
+    "linting",
+    "oxc"
+  ],
+  "exports": {
+    "./package.json": "./package.json",
+    "./oxlint": "./src/oxlint/index.ts",
+    "./oxlint/rules/*": "./src/oxlint/rules/*.ts",
+    "./oxlintrc.json": "./oxlintrc.json"
+  },
+  "files": [
+    "oxlintrc.json",
+    "src/**/*.ts",
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "dist/**/*.d.ts",
+    "dist/**/*.d.ts.map"
+  ],
+  "publishConfig": {
+    "provenance": true,
+    "exports": {
+      "./package.json": "./package.json",
+      "./oxlint": "./dist/oxlint/index.js",
+      "./oxlint/rules/*": "./dist/oxlint/rules/*.js",
+      "./oxlintrc.json": "./oxlintrc.json"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b tsconfig.json && pnpm babel",
+    "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+    "check": "tsc -b tsconfig.json"
+  },
+  "dependencies": {
+    "@oxlint/plugins": "^1.85.0"
+  },
+  "peerDependencies": {
+    "typescript": ">=5.0.0 <7.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.2"
+  }
+}

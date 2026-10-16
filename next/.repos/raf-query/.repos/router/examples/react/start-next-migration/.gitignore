@@ -1,0 +1,13 @@
+node_modules
+.next
+.output
+.nitro
+.tanstack
+test-results
+playwright-report
+.env
+.env.local
+*.tsbuildinfo
+next-env.d.ts
+next-app/AGENTS.md
+next-app/CLAUDE.md

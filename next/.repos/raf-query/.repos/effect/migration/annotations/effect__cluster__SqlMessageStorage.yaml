@@ -1,0 +1,9 @@
+"@effect/cluster/SqlMessageStorage#layer":
+  replacement: "effect/cluster/SqlMessageStorage#layer"
+  note: "Moved into core Effect. V4 adds a Crypto.Crypto requirement for hashing long deduplication keys."
+"@effect/cluster/SqlMessageStorage#layerWith":
+  replacement: "effect/cluster/SqlMessageStorage#layerWith"
+  note: "Moved into core Effect with the same optional table prefix; v4 additionally requires Crypto.Crypto."
+"@effect/cluster/SqlMessageStorage#make":
+  replacement: "effect/cluster/SqlMessageStorage#make"
+  note: "Moved into core Effect with the same prefix option; v4 additionally requires Crypto.Crypto."

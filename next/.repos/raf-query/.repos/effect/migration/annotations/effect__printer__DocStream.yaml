@@ -1,0 +1,3 @@
+"@effect/printer/DocStream":
+  replacement: none
+  note: The @effect/printer package and its laid-out DocStream intermediate representation were removed in v4. Use a target-specific renderer or another pretty-printing library.

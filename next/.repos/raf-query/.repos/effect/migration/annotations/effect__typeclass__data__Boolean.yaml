@@ -1,0 +1,24 @@
+"@effect/typeclass/data/Boolean#MonoidEqv":
+  replacement: "Reducer.make(Boolean.eqv, true)"
+  note: "Rebuild the removed instance with the v4 boolean operation and its identity."
+"@effect/typeclass/data/Boolean#MonoidEvery":
+  replacement: "Boolean.ReducerAnd"
+  note: "Renamed and moved to the concrete v4 Boolean module."
+"@effect/typeclass/data/Boolean#MonoidSome":
+  replacement: "Boolean.ReducerOr"
+  note: "Renamed and moved to the concrete v4 Boolean module."
+"@effect/typeclass/data/Boolean#MonoidXor":
+  replacement: "Reducer.make(Boolean.xor, false)"
+  note: "Rebuild the removed instance with the v4 boolean operation and its identity."
+"@effect/typeclass/data/Boolean#SemigroupEqv":
+  replacement: "Combiner.make(Boolean.eqv)"
+  note: "Rebuild the removed instance as a v4 Combiner."
+"@effect/typeclass/data/Boolean#SemigroupEvery":
+  replacement: "Boolean.ReducerAnd"
+  note: "The v4 Reducer is also a Combiner and preserves logical-AND combine semantics."
+"@effect/typeclass/data/Boolean#SemigroupSome":
+  replacement: "Boolean.ReducerOr"
+  note: "The v4 Reducer is also a Combiner and preserves logical-OR combine semantics."
+"@effect/typeclass/data/Boolean#SemigroupXor":
+  replacement: "Combiner.make(Boolean.xor)"
+  note: "Rebuild the removed instance as a v4 Combiner."

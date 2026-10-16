@@ -1,0 +1,87 @@
+effect/TQueue#BaseTQueue:
+  replacement: "TxQueue.TxQueueState"
+  note: "The shared queue state model was renamed and now includes the richer open, closing, and done lifecycle."
+effect/TQueue#TDequeue:
+  replacement: "TxQueue.TxDequeue"
+  note: "Rename the read-side type; it now carries an error channel."
+effect/TQueue#TDequeueTypeId:
+  replacement: "TxQueue.isTxDequeue"
+  note: "The type id is internal in v4; use the public runtime guard."
+effect/TQueue#TEnqueue:
+  replacement: "TxQueue.TxEnqueue"
+  note: "Rename the write-side type; it now carries an error channel."
+effect/TQueue#TEnqueueTypeId:
+  replacement: "TxQueue.isTxEnqueue"
+  note: "The type id is internal in v4; use the public runtime guard."
+effect/TQueue#TQueue:
+  replacement: "TxQueue.TxQueue"
+  note: "Rename the type; it now carries an error channel and completion lifecycle. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TQueue#TQueue.TDequeueVariance:
+  replacement: "TxQueue.TxDequeue.Variance"
+  note: "The read-side variance marker moved under TxDequeue and now includes the error type."
+effect/TQueue#TQueue.TEnqueueVariance:
+  replacement: "TxQueue.TxEnqueue.Variance"
+  note: "The write-side variance marker moved under TxEnqueue and now includes the error type."
+effect/TQueue#bounded:
+  replacement: "TxQueue.bounded"
+  note: "Import TxQueue from \"effect/TxQueue\"; the operation keeps its name. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TQueue#capacity:
+  replacement: "queue.capacity"
+  note: "Capacity is now a property on TxQueue handles rather than a module function."
+effect/TQueue#dropping:
+  replacement: "TxQueue.dropping"
+  note: "Import TxQueue from \"effect/TxQueue\"; the operation keeps its name. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TQueue#isEmpty:
+  replacement: "TxQueue.isEmpty"
+  note: "Import TxQueue from \"effect/TxQueue\"; the operation keeps its name. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TQueue#isFull:
+  replacement: "TxQueue.isFull"
+  note: "Import TxQueue from \"effect/TxQueue\"; the operation keeps its name. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TQueue#isTDequeue:
+  replacement: "TxQueue.isTxDequeue"
+  note: "The runtime guard was renamed with the TxDequeue type."
+effect/TQueue#isTEnqueue:
+  replacement: "TxQueue.isTxEnqueue"
+  note: "The runtime guard was renamed with the TxEnqueue type."
+effect/TQueue#isTQueue:
+  replacement: "TxQueue.isTxQueue"
+  note: "The runtime guard was renamed with the TxQueue type."
+effect/TQueue#offerAll:
+  replacement: "TxQueue.offerAll"
+  note: "The operation remains, but now returns rejected elements rather than a boolean."
+effect/TQueue#peek:
+  replacement: "TxQueue.peek"
+  note: "Import TxQueue from \"effect/TxQueue\"; the operation keeps its name. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TQueue#poll:
+  replacement: "TxQueue.poll"
+  note: "Import TxQueue from \"effect/TxQueue\"; the operation keeps its name. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TQueue#seek:
+  replacement: "none"
+  note: "TxQueue has no seek helper; repeat TxQueue.take under Effect.tx until the predicate matches."
+effect/TQueue#shutdown:
+  replacement: "TxQueue.shutdown"
+  note: "The operation remains, but now returns whether shutdown changed the queue state."
+effect/TQueue#size:
+  replacement: "TxQueue.size"
+  note: "Import TxQueue from \"effect/TxQueue\"; the operation keeps its name. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TQueue#sliding:
+  replacement: "TxQueue.sliding"
+  note: "Import TxQueue from \"effect/TxQueue\"; the operation keeps its name. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TQueue#take:
+  replacement: "TxQueue.take"
+  note: "Import TxQueue from \"effect/TxQueue\"; the operation keeps its name. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TQueue#takeBetween:
+  replacement: "TxQueue.takeBetween"
+  note: "Import TxQueue from \"effect/TxQueue\"; the operation keeps its name. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TQueue#takeN:
+  replacement: "TxQueue.takeN"
+  note: "Import TxQueue from \"effect/TxQueue\"; the operation keeps its name. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TQueue#unbounded:
+  replacement: "TxQueue.unbounded"
+  note: "Import TxQueue from \"effect/TxQueue\"; the operation keeps its name. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TQueue#isShutdown:
+  replacement: "TxQueue.isShutdown"
+  note: "Import TxQueue from \"effect/TxQueue\"; it checks the richer done lifecycle and returns an ordinary Effect."
+effect/TQueue#takeAll:
+  replacement: "TxQueue.takeAll"
+  note: "The operation now blocks until at least one item is available, returns a NonEmptyArray, and propagates the queue error channel through an ordinary Effect."

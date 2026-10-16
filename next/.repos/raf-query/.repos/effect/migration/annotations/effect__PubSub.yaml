@@ -1,0 +1,3 @@
+effect/PubSub#PubSub:
+  replacement: "PubSub.PubSub"
+  note: "The model remains but no longer extends Queue.Enqueue; replace Queue operations with explicit PubSub.publish, PubSub.publishAll, and PubSub.subscribe calls."

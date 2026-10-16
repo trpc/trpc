@@ -1,0 +1,18 @@
+"effect/Clock#CancelToken":
+  replacement: "none"
+  note: "The public clock scheduler and cancellation-token protocol were removed. Use Effect.sleep for delays and Effect interruption or Fiber.interrupt for cancellation."
+"effect/Clock#Clock":
+  replacement: "Clock.Clock"
+  note: "The service interface remains, but unsafeCurrentTimeMillis and unsafeCurrentTimeNanos were renamed to currentTimeMillisUnsafe and currentTimeNanosUnsafe, the public type-id field was removed, and custom implementations must add monotonicTimeNanosUnsafe plus monotonicTimeNanos for elapsed-time measurement."
+"effect/Clock#ClockScheduler":
+  replacement: "none"
+  note: "The low-level clock scheduler is no longer public. Express scheduling with Effect.sleep and cancel the running fiber through normal Effect interruption."
+"effect/Clock#ClockTypeId":
+  replacement: "none"
+  note: "The Clock type-id is private in v4. Use the Clock.Clock Context.Reference to access, provide, or identify the clock service."
+"effect/Clock#make":
+  replacement: "Layer.succeed(Clock.Clock, clock)"
+  note: "The Clock constructor was removed. Implement the v4 Clock interface as a plain service value and provide it through Clock.Clock."
+"effect/Clock#Task":
+  replacement: "none"
+  note: "The low-level clock task alias was removed with ClockScheduler. Model delayed work as an Effect and run or fork it after Effect.sleep."

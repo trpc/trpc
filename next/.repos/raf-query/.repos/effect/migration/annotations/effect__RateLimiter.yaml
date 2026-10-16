@@ -1,0 +1,3 @@
+effect/RateLimiter:
+  replacement: none
+  note: The old limit, interval, and algorithm options belonged to the removed in-process limiter; choose and configure an application limiter explicitly. The scoped in-process callable limiter was not ported to v4; effect/persistence/RateLimiter is a keyed persistence service with different semantics, not a drop-in replacement. The FiberRef-based per-effect cost annotation was removed with the core RateLimiter; pass token cost explicitly to the replacement limiter.

@@ -1,0 +1,15 @@
+"@effect/experimental/Reactivity#layer":
+  replacement: effect/reactivity/Reactivity#layer
+  note: Import layer from the v4 unstable Reactivity module.
+"@effect/experimental/Reactivity#make":
+  replacement: effect/reactivity/Reactivity#make
+  note: Import make from the v4 unstable Reactivity module.
+"@effect/experimental/Reactivity#Reactivity":
+  replacement: effect/reactivity/Reactivity#Reactivity
+  note: Use the Reactivity interface for implementations and the Reactivity Context.Service value as the service key. Implementations require the TypeId brand; prefer Reactivity.make. Unsafe methods were renamed with an Unsafe suffix.
+"@effect/experimental/Reactivity#Reactivity.Service":
+  replacement: effect/reactivity/Reactivity#Reactivity
+  note: "The named namespace member was removed; use the branded Reactivity interface directly. Prefer Reactivity.make, or include [Reactivity.TypeId]: Reactivity.TypeId in a custom implementation."
+"@effect/experimental/Reactivity#stream":
+  replacement: effect/reactivity/Reactivity#stream
+  note: Import stream from the v4 unstable Reactivity module.

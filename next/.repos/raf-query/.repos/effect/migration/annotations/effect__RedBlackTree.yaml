@@ -1,0 +1,105 @@
+"effect/RedBlackTree#at":
+  replacement: "Array.drop"
+  note: "Represent the removed tree as sorted entries; for a non-negative index, Array.drop(entries, index) traverses forward from that absolute position."
+"effect/RedBlackTree#atReversed":
+  replacement: "Array.take + Array.reverse"
+  note: "For a valid absolute index, reverse Array.take(entries, index + 1) to traverse backward from it."
+"effect/RedBlackTree#Direction":
+  replacement: "none"
+  note: "The tree direction type was removed; use normal array order or Array.reverse."
+"effect/RedBlackTree#empty":
+  replacement: "Array.empty"
+  note: "The module was removed; use an empty Array<readonly [K, V]> and retain the Order separately."
+"effect/RedBlackTree#first":
+  replacement: "Array.head"
+  note: "On a sorted entry array, Array.head returns the same optional minimum entry."
+"effect/RedBlackTree#forEachBetween":
+  replacement: "Array.filter + Array.forEach"
+  note: "Filter sorted entries to min <= key < max with the retained Order, then visit them with Array.forEach."
+"effect/RedBlackTree#forEachGreaterThanEqual":
+  replacement: "Array.filter + Array.forEach"
+  note: "Filter sorted entries to key >= min with the retained Order, then visit them in ascending order."
+"effect/RedBlackTree#forEachLessThan":
+  replacement: "Array.filter + Array.forEach"
+  note: "Filter sorted entries to key < max with the retained Order, then visit them in ascending order."
+"effect/RedBlackTree#fromIterable":
+  replacement: "Array.sortWith"
+  note: "Sort the entry iterable by key and retain the Order separately; this does not preserve logarithmic tree operations."
+"effect/RedBlackTree#getAt":
+  replacement: "Array.get"
+  note: "Array.get on sorted entries preserves the optional index lookup behavior."
+"effect/RedBlackTree#getOrder":
+  replacement: "none"
+  note: "No replacement collection stores an Order; retain and pass the Order explicitly."
+"effect/RedBlackTree#greaterThan":
+  replacement: "Array.filter"
+  note: "Filter sorted entries with the retained Order for key > bound."
+"effect/RedBlackTree#greaterThanEqual":
+  replacement: "Array.filter"
+  note: "Filter sorted entries with the retained Order for key >= bound."
+"effect/RedBlackTree#greaterThanEqualReversed":
+  replacement: "Array.filter + Array.reverse"
+  note: "Filter sorted entries with the retained Order for key >= bound, then reverse for descending traversal."
+"effect/RedBlackTree#greaterThanReversed":
+  replacement: "Array.filter + Array.reverse"
+  note: "Filter sorted entries with the retained Order for key > bound, then reverse for descending traversal."
+"effect/RedBlackTree#has":
+  replacement: "Array.some"
+  note: "Use Array.some on sorted entries with Equal.equals for key membership; this is linear rather than logarithmic."
+"effect/RedBlackTree#insert":
+  replacement: "Array.prepend + Array.sortWith"
+  note: "Prepend the entry and sort by key to preserve newest-first comparator ties; use an external ordered multimap if logarithmic updates matter."
+"effect/RedBlackTree#isRedBlackTree":
+  replacement: "Array.isArray"
+  note: "The brand was removed; Array.isArray only checks the replacement representation and cannot prove its sorted invariant."
+"effect/RedBlackTree#keys":
+  replacement: "Array.map"
+  note: "Map sorted entries to keys and iterate the resulting array."
+"effect/RedBlackTree#keysReversed":
+  replacement: "Array.reverse + Array.map"
+  note: "Reverse sorted entries, map them to keys, and iterate the resulting array."
+"effect/RedBlackTree#last":
+  replacement: "Array.last"
+  note: "On a sorted entry array, Array.last returns the same optional maximum entry."
+"effect/RedBlackTree#lessThan":
+  replacement: "Array.filter"
+  note: "Filter sorted entries with the retained Order for key < bound."
+"effect/RedBlackTree#lessThanEqual":
+  replacement: "Array.filter"
+  note: "Filter sorted entries with the retained Order for key <= bound."
+"effect/RedBlackTree#lessThanEqualReversed":
+  replacement: "Array.filter + Array.reverse"
+  note: "Filter sorted entries with the retained Order for key <= bound, then reverse for descending traversal."
+"effect/RedBlackTree#lessThanReversed":
+  replacement: "Array.filter + Array.reverse"
+  note: "Filter sorted entries with the retained Order for key < bound, then reverse for descending traversal."
+"effect/RedBlackTree#make":
+  replacement: "Array.sortWith"
+  note: "Sort the supplied entries by key and retain the Order separately; this is not a balanced tree."
+"effect/RedBlackTree#RedBlackTree":
+  replacement: "ReadonlyArray<readonly [K, V]>"
+  note: "The core tree was removed; use sorted immutable entries for small collections or an external persistent ordered multimap when complexity or duplicate-key semantics matter."
+"effect/RedBlackTree#RedBlackTree.Direction":
+  replacement: "none"
+  note: "The nested direction type was removed; use normal array order or Array.reverse."
+"effect/RedBlackTree#reduce":
+  replacement: "Array.reduce"
+  note: "Reduce sorted entries in ascending order, adapting the callback to receive [key, value]."
+"effect/RedBlackTree#removeFirst":
+  replacement: "Array.findFirstIndex + Array.remove"
+  note: "Find the first entry whose key is Equal.equals to the target, then remove that index; leave the array unchanged when absent."
+"effect/RedBlackTree#reversed":
+  replacement: "Array.reverse"
+  note: "Reverse the sorted entry array for descending traversal."
+"effect/RedBlackTree#size":
+  replacement: "Array.length"
+  note: "Use Array.length or the .length property on the replacement entry array."
+"effect/RedBlackTree#TypeId":
+  replacement: "none"
+  note: "The RedBlackTree module and brand symbol were removed."
+"effect/RedBlackTree#values":
+  replacement: "Array.map"
+  note: "Map sorted entries to values and iterate the resulting array to preserve key order."
+"effect/RedBlackTree#valuesReversed":
+  replacement: "Array.reverse + Array.map"
+  note: "Reverse sorted entries, map them to values, and iterate to preserve reverse key order."

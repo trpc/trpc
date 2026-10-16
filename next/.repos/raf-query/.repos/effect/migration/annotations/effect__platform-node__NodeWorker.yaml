@@ -1,0 +1,6 @@
+"@effect/platform-node/NodeWorker#layerManager":
+  replacement: "NodeWorker.layerPlatform"
+  note: "WorkerManager was removed. Provide WorkerPlatform directly, or use NodeWorker.layer(spawn) when a Worker.Spawner is also required."
+"@effect/platform-node/NodeWorker#layerWorker":
+  replacement: "NodeWorker.layerPlatform"
+  note: "PlatformWorker became Worker.WorkerPlatform; NodeWorker.layer(spawn) combines the platform and spawner layers."

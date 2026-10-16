@@ -1,0 +1,63 @@
+"@effect/ai/Tool#AnyParametersSchema":
+  replacement: "Schema.Constraint"
+  note: "The AI-specific alias was removed. V4 Tool parameter schemas use the general Schema.Constraint type and are no longer restricted to the old struct-or-EmptyParams union."
+"@effect/ai/Tool#AnyTaggedRequestSchema":
+  replacement: "none"
+  note: "The TaggedRequest-specific Tool adapter contract was removed. Model the operation directly with Tool.make and ordinary v4 Schema.Constraint values."
+"@effect/ai/Tool#Destructive":
+  replacement: "Tool.Destructive"
+  note: "Moved to effect/ai/Tool. It is now a Context.Reference<boolean> value rather than a Reference subclass; its default remains true."
+"@effect/ai/Tool#Failure":
+  replacement: "Tool.Failure"
+  note: "Moved to effect/ai/Tool and remains the utility type that extracts a tool's decoded failure type."
+"@effect/ai/Tool#fromTaggedRequest":
+  replacement: "Tool.make"
+  note: "The adapter was removed. Rebuild the tool explicitly with Tool.make(name, { parameters, success, failure }); Toolkit.make no longer converts schema values automatically."
+"@effect/ai/Tool#FromTaggedRequest":
+  replacement: "Tool.Tool"
+  note: "The dedicated derived alias was removed. Construct with Tool.make and let Tool.Tool infer the name, parameter, success, and failure schemas."
+"@effect/ai/Tool#getDescriptionFromSchemaAst":
+  replacement: "SchemaAST.resolveDescription"
+  note: "Moved out of Tool to the general v4 AST annotation resolver. For a Tool value, prefer Tool.getDescription."
+"@effect/ai/Tool#getJsonSchemaFromSchemaAst":
+  replacement: "Tool.getJsonSchemaFromSchema"
+  note: "Renamed to accept a Schema.Constraint instead of a raw AST and now emits the v4 JSON Schema model. Wrap a raw AST with Schema.make first."
+"@effect/ai/Tool#Idempotent":
+  replacement: "Tool.Idempotent"
+  note: "Moved to effect/ai/Tool. It is now a Context.Reference<boolean> value rather than a Reference subclass; its default remains false."
+"@effect/ai/Tool#OpenWorld":
+  replacement: "Tool.OpenWorld"
+  note: "Moved to effect/ai/Tool. It is now a Context.Reference<boolean> value rather than a Reference subclass; its default remains true."
+"@effect/ai/Tool#ProviderDefinedTypeId":
+  replacement: "Tool.ProviderDefinedTypeId"
+  note: "Moved to effect/ai/Tool and remains public. Its literal changed, so use the export rather than retaining the old hard-coded string."
+"@effect/ai/Tool#Readonly":
+  replacement: "Tool.Readonly"
+  note: "Moved to effect/ai/Tool. It is now a Context.Reference<boolean> value rather than a Reference subclass; its default remains false."
+"@effect/ai/Tool#Requirements":
+  replacement: "Tool.HandlerServices"
+  note: "Renamed and refined. HandlerServices combines parameter-decoding, result-encoding, and request-level dependencies required by a tool handler."
+"@effect/ai/Tool#Success":
+  replacement: "Tool.Success"
+  note: "Moved to effect/ai/Tool and remains the utility type that extracts a tool's decoded success type."
+"@effect/ai/Tool#Title":
+  replacement: "Tool.Title"
+  note: "Moved to effect/ai/Tool. It is now a Context.Service annotation key; continue attaching the string title with tool.annotate(Tool.Title, value)."
+"@effect/ai/Tool#Tool.ProviderDefinedProto":
+  replacement: "Tool.ProviderDefined"
+  note: "This implementation-brand interface is no longer public. Use Tool.ProviderDefined for the model type and Tool.isProviderDefined for runtime narrowing."
+"@effect/ai/Tool#Tool.Variance":
+  replacement: "Tool.Tool / Tool.Any"
+  note: "This implementation variance interface is no longer public; its requirement marker is inline in Tool.Tool. Constrain generic code with Tool.Tool or Tool.Any."
+"@effect/ai/Tool#Tool.VarianceStruct":
+  replacement: "Tool.Tool / Tool.Any"
+  note: "This implementation variance payload is no longer public; the requirements marker is inline in Tool.Tool and should not be named independently."
+"@effect/ai/Tool#TypeId":
+  replacement: "Tool.TypeId"
+  note: "Moved to effect/ai/Tool and remains public. Its literal changed, so use the export rather than retaining the old hard-coded string."
+"@effect/ai/Tool#Result":
+  replacement: "Tool.Result"
+  note: "The result includes success, declared failure, and execution-denied or execution-interrupted values in both failure modes. Return mode also includes AiError; handle these variants when narrowing results."
+"@effect/ai/Tool#ResultEncoded":
+  replacement: "Tool.ResultEncoded"
+  note: "The encoded result includes execution-denied and execution-interrupted variants in both failure modes, plus encoded AiError in return mode."

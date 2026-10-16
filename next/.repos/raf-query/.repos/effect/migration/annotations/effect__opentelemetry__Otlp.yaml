@@ -1,0 +1,3 @@
+"@effect/opentelemetry/Otlp#layer":
+  replacement: "Otlp.layer"
+  note: "Moved to effect/observability/Otlp; replaceLogger was replaced by loggerMergeWithExisting, and metricsTemporality is now configurable."

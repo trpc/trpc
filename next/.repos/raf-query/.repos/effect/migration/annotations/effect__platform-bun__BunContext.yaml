@@ -1,0 +1,6 @@
+"@effect/platform-bun/BunContext#BunContext":
+  replacement: "BunServices.BunServices"
+  note: "The aggregate was renamed and now provides ChildProcessSpawner, Crypto, FileSystem, Path, Stdio, and Terminal; add BunWorker separately when needed."
+"@effect/platform-bun/BunContext#layer":
+  replacement: "BunServices.layer"
+  note: "Use the renamed aggregate layer; worker services are no longer included."

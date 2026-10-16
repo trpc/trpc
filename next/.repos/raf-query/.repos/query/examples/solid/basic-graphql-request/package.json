@@ -1,0 +1,22 @@
+{
+  "name": "@tanstack/query-example-solid-basic-graphql-request",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@tanstack/solid-query": "^5.104.1",
+    "@tanstack/solid-query-devtools": "^5.104.1",
+    "graphql": "^16.9.0",
+    "graphql-request": "^7.1.2",
+    "solid-js": "^1.9.15"
+  },
+  "devDependencies": {
+    "typescript": "5.8.3",
+    "vite": "^8.3.1",
+    "vite-plugin-solid": "^2.11.14"
+  }
+}

@@ -1,0 +1,45 @@
+"@effect/cluster/Envelope#Envelope.Any":
+  replacement: "effect/cluster/Envelope#Envelope.Any"
+  note: "Moved into core Effect with the same erased envelope type."
+"@effect/cluster/Envelope#Envelope.Encoded":
+  replacement: "effect/cluster/Envelope#Encoded"
+  note: "The encoded envelope union moved to the module-level Encoded type."
+"@effect/cluster/Envelope#Envelope.PartialEncoded":
+  replacement: "effect/cluster/Envelope#Partial"
+  note: "The partially decoded runtime union was renamed to Partial; use PartialJson for its JSON codec."
+"@effect/cluster/Envelope#EnvelopeFromSelf":
+  replacement: "effect/cluster/Envelope#Envelope"
+  note: "The self schema was renamed to Envelope and declaration-merges with the envelope type and namespace."
+"@effect/cluster/Envelope#PartialEncoded":
+  replacement: "effect/cluster/Envelope#PartialJson"
+  note: "The partially decoded envelope JSON codec was renamed to PartialJson."
+"@effect/cluster/Envelope#PartialEncodedArray":
+  replacement: "effect/cluster/Envelope#PartialArray"
+  note: "The mutable array codec was renamed to PartialArray."
+"@effect/cluster/Envelope#PartialEncodedFromSelf":
+  replacement: "effect/cluster/Envelope#Partial"
+  note: "The separate self schema was folded into Partial; derive JSON encoding with PartialJson."
+"@effect/cluster/Envelope#PartialEncodedRequest":
+  replacement: "Schema.toCodecJson(Envelope.PartialRequest)"
+  note: "V4 exports the self schema as PartialRequest and derives its JSON codec with Schema.toCodecJson."
+"@effect/cluster/Envelope#PartialEncodedRequestFromSelf":
+  replacement: "effect/cluster/Envelope#PartialRequest"
+  note: "The partially decoded request self schema was renamed to PartialRequest."
+"@effect/cluster/Envelope#Request":
+  replacement: "effect/cluster/Envelope#Request"
+  note: "The request interface remains and declaration-merges with the exported Request schema."
+"@effect/cluster/Envelope#Request.Any":
+  replacement: "effect/cluster/Envelope#Request.Any"
+  note: "Moved into core Effect with the same erased request type."
+"@effect/cluster/Envelope#Request.Encoded":
+  replacement: "effect/cluster/Envelope#PartialRequestEncoded"
+  note: "The JSON request shape moved to the module-level PartialRequestEncoded interface."
+"@effect/cluster/Envelope#Request.PartialEncoded":
+  replacement: "effect/cluster/Envelope#PartialRequest"
+  note: "The partially decoded request shape moved to the module-level PartialRequest class and type."
+"@effect/cluster/Envelope#RequestFromSelf":
+  replacement: "effect/cluster/Envelope#Request"
+  note: "The request self schema was renamed to Request and declaration-merges with the runtime interface."
+"@effect/cluster/Envelope#TypeId":
+  replacement: "typeof Envelope.TypeId"
+  note: "The marker value remains, but the type alias was removed and the value is now a string literal; use typeof in type position."

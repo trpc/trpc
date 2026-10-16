@@ -1,0 +1,30 @@
+"effect/Effectable#ChannelTypeId":
+  replacement: "Channel.TypeId"
+  note: "The public channel brand moved to its owning module; v4 uses a string TypeId rather than the v3 Symbol."
+"effect/Effectable#Class":
+  replacement: "Effectable.Class"
+  note: "Still available; replace commit() with an asEffect() method returning the Effect. The intermediate v4 override property/getter is no longer supported."
+"effect/Effectable#CommitPrimitive":
+  replacement: "new<A, E = never, R = never>() => Effect.Effect<A, E, R>"
+  note: "The named constructor interface was removed; inline the constructor type when needed."
+"effect/Effectable#CommitPrototype":
+  replacement: "Effectable.Prototype"
+  note: "Use Effectable.Prototype({ label, evaluate(fiber) { ... } }) and move the old commit body into evaluate."
+"effect/Effectable#EffectPrototype":
+  replacement: "Effectable.Prototype"
+  note: "The raw multi-branded prototype was removed; use Prototype with an explicit evaluate callback."
+"effect/Effectable#EffectTypeId":
+  replacement: "Effect.TypeId"
+  note: "The public Effect brand moved to Effect; v4 uses a string TypeId rather than the v3 Symbol."
+"effect/Effectable#SinkTypeId":
+  replacement: "Sink.isSink"
+  note: "Sink's TypeId is private in v4; use the public guard for runtime checks and public Sink constructors for values."
+"effect/Effectable#StreamTypeId":
+  replacement: "Stream.TypeId"
+  note: "The public stream brand moved to its owning module; v4 uses a string TypeId rather than the v3 Symbol."
+"effect/Effectable#StructuralClass":
+  replacement: "Effectable.Class"
+  note: "Use Class and migrate commit() to asEffect(); v4 equality is structural by default."
+"effect/Effectable#StructuralCommitPrototype":
+  replacement: "Effectable.Prototype"
+  note: "Use Prototype with evaluate; a separate structural prototype is unnecessary because v4 equality is structural by default."

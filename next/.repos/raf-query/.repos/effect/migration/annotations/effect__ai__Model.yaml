@@ -1,0 +1,3 @@
+"@effect/ai/Model#TypeId":
+  replacement: "none"
+  note: "The Model brand still exists internally, but its TypeId is not exported and v4 has no public isModel guard. Use Model values created by Model.make rather than inspecting or constructing the brand."

@@ -1,0 +1,9 @@
+effect/LogSpan#LogSpan:
+  replacement: "readonly [label: string, timestamp: number]"
+  note: "The module was removed. Active log spans are tuples in References.CurrentLogSpans; ordinary callers should prefer Effect.withLogSpan."
+effect/LogSpan#make:
+  replacement: "[label, startTime] as const"
+  note: "Construct the tuple directly, or use Effect.withLogSpan so Effect obtains the timestamp and scopes the span."
+effect/LogSpan#render:
+  replacement: "custom tuple formatter"
+  note: "No public standalone renderer remains. Built-in loggers format span tuples internally; custom formatters can render label and elapsed milliseconds themselves."

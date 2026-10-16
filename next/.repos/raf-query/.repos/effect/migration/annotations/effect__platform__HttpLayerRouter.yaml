@@ -1,0 +1,69 @@
+"@effect/platform/HttpLayerRouter#addHttpApi":
+  replacement: "HttpApiBuilder.layer"
+  note: "HTTP API registration moved to effect/http-api."
+"@effect/platform/HttpLayerRouter#cors":
+  replacement: "HttpRouter.cors"
+  note: "HttpLayerRouter was consolidated into v4 HttpRouter."
+"@effect/platform/HttpLayerRouter#FindMyWay.make":
+  replacement: "FindMyWay.make"
+  note: "Import FindMyWay from effect/http."
+"@effect/platform/HttpLayerRouter#FindMyWay.PathInput":
+  replacement: "FindMyWay.PathInput"
+  note: "Import FindMyWay from effect/http."
+"@effect/platform/HttpLayerRouter#make":
+  replacement: "HttpRouter.make"
+  note: "The layer-oriented router became the sole v4 HttpRouter implementation."
+"@effect/platform/HttpLayerRouter#MiddlewareTypeId":
+  replacement: "none"
+  note: "The middleware type id is internal in v4; use HttpRouter.Middleware."
+"@effect/platform/HttpLayerRouter#PathInput":
+  replacement: "HttpRouter.PathInput"
+  note: "Moved to the consolidated v4 router."
+"@effect/platform/HttpLayerRouter#RouteContext":
+  replacement: "HttpRouter.RouteContext"
+  note: "Moved to the consolidated v4 router."
+"@effect/platform/HttpLayerRouter#RouterConfig":
+  replacement: "HttpRouter.RouterConfig"
+  note: "Now a Context.Reference containing Partial<FindMyWay.RouterConfig>."
+"@effect/platform/HttpLayerRouter#RouteTypeId":
+  replacement: "none"
+  note: "Route nominal ids are internal in v4; construct routes with HttpRouter.route."
+"@effect/platform/HttpLayerRouter#schemaJson":
+  replacement: "HttpRouter.schemaJson"
+  note: "Moved to the consolidated router with v4 Schema and error types."
+"@effect/platform/HttpLayerRouter#schemaNoBody":
+  replacement: "HttpRouter.schemaNoBody"
+  note: "Moved to the consolidated router with v4 Schema types."
+"@effect/platform/HttpLayerRouter#serve":
+  replacement: "HttpRouter.serve"
+  note: "Moved to the consolidated router; pass the route-registration layer."
+"@effect/platform/HttpLayerRouter#toWebHandler":
+  replacement: "HttpRouter.toWebHandler"
+  note: "Moved to the consolidated router for building a Fetch handler and disposer."
+"@effect/platform/HttpLayerRouter#TypeId":
+  replacement: "none"
+  note: "The router nominal service id is internal in v4; use HttpRouter.HttpRouter."
+"@effect/platform/HttpLayerRouter#Request.From":
+  replacement: "HttpRouter.Request.From"
+  note: "Moved with the layer-oriented router into the consolidated HttpRouter module."
+"@effect/platform/HttpLayerRouter#Request.Only":
+  replacement: "HttpRouter.Request.Only"
+  note: "Moved with the layer-oriented router into the consolidated HttpRouter module."
+"@effect/platform/HttpLayerRouter#Route.Context":
+  replacement: "HttpRouter.Route.Context"
+  note: "Moved with the Route helper types into the consolidated HttpRouter module."
+"@effect/platform/HttpLayerRouter#Route.Error":
+  replacement: "HttpRouter.Route.Error"
+  note: "Moved with the Route helper types into the consolidated HttpRouter module."
+"@effect/platform/HttpLayerRouter#add":
+  replacement: "HttpRouter.add"
+  note: "Moved to the consolidated HttpRouter; it still returns a route-registration Layer."
+"@effect/platform/HttpLayerRouter#addAll":
+  replacement: "HttpRouter.addAll"
+  note: "Moved to the consolidated HttpRouter; it still registers route values through a Layer and supports a prefix option."
+"@effect/platform/HttpLayerRouter#layer":
+  replacement: "HttpRouter.layer"
+  note: "Use the layer for the consolidated HttpRouter service."
+"@effect/platform/HttpLayerRouter#toHttpEffect":
+  replacement: "HttpRouter.toHttpEffect"
+  note: "Moved to the consolidated HttpRouter; route-not-found failures now use HttpServerError.HttpServerError."

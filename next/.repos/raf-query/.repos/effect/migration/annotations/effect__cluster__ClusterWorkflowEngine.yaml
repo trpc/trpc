@@ -1,0 +1,6 @@
+"@effect/cluster/ClusterWorkflowEngine#layer":
+  replacement: "effect/cluster/ClusterWorkflowEngine#layer"
+  note: "Moved into core Effect with the same cluster-backed WorkflowEngine layer composition."
+"@effect/cluster/ClusterWorkflowEngine#make":
+  replacement: "effect/cluster/ClusterWorkflowEngine#make"
+  note: "Moved into core Effect; the constructor still uses Sharding and MessageStorage."

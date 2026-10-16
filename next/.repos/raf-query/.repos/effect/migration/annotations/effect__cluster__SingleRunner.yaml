@@ -1,0 +1,3 @@
+"@effect/cluster/SingleRunner#layer":
+  replacement: "effect/cluster/SingleRunner#layer"
+  note: "Moved into core Effect. V4 additionally requires Crypto.Crypto because SQL message storage hashes long deduplication keys."

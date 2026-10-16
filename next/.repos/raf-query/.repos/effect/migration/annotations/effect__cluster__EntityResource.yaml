@@ -1,0 +1,6 @@
+"@effect/cluster/EntityResource#make":
+  replacement: "effect/cluster/EntityResource#make"
+  note: "Moved into core Effect. Acquisition is lazy by default in v4; set acquireEagerly: true to preserve v3 behavior."
+"@effect/cluster/EntityResource#TypeId":
+  replacement: "effect/cluster/EntityResource#TypeId"
+  note: "Moved into core Effect; its literal changed to ~effect/cluster/EntityResource."

@@ -1,0 +1,9 @@
+"@effect/workflow/WorkflowProxyServer#layerHttpApi":
+  replacement: "effect/workflow/WorkflowProxyServer#layerHttpApi"
+  note: "Moved into core Effect. Use v4 HttpApi group identifiers and Workflow.RequirementsHandler schema services."
+"@effect/workflow/WorkflowProxyServer#layerRpcHandlers":
+  replacement: "effect/workflow/WorkflowProxyServer#layerRpcHandlers"
+  note: "Moved into core Effect; generated handlers require Workflow.RequirementsHandler rather than the undirected Requirements union."
+"@effect/workflow/WorkflowProxyServer#RpcHandlers":
+  replacement: "effect/workflow/WorkflowProxyServer#RpcHandlers"
+  note: "Moved into core Effect; handler names derive from workflow _tag and the optional prefix."

@@ -1,0 +1,21 @@
+"@effect/ai-anthropic/AnthropicLanguageModel#AnthropicReasoningInfo":
+  replacement: "Prompt.ReasoningPartOptions / Response reasoning metadata"
+  note: "The standalone reasoning-info union was removed; v4 declares Anthropic thinking and redacted-thinking data directly on Prompt and Response provider metadata."
+"@effect/ai-anthropic/AnthropicLanguageModel#AnthropicTools":
+  replacement: "AnthropicLanguageModel.AnthropicUserDefinedTool | AnthropicLanguageModel.AnthropicProviderDefinedTool"
+  note: "The old combined tool union was split into explicit user-defined and provider-defined Anthropic request tool types."
+"@effect/ai-anthropic/AnthropicLanguageModel#Config":
+  replacement: "AnthropicLanguageModel.Config"
+  note: "Still exported in v4; update imports and adapt to the revised Messages API request fields."
+"@effect/ai-anthropic/AnthropicLanguageModel#Config.Service":
+  replacement: "AnthropicLanguageModel.Config.Service"
+  note: "Still exported in v4; update imports and adapt to the revised Messages API request fields."
+"@effect/ai-anthropic/AnthropicLanguageModel#layerWithTokenizer":
+  replacement: "AnthropicLanguageModel.layer"
+  note: "The tokenizer-combining layer was removed; provide the language model and any Tokenizer service separately."
+"@effect/ai-anthropic/AnthropicLanguageModel#modelWithTokenizer":
+  replacement: "AnthropicLanguageModel.model"
+  note: "The tokenizer-combining model was removed; use the v4 model descriptor and provide any Tokenizer service separately."
+"@effect/ai-anthropic/AnthropicLanguageModel#prepareTools":
+  replacement: "none"
+  note: "Tool conversion became an internal part of the v4 Anthropic language model; use AnthropicTool constructors and pass tools through LanguageModel provider options instead."

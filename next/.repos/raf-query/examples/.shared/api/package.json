@@ -1,0 +1,27 @@
+{
+	"name": "@examples/api",
+	"version": "0.0.0",
+	"private": true,
+	"description": "REST API over the fake database, and its typed client, shared by the example apps",
+	"type": "module",
+	"exports": {
+		".": "./src/app.ts",
+		"./client": {
+			"browser": "./src/browser.ts",
+			"default": "./src/in-process.ts"
+		}
+	},
+	"scripts": {
+		"typecheck": "tsc"
+	},
+	"dependencies": {
+		"@examples/db": "workspace:*",
+		"@hono/standard-validator": "0.4.0",
+		"hono": "4.13.13",
+		"zod": "4.6.5"
+	},
+	"devDependencies": {
+		"@types/node": "26.6.4",
+		"typescript": "7.0.2"
+	}
+}

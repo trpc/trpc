@@ -1,0 +1,15 @@
+"@effect/cluster/MessageStorage#layerMemory":
+  replacement: "effect/cluster/MessageStorage#layerMemory"
+  note: "Moved into core Effect; it still provides MessageStorage and MemoryDriver and requires ShardingConfig."
+"@effect/cluster/MessageStorage#layerNoop":
+  replacement: "effect/cluster/MessageStorage#layerNoop"
+  note: "Moved into core Effect with the same dependency-free no-op implementation."
+"@effect/cluster/MessageStorage#make":
+  replacement: "effect/cluster/MessageStorage#make"
+  note: "Moved into core Effect. Context service projections now use the Service property instead of Type. Custom service implementations must also provide resetAddresses for batched mailbox resets."
+"@effect/cluster/MessageStorage#makeEncoded":
+  replacement: "effect/cluster/MessageStorage#makeEncoded"
+  note: "Moved into core Effect. Custom encoded drivers must replace resetAddress with resetAddresses and may use the new limit and addresses options passed to unprocessedMessages."
+"@effect/cluster/MessageStorage#Encoded":
+  replacement: "effect/cluster/MessageStorage#Encoded"
+  note: "Moved into core Effect; use the v4 Envelope.Encoded and Reply.Encoded aliases. Custom drivers now implement batched resetAddresses, and unprocessedMessages receives optional limit and address filters."

@@ -1,0 +1,3414 @@
+{
+  "defaults": {
+    "rounds": 5,
+    "timeMs": 300,
+    "warmupTimeMs": 100,
+    "targetBatchTimeNs": 100000,
+    "maxBatchSize": 1048576,
+    "bootstrapIterations": 10000,
+    "bootstrapSeed": 1592594996,
+    "minImprovementPercent": 2,
+    "maxRegressionPercent": 5
+  },
+  "suites": [
+    {
+      "name": "schema-checked-sources",
+      "fixtures": [
+        {
+          "file": "suites/schema-checked-sources/fixtures/cases.ts",
+          "defaults": {
+            "tier": 1,
+            "family": "jit",
+            "implementation": "effect-jit",
+            "astTags": ["Arrays", "Objects", "String", "Number"],
+            "operation": "decode",
+            "path": "valid",
+            "size": 1000
+          },
+          "cases": [
+            {
+              "name": "digits",
+              "export": "digits",
+              "scenario": "checked-sources-digits"
+            },
+            {
+              "name": "checked-source",
+              "export": "checkedSource",
+              "scenario": "checked-sources-checked-source"
+            },
+            {
+              "name": "unchecked-source",
+              "export": "uncheckedSource",
+              "scenario": "checked-sources-unchecked-source"
+            },
+            {
+              "name": "two-passes",
+              "export": "twoPasses",
+              "scenario": "checked-sources-two-passes"
+            },
+            {
+              "name": "checked-template-target",
+              "export": "checkedTemplateTarget",
+              "scenario": "checked-sources-checked-template-target",
+              "astTags": ["Arrays", "Objects", "String", "TemplateLiteral"]
+            },
+            {
+              "name": "unchecked-template-target",
+              "export": "uncheckedTemplateTarget",
+              "scenario": "checked-sources-unchecked-template-target",
+              "astTags": ["Arrays", "Objects", "String", "TemplateLiteral"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "schema-excess-properties",
+      "fixtures": [
+        {
+          "file": "suites/schema-excess-properties/fixtures/cases.ts",
+          "defaults": {
+            "tier": 1,
+            "family": "interpreted",
+            "implementation": "effect",
+            "astTags": ["Objects", "String", "Number", "Boolean"],
+            "operation": "decode",
+            "path": "valid",
+            "size": 3
+          },
+          "cases": [
+            {
+              "name": "interpreted-struct-default",
+              "export": "interpretedStructDefault",
+              "scenario": "excess-struct-default"
+            },
+            {
+              "name": "jit-struct-default",
+              "export": "jitStructDefault",
+              "scenario": "excess-struct-default",
+              "family": "jit",
+              "implementation": "effect-jit"
+            },
+            {
+              "name": "interpreted-struct-strict",
+              "export": "interpretedStructStrict",
+              "scenario": "excess-struct-strict"
+            },
+            {
+              "name": "jit-struct-strict",
+              "export": "jitStructStrict",
+              "scenario": "excess-struct-strict",
+              "family": "jit",
+              "implementation": "effect-jit"
+            },
+            {
+              "name": "interpreted-extra-strict",
+              "export": "interpretedExtraStrict",
+              "scenario": "excess-extra-strict",
+              "path": "invalid",
+              "size": 4
+            },
+            {
+              "name": "jit-extra-strict",
+              "export": "jitExtraStrict",
+              "scenario": "excess-extra-strict",
+              "family": "jit",
+              "implementation": "effect-jit",
+              "path": "invalid",
+              "size": 4
+            },
+            {
+              "name": "interpreted-strings-strict",
+              "export": "interpretedStringsStrict",
+              "scenario": "excess-strings-strict",
+              "astTags": ["Objects", "String", "Number"],
+              "size": 32
+            },
+            {
+              "name": "jit-strings-strict",
+              "export": "jitStringsStrict",
+              "scenario": "excess-strings-strict",
+              "family": "jit",
+              "implementation": "effect-jit",
+              "astTags": ["Objects", "String", "Number"],
+              "size": 32
+            },
+            {
+              "name": "interpreted-symbols-default",
+              "export": "interpretedSymbolsDefault",
+              "scenario": "excess-symbols-default",
+              "astTags": ["Objects", "Symbol", "Number"],
+              "size": 32
+            },
+            {
+              "name": "jit-symbols-default",
+              "export": "jitSymbolsDefault",
+              "scenario": "excess-symbols-default",
+              "family": "jit",
+              "implementation": "effect-jit",
+              "astTags": ["Objects", "Symbol", "Number"],
+              "size": 32
+            },
+            {
+              "name": "interpreted-symbols-strict",
+              "export": "interpretedSymbolsStrict",
+              "scenario": "excess-symbols-strict",
+              "astTags": ["Objects", "Symbol", "Number"],
+              "size": 32
+            },
+            {
+              "name": "jit-symbols-strict",
+              "export": "jitSymbolsStrict",
+              "scenario": "excess-symbols-strict",
+              "family": "jit",
+              "implementation": "effect-jit",
+              "astTags": ["Objects", "Symbol", "Number"],
+              "size": 32
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "arbitrary",
+      "fixtures": [
+        {
+          "file": "suites/arbitrary/fixtures/native.ts",
+          "defaults": {
+            "tier": 1,
+            "implementation": "effect",
+            "family": "arbitrary",
+            "astTags": [
+              "Objects",
+              "Arrays",
+              "String",
+              "Number",
+              "Declaration",
+              "Suspend"
+            ],
+            "path": "valid"
+          },
+          "cases": [
+            {
+              "name": "cold-recursive-first-sample-native",
+              "export": "coldRecursiveFirstSample",
+              "scenario": "arbitrary-cold-recursive-first-sample",
+              "operation": "derive-and-sample",
+              "path": "cold",
+              "size": 1
+            },
+            {
+              "name": "recursive-sample-32-native",
+              "export": "recursiveSample32",
+              "scenario": "arbitrary-recursive-sample-32",
+              "operation": "sample",
+              "size": 32
+            },
+            {
+              "name": "optional-struct-sample-128-native",
+              "export": "optionalStructSample128",
+              "scenario": "arbitrary-optional-struct-sample-128",
+              "operation": "sample-optional-struct",
+              "astTags": [
+                "Objects",
+                "Number"
+              ],
+              "size": 128
+            },
+            {
+              "name": "constrained-string-sample-128-native",
+              "export": "constrainedStringSample128",
+              "scenario": "arbitrary-constrained-string-sample-128",
+              "operation": "sample",
+              "astTags": [
+                "String"
+              ],
+              "size": 128
+            },
+            {
+              "name": "cold-regexp-first-sample-native",
+              "export": "coldRegExpFirstSample",
+              "scenario": "arbitrary-cold-regexp-first-sample",
+              "operation": "derive-and-sample-pattern",
+              "path": "cold",
+              "astTags": [
+                "String"
+              ],
+              "size": 1
+            },
+            {
+              "name": "regexp-sample-64-native",
+              "export": "regExpSample64",
+              "scenario": "arbitrary-regexp-sample-64",
+              "operation": "sample-pattern",
+              "astTags": [
+                "String"
+              ],
+              "size": 64
+            },
+            {
+              "name": "regexp-check-falsify-shrink-native",
+              "export": "regExpCheckFalsifyAndShrink",
+              "scenario": "arbitrary-regexp-check-falsify-shrink",
+              "operation": "check-pattern-and-shrink",
+              "path": "failure",
+              "astTags": [
+                "String"
+              ],
+              "size": 1
+            },
+            {
+              "name": "bounded-number-sample-128-native",
+              "export": "boundedNumberSample128",
+              "scenario": "arbitrary-bounded-number-sample-128",
+              "operation": "sample",
+              "astTags": [
+                "Number"
+              ],
+              "size": 128
+            },
+            {
+              "name": "uint8-array-sample-128-native",
+              "export": "uint8ArraySample128",
+              "scenario": "arbitrary-uint8-array-sample-128",
+              "operation": "sample",
+              "astTags": [
+                "Declaration",
+                "Arrays",
+                "Number"
+              ],
+              "size": 128
+            },
+            {
+              "name": "big-decimal-sample-128-native",
+              "export": "bigDecimalSample128",
+              "scenario": "arbitrary-big-decimal-sample-128",
+              "operation": "sample",
+              "astTags": [
+                "Declaration",
+                "Objects",
+                "BigInt",
+                "Number"
+              ],
+              "size": 128
+            },
+            {
+              "name": "date-time-utc-sample-128-native",
+              "export": "dateTimeUtcSample128",
+              "scenario": "arbitrary-date-time-utc-sample-128",
+              "operation": "sample",
+              "astTags": [
+                "Declaration",
+                "Number"
+              ],
+              "size": 128
+            },
+            {
+              "name": "time-zone-named-sample-128-native",
+              "export": "timeZoneNamedSample128",
+              "scenario": "arbitrary-time-zone-named-sample-128",
+              "operation": "sample",
+              "astTags": [
+                "Declaration",
+                "Literal"
+              ],
+              "size": 128
+            },
+            {
+              "name": "time-zone-sample-128-native",
+              "export": "timeZoneSample128",
+              "scenario": "arbitrary-time-zone-sample-128",
+              "operation": "sample",
+              "astTags": [
+                "Declaration",
+                "Union",
+                "Number",
+                "Literal"
+              ],
+              "size": 128
+            },
+            {
+              "name": "date-time-zoned-sample-128-native",
+              "export": "dateTimeZonedSample128",
+              "scenario": "arbitrary-date-time-zoned-sample-128",
+              "operation": "sample",
+              "astTags": [
+                "Declaration",
+                "Objects",
+                "Union",
+                "Number",
+                "Literal"
+              ],
+              "size": 128
+            },
+            {
+              "name": "rare-filter-sample-32-native",
+              "export": "rareFilterSample32",
+              "scenario": "arbitrary-rare-filter-sample-32",
+              "operation": "sample",
+              "astTags": [
+                "Number"
+              ],
+              "size": 32
+            },
+            {
+              "name": "unique-array-sample-32-native",
+              "export": "uniqueArraySample32",
+              "scenario": "arbitrary-unique-array-sample-32",
+              "operation": "sample",
+              "astTags": [
+                "Arrays",
+                "Number"
+              ],
+              "size": 32
+            },
+            {
+              "name": "literal-sample-128-native",
+              "export": "literalSample128",
+              "scenario": "arbitrary-literal-sample-128",
+              "operation": "sample",
+              "astTags": [
+                "Literal"
+              ],
+              "size": 128
+            },
+            {
+              "name": "map-sample-128-native",
+              "export": "mapSample128",
+              "scenario": "arbitrary-map-sample-128",
+              "operation": "sample-map",
+              "astTags": [
+                "Number"
+              ],
+              "size": 128
+            },
+            {
+              "name": "passing-filter-sample-128-native",
+              "export": "passingFilterSample128",
+              "scenario": "arbitrary-passing-filter-sample-128",
+              "operation": "sample-filter",
+              "astTags": [
+                "Number"
+              ],
+              "size": 128
+            },
+            {
+              "name": "selective-filter-sample-32-native",
+              "export": "selectiveFilterSample32",
+              "scenario": "arbitrary-selective-filter-sample-32",
+              "operation": "sample-filter",
+              "astTags": [
+                "Number"
+              ],
+              "size": 32
+            },
+            {
+              "name": "filter-map-sample-128-native",
+              "export": "filterMapSample128",
+              "scenario": "arbitrary-filter-map-sample-128",
+              "operation": "sample-filter-map",
+              "astTags": [
+                "Number"
+              ],
+              "size": 128
+            },
+            {
+              "name": "filter-check-falsify-shrink-native",
+              "export": "filterCheckFalsifyAndShrink",
+              "scenario": "arbitrary-filter-check-falsify-shrink",
+              "operation": "check-filter-and-shrink",
+              "path": "failure",
+              "astTags": [
+                "Number"
+              ],
+              "size": 1
+            },
+            {
+              "name": "all-tuple-sample-128-native",
+              "export": "allTupleSample128",
+              "scenario": "arbitrary-all-tuple-sample-128",
+              "operation": "sample-all-tuple",
+              "astTags": [
+                "Literal"
+              ],
+              "size": 128
+            },
+            {
+              "name": "all-record-sample-128-native",
+              "export": "allRecordSample128",
+              "scenario": "arbitrary-all-record-sample-128",
+              "operation": "sample-all-record",
+              "astTags": [
+                "Union",
+                "Literal",
+                "Number"
+              ],
+              "size": 128
+            },
+            {
+              "name": "flat-map-sample-128-native",
+              "export": "flatMapSample128",
+              "scenario": "arbitrary-flat-map-sample-128",
+              "operation": "sample-flat-map",
+              "astTags": [
+                "Arrays",
+                "Number"
+              ],
+              "size": 128
+            },
+            {
+              "name": "flat-map-check-falsify-shrink-native",
+              "export": "flatMapCheckFalsifyAndShrink",
+              "scenario": "arbitrary-flat-map-check-falsify-shrink",
+              "operation": "check-flat-map-and-shrink",
+              "path": "failure",
+              "astTags": [
+                "Arrays",
+                "Number"
+              ],
+              "size": 1
+            },
+            {
+              "name": "flat-map-check-replay-native",
+              "export": "flatMapCheckReplay",
+              "scenario": "arbitrary-flat-map-check-replay",
+              "operation": "replay-flat-map",
+              "path": "failure",
+              "astTags": [
+                "Arrays",
+                "Number"
+              ],
+              "size": 1
+            },
+            {
+              "name": "array-check-pass-100-native",
+              "export": "arrayCheckPass100",
+              "scenario": "arbitrary-array-check-pass-100",
+              "operation": "check-array",
+              "size": 50
+            },
+            {
+              "name": "array-check-falsify-shrink-native",
+              "export": "arrayCheckFalsifyAndShrink",
+              "scenario": "arbitrary-array-check-falsify-shrink",
+              "operation": "check-array-and-shrink",
+              "path": "failure",
+              "size": 4
+            },
+            {
+              "name": "check-pass-100-native",
+              "export": "checkPass100",
+              "scenario": "arbitrary-check-pass-100",
+              "operation": "check",
+              "astTags": [
+                "Number"
+              ],
+              "size": 100
+            },
+            {
+              "name": "test-schema-verify-generation-100-native",
+              "export": "testSchemaVerifyGeneration100",
+              "scenario": "test-schema-verify-generation-100",
+              "operation": "derive-and-check",
+              "astTags": [
+                "Number"
+              ],
+              "size": 100
+            },
+            {
+              "name": "check-falsify-shrink-native",
+              "export": "checkFalsifyAndShrink",
+              "scenario": "arbitrary-check-falsify-shrink",
+              "operation": "check-and-shrink",
+              "path": "failure",
+              "astTags": [
+                "Number"
+              ],
+              "size": 1
+            },
+            {
+              "name": "check-replay-native",
+              "export": "checkReplay",
+              "scenario": "arbitrary-check-replay",
+              "operation": "replay",
+              "path": "failure",
+              "astTags": [
+                "Number"
+              ],
+              "size": 1
+            }
+          ]
+        },
+        {
+          "file": "suites/arbitrary/fixtures/fast-check-v4.ts",
+          "defaults": {
+            "tier": 1,
+            "implementation": "fast-check-v4",
+            "family": "arbitrary",
+            "astTags": [],
+            "path": "valid"
+          },
+          "cases": [
+            {
+              "name": "cold-recursive-first-sample-fast-check-v4",
+              "export": "coldRecursiveFirstSample",
+              "scenario": "arbitrary-cold-recursive-first-sample",
+              "operation": "derive-and-sample",
+              "path": "cold",
+              "size": 1
+            },
+            {
+              "name": "recursive-sample-32-fast-check-v4",
+              "export": "recursiveSample32",
+              "scenario": "arbitrary-recursive-sample-32",
+              "operation": "sample",
+              "size": 32
+            },
+            {
+              "name": "optional-struct-sample-128-fast-check-v4",
+              "export": "optionalStructSample128",
+              "scenario": "arbitrary-optional-struct-sample-128",
+              "operation": "sample-optional-struct",
+              "size": 128
+            },
+            {
+              "name": "constrained-string-sample-128-fast-check-v4",
+              "export": "constrainedStringSample128",
+              "scenario": "arbitrary-constrained-string-sample-128",
+              "operation": "sample",
+              "size": 128
+            },
+            {
+              "name": "cold-regexp-first-sample-fast-check-v4",
+              "export": "coldRegExpFirstSample",
+              "scenario": "arbitrary-cold-regexp-first-sample",
+              "operation": "derive-and-sample-pattern",
+              "path": "cold",
+              "size": 1
+            },
+            {
+              "name": "regexp-sample-64-fast-check-v4",
+              "export": "regExpSample64",
+              "scenario": "arbitrary-regexp-sample-64",
+              "operation": "sample-pattern",
+              "size": 64
+            },
+            {
+              "name": "regexp-check-falsify-shrink-fast-check-v4",
+              "export": "regExpCheckFalsifyAndShrink",
+              "scenario": "arbitrary-regexp-check-falsify-shrink",
+              "operation": "check-pattern-and-shrink",
+              "path": "failure",
+              "size": 1
+            },
+            {
+              "name": "bounded-number-sample-128-fast-check-v4",
+              "export": "boundedNumberSample128",
+              "scenario": "arbitrary-bounded-number-sample-128",
+              "operation": "sample",
+              "size": 128
+            },
+            {
+              "name": "uint8-array-sample-128-fast-check-v4",
+              "export": "uint8ArraySample128",
+              "scenario": "arbitrary-uint8-array-sample-128",
+              "operation": "sample",
+              "size": 128
+            },
+            {
+              "name": "big-decimal-sample-128-fast-check-v4",
+              "export": "bigDecimalSample128",
+              "scenario": "arbitrary-big-decimal-sample-128",
+              "operation": "sample",
+              "size": 128
+            },
+            {
+              "name": "date-time-utc-sample-128-fast-check-v4",
+              "export": "dateTimeUtcSample128",
+              "scenario": "arbitrary-date-time-utc-sample-128",
+              "operation": "sample",
+              "size": 128
+            },
+            {
+              "name": "time-zone-named-sample-128-fast-check-v4",
+              "export": "timeZoneNamedSample128",
+              "scenario": "arbitrary-time-zone-named-sample-128",
+              "operation": "sample",
+              "size": 128
+            },
+            {
+              "name": "time-zone-sample-128-fast-check-v4",
+              "export": "timeZoneSample128",
+              "scenario": "arbitrary-time-zone-sample-128",
+              "operation": "sample",
+              "size": 128
+            },
+            {
+              "name": "date-time-zoned-sample-128-fast-check-v4",
+              "export": "dateTimeZonedSample128",
+              "scenario": "arbitrary-date-time-zoned-sample-128",
+              "operation": "sample",
+              "size": 128
+            },
+            {
+              "name": "rare-filter-sample-32-fast-check-v4",
+              "export": "rareFilterSample32",
+              "scenario": "arbitrary-rare-filter-sample-32",
+              "operation": "sample",
+              "size": 32
+            },
+            {
+              "name": "unique-array-sample-32-fast-check-v4",
+              "export": "uniqueArraySample32",
+              "scenario": "arbitrary-unique-array-sample-32",
+              "operation": "sample",
+              "size": 32
+            },
+            {
+              "name": "literal-sample-128-fast-check-v4",
+              "export": "literalSample128",
+              "scenario": "arbitrary-literal-sample-128",
+              "operation": "sample",
+              "size": 128
+            },
+            {
+              "name": "map-sample-128-fast-check-v4",
+              "export": "mapSample128",
+              "scenario": "arbitrary-map-sample-128",
+              "operation": "sample-map",
+              "size": 128
+            },
+            {
+              "name": "passing-filter-sample-128-fast-check-v4",
+              "export": "passingFilterSample128",
+              "scenario": "arbitrary-passing-filter-sample-128",
+              "operation": "sample-filter",
+              "size": 128
+            },
+            {
+              "name": "selective-filter-sample-32-fast-check-v4",
+              "export": "selectiveFilterSample32",
+              "scenario": "arbitrary-selective-filter-sample-32",
+              "operation": "sample-filter",
+              "size": 32
+            },
+            {
+              "name": "filter-map-sample-128-fast-check-v4",
+              "export": "filterMapSample128",
+              "scenario": "arbitrary-filter-map-sample-128",
+              "operation": "sample-filter-map",
+              "size": 128
+            },
+            {
+              "name": "filter-check-falsify-shrink-fast-check-v4",
+              "export": "filterCheckFalsifyAndShrink",
+              "scenario": "arbitrary-filter-check-falsify-shrink",
+              "operation": "check-filter-and-shrink",
+              "path": "failure",
+              "size": 1
+            },
+            {
+              "name": "all-tuple-sample-128-fast-check-v4",
+              "export": "allTupleSample128",
+              "scenario": "arbitrary-all-tuple-sample-128",
+              "operation": "sample-all-tuple",
+              "size": 128
+            },
+            {
+              "name": "all-record-sample-128-fast-check-v4",
+              "export": "allRecordSample128",
+              "scenario": "arbitrary-all-record-sample-128",
+              "operation": "sample-all-record",
+              "size": 128
+            },
+            {
+              "name": "flat-map-sample-128-fast-check-v4",
+              "export": "flatMapSample128",
+              "scenario": "arbitrary-flat-map-sample-128",
+              "operation": "sample-flat-map",
+              "size": 128
+            },
+            {
+              "name": "flat-map-check-falsify-shrink-fast-check-v4",
+              "export": "flatMapCheckFalsifyAndShrink",
+              "scenario": "arbitrary-flat-map-check-falsify-shrink",
+              "operation": "check-flat-map-and-shrink",
+              "path": "failure",
+              "size": 1
+            },
+            {
+              "name": "flat-map-check-replay-fast-check-v4",
+              "export": "flatMapCheckReplay",
+              "scenario": "arbitrary-flat-map-check-replay",
+              "operation": "replay-flat-map",
+              "path": "failure",
+              "size": 1
+            },
+            {
+              "name": "array-check-pass-100-fast-check-v4",
+              "export": "arrayCheckPass100",
+              "scenario": "arbitrary-array-check-pass-100",
+              "operation": "check-array",
+              "size": 50
+            },
+            {
+              "name": "array-check-falsify-shrink-fast-check-v4",
+              "export": "arrayCheckFalsifyAndShrink",
+              "scenario": "arbitrary-array-check-falsify-shrink",
+              "operation": "check-array-and-shrink",
+              "path": "failure",
+              "size": 4
+            },
+            {
+              "name": "check-pass-100-fast-check-v4",
+              "export": "checkPass100",
+              "scenario": "arbitrary-check-pass-100",
+              "operation": "check",
+              "size": 100
+            },
+            {
+              "name": "test-schema-verify-generation-100-fast-check-v4",
+              "export": "testSchemaVerifyGeneration100",
+              "scenario": "test-schema-verify-generation-100",
+              "operation": "derive-and-check",
+              "size": 100
+            },
+            {
+              "name": "check-falsify-shrink-fast-check-v4",
+              "export": "checkFalsifyAndShrink",
+              "scenario": "arbitrary-check-falsify-shrink",
+              "operation": "check-and-shrink",
+              "path": "failure",
+              "size": 1
+            },
+            {
+              "name": "check-replay-fast-check-v4",
+              "export": "checkReplay",
+              "scenario": "arbitrary-check-replay",
+              "operation": "replay",
+              "path": "failure",
+              "size": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "schema",
+      "fixtures": [
+        {
+          "file": "suites/schema/fixtures/comparison.ts",
+          "defaults": {
+            "tier": 1,
+            "operation": "decode"
+          },
+          "cases": [
+            {
+              "name": "object-32-valid-effect",
+              "export": "effectObject32Valid",
+              "scenario": "object-32-valid",
+              "implementation": "effect",
+              "family": "objects",
+              "astTags": [
+                "Objects"
+              ],
+              "path": "valid",
+              "size": 32
+            },
+            {
+              "name": "object-32-invalid-last-effect",
+              "export": "effectObject32InvalidLast",
+              "scenario": "object-32-invalid-last",
+              "implementation": "effect",
+              "family": "objects",
+              "astTags": [
+                "Objects"
+              ],
+              "path": "invalid",
+              "size": 32
+            },
+            {
+              "name": "array-32-valid-effect",
+              "export": "effectArray32Valid",
+              "scenario": "array-32-valid",
+              "implementation": "effect",
+              "family": "arrays",
+              "astTags": [
+                "Arrays"
+              ],
+              "path": "valid",
+              "size": 32
+            },
+            {
+              "name": "array-32-invalid-last-effect",
+              "export": "effectArray32InvalidLast",
+              "scenario": "array-32-invalid-last",
+              "implementation": "effect",
+              "family": "arrays",
+              "astTags": [
+                "Arrays"
+              ],
+              "path": "invalid",
+              "size": 32
+            },
+            {
+              "name": "record-32-valid-effect",
+              "export": "effectRecord32Valid",
+              "scenario": "record-32-valid",
+              "implementation": "effect",
+              "family": "records",
+              "astTags": [
+                "Objects"
+              ],
+              "path": "valid",
+              "size": 32
+            },
+            {
+              "name": "record-32-invalid-last-effect",
+              "export": "effectRecord32InvalidLast",
+              "scenario": "record-32-invalid-last",
+              "implementation": "effect",
+              "family": "records",
+              "astTags": [
+                "Objects"
+              ],
+              "path": "invalid",
+              "size": 32
+            },
+            {
+              "name": "literal-100-valid-last-effect",
+              "export": "effectLiteral100ValidLast",
+              "scenario": "literal-100-valid-last",
+              "implementation": "effect",
+              "family": "union",
+              "astTags": [
+                "Union",
+                "Literal"
+              ],
+              "path": "valid",
+              "size": 100
+            },
+            {
+              "name": "literal-100-invalid-effect",
+              "export": "effectLiteral100Invalid",
+              "scenario": "literal-100-invalid",
+              "implementation": "effect",
+              "family": "union",
+              "astTags": [
+                "Union",
+                "Literal"
+              ],
+              "path": "invalid",
+              "size": 100
+            },
+            {
+              "name": "tagged-100-valid-last-effect",
+              "export": "effectTagged100ValidLast",
+              "scenario": "tagged-100-valid-last",
+              "implementation": "effect",
+              "family": "union",
+              "astTags": [
+                "Union",
+                "Objects",
+                "Literal"
+              ],
+              "path": "valid",
+              "size": 100
+            },
+            {
+              "name": "tagged-100-invalid-selected-effect",
+              "export": "effectTagged100InvalidSelected",
+              "scenario": "tagged-100-invalid-selected",
+              "implementation": "effect",
+              "family": "union",
+              "astTags": [
+                "Union",
+                "Objects",
+                "Literal"
+              ],
+              "path": "invalid",
+              "size": 100
+            },
+            {
+              "name": "tagged-100-invalid-tag-effect",
+              "export": "effectTagged100InvalidTag",
+              "scenario": "tagged-100-invalid-tag",
+              "implementation": "effect",
+              "family": "union",
+              "astTags": [
+                "Union",
+                "Objects",
+                "Literal"
+              ],
+              "path": "invalid",
+              "size": 100
+            },
+            {
+              "name": "multi-sentinel-100-valid-first-effect",
+              "export": "effectMultiSentinel100ValidFirst",
+              "scenario": "multi-sentinel-100-valid-first",
+              "implementation": "effect",
+              "family": "union",
+              "astTags": [
+                "Union",
+                "Objects",
+                "Literal"
+              ],
+              "path": "valid",
+              "size": 100
+            },
+            {
+              "name": "multi-sentinel-100-invalid-variant-effect",
+              "export": "effectMultiSentinel100InvalidVariant",
+              "scenario": "multi-sentinel-100-invalid-variant",
+              "implementation": "effect",
+              "family": "union",
+              "astTags": [
+                "Union",
+                "Objects",
+                "Literal"
+              ],
+              "path": "invalid",
+              "size": 100
+            }
+          ]
+        },
+        {
+          "file": "suites/schema/fixtures/behavior.ts",
+          "defaults": {
+            "tier": 2,
+            "implementation": "effect",
+            "operation": "decode"
+          },
+          "cases": [
+            {
+              "name": "checks-invalid-first",
+              "export": "checksInvalidFirst",
+              "scenario": "checks-invalid-first",
+              "family": "checks",
+              "astTags": [
+                "String"
+              ],
+              "path": "invalid",
+              "size": 2
+            },
+            {
+              "name": "checks-invalid-last",
+              "export": "checksInvalidLast",
+              "scenario": "checks-invalid-last",
+              "family": "checks",
+              "astTags": [
+                "String"
+              ],
+              "path": "invalid",
+              "size": 2
+            },
+            {
+              "name": "encoding-check-valid",
+              "export": "encodingCheckValid",
+              "scenario": "encoding-check-valid",
+              "family": "checks",
+              "astTags": [
+                "String"
+              ],
+              "path": "valid",
+              "size": 1
+            },
+            {
+              "name": "template-literal-linear-valid",
+              "export": "templateLiteralLinearValid",
+              "scenario": "template-literal-linear-valid",
+              "family": "template-literal",
+              "astTags": [
+                "TemplateLiteral",
+                "Arrays"
+              ],
+              "path": "valid",
+              "size": 5
+            },
+            {
+              "name": "template-literal-linear-invalid",
+              "export": "templateLiteralLinearInvalid",
+              "scenario": "template-literal-linear-invalid",
+              "family": "template-literal",
+              "astTags": [
+                "TemplateLiteral",
+                "Arrays"
+              ],
+              "path": "invalid",
+              "size": 5
+            },
+            {
+              "name": "template-literal-backtracking-valid",
+              "export": "templateLiteralBacktrackingValid",
+              "scenario": "template-literal-backtracking-valid",
+              "family": "template-literal",
+              "astTags": [
+                "TemplateLiteral",
+                "Arrays",
+                "String"
+              ],
+              "path": "valid",
+              "size": 4
+            },
+            {
+              "name": "template-literal-backtracking-invalid",
+              "export": "templateLiteralBacktrackingInvalid",
+              "scenario": "template-literal-backtracking-invalid",
+              "family": "template-literal",
+              "astTags": [
+                "TemplateLiteral",
+                "Arrays",
+                "String"
+              ],
+              "path": "invalid",
+              "size": 4
+            },
+            {
+              "name": "template-literal-transformed-valid",
+              "export": "templateLiteralTransformedValid",
+              "scenario": "template-literal-transformed-valid",
+              "family": "template-literal",
+              "astTags": [
+                "TemplateLiteral",
+                "Arrays",
+                "String",
+                "Number"
+              ],
+              "path": "valid",
+              "size": 3
+            },
+            {
+              "name": "template-literal-record-32-valid",
+              "export": "templateLiteralRecord32Valid",
+              "scenario": "template-literal-record-32-valid",
+              "family": "template-literal",
+              "astTags": [
+                "TemplateLiteral",
+                "Objects",
+                "String",
+                "Number"
+              ],
+              "path": "valid",
+              "size": 32
+            },
+            {
+              "name": "transformation-decode-valid",
+              "export": "transformationDecodeValid",
+              "scenario": "transformation-decode-valid",
+              "family": "transformation",
+              "astTags": [
+                "String",
+                "Number"
+              ],
+              "path": "valid",
+              "size": 1
+            },
+            {
+              "name": "transformation-decode-invalid",
+              "export": "transformationDecodeInvalid",
+              "scenario": "transformation-decode-invalid",
+              "family": "transformation",
+              "astTags": [
+                "String",
+                "Number"
+              ],
+              "path": "invalid",
+              "size": 1
+            },
+            {
+              "name": "transformation-encode-valid",
+              "export": "transformationEncodeValid",
+              "scenario": "transformation-encode-valid",
+              "family": "transformation",
+              "astTags": [
+                "String",
+                "Number"
+              ],
+              "operation": "encode",
+              "path": "valid",
+              "size": 1
+            },
+            {
+              "name": "encoding-chain-8-decode-valid",
+              "export": "encodingChain8DecodeValid",
+              "scenario": "encoding-chain-8-decode-valid",
+              "family": "transformation",
+              "astTags": [
+                "String",
+                "Number"
+              ],
+              "path": "valid",
+              "size": 8
+            },
+            {
+              "name": "encoding-chain-8-decode-invalid",
+              "export": "encodingChain8DecodeInvalid",
+              "scenario": "encoding-chain-8-decode-invalid",
+              "family": "transformation",
+              "astTags": [
+                "String",
+                "Number"
+              ],
+              "path": "invalid",
+              "size": 8
+            },
+            {
+              "name": "encoding-chain-8-encode-valid",
+              "export": "encodingChain8EncodeValid",
+              "scenario": "encoding-chain-8-encode-valid",
+              "family": "transformation",
+              "astTags": [
+                "String",
+                "Number"
+              ],
+              "operation": "encode",
+              "path": "valid",
+              "size": 8
+            },
+            {
+              "name": "record-32-transformed-keys-valid",
+              "export": "transformedKeyRecordValid",
+              "scenario": "record-32-transformed-keys-valid",
+              "family": "records",
+              "astTags": [
+                "Objects",
+                "String"
+              ],
+              "path": "valid",
+              "size": 32
+            },
+            {
+              "name": "optional-valid",
+              "export": "optionalValid",
+              "scenario": "optional-valid",
+              "family": "optional",
+              "astTags": [
+                "Objects",
+                "Union",
+                "Undefined"
+              ],
+              "path": "valid",
+              "size": 3
+            },
+            {
+              "name": "optional-present-valid",
+              "export": "optionalPresentValid",
+              "scenario": "optional-present-valid",
+              "family": "optional",
+              "astTags": [
+                "Objects",
+                "Union",
+                "Undefined"
+              ],
+              "path": "valid",
+              "size": 3
+            },
+            {
+              "name": "optional-present-invalid",
+              "export": "optionalPresentInvalid",
+              "scenario": "optional-present-invalid",
+              "family": "optional",
+              "astTags": [
+                "Objects",
+                "Union",
+                "Undefined"
+              ],
+              "path": "invalid",
+              "size": 3
+            },
+            {
+              "name": "object-32-suspended-middle-valid",
+              "export": "object32SuspendedMiddleValid",
+              "scenario": "object-32-suspended-middle-valid",
+              "family": "objects",
+              "astTags": [
+                "Objects",
+                "String",
+                "Transformation"
+              ],
+              "path": "valid",
+              "size": 32
+            },
+            {
+              "name": "array-32-suspended-concurrency-4",
+              "export": "array32SuspendedConcurrent4",
+              "scenario": "array-32-suspended-concurrency-4",
+              "family": "arrays",
+              "astTags": [
+                "Arrays",
+                "String",
+                "Transformation"
+              ],
+              "path": "valid",
+              "size": 32
+            },
+            {
+              "name": "object-32-suspended-concurrency-4",
+              "export": "object32SuspendedConcurrent4",
+              "scenario": "object-32-suspended-concurrency-4",
+              "family": "objects",
+              "astTags": [
+                "Objects",
+                "String",
+                "Transformation"
+              ],
+              "path": "valid",
+              "size": 32
+            },
+            {
+              "name": "record-32-suspended-concurrency-4",
+              "export": "record32SuspendedConcurrent4",
+              "scenario": "record-32-suspended-concurrency-4",
+              "family": "records",
+              "astTags": [
+                "Objects",
+                "String",
+                "Transformation"
+              ],
+              "path": "valid",
+              "size": 32
+            },
+            {
+              "name": "literal-2-valid-last",
+              "export": "literal2ValidLast",
+              "scenario": "literal-2-valid-last",
+              "family": "union",
+              "astTags": [
+                "Union",
+                "Literal"
+              ],
+              "path": "valid",
+              "size": 2
+            },
+            {
+              "name": "literal-100-valid-first",
+              "export": "literal100ValidFirst",
+              "scenario": "literal-100-valid-first",
+              "family": "union",
+              "astTags": [
+                "Union",
+                "Literal"
+              ],
+              "path": "valid",
+              "size": 100
+            },
+            {
+              "name": "homogeneous-union-100-invalid",
+              "export": "homogeneousUnion100Invalid",
+              "scenario": "homogeneous-union-100-invalid",
+              "family": "union",
+              "astTags": [
+                "Union",
+                "String"
+              ],
+              "path": "invalid",
+              "size": 100
+            },
+            {
+              "name": "tagged-2-valid-last",
+              "export": "tagged2ValidLast",
+              "scenario": "tagged-2-valid-last",
+              "family": "union",
+              "astTags": [
+                "Union",
+                "Objects",
+                "Literal"
+              ],
+              "path": "valid",
+              "size": 2
+            },
+            {
+              "name": "tagged-with-fallback-valid",
+              "export": "taggedWithFallbackValid",
+              "scenario": "tagged-with-fallback-valid",
+              "family": "union",
+              "astTags": [
+                "Union",
+                "Objects",
+                "Literal"
+              ],
+              "path": "valid",
+              "size": 2
+            },
+            {
+              "name": "recursive-tree-depth-16-valid",
+              "export": "recursiveTreeDepth16Valid",
+              "scenario": "recursive-tree-depth-16-valid",
+              "family": "recursion",
+              "astTags": [
+                "Objects",
+                "Arrays",
+                "Suspend"
+              ],
+              "path": "valid",
+              "size": 16
+            }
+          ]
+        },
+        {
+          "file": "suites/schema/fixtures/adapters.ts",
+          "defaults": {
+            "tier": 2,
+            "implementation": "effect",
+            "family": "adapters",
+            "astTags": [
+              "Objects"
+            ],
+            "path": "valid",
+            "size": 2
+          },
+          "cases": [
+            {
+              "name": "adapter-make-valid",
+              "export": "makeValid",
+              "scenario": "adapter-make-valid",
+              "operation": "make",
+              "adapter": "Sync"
+            },
+            {
+              "name": "adapter-parser-decode-exit-invalid",
+              "export": "parserExitInvalid",
+              "scenario": "adapter-parser-decode-exit-invalid",
+              "operation": "decode",
+              "path": "invalid",
+              "adapter": "SchemaParser Exit"
+            },
+            {
+              "name": "adapter-decode-exit-valid",
+              "export": "exitValid",
+              "scenario": "adapter-decode-exit-valid",
+              "operation": "decode",
+              "adapter": "Exit"
+            },
+            {
+              "name": "adapter-decode-exit-invalid",
+              "export": "exitInvalid",
+              "scenario": "adapter-decode-exit-invalid",
+              "operation": "decode",
+              "path": "invalid",
+              "adapter": "Exit"
+            },
+            {
+              "name": "adapter-decode-option-valid",
+              "export": "optionValid",
+              "scenario": "adapter-decode-option-valid",
+              "operation": "decode",
+              "adapter": "Option"
+            },
+            {
+              "name": "adapter-decode-option-invalid",
+              "export": "optionInvalid",
+              "scenario": "adapter-decode-option-invalid",
+              "operation": "decode",
+              "path": "invalid",
+              "adapter": "Option"
+            },
+            {
+              "name": "adapter-decode-result-valid",
+              "export": "resultValid",
+              "scenario": "adapter-decode-result-valid",
+              "operation": "decode",
+              "adapter": "Result"
+            },
+            {
+              "name": "adapter-decode-result-invalid",
+              "export": "resultInvalid",
+              "scenario": "adapter-decode-result-invalid",
+              "operation": "decode",
+              "path": "invalid",
+              "adapter": "Result"
+            },
+            {
+              "name": "adapter-decode-sync-invalid",
+              "export": "syncInvalid",
+              "scenario": "adapter-decode-sync-invalid",
+              "operation": "decode",
+              "path": "invalid",
+              "adapter": "Sync"
+            }
+          ]
+        },
+        {
+          "file": "suites/schema/fixtures/cold.ts",
+          "defaults": {
+            "tier": 2,
+            "family": "cold",
+            "astTags": [
+              "Objects"
+            ],
+            "path": "valid",
+            "size": 32
+          },
+          "cases": [
+            {
+              "name": "schema-creation-object-2-effect",
+              "export": "effectSchemaCreationObject2",
+              "scenario": "schema-creation-object-2",
+              "implementation": "effect",
+              "operation": "schema",
+              "size": 2
+            },
+            {
+              "name": "schema-creation-object-32-effect",
+              "export": "effectSchemaCreationObject32",
+              "scenario": "schema-creation-object-32",
+              "implementation": "effect",
+              "operation": "schema"
+            },
+            {
+              "name": "schema-creation-object-256-effect",
+              "export": "effectSchemaCreationObject256",
+              "scenario": "schema-creation-object-256",
+              "implementation": "effect",
+              "operation": "schema",
+              "size": 256
+            },
+            {
+              "name": "schema-creation-encoded-record-effect",
+              "export": "effectSchemaCreationEncodedRecord",
+              "scenario": "schema-creation-encoded-record",
+              "implementation": "effect",
+              "operation": "schema"
+            },
+            {
+              "name": "schema-creation-encoded-object-8-effect",
+              "export": "effectSchemaCreationEncodedObject8",
+              "scenario": "schema-creation-encoded-object-8",
+              "implementation": "effect",
+              "operation": "schema",
+              "astTags": ["Objects", "Arrays", "String", "Number", "Boolean"],
+              "size": 8
+            },
+            {
+              "name": "first-make-encoded-object-8-effect",
+              "export": "effectFirstMakeEncodedObject8",
+              "scenario": "first-make-encoded-object-8",
+              "implementation": "effect",
+              "operation": "first-make",
+              "astTags": ["Objects", "Arrays", "String", "Number", "Boolean"],
+              "size": 8
+            },
+            {
+              "name": "first-make-object-2-effect",
+              "export": "effectFirstMakeObject2",
+              "scenario": "first-make-object-2",
+              "implementation": "effect",
+              "operation": "first-make",
+              "size": 2
+            },
+            {
+              "name": "schema-creation-template-literal-effect",
+              "export": "effectSchemaCreationTemplateLiteral",
+              "scenario": "schema-creation-template-literal",
+              "implementation": "effect",
+              "operation": "schema",
+              "astTags": [
+                "TemplateLiteral"
+              ],
+              "size": 5
+            },
+            {
+              "name": "schema-creation-template-literal-256-effect",
+              "export": "effectSchemaCreationTemplateLiteral256",
+              "scenario": "schema-creation-template-literal-256",
+              "implementation": "effect",
+              "operation": "schema",
+              "astTags": [
+                "TemplateLiteral"
+              ],
+              "size": 256
+            },
+            {
+              "name": "first-decode-checked-object-32-effect",
+              "export": "effectFirstDecodeCheckedObject32",
+              "scenario": "first-decode-checked-object-32",
+              "implementation": "effect",
+              "operation": "first-decode"
+            },
+            {
+              "name": "first-decode-template-literal-effect",
+              "export": "effectFirstDecodeTemplateLiteral",
+              "scenario": "first-decode-template-literal",
+              "implementation": "effect",
+              "operation": "first-decode",
+              "astTags": [
+                "TemplateLiteral"
+              ],
+              "size": 5
+            },
+            {
+              "name": "first-decode-record-32-effect",
+              "export": "effectFirstDecodeRecord32",
+              "scenario": "first-decode-record-32",
+              "implementation": "effect",
+              "operation": "first-decode"
+            },
+            {
+              "name": "first-decode-literal-100-effect",
+              "export": "effectFirstDecodeLiteral100",
+              "scenario": "first-decode-literal-100",
+              "implementation": "effect",
+              "operation": "first-decode",
+              "astTags": [
+                "Union",
+                "Literal"
+              ],
+              "size": 100
+            },
+            {
+              "name": "first-decode-tagged-100-effect",
+              "export": "effectFirstDecodeTagged100",
+              "scenario": "first-decode-tagged-100",
+              "implementation": "effect",
+              "operation": "first-decode",
+              "astTags": [
+                "Union",
+                "Objects",
+                "Literal"
+              ],
+              "size": 100
+            },
+            {
+              "name": "first-decode-encoding-chain-8-effect",
+              "export": "effectFirstDecodeEncodingChain8",
+              "scenario": "first-decode-encoding-chain-8",
+              "implementation": "effect",
+              "operation": "first-decode",
+              "astTags": [
+                "String",
+                "Number"
+              ],
+              "size": 8
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "schema-benchmarks",
+      "fixtures": [
+        {
+          "file": "suites/schema-benchmarks/fixtures/valibot.ts",
+          "defaults": {
+            "tier": 3,
+            "implementation": "valibot",
+            "family": "schema-benchmarks",
+            "astTags": [],
+            "size": "product"
+          },
+          "cases": [
+            {
+              "name": "initialization-schema-valibot",
+              "export": "initializationSchema",
+              "scenario": "schema-benchmarks-initialization-schema",
+              "operation": "schema",
+              "path": "cold"
+            },
+            {
+              "name": "validation-valid-valibot",
+              "export": "validationValid",
+              "scenario": "schema-benchmarks-validation-valid",
+              "operation": "is",
+              "path": "valid"
+            },
+            {
+              "name": "validation-invalid-valibot",
+              "export": "validationInvalid",
+              "scenario": "schema-benchmarks-validation-invalid",
+              "operation": "is",
+              "path": "invalid"
+            },
+            {
+              "name": "parsing-all-valid-valibot",
+              "export": "parsingAllValid",
+              "scenario": "schema-benchmarks-parsing-all-valid",
+              "operation": "safe-parse-all",
+              "path": "valid"
+            },
+            {
+              "name": "parsing-all-invalid-valibot",
+              "export": "parsingAllInvalid",
+              "scenario": "schema-benchmarks-parsing-all-invalid",
+              "operation": "safe-parse-all",
+              "path": "invalid"
+            },
+            {
+              "name": "parsing-first-valid-valibot",
+              "export": "parsingFirstValid",
+              "scenario": "schema-benchmarks-parsing-first-valid",
+              "operation": "safe-parse-first",
+              "path": "valid"
+            },
+            {
+              "name": "parsing-first-invalid-valibot",
+              "export": "parsingFirstInvalid",
+              "scenario": "schema-benchmarks-parsing-first-invalid",
+              "operation": "safe-parse-first",
+              "path": "invalid"
+            },
+            {
+              "name": "standard-all-valid-valibot",
+              "export": "standardAllValid",
+              "scenario": "schema-benchmarks-standard-all-valid",
+              "operation": "standard-schema-all",
+              "path": "valid"
+            },
+            {
+              "name": "standard-all-invalid-valibot",
+              "export": "standardAllInvalid",
+              "scenario": "schema-benchmarks-standard-all-invalid",
+              "operation": "standard-schema-all",
+              "path": "invalid"
+            }
+          ]
+        },
+        {
+          "file": "suites/schema-benchmarks/fixtures/zod.ts",
+          "defaults": {
+            "tier": 3,
+            "implementation": "zod4",
+            "family": "schema-benchmarks",
+            "astTags": [],
+            "size": "product"
+          },
+          "cases": [
+            {
+              "name": "initialization-schema-zod4",
+              "export": "initializationSchema",
+              "scenario": "schema-benchmarks-initialization-schema",
+              "operation": "schema",
+              "path": "cold"
+            },
+            {
+              "name": "parsing-all-valid-zod4",
+              "export": "parsingAllValid",
+              "scenario": "schema-benchmarks-parsing-all-valid",
+              "operation": "safe-parse-all",
+              "path": "valid"
+            },
+            {
+              "name": "parsing-all-invalid-zod4",
+              "export": "parsingAllInvalid",
+              "scenario": "schema-benchmarks-parsing-all-invalid",
+              "operation": "safe-parse-all",
+              "path": "invalid"
+            },
+            {
+              "name": "standard-all-valid-zod4",
+              "export": "standardAllValid",
+              "scenario": "schema-benchmarks-standard-all-valid",
+              "operation": "standard-schema-all",
+              "path": "valid"
+            },
+            {
+              "name": "standard-all-invalid-zod4",
+              "export": "standardAllInvalid",
+              "scenario": "schema-benchmarks-standard-all-invalid",
+              "operation": "standard-schema-all",
+              "path": "invalid"
+            },
+            {
+              "name": "codec-typed-encode-zod4",
+              "export": "codecTypedEncode",
+              "scenario": "schema-benchmarks-codec-typed-encode",
+              "operation": "encode",
+              "path": "valid",
+              "size": 1
+            },
+            {
+              "name": "codec-typed-decode-zod4",
+              "export": "codecTypedDecode",
+              "scenario": "schema-benchmarks-codec-typed-decode",
+              "operation": "decode",
+              "path": "valid",
+              "size": 1
+            }
+          ]
+        },
+        {
+          "file": "suites/schema-benchmarks/fixtures/effect-beta.ts",
+          "defaults": {
+            "tier": 3,
+            "implementation": "effect",
+            "family": "schema-benchmarks",
+            "astTags": [
+              "Objects",
+              "Arrays",
+              "Literal",
+              "String",
+              "Number",
+              "Null",
+              "Declaration"
+            ],
+            "size": "product"
+          },
+          "cases": [
+            {
+              "name": "initialization-schema",
+              "export": "initializationSchema",
+              "scenario": "schema-benchmarks-initialization-schema",
+              "operation": "schema",
+              "path": "cold"
+            },
+            {
+              "name": "initialization-decoder",
+              "export": "initializationDecoder",
+              "scenario": "schema-benchmarks-initialization-decoder",
+              "operation": "schema-and-decoder",
+              "path": "cold"
+            },
+            {
+              "name": "validation-valid",
+              "export": "validationValid",
+              "scenario": "schema-benchmarks-validation-valid",
+              "operation": "is",
+              "path": "valid"
+            },
+            {
+              "name": "validation-invalid",
+              "export": "validationInvalid",
+              "scenario": "schema-benchmarks-validation-invalid",
+              "operation": "is",
+              "path": "invalid"
+            },
+            {
+              "name": "parsing-all-valid",
+              "export": "parsingAllValid",
+              "scenario": "schema-benchmarks-parsing-all-valid",
+              "operation": "decode-option-all",
+              "path": "valid"
+            },
+            {
+              "name": "parsing-all-invalid",
+              "export": "parsingAllInvalid",
+              "scenario": "schema-benchmarks-parsing-all-invalid",
+              "operation": "decode-option-all",
+              "path": "invalid"
+            },
+            {
+              "name": "parsing-first-valid",
+              "export": "parsingFirstValid",
+              "scenario": "schema-benchmarks-parsing-first-valid",
+              "operation": "decode-option-first",
+              "path": "valid"
+            },
+            {
+              "name": "parsing-first-invalid",
+              "export": "parsingFirstInvalid",
+              "scenario": "schema-benchmarks-parsing-first-invalid",
+              "operation": "decode-option-first",
+              "path": "invalid"
+            },
+            {
+              "name": "standard-all-valid",
+              "export": "standardAllValid",
+              "scenario": "schema-benchmarks-standard-all-valid",
+              "operation": "standard-schema-all",
+              "path": "valid"
+            },
+            {
+              "name": "standard-all-invalid",
+              "export": "standardAllInvalid",
+              "scenario": "schema-benchmarks-standard-all-invalid",
+              "operation": "standard-schema-all",
+              "path": "invalid"
+            },
+            {
+              "name": "standard-first-valid",
+              "export": "standardFirstValid",
+              "scenario": "schema-benchmarks-standard-first-valid",
+              "operation": "standard-schema-first",
+              "path": "valid"
+            },
+            {
+              "name": "standard-first-invalid",
+              "export": "standardFirstInvalid",
+              "scenario": "schema-benchmarks-standard-first-invalid",
+              "operation": "standard-schema-first",
+              "path": "invalid"
+            },
+            {
+              "name": "codec-typed-encode",
+              "export": "codecTypedEncode",
+              "scenario": "schema-benchmarks-codec-typed-encode",
+              "operation": "encode-sync",
+              "path": "valid",
+              "astTags": [
+                "String",
+                "BigInt"
+              ],
+              "size": 1
+            },
+            {
+              "name": "codec-typed-decode",
+              "export": "codecTypedDecode",
+              "scenario": "schema-benchmarks-codec-typed-decode",
+              "operation": "decode-sync",
+              "path": "valid",
+              "astTags": [
+                "String",
+                "BigInt"
+              ],
+              "size": 1
+            },
+            {
+              "name": "codec-unknown-encode",
+              "export": "codecUnknownEncode",
+              "scenario": "schema-benchmarks-codec-unknown-encode",
+              "operation": "encode-unknown-sync",
+              "path": "valid",
+              "astTags": [
+                "String",
+                "BigInt"
+              ],
+              "size": 1
+            },
+            {
+              "name": "codec-unknown-decode",
+              "export": "codecUnknownDecode",
+              "scenario": "schema-benchmarks-codec-unknown-decode",
+              "operation": "decode-unknown-sync",
+              "path": "valid",
+              "astTags": [
+                "String",
+                "BigInt"
+              ],
+              "size": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "moltar-parse-safe",
+      "fixtures": [
+        {
+          "file": "suites/moltar/fixtures/interpreted.ts",
+          "defaults": {
+            "tier": 2,
+            "family": "moltar-parse-safe",
+            "implementation": "effect",
+            "operation": "decode-unknown-sync",
+            "astTags": ["Objects", "String", "Number", "Boolean"],
+            "size": "moltar-object"
+          },
+          "cases": [
+            {
+              "name": "effect-valid",
+              "export": "parseValid",
+              "scenario": "moltar-parse-safe-valid",
+              "path": "valid"
+            },
+            {
+              "name": "effect-extra-valid",
+              "export": "parseExtraValid",
+              "scenario": "moltar-parse-safe-extra-valid",
+              "path": "extra-valid"
+            },
+            {
+              "name": "effect-invalid",
+              "export": "parseInvalid",
+              "scenario": "moltar-parse-safe-invalid",
+              "path": "invalid"
+            }
+          ]
+        },
+        {
+          "file": "suites/moltar/fixtures/jit.ts",
+          "defaults": {
+            "tier": 2,
+            "family": "moltar-parse-safe",
+            "implementation": "effect-jit",
+            "operation": "decode-unknown-sync",
+            "astTags": ["Objects", "String", "Number", "Boolean"],
+            "size": "moltar-object"
+          },
+          "cases": [
+            {
+              "name": "effect-jit-valid",
+              "export": "parseValid",
+              "scenario": "moltar-parse-safe-valid",
+              "path": "valid"
+            },
+            {
+              "name": "effect-jit-extra-valid",
+              "export": "parseExtraValid",
+              "scenario": "moltar-parse-safe-extra-valid",
+              "path": "extra-valid"
+            },
+            {
+              "name": "effect-jit-invalid",
+              "export": "parseInvalid",
+              "scenario": "moltar-parse-safe-invalid",
+              "path": "invalid"
+            }
+          ]
+        },
+        {
+          "file": "suites/moltar/fixtures/aot.ts",
+          "defaults": {
+            "tier": 2,
+            "family": "moltar-parse-safe",
+            "implementation": "effect-aot",
+            "operation": "decode-unknown-sync",
+            "astTags": ["Objects", "String", "Number", "Boolean"],
+            "size": "moltar-object"
+          },
+          "cases": [
+            {
+              "name": "effect-aot-valid",
+              "export": "parseValid",
+              "scenario": "moltar-parse-safe-valid",
+              "path": "valid"
+            },
+            {
+              "name": "effect-aot-extra-valid",
+              "export": "parseExtraValid",
+              "scenario": "moltar-parse-safe-extra-valid",
+              "path": "extra-valid"
+            },
+            {
+              "name": "effect-aot-invalid",
+              "export": "parseInvalid",
+              "scenario": "moltar-parse-safe-invalid",
+              "path": "invalid"
+            }
+          ]
+        },
+        {
+          "file": "suites/moltar/fixtures/valibot.ts",
+          "defaults": {
+            "tier": 2,
+            "family": "moltar-parse-safe",
+            "implementation": "valibot",
+            "operation": "parse",
+            "astTags": [],
+            "size": "moltar-object"
+          },
+          "cases": [
+            {
+              "name": "valibot-valid",
+              "export": "parseValid",
+              "scenario": "moltar-parse-safe-valid",
+              "path": "valid"
+            },
+            {
+              "name": "valibot-extra-valid",
+              "export": "parseExtraValid",
+              "scenario": "moltar-parse-safe-extra-valid",
+              "path": "extra-valid"
+            },
+            {
+              "name": "valibot-invalid",
+              "export": "parseInvalid",
+              "scenario": "moltar-parse-safe-invalid",
+              "path": "invalid"
+            }
+          ]
+        },
+        {
+          "file": "suites/moltar/fixtures/zod.ts",
+          "defaults": {
+            "tier": 2,
+            "family": "moltar-parse-safe",
+            "astTags": [],
+            "size": "moltar-object"
+          },
+          "cases": [
+            {
+              "name": "zod-valid",
+              "export": "parseValid",
+              "scenario": "moltar-parse-safe-valid",
+              "implementation": "zod4",
+              "operation": "parse",
+              "path": "valid"
+            },
+            {
+              "name": "zod-extra-valid",
+              "export": "parseExtraValid",
+              "scenario": "moltar-parse-safe-extra-valid",
+              "implementation": "zod4",
+              "operation": "parse",
+              "path": "extra-valid"
+            },
+            {
+              "name": "zod-invalid",
+              "export": "parseInvalid",
+              "scenario": "moltar-parse-safe-invalid",
+              "implementation": "zod4",
+              "operation": "parse",
+              "path": "invalid"
+            },
+            {
+              "name": "zod-jitless-valid",
+              "export": "parseJitlessValid",
+              "scenario": "moltar-parse-safe-valid",
+              "implementation": "zod4-jitless",
+              "operation": "parse-jitless",
+              "path": "valid"
+            },
+            {
+              "name": "zod-jitless-extra-valid",
+              "export": "parseJitlessExtraValid",
+              "scenario": "moltar-parse-safe-extra-valid",
+              "implementation": "zod4-jitless",
+              "operation": "parse-jitless",
+              "path": "extra-valid"
+            },
+            {
+              "name": "zod-jitless-invalid",
+              "export": "parseJitlessInvalid",
+              "scenario": "moltar-parse-safe-invalid",
+              "implementation": "zod4-jitless",
+              "operation": "parse-jitless",
+              "path": "invalid"
+            },
+            {
+              "name": "zod-compiled-valid",
+              "export": "parseCompiledValid",
+              "scenario": "moltar-parse-safe-valid",
+              "implementation": "zod4-compiled",
+              "operation": "parse-compiled",
+              "path": "valid"
+            },
+            {
+              "name": "zod-compiled-extra-valid",
+              "export": "parseCompiledExtraValid",
+              "scenario": "moltar-parse-safe-extra-valid",
+              "implementation": "zod4-compiled",
+              "operation": "parse-compiled",
+              "path": "extra-valid"
+            },
+            {
+              "name": "zod-compiled-invalid",
+              "export": "parseCompiledInvalid",
+              "scenario": "moltar-parse-safe-invalid",
+              "implementation": "zod4-compiled",
+              "operation": "parse-compiled",
+              "path": "invalid"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "moltar-assert-loose",
+      "fixtures": [
+        {
+          "file": "suites/moltar/fixtures/interpreted.ts",
+          "defaults": {
+            "tier": 2,
+            "family": "moltar-assert-loose",
+            "implementation": "effect",
+            "operation": "is",
+            "astTags": ["Objects", "String", "Number", "Boolean"],
+            "size": "moltar-object"
+          },
+          "cases": [
+            {
+              "name": "effect-valid",
+              "export": "isValid",
+              "scenario": "moltar-assert-loose-valid",
+              "path": "valid"
+            },
+            {
+              "name": "effect-extra-valid",
+              "export": "isExtraValid",
+              "scenario": "moltar-assert-loose-extra-valid",
+              "path": "extra-valid"
+            },
+            {
+              "name": "effect-invalid",
+              "export": "isInvalid",
+              "scenario": "moltar-assert-loose-invalid",
+              "path": "invalid"
+            }
+          ]
+        },
+        {
+          "file": "suites/moltar/fixtures/jit.ts",
+          "defaults": {
+            "tier": 2,
+            "family": "moltar-assert-loose",
+            "implementation": "effect-jit",
+            "operation": "is",
+            "astTags": ["Objects", "String", "Number", "Boolean"],
+            "size": "moltar-object"
+          },
+          "cases": [
+            {
+              "name": "effect-jit-valid",
+              "export": "isValid",
+              "scenario": "moltar-assert-loose-valid",
+              "path": "valid"
+            },
+            {
+              "name": "effect-jit-extra-valid",
+              "export": "isExtraValid",
+              "scenario": "moltar-assert-loose-extra-valid",
+              "path": "extra-valid"
+            },
+            {
+              "name": "effect-jit-invalid",
+              "export": "isInvalid",
+              "scenario": "moltar-assert-loose-invalid",
+              "path": "invalid"
+            }
+          ]
+        },
+        {
+          "file": "suites/moltar/fixtures/aot.ts",
+          "defaults": {
+            "tier": 2,
+            "family": "moltar-assert-loose",
+            "implementation": "effect-aot",
+            "operation": "is",
+            "astTags": ["Objects", "String", "Number", "Boolean"],
+            "size": "moltar-object"
+          },
+          "cases": [
+            {
+              "name": "effect-aot-valid",
+              "export": "isValid",
+              "scenario": "moltar-assert-loose-valid",
+              "path": "valid"
+            },
+            {
+              "name": "effect-aot-extra-valid",
+              "export": "isExtraValid",
+              "scenario": "moltar-assert-loose-extra-valid",
+              "path": "extra-valid"
+            },
+            {
+              "name": "effect-aot-invalid",
+              "export": "isInvalid",
+              "scenario": "moltar-assert-loose-invalid",
+              "path": "invalid"
+            }
+          ]
+        },
+        {
+          "file": "suites/moltar/fixtures/valibot.ts",
+          "defaults": {
+            "tier": 2,
+            "family": "moltar-assert-loose",
+            "implementation": "valibot",
+            "operation": "is",
+            "astTags": [],
+            "size": "moltar-object"
+          },
+          "cases": [
+            {
+              "name": "valibot-valid",
+              "export": "isValid",
+              "scenario": "moltar-assert-loose-valid",
+              "path": "valid"
+            },
+            {
+              "name": "valibot-extra-valid",
+              "export": "isExtraValid",
+              "scenario": "moltar-assert-loose-extra-valid",
+              "path": "extra-valid"
+            },
+            {
+              "name": "valibot-invalid",
+              "export": "isInvalid",
+              "scenario": "moltar-assert-loose-invalid",
+              "path": "invalid"
+            }
+          ]
+        },
+        {
+          "file": "suites/moltar/fixtures/zod.ts",
+          "defaults": {
+            "tier": 2,
+            "family": "moltar-assert-loose",
+            "astTags": [],
+            "size": "moltar-object"
+          },
+          "cases": [
+            {
+              "name": "zod-parse-valid",
+              "export": "assertParseValid",
+              "scenario": "moltar-assert-loose-valid",
+              "implementation": "zod4",
+              "operation": "parse-and-assert",
+              "path": "valid"
+            },
+            {
+              "name": "zod-parse-extra-valid",
+              "export": "assertParseExtraValid",
+              "scenario": "moltar-assert-loose-extra-valid",
+              "implementation": "zod4",
+              "operation": "parse-and-assert",
+              "path": "extra-valid"
+            },
+            {
+              "name": "zod-jitless-validate-valid",
+              "export": "isJitlessValid",
+              "scenario": "moltar-assert-loose-valid",
+              "implementation": "zod4-jitless",
+              "operation": "validate-jitless",
+              "path": "valid"
+            },
+            {
+              "name": "zod-jitless-validate-extra-valid",
+              "export": "isJitlessExtraValid",
+              "scenario": "moltar-assert-loose-extra-valid",
+              "implementation": "zod4-jitless",
+              "operation": "validate-jitless",
+              "path": "extra-valid"
+            },
+            {
+              "name": "zod-jitless-validate-invalid",
+              "export": "isJitlessInvalid",
+              "scenario": "moltar-assert-loose-invalid",
+              "implementation": "zod4-jitless",
+              "operation": "validate-jitless",
+              "path": "invalid"
+            },
+            {
+              "name": "zod-validate-valid",
+              "export": "isValid",
+              "scenario": "moltar-assert-loose-valid",
+              "implementation": "zod4-validate",
+              "operation": "validate",
+              "path": "valid"
+            },
+            {
+              "name": "zod-validate-extra-valid",
+              "export": "isExtraValid",
+              "scenario": "moltar-assert-loose-extra-valid",
+              "implementation": "zod4-validate",
+              "operation": "validate",
+              "path": "extra-valid"
+            },
+            {
+              "name": "zod-validate-invalid",
+              "export": "isInvalid",
+              "scenario": "moltar-assert-loose-invalid",
+              "implementation": "zod4-validate",
+              "operation": "validate",
+              "path": "invalid"
+            },
+            {
+              "name": "zod-compiled-valid",
+              "export": "isCompiledValid",
+              "scenario": "moltar-assert-loose-valid",
+              "implementation": "zod4-compiled",
+              "operation": "validate-compiled",
+              "path": "valid"
+            },
+            {
+              "name": "zod-compiled-extra-valid",
+              "export": "isCompiledExtraValid",
+              "scenario": "moltar-assert-loose-extra-valid",
+              "implementation": "zod4-compiled",
+              "operation": "validate-compiled",
+              "path": "extra-valid"
+            },
+            {
+              "name": "zod-compiled-invalid",
+              "export": "isCompiledInvalid",
+              "scenario": "moltar-assert-loose-invalid",
+              "implementation": "zod4-compiled",
+              "operation": "validate-compiled",
+              "path": "invalid"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "compiler-rebuild",
+      "fixtures": [
+        {
+          "file": "suites/compiler-rebuild/fixtures/interpreted.ts",
+          "defaults": {
+            "tier": 1,
+            "family": "interpreted",
+            "implementation": "effect",
+            "astTags": [
+              "Objects",
+              "String",
+              "Number",
+              "Boolean"
+            ],
+            "operation": "decode",
+            "path": "valid",
+            "size": 3
+          },
+          "cases": [
+            {
+              "name": "interpreted-parseValid",
+              "export": "parseValid",
+              "scenario": "compiler-rebuild-parseValid"
+            },
+            {
+              "name": "interpreted-parseExtra",
+              "export": "parseExtra",
+              "scenario": "compiler-rebuild-parseExtra",
+              "size": 4
+            },
+            {
+              "name": "interpreted-parseInvalid",
+              "export": "parseInvalid",
+              "scenario": "compiler-rebuild-parseInvalid",
+              "path": "invalid"
+            },
+            {
+              "name": "interpreted-isValid",
+              "export": "isValid",
+              "scenario": "compiler-rebuild-isValid",
+              "operation": "is"
+            },
+            {
+              "name": "interpreted-isInvalid",
+              "export": "isInvalid",
+              "scenario": "compiler-rebuild-isInvalid",
+              "operation": "is",
+              "path": "invalid"
+            },
+            {
+              "name": "interpreted-encode",
+              "export": "encode",
+              "scenario": "compiler-rebuild-encode",
+              "operation": "encode"
+            },
+            {
+              "name": "interpreted-strict",
+              "export": "strict",
+              "scenario": "compiler-rebuild-strict"
+            },
+            {
+              "name": "interpreted-nested",
+              "export": "nested",
+              "scenario": "compiler-rebuild-nested",
+              "astTags": [
+                "Objects",
+                "Arrays",
+                "String",
+                "Number",
+                "Boolean"
+              ],
+              "size": 2
+            },
+            {
+              "name": "interpreted-array",
+              "export": "array",
+              "scenario": "compiler-rebuild-array",
+              "astTags": [
+                "Arrays",
+                "Objects",
+                "String",
+                "Number",
+                "Boolean"
+              ],
+              "size": 32
+            },
+            {
+              "name": "interpreted-arrayInvalid",
+              "export": "arrayInvalid",
+              "scenario": "compiler-rebuild-arrayInvalid",
+              "path": "invalid",
+              "astTags": [
+                "Arrays",
+                "Objects",
+                "String",
+                "Number",
+                "Boolean"
+              ],
+              "size": 33
+            },
+            {
+              "name": "interpreted-tuple",
+              "export": "tuple",
+              "scenario": "compiler-rebuild-tuple",
+              "astTags": [
+                "Arrays",
+                "String",
+                "Number",
+                "Boolean"
+              ],
+              "size": 34
+            },
+            {
+              "name": "interpreted-record",
+              "export": "record",
+              "scenario": "compiler-rebuild-record",
+              "size": 32
+            },
+            {
+              "name": "interpreted-recordTransformedKeys",
+              "export": "recordTransformedKeys",
+              "scenario": "compiler-rebuild-recordTransformedKeys",
+              "astTags": [
+                "Objects",
+                "String"
+              ],
+              "size": 32
+            },
+            {
+              "name": "interpreted-union",
+              "export": "union",
+              "scenario": "compiler-rebuild-union",
+              "astTags": [
+                "Union",
+                "Objects",
+                "Literal",
+                "Number"
+              ],
+              "size": 8
+            },
+            {
+              "name": "interpreted-oneOf",
+              "export": "oneOf",
+              "scenario": "compiler-rebuild-oneOf",
+              "astTags": [
+                "Union",
+                "Objects",
+                "String",
+                "Number"
+              ],
+              "size": 2
+            },
+            {
+              "name": "interpreted-transform",
+              "export": "transform",
+              "scenario": "compiler-rebuild-transform",
+              "astTags": [
+                "Objects",
+                "String",
+                "Number"
+              ],
+              "size": 32
+            },
+            {
+              "name": "interpreted-transformInvalid",
+              "export": "transformInvalid",
+              "scenario": "compiler-rebuild-transformInvalid",
+              "path": "invalid",
+              "astTags": [
+                "String",
+                "Number"
+              ],
+              "size": 1
+            },
+            {
+              "name": "interpreted-rootTransform",
+              "export": "rootTransform",
+              "scenario": "compiler-rebuild-rootTransform",
+              "astTags": [
+                "String",
+                "Number"
+              ],
+              "size": 1
+            },
+            {
+              "name": "interpreted-middleware",
+              "export": "middleware",
+              "scenario": "compiler-rebuild-middleware"
+            },
+            {
+              "name": "interpreted-recursive",
+              "export": "recursive",
+              "scenario": "compiler-rebuild-recursive",
+              "astTags": [
+                "Objects",
+                "Arrays",
+                "Suspend",
+                "Number"
+              ],
+              "size": 31
+            },
+            {
+              "name": "interpreted-suspendRoot",
+              "export": "suspendRoot",
+              "scenario": "compiler-rebuild-suspendRoot",
+              "astTags": [
+                "Suspend",
+                "Objects",
+                "Number"
+              ],
+              "size": 1
+            },
+            {
+              "name": "interpreted-declaration",
+              "export": "declaration",
+              "scenario": "compiler-rebuild-declaration",
+              "astTags": [
+                "Declaration",
+                "Objects",
+                "String",
+                "Number",
+                "Boolean"
+              ],
+              "size": 32
+            },
+            {
+              "name": "interpreted-makeStruct",
+              "export": "makeStruct",
+              "scenario": "compiler-rebuild-makeStruct",
+              "operation": "make",
+              "astTags": [
+                "Objects",
+                "Number"
+              ],
+              "size": 32
+            },
+            {
+              "name": "interpreted-makeArray",
+              "export": "makeArray",
+              "scenario": "compiler-rebuild-makeArray",
+              "operation": "make",
+              "astTags": [
+                "Arrays",
+                "Objects",
+                "String",
+                "Number",
+                "Boolean"
+              ],
+              "size": 32
+            },
+            {
+              "name": "interpreted-makeUnion",
+              "export": "makeUnion",
+              "scenario": "compiler-rebuild-makeUnion",
+              "operation": "make",
+              "astTags": [
+                "Union",
+                "Objects",
+                "Literal",
+                "Number"
+              ],
+              "size": 8
+            }
+          ]
+        },
+        {
+          "file": "suites/compiler-rebuild/fixtures/jit.ts",
+          "defaults": {
+            "tier": 1,
+            "family": "jit",
+            "implementation": "effect-jit",
+            "astTags": [
+              "Objects",
+              "String",
+              "Number",
+              "Boolean"
+            ],
+            "operation": "decode",
+            "path": "valid",
+            "size": 3
+          },
+          "cases": [
+            {
+              "name": "jit-parseValid",
+              "export": "parseValid",
+              "scenario": "compiler-rebuild-parseValid"
+            },
+            {
+              "name": "jit-parseExtra",
+              "export": "parseExtra",
+              "scenario": "compiler-rebuild-parseExtra",
+              "size": 4
+            },
+            {
+              "name": "jit-parseInvalid",
+              "export": "parseInvalid",
+              "scenario": "compiler-rebuild-parseInvalid",
+              "path": "invalid"
+            },
+            {
+              "name": "jit-isValid",
+              "export": "isValid",
+              "scenario": "compiler-rebuild-isValid",
+              "operation": "is"
+            },
+            {
+              "name": "jit-isInvalid",
+              "export": "isInvalid",
+              "scenario": "compiler-rebuild-isInvalid",
+              "operation": "is",
+              "path": "invalid"
+            },
+            {
+              "name": "jit-encode",
+              "export": "encode",
+              "scenario": "compiler-rebuild-encode",
+              "operation": "encode"
+            },
+            {
+              "name": "jit-strict",
+              "export": "strict",
+              "scenario": "compiler-rebuild-strict"
+            },
+            {
+              "name": "jit-nested",
+              "export": "nested",
+              "scenario": "compiler-rebuild-nested",
+              "astTags": [
+                "Objects",
+                "Arrays",
+                "String",
+                "Number",
+                "Boolean"
+              ],
+              "size": 2
+            },
+            {
+              "name": "jit-array",
+              "export": "array",
+              "scenario": "compiler-rebuild-array",
+              "astTags": [
+                "Arrays",
+                "Objects",
+                "String",
+                "Number",
+                "Boolean"
+              ],
+              "size": 32
+            },
+            {
+              "name": "jit-arrayInvalid",
+              "export": "arrayInvalid",
+              "scenario": "compiler-rebuild-arrayInvalid",
+              "path": "invalid",
+              "astTags": [
+                "Arrays",
+                "Objects",
+                "String",
+                "Number",
+                "Boolean"
+              ],
+              "size": 33
+            },
+            {
+              "name": "jit-tuple",
+              "export": "tuple",
+              "scenario": "compiler-rebuild-tuple",
+              "astTags": [
+                "Arrays",
+                "String",
+                "Number",
+                "Boolean"
+              ],
+              "size": 34
+            },
+            {
+              "name": "jit-record",
+              "export": "record",
+              "scenario": "compiler-rebuild-record",
+              "size": 32
+            },
+            {
+              "name": "jit-recordTransformedKeys",
+              "export": "recordTransformedKeys",
+              "scenario": "compiler-rebuild-recordTransformedKeys",
+              "astTags": [
+                "Objects",
+                "String"
+              ],
+              "size": 32
+            },
+            {
+              "name": "jit-union",
+              "export": "union",
+              "scenario": "compiler-rebuild-union",
+              "astTags": [
+                "Union",
+                "Objects",
+                "Literal",
+                "Number"
+              ],
+              "size": 8
+            },
+            {
+              "name": "jit-oneOf",
+              "export": "oneOf",
+              "scenario": "compiler-rebuild-oneOf",
+              "astTags": [
+                "Union",
+                "Objects",
+                "String",
+                "Number"
+              ],
+              "size": 2
+            },
+            {
+              "name": "jit-transform",
+              "export": "transform",
+              "scenario": "compiler-rebuild-transform",
+              "astTags": [
+                "Objects",
+                "String",
+                "Number"
+              ],
+              "size": 32
+            },
+            {
+              "name": "jit-transformInvalid",
+              "export": "transformInvalid",
+              "scenario": "compiler-rebuild-transformInvalid",
+              "path": "invalid",
+              "astTags": [
+                "String",
+                "Number"
+              ],
+              "size": 1
+            },
+            {
+              "name": "jit-rootTransform",
+              "export": "rootTransform",
+              "scenario": "compiler-rebuild-rootTransform",
+              "astTags": [
+                "String",
+                "Number"
+              ],
+              "size": 1
+            },
+            {
+              "name": "jit-middleware",
+              "export": "middleware",
+              "scenario": "compiler-rebuild-middleware"
+            },
+            {
+              "name": "jit-recursive",
+              "export": "recursive",
+              "scenario": "compiler-rebuild-recursive",
+              "astTags": [
+                "Objects",
+                "Arrays",
+                "Suspend",
+                "Number"
+              ],
+              "size": 31
+            },
+            {
+              "name": "jit-suspendRoot",
+              "export": "suspendRoot",
+              "scenario": "compiler-rebuild-suspendRoot",
+              "astTags": [
+                "Suspend",
+                "Objects",
+                "Number"
+              ],
+              "size": 1
+            },
+            {
+              "name": "jit-declaration",
+              "export": "declaration",
+              "scenario": "compiler-rebuild-declaration",
+              "astTags": [
+                "Declaration",
+                "Objects",
+                "String",
+                "Number",
+                "Boolean"
+              ],
+              "size": 32
+            },
+            {
+              "name": "jit-makeStruct",
+              "export": "makeStruct",
+              "scenario": "compiler-rebuild-makeStruct",
+              "operation": "make",
+              "astTags": [
+                "Objects",
+                "Number"
+              ],
+              "size": 32
+            },
+            {
+              "name": "jit-makeArray",
+              "export": "makeArray",
+              "scenario": "compiler-rebuild-makeArray",
+              "operation": "make",
+              "astTags": [
+                "Arrays",
+                "Objects",
+                "String",
+                "Number",
+                "Boolean"
+              ],
+              "size": 32
+            },
+            {
+              "name": "jit-makeUnion",
+              "export": "makeUnion",
+              "scenario": "compiler-rebuild-makeUnion",
+              "operation": "make",
+              "astTags": [
+                "Union",
+                "Objects",
+                "Literal",
+                "Number"
+              ],
+              "size": 8
+            }
+          ]
+        },
+        {
+          "file": "suites/compiler-rebuild/fixtures/aot.ts",
+          "defaults": {
+            "tier": 1,
+            "family": "aot",
+            "implementation": "effect-aot",
+            "astTags": [
+              "Objects",
+              "String",
+              "Number",
+              "Boolean"
+            ],
+            "operation": "decode",
+            "path": "valid",
+            "size": 3
+          },
+          "cases": [
+            {
+              "name": "aot-parseValid",
+              "export": "parseValid",
+              "scenario": "compiler-rebuild-parseValid"
+            },
+            {
+              "name": "aot-parseExtra",
+              "export": "parseExtra",
+              "scenario": "compiler-rebuild-parseExtra",
+              "size": 4
+            },
+            {
+              "name": "aot-parseInvalid",
+              "export": "parseInvalid",
+              "scenario": "compiler-rebuild-parseInvalid",
+              "path": "invalid"
+            },
+            {
+              "name": "aot-isValid",
+              "export": "isValid",
+              "scenario": "compiler-rebuild-isValid",
+              "operation": "is"
+            },
+            {
+              "name": "aot-isInvalid",
+              "export": "isInvalid",
+              "scenario": "compiler-rebuild-isInvalid",
+              "operation": "is",
+              "path": "invalid"
+            },
+            {
+              "name": "aot-encode",
+              "export": "encode",
+              "scenario": "compiler-rebuild-encode",
+              "operation": "encode"
+            },
+            {
+              "name": "aot-strict",
+              "export": "strict",
+              "scenario": "compiler-rebuild-strict"
+            },
+            {
+              "name": "aot-nested",
+              "export": "nested",
+              "scenario": "compiler-rebuild-nested",
+              "astTags": [
+                "Objects",
+                "Arrays",
+                "String",
+                "Number",
+                "Boolean"
+              ],
+              "size": 2
+            },
+            {
+              "name": "aot-array",
+              "export": "array",
+              "scenario": "compiler-rebuild-array",
+              "astTags": [
+                "Arrays",
+                "Objects",
+                "String",
+                "Number",
+                "Boolean"
+              ],
+              "size": 32
+            },
+            {
+              "name": "aot-arrayInvalid",
+              "export": "arrayInvalid",
+              "scenario": "compiler-rebuild-arrayInvalid",
+              "path": "invalid",
+              "astTags": [
+                "Arrays",
+                "Objects",
+                "String",
+                "Number",
+                "Boolean"
+              ],
+              "size": 33
+            },
+            {
+              "name": "aot-tuple",
+              "export": "tuple",
+              "scenario": "compiler-rebuild-tuple",
+              "astTags": [
+                "Arrays",
+                "String",
+                "Number",
+                "Boolean"
+              ],
+              "size": 34
+            },
+            {
+              "name": "aot-record",
+              "export": "record",
+              "scenario": "compiler-rebuild-record",
+              "size": 32
+            },
+            {
+              "name": "aot-recordTransformedKeys",
+              "export": "recordTransformedKeys",
+              "scenario": "compiler-rebuild-recordTransformedKeys",
+              "astTags": [
+                "Objects",
+                "String"
+              ],
+              "size": 32
+            },
+            {
+              "name": "aot-union",
+              "export": "union",
+              "scenario": "compiler-rebuild-union",
+              "astTags": [
+                "Union",
+                "Objects",
+                "Literal",
+                "Number"
+              ],
+              "size": 8
+            },
+            {
+              "name": "aot-oneOf",
+              "export": "oneOf",
+              "scenario": "compiler-rebuild-oneOf",
+              "astTags": [
+                "Union",
+                "Objects",
+                "String",
+                "Number"
+              ],
+              "size": 2
+            },
+            {
+              "name": "aot-transform",
+              "export": "transform",
+              "scenario": "compiler-rebuild-transform",
+              "astTags": [
+                "Objects",
+                "String",
+                "Number"
+              ],
+              "size": 32
+            },
+            {
+              "name": "aot-transformInvalid",
+              "export": "transformInvalid",
+              "scenario": "compiler-rebuild-transformInvalid",
+              "path": "invalid",
+              "astTags": [
+                "String",
+                "Number"
+              ],
+              "size": 1
+            },
+            {
+              "name": "aot-rootTransform",
+              "export": "rootTransform",
+              "scenario": "compiler-rebuild-rootTransform",
+              "astTags": [
+                "String",
+                "Number"
+              ],
+              "size": 1
+            },
+            {
+              "name": "aot-middleware",
+              "export": "middleware",
+              "scenario": "compiler-rebuild-middleware"
+            },
+            {
+              "name": "aot-recursive",
+              "export": "recursive",
+              "scenario": "compiler-rebuild-recursive",
+              "astTags": [
+                "Objects",
+                "Arrays",
+                "Suspend",
+                "Number"
+              ],
+              "size": 31
+            },
+            {
+              "name": "aot-suspendRoot",
+              "export": "suspendRoot",
+              "scenario": "compiler-rebuild-suspendRoot",
+              "astTags": [
+                "Suspend",
+                "Objects",
+                "Number"
+              ],
+              "size": 1
+            },
+            {
+              "name": "aot-declaration",
+              "export": "declaration",
+              "scenario": "compiler-rebuild-declaration",
+              "astTags": [
+                "Declaration",
+                "Objects",
+                "String",
+                "Number",
+                "Boolean"
+              ],
+              "size": 32
+            },
+            {
+              "name": "aot-makeStruct",
+              "export": "makeStruct",
+              "scenario": "compiler-rebuild-makeStruct",
+              "operation": "make",
+              "astTags": [
+                "Objects",
+                "Number"
+              ],
+              "size": 32
+            },
+            {
+              "name": "aot-makeArray",
+              "export": "makeArray",
+              "scenario": "compiler-rebuild-makeArray",
+              "operation": "make",
+              "astTags": [
+                "Arrays",
+                "Objects",
+                "String",
+                "Number",
+                "Boolean"
+              ],
+              "size": 32
+            },
+            {
+              "name": "aot-makeUnion",
+              "export": "makeUnion",
+              "scenario": "compiler-rebuild-makeUnion",
+              "operation": "make",
+              "astTags": [
+                "Union",
+                "Objects",
+                "Literal",
+                "Number"
+              ],
+              "size": 8
+            }
+          ]
+        },
+        {
+          "file": "suites/compiler-rebuild/fixtures/valibot.ts",
+          "defaults": {
+            "tier": 1,
+            "family": "valibot",
+            "implementation": "valibot",
+            "astTags": [],
+            "operation": "decode",
+            "path": "valid",
+            "size": 3
+          },
+          "cases": [
+            {
+              "name": "valibot-parseValid",
+              "export": "parseValid",
+              "scenario": "compiler-rebuild-parseValid"
+            },
+            {
+              "name": "valibot-parseInvalid",
+              "export": "parseInvalid",
+              "scenario": "compiler-rebuild-parseInvalid",
+              "path": "invalid"
+            },
+            {
+              "name": "valibot-isValid",
+              "export": "isValid",
+              "scenario": "compiler-rebuild-isValid",
+              "operation": "is"
+            },
+            {
+              "name": "valibot-isInvalid",
+              "export": "isInvalid",
+              "scenario": "compiler-rebuild-isInvalid",
+              "operation": "is",
+              "path": "invalid"
+            },
+            {
+              "name": "valibot-array",
+              "export": "array",
+              "scenario": "compiler-rebuild-array",
+              "size": 32
+            },
+            {
+              "name": "valibot-record",
+              "export": "record",
+              "scenario": "compiler-rebuild-record",
+              "size": 32
+            },
+            {
+              "name": "valibot-recordTransformedKeys",
+              "export": "recordTransformedKeys",
+              "scenario": "compiler-rebuild-recordTransformedKeys",
+              "size": 32
+            },
+            {
+              "name": "valibot-union",
+              "export": "union",
+              "scenario": "compiler-rebuild-union",
+              "size": 8
+            },
+            {
+              "name": "valibot-transform",
+              "export": "transform",
+              "scenario": "compiler-rebuild-transform",
+              "size": 32
+            },
+            {
+              "name": "valibot-makeStruct",
+              "export": "makeStruct",
+              "scenario": "compiler-rebuild-makeStruct",
+              "operation": "make",
+              "size": 32
+            },
+            {
+              "name": "valibot-makeArray",
+              "export": "makeArray",
+              "scenario": "compiler-rebuild-makeArray",
+              "operation": "make",
+              "size": 32
+            }
+          ]
+        },
+        {
+          "file": "suites/compiler-rebuild/fixtures/zod-jitless.ts",
+          "defaults": {
+            "tier": 1,
+            "family": "zod-jitless",
+            "implementation": "zod4-jitless",
+            "astTags": [],
+            "operation": "decode",
+            "path": "valid",
+            "size": 3
+          },
+          "cases": [
+            {
+              "name": "zod-jitless-parseValid",
+              "export": "parseValid",
+              "scenario": "compiler-rebuild-parseValid"
+            },
+            {
+              "name": "zod-jitless-parseInvalid",
+              "export": "parseInvalid",
+              "scenario": "compiler-rebuild-parseInvalid",
+              "path": "invalid"
+            },
+            {
+              "name": "zod-jitless-isValid",
+              "export": "isValid",
+              "scenario": "compiler-rebuild-isValid",
+              "operation": "is"
+            },
+            {
+              "name": "zod-jitless-isInvalid",
+              "export": "isInvalid",
+              "scenario": "compiler-rebuild-isInvalid",
+              "operation": "is",
+              "path": "invalid"
+            },
+            {
+              "name": "zod-jitless-array",
+              "export": "array",
+              "scenario": "compiler-rebuild-array",
+              "size": 32
+            },
+            {
+              "name": "zod-jitless-record",
+              "export": "record",
+              "scenario": "compiler-rebuild-record",
+              "size": 32
+            },
+            {
+              "name": "zod-jitless-recordTransformedKeys",
+              "export": "recordTransformedKeys",
+              "scenario": "compiler-rebuild-recordTransformedKeys",
+              "size": 32
+            },
+            {
+              "name": "zod-jitless-union",
+              "export": "union",
+              "scenario": "compiler-rebuild-union",
+              "size": 8
+            },
+            {
+              "name": "zod-jitless-transform",
+              "export": "transform",
+              "scenario": "compiler-rebuild-transform",
+              "size": 32
+            },
+            {
+              "name": "zod-jitless-makeStruct",
+              "export": "makeStruct",
+              "scenario": "compiler-rebuild-makeStruct",
+              "operation": "make",
+              "size": 32
+            },
+            {
+              "name": "zod-jitless-makeArray",
+              "export": "makeArray",
+              "scenario": "compiler-rebuild-makeArray",
+              "operation": "make",
+              "size": 32
+            }
+          ]
+        },
+        {
+          "file": "suites/compiler-rebuild/fixtures/zod-compiled.ts",
+          "defaults": {
+            "tier": 1,
+            "family": "zod-compiled",
+            "implementation": "zod4-compiled",
+            "astTags": [],
+            "operation": "decode",
+            "path": "valid",
+            "size": 3
+          },
+          "cases": [
+            {
+              "name": "zod-compiled-parseValid",
+              "export": "parseValid",
+              "scenario": "compiler-rebuild-parseValid"
+            },
+            {
+              "name": "zod-compiled-parseExtra",
+              "export": "parseExtra",
+              "scenario": "compiler-rebuild-parseExtra",
+              "size": 4
+            },
+            {
+              "name": "zod-compiled-parseInvalid",
+              "export": "parseInvalid",
+              "scenario": "compiler-rebuild-parseInvalid",
+              "path": "invalid"
+            },
+            {
+              "name": "zod-compiled-isValid",
+              "export": "isValid",
+              "scenario": "compiler-rebuild-isValid",
+              "operation": "is"
+            },
+            {
+              "name": "zod-compiled-isInvalid",
+              "export": "isInvalid",
+              "scenario": "compiler-rebuild-isInvalid",
+              "operation": "is",
+              "path": "invalid"
+            },
+            {
+              "name": "zod-compiled-encode",
+              "export": "encode",
+              "scenario": "compiler-rebuild-encode",
+              "operation": "encode"
+            },
+            {
+              "name": "zod-compiled-strict",
+              "export": "strict",
+              "scenario": "compiler-rebuild-strict"
+            },
+            {
+              "name": "zod-compiled-nested",
+              "export": "nested",
+              "scenario": "compiler-rebuild-nested",
+              "size": 2
+            },
+            {
+              "name": "zod-compiled-array",
+              "export": "array",
+              "scenario": "compiler-rebuild-array",
+              "size": 32
+            },
+            {
+              "name": "zod-compiled-arrayInvalid",
+              "export": "arrayInvalid",
+              "scenario": "compiler-rebuild-arrayInvalid",
+              "path": "invalid",
+              "size": 33
+            },
+            {
+              "name": "zod-compiled-record",
+              "export": "record",
+              "scenario": "compiler-rebuild-record",
+              "size": 32
+            },
+            {
+              "name": "zod-compiled-recordTransformedKeys",
+              "export": "recordTransformedKeys",
+              "scenario": "compiler-rebuild-recordTransformedKeys",
+              "size": 32
+            },
+            {
+              "name": "zod-compiled-union",
+              "export": "union",
+              "scenario": "compiler-rebuild-union",
+              "size": 8
+            },
+            {
+              "name": "zod-compiled-transform",
+              "export": "transform",
+              "scenario": "compiler-rebuild-transform",
+              "size": 32
+            },
+            {
+              "name": "zod-compiled-transformInvalid",
+              "export": "transformInvalid",
+              "scenario": "compiler-rebuild-transformInvalid",
+              "path": "invalid",
+              "size": 1
+            },
+            {
+              "name": "zod-compiled-declaration",
+              "export": "declaration",
+              "scenario": "compiler-rebuild-declaration",
+              "size": 32
+            },
+            {
+              "name": "zod-compiled-makeStruct",
+              "export": "makeStruct",
+              "scenario": "compiler-rebuild-makeStruct",
+              "operation": "make",
+              "size": 32
+            },
+            {
+              "name": "zod-compiled-makeArray",
+              "export": "makeArray",
+              "scenario": "compiler-rebuild-makeArray",
+              "operation": "make",
+              "size": 32
+            },
+            {
+              "name": "zod-compiled-makeUnion",
+              "export": "makeUnion",
+              "scenario": "compiler-rebuild-makeUnion",
+              "operation": "make",
+              "size": 8
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

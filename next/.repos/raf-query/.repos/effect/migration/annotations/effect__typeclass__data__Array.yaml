@@ -1,0 +1,51 @@
+"@effect/typeclass/data/Array#Applicative":
+  replacement: "effect/Array"
+  note: "The @effect/typeclass package and its Array instance dictionaries were removed in v4. Use the concrete effect/Array operations directly."
+"@effect/typeclass/data/Array#Chainable":
+  replacement: "effect/Array"
+  note: "The @effect/typeclass package and its Array instance dictionaries were removed in v4. Use the concrete effect/Array operations directly."
+"@effect/typeclass/data/Array#Covariant":
+  replacement: "effect/Array"
+  note: "The @effect/typeclass package and its Array instance dictionaries were removed in v4. Use the concrete effect/Array operations directly."
+"@effect/typeclass/data/Array#Filterable":
+  replacement: "effect/Array"
+  note: "The @effect/typeclass package and its Array instance dictionaries were removed in v4. Use the concrete effect/Array operations directly."
+"@effect/typeclass/data/Array#FlatMap":
+  replacement: "effect/Array"
+  note: "The @effect/typeclass package and its Array instance dictionaries were removed in v4. Use the concrete effect/Array operations directly."
+"@effect/typeclass/data/Array#Foldable":
+  replacement: "effect/Array"
+  note: "The @effect/typeclass package and its Array instance dictionaries were removed in v4. Use the concrete effect/Array operations directly."
+"@effect/typeclass/data/Array#getMonoid":
+  replacement: "Array.makeReducerConcat"
+  note: "Use the v4 concatenation Reducer; Reducer replaces Monoid."
+"@effect/typeclass/data/Array#getSemigroup":
+  replacement: "Array.makeReducerConcat"
+  note: "The v4 concatenation Reducer is also a Combiner and replaces this Semigroup."
+"@effect/typeclass/data/Array#Invariant":
+  replacement: "effect/Array"
+  note: "The @effect/typeclass package and its Array instance dictionaries were removed in v4. Use the concrete effect/Array operations directly."
+"@effect/typeclass/data/Array#Monad":
+  replacement: "effect/Array"
+  note: "The @effect/typeclass package and its Array instance dictionaries were removed in v4. Use the concrete effect/Array operations directly."
+"@effect/typeclass/data/Array#Of":
+  replacement: "effect/Array"
+  note: "The @effect/typeclass package and its Array instance dictionaries were removed in v4. Use the concrete effect/Array operations directly."
+"@effect/typeclass/data/Array#Pointed":
+  replacement: "effect/Array"
+  note: "The @effect/typeclass package and its Array instance dictionaries were removed in v4. Use the concrete effect/Array operations directly."
+"@effect/typeclass/data/Array#Product":
+  replacement: "effect/Array"
+  note: "The @effect/typeclass package and its Array instance dictionaries were removed in v4. Use the concrete effect/Array operations directly."
+"@effect/typeclass/data/Array#SemiApplicative":
+  replacement: "effect/Array"
+  note: "The @effect/typeclass package and its Array instance dictionaries were removed in v4. Use the concrete effect/Array operations directly."
+"@effect/typeclass/data/Array#SemiProduct":
+  replacement: "effect/Array"
+  note: "The @effect/typeclass package and its Array instance dictionaries were removed in v4. Use the concrete effect/Array operations directly."
+"@effect/typeclass/data/Array#Traversable":
+  replacement: "effect/Array"
+  note: "The @effect/typeclass package and its Array instance dictionaries were removed in v4. Use the concrete effect/Array operations directly."
+"@effect/typeclass/data/Array#TraversableFilterable":
+  replacement: "effect/Array"
+  note: "The @effect/typeclass package and its Array instance dictionaries were removed in v4. Use the concrete effect/Array operations directly."

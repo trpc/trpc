@@ -1,0 +1,169 @@
+cleanupUnusedCatalogs: true
+minimumReleaseAge: 1440
+linkWorkspacePackages: true
+preferWorkspacePackages: true
+blockExoticSubdeps: true
+trustPolicy: 'no-downgrade'
+
+trustPolicyExclude:
+  - 'chokidar@4.0.3' # known to be safe, installed by sass, prisma, netlify... no planned releases in v4, packages is on v5 now
+  - 'semver@6.3.1' # installed by babel, ecosystem has been on v7 for 7 years now, but babel is horribly out of date, 6.3.1 is the latest v6 and was released 3 years ago
+  - 'undici@6.21.2' # installed by cheerio@1.0.0 -> html-link-extractor@1.0.5 -> markdown-link-extractor@4.0.3, is only 1 year old, v6, v7 and v8 are maintained in parallel
+  - '@platformatic/flame@1.7.0' # trusted publishing failed due to a missing sigstore module in npm, then an established maintainer published it manually
+  - '@netlify/serverless-functions-api@2.21.2 || 2.18.0' # Netlify's repo went private Aug 2023, provenance never returned for any version since. Two versions: @netlify/server-dev wants ^2.21.2, @netlify/zip-it-and-ship-it pins an exact 2.18.0
+
+packages:
+  - 'packages/*'
+  - 'benchmarks/*'
+  - 'benchmarks/memory/*'
+  - 'examples/react/*'
+  - 'examples/solid/*'
+  - 'examples/vue/*'
+  - 'examples/react/router-monorepo-react-query/packages/*'
+  - 'examples/react/router-monorepo-simple/packages/*'
+  - 'examples/react/router-monorepo-simple-lazy/packages/*'
+  - 'e2e/e2e-utils'
+  - 'e2e/react-router/*'
+  - 'e2e/solid-router/*'
+  - 'e2e/vue-router/*'
+  - 'e2e/react-start/*'
+  - 'e2e/solid-start/*'
+  - 'e2e/vue-start/*'
+  - 'e2e/eslint-plugin-start'
+
+catalog:
+  '@babel/core': ^7.29.7
+  '@babel/types': ^7.29.8
+  '@arethetypeswrong/cli': ^0.18.4
+  '@eslint-react/eslint-plugin': ^1.26.2
+  '@rsbuild/core': ^2.2.5
+  '@tanstack/vite-config': 0.5.2
+  '@testing-library/jest-dom': ^6.6.3
+  '@testing-library/react': ^16.2.0
+  '@vitejs/plugin-react': ^4.3.4
+  '@vitejs/plugin-vue-jsx': ^4.1.2
+  '@vitest/ui': ^4.1.4
+  react: ^19.2.3
+  react-dom: ^19.2.3
+  '@types/react': ^19.2.8
+  '@types/react-dom': ^19.2.3
+  eslint: ^9.22.0
+  eslint-plugin-react-hooks: ^5.1.0
+  chokidar: ^5.0.0
+  combinate: ^1.1.11
+  isbot: ^5.1.22
+  jsdom: ^25.0.1
+  pathe: ^2.0.3
+  publint: ^0.3.16
+  redaxios: ^0.5.1
+  rimraf: ^6.1.2
+  solid-js: 1.9.12
+  tinyglobby: ^0.2.17
+  vite: ^8.3.4
+  vite-plugin-solid: 2.11.10
+  vitest: ^4.1.4
+  vue: ^3.5.25
+  zod: ^4.5.4
+  '@types/node': 25.0.9
+  '@playwright/test': ^1.63.0
+  '@tanstack/query-core': ^5.102.0
+  '@tanstack/react-query': ^5.102.0
+  '@tanstack/solid-query': ^5.102.0
+  '@tanstack/vue-query': ^5.102.0
+
+overrides:
+  '@types/babel__traverse': '^7.28.0'
+  vite-plugin-dts: 4.2.3
+  solid-js: 'catalog:'
+  react: 'catalog:'
+  react-dom: 'catalog:'
+  '@types/react': 'catalog:'
+  '@types/react-dom': 'catalog:'
+  eslint: 'catalog:'
+  vite: 'catalog:'
+  '@types/node': 'catalog:'
+  '@playwright/test': 'catalog:'
+  '@tanstack/query-core': 'catalog:'
+  '@tanstack/react-query': 'catalog:'
+  '@tanstack/solid-query': 'catalog:'
+  '@tanstack/vue-query': 'catalog:'
+  '@tanstack/history': 'workspace:*'
+  '@tanstack/router-core': 'workspace:*'
+  '@tanstack/react-router': 'workspace:*'
+  '@tanstack/router-cli': 'workspace:*'
+  '@tanstack/router-devtools': 'workspace:*'
+  '@tanstack/router-devtools-core': 'workspace:^'
+  '@tanstack/react-router-devtools': 'workspace:^'
+  '@tanstack/solid-router-devtools': 'workspace:^'
+  '@tanstack/router-generator': 'workspace:*'
+  '@tanstack/virtual-file-routes': 'workspace:*'
+  '@tanstack/router-plugin': 'workspace:*'
+  '@tanstack/router-vite-plugin': 'workspace:*'
+  '@tanstack/router-ssr-query-core': 'workspace:*'
+  '@tanstack/react-router-ssr-query': 'workspace:*'
+  '@tanstack/solid-router-ssr-query': 'workspace:*'
+  '@tanstack/vue-router-ssr-query': 'workspace:*'
+  '@tanstack/zod-adapter': 'workspace:*'
+  '@tanstack/valibot-adapter': 'workspace:*'
+  '@tanstack/arktype-adapter': 'workspace:*'
+  '@tanstack/react-start': 'workspace:*'
+  '@tanstack/react-start-rsc': 'workspace:*'
+  '@tanstack/react-start-client': 'workspace:*'
+  '@tanstack/react-start-server': 'workspace:*'
+  '@tanstack/solid-start': 'workspace:*'
+  '@tanstack/solid-start-client': 'workspace:*'
+  '@tanstack/solid-start-server': 'workspace:*'
+  '@tanstack/vue-start': 'workspace:*'
+  '@tanstack/vue-start-client': 'workspace:*'
+  '@tanstack/vue-start-server': 'workspace:*'
+  '@tanstack/start-plugin-core': 'workspace:*'
+  '@tanstack/start-client-core': 'workspace:*'
+  '@tanstack/start-server-core': 'workspace:*'
+  '@tanstack/start-storage-context': 'workspace:*'
+  '@tanstack/vue-router': 'workspace:*'
+  '@tanstack/vue-router-devtools': 'workspace:*'
+  '@tanstack/eslint-plugin-router': 'workspace:*'
+  '@tanstack/router-utils': 'workspace:*'
+  '@tanstack/start-static-server-functions': 'workspace:*'
+  '@tanstack/nitro-v2-vite-plugin': 'workspace:*'
+
+allowBuilds:
+  # root dependency
+  '@swc/core': true # required for TypeScript compilation
+  nx: true
+  unrs-resolver: false # not directly required for build
+  esbuild: true
+
+  # @clerk/tanstack-start-adapter
+  '@clerk/shared': false # optional auth integration, not required for build
+
+  # prisma
+  '@prisma/engines': false # only required for auth e2e examples
+  prisma: false # only required for auth e2e examples
+
+  #msw
+  msw: false # only required for trellaux examples
+
+  # workerd
+  workerd: false # only required for auth e2e examples
+
+  # listhen
+  '@parcel/watcher': true
+
+  # @tanstack/vue-store
+  vue-demi: false # only required for vue 2 support
+
+  # next js
+  sharp: false # not directly required for build
+
+  # @datadog
+  '@datadog/pprof': false # transitive dep
+
+  # @firebase
+  '@firebase/util': false # transitive dep
+
+  # @sentry
+  '@sentry/cli': false # transitive dep
+
+  # protobufjs
+  protobufjs: false # transitive dep

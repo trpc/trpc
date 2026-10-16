@@ -1,0 +1,36 @@
+{
+  "name": "ai-docs",
+  "private": true,
+  "type": "module",
+  "version": "0.0.0",
+  "dependencies": {
+    "@effect/ai-anthropic": "workspace:*",
+    "@effect/ai-openai": "workspace:*",
+    "@effect/ai-openai-compat": "workspace:*",
+    "@effect/ai-openrouter": "workspace:*",
+    "@effect/atom-react": "workspace:*",
+    "@effect/atom-solid": "workspace:*",
+    "@effect/atom-vue": "workspace:*",
+    "@effect/opentelemetry": "workspace:*",
+    "@effect/platform-bun": "workspace:*",
+    "@effect/platform-node": "workspace:*",
+    "@effect/sql-clickhouse": "workspace:*",
+    "@effect/sql-d1": "workspace:*",
+    "@effect/sql-libsql": "workspace:*",
+    "@effect/sql-mssql": "workspace:*",
+    "@effect/sql-mysql2": "workspace:*",
+    "@effect/sql-pg": "workspace:*",
+    "@effect/sql-sqlite-bun": "workspace:*",
+    "@effect/sql-sqlite-do": "workspace:*",
+    "@effect/sql-sqlite-node": "workspace:*",
+    "@effect/sql-sqlite-react-native": "workspace:*",
+    "@effect/sql-sqlite-wasm": "workspace:*",
+    "@effect/vitest": "workspace:*",
+    "effect": "workspace:*",
+    "hono": "^4.13.9",
+    "nodemailer": "^10.0.10"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "^8.0.2"
+  }
+}

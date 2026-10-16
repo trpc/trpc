@@ -1,0 +1,36 @@
+{
+  "name": "@tanstack/query-example-react-react-native",
+  "private": true,
+  "main": "node_modules/expo/AppEntry.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "eject": "expo eject",
+    "type:check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@react-native-community/netinfo": "^12.0.1",
+    "@react-navigation/native": "^6.1.18",
+    "@react-navigation/stack": "^6.4.1",
+    "@tanstack/react-query": "^5.104.1",
+    "@tanstack/react-query-devtools": "^5.104.1",
+    "expo": "^57.0.24",
+    "expo-constants": "^57.0.19",
+    "expo-status-bar": "^57.0.1",
+    "react": "^19.0.0",
+    "react-native": "^0.86.3",
+    "react-native-gesture-handler": "^2.32.0",
+    "react-native-paper": "^5.15.0",
+    "react-native-reanimated": "^4.5.1",
+    "react-native-safe-area-context": "^5.7.0",
+    "react-native-screens": "^4.26.2",
+    "react-native-web": "^0.21.2"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.9",
+    "@expo/config": "^57.0.9",
+    "typescript": "5.8.3"
+  }
+}

@@ -1,0 +1,27 @@
+"@effect/rpc/RpcClient#currentHeaders":
+  replacement: "effect/rpc/RpcClient#CurrentHeaders"
+  note: "Renamed and changed from FiberRef to Context.Reference; prefer RpcClient.withHeaders for scoped overrides."
+"@effect/rpc/RpcClient#layerProtocolHttp":
+  replacement: "effect/rpc/RpcClient#layerProtocolHttp"
+  note: "Retained; it provides the v4 Protocol from HttpClient and RpcSerialization."
+"@effect/rpc/RpcClient#make":
+  replacement: "effect/rpc/RpcClient#make"
+  note: "Retained; generated calls can now take per-request headers and Context, and include RpcClientError in their error channel."
+"@effect/rpc/RpcClient#makeProtocolHttp":
+  replacement: "effect/rpc/RpcClient#makeProtocolHttp"
+  note: "Retained; it creates the Protocol service implementation from an HttpClient."
+"@effect/rpc/RpcClient#Protocol":
+  replacement: "effect/rpc/RpcClient#Protocol"
+  note: "Retained as a Context.Service; custom transports now route multiple client ids through run and send."
+"@effect/rpc/RpcClient#RpcClient.NonPrefixed":
+  replacement: "none"
+  note: "The prefix-partition helper was removed; v4 clients map every RPC tag directly to an object property."
+"@effect/rpc/RpcClient#RpcClient.Prefixes":
+  replacement: "none"
+  note: "Nested prefix client objects were removed; v4 preserves the full RPC tag as the generated client property."
+"@effect/rpc/RpcClient#withHeadersEffect":
+  replacement: "Effect.flatMap(headers, (value) => RpcClient.withHeaders(effect, value))"
+  note: "withHeaders now accepts Headers.Input synchronously; evaluate effectful headers first and then scope the client effect."
+"@effect/rpc/RpcClient#RpcClient.From":
+  replacement: "effect/rpc/RpcClient#RpcClient.From"
+  note: "Generated clients now preserve full RPC tags as property names, remove the Prefix type parameter, and expose streaming results through the asQueue option instead of asMailbox."

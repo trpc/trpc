@@ -1,0 +1,13 @@
+{
+	"recommendations": [
+		"oxc.oxc-vscode",
+		"orta.vscode-twoslash-queries",
+		"yoavbls.pretty-ts-errors"
+	],
+	"unwantedRecommendations": [
+		"Davidanson.vscode-markdownlint",
+		"esbenp.prettier-vscode",
+		"dbaeumer.vscode-eslint",
+		"biomejs.biome"
+	]
+}

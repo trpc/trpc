@@ -1,0 +1,108 @@
+effect/RuntimeFlags#cooperativeYielding:
+  replacement: "!References.PreventSchedulerYield"
+  note: "Read the scheduler Reference and negate it; the aggregate flags value was removed."
+effect/RuntimeFlags#CooperativeYielding:
+  replacement: "References.PreventSchedulerYield"
+  note: "Use the scheduler Reference with inverse boolean meaning."
+effect/RuntimeFlags#diff:
+  replacement: "none"
+  note: "The runtime-flags bitset was removed; configure each semantic behavior directly."
+effect/RuntimeFlags#differ:
+  replacement: "none"
+  note: "The runtime-flags bitset and patch differ were removed."
+effect/RuntimeFlags#disable:
+  replacement: "none"
+  note: "The generic flag operation was removed; disable the corresponding behavior directly."
+effect/RuntimeFlags#disableAll:
+  replacement: "none"
+  note: "The aggregate flags value was removed; configure scheduler yielding, interruptibility, and metrics independently."
+effect/RuntimeFlags#disableCooperativeYielding:
+  replacement: "Effect.provideService(References.PreventSchedulerYield, true)"
+  note: "Prevent scheduler yielding through its Context.Reference."
+effect/RuntimeFlags#disableInterruption:
+  replacement: "Effect.uninterruptible"
+  note: "Use an uninterruptible region instead of changing a runtime flag."
+effect/RuntimeFlags#disableOpSupervision:
+  replacement: "none"
+  note: "Operation supervision and its runtime flag were removed."
+effect/RuntimeFlags#disableRuntimeMetrics:
+  replacement: "Metric.disableRuntimeMetrics"
+  note: "Disable fiber runtime metrics directly; use disableRuntimeMetricsLayer when providing a Layer."
+effect/RuntimeFlags#disableWindDown:
+  replacement: "none"
+  note: "The wind-down flag is runtime-internal in v4; use normal scoped finalizers and explicit interruptibility regions."
+effect/RuntimeFlags#enable:
+  replacement: "none"
+  note: "The generic flag operation was removed; enable the corresponding behavior directly."
+effect/RuntimeFlags#enableAll:
+  replacement: "none"
+  note: "The aggregate flags value was removed; configure scheduler yielding, interruptibility, and metrics independently."
+effect/RuntimeFlags#enableCooperativeYielding:
+  replacement: "Effect.provideService(References.PreventSchedulerYield, false)"
+  note: "Allow scheduler yielding through its Context.Reference."
+effect/RuntimeFlags#enableInterruption:
+  replacement: "Effect.interruptible"
+  note: "Use an interruptible region instead of changing a runtime flag."
+effect/RuntimeFlags#enableOpSupervision:
+  replacement: "none"
+  note: "Operation supervision and its runtime flag were removed."
+effect/RuntimeFlags#enableRuntimeMetrics:
+  replacement: "Metric.enableRuntimeMetrics"
+  note: "Enable fiber runtime metrics directly; use enableRuntimeMetricsLayer when providing a Layer."
+effect/RuntimeFlags#enableWindDown:
+  replacement: "none"
+  note: "The wind-down flag is runtime-internal in v4; use normal scoped finalizers and explicit interruptibility regions."
+effect/RuntimeFlags#interruptible:
+  replacement: "none"
+  note: "There is no public current-interruptibility getter; structure the program with Effect.interruptible or Effect.uninterruptible."
+effect/RuntimeFlags#interruption:
+  replacement: "none"
+  note: "Interruptibility is controlled by Effect regions rather than queried from a flags value."
+effect/RuntimeFlags#Interruption:
+  replacement: "Effect.interruptible | Effect.uninterruptible"
+  note: "The bit flag was removed; control interruptibility with Effect regions."
+effect/RuntimeFlags#isDisabled:
+  replacement: "none"
+  note: "There is no aggregate flags value to query; inspect or control the corresponding semantic facility."
+effect/RuntimeFlags#make:
+  replacement: "none"
+  note: "The runtime-flags bitset was removed; do not recreate it in v4."
+effect/RuntimeFlags#none:
+  replacement: "none"
+  note: "The runtime-flags bitset was removed; configure each semantic behavior independently."
+effect/RuntimeFlags#None:
+  replacement: "none"
+  note: "The empty runtime-flags value and its type were removed."
+effect/RuntimeFlags#opSupervision:
+  replacement: "none"
+  note: "Operation supervision and its runtime flag were removed."
+effect/RuntimeFlags#OpSupervision:
+  replacement: "none"
+  note: "Operation supervision and its runtime flag were removed."
+effect/RuntimeFlags#patch:
+  replacement: "none"
+  note: "Aggregate runtime-flags patches were removed; configure each semantic behavior directly."
+effect/RuntimeFlags#render:
+  replacement: "none"
+  note: "The runtime-flags bitset and its renderer were removed."
+effect/RuntimeFlags#RuntimeFlag:
+  replacement: "none"
+  note: "Individual bit flags were removed; use the corresponding semantic API."
+effect/RuntimeFlags#RuntimeFlags:
+  replacement: "none"
+  note: "The aggregate runtime-flags bitset was removed."
+effect/RuntimeFlags#runtimeMetrics:
+  replacement: "Metric.FiberRuntimeMetrics"
+  note: "Read the Context.Reference and test for undefined instead of querying a bit flag."
+effect/RuntimeFlags#RuntimeMetrics:
+  replacement: "Metric.FiberRuntimeMetrics"
+  note: "Runtime metrics are now configured through a Context.Reference service rather than a bit flag."
+effect/RuntimeFlags#toSet:
+  replacement: "none"
+  note: "The runtime-flags bitset was removed; there is no set conversion."
+effect/RuntimeFlags#windDown:
+  replacement: "none"
+  note: "The wind-down flag is no longer public."
+effect/RuntimeFlags#WindDown:
+  replacement: "none"
+  note: "The wind-down flag is no longer public."

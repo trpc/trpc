@@ -1,0 +1,3 @@
+effect/UpstreamPullRequest:
+  replacement: none
+  note: Removed with Channel.concatMapWithCustom; v4 does not expose channel-executor pull-request events. Use supported flattening operators or implement exceptional behavior with Channel.fromTransform and Pull.

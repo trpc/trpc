@@ -1,0 +1,6 @@
+"@effect/ai-openai/OpenAiTokenizer#layer":
+  replacement: "Tokenizer.make"
+  note: "The provider-specific tokenizer module was removed; build and provide an effect/ai/Tokenizer service explicitly, using gpt-tokenizer if equivalent OpenAI counting is required."
+"@effect/ai-openai/OpenAiTokenizer#make":
+  replacement: "Tokenizer.make"
+  note: "The provider-specific tokenizer module was removed; build and provide an effect/ai/Tokenizer service explicitly, using gpt-tokenizer if equivalent OpenAI counting is required."

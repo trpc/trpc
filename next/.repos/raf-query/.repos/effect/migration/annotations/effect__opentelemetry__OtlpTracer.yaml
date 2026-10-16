@@ -1,0 +1,6 @@
+"@effect/opentelemetry/OtlpTracer#layer":
+  replacement: "OtlpTracer.layer"
+  note: "The layer remains in the module moved to effect/observability/OtlpTracer."
+"@effect/opentelemetry/OtlpTracer#make":
+  replacement: "OtlpTracer.make"
+  note: "The constructor remains in the module moved to effect/observability/OtlpTracer."

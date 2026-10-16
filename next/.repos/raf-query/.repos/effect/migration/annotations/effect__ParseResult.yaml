@@ -1,0 +1,134 @@
+"effect/ParseResult#Forbidden":
+  replacement: "SchemaIssue.Forbidden"
+  note: "Forbidden failures use the v4 SchemaIssue class; its constructor takes issue annotations plus optional input and parse options, retaining input only when reportInput is true."
+"effect/ParseResult#ArrayFormatter":
+  replacement: "SchemaIssue.makeFormatterStandardSchemaV1"
+  note: "Format error.issue with the Standard Schema formatter."
+  example: "SchemaIssue.makeFormatterStandardSchemaV1()(error.issue).issues"
+"effect/ParseResult#ArrayFormatterIssue":
+  replacement: "StandardSchemaV1.FailureResult[\"issues\"][number]"
+  note: "Use the Standard Schema issue shape returned by makeFormatterStandardSchemaV1."
+"effect/ParseResult#Composite":
+  replacement: "SchemaIssue.Composite"
+  note: "Composite parse failures moved to SchemaIssue. The v4 constructor takes the failing AST and an array of nested issues; input is retained only when reportInput is enabled."
+"effect/ParseResult#DeclarationDecodeUnknown":
+  replacement: "SchemaGetter.Getter"
+  note: "Custom declaration decoding now uses SchemaGetter values and Schema.declare annotations. Getter is a tagged union, not a constructor; use transformOptionalEffect for an Option-to-Effect decoder. Use standalone SchemaGetter.run, map, and compose instead of instance methods."
+"effect/ParseResult#decodeEither":
+  replacement: "Schema.decodeExit"
+  note: "Either parsing was replaced by Exit parsing."
+"effect/ParseResult#decodePromise":
+  replacement: "Schema.decodePromise"
+  note: "Parsing helpers moved onto Schema and now fail with SchemaError."
+"effect/ParseResult#decodeSync":
+  replacement: "Schema.decodeSync"
+  note: "Parsing helpers moved onto Schema and now throw SchemaError."
+"effect/ParseResult#DecodeUnknown":
+  replacement: "Schema.decodeUnknownEffect"
+  note: "Use the function type returned by Schema.decodeUnknownEffect."
+"effect/ParseResult#decodeUnknownEither":
+  replacement: "Schema.decodeUnknownExit"
+  note: "Either parsing was replaced by Exit parsing."
+"effect/ParseResult#decodeUnknownPromise":
+  replacement: "Schema.decodeUnknownPromise"
+  note: "Parsing helpers moved onto Schema and now reject with SchemaError."
+"effect/ParseResult#decodeUnknownSync":
+  replacement: "Schema.decodeUnknownSync"
+  note: "Parsing helpers moved onto Schema and now throw SchemaError."
+"effect/ParseResult#eitherOrUndefined":
+  replacement: "none"
+  note: "This ParseResult internal optimization was removed; use Effect, Exit, Option, or Result combinators directly."
+"effect/ParseResult#encodeEither":
+  replacement: "Schema.encodeExit"
+  note: "Either encoding was replaced by Exit encoding."
+"effect/ParseResult#encodeSync":
+  replacement: "Schema.encodeSync"
+  note: "Encoding helpers moved onto Schema and now throw SchemaError."
+"effect/ParseResult#encodeUnknownEither":
+  replacement: "Schema.encodeUnknownExit"
+  note: "Either encoding was replaced by Exit encoding."
+"effect/ParseResult#encodeUnknownSync":
+  replacement: "Schema.encodeUnknownSync"
+  note: "Encoding helpers moved onto Schema and now throw SchemaError."
+"effect/ParseResult#fail":
+  replacement: "Effect.fail"
+  note: "Schema transformations now use Effect and fail with SchemaIssue.Issue."
+"effect/ParseResult#flatMap":
+  replacement: "Effect.flatMap"
+  note: "Schema transformations now use Effect combinators."
+"effect/ParseResult#isComposite":
+  replacement: "SchemaIssue.Composite"
+  note: "Narrow with instanceof SchemaIssue.Composite or inspect the issue _tag."
+"effect/ParseResult#isParseError":
+  replacement: "Schema.isSchemaError"
+  note: "ParseError was replaced by SchemaError."
+"effect/ParseResult#map":
+  replacement: "Effect.map"
+  note: "Schema transformations now use Effect combinators."
+"effect/ParseResult#Missing":
+  replacement: "SchemaIssue.MissingKey"
+  note: "Missing-key failures use the v4 SchemaIssue class."
+"effect/ParseResult#orElse":
+  replacement: "Effect.orElse"
+  note: "Schema transformations now use Effect combinators."
+"effect/ParseResult#Pointer":
+  replacement: "SchemaIssue.Pointer"
+  note: "Path-qualified failures moved to SchemaIssue. Construct them with the property path and nested issue; rejected input belongs to the nested issue when reportInput is enabled."
+"effect/ParseResult#parseError":
+  replacement: "Schema.SchemaError"
+  note: "Construct a SchemaError from a SchemaIssue.Issue."
+  example: "new Schema.SchemaError(issue)"
+"effect/ParseResult#ParseErrorTypeId":
+  replacement: "none"
+  note: "The public symbol was removed; use Schema.isSchemaError for runtime narrowing."
+"effect/ParseResult#ParseIssue":
+  replacement: "SchemaIssue.Issue"
+  note: "The structured parse issue union moved to SchemaIssue."
+"effect/ParseResult#ParseResultFormatter":
+  replacement: "SchemaIssue.Formatter"
+  note: "Issue formatter types moved to SchemaIssue."
+"effect/ParseResult#Refinement":
+  replacement: "SchemaIssue.Filter"
+  note: "Refinement failures are represented as filter issues in v4."
+"effect/ParseResult#SingleOrNonEmpty":
+  replacement: "ReadonlyArray"
+  note: "This ParseResult helper type was removed; use an explicit value-or-non-empty-array type when still needed."
+"effect/ParseResult#succeed":
+  replacement: "Effect.succeed"
+  note: "Schema transformations now use Effect."
+"effect/ParseResult#TreeFormatter":
+  replacement: "SchemaIssue.defaultFormatter"
+  note: "Use the default SchemaIssue string formatter."
+  example: "SchemaIssue.defaultFormatter(issue)"
+"effect/ParseResult#Transformation":
+  replacement: "SchemaIssue.Encoding"
+  note: "Transformation-stage failures are Encoding issues in v4. They retain the failing AST and nested issue; the old Encoded, Transformation, and Type kind discriminator was removed."
+"effect/ParseResult#try":
+  replacement: "Effect.try"
+  note: "Schema transformations now use Effect and map thrown errors to SchemaIssue values."
+"effect/ParseResult#Type":
+  replacement: "SchemaIssue.InvalidType"
+  note: "Type mismatches use the v4 SchemaIssue class."
+"effect/ParseResult#Unexpected":
+  replacement: "SchemaIssue.UnexpectedKey"
+  note: "Unexpected object keys use the v4 SchemaIssue class."
+"effect/ParseResult#validate":
+  replacement: "Schema.decodeEffect + Schema.toType"
+  note: "Validation-only parsers were removed; decode the type-side schema instead."
+  example: "Schema.decodeEffect(Schema.toType(schema))"
+"effect/ParseResult#validateEither":
+  replacement: "Schema.decodeExit + Schema.toType"
+  note: "Validation-only parsers were removed; decode the type-side schema instead."
+  example: "Schema.decodeExit(Schema.toType(schema))"
+"effect/ParseResult#validateOption":
+  replacement: "Schema.decodeOption + Schema.toType"
+  note: "Validation-only parsers were removed; decode the type-side schema instead."
+  example: "Schema.decodeOption(Schema.toType(schema))"
+"effect/ParseResult#validatePromise":
+  replacement: "Schema.decodePromise + Schema.toType"
+  note: "Validation-only parsers were removed; decode the type-side schema instead."
+  example: "Schema.decodePromise(Schema.toType(schema))"
+"effect/ParseResult#validateSync":
+  replacement: "Schema.decodeSync + Schema.toType"
+  note: "Validation-only parsers were removed; decode the type-side schema instead."
+  example: "Schema.decodeSync(Schema.toType(schema))"

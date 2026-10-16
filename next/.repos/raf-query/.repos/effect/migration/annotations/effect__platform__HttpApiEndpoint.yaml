@@ -1,0 +1,105 @@
+"@effect/platform/HttpApiEndpoint#get":
+  replacement: "effect/http-api/HttpApiEndpoint#get"
+  note: "Use get(identifier, path, options?); tagged templates and fluent schema setters were removed."
+"@effect/platform/HttpApiEndpoint#head":
+  replacement: "effect/http-api/HttpApiEndpoint#head"
+  note: "Use head(identifier, path, options?); tagged templates and fluent schema setters were removed."
+"@effect/platform/HttpApiEndpoint#HttpApiEndpoint":
+  replacement: "effect/http-api/HttpApiEndpoint#HttpApiEndpoint"
+  note: "The model remains, but its generics now carry path literals, schemas, middleware, and middleware services."
+"@effect/platform/HttpApiEndpoint#HttpApiEndpoint.AddContext":
+  replacement: "effect/http-api/HttpApiEndpoint#AddMiddleware"
+  note: "Use AddMiddleware to add a middleware identifier and compute its service transformation."
+"@effect/platform/HttpApiEndpoint#HttpApiEndpoint.AddError":
+  replacement: "none"
+  note: "Declare error schemas in the endpoint constructor options; the type helper and fluent addError method were removed."
+"@effect/platform/HttpApiEndpoint#HttpApiEndpoint.Constructor":
+  replacement: "none"
+  note: "The tagged-template constructor type was removed; use HttpApiEndpoint.make(method)(identifier, path, options?)."
+"@effect/platform/HttpApiEndpoint#HttpApiEndpoint.Context":
+  replacement: "effect/http-api/HttpApiEndpoint#ServerServices"
+  note: "Use ServerServices for handler requirements; middleware IDs and extra requirements have separate extractors."
+"@effect/platform/HttpApiEndpoint#HttpApiEndpoint.ContextWithName":
+  replacement: "effect/http-api/HttpApiEndpoint#ServerServicesWithIdentifier"
+  note: "Name became Identifier; combine with middleware extractors when the complete handler requirement union is needed."
+"@effect/platform/HttpApiEndpoint#HttpApiEndpoint.Error":
+  replacement: "effect/http-api/HttpApiEndpoint#Errors"
+  note: "Use Errors for the decoded endpoint and middleware error union; v4 Error extracts the schema."
+"@effect/platform/HttpApiEndpoint#HttpApiEndpoint.ErrorContext":
+  replacement: "effect/http-api/HttpApiEndpoint#ErrorServicesEncode / ErrorServicesDecode"
+  note: "The single schema context split into server encoding and client decoding services."
+"@effect/platform/HttpApiEndpoint#HttpApiEndpoint.ErrorContextWithName":
+  replacement: "effect/http-api/HttpApiEndpoint#ErrorServicesEncode / ErrorServicesDecode"
+  note: "Select the endpoint with WithIdentifier, then apply the encode or decode service extractor."
+"@effect/platform/HttpApiEndpoint#HttpApiEndpoint.ErrorWithName":
+  replacement: "effect/http-api/HttpApiEndpoint#ErrorsWithIdentifier"
+  note: "Renamed for identifier and returns the decoded endpoint plus middleware error union."
+"@effect/platform/HttpApiEndpoint#HttpApiEndpoint.ExcludeName":
+  replacement: "effect/http-api/HttpApiEndpoint#ExcludeIdentifier"
+  note: "Direct rename from name to identifier."
+"@effect/platform/HttpApiEndpoint#HttpApiEndpoint.ExtractPath":
+  replacement: "none"
+  note: "Tagged-template path extraction was removed. Put a params schema or field record in constructor option params."
+"@effect/platform/HttpApiEndpoint#HttpApiEndpoint.HandlerRawWithName":
+  replacement: "effect/http-api/HttpApiEndpoint#HandlerRawWithIdentifier"
+  note: "Direct rename; raw request fields are now params and query."
+"@effect/platform/HttpApiEndpoint#HttpApiEndpoint.HandlerWithName":
+  replacement: "effect/http-api/HttpApiEndpoint#HandlerWithIdentifier"
+  note: "Direct rename from name to identifier."
+"@effect/platform/HttpApiEndpoint#HttpApiEndpoint.OptionalTypePropertySignature":
+  replacement: "none"
+  note: "Removed with the tagged-template path implementation."
+"@effect/platform/HttpApiEndpoint#HttpApiEndpoint.PathEntries":
+  replacement: "none"
+  note: "Removed with tagged-template path extraction; declare endpoint params explicitly."
+"@effect/platform/HttpApiEndpoint#HttpApiEndpoint.PathParsed":
+  replacement: "effect/http-api/HttpApiEndpoint#Params"
+  note: "Path data became params; Params extracts the schema, so use Params<Endpoint>[\"Type\"] for decoded data."
+"@effect/platform/HttpApiEndpoint#HttpApiEndpoint.Payload":
+  replacement: "effect/http-api/HttpApiEndpoint#Payload"
+  note: "The name remains but now extracts the schema; use Payload<Endpoint>[\"Type\"] for buffered decoded data."
+"@effect/platform/HttpApiEndpoint#HttpApiEndpoint.Success":
+  replacement: "effect/http-api/HttpApiEndpoint#SuccessWithIdentifier"
+  note: "Use SuccessWithIdentifier for the decoded, stream-aware result; v4 Success extracts the schema."
+"@effect/platform/HttpApiEndpoint#HttpApiEndpoint.SuccessWithName":
+  replacement: "effect/http-api/HttpApiEndpoint#SuccessWithIdentifier"
+  note: "Direct rename from name to identifier; the result remains decoded and stream-aware."
+"@effect/platform/HttpApiEndpoint#HttpApiEndpoint.UrlParams":
+  replacement: "effect/http-api/HttpApiEndpoint#Query"
+  note: "urlParams became query; Query extracts the schema, so use Query<Endpoint>[\"Type\"] for decoded data."
+"@effect/platform/HttpApiEndpoint#HttpApiEndpoint.ValidateHeaders":
+  replacement: "effect/http-api/HttpApiEndpoint#HeadersConstraint"
+  note: "Validation moved from an intersection helper to a constructor generic constraint."
+"@effect/platform/HttpApiEndpoint#HttpApiEndpoint.ValidateParams":
+  replacement: "none"
+  note: "Tagged-template interpolation validation was removed; params are declared explicitly in options.params."
+"@effect/platform/HttpApiEndpoint#HttpApiEndpoint.ValidatePath":
+  replacement: "effect/http-api/HttpApiEndpoint#ParamsConstraint"
+  note: "path became params and validation is now a constructor constraint."
+"@effect/platform/HttpApiEndpoint#HttpApiEndpoint.ValidatePayload":
+  replacement: "effect/http-api/HttpApiEndpoint#PayloadConstraint"
+  note: "Payload validation is now a method-sensitive constructor constraint."
+"@effect/platform/HttpApiEndpoint#HttpApiEndpoint.ValidateUrlParams":
+  replacement: "effect/http-api/HttpApiEndpoint#QueryConstraint"
+  note: "urlParams became query and validation is now a constructor constraint."
+"@effect/platform/HttpApiEndpoint#make":
+  replacement: "effect/http-api/HttpApiEndpoint#make"
+  note: "The factory remains but now requires identifier, path, and options and applies codecs unless disabled."
+"@effect/platform/HttpApiEndpoint#options":
+  replacement: "effect/http-api/HttpApiEndpoint#options"
+  note: "Same HTTP method constructor with the new identifier, path, and options signature."
+"@effect/platform/HttpApiEndpoint#patch":
+  replacement: "effect/http-api/HttpApiEndpoint#patch"
+  note: "Same HTTP method constructor with the new identifier, path, and options signature."
+"@effect/platform/HttpApiEndpoint#PathSegment":
+  replacement: "effect/http/HttpRouter#PathInput"
+  note: "Path input moved to the shared router and is generalized to slash-prefixed paths or wildcard."
+"@effect/platform/HttpApiEndpoint#post":
+  replacement: "effect/http-api/HttpApiEndpoint#post"
+  note: "Same HTTP method constructor with the new identifier, path, and options signature."
+"@effect/platform/HttpApiEndpoint#put":
+  replacement: "effect/http-api/HttpApiEndpoint#put"
+  note: "Same HTTP method constructor with the new identifier, path, and options signature."
+"@effect/platform/HttpApiEndpoint#TypeId":
+  replacement: "none"
+  note: "The endpoint type ID is private; use HttpApiEndpoint.isHttpApiEndpoint for runtime narrowing."

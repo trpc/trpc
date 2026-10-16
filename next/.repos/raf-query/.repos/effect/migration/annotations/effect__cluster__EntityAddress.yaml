@@ -1,0 +1,9 @@
+"@effect/cluster/EntityAddress#EntityAddressFromSelf":
+  replacement: "effect/cluster/EntityAddress#EntityAddress"
+  note: "The separate self schema was removed; the v4 Schema.Class is itself the EntityAddress schema."
+"@effect/cluster/EntityAddress#make":
+  replacement: "effect/cluster/EntityAddress#make"
+  note: "Moved into core Effect with the same options-object constructor."
+"@effect/cluster/EntityAddress#TypeId":
+  replacement: "none"
+  note: "The marker is private in v4. Use the exported EntityAddress class and schema."

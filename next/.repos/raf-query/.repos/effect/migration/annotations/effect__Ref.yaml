@@ -1,0 +1,48 @@
+effect/Ref#getAndSet:
+  replacement: "Ref.getAndSet"
+  note: "The operation remains with data-first and data-last forms."
+effect/Ref#getAndUpdate:
+  replacement: "Ref.getAndUpdate"
+  note: "The operation remains with data-first and data-last forms."
+effect/Ref#getAndUpdateSome:
+  replacement: "Ref.getAndUpdateSome"
+  note: "The operation remains; Option.none leaves the value unchanged."
+effect/Ref#modify:
+  replacement: "Ref.modify"
+  note: "The operation remains with data-first and data-last forms."
+effect/Ref#Ref:
+  replacement: "Ref.Ref"
+  note: "The model remains but is now Pipeable rather than an Effect or Readable subtype; read it explicitly with Ref.get."
+effect/Ref#Ref.Variance:
+  replacement: "Ref.Ref.Variance"
+  note: "The marker remains under Ref.Ref, but its brand uses an internal type id; ordinary code should use Ref.Ref directly."
+effect/Ref#RefTypeId:
+  replacement: "none"
+  note: "The Ref type id is internal in v4; do not inspect or construct the brand directly."
+effect/Ref#RefUnify:
+  replacement: "none"
+  note: "Ref is no longer an Effect subtype, so its Effect unification helper was removed; call Ref.get explicitly."
+effect/Ref#RefUnifyIgnore:
+  replacement: "none"
+  note: "Ref is no longer an Effect subtype, so its Effect unification ignore marker was removed."
+effect/Ref#set:
+  replacement: "Ref.set"
+  note: "The operation remains with data-first and data-last forms."
+effect/Ref#setAndGet:
+  replacement: "Ref.setAndGet"
+  note: "The operation remains with data-first and data-last forms."
+effect/Ref#unsafeMake:
+  replacement: "Ref.makeUnsafe"
+  note: "The unsafe suffix moved to the end."
+effect/Ref#update:
+  replacement: "Ref.update"
+  note: "The operation remains with data-first and data-last forms."
+effect/Ref#updateAndGet:
+  replacement: "Ref.updateAndGet"
+  note: "The operation remains with data-first and data-last forms."
+effect/Ref#updateSome:
+  replacement: "Ref.updateSome"
+  note: "The operation remains; Option.none leaves the value unchanged."
+effect/Ref#updateSomeAndGet:
+  replacement: "Ref.updateSomeAndGet"
+  note: "The operation remains; Option.none leaves the value unchanged and returns the current value."

@@ -1,0 +1,78 @@
+{
+  "name": "@effect/openapi-generator",
+  "type": "module",
+  "version": "4.0.1",
+  "license": "MIT",
+  "description": "Generate Effect Schema types, HTTP clients, and HttpApi modules from OpenAPI specifications",
+  "homepage": "https://effect.website",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Effect-TS/effect.git",
+    "directory": "packages/tools/openapi-generator"
+  },
+  "bugs": {
+    "url": "https://github.com/Effect-TS/effect/issues"
+  },
+  "tags": [
+    "typescript",
+    "openapi",
+    "codegen"
+  ],
+  "keywords": [
+    "typescript",
+    "openapi",
+    "codegen"
+  ],
+  "bin": {
+    "openapigen": "./src/bin.ts"
+  },
+  "sideEffects": [],
+  "exports": {
+    "./package.json": "./package.json",
+    "./*": "./src/*.ts",
+    "./bin": null,
+    "./main": null
+  },
+  "files": [
+    "src/**/*.ts",
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "dist/**/*.d.ts",
+    "dist/**/*.d.ts.map",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "ai-docs/**/*"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "bin": {
+      "openapigen": "./dist/bin.js"
+    },
+    "exports": {
+      "./package.json": "./package.json",
+      "./*": "./dist/*.js",
+      "./bin": null,
+      "./main": null
+    }
+  },
+  "scripts": {
+    "build": "tsc -b tsconfig.json && pnpm babel",
+    "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+    "check": "tsc -b tsconfig.json"
+  },
+  "peerDependencies": {
+    "@effect/platform-node": "workspace:^",
+    "effect": "workspace:^"
+  },
+  "dependencies": {
+    "swagger2openapi": "^7.0.8"
+  },
+  "devDependencies": {
+    "@types/swagger2openapi": "^7.0.4",
+    "effect": "workspace:^",
+    "json-schema-typed": "^8.0.2",
+    "openapi-typescript": "^7.13.0",
+    "rolldown": "^1.2.11"
+  }
+}

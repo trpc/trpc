@@ -1,0 +1,6 @@
+"effect/TestContext#LiveContext":
+  replacement: "@effect/vitest#live"
+  note: "Default runtime references are live in v4. Use it.live for a whole live test; no LiveContext layer is required."
+"effect/TestContext#TestContext":
+  replacement: "Layer.mergeAll(TestConsole.layer, TestClock.layer())"
+  note: "This is the v4 test layer used by @effect/vitest. Prefer it.effect, which provides it automatically."

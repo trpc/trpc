@@ -1,0 +1,12 @@
+"@effect/platform-browser/Geolocation#ErrorTypeId":
+  replacement: "none"
+  note: "The error marker is private in v4; discriminate GeolocationError and its tagged reason."
+"@effect/platform-browser/Geolocation#Geolocation":
+  replacement: "Geolocation.Geolocation"
+  note: "The service remains, now as a Context.Service with a private brand."
+"@effect/platform-browser/Geolocation#GeolocationError":
+  replacement: "Geolocation.GeolocationError"
+  note: "The class remains, but reason is now PositionUnavailable, PermissionDenied, or Timeout, with the cause stored on that tagged reason."
+"@effect/platform-browser/Geolocation#TypeId":
+  replacement: "none"
+  note: "The service marker is private in v4; use the Geolocation Context.Service value."

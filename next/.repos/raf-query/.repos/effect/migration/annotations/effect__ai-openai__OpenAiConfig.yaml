@@ -1,0 +1,6 @@
+"@effect/ai-openai/OpenAiConfig#OpenAiConfig":
+  replacement: "OpenAiConfig.OpenAiConfig"
+  note: "Still exported in v4; update imports and adapt to the revised v4 service and schema types."
+"@effect/ai-openai/OpenAiConfig#OpenAiConfig.Service":
+  replacement: "OpenAiConfig.OpenAiConfig.Service"
+  note: "Still exported in v4; update imports and adapt to the revised v4 service and schema types."

@@ -1,0 +1,42 @@
+"@effect/cli/Primitive#boolean":
+  replacement: "Primitive.Boolean"
+  note: "Boolean is now a singleton value; defaults belong on Flag.Boolean or withDefault."
+"@effect/cli/Primitive#choice":
+  replacement: "Primitive.Choice"
+  note: "Use the moved constructor."
+"@effect/cli/Primitive#date":
+  replacement: "Primitive.Date"
+  note: "Date is now a singleton Primitive value."
+"@effect/cli/Primitive#float":
+  replacement: "Primitive.Finite"
+  note: "Finite is now a singleton Primitive value and rejects non-finite numbers."
+"@effect/cli/Primitive#getChoices":
+  replacement: "none"
+  note: "Choice introspection is internal in v4; retain alternatives in application code when needed."
+"@effect/cli/Primitive#getHelp":
+  replacement: "none"
+  note: "Primitive-level help generation was removed from the public API."
+"@effect/cli/Primitive#integer":
+  replacement: "Primitive.Int"
+  note: "Int is now a singleton Primitive value."
+"@effect/cli/Primitive#isBool":
+  replacement: "none"
+  note: "The boolean Primitive predicate is internal in v4."
+"@effect/cli/Primitive#Primitive.PathExists":
+  replacement: "mustExist?: boolean"
+  note: "Use true for yes and omit for either; no cannot be represented exactly because false permits existing paths."
+"@effect/cli/Primitive#Primitive.ValueType":
+  replacement: "P extends Primitive.Primitive<infer A> ? A : never"
+  note: "The named helper was removed; infer the value with a local conditional type."
+"@effect/cli/Primitive#Primitive.Variance":
+  replacement: "Primitive.Primitive.Variance"
+  note: "The variance interface remains, but its brand key is internal; prefer Primitive<A> in user APIs."
+"@effect/cli/Primitive#PrimitiveTypeId":
+  replacement: "none"
+  note: "The public Primitive type-id symbol was removed."
+"@effect/cli/Primitive#text":
+  replacement: "Primitive.String"
+  note: "Renamed from text to String."
+"@effect/cli/Primitive#validate":
+  replacement: "primitive.parse(value)"
+  note: "Parsing is now the Primitive.parse method over a string; defaults and case normalization moved out of this layer."

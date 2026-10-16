@@ -1,0 +1,21 @@
+"@effect/cli/CommandDirective#builtIn":
+  replacement: "GlobalFlag.Action"
+  note: "Define a custom action flag; v4 runners no longer return built-in directives."
+"@effect/cli/CommandDirective#BuiltIn":
+  replacement: "GlobalFlag.Action"
+  note: "Use the global action definition type; it is processed directly by the runner."
+"@effect/cli/CommandDirective#CommandDirective":
+  replacement: "none"
+  note: "The intermediate parse-result model was removed; the runner invokes the selected handler directly."
+"@effect/cli/CommandDirective#isBuiltIn":
+  replacement: "none"
+  note: "Intermediate built-in directives were removed."
+"@effect/cli/CommandDirective#map":
+  replacement: "none"
+  note: "Map parameters or transform in the handler; there is no intermediate directive to map."
+"@effect/cli/CommandDirective#userDefined":
+  replacement: "none"
+  note: "Parsed input is delivered directly to the selected command handler."
+"@effect/cli/CommandDirective#UserDefined":
+  replacement: "none"
+  note: "The user-defined intermediate directive was removed."

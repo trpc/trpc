@@ -1,0 +1,39 @@
+"@effect/experimental/VariantSchema#Field.Any":
+  replacement: effect/schema/VariantSchema#Field.Any
+  note: Import the retained Field.Any helper type from the v4 unstable VariantSchema module.
+"@effect/experimental/VariantSchema#Field.Config":
+  replacement: effect/schema/VariantSchema#Field.Config
+  note: Import the retained Field.Config helper type from the v4 unstable VariantSchema module.
+"@effect/experimental/VariantSchema#Field.Fields":
+  replacement: effect/schema/VariantSchema#Field.Fields
+  note: Import the retained Field.Fields helper type from the v4 unstable VariantSchema module.
+"@effect/experimental/VariantSchema#Field.ValueAny":
+  replacement: effect/Schema#Top
+  note: Use the core Schema.Top constraint for an arbitrary field value schema.
+"@effect/experimental/VariantSchema#FieldTypeId":
+  replacement: none
+  note: The Field brand is private in v4; use VariantSchema.isField for narrowing.
+"@effect/experimental/VariantSchema#fromKey":
+  replacement: none
+  note: Field-level fromKey was not ported; for whole-struct encoded-key renaming consider Schema.encodeKeys.
+"@effect/experimental/VariantSchema#fromKey.Rename":
+  replacement: none
+  note: The fromKey rename helper was not ported; for whole-struct encoded-key renaming consider Schema.encodeKeys.
+"@effect/experimental/VariantSchema#isField":
+  replacement: effect/schema/VariantSchema#isField
+  note: Import isField from the v4 unstable VariantSchema module.
+"@effect/experimental/VariantSchema#make":
+  replacement: effect/schema/VariantSchema#make
+  note: Import make from the v4 module; FieldOnly and FieldExcept take one key array and Union takes one member array.
+"@effect/experimental/VariantSchema#Override":
+  replacement: effect/schema/VariantSchema#Override
+  note: Import Override from the v4 unstable VariantSchema module.
+"@effect/experimental/VariantSchema#Struct.Fields":
+  replacement: effect/schema/VariantSchema#Struct.Fields
+  note: Import the retained Struct.Fields helper type from the v4 unstable VariantSchema module.
+"@effect/experimental/VariantSchema#TypeId":
+  replacement: effect/schema/VariantSchema#TypeId
+  note: Use the retained runtime value; in type position use typeof VariantSchema.TypeId.
+"@effect/experimental/VariantSchema#Extract":
+  replacement: effect/schema/VariantSchema#Extract
+  note: Import the retained helper from the v4 module; its erased schema constraint is Schema.Top.

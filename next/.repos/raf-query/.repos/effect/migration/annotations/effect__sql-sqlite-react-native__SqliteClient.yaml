@@ -1,0 +1,3 @@
+"@effect/sql-sqlite-react-native/SqliteClient#asyncQuery":
+  replacement: "@effect/sql-sqlite-react-native/SqliteClient#AsyncQuery"
+  note: "Renamed and changed from FiberRef to Context.Reference; prefer withAsyncQuery or provide AsyncQuery as a service."

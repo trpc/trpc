@@ -1,0 +1,6 @@
+"@effect/opentelemetry/OtlpResource#make":
+  replacement: "OtlpResource.make"
+  note: "The constructor remains in the module moved to effect/observability/OtlpResource."
+"@effect/opentelemetry/OtlpResource#unsafeServiceName":
+  replacement: "OtlpResource.serviceNameUnsafe"
+  note: "Moved to effect/observability/OtlpResource and renamed to follow the v4 unsafe-suffix convention."

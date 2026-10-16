@@ -1,0 +1,12 @@
+"effect/TestSized#fromFiberRef":
+  replacement: "Context.Reference<number>"
+  note: "FiberRef and TestSized were removed. Define one stable Context.Reference<number> instead of wrapping a FiberRef."
+"effect/TestSized#make":
+  replacement: "Context.Reference<number>"
+  note: "Define a module-level reference with defaultValue; do not create a fresh key at each call site."
+"effect/TestSized#TestSized":
+  replacement: "Context.Reference<number>"
+  note: "Collapse the wrapper service to the reference itself; yield the reference to read the current size."
+"effect/TestSized#TestSizedTypeId":
+  replacement: "none"
+  note: "The wrapper's nominal type id is unnecessary; Context.Reference supplies stable key identity."

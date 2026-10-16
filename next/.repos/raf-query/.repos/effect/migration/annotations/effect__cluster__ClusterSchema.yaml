@@ -1,0 +1,12 @@
+"@effect/cluster/ClusterSchema#ClientTracingEnabled":
+  replacement: "effect/cluster/ClusterSchema#ClientTracingEnabled"
+  note: "Moved into core Effect and changed from a Context.Tag subclass to a Context.Reference value."
+"@effect/cluster/ClusterSchema#Persisted":
+  replacement: "effect/cluster/ClusterSchema#Persisted"
+  note: "Moved into core Effect and changed from a Context.Tag subclass to a Context.Reference value with the same false default."
+"@effect/cluster/ClusterSchema#ShardGroup":
+  replacement: "effect/cluster/ClusterSchema#ShardGroup"
+  note: "Moved into core Effect and changed from a Context.Tag subclass to a Context.Reference value."
+"@effect/cluster/ClusterSchema#Uninterruptible":
+  replacement: "effect/cluster/ClusterSchema#Uninterruptible"
+  note: "Now a Context.Reference value. Replace its static methods with ClusterSchema.isUninterruptibleForServer and isUninterruptibleForClient."

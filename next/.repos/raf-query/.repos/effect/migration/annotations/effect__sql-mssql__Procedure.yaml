@@ -1,0 +1,6 @@
+"@effect/sql-mssql/Procedure#Procedure":
+  replacement: "@effect/sql-mssql/Procedure#Procedure"
+  note: "Retained with the same generics and fields."
+"@effect/sql-mssql/Procedure#Procedure.ParametersRecord":
+  replacement: "@effect/sql-mssql/Procedure#Procedure.ParametersRecord"
+  note: "Retained unchanged; from the deep module it is also available as Procedure.ParametersRecord."

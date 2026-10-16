@@ -1,0 +1,51 @@
+"@effect/platform/HttpApiBuilder#api":
+  replacement: "effect/http-api/HttpApiBuilder#layer"
+  note: "Use layer(api) and provide the group layers; it registers the completed API with HttpRouter."
+"@effect/platform/HttpApiBuilder#buildMiddleware":
+  replacement: "none"
+  note: "API-wide middleware assembly was removed. Declared HttpApiMiddleware services are applied while routes are built; use HttpRouter.middleware for additional middleware."
+"@effect/platform/HttpApiBuilder#group":
+  replacement: "effect/http-api/HttpApiBuilder#group"
+  note: "The group layer remains; names are now identifiers and API/group global error channels are gone."
+"@effect/platform/HttpApiBuilder#handler":
+  replacement: "effect/http-api/HttpApiBuilder#handler"
+  note: "The typed callback helper remains; names are now identifiers and API/group global error channels are gone. Pass the returned callback to handlers.handle."
+"@effect/platform/HttpApiBuilder#Handlers":
+  replacement: "effect/http-api/HttpApiBuilder#Handlers"
+  note: "Handlers now tracks an endpoint map and handled identifiers. Prefer Handlers.FromGroup<Group>."
+"@effect/platform/HttpApiBuilder#Handlers.Error":
+  replacement: "effect/http-api/HttpApiBuilder#Handlers.Error"
+  note: "The helper remains and extracts the error channel of an effectful group-builder return."
+"@effect/platform/HttpApiBuilder#Handlers.Middleware":
+  replacement: "none"
+  note: "The handler-internal HttpApp middleware alias was removed. Use HttpRouter.middleware inference or HttpRouter.middleware.Fn."
+"@effect/platform/HttpApiBuilder#Handlers.ValidateReturn":
+  replacement: "effect/http-api/HttpApiBuilder#Handlers.ValidateReturn"
+  note: "The validator remains and now checks the endpoint map against handled identifiers."
+"@effect/platform/HttpApiBuilder#HandlersTypeId":
+  replacement: "none"
+  note: "The exported symbol was removed; do not inspect or construct the private Handlers marker."
+"@effect/platform/HttpApiBuilder#Middleware":
+  replacement: "none"
+  note: "The API-specific middleware service tag was removed. Declared HttpApiMiddleware services are applied while routes are built; use HttpRouter.middleware for additional global middleware."
+"@effect/platform/HttpApiBuilder#httpApp":
+  replacement: "effect/http/HttpRouter#toHttpEffect"
+  note: "Build the application from the assembled API route layer; HTTP apps are Effects in v4."
+"@effect/platform/HttpApiBuilder#middleware":
+  replacement: "effect/http/HttpRouter#middleware"
+  note: "Use router effect middleware and provide its layer to the API route layer; global middleware can target all router routes."
+"@effect/platform/HttpApiBuilder#middlewareCors":
+  replacement: "effect/http/HttpRouter#cors"
+  note: "Use the router CORS layer, or provide route-scoped HttpMiddleware.cors through HttpRouter.middleware."
+"@effect/platform/HttpApiBuilder#MiddlewareFn":
+  replacement: "effect/http/HttpRouter#middleware.Fn"
+  note: "HTTP apps are Effects in v4; use the router middleware function type or infer it through HttpRouter.middleware."
+"@effect/platform/HttpApiBuilder#middlewareOpenApi":
+  replacement: "effect/http-api/HttpApiBuilder#layer"
+  note: "Set openapiPath in layer(api, options). The additionalPropertiesStrategy option was removed."
+"@effect/platform/HttpApiBuilder#Router":
+  replacement: "effect/http/HttpRouter#HttpRouter"
+  note: "The API-specific router tag was removed; API and group layers register with the shared HttpRouter service."
+"@effect/platform/HttpApiBuilder#toWebHandler":
+  replacement: "effect/http/HttpRouter#toWebHandler"
+  note: "Pass the assembled API route layer to HttpRouter.toWebHandler; the handler and dispose lifecycle is retained."

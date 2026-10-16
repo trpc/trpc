@@ -1,0 +1,3 @@
+"@effect/experimental/Sse#RetryTypeId":
+  replacement: none
+  note: The Retry identifier is private in v4; use effect/encoding/Sse#Retry and Retry.is instead of inspecting the brand.

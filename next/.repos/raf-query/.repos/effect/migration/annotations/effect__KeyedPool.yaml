@@ -1,0 +1,27 @@
+effect/KeyedPool#get:
+  replacement: "RcMap.get + Pool.get"
+  note: "KeyedPool was removed; acquire the per-key Pool from an RcMap, then borrow an item with Pool.get in the current Scope."
+effect/KeyedPool#invalidate:
+  replacement: "RcMap.get + Pool.invalidate"
+  note: "KeyedPool was removed; retain the key, get its Pool from RcMap, and call Pool.invalidate for the item."
+effect/KeyedPool#KeyedPool:
+  replacement: "RcMap.RcMap<K, Pool.Pool<A, E>>"
+  note: "Model keyed pools as an RcMap whose scoped lookup creates one Pool per key."
+effect/KeyedPool#KeyedPool.Variance:
+  replacement: "none"
+  note: "KeyedPool and its variance marker were removed; use the RcMap and Pool public models without depending on branding internals."
+effect/KeyedPool#KeyedPoolTypeId:
+  replacement: "none"
+  note: "KeyedPool was removed, so its runtime type id has no v4 equivalent."
+effect/KeyedPool#make:
+  replacement: "RcMap.make + Pool.make"
+  note: "Create an RcMap with lookup key => Pool.make({ acquire: acquire(key), size }); RcMap.get followed by Pool.get replaces keyed borrowing."
+effect/KeyedPool#makeWith:
+  replacement: "RcMap.make + Pool.make"
+  note: "Create an RcMap whose lookup uses Pool.make with size: size(key)."
+effect/KeyedPool#makeWithTTL:
+  replacement: "RcMap.make + Pool.makeWithTTL"
+  note: "Create an RcMap whose lookup uses Pool.makeWithTTL with min(key), max(key), and the shared timeToLive."
+effect/KeyedPool#makeWithTTLBy:
+  replacement: "RcMap.make + Pool.makeWithTTL"
+  note: "Create an RcMap whose lookup uses Pool.makeWithTTL with min(key), max(key), and timeToLive(key)."

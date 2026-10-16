@@ -1,0 +1,51 @@
+"@effect/rpc/RpcServer#fiberIdClientInterrupt":
+  replacement: "effect/rpc/RpcSchema#ClientAbort"
+  note: "The sentinel FiberId was replaced by a Cause annotation; inspect ClientAbort in the interruption cause when client cancellation must be distinguished."
+"@effect/rpc/RpcServer#fiberIdTransientInterrupt":
+  replacement: "none"
+  note: "The internal transient sentinel was removed; protocol shutdown and disconnect now interrupt with the active parent fiber identity."
+"@effect/rpc/RpcServer#layerHttpRouter":
+  replacement: "effect/rpc/RpcServer#layerHttp"
+  note: "Renamed; it installs an HTTP or WebSocket RPC route into the v4 HttpRouter service."
+"@effect/rpc/RpcServer#layerProtocolHttp":
+  replacement: "effect/rpc/RpcServer#layerProtocolHttp"
+  note: "Retained; v4 has one HttpRouter service and no router tag option."
+"@effect/rpc/RpcServer#layerProtocolHttpRouter":
+  replacement: "effect/rpc/RpcServer#layerProtocolHttp"
+  note: "The separate layer-router variant was unified with layerProtocolHttp."
+"@effect/rpc/RpcServer#layerProtocolWebsocketRouter":
+  replacement: "effect/rpc/RpcServer#layerProtocolWebsocket"
+  note: "Renamed after the HTTP router services were unified."
+"@effect/rpc/RpcServer#make":
+  replacement: "effect/rpc/RpcServer#make"
+  note: "Retained; schema encoding services are now explicit server requirements."
+"@effect/rpc/RpcServer#makeProtocolHttp":
+  replacement: "effect/rpc/RpcServer#makeProtocolHttp"
+  note: "Retained; it registers a POST route in the current v4 HttpRouter."
+"@effect/rpc/RpcServer#makeProtocolHttpRouter":
+  replacement: "effect/rpc/RpcServer#makeProtocolHttp"
+  note: "The separate router constructor was unified with makeProtocolHttp."
+"@effect/rpc/RpcServer#makeProtocolWebsocketRouter":
+  replacement: "effect/rpc/RpcServer#makeProtocolWebsocket"
+  note: "Renamed after the HTTP router services were unified."
+"@effect/rpc/RpcServer#makeProtocolWithHttpApp":
+  replacement: "effect/rpc/RpcServer#makeProtocolWithHttpEffect"
+  note: "HttpApp became HttpEffect; the result contains protocol and httpEffect."
+"@effect/rpc/RpcServer#makeProtocolWithHttpAppWebsocket":
+  replacement: "effect/rpc/RpcServer#makeProtocolWithHttpEffectWebsocket"
+  note: "HttpApp became HttpEffect; the result contains the WebSocket protocol and upgrade effect."
+"@effect/rpc/RpcServer#Protocol":
+  replacement: "effect/rpc/RpcServer#Protocol"
+  note: "Retained as a Context.Service; custom transports now expose a disconnect queue, explicit capability flags, and codecFor for schema-aware payload and exit encoding."
+"@effect/rpc/RpcServer#toHttpApp":
+  replacement: "effect/rpc/RpcServer#toHttpEffect"
+  note: "Renamed for the v4 HTTP effect model; it starts the RPC server and returns the request effect."
+"@effect/rpc/RpcServer#toHttpAppWebsocket":
+  replacement: "effect/rpc/RpcServer#toHttpEffectWebsocket"
+  note: "Renamed for the v4 HTTP effect model; it returns the WebSocket upgrade effect."
+"@effect/rpc/RpcServer#toWebHandler":
+  replacement: "HttpRouter.toWebHandler(RpcServer.layerHttp(options).pipe(Layer.provide(options.layer)))"
+  note: "The RPC convenience wrapper was removed; build the RPC route layer and convert it with the generic v4 HttpRouter web-handler adapter."
+"@effect/rpc/RpcServer#layer":
+  replacement: "effect/rpc/RpcServer#layer"
+  note: "Moved to core Effect; server requirements are now derived with Rpc.ServicesServer rather than the former combined Rpc.Context alias."

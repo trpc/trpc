@@ -1,0 +1,354 @@
+effect/STM#Adapter:
+  replacement: "none"
+  note: "The STM.gen adapter was removed; Effect.gen accepts yielded Effects directly."
+effect/STM#All.IsDiscard:
+  replacement: "Effect.All.IsDiscard"
+  note: "The helper moved to Effect.All because STM.all is now Effect.all."
+effect/STM#All.Narrow:
+  replacement: "none"
+  note: "Effect.all uses a const generic directly, so the separate tuple-narrowing helper was removed."
+effect/STM#All.Options:
+  replacement: "none"
+  note: "Effect.all inlines its options type; use its concurrency, discard, and mode options directly."
+effect/STM#All.STMAny:
+  replacement: "Effect.All.EffectAny"
+  note: "STM inputs are ordinary Effects in v4, so use the Effect.All helper."
+effect/STM#All.Signature:
+  replacement: "typeof Effect.all"
+  note: "The named STM all signature was removed; refer to Effect.all directly."
+effect/STM#Do:
+  replacement: "Effect.Do"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#STM:
+  replacement: "Effect.Effect"
+  note: "The distinct STM instruction type was removed. Tx APIs return Effect values; wrap the complete transaction in Effect.tx."
+effect/STM#STM.Variance:
+  replacement: "Effect.Variance"
+  note: "The distinct STM variance marker was removed with STM; use the Effect marker."
+effect/STM#STMTypeId:
+  replacement: "Effect.TypeId"
+  note: "The distinct STM type id was removed because transactions are represented by Effect values."
+effect/STM#STMTypeLambda:
+  replacement: "Effect.EffectTypeLambda"
+  note: "Use the Effect type lambda; transactional requirements are represented by Effect.Transaction."
+effect/STM#STMUnify:
+  replacement: "Effect.EffectUnify"
+  note: "STM unification moved to ordinary Effect unification."
+effect/STM#STMUnifyIgnore:
+  replacement: "none"
+  note: "The STM-specific unification ignore marker was removed; rely on Effect inference."
+effect/STM#acquireUseRelease:
+  replacement: "Effect.acquireUseRelease + Effect.tx"
+  note: "Wrap acquire, use, and release in separate Effect.tx calls to preserve the v3 separately committed phases; v4 release also receives the use Exit."
+effect/STM#all:
+  replacement: "Effect.all"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#as:
+  replacement: "Effect.as"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#asSome:
+  replacement: "Effect.asSome"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#asSomeError:
+  replacement: "Effect.mapError(self, Option.some)"
+  note: "The dedicated helper was removed; map the error into Option.some."
+effect/STM#asVoid:
+  replacement: "Effect.asVoid"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#attempt:
+  replacement: "Effect.try"
+  note: "The constructor was renamed; transaction programs are ordinary Effects in v4."
+effect/STM#bind:
+  replacement: "Effect.bind"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#bindTo:
+  replacement: "Effect.bindTo"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#catchAll:
+  replacement: "Effect.catch"
+  note: "Use Effect.catch for typed failures. It does not catch Effect.txRetry or restore a transactional savepoint."
+effect/STM#catchSome:
+  replacement: "Effect.catch + Option.match"
+  note: "Use Effect.catch and re-fail the original error when the partial handler returns None."
+effect/STM#catchTag:
+  replacement: "Effect.catchTag"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#check:
+  replacement: "Effect.suspend + Effect.txRetry"
+  note: "Evaluate the predicate lazily and return Effect.void when true or Effect.txRetry when false, inside Effect.tx."
+effect/STM#collect:
+  replacement: "Effect.flatMap + Option.match + Effect.txRetry"
+  note: "Map Some to success and None to Effect.txRetry inside the surrounding Effect.tx transaction."
+effect/STM#collectSTM:
+  replacement: "Effect.flatMap + Option.match + Effect.txRetry"
+  note: "Return the Effect held by Some and use Effect.txRetry for None, inside the surrounding Effect.tx transaction."
+effect/STM#commit:
+  replacement: "Effect.tx"
+  note: "Effect.tx runs an Effect transaction and removes its Effect.Transaction requirement."
+effect/STM#commitEither:
+  replacement: "Effect.tx + Effect.result + Effect.fromResult"
+  note: "Run Effect.tx(Effect.result(body)) before Effect.fromResult so journal changes commit even when the original transaction had a typed failure."
+effect/STM#cond:
+  replacement: "Effect.suspend"
+  note: "Lazily branch to Effect.succeed or Effect.fail based on the predicate."
+effect/STM#context:
+  replacement: "Effect.context"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#contextWith:
+  replacement: "Effect.contextWith"
+  note: "The name remains, but the v4 callback returns an Effect directly."
+effect/STM#contextWithSTM:
+  replacement: "Effect.contextWith"
+  note: "The Effect-returning context constructor no longer needs an STM suffix."
+effect/STM#dieMessage:
+  replacement: "Effect.die(new Error(message))"
+  note: "The message-specific helper was removed; construct a message-bearing defect explicitly."
+effect/STM#dieSync:
+  replacement: "Effect.suspend(() => Effect.die(evaluate()))"
+  note: "The lazy defect helper was removed; suspend construction and then die."
+effect/STM#either:
+  replacement: "Effect.result"
+  note: "V4 uses Result instead of Either for materialized typed failures."
+effect/STM#ensuring:
+  replacement: "Effect.ensuring"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#eventually:
+  replacement: "Effect.eventually"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#every:
+  replacement: "Effect.findFirst + Option.isNone"
+  note: "Search sequentially for the first false effectful predicate; no match means every element passed."
+effect/STM#exists:
+  replacement: "Effect.findFirst + Option.isSome"
+  note: "Search sequentially for the first true effectful predicate."
+effect/STM#fail:
+  replacement: "Effect.fail"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#failSync:
+  replacement: "Effect.failSync"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#fiberId:
+  replacement: "Effect.fiberId"
+  note: "The operation remains on Effect, but v4 yields the fiber id as a number."
+effect/STM#filter:
+  replacement: "Effect.filter"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#filterNot:
+  replacement: "Effect.filter"
+  note: "Negate the effectful predicate result and use Effect.filter."
+effect/STM#filterOrDie:
+  replacement: "Effect.filterOrFail + Effect.orDie"
+  note: "Fail with the lazy defect when the predicate rejects, then convert that failure to a defect."
+effect/STM#filterOrDieMessage:
+  replacement: "Effect.filterOrFail + Effect.orDie"
+  note: "Fail with a new Error carrying the message when the predicate rejects, then convert it to a defect."
+effect/STM#filterOrFail:
+  replacement: "Effect.filterOrFail"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#firstSuccessOf:
+  replacement: "Effect.firstSuccessOf"
+  note: "This only preserves typed-failure fallback. V4 has no equivalent for v3 retry-aware alternatives with journal savepoints."
+effect/STM#flatMap:
+  replacement: "Effect.flatMap"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#flatten:
+  replacement: "Effect.flatten"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#flip:
+  replacement: "Effect.flip"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#flipWith:
+  replacement: "Effect.flip(self).pipe(f, Effect.flip)"
+  note: "Compose the retained Effect.flip operation around the transforming function."
+effect/STM#fromEither:
+  replacement: "Effect.fromResult"
+  note: "V4 replaced Either with Result; migrate the value and use Effect.fromResult."
+effect/STM#head:
+  replacement: "Effect.matchEffect"
+  note: "Map source failures to Option.some, return the first iterable element, and fail with Option.none when empty."
+effect/STM#if:
+  replacement: "Effect.suspend or Effect.flatMap"
+  note: "Select the true or false branch lazily; use flatMap when the condition is effectful."
+effect/STM#ignore:
+  replacement: "Effect.ignore"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#interrupt:
+  replacement: "Effect.interrupt"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#interruptAs:
+  replacement: "Effect.interrupt"
+  note: "V4 exposes interruption of the current fiber only; remove the explicit FiberId argument."
+effect/STM#isFailure:
+  replacement: "Effect.isFailure"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#isSTM:
+  replacement: "Effect.isEffect"
+  note: "STM no longer has a distinct runtime representation; transaction programs are Effects."
+effect/STM#isSuccess:
+  replacement: "Effect.isSuccess"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#iterate:
+  replacement: "Effect.gen loop"
+  note: "No direct Effect iterate helper remains; carry state in an explicit sequential Effect.gen loop inside Effect.tx."
+effect/STM#let:
+  replacement: "Effect.let"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#loop:
+  replacement: "Effect.gen loop"
+  note: "No direct Effect loop helper remains; implement the state loop explicitly and collect values unless discard was requested."
+effect/STM#map:
+  replacement: "Effect.map"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#mapAttempt:
+  replacement: "Effect.flatMap(self, (a) => Effect.try(() => f(a)))"
+  note: "Use Effect.try in flatMap so thrown exceptions remain typed failures rather than defects."
+effect/STM#mapInputContext:
+  replacement: "Effect.updateContext"
+  note: "The context-input mapping operation was renamed on Effect."
+effect/STM#match:
+  replacement: "Effect.match"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#matchSTM:
+  replacement: "Effect.matchEffect"
+  note: "The Effect-returning match combinator no longer has an STM suffix."
+effect/STM#mergeAll:
+  replacement: "Effect.reduce"
+  note: "Reduce the input Effects sequentially and combine each produced value with the accumulator."
+effect/STM#none:
+  replacement: "Effect.matchEffect + Option.match"
+  note: "Recreate the Option success/error shuffle explicitly; no dedicated helper remains."
+effect/STM#option:
+  replacement: "Effect.option"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#orDie:
+  replacement: "Effect.orDie"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#orDieWith:
+  replacement: "Effect.mapError + Effect.orDie"
+  note: "Map the typed error to the desired defect and then use Effect.orDie."
+effect/STM#orElse:
+  replacement: "none"
+  note: "V4 has no exact retry-aware transactional alternative with journal savepoint restoration. Effect.catch is only a failure-only approximation."
+effect/STM#orElseEither:
+  replacement: "none"
+  note: "V4 has no exact retry-aware alternative. For typed failures only, compose Effect.catch and Result tagging manually."
+effect/STM#orElseFail:
+  replacement: "Effect.mapError"
+  note: "Map typed failures to the replacement error; this does not preserve v3 retry fallback semantics."
+effect/STM#orElseOptional:
+  replacement: "Effect.catch + Option.match"
+  note: "Run the fallback for None and re-fail Some errors explicitly."
+effect/STM#orElseSucceed:
+  replacement: "Effect.orElseSucceed"
+  note: "The name remains for typed failures, but v4 does not preserve v3 retry fallback or journal savepoints."
+effect/STM#orTry:
+  replacement: "none"
+  note: "V4 exposes no recoverable retry signal or public transactional savepoint; restructure branch selection before Effect.txRetry."
+effect/STM#partition:
+  replacement: "Effect.partition"
+  note: "STM values are now ordinary Effects. Run the complete transaction with Effect.tx. The tuple is [passes, fails], the reverse of v3 [failures, successes]."
+effect/STM#provideServiceSTM:
+  replacement: "Effect.provideServiceEffect"
+  note: "The effectful service provider was renamed on Effect."
+effect/STM#provideSomeContext:
+  replacement: "Effect.provideContext or Effect.updateContext"
+  note: "The dedicated partial-context helper was removed; provide or update the Effect context explicitly."
+effect/STM#reduce:
+  replacement: "Effect.reduce"
+  note: "The combinator remains, but v4 takes the initial state lazily and also passes the element index."
+effect/STM#reduceAll:
+  replacement: "Effect.flatMap + Effect.reduce"
+  note: "Evaluate the initial Effect, then reduce the remaining Effects sequentially."
+effect/STM#reduceRight:
+  replacement: "Effect.reduce over a reversed Array"
+  note: "Materialize and reverse the iterable, then reduce while preserving the old state/element callback order."
+effect/STM#refineOrDie:
+  replacement: "Effect.catch + Option.match"
+  note: "Re-fail Some refined errors and die with the original error for None."
+effect/STM#refineOrDieWith:
+  replacement: "Effect.catch + Option.match"
+  note: "Re-fail Some refined errors and map None to the requested defect."
+effect/STM#reject:
+  replacement: "Effect.flatMap + Option.match"
+  note: "Fail when the partial rejection returns Some; otherwise keep the original success."
+effect/STM#rejectSTM:
+  replacement: "Effect.flatMap + Option.match"
+  note: "Run and fail with the Effect held by Some; otherwise keep the original success."
+effect/STM#repeatUntil:
+  replacement: "Effect.repeat(self, { until: predicate })"
+  note: "The dedicated combinator moved to Effect.repeat options."
+effect/STM#repeatWhile:
+  replacement: "Effect.repeat(self, { while: predicate })"
+  note: "The dedicated combinator moved to Effect.repeat options."
+effect/STM#replicate:
+  replacement: "Effect.replicate"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#replicateSTM:
+  replacement: "Effect.replicateEffect"
+  note: "Use the effectful replication combinator and keep execution sequential inside Effect.tx."
+effect/STM#replicateSTMDiscard:
+  replacement: "Effect.replicateEffect(self, n, { discard: true })"
+  note: "Use effectful replication with discard enabled and keep execution sequential inside Effect.tx."
+effect/STM#retry:
+  replacement: "Effect.txRetry"
+  note: "Do not use Effect.retry, which retries typed failures by schedule; Effect.txRetry waits for an accessed Tx value to change."
+effect/STM#retryUntil:
+  replacement: "Effect.flatMap + Effect.txRetry"
+  note: "Succeed when the predicate passes; otherwise return Effect.txRetry inside Effect.tx."
+effect/STM#retryWhile:
+  replacement: "Effect.flatMap + Effect.txRetry"
+  note: "Return Effect.txRetry while the predicate passes; otherwise succeed inside Effect.tx."
+effect/STM#some:
+  replacement: "Effect.matchEffect + Option.match"
+  note: "Recreate the Option success/error shuffle explicitly; no dedicated helper remains."
+effect/STM#succeed:
+  replacement: "Effect.succeed"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#summarized:
+  replacement: "Effect.gen"
+  note: "Run the summary Effect before and after the body, then return the computed summary and body value."
+effect/STM#sync:
+  replacement: "Effect.sync"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#tap:
+  replacement: "Effect.tap"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#tapBoth:
+  replacement: "Effect.tapError + Effect.tap"
+  note: "Compose the separate failure and success taps."
+effect/STM#tapError:
+  replacement: "Effect.tapError"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#try:
+  replacement: "Effect.try"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#unless:
+  replacement: "Effect.when(self, Effect.sync(() => !predicate()))"
+  note: "V4 Effect.when takes an effectful condition; suspend and negate the old lazy boolean."
+effect/STM#unlessSTM:
+  replacement: "Effect.when(self, Effect.map(condition, (b) => !b))"
+  note: "Negate the effectful condition and use Effect.when."
+effect/STM#unsome:
+  replacement: "Effect.matchEffect + Option.match"
+  note: "Recreate the Option error/success shuffle explicitly; no dedicated helper remains."
+effect/STM#validateAll:
+  replacement: "Effect.validate"
+  note: "The validation combinator was renamed and now returns a NonEmptyArray of errors."
+effect/STM#validateFirst:
+  replacement: "Effect.flip + Effect.forEach"
+  note: "Flip each candidate result, traverse sequentially, then flip the aggregate to preserve all errors when every candidate fails."
+effect/STM#void:
+  replacement: "Effect.void"
+  note: "The combinator keeps its name, but STM values are now ordinary Effects. Run the complete transaction with Effect.tx. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/STM#when:
+  replacement: "Effect.when(self, Effect.sync(predicate))"
+  note: "V4 Effect.when takes an effectful boolean, so suspend the old lazy predicate."
+effect/STM#whenSTM:
+  replacement: "Effect.when"
+  note: "The effectful-condition form is now the only Effect.when form."
+effect/STM#zipLeft:
+  replacement: "Effect.zipWith(self, that, (left) => left)"
+  note: "Use sequential Effect.zipWith and retain the left result."
+effect/STM#zipRight:
+  replacement: "Effect.andThen"
+  note: "Use Effect.andThen for sequential composition that retains the right result."

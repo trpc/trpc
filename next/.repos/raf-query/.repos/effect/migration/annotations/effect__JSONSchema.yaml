@@ -1,0 +1,71 @@
+"effect/JSONSchema#fromAST":
+  replacement: "Schema.toJsonSchemaDocument"
+  note: "Wrap a low-level AST with Schema.make, then generate a draft 2020-12 document. Generation defaults to onExcessProperty: 'ignore'; use 'error' for closed objects. JSON Schema validation is approximate and does not replace Effect decoding."
+  example: "Schema.toJsonSchemaDocument(Schema.make(ast))"
+"effect/JSONSchema#JsonSchema7":
+  replacement: "JsonSchema.JsonSchema"
+  note: "The draft-07-specific union was replaced by the dialect-neutral JSON Schema model."
+"effect/JSONSchema#JsonSchema7Any":
+  replacement: "JsonSchema.JsonSchema"
+  note: "Individual draft-07 node interfaces were consolidated into JsonSchema.JsonSchema."
+"effect/JSONSchema#JsonSchema7AnyOf":
+  replacement: "JsonSchema.JsonSchema"
+  note: "Individual draft-07 node interfaces were consolidated into JsonSchema.JsonSchema."
+"effect/JSONSchema#JsonSchema7Array":
+  replacement: "JsonSchema.JsonSchema"
+  note: "Individual draft-07 node interfaces were consolidated into JsonSchema.JsonSchema."
+"effect/JSONSchema#JsonSchema7Boolean":
+  replacement: "JsonSchema.JsonSchema"
+  note: "Individual draft-07 node interfaces were consolidated into JsonSchema.JsonSchema."
+"effect/JSONSchema#JsonSchema7empty":
+  replacement: "JsonSchema.JsonSchema"
+  note: "Individual draft-07 node interfaces were consolidated into JsonSchema.JsonSchema."
+"effect/JSONSchema#JsonSchema7Enum":
+  replacement: "JsonSchema.JsonSchema"
+  note: "Individual draft-07 node interfaces were consolidated into JsonSchema.JsonSchema."
+"effect/JSONSchema#JsonSchema7Enums":
+  replacement: "JsonSchema.JsonSchema"
+  note: "Individual draft-07 node interfaces were consolidated into JsonSchema.JsonSchema."
+"effect/JSONSchema#JsonSchema7Integer":
+  replacement: "JsonSchema.JsonSchema"
+  note: "Individual draft-07 node interfaces were consolidated into JsonSchema.JsonSchema."
+"effect/JSONSchema#JsonSchema7Never":
+  replacement: "JsonSchema.JsonSchema"
+  note: "Individual draft-07 node interfaces were consolidated into JsonSchema.JsonSchema."
+"effect/JSONSchema#JsonSchema7Null":
+  replacement: "JsonSchema.JsonSchema"
+  note: "Individual draft-07 node interfaces were consolidated into JsonSchema.JsonSchema."
+"effect/JSONSchema#JsonSchema7Number":
+  replacement: "JsonSchema.JsonSchema"
+  note: "Individual draft-07 node interfaces were consolidated into JsonSchema.JsonSchema."
+"effect/JSONSchema#JsonSchema7Numeric":
+  replacement: "JsonSchema.JsonSchema"
+  note: "Individual draft-07 node interfaces were consolidated into JsonSchema.JsonSchema."
+"effect/JSONSchema#JsonSchema7object":
+  replacement: "JsonSchema.JsonSchema"
+  note: "Individual draft-07 node interfaces were consolidated into JsonSchema.JsonSchema."
+"effect/JSONSchema#JsonSchema7Object":
+  replacement: "JsonSchema.JsonSchema"
+  note: "Individual draft-07 node interfaces were consolidated into JsonSchema.JsonSchema."
+"effect/JSONSchema#JsonSchema7Ref":
+  replacement: "JsonSchema.JsonSchema"
+  note: "Individual draft-07 node interfaces were consolidated into JsonSchema.JsonSchema."
+"effect/JSONSchema#JsonSchema7String":
+  replacement: "JsonSchema.JsonSchema"
+  note: "Individual draft-07 node interfaces were consolidated into JsonSchema.JsonSchema."
+"effect/JSONSchema#JsonSchema7Unknown":
+  replacement: "JsonSchema.JsonSchema"
+  note: "Individual draft-07 node interfaces were consolidated into JsonSchema.JsonSchema."
+"effect/JSONSchema#JsonSchema7Void":
+  replacement: "JsonSchema.JsonSchema"
+  note: "Individual draft-07 node interfaces were consolidated into JsonSchema.JsonSchema."
+"effect/JSONSchema#JsonSchema7Root":
+  replacement: "JsonSchema.Document<\"draft-07\">"
+  note: "Use a typed JSON Schema document for a draft-07 root and definitions."
+"effect/JSONSchema#JsonSchemaAnnotations":
+  replacement: "Schema.Annotations.Documentation"
+  note: "Schema metadata now uses string-keyed Schema annotations; JSON Schema-specific checks use toJsonSchema annotations."
+"effect/JSONSchema#make":
+  replacement: "Schema.toJsonSchemaDocument"
+  note: "Generate draft 2020-12, then call JsonSchema.toDocumentDraft07 when draft-07 output is required. Generation now defaults to onExcessProperty: 'ignore'; pass 'error' to retain closed-object output, and use the same option when decoding to reject excess properties. The earlier v4 additionalProperties generation option was removed. JSON Schema validation is approximate and does not replace Effect decoding."
+  example: "JsonSchema.toDocumentDraft07(Schema.toJsonSchemaDocument(schema))"

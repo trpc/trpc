@@ -1,0 +1,72 @@
+effect/Exit#all:
+  replacement: "Exit.asVoidAll + Exit.isSuccess + Option.some / Option.none"
+  note: "No direct value-collecting v4 equivalent. Materialize the iterable once; return Option.none for empty input, use Exit.asVoidAll to combine every failure, and otherwise collect each Success.value into Exit.succeed and wrap it in Option.some. The parallel option is gone because v4 Cause flattens sequential and parallel composition."
+effect/Exit#as:
+  replacement: "Exit.map"
+  note: "Replace with Exit.map(self, () => value); this preserves a failed Exit and returns Exit data rather than a general Effect."
+effect/Exit#causeOption:
+  replacement: "Exit.getCause"
+  note: "Direct rename; still returns Option.some(cause) for Failure and Option.none for Success."
+effect/Exit#exists:
+  replacement: "Exit.isSuccess"
+  note: "No direct v4 combinator; use Exit.isSuccess(self) && predicate(self.value). If callers rely on the refinement overload, retain an explicitly typed wrapper returning self is Exit.Exit<B>."
+effect/Exit#Exit:
+  replacement: "Exit.Exit"
+  note: "Still exported as Exit.Exit<A, E> = Exit.Success<A, E> | Exit.Failure<A, E>; v4 variants share Exit.Exit.Proto and remain Effect values."
+effect/Exit#ExitUnify:
+  replacement: "none"
+  note: "Removed type-level implementation hook; delete direct references. V4 Success and Failure inherit Exit.Exit.Proto, but no exported Exit-specific Unify interface replaces this API."
+effect/Exit#ExitUnifyIgnore:
+  replacement: "none"
+  note: "Removed type-level implementation hook; delete direct references. V4 Success and Failure inherit Exit.Exit.Proto, but no exported Exit-specific Unify interface replaces this API."
+effect/Exit#Failure:
+  replacement: "Exit.Failure"
+  note: "Still exported with _tag Failure and cause; it now extends Exit.Exit.Proto and no longer exposes the v3 _op, effect_instruction_i0, or Exit-specific Unify fields."
+effect/Exit#flatMapEffect:
+  replacement: "Effect.matchCauseEffectEager"
+  note: "Use Effect.matchCauseEffectEager(self, { onFailure: cause => Effect.succeed(Exit.failCause(cause)), onSuccess: f }). The explicit failure branch is required because v3 preserved an input Failure as a successful outer Effect; plain Effect.flatMap would instead fail the outer Effect."
+effect/Exit#flatten:
+  replacement: "Exit.match"
+  note: "No direct v4 Exit flatten; use Exit.match(self, { onFailure: Exit.failCause, onSuccess: identity }) to return the inner Exit on success and preserve an outer failure as Exit data."
+effect/Exit#forEachEffect:
+  replacement: "Effect.flatMapEager + Effect.exit"
+  note: "Use Effect.exit(Effect.flatMapEager(self, f)). This captures both the original Exit failure and failures from f into the returned Exit while keeping the outer Effect infallible; flatMapEager preserves v3's eager callback selection for an already-resolved Exit."
+effect/Exit#fromEither:
+  replacement: "Result.match + Exit.fail / Exit.succeed"
+  note: "V3 Either is v4 Result. Convert with Result.match(result, { onFailure: Exit.fail, onSuccess: Exit.succeed }); there is no v4 Exit.fromResult constructor."
+effect/Exit#fromOption:
+  replacement: "Option.match + Exit.fail / Exit.succeed"
+  note: "Use Option.match(option, { onNone: () => Exit.fail(undefined), onSome: Exit.succeed }) to preserve v3's Exit<A, void> contract. Exit.findErrorOption is an accessor and is not a replacement."
+effect/Exit#getOrElse:
+  replacement: "Exit.match"
+  note: "Use Exit.match(self, { onFailure: orElse, onSuccess: identity }); onFailure still receives the full Cause."
+effect/Exit#isInterrupted:
+  replacement: "Exit.hasInterrupts"
+  note: "Direct semantic rename; true for a Failure whose Cause contains at least one Interrupt reason, false for Success."
+effect/Exit#mapErrorCause:
+  replacement: "Exit.match + Exit.failCause / Exit.succeed"
+  note: "No direct v4 combinator. Use Exit.match(self, { onFailure: cause => Exit.failCause(f(cause)), onSuccess: Exit.succeed }); f now receives the flattened v4 Cause representation. Cause.map is only equivalent when f merely maps typed errors."
+effect/Exit#matchEffect:
+  replacement: "Effect.matchCauseEffectEager"
+  note: "Direct cause-aware migration because Exit is an Effect in v4. Use the same onFailure/onSuccess handlers; the Eager variant preserves v3's immediate branch selection for resolved Exit values."
+effect/Exit#Success:
+  replacement: "Exit.Success"
+  note: "Still exported with _tag Success and value; it now extends Exit.Exit.Proto, defaults E to never, and no longer exposes the v3 _op, effect_instruction_i0, or Exit-specific Unify fields."
+effect/Exit#zipLeft:
+  replacement: "Exit.asVoidAll"
+  note: "Use const checked = Exit.asVoidAll([self, that]); return Exit.isFailure(checked) ? checked : self. This retains the left success and combines dual failures; v4 Cause no longer distinguishes sequential from parallel composition."
+effect/Exit#zipPar:
+  replacement: "Exit.asVoidAll + Exit.succeed"
+  note: "No direct v4 Exit pair combinator. Check Exit.asVoidAll([self, that]); return its Failure, or after narrowing both inputs to Success return Exit.succeed([self.value, that.value]). V4 Cause.combine has no parallel marker."
+effect/Exit#zipParLeft:
+  replacement: "Exit.asVoidAll"
+  note: "Use const checked = Exit.asVoidAll([self, that]); return Exit.isFailure(checked) ? checked : self. This retains the left success and combines dual failures; v4 Cause no longer distinguishes sequential from parallel composition."
+effect/Exit#zipParRight:
+  replacement: "Exit.asVoidAll"
+  note: "Use const checked = Exit.asVoidAll([self, that]); return Exit.isFailure(checked) ? checked : that. This retains the right success and combines dual failures; v4 Cause no longer distinguishes sequential from parallel composition."
+effect/Exit#zipRight:
+  replacement: "Exit.asVoidAll"
+  note: "Use const checked = Exit.asVoidAll([self, that]); return Exit.isFailure(checked) ? checked : that. This retains the right success and combines dual failures; v4 Cause no longer distinguishes sequential from parallel composition."
+effect/Exit#zipWith:
+  replacement: "Exit.match"
+  note: "No direct v4 equivalent. Nested-match both Exits: preserve a lone failure cause, call options.onFailure and Exit.failCause only when both fail, and call Exit.succeed(options.onSuccess(a, b)) when both succeed."

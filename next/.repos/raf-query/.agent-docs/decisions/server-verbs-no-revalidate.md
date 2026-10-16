@@ -1,0 +1,3 @@
+# Server verbs don't revalidate (agent)
+
+- **Server clients don't background-revalidate in the verbs** (parent agent, 2026-10-12). `prefetch` / `ensure` / `fetch` on an `isServer` client reuse cached data whatever `staleTime` says (`revalidate` in `cache.ts`); with the default `staleTime: 0`, `fetch` then `ensure` of one query in a server component would otherwise fire a second request whose result is never rendered. Invalidated entries still refetch, and `invalidate` / `refetch` / `reset` are unchanged. The browser still revalidates stale data. The examples keep `staleTime: 5000` for their browser clients (Start's intent preloading reruns the loader on click; Next passes the same config to `QueryProvider`), where it still saves refetches of just-hydrated data.

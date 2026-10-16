@@ -1,0 +1,30 @@
+"@effect/platform/HttpClientResponse#filterStatus":
+  replacement: "HttpClientResponse.filterStatus"
+  note: "Retained; rejected status now fails with an HttpClientError wrapper."
+"@effect/platform/HttpClientResponse#filterStatusOk":
+  replacement: "HttpClientResponse.filterStatusOk"
+  note: "Retained; non-2xx status now fails with an HttpClientError wrapper."
+"@effect/platform/HttpClientResponse#schemaBodyJson":
+  replacement: "HttpClientResponse.schemaBodyJson"
+  note: "Retained with v4 Schema constraints and SchemaError failures."
+"@effect/platform/HttpClientResponse#schemaBodyUrlParams":
+  replacement: "HttpClientResponse.schemaBodyUrlParams"
+  note: "Retained with ConstraintCodec input and SchemaError failures."
+"@effect/platform/HttpClientResponse#schemaHeaders":
+  replacement: "HttpClientResponse.schemaHeaders"
+  note: "Retained with ConstraintCodec input and SchemaError failures."
+"@effect/platform/HttpClientResponse#schemaJson":
+  replacement: "HttpClientResponse.schemaJson"
+  note: "Retained with ConstraintCodec input and v4 error types."
+"@effect/platform/HttpClientResponse#schemaNoBody":
+  replacement: "HttpClientResponse.schemaNoBody"
+  note: "Retained with Schema.Codec input and SchemaError failures."
+"@effect/platform/HttpClientResponse#stream":
+  replacement: "HttpClientResponse.stream"
+  note: "Retained; body failures now use the broader HttpClientError wrapper."
+"@effect/platform/HttpClientResponse#TypeId":
+  replacement: "typeof HttpClientResponse.TypeId"
+  note: "TypeId remains public but is now a string constant; use typeof in type position."
+"@effect/platform/HttpClientResponse#HttpClientResponse":
+  replacement: "HttpClientResponse.HttpClientResponse"
+  note: "Custom implementations must supply the required url string. It represents the resolved URL including query parameters and excluding the hash, uses the final URL after redirects, and is empty when unknown."

@@ -1,0 +1,3 @@
+"@effect/sql-sqlite-do/index":
+  replacement: "@effect/sql-sqlite-do"
+  note: "The explicit /index entrypoint was removed; import the same namespaces from the @effect/sql-sqlite-do package root or import specific modules directly."

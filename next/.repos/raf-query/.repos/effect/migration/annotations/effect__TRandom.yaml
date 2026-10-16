@@ -1,0 +1,27 @@
+effect/TRandom#TRandom:
+  replacement: "none"
+  note: "The transactional random service was deliberately removed; use Random outside retried transactions where possible."
+effect/TRandom#TRandomTypeId:
+  replacement: "none"
+  note: "TRandom and its public type id were removed; v4 has no TxRandom module."
+effect/TRandom#Tag:
+  replacement: "Random.Random"
+  note: "Use the v4 Random Context.Reference; the transactional random service was removed."
+effect/TRandom#next:
+  replacement: "Random.next"
+  note: "TxRandom was removed. Random.next is an ordinary Effect and may be re-executed if used inside a retried transaction."
+effect/TRandom#nextBoolean:
+  replacement: "Random.nextBoolean"
+  note: "TxRandom was removed. This ordinary Effect is not rollback-safe under transaction retry."
+effect/TRandom#nextInt:
+  replacement: "Random.nextInt"
+  note: "TxRandom was removed. This ordinary Effect is not rollback-safe under transaction retry."
+effect/TRandom#nextIntBetween:
+  replacement: "Random.nextIntBetween(low, high, { halfOpen: true })"
+  note: "TxRandom was removed; request half-open bounds explicitly to preserve the v3 range behavior."
+effect/TRandom#nextRange:
+  replacement: "Random.nextBetween"
+  note: "The operation was renamed and is no longer backed by rollback-safe transactional random state."
+effect/TRandom#shuffle:
+  replacement: "Random.shuffle"
+  note: "TxRandom was removed. This ordinary Effect is not rollback-safe under transaction retry."

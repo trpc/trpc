@@ -1,0 +1,219 @@
+"effect/Channel#acquireReleaseOut":
+  replacement: "Channel.acquireRelease"
+  note: "Renamed to acquireRelease. The v4 release action cannot add environment requirements, so capture or provide any services it needs."
+"effect/Channel#as":
+  replacement: "Channel.mapDone"
+  note: "Replace Channel.as(self, value) with Channel.mapDone(self, () => value)."
+"effect/Channel#asVoid":
+  replacement: "Channel.mapDone"
+  note: "Replace Channel.asVoid(self) with Channel.mapDone(self, () => void 0)."
+"effect/Channel#bufferChunk":
+  replacement: "none"
+  note: "The inferred Channel.fromChunk match is not equivalent. Rebuild the buffered upstream-pull transform with Channel.fromTransform and Channel.toTransform."
+"effect/Channel#catchAll":
+  replacement: "Channel.catch"
+  note: "Renamed to catch for typed-error recovery."
+"effect/Channel#catchAllCause":
+  replacement: "Channel.catchCause"
+  note: "Renamed to catchCause for full-cause recovery."
+"effect/Channel#Channel":
+  replacement: "Channel.Channel"
+  note: "Retained, but reorder type parameters from <OutElem, InElem, OutErr, InErr, OutDone, InDone, Env> to <OutElem, OutErr, OutDone, InElem, InErr, InDone, Env>. Convert Effect values explicitly with Channel.fromEffect or Channel.fromEffectDone."
+"effect/Channel#ChannelException":
+  replacement: "none"
+  note: "Removed implementation artifact. Channel.pipeToOrFail now handles upstream failures without exposing the v3 exception wrapper."
+"effect/Channel#ChannelExceptionTypeId":
+  replacement: "none"
+  note: "Removed implementation artifact. Channel.pipeToOrFail now handles upstream failures without exposing the v3 exception wrapper."
+"effect/Channel#isChannelException":
+  replacement: "none"
+  note: "Removed implementation artifact. Channel.pipeToOrFail now handles upstream failures without exposing the v3 exception wrapper."
+"effect/Channel#ChannelTypeId":
+  replacement: "Channel.TypeId"
+  note: "Renamed to TypeId; the brand is now the string literal ~effect/Channel. Prefer Channel.isChannel for runtime checks."
+"effect/Channel#ChannelUnify":
+  replacement: "Channel.ChannelUnify"
+  note: "Retained; update inferred Channel arguments to the v4 generic order."
+"effect/Channel#ChannelUnifyIgnore":
+  replacement: "Channel.ChannelUnifyIgnore"
+  note: "Retained with a new shape: it no longer extends EffectUnifyIgnore and now contains Effect?: true."
+"effect/Channel#collect":
+  replacement: "Channel.filterMap"
+  note: "Use Channel.filterMap(self, Filter.fromPredicateOption(pf)) to adapt the v3 Option-returning partial function."
+"effect/Channel#concatAll":
+  replacement: "Channel.flatten"
+  note: "Use flatten for sequential emitted-channel flattening. V4 preserves the outer done value and discards child done values."
+"effect/Channel#concatOut":
+  replacement: "Channel.flatten"
+  note: "Use flatten for sequential emitted-channel flattening. V4 preserves the outer done value and discards child done values."
+"effect/Channel#concatAllWith":
+  replacement: "none"
+  note: "V4 removed child-done accumulation and the outer-done combiner. Use Channel.flatten or Channel.flatMap only when child done values may be discarded; otherwise implement a Pull transform."
+"effect/Channel#concatMapWith":
+  replacement: "none"
+  note: "V4 removed child-done accumulation and the outer-done combiner. Use Channel.flatten or Channel.flatMap only when child done values may be discarded; otherwise implement a Pull transform."
+"effect/Channel#concatMap":
+  replacement: "Channel.flatMap"
+  note: "Renamed to flatMap. Sequential flattening is the default; child done values are discarded and the source done value is preserved."
+"effect/Channel#concatMapWithCustom":
+  replacement: "none"
+  note: "Removed with the channel executor scheduling protocol. Use Channel.flatMap for ordinary sequencing or implement custom scheduling with Channel.fromTransform and Pull."
+"effect/Channel#context":
+  replacement: "Channel.contextWith"
+  note: "Use Channel.contextWith((context) => Channel.end(context)); the context was the v3 channel done value."
+"effect/Channel#contextWithChannel":
+  replacement: "Channel.contextWith"
+  note: "Renamed to contextWith."
+"effect/Channel#contextWithEffect":
+  replacement: "Channel.contextWith"
+  note: "Use Channel.contextWith((context) => Channel.fromEffectDone(f(context))) to preserve the effect result as the done value."
+"effect/Channel#doneCollect":
+  replacement: "none"
+  note: "No exact channel combinator remains. Drive Channel.toPull, collect output elements, and handle Cause.Done to retain both outputs and the done value."
+"effect/Channel#emitCollect":
+  replacement: "none"
+  note: "No exact channel combinator remains. Drive Channel.toPull, collect output elements, and handle Cause.Done to retain both outputs and the done value."
+"effect/Channel#ensuringWith":
+  replacement: "Channel.onExit"
+  note: "Renamed to onExit; the finalizer still receives the channel Exit."
+"effect/Channel#foldCauseChannel":
+  replacement: "none"
+  note: "V4 has no exact two-sided fold over failure and completion. Use catchCause or catch for failure-only handling, concatWith for success-only handling, or match the Pull in a custom transform."
+"effect/Channel#foldChannel":
+  replacement: "none"
+  note: "V4 has no exact two-sided fold over failure and completion. Use catchCause or catch for failure-only handling, concatWith for success-only handling, or match the Pull in a custom transform."
+"effect/Channel#fromEither":
+  replacement: "Channel.fromEffectDone"
+  note: "Either is now Result. Use Channel.fromEffectDone(Effect.fromResult(result)) to preserve success as the done value."
+"effect/Channel#fromInput":
+  replacement: "none"
+  note: "SingleProducerAsyncInput was removed. Model the producer with Queue and Pull; use Channel.fromPull with Queue.take when a typed done value matters."
+"effect/Channel#fromOption":
+  replacement: "Channel.fromEffectDone"
+  note: "Use Channel.fromEffectDone(Effect.fromOption(option, Option.none)) to preserve the v3 Option.none error, or omit onNone for the v4 NoSuchElementError default."
+"effect/Channel#fromPubSubScoped":
+  replacement: "Channel.fromPubSubTake"
+  note: "Change the protocol to PubSub<Take<Elem, Err, Done>> and use Channel.flattenArray(Channel.fromPubSubTake(pubsub)). The v4 constructor owns the scoped subscription and returns a Channel directly."
+"effect/Channel#interruptWhenDeferred":
+  replacement: "Channel.interruptWhen"
+  note: "Use Channel.interruptWhen(self, Deferred.await(deferred)); the Deferred-specific overload was removed."
+"effect/Channel#mapErrorCause":
+  replacement: "Channel.catchCause"
+  note: "Use Channel.catchCause(self, (cause) => Channel.failCause(f(cause)))."
+"effect/Channel#mapInputContext":
+  replacement: "Channel.updateContext"
+  note: "Renamed to updateContext for transforming the channel requirement Context."
+"effect/Channel#mapInputEffect":
+  replacement: "none"
+  note: "V4 removed upstream done/error effect mapping. Adapt Cause.Done or failure on the upstream Pull, then pass it through Channel.toTransform(self)."
+"effect/Channel#mapInputErrorEffect":
+  replacement: "none"
+  note: "V4 removed upstream done/error effect mapping. Adapt Cause.Done or failure on the upstream Pull, then pass it through Channel.toTransform(self)."
+"effect/Channel#mapInputIn":
+  replacement: "Channel.mapInput"
+  note: "Use Channel.mapInput(self, (value) => Effect.succeed(f(value))); v4 consolidated pure and effectful input mapping."
+"effect/Channel#mapInputInEffect":
+  replacement: "Channel.mapInput"
+  note: "Renamed to mapInput; the mapper remains effectful."
+"effect/Channel#mapOut":
+  replacement: "Channel.map"
+  note: "Renamed to map; the v4 mapper also receives the element index."
+"effect/Channel#mapOutEffect":
+  replacement: "Channel.mapEffect"
+  note: "Renamed to mapEffect for sequential effectful output mapping."
+"effect/Channel#mapOutEffectPar":
+  replacement: "Channel.mapEffect"
+  note: "Use Channel.mapEffect(self, f, { concurrency: n }); ordered output remains the default."
+"effect/Channel#mergeAllUnbounded":
+  replacement: "Channel.mergeAll"
+  note: "Use Channel.mergeAll(channels, { concurrency: \"unbounded\" }); child done values are discarded and the outer done value is preserved."
+"effect/Channel#mergeAllUnboundedWith":
+  replacement: "none"
+  note: "V4 mergeAll removed child-done combining. Use Channel.mergeAll if terminal accumulation can be dropped; otherwise implement a custom Pull merge."
+"effect/Channel#mergeAllWith":
+  replacement: "none"
+  note: "V4 mergeAll removed child-done combining. Use Channel.mergeAll if terminal accumulation can be dropped; otherwise implement a custom Pull merge."
+"effect/Channel#mergeOutWith":
+  replacement: "none"
+  note: "V4 mergeAll removed child-done combining. Use Channel.mergeAll if terminal accumulation can be dropped; otherwise implement a custom Pull merge."
+"effect/Channel#mergeMap":
+  replacement: "Channel.flatMap"
+  note: "Use Channel.flatMap with concurrency and bufferSize for backpressure, or Channel.switchMap with the same options for the v3 sliding strategy."
+"effect/Channel#mergeOut":
+  replacement: "Channel.mergeAll"
+  note: "Use Channel.mergeAll(self, { concurrency: n }) for bounded backpressured flattening when child done values are irrelevant."
+"effect/Channel#mergeWith":
+  replacement: "Channel.merge"
+  note: "Use Channel.merge with haltStrategy left, right, both, or either for standard policies. Custom MergeDecision effects require a Pull-level redesign."
+"effect/Channel#orDieWith":
+  replacement: "Channel.catch"
+  note: "Use Channel.catch(self, (error) => Channel.die(f(error))); v4 Channel.orDie has no mapping callback."
+"effect/Channel#orElse":
+  replacement: "Channel.catch"
+  note: "Use Channel.catch(self, () => that()) and keep the fallback lazy."
+"effect/Channel#provideLayer":
+  replacement: "Channel.provide"
+  note: "Both collapse into provide. V4 removes services supplied by the layer and retains remaining requirements; use options.local when a fresh layer instance is needed."
+"effect/Channel#provideSomeLayer":
+  replacement: "Channel.provide"
+  note: "Both collapse into provide. V4 removes services supplied by the layer and retains remaining requirements; use options.local when a fresh layer instance is needed."
+"effect/Channel#read":
+  replacement: "none"
+  note: "The channel instruction AST was removed. Implement a one-step upstream read with Channel.fromTransform and Pull matching, including Cause.Done handling."
+"effect/Channel#readOrFail":
+  replacement: "none"
+  note: "The channel instruction AST was removed. Implement a one-step upstream read with Channel.fromTransform and Pull matching, including Cause.Done handling."
+"effect/Channel#readWith":
+  replacement: "none"
+  note: "The channel instruction AST was removed. Implement a one-step upstream read with Channel.fromTransform and Pull matching, including Cause.Done handling."
+"effect/Channel#readWithCause":
+  replacement: "none"
+  note: "The channel instruction AST was removed. Implement a one-step upstream read with Channel.fromTransform and Pull matching, including Cause.Done handling."
+"effect/Channel#repeated":
+  replacement: "Channel.forever"
+  note: "Use forever for infinite repetition. Channel.repeat takes a Schedule and may terminate, so it is not equivalent."
+"effect/Channel#run":
+  replacement: "Channel.runDrain"
+  note: "Use runDrain to consume all emitted elements and return the channel's done value."
+"effect/Channel#runScoped":
+  replacement: "Channel.toPull"
+  note: "No direct scoped runner remains. Use toPull in the caller scope and recover Cause.Done; use runDrain when an internally managed scope is acceptable."
+"effect/Channel#scopedWith":
+  replacement: "Channel.unwrap"
+  note: "Use Channel.unwrap(Effect.map(Effect.scope, (scope) => Channel.fromEffect(f(scope)))) so the effect uses the active channel scope."
+"effect/Channel#toPullIn":
+  replacement: "Channel.toPullScoped"
+  note: "Renamed to toPullScoped. The returned Pull emits elements directly and represents completion with Cause.Done instead of Either."
+"effect/Channel#toSink":
+  replacement: "Sink.fromChannel"
+  note: "Constructor moved to Sink. Adapt the channel to non-empty array input, no emitted leftovers, and a Sink.End done value."
+"effect/Channel#toStream":
+  replacement: "Stream.fromChannel"
+  note: "Constructor moved to Stream. Adapt Chunk outputs to non-empty readonly arrays and map the channel done value to void."
+"effect/Channel#unwrapScoped":
+  replacement: "Channel.unwrap"
+  note: "Use unwrap; v4 supplies the active channel scope to the effect and removes Scope from the resulting requirement."
+"effect/Channel#unwrapScopedWith":
+  replacement: "Channel.unwrap"
+  note: "Use Channel.unwrap(Effect.flatMap(Effect.scope, f)) to pass the active channel scope to f."
+"effect/Channel#void":
+  replacement: "Channel.empty"
+  note: "Renamed to empty: emit nothing and end with void."
+"effect/Channel#write":
+  replacement: "Channel.succeed"
+  note: "Renamed to succeed, which emits one element in v4. Use Channel.end when migrating v3 succeed, which produced a done value."
+"effect/Channel#writeAll":
+  replacement: "Channel.fromArray"
+  note: "Replace the variadic writer with Channel.fromArray(outs)."
+"effect/Channel#writeChunk":
+  replacement: "Channel.fromChunk"
+  note: "Renamed to fromChunk for emitting every Chunk element."
+"effect/Channel#zip":
+  replacement: "Channel.concatWith"
+  note: "For sequential zip, concatWith the left channel and mapDone the right result to a tuple. Concurrent tuple-done semantics require custom Pull coordination."
+"effect/Channel#zipLeft":
+  replacement: "Channel.concatWith"
+  note: "For sequential zipLeft, concatWith and mapDone the right result back to the left done value. Concurrent done preservation requires custom Pull coordination."
+"effect/Channel#zipRight":
+  replacement: "Channel.concat"
+  note: "Use concat for the sequential form; it preserves the right done value. Concurrent mode has no exact replacement."

@@ -1,0 +1,3 @@
+"@effect/experimental/PersistedCache#make":
+  replacement: effect/persistence/PersistedCache#make
+  note: Pass lookup as the first argument and options second; timeToLive now receives exit before request and the service is Persistence.Persistence.

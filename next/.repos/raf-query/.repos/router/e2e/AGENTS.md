@@ -1,0 +1,9 @@
+# E2E tests
+
+- Read the project's `package.json` and test config. Inspect resolved targets with `CI=1 NX_DAEMON=false pnpm nx show project <name> --json`: `nx.metadata.playwrightModes` generates modes, variants, and shards. The aggregate `test:e2e` can also run extra package-script suites. For focused Playwright runs, select an executable test target (a mode/shard target when inferred) and append filters after `--` (e.g. `-- tests/navigation.spec.ts --grep "redirect"`).
+- Check Playwright's `webServer.command` to select dev or production coverage. A mode named `ssr` can still start a dev server. `e2e/eslint-plugin-start` uses Vitest instead of Playwright.
+- For inferred Playwright modes, Nx builds first and supplies `MODE`, `E2E_TOOLCHAIN`, `E2E_DIST_DIR`, and `E2E_PORT_KEY`. Preserve these in server/config changes; let Nx own the build while `webServer.command` only starts the selected server. Target generation lives in [`scripts/nx/playwright-plugin.ts`](../scripts/nx/playwright-plugin.ts).
+- Use the same `E2E_PORT_KEY`-aware key throughout config, app, and dummy-server setup/teardown. Clean only that key's port files, before allocation, when `TEST_WORKER_INDEX === undefined`; worker config reloads must not remap a running server's port.
+- For new browser tests, reuse the local error-checking fixture. The shared `test` from `@tanstack/router-e2e-utils` fails on unexpected `console.error`, including hydration errors; allow only expected errors with `whitelistErrors`.
+- HMR/watch tests edit real app sources. Reuse existing edit/restore helpers such as `createHmrFileEditor`, restore edits in teardown even after failures, and preserve the suites' single-worker and Nx `parallelism: false` settings.
+- `@tanstack/router-e2e-utils:test:unit` is a placeholder. Validate helper changes through consuming e2e projects.

@@ -1,0 +1,9 @@
+"@effect/cluster/ShardingConfig#config":
+  replacement: "effect/cluster/ShardingConfig#config"
+  note: "Moved into core Effect; its Context service value type now uses the Service property instead of Type."
+"@effect/cluster/ShardingConfig#defaults":
+  replacement: "effect/cluster/ShardingConfig#defaults"
+  note: "Moved into core Effect; service type projections now use Service instead of Type. V4 also defaults maxResidentEntities to 10,000 and unprocessedMessageBatchSize to 1,024."
+"@effect/cluster/ShardingConfig#layer":
+  replacement: "effect/cluster/ShardingConfig#layer"
+  note: "Moved into core Effect with the same shallow default merge; service type projections now use Service instead of Type."

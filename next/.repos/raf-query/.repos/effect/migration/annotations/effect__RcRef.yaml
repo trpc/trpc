@@ -1,0 +1,12 @@
+effect/RcRef#RcRef:
+  replacement: "RcRef.RcRef"
+  note: "The model remains but is now only Pipeable; replace yielding or reading the RcRef directly with RcRef.get in a Scope."
+effect/RcRef#RcRefUnify:
+  replacement: "none"
+  note: "RcRef is no longer an Effect subtype, so its Effect unification helper was removed; call RcRef.get explicitly."
+effect/RcRef#RcRefUnifyIgnore:
+  replacement: "none"
+  note: "RcRef is no longer an Effect subtype, so its Effect unification ignore marker was removed."
+effect/RcRef#TypeId:
+  replacement: "none"
+  note: "The RcRef type id is internal in v4; do not inspect or construct the brand directly."

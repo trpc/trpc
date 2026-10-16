@@ -1,0 +1,21 @@
+diff --git a/dist/index.mjs b/dist/index.mjs
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -171,7 +171,7 @@
+ 		const bDate = new Date(b.mergedAt);
+ 		return aDate.getTime() - bDate.getTime();
+ 	})[0];
+-	const author = pr?.author ?? data.author?.user;
++	const author = data.author?.user;
+ 	return {
+ 		commit: {
+ 			sha: options.commit,
+@@ -181,7 +181,7 @@
+ 		author: author ? {
+ 			login: author.login,
+ 			url: author.url,
+-			markdownLink: `[@${author.login}](${author.url})`
++			markdownLink: `@${author.login}`
+ 		} : void 0,
+ 		pull: pr ? {
+ 			number: pr.number,

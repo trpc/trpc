@@ -1,0 +1,3 @@
+"@effect/sql/SqlConnection#Connection":
+  replacement: "effect/sql/SqlConnection#Connection"
+  note: "Moved; Connection.Acquirer is now top-level SqlConnection.Acquirer, and custom connections must implement executeValuesUnprepared."

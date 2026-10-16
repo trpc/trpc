@@ -1,0 +1,15 @@
+"@effect/ai-openrouter/OpenRouterClient#ChatStreamingChoice":
+  replacement: "Generated.ChatStreamChoice"
+  note: "The client-local streaming choice schema moved into the regenerated OpenRouter schema surface and changed shape."
+"@effect/ai-openrouter/OpenRouterClient#ChatStreamingMessageChunk":
+  replacement: "Generated.ChatStreamDelta"
+  note: "The client-local streaming message delta moved into the regenerated OpenRouter schema surface and changed shape."
+"@effect/ai-openrouter/OpenRouterClient#ChatStreamingMessageToolCall":
+  replacement: "Generated.ChatStreamToolCall"
+  note: "The client-local streaming tool-call delta moved into the regenerated OpenRouter schema surface and changed shape."
+"@effect/ai-openrouter/OpenRouterClient#ChatStreamingResponseChunk":
+  replacement: "OpenRouterClient.ChatStreamingResponseChunkData"
+  note: "The standalone streaming chunk schema was replaced by the decoded data type from Generated.ChatStreamingResponse."
+"@effect/ai-openrouter/OpenRouterClient#Service":
+  replacement: "OpenRouterClient.Service"
+  note: "Still exported in v4; adapt to the regenerated client, revised request and response schemas, and the new streaming result tuple. Custom service implementations and mocks must also provide createDecisions, returning an Effect of [decoded DecisionsResponse, HttpClientResponse] with AiError failures."

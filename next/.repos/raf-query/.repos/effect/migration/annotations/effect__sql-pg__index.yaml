@@ -1,0 +1,3 @@
+"@effect/sql-pg/index":
+  replacement: "@effect/sql-pg"
+  note: "The explicit /index entrypoint was removed; import the same namespaces from the @effect/sql-pg package root or import specific modules directly."

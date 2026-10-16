@@ -1,0 +1,27 @@
+"effect/Types#Concurrency":
+  replacement: "Types.Concurrency"
+  note: "Still exported, but v4 removes inherit; replace it with an explicit number or unbounded."
+"effect/Types#Contravariant":
+  replacement: "Types.Contravariant"
+  note: "Unchanged contravariant type helper."
+"effect/Types#Covariant":
+  replacement: "Types.Covariant"
+  note: "Unchanged covariant type helper."
+"effect/Types#Ctor":
+  replacement: "new (...args: Array<any>) => T"
+  note: "The named alias was removed; inline the construct signature or define a local alias."
+"effect/Types#DeepMutable":
+  replacement: "Types.DeepMutable"
+  note: "Retained, but v4 preserves built-in objects, Effect data types, and other objects with methods or symbol-keyed properties while making surrounding structural data mutable."
+"effect/Types#Invariant":
+  replacement: "Types.Invariant"
+  note: "Unchanged invariant type helper."
+"effect/Types#MatchRecord":
+  replacement: "{} extends S ? onTrue : onFalse"
+  note: "The alias was removed; inline its conditional because Types.VoidIfEmpty has different optional-record behavior."
+"effect/Types#MergeRecord":
+  replacement: "Types.MergeLeft"
+  note: "MergeRecord was an alias for the retained left-biased MergeLeft helper."
+"effect/Types#NoExcessProperties":
+  replacement: "Types.NoExcessProperties"
+  note: "Retained with equivalent excess-key checking."

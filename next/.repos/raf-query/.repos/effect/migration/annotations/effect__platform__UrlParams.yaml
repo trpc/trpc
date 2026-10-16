@@ -1,0 +1,54 @@
+"@effect/platform/UrlParams#append":
+  replacement: "UrlParams.append"
+  note: "Retained and returns the immutable UrlParams wrapper."
+"@effect/platform/UrlParams#appendAll":
+  replacement: "UrlParams.appendAll"
+  note: "Retained and preserves existing parameters."
+"@effect/platform/UrlParams#CoercibleRecord":
+  replacement: "UrlParams.CoercibleRecord<A>"
+  note: "The recursive interface became a generic mapped type preserving the input shape."
+"@effect/platform/UrlParams#empty":
+  replacement: "UrlParams.empty"
+  note: "Now a branded iterable object with params rather than a ReadonlyArray."
+"@effect/platform/UrlParams#fromInput":
+  replacement: "UrlParams.fromInput"
+  note: "Retained and now also accepts an existing UrlParams."
+"@effect/platform/UrlParams#Input":
+  replacement: "UrlParams.Input"
+  note: "Retained and broadened to include UrlParams itself."
+"@effect/platform/UrlParams#makeUrl":
+  replacement: "Url.make"
+  note: "Moved to Url, returns Result, and takes string | undefined for the hash."
+"@effect/platform/UrlParams#remove":
+  replacement: "UrlParams.remove"
+  note: "Retained and removes every value for the key."
+"@effect/platform/UrlParams#schemaFromSelf":
+  replacement: "Schema.UrlParams"
+  note: "The declaration schema for the v4 wrapper moved to effect/Schema."
+"@effect/platform/UrlParams#schemaFromString":
+  replacement: "Schema.String.pipe(Schema.decodeTo(Schema.UrlParams, { decode: SchemaGetter.transform((s) => UrlParams.fromInput(new URLSearchParams(s))), encode: SchemaGetter.transform(UrlParams.toString) }))"
+  note: "No prebuilt string codec remains; recreate it by transforming between a query string and UrlParams."
+"@effect/platform/UrlParams#schemaJson":
+  replacement: "Schema.JsonFromUrlParamsField(field).pipe(Schema.decodeTo(schema), Schema.decodeEffect)"
+  note: "The field codec moved to effect/Schema. Compose it with the target schema, then decode it."
+"@effect/platform/UrlParams#schemaParse":
+  replacement: "UrlParamsFromString.pipe(Schema.decodeTo(Schema.RecordFromUrlParams.pipe(Schema.decodeTo(schema))))"
+  note: "Recreate the removed helper by composing the string, record, and target codecs."
+"@effect/platform/UrlParams#schemaRecord":
+  replacement: "Schema.RecordFromUrlParams.pipe(Schema.decodeTo(schema))"
+  note: "RecordFromUrlParams is a base codec in effect/Schema; compose it with the target schema."
+"@effect/platform/UrlParams#schemaStruct":
+  replacement: "Schema.RecordFromUrlParams.pipe(Schema.decodeTo(schema), Schema.decodeEffect)"
+  note: "Compose the record codec from effect/Schema with the target schema and decode it."
+"@effect/platform/UrlParams#set":
+  replacement: "UrlParams.set"
+  note: "Retained and replaces all existing values for the key."
+"@effect/platform/UrlParams#setAll":
+  replacement: "UrlParams.setAll"
+  note: "Retained; supplied keys replace existing values and other keys remain."
+"@effect/platform/UrlParams#toString":
+  replacement: "UrlParams.toString"
+  note: "Retained and broadened to accept any UrlParams.Input."
+"@effect/platform/UrlParams#UrlParams":
+  replacement: "UrlParams.UrlParams"
+  note: "Import UrlParams from effect/http. It is now a branded iterable object with a params field rather than a ReadonlyArray; construct it with UrlParams.make or UrlParams.fromInput."

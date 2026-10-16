@@ -1,0 +1,628 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { ref, unref } from 'vue-demi'
+import { QueryClient as QueryClientOrigin } from '@tanstack/query-core'
+import { QueryClient } from '../queryClient'
+import { QueryCache } from '../queryCache'
+import { MutationCache } from '../mutationCache'
+import { infiniteQueryOptions } from '../infiniteQueryOptions'
+import { queryOptions } from '../queryOptions'
+
+vi.mock('@tanstack/query-core', async () => {
+  const actual = await vi.importActual<{
+    QueryClient: typeof QueryClientOrigin
+  }>('@tanstack/query-core')
+
+  // Get the prototype methods dynamically
+  const prototypeMethods = Object.getOwnPropertyNames(
+    actual.QueryClient.prototype,
+  ).filter((prop): prop is keyof typeof actual.QueryClient.prototype => {
+    const descriptor = Object.getOwnPropertyDescriptor(
+      actual.QueryClient.prototype,
+      prop,
+    )
+    return typeof descriptor?.value === 'function' && prop !== 'constructor'
+  })
+
+  // Spy on all methods in the prototype
+  prototypeMethods.forEach((method) => {
+    vi.spyOn(actual.QueryClient.prototype, method)
+  })
+
+  return actual
+})
+
+const queryKeyRef = ['foo', ref('bar')]
+const queryKeyUnref = ['foo', 'bar']
+
+const fn = () => 'mock'
+
+describe('QueryCache', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.clearAllMocks()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  describe('constructor', () => {
+    it('should use the queryCache and mutationCache passed in the config', () => {
+      const queryCache = new QueryCache()
+      const mutationCache = new MutationCache()
+      const queryClient = new QueryClient({ queryCache, mutationCache })
+
+      expect(queryClient.getQueryCache()).toBe(queryCache)
+      expect(queryClient.getMutationCache()).toBe(mutationCache)
+    })
+  })
+
+  describe('isFetching', () => {
+    it('should properly unwrap 1 parameter', () => {
+      const queryClient = new QueryClient()
+
+      queryClient.isFetching({
+        queryKey: queryKeyRef,
+      })
+
+      expect(QueryClientOrigin.prototype.isFetching).toHaveBeenCalledWith({
+        queryKey: queryKeyUnref,
+      })
+    })
+  })
+
+  describe('isMutating', () => {
+    it('should properly unwrap 1 parameter', () => {
+      const queryClient = new QueryClient()
+
+      queryClient.isMutating({
+        mutationKey: queryKeyRef,
+      })
+
+      expect(QueryClientOrigin.prototype.isMutating).toHaveBeenCalledWith({
+        mutationKey: queryKeyUnref,
+      })
+    })
+  })
+
+  describe('getQueryData', () => {
+    it('should properly unwrap 1 parameter', () => {
+      const queryClient = new QueryClient()
+
+      queryClient.getQueryData(queryKeyRef)
+
+      expect(QueryClientOrigin.prototype.getQueryData).toHaveBeenCalledWith(
+        queryKeyUnref,
+      )
+    })
+  })
+
+  describe('ensureQueryData', () => {
+    it('should properly unwrap parameter', () => {
+      const queryClient = new QueryClient()
+
+      // eslint-disable-next-line no-restricted-syntax -- grandfathered direct test
+      queryClient.ensureQueryData({
+        queryKey: queryKeyRef,
+        queryFn: fn,
+      })
+
+      expect(QueryClientOrigin.prototype.ensureQueryData).toHaveBeenCalledWith({
+        queryKey: queryKeyUnref,
+        queryFn: fn,
+      })
+    })
+  })
+
+  describe('getQueriesData', () => {
+    it('should properly unwrap queryKey param', () => {
+      const queryClient = new QueryClient()
+
+      queryClient.getQueriesData({ queryKey: queryKeyRef })
+
+      expect(QueryClientOrigin.prototype.getQueriesData).toHaveBeenCalledWith({
+        queryKey: queryKeyUnref,
+      })
+    })
+
+    it('should properly unwrap filters param', () => {
+      const queryClient = new QueryClient()
+
+      queryClient.getQueriesData({ queryKey: queryKeyRef })
+
+      expect(QueryClientOrigin.prototype.getQueriesData).toHaveBeenCalledWith({
+        queryKey: queryKeyUnref,
+      })
+    })
+  })
+
+  describe('setQueryData', () => {
+    it('should properly unwrap 3 parameter', () => {
+      const queryClient = new QueryClient()
+
+      queryClient.setQueryData(queryKeyRef, fn, {
+        updatedAt: ref(3),
+      })
+
+      expect(QueryClientOrigin.prototype.setQueryData).toHaveBeenCalledWith(
+        queryKeyUnref,
+        fn,
+        { updatedAt: 3 },
+      )
+    })
+  })
+
+  describe('setQueriesData', () => {
+    it('should properly unwrap params with queryKey', () => {
+      const queryClient = new QueryClient()
+
+      queryClient.setQueriesData({ queryKey: queryKeyRef }, fn, {
+        updatedAt: ref(3),
+      })
+
+      expect(QueryClientOrigin.prototype.setQueriesData).toHaveBeenCalledWith(
+        { queryKey: queryKeyUnref },
+        fn,
+        { updatedAt: 3 },
+      )
+    })
+
+    it('should properly unwrap params with filters', () => {
+      const queryClient = new QueryClient()
+
+      queryClient.setQueriesData({ queryKey: queryKeyRef }, fn, {
+        updatedAt: ref(3),
+      })
+
+      expect(QueryClientOrigin.prototype.setQueriesData).toHaveBeenCalledWith(
+        { queryKey: queryKeyUnref },
+        fn,
+        { updatedAt: 3 },
+      )
+    })
+  })
+
+  describe('getQueryState', () => {
+    it('should properly unwrap 1 parameter', () => {
+      const queryClient = new QueryClient()
+
+      queryClient.getQueryState(queryKeyRef)
+
+      expect(QueryClientOrigin.prototype.getQueryState).toHaveBeenCalledWith(
+        queryKeyUnref,
+      )
+    })
+  })
+
+  describe('removeQueries', () => {
+    it('should properly unwrap 1 parameter', () => {
+      const queryClient = new QueryClient()
+
+      queryClient.removeQueries({
+        queryKey: queryKeyRef,
+      })
+
+      expect(QueryClientOrigin.prototype.removeQueries).toHaveBeenCalledWith({
+        queryKey: queryKeyUnref,
+      })
+    })
+  })
+
+  describe('resetQueries', () => {
+    it('should properly unwrap 2 parameter', () => {
+      const queryClient = new QueryClient()
+
+      queryClient.resetQueries(
+        {
+          queryKey: queryKeyRef,
+        },
+        { cancelRefetch: ref(false) },
+      )
+
+      expect(QueryClientOrigin.prototype.resetQueries).toHaveBeenCalledWith(
+        {
+          queryKey: queryKeyUnref,
+        },
+        { cancelRefetch: false },
+      )
+    })
+  })
+
+  describe('cancelQueries', () => {
+    it('should properly unwrap 2 parameter', () => {
+      const queryClient = new QueryClient()
+
+      queryClient.cancelQueries(
+        {
+          queryKey: queryKeyRef,
+        },
+        { revert: ref(false) },
+      )
+
+      expect(QueryClientOrigin.prototype.cancelQueries).toHaveBeenCalledWith(
+        {
+          queryKey: queryKeyUnref,
+        },
+        { revert: false },
+      )
+    })
+  })
+
+  describe('invalidateQueries', () => {
+    it('should properly unwrap 2 parameter', () => {
+      const queryClient = new QueryClient()
+
+      queryClient.invalidateQueries(
+        {
+          queryKey: queryKeyRef,
+        },
+        { cancelRefetch: ref(false) },
+      )
+
+      expect(
+        QueryClientOrigin.prototype.invalidateQueries,
+      ).toHaveBeenCalledWith(
+        {
+          queryKey: queryKeyUnref,
+          refetchType: 'none',
+        },
+        { cancelRefetch: false },
+      )
+    })
+
+    // #7694
+    it('should call invalidateQueries immediately and refetchQueries after sleep', async () => {
+      const invalidateQueries = vi.spyOn(
+        QueryClientOrigin.prototype,
+        'invalidateQueries',
+      )
+      const refetchQueries = vi.spyOn(
+        QueryClientOrigin.prototype,
+        'refetchQueries',
+      )
+
+      const queryClient = new QueryClient()
+
+      queryClient.invalidateQueries({
+        queryKey: queryKeyRef,
+      })
+
+      expect(invalidateQueries).toHaveBeenCalled()
+      expect(refetchQueries).not.toHaveBeenCalled()
+      await vi.advanceTimersByTimeAsync(0)
+      expect(refetchQueries).toHaveBeenCalledWith(
+        { queryKey: queryKeyUnref, type: 'active' },
+        {},
+      )
+    })
+
+    it('should pass refetchType as type and the options to refetchQueries', async () => {
+      const refetchQueries = vi.spyOn(
+        QueryClientOrigin.prototype,
+        'refetchQueries',
+      )
+
+      const queryClient = new QueryClient()
+
+      queryClient.invalidateQueries(
+        { queryKey: queryKeyRef, refetchType: 'all', type: 'inactive' },
+        { cancelRefetch: ref(false) },
+      )
+
+      await vi.advanceTimersByTimeAsync(0)
+      expect(refetchQueries).toHaveBeenCalledWith(
+        { queryKey: queryKeyUnref, refetchType: 'all', type: 'all' },
+        { cancelRefetch: false },
+      )
+    })
+
+    it('should call invalidateQueries immediately and not call refetchQueries', async () => {
+      const invalidateQueries = vi.spyOn(
+        QueryClientOrigin.prototype,
+        'invalidateQueries',
+      )
+      const refetchQueries = vi.spyOn(
+        QueryClientOrigin.prototype,
+        'refetchQueries',
+      )
+
+      const queryClient = new QueryClient()
+
+      queryClient.invalidateQueries({
+        queryKey: queryKeyRef,
+        refetchType: 'none',
+      })
+
+      expect(invalidateQueries).toHaveBeenCalled()
+      expect(refetchQueries).not.toHaveBeenCalled()
+      await vi.advanceTimersByTimeAsync(0)
+      expect(refetchQueries).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('refetchQueries', () => {
+    it('should properly unwrap 2 parameter', () => {
+      const queryClient = new QueryClient()
+
+      queryClient.refetchQueries(
+        {
+          queryKey: queryKeyRef,
+        },
+        { cancelRefetch: ref(false) },
+      )
+
+      expect(QueryClientOrigin.prototype.refetchQueries).toHaveBeenCalledWith(
+        {
+          queryKey: queryKeyUnref,
+        },
+        { cancelRefetch: false },
+      )
+    })
+  })
+
+  describe('fetchQuery', () => {
+    it('should properly unwrap parameter', () => {
+      const queryClient = new QueryClient()
+
+      // eslint-disable-next-line no-restricted-syntax -- grandfathered direct test
+      queryClient.fetchQuery({
+        queryKey: queryKeyRef,
+      })
+
+      expect(QueryClientOrigin.prototype.fetchQuery).toHaveBeenCalledWith({
+        queryKey: queryKeyUnref,
+      })
+    })
+  })
+
+  describe('query', () => {
+    it('should properly unwrap queryKey', () => {
+      const queryClient = new QueryClient()
+
+      queryClient.query({
+        queryKey: queryKeyRef,
+      })
+
+      expect(QueryClientOrigin.prototype.query).toHaveBeenCalledWith({
+        queryKey: queryKeyUnref,
+      })
+    })
+
+    it('should properly unwrap staleTime, and select', () => {
+      const queryClient = new QueryClient()
+      const staleTime = () => 1000
+      const select = (data: string) => data.length
+
+      queryClient.query({
+        queryKey: queryKeyRef,
+        staleTime: ref(staleTime),
+        select: ref(select),
+      })
+
+      expect(QueryClientOrigin.prototype.query).toHaveBeenCalledWith({
+        queryKey: queryKeyUnref,
+        staleTime,
+        select,
+      })
+    })
+
+    it('should accept explicitly resolved getter options and unwrap queryKey', () => {
+      const queryClient = new QueryClient()
+      const options = queryOptions(() => ({
+        queryKey: queryKeyRef,
+      }))
+
+      queryClient.query(options())
+
+      expect(QueryClientOrigin.prototype.query).toHaveBeenCalledWith({
+        queryKey: queryKeyUnref,
+      })
+    })
+  })
+
+  describe('prefetchQuery', () => {
+    it('should properly unwrap parameters', () => {
+      const queryClient = new QueryClient()
+
+      // eslint-disable-next-line no-restricted-syntax -- grandfathered direct test
+      queryClient.prefetchQuery({ queryKey: queryKeyRef, queryFn: fn })
+
+      expect(QueryClientOrigin.prototype.prefetchQuery).toHaveBeenCalledWith({
+        queryKey: queryKeyUnref,
+        queryFn: fn,
+      })
+    })
+  })
+
+  describe('fetchInfiniteQuery', () => {
+    it('should properly unwrap parameter', () => {
+      const queryClient = new QueryClient()
+
+      // eslint-disable-next-line no-restricted-syntax -- grandfathered direct test
+      queryClient.fetchInfiniteQuery({
+        queryKey: queryKeyRef,
+        initialPageParam: 0,
+      })
+
+      expect(
+        QueryClientOrigin.prototype.fetchInfiniteQuery,
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          initialPageParam: 0,
+          queryKey: queryKeyUnref,
+        }),
+      )
+    })
+    it('should properly unwrap parameter using infiniteQueryOptions with unref', () => {
+      const queryClient = new QueryClient()
+
+      const options = infiniteQueryOptions({
+        queryKey: queryKeyUnref,
+        initialPageParam: 0,
+        getNextPageParam: () => 12,
+      })
+
+      // eslint-disable-next-line no-restricted-syntax -- grandfathered direct test
+      queryClient.fetchInfiniteQuery(options)
+
+      expect(
+        QueryClientOrigin.prototype.fetchInfiniteQuery,
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          initialPageParam: 0,
+          queryKey: queryKeyUnref,
+        }),
+      )
+    })
+  })
+
+  describe('infiniteQuery', () => {
+    it('should properly unwrap queryKey, initialPageParam, pages, and select', () => {
+      const queryClient = new QueryClient()
+      const getNextPageParam = () => 1
+      const select = (data: { pages: Array<string> }) => data.pages.length
+
+      queryClient.infiniteQuery({
+        queryKey: queryKeyRef,
+        initialPageParam: ref(0),
+        pages: ref(2),
+        getNextPageParam: ref(getNextPageParam),
+        select: ref(select),
+      })
+
+      expect(QueryClientOrigin.prototype.infiniteQuery).toBeCalledWith(
+        expect.objectContaining({
+          queryKey: queryKeyUnref,
+          initialPageParam: 0,
+          pages: 2,
+          getNextPageParam,
+          select,
+        }),
+      )
+    })
+
+    it('should properly unwrap getNextPageParam when using infiniteQueryOptions', () => {
+      const queryClient = new QueryClient()
+      const getNextPageParam = () => 12
+
+      const options = infiniteQueryOptions({
+        queryKey: queryKeyRef,
+        initialPageParam: ref(0),
+        getNextPageParam: ref(getNextPageParam),
+      })
+
+      queryClient.infiniteQuery({
+        ...unref(options),
+        staleTime: 0,
+        pages: 1,
+      })
+
+      expect(QueryClientOrigin.prototype.infiniteQuery).toHaveBeenCalledWith(
+        expect.objectContaining({
+          queryKey: queryKeyUnref,
+          initialPageParam: 0,
+          pages: 1,
+          getNextPageParam,
+        }),
+      )
+    })
+  })
+
+  describe('prefetchInfiniteQuery', () => {
+    it('should properly unwrap parameters', () => {
+      const queryClient = new QueryClient()
+
+      // eslint-disable-next-line no-restricted-syntax -- grandfathered direct test
+      queryClient.prefetchInfiniteQuery({
+        queryKey: queryKeyRef,
+        queryFn: fn,
+        initialPageParam: 0,
+      })
+
+      expect(
+        QueryClientOrigin.prototype.prefetchInfiniteQuery,
+      ).toHaveBeenCalledWith({
+        initialPageParam: 0,
+        queryKey: queryKeyUnref,
+        queryFn: fn,
+      })
+    })
+  })
+
+  describe('setDefaultOptions', () => {
+    it('should properly unwrap parameters', () => {
+      const queryClient = new QueryClient()
+
+      queryClient.setDefaultOptions({
+        queries: {
+          enabled: ref(false),
+        },
+      })
+
+      expect(
+        QueryClientOrigin.prototype.setDefaultOptions,
+      ).toHaveBeenCalledWith({
+        queries: {
+          enabled: false,
+        },
+      })
+    })
+  })
+
+  describe('setQueryDefaults', () => {
+    it('should properly unwrap parameters', () => {
+      const queryClient = new QueryClient()
+
+      queryClient.setQueryDefaults(queryKeyRef, {
+        enabled: ref(false),
+      })
+
+      expect(QueryClientOrigin.prototype.setQueryDefaults).toHaveBeenCalledWith(
+        queryKeyUnref,
+        {
+          enabled: false,
+        },
+      )
+    })
+  })
+
+  describe('getQueryDefaults', () => {
+    it('should properly unwrap parameters', () => {
+      const queryClient = new QueryClient()
+
+      queryClient.getQueryDefaults(queryKeyRef)
+
+      expect(QueryClientOrigin.prototype.getQueryDefaults).toHaveBeenCalledWith(
+        queryKeyUnref,
+      )
+    })
+  })
+
+  describe('setMutationDefaults', () => {
+    it('should properly unwrap parameters', () => {
+      const queryClient = new QueryClient()
+
+      queryClient.setMutationDefaults(queryKeyRef, {
+        mutationKey: queryKeyRef,
+      })
+
+      expect(
+        QueryClientOrigin.prototype.setMutationDefaults,
+      ).toHaveBeenCalledWith(queryKeyUnref, {
+        mutationKey: queryKeyUnref,
+      })
+    })
+  })
+
+  describe('getMutationDefaults', () => {
+    it('should properly unwrap parameters', () => {
+      const queryClient = new QueryClient()
+
+      queryClient.getMutationDefaults(queryKeyRef)
+
+      expect(
+        QueryClientOrigin.prototype.getMutationDefaults,
+      ).toHaveBeenCalledWith(queryKeyUnref)
+    })
+  })
+})

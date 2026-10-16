@@ -1,0 +1,6 @@
+- op: replace
+  path: /info/title
+  value: YAML Patched Title
+- op: add
+  path: /info/x-yaml-patch
+  value: true

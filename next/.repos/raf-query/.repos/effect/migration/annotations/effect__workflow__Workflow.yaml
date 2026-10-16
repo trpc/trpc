@@ -1,0 +1,51 @@
+"@effect/workflow/Workflow#Any":
+  replacement: "effect/workflow/Workflow#Any"
+  note: "Moved into core Effect. Workflow identity changed from name to _tag and definitions are now class-compatible constructors."
+"@effect/workflow/Workflow#AnyTaggedRequestSchema":
+  replacement: "none"
+  note: "The TaggedRequest adapter constraint was removed. Define the workflow explicitly with Workflow.make and the request payload, success, error, and PrimaryKey schemas."
+"@effect/workflow/Workflow#CaptureDefects":
+  replacement: "effect/workflow/Workflow#CaptureDefects"
+  note: "Moved into core Effect and changed from a Context.Tag subclass to a Context.Reference value with the same true default."
+"@effect/workflow/Workflow#Execution":
+  replacement: "effect/workflow/Workflow#Execution"
+  note: "Moved into core Effect; its workflow discriminator changed from name to _tag."
+"@effect/workflow/Workflow#fromTaggedRequest":
+  replacement: "none"
+  note: "Removed. Expand to Workflow.make(schema._tag, { payload: schema, success: schema.success, error: schema.failure, idempotencyKey: PrimaryKey.value })."
+"@effect/workflow/Workflow#isResult":
+  replacement: "effect/workflow/Workflow#isResult"
+  note: "Moved into core Effect with the same result refinement behavior."
+"@effect/workflow/Workflow#make":
+  replacement: "effect/workflow/Workflow#make"
+  note: "The signature changed from make({ name, ... }) to make(tag, { ... }); definitions expose _tag and are class-compatible constructors."
+"@effect/workflow/Workflow#Requirements":
+  replacement: "Workflow.RequirementsClient / Workflow.RequirementsHandler"
+  note: "The schema Context union split by direction: client payload encoding and result decoding versus handler payload decoding and result encoding."
+"@effect/workflow/Workflow#Result":
+  replacement: "effect/workflow/Workflow#Result"
+  note: "Moved into core Effect and remains the Complete or Suspended result type and schema constructor."
+"@effect/workflow/Workflow#ResultEncoded":
+  replacement: "effect/workflow/Workflow#ResultEncoded"
+  note: "Moved into core Effect and remains both the encoded result type and generic encoded-result codec."
+"@effect/workflow/Workflow#ResultTypeId":
+  replacement: "none"
+  note: "The result marker is private in v4. Use Workflow.isResult for narrowing."
+"@effect/workflow/Workflow#SuspendOnFailure":
+  replacement: "effect/workflow/Workflow#SuspendOnFailure"
+  note: "Moved into core Effect and changed from a Context.Tag subclass to a Context.Reference value with the same false default."
+"@effect/workflow/Workflow#TypeId":
+  replacement: "none"
+  note: "The workflow marker is private in v4. Use Workflow.Any or Workflow.Workflow constraints."
+"@effect/workflow/Workflow#Workflow":
+  replacement: "effect/workflow/Workflow#Workflow"
+  note: "Name and name became Tag and _tag, schemas use directional services, definitions are constructable, and poll returns Option."
+"@effect/workflow/Workflow#Workflow.Error":
+  replacement: "W[\"errorSchema\"][\"Type\"]"
+  note: "The namespace alias was removed. Extract the decoded error type from the public errorSchema property."
+"@effect/workflow/Workflow#Workflow.Payload":
+  replacement: "Schema.Schema.Type<Workflow.PayloadSchema<W>>"
+  note: "The namespace alias was removed. Extract the decoded payload from the exported PayloadSchema helper."
+"@effect/workflow/Workflow#Workflow.Success":
+  replacement: "W[\"successSchema\"][\"Type\"]"
+  note: "The namespace alias was removed. Extract the decoded success type from the public successSchema property."

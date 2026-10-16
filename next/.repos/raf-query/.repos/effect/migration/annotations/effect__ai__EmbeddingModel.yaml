@@ -1,0 +1,9 @@
+"@effect/ai/EmbeddingModel#makeDataLoader":
+  replacement: "EmbeddingModel.make + RequestResolver.setDelay + RequestResolver.batchN"
+  note: "The dedicated data-loader constructor was removed. EmbeddingModel.make batches concurrent embed requests through its resolver; compose the exposed resolver with setDelay and optional batchN for the old window and maximum-batch behavior."
+"@effect/ai/EmbeddingModel#EmbeddingModel":
+  replacement: "EmbeddingModel.EmbeddingModel"
+  note: "Use the EmbeddingModel interface for implementations and the Context.Service value as the service key; it is no longer a class. Prefer EmbeddingModel.make to construct the branded implementation."
+"@effect/ai/EmbeddingModel#Service":
+  replacement: "EmbeddingModel.EmbeddingModel"
+  note: "Service was renamed to EmbeddingModel. Implementations require [EmbeddingModel.TypeId]: EmbeddingModel.TypeId; EmbeddingModel.make supplies the brand."

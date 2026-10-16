@@ -1,0 +1,108 @@
+effect/Logger#add:
+  replacement: "Logger.layer([logger], { mergeWithExisting: true })"
+  note: "Logger installation is whole-set based; mergeWithExisting reproduces add."
+effect/Logger#addEffect:
+  replacement: "Logger.layer([loggerEffect], { mergeWithExisting: true })"
+  note: "Logger.layer accepts effects that construct loggers."
+effect/Logger#addScoped:
+  replacement: "Logger.layer([scopedLoggerEffect], { mergeWithExisting: true })"
+  note: "Layer acquisition handles the scoped effect; the separate scoped constructor is gone."
+effect/Logger#batched:
+  replacement: "Logger.batched(logger, { window, flush })"
+  note: "The trailing arguments moved into one options object. Provide any services needed by flush before constructing it."
+effect/Logger#filterLogLevel:
+  replacement: "Logger.make(options => predicate(options.logLevel) ? Option.some(logger.log(options)) : Option.none())"
+  note: "No named combinator remains; rebuild the wrapper with Logger.make. Prefer References.MinimumLogLevel for ordinary threshold filtering."
+effect/Logger#json:
+  replacement: "Logger.layer([Logger.consoleJson, Logger.tracerLogger])"
+  note: "Logger.layer replaces the active set. Include tracerLogger to preserve v3 built-in layer behavior, or omit it when trace log events are intentionally disabled."
+effect/Logger#jsonLogger:
+  replacement: "Logger.formatJson"
+  note: "Formatter rename; v4 JSON output uses level rather than logLevel."
+effect/Logger#logFmt:
+  replacement: "Logger.layer([Logger.consoleLogFmt, Logger.tracerLogger])"
+  note: "Logger.layer replaces the active set; include tracerLogger to preserve v3 built-in layer behavior."
+effect/Logger#logfmtLogger:
+  replacement: "Logger.formatLogFmt"
+  note: "Formatter rename and capitalization change."
+effect/Logger#Logger:
+  replacement: "Logger.Logger"
+  note: "The name remains. Logger.Options now has fiber instead of fiberId; read the id from fiber.id and annotations or spans through fiber references."
+effect/Logger#Logger.Variance:
+  replacement: "none"
+  note: "Public variance metadata was removed; use Logger.Logger<Message, Output> directly."
+effect/Logger#LoggerTypeId:
+  replacement: "Logger.isLogger"
+  note: "The brand is private in v4; use the public runtime guard."
+effect/Logger#map:
+  replacement: "Logger.map"
+  note: "Retained with the same output-mapping behavior."
+effect/Logger#mapInput:
+  replacement: "Logger.make(options => logger.log({ ...options, message: f(options.message) }))"
+  note: "No named input contramap remains; rebuild it with Logger.make."
+effect/Logger#mapInputOptions:
+  replacement: "Logger.make(options => logger.log(f(options)))"
+  note: "No named options contramap remains; rebuild it with Logger.make and adapt f to the v4 Logger.Options shape."
+effect/Logger#minimumLogLevel:
+  replacement: "Layer.succeed(References.MinimumLogLevel, level)"
+  note: "Minimum log level is now a context reference."
+effect/Logger#none:
+  replacement: "Logger.make(() => undefined)"
+  note: "Rebuild the no-op logger with Logger.make."
+effect/Logger#pretty:
+  replacement: "Logger.layer([Logger.consolePretty(), Logger.tracerLogger])"
+  note: "Logger.layer replaces the active set; include tracerLogger to preserve v3 built-in layer behavior."
+effect/Logger#prettyLogger:
+  replacement: "Logger.consolePretty"
+  note: "Renamed to consolePretty. Remove the stderr option; provide Logger.LogToStderr with true to route TTY output to console.error. Colors, formatDate, and mode remain constructor options."
+effect/Logger#prettyLoggerDefault:
+  replacement: "Logger.consolePretty()"
+  note: "The prebuilt singleton became a constructor call."
+effect/Logger#remove:
+  replacement: "Logger.layer([...desiredLoggers])"
+  note: "No named removal combinator remains. Declare the complete desired logger set; transform Logger.CurrentLoggers only when removing from an unknown inherited set is unavoidable."
+effect/Logger#replace:
+  replacement: "Logger.layer([...desiredLoggers])"
+  note: "V4 replaces the whole active set. When replacing the old default logger, include Logger.tracerLogger explicitly if it must survive."
+effect/Logger#replaceEffect:
+  replacement: "Logger.layer([loggerEffect, ...otherLoggers])"
+  note: "Logger.layer accepts effects. Explicitly list every logger that must remain active."
+effect/Logger#replaceScoped:
+  replacement: "Logger.layer([scopedLoggerEffect, ...otherLoggers])"
+  note: "Logger.layer acquisition supplies the scope; explicitly list every logger that must remain active."
+effect/Logger#simple:
+  replacement: "Logger.make(({ message }) => log(message))"
+  note: "V3 simple was a message-only custom logger constructor; rebuild it with Logger.make."
+effect/Logger#stringLogger:
+  replacement: "Logger.formatSimple"
+  note: "The prebuilt string formatter was renamed."
+effect/Logger#structured:
+  replacement: "Logger.layer([Logger.consoleStructured, Logger.tracerLogger])"
+  note: "Logger.layer replaces the active set; include tracerLogger to preserve v3 built-in layer behavior."
+effect/Logger#structuredLogger:
+  replacement: "Logger.formatStructured"
+  note: "Formatter rename; its output field logLevel is now named level."
+effect/Logger#succeed:
+  replacement: "Logger.make(() => value)"
+  note: "Rebuild the constant-output logger with Logger.make."
+effect/Logger#sync:
+  replacement: "Logger.make(() => evaluate())"
+  note: "Rebuild the lazy-output logger; evaluate still runs once per log event."
+effect/Logger#test:
+  replacement: "Effect.log(input).pipe(Effect.provide(Logger.layer([capturingLogger])))"
+  note: "No synthetic-options helper remains. Exercise the logger through the runtime and capture its output so it receives a real Fiber, cause, level, and date."
+effect/Logger#withMinimumLogLevel:
+  replacement: "Effect.provideService(effect, References.MinimumLogLevel, level)"
+  note: "Replace the FiberRef-local helper with reference provisioning."
+effect/Logger#withSpanAnnotations:
+  replacement: "custom Logger.make wrapper using options.fiber.cache.span"
+  note: "No transparent generic equivalent remains. Read span identity from options.fiber.cache.span and add it to custom output as needed."
+effect/Logger#zip:
+  replacement: "Logger.make(options => [left.log(options), right.log(options)])"
+  note: "No named combinator remains; invoke both loggers and return their output tuple."
+effect/Logger#zipLeft:
+  replacement: "Logger.make(options => { const output = left.log(options); right.log(options); return output })"
+  note: "Rebuild explicitly, preserving evaluation of both loggers and returning the left output."
+effect/Logger#zipRight:
+  replacement: "Logger.make(options => { left.log(options); return right.log(options) })"
+  note: "Rebuild explicitly, preserving evaluation order and returning the right output."

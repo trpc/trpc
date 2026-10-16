@@ -1,0 +1,279 @@
+"@effect/vitest/index#scoped":
+  replacement: "@effect/vitest#effect"
+  note: "V4 effect tests are scoped and provide the test environment. Replace scoped(...) with effect(...), and it.scoped(...) with it.effect(...)."
+"@effect/vitest/index#scopedLive":
+  replacement: "@effect/vitest#live"
+  note: "V4 live tests are scoped automatically. Replace scopedLive(...) with live(...), and it.scopedLive(...) with it.live(...)."
+"@effect/vitest/index#chai.Should":
+  replacement: "vitest#chai.Should"
+  note: "This was a Vitest re-export, not Effect API. Import it directly from vitest; @effect/vitest/index is not a valid v4 route."
+"@effect/vitest/index#expect":
+  replacement: "vitest#expect"
+  note: "This was a Vitest re-export, not Effect API. Import it directly from vitest; @effect/vitest/index is not a valid v4 route."
+"@effect/vitest/index#Mock":
+  replacement: "vitest#Mock"
+  note: "This was a Vitest re-export, not Effect API. Import it directly from vitest; @effect/vitest/index is not a valid v4 route."
+"@effect/vitest/index#should":
+  replacement: "vitest#should"
+  note: "This was a Vitest re-export, not Effect API. Import it directly from vitest; @effect/vitest/index is not a valid v4 route."
+"@effect/vitest/index#ApiConfig":
+  replacement: "vitest/node#ApiConfig"
+  note: "This was a deprecated Vitest 3 root re-export. Import the type directly from vitest/node and review its Vitest 5 shape."
+"@effect/vitest/index#BaseCoverageOptions":
+  replacement: "vitest/node#BaseCoverageOptions"
+  note: "This was a deprecated Vitest 3 root re-export. Import the type directly from vitest/node and review its Vitest 5 shape."
+"@effect/vitest/index#BenchmarkUserOptions":
+  replacement: "vitest/node#BenchmarkUserOptions"
+  note: "This was a deprecated Vitest 3 root re-export. Import the type directly from vitest/node and review its Vitest 5 shape."
+"@effect/vitest/index#BrowserConfigOptions":
+  replacement: "vitest/node#BrowserConfigOptions"
+  note: "This was a deprecated Vitest 3 root re-export. Import the type directly from vitest/node and review its Vitest 5 shape."
+"@effect/vitest/index#BrowserScript":
+  replacement: "vitest/node#BrowserScript"
+  note: "This was a deprecated Vitest 3 root re-export. Import the type directly from vitest/node and review its Vitest 5 shape."
+"@effect/vitest/index#BuiltinEnvironment":
+  replacement: "vitest/node#BuiltinEnvironment"
+  note: "This was a deprecated Vitest 3 root re-export. Import the type directly from vitest/node and review its Vitest 5 shape."
+"@effect/vitest/index#CoverageIstanbulOptions":
+  replacement: "vitest/node#CoverageIstanbulOptions"
+  note: "This was a deprecated Vitest 3 root re-export. Import the type directly from vitest/node and review its Vitest 5 shape."
+"@effect/vitest/index#CoverageOptions":
+  replacement: "vitest/node#CoverageOptions"
+  note: "This was a deprecated Vitest 3 root re-export. Import the type directly from vitest/node and review its Vitest 5 shape."
+"@effect/vitest/index#CoverageProvider":
+  replacement: "vitest/node#CoverageProvider"
+  note: "This was a deprecated Vitest 3 root re-export. Import the type directly from vitest/node and review its Vitest 5 shape."
+"@effect/vitest/index#CoverageProviderModule":
+  replacement: "vitest/node#CoverageProviderModule"
+  note: "This was a deprecated Vitest 3 root re-export. Import the type directly from vitest/node and review its Vitest 5 shape."
+"@effect/vitest/index#CoverageReporter":
+  replacement: "vitest/node#CoverageReporter"
+  note: "This was a deprecated Vitest 3 root re-export. Import the type directly from vitest/node and review its Vitest 5 shape."
+"@effect/vitest/index#CoverageV8Options":
+  replacement: "vitest/node#CoverageV8Options"
+  note: "This was a deprecated Vitest 3 root re-export. Import the type directly from vitest/node and review its Vitest 5 shape."
+"@effect/vitest/index#CSSModuleScopeStrategy":
+  replacement: "vitest/node#CSSModuleScopeStrategy"
+  note: "This was a deprecated Vitest 3 root re-export. Import the type directly from vitest/node and review its Vitest 5 shape."
+"@effect/vitest/index#CustomProviderOptions":
+  replacement: "vitest/node#CustomProviderOptions"
+  note: "This was a deprecated Vitest 3 root re-export. Import the type directly from vitest/node and review its Vitest 5 shape."
+"@effect/vitest/index#DepsOptimizationOptions":
+  replacement: "vitest/node#DepsOptimizationOptions"
+  note: "This was a deprecated Vitest 3 root re-export. Import the type directly from vitest/node and review its Vitest 5 shape."
+"@effect/vitest/index#EnvironmentOptions":
+  replacement: "vitest/node#EnvironmentOptions"
+  note: "This was a deprecated Vitest 3 root re-export. Import the type directly from vitest/node and review its Vitest 5 shape."
+"@effect/vitest/index#InlineConfig":
+  replacement: "vitest/node#InlineConfig"
+  note: "This was a deprecated Vitest 3 root re-export. Import the type directly from vitest/node and review its Vitest 5 shape."
+"@effect/vitest/index#Pool":
+  replacement: "vitest/node#Pool"
+  note: "This was a deprecated Vitest 3 root re-export. Import the type directly from vitest/node and review its Vitest 5 shape."
+"@effect/vitest/index#ProjectConfig":
+  replacement: "vitest/node#ProjectConfig"
+  note: "This was a deprecated Vitest 3 root re-export. Import the type directly from vitest/node and review its Vitest 5 shape."
+"@effect/vitest/index#ReportContext":
+  replacement: "vitest/node#ReportContext"
+  note: "This was a deprecated Vitest 3 root re-export. Import the type directly from vitest/node and review its Vitest 5 shape."
+"@effect/vitest/index#ResolvedConfig":
+  replacement: "vitest/node#ResolvedConfig"
+  note: "This was a deprecated Vitest 3 root re-export. Import the type directly from vitest/node and review its Vitest 5 shape."
+"@effect/vitest/index#ResolvedCoverageOptions":
+  replacement: "vitest/node#ResolvedCoverageOptions"
+  note: "This was a deprecated Vitest 3 root re-export. Import the type directly from vitest/node and review its Vitest 5 shape."
+"@effect/vitest/index#SequenceHooks":
+  replacement: "vitest/node#SequenceHooks"
+  note: "This was a deprecated Vitest 3 root re-export. Import the type directly from vitest/node and review its Vitest 5 shape."
+"@effect/vitest/index#SequenceSetupFiles":
+  replacement: "vitest/node#SequenceSetupFiles"
+  note: "This was a deprecated Vitest 3 root re-export. Import the type directly from vitest/node and review its Vitest 5 shape."
+"@effect/vitest/index#TypecheckConfig":
+  replacement: "vitest/node#TypecheckConfig"
+  note: "This was a deprecated Vitest 3 root re-export. Import the type directly from vitest/node and review its Vitest 5 shape."
+"@effect/vitest/index#VitestEnvironment":
+  replacement: "vitest/node#VitestEnvironment"
+  note: "This was a deprecated Vitest 3 root re-export. Import the type directly from vitest/node and review its Vitest 5 shape."
+"@effect/vitest/index#VitestRunMode":
+  replacement: "vitest/node#VitestRunMode"
+  note: "This was a deprecated Vitest 3 root re-export. Import the type directly from vitest/node and review its Vitest 5 shape."
+"@effect/vitest/index#WorkerContext":
+  replacement: "vitest/node#WorkerContext"
+  note: "This was a deprecated Vitest 3 root re-export. Import the type directly from vitest/node and review its Vitest 5 shape."
+"@effect/vitest/index#CollectLineNumbers":
+  replacement: "vitest/node#TypeCheckCollectLineNumbers"
+  note: "Vitest 3 deprecated the root alias in favor of this renamed vitest/node type."
+"@effect/vitest/index#CollectLines":
+  replacement: "vitest/node#TypeCheckCollectLines"
+  note: "Vitest 3 deprecated the root alias in favor of this renamed vitest/node type."
+"@effect/vitest/index#Context":
+  replacement: "vitest/node#TypeCheckContext"
+  note: "Vitest 3 deprecated the root alias in favor of this renamed vitest/node type."
+"@effect/vitest/index#RawErrsMap":
+  replacement: "vitest/node#TypeCheckRawErrorsMap"
+  note: "Vitest 3 deprecated the root alias in favor of this renamed vitest/node type."
+"@effect/vitest/index#RootAndTarget":
+  replacement: "vitest/node#TypeCheckRootAndTarget"
+  note: "Vitest 3 deprecated the root alias in favor of this renamed vitest/node type."
+"@effect/vitest/index#TscErrorInfo":
+  replacement: "vitest/node#TypeCheckErrorInfo"
+  note: "Vitest 3 deprecated the root alias in favor of this renamed vitest/node type."
+"@effect/vitest/index#Custom":
+  replacement: "vitest#RunnerTestCase"
+  note: "Vitest 4 removed the deprecated unprefixed runner alias. Import the explicit Runner* type from vitest."
+"@effect/vitest/index#RunnerCustomCase":
+  replacement: "vitest#RunnerTestCase"
+  note: "Vitest 4 removed the deprecated unprefixed runner alias. Import the explicit Runner* type from vitest."
+"@effect/vitest/index#File":
+  replacement: "vitest#RunnerTestFile"
+  note: "Vitest 4 removed the deprecated unprefixed runner alias. Import the explicit Runner* type from vitest."
+"@effect/vitest/index#Suite":
+  replacement: "vitest#RunnerTestSuite"
+  note: "Vitest 4 removed the deprecated unprefixed runner alias. Import the explicit Runner* type from vitest."
+"@effect/vitest/index#Task":
+  replacement: "vitest#RunnerTask"
+  note: "Vitest 4 removed the deprecated unprefixed runner alias. Import the explicit Runner* type from vitest."
+"@effect/vitest/index#TaskBase":
+  replacement: "vitest#RunnerTaskBase"
+  note: "Vitest 4 removed the deprecated unprefixed runner alias. Import the explicit Runner* type from vitest."
+"@effect/vitest/index#TaskResult":
+  replacement: "vitest#RunnerTaskResult"
+  note: "Vitest 4 removed the deprecated unprefixed runner alias. Import the explicit Runner* type from vitest."
+"@effect/vitest/index#TaskResultPack":
+  replacement: "vitest#RunnerTaskResultPack"
+  note: "Vitest 4 removed the deprecated unprefixed runner alias. Import the explicit Runner* type from vitest."
+"@effect/vitest/index#Test":
+  replacement: "vitest#RunnerTestCase"
+  note: "Vitest 4 removed the deprecated unprefixed runner alias. Import the explicit Runner* type from vitest."
+"@effect/vitest/index#ExtendedContext":
+  replacement: "vitest#TestContext"
+  note: "The separate context alias was removed. Vitest 5 uses TestContext, which includes the current task and lifecycle methods."
+"@effect/vitest/index#TaskContext":
+  replacement: "vitest#TestContext"
+  note: "The separate context alias was removed. Vitest 5 uses TestContext, which includes the current task and lifecycle methods."
+"@effect/vitest/index#Environment":
+  replacement: "vitest/runtime#Environment"
+  note: "This was a deprecated root re-export. Import it from vitest/runtime; Vitest 5 exposes custom environments through vitest/runtime."
+"@effect/vitest/index#EnvironmentReturn":
+  replacement: "vitest/runtime#EnvironmentReturn"
+  note: "This was a deprecated root re-export. Import it from vitest/runtime; Vitest 5 exposes custom environments through vitest/runtime."
+"@effect/vitest/index#VmEnvironmentReturn":
+  replacement: "vitest/runtime#VmEnvironmentReturn"
+  note: "This was a deprecated root re-export. Import it from vitest/runtime; Vitest 5 exposes custom environments through vitest/runtime."
+"@effect/vitest/index#HappyDOMOptions":
+  replacement: "NonNullable<import(\"vitest/node\").EnvironmentOptions[\"happyDOM\"]>"
+  note: "Vitest 5 keeps this shape only as a property of EnvironmentOptions; derive it from the public vitest/node type."
+"@effect/vitest/index#JSDOMOptions":
+  replacement: "NonNullable<import(\"vitest/node\").EnvironmentOptions[\"jsdom\"]>"
+  note: "Vitest 5 keeps this shape only as a property of EnvironmentOptions; derive it from the public vitest/node type."
+"@effect/vitest/index#ArgumentsType":
+  replacement: "T extends (...args: infer A) => any ? A : never"
+  note: "Vitest 3 marked this root alias as an internal helper. Define the small TypeScript shape locally instead of depending on transitive internals."
+"@effect/vitest/index#Arrayable":
+  replacement: "T | Array<T>"
+  note: "Vitest 3 marked this root alias as an internal helper. Define the small TypeScript shape locally instead of depending on transitive internals."
+"@effect/vitest/index#Awaitable":
+  replacement: "T | PromiseLike<T>"
+  note: "Vitest 3 marked this root alias as an internal helper. Define the small TypeScript shape locally instead of depending on transitive internals."
+"@effect/vitest/index#Constructable":
+  replacement: "new (...args: any[]) => any"
+  note: "Vitest 3 marked this root alias as an internal helper. Define the small TypeScript shape locally instead of depending on transitive internals."
+"@effect/vitest/index#MutableArray":
+  replacement: "{ -readonly [K in keyof T]: T[K] }"
+  note: "Vitest 3 marked this root alias as an internal helper. Define the small TypeScript shape locally instead of depending on transitive internals."
+"@effect/vitest/index#Nullable":
+  replacement: "T | null | undefined"
+  note: "Vitest 3 marked this root alias as an internal helper. Define the small TypeScript shape locally instead of depending on transitive internals."
+"@effect/vitest/index#ErrorWithDiff":
+  replacement: "vitest#TestError"
+  note: "Vitest 3 deprecated ErrorWithDiff in favor of TestError; review the tightened actual, expected, and cause fields."
+"@effect/vitest/index#SerializableSpec":
+  replacement: "vitest#SerializedTestSpecification"
+  note: "Use the non-deprecated Vitest name; SerializableSpec was only an alias."
+"@effect/vitest/index#Reporter":
+  replacement: "vitest/node#Reporter"
+  note: "Import Reporter from vitest/node; the deprecated vitest/reporters entrypoint was removed in Vitest 5."
+"@effect/vitest/index#UserConfig":
+  replacement: "vitest/config#TestUserConfig"
+  note: "Vitest 5 exposes its config as TestUserConfig; ViteUserConfig is the separate Vite configuration type."
+"@effect/vitest/index#UserWorkspaceConfig":
+  replacement: "vitest/config#UserWorkspaceConfig"
+  note: "Import the type from vitest/config and migrate Vitest workspace configuration to projects."
+"@effect/vitest/index#PoolOptions":
+  replacement: "vitest/config#TestUserConfig"
+  note: "The v3 built-in poolOptions object was removed. Move its fields to Vitest 5 top-level config such as maxWorkers and vmMemoryLimit; vitest/node PoolOptions is a different custom-pool API."
+"@effect/vitest/index#RuntimeContext":
+  replacement: "none"
+  note: "Vitest 5 deprecates @vitest/runner and does not expose this internal state type. Extend TestRunner from vitest and use its public methods instead."
+"@effect/vitest/index#SuiteHooks":
+  replacement: "ReturnType<typeof import(\"vitest\").TestRunner.getSuiteHooks>"
+  note: "Derive the hook collection from Vitest 5's public TestRunner API; ordinary tests should use public hook functions."
+"@effect/vitest/index#DoneCallback":
+  replacement: "none"
+  note: "Vitest does not support callback-style tests. Return a Promise or, in @effect/vitest tests, return an Effect."
+"@effect/vitest/index#HookCleanupCallback":
+  replacement: "none"
+  note: "No named Vitest 5 export replaces this alias. Let the hook return type infer, or type the cleanup function locally."
+"@effect/vitest/index#HookListener":
+  replacement: "none"
+  note: "Infer the callback from the public hook function, or derive it with Parameters<typeof import(\"vitest\").beforeAll>[0] and the corresponding hook name."
+"@effect/vitest/index#ModuleCache":
+  replacement: "none"
+  note: "Vitest 3 marked this unused internal cache shape deprecated; Vitest 5 has no public replacement."
+"@effect/vitest/index#ResolvedTestEnvironment":
+  replacement: "none"
+  note: "Vitest 3 marked this type unsupported. Use Environment from vitest/runtime for custom environments."
+"@effect/vitest/index#ResolveIdFunction":
+  replacement: "none"
+  note: "This deprecated vite-node callback was removed. Use Vite environment or module-runner APIs."
+"@effect/vitest/index#TransformModePatterns":
+  replacement: "none"
+  note: "This was removed with vite-node transform modes. Configure the Vite environment and its dependency optimizer instead."
+"@effect/vitest/index#WorkerRPC":
+  replacement: "none"
+  note: "The concrete worker RPC composition is internal. Use public Vitest RuntimeRPC, RunnerRPC, ContextRPC, or WorkerRequest types only when their narrower contract fits."
+"@effect/vitest/index#bench":
+  replacement: "vitest#test"
+  note: "Vitest 5 removes the top-level bench export. Destructure bench from a regular test's context and await bench(name, fn).run(); use skip, only, or todo on the enclosing test."
+"@effect/vitest/index#BenchFactory":
+  replacement: "vitest#Bench"
+  note: "Use the Vitest 5 test-context bench fixture type. It is no longer the tinybench factory constructor."
+"@effect/vitest/index#BenchFunction":
+  replacement: "vitest#BenchFn"
+  note: "Use BenchFn for the callback passed to the Vitest 5 test-context bench fixture."
+"@effect/vitest/index#BenchTask":
+  replacement: "vitest#BenchRegistration"
+  note: "Migrate to a fixture registration and await its run() method; review its fields instead of treating it as a tinybench task."
+"@effect/vitest/index#BenchTaskResult":
+  replacement: "vitest#BenchResult"
+  note: "Use the result returned by awaiting the Vitest 5 fixture registration's run() method."
+"@effect/vitest/index#Benchmark":
+  replacement: "vitest#TestBenchmark"
+  note: "Use TestBenchmark for recorded benchmark data on a test; benchmarks are no longer standalone test tasks."
+"@effect/vitest/index#BenchmarkAPI":
+  replacement: "vitest#Bench"
+  note: "Use the test-context bench fixture. Move skip, only, and todo to the enclosing test."
+"@effect/vitest/index#BenchmarkResult":
+  replacement: "vitest#BenchResult"
+  note: "Use the result returned by awaiting the Vitest 5 fixture registration's run() method; review its changed fields."
+"@effect/vitest/index#BenchmarkRunner":
+  replacement: "vitest#BenchmarkProvider"
+  note: "Vitest 5 runs benchmarks through providers. Export a BenchmarkProvider with an asynchronous run(group) method for a custom engine."
+"@effect/vitest/index#ExpectPollOptions":
+  replacement: "NonNullable<Parameters<typeof import(\"vitest\").expect.poll>[1]>"
+  note: "Vitest 5 removes the named options export; derive the options from the public expect.poll function."
+"@effect/vitest/index#Assertion":
+  replacement: "vitest#Assertion"
+  note: "Vitest 5 takes the matcher return type first. Replace Assertion<T> with Assertion<void, T> or Assertion<Promise<void>, T> for asynchronous assertions."
+"@effect/vitest/index#Matchers":
+  replacement: "vitest#Matchers"
+  note: "Augment vitest.Matchers<R, T> for custom matchers. R is the matcher return type and T is the received value; @vitest/expect no longer shares Vitest's assertion state."
+"@effect/vitest/index#it":
+  replacement: "@effect/vitest#it"
+  note: "Effect helpers retain their calling convention. Vitest 5 removes it.sequential; pass { concurrent: false } to the native test or as the Effect helper's third argument."
+"@effect/vitest/index#test":
+  replacement: "vitest#test"
+  note: "Vitest 5 removes test.sequential and sequential options. Pass { concurrent: false } to opt out of inherited concurrency."
+"@effect/vitest/index#describe":
+  replacement: "vitest#describe"
+  note: "Vitest 5 removes describe.sequential and sequential options. Use describe(name, { concurrent: false }, body) for suites that depend on ordering."

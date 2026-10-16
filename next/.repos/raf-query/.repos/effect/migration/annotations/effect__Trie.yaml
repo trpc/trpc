@@ -1,0 +1,6 @@
+"effect/Trie#TypeId":
+  replacement: "none"
+  note: "The Trie brand is private and there is no public Trie runtime guard; use Trie.Trie<V> in type positions."
+"effect/Trie#unsafeGet":
+  replacement: "Trie.getUnsafe"
+  note: "Direct word-order rename; it still throws for a missing key."

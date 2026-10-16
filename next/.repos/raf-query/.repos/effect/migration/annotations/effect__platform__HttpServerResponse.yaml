@@ -1,0 +1,66 @@
+"@effect/platform/HttpServerResponse#empty":
+  replacement: "HttpServerResponse.empty"
+  note: "Retained with default status 204; responses are no longer Effects or Respondables."
+"@effect/platform/HttpServerResponse#expireCookie":
+  replacement: "HttpServerResponse.expireCookie"
+  note: "Now effectful and safe; use expireCookieUnsafe for synchronous throwing behavior."
+"@effect/platform/HttpServerResponse#file":
+  replacement: "HttpServerResponse.file"
+  note: "Retained; offset and bytesToRead accept ByteSize.Input, while chunkSize uses number. Path-backed responses validate ranges and clamp content length to the available bytes."
+"@effect/platform/HttpServerResponse#formData":
+  replacement: "HttpServerResponse.formData"
+  note: "Moved unchanged."
+"@effect/platform/HttpServerResponse#fromWeb":
+  replacement: "HttpServerResponse.fromWeb"
+  note: "Retained; Set-Cookie headers become Cookies and Web bodies become stream bodies."
+"@effect/platform/HttpServerResponse#isServerResponse":
+  replacement: "HttpServerResponse.isHttpServerResponse"
+  note: "Renamed."
+"@effect/platform/HttpServerResponse#json":
+  replacement: "HttpServerResponse.json"
+  note: "Retained as the safe effectful JSON constructor."
+"@effect/platform/HttpServerResponse#raw":
+  replacement: "HttpServerResponse.raw"
+  note: "Moved unchanged."
+"@effect/platform/HttpServerResponse#setBody":
+  replacement: "HttpServerResponse.setBody"
+  note: "Retained and reflects body content metadata in response headers."
+"@effect/platform/HttpServerResponse#setCookie":
+  replacement: "HttpServerResponse.setCookie"
+  note: "Retained as the safe effectful cookie setter."
+"@effect/platform/HttpServerResponse#setHeader":
+  replacement: "HttpServerResponse.setHeader"
+  note: "Retained with data-first and data-last overloads."
+"@effect/platform/HttpServerResponse#setHeaders":
+  replacement: "HttpServerResponse.setHeaders"
+  note: "Retained with data-first and data-last overloads."
+"@effect/platform/HttpServerResponse#stream":
+  replacement: "HttpServerResponse.stream"
+  note: "Retained; v4 Stream no longer has a service type parameter."
+"@effect/platform/HttpServerResponse#text":
+  replacement: "HttpServerResponse.text"
+  note: "Moved unchanged."
+"@effect/platform/HttpServerResponse#toWeb":
+  replacement: "HttpServerResponse.toWeb"
+  note: "Retained, but the optional Runtime became an optional Context for stream execution. For a raw Web Response, outer headers override native headers and cookies append, including when the body is omitted. With withoutBody, the raw status and statusText are preserved unless the outer status is 204, 205, or 304, which takes precedence."
+"@effect/platform/HttpServerResponse#TypeId":
+  replacement: "HttpServerResponse.isHttpServerResponse"
+  note: "The response brand is private in v4; use the public runtime refinement."
+"@effect/platform/HttpServerResponse#uint8Array":
+  replacement: "HttpServerResponse.uint8Array"
+  note: "Moved unchanged."
+"@effect/platform/HttpServerResponse#unsafeJson":
+  replacement: "HttpServerResponse.jsonUnsafe"
+  note: "Renamed to put Unsafe last; serialization failures still throw."
+"@effect/platform/HttpServerResponse#unsafeSetCookie":
+  replacement: "HttpServerResponse.setCookieUnsafe"
+  note: "Renamed to put Unsafe last; invalid cookies still throw."
+"@effect/platform/HttpServerResponse#unsafeSetCookies":
+  replacement: "HttpServerResponse.setCookiesUnsafe"
+  note: "Renamed to put Unsafe last; invalid cookies still throw."
+"@effect/platform/HttpServerResponse#urlParams":
+  replacement: "HttpServerResponse.urlParams"
+  note: "Retained and widened to accept UrlParams.Input."
+"@effect/platform/HttpServerResponse#fileWeb":
+  replacement: "HttpServerResponse.fileWeb"
+  note: "Web File offset, bytesToRead, and chunkSize options use number, unlike path-backed ByteSize.Input ranges."

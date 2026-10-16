@@ -1,0 +1,21 @@
+"effect/BigInt#fromNumber":
+  replacement: "BigInt.fromNumber"
+  note: "Unchanged; it returns Option for safe conversion."
+"effect/BigInt#greaterThan":
+  replacement: "BigInt.isGreaterThan"
+  note: "Renamed with the v4 is-prefix."
+"effect/BigInt#greaterThanOrEqualTo":
+  replacement: "BigInt.isGreaterThanOrEqualTo"
+  note: "Renamed with the v4 is-prefix."
+"effect/BigInt#lessThan":
+  replacement: "BigInt.isLessThan"
+  note: "Renamed with the v4 is-prefix."
+"effect/BigInt#lessThanOrEqualTo":
+  replacement: "BigInt.isLessThanOrEqualTo"
+  note: "Renamed with the v4 is-prefix."
+"effect/BigInt#unsafeDivide":
+  replacement: "BigInt.divideUnsafe"
+  note: "Renamed to use the v4 Unsafe suffix convention."
+"effect/BigInt#unsafeSqrt":
+  replacement: "BigInt.sqrtUnsafe"
+  note: "Renamed to use the v4 Unsafe suffix convention."

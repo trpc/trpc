@@ -1,0 +1,24 @@
+"@effect/typeclass/Monoid#array":
+  replacement: "Array.makeReducerConcat"
+  note: "Use the v4 array concatenation Reducer; Reducer replaces Monoid and names the identity initialValue."
+"@effect/typeclass/Monoid#fromSemigroup":
+  replacement: "Reducer.make(S.combine, empty)"
+  note: "Construct a v4 Reducer from the replacement Combiner operation and identity value."
+"@effect/typeclass/Monoid#max":
+  replacement: "Reducer.make(Combiner.max(B.compare).combine, B.minBound)"
+  note: "Reducer replaces Monoid. Build it from the v4 maximum Combiner and the bounded order's minimum value."
+"@effect/typeclass/Monoid#min":
+  replacement: "Reducer.make(Combiner.min(B.compare).combine, B.maxBound)"
+  note: "Reducer replaces Monoid. Build it from the v4 minimum Combiner and the bounded order's maximum value."
+"@effect/typeclass/Monoid#Monoid":
+  replacement: "Reducer.Reducer"
+  note: "Reducer replaces Monoid in v4; empty is renamed initialValue and combineAll remains available."
+"@effect/typeclass/Monoid#reverse":
+  replacement: "Reducer.flip"
+  note: "Use the v4 Reducer combinator; it preserves initialValue and reverses combine argument order."
+"@effect/typeclass/Monoid#struct":
+  replacement: "Struct.makeReducer"
+  note: "Pass a record of v4 Reducers to derive a field-wise Reducer."
+"@effect/typeclass/Monoid#tuple":
+  replacement: "Tuple.makeReducer"
+  note: "Pass one array of v4 Reducers instead of rest Monoid arguments."

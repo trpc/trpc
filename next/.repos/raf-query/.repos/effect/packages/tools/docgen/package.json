@@ -1,0 +1,84 @@
+{
+  "name": "@effect/docgen",
+  "version": "4.0.1",
+  "type": "module",
+  "license": "MIT",
+  "description": "An opinionated documentation generator for Effect projects",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "homepage": "https://effect.website",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Effect-TS/effect.git",
+    "directory": "packages/tools/docgen"
+  },
+  "sideEffects": [],
+  "bin": {
+    "docgen": "./src/bin.ts"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    "./schema.json": "./schema.json",
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts",
+    "./index": null,
+    "./bin": null
+  },
+  "files": [
+    "src/**/*.ts",
+    "schema.json",
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "dist/**/*.d.ts",
+    "dist/**/*.d.ts.map",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "ai-docs/**/*"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "bin": {
+      "docgen": "./dist/bin.js"
+    },
+    "exports": {
+      "./package.json": "./package.json",
+      "./schema.json": "./schema.json",
+      ".": "./dist/index.js",
+      "./*": "./dist/*.js",
+      "./index": null,
+      "./bin": null
+    }
+  },
+  "scripts": {
+    "build": "tsc -b tsconfig.json && pnpm babel",
+    "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+    "check": "tsc -b tsconfig.json"
+  },
+  "dependencies": {
+    "@babel/code-frame": "^8.0.6",
+    "@effect/markdown-toc": "^0.1.0",
+    "@effect/platform-node": "workspace:^",
+    "chalk": "^6.0.0",
+    "doctrine": "^3.0.0",
+    "effect": "workspace:^",
+    "glob": "^13.0.6",
+    "prettier": "^3.9.9",
+    "ts-morph": "^28.0.0",
+    "tsconfck": "^3.1.6"
+  },
+  "peerDependencies": {
+    "tsx": ">=4.19.3 <5.0.0",
+    "typescript": ">=5.8.2 <7.0.0"
+  },
+  "devDependencies": {
+    "@effect/vitest": "workspace:^",
+    "@types/babel__code-frame": "^7.27.0",
+    "@types/doctrine": "^0.0.9",
+    "@types/node": "^26.6.3",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.2"
+  }
+}

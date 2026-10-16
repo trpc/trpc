@@ -1,0 +1,6 @@
+# Handles from ensure and fetch carry their data (human asked, 2026-10-15)
+
+- **`ensure` and `fetch` both return `QueryHandleWithData`**, which extends `QueryHandle` (what `prefetch` returns) with `data`. `ensure` is `fetch` without waiting on stale data. Human: "make it so that ensure is essentially a wrapper for .fetch() but ignoring stale time"; "both of them should be 'Ensured' handles in the regard that they have data … whatever name you pick should be an extension of what the `.prefetch()` interface is".
+- **`useQuery` returns the data for a handle with data**, a promise for a plain `QueryHandle`. See [use-query-reads-handles-with-data.md](./use-query-reads-handles-with-data.md).
+- **`data` is the entry's own object** (`withData` in `cache.ts`), never a copy: the TanStack Router serializer (seroval) and React's RSC payload dedupe by reference, so a handle's data and the dehydrated entry cross once (`ssr.test.tsx` checks the router payload; the Next.js RSC payload references `$…:props:state:queries:N:data`).
+- **`data` is a snapshot** for the code that called the verb (RSC rendering, dependent inputs, redirects, `head`). Components read the live entry with `useQuery`; docs say so in `www/content/handles.md`.

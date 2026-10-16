@@ -1,0 +1,12 @@
+effect/ScopedCache#Lookup:
+  replacement: "(key: Key) => Effect.Effect<A, E, R | Scope.Scope>"
+  note: "The named alias was removed; use an inline lookup type or ScopedCache.ScopedCache<Key, A, E, R>[\"lookup\"]."
+effect/ScopedCache#ScopedCache:
+  replacement: "ScopedCache.ScopedCache"
+  note: "The model remains as a Pipeable scoped cache; construct and use it inside a Scope with explicit ScopedCache operations."
+effect/ScopedCache#ScopedCache.Variance:
+  replacement: "none"
+  note: "The public variance marker was removed; use ScopedCache.ScopedCache directly."
+effect/ScopedCache#ScopedCacheTypeId:
+  replacement: "none"
+  note: "The ScopedCache type id is internal in v4; do not inspect or construct the brand directly."

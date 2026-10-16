@@ -1,0 +1,3 @@
+"@effect/platform":
+  replacement: "none"
+  note: "The @effect/platform package was folded into the effect package: core services live in effect root modules (e.g. effect/FileSystem, effect/Path) and HTTP in effect/http; follow the Import Map for each module."

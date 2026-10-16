@@ -1,0 +1,6 @@
+"@effect/workflow/WorkflowEngine#layerMemory":
+  replacement: "effect/workflow/WorkflowEngine#layerMemory"
+  note: "Moved into core Effect and remains the non-durable engine for tests and local development."
+"@effect/workflow/WorkflowEngine#makeUnsafe":
+  replacement: "effect/workflow/WorkflowEngine#makeUnsafe"
+  note: "Moved into core Effect. Context service projections now use Service instead of Type, and absent encoded results use Option."

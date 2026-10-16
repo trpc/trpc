@@ -1,0 +1,15 @@
+"@effect/experimental/DevTools/Client#Client":
+  replacement: effect/devtools/DevToolsClient#DevToolsClient
+  note: Client was renamed to the DevToolsClient Context.Service class.
+"@effect/experimental/DevTools/Client#ClientImpl":
+  replacement: effect/devtools/DevToolsClient#DevToolsClient["Service"]
+  note: Use the service shape from DevToolsClient; unsafeAddSpan was replaced by sendUnsafe.
+"@effect/experimental/DevTools/Client#layer":
+  replacement: effect/devtools/DevToolsClient#layer
+  note: Import layer from the v4 unstable DevToolsClient module.
+"@effect/experimental/DevTools/Client#layerTracer":
+  replacement: effect/devtools/DevToolsClient#layerTracer
+  note: Import layerTracer from the v4 unstable DevToolsClient module.
+"@effect/experimental/DevTools/Client#make":
+  replacement: effect/devtools/DevToolsClient#make
+  note: Import make from the v4 unstable DevToolsClient module.

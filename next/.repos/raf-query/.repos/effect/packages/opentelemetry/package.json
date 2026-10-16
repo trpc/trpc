@@ -1,0 +1,128 @@
+{
+  "name": "@effect/opentelemetry",
+  "type": "module",
+  "version": "4.0.1",
+  "license": "MIT",
+  "description": "OpenTelemetry integration for Effect",
+  "homepage": "https://effect.website",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Effect-TS/effect.git",
+    "directory": "packages/opentelemetry"
+  },
+  "bugs": {
+    "url": "https://github.com/Effect-TS/effect/issues"
+  },
+  "tags": [
+    "opentelemetry",
+    "observability",
+    "tracing",
+    "metrics",
+    "typescript",
+    "algebraic-data-types",
+    "functional-programming"
+  ],
+  "keywords": [
+    "opentelemetry",
+    "observability",
+    "tracing",
+    "metrics",
+    "typescript",
+    "algebraic-data-types",
+    "functional-programming"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "sideEffects": [],
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts",
+    "./internal/*": null,
+    "./index": null,
+    "./*/index": null
+  },
+  "files": [
+    "src/**/*.ts",
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "dist/**/*.d.ts",
+    "dist/**/*.d.ts.map",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "ai-docs/**/*"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "exports": {
+      "./package.json": "./package.json",
+      ".": "./dist/index.js",
+      "./*": "./dist/*.js",
+      "./internal/*": null,
+      "./index": null,
+      "./*/index": null
+    }
+  },
+  "scripts": {
+    "codegen": "effect-utils codegen",
+    "build": "tsc -b tsconfig.json && pnpm babel",
+    "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+    "check": "tsc -b tsconfig.json"
+  },
+  "peerDependencies": {
+    "@opentelemetry/api": ">=1.9.0 <2.0.0",
+    "@opentelemetry/api-logs": ">=0.203.0 <0.300.0",
+    "@opentelemetry/resources": ">=2.0.0 <3.0.0",
+    "@opentelemetry/sdk-logs": ">=0.203.0 <0.300.0",
+    "@opentelemetry/sdk-metrics": ">=2.0.0 <3.0.0",
+    "@opentelemetry/sdk-trace-base": ">=2.0.0 <3.0.0",
+    "@opentelemetry/sdk-trace-node": ">=2.0.0 <3.0.0",
+    "@opentelemetry/sdk-trace-web": ">=2.0.0 <3.0.0",
+    "@opentelemetry/semantic-conventions": ">=1.33.0 <2.0.0",
+    "effect": "workspace:^"
+  },
+  "peerDependenciesMeta": {
+    "@opentelemetry/api": {
+      "optional": true
+    },
+    "@opentelemetry/resources": {
+      "optional": true
+    },
+    "@opentelemetry/sdk-metrics": {
+      "optional": true
+    },
+    "@opentelemetry/sdk-trace-base": {
+      "optional": true
+    },
+    "@opentelemetry/sdk-trace-node": {
+      "optional": true
+    },
+    "@opentelemetry/sdk-trace-web": {
+      "optional": true
+    },
+    "@opentelemetry/sdk-logs": {
+      "optional": true
+    },
+    "@opentelemetry/api-logs": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/api-logs": "^0.222.0",
+    "@opentelemetry/context-async-hooks": "^2.11.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "0.222.0",
+    "@opentelemetry/exporter-prometheus": "^0.222.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.222.0",
+    "@opentelemetry/otlp-exporter-base": "^0.222.0",
+    "@opentelemetry/resources": "^2.11.0",
+    "@opentelemetry/sdk-logs": "^0.222.0",
+    "@opentelemetry/sdk-metrics": "^2.11.0",
+    "@opentelemetry/sdk-trace-base": "^2.11.0",
+    "@opentelemetry/sdk-trace-node": "^2.11.0",
+    "@opentelemetry/sdk-trace-web": "^2.11.0",
+    "@opentelemetry/semantic-conventions": "^1.43.0"
+  }
+}

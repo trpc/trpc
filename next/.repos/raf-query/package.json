@@ -1,0 +1,60 @@
+{
+	"name": "raf-query-workspace",
+	"private": true,
+	"description": "Workspace root for raf-query",
+	"type": "module",
+	"scripts": {
+		"build": "pnpm -r --filter \"./packages/*\" --filter \"@raf-query/experimental-*\" build",
+		"bundle-size": "pnpm --filter @tooling/bundle-size measure",
+		"build:www": "pnpm --filter @raf-query/www build",
+		"build:examples": "pnpm -r --filter \"./examples/*\" --filter \"@examples/experimental-*\" build",
+		"dev": "pnpm --parallel --filter \"./examples/*\" --filter \"./www\" dev",
+		"dev:start": "pnpm --filter @examples/tanstack-start dev",
+		"dev:next": "pnpm --filter @examples/nextjs dev",
+		"dev:react-router": "pnpm --filter @examples/react-router dev",
+		"dev:effect": "pnpm --filter @examples/tanstack-start-effect dev",
+		"dev:www": "pnpm --filter @raf-query/www dev",
+		"dev:experimental": "pnpm --parallel --filter \"@examples/experimental-*\" dev",
+		"dev:all": "pnpm --parallel --filter \"./examples/*\" --filter \"@examples/experimental-*\" --filter \"./www\" dev",
+		"preview:examples": "pnpm build:examples && pnpm --parallel --filter \"./examples/*\" --filter \"@examples/experimental-*\" start",
+		"format": "vp fmt",
+		"format:check": "vp fmt --check",
+		"knip": "knip",
+		"lint": "vp lint -c .oxlintrc.json --disable-nested-config",
+		"lint:fix": "vp lint -c .oxlintrc.json --fix --disable-nested-config",
+		"prepare": "husky",
+		"test": "pnpm -r --filter \"./packages/*\" --filter \"@raf-query/experimental-*\" --filter \"./tooling/*\" --filter \"./www\" test",
+		"typecheck": "pnpm -r --filter \"./examples/*\" --filter \"@examples/experimental-*\" --filter \"./examples/.shared/*\" --filter \"./www\" --filter \"./www/samples/*\" --filter \"./packages/*\" --filter \"@raf-query/experimental-*\" --filter \"./tooling/*\" typecheck",
+		"check": "vp check",
+		"postinstall": "vendor-src check"
+	},
+	"devDependencies": {
+		"@effect/platform-node": "catalog:",
+		"@release-it/conventional-changelog": "12.0.2",
+		"@tanstack/react-query": "5.104.1",
+		"@tanstack/react-router": "1.170.42",
+		"@types/node": "26.6.4",
+		"@vitest/coverage-v8": "5.0.1",
+		"effect": "catalog:",
+		"eslint-plugin-no-only-tests": "3.4.0",
+		"eslint-plugin-perfectionist": "5.12.1",
+		"husky": "9.1.7",
+		"knip": "6.41.0",
+		"lint-staged": "17.6.0",
+		"oxfmt": "0.70.0",
+		"oxlint": "1.85.0",
+		"oxlint-tsgolint": "7.0.2003",
+		"release-it": "21.1.0",
+		"typescript": "7.0.2",
+		"vendor-src": "0.15.2",
+		"vite-plus": "1.0.0"
+	},
+	"lint-staged": {
+		"*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}": "vp lint -c .oxlintrc.json --fix --disable-nested-config --no-error-on-unmatched-pattern",
+		"*": "vp fmt --no-error-on-unmatched-pattern"
+	},
+	"engines": {
+		"node": ">=24"
+	},
+	"packageManager": "pnpm@12.9.1"
+}

@@ -1,0 +1,21 @@
+{
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "vite.config.ts",
+    "playwright.config.ts",
+    "tests/**/*.ts"
+  ],
+  "compilerOptions": {
+    "strict": true,
+    "esModuleInterop": true,
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["DOM", "DOM.Iterable", "ES2024"],
+    "skipLibCheck": true,
+    "target": "ES2024",
+    "noEmit": true,
+    "types": ["vite/client"]
+  }
+}

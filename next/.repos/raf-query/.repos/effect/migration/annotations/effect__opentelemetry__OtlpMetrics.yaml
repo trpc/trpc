@@ -1,0 +1,6 @@
+"@effect/opentelemetry/OtlpMetrics#layer":
+  replacement: "OtlpMetrics.layer"
+  note: "Moved to effect/observability/OtlpMetrics; the layer now also accepts optional cumulative or delta temporality."
+"@effect/opentelemetry/OtlpMetrics#make":
+  replacement: "OtlpMetrics.make"
+  note: "Moved to effect/observability/OtlpMetrics; the constructor now also accepts optional cumulative or delta temporality."

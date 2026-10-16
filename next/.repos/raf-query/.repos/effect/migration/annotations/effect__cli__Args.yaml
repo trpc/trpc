@@ -1,0 +1,126 @@
+"@effect/cli/Args#all":
+  replacement: "Command.make(name, config)"
+  note: "Collect arguments in the config record passed to Command.make; there is no standalone Argument.all."
+"@effect/cli/Args#All.ArgsAny":
+  replacement: "Param.AnyArgument"
+  note: "Use the shared any-positional-parameter type."
+"@effect/cli/Args#All.Return":
+  replacement: "Command.Command.Config.Infer"
+  note: "Infer the output of a command config record; standalone argument collections were removed."
+"@effect/cli/Args#Args":
+  replacement: "Argument.Argument"
+  note: "Args was renamed to Argument in effect/cli."
+"@effect/cli/Args#Args.BaseArgsConfig":
+  replacement: "name: string"
+  note: "Argument constructors now take the name as a required first parameter."
+"@effect/cli/Args#Args.FormatArgsConfig":
+  replacement: "Primitive.FileParseOptions"
+  note: "Pass the name separately and use the format option with Argument.FileParse or Argument.FileSchema."
+"@effect/cli/Args#Args.PathArgsConfig":
+  replacement: "Argument.Path(name, { pathType, mustExist })"
+  note: "Path options are inline; map exists=yes to mustExist=true and either to omission. exists=no has no exact replacement."
+"@effect/cli/Args#Args.Variance":
+  replacement: "Argument.Argument"
+  note: "The separate variance artifact was removed; Argument inherits the shared Param variance."
+"@effect/cli/Args#ArgsTypeId":
+  replacement: "Param.isParam(value) && value.kind === Param.argumentKind"
+  note: "The public Args type id was removed; use the Param guard and argument kind discriminator."
+"@effect/cli/Args#atLeast":
+  replacement: "Argument.atLeast"
+  note: "Use the moved combinator; v4 returns ReadonlyArray and does not encode non-emptiness in the type."
+"@effect/cli/Args#atMost":
+  replacement: "Argument.atMost"
+  note: "Use the moved combinator."
+"@effect/cli/Args#between":
+  replacement: "Argument.between"
+  note: "Use the moved combinator; v4 validates bounds when constructing the parameter."
+"@effect/cli/Args#boolean":
+  replacement: "Flag.Boolean / Argument.ChoiceWithValue"
+  note: "Positional booleans were removed as ambiguous; prefer a boolean flag or explicit true/false positional choices."
+"@effect/cli/Args#choice":
+  replacement: "Argument.Literals"
+  note: "Use the renamed constructor and pass the argument name explicitly."
+"@effect/cli/Args#date":
+  replacement: "Argument.Date"
+  note: "Use the renamed constructor and pass the argument name explicitly."
+"@effect/cli/Args#directory":
+  replacement: "Argument.Directory"
+  note: "Use mustExist=true for exists=yes and omit it for either; exists=no has no exact replacement."
+"@effect/cli/Args#file":
+  replacement: "Argument.File"
+  note: "Use mustExist=true for exists=yes and omit it for either; exists=no has no exact replacement."
+"@effect/cli/Args#fileContent":
+  replacement: "Argument.File + Argument.mapEffect"
+  note: "Parse a path and read it with FileSystem.readFile; no binary-content argument constructor remains."
+"@effect/cli/Args#fileParse":
+  replacement: "Argument.FileParse"
+  note: "Pass the old format as an options field; v4 returns parsed content rather than a path/content tuple."
+"@effect/cli/Args#fileSchema":
+  replacement: "Argument.FileSchema"
+  note: "Pass the old format as an options field and use a v4 Schema constraint decoder."
+"@effect/cli/Args#fileText":
+  replacement: "Argument.FileText"
+  note: "Use the renamed constructor; it returns content only."
+"@effect/cli/Args#float":
+  replacement: "Argument.Finite"
+  note: "Use the renamed constructor; it rejects non-finite numbers."
+"@effect/cli/Args#getHelp":
+  replacement: "none"
+  note: "Per-argument help introspection was removed; Command generates help internally."
+"@effect/cli/Args#getIdentifier":
+  replacement: "none"
+  note: "Public argument identifier introspection was removed."
+"@effect/cli/Args#getMaxSize":
+  replacement: "none"
+  note: "Public arity introspection was removed; command parsing enforces variadic bounds internally."
+"@effect/cli/Args#getMinSize":
+  replacement: "none"
+  note: "Public arity introspection was removed; command parsing enforces variadic bounds internally."
+"@effect/cli/Args#getUsage":
+  replacement: "none"
+  note: "The public Usage tree was removed; Command generates a usage string internally."
+"@effect/cli/Args#integer":
+  replacement: "Argument.Int"
+  note: "Use the renamed constructor and pass the argument name explicitly."
+"@effect/cli/Args#isArgs":
+  replacement: "Param.isParam(value) && value.kind === Param.argumentKind"
+  note: "Arguments now use the shared Param representation and an explicit kind discriminator."
+"@effect/cli/Args#map":
+  replacement: "Argument.map"
+  note: "Use the moved combinator."
+"@effect/cli/Args#none":
+  replacement: "omit the config entry"
+  note: "V4 Argument.Never is an always-failing sentinel, not v3's empty successful argument set."
+"@effect/cli/Args#optional":
+  replacement: "Argument.optional"
+  note: "Use the moved combinator; it still returns Option."
+"@effect/cli/Args#path":
+  replacement: "Argument.Path"
+  note: "Path options are inline; map exists=yes to mustExist=true and either to omission. exists=no has no exact replacement."
+"@effect/cli/Args#redacted":
+  replacement: "Argument.Redacted"
+  note: "Use the renamed constructor and pass the argument name explicitly."
+"@effect/cli/Args#repeated":
+  replacement: "Argument.variadic"
+  note: "Renamed to variadic; pass optional min and max bounds."
+"@effect/cli/Args#secret":
+  replacement: "Argument.Redacted"
+  note: "Use Redacted-backed positional input."
+"@effect/cli/Args#text":
+  replacement: "Argument.String"
+  note: "Renamed to String; pass the argument name explicitly."
+"@effect/cli/Args#validate":
+  replacement: "argument.parse({ flags: {}, arguments: args })"
+  note: "Parsing is now a Param method and returns leftover tokens with the value; errors are CliError."
+"@effect/cli/Args#withDefault":
+  replacement: "Argument.withDefault"
+  note: "Use the moved combinator; v4 also accepts an Effect fallback."
+"@effect/cli/Args#withDescription":
+  replacement: "Argument.withDescription"
+  note: "Use the moved combinator."
+"@effect/cli/Args#withFallbackConfig":
+  replacement: "Argument.withFallbackConfig"
+  note: "Use the moved combinator; invalid configuration becomes CliError.InvalidValue."
+"@effect/cli/Args#withSchema":
+  replacement: "Argument.withSchema"
+  note: "Use the moved combinator with a v4 Schema constraint decoder."

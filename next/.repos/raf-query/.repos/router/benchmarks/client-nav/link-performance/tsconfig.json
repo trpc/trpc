@@ -1,0 +1,15 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "types": ["node", "vite/client", "vitest/globals"]
+  },
+  "include": [
+    "./**/*.ts",
+    "./**/*.tsx",
+    "../scenarios/harness.ts",
+    "../setup-helpers.ts",
+    "../vitest.setup.ts"
+  ]
+}

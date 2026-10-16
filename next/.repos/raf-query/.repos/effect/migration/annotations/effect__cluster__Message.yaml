@@ -1,0 +1,3 @@
+"@effect/cluster/Message#serialize":
+  replacement: "effect/cluster/Message#serialize"
+  note: "Moved into core Effect. Pass the transport's codecFor as the second argument; use serializeEnvelope for the JSON Envelope.Encoded form."

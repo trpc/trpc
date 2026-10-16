@@ -1,0 +1,23 @@
+import axios from 'redaxios'
+
+export class NotFoundError extends Error {}
+
+const queryURL = 'https://jsonplaceholder.typicode.com'
+
+export const fetchPosts = async () => {
+  console.info('Fetching posts...')
+  return axios.get(`${queryURL}/posts`).then((r) => r.data.slice(0, 10))
+}
+
+export const fetchPost = async (postId) => {
+  console.info(`Fetching post with id ${postId}...`)
+  const post = await axios
+    .get(`${queryURL}/posts/${postId}`)
+    .then((r) => r.data)
+
+  if (!post) {
+    throw new NotFoundError(`Post with id "${postId}" not found!`)
+  }
+
+  return post
+}

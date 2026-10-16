@@ -1,0 +1,9 @@
+"@effect/opentelemetry/Logger#layerLoggerAdd":
+  replacement: "OtelLogger.layer({ mergeWithExisting: true })"
+  note: "The Logger module was renamed to OtelLogger; logger installation is now one configurable layer, with true preserving the v3 additive behavior."
+"@effect/opentelemetry/Logger#layerLoggerReplace":
+  replacement: "OtelLogger.layer({ mergeWithExisting: false })"
+  note: "The Logger module was renamed to OtelLogger; logger installation is now one configurable layer, with false replacing existing loggers."
+"@effect/opentelemetry/Logger#make":
+  replacement: "OtelLogger.make"
+  note: "The constructor remains in the renamed OtelLogger module."

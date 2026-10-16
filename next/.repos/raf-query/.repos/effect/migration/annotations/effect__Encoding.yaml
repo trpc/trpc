@@ -1,0 +1,57 @@
+"effect/Encoding":
+  replacement: "none"
+  note: "Import each format or the shared error API from its direct subpath."
+"effect/Encoding#DecodeException":
+  replacement: "effect/encoding/EncodingError#EncodingError"
+  note: "Use the unified error class with kind Decode."
+"effect/Encoding#DecodeExceptionTypeId":
+  replacement: "effect/encoding/EncodingError#EncodingErrorTypeId"
+  note: "Decode and encode failures now share one marker."
+"effect/Encoding#decodeUriComponent":
+  replacement: "Result.try"
+  note: "Wrap decodeURIComponent in Result.try and map failure to EncodingError, or decode Schema.StringFromUriComponent."
+"effect/Encoding#EncodeException":
+  replacement: "effect/encoding/EncodingError#EncodingError"
+  note: "Use the unified error class with kind Encode."
+"effect/Encoding#EncodeExceptionTypeId":
+  replacement: "effect/encoding/EncodingError#EncodingErrorTypeId"
+  note: "Decode and encode failures now share one marker."
+"effect/Encoding#encodeUriComponent":
+  replacement: "Result.try"
+  note: "Wrap encodeURIComponent in Result.try and map failure to EncodingError, or encode Schema.StringFromUriComponent."
+"effect/Encoding#isDecodeException":
+  replacement: "effect/encoding/EncodingError#isEncodingError"
+  note: "Use the unified guard and test kind === Decode when decode-only narrowing is required."
+"effect/Encoding#isEncodeException":
+  replacement: "effect/encoding/EncodingError#isEncodingError"
+  note: "Use the unified guard and test kind === Encode when encode-only narrowing is required."
+"effect/Encoding#encodeBase64":
+  replacement: "effect/encoding/Base64#encode"
+  note: "Import the Base64 helpers from their direct subpath."
+"effect/Encoding#decodeBase64":
+  replacement: "effect/encoding/Base64#decode"
+  note: "Import the Base64 helpers from their direct subpath."
+"effect/Encoding#decodeBase64String":
+  replacement: "effect/encoding/Base64#decodeString"
+  note: "Import the Base64 helpers from their direct subpath."
+"effect/Encoding#encodeBase64Url":
+  replacement: "effect/encoding/Base64Url#encode"
+  note: "Import the Base64Url helpers from their direct subpath."
+"effect/Encoding#decodeBase64Url":
+  replacement: "effect/encoding/Base64Url#decode"
+  note: "Import the Base64Url helpers from their direct subpath."
+"effect/Encoding#decodeBase64UrlString":
+  replacement: "effect/encoding/Base64Url#decodeString"
+  note: "Import the Base64Url helpers from their direct subpath."
+"effect/Encoding#encodeHex":
+  replacement: "effect/encoding/Hex#encode"
+  note: "Import the Hex helpers from their direct subpath."
+"effect/Encoding#decodeHex":
+  replacement: "effect/encoding/Hex#decode"
+  note: "Import the Hex helpers from their direct subpath."
+"effect/Encoding#decodeHexString":
+  replacement: "effect/encoding/Hex#decodeString"
+  note: "Import the Hex helpers from their direct subpath."
+"effect/Encoding#randomHex":
+  replacement: "effect/encoding/Hex#random"
+  note: "randomHex was renamed to random in the Hex module."

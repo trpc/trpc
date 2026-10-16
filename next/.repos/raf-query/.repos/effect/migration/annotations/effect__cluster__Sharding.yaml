@@ -1,0 +1,3 @@
+"@effect/cluster/Sharding#layer":
+  replacement: "effect/cluster/Sharding#layer"
+  note: "Moved into core Effect with the same main sharding runtime composition and public service requirements."

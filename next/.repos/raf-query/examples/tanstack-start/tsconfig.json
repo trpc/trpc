@@ -1,0 +1,18 @@
+{
+	"compilerOptions": {
+		"allowImportingTsExtensions": true,
+		"jsx": "react-jsx",
+		"lib": ["ES2024", "DOM", "DOM.Iterable"],
+		"module": "preserve",
+		"moduleResolution": "bundler",
+		"noEmit": true,
+		"paths": {
+			"~/*": ["./src/*"]
+		},
+		"skipLibCheck": true,
+		"strict": true,
+		"target": "ES2024",
+		"types": ["node", "vite/client"]
+	},
+	"include": ["src", "vite.config.ts"]
+}

@@ -1,0 +1,30 @@
+"effect/ConfigProviderPathPatch#AndThen":
+  replacement: "ConfigProvider.mapInput"
+  note: "PathPatch is no longer public; compose path transformations as ordinary functions passed to mapInput."
+"effect/ConfigProviderPathPatch#empty":
+  replacement: "ConfigProvider.ConfigProvider"
+  note: "No identity patch value is needed; leave the provider untransformed."
+"effect/ConfigProviderPathPatch#Empty":
+  replacement: "none"
+  note: "The PathPatch ADT was removed; an unchanged provider represents the identity transformation."
+"effect/ConfigProviderPathPatch#mapName":
+  replacement: "ConfigProvider.mapInput"
+  note: "Map the string segments of the full ConfigProvider.Path explicitly."
+"effect/ConfigProviderPathPatch#MapName":
+  replacement: "none"
+  note: "The PathPatch ADT was removed; use a path transformation function with ConfigProvider.mapInput."
+"effect/ConfigProviderPathPatch#nested":
+  replacement: "ConfigProvider.nested"
+  note: "Apply nesting directly to the provider instead of constructing a patch."
+"effect/ConfigProviderPathPatch#Nested":
+  replacement: "none"
+  note: "The PathPatch ADT was removed; use ConfigProvider.nested on the provider."
+"effect/ConfigProviderPathPatch#PathPatch":
+  replacement: "(path: ConfigProvider.Path) => ConfigProvider.Path"
+  note: "Path patches are ordinary full-path transformations in v4 and are installed with ConfigProvider.mapInput."
+"effect/ConfigProviderPathPatch#unnested":
+  replacement: "ConfigProvider.mapInput"
+  note: "Strip the expected leading path segment in a mapInput callback; v4 has no named unnested helper."
+"effect/ConfigProviderPathPatch#Unnested":
+  replacement: "none"
+  note: "The PathPatch ADT was removed; express prefix removal as a ConfigProvider.mapInput function."

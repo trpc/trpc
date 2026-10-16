@@ -1,0 +1,25 @@
+{
+  "name": "tanstack-react-start-e2e-issue-8049",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build && tsc --noEmit",
+    "dev": "vite dev --port 3000",
+    "dev:e2e": "vite dev",
+    "test:e2e": "playwright test --project=chromium"
+  },
+  "dependencies": {
+    "@tanstack/react-router": "workspace:^",
+    "@tanstack/react-start": "workspace:^",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.0",
+    "@tanstack/router-e2e-utils": "workspace:^",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "vite": "^8.0.14"
+  }
+}

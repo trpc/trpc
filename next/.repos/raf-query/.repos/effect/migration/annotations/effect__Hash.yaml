@@ -1,0 +1,3 @@
+"effect/Hash#cached":
+  replacement: "none"
+  note: "Delete Hash.cached wrappers and return the computed value from Hash.symbol; Hash.hash now caches objects automatically in a private WeakMap without mutating them."

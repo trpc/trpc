@@ -1,0 +1,14 @@
+"@effect/ai-openai/OpenAiTool#CodeInterpreter":
+  replacement: "OpenAiTool.CodeInterpreter"
+  note: "Results now wrap outputs in an object with status and outputs, rather than returning the output array or null directly. Only completed is successful; other statuses produce failure results that preserve outputs."
+"@effect/ai-openai/OpenAiTool#FileSearch":
+  replacement: "OpenAiTool.FileSearch"
+  note: "Results contain status, queries, and a required results field holding matches or null. Only completed is successful; other statuses produce failure results that preserve partial matches."
+"@effect/ai-openai/OpenAiTool#WebSearch":
+  include: true
+  replacement: "OpenAiTool.WebSearch"
+  note: "Results now include action alongside status. Only completed is successful; other statuses produce failure results. Inspect isFailure before treating a result as a successful search. Inspect each search source by its type: URL sources have url, while API sources have name and no url."
+"@effect/ai-openai/OpenAiTool#WebSearchPreview":
+  include: true
+  replacement: "OpenAiTool.WebSearchPreview"
+  note: "Results now include action alongside status. Only completed is successful; other statuses produce failure results. Inspect isFailure before treating a result as a successful search. Inspect each search source by its type: URL sources have url, while API sources have name and no url."

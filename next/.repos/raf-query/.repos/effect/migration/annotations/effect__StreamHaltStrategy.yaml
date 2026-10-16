@@ -1,0 +1,44 @@
+effect/StreamHaltStrategy#HaltStrategy:
+  replacement: "Stream.HaltStrategy"
+  note: "The StreamHaltStrategy module is gone; v4 HaltStrategy is the string-literal union \"left\" | \"right\" | \"both\" | \"either\" (defined in Channel, re-exported as Stream.HaltStrategy) instead of tagged objects."
+effect/StreamHaltStrategy#HaltStrategyInput:
+  replacement: "Stream.HaltStrategy"
+  note: "The Input widening (tagged object OR string) is obsolete; v4 only ever uses the string literals, so haltStrategy options take Stream.HaltStrategy directly."
+effect/StreamHaltStrategy#Left:
+  replacement: "\"left\""
+  note: "The tagged constructor is replaced by the plain string literal \"left\" passed directly to haltStrategy options."
+effect/StreamHaltStrategy#Right:
+  replacement: "\"right\""
+  note: "The tagged constructor is replaced by the plain string literal \"right\" passed directly to haltStrategy options."
+effect/StreamHaltStrategy#Both:
+  replacement: "\"both\""
+  note: "The tagged constructor is replaced by the plain string literal \"both\" passed directly to haltStrategy options."
+effect/StreamHaltStrategy#Either:
+  replacement: "\"either\""
+  note: "The tagged constructor is replaced by the plain string literal \"either\" passed directly to haltStrategy options."
+effect/StreamHaltStrategy#fromInput:
+  replacement: "none"
+  note: "Remove the call; there is no conversion step in v4 because strategies already are the string literals, so pass the value through unchanged."
+effect/StreamHaltStrategy#isLeft:
+  replacement: "strategy === \"left\""
+  note: "Refinements on the tagged union become plain string comparison against the literal."
+effect/StreamHaltStrategy#isRight:
+  replacement: "strategy === \"right\""
+  note: "Refinements on the tagged union become plain string comparison against the literal."
+effect/StreamHaltStrategy#isBoth:
+  replacement: "strategy === \"both\""
+  note: "Refinements on the tagged union become plain string comparison against the literal."
+effect/StreamHaltStrategy#isEither:
+  replacement: "strategy === \"either\""
+  note: "Refinements on the tagged union become plain string comparison against the literal."
+effect/StreamHaltStrategy#match:
+  replacement: "switch (strategy)"
+  note: "Fold over the strategy with an ordinary switch (or ternary chain) on the string literal; TypeScript exhaustiveness-checks the four cases."
+  example: |
+    // v3: HaltStrategy.match(s, { onLeft, onRight, onBoth, onEither })
+    switch (strategy) {
+      case "left": return onLeft()
+      case "right": return onRight()
+      case "both": return onBoth()
+      case "either": return onEither()
+    }

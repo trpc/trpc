@@ -1,0 +1,7 @@
+.styledBox {
+  background-color: #3b82f6;
+  background-image: url('./ssr-background.svg?no-inline');
+  color: white;
+  padding: 24px;
+  border-radius: 12px;
+}

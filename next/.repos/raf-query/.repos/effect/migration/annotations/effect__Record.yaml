@@ -1,0 +1,32 @@
+"effect/Record#getEquivalence":
+  replacement: "Record.makeEquivalence"
+  note: "Direct rename; pass the value equivalence unchanged."
+"effect/Record#getLefts":
+  replacement: "Record.getFailures"
+  note: "Extract Result.Failure values while preserving keys."
+"effect/Record#getRights":
+  replacement: "Record.getSuccesses"
+  note: "Extract Result.Success values while preserving keys."
+"effect/Record#modifyOption":
+  replacement: "Record.modify"
+  note: "The Option suffix was dropped; missing keys still return Option.none."
+"effect/Record#partition":
+  include: true
+  replacement: "Record.partition"
+  note: "Return Result.succeed(value) for a match and Result.fail(value) otherwise; Filter.fromPredicate adapts predicates that only inspect the value. The tuple is now [passes, fails], the reverse of v3 [excluded, satisfying]."
+"effect/Record#partitionMap":
+  replacement: "Record.partition"
+  note: "Pass a mapper returning Result. The tuple is [passes, fails], the reverse of v3 [failures, successes]."
+"effect/Record#ReadonlyRecord":
+  replacement: "Record.ReadonlyRecord"
+  note: "The public type and parameter order are unchanged."
+"effect/Record#ReadonlyRecord.IsFiniteString":
+  replacement: "Record.ReadonlyRecord.IsFiniteString"
+  note: "The namespace utility type is unchanged."
+"effect/Record#replaceOption":
+  replacement: "Record.replace"
+  note: "The Option suffix was dropped; missing keys still return Option.none."
+"effect/Record#separate":
+  include: true
+  replacement: "Record.separate"
+  note: "The tuple is now [successes, failures], the reverse of v3 [failures, successes]."

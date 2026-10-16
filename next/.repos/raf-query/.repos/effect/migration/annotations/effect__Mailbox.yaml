@@ -1,0 +1,30 @@
+effect/Mailbox#fromStream:
+  replacement: "Stream.toQueue"
+  note: "Mailbox was renamed and folded into Queue; Stream.toQueue returns a scoped Queue.Dequeue whose error includes Cause.Done."
+effect/Mailbox#into:
+  replacement: "Queue.into"
+  note: "Use Queue.into with a Queue.Enqueue whose error channel includes Cause.Done."
+effect/Mailbox#isMailbox:
+  replacement: "Queue.isQueue"
+  note: "Mailbox became the completion-aware v4 Queue model."
+effect/Mailbox#isReadonlyMailbox:
+  replacement: "Queue.isDequeue"
+  note: "ReadonlyMailbox became Queue.Dequeue."
+effect/Mailbox#Mailbox:
+  replacement: "Queue.Queue<A, E | Cause.Done>"
+  note: "Mailbox was folded into Queue; include Cause.Done in the error channel when normal end signaling is used."
+effect/Mailbox#make:
+  replacement: "Queue.make"
+  note: "Pass the v4 options object with optional capacity and strategy; a numeric capacity argument must become { capacity }."
+effect/Mailbox#ReadonlyMailbox:
+  replacement: "Queue.Dequeue<A, E | Cause.Done>"
+  note: "Use explicit Queue taking operations; Queue.Dequeue is not itself an Effect yielding message chunks."
+effect/Mailbox#ReadonlyTypeId:
+  replacement: "Queue.isDequeue"
+  note: "The public Mailbox type id was removed; use the Queue.isDequeue guard instead."
+effect/Mailbox#toStream:
+  replacement: "Stream.fromQueue"
+  note: "Convert a Queue.Dequeue to a Stream; Cause.Done is excluded from the resulting stream error type."
+effect/Mailbox#TypeId:
+  replacement: "Queue.isQueue"
+  note: "The public Mailbox type id was removed; use the Queue.isQueue guard instead."

@@ -1,0 +1,27 @@
+"effect/MergeStrategy#BackPressure":
+  replacement: "Channel.mergeAll"
+  note: "Remove the MergeStrategy value and configure the v4 merge directly: backpressure is the default; sliding replacement uses Channel.mergeAll with switch: true or Channel.switchMap."
+"effect/MergeStrategy#BufferSliding":
+  replacement: "Channel.mergeAll"
+  note: "Remove the MergeStrategy value and configure the v4 merge directly: backpressure is the default; sliding replacement uses Channel.mergeAll with switch: true or Channel.switchMap."
+"effect/MergeStrategy#isBackPressure":
+  replacement: "Channel.mergeAll"
+  note: "Remove the MergeStrategy value and configure the v4 merge directly: backpressure is the default; sliding replacement uses Channel.mergeAll with switch: true or Channel.switchMap."
+"effect/MergeStrategy#isBufferSliding":
+  replacement: "Channel.mergeAll"
+  note: "Remove the MergeStrategy value and configure the v4 merge directly: backpressure is the default; sliding replacement uses Channel.mergeAll with switch: true or Channel.switchMap."
+"effect/MergeStrategy#isMergeStrategy":
+  replacement: "Channel.mergeAll"
+  note: "Remove the MergeStrategy value and configure the v4 merge directly: backpressure is the default; sliding replacement uses Channel.mergeAll with switch: true or Channel.switchMap."
+"effect/MergeStrategy#match":
+  replacement: "Channel.mergeAll"
+  note: "Remove the MergeStrategy value and configure the v4 merge directly: backpressure is the default; sliding replacement uses Channel.mergeAll with switch: true or Channel.switchMap."
+"effect/MergeStrategy#MergeStrategy":
+  replacement: "Channel.mergeAll"
+  note: "Remove the MergeStrategy value and configure the v4 merge directly: backpressure is the default; sliding replacement uses Channel.mergeAll with switch: true or Channel.switchMap."
+"effect/MergeStrategy#MergeStrategy.Proto":
+  replacement: "Channel.mergeAll"
+  note: "Remove the MergeStrategy value and configure the v4 merge directly: backpressure is the default; sliding replacement uses Channel.mergeAll with switch: true or Channel.switchMap."
+"effect/MergeStrategy#MergeStrategyTypeId":
+  replacement: "Channel.mergeAll"
+  note: "Remove the MergeStrategy value and configure the v4 merge directly: backpressure is the default; sliding replacement uses Channel.mergeAll with switch: true or Channel.switchMap."

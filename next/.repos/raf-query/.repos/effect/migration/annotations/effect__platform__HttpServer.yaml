@@ -1,0 +1,33 @@
+"@effect/platform/HttpServer#Address":
+  replacement: "effect/net/NetAddress#SocketAddress"
+  note: "Replaced by the shared concrete internet-or-Unix socket address union."
+"@effect/platform/HttpServer#addressWith":
+  replacement: "HttpServer.HttpServer.use(({ address }) => effect(address))"
+  note: "The accessor was removed; read the service and pass its Address to the callback."
+"@effect/platform/HttpServer#HttpServer":
+  replacement: "HttpServer.HttpServer"
+  note: "The interface and tag became one Context.Service class; use its Service member for implementations."
+"@effect/platform/HttpServer#layerContext":
+  replacement: "HttpServer.layerServices"
+  note: "Renamed; it provides the standard HTTP platform services."
+"@effect/platform/HttpServer#make":
+  replacement: "HttpServer.make"
+  note: "Retained; it returns the Context.Service implementation. Supply a NetAddress.SocketAddress for address, using NetAddress.inetAddressUnsafe for a parsed IP and port or NetAddress.unixPathAddress for a Unix path. Use NetAddress.inetAddress to validate the port through Result instead."
+"@effect/platform/HttpServer#formatAddress":
+  replacement: "HttpServer.formatAddress"
+  note: "Accepts NetAddress.SocketAddress and delegates to NetAddress.formatUrlUnsafe. Scoped IPv6 addresses throw NetAddressError; Unix paths use the unix:// prefix."
+"@effect/platform/HttpServer#ServeOptions":
+  replacement: "none"
+  note: "The unused respond option model was removed with no shared v4 counterpart."
+"@effect/platform/HttpServer#TcpAddress":
+  replacement: "effect/net/NetAddress#InetAddress"
+  note: "Replaced by the shared resolved internet-address model; use address and port instead of hostname and port."
+"@effect/platform/HttpServer#TypeId":
+  replacement: "none"
+  note: "The public TypeId was removed; HttpServer is now a Context.Service class."
+"@effect/platform/HttpServer#UnixAddress":
+  replacement: "effect/net/NetAddress#UnixPathAddress"
+  note: "Replaced by the shared Unix filesystem-path address model."
+"@effect/platform/HttpServer#serve":
+  replacement: "effect/http/HttpServer#serve"
+  note: "Moved to the v4 HTTP module; the application is now an Effect producing HttpServerResponse rather than the separate HttpApp model."

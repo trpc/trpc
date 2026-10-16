@@ -1,0 +1,30 @@
+"@effect/platform/MsgPack":
+  replacement: "effect/encoding/SchemaBinary"
+  note: "MessagePack support was removed. Schema-aware encode, decode, and duplex now live on SchemaBinary. Untyped MessagePack of unknown values has no replacement."
+"@effect/platform/MsgPack#duplex":
+  replacement: "SchemaBinary.duplex"
+  note: "MessagePack was removed. Wrap a byte channel with SchemaBinary.duplex and explicit input and output schemas."
+"@effect/platform/MsgPack#duplexSchema":
+  replacement: "SchemaBinary.duplex"
+  note: "MessagePack was removed. Use SchemaBinary.duplex with the v4 Schema model."
+"@effect/platform/MsgPack#ErrorTypeId":
+  replacement: "Schema.SchemaError"
+  note: "MsgPackError was removed with MessagePack. SchemaBinary channels fail with Schema.SchemaError."
+"@effect/platform/MsgPack#MsgPackError":
+  replacement: "Schema.SchemaError"
+  note: "MsgPackError was removed with MessagePack. SchemaBinary channels fail with Schema.SchemaError."
+"@effect/platform/MsgPack#pack":
+  replacement: "SchemaBinary.encode"
+  note: "MessagePack was removed. Encode schema values to binary frames with SchemaBinary.encode."
+"@effect/platform/MsgPack#packSchema":
+  replacement: "SchemaBinary.encode"
+  note: "MessagePack was removed. Use SchemaBinary.encode with the v4 Schema model."
+"@effect/platform/MsgPack#schema":
+  replacement: "SchemaBinary.toCodec"
+  note: "MessagePack was removed. Derive a binary codec from a Schema with SchemaBinary.toCodec."
+"@effect/platform/MsgPack#unpack":
+  replacement: "SchemaBinary.decode"
+  note: "MessagePack was removed. Decode binary frames with SchemaBinary.decode."
+"@effect/platform/MsgPack#unpackSchema":
+  replacement: "SchemaBinary.decode"
+  note: "MessagePack was removed. Use SchemaBinary.decode with the v4 Schema model."

@@ -1,0 +1,696 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`HttpApi > original tests > OpenAPI spec > fixture 1`] = `
+{
+  "components": {
+    "schemas": {
+      "ComponentsSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "contentType": {
+            "type": "string",
+          },
+          "length": {
+            "type": "integer",
+          },
+        },
+        "required": [
+          "contentType",
+          "length",
+        ],
+        "type": "object",
+      },
+      "GroupEncoded": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "integer",
+          },
+          "name": {
+            "type": "string",
+          },
+        },
+        "required": [
+          "id",
+          "name",
+        ],
+        "type": "object",
+      },
+      "NoStatusErrorEncoded": {
+        "additionalProperties": false,
+        "properties": {
+          "_tag": {
+            "enum": [
+              "NoStatusError",
+            ],
+            "type": "string",
+          },
+        },
+        "required": [
+          "_tag",
+        ],
+        "type": "object",
+      },
+      "UserEncoded": {
+        "additionalProperties": false,
+        "properties": {
+          "createdAt": {
+            "type": "string",
+          },
+          "id": {
+            "type": "integer",
+          },
+          "name": {
+            "type": "string",
+          },
+          "uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+              },
+              {
+                "type": "null",
+              },
+            ],
+          },
+        },
+        "required": [
+          "id",
+          "name",
+          "createdAt",
+        ],
+        "type": "object",
+      },
+      "UserErrorEncoded": {
+        "additionalProperties": false,
+        "properties": {
+          "_tag": {
+            "enum": [
+              "UserError",
+            ],
+            "type": "string",
+          },
+        },
+        "required": [
+          "_tag",
+        ],
+        "type": "object",
+      },
+    },
+    "securitySchemes": {
+      "cookie": {
+        "in": "cookie",
+        "name": "token",
+        "type": "apiKey",
+      },
+    },
+  },
+  "info": {
+    "summary": "test api summary",
+    "title": "API",
+    "version": "0.0.1",
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/groups": {
+      "post": {
+        "operationId": "groups.create",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "name",
+                ],
+                "type": "object",
+              },
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "foo": {
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "foo",
+                ],
+                "type": "object",
+              },
+            },
+            "multipart/form-data": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "name",
+                ],
+                "type": "object",
+              },
+            },
+          },
+          "required": true,
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupEncoded",
+                },
+              },
+            },
+            "description": "Group",
+          },
+        },
+        "security": [],
+        "tags": [
+          "groups",
+        ],
+      },
+    },
+    "/groups/handle/{id}": {
+      "post": {
+        "operationId": "groups.handle",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+            },
+          },
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "name",
+                ],
+                "type": "object",
+              },
+            },
+          },
+          "required": true,
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "type": "number",
+                    },
+                    "name": {
+                      "type": "string",
+                    },
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                  ],
+                  "type": "object",
+                },
+              },
+            },
+            "description": "Success",
+          },
+        },
+        "security": [],
+        "tags": [
+          "groups",
+        ],
+      },
+    },
+    "/groups/handleraw/{id}": {
+      "post": {
+        "operationId": "groups.handleRaw",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+            },
+          },
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "name",
+                ],
+                "type": "object",
+              },
+            },
+          },
+          "required": true,
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "type": "number",
+                    },
+                    "name": {
+                      "type": "string",
+                    },
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                  ],
+                  "type": "object",
+                },
+              },
+            },
+            "description": "Success",
+          },
+        },
+        "security": [],
+        "tags": [
+          "groups",
+        ],
+      },
+    },
+    "/groups/{id}": {
+      "get": {
+        "operationId": "groups.findById",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+            },
+          },
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupEncoded",
+                },
+              },
+            },
+            "description": "Group",
+          },
+          "418": {
+            "description": "GroupError",
+          },
+        },
+        "security": [],
+        "tags": [
+          "groups",
+        ],
+      },
+    },
+    "/healthz": {
+      "get": {
+        "operationId": "healthz",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Empty",
+          },
+        },
+        "security": [],
+        "tags": [
+          "root",
+        ],
+      },
+    },
+    "/users": {
+      "get": {
+        "deprecated": true,
+        "operationId": "listUsers",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "pattern": "^[+-]?\\d*\\.?\\d+(?:[Ee][+-]?\\d+)?$",
+              "type": "string",
+            },
+          },
+          {
+            "in": "query",
+            "name": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                },
+                {
+                  "type": "null",
+                },
+              ],
+              "description": "search query",
+            },
+          },
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/UserEncoded",
+                  },
+                  "type": "array",
+                },
+              },
+            },
+            "description": "Success",
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoStatusErrorEncoded",
+                },
+              },
+            },
+            "description": "NoStatusError",
+          },
+        },
+        "security": [
+          {
+            "cookie": [],
+          },
+        ],
+        "summary": "test summary",
+        "tags": [
+          "Users API",
+        ],
+      },
+      "post": {
+        "operationId": "users.create",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "pattern": "^[+-]?\\d*\\.?\\d+(?:[Ee][+-]?\\d+)?$",
+              "type": "string",
+            },
+          },
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                  },
+                  "uuid": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                      },
+                      {
+                        "type": "null",
+                      },
+                    ],
+                  },
+                },
+                "required": [
+                  "name",
+                ],
+                "type": "object",
+              },
+            },
+          },
+          "required": true,
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserEncoded",
+                },
+              },
+            },
+            "description": "Some description for User",
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserErrorEncoded",
+                },
+              },
+            },
+            "description": "UserError",
+          },
+        },
+        "security": [
+          {
+            "cookie": [],
+          },
+        ],
+        "tags": [
+          "Users API",
+        ],
+      },
+    },
+    "/users/upload/{0}": {
+      "post": {
+        "operationId": "users.upload",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "0",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                },
+                {
+                  "type": "null",
+                },
+              ],
+            },
+          },
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "file": {
+                    "format": "binary",
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "file",
+                ],
+                "type": "object",
+              },
+            },
+          },
+          "required": true,
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "contentType": {
+                      "type": "string",
+                    },
+                    "length": {
+                      "type": "integer",
+                    },
+                  },
+                  "required": [
+                    "contentType",
+                    "length",
+                  ],
+                  "type": "object",
+                },
+              },
+            },
+            "description": "Success",
+          },
+        },
+        "security": [
+          {
+            "cookie": [],
+          },
+        ],
+        "tags": [
+          "Users API",
+        ],
+      },
+    },
+    "/users/uploadstream": {
+      "post": {
+        "operationId": "users.uploadStream",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "file": {
+                    "format": "binary",
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "file",
+                ],
+                "type": "object",
+              },
+            },
+          },
+          "required": true,
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "contentType": {
+                      "type": "string",
+                    },
+                    "length": {
+                      "type": "integer",
+                    },
+                  },
+                  "required": [
+                    "contentType",
+                    "length",
+                  ],
+                  "type": "object",
+                },
+              },
+            },
+            "description": "Success",
+          },
+        },
+        "security": [
+          {
+            "cookie": [],
+          },
+        ],
+        "tags": [
+          "Users API",
+        ],
+      },
+    },
+    "/users/{id}": {
+      "get": {
+        "operationId": "users.findById",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "pattern": "^[+-]?\\d*\\.?\\d+(?:[Ee][+-]?\\d+)?$",
+              "type": "string",
+            },
+          },
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserEncoded",
+                },
+              },
+            },
+            "description": "Some description for User",
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserErrorEncoded",
+                },
+              },
+            },
+            "description": "UserError",
+          },
+        },
+        "security": [
+          {
+            "cookie": [],
+          },
+        ],
+        "tags": [
+          "Users API",
+        ],
+      },
+    },
+  },
+  "security": [],
+  "tags": [
+    {
+      "name": "groups",
+    },
+    {
+      "name": "Users API",
+    },
+    {
+      "name": "root",
+    },
+    {
+      "name": "Tag from OpenApi.Transform annotation",
+    },
+  ],
+}
+`;

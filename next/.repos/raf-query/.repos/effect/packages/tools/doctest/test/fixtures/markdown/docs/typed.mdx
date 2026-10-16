@@ -1,0 +1,10 @@
+# Typed MDX example
+
+```ts import.meta.vitest name=typed-mdx
+import { expect } from "vitest"
+import { answer } from "./helper.ts"
+const local: number = answer
+expect.assertions(2)
+expect(local).toBe(42)
+expect(import.meta.url).toContain("/docs/typed.mdx")
+```

@@ -1,0 +1,3 @@
+"@effect/ai/IdGenerator#make":
+  replacement: "IdGenerator.make"
+  note: "Moved to effect/ai/IdGenerator with the same configurable alphabet, prefix, separator, and size behavior. Invalid configuration now fails with Cause.IllegalArgumentError."

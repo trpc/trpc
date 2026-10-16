@@ -1,0 +1,3 @@
+"@effect/sql-kysely/Sqlite":
+  replacement: none
+  note: The integration was removed; use native Kysely with SqliteDialect and wrap promises, or rewrite against a matching @effect/sql-sqlite-* client.

@@ -1,0 +1,3 @@
+"@effect/platform/Runtime#RunMain":
+  replacement: "ReturnType<typeof Runtime.makeRunMain>"
+  note: "The standalone interface was removed; derive the runner type from effect/Runtime.makeRunMain. disablePrettyLogger is no longer an option."

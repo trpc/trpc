@@ -1,0 +1,63 @@
+"effect/Order#all":
+  replacement: "Order.Tuple([...collection])"
+  note: "Materialize the comparator iterable for Tuple. V4 evaluates the configured tuple instead of stopping at the shorter input; use Order.make for intentional v3 prefix semantics."
+"effect/Order#array":
+  replacement: "Order.Array"
+  note: "Capitalized constructor name; lexicographic array ordering and the length tie-break are unchanged."
+"effect/Order#between":
+  replacement: "Order.isBetween"
+  note: "Renamed with the v4 is-prefix; inclusive bounds and call forms are unchanged."
+"effect/Order#bigint":
+  replacement: "Order.BigInt"
+  note: "Capitalized instance name; bigint ordering is unchanged."
+"effect/Order#boolean":
+  replacement: "Order.Boolean"
+  note: "Capitalized instance name; false remains ordered before true."
+"effect/Order#combineAll":
+  replacement: "Order.combineAll"
+  note: "Retained with the same left-to-right tie-breaking and empty-iterable result."
+"effect/Order#combineMany":
+  replacement: "Order.combine(self, Order.combineAll(collection))"
+  note: "Compose combine with combineAll; the dedicated dual combineMany helper was removed."
+"effect/Order#empty":
+  replacement: "Order.alwaysEqual"
+  note: "Renamed constructor; call as Order.alwaysEqual<A>() to produce an order that always returns zero."
+"effect/Order#greaterThan":
+  replacement: "Order.isGreaterThan"
+  note: "Renamed with the v4 is-prefix; curried and uncurried comparisons are retained."
+"effect/Order#greaterThanOrEqualTo":
+  replacement: "Order.isGreaterThanOrEqualTo"
+  note: "Renamed with the v4 is-prefix; curried and uncurried comparisons are retained."
+"effect/Order#lessThan":
+  replacement: "Order.isLessThan"
+  note: "Renamed with the v4 is-prefix; curried and uncurried comparisons are retained."
+"effect/Order#lessThanOrEqualTo":
+  replacement: "Order.isLessThanOrEqualTo"
+  note: "Renamed with the v4 is-prefix; curried and uncurried comparisons are retained."
+"effect/Order#make":
+  replacement: "Order.make"
+  note: "Retained with the same comparator contract and reference-equality fast path."
+"effect/Order#number":
+  replacement: "Order.Number"
+  note: "Capitalized instance name. V4 orders NaN below non-NaN values and all NaNs equally; use a custom Order.make to preserve v3 edge behavior."
+"effect/Order#Order":
+  replacement: "Order.Order"
+  note: "The callable type is retained; its return type remains the -1 | 0 | 1 Ordering union."
+"effect/Order#product":
+  replacement: "Order.Tuple([self, that])"
+  note: "Replace the dual two-order helper with the single-array Tuple constructor."
+"effect/Order#productMany":
+  replacement: "Order.Tuple([self, ...collection])"
+  note: "Materialize the order iterable in one Tuple call; v4 evaluates every configured comparator for short inputs."
+"effect/Order#reverse":
+  replacement: "Order.flip"
+  note: "Direct rename; the replacement reverses comparison by swapping the operands."
+"effect/Order#string":
+  replacement: "Order.String"
+  note: "Capitalized instance name; case-sensitive JavaScript lexicographic ordering is unchanged."
+"effect/Order#struct":
+  replacement: "Order.Struct"
+  note: "Capitalized constructor name; field-order tie-breaking is unchanged."
+"effect/Order#tuple":
+  replacement: "Order.Tuple([orderA, orderB, ...])"
+  note: "Capitalized constructor now takes one comparator array instead of rest arguments and evaluates every configured position."

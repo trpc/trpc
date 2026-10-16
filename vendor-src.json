@@ -14,6 +14,16 @@
 			"url": "https://github.com/middleapi/orpc.git",
 			"version": "v2.0.0-beta.44",
 			"ref": "v2.0.0-beta.44"
+		},
+		"raf-query": {
+			"packages": [],
+			"url": "https://github.com/KATT/raf-query.git",
+			"version": "841ffcf4d0fa0a40dfc58dc65bfcfadca8948874",
+			"ref": "841ffcf4d0fa0a40dfc58dc65bfcfadca8948874",
+			"ignore": [
+				"**/.github/**",
+				"pnpm-lock.yaml"
+			]
 		}
 	}
 }

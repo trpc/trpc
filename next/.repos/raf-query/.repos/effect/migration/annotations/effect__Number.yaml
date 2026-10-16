@@ -1,0 +1,18 @@
+"effect/Number#greaterThan":
+  replacement: "Number.isGreaterThan"
+  note: "Renamed with the v4 is-prefix."
+"effect/Number#greaterThanOrEqualTo":
+  replacement: "Number.isGreaterThanOrEqualTo"
+  note: "Renamed with the v4 is-prefix."
+"effect/Number#lessThan":
+  replacement: "Number.isLessThan"
+  note: "Renamed with the v4 is-prefix."
+"effect/Number#lessThanOrEqualTo":
+  replacement: "Number.isLessThanOrEqualTo"
+  note: "Renamed with the v4 is-prefix."
+"effect/Number#negate":
+  replacement: "Number.multiply(-1)"
+  note: "Use Number.multiply(n, -1), or Number.multiply(-1) as the equivalent unary function."
+"effect/Number#unsafeDivide":
+  replacement: "Number.divideUnsafe"
+  note: "Renamed; v4 throws for zero whereas v3 raw division returned Infinity or NaN."

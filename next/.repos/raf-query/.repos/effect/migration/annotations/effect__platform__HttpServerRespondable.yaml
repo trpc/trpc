@@ -1,0 +1,3 @@
+"@effect/platform/HttpServerRespondable#symbol":
+  replacement: "HttpServerRespondable.symbol"
+  note: "Retained as a string protocol key rather than a unique symbol."

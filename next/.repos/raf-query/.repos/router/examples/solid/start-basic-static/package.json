@@ -1,0 +1,30 @@
+{
+  "name": "tanstack-solid-start-example-basic-static",
+  "private": true,
+  "sideEffects": false,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build && tsc --noEmit",
+    "preview": "vite preview",
+    "start": "pnpx srvx --prod -s ../client dist/server/server.js"
+  },
+  "dependencies": {
+    "@tanstack/solid-router": "^1.170.39",
+    "@tanstack/solid-router-devtools": "^1.167.2",
+    "@tanstack/solid-start": "^1.168.58",
+    "@tanstack/start-static-server-functions": "^1.167.40",
+    "redaxios": "^0.5.1",
+    "solid-js": "^1.9.10",
+    "tailwind-merge": "^3.6.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.2.2",
+    "@types/node": "^22.5.4",
+    "tailwindcss": "^4.2.2",
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "vite": "^8.0.14",
+    "vite-plugin-solid": "^2.11.11"
+  }
+}

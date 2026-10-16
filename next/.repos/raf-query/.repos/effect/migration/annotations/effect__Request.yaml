@@ -1,0 +1,30 @@
+effect/Request#Cache:
+  replacement: "RequestResolver.asCache"
+  note: "The runtime request cache type was removed; expose resolver results through a first-class Cache, or use RequestResolver.withCache to retain a resolver."
+effect/Request#Entry:
+  replacement: "Request.Entry"
+  note: "Entry remains but now carries request, context, uninterruptible, and completeUnsafe fields; Deferred, listener, owner, and state fields were removed."
+effect/Request#EntryTypeId:
+  replacement: "none"
+  note: "Request entries are unbranded structural values in v4; do not inspect or construct an entry type id."
+effect/Request#interruptWhenPossible:
+  replacement: "none"
+  note: "Request cancellation is managed by the v4 batching runtime; resolver code should complete the entries it receives and not wrap work with this internal listener helper."
+effect/Request#isEntry:
+  replacement: "none"
+  note: "The entry guard was removed; entries are supplied structurally to RequestResolver callbacks."
+effect/Request#Listeners:
+  replacement: "none"
+  note: "Request listener accounting is no longer public; cancellation and shared request lifecycle are managed by the v4 runtime and resolver caching."
+effect/Request#makeCache:
+  replacement: "RequestResolver.asCache"
+  note: "Create a cache from a resolver with capacity and timeToLive options, or use RequestResolver.withCache for a cached resolver."
+effect/Request#Request:
+  replacement: "Request.Request"
+  note: "The request model remains and adds a third R parameter for services required while resolving the request."
+effect/Request#Request.OptionalResult:
+  replacement: "Exit.Exit<Option.Option<Request.Success<R>>, Request.Error<R>>"
+  note: "The named alias was removed; write the optional request exit type directly when it is still required."
+effect/Request#RequestTypeId:
+  replacement: "none"
+  note: "The request type id is internal in v4; define requests by extending Request.Request or with Request.Class and do not depend on branding internals."

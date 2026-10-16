@@ -1,0 +1,3 @@
+"@effect/sql-kysely/Pg":
+  replacement: none
+  note: The integration was removed; use native Kysely with PostgresDialect and wrap promises, or rewrite against @effect/sql-pg for Effect-native queries.

@@ -1,0 +1,6 @@
+"@effect/sql/SqlEventLogServer#layerStorage":
+  replacement: "effect/eventlog/SqlEventLogServerEncrypted#layerStorage"
+  note: "Moved to the encrypted server module with the same options and EventLogEncryption requirement."
+"@effect/sql/SqlEventLogServer#makeStorage":
+  replacement: "effect/eventlog/SqlEventLogServerEncrypted#makeStorage"
+  note: "Moved to the encrypted server module with the same SQL, encryption, and scope requirements."

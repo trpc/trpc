@@ -1,0 +1,111 @@
+"@effect/cli/ValidationError#commandMismatch":
+  replacement: "none"
+  note: "V4 runners receive arguments after the root name; unknown child commands use CliError.UnknownSubcommand."
+"@effect/cli/ValidationError#CommandMismatch":
+  replacement: "none"
+  note: "The root-command mismatch error was removed."
+"@effect/cli/ValidationError#correctedFlag":
+  replacement: "new CliError.UnrecognizedOption({ option, command, suggestions })"
+  note: "Suggestions are carried by UnrecognizedOption; there is no separate corrected-flag case."
+"@effect/cli/ValidationError#CorrectedFlag":
+  replacement: "CliError.UnrecognizedOption"
+  note: "Use the unrecognized-option class and its suggestions field."
+"@effect/cli/ValidationError#helpRequested":
+  replacement: "new CliError.ShowHelp({ commandPath, errors: [] })"
+  note: "Help requests now carry a command path and optional underlying errors."
+"@effect/cli/ValidationError#HelpRequested":
+  replacement: "CliError.ShowHelp"
+  note: "Renamed and redesigned as ShowHelp."
+"@effect/cli/ValidationError#invalidArgument":
+  replacement: "new CliError.InvalidValue({ option, value, expected, kind: \"argument\" })"
+  note: "Use InvalidValue for undecodable arguments and UnexpectedArgument for leftover operands."
+"@effect/cli/ValidationError#InvalidArgument":
+  replacement: "CliError.InvalidValue | CliError.UnexpectedArgument"
+  note: "Argument decoding and leftover operands are separate v4 errors."
+"@effect/cli/ValidationError#invalidValue":
+  replacement: "new CliError.InvalidValue({ option, value, expected, kind })"
+  note: "Replace the HelpDoc payload with structured option, value, expected, and kind fields."
+"@effect/cli/ValidationError#InvalidValue":
+  replacement: "CliError.InvalidValue"
+  note: "Use the schema-backed v4 error class."
+"@effect/cli/ValidationError#isCommandMismatch":
+  replacement: "none"
+  note: "The root-command mismatch error was removed."
+"@effect/cli/ValidationError#isCorrectedFlag":
+  replacement: "error._tag === \"UnrecognizedOption\" && error.suggestions.length > 0"
+  note: "Check the v4 tag and suggestions array."
+"@effect/cli/ValidationError#isHelpRequested":
+  replacement: "error._tag === \"ShowHelp\""
+  note: "Narrow the CliError union by its tag."
+"@effect/cli/ValidationError#isInvalidArgument":
+  replacement: "(error._tag === \"InvalidValue\" && error.kind === \"argument\") || error._tag === \"UnexpectedArgument\""
+  note: "Check both v4 argument error forms."
+"@effect/cli/ValidationError#isInvalidValue":
+  replacement: "error._tag === \"InvalidValue\""
+  note: "Narrow the CliError union by its tag."
+"@effect/cli/ValidationError#isMissingFlag":
+  replacement: "error._tag === \"MissingOption\""
+  note: "MissingFlag was renamed to MissingOption."
+"@effect/cli/ValidationError#isMissingSubcommand":
+  replacement: "none"
+  note: "Missing subcommands now cause ShowHelp rather than a dedicated error."
+"@effect/cli/ValidationError#isMissingValue":
+  replacement: "error._tag === \"InvalidValue\" && error.value === \"\""
+  note: "Missing values are represented as InvalidValue with an empty value."
+"@effect/cli/ValidationError#isMultipleValuesDetected":
+  replacement: "none"
+  note: "Count violations are summarized as InvalidValue without a stable subtype."
+"@effect/cli/ValidationError#isNoBuiltInMatch":
+  replacement: "none"
+  note: "Built-ins are GlobalFlag definitions and the intermediate failure was removed."
+"@effect/cli/ValidationError#isUnclusteredFlag":
+  replacement: "none"
+  note: "Cluster expansion is internal and has no public intermediate error."
+"@effect/cli/ValidationError#isValidationError":
+  replacement: "CliError.isCliError"
+  note: "Use the renamed union guard."
+"@effect/cli/ValidationError#keyValuesDetected":
+  replacement: "new CliError.InvalidValue({ option, value, expected, kind: \"flag\" })"
+  note: "Represent count violations with structured InvalidValue fields."
+"@effect/cli/ValidationError#missingFlag":
+  replacement: "new CliError.MissingOption({ option })"
+  note: "MissingFlag was renamed to MissingOption."
+"@effect/cli/ValidationError#MissingFlag":
+  replacement: "CliError.MissingOption"
+  note: "Renamed to MissingOption."
+"@effect/cli/ValidationError#missingSubcommand":
+  replacement: "none"
+  note: "A parent without a selected subcommand now shows help rather than emitting a dedicated error."
+"@effect/cli/ValidationError#MissingSubcommand":
+  replacement: "none"
+  note: "The dedicated missing-subcommand error was removed."
+"@effect/cli/ValidationError#missingValue":
+  replacement: "new CliError.InvalidValue({ option, value: \"\", expected, kind })"
+  note: "Missing values are represented as InvalidValue with an empty value."
+"@effect/cli/ValidationError#MissingValue":
+  replacement: "CliError.InvalidValue"
+  note: "The dedicated tag was folded into InvalidValue."
+"@effect/cli/ValidationError#MultipleValuesDetected":
+  replacement: "CliError.InvalidValue"
+  note: "Count violations are summarized as InvalidValue without preserving the old values array."
+"@effect/cli/ValidationError#noBuiltInMatch":
+  replacement: "none"
+  note: "Built-ins are GlobalFlag definitions and the intermediate failure was removed."
+"@effect/cli/ValidationError#NoBuiltInMatch":
+  replacement: "none"
+  note: "The intermediate built-in matching error was removed."
+"@effect/cli/ValidationError#unclusteredFlag":
+  replacement: "none"
+  note: "Flag cluster expansion is internal in v4."
+"@effect/cli/ValidationError#UnclusteredFlag":
+  replacement: "none"
+  note: "The public cluster error was removed."
+"@effect/cli/ValidationError#ValidationError":
+  replacement: "CliError.CliError"
+  note: "The validation union was redesigned and renamed to CliError."
+"@effect/cli/ValidationError#ValidationError.Proto":
+  replacement: "none"
+  note: "V4 errors are schema-backed classes and expose no shared public prototype type."
+"@effect/cli/ValidationError#ValidationErrorTypeId":
+  replacement: "none"
+  note: "The CliError type id is private; use CliError.isCliError."

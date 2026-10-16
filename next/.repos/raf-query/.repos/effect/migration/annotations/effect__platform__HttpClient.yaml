@@ -1,0 +1,51 @@
+"@effect/platform/HttpClient#catchAll":
+  replacement: "HttpClient.catch"
+  note: "Renamed to catch; the recovery callback still returns a response effect."
+"@effect/platform/HttpClient#catchTag":
+  replacement: "HttpClient.catchTag"
+  note: "Retained and widened to accept one or more error tags."
+"@effect/platform/HttpClient#currentTracerDisabledWhen":
+  replacement: "HttpClient.TracerDisabledWhen"
+  note: "Renamed and changed from FiberRef to Context.Reference."
+"@effect/platform/HttpClient#currentTracerPropagation":
+  replacement: "HttpClient.TracerPropagationEnabled"
+  note: "Renamed and changed from FiberRef to Context.Reference<boolean>."
+"@effect/platform/HttpClient#filterOrFail":
+  replacement: "HttpClient.filterOrFail"
+  note: "Retained; v4 also provides refinement overloads."
+"@effect/platform/HttpClient#filterStatus":
+  replacement: "HttpClient.filterStatus"
+  note: "Retained; rejection now fails with the HttpClientError wrapper."
+"@effect/platform/HttpClient#filterStatusOk":
+  replacement: "HttpClient.filterStatusOk"
+  note: "Retained; non-2xx responses now fail with the HttpClientError wrapper."
+"@effect/platform/HttpClient#make":
+  replacement: "HttpClient.make"
+  note: "Retained; the runner receives Fiber.Fiber and failures use the v4 error wrapper."
+"@effect/platform/HttpClient#makeWith":
+  replacement: "HttpClient.makeWith"
+  note: "Retained with the preprocess and postprocess constructor pattern."
+"@effect/platform/HttpClient#retry":
+  replacement: "HttpClient.retry"
+  note: "Retained; the Schedule error channel is included in the resulting client error type."
+"@effect/platform/HttpClient#SpanNameGenerator":
+  replacement: "HttpClient.SpanNameGenerator"
+  note: "The interface became a Context.Reference containing the generator function."
+"@effect/platform/HttpClient#TypeId":
+  replacement: "HttpClient.isHttpClient"
+  note: "The brand key is private in v4; use the public runtime refinement."
+"@effect/platform/HttpClient#withSpanNameGenerator":
+  replacement: "HttpClient.transformResponse(Effect.provideService(HttpClient.SpanNameGenerator, f))"
+  note: "The convenience combinator was removed; provide the reference around response effects."
+"@effect/platform/HttpClient#withTracerDisabledWhen":
+  replacement: "HttpClient.transformResponse(Effect.provideService(HttpClient.TracerDisabledWhen, predicate))"
+  note: "The convenience combinator was removed; provide the reference around response effects."
+"@effect/platform/HttpClient#withTracerPropagation":
+  replacement: "HttpClient.transformResponse(Effect.provideService(HttpClient.TracerPropagationEnabled, enabled))"
+  note: "Provide the renamed propagation reference around response effects."
+"@effect/platform/HttpClient#tap":
+  replacement: "effect/http/HttpClient#tap"
+  note: "Moved to the v4 HTTP module with the same response-effect callback and client error/service widening."
+"@effect/platform/HttpClient#transform":
+  replacement: "effect/http/HttpClient#transform"
+  note: "Moved to the v4 HTTP module with the same request-aware transformation shape."

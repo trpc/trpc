@@ -1,0 +1,17 @@
+"@effect/experimental/EventLogServer#layerStorageMemory":
+  include: true
+  replacement: effect/eventlog/EventLogServerEncrypted#layerStorageMemory
+  note: Use the encrypted server memory storage layer; storage is now storeId- and session-aware.
+"@effect/experimental/EventLogServer#makeHandler":
+  replacement: effect/eventlog/EventLogServerEncrypted#layer + effect/rpc/RpcServer#layerProtocolSocketServer
+  note: Compose the encrypted server layer with the generic RPC socket server; there is no per-socket handler factory.
+"@effect/experimental/EventLogServer#makeHandlerHttp":
+  replacement: effect/eventlog/EventLogServerEncrypted#layer + effect/rpc/RpcServer#makeProtocolWithHttpEffectWebsocket
+  note: Use the returned httpEffect for upgrades and provide its protocol to the encrypted server layer.
+"@effect/experimental/EventLogServer#makeStorageMemory":
+  replacement: effect/eventlog/EventLogServerEncrypted#makeStorageMemory
+  note: Use the encrypted server memory storage constructor.
+"@effect/experimental/EventLogServer#Storage":
+  include: true
+  replacement: effect/eventlog/EventLogServerEncrypted#Storage
+  note: Use the encrypted server Storage service, which is storeId- and session-aware.

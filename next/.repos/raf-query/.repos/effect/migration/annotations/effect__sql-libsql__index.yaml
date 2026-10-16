@@ -1,0 +1,3 @@
+"@effect/sql-libsql/index":
+  replacement: "@effect/sql-libsql"
+  note: "The explicit /index entrypoint was removed; import the same namespaces from the @effect/sql-libsql package root or import specific modules directly."

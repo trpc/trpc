@@ -1,0 +1,12 @@
+"effect/Function#FunctionN":
+  replacement: "Function.FunctionN"
+  note: "No call-site migration; v4 keeps the same function shape as a type alias."
+"effect/Function#isFunction":
+  replacement: "Predicate.isFunction"
+  note: "The function refinement moved to Predicate."
+"effect/Function#LazyArg":
+  replacement: "Function.LazyArg"
+  note: "No call-site migration; v4 keeps the same lazy function shape as a type alias."
+"effect/Function#unsafeCoerce":
+  replacement: "Function.cast"
+  note: "Renamed type-only cast; runtime behavior remains identity with no validation."

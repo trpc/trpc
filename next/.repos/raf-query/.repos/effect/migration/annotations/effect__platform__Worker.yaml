@@ -1,0 +1,66 @@
+"@effect/platform/Worker#BackingWorker":
+  replacement: "Worker.Worker"
+  note: "The low-level backing worker became the primary Worker interface with send and run operations."
+"@effect/platform/Worker#layerManager":
+  replacement: "Worker.WorkerPlatform"
+  note: "WorkerManager was removed; provide the adapter's WorkerPlatform layer directly."
+"@effect/platform/Worker#makeManager":
+  replacement: "Worker.WorkerPlatform"
+  note: "WorkerManager was removed; obtain WorkerPlatform and call its spawn method."
+"@effect/platform/Worker#makePool":
+  replacement: "Pool + Worker.WorkerPlatform.spawn"
+  note: "Generic worker pools are no longer built by this module; build a Pool around WorkerPlatform.spawn, or use RpcClient.makeProtocolWorker for RPC workers."
+"@effect/platform/Worker#makePoolLayer":
+  replacement: "RpcClient.layerProtocolWorker"
+  note: "The standard v4 worker-pool layer is the worker-backed RPC client protocol; compose it with the RPC client layer."
+"@effect/platform/Worker#makePoolSerialized":
+  replacement: "RpcClient.makeProtocolWorker"
+  note: "Serialized tagged-request workers were replaced by the worker-backed RPC protocol."
+"@effect/platform/Worker#makePoolSerializedLayer":
+  replacement: "RpcClient.layerProtocolWorker"
+  note: "Serialized tagged-request worker pools were replaced by the worker-backed RPC protocol layer."
+"@effect/platform/Worker#makeSerialized":
+  replacement: "RpcClient with RpcClient.layerProtocolWorker"
+  note: "Serialized tagged-request execution moved to the v4 RPC model; define an RpcGroup and use the worker protocol."
+"@effect/platform/Worker#PlatformWorker":
+  replacement: "Worker.WorkerPlatform"
+  note: "The platform service was renamed and is now a Context.Service class."
+"@effect/platform/Worker#PlatformWorkerTypeId":
+  replacement: "none"
+  note: "The Context.Service class replaces the public platform-worker type-id alias."
+"@effect/platform/Worker#SerializedWorker":
+  replacement: "RpcClient with RpcClient.layerProtocolWorker"
+  note: "The serialized worker facade was removed; v4 routes schema-defined RPCs through the worker protocol."
+"@effect/platform/Worker#SerializedWorker.Options":
+  replacement: "RpcWorker.layerInitialMessage"
+  note: "Use RpcWorker.layerInitialMessage when a worker RPC protocol needs schema-encoded initialization."
+"@effect/platform/Worker#SerializedWorkerPool":
+  replacement: "RpcClient.makeProtocolWorker"
+  note: "The worker-backed RPC protocol owns its worker pool in v4."
+"@effect/platform/Worker#SerializedWorkerPool.Options":
+  replacement: "Parameters<typeof RpcClient.makeProtocolWorker>[0]"
+  note: "Pool sizing options moved to the worker RPC protocol; initial messages are provided separately with RpcWorker.layerInitialMessage."
+"@effect/platform/Worker#Worker":
+  replacement: "Worker.Worker"
+  note: "The name remains in effect/workers/Worker, but it is now the low-level send/run abstraction rather than execute/executeEffect."
+"@effect/platform/Worker#Worker.Options":
+  replacement: "Worker.Worker[\"run\"] options"
+  note: "Encoding moved to RPC schemas; the low-level run operation only accepts an optional onSpawn effect."
+"@effect/platform/Worker#Worker.Response":
+  replacement: "none"
+  note: "The old tagged-request wire response is gone; worker RPC wire messages are internal to RpcClient and RpcServer."
+"@effect/platform/Worker#Worker.Span":
+  replacement: "none"
+  note: "The explicit span tuple was removed; the RPC worker protocol handles span propagation internally."
+"@effect/platform/Worker#WorkerManager":
+  replacement: "Worker.WorkerPlatform"
+  note: "WorkerPlatform now spawns low-level Worker values directly, replacing WorkerManager."
+"@effect/platform/Worker#WorkerManagerTypeId":
+  replacement: "none"
+  note: "The removed WorkerManager has no v4 type-id; WorkerPlatform is a Context.Service class."
+"@effect/platform/Worker#WorkerPool":
+  replacement: "RpcClient.Protocol"
+  note: "For serialized request/response workloads use the worker-backed RPC Protocol; for raw messages build a Pool around WorkerPlatform.spawn."
+"@effect/platform/Worker#WorkerPool.Options":
+  replacement: "Parameters<typeof RpcClient.makeProtocolWorker>[0]"
+  note: "Worker RPC pool sizing is configured on makeProtocolWorker or layerProtocolWorker."

@@ -1,0 +1,6 @@
+"@effect/platform/HttpApiSwagger#layer":
+  replacement: "effect/http-api/HttpApiSwagger#layer"
+  note: "Pass the HttpApi as the first argument; the layer now contributes directly to HttpRouter."
+"@effect/platform/HttpApiSwagger#layerHttpLayerRouter":
+  replacement: "effect/http-api/HttpApiSwagger#layer"
+  note: "The duplicate was removed. Pass options.api first and the path option second."

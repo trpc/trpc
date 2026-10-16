@@ -1,0 +1,21 @@
+effect/TReentrantLock#TReentrantLock:
+  replacement: "TxReentrantLock.TxReentrantLock"
+  note: "Rename the type and import from \"effect/TxReentrantLock\". V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TReentrantLock#TReentrantLock.Proto:
+  replacement: "none"
+  note: "The public prototype interface was removed."
+effect/TReentrantLock#TReentrantLockTypeId:
+  replacement: "TxReentrantLock.isTxReentrantLock"
+  note: "The type id is internal in v4; use the public runtime guard."
+effect/TReentrantLock#fiberReadLocks:
+  replacement: "none"
+  note: "Per-fiber read-lock counts were removed; TxReentrantLock.readLocks reports only the total count."
+effect/TReentrantLock#fiberWriteLocks:
+  replacement: "none"
+  note: "Per-fiber write-lock counts were removed; TxReentrantLock.writeLocks reports only the total count."
+effect/TReentrantLock#lock:
+  replacement: "TxReentrantLock.writeLock"
+  note: "The generic lock helper was renamed to make write-lock acquisition explicit."
+effect/TReentrantLock#make:
+  replacement: "TxReentrantLock.make()"
+  note: "The constructor keeps its name but is now a function call rather than a constant STM value."

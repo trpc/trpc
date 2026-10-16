@@ -1,0 +1,99 @@
+"@effect/platform/HttpApiSchema#AnnotationEmptyDecodeable":
+  replacement: "effect/http-api/HttpApiSchema#asNoContent"
+  note: "The public marker was removed; represent no-content decoding structurally with asNoContent({ decode })."
+"@effect/platform/HttpApiSchema#AnnotationEncoding":
+  replacement: "effect/http-api/HttpApiSchema#asJson / asFormUrlEncoded / asText / asUint8Array"
+  note: "The key is internal; select encoding with a public combinator."
+"@effect/platform/HttpApiSchema#AnnotationMultipart":
+  replacement: "effect/http-api/HttpApiSchema#asMultipart"
+  note: "The symbol annotation became a brand plus internal encoding metadata; apply the schema combinator."
+"@effect/platform/HttpApiSchema#AnnotationMultipartStream":
+  replacement: "effect/http-api/HttpApiSchema#asMultipartStream"
+  note: "The symbol annotation became a brand plus internal encoding metadata; apply the schema combinator."
+"@effect/platform/HttpApiSchema#AnnotationParam":
+  replacement: "effect/http-api/HttpApiEndpoint#params"
+  note: "Path names now live in the router path and schemas in endpoint option params, not schema annotations."
+"@effect/platform/HttpApiSchema#annotations":
+  replacement: "effect/Schema#annotate"
+  note: "Schema annotations became annotate; set httpApiStatus directly or prefer HttpApiSchema.status for status only."
+"@effect/platform/HttpApiSchema#AnnotationStatus":
+  replacement: "effect/http-api/HttpApiSchema#status"
+  note: "The public symbol was removed; apply status(code), which uses the httpApiStatus schema annotation."
+"@effect/platform/HttpApiSchema#asEmpty":
+  replacement: "effect/http-api/HttpApiSchema#asNoContent"
+  note: "Use schema.pipe(asNoContent({ decode }), status(code)); status is now a separate combinator."
+"@effect/platform/HttpApiSchema#deunionize":
+  replacement: "none"
+  note: "Pass schema arrays to endpoint success, error, and body alternatives so each member retains status and content type."
+"@effect/platform/HttpApiSchema#Empty":
+  replacement: "effect/http-api/HttpApiSchema#Empty"
+  note: "The API remains and returns Schema.Void annotated with the supplied status."
+"@effect/platform/HttpApiSchema#EmptyError":
+  replacement: "effect/Schema#Error"
+  note: "Define a normal schema error with httpApiStatus, then derive its no-content wire schema with asNoContent."
+"@effect/platform/HttpApiSchema#EmptyErrorClass":
+  replacement: "effect/Schema#Error"
+  note: "The class and no-content codec are separate in v4; combine Schema.Error with HttpApiSchema.asNoContent."
+"@effect/platform/HttpApiSchema#EmptyErrorUnify":
+  replacement: "none"
+  note: "Removed with EmptyError; Schema.Error instances already support yieldable-error behavior."
+"@effect/platform/HttpApiSchema#EmptyErrorUnifyIgnore":
+  replacement: "none"
+  note: "Removed with EmptyError; do not recreate the old Unify marker."
+"@effect/platform/HttpApiSchema#Encoding":
+  replacement: "effect/http-api/HttpApiSchema#Encoding"
+  note: "The name remains but is now a discriminated PayloadEncoding or ResponseEncoding union; prefer public as* combinators."
+"@effect/platform/HttpApiSchema#extractAnnotations":
+  replacement: "none"
+  note: "The internal symbol-copy helper was removed; HTTP metadata is schema-native and resolved through AST traversal."
+"@effect/platform/HttpApiSchema#getEmptyDecodeable":
+  replacement: "effect/http-api/HttpApiSchema#isNoContent"
+  note: "Use isNoContent only to test bodylessness; decodeability is structural and has no exact query replacement."
+"@effect/platform/HttpApiSchema#getEncoding":
+  replacement: "effect/http-api/HttpApiSchema#getPayloadEncoding / getResponseEncoding"
+  note: "Encoding lookup split by direction; application code should normally use public as* combinators."
+"@effect/platform/HttpApiSchema#getMultipart":
+  replacement: "effect/http-api/HttpApiSchema#getPayloadEncoding"
+  note: "Narrow the payload encoding to Multipart with buffered mode; multipart limits are on the encoding value."
+"@effect/platform/HttpApiSchema#getMultipartStream":
+  replacement: "effect/http-api/HttpApiSchema#getPayloadEncoding"
+  note: "Narrow the payload encoding to Multipart with stream mode; multipart limits are on the encoding value."
+"@effect/platform/HttpApiSchema#getParam":
+  replacement: "none"
+  note: "Param identity moved out of schema metadata; read endpoint.path and endpoint.params."
+"@effect/platform/HttpApiSchema#getStatus":
+  replacement: "effect/SchemaAST#resolveAt"
+  note: "Resolve the httpApiStatus annotation directly, or prefer getStatusSuccess and getStatusError for response logic."
+"@effect/platform/HttpApiSchema#getStatusError":
+  replacement: "effect/http-api/HttpApiSchema#getStatusError"
+  note: "The helper remains but accepts an AST and defaults to 500."
+"@effect/platform/HttpApiSchema#getStatusErrorAST":
+  replacement: "effect/http-api/HttpApiSchema#getStatusError"
+  note: "The AST suffix collapsed into the sole helper, which defaults to 500."
+"@effect/platform/HttpApiSchema#getStatusSuccess":
+  replacement: "effect/http-api/HttpApiSchema#getStatusSuccess"
+  note: "The helper remains but accepts an AST; bare Schema.Void now defaults to 200, so use Empty(204) for 204."
+"@effect/platform/HttpApiSchema#getStatusSuccessAST":
+  replacement: "effect/http-api/HttpApiSchema#getStatusSuccess"
+  note: "The AST suffix collapsed into the sole helper; bare Schema.Void no longer implies 204."
+"@effect/platform/HttpApiSchema#Multipart":
+  replacement: "effect/http-api/HttpApiSchema#asMultipart"
+  note: "The type and constructor became a curried schema combinator: schema.pipe(asMultipart(options))."
+"@effect/platform/HttpApiSchema#MultipartStream":
+  replacement: "effect/http-api/HttpApiSchema#asMultipartStream"
+  note: "The type and constructor became a curried schema combinator."
+"@effect/platform/HttpApiSchema#param":
+  replacement: "effect/http-api/HttpApiEndpoint#params"
+  note: "Use a literal /:name path and the matching field in endpoint constructor option params."
+"@effect/platform/HttpApiSchema#Text":
+  replacement: "effect/http-api/HttpApiSchema#asText"
+  note: "Apply the encoding combinator to Schema.String instead of using a dedicated constructor."
+"@effect/platform/HttpApiSchema#Uint8Array":
+  replacement: "effect/http-api/HttpApiSchema#asUint8Array"
+  note: "Apply the encoding combinator to Schema.Uint8Array instead of using a dedicated constructor."
+"@effect/platform/HttpApiSchema#UnionUnify":
+  replacement: "effect/Schema#Union"
+  note: "Use Schema.Union([self, that]); for endpoint alternatives, pass the schema array directly to preserve metadata."
+"@effect/platform/HttpApiSchema#withEncoding":
+  replacement: "effect/http-api/HttpApiSchema#asJson / asFormUrlEncoded / asUint8Array / asText"
+  note: "Replace the generic kind with the matching public curried encoding combinator."

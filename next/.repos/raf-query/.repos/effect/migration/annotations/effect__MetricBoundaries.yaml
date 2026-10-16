@@ -1,0 +1,18 @@
+effect/MetricBoundaries#exponential:
+  replacement: "Metric.exponentialBoundaries"
+  note: "Moved into effect/Metric and now returns ReadonlyArray<number>. V4 also filters non-positive boundaries."
+effect/MetricBoundaries#fromIterable:
+  replacement: "Metric.boundariesFromIterable"
+  note: "Moved into effect/Metric and now returns an unbranded ReadonlyArray<number>; v4 removes non-positive values before appending Infinity."
+effect/MetricBoundaries#linear:
+  replacement: "Metric.linearBoundaries"
+  note: "Moved into effect/Metric, but the compared v4 implementation uses start + i + width rather than v3's start + i * width. Preserve the v3 formula manually when width is not 1."
+effect/MetricBoundaries#MetricBoundaries:
+  replacement: "ReadonlyArray<number>"
+  note: "The wrapper was removed; Metric.histogram accepts plain boundaries in its options."
+effect/MetricBoundaries#isMetricBoundaries:
+  replacement: "none"
+  note: "Boundaries are unbranded arrays, so the guard and public type-id symbol have no replacement."
+effect/MetricBoundaries#MetricBoundariesTypeId:
+  replacement: "none"
+  note: "Boundaries are unbranded arrays, so the guard and public type-id symbol have no replacement."

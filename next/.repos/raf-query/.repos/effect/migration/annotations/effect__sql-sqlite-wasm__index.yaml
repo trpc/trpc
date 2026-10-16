@@ -1,0 +1,3 @@
+"@effect/sql-sqlite-wasm/index":
+  replacement: "@effect/sql-sqlite-wasm"
+  note: "The explicit /index entrypoint was removed; import the same namespaces from the @effect/sql-sqlite-wasm package root or import specific modules directly."

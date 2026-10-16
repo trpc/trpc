@@ -1,0 +1,71 @@
+{
+  "name": "tanstack-react-start-e2e-streaming-ssr",
+  "private": true,
+  "sideEffects": false,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev --port 3000",
+    "dev:e2e": "vite dev",
+    "build": "vite build && tsc --noEmit",
+    "start": "pnpx srvx --prod -s ../client dist/server/server.js",
+    "preview": "vite preview",
+    "test:e2e": "playwright test --project=chromium",
+    "test:e2e:preview": "MODE=preview playwright test preview-streaming.spec.ts --project=chromium",
+    "test:e2e:buffer-repro": "RUN_SSR_ROUTER_HTML_BUFFER_REPRO=true playwright test router-html-buffer.spec.ts --project=chromium"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.80.7",
+    "@tanstack/react-router": "workspace:^",
+    "@tanstack/react-router-ssr-query": "workspace:^",
+    "@tanstack/react-start": "workspace:^",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.0",
+    "@tanstack/router-e2e-utils": "workspace:^",
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "srvx": "^0.11.9",
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "vite": "^8.0.14"
+  },
+  "nx": {
+    "targets": {
+      "build": {
+        "inputs": [
+          "buildProduction",
+          "^buildProduction",
+          "dependentTaskOutputs",
+          "streamingSsrTests"
+        ]
+      },
+      "test:e2e": {
+        "inputs": [
+          "default",
+          "^production",
+          "dependentTaskOutputs",
+          "streamingSsrTests"
+        ]
+      },
+      "test:e2e:preview": {
+        "inputs": [
+          "default",
+          "^production",
+          "streamingSsrTests"
+        ]
+      },
+      "test:e2e:buffer-repro": {
+        "inputs": [
+          "default",
+          "^production",
+          "dependentTaskOutputs",
+          "streamingSsrTests"
+        ]
+      }
+    }
+  }
+}

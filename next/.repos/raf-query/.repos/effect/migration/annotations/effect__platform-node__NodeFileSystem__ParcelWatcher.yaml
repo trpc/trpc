@@ -1,0 +1,3 @@
+"@effect/platform-node/NodeFileSystem/ParcelWatcher#layer":
+  replacement: "NodeFileSystem.layer"
+  note: "The Parcel watcher adapter was removed. Native node:fs.watch support is built in; FileSystem.WatchBackend is the extension point."

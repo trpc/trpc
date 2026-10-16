@@ -1,0 +1,15 @@
+"@effect/platform-node-shared/NodeStream#FromReadableOptions":
+  replacement: "{ readonly chunkSize?: number; readonly closeOnDone?: boolean }"
+  note: "The named interface was removed and its fields were inlined into readable constructor options; chunkSize narrowed from SizeInput to number."
+"@effect/platform-node-shared/NodeStream#FromWritableOptions":
+  replacement: "{ readonly endOnDone?: boolean; readonly encoding?: BufferEncoding }"
+  note: "The named interface was removed and its fields were inlined into NodeSink and duplex constructor options."
+"@effect/platform-node-shared/NodeStream#stderr":
+  replacement: "NodeStream.fromReadable({ evaluate: () => process.stderr, closeOnDone: false }).pipe(Stream.orDie)"
+  note: "This preserves the unusual v3 read behavior; for normal error output use the stdio.stderr() Sink from effect/Stdio."
+"@effect/platform-node-shared/NodeStream#stdin":
+  replacement: "stdio.stdin from Stdio.Stdio"
+  note: "Standard input moved to effect/Stdio; provide NodeStdio.layer or NodeServices.layer. The service stream exposes PlatformError instead of dying."
+"@effect/platform-node-shared/NodeStream#stdout":
+  replacement: "NodeStream.fromReadable({ evaluate: () => process.stdout, closeOnDone: false }).pipe(Stream.orDie)"
+  note: "This preserves the unusual v3 read behavior; for normal output use the stdio.stdout() Sink from effect/Stdio."

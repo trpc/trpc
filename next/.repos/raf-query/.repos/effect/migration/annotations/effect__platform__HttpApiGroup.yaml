@@ -1,0 +1,54 @@
+"@effect/platform/HttpApiGroup#ApiGroup":
+  replacement: "effect/http-api/HttpApiGroup#Service"
+  note: "Renamed; the service field and type parameter are now identifier rather than name."
+"@effect/platform/HttpApiGroup#HttpApiGroup.AddContext":
+  replacement: "none"
+  note: "Groups no longer carry arbitrary context. Use AddMiddleware for middleware service transformations."
+"@effect/platform/HttpApiGroup#HttpApiGroup.Any":
+  replacement: "effect/http-api/HttpApiGroup#Constraint"
+  note: "Renamed widened structural constraint."
+"@effect/platform/HttpApiGroup#HttpApiGroup.AnyWithProps":
+  replacement: "effect/http-api/HttpApiGroup#Top"
+  note: "Renamed widened runtime-property type."
+"@effect/platform/HttpApiGroup#HttpApiGroup.ClientContext":
+  replacement: "effect/http-api/HttpApiGroup#ClientServices / ErrorServicesDecode / MiddlewareClient"
+  note: "Client schema services and required client middleware are separate extractors in v4."
+"@effect/platform/HttpApiGroup#HttpApiGroup.Context":
+  replacement: "none"
+  note: "Group error and context generics were removed; derive server requirements from the group's endpoints."
+"@effect/platform/HttpApiGroup#HttpApiGroup.ContextWithName":
+  replacement: "none"
+  note: "Select with WithIdentifier and derive endpoint server requirements; groups no longer have a context generic."
+"@effect/platform/HttpApiGroup#HttpApiGroup.EndpointsWithName":
+  replacement: "effect/http-api/HttpApiGroup#EndpointsWithIdentifier"
+  note: "Direct rename from name to identifier."
+"@effect/platform/HttpApiGroup#HttpApiGroup.Error":
+  replacement: "none"
+  note: "Group-level errors were removed. Declare shared errors on each endpoint or through middleware."
+"@effect/platform/HttpApiGroup#HttpApiGroup.ErrorContext":
+  replacement: "effect/http-api/HttpApiGroup#ErrorServicesEncode / ErrorServicesDecode"
+  note: "The closest endpoint-error aggregate splits server encoding from client decoding services."
+"@effect/platform/HttpApiGroup#HttpApiGroup.ErrorWithName":
+  replacement: "none"
+  note: "Group-level errors were removed; select with WithIdentifier and inspect Errors over the selected endpoints."
+"@effect/platform/HttpApiGroup#HttpApiGroup.Middleware":
+  replacement: "effect/http-api/HttpApiEndpoint#Middleware"
+  note: "Middleware is attached to the endpoints present when group.middleware is called; extract it from group endpoints."
+"@effect/platform/HttpApiGroup#HttpApiGroup.MiddlewareWithName":
+  replacement: "effect/http-api/HttpApiEndpoint#Middleware"
+  note: "Select the group with WithIdentifier, get its endpoints, then apply the endpoint Middleware extractor."
+"@effect/platform/HttpApiGroup#HttpApiGroup.Provides":
+  replacement: "effect/http-api/HttpApiGroup#MiddlewareProvides"
+  note: "Renamed; derives provided services from endpoint middleware."
+"@effect/platform/HttpApiGroup#HttpApiGroup.ToService":
+  replacement: "effect/http-api/HttpApiGroup#ToService"
+  note: "Same role and now produces Service<ApiId, Identifier>."
+"@effect/platform/HttpApiGroup#HttpApiGroup.WithName":
+  replacement: "effect/http-api/HttpApiGroup#WithIdentifier"
+  note: "Direct rename from name to identifier."
+"@effect/platform/HttpApiGroup#make":
+  replacement: "effect/http-api/HttpApiGroup#make"
+  note: "The constructor remains; group error and context generics are gone and add is variadic."
+"@effect/platform/HttpApiGroup#TypeId":
+  replacement: "none"
+  note: "The group type ID is private; use HttpApiGroup.isHttpApiGroup for runtime narrowing."

@@ -1,0 +1,6 @@
+"effect/MutableHashSet#MutableHashSet":
+  replacement: "MutableHashSet.MutableHashSet"
+  note: "The MutableHashSet model remains; use its public operations rather than depending on internal representation fields."
+"effect/MutableHashSet#TypeId":
+  replacement: "none"
+  note: "The public MutableHashSet.TypeId was removed; the v4 marker is private."

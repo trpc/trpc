@@ -1,0 +1,45 @@
+"@effect/rpc/RpcMiddleware#ForClient":
+  replacement: "effect/rpc/RpcMiddleware#ForClient"
+  note: "Retained as the marker requirement provided by a client middleware layer."
+"@effect/rpc/RpcMiddleware#layerClient":
+  replacement: "effect/rpc/RpcMiddleware#layerClient"
+  note: "Retained; the client function can now modify the typed Request passed to next and carry a client-only error type."
+"@effect/rpc/RpcMiddleware#RpcMiddlewareWrap":
+  replacement: "effect/rpc/RpcMiddleware#RpcMiddleware"
+  note: "The wrap and non-wrap shapes were unified; implement a function receiving the handler effect and request options."
+"@effect/rpc/RpcMiddleware#Tag":
+  replacement: "effect/rpc/RpcMiddleware#Service"
+  note: "Renamed and redesigned with explicit requires, provides, clientError, error, and requiredForClient configuration."
+"@effect/rpc/RpcMiddleware#TagClass":
+  replacement: "effect/rpc/RpcMiddleware#ServiceClass"
+  note: "Renamed class type for the v4 Context.Service-based middleware declaration."
+"@effect/rpc/RpcMiddleware#TagClass.Failure":
+  replacement: "effect/rpc/RpcMiddleware#Error"
+  note: "Failure terminology became error; apply the extractor to the middleware ID."
+"@effect/rpc/RpcMiddleware#TagClass.FailureContext":
+  replacement: "effect/rpc/RpcMiddleware#ErrorServicesEncode / ErrorServicesDecode"
+  note: "The single schema context split into server encoding and client decoding services."
+"@effect/rpc/RpcMiddleware#TagClass.FailureSchema":
+  replacement: "effect/rpc/RpcMiddleware#ErrorSchema"
+  note: "Renamed and applied to the middleware ID rather than constructor options."
+"@effect/rpc/RpcMiddleware#TagClass.FailureService":
+  replacement: "effect/rpc/RpcMiddleware#Error"
+  note: "Use the decoded error extractor; optional middleware fallback was removed."
+"@effect/rpc/RpcMiddleware#TagClass.Optional":
+  replacement: "none"
+  note: "Optional declaration and fallback-on-failure behavior were removed; model fallback inside the middleware effect."
+"@effect/rpc/RpcMiddleware#TagClass.Provides":
+  replacement: "effect/rpc/RpcMiddleware#Provides"
+  note: "Moved to the module level and applied to the middleware ID metadata."
+"@effect/rpc/RpcMiddleware#TagClass.RequiredForClient":
+  replacement: "RpcMiddleware.ServiceClass[\"requiredForClient\"]"
+  note: "The standalone options extractor was removed; the boolean is exposed directly by the resulting service class."
+"@effect/rpc/RpcMiddleware#TagClassAny":
+  replacement: "effect/rpc/RpcMiddleware#AnyService"
+  note: "Renamed widened middleware service-key shape."
+"@effect/rpc/RpcMiddleware#TagClassAnyWithProps":
+  replacement: "effect/rpc/RpcMiddleware#AnyServiceWithProps"
+  note: "Renamed erased service key whose value has the unified server middleware function shape."
+"@effect/rpc/RpcMiddleware#TypeId":
+  replacement: "effect/rpc/RpcMiddleware#TypeId"
+  note: "Retained as the public middleware metadata marker and now has a string-literal type."

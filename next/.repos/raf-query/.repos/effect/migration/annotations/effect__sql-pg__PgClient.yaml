@@ -1,0 +1,16 @@
+"@effect/sql-pg/PgClient#fromPool":
+  replacement: none
+  note: "Wrapping an existing node-pg Pool was removed with the native protocol client. Use PgClient.make or PgClient.layer with connection settings."
+"@effect/sql-pg/PgClient#layerFromPool":
+  replacement: "PgClient.layer"
+  note: "Wrapping an existing node-pg Pool was removed. Provide connection settings to PgClient.layer instead."
+"@effect/sql-pg/PgClient#PgClient":
+  replacement: "@effect/sql-pg/PgClient#PgClient"
+  note: "Retained; the service value is now a Context.Service. The listen method returns a scoped Effect acquiring a Queue.Dequeue<PgConnection.Notification, SqlError>; consume it with Queue operations or Stream.fromQueue and read each notification's payload. Connection failures after registration fail the queue with the original SqlError; scope closure interrupts consumers."
+"@effect/sql-pg/PgClient#PgClientConfig":
+  include: true
+  replacement: "@effect/sql-pg/PgClient#PgClientConfig / PgPoolConfig"
+  note: "Use PgClientConfig for base settings and PgPoolConfig for make/layer; pool sizing, idle timeout, and connection TTL moved to PgPoolConfig. The types option takes a PgTypes.Registry rather than node-pg custom types. Timestamp and timestamptz results (including array elements) are Date values with millisecond precision; infinity, -infinity, and out-of-range values become invalid Dates. Numeric readers can use getTime() or register numeric codecs. Date parameters bind as timestamptz; use PgTypes.timestamp(value) to preserve UTC fields when writing a timestamp column instead of applying the session TimeZone."
+"@effect/sql-pg/PgClient#PgClientFromPoolOptions":
+  replacement: none
+  note: "The node-pg Pool wrapper options were removed with fromPool. Use PgClient.PgPoolConfig with PgClient.make or PgClient.layer."

@@ -1,0 +1,28 @@
+{
+  "name": "tanstack-router-react-example-quickstart-rspack-file-based",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "rsbuild dev --port 3000",
+    "build": "rsbuild build && tsc --noEmit",
+    "preview": "rsbuild preview"
+  },
+  "dependencies": {
+    "@tailwindcss/postcss": "^4.2.2",
+    "@tanstack/react-router": "^1.170.42",
+    "@tanstack/react-router-devtools": "^1.167.2",
+    "postcss": "^8.5.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwindcss": "^4.2.2"
+  },
+  "devDependencies": {
+    "@rsbuild/core": "^2.1.0",
+    "@rsbuild/plugin-react": "^2.0.0",
+    "@tanstack/router-plugin": "^1.168.43",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "typescript": "npm:@typescript/typescript6@^6.0.2"
+  }
+}

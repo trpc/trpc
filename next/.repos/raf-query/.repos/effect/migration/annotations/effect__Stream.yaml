@@ -1,0 +1,488 @@
+effect/Stream#bind:
+  include: true
+  replacement: "Stream.bind"
+  note: "The input must be a record. Start from Stream.Do or use Stream.bindTo(name) to wrap a non-record element. The field name may now re-bind an existing key; the resulting record type is Simplify<Omit<A, N> & Record<N, B>>."
+effect/Stream#bindEffect:
+  include: true
+  replacement: "Stream.bindEffect"
+  note: "The input must be a record. Start from Stream.Do or use Stream.bindTo(name) to wrap a non-record element. Existing keys may be re-bound, with the new value replacing the old field type. The callback still returns an Effect."
+effect/Stream#catchTags:
+  include: true
+  replacement: "Stream.catchTags"
+  note: "Only keys present in the tagged error union are accepted; remove handlers for tags the stream cannot fail with. Untagged errors remain in the error channel."
+effect/Stream#mapBoth:
+  include: true
+  replacement: "Stream.mapBoth"
+  note: "Rename the options onSuccess to onElement and onFailure to onError. The callbacks still transform emitted elements and typed errors respectively."
+effect/Stream#partition:
+  include: true
+  replacement: "Stream.partition"
+  note: "Pass a Result-returning Filter instead of a boolean predicate or refinement; Filter.fromPredicate(predicate) adapts existing predicates. The tuple order is now [passes, fails], the reverse of v3 [excluded, satisfying]. Rename bufferSize to capacity (default 16; also accepts \"unbounded\"). Acquisition is scoped and does not fail with E; the returned streams carry E."
+effect/Stream#scan:
+  include: true
+  replacement: "Stream.scan"
+  note: "Wrap the initial state in a thunk: Stream.scan(() => initial, step). The thunk is evaluated for each stream run; allocate mutable initial state inside it to avoid sharing state between runs."
+effect/Stream#scanEffect:
+  include: true
+  replacement: "Stream.scanEffect"
+  note: "Wrap the initial state in a thunk: Stream.scanEffect(() => initial, step). It is evaluated for each stream run; the step still returns an Effect."
+effect/Stream#runIntoPubSub:
+  include: true
+  replacement: "Stream.runIntoPubSub"
+  note: "Pass a PubSub of plain elements rather than Take wrappers. Both overloads return Effect<void, E, R>, so handle stream failures on the returned Effect instead of expecting them as PubSub messages. The optional shutdownOnEnd flag controls PubSub shutdown."
+effect/Stream#let:
+  include: true
+  replacement: "Stream.let"
+  note: "Retained in v4 and aligned with Effect.let: the field name may re-bind an existing key (the computed value replaces it) and the record type is Simplify<Omit<A, N> & Record<N, B>>."
+effect/Stream#Stream:
+  replacement: "Stream"
+  note: "The Stream<A, E, R> interface is unchanged in shape and keeps the effect/Stream import path; the type-id key is now the string literal \"~effect/Stream\" instead of a unique symbol."
+effect/Stream#Stream.Context:
+  replacement: "Stream.Services"
+  note: "Type-level extractor of the R parameter renamed from Stream.Context<T> to Stream.Services<T>; identical conditional-infer semantics."
+effect/Stream#Stream.DynamicTuple:
+  replacement: "Types.TupleOf"
+  note: "Already deprecated in v3 in favor of Types.TupleOf; removed in v4. Use Types.TupleOf<N, T> (v4 Stream.broadcastN uses it for its return type)."
+effect/Stream#Stream.DynamicTupleOf:
+  replacement: "Types.TupleOf"
+  note: "Recursive tuple-builder helper removed with Stream.DynamicTuple; Types.TupleOf<N, T> is the v4 equivalent."
+effect/Stream#StreamTypeId:
+  replacement: "Stream.TypeId"
+  note: "Renamed StreamTypeId -> TypeId and changed from a unique symbol to the string literal \"~effect/Stream\" (both the const and the type)."
+effect/Stream#StreamUnify:
+  replacement: "Stream.StreamUnify"
+  note: "Still exported under the same name in v4 (extends Effect.EffectUnify); no change needed besides any Chunk-related element types."
+effect/Stream#StreamUnifyIgnore:
+  replacement: "Stream.StreamUnifyIgnore"
+  note: "Still exported under the same name in v4 (extends Effect.EffectUnifyIgnore with Effect ignored); unchanged."
+effect/Stream#accumulateChunks:
+  replacement: "none"
+  note: "v3 accumulateChunks only rewrote the internal chunk layout (each chunk cumulatively contained all prior elements) without changing the emitted element sequence; v4 has no chunk-layout twin. Stream.accumulate emits the cumulative NonEmptyArray values, and Stream.rechunk controls chunk sizing."
+effect/Stream#acquireRelease:
+  replacement: "Stream.scoped(Stream.fromEffect(Effect.acquireRelease(acquire, release)))"
+  note: "Dedicated constructor removed; compose Effect.acquireRelease (same (resource, exit) release signature) with Stream.fromEffect, then Stream.scoped to tie the finalizer to the stream's lifetime."
+effect/Stream#aggregateWithinEither:
+  replacement: "Stream.aggregateWithin"
+  note: "Either-emitting variant removed; v4 aggregateWithin(sink, schedule) emits only the sink outputs B (schedule outputs are no longer surfaced as Either.right)."
+effect/Stream#as:
+  include: true
+  replacement: "Stream.as"
+  note: "Retained in v4 with the same signature; replaces every element with the provided constant value."
+effect/Stream#async:
+  replacement: "Stream.callback"
+  note: "Stream.callback((queue) => Effect | void, { bufferSize?, strategy? }) replaces the Emit-based async; push with Queue.offer/offerAll, end with Queue.end, fail with Queue.fail."
+effect/Stream#asyncEffect:
+  replacement: "Stream.callback"
+  note: "The register function of Stream.callback may return an Effect (run before the stream starts pulling), covering asyncEffect; signal end/failure through the provided Queue."
+effect/Stream#asyncPush:
+  replacement: "Stream.callback"
+  note: "Stream.callback's register effect can use Scope for acquire/release of the external subscription, replacing asyncPush; the Emit ops helpers become plain Queue operations."
+effect/Stream#asyncScoped:
+  replacement: "Stream.callback"
+  note: "Stream.callback's register effect may use Scope (Scope is excluded from the resulting R), replacing asyncScoped; the Option<E> end signal becomes Queue.end."
+effect/Stream#branchAfter:
+  replacement: "Stream.peel"
+  note: "Removed; the closest v4 primitive is Stream.peel(self, Sink.take(n)), a scoped Effect yielding [firstN, restStream] from which you build the continuation stream and re-wrap with Stream.unwrap."
+  example: "Stream.unwrap(Effect.map(Stream.peel(self, Sink.take(n)), ([head, rest]) => f(head)(rest)))"
+effect/Stream#broadcastDynamic:
+  replacement: "Stream.broadcast"
+  note: "v4 Stream.broadcast({ capacity, strategy?, replay? }) is the dynamic-subscriber fan-out returning Effect<Stream<A, E>, never, Scope | R> (v3 fixed-arity broadcast(n) became Stream.broadcastN); Stream.share adds refcounted/idleTimeToLive semantics."
+effect/Stream#broadcastedQueues:
+  replacement: "none"
+  note: "Queue-of-Take fan-out surface removed. Use Stream.broadcastN({ n, capacity }) for a fixed tuple of mirror streams, or Stream.toPubSubTake to obtain a PubSub of Take values and subscribe consumers to it."
+effect/Stream#broadcastedQueuesDynamic:
+  replacement: "none"
+  note: "Removed with broadcastedQueues. Use Stream.broadcast (dynamic mirror streams) or Stream.toPubSubTake + PubSub subscriptions when raw Take-level consumers are needed."
+effect/Stream#bufferChunks:
+  replacement: "Stream.bufferArray"
+  note: "Chunk->Array rename; buffers whole arrays (chunks) up to capacity with the same strategy options."
+effect/Stream#catchAll:
+  replacement: "Stream.catch"
+  note: "Renamed to Stream.catch (exported keyword-style); same (error) => Stream handler for all typed failures."
+effect/Stream#catchAllCause:
+  replacement: "Stream.catchCause"
+  note: "Renamed; handler receives the full Cause<E> and returns a recovery stream, identical semantics."
+effect/Stream#catchSome:
+  replacement: "Stream.catchFilter"
+  note: "Option-returning partial handler replaced by the Filter API: Stream.catchFilter(filter, f, orElse?) recovers matched errors, unmatched failures pass through (Stream.catchIf for refinement/predicate matching)."
+effect/Stream#catchSomeCause:
+  replacement: "Stream.catchCauseFilter"
+  note: "Option-returning cause handler replaced by Stream.catchCauseFilter(filter, f, orElse?) using a Filter on the Cause (Stream.catchCauseIf for refinements)."
+effect/Stream#chunksWith:
+  replacement: "Stream.flattenArray(f(Stream.chunks(self)))"
+  note: "No dedicated combinator; expose chunk structure with Stream.chunks (Stream<NonEmptyReadonlyArray<A>>), transform, then re-flatten with Stream.flattenArray."
+effect/Stream#combineChunks:
+  replacement: "Stream.combineArray"
+  note: "Chunk->Array rename of the pull-level combining primitive; pulls now yield NonEmptyReadonlyArray values and halt via Cause.Done-failing Pull effects instead of Option-typed errors."
+effect/Stream#concatAll:
+  replacement: "Stream.flatten"
+  note: "Chunk-of-streams constructor removed; sequential concatenation of many streams is Stream.flatten(Stream.fromIterable(streams)) (default concurrency 1 preserves order)."
+effect/Stream#context:
+  replacement: "Stream.fromEffect(Effect.context<R>())"
+  note: "Dedicated accessor removed; lift Effect.context<R>() into a single-element stream."
+effect/Stream#contextWith:
+  replacement: "Stream.fromEffect(Effect.contextWith(f))"
+  note: "Dedicated accessor removed; Effect.contextWith still exists in v4, lift it with Stream.fromEffect."
+effect/Stream#contextWithEffect:
+  replacement: "Stream.fromEffect(Effect.flatMap(Effect.context<R0>(), f))"
+  note: "Removed; read the Context with Effect.context, feed it to the effectful function, and lift the result with Stream.fromEffect."
+effect/Stream#contextWithStream:
+  replacement: "Stream.unwrap(Effect.contextWith(f))"
+  note: "Removed; build the dependent stream inside Effect.contextWith and flatten with Stream.unwrap."
+effect/Stream#crossLeft:
+  replacement: "Stream.crossWith(that, (a, _) => a)"
+  note: "Removed; cartesian product keeping only left elements is expressed with Stream.crossWith and a left-projecting combiner."
+effect/Stream#crossRight:
+  replacement: "Stream.crossWith(that, (_, b) => b)"
+  note: "Removed; cartesian product keeping only right elements is Stream.crossWith with a right-projecting combiner (equivalently Stream.flatMap(self, () => that))."
+effect/Stream#dieMessage:
+  replacement: "Stream.die(new Error(message))"
+  note: "Removed along with RuntimeException; die with an explicit defect value via Stream.die."
+effect/Stream#dieSync:
+  replacement: "Stream.failCauseSync(() => Cause.die(evaluate()))"
+  note: "Removed; lazily construct the defect cause with Cause.die inside Stream.failCauseSync."
+effect/Stream#distributedWith:
+  replacement: "none"
+  note: "Predicate-routed fixed fan-out to Take queues removed (no v4 counterpart found among broadcast/broadcastN/share/toPubSub/partition). Closest patterns: Stream.broadcastN + Stream.filter per branch, Stream.partition for two-way splits, or manual routing by running the stream into per-consumer Queues."
+effect/Stream#distributedWithDynamic:
+  replacement: "none"
+  note: "Dynamic predicate-routed fan-out removed with distributedWith. Use Stream.broadcast/Stream.share for dynamic mirrors plus per-subscriber Stream.filter, or hand-roll routing into Queues via Stream.runForEach."
+effect/Stream#either:
+  replacement: "Stream.result"
+  note: "Either is replaced by Result in v4: Stream.result yields Stream<Result.Result<A, E>, never, R> (element -> Result.succeed, first error -> Result.fail and the stream ends, as before)."
+effect/Stream#ensuringWith:
+  replacement: "Stream.onExit"
+  note: "Renamed; Stream.onExit runs the finalizer with the Exit<unknown, E> of the stream, identical shape."
+effect/Stream#execute:
+  replacement: "Stream.fromEffectDrain"
+  note: "Renamed; runs the effect for its side effects and emits nothing (Stream<never, E, R>)."
+effect/Stream#filterMapWhile:
+  replacement: "Stream.takeWhileFilter"
+  note: "Option-returning partial function replaced by the Filter API: Stream.takeWhileFilter(filter) maps and emits while the filter passes, ending the stream at the first miss."
+effect/Stream#filterMapWhileEffect:
+  replacement: "none"
+  note: "No effectful takeWhileFilter variant in v4. Recreate by using Stream.takeWhileFilter with a Filter that selects the Effect<A2, E2, R2> to run, followed by Stream.mapEffect((eff) => eff) to execute it."
+effect/Stream#finalizer:
+  replacement: "Stream.ensuring"
+  note: "One-element finalizer-registering stream removed; attach finalizers directly with Stream.ensuring/Stream.onExit, or register in the stream scope via Stream.scoped(Stream.fromEffect(Effect.addFinalizer(fin))) when the v3 concat-a-finalizer pattern must be preserved."
+effect/Stream#find:
+  replacement: "Stream.take(Stream.filter(self, predicate), 1)"
+  note: "Removed; first-match semantics are Stream.filter followed by Stream.take(1)."
+effect/Stream#findEffect:
+  replacement: "Stream.take(Stream.filterEffect(self, f), 1)"
+  note: "Removed; Stream.filterEffect takes an effectful (a, index) => Effect<boolean> predicate, then Stream.take(1) stops at the first match."
+effect/Stream#flattenChunks:
+  replacement: "Stream.flattenArray"
+  note: "Chunk->Array rename; flattens a Stream of ReadonlyArray values into their elements."
+effect/Stream#flattenExitOption:
+  replacement: "Stream.flattenTake"
+  note: "The Exit<A, Option<E>> end-of-stream encoding is gone; v4 uses Take<A, E, Done> = NonEmptyReadonlyArray<A> | Exit and Stream.flattenTake unwraps it (emit arrays, end/fail on Exit)."
+effect/Stream#flattenIterables:
+  replacement: "Stream.flattenIterable"
+  note: "Renamed (singular); flattens a Stream of Iterables into their elements."
+effect/Stream#fromChunk:
+  replacement: "Stream.fromArray"
+  note: "Chunk->Array rename; takes a ReadonlyArray and emits it as one chunk."
+effect/Stream#fromChunkPubSub:
+  replacement: "Stream.fromPubSub"
+  note: "Chunked PubSub constructors are gone; v4 Stream.fromPubSub(pubsub) consumes PubSub<A> directly (batched internally). For a PubSub carrying arrays use Stream.flattenArray(Stream.fromPubSub(pubsub)); the scoped/shutdown options were dropped (Stream.fromSubscription consumes an existing subscription)."
+effect/Stream#fromChunkQueue:
+  replacement: "Stream.fromQueue"
+  note: "Chunked Queue constructor gone; v4 Stream.fromQueue consumes Queue.Dequeue<A, E> whose done/failure signals end the stream (no shutdown option). For array payloads wrap with Stream.flattenArray."
+effect/Stream#fromChunks:
+  replacement: "Stream.fromArrays"
+  note: "Chunk->Array rename; variadic arrays, each emitted as one chunk."
+effect/Stream#fromEffectOption:
+  replacement: "none"
+  note: "The Effect<A, Option<E>> encoding (fail None = empty stream) is removed; v4 signals early end with Cause.Done in Pull-level code. Rebuild with Stream.unwrap: map the success to Stream.succeed and match the Option error to Stream.empty (None) or Stream.fail (Some)."
+effect/Stream#fromReadableStreamByob:
+  replacement: "Stream.fromReadableStream"
+  note: "BYOB reader variant removed (no byob support in v4 source); Stream.fromReadableStream({ evaluate, onError, releaseLockOnEnd? }) consumes any ReadableStream with a default reader, without byte-buffer allocation control."
+effect/Stream#fromTPubSub:
+  replacement: "none"
+  note: "STM TPubSub was replaced by the transactional TxPubSub module and v4 Stream has no Tx* constructors; subscribe and repeatedly TxQueue.take from the subscription (e.g. inside Stream.fromPull/Stream.callback), or bridge through a regular PubSub and Stream.fromPubSub."
+effect/Stream#fromTQueue:
+  replacement: "none"
+  note: "STM TQueue was replaced by TxQueue and v4 Stream has no Tx* constructors; drain by repeatedly calling TxQueue.take inside a custom loop (Stream.fromPull/Stream.callback), or bridge into a regular Queue and use Stream.fromQueue."
+effect/Stream#haltAfter:
+  replacement: "Stream.haltWhen(Effect.sleep(duration))"
+  note: "Duration-specialized halt removed; v3 documented it as haltWhen with a sleep — completes the stream after the duration without interrupting an in-flight pull."
+effect/Stream#haltWhenDeferred:
+  replacement: "Stream.haltWhen(Deferred.await(deferred))"
+  note: "Deferred-specialized variant removed; Deferred.await is an Effect, so plain Stream.haltWhen covers it."
+effect/Stream#identity:
+  replacement: "Channel.identity"
+  note: "The identity-pipeline Stream is gone; for pipeThrough-style plumbing use Stream.pipeThroughChannel(Channel.identity()), or simply the identity function where a Stream=>Stream transform is expected."
+effect/Stream#interruptAfter:
+  replacement: "Stream.interruptWhen(Effect.sleep(duration))"
+  note: "Duration-specialized interrupt removed; interruptWhen forks the sleep and also interrupts an in-progress pull, matching v3 semantics."
+effect/Stream#interruptWhenDeferred:
+  replacement: "Stream.interruptWhen(Deferred.await(deferred))"
+  note: "Deferred-specialized variant removed; pass Deferred.await to Stream.interruptWhen (a Deferred failure surfaces as the stream's failure, as before)."
+effect/Stream#mapChunks:
+  replacement: "Stream.mapArray"
+  note: "Chunk->Array rename; transforms each emitted chunk as a NonEmptyReadonlyArray."
+effect/Stream#mapChunksEffect:
+  replacement: "Stream.mapArrayEffect"
+  note: "Chunk->Array rename of the effectful per-chunk transform."
+effect/Stream#mapConcat:
+  replacement: "Stream.flattenIterable(Stream.map(self, f))"
+  note: "Removed; map each element to an Iterable and flatten with Stream.flattenIterable."
+effect/Stream#mapConcatChunk:
+  replacement: "Stream.flattenArray(Stream.map(self, f))"
+  note: "Chunk variant removed with Chunk itself; map to a ReadonlyArray and flatten with Stream.flattenArray."
+effect/Stream#mapConcatChunkEffect:
+  replacement: "Stream.flattenArray(Stream.mapEffect(self, f))"
+  note: "Removed; effectfully map each element to a ReadonlyArray and flatten with Stream.flattenArray."
+effect/Stream#mapConcatEffect:
+  replacement: "Stream.flattenIterable(Stream.mapEffect(self, f))"
+  note: "Removed; effectfully map each element to an Iterable and flatten with Stream.flattenIterable."
+effect/Stream#mapErrorCause:
+  replacement: "Stream.catchCause((cause) => Stream.failCause(f(cause)))"
+  note: "Removed; transform the full Cause by catching it and re-failing with the mapped cause."
+effect/Stream#mapInputContext:
+  replacement: "Stream.updateContext"
+  note: "Renamed; same contravariant (Context<R2>) => Context<R> mapping of the required services."
+effect/Stream#mergeEither:
+  replacement: "Stream.mergeResult"
+  note: "Either replaced by Result: Stream.mergeResult(self, that) yields Result.Result<A, A2> with self -> Result.succeed and that -> Result.fail (v3 put self in Either.left and that in Either.right, so the success/left roles swap sides)."
+effect/Stream#mergeWith:
+  replacement: "Stream.merge(Stream.map(self, onSelf), Stream.map(that, onOther), { haltStrategy })"
+  note: "Removed; pre-map both streams to the common type and use Stream.merge, whose options accept the same haltStrategy union (\"left\" | \"right\" | \"both\" | \"either\")."
+effect/Stream#mergeWithTag:
+  replacement: "none"
+  note: "Struct-to-tagged-union merge removed. Recreate with Stream.mergeAll over the entries, tagging each stream first."
+  example: "Stream.mergeAll(Object.entries(streams).map(([_tag, s]) => Stream.map(s, (value) => ({ _tag, value }))), { concurrency })"
+effect/Stream#onDone:
+  replacement: "Stream.onEnd"
+  note: "Renamed; v4 onEnd takes an Effect value (not a () => Effect thunk) run when the stream ends successfully, and its error type may add to the stream's."
+
+effect/Stream#orDieWith:
+  replacement: "Stream.orDie"
+  note: "orDieWith removed; transform the error first, then convert failures to defects: `self.pipe(Stream.mapError(f), Stream.orDie)`."
+effect/Stream#orElse:
+  replacement: "Stream.catch"
+  note: "v3 catchAll was renamed to Stream.catch in v4; orElse ignored the error, so write `Stream.catch(self, () => that())`."
+effect/Stream#orElseEither:
+  replacement: "Stream.catch"
+  note: "Removed; Either is replaced by Result in v4. Emulate: `Stream.map(self, Result.succeed).pipe(Stream.catch(() => Stream.map(that(), Result.fail)))` (same encoding v4 Stream.mergeResult uses)."
+effect/Stream#orElseFail:
+  replacement: "Stream.mapError"
+  note: "Removed; it only replaced the failure value: `Stream.mapError(self, () => error())` or `Stream.catch(self, () => Stream.fail(error()))`."
+effect/Stream#orElseIfEmptyChunk:
+  replacement: "Stream.orElseIfEmpty"
+  note: "Folded into Stream.orElseIfEmpty, which now takes a lazy fallback Stream: `Stream.orElseIfEmpty(self, () => Stream.fromArray(array))`; Chunk is replaced by plain arrays."
+effect/Stream#orElseIfEmptyStream:
+  replacement: "Stream.orElseIfEmpty"
+  note: "Direct rename: v4 Stream.orElseIfEmpty takes a LazyArg<Stream> fallback, identical semantics."
+effect/Stream#paginateChunk:
+  replacement: "Stream.paginate"
+  note: "v4 Stream.paginate is effectful and array-based: `paginate(s, (s) => Effect<readonly [ReadonlyArray<A>, Option<S>]>)`; wrap the pure step in Effect.succeed and use an array instead of a Chunk."
+effect/Stream#paginateChunkEffect:
+  replacement: "Stream.paginate"
+  note: "v4 Stream.paginate has exactly this shape; only Chunk becomes ReadonlyArray."
+effect/Stream#paginateEffect:
+  replacement: "Stream.paginate"
+  note: "v4 Stream.paginate emits a batch per step; wrap the single value in an array: `(s) => Effect.map(step(s), ([a, next]) => [[a], next])`."
+effect/Stream#partitionEither:
+  replacement: "Stream.partitionEffect"
+  note: "Either-based split replaced by Filter.FilterEffect: the function now returns Effect<Result<Pass, Fail>> (Result.succeed/Result.fail instead of Either.right/left). Returns Effect<[passes, fails], never, R | Scope> — note the tuple is [passes, fails], v3 was [left, right]; options are { capacity?, concurrency? }."
+effect/Stream#provideLayer:
+  replacement: "Stream.provide"
+  note: "v4 Stream.provide accepts a Layer or a Context; behavior identical."
+effect/Stream#provideServiceStream:
+  replacement: "none"
+  note: "Removed; v4 has provideService/provideServiceEffect but no stream-valued variant. Emulate with `Stream.flatMap(services, (s) => Stream.provideService(self, tag, s))` over the service stream, or use Stream.provideServiceEffect for effectful acquisition."
+effect/Stream#provideSomeContext:
+  replacement: "Stream.provideContext"
+  note: "v4 Stream.provideContext is the single Context provider with `Exclude<R, R2>` semantics — same behavior as v3 provideSomeContext."
+effect/Stream#provideSomeLayer:
+  replacement: "Stream.provide"
+  note: "v4 Stream.provide accepts a Layer (or Context) and excludes only the provided services from R — same partial-provision semantics."
+effect/Stream#refineOrDie:
+  replacement: "Stream.catch"
+  note: "Removed; emulate with `Stream.catch(self, (e) => { const r = pf(e); return Option.isSome(r) ? Stream.fail(r.value) : Stream.die(e) })` — refail refined errors, die on the rest."
+effect/Stream#refineOrDieWith:
+  replacement: "Stream.catch"
+  note: "Removed; same as refineOrDie but die with the mapped defect: `Stream.die(f(e))` for unrefined errors."
+effect/Stream#repeatEffect:
+  replacement: "Stream.fromEffectRepeat"
+  note: "Renamed; repeats the effect forever emitting each result."
+effect/Stream#repeatEffectChunk:
+  replacement: "Stream.fromIterableEffectRepeat"
+  note: "Renamed; the effect now produces an Iterable/array instead of a Chunk, repeated forever."
+effect/Stream#repeatEffectChunkOption:
+  replacement: "Stream.fromIterableEffectRepeat"
+  note: "The Option<E> error encoding is gone: end the stream by failing the effect with `Cause.done()` (a Cause.Done failure); Done is excluded from the resulting stream's error type (Pull.ExcludeDone<E>)."
+effect/Stream#repeatEffectOption:
+  replacement: "Stream.fromEffectRepeat"
+  note: "The Option<E> error encoding is gone: fail the effect with `Cause.done()` instead of Option.none() to end the stream; other failures propagate as stream errors."
+effect/Stream#repeatEffectWithSchedule:
+  replacement: "Stream.fromEffectSchedule"
+  note: "Renamed; runs the effect once, then repeats it per the schedule, emitting each result."
+effect/Stream#repeatEither:
+  replacement: "none"
+  note: "Removed; v4 Stream.repeat(schedule) repeats the stream but never emits the schedule outputs, and no Either/unification variant exists. If schedule outputs must be observed, hand-roll with Channel or track them via a schedule that taps into a Ref."
+effect/Stream#repeatElementsWith:
+  replacement: "none"
+  note: "Removed; v4 Stream.repeatElements(schedule) repeats each element per the schedule but never emits schedule outputs — the onElement/onSchedule unification is gone. Use repeatElements if only element repetition is needed."
+effect/Stream#repeatValue:
+  replacement: "Stream.fromEffectRepeat"
+  note: "Removed; use `Stream.fromEffectRepeat(Effect.succeed(value))` or `Stream.forever(Stream.succeed(value))`."
+effect/Stream#repeatWith:
+  replacement: "none"
+  note: "Removed; v4 Stream.repeat(schedule) covers the repetition but drops the schedule outputs and the onElement/onSchedule unification. Hand-roll if schedule outputs must appear in the stream."
+effect/Stream#runFoldScoped:
+  replacement: "Stream.runFold"
+  note: "Scoped run variants are gone; v4 run functions manage the stream's scope internally and the initial value is now a LazyArg: `Stream.runFold(self, () => s, f)`. For enclosing-scope control, pull manually via `Stream.toPull` (Effect<Pull, never, R | Scope>)."
+effect/Stream#runFoldScopedEffect:
+  replacement: "Stream.runFoldEffect"
+  note: "Scoped run variants are gone; use `Stream.runFoldEffect(self, () => s, f)` — scope is managed internally, initial value is a LazyArg. Use Stream.toPull for manual scoped consumption."
+effect/Stream#runFoldWhile:
+  replacement: "none"
+  note: "v4 runFold has no early-exit predicate; emulate with Stream.runForEachWhile and a mutable accumulator."
+  example: |
+    // v3: Stream.runFoldWhile(self, init, cont, f)
+    Effect.suspend(() => {
+      let acc = init
+      return Stream.runForEachWhile(self, (a) => {
+        acc = f(acc, a)
+        return Effect.succeed(cont(acc))
+      }).pipe(Effect.map(() => acc))
+    })
+effect/Stream#runFoldWhileEffect:
+  replacement: "none"
+  note: "v4 runFoldEffect has no early-exit predicate; emulate with Stream.runForEachWhile and a mutable accumulator, mapping the effectful step to Effect<boolean> via cont(acc) (see runFoldWhile example)."
+effect/Stream#runFoldWhileScoped:
+  replacement: "none"
+  note: "Both the while-predicate and the scoped run variants are gone in v4; emulate the predicate with Stream.runForEachWhile plus a mutable accumulator (see runFoldWhile); scope is managed internally by v4 run functions."
+effect/Stream#runFoldWhileScopedEffect:
+  replacement: "none"
+  note: "Both the while-predicate and the scoped run variants are gone in v4; emulate with Stream.runForEachWhile plus a mutable accumulator and effectful step; scope is managed internally by v4 run functions."
+effect/Stream#runForEachChunk:
+  replacement: "Stream.runForEachArray"
+  note: "Renamed; the callback receives a NonEmptyReadonlyArray instead of a Chunk."
+effect/Stream#runForEachChunkScoped:
+  replacement: "Stream.runForEachArray"
+  note: "Scoped run variants are gone; v4 runForEachArray manages the stream scope internally. Use Stream.toPull for manual scoped consumption."
+effect/Stream#runForEachScoped:
+  replacement: "Stream.runForEach"
+  note: "Scoped run variants are gone; v4 runForEach manages the stream scope internally. Use Stream.toPull for manual scoped consumption."
+effect/Stream#runForEachWhileScoped:
+  replacement: "Stream.runForEachWhile"
+  note: "Scoped run variants are gone; v4 runForEachWhile (callback returns Effect<boolean>) manages the stream scope internally."
+effect/Stream#runIntoPubSubScoped:
+  replacement: "Stream.runIntoPubSub"
+  note: "Scoped variant removed; v4 runIntoPubSub(pubsub, { shutdownOnEnd? }) publishes plain values (the Take wrapper is gone) and does not require Scope — fork the returned effect (Effect.forkIn/Effect.forkScoped) to reproduce the background scoped behavior."
+effect/Stream#runIntoQueueElementsScoped:
+  replacement: "Stream.runIntoQueue"
+  note: "The per-element Exit<A, Option<E>> encoding is gone; v4 runIntoQueue targets a Queue<A, E | Cause.Done> — elements are offered plainly and failure/end are signalled through the queue's error/done channel. Fork with Effect.forkIn for scoped background running."
+effect/Stream#runIntoQueueScoped:
+  replacement: "Stream.runIntoQueue"
+  note: "Scoped variant removed; v4 runIntoQueue offers plain values to a Queue<A, E | Cause.Done> (Take wrapper gone) and requires no Scope — fork the returned effect into a scope (Effect.forkIn) if needed."
+effect/Stream#runScoped:
+  replacement: "Stream.run"
+  note: "Scoped variant removed; v4 Stream.run(sink) manages the stream's scope internally. For consumption tied to an enclosing Scope, use Stream.toPull and drive the Pull manually."
+effect/Stream#scanReduce:
+  replacement: "Stream.mapAccum"
+  note: "Removed; emulate first-element-as-seed with `Stream.mapAccum(self, () => undefined as A | undefined, (acc, a) => { const next = acc === undefined ? a : f(acc, a); return [next, [next]] })`."
+effect/Stream#scanReduceEffect:
+  replacement: "Stream.mapAccumEffect"
+  note: "Removed; same first-element-as-seed emulation as scanReduce but with Stream.mapAccumEffect and an effectful step."
+effect/Stream#scheduleWith:
+  replacement: "none"
+  note: "Removed; v4 Stream.schedule(schedule) only paces elements and never emits schedule outputs — the onElement/onSchedule unification is gone. Use Stream.schedule if only pacing is needed."
+effect/Stream#scopedWith:
+  replacement: "Stream.scoped"
+  note: "Removed; v4 Stream.scoped scopes a Stream (provides a Scope kept open for the stream's lifetime). Emulate: `Stream.scoped(Stream.fromEffect(Effect.flatMap(Effect.scope, f)))` — Effect.scope accesses the ambient Scope."
+effect/Stream#some:
+  replacement: "none"
+  note: "Removed along with Option<E> error encodings. To drop None values use `Stream.filterMap(self, Filter.fromPredicateOption((o) => o))`; to fail on None use Stream.mapEffect with Option.match into Effect.fail/Effect.succeed."
+effect/Stream#someOrElse:
+  replacement: "Stream.map"
+  note: "Removed; use `Stream.map(self, Option.getOrElse(() => fallback()))`."
+effect/Stream#someOrFail:
+  replacement: "Stream.mapEffect"
+  note: "Removed; use `Stream.mapEffect(self, Option.match({ onNone: () => Effect.fail(error()), onSome: Effect.succeed }))`."
+effect/Stream#splitOnChunk:
+  replacement: "none"
+  note: "Delimiter-subsequence splitting was removed; v4 keeps only Stream.split (predicate/refinement, emitting NonEmptyReadonlyArray segments) and Stream.splitLines. Hand-roll multi-element delimiter splitting with Stream.mapAccumArray."
+effect/Stream#tapErrorCause:
+  replacement: "Stream.tapCause"
+  note: "Renamed; taps the full Cause on failure."
+effect/Stream#timeoutFail:
+  replacement: "Stream.timeoutOrElse"
+  note: "Use `Stream.timeoutOrElse(self, { duration, orElse: () => Stream.fail(error()) })`; the timeout resets on every emitted value as before."
+effect/Stream#timeoutFailCause:
+  replacement: "Stream.timeoutOrElse"
+  note: "Use `Stream.timeoutOrElse(self, { duration, orElse: () => Stream.failCause(cause()) })`."
+effect/Stream#timeoutTo:
+  replacement: "Stream.timeoutOrElse"
+  note: "Renamed into an options form: `Stream.timeoutOrElse(self, { duration, orElse: () => that })` — the fallback stream is now lazy."
+effect/Stream#toAsyncIterableRuntime:
+  replacement: "Stream.toAsyncIterableWith"
+  note: "Renamed; takes a `Context.Context<XR>` instead of a Runtime (v4 removed Runtime — a services Context is the execution environment). toAsyncIterable/toAsyncIterableEffect also still exist."
+effect/Stream#toQueueOfElements:
+  replacement: "Stream.toQueue"
+  note: "The Exit<A, Option<E>>-per-element queue is gone; v4 toQueue(options: { capacity, strategy? }) returns Effect<Queue.Dequeue<A, E | Cause.Done>, never, R | Scope> — elements are plain values and failure/end arrive through the queue's error/done channel."
+effect/Stream#toReadableStreamRuntime:
+  replacement: "Stream.toReadableStreamWith"
+  note: "Renamed; takes a `Context.Context<XR>` instead of a Runtime (v4 removed Runtime); options `{ strategy?: QueuingStrategy }` unchanged."
+effect/Stream#transduce:
+  include: true
+  replacement: "Stream.transduce"
+  note: "Unchanged name and Sink-based shape; chunks are plain arrays in v4."
+effect/Stream#unfoldChunk:
+  replacement: "Stream.paginate"
+  note: "Removed; v4 Stream.paginate(s, (s) => Effect<[ReadonlyArray<A>, Option<S>]>) is the array-emitting unfold — wrap the pure step in Effect.succeed; to end without emitting return `[[], Option.none()]`."
+effect/Stream#unfoldChunkEffect:
+  replacement: "Stream.paginate"
+  note: "Removed; v4 Stream.paginate has the effectful array-step shape — map v3's Option<[Chunk, S]> result to `[array, Option<S>]`, returning `[[], Option.none()]` to end without emitting."
+effect/Stream#unfoldEffect:
+  replacement: "Stream.unfold"
+  note: "v4 Stream.unfold is effectful: `unfold(s, (s) => Effect<readonly [A, S] | undefined>)` — return the pair or `undefined` to end instead of Option."
+effect/Stream#unwrapScoped:
+  replacement: "Stream.unwrap"
+  note: "v4 Stream.unwrap accepts scoped effects (`Exclude<R, Scope>` built in); the scope stays open for the stream's lifetime — it replaces both unwrap and unwrapScoped."
+effect/Stream#unwrapScopedWith:
+  replacement: "Stream.unwrap"
+  note: "Removed; access the ambient Scope explicitly: `Stream.unwrap(Effect.flatMap(Effect.scope, f))` — v4 unwrap keeps the scope open for the stream's lifetime."
+effect/Stream#void:
+  replacement: "Stream.succeed(void 0)"
+  note: "The `Stream.void` constant (single void element) was removed; use `Stream.succeed(void 0)` or `Stream.make(void 0)`."
+effect/Stream#whenCase:
+  replacement: "none"
+  note: "Removed; emulate with `Stream.suspend(() => Option.match(pf(evaluate()), { onNone: () => Stream.empty, onSome: (s) => s }))`."
+effect/Stream#whenCaseEffect:
+  replacement: "none"
+  note: "Removed; emulate with `Stream.unwrap(Effect.map(self, (a) => Option.match(pf(a), { onNone: () => Stream.empty, onSome: (s) => s })))`."
+effect/Stream#whenEffect:
+  replacement: "Stream.when"
+  note: "Folded into Stream.when, which now takes an `Effect<boolean>` test directly (wrap a pure condition with Effect.sync)."
+effect/Stream#zipAll:
+  replacement: "none"
+  note: "The entire zipAll family was removed in v4 (only zip/zipLatest/zipLatestAll exist; zip ends at the shorter side, zipLatest* combine latest values — different semantics). Pad-with-default zipping must be hand-rolled, e.g. with Stream.combineArray pulling both sides."
+effect/Stream#zipAllLeft:
+  replacement: "none"
+  note: "Removed with the zipAll family; no default-padding zip exists in v4. Hand-roll with Stream.combineArray (or concat the remainder after a plain Stream.zipLeft) if needed."
+effect/Stream#zipAllRight:
+  replacement: "none"
+  note: "Removed with the zipAll family; no default-padding zip exists in v4. Hand-roll with Stream.combineArray if needed."
+effect/Stream#zipAllSortedByKey:
+  replacement: "none"
+  note: "Removed; the sorted-by-key merge-join family has no v4 equivalent (checked v4 Stream exports — only zip/zipLatest/zipLatestAll/zipWithArray). Hand-roll a keyed merge with Stream.combineArray."
+effect/Stream#zipAllSortedByKeyLeft:
+  replacement: "none"
+  note: "Removed; see zipAllSortedByKey — no keyed merge-join in v4, hand-roll with Stream.combineArray."
+effect/Stream#zipAllSortedByKeyRight:
+  replacement: "none"
+  note: "Removed; see zipAllSortedByKey — no keyed merge-join in v4, hand-roll with Stream.combineArray."
+effect/Stream#zipAllSortedByKeyWith:
+  replacement: "none"
+  note: "Removed; see zipAllSortedByKey — no keyed merge-join in v4, hand-roll with Stream.combineArray."
+effect/Stream#zipAllWith:
+  replacement: "none"
+  note: "Removed with the zipAll family; v4 has no zip that pads the shorter side with defaults. Hand-roll with Stream.combineArray."
+effect/Stream#zipWithChunks:
+  replacement: "Stream.zipWithArray"
+  note: "Renamed; the combiner now receives two NonEmptyReadonlyArrays and returns `[output: NonEmptyReadonlyArray, leftoverLeft: ReadonlyArray, leftoverRight: ReadonlyArray]` — the Either-wrapped leftover (ZipChunksResult) is replaced by the two explicit leftover arrays."

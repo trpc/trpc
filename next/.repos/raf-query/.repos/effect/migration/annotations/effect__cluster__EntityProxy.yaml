@@ -1,0 +1,6 @@
+"@effect/cluster/EntityProxy#ConvertHttpApi":
+  replacement: "effect/cluster/EntityProxy#ConvertHttpApi"
+  note: "Moved into core Effect and updated to the v4 HttpApiEndpoint and Schema types."
+"@effect/cluster/EntityProxy#ConvertRpcs":
+  replacement: "effect/cluster/EntityProxy#ConvertRpcs"
+  note: "Moved into core Effect and updated to the v4 Rpc and Schema type parameters."

@@ -1,0 +1,22 @@
+"@effect/experimental/RateLimiter#layer":
+  replacement: effect/persistence/RateLimiter#layer
+  note: Import layer from the v4 unstable RateLimiter module.
+"@effect/experimental/RateLimiter#make":
+  replacement: effect/persistence/RateLimiter#make
+  note: Import make from the v4 unstable RateLimiter module.
+"@effect/experimental/RateLimiter#makeSleep":
+  replacement: effect/persistence/RateLimiter#sleep
+  note: The accessor Effect was replaced by sleep; obtain the RateLimiter service and pass it to sleep directly or with its curried overload.
+"@effect/experimental/RateLimiter#RateLimiterError":
+  replacement: effect/persistence/RateLimiter#RateLimiterError
+  note: The retained name is now a wrapper error class whose reason is RateLimitExceeded or RateLimitStoreError.
+"@effect/experimental/RateLimiter#ErrorTypeId":
+  replacement: effect/persistence/RateLimiter#ErrorTypeId
+  note: Retained as a string brand; the runtime marker now uses the persistence module path.
+"@effect/experimental/RateLimiter#TypeId":
+  replacement: effect/persistence/RateLimiter#TypeId
+  note: Import TypeId from the v4 unstable RateLimiter module; it is now a string brand.
+"@effect/experimental/RateLimiter#RateLimiterStore":
+  include: true
+  replacement: RateLimiter.RateLimiterStore
+  note: "Use the Context.Service class from effect/persistence/RateLimiter. Custom tokenBucket implementations must return [remaining, elapsedMillis] instead of a number, preserving fractional counts and elapsed refill time."

@@ -1,0 +1,24 @@
+"@effect/platform/Cookies#CookieTypeId":
+  replacement: "Cookies.isCookie"
+  note: "The cookie brand is private in v4; use the public refinement instead of reading the type-id symbol."
+"@effect/platform/Cookies#ErrorTypeId":
+  replacement: "Cookies.CookiesError"
+  note: "The error brand is private in v4; identify the exported error class instead."
+"@effect/platform/Cookies#remove":
+  replacement: "Cookies.remove"
+  note: "Retained with the same dual name-based removal signature."
+"@effect/platform/Cookies#TypeId":
+  replacement: "Cookies.isCookies"
+  note: "The collection brand is private in v4; use the public refinement instead."
+"@effect/platform/Cookies#unsafeMakeCookie":
+  replacement: "Cookies.makeCookieUnsafe"
+  note: "Renamed to put Unsafe last; it still throws on invalid cookie data."
+"@effect/platform/Cookies#unsafeSet":
+  replacement: "Cookies.setUnsafe"
+  note: "Renamed to put Unsafe last; the dual throwing behavior is retained."
+"@effect/platform/Cookies#unsafeSetAll":
+  replacement: "Cookies.setAllUnsafe"
+  note: "Renamed to put Unsafe last; the dual all-or-throw behavior is retained."
+"@effect/platform/Cookies#CookiesError":
+  replacement: "Cookies.CookiesError"
+  note: "The error tag is CookiesError rather than CookieError. Update catchTag calls and _tag comparisons; validation details are in the reason field."

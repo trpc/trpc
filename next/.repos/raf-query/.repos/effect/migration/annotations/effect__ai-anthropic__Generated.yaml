@@ -1,0 +1,1023 @@
+"@effect/ai-anthropic/Generated#APIError":
+  replacement: "Generated.APIError"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#AuthenticationError":
+  replacement: "Generated.AuthenticationError"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#Base64ImageSource":
+  replacement: "Generated.Base64ImageSource"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#Base64ImageSourceMediaType":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#Base64PDFSource":
+  replacement: "Generated.Base64PDFSource"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BashTool20250124":
+  replacement: "Generated.BashTool_20250124"
+  note: "Regenerated in v4 under this name; update the identifier and re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaAPIError":
+  replacement: "Generated.BetaAPIError"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaapiSchemasSkillsSkill":
+  replacement: "Generated.Betaapi__schemas__skills__Skill"
+  note: "Regenerated in v4 under this name; update the identifier and re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaAuthenticationError":
+  replacement: "Generated.BetaAuthenticationError"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaBase64ImageSource":
+  replacement: "Generated.BetaBase64ImageSource"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaBase64ImageSourceMediaType":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#BetaBase64PDFSource":
+  replacement: "Generated.BetaBase64PDFSource"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaBashCodeExecutionToolResultErrorCode":
+  replacement: "Generated.BetaBashCodeExecutionToolResultErrorCode"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaBashTool20241022":
+  replacement: "Generated.BetaBashTool_20241022"
+  note: "Regenerated in v4 under this name; update the identifier and re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaBashTool20250124":
+  replacement: "Generated.BetaBashTool_20250124"
+  note: "Regenerated in v4 under this name; update the identifier and re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaBillingError":
+  replacement: "Generated.BetaBillingError"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaBodyCreateSkillV1SkillsPost":
+  replacement: "Generated.BetaBody_create_skill_v1_skills_post"
+  note: "Regenerated in v4 under this name; update the identifier and re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaBodyCreateSkillVersionV1SkillsSkillIdVersionsPost":
+  replacement: "Generated.BetaBody_create_skill_version_v1_skills__skill_id__versions_post"
+  note: "Regenerated in v4 under this name; update the identifier and re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaCacheControlEphemeral":
+  replacement: "Generated.BetaCacheControlEphemeral"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaCacheControlEphemeralTtl":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#BetaCacheCreation":
+  replacement: "Generated.BetaCacheCreation"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaClearToolUses20250919":
+  replacement: "Generated.BetaClearToolUses20250919"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaCodeExecutionTool20250522":
+  replacement: "Generated.BetaCodeExecutionTool_20250522"
+  note: "Regenerated in v4 under this name; update the identifier and re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaCodeExecutionTool20250825":
+  replacement: "Generated.BetaCodeExecutionTool_20250825"
+  note: "Regenerated in v4 under this name; update the identifier and re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaCodeExecutionToolResultErrorCode":
+  replacement: "Generated.BetaCodeExecutionToolResultErrorCode"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaComputerUseTool20241022":
+  replacement: "Generated.BetaComputerUseTool_20241022"
+  note: "Regenerated in v4 under this name; update the identifier and re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaComputerUseTool20250124":
+  replacement: "Generated.BetaComputerUseTool_20250124"
+  note: "Regenerated in v4 under this name; update the identifier and re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaContainer":
+  replacement: "Generated.BetaContainer"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaContainerParams":
+  replacement: "Generated.BetaContainerParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaContentBlock":
+  replacement: "Generated.BetaContentBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaContentBlockSource":
+  replacement: "Generated.BetaContentBlockSource"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaContextManagementConfig":
+  replacement: "Generated.BetaContextManagementConfig"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaContextManagementResponse":
+  replacement: "Generated.BetaContextManagementResponse"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaCountMessageTokensParams":
+  replacement: "Generated.BetaCountMessageTokensParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaCountMessageTokensResponse":
+  replacement: "Generated.BetaCountMessageTokensResponse"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaCreateMessageBatchParams":
+  replacement: "Generated.BetaCreateMessageBatchParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaCreateMessageParams":
+  replacement: "Generated.BetaCreateMessageParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaCreateMessageParamsServiceTier":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#BetaCreateSkillResponse":
+  replacement: "Generated.BetaCreateSkillResponse"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaCreateSkillV1SkillsPostParams":
+  replacement: "Generated.BetaCreateSkillV1SkillsPostParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaCreateSkillVersionResponse":
+  replacement: "Generated.BetaCreateSkillVersionResponse"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaCreateSkillVersionV1SkillsSkillIdVersionsPostParams":
+  replacement: "Generated.BetaCreateSkillVersionV1SkillsSkillIdVersionsPostParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaDeleteFileV1FilesFileIdDeleteParams":
+  replacement: "Generated.BetaDeleteFileV1FilesFileIdDeleteParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaDeleteMessageBatchResponse":
+  replacement: "Generated.BetaDeleteMessageBatchResponse"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaDeleteSkillResponse":
+  replacement: "Generated.BetaDeleteSkillResponse"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaDeleteSkillV1SkillsSkillIdDeleteParams":
+  replacement: "Generated.BetaDeleteSkillV1SkillsSkillIdDeleteParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaDeleteSkillVersionResponse":
+  replacement: "Generated.BetaDeleteSkillVersionResponse"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaDeleteSkillVersionV1SkillsSkillIdVersionsVersionDeleteParams":
+  replacement: "Generated.BetaDeleteSkillVersionV1SkillsSkillIdVersionsVersionDeleteParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaDownloadFileV1FilesFileIdContentGetParams":
+  replacement: "Generated.BetaDownloadFileV1FilesFileIdContentGetParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaErrorResponse":
+  replacement: "Generated.BetaErrorResponse"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaFileDeleteResponse":
+  replacement: "Generated.BetaFileDeleteResponse"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaFileDocumentSource":
+  replacement: "Generated.BetaFileDocumentSource"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaFileImageSource":
+  replacement: "Generated.BetaFileImageSource"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaFileListResponse":
+  replacement: "Generated.BetaFileListResponse"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaFileMetadataSchema":
+  replacement: "Generated.BetaFileMetadataSchema"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaGatewayTimeoutError":
+  replacement: "Generated.BetaGatewayTimeoutError"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaGetFileMetadataV1FilesFileIdGetParams":
+  replacement: "Generated.BetaGetFileMetadataV1FilesFileIdGetParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaGetSkillResponse":
+  replacement: "Generated.BetaGetSkillResponse"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaGetSkillV1SkillsSkillIdGetParams":
+  replacement: "Generated.BetaGetSkillV1SkillsSkillIdGetParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaGetSkillVersionResponse":
+  replacement: "Generated.BetaGetSkillVersionResponse"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaGetSkillVersionV1SkillsSkillIdVersionsVersionGetParams":
+  replacement: "Generated.BetaGetSkillVersionV1SkillsSkillIdVersionsVersionGetParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaInputContentBlock":
+  replacement: "Generated.BetaInputContentBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaInputMessage":
+  replacement: "Generated.BetaInputMessage"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaInputMessageRole":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#BetaInputSchema":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#BetaInputTokensClearAtLeast":
+  replacement: "Generated.BetaInputTokensClearAtLeast"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaInputTokensTrigger":
+  replacement: "Generated.BetaInputTokensTrigger"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaInvalidRequestError":
+  replacement: "Generated.BetaInvalidRequestError"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaListFilesV1FilesGetParams":
+  replacement: "Generated.BetaListFilesV1FilesGetParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaListResponseMessageBatch":
+  replacement: "Generated.BetaListResponse_MessageBatch_"
+  note: "Regenerated in v4 under this name; update the identifier and re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaListResponseModelInfo":
+  replacement: "Generated.BetaListResponse_ModelInfo_"
+  note: "Regenerated in v4 under this name; update the identifier and re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaListSkillsResponse":
+  replacement: "Generated.BetaListSkillsResponse"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaListSkillsV1SkillsGetParams":
+  replacement: "Generated.BetaListSkillsV1SkillsGetParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaListSkillVersionsResponse":
+  replacement: "Generated.BetaListSkillVersionsResponse"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaListSkillVersionsV1SkillsSkillIdVersionsGetParams":
+  replacement: "Generated.BetaListSkillVersionsV1SkillsSkillIdVersionsGetParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaMemoryTool20250818":
+  replacement: "Generated.BetaMemoryTool_20250818"
+  note: "Regenerated in v4 under this name; update the identifier and re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaMessage":
+  replacement: "Generated.BetaMessage"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaMessageBatch":
+  replacement: "Generated.BetaMessageBatch"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaMessageBatchesCancelParams":
+  replacement: "Generated.BetaMessageBatchesCancelParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaMessageBatchesDeleteParams":
+  replacement: "Generated.BetaMessageBatchesDeleteParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaMessageBatchesListParams":
+  replacement: "Generated.BetaMessageBatchesListParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaMessageBatchesPostParams":
+  replacement: "Generated.BetaMessageBatchesPostParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaMessageBatchesResultsParams":
+  replacement: "Generated.BetaMessageBatchesResultsParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaMessageBatchesRetrieveParams":
+  replacement: "Generated.BetaMessageBatchesRetrieveParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaMessageBatchIndividualRequestParams":
+  replacement: "Generated.BetaMessageBatchIndividualRequestParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaMessageBatchProcessingStatus":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#BetaMessagesCountTokensPostParams":
+  replacement: "Generated.BetaMessagesCountTokensPostParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaMessagesPostParams":
+  replacement: "Generated.BetaMessagesPostParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaMetadata":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#BetaModelInfo":
+  replacement: "Generated.BetaModelInfo"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaModelsGetParams":
+  replacement: "Generated.BetaModelsGetParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaModelsListParams":
+  replacement: "Generated.BetaModelsListParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaNotFoundError":
+  replacement: "Generated.BetaNotFoundError"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaOverloadedError":
+  replacement: "Generated.BetaOverloadedError"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaPermissionError":
+  replacement: "Generated.BetaPermissionError"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaPlainTextSource":
+  replacement: "Generated.BetaPlainTextSource"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRateLimitError":
+  replacement: "Generated.BetaRateLimitError"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestBashCodeExecutionOutputBlock":
+  replacement: "Generated.BetaRequestBashCodeExecutionOutputBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestBashCodeExecutionResultBlock":
+  replacement: "Generated.BetaRequestBashCodeExecutionResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestBashCodeExecutionToolResultBlock":
+  replacement: "Generated.BetaRequestBashCodeExecutionToolResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestBashCodeExecutionToolResultError":
+  replacement: "Generated.BetaRequestBashCodeExecutionToolResultError"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestCharLocationCitation":
+  replacement: "Generated.BetaRequestCharLocationCitation"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestCitationsConfig":
+  replacement: "Generated.BetaRequestCitationsConfig"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestCodeExecutionOutputBlock":
+  replacement: "Generated.BetaRequestCodeExecutionOutputBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestCodeExecutionResultBlock":
+  replacement: "Generated.BetaRequestCodeExecutionResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestCodeExecutionToolResultBlock":
+  replacement: "Generated.BetaRequestCodeExecutionToolResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestCodeExecutionToolResultError":
+  replacement: "Generated.BetaRequestCodeExecutionToolResultError"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestContainerUploadBlock":
+  replacement: "Generated.BetaRequestContainerUploadBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestContentBlockLocationCitation":
+  replacement: "Generated.BetaRequestContentBlockLocationCitation"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestCounts":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#BetaRequestDocumentBlock":
+  replacement: "Generated.BetaRequestDocumentBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestImageBlock":
+  replacement: "Generated.BetaRequestImageBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestMCPServerToolConfiguration":
+  replacement: "Generated.BetaRequestMCPServerToolConfiguration"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestMCPServerURLDefinition":
+  replacement: "Generated.BetaRequestMCPServerURLDefinition"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestMCPToolResultBlock":
+  replacement: "Generated.BetaRequestMCPToolResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestMCPToolUseBlock":
+  replacement: "Generated.BetaRequestMCPToolUseBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestPageLocationCitation":
+  replacement: "Generated.BetaRequestPageLocationCitation"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestRedactedThinkingBlock":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#BetaRequestSearchResultBlock":
+  replacement: "Generated.BetaRequestSearchResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestSearchResultLocationCitation":
+  replacement: "Generated.BetaRequestSearchResultLocationCitation"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestServerToolUseBlock":
+  replacement: "Generated.BetaRequestServerToolUseBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestServerToolUseBlockName":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#BetaRequestTextBlock":
+  replacement: "Generated.BetaRequestTextBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestTextEditorCodeExecutionCreateResultBlock":
+  replacement: "Generated.BetaRequestTextEditorCodeExecutionCreateResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestTextEditorCodeExecutionStrReplaceResultBlock":
+  replacement: "Generated.BetaRequestTextEditorCodeExecutionStrReplaceResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestTextEditorCodeExecutionToolResultBlock":
+  replacement: "Generated.BetaRequestTextEditorCodeExecutionToolResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestTextEditorCodeExecutionToolResultError":
+  replacement: "Generated.BetaRequestTextEditorCodeExecutionToolResultError"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestTextEditorCodeExecutionViewResultBlock":
+  replacement: "Generated.BetaRequestTextEditorCodeExecutionViewResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestTextEditorCodeExecutionViewResultBlockFileType":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#BetaRequestThinkingBlock":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#BetaRequestToolResultBlock":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#BetaRequestToolUseBlock":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#BetaRequestWebFetchResultBlock":
+  replacement: "Generated.BetaRequestWebFetchResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestWebFetchToolResultBlock":
+  replacement: "Generated.BetaRequestWebFetchToolResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestWebFetchToolResultError":
+  replacement: "Generated.BetaRequestWebFetchToolResultError"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestWebSearchResultBlock":
+  replacement: "Generated.BetaRequestWebSearchResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestWebSearchResultLocationCitation":
+  replacement: "Generated.BetaRequestWebSearchResultLocationCitation"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestWebSearchToolResultBlock":
+  replacement: "Generated.BetaRequestWebSearchToolResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaRequestWebSearchToolResultError":
+  replacement: "Generated.BetaRequestWebSearchToolResultError"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseBashCodeExecutionOutputBlock":
+  replacement: "Generated.BetaResponseBashCodeExecutionOutputBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseBashCodeExecutionResultBlock":
+  replacement: "Generated.BetaResponseBashCodeExecutionResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseBashCodeExecutionToolResultBlock":
+  replacement: "Generated.BetaResponseBashCodeExecutionToolResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseBashCodeExecutionToolResultError":
+  replacement: "Generated.BetaResponseBashCodeExecutionToolResultError"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseCharLocationCitation":
+  replacement: "Generated.BetaResponseCharLocationCitation"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseCitationsConfig":
+  replacement: "Generated.BetaResponseCitationsConfig"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseClearToolUses20250919Edit":
+  replacement: "Generated.BetaResponseClearToolUses20250919Edit"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseCodeExecutionOutputBlock":
+  replacement: "Generated.BetaResponseCodeExecutionOutputBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseCodeExecutionResultBlock":
+  replacement: "Generated.BetaResponseCodeExecutionResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseCodeExecutionToolResultBlock":
+  replacement: "Generated.BetaResponseCodeExecutionToolResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseCodeExecutionToolResultError":
+  replacement: "Generated.BetaResponseCodeExecutionToolResultError"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseContainerUploadBlock":
+  replacement: "Generated.BetaResponseContainerUploadBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseContentBlockLocationCitation":
+  replacement: "Generated.BetaResponseContentBlockLocationCitation"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseContextManagement":
+  replacement: "Generated.BetaResponseContextManagement"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseDocumentBlock":
+  replacement: "Generated.BetaResponseDocumentBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseMCPToolResultBlock":
+  replacement: "Generated.BetaResponseMCPToolResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseMCPToolUseBlock":
+  replacement: "Generated.BetaResponseMCPToolUseBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponsePageLocationCitation":
+  replacement: "Generated.BetaResponsePageLocationCitation"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseRedactedThinkingBlock":
+  replacement: "Generated.BetaResponseRedactedThinkingBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseSearchResultLocationCitation":
+  replacement: "Generated.BetaResponseSearchResultLocationCitation"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseServerToolUseBlock":
+  replacement: "Generated.BetaResponseServerToolUseBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseServerToolUseBlockName":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#BetaResponseTextBlock":
+  replacement: "Generated.BetaResponseTextBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseTextEditorCodeExecutionCreateResultBlock":
+  replacement: "Generated.BetaResponseTextEditorCodeExecutionCreateResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseTextEditorCodeExecutionStrReplaceResultBlock":
+  replacement: "Generated.BetaResponseTextEditorCodeExecutionStrReplaceResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseTextEditorCodeExecutionToolResultBlock":
+  replacement: "Generated.BetaResponseTextEditorCodeExecutionToolResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseTextEditorCodeExecutionToolResultError":
+  replacement: "Generated.BetaResponseTextEditorCodeExecutionToolResultError"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseTextEditorCodeExecutionViewResultBlock":
+  replacement: "Generated.BetaResponseTextEditorCodeExecutionViewResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseTextEditorCodeExecutionViewResultBlockFileType":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#BetaResponseThinkingBlock":
+  replacement: "Generated.BetaResponseThinkingBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseToolUseBlock":
+  replacement: "Generated.BetaResponseToolUseBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseWebFetchResultBlock":
+  replacement: "Generated.BetaResponseWebFetchResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseWebFetchToolResultBlock":
+  replacement: "Generated.BetaResponseWebFetchToolResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseWebFetchToolResultError":
+  replacement: "Generated.BetaResponseWebFetchToolResultError"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseWebSearchResultBlock":
+  replacement: "Generated.BetaResponseWebSearchResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseWebSearchResultLocationCitation":
+  replacement: "Generated.BetaResponseWebSearchResultLocationCitation"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseWebSearchToolResultBlock":
+  replacement: "Generated.BetaResponseWebSearchToolResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaResponseWebSearchToolResultError":
+  replacement: "Generated.BetaResponseWebSearchToolResultError"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaServerToolUsage":
+  replacement: "Generated.BetaServerToolUsage"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaSkill":
+  replacement: "Generated.BetaSkill"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaSkillParams":
+  replacement: "Generated.BetaSkillParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaSkillParamsType":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#BetaSkillType":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#BetaSkillVersion":
+  replacement: "Generated.BetaSkillVersion"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaStopReason":
+  replacement: "Generated.BetaStopReason"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaTextEditor20241022":
+  replacement: "Generated.BetaTextEditor_20241022"
+  note: "Regenerated in v4 under this name; update the identifier and re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaTextEditor20250124":
+  replacement: "Generated.BetaTextEditor_20250124"
+  note: "Regenerated in v4 under this name; update the identifier and re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaTextEditor20250429":
+  replacement: "Generated.BetaTextEditor_20250429"
+  note: "Regenerated in v4 under this name; update the identifier and re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaTextEditor20250728":
+  replacement: "Generated.BetaTextEditor_20250728"
+  note: "Regenerated in v4 under this name; update the identifier and re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaTextEditorCodeExecutionToolResultErrorCode":
+  replacement: "Generated.BetaTextEditorCodeExecutionToolResultErrorCode"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaThinkingConfigDisabled":
+  replacement: "Generated.BetaThinkingConfigDisabled"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaThinkingConfigEnabled":
+  replacement: "Generated.BetaThinkingConfigEnabled"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaThinkingConfigParam":
+  replacement: "Generated.BetaThinkingConfigParam"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaTool":
+  replacement: "Generated.BetaTool"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaToolChoice":
+  replacement: "Generated.BetaToolChoice"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaToolChoiceAny":
+  replacement: "Generated.BetaToolChoiceAny"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaToolChoiceAuto":
+  replacement: "Generated.BetaToolChoiceAuto"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaToolChoiceNone":
+  replacement: "Generated.BetaToolChoiceNone"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaToolChoiceTool":
+  replacement: "Generated.BetaToolChoiceTool"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaToolUsesKeep":
+  replacement: "Generated.BetaToolUsesKeep"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaToolUsesTrigger":
+  replacement: "Generated.BetaToolUsesTrigger"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaUploadFileV1FilesPostParams":
+  replacement: "Generated.BetaUploadFileV1FilesPostParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaUploadFileV1FilesPostRequest":
+  replacement: "Generated.BetaUploadFileV1FilesPostRequestFormData"
+  note: "Regenerated in v4 under this name; update the identifier and re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaURLImageSource":
+  replacement: "Generated.BetaURLImageSource"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaURLPDFSource":
+  replacement: "Generated.BetaURLPDFSource"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaUsage":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#BetaUsageServiceTierEnum":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#BetaUserLocation":
+  replacement: "Generated.BetaUserLocation"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaWebFetchTool20250910":
+  replacement: "Generated.BetaWebFetchTool_20250910"
+  note: "Regenerated in v4 under this name; update the identifier and re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaWebFetchToolResultErrorCode":
+  replacement: "Generated.BetaWebFetchToolResultErrorCode"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaWebSearchTool20250305":
+  replacement: "Generated.BetaWebSearchTool_20250305"
+  note: "Regenerated in v4 under this name; update the identifier and re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BetaWebSearchToolResultErrorCode":
+  replacement: "Generated.BetaWebSearchToolResultErrorCode"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BillingError":
+  replacement: "Generated.BillingError"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BodyCreateSkillV1SkillsPost":
+  replacement: "Generated.Body_create_skill_v1_skills_post"
+  note: "Regenerated in v4 under this name; update the identifier and re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#BodyCreateSkillVersionV1SkillsSkillIdVersionsPost":
+  replacement: "Generated.Body_create_skill_version_v1_skills__skill_id__versions_post"
+  note: "Regenerated in v4 under this name; update the identifier and re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#CacheControlEphemeral":
+  replacement: "Generated.CacheControlEphemeral"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#CacheControlEphemeralTtl":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#CacheCreation":
+  replacement: "Generated.CacheCreation"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#Client":
+  replacement: "Generated.AnthropicClient"
+  note: "Regenerated in v4 under this name; update the identifier and re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ClientError":
+  replacement: "Generated.AnthropicClientError"
+  note: "Regenerated in v4 under this name; update the identifier and re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#CompletePostParams":
+  replacement: "Generated.CompletePostParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#CompletionRequest":
+  replacement: "Generated.CompletionRequest"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#CompletionResponse":
+  replacement: "Generated.CompletionResponse"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ContentBlock":
+  replacement: "Generated.ContentBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ContentBlockSource":
+  replacement: "Generated.ContentBlockSource"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#CountMessageTokensParams":
+  replacement: "Generated.CountMessageTokensParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#CountMessageTokensResponse":
+  replacement: "Generated.CountMessageTokensResponse"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#CreateMessageBatchParams":
+  replacement: "Generated.CreateMessageBatchParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#CreateMessageParams":
+  replacement: "Generated.CreateMessageParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#CreateMessageParamsServiceTier":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#CreateSkillResponse":
+  replacement: "Generated.CreateSkillResponse"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#CreateSkillV1SkillsPostParams":
+  replacement: "Generated.CreateSkillV1SkillsPostParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#CreateSkillVersionResponse":
+  replacement: "Generated.CreateSkillVersionResponse"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#CreateSkillVersionV1SkillsSkillIdVersionsPostParams":
+  replacement: "Generated.CreateSkillVersionV1SkillsSkillIdVersionsPostParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#DeleteFileV1FilesFileIdDeleteParams":
+  replacement: "Generated.DeleteFileV1FilesFileIdDeleteParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#DeleteMessageBatchResponse":
+  replacement: "Generated.DeleteMessageBatchResponse"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#DeleteSkillResponse":
+  replacement: "Generated.DeleteSkillResponse"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#DeleteSkillV1SkillsSkillIdDeleteParams":
+  replacement: "Generated.DeleteSkillV1SkillsSkillIdDeleteParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#DeleteSkillVersionResponse":
+  replacement: "Generated.DeleteSkillVersionResponse"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#DeleteSkillVersionV1SkillsSkillIdVersionsVersionDeleteParams":
+  replacement: "Generated.DeleteSkillVersionV1SkillsSkillIdVersionsVersionDeleteParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#DownloadFileV1FilesFileIdContentGetParams":
+  replacement: "Generated.DownloadFileV1FilesFileIdContentGetParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ErrorResponse":
+  replacement: "Generated.ErrorResponse"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#FileDeleteResponse":
+  replacement: "Generated.FileDeleteResponse"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#FileListResponse":
+  replacement: "Generated.FileListResponse"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#FileMetadataSchema":
+  replacement: "Generated.FileMetadataSchema"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#GatewayTimeoutError":
+  replacement: "Generated.GatewayTimeoutError"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#GetFileMetadataV1FilesFileIdGetParams":
+  replacement: "Generated.GetFileMetadataV1FilesFileIdGetParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#GetSkillResponse":
+  replacement: "Generated.GetSkillResponse"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#GetSkillV1SkillsSkillIdGetParams":
+  replacement: "Generated.GetSkillV1SkillsSkillIdGetParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#GetSkillVersionResponse":
+  replacement: "Generated.GetSkillVersionResponse"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#GetSkillVersionV1SkillsSkillIdVersionsVersionGetParams":
+  replacement: "Generated.GetSkillVersionV1SkillsSkillIdVersionsVersionGetParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#InputContentBlock":
+  replacement: "Generated.InputContentBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#InputMessage":
+  replacement: "Generated.InputMessage"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#InputMessageRole":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#InputSchema":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#InvalidRequestError":
+  replacement: "Generated.InvalidRequestError"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ListFilesV1FilesGetParams":
+  replacement: "Generated.ListFilesV1FilesGetParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ListResponseMessageBatch":
+  replacement: "Generated.ListResponse_MessageBatch_"
+  note: "Regenerated in v4 under this name; update the identifier and re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ListResponseModelInfo":
+  replacement: "Generated.ListResponse_ModelInfo_"
+  note: "Regenerated in v4 under this name; update the identifier and re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ListSkillsResponse":
+  replacement: "Generated.ListSkillsResponse"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ListSkillsV1SkillsGetParams":
+  replacement: "Generated.ListSkillsV1SkillsGetParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ListSkillVersionsResponse":
+  replacement: "Generated.ListSkillVersionsResponse"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ListSkillVersionsV1SkillsSkillIdVersionsGetParams":
+  replacement: "Generated.ListSkillVersionsV1SkillsSkillIdVersionsGetParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#make":
+  replacement: "Generated.make"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#Message":
+  replacement: "Generated.Message"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#MessageBatch":
+  replacement: "Generated.MessageBatch"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#MessageBatchesCancelParams":
+  replacement: "Generated.MessageBatchesCancelParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#MessageBatchesDeleteParams":
+  replacement: "Generated.MessageBatchesDeleteParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#MessageBatchesListParams":
+  replacement: "Generated.MessageBatchesListParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#MessageBatchesPostParams":
+  replacement: "Generated.MessageBatchesPostParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#MessageBatchesResultsParams":
+  replacement: "Generated.MessageBatchesResultsParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#MessageBatchesRetrieveParams":
+  replacement: "Generated.MessageBatchesRetrieveParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#MessageBatchIndividualRequestParams":
+  replacement: "Generated.MessageBatchIndividualRequestParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#MessageBatchProcessingStatus":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#MessagesCountTokensPostParams":
+  replacement: "Generated.MessagesCountTokensPostParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#MessagesPostParams":
+  replacement: "Generated.MessagesPostParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#Metadata":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#Model":
+  replacement: "Generated.Model"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ModelInfo":
+  replacement: "Generated.ModelInfo"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ModelsGetParams":
+  replacement: "Generated.ModelsGetParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ModelsListParams":
+  replacement: "Generated.ModelsListParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#NotFoundError":
+  replacement: "Generated.NotFoundError"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#OverloadedError":
+  replacement: "Generated.OverloadedError"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#PermissionError":
+  replacement: "Generated.PermissionError"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#PlainTextSource":
+  replacement: "Generated.PlainTextSource"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#RateLimitError":
+  replacement: "Generated.RateLimitError"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#RequestCharLocationCitation":
+  replacement: "Generated.RequestCharLocationCitation"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#RequestCitationsConfig":
+  replacement: "Generated.RequestCitationsConfig"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#RequestContentBlockLocationCitation":
+  replacement: "Generated.RequestContentBlockLocationCitation"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#RequestCounts":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#RequestDocumentBlock":
+  replacement: "Generated.RequestDocumentBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#RequestImageBlock":
+  replacement: "Generated.RequestImageBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#RequestPageLocationCitation":
+  replacement: "Generated.RequestPageLocationCitation"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#RequestRedactedThinkingBlock":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#RequestSearchResultBlock":
+  replacement: "Generated.RequestSearchResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#RequestSearchResultLocationCitation":
+  replacement: "Generated.RequestSearchResultLocationCitation"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#RequestServerToolUseBlock":
+  replacement: "Generated.RequestServerToolUseBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#RequestTextBlock":
+  replacement: "Generated.RequestTextBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#RequestThinkingBlock":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#RequestToolResultBlock":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#RequestToolUseBlock":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#RequestWebSearchResultBlock":
+  replacement: "Generated.RequestWebSearchResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#RequestWebSearchResultLocationCitation":
+  replacement: "Generated.RequestWebSearchResultLocationCitation"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#RequestWebSearchToolResultBlock":
+  replacement: "Generated.RequestWebSearchToolResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#RequestWebSearchToolResultError":
+  replacement: "Generated.RequestWebSearchToolResultError"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ResponseCharLocationCitation":
+  replacement: "Generated.ResponseCharLocationCitation"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ResponseContentBlockLocationCitation":
+  replacement: "Generated.ResponseContentBlockLocationCitation"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ResponsePageLocationCitation":
+  replacement: "Generated.ResponsePageLocationCitation"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ResponseRedactedThinkingBlock":
+  replacement: "Generated.ResponseRedactedThinkingBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ResponseSearchResultLocationCitation":
+  replacement: "Generated.ResponseSearchResultLocationCitation"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ResponseServerToolUseBlock":
+  replacement: "Generated.ResponseServerToolUseBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ResponseTextBlock":
+  replacement: "Generated.ResponseTextBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ResponseThinkingBlock":
+  replacement: "Generated.ResponseThinkingBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ResponseToolUseBlock":
+  replacement: "Generated.ResponseToolUseBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ResponseWebSearchResultBlock":
+  replacement: "Generated.ResponseWebSearchResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ResponseWebSearchResultLocationCitation":
+  replacement: "Generated.ResponseWebSearchResultLocationCitation"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ResponseWebSearchToolResultBlock":
+  replacement: "Generated.ResponseWebSearchToolResultBlock"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ResponseWebSearchToolResultError":
+  replacement: "Generated.ResponseWebSearchToolResultError"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ServerToolUsage":
+  replacement: "Generated.ServerToolUsage"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#Skill":
+  replacement: "Generated.Skill"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#SkillVersion":
+  replacement: "Generated.SkillVersion"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#StopReason":
+  replacement: "Generated.StopReason"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#TextEditor20250124":
+  replacement: "Generated.TextEditor_20250124"
+  note: "Regenerated in v4 under this name; update the identifier and re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#TextEditor20250429":
+  replacement: "Generated.TextEditor_20250429"
+  note: "Regenerated in v4 under this name; update the identifier and re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#TextEditor20250728":
+  replacement: "Generated.TextEditor_20250728"
+  note: "Regenerated in v4 under this name; update the identifier and re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ThinkingConfigDisabled":
+  replacement: "Generated.ThinkingConfigDisabled"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ThinkingConfigEnabled":
+  replacement: "Generated.ThinkingConfigEnabled"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ThinkingConfigParam":
+  replacement: "Generated.ThinkingConfigParam"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#Tool":
+  replacement: "Generated.Tool"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ToolChoice":
+  replacement: "Generated.ToolChoice"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ToolChoiceAny":
+  replacement: "Generated.ToolChoiceAny"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ToolChoiceAuto":
+  replacement: "Generated.ToolChoiceAuto"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ToolChoiceNone":
+  replacement: "Generated.ToolChoiceNone"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#ToolChoiceTool":
+  replacement: "Generated.ToolChoiceTool"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#UploadFileV1FilesPostParams":
+  replacement: "Generated.UploadFileV1FilesPostParams"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#UploadFileV1FilesPostRequest":
+  replacement: "Generated.UploadFileV1FilesPostRequestFormData"
+  note: "Regenerated in v4 under this name; update the identifier and re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#URLImageSource":
+  replacement: "Generated.URLImageSource"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#URLPDFSource":
+  replacement: "Generated.URLPDFSource"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#UsageServiceTierEnum":
+  replacement: "none"
+  note: "Removed or inlined when the Anthropic specification client was regenerated; use the current Generated request/response schema for the relevant endpoint instead of this old snapshot helper."
+"@effect/ai-anthropic/Generated#UserLocation":
+  replacement: "Generated.UserLocation"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#WebSearchTool20250305":
+  replacement: "Generated.WebSearchTool_20250305"
+  note: "Regenerated in v4 under this name; update the identifier and re-check the schema's Type/Encoded shape because the generated definition changed."
+"@effect/ai-anthropic/Generated#WebSearchToolResultErrorCode":
+  replacement: "Generated.WebSearchToolResultErrorCode"
+  note: "Still generated in v4 from the current Anthropic specification; re-check the schema's Type/Encoded shape because the generated definition changed."

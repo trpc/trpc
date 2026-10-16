@@ -1,0 +1,108 @@
+{
+	"name": "@raf-query/react",
+	"version": "0.10.0",
+	"description": "React bindings for raf-query, a render-as-you-fetch query library",
+	"keywords": [
+		"query",
+		"raf",
+		"react",
+		"render-as-you-fetch",
+		"suspense"
+	],
+	"license": "MIT",
+	"author": {
+		"name": "KATT",
+		"email": "alexander@n1s.se"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/KATT/raf-query.git",
+		"directory": "packages/react"
+	},
+	"homepage": "https://raf-query.katt.dev",
+	"bugs": {
+		"url": "https://github.com/KATT/raf-query/issues"
+	},
+	"files": [
+		"dist/",
+		"CHANGELOG.md",
+		"LICENSE.md",
+		"README.md"
+	],
+	"type": "module",
+	"sideEffects": false,
+	"exports": {
+		".": {
+			"react-server": "./src/index-react-server.ts",
+			"default": "./src/index.ts"
+		},
+		"./devtools": "./src/devtools.tsx",
+		"./tanstack-router": {
+			"workerd": "./src/tanstack-router.ts",
+			"worker": "./src/tanstack-router.ts",
+			"node": "./src/tanstack-router.ts",
+			"deno": "./src/tanstack-router.ts",
+			"bun": "./src/tanstack-router.ts",
+			"browser": "./src/tanstack-router-browser.ts",
+			"default": "./src/tanstack-router.ts"
+		}
+	},
+	"scripts": {
+		"prepack": "node ../../scripts/sync-package-docs.ts",
+		"build": "vp pack",
+		"test": "vp test",
+		"typecheck": "tsc",
+		"publish:npm": "pnpm pack --out package.tgz && npm publish package.tgz --access public && rm package.tgz"
+	},
+	"dependencies": {
+		"@raf-query/core": "workspace:*"
+	},
+	"peerDependencies": {
+		"@tanstack/react-router": "^1.170.0",
+		"effect": "^4.0.0",
+		"react": "^19.2.0"
+	},
+	"peerDependenciesMeta": {
+		"@tanstack/react-router": {
+			"optional": true
+		}
+	},
+	"devDependencies": {
+		"@effect/vitest": "catalog:",
+		"@tanstack/react-router": "1.170.42",
+		"@testing-library/react": "16.3.3",
+		"@types/node": "26.6.4",
+		"@types/react": "19.3.0",
+		"@types/react-dom": "19.3.0",
+		"@vitest/coverage-v8": "5.0.1",
+		"effect": "catalog:",
+		"happy-dom": "21.0.1",
+		"react": "19.3.0",
+		"react-dom": "19.3.0",
+		"typescript": "7.0.2",
+		"vite-plus": "1.0.0"
+	},
+	"publishConfig": {
+		"access": "public",
+		"exports": {
+			".": {
+				"react-server": "./dist/index-react-server.mjs",
+				"default": "./dist/index.mjs"
+			},
+			"./devtools": "./dist/devtools.mjs",
+			"./tanstack-router": {
+				"workerd": "./dist/tanstack-router.mjs",
+				"worker": "./dist/tanstack-router.mjs",
+				"node": "./dist/tanstack-router.mjs",
+				"deno": "./dist/tanstack-router.mjs",
+				"bun": "./dist/tanstack-router.mjs",
+				"browser": "./dist/tanstack-router-browser.mjs",
+				"default": "./dist/tanstack-router.mjs"
+			}
+		},
+		"provenance": true
+	},
+	"engines": {
+		"node": ">=22"
+	}
+}

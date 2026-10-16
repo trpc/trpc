@@ -1,0 +1,6 @@
+# Handles in TanStack Router route context (agent)
+
+- Handles go in `beforeLoad` context as they are. At runtime they always crossed: the router dehydrates each match's `__beforeLoadContext` (`b`) with seroval, and a handle is a plain `{ key, input, data? }`. Only the types blocked it: with Start's `ssr: true` registered, `beforeLoad`'s result goes through `ValidateSerializable`, which rejects the handle's phantom factory field (a function type) and `key: ReadonlyArray<unknown>`. Loaders return `any` there, so loader handles never hit this.
+- Fix: `tanstack-router-shared.ts` augments `SerializableExtensions` with `QueryHandle` (which `QueryHandleWithData` extends), so the check stops at the handle. `data` is dehydrated anyway, so it is serializable. It's in the shared module so both the server and browser builds' types carry it.
+- Lost: retyping `QueryKey` as a JSON type (breaks inputs typed as interfaces, and every factory), and a branded-primitive phantom (fixes the factory field but not `key`).
+- Tested in `ssr.test.tsx` ("carries handles in beforeLoad context…"): a type assertion against `Serializable`, plus a server render that reads the handle from context and checks the dehydrated match.

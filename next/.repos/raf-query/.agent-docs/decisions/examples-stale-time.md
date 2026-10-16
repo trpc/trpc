@@ -1,0 +1,7 @@
+# Example stale time (human)
+
+- The three example apps' top bar has a **Stale time** menu beside prefetch and latency (human asked). Choices: 0 ms, 5 s, 30 s, 5 min, Forever. Until a cookie is set, the client uses **5 s**, the same default the apps already had.
+- The menu does not show `gcTime`. The browser client sets it from the choice: at least five minutes (the library default), and at least twice `staleTime`, so an unread entry outlives the time it counts as fresh. Forever sets both to `Infinity`, so data that never goes stale is not collected. A server client leaves `gcTime` unset, so a request's cache is still never collected.
+- Changing the menu writes the `stale-time` cookie and mutates the live client's defaults object (the cache reads it by reference). `gcTime` is applied only when `queryClient.isServer` is false. **Reset** clears the settings cookies, calls `queryClient.clear()`, clears the TanStack router's match cache, and reloads. The reload is what drops Next's client cache and any observer still holding a removed entry. The button stays enabled when the menu is already on the defaults, so it can still empty the cache.
+- Lost: a `gcTime` control; `gcTime` of exactly `2 * staleTime` with no five-minute floor (a 5 s stale time would drop the list 10 s after opening an issue); leaving Reset disabled until a setting changed.
+- Files: `examples/.shared/db/src/types.ts` (`gcTimeFor`, `queryTimeDefaults`), each app's `src/components/settings.tsx`, `examples/nextjs/src/components/app-query-provider.tsx`, the Start apps' `src/router.tsx`.

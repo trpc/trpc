@@ -1,0 +1,656 @@
+{
+	"$schema": "./node_modules/oxlint/configuration_schema.json",
+	// `oxlint --init` plus the stricter `suspicious` category. Pedantic / style /
+	// restriction stay off as categories; the rules below are enabled one by one.
+	"options": {
+		"typeAware": true
+	},
+	"plugins": ["typescript", "unicorn", "oxc", "vitest", "react", "import"],
+	"categories": {
+		"correctness": "error",
+		"suspicious": "error"
+	},
+	"env": {
+		"builtin": true,
+		"browser": true,
+		"es2024": true,
+		"node": true
+	},
+	"ignorePatterns": [
+		"coverage",
+		"**/coverage",
+		"dist",
+		"**/dist",
+		"node_modules",
+		"**/node_modules",
+		".repos",
+		"pnpm-lock.yaml",
+		"**/routeTree.gen.ts",
+		"**/.next/**",
+		"**/.output/**",
+		"**/.tanstack/**",
+		"**/next-env.d.ts",
+		"tooling/oxlint-plugins/**"
+	],
+	"jsPlugins": [
+		{
+			"name": "anti-slop",
+			"specifier": "./tooling/oxlint-plugins/anti-slop/index.ts"
+		},
+		{
+			// Effect conventions; enabled for Effect code in `overrides`.
+			"name": "anti-slop-effect",
+			"specifier": "./tooling/oxlint-plugins/anti-slop/effect/index.ts"
+		},
+		{
+			"name": "nkzw",
+			"specifier": "./tooling/oxlint-plugins/nkzw/index.ts"
+		},
+		{
+			"name": "workspace",
+			"specifier": "./tooling/oxlint-plugins/workspace.ts"
+		},
+		{
+			"name": "no-only-tests",
+			"specifier": "eslint-plugin-no-only-tests"
+		},
+		{
+			"name": "perfectionist",
+			"specifier": "eslint-plugin-perfectionist"
+		}
+	],
+	"rules": {
+		"vitest/no-hooks": "error",
+		// Clean up with `using`: a test helper returns a `Disposable` that undoes
+		// what it set up, and the test's scope disposes it.
+		"no-restricted-imports": [
+			"error",
+			{
+				"paths": [
+					{
+						"importNames": ["onTestFinished"],
+						"message": "Return a Disposable and `using` it instead.",
+						"name": "@effect/vitest"
+					},
+					{
+						"importNames": ["onTestFinished"],
+						"message": "Return a Disposable and `using` it instead.",
+						"name": "vitest"
+					}
+				]
+			}
+		],
+		// `@effect/vitest` testers run their Effect as the test body.
+		"vitest/no-standalone-expect": [
+			"error",
+			{
+				"additionalTestBlockFunctions": [
+					"it.effect",
+					"it.effect.each",
+					"it.live"
+				]
+			}
+		],
+		// Ban module mocking everywhere — tests *and* shared test helpers, so a
+		// helper cannot reintroduce it behind a seam.
+		"workspace/no-mock": "error",
+		// Ban raising Vitest/waitFor timeouts. Make the test faster instead.
+		"workspace/no-custom-test-timeout": "error",
+		// Destructure only fields read three or more times: `const post = use(p)`.
+		"workspace/no-overzealous-destructuring": "error",
+		// `use()` on its own line: `const post = use(p)`, not `use(p).title`.
+		"workspace/no-use-member-access": "error",
+		// `anti-slop/require-safety-comment-for-type-assertion` covers assertions.
+		"typescript/consistent-type-assertions": "off",
+		// JSDoc `@deprecated` is not a TypeScript error; fail the lint instead.
+		// `typeAware` is required. Other tsgolint rules in correctness/suspicious
+		// stay off so this stays an opt-in rule, not a full type-aware rollout.
+		"typescript/no-deprecated": "error",
+		"typescript/await-thenable": "off",
+		"typescript/consistent-return": "off",
+		"typescript/no-array-delete": "off",
+		"typescript/no-base-to-string": "off",
+		"typescript/no-duplicate-type-constituents": "off",
+		"typescript/no-floating-promises": "off",
+		"typescript/no-for-in-array": "off",
+		"typescript/no-implied-eval": "off",
+		"typescript/no-meaningless-void-operator": "off",
+		"typescript/no-misused-spread": "off",
+		"typescript/no-redundant-type-constituents": "off",
+		"typescript/no-unnecessary-boolean-literal-compare": "off",
+		"typescript/no-unnecessary-template-expression": "off",
+		"typescript/no-unnecessary-type-arguments": "off",
+		"typescript/no-unnecessary-type-assertion": "off",
+		"typescript/no-unnecessary-type-conversion": "off",
+		"typescript/no-unnecessary-type-parameters": "off",
+		"typescript/no-unsafe-enum-comparison": "off",
+		"typescript/no-unsafe-type-assertion": "off",
+		"typescript/no-unsafe-unary-minus": "off",
+		"typescript/no-useless-default-assignment": "off",
+		"typescript/require-array-sort-compare": "off",
+		"typescript/restrict-template-expressions": "off",
+		"typescript/unbound-method": "off",
+		// Unused `@ts-expect-error` is TS2578 (typecheck). This rule requires a description
+		// and bans `@ts-ignore` / `@ts-nocheck`.
+		"typescript/ban-ts-comment": [
+			"error",
+			{
+				"ts-expect-error": "allow-with-description",
+				"ts-ignore": true,
+				"ts-nocheck": true,
+				"ts-check": false,
+				"minimumDescriptionLength": 10
+			}
+		],
+		"anti-slop/no-module-mocking": "error",
+		"anti-slop/no-reflect-apply": "error",
+		"anti-slop/no-unknown-type-aliases": "error",
+		"anti-slop/no-widen-then-assert": "error",
+		"anti-slop/require-safety-comment-for-type-assertion": "error",
+		"anti-slop/no-shape-in-symbol-names": "error",
+		"anti-slop/no-reflect-get": "error",
+		"anti-slop/no-object-parameters": "error",
+		"anti-slop/no-conditional-empty-object-spread": "error",
+		"anti-slop/no-known-value-widening": "error",
+		"anti-slop/no-unsafe-dictionary-type": "error",
+		"anti-slop/no-unknown-returns": "error",
+		"anti-slop/no-unknown-parameters": "error",
+		"anti-slop/no-runtime-typeof": ["error", { "allowInTypeGuards": true }],
+		"eslint/no-underscore-dangle": ["error", { "allow": ["_exhaustive"] }],
+		// Apps compile with React Compiler; it memoizes for them.
+		"workspace/no-manual-memoization": "error",
+		"workspace/no-use-effect": "error",
+		// Always on, so banned hooks cannot be laundered through a local re-export.
+		"workspace/no-banned-react-reexport": "error",
+		// React Compiler — full set as errors (eslint-plugin-react-hooks
+		// recommended + recommended-latest + experimental). Recommended rules
+		// already live in `correctness`; the rest sit in restriction/perf and
+		// would stay off with a blanket category enable.
+		"react/error-boundaries": "error",
+		"react/globals": "error",
+		"react/immutability": "error",
+		"react/incompatible-library": "error",
+		"react/preserve-manual-memoization": "error",
+		"react/purity": "error",
+		"react/refs": "error",
+		"react/set-state-in-effect": "error",
+		"react/set-state-in-render": "error",
+		"react/static-components": "error",
+		"react/use-memo": "error",
+		"react/unsupported-syntax": "error",
+		"react/void-use-memo": "error",
+		"react/no-deriving-state-in-effects": "error",
+		"react/invariant": "error",
+		"react/rule-suppression": "error",
+		"react/syntax": "error",
+		"react/todo": "error",
+		"react/capitalized-calls": "error",
+		"react/exhaustive-effect-dependencies": "error",
+		"react/hooks": "error",
+		"react/memo-dependencies": "error",
+		// From @nkzw/oxlint-config (https://github.com/nkzw-tech/oxlint-config).
+		// @nkzw/eslint-plugin rules live in tooling/oxlint-plugins/nkzw.
+		"nkzw/no-instanceof": "error",
+		"nkzw/require-use-effect-arguments": "error",
+		"@typescript-eslint/array-type": ["error", { "default": "generic" }],
+		"@typescript-eslint/no-duplicate-enum-values": "error",
+		"@typescript-eslint/no-empty-object-type": "error",
+		"@typescript-eslint/no-explicit-any": "error",
+		"@typescript-eslint/no-extra-non-null-assertion": "error",
+		"@typescript-eslint/no-misused-new": "error",
+		"@typescript-eslint/no-non-null-asserted-nullish-coalescing": "error",
+		"@typescript-eslint/no-non-null-asserted-optional-chain": "error",
+		"@typescript-eslint/no-require-imports": "error",
+		"@typescript-eslint/no-unnecessary-parameter-property-assignment": "error",
+		"@typescript-eslint/no-unnecessary-type-constraint": "error",
+		"@typescript-eslint/no-unsafe-declaration-merging": "error",
+		"@typescript-eslint/no-unsafe-function-type": "error",
+		"@typescript-eslint/no-wrapper-object-types": "error",
+		"@typescript-eslint/prefer-as-const": "error",
+		"@typescript-eslint/prefer-namespace-keyword": "error",
+		"@typescript-eslint/triple-slash-reference": "error",
+		"array-callback-return": "error",
+		"constructor-super": "error",
+		"curly": "error",
+		"eqeqeq": ["error", "always", { "null": "ignore" }],
+		"for-direction": "error",
+		"getter-return": "error",
+		"import-x/export": "error",
+		// Side-effect CSS / module-augmentation imports are required.
+		"import/no-unassigned-import": "off",
+		"no-array-constructor": "error",
+		"no-async-promise-executor": "error",
+		"no-case-declarations": "error",
+		"no-class-assign": "error",
+		"no-compare-neg-zero": "error",
+		"no-cond-assign": "error",
+		"no-console": "error",
+		"no-const-assign": "error",
+		"no-constant-binary-expression": "error",
+		"no-constant-condition": "error",
+		"no-control-regex": "error",
+		"no-debugger": "error",
+		"no-delete-var": "error",
+		"no-dupe-class-members": "error",
+		"no-dupe-else-if": "error",
+		"no-dupe-keys": "error",
+		"no-duplicate-case": "error",
+		"no-empty": "error",
+		"no-empty-character-class": "error",
+		"no-empty-pattern": "error",
+		"no-empty-static-block": "error",
+		"no-ex-assign": "error",
+		"no-extra-bind": "error",
+		"no-extra-boolean-cast": "error",
+		"no-fallthrough": "error",
+		"no-func-assign": "error",
+		"no-global-assign": "error",
+		"no-implied-eval": "error",
+		"no-import-assign": "error",
+		"no-invalid-regexp": "error",
+		"no-irregular-whitespace": "error",
+		"no-loss-of-precision": "error",
+		"no-misleading-character-class": "error",
+		"no-new-native-nonconstructor": "error",
+		"no-new-wrappers": "error",
+		"no-nonoctal-decimal-escape": "error",
+		"no-obj-calls": "error",
+		"no-only-tests/no-only-tests": "error",
+		"no-prototype-builtins": "error",
+		"no-redeclare": "error",
+		"no-regex-spaces": "error",
+		"no-self-assign": "error",
+		"no-self-compare": "error",
+		"no-setter-return": "error",
+		"no-shadow-restricted-names": "error",
+		"no-sparse-arrays": "error",
+		"no-this-before-super": "error",
+		"no-throw-literal": "error",
+		"no-undef": "error",
+		"no-unexpected-multiline": "error",
+		"no-unreachable": "error",
+		"no-unsafe-finally": "error",
+		"no-unsafe-negation": "error",
+		"no-unsafe-optional-chaining": "error",
+		"no-unused-expressions": "error",
+		"no-unused-labels": "error",
+		"no-unused-private-class-members": "error",
+		"no-unused-vars": [
+			"error",
+			{
+				"args": "none",
+				"fix": {
+					"imports": "safe-fix",
+					"variables": "off"
+				},
+				"varsIgnorePattern": "^_"
+			}
+		],
+		"no-useless-backreference": "error",
+		"no-useless-catch": "error",
+		"no-useless-escape": "error",
+		"no-useless-rename": "error",
+		"no-var": "error",
+		"no-warning-comments": ["error", { "terms": ["@nocommit"] }],
+		"no-with": "error",
+		"object-shorthand": "error",
+		"oxc/approx-constant": "error",
+		"oxc/bad-bitwise-operator": "error",
+		"oxc/bad-char-at-comparison": "error",
+		"oxc/bad-comparison-sequence": "error",
+		"oxc/bad-min-max-func": "error",
+		"oxc/bad-object-literal-comparison": "error",
+		"oxc/bad-replace-all-arg": "error",
+		"oxc/const-comparisons": "error",
+		"oxc/double-comparisons": "error",
+		"oxc/misrefactored-assign-op": "error",
+		"oxc/missing-throw": "error",
+		"oxc/number-arg-out-of-range": "error",
+		"oxc/uninvoked-array-callback": "error",
+		"perfectionist/sort-enums": [
+			"error",
+			{
+				"partitionByComment": true,
+				"sortByValue": "always"
+			}
+		],
+		"perfectionist/sort-heritage-clauses": "error",
+		"perfectionist/sort-interfaces": "error",
+		"perfectionist/sort-jsx-props": "error",
+		"perfectionist/sort-object-types": "error",
+		"perfectionist/sort-objects": [
+			"error",
+			{
+				"partitionByComment": true
+			}
+		],
+		"prefer-arrow-callback": ["error", { "allowNamedFunctions": true }],
+		"prefer-const": "error",
+		"prefer-object-has-own": "error",
+		"preserve-caught-error": "error",
+		"react/button-has-type": "error",
+		"react/checked-requires-onchange-or-readonly": "error",
+		"react/display-name": "error",
+		"react/exhaustive-deps": "error",
+		"react/jsx-key": "error",
+		"react/jsx-no-comment-textnodes": "error",
+		"react/jsx-no-duplicate-props": "error",
+		"react/jsx-no-script-url": "error",
+		"react/jsx-no-target-blank": "error",
+		"react/jsx-no-undef": "error",
+		"react/jsx-props-no-spread-multi": "error",
+		"react/no-children-prop": "error",
+		"react/no-danger-with-children": "error",
+		"react/no-direct-mutation-state": "error",
+		"react/no-find-dom-node": "error",
+		"react/no-is-mounted": "error",
+		"react/no-render-return-value": "error",
+		"react/no-string-refs": "error",
+		"react/no-unescaped-entities": "error",
+		"react/no-unknown-property": "error",
+		"react/require-render-return": "error",
+		"react/rules-of-hooks": "error",
+		"react/void-dom-elements-no-children": "error",
+		// Automatic JSX runtime — no React import required.
+		"react/react-in-jsx-scope": "off",
+		"require-yield": "error",
+		"unicorn/catch-error-name": "error",
+		"unicorn/consistent-empty-array-spread": "error",
+		"unicorn/consistent-function-scoping": "error",
+		"unicorn/no-abusive-eslint-disable": "error",
+		"unicorn/no-hex-escape": "error",
+		"unicorn/no-invalid-fetch-options": "error",
+		"unicorn/no-magic-array-flat-depth": "error",
+		"unicorn/no-typeof-undefined": "error",
+		"unicorn/no-unnecessary-slice-end": "error",
+		"unicorn/no-useless-promise-resolve-reject": "error",
+		"unicorn/no-useless-spread": "error",
+		"unicorn/numeric-separators-style": "error",
+		"unicorn/prefer-array-flat-map": "error",
+		"unicorn/prefer-array-index-of": "error",
+		"unicorn/prefer-array-some": "error",
+		"unicorn/prefer-at": "error",
+		"unicorn/prefer-dom-node-append": "error",
+		"unicorn/prefer-import-meta-properties": "error",
+		"unicorn/prefer-native-coercion-functions": "error",
+		"unicorn/prefer-node-protocol": "error",
+		"unicorn/prefer-number-properties": "error",
+		"unicorn/prefer-optional-catch-binding": "error",
+		"unicorn/prefer-set-size": "error",
+		"unicorn/prefer-single-call": "error",
+		"unicorn/prefer-string-raw": "error",
+		"unicorn/prefer-string-replace-all": "error",
+		"unicorn/prefer-string-slice": "error",
+		"unicorn/prefer-structured-clone": "error",
+		"unicorn/prefer-top-level-await": "error",
+		"unicorn/text-encoding-identifier-case": "error",
+		"use-isnan": "error",
+		"valid-typeof": "error"
+	},
+	"overrides": [
+		{
+			"files": ["**/*.ts", "**/*.tsx", "**/*.mts", "**/*.cts"],
+			"rules": {
+				"constructor-super": "off",
+				"getter-return": "off",
+				"no-class-assign": "off",
+				"no-const-assign": "off",
+				"no-dupe-class-members": "off",
+				"no-dupe-keys": "off",
+				"no-func-assign": "off",
+				"no-import-assign": "off",
+				"no-new-native-nonconstructor": "off",
+				"no-obj-calls": "off",
+				"no-redeclare": "off",
+				"no-setter-return": "off",
+				"no-this-before-super": "off",
+				"no-undef": "off",
+				"no-unreachable": "off",
+				"no-unsafe-negation": "off",
+				"no-with": "off",
+				"prefer-rest-params": "error",
+				"prefer-spread": "error"
+			}
+		},
+		{
+			"files": [
+				"**/*.test.{js,jsx,ts,tsx}",
+				"**/*.spec.{js,jsx,ts,tsx}",
+				"**/test/**/*.{js,jsx,ts,tsx}",
+				"**/tests/**/*.{js,jsx,ts,tsx}"
+			],
+			"rules": {
+				"no-console": "off",
+				"eslint/no-underscore-dangle": "off",
+				"vitest/require-mock-type-parameters": "off",
+				"vitest/no-conditional-expect": "off",
+				// Tests assign through `{ current }` holders and fixture refs.
+				"react/immutability": "off",
+				"unicorn/consistent-function-scoping": "off",
+				"unicorn/prefer-add-event-listener": "off"
+			}
+		},
+		{
+			// The React bindings are the audited hook seam: subscriptions and
+			// timers need effects, and the library isn't built with React Compiler,
+			// so it memoizes by hand.
+			"files": [
+				"packages/react/src/**/*.{ts,tsx}",
+				".experimental/*/package/src/**/*.{ts,tsx}"
+			],
+			"rules": {
+				"workspace/no-use-effect": "off",
+				"workspace/no-manual-memoization": "off"
+			}
+		},
+		{
+			// Code built on Effect. Opt-in, because these rules would push Effect
+			// idioms into code that doesn't use it.
+			"files": [
+				"packages/*/src/**",
+				"scripts/**",
+				"tooling/codesandbox/src/**",
+				"examples/tanstack-start-effect/src/**"
+			],
+			"rules": {
+				"anti-slop-effect/no-manual-effect-error-tag": "error",
+				"anti-slop-effect/no-manual-tag-comparison": "error",
+				"anti-slop-effect/no-manual-tagged-construction": "error",
+				"anti-slop-effect/no-service-constructor-imports": "error",
+				"anti-slop-effect/prefer-effect-match": "error"
+			}
+		},
+		{
+			"files": ["tooling/pr-title/src/cli.ts"],
+			"rules": {
+				"no-console": "off"
+			}
+		},
+		{
+			// Library internals are type-erased on purpose: the cache stores any
+			// query's data and errors, and factory generics restore the types at
+			// the public boundary.
+			"files": ["packages/*/src/**", ".experimental/*/package/src/**"],
+			"rules": {
+				"anti-slop/no-unknown-parameters": "off",
+				"anti-slop/no-unknown-returns": "off",
+				"anti-slop/no-unsafe-dictionary-type": "off"
+			}
+		},
+		{
+			"files": [
+				"examples/*/src/**/*.{ts,tsx}",
+				"examples/*/app/**/*.{ts,tsx}",
+				".experimental/*/*/src/**/*.{ts,tsx}",
+				"examples/.shared/*/src/**/*.{ts,tsx}",
+				"www/src/**/*.{ts,tsx}"
+			],
+			"rules": {
+				"workspace/infer-callback-params": "error",
+				"workspace/inline-jsx-callback": "error"
+			}
+		},
+		{
+			// Experiment libraries (always `package/`) are not app code; the
+			// callback-inference rules above are for examples.
+			"files": [".experimental/*/package/src/**/*.{ts,tsx}"],
+			"rules": {
+				"workspace/infer-callback-params": "off",
+				"workspace/inline-jsx-callback": "off"
+			}
+		},
+		{
+			// Effect example: `Effect.fn` parameters come from the generator (no
+			// contextual type), and `Context.Service.use` is not a React hook —
+			// rules-of-hooks matches any call whose property is named `use`.
+			"files": [
+				"examples/tanstack-start-effect/src/**/*.{ts,tsx}",
+				"www/samples/tanstack-start-effect/src/**/*.{ts,tsx}"
+			],
+			"rules": {
+				"react-hooks/rules-of-hooks": "off",
+				"react/no-unstable-nested-components": "off",
+				"react/rules-of-hooks": "off",
+				"workspace/infer-callback-params": "off"
+			}
+		},
+		{
+			// TanStack Router infers loader/search/context types from option key
+			// order (`validateSearch` before `loader`, `loader` before `head`).
+			"files": [
+				"examples/*/src/routes/**/*.{ts,tsx}",
+				".experimental/*/*/src/routes/**/*.{ts,tsx}",
+				"www/src/routes/**/*.{ts,tsx}"
+			],
+			"rules": {
+				"perfectionist/sort-objects": "off"
+			}
+		},
+		{
+			// The docs' example files are what readers copy: keys and props in the
+			// order the guides explain them (`queryKey` before `queryFn`, `to`
+			// before `params`), a query's input built at the call
+			// (`const { slug } = args.params`), and no ceremony a sample doesn't
+			// need.
+			"files": [
+				"www/samples/*/src/**/*.{ts,tsx}",
+				"www/samples/react-router*/app/**/*.{ts,tsx}"
+			],
+			"rules": {
+				"anti-slop/require-safety-comment-for-type-assertion": "off",
+				"curly": "off",
+				"eslint/no-underscore-dangle": [
+					"error",
+					{ "allow": ["_exhaustive", "_tag"] }
+				],
+				"perfectionist/sort-jsx-props": "off",
+				"perfectionist/sort-object-types": "off",
+				"perfectionist/sort-objects": "off",
+				"react/button-has-type": "off",
+				"react/no-unescaped-entities": "off",
+				"typescript/consistent-type-assertions": "off",
+				"workspace/no-overzealous-destructuring": "off"
+			}
+		},
+		{
+			// A page's own samples (`src/docs/<page>`, `app/docs/<page>` in the
+			// React Router apps) are its code blocks, shown
+			// one region at a time: fragments with hooks at the top level, bindings
+			// the next block reads, bare expressions to pin with `^?`, and the
+			// `unknown`s and shortcuts the prose is about. Typecheck them; the app
+			// code rules don't fit.
+			"files": [
+				"www/samples/*/src/docs/**/*.{ts,tsx}",
+				"www/samples/react-router*/app/docs/**/*.{ts,tsx}"
+			],
+			"rules": {
+				"anti-slop/no-runtime-typeof": "off",
+				"anti-slop/no-shape-in-symbol-names": "off",
+				"anti-slop/no-unknown-parameters": "off",
+				"anti-slop/no-unknown-returns": "off",
+				"eslint/no-shadow": "off",
+				"eslint/no-unused-expressions": "off",
+				"eslint/no-unused-vars": "off",
+				"react-hooks/rules-of-hooks": "off",
+				"react/no-unstable-nested-components": "off",
+				"react/rules-of-hooks": "off",
+				"typescript/array-type": "off",
+				"unicorn/no-useless-promise-resolve-reject": "off"
+			}
+		},
+		{
+			// Vendored shadcn/ui registry components — not first-party code.
+			"files": [
+				"examples/.shared/ui/src/components/**",
+				"examples/.shared/ui/src/hooks/**",
+				"examples/.shared/ui/src/lib/highlighter.tsx"
+			],
+			"rules": {
+				"typescript/no-deprecated": "off",
+				"anti-slop/no-conditional-empty-object-spread": "off",
+				"anti-slop/no-known-value-widening": "off",
+				"anti-slop/no-object-parameters": "off",
+				"anti-slop/no-reflect-apply": "off",
+				"anti-slop/no-reflect-get": "off",
+				"anti-slop/no-runtime-typeof": "off",
+				"anti-slop/no-shape-in-symbol-names": "off",
+				"anti-slop/no-unknown-parameters": "off",
+				"anti-slop/no-unknown-returns": "off",
+				"anti-slop/no-unknown-type-aliases": "off",
+				"anti-slop/no-unsafe-dictionary-type": "off",
+				"anti-slop/no-widen-then-assert": "off",
+				"anti-slop/require-safety-comment-for-type-assertion": "off",
+				"eslint/no-shadow": "off",
+				"eslint/no-underscore-dangle": "off",
+				"workspace/infer-callback-params": "off",
+				"workspace/no-overzealous-destructuring": "off",
+				"workspace/no-use-effect": "off",
+				"workspace/no-manual-memoization": "off",
+				"react/no-unstable-nested-components": "off",
+				"react/set-state-in-effect": "off",
+				"react/exhaustive-effect-dependencies": "off",
+				"react/immutability": "off",
+				"react/refs": "off",
+				"react/purity": "off",
+				"react/set-state-in-render": "off",
+				"react/hooks": "off",
+				"react/static-components": "off",
+				"react/preserve-manual-memoization": "off",
+				"react/use-memo": "off",
+				"react/void-use-memo": "off",
+				"react/unsupported-syntax": "off",
+				"react/incompatible-library": "off",
+				"react/error-boundaries": "off",
+				"react/globals": "off",
+				"react/invariant": "off",
+				"react/rule-suppression": "off",
+				"react/syntax": "off",
+				"react/todo": "off",
+				"react/capitalized-calls": "off",
+				"react/memo-dependencies": "off",
+				"react/no-deriving-state-in-effects": "off",
+				"react-hooks/exhaustive-deps": "off",
+				"eqeqeq": "off",
+				"react/button-has-type": "off",
+				"@typescript-eslint/array-type": "off",
+				"curly": "off",
+				"import-x/no-namespace": "off",
+				"object-shorthand": "off",
+				"perfectionist/sort-enums": "off",
+				"perfectionist/sort-heritage-clauses": "off",
+				"perfectionist/sort-interfaces": "off",
+				"perfectionist/sort-jsx-props": "off",
+				"perfectionist/sort-object-types": "off",
+				"perfectionist/sort-objects": "off",
+				"prefer-arrow-callback": "off",
+				"unicorn/prefer-string-raw": "off"
+			}
+		},
+		{
+			"files": ["**/scripts/**"],
+			"rules": {
+				"no-console": "off"
+			}
+		}
+	]
+}

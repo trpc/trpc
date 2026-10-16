@@ -1,0 +1,96 @@
+"effect/TestServices#annotate":
+  replacement: "none"
+  note: "The annotation service was removed. Use Vitest metadata/options for runner concerns, an ordinary Ref or Context.Reference for application-owned test state, and FiberSet for explicit fiber tracking."
+"effect/TestServices#annotations":
+  replacement: "none"
+  note: "The annotation service was removed. Use Vitest metadata/options for runner concerns, an ordinary Ref or Context.Reference for application-owned test state, and FiberSet for explicit fiber tracking."
+"effect/TestServices#annotationsLayer":
+  replacement: "none"
+  note: "The annotation service was removed. Use Vitest metadata/options for runner concerns, an ordinary Ref or Context.Reference for application-owned test state, and FiberSet for explicit fiber tracking."
+"effect/TestServices#annotationsWith":
+  replacement: "none"
+  note: "The annotation service was removed. Use Vitest metadata/options for runner concerns, an ordinary Ref or Context.Reference for application-owned test state, and FiberSet for explicit fiber tracking."
+"effect/TestServices#get":
+  replacement: "none"
+  note: "The annotation service was removed. Use Vitest metadata/options for runner concerns, an ordinary Ref or Context.Reference for application-owned test state, and FiberSet for explicit fiber tracking."
+"effect/TestServices#supervisedFibers":
+  replacement: "none"
+  note: "The annotation service was removed. Use Vitest metadata/options for runner concerns, an ordinary Ref or Context.Reference for application-owned test state, and FiberSet for explicit fiber tracking."
+"effect/TestServices#withAnnotations":
+  replacement: "none"
+  note: "The annotation service was removed. Use Vitest metadata/options for runner concerns, an ordinary Ref or Context.Reference for application-owned test state, and FiberSet for explicit fiber tracking."
+"effect/TestServices#withAnnotationsScoped":
+  replacement: "none"
+  note: "The annotation service was removed. Use Vitest metadata/options for runner concerns, an ordinary Ref or Context.Reference for application-owned test state, and FiberSet for explicit fiber tracking."
+"effect/TestServices#currentServices":
+  replacement: "Effect.context()"
+  note: "The separate FiberRef<Context<TestServices>> was removed. Test services now live in the ordinary Effect Context; override individual references with Effect.provideService."
+"effect/TestServices#liveLayer":
+  replacement: "none"
+  note: "The standalone TestLive service and layer were removed. TestClock.layer() captures its surrounding live Clock itself."
+"effect/TestServices#liveServices":
+  replacement: "none"
+  note: "There is no prebuilt aggregate test-service Context. @effect/vitest constructs TestClock and TestConsole layers per test; live references are defaults."
+"effect/TestServices#liveWith":
+  replacement: "TestClock.withLive"
+  note: "There is no TestLive callback object. Refactor to the effect ultimately run and apply TestClock.withLive, or use it.live for whole-test live execution."
+"effect/TestServices#provideLive":
+  replacement: "TestClock.withLive"
+  note: "For live time, run the effect with the Clock captured by TestClock.layer(). Use it.live when the entire test should omit all test-service overrides."
+"effect/TestServices#provideWithLive":
+  replacement: "TestClock.testClockWith + TestClock.withLive + Effect.provideService"
+  note: "To retain test time for the inner effect while its transformer uses live time, combine testClockWith, withLive, and provideService. Other v3 default services have no aggregate equivalent."
+"effect/TestServices#repeats":
+  replacement: "Vitest TestOptions.repeats"
+  note: "Configure repeats in the Vitest options passed to it.effect or it.live; it is no longer an Effect service value."
+"effect/TestServices#retries":
+  replacement: "Vitest TestOptions.retry"
+  note: "Configure retry in Vitest test options. To retry an Effect inside a test, use Effect.retry."
+"effect/TestServices#samples":
+  replacement: "{ arbitrary: { runs } }"
+  note: "Pass the run count through @effect/vitest property-test options, for example it.effect.prop(..., { arbitrary: { runs: samples } })."
+"effect/TestServices#shrinks":
+  replacement: "{ arbitrary: { maxShrinks } }"
+  note: "Pass maxShrinks through @effect/vitest property-test options, for example it.effect.prop(..., { arbitrary: { maxShrinks } })."
+"effect/TestServices#size":
+  replacement: "CurrentSize"
+  note: "Define a custom Context.Reference<number> and yield it to read the current size."
+"effect/TestServices#sized":
+  replacement: "CurrentSize"
+  note: "TestSized was removed. Use a custom Context.Reference<number> directly instead of a wrapper object."
+"effect/TestServices#sizedLayer":
+  replacement: "Layer.succeed(CurrentSize, size)"
+  note: "Provide the custom size reference as a layer."
+"effect/TestServices#sizedWith":
+  replacement: "CurrentSize.use"
+  note: "Use the custom reference's callback, or preferably yield CurrentSize in Effect.gen."
+"effect/TestServices#testConfig":
+  replacement: "none"
+  note: "The runner no longer reads an Effect TestConfig service. Use Vitest TestOptions and property-test arbitrary options; model application state as a custom Context.Reference."
+"effect/TestServices#testConfigLayer":
+  replacement: "none"
+  note: "The runner no longer reads an Effect TestConfig service. Use Vitest TestOptions and property-test arbitrary options; model application state as a custom Context.Reference."
+"effect/TestServices#testConfigWith":
+  replacement: "none"
+  note: "The runner no longer reads an Effect TestConfig service. Use Vitest TestOptions and property-test arbitrary options; model application state as a custom Context.Reference."
+"effect/TestServices#withTestConfig":
+  replacement: "none"
+  note: "The runner no longer reads an Effect TestConfig service. Use Vitest TestOptions and property-test arbitrary options; model application state as a custom Context.Reference."
+"effect/TestServices#withTestConfigScoped":
+  replacement: "none"
+  note: "The runner no longer reads an Effect TestConfig service. Use Vitest TestOptions and property-test arbitrary options; model application state as a custom Context.Reference."
+"effect/TestServices#TestServices":
+  replacement: "TestClock.TestClock | TestConsole.TestConsole"
+  note: "This is the v4 @effect/vitest test-environment union. it.effect provides both automatically; it.live provides neither override."
+"effect/TestServices#withLiveScoped":
+  replacement: "none"
+  note: "There is no scoped TestLive service override. Apply TestClock.withLive to a specific effect, or choose it.live at test declaration time."
+"effect/TestServices#withSize":
+  replacement: "Effect.provideService(effect, CurrentSize, size)"
+  note: "Provide a custom size Context.Reference for the duration of the wrapped effect."
+"effect/TestServices#withSized":
+  replacement: "Effect.provideService(effect, CurrentSize, size)"
+  note: "Collapse the old TestSized wrapper to its numeric value and provide the custom reference."
+"effect/TestServices#withSizedScoped":
+  replacement: "Effect.updateServiceScoped(CurrentSize, () => size)"
+  note: "For a scope-bounded override use updateServiceScoped; otherwise prefer wrapping the workflow with Effect.provideService."

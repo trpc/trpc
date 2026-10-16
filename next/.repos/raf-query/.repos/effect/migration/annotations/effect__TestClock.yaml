@@ -1,0 +1,24 @@
+"effect/TestClock#adjustWith":
+  replacement: "Effect.zipWith(effect, TestClock.adjust(duration), (result) => result, { concurrent: true })"
+  note: "V4 removed adjustWith. Run the tested effect and clock adjustment concurrently and retain the tested effect's result."
+"effect/TestClock#currentTimeMillis":
+  replacement: "Clock.currentTimeMillis"
+  note: "Read time from the active Clock reference; under it.effect or TestClock.layer() this is virtual time."
+"effect/TestClock#Data":
+  replacement: "TestClock.TestClock.State"
+  note: "The nearest state model is State, with timestamp and a private latch-based sleep queue. V4 exposes no full state getter or setter."
+"effect/TestClock#defaultTestClock":
+  replacement: "TestClock.layer()"
+  note: "The v4 layer creates an epoch-based test clock and captures the surrounding live Clock automatically; it no longer needs TestAnnotations or TestLive."
+"effect/TestClock#makeData":
+  replacement: "TestClock.layer() + TestClock.setTime(instant)"
+  note: "State injection was removed. Build the layer, then set initial time; seeded pending sleeps cannot migrate because the queue is private."
+"effect/TestClock#save":
+  replacement: "none"
+  note: "Full clock snapshots including pending sleeps are no longer public. For timestamp-only restoration, read Clock.currentTimeMillis and later call TestClock.setTime(savedMillis)."
+"effect/TestClock#sleeps":
+  replacement: "none"
+  note: "The pending-sleep queue is private. Test observable behavior by forking sleepers, adjusting time, and joining or asserting the fibers."
+"effect/TestClock#testClock":
+  replacement: "TestClock.testClockWith(Effect.succeed)"
+  note: "V4 exposes callback-based access to the active test clock; use testClockWith directly when possible."

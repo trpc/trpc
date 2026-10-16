@@ -1,0 +1,36 @@
+packages:
+  - ai-docs
+  - scratchpad
+  - scripts
+  - packages/*
+  - packages/ai/*
+  - packages/atom/*
+  - packages/platform/*
+  - packages/sql/*
+  - packages/tools/*
+  - examples/*
+
+verifyDepsBeforeRun: error
+enableGlobalVirtualStore: false
+
+allowBuilds:
+  core-js: false
+  cpu-features: false
+  dprint: false
+  esbuild: false
+  protobufjs: false
+  sharp: false
+  ssh2: false
+  tree-sitter: false
+  tree-sitter-javascript: false
+  tree-sitter-typescript: false
+  workerd: false
+
+patchedDependencies:
+  '@changesets/get-github-info@1.0.1': patches/@changesets__get-github-info@1.0.1.patch
+
+overrides:
+  # jsdom 30.1.0 fails under Bun when Vitest installs its window error handler.
+  # Remove after a later jsdom release passes the Atom React and Solid suites under Bun.
+  # Upstream changes: https://github.com/jsdom/jsdom/compare/v30.0.1...v30.1.0
+  jsdom: ~30.0.1

@@ -1,0 +1,21 @@
+"effect/Cron#Cron":
+  replacement: "Cron.Cron"
+  note: "The model remains; update for the v4 representation and private type id."
+"effect/Cron#isParseError":
+  replacement: "Cron.isCronParseError"
+  note: "The parse-error guard was renamed with the error type."
+"effect/Cron#ParseError":
+  replacement: "Cron.CronParseError"
+  note: "The parse error was renamed and Cron.parse now returns Result.Result<Cron, CronParseError>."
+"effect/Cron#ParseErrorTypeId":
+  replacement: "none"
+  note: "The cron parse-error type id is private in v4. Use Cron.isCronParseError to narrow unknown failures."
+"effect/Cron#sequenceReverse":
+  replacement: "Cron.prev"
+  note: "The reverse iterator was removed. Build an iterator that repeatedly calls Cron.prev, feeding each returned Date into the next call."
+"effect/Cron#TypeId":
+  replacement: "none"
+  note: "The Cron type id is private in v4. Use Cron.isCron to identify cron values."
+"effect/Cron#unsafeParse":
+  replacement: "Cron.parseUnsafe"
+  note: "The throwing parser was renamed; it also accepts an optional time zone."

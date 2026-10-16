@@ -1,0 +1,3 @@
+effect/ScheduleInterval:
+  replacement: none
+  note: The public ScheduleInterval module was removed in v4. Schedule steps now express only a relative Duration; combine policies with Schedule.max or Schedule.min, or implement custom timing with Schedule.fromStep.

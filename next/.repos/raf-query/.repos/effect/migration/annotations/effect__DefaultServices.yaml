@@ -1,0 +1,9 @@
+"effect/DefaultServices#currentServices":
+  replacement: "Effect.context() and Context.get(context, reference)"
+  note: "The aggregate FiberRef was removed; access and override default Context.Reference services individually."
+"effect/DefaultServices#DefaultServices":
+  replacement: "none"
+  note: "The aggregate type and module were removed; Clock, Console, Random, ConfigProvider, and Tracer are independent defaulted references."
+"effect/DefaultServices#liveServices":
+  replacement: "Context.empty() with individual Context.Reference defaults"
+  note: "There is no live-services bundle; each default service reference supplies its own live default."

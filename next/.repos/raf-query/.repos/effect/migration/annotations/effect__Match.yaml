@@ -1,0 +1,51 @@
+"effect/Match#either":
+  replacement: "Match.result"
+  note: "Renamed finalizer with a container change: matched Right and unmatched Left become Result.Success and Result.Failure."
+"effect/Match#MatcherTypeId":
+  replacement: "none"
+  note: "The public matcher brand was internalized. Obtain matchers from Match.type or Match.value and use their public _tag when discrimination is required."
+"effect/Match#Matcher":
+  replacement: "Match.Matcher"
+  note: "The type is retained, but its fifth argument is now a flavor marker (ValueFlavor for Match.value and never for Match.type or Match.fn) rather than the provided value; an optional seventh Args tuple tracks Match.fn selector arguments. Prefer inference from Match.type, Match.value, or Match.fn and update hand-written Matcher annotations."
+"effect/Match#Not":
+  replacement: "Match.Not"
+  note: "The case type is retained. Its evaluate method now receives any Match.fn selector arguments after the selected input; update custom case implementations that consume those arguments."
+"effect/Match#SafeRefinementId":
+  replacement: "none"
+  note: "The public safe-refinement brand was internalized. Use Predicate.Refinement, Predicate.Predicate, or a built-in Match refinement instead of constructing the brand."
+"effect/Match#TypeMatcher":
+  replacement: "Match.TypeMatcher"
+  note: "The public type is retained, but its brand is private; create values with Match.type rather than implementing the interface."
+"effect/Match#Types":
+  replacement: "Match.Types"
+  note: "The public type-level namespace is retained with no call-site migration."
+"effect/Match#Types.ExtractAndNarrow":
+  replacement: "Match.Types.ExtractAndNarrow"
+  note: "The type-only matching helper is retained unchanged."
+"effect/Match#Types.MaybeReplace":
+  replacement: "Match.Types.MaybeReplace"
+  note: "The type-only matching helper is retained unchanged."
+"effect/Match#Types.NonFailKeys":
+  replacement: "Match.Types.NonFailKeys"
+  note: "The type-only matching helper is retained unchanged."
+"effect/Match#Types.PForNotMatch":
+  replacement: "Match.Types.PForNotMatch"
+  note: "The type-only matching helper is retained unchanged."
+"effect/Match#Types.ResolvePred":
+  replacement: "Match.Types.ResolvePred"
+  note: "The type-only matching helper is retained unchanged."
+"effect/Match#Types.SafeRefinementR":
+  replacement: "Match.Types.SafeRefinementR"
+  note: "The type-only matching helper is retained unchanged."
+"effect/Match#Types.ToInvertedRefinement":
+  replacement: "Match.Types.ToInvertedRefinement"
+  note: "The type-only matching helper is retained unchanged."
+"effect/Match#Types.ToSafeRefinement":
+  replacement: "Match.Types.ToSafeRefinement"
+  note: "The type-only matching helper is retained unchanged."
+"effect/Match#ValueMatcher":
+  replacement: "Match.ValueMatcher"
+  note: "The type is retained, but value now uses Result instead of Either and the brand is private; create values with Match.value."
+"effect/Match#When":
+  replacement: "Match.When"
+  note: "The case type is retained. Its evaluate method now receives any Match.fn selector arguments after the selected input; update custom case implementations that consume those arguments."

@@ -1,0 +1,15 @@
+{
+	"compilerOptions": {
+		"allowImportingTsExtensions": true,
+		"jsx": "react-jsx",
+		"lib": ["ES2024", "DOM", "DOM.Iterable"],
+		"module": "preserve",
+		"moduleResolution": "bundler",
+		"noEmit": true,
+		"skipLibCheck": true,
+		"strict": true,
+		"target": "ES2024",
+		"types": ["node", "@vitejs/plugin-rsc/types"]
+	},
+	"include": ["src", "vite-rsc", "vite.config.ts"]
+}

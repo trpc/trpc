@@ -1,0 +1,51 @@
+"@effect/experimental/Persistence#BackingPersistence":
+  replacement: effect/persistence/Persistence#BackingPersistence
+  note: Use the v4 BackingPersistence Context.Service class.
+"@effect/experimental/Persistence#BackingPersistenceTypeId":
+  replacement: none
+  note: The BackingPersistence brand is no longer publicly exported in v4.
+"@effect/experimental/Persistence#ErrorTypeId":
+  replacement: none
+  note: The v4 persistence error identifier is private; narrow with the exported error classes.
+"@effect/experimental/Persistence#layerKeyValueStore":
+  replacement: effect/persistence/Persistence#layerBackingKvs
+  note: The KeyValueStore backing layer was renamed to layerBackingKvs.
+"@effect/experimental/Persistence#layerMemory":
+  replacement: effect/persistence/Persistence#layerBackingMemory
+  note: Use layerBackingMemory for the old backing service; v4 layerMemory creates the higher-level Persistence service.
+"@effect/experimental/Persistence#layerResult":
+  replacement: effect/persistence/Persistence#layer
+  note: The ResultPersistence service layer was renamed to layer.
+"@effect/experimental/Persistence#layerResultKeyValueStore":
+  replacement: effect/persistence/Persistence#layerKvs
+  note: The combined KeyValueStore-backed result layer was renamed to layerKvs.
+"@effect/experimental/Persistence#layerResultMemory":
+  replacement: effect/persistence/Persistence#layerMemory
+  note: The combined memory-backed result layer was renamed to layerMemory.
+"@effect/experimental/Persistence#PersistenceBackingError":
+  replacement: effect/persistence/Persistence#PersistenceError
+  note: PersistenceError now represents failures from the backing persistence implementation.
+"@effect/experimental/Persistence#PersistenceError":
+  replacement: effect/persistence/Persistence#PersistenceError | effect/Schema#SchemaError
+  note: The old combined alias was split into backing PersistenceError and schema SchemaError.
+"@effect/experimental/Persistence#PersistenceParseError":
+  replacement: effect/Schema#SchemaError
+  note: Persistence parsing failures now use the core SchemaError type.
+"@effect/experimental/Persistence#ResultPersistence":
+  replacement: effect/persistence/Persistence#Persistence
+  note: ResultPersistence was renamed to Persistence and is now a Context.Service class.
+"@effect/experimental/Persistence#ResultPersistence.Key":
+  replacement: effect/persistence/Persistable#Persistable
+  note: Persistable is the v4 schema-backed persistence key contract.
+"@effect/experimental/Persistence#ResultPersistence.KeyAny":
+  replacement: effect/persistence/Persistable#Any
+  note: Use Persistable.Any for an arbitrary v4 persistence key contract.
+"@effect/experimental/Persistence#ResultPersistence.TimeToLiveArgs":
+  replacement: Parameters<effect/persistence/Persistable#TimeToLiveFn<K>>
+  note: Derive the tuple from TimeToLiveFn; its order is now exit then request.
+"@effect/experimental/Persistence#ResultPersistenceStore":
+  replacement: effect/persistence/Persistence#PersistenceStore
+  note: ResultPersistenceStore was renamed to PersistenceStore.
+"@effect/experimental/Persistence#ResultPersistenceTypeId":
+  replacement: none
+  note: The ResultPersistence brand is no longer publicly exported in v4.

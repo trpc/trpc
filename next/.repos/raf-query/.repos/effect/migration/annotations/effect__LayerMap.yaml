@@ -1,0 +1,15 @@
+"effect/LayerMap#LayerMap":
+  replacement: "LayerMap.LayerMap"
+  note: "The type remains; runtime(key) became contextEffect(key) and returns Context."
+"effect/LayerMap#Service":
+  replacement: "LayerMap.Service"
+  note: "Use layer instead of Default, layerNoDeps instead of DefaultWithoutDependencies, and contextEffect instead of runtime. Preloading does not remove acquisition errors from later lookups, which can reacquire expired or invalidated entries."
+"effect/LayerMap#Service.Context":
+  replacement: "LayerMap.Service.Services<Options>"
+  note: "The input-services extractor was renamed."
+"effect/LayerMap#TagClass":
+  replacement: "LayerMap.TagClass"
+  note: "The type remains and now extends Context.ServiceClass; use the renamed layer and contextEffect members."
+"effect/LayerMap#TypeId":
+  replacement: "none"
+  note: "The LayerMap marker is private in v4 and no public guard exists."

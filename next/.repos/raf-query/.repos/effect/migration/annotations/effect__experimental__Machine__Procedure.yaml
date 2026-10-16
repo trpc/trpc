@@ -1,0 +1,3 @@
+"@effect/experimental/Machine/Procedure":
+  replacement: none
+  note: The stateful Machine Procedure model, its serializable variant and guard, and both Procedure brands were not ported to v4. Define request contracts with Rpc (using schemas for serializable procedures) and implement state handling in an explicit actor architecture, because Rpc provides only the request contract. The handler context, context and request extractors, and no-reply sentinel were removed; use the corresponding Rpc request types after redesigning the contract. Replace the removed tagged-request base and helpers with schema-backed Rpc requests and Rpc helper types where appropriate.

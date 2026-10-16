@@ -1,0 +1,57 @@
+"@effect/platform/Multipart#ErrorTypeId":
+  replacement: "Multipart.MultipartError"
+  note: "The public error type-id alias was removed; use the MultipartError class."
+"@effect/platform/Multipart#FieldMimeTypes":
+  replacement: "Multipart.FieldMimeTypes"
+  note: "The setting remains but is now a Context.Reference rather than a service class."
+"@effect/platform/Multipart#FileSchema":
+  replacement: "Multipart.PersistedFileSchema"
+  note: "The schema for persisted multipart files was renamed."
+"@effect/platform/Multipart#isField":
+  replacement: "Multipart.isField"
+  note: "The guard remains in effect/http/Multipart."
+"@effect/platform/Multipart#isFile":
+  replacement: "Multipart.isFile"
+  note: "The guard remains in effect/http/Multipart."
+"@effect/platform/Multipart#isPart":
+  replacement: "Multipart.isPart"
+  note: "The guard remains in effect/http/Multipart."
+"@effect/platform/Multipart#MaxFieldSize":
+  replacement: "Multipart.MaxFieldSize"
+  note: "Now a Context.Reference<ByteSize.ByteSize>; provide a value such as ByteSize.bytes(100)."
+"@effect/platform/Multipart#MaxFileSize":
+  replacement: "Multipart.MaxFileSize"
+  note: "Now a Context.Reference<ByteSize.ByteSize | undefined>; provide ByteSize.bytes(100), for example, or undefined for no limit."
+"@effect/platform/Multipart#MaxParts":
+  replacement: "Multipart.MaxParts"
+  note: "The setting remains as a Context.Reference; use undefined rather than Option.none for no limit."
+"@effect/platform/Multipart#schemaJson":
+  replacement: "Multipart.schemaJson"
+  note: "The JSON-field decoder remains in effect/http/Multipart and uses v4 Schema constraints."
+"@effect/platform/Multipart#TypeId":
+  replacement: "typeof Multipart.TypeId"
+  note: "The runtime marker remains exported, but the separate type alias was removed."
+"@effect/platform/Multipart#withFieldMimeTypes":
+  replacement: "Effect.provideService(Multipart.FieldMimeTypes, mimeTypes)"
+  note: "Provide the v4 Context.Reference around the effect."
+"@effect/platform/Multipart#withLimits":
+  replacement: "Effect.provideContext(effect, Multipart.limitsServices(options))"
+  note: "Build the multipart limit context and provide it to the effect; Option-valued limits became optional plain values."
+"@effect/platform/Multipart#withLimitsStream":
+  replacement: "Stream.provideContext(stream, Multipart.limitsServices(options))"
+  note: "Build the multipart limit context and provide it to the stream; Option-valued limits became optional plain values."
+"@effect/platform/Multipart#withMaxFieldSize":
+  replacement: "Effect.provideService(Multipart.MaxFieldSize, size)"
+  note: "Provide a ByteSize value, such as ByteSize.bytes(100). To normalize ByteSize.Input options, use Multipart.limitsServices."
+"@effect/platform/Multipart#withMaxFileSize":
+  replacement: "Effect.provideService(Multipart.MaxFileSize, size)"
+  note: "Replace Option.none with undefined and Option.some(value) with a normalized ByteSize value. To normalize ByteSize.Input options, use Multipart.limitsServices."
+"@effect/platform/Multipart#withMaxParts":
+  replacement: "Effect.provideService(Multipart.MaxParts, count)"
+  note: "Provide the v4 Context.Reference around the effect, converting Option.none to undefined."
+"@effect/platform/Multipart#makeChannel":
+  replacement: "effect/http/Multipart#makeChannel"
+  note: "The channel constructor moved and no longer accepts bufferSize; input and output chunks use non-empty readonly arrays."
+"@effect/platform/Multipart#withLimits.Options":
+  replacement: "Multipart.withLimits.Options"
+  note: "Limit fields now use optional plain numbers or ByteSize inputs; convert Option.none to undefined and Option.some(value) to value."

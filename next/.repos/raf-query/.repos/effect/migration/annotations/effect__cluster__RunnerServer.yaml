@@ -1,0 +1,6 @@
+"@effect/cluster/RunnerServer#layer":
+  replacement: "effect/cluster/RunnerServer#layer"
+  note: "Moved into core Effect; it still serves runner RPCs over a separately provided RpcServer.Protocol."
+"@effect/cluster/RunnerServer#layerClientOnly":
+  replacement: "effect/cluster/RunnerServer#layerClientOnly"
+  note: "Moved into core Effect with the same client-only Sharding and Runners composition."

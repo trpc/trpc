@@ -1,0 +1,6 @@
+"@effect/platform-bun/BunHttpServer#layerContext":
+  replacement: "BunHttpServer.layerHttpServices"
+  note: "Direct rename; it provides HttpPlatform, Etag.Generator, and BunServices."
+"@effect/platform-bun/BunHttpServer#ServeOptions":
+  replacement: "BunHttpServer.ServeOptions<R>"
+  note: "The alias remains, but R is now a route-key string union and routes uses Bun.Serve.Routes; update old route-map generic arguments or infer R from routes."

@@ -1,0 +1,39 @@
+"@effect/platform/Ndjson#duplex":
+  replacement: "Ndjson.duplex"
+  note: "The API moved to effect/encoding/Ndjson."
+"@effect/platform/Ndjson#duplexSchema":
+  replacement: "Ndjson.duplexSchema"
+  note: "The API moved to effect/encoding/Ndjson and uses v4 Schema constraints."
+"@effect/platform/Ndjson#ErrorTypeId":
+  replacement: "Ndjson.NdjsonError"
+  note: "The public error marker was removed; use the NdjsonError class."
+"@effect/platform/Ndjson#NdjsonErrorTypeId":
+  replacement: "Ndjson.NdjsonError"
+  note: "The public error type-id alias was removed; use the NdjsonError class."
+"@effect/platform/Ndjson#NdjsonOptions":
+  replacement: "{ readonly ignoreEmptyLines?: boolean }"
+  note: "The standalone options interface was removed; decoding and duplex APIs accept this inline shape."
+"@effect/platform/Ndjson#pack":
+  replacement: "Ndjson.encode"
+  note: "The NDJSON channel constructor was renamed from pack to encode."
+"@effect/platform/Ndjson#packSchema":
+  replacement: "Ndjson.encodeSchema"
+  note: "The schema-aware pack channel was renamed to encodeSchema."
+"@effect/platform/Ndjson#packSchemaString":
+  replacement: "Ndjson.encodeSchemaString"
+  note: "The string schema pack channel was renamed to encodeSchemaString."
+"@effect/platform/Ndjson#packString":
+  replacement: "Ndjson.encodeString"
+  note: "The string pack channel was renamed to encodeString."
+"@effect/platform/Ndjson#unpack":
+  replacement: "Ndjson.decode"
+  note: "The NDJSON channel constructor was renamed from unpack to decode."
+"@effect/platform/Ndjson#unpackSchema":
+  replacement: "Ndjson.decodeSchema"
+  note: "The schema-aware unpack channel was renamed to decodeSchema."
+"@effect/platform/Ndjson#unpackSchemaString":
+  replacement: "Ndjson.decodeSchemaString"
+  note: "The string schema unpack channel was renamed to decodeSchemaString."
+"@effect/platform/Ndjson#unpackString":
+  replacement: "Ndjson.decodeString"
+  note: "The string unpack channel was renamed to decodeString."

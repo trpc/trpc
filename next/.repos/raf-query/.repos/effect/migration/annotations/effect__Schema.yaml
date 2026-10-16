@@ -1,0 +1,1362 @@
+effect/Schema#Annotable:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#Annotable.All:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#Annotable.Any:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#Annotable.Self:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#AnnotableClass:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#AnnotableDeclare:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#annotations:
+  replacement: Schema.annotate
+  note: Rename `annotations` to `annotate`.
+effect/Schema#Annotations:
+  replacement: Schema.Annotations
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#Annotations.Doc:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#Annotations.Filter:
+  replacement: Schema.Annotations.Filter
+  note: "Use the v4 filter annotation shape. arbitraryConstraint uses Schema.Annotations.ToArbitrary.FilterConstraint; the earlier v4 ToArbitrary.Constraint name was removed."
+effect/Schema#Annotations.GenericSchema:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#Annotations.Schema:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#Any:
+  replacement: Schema.Any
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#Array$:
+  replacement: Schema.$Array
+  note: Use the renamed v4 constructor result interface.
+effect/Schema#ArrayEnsure:
+  replacement: Schema.ArrayEnsure
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#ArrayFormatterIssue:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#asSchema:
+  replacement: Schema.revealCodec
+  note: Use `revealCodec` to expose a schema's codec type.
+effect/Schema#asSerializable:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#asSerializableWithResult:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#asWithResult:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#attachPropertySignature:
+  replacement: Schema.tagDefaultOmit
+  note: "Map the struct fields and add `key: Schema.tagDefaultOmit(value)`; the old combinator was removed."
+effect/Schema#between:
+  replacement: Schema.isBetween
+  note: Rename the predicate to `isBetween` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#betweenBigDecimal:
+  replacement: Schema.isBetweenBigDecimal
+  note: Rename the predicate to `isBetweenBigDecimal` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#BetweenBigDecimalSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#betweenBigInt:
+  replacement: Schema.isBetweenBigInt
+  note: Rename the predicate to `isBetweenBigInt` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#BetweenBigIntSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#betweenDate:
+  replacement: Schema.isBetweenDate
+  note: Rename the predicate to `isBetweenDate` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#BetweenDateSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#betweenDuration:
+  replacement: Schema.isBetween
+  note: Rename the predicate to `isBetween` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#BetweenDurationSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#BetweenSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#BigDecimal:
+  replacement: Schema.BigDecimalFromString
+  note: Use the string-to-BigDecimal codec; v4 `BigDecimal` is the self schema.
+effect/Schema#BigDecimalFromNumber:
+  replacement: none
+  note: No built-in number-to-BigDecimal codec remains; compose `decodeTo` with a `SchemaGetter` conversion.
+effect/Schema#BigDecimalFromSelf:
+  replacement: Schema.BigDecimal
+  note: The self schema dropped the `FromSelf` suffix.
+effect/Schema#BigInt:
+  replacement: Schema.BigIntFromString
+  note: Use the string-to-bigint codec; v4 `BigInt` is the self schema.
+effect/Schema#BigIntFromNumber:
+  replacement: none
+  note: No built-in number-to-bigint codec remains; compose `decodeTo` with a checked `SchemaGetter` conversion.
+effect/Schema#BigIntFromSelf:
+  replacement: Schema.BigInt
+  note: The self schema dropped the `FromSelf` suffix.
+effect/Schema#Boolean:
+  replacement: Schema.Boolean
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#BooleanFromString:
+  replacement: none
+  note: No built-in string-to-boolean codec remains; use `decodeTo` with an explicit `SchemaGetter` transformation.
+effect/Schema#BooleanFromUnknown:
+  replacement: Schema.Boolean
+  note: Use the boolean schema and perform any coercion explicitly before decoding.
+effect/Schema#brand:
+  replacement: Schema.brand
+  note: Pass one concrete string literal as the brand identifier. Widened strings, unions, open template literals, and symbol identifiers are rejected; apply brand repeatedly to compose brands. V4 branding is type-only and does not add runtime AST metadata.
+effect/Schema#BrandSchema:
+  replacement: Schema.brand
+  note: Use the schema returned by the v4 `brand` combinator and infer its concrete type. The brand exists only in the TypeScript type and cannot be inspected through the runtime AST.
+effect/Schema#BrandSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#Capitalize:
+  replacement: Schema.String.pipe(Schema.decodeTo(Schema.String.check(Schema.isCapitalized()), SchemaTransformation.capitalize()))
+  note: Rebuild the capitalization transformation with `decodeTo`.
+effect/Schema#capitalized:
+  replacement: Schema.isCapitalized
+  note: Rename the string predicate to `isCapitalized` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#Capitalized:
+  replacement: Schema.String.check(Schema.isCapitalized())
+  note: Rebuild the removed convenience schema from the v4 base schema and check APIs.
+effect/Schema#CapitalizedSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#Cause:
+  replacement: Schema.toCodecJson(Schema.Cause(error, defect))
+  note: Use the derived JSON codec to preserve v3's encoded Cause representation; v4 `Cause` itself is the self schema.
+effect/Schema#CauseEncoded:
+  replacement: Schema.CauseIso
+  note: Use the v4 Cause JSON/iso representation type.
+effect/Schema#CauseFromSelf:
+  replacement: Schema.Cause
+  note: The self schema dropped the `FromSelf` suffix.
+effect/Schema#Char:
+  replacement: Schema.Char
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#Chunk:
+  replacement: Schema.toCodecJson(Schema.Chunk(value))
+  note: Use the derived JSON codec to preserve v3's array-to-Chunk behavior; v4 `Chunk` itself is the self schema.
+effect/Schema#ChunkFromSelf:
+  replacement: Schema.Chunk
+  note: The self schema dropped the `FromSelf` suffix.
+effect/Schema#clamp:
+  replacement: Schema.decodeTo + SchemaGetter.transform(Number.clamp(...))
+  note: Rebuild clamping as an explicit reversible transformation.
+effect/Schema#clampBigDecimal:
+  replacement: Schema.decodeTo + SchemaGetter.transform(BigDecimal.clamp(...))
+  note: Rebuild BigDecimal clamping as an explicit reversible transformation.
+effect/Schema#clampBigInt:
+  replacement: Schema.decodeTo + SchemaGetter.transform(BigInt.clamp(...))
+  note: Rebuild bigint clamping as an explicit reversible transformation.
+effect/Schema#clampDuration:
+  replacement: Schema.decodeTo + SchemaGetter.transform(Duration.clamp(...))
+  note: Rebuild Duration clamping as an explicit reversible transformation.
+effect/Schema#Class:
+  replacement: Schema.Class
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#Config:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#Data:
+  replacement: none
+  note: Remove this wrapper. v4 structural equality works on ordinary decoded objects.
+effect/Schema#DataFromSelf:
+  replacement: none
+  note: Remove this wrapper. v4 structural equality works on ordinary decoded objects.
+effect/Schema#Date:
+  replacement: Schema.DateFromString
+  note: Use `DateFromString`; v4 `Date` is the self schema.
+effect/Schema#DateFromNumber:
+  replacement: Schema.DateFromMillis
+  note: Rename the milliseconds-to-Date codec.
+effect/Schema#DateFromSelf:
+  replacement: Schema.Date
+  note: The self schema dropped the `FromSelf` suffix.
+effect/Schema#DateFromSelfSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#DateFromString:
+  replacement: Schema.DateFromString
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#DateTimeUtc:
+  replacement: Schema.DateTimeUtcFromString
+  note: Use the string codec; v4 `DateTimeUtc` is the self schema.
+effect/Schema#DateTimeUtcFromDate:
+  replacement: Schema.DateTimeUtcFromDate
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#DateTimeUtcFromNumber:
+  replacement: Schema.DateTimeUtcFromMillis
+  note: Rename the milliseconds-to-DateTime codec.
+effect/Schema#DateTimeUtcFromSelf:
+  replacement: Schema.DateTimeUtc
+  note: The self schema dropped the `FromSelf` suffix.
+effect/Schema#DateTimeZoned:
+  replacement: Schema.DateTimeZonedFromString
+  note: Use the string codec; v4 `DateTimeZoned` is the self schema.
+effect/Schema#DateTimeZonedFromSelf:
+  replacement: Schema.DateTimeZoned
+  note: The self schema dropped the `FromSelf` suffix.
+effect/Schema#declare:
+  replacement: Schema.declare
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#decode:
+  replacement: Schema.decodeEffect
+  note: Rename the effectful decoder.
+effect/Schema#decodeEither:
+  replacement: Schema.decodeExit
+  note: Rename the decoder returning an `Exit`.
+effect/Schema#decodeUnknown:
+  replacement: Schema.decodeUnknownEffect
+  note: Rename the effectful unknown-input decoder.
+effect/Schema#decodeUnknownEither:
+  replacement: Schema.decodeUnknownExit
+  note: Rename the unknown-input decoder returning an `Exit`.
+effect/Schema#decodeUnknownPromise:
+  replacement: Schema.decodeUnknownPromise
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#Defect:
+  replacement: Schema.Defect
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#deserialize:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#deserializeExit:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#deserializeFailure:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#deserializeSuccess:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#Duration:
+  replacement: Schema.DurationFromString
+  note: Use the string codec; v4 `Duration` is the self schema.
+effect/Schema#DurationEncoded:
+  replacement: Schema.Duration["Iso"]
+  note: Use the v4 Duration iso representation type.
+effect/Schema#DurationFromMillis:
+  replacement: Schema.DurationFromMillis
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#DurationFromNanos:
+  replacement: Schema.DurationFromNanos
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#DurationFromSelf:
+  replacement: Schema.Duration
+  note: The self schema dropped the `FromSelf` suffix.
+effect/Schema#Either:
+  replacement: Schema.Result
+  note: "`Either` was renamed to `Result`; pass success and failure schemas positionally."
+effect/Schema#EitherEncoded:
+  replacement: Schema.ResultIso
+  note: Use the v4 Result iso representation type.
+effect/Schema#EitherFromSelf:
+  replacement: Schema.Result
+  note: "`Either` was renamed to `Result` in v4."
+effect/Schema#EitherFromUnion:
+  replacement: Schema.Result
+  note: "`Either` was renamed to `Result`; use its tagged Result representation."
+effect/Schema#element:
+  replacement: none
+  note: The tuple element wrapper was removed; express elements directly in `Tuple([...])` or use `TupleWithRest` for rest elements.
+effect/Schema#Element:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#Element.Token:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#encode:
+  replacement: Schema.encodeEffect
+  note: Rename the effectful encoder.
+effect/Schema#encodedBoundSchema:
+  replacement: Schema.toEncoded
+  note: Use the encoded side of the codec; service bounds are modeled by v4 codec service types.
+effect/Schema#encodedSchema:
+  replacement: Schema.toEncoded
+  note: Rename the encoded-side projection.
+effect/Schema#encodeEither:
+  replacement: Schema.encodeExit
+  note: Rename the encoder returning an `Exit`.
+effect/Schema#encodeUnknown:
+  replacement: Schema.encodeUnknownEffect
+  note: Rename the effectful unknown-input encoder.
+effect/Schema#encodeUnknownEither:
+  replacement: Schema.encodeUnknownExit
+  note: Rename the unknown-input encoder returning an `Exit`.
+effect/Schema#encodeUnknownPromise:
+  replacement: Schema.encodeUnknownPromise
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#endsWith:
+  replacement: Schema.isEndingWith
+  note: Rename the string predicate to `isEndingWith` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#EndsWithSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#Enums:
+  replacement: Schema.Enum
+  note: "Rename the enum constructor and pass the enum object. Numeric members must be finite; NaN and positive or negative Infinity throw at construction."
+effect/Schema#EnumsDefinition:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#equivalence:
+  replacement: Schema.toEquivalence
+  note: Rename the equivalence derivation utility.
+effect/Schema#Exit:
+  replacement: Schema.toCodecJson(Schema.Exit(value, error, defect))
+  note: Use the derived JSON codec to preserve v3's encoded Exit representation; v4 `Exit` itself is the self schema.
+effect/Schema#ExitEncoded:
+  replacement: Schema.ExitIso
+  note: Use the v4 Exit iso representation type.
+effect/Schema#ExitFromSelf:
+  replacement: Schema.Exit
+  note: The self schema dropped the `FromSelf` suffix.
+effect/Schema#exitSchema:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#extend:
+  replacement: schema.mapFields(Struct.assign(fields))
+  note: Replace struct extension with `mapFields(Struct.assign(...))` or `Schema.fieldsAssign`; map union members explicitly.
+effect/Schema#failureSchema:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#FiberId:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#FiberIdEncoded:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#FiberIdFromSelf:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#filter:
+  replacement: Schema.check(Schema.makeFilter(predicate)) / Schema.refine(refinement)
+  note: Use `check(makeFilter(...))` for predicates and `refine` for type refinements.
+effect/Schema#filterEffect:
+  replacement: "Schema.decode({ decode: SchemaGetter.checkEffect(...), encode: SchemaGetter.passthrough() })"
+  note: Rebuild effectful validation as a decode step with `SchemaGetter.checkEffect`.
+effect/Schema#FilterIssue:
+  replacement: Schema.FilterIssue
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#FilterOutput:
+  replacement: Schema.FilterOutput
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#finite:
+  replacement: Schema.isFinite
+  note: Rename the predicate to `isFinite` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#Finite:
+  replacement: Schema.Finite
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#FiniteSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#format:
+  replacement: SchemaRepresentation.toCodeDocument
+  note: Build a representation with `SchemaRepresentation.toRepresentation`, `toMultiDocument`, then `toCodeDocument`.
+effect/Schema#fromBrand:
+  replacement: Schema.fromBrand
+  note: Pass the constructor's single concrete string brand key as the first argument, followed by the constructor and then the schema. Apply fromBrand repeatedly for multiple brands; use Schema.Union for alternatives. Constructor checks remain at runtime, while the brand is type-only and does not add AST metadata.
+effect/Schema#fromKey:
+  replacement: Schema.encodeKeys
+  note: Use `encodeKeys` to map decoded property names to encoded keys.
+effect/Schema#FromPropertySignature:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#getNumberIndexedAccess:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#greaterThan:
+  replacement: Schema.isGreaterThan
+  note: Rename the predicate to `isGreaterThan` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#greaterThanBigDecimal:
+  replacement: Schema.isGreaterThanBigDecimal
+  note: Rename the predicate to `isGreaterThanBigDecimal` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#GreaterThanBigDecimalSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#greaterThanBigInt:
+  replacement: Schema.isGreaterThanBigInt
+  note: Rename the predicate to `isGreaterThanBigInt` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#GreaterThanBigIntSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#greaterThanDate:
+  replacement: Schema.isGreaterThanDate
+  note: Rename the predicate to `isGreaterThanDate` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#GreaterThanDateSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#greaterThanDuration:
+  replacement: Schema.isGreaterThan
+  note: Rename the predicate to `isGreaterThan` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#GreaterThanDurationSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#greaterThanOrEqualTo:
+  replacement: Schema.isGreaterThanOrEqualTo
+  note: Rename the predicate to `isGreaterThanOrEqualTo` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#greaterThanOrEqualToBigDecimal:
+  replacement: Schema.isGreaterThanOrEqualToBigDecimal
+  note: Rename the predicate to `isGreaterThanOrEqualToBigDecimal` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#GreaterThanOrEqualToBigDecimalSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#greaterThanOrEqualToBigInt:
+  replacement: Schema.isGreaterThanOrEqualToBigInt
+  note: Rename the predicate to `isGreaterThanOrEqualToBigInt` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#GreaterThanOrEqualToBigIntSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#greaterThanOrEqualToDate:
+  replacement: Schema.isGreaterThanOrEqualToDate
+  note: Rename the predicate to `isGreaterThanOrEqualToDate` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#GreaterThanOrEqualToDateSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#greaterThanOrEqualToDuration:
+  replacement: Schema.isGreaterThanOrEqualTo
+  note: Rename the predicate to `isGreaterThanOrEqualTo` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#GreaterThanOrEqualToDurationSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#GreaterThanOrEqualToSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#GreaterThanSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#HashMap:
+  replacement: Schema.toCodecJson(Schema.HashMap(key, value))
+  note: Pass key and value positionally and use the derived JSON codec to preserve v3's entry-array encoding.
+effect/Schema#HashMapFromSelf:
+  replacement: Schema.HashMap
+  note: The self schema dropped the `FromSelf` suffix; pass key and value positionally.
+effect/Schema#HashSet:
+  replacement: Schema.toCodecJson(Schema.HashSet(value))
+  note: Use the derived JSON codec to preserve v3's array-to-HashSet behavior.
+effect/Schema#HashSetFromSelf:
+  replacement: Schema.HashSet
+  note: The self schema dropped the `FromSelf` suffix.
+effect/Schema#head:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#headNonEmpty:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#headOrElse:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#includes:
+  replacement: Schema.isIncluding
+  note: Rename the string predicate to `isIncluding` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#IncludesSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#IndexSignature:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#IndexSignature.Context:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#IndexSignature.Encoded:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#IndexSignature.NonEmptyRecords:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#IndexSignature.Record:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#IndexSignature.Type:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#instanceOf:
+  replacement: Schema.instanceOf
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#InstanceOfSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#int:
+  replacement: Schema.isInt
+  note: Rename the predicate to `isInt` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#Int:
+  replacement: Schema.Int
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#IntSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#isPropertySignature:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#isSchema:
+  replacement: Schema.isSchema
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#itemsCount:
+  replacement: Schema.isBetweenLength
+  note: Use the v4 collection-size check and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#ItemsCountSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#JsonNumber:
+  replacement: Schema.Finite
+  note: Use the finite-number schema for JSON-compatible numbers.
+effect/Schema#JsonNumberSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#keyof:
+  replacement: none
+  note: Removed with the schema model rewrite; derive keys from struct fields or use `Schema.Literals` explicitly.
+effect/Schema#LeftEncoded:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#length:
+  replacement: Schema.isBetweenLength
+  note: Use `isBetweenLength` with equal minimum and maximum values for an exact string length.
+effect/Schema#LengthSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#lessThan:
+  replacement: Schema.isLessThan
+  note: Rename the predicate to `isLessThan` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#lessThanBigDecimal:
+  replacement: Schema.isLessThanBigDecimal
+  note: Rename the predicate to `isLessThanBigDecimal` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#LessThanBigDecimalSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#lessThanBigInt:
+  replacement: Schema.isLessThanBigInt
+  note: Rename the predicate to `isLessThanBigInt` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#LessThanBigIntSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#lessThanDate:
+  replacement: Schema.isLessThanDate
+  note: Rename the predicate to `isLessThanDate` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#LessThanDateSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#lessThanDuration:
+  replacement: Schema.isLessThan
+  note: Rename the predicate to `isLessThan` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#LessThanDurationSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#lessThanOrEqualTo:
+  replacement: Schema.isLessThanOrEqualTo
+  note: Rename the predicate to `isLessThanOrEqualTo` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#lessThanOrEqualToBigDecimal:
+  replacement: Schema.isLessThanOrEqualToBigDecimal
+  note: Rename the predicate to `isLessThanOrEqualToBigDecimal` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#LessThanOrEqualToBigDecimalSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#lessThanOrEqualToBigInt:
+  replacement: Schema.isLessThanOrEqualToBigInt
+  note: Rename the predicate to `isLessThanOrEqualToBigInt` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#LessThanOrEqualToBigIntSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#lessThanOrEqualToDate:
+  replacement: Schema.isLessThanOrEqualToDate
+  note: Rename the predicate to `isLessThanOrEqualToDate` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#LessThanOrEqualToDateSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#lessThanOrEqualToDuration:
+  replacement: Schema.isLessThanOrEqualTo
+  note: Rename the predicate to `isLessThanOrEqualTo` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#LessThanOrEqualToDurationSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#LessThanOrEqualToSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#LessThanSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#List:
+  replacement: none
+  note: The List schema was removed; migrate the model to `Schema.Array` or declare a custom List codec.
+effect/Schema#ListFromSelf:
+  replacement: none
+  note: The List self schema was removed; migrate to arrays or use `Schema.declare` for List values.
+effect/Schema#Literal:
+  replacement: Schema.Literal / Schema.Literals
+  note: Use `Literal(value)` for one non-null literal, `Null` for null, and `Literals([...])` for several literals.
+effect/Schema#Lowercase:
+  replacement: Schema.String.pipe(Schema.decodeTo(Schema.String.check(Schema.isLowercased()), SchemaTransformation.toLowerCase()))
+  note: Rebuild the lowercase transformation with `decodeTo`.
+effect/Schema#lowercased:
+  replacement: Schema.isLowercased
+  note: Rename the string predicate to `isLowercased` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#Lowercased:
+  replacement: Schema.String.check(Schema.isLowercased())
+  note: Rebuild the removed convenience schema from the v4 base schema and check APIs.
+effect/Schema#LowercasedSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#make:
+  replacement: Schema.make
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#MakeOptions:
+  replacement: Schema.MakeOptions
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#makePropertySignature:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#Map:
+  replacement: Schema.toCodecJson(Schema.ReadonlyMap(key, value))
+  note: Use `ReadonlyMap` with positional arguments and derive its JSON codec; mutable Map-specific schema types were removed.
+effect/Schema#Map$:
+  replacement: Schema.$ReadonlyMap
+  note: Use the renamed v4 constructor result interface.
+effect/Schema#MapFromRecord:
+  replacement: none
+  note: No direct record-to-Map codec remains; compose `Record` and `ReadonlyMap` with an explicit `decodeTo` transformation.
+effect/Schema#MapFromSelf:
+  replacement: Schema.ReadonlyMap
+  note: Use the readonly Map self schema with positional key and value arguments.
+effect/Schema#maxItems:
+  replacement: Schema.isMaxLength
+  note: Use the v4 collection-size check and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#MaxItemsSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#maxLength:
+  replacement: Schema.isMaxLength
+  note: Rename the string predicate to `isMaxLength` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#MaxLengthSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#minItems:
+  replacement: Schema.isMinLength
+  note: Use the v4 collection-size check and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#MinItemsSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#minLength:
+  replacement: Schema.isMinLength
+  note: Rename the string predicate to `isMinLength` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#MinLengthSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#multipleOf:
+  replacement: Schema.isMultipleOf
+  note: "Rename the predicate to `isMultipleOf` and apply it with `Schema.check` or a schema's `check` method. The divisor must be finite and nonzero or construction throws RangeError; negative divisors are normalized to their absolute value."
+effect/Schema#MultipleOfSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#mutable:
+  replacement: Schema.mutable
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#negative:
+  replacement: Schema.isLessThan(0)
+  note: Use `isLessThan(0)` as a v4 check.
+effect/Schema#Negative:
+  replacement: Schema.Number.check(Schema.isLessThan(0))
+  note: Rebuild the removed convenience schema from the v4 base schema and check APIs.
+effect/Schema#negativeBigDecimal:
+  replacement: Schema.isLessThanBigDecimal(BigDecimal.fromNumber(0))
+  note: Use `isLessThanBigDecimal` as a v4 check.
+effect/Schema#NegativeBigDecimalFromSelf:
+  replacement: Schema.BigDecimal.check(Schema.isLessThanBigDecimal(BigDecimal.fromNumber(0)))
+  note: Rebuild the removed convenience schema from the v4 base schema and check APIs.
+effect/Schema#NegativeBigDecimalSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#negativeBigInt:
+  replacement: Schema.isLessThanBigInt(0n)
+  note: Use `isLessThanBigInt(0n)` as a v4 check.
+effect/Schema#NegativeBigInt:
+  replacement: Schema.BigIntFromString.check(Schema.isLessThanBigInt(0n))
+  note: Rebuild the removed convenience schema from the v4 base schema and check APIs.
+effect/Schema#NegativeBigIntFromSelf:
+  replacement: Schema.BigInt.check(Schema.isLessThanBigInt(0n))
+  note: Rebuild the removed convenience schema from the v4 base schema and check APIs.
+effect/Schema#Never:
+  replacement: Schema.Never
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#NonEmptyArray:
+  replacement: Schema.NonEmptyArray
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#NonEmptyArrayEnsure:
+  replacement: none
+  note: No direct replacement remains; explicitly decode a single value or array to `Schema.NonEmptyArray`.
+effect/Schema#NonEmptyChunk:
+  replacement: Schema.toCodecJson(Schema.Chunk(value).check(Schema.isMinLength(1)))
+  note: Use a checked Chunk JSON codec.
+effect/Schema#NonEmptyChunkFromSelf:
+  replacement: Schema.Chunk(value).check(Schema.isMinLength(1))
+  note: Use the Chunk self schema with a minimum-length check.
+effect/Schema#nonEmptyString:
+  replacement: Schema.isNonEmpty
+  note: Rename the string predicate to `isNonEmpty` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#NonEmptyString:
+  replacement: Schema.NonEmptyString
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#NonEmptyTrimmedString:
+  replacement: Schema.Trimmed.check(Schema.isNonEmpty())
+  note: Compose the trimmed schema with the non-empty check.
+effect/Schema#nonNaN:
+  replacement: Schema.makeFilter((n) => !Number.isNaN(n))
+  note: Use an explicit filter because v4 has no dedicated non-NaN check.
+effect/Schema#NonNaN:
+  replacement: Schema.Number.check(Schema.makeFilter((n) => !Number.isNaN(n)))
+  note: Rebuild the removed convenience schema from the v4 base schema and check APIs.
+effect/Schema#NonNaNSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#nonNegative:
+  replacement: Schema.isGreaterThanOrEqualTo(0)
+  note: Use `isGreaterThanOrEqualTo(0)` as a v4 check.
+effect/Schema#NonNegative:
+  replacement: Schema.Number.check(Schema.isGreaterThanOrEqualTo(0))
+  note: Rebuild the removed convenience schema from the v4 base schema and check APIs.
+effect/Schema#nonNegativeBigDecimal:
+  replacement: Schema.isGreaterThanOrEqualToBigDecimal(BigDecimal.fromNumber(0))
+  note: Use `isGreaterThanOrEqualToBigDecimal` as a v4 check.
+effect/Schema#NonNegativeBigDecimalFromSelf:
+  replacement: Schema.BigDecimal.check(Schema.isGreaterThanOrEqualToBigDecimal(BigDecimal.fromNumber(0)))
+  note: Rebuild the removed convenience schema from the v4 base schema and check APIs.
+effect/Schema#NonNegativeBigDecimalSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#nonNegativeBigInt:
+  replacement: Schema.isGreaterThanOrEqualToBigInt(0n)
+  note: Use `isGreaterThanOrEqualToBigInt(0n)` as a v4 check.
+effect/Schema#NonNegativeBigInt:
+  replacement: Schema.BigIntFromString.check(Schema.isGreaterThanOrEqualToBigInt(0n))
+  note: Rebuild the removed convenience schema from the v4 base schema and check APIs.
+effect/Schema#NonNegativeBigIntFromSelf:
+  replacement: Schema.BigInt.check(Schema.isGreaterThanOrEqualToBigInt(0n))
+  note: Rebuild the removed convenience schema from the v4 base schema and check APIs.
+effect/Schema#NonNegativeInt:
+  replacement: Schema.Number.check(Schema.isInt(), Schema.isGreaterThanOrEqualTo(0))
+  note: Rebuild the removed convenience schema from the v4 base schema and check APIs.
+effect/Schema#nonPositive:
+  replacement: Schema.isLessThanOrEqualTo(0)
+  note: Use `isLessThanOrEqualTo(0)` as a v4 check.
+effect/Schema#NonPositive:
+  replacement: Schema.Number.check(Schema.isLessThanOrEqualTo(0))
+  note: Rebuild the removed convenience schema from the v4 base schema and check APIs.
+effect/Schema#nonPositiveBigDecimal:
+  replacement: Schema.isLessThanOrEqualToBigDecimal(BigDecimal.fromNumber(0))
+  note: Use `isLessThanOrEqualToBigDecimal` as a v4 check.
+effect/Schema#NonPositiveBigDecimalFromSelf:
+  replacement: Schema.BigDecimal.check(Schema.isLessThanOrEqualToBigDecimal(BigDecimal.fromNumber(0)))
+  note: Rebuild the removed convenience schema from the v4 base schema and check APIs.
+effect/Schema#NonPositiveBigDecimalSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#nonPositiveBigInt:
+  replacement: Schema.isLessThanOrEqualToBigInt(0n)
+  note: Use `isLessThanOrEqualToBigInt(0n)` as a v4 check.
+effect/Schema#NonPositiveBigInt:
+  replacement: Schema.BigIntFromString.check(Schema.isLessThanOrEqualToBigInt(0n))
+  note: Rebuild the removed convenience schema from the v4 base schema and check APIs.
+effect/Schema#NonPositiveBigIntFromSelf:
+  replacement: Schema.BigInt.check(Schema.isLessThanOrEqualToBigInt(0n))
+  note: Rebuild the removed convenience schema from the v4 base schema and check APIs.
+effect/Schema#Not:
+  replacement: none
+  note: The exclusion constructor was removed; express the accepted alternatives directly or add a `Schema.check`.
+effect/Schema#Null:
+  replacement: Schema.Null
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#NullishOr:
+  replacement: Schema.NullishOr
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#NullOr:
+  replacement: Schema.NullOr
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#Number:
+  replacement: Schema.Number
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#NumberFromString:
+  replacement: Schema.NumberFromString
+  note: "Decoding now uses JavaScript number coercion: unlike v3, `\"abc\"` decodes to `NaN`, while `\"\"` and whitespace-only strings decode to `0`. `FiniteFromString` rejects non-finite results, so it rejects invalid strings but also the `\"NaN\"` and infinity spellings accepted by v3; it still decodes blank strings to `0`. Use a custom codec to preserve the v3 acceptance rules exactly."
+effect/Schema#Object:
+  replacement: Schema.ObjectKeyword
+  note: Rename the object keyword schema.
+effect/Schema#omit:
+  replacement: schema.mapFields(Struct.omit([keys]))
+  note: Use `mapFields` with `Struct.omit`; pass keys as an array.
+effect/Schema#Option:
+  replacement: Schema.toCodecJson(Schema.Option(value))
+  note: Use the derived JSON codec to preserve v3's tagged Option encoding; v4 `Option` itself is the self schema.
+effect/Schema#optional:
+  replacement: Schema.optional
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#optionalElement:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#OptionalOptions:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#optionalToOptional:
+  replacement: Schema.decodeTo + SchemaGetter.transformOptional
+  note: Rebuild optional-field transformations with `decodeTo` and `SchemaGetter.transformOptional`.
+effect/Schema#optionalToRequired:
+  replacement: Schema.decodeTo + SchemaGetter.transformOptional
+  note: Rebuild optional-field transformations with `decodeTo` and `SchemaGetter.transformOptional`.
+effect/Schema#optionalWith:
+  replacement: Schema.optional / Schema.optionalKey / Schema.withDecodingDefaultType
+  note: Choose `optional` or `optionalKey`; use the decoding-default helpers and an explicit nullable transformation as required by the old options.
+effect/Schema#OptionEncoded:
+  replacement: Schema.OptionIso
+  note: Use the v4 Option iso representation type.
+effect/Schema#OptionFromNonEmptyTrimmedString:
+  replacement: Schema.Trimmed.check(Schema.isNonEmpty()).pipe(Schema.decodeTo(Schema.Option(Schema.String), ...))
+  note: Rebuild the empty-string-to-None conversion explicitly with `decodeTo`.
+effect/Schema#OptionFromNullishOr:
+  replacement: Schema.OptionFromNullishOr
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#OptionFromNullOr:
+  replacement: Schema.OptionFromNullOr
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#OptionFromSelf:
+  replacement: Schema.Option
+  note: The self schema dropped the `FromSelf` suffix.
+effect/Schema#OptionFromUndefinedOr:
+  replacement: Schema.OptionFromUndefinedOr
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#parseJson:
+  replacement: Schema.fromJsonString(Schema.Unknown) / Schema.fromJsonString(schema)
+  note: Use `fromJsonString(Schema.Unknown)` without an inner schema or `fromJsonString(schema)` with one.
+effect/Schema#ParseJsonOptions:
+  replacement: none
+  note: The old parse-json options type was removed; configure `fromJsonString` and its underlying getter directly.
+effect/Schema#parseNumber:
+  replacement: Schema.NumberFromString
+  note: "Use the built-in string-to-number codec. Unlike v3 `parseNumber`, invalid strings decode to `NaN`, while blank strings decode to `0`. `FiniteFromString` rejects non-finite results but also the `\"NaN\"` and infinity spellings accepted by v3; exact compatibility requires a custom codec."
+effect/Schema#partial:
+  replacement: schema.mapFields(Struct.map(Schema.optional))
+  note: Map struct fields with `Schema.optional`.
+effect/Schema#partialWith:
+  replacement: schema.mapFields(Struct.map(Schema.optionalKey))
+  note: "For `{ exact: true }`, map struct fields with `Schema.optionalKey`; choose field helpers explicitly for other options."
+effect/Schema#pattern:
+  replacement: Schema.isPattern
+  note: Rename the string predicate to `isPattern` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#PatternSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#pick:
+  replacement: schema.mapFields(Struct.pick([keys]))
+  note: Use `mapFields` with `Struct.pick`; pass keys as an array.
+effect/Schema#pickLiteral:
+  replacement: Schema.Literals(values).pick(selected)
+  note: Build a `Literals` schema from an array and call its `pick` method.
+effect/Schema#pluck:
+  replacement: none
+  note: No direct replacement remains; pick the field then use `decodeTo` with `SchemaGetter.transform` to map between the field and enclosing object.
+effect/Schema#positive:
+  replacement: Schema.isGreaterThan(0)
+  note: Use `isGreaterThan(0)` as a v4 check.
+effect/Schema#Positive:
+  replacement: Schema.Number.check(Schema.isGreaterThan(0))
+  note: Rebuild the removed convenience schema from the v4 base schema and check APIs.
+effect/Schema#positiveBigDecimal:
+  replacement: Schema.isGreaterThanBigDecimal(BigDecimal.fromNumber(0))
+  note: Use `isGreaterThanBigDecimal` as a v4 check.
+effect/Schema#PositiveBigDecimalFromSelf:
+  replacement: Schema.BigDecimal.check(Schema.isGreaterThanBigDecimal(BigDecimal.fromNumber(0)))
+  note: Rebuild the removed convenience schema from the v4 base schema and check APIs.
+effect/Schema#PositiveBigDecimalSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#positiveBigInt:
+  replacement: Schema.isGreaterThanBigInt(0n)
+  note: Use `isGreaterThanBigInt(0n)` as a v4 check.
+effect/Schema#PositiveBigInt:
+  replacement: Schema.BigIntFromString.check(Schema.isGreaterThanBigInt(0n))
+  note: Rebuild the removed convenience schema from the v4 base schema and check APIs.
+effect/Schema#PositiveBigIntFromSelf:
+  replacement: Schema.BigInt.check(Schema.isGreaterThanBigInt(0n))
+  note: Rebuild the removed convenience schema from the v4 base schema and check APIs.
+effect/Schema#PropertyKey:
+  replacement: Schema.PropertyKey
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#propertySignature:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#PropertySignature:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#PropertySignature.All:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#PropertySignature.Any:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#PropertySignature.AST:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#PropertySignature.Token:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#PropertySignatureDeclaration:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#PropertySignatureTransformation:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#PropertySignatureTypeId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#ReadonlyMap:
+  replacement: Schema.toCodecJson(Schema.ReadonlyMap(key, value))
+  note: Pass key and value positionally and use the derived JSON codec to preserve v3's entry-array encoding.
+effect/Schema#ReadonlyMap$:
+  replacement: Schema.$ReadonlyMap
+  note: Use the renamed v4 constructor result interface.
+effect/Schema#ReadonlyMapFromRecord:
+  replacement: none
+  note: No direct record-to-ReadonlyMap codec remains; compose `Record` and `ReadonlyMap` with an explicit `decodeTo` transformation.
+effect/Schema#ReadonlyMapFromSelf:
+  replacement: Schema.ReadonlyMap
+  note: The self schema dropped the `FromSelf` suffix; pass key and value positionally.
+effect/Schema#ReadonlySet:
+  replacement: Schema.toCodecJson(Schema.ReadonlySet(value))
+  note: Use the derived JSON codec to preserve v3's array-to-ReadonlySet behavior.
+effect/Schema#ReadonlySet$:
+  replacement: Schema.$ReadonlySet
+  note: Use the renamed v4 constructor result interface.
+effect/Schema#ReadonlySetFromSelf:
+  replacement: Schema.ReadonlySet
+  note: The self schema dropped the `FromSelf` suffix.
+effect/Schema#Record:
+  replacement: Schema.Record(key, value)
+  note: Pass key and value as separate arguments.
+effect/Schema#Record$:
+  replacement: Schema.$Record
+  note: Use the renamed v4 constructor result interface.
+effect/Schema#Redacted:
+  replacement: Schema.RedactedFromValue
+  note: Use `RedactedFromValue` to wrap decoded raw values; v4 `Redacted` is the self schema.
+effect/Schema#RedactedFromSelf:
+  replacement: Schema.Redacted
+  note: The self schema dropped the `FromSelf` suffix.
+effect/Schema#refine:
+  replacement: Schema.refine
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#RefineSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#rename:
+  replacement: Schema.encodeKeys
+  note: Use `encodeKeys` for encoded-key renaming.
+effect/Schema#requiredToOptional:
+  replacement: Schema.decodeTo + SchemaGetter.transformOptional
+  note: Rebuild optional-field transformations with `decodeTo` and `SchemaGetter.transformOptional`.
+effect/Schema#RightEncoded:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#Schema:
+  replacement: Schema.Schema
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#Schema.All:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#Schema.Any:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#Schema.AnyNoContext:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#Schema.AsSchema:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#Schema.Context:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#Schema.Encoded:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#Schema.ToAsserts:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#Schema.Variance:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#SchemaClass:
+  replacement: Schema.Codec
+  note: The concrete SchemaClass abstraction was removed; accept the appropriate v4 `Codec` or constraint type.
+effect/Schema#Serializable:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#Serializable.All:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#Serializable.Any:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#Serializable.Context:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#Serializable.Encoded:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#Serializable.Type:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#serializableSchema:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#SerializableWithResult:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#SerializableWithResult.All:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#SerializableWithResult.Any:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#SerializableWithResult.Context:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#serialize:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#serializeExit:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#serializeFailure:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#serializeSuccess:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#Set:
+  replacement: Schema.toCodecJson(Schema.ReadonlySet(value))
+  note: Use the readonly Set schema and derive its JSON codec; mutable Set-specific schema types were removed.
+effect/Schema#Set$:
+  replacement: Schema.$ReadonlySet
+  note: Use the renamed v4 constructor result interface.
+effect/Schema#SetFromSelf:
+  replacement: Schema.ReadonlySet
+  note: Use the readonly Set self schema.
+effect/Schema#SimplifyMutable:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#SortedSet:
+  replacement: none
+  note: The SortedSet schema was removed; migrate to `ReadonlySet` or declare a custom codec that applies the required ordering.
+effect/Schema#SortedSetFromSelf:
+  replacement: none
+  note: The SortedSet self schema was removed; use `Schema.declare` if SortedSet values must remain in the model.
+effect/Schema#split:
+  replacement: Schema.String.pipe(Schema.decodeTo(Schema.Array(Schema.String), SchemaTransformation.transform(...)))
+  note: Rebuild splitting as an explicit reversible string/array transformation.
+effect/Schema#standardSchemaV1:
+  replacement: Schema.toStandardSchemaV1
+  note: Rename the Standard Schema adapter.
+effect/Schema#startsWith:
+  replacement: Schema.isStartingWith
+  note: Rename the string predicate to `isStartingWith` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#StartsWithSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#String:
+  replacement: Schema.String
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#Struct:
+  replacement: Schema.Struct
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#Struct.Constructor:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#Struct.Context:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#Struct.Encoded:
+  replacement: Schema.Struct.Encoded
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#Struct.EncodedOptionalKeys:
+  replacement: Schema.Struct.EncodedOptionalKeys
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#Struct.Field:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#Struct.Key:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#Struct.OptionalEncodedPropertySignature:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#Struct.OptionalTypePropertySignature:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#Struct.PropertySignatureWithDefault:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#successSchema:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#suspend:
+  replacement: Schema.suspend
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#Symbol:
+  replacement: none
+  note: v4 `Symbol` is the self schema and has no built-in string-to-symbol codec; rebuild the conversion explicitly with `decodeTo`.
+effect/Schema#SymbolFromSelf:
+  replacement: Schema.Symbol
+  note: The self schema dropped the `FromSelf` suffix.
+effect/Schema#symbolSerializable:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#symbolWithResult:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#tag:
+  replacement: Schema.tag
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#TaggedClass:
+  replacement: Schema.TaggedClass
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#TaggedError:
+  replacement: Schema.TaggedError
+  note: The constructor name is retained; update to the v4 fields-or-Struct signature and infer the resulting class types.
+effect/Schema#TaggedErrorClass:
+  replacement: Schema.TaggedError
+  note: The exported helper interface was removed; use the class returned by Schema.TaggedError and infer its types.
+effect/Schema#TaggedRequest:
+  replacement: effect/rpc/Rpc.make
+  note: The Schema request/serialization protocol was removed; migrate RPC requests to the v4 Rpc APIs.
+effect/Schema#TaggedRequest.All:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#TaggedRequest.Any:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#TaggedRequestClass:
+  replacement: effect/rpc/Rpc.make
+  note: The Schema request/serialization protocol was removed; migrate RPC requests to the v4 Rpc APIs.
+effect/Schema#TaggedStruct:
+  replacement: Schema.TaggedStruct
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#TemplateLiteral:
+  replacement: Schema.TemplateLiteral(parts)
+  note: Pass template literal parts as one array. Parts must not contain encodings, including inside unions and nested templates. Transformations whose decoded and encoded types are equal are also rejected. Use Schema.TemplateLiteralParser(parts) for transformed parts.
+effect/Schema#TemplateLiteralParser:
+  replacement: Schema.TemplateLiteralParser(parts)
+  note: Pass template literal parts directly as one array. Transformed parts are supported, and their decoding and encoding services are required in the corresponding direction.
+effect/Schema#TimeZone:
+  replacement: Schema.TimeZoneFromString
+  note: Use the string codec; v4 `TimeZone` is the self schema.
+effect/Schema#TimeZoneFromSelf:
+  replacement: Schema.TimeZone
+  note: The self schema dropped the `FromSelf` suffix.
+effect/Schema#TimeZoneNamed:
+  replacement: Schema.TimeZoneNamedFromString
+  note: Use the string codec; v4 `TimeZoneNamed` is the self schema.
+effect/Schema#TimeZoneNamedFromSelf:
+  replacement: Schema.TimeZoneNamed
+  note: The self schema dropped the `FromSelf` suffix.
+effect/Schema#TimeZoneOffset:
+  replacement: Schema.toCodecJson(Schema.TimeZoneOffset)
+  note: Use the derived JSON codec to preserve v3's encoded offset representation; v4 `TimeZoneOffset` is the self schema.
+effect/Schema#TimeZoneOffsetFromSelf:
+  replacement: Schema.TimeZoneOffset
+  note: The self schema dropped the `FromSelf` suffix.
+effect/Schema#ToPropertySignature:
+  replacement: none
+  note: Compared the v3 declaration with v4 Schema and the schema migration guide; no direct public replacement remains. Rebuild the behavior from public v4 codecs/getters where still required.
+effect/Schema#transform:
+  replacement: schema.pipe(Schema.decodeTo(target, SchemaTransformation.transform({ decode, encode })))
+  note: Replace the constructor with `decodeTo` and a `SchemaTransformation`.
+effect/Schema#transformLiteral:
+  replacement: Schema.Literal(from).transform(to)
+  note: Use the literal schema's `transform` method.
+effect/Schema#transformLiterals:
+  replacement: Schema.Literals(fromValues).transform(toValues)
+  note: Split the pairs into parallel arrays and use `Literals(...).transform(...)`.
+effect/Schema#transformOrFail:
+  replacement: "schema.pipe(Schema.decodeTo(target, { decode: SchemaGetter.transformEffect(...), encode: ... }))"
+  note: Replace the constructor with `decodeTo` and effectful `SchemaGetter` transformations.
+effect/Schema#Trim:
+  replacement: Schema.Trim
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#trimmed:
+  replacement: Schema.isTrimmed
+  note: Rename the string predicate to `isTrimmed` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#Trimmed:
+  replacement: Schema.Trimmed
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#TrimmedSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#Tuple:
+  replacement: Schema.Tuple(elements)
+  note: Pass tuple elements as one array.
+effect/Schema#Tuple2:
+  replacement: Schema.Tuple
+  note: Use the array-based tuple constructor.
+effect/Schema#TupleType.ElementsEncoded:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#TupleType.ElementsType:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#TupleType.Encoded:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#TupleType.Type:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#TypeId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#TypeLiteral:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#TypeLiteral.Constructor:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#TypeLiteral.Encoded:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#TypeLiteral.Type:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#typeSchema:
+  replacement: Schema.toType
+  note: Rename the type-side projection.
+effect/Schema#Uint8:
+  replacement: "Schema.Number.check(Schema.isInt(), Schema.isBetween({ minimum: 0, maximum: 255 }))"
+  note: Rebuild the unsigned-byte schema from integer and range checks.
+effect/Schema#Uint8Array:
+  replacement: Schema.toCodecJson(Schema.Uint8Array)
+  note: Use the derived JSON codec to preserve v3's number-array encoding; v4 `Uint8Array` is the self schema.
+effect/Schema#Uint8ArrayFromSelf:
+  replacement: Schema.Uint8Array
+  note: The self schema dropped the `FromSelf` suffix.
+effect/Schema#ULID:
+  replacement: Schema.String.check(Schema.isULID())
+  note: Build the string schema with the ULID check.
+effect/Schema#ULIDSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#Uncapitalize:
+  replacement: Schema.String.pipe(Schema.decodeTo(Schema.String.check(Schema.isUncapitalized()), SchemaTransformation.uncapitalize()))
+  note: Rebuild the uncapitalization transformation with `decodeTo`.
+effect/Schema#uncapitalized:
+  replacement: Schema.isUncapitalized
+  note: Rename the string predicate to `isUncapitalized` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#Uncapitalized:
+  replacement: Schema.String.check(Schema.isUncapitalized())
+  note: Rebuild the removed convenience schema from the v4 base schema and check APIs.
+effect/Schema#UncapitalizedSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#Undefined:
+  replacement: Schema.Undefined
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#UndefinedOr:
+  replacement: Schema.UndefinedOr
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#Union:
+  replacement: Schema.Union(members)
+  note: Pass union members as one array.
+effect/Schema#UniqueSymbolFromSelf:
+  replacement: Schema.UniqueSymbol
+  note: "Use the v4 unique-symbol schema constructor. JSON encoding is available only for globally registered symbols and uses the exact String(symbol) value; local symbols cannot be encoded as JSON."
+effect/Schema#Unknown:
+  replacement: Schema.Unknown
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#Uppercase:
+  replacement: Schema.String.pipe(Schema.decodeTo(Schema.String.check(Schema.isUppercased()), SchemaTransformation.toUpperCase()))
+  note: Rebuild the uppercase transformation with `decodeTo`.
+effect/Schema#uppercased:
+  replacement: Schema.isUppercased
+  note: Rename the string predicate to `isUppercased` and apply it with `Schema.check` or a schema's `check` method.
+effect/Schema#Uppercased:
+  replacement: Schema.String.check(Schema.isUppercased())
+  note: Rebuild the removed convenience schema from the v4 base schema and check APIs.
+effect/Schema#UppercasedSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#URL:
+  replacement: Schema.URLFromString
+  note: Use the string-to-URL codec; v4 `URL` is the self schema.
+effect/Schema#URLFromSelf:
+  replacement: Schema.URL
+  note: The self schema dropped the `FromSelf` suffix.
+effect/Schema#UUID:
+  replacement: Schema.String.check(Schema.isUUID())
+  note: Build the string schema with the UUID check.
+effect/Schema#UUIDSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#validate:
+  replacement: Schema.decodeEffect(Schema.toType(schema))
+  note: Validation was removed; decode through the schema's type side.
+effect/Schema#validateEither:
+  replacement: Schema.decodeExit(Schema.toType(schema))
+  note: Validation was removed; decode through the schema's type side.
+effect/Schema#validatePromise:
+  replacement: Schema.decodePromise(Schema.toType(schema))
+  note: Validation was removed; decode through the schema's type side.
+effect/Schema#validDate:
+  replacement: Schema.Date
+  note: Use the v4 Date self schema, which rejects invalid Date values.
+effect/Schema#ValidDateFromSelf:
+  replacement: Schema.Date
+  note: Use the v4 Date self schema, which rejects invalid Date values.
+effect/Schema#ValidDateSchemaId:
+  replacement: none
+  note: The v3 schema-id symbol was removed. Use the corresponding public v4 constructor/check instead of inspecting schema ids.
+effect/Schema#Void:
+  replacement: Schema.Void
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#withConstructorDefault:
+  replacement: Schema.withConstructorDefault
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#withDecodingDefault:
+  replacement: Schema.withDecodingDefault
+  note: The API remains public in v4, but its type/value declaration was consolidated; use the v4 declaration and update inferred types/signature as needed.
+effect/Schema#withDefaults:
+  replacement: none
+  note: Removed; choose `withConstructorDefault` and decoding-default helpers explicitly for each side.
+effect/Schema#WithResult:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#WithResult.All:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#WithResult.Any:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#WithResult.Context:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#WithResult.Failure:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#WithResult.FailureEncoded:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#WithResult.Success:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.
+effect/Schema#WithResult.SuccessEncoded:
+  replacement: none
+  note: The v3 helper/protocol type was removed by the v4 Schema model rewrite. Use the public v4 constructor and infer its result types instead.

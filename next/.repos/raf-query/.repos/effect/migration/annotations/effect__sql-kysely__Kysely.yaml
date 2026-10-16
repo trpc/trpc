@@ -1,0 +1,3 @@
+"@effect/sql-kysely/Kysely":
+  replacement: none
+  note: The Effect integration was removed. Use native kysely#Kysely, explicitly wrap promise execution with Effect.tryPromise, and define an application service if needed. No Effect-native equivalent remains; construct native new Kysely(config) and explicitly wrap builder execution and errors with Effect.tryPromise.

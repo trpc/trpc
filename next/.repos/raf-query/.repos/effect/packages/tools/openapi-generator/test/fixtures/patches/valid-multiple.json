@@ -1,0 +1,17 @@
+[
+  {
+    "op": "replace",
+    "path": "/info/title",
+    "value": "My Custom API"
+  },
+  {
+    "op": "add",
+    "path": "/info/x-generator",
+    "value": "effect-openapi"
+  },
+  {
+    "op": "replace",
+    "path": "/info/version",
+    "value": "2.0.0"
+  }
+]

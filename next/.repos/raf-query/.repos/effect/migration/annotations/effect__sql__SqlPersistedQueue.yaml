@@ -1,0 +1,6 @@
+"@effect/sql/SqlPersistedQueue#layerStore":
+  replacement: "effect/persistence/PersistedQueue#layerStoreSql"
+  note: "Moved into PersistedQueue and renamed with the Sql suffix; options are unchanged."
+"@effect/sql/SqlPersistedQueue#make":
+  replacement: "effect/persistence/PersistedQueue#makeStoreSql"
+  note: "Use the SQL store constructor; PersistedQueue.make creates a typed queue from a store factory and is not equivalent."

@@ -1,0 +1,12 @@
+"@effect/platform/Transferable#CollectorService":
+  replacement: "Transferable.Collector[\"Service\"]"
+  note: "The collector interface is now the service type of the Transferable.Collector Context.Service class."
+"@effect/platform/Transferable#schema":
+  replacement: "Transferable.schema"
+  note: "The schema wrapper moved to effect/workers/Transferable and uses the v4 Schema model."
+"@effect/platform/Transferable#Uint8Array":
+  replacement: "Transferable.Uint8Array"
+  note: "The transferable Uint8Array schema remains in the moved module."
+"@effect/platform/Transferable#unsafeMakeCollector":
+  replacement: "Transferable.makeCollectorUnsafe"
+  note: "The unsafe collector constructor was renamed."

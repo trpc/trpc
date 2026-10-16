@@ -1,0 +1,6 @@
+"@effect/ai-anthropic/AnthropicTool#getProviderDefinedToolName":
+  replacement: "Tool.NameMapper"
+  note: "The Anthropic-specific name lookup was removed; v4 provider tools carry custom and provider names through the shared Tool.NameMapper."
+"@effect/ai-anthropic/AnthropicTool#ProviderDefinedTools":
+  replacement: "AnthropicTool.AnthropicTool"
+  note: "The provider-defined schema union was replaced by the union of v4 Anthropic provider tool constructor return types."

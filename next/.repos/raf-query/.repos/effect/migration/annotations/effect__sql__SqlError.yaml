@@ -1,0 +1,3 @@
+"@effect/sql/SqlError#SqlErrorTypeId":
+  replacement: "effect/sql/SqlError#isSqlError"
+  note: "The type id is private; use isSqlError for runtime narrowing or isSqlErrorReason for structured reason values."

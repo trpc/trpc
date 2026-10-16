@@ -1,0 +1,6 @@
+"@effect/platform/FetchHttpClient#Fetch":
+  replacement: "FetchHttpClient.Fetch"
+  note: "Retained as a Context.Reference that defaults to globalThis.fetch."
+"@effect/platform/FetchHttpClient#layer":
+  replacement: "FetchHttpClient.layer"
+  note: "Retained as the HttpClient layer backed by the configured Fetch reference."

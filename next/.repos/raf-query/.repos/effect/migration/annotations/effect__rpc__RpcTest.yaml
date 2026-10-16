@@ -1,0 +1,3 @@
+"@effect/rpc/RpcTest#makeClient":
+  replacement: "effect/rpc/RpcTest#makeClient"
+  note: "Retained; it uses the v4 no-serialization client/server path and requires handlers plus any server and client middleware services."

@@ -1,0 +1,42 @@
+"@effect/experimental/Event#Event.AddError":
+  replacement: effect/eventlog/Event#AddError
+  note: This type moved from the Event namespace to a top-level export.
+"@effect/experimental/Event#Event.Any":
+  replacement: effect/eventlog/Event#Any
+  note: This type moved from the Event namespace to a top-level export.
+"@effect/experimental/Event#Event.Context":
+  replacement: effect/eventlog/Event#Services
+  note: Event schema context is now represented by decoding and encoding Services.
+"@effect/experimental/Event#Event.ContextWithTag":
+  replacement: effect/eventlog/Event#Services<effect/eventlog/Event#WithTag<Events, Tag>>
+  note: Filter with WithTag and derive its decoding and encoding Services.
+"@effect/experimental/Event#Event.Error":
+  replacement: effect/eventlog/Event#Error
+  note: This type moved from the Event namespace to a top-level export.
+"@effect/experimental/Event#Event.ErrorSchema":
+  replacement: effect/eventlog/Event#ErrorSchema
+  note: This type moved from the Event namespace to a top-level export.
+"@effect/experimental/Event#Event.Payload":
+  replacement: effect/eventlog/Event#Payload
+  note: This type moved from the Event namespace to a top-level export.
+"@effect/experimental/Event#Event.PayloadSchema":
+  replacement: effect/eventlog/Event#PayloadSchema
+  note: This type moved from the Event namespace to a top-level export.
+"@effect/experimental/Event#Event.Success":
+  replacement: effect/eventlog/Event#Success
+  note: This type moved from the Event namespace to a top-level export.
+"@effect/experimental/Event#Event.SuccessSchema":
+  replacement: effect/eventlog/Event#SuccessSchema
+  note: This type moved from the Event namespace to a top-level export.
+"@effect/experimental/Event#Event.Tag":
+  replacement: effect/eventlog/Event#Tag
+  note: This type moved from the Event namespace to a top-level export.
+"@effect/experimental/Event#Event.ToService":
+  replacement: effect/eventlog/Event#ToService
+  note: This type moved from the Event namespace to a top-level export.
+"@effect/experimental/Event#make":
+  replacement: effect/eventlog/Event#make
+  note: Import make from the v4 unstable Event module.
+"@effect/experimental/Event#TypeId":
+  replacement: effect/eventlog/Event#TypeId
+  note: Import TypeId from the v4 unstable Event module; its runtime representation is now a string brand.

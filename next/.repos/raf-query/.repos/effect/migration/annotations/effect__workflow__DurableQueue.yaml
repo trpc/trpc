@@ -1,0 +1,6 @@
+"@effect/workflow/DurableQueue#make":
+  replacement: "effect/workflow/DurableQueue#make"
+  note: "Moved into core Effect; queue persistence now comes from effect/persistence."
+"@effect/workflow/DurableQueue#TypeId":
+  replacement: "effect/workflow/DurableQueue#TypeId"
+  note: "Moved into core Effect; the marker literal changed to ~effect/workflow/DurableQueue. Use typeof DurableQueue.TypeId in type position."

@@ -1,0 +1,18 @@
+"@effect/experimental/EventJournal#EntryIdTypeId":
+  replacement: effect/eventlog/EventJournal#EntryIdTypeId
+  note: Import EntryIdTypeId from the v4 EventJournal module; it is now a string brand.
+"@effect/experimental/EventJournal#ErrorTypeId":
+  replacement: none
+  note: The v4 error marker is private; narrow with EventJournalError instead.
+"@effect/experimental/EventJournal#makeEntryId":
+  replacement: effect/eventlog/EventJournal#makeEntryIdUnsafe
+  note: The unchecked EntryId constructor was renamed to makeEntryIdUnsafe.
+"@effect/experimental/EventJournal#makeRemoteId":
+  replacement: effect/eventlog/EventJournal#makeRemoteIdUnsafe
+  note: The unchecked RemoteId constructor was renamed to makeRemoteIdUnsafe.
+"@effect/experimental/EventJournal#RemoteIdTypeId":
+  replacement: effect/eventlog/EventJournal#RemoteIdTypeId
+  note: Import RemoteIdTypeId from the v4 EventJournal module; it is now a string brand.
+"@effect/experimental/EventJournal#makeMemory":
+  replacement: effect/eventlog/EventJournal#makeMemory
+  note: The in-memory constructor moved into core Effect and now returns the Context.Service implementation through its Service projection.

@@ -1,0 +1,9 @@
+"@effect/platform/HttpClientError#HttpClientError":
+  replacement: "HttpClientError.HttpClientError"
+  note: "Changed from a union to a tagged wrapper class containing a concrete failure in reason."
+"@effect/platform/HttpClientError#RequestError":
+  replacement: "HttpClientError.RequestError"
+  note: "Now a type-only reason union; construct a concrete reason and wrap it in HttpClientError."
+"@effect/platform/HttpClientError#TypeId":
+  replacement: "HttpClientError.isHttpClientError"
+  note: "The brand key is private in v4; use the public runtime refinement."

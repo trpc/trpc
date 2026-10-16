@@ -1,0 +1,3 @@
+effect/RuntimeFlagsPatch:
+  replacement: none
+  note: The aggregate RuntimeFlagsPatch abstraction, its enabled/disabled bit sets, set operations, queries, and renderer were removed; no aggregate patch value remains to construct, combine, inspect, or render. Enable, disable, or invert the corresponding semantic behavior directly, combining semantic configurations where needed. Configure scheduler yielding, interruptibility, or metrics directly, and inspect the corresponding semantic facility when needed.

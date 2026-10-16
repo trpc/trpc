@@ -1,0 +1,42 @@
+effect/TPriorityQueue#TPriorityQueue:
+  replacement: "TxPriorityQueue.TxPriorityQueue"
+  note: "Rename the type and import from \"effect/TxPriorityQueue\". V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TPriorityQueue#TPriorityQueue.Variance:
+  replacement: "none"
+  note: "TxPriorityQueue exposes no public variance marker."
+effect/TPriorityQueue#TPriorityQueueTypeId:
+  replacement: "TxPriorityQueue.isTxPriorityQueue"
+  note: "The type id is internal in v4; use the public runtime guard."
+effect/TPriorityQueue#empty:
+  replacement: "TxPriorityQueue.empty"
+  note: "Import TxPriorityQueue from \"effect/TxPriorityQueue\"; the operation keeps its name. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TPriorityQueue#fromIterable:
+  replacement: "TxPriorityQueue.fromIterable"
+  note: "Import TxPriorityQueue from \"effect/TxPriorityQueue\"; the operation keeps its name. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TPriorityQueue#isEmpty:
+  replacement: "TxPriorityQueue.isEmpty"
+  note: "Import TxPriorityQueue from \"effect/TxPriorityQueue\"; the operation keeps its name. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TPriorityQueue#isNonEmpty:
+  replacement: "TxPriorityQueue.isNonEmpty"
+  note: "Import TxPriorityQueue from \"effect/TxPriorityQueue\"; the operation keeps its name. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TPriorityQueue#make:
+  replacement: "TxPriorityQueue.make"
+  note: "Import TxPriorityQueue from \"effect/TxPriorityQueue\"; the operation keeps its name. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TPriorityQueue#peek:
+  replacement: "TxPriorityQueue.peek"
+  note: "Import TxPriorityQueue from \"effect/TxPriorityQueue\"; the operation keeps its name. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TPriorityQueue#size:
+  replacement: "TxPriorityQueue.size"
+  note: "Import TxPriorityQueue from \"effect/TxPriorityQueue\"; the operation keeps its name. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TPriorityQueue#toArray:
+  replacement: "TxPriorityQueue.toArray"
+  note: "Import TxPriorityQueue from \"effect/TxPriorityQueue\"; the operation keeps its name. V4 Tx operations return ordinary Effects; compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TPriorityQueue#toChunk:
+  replacement: "Effect.map(TxPriorityQueue.toArray(self), Chunk.fromIterable)"
+  note: "The direct Chunk conversion was removed; convert the retained Array snapshot explicitly."
+effect/TPriorityQueue#take:
+  replacement: "TxPriorityQueue.take"
+  note: "Import TxPriorityQueue from \"effect/TxPriorityQueue\"; the operation now returns an ordinary Effect, so compose multiple operations under one outer Effect.tx to keep them atomic."
+effect/TPriorityQueue#takeAll:
+  replacement: "TxPriorityQueue.takeAll"
+  note: "Import TxPriorityQueue from \"effect/TxPriorityQueue\"; it returns an ordinary Effect containing the priority-ordered Array."

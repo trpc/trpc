@@ -1,0 +1,30 @@
+"@effect/ai/McpSchema#ContentBlock":
+  replacement: "McpSchema.ContentBlock"
+  note: "Moved to effect/ai/McpSchema. It remains the MCP content-block union, but v4 exports it as a const schema rather than a Schema.Union subclass. Binary image, audio, and blob data still use Uint8Array values with base64 wire encoding."
+"@effect/ai/McpSchema#ElicitResult":
+  replacement: "McpSchema.ElicitResult"
+  note: "Moved to effect/ai/McpSchema. It remains discriminated by action, but accepted content is now optional and, when present, is a record of strings, finite numbers, booleans, or string arrays; declined and canceled responses still omit content."
+"@effect/ai/McpSchema#FailureEncoded":
+  replacement: "McpSchema.FailureEncoded"
+  note: "Moved to effect/ai/McpSchema and still derives an encoded JSON-RPC failure union from an RpcGroup."
+"@effect/ai/McpSchema#FromClientEncoded":
+  replacement: "McpSchema.FromClientEncoded"
+  note: "Moved to effect/ai/McpSchema and remains the union of client requests and client notifications."
+"@effect/ai/McpSchema#FromServerEncoded":
+  replacement: "McpSchema.FromServerEncoded"
+  note: "Moved to effect/ai/McpSchema and remains the union of server results and server notifications."
+"@effect/ai/McpSchema#McpError":
+  replacement: "McpSchema.McpError"
+  note: "Moved, but changed from a constructable base class to a union schema of standard tagged protocol errors plus McpErrorBase. Use McpErrorBase to construct a generic MCP error."
+"@effect/ai/McpSchema#McpServerClient":
+  replacement: "McpSchema.McpRequestContext / McpSchema.McpServerClient"
+  note: "Use McpRequestContext for client identity, capabilities, and request metadata in protocol-neutral handlers. McpServerClient remains available for initialized stateful protocols and reverse client requests; it is not provided by the stateless 2026-07-28 adapter. Registration helpers exclude McpRequestContext from handler requirements, not McpServerClient."
+"@effect/ai/McpSchema#param":
+  replacement: "McpSchema.param"
+  note: "Moved to effect/ai/McpSchema. V4 wraps the schema and exposes Param.name and Param.schema instead of attaching a public symbol annotation."
+"@effect/ai/McpSchema#ParamAnnotation":
+  replacement: "McpSchema.isParam / Param.name"
+  note: "The public symbol annotation was removed. Detect parameter wrappers with McpSchema.isParam and read the narrowed Param.name instead of inspecting AST annotations."
+"@effect/ai/McpSchema#SuccessEncoded":
+  replacement: "McpSchema.SuccessEncoded"
+  note: "Moved to effect/ai/McpSchema and still derives an encoded JSON-RPC success union from an RpcGroup."

@@ -1,0 +1,18 @@
+"@effect/workflow/Activity#Any":
+  replacement: "effect/workflow/Activity#Any"
+  note: "Moved into core Effect. V4 Any is minimal; use AnyWithProps when schemas or execution properties are required."
+"@effect/workflow/Activity#CurrentAttempt":
+  replacement: "effect/workflow/Activity#CurrentAttempt"
+  note: "Moved into core Effect and changed from a Context.Tag subclass to a Context.Reference value with the same default of 1."
+"@effect/workflow/Activity#make":
+  replacement: "effect/workflow/Activity#make"
+  note: "Moved into core Effect with the same constructor shape, v4 Schema.Constraint service directions, and optional annotations."
+"@effect/workflow/Activity#raceAll":
+  replacement: "effect/workflow/Activity#raceAll"
+  note: "Moved into core Effect with the same named durable race behavior."
+"@effect/workflow/Activity#retry":
+  replacement: "effect/workflow/Activity#retry"
+  note: "Moved into core Effect and updated to v4 Effect.retry option types."
+"@effect/workflow/Activity#TypeId":
+  replacement: "none"
+  note: "The activity marker is private in v4. Use Activity, Activity.Any, or Activity.AnyWithProps constraints."

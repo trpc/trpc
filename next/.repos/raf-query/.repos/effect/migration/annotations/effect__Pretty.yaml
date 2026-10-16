@@ -1,0 +1,13 @@
+"effect/Pretty#make":
+  replacement: "Schema.toFormatter"
+  note: "Formatter derivation moved onto Schema."
+  example: "Schema.toFormatter(schema)"
+"effect/Pretty#match":
+  replacement: "Schema.toFormatter"
+  note: "The compiler match table was removed; customize traversal with the toFormatter onBefore option."
+"effect/Pretty#Pretty":
+  replacement: "Formatter.Formatter"
+  note: "The formatter function type is now exported by Formatter."
+"effect/Pretty#PrettyAnnotation":
+  replacement: "Schema.Annotations.ToFormatter.Declaration"
+  note: "Custom declaration formatter annotations now use the toFormatter key in Schema.Annotations."

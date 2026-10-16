@@ -1,0 +1,15 @@
+"effect/Graph#Edge":
+  replacement: "Graph.Edge"
+  note: "The type remains as a structural interface, but its Data.Class constructor/value export was removed. Replace new Graph.Edge({ source, target, data }) with an object literal."
+"effect/Graph#Graph":
+  replacement: "Graph.Graph"
+  note: "The immutable type remains, but storage is opaque; replace field access with Graph nodes, edges, count, lookup, neighbor, and acyclicity APIs."
+"effect/Graph#MutableGraph":
+  replacement: "Graph.MutableGraph"
+  note: "The mutable type remains but no longer shares a public base interface with immutable Graph; obtain it through Graph.mutate or Graph.beginMutation and use public mutation/query functions."
+"effect/Graph#Proto":
+  replacement: "none"
+  note: "The common graph protocol was removed. Use Graph.Graph or Graph.MutableGraph as appropriate and replace storage-field access with public graph query and mutation functions."
+"effect/Graph#SearchConfig":
+  replacement: "Graph.SearchConfig"
+  note: "The type remains; direction is now Graph.TraversalDirection and also accepts undirected, while radius limits traversal depth."

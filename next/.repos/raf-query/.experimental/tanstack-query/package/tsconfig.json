@@ -1,0 +1,19 @@
+{
+	"compilerOptions": {
+		"declaration": true,
+		"esModuleInterop": true,
+		"jsx": "react-jsx",
+		"module": "preserve",
+		"moduleResolution": "bundler",
+		"noEmit": true,
+		"resolveJsonModule": true,
+		"rewriteRelativeImportExtensions": true,
+		"skipLibCheck": true,
+		"strict": true,
+		"lib": ["ES2024", "DOM", "DOM.Iterable"],
+		"types": ["node"],
+		"target": "ES2024"
+	},
+	"include": ["src", "scripts"],
+	"exclude": [".repos", "dist", "node_modules", "coverage"]
+}

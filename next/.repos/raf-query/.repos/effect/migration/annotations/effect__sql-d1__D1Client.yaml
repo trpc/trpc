@@ -1,0 +1,3 @@
+"@effect/sql-d1/D1Client#D1ClientConfig":
+  replacement: "@effect/sql-d1/D1Client#D1ClientConfig"
+  note: "Retained; prepareCacheTTL now uses Duration.Input."

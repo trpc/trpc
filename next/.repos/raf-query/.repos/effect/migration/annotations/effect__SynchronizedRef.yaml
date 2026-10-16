@@ -1,0 +1,18 @@
+effect/SynchronizedRef#SynchronizedRef:
+  replacement: "SynchronizedRef.SynchronizedRef"
+  note: "The model remains but no longer extends Ref; read and update it through explicit SynchronizedRef operations. The curried v4 modifySomeEffect takes only the callback, which returns an Effect of [result, Option<newValue>]; remove the v3 fallback and outer Option."
+effect/SynchronizedRef#SynchronizedRef.Variance:
+  replacement: "none"
+  note: "The public nested variance marker was removed. SynchronizedRef uses an internal brand in v4, so do not refer to a variance interface directly."
+effect/SynchronizedRef#SynchronizedRefTypeId:
+  replacement: "none"
+  note: "The SynchronizedRef type id is internal in v4; do not inspect or construct the brand directly."
+effect/SynchronizedRef#SynchronizedRefUnify:
+  replacement: "none"
+  note: "SynchronizedRef is no longer an Effect subtype, so its Effect unification helper was removed; call SynchronizedRef.get explicitly."
+effect/SynchronizedRef#SynchronizedRefUnifyIgnore:
+  replacement: "none"
+  note: "SynchronizedRef is no longer an Effect subtype, so its Effect unification ignore marker was removed."
+effect/SynchronizedRef#unsafeMake:
+  replacement: "SynchronizedRef.makeUnsafe"
+  note: "The unsafe suffix moved to the end."

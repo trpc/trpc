@@ -1,0 +1,9 @@
+"@effect/cluster/ShardId#make":
+  replacement: "effect/cluster/ShardId#make"
+  note: "Moved into core Effect with the same cached group and id constructor."
+"@effect/cluster/ShardId#ShardId":
+  replacement: "effect/cluster/ShardId#ShardId"
+  note: "The class became a merged interface and schema value. Use ShardId.make; former static parsers and printers are module functions."
+"@effect/cluster/ShardId#TypeId":
+  replacement: "none"
+  note: "The shard marker is private in v4. Use ShardId.isShardId for runtime refinement."

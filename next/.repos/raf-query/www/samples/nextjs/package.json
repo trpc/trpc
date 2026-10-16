@@ -1,0 +1,27 @@
+{
+	"name": "@samples/nextjs",
+	"version": "0.0.0",
+	"private": true,
+	"description": "The Next.js App Router app the docs' Next.js page is written against",
+	"type": "module",
+	"imports": {
+		"#api-fetch": {
+			"react-server": "./src/api-fetch.server.ts",
+			"default": "./src/api-fetch.ts"
+		}
+	},
+	"scripts": {
+		"typecheck": "tsc"
+	},
+	"dependencies": {
+		"@raf-query/react": "workspace:*",
+		"next": "16.4.0",
+		"react": "19.3.0",
+		"react-dom": "19.3.0"
+	},
+	"devDependencies": {
+		"@types/node": "26.6.4",
+		"@types/react": "19.3.0",
+		"typescript": "7.0.2"
+	}
+}

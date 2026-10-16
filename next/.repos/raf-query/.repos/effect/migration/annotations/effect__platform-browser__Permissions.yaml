@@ -1,0 +1,12 @@
+"@effect/platform-browser/Permissions#ErrorTypeId":
+  replacement: "none"
+  note: "The error marker is private in v4; discriminate PermissionsError and its tagged reason."
+"@effect/platform-browser/Permissions#Permissions":
+  replacement: "Permissions.Permissions"
+  note: "The query service remains, now as a Context.Service with a private brand."
+"@effect/platform-browser/Permissions#PermissionsError":
+  replacement: "Permissions.PermissionsError"
+  note: "The class remains, but reason is now PermissionsInvalidStateError or PermissionsTypeError, with the cause stored on that tagged reason."
+"@effect/platform-browser/Permissions#TypeId":
+  replacement: "none"
+  note: "The service marker is private in v4; use the Permissions Context.Service value."

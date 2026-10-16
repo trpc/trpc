@@ -1,0 +1,3 @@
+"effect/Equal#equivalence":
+  replacement: "Equal.asEquivalence"
+  note: "Direct rename. The returned equivalence now follows v4 structural equality, including NaN equality and cached comparisons for immutable objects."

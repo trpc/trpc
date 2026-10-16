@@ -1,0 +1,3 @@
+"@effect/platform-bun/BunHttpServerRequest#toRequest":
+  replacement: "BunHttpServerRequest.toBunServerRequest"
+  note: "Direct rename with the more precise Bun.BunRequest result type."

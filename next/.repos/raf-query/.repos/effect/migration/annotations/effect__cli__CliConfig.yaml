@@ -1,0 +1,18 @@
+"@effect/cli/CliConfig#CliConfig":
+  replacement: "CliConfig.CliConfig.Service"
+  note: "The service was redesigned to configure built-in global flags; old parser and help switches were removed."
+"@effect/cli/CliConfig#defaultConfig":
+  replacement: "CliConfig.defaults"
+  note: "Renamed to defaults with the redesigned service shape."
+"@effect/cli/CliConfig#defaultLayer":
+  replacement: "CliConfig.layer"
+  note: "Call CliConfig.layer() to provide the defaults."
+"@effect/cli/CliConfig#make":
+  replacement: "CliConfig.make"
+  note: "The constructor remains but accepts the redesigned service options."
+"@effect/cli/CliConfig#normalizeCase":
+  replacement: "none"
+  note: "Case normalization is no longer configurable through CliConfig."
+"@effect/cli/CliConfig#layer":
+  replacement: "CliConfig.layer"
+  note: "The layer constructor remains, but its options configure the redesigned CliConfig.Service for built-in global flags."

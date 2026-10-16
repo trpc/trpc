@@ -1,0 +1,45 @@
+"@effect/platform/Headers#currentRedactedNames":
+  replacement: "Headers.CurrentRedactedNames"
+  note: "Renamed and changed from FiberRef to Context.Reference; override it with service provisioning."
+"@effect/platform/Headers#empty":
+  replacement: "Headers.empty"
+  note: "Retained as the empty immutable Headers value."
+"@effect/platform/Headers#fromInput":
+  replacement: "Headers.fromInput"
+  note: "Retained with the same optional Input and lowercase normalization behavior."
+"@effect/platform/Headers#get":
+  replacement: "Headers.get"
+  note: "Retained with the same dual, case-insensitive Option-returning signature."
+"@effect/platform/Headers#has":
+  replacement: "Headers.has"
+  note: "Retained with the same dual, case-insensitive signature."
+"@effect/platform/Headers#Headers":
+  replacement: "Headers.Headers"
+  note: "Import Headers from effect/http; the immutable string-record interface is retained with its v4 TypeId brand."
+"@effect/platform/Headers#HeadersTypeId":
+  replacement: "Headers.TypeId"
+  note: "The public Headers type-id symbol was renamed from HeadersTypeId to TypeId."
+"@effect/platform/Headers#Input":
+  replacement: "Headers.Input"
+  note: "Retained with the same record-or-entry-iterable input shape."
+"@effect/platform/Headers#merge":
+  replacement: "Headers.merge"
+  note: "Retained with the same dual signature; values from the second collection win."
+"@effect/platform/Headers#remove":
+  replacement: "Headers.remove / Headers.removeMany"
+  note: "Use remove for one name or removeMany for an iterable; RegExp removal requires enumerating matching names."
+"@effect/platform/Headers#schema":
+  replacement: "Schema.Headers"
+  note: "The encoded-record and self schemas were consolidated and moved to effect/Schema as Schema.Headers."
+"@effect/platform/Headers#schemaFromSelf":
+  replacement: "Schema.Headers"
+  note: "The encoded-record and self schemas were consolidated and moved to effect/Schema as Schema.Headers."
+"@effect/platform/Headers#set":
+  replacement: "Headers.set"
+  note: "Retained with the same dual signature and lowercase key normalization."
+"@effect/platform/Headers#setAll":
+  replacement: "Headers.setAll"
+  note: "Retained with the same dual Input signature; supplied values override existing names."
+"@effect/platform/Headers#unsafeFromRecord":
+  replacement: "Headers.fromRecordUnsafe"
+  note: "Renamed to put Unsafe last; it still skips name normalization."

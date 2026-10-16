@@ -1,0 +1,63 @@
+{
+  "name": "@effect/doctest",
+  "version": "4.0.1",
+  "type": "module",
+  "license": "MIT",
+  "description": "Runs TypeScript documentation examples as Vitest tests",
+  "homepage": "https://effect.website",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Effect-TS/effect.git",
+    "directory": "packages/tools/doctest"
+  },
+  "sideEffects": [],
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts",
+    "./index": null,
+    "./internal/*": null
+  },
+  "files": [
+    "src/**/*.ts",
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "dist/**/*.d.ts",
+    "dist/**/*.d.ts.map",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "ai-docs/**/*"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "exports": {
+      "./package.json": "./package.json",
+      ".": "./dist/index.js",
+      "./*": "./dist/*.js",
+      "./index": null,
+      "./internal/*": null
+    }
+  },
+  "scripts": {
+    "codegen": "effect-utils codegen",
+    "build": "tsc -b tsconfig.json && pnpm babel",
+    "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+    "check": "tsc -b tsconfig.json"
+  },
+  "dependencies": {
+    "rolldown": "^1.2.11"
+  },
+  "peerDependencies": {
+    "effect": "workspace:^",
+    "vite": ">=8.1.5 <9.0.0",
+    "vitest": ">=5.0.0 <6.0.0"
+  },
+  "devDependencies": {
+    "@effect/vitest": "workspace:^",
+    "@types/node": "^26.6.3",
+    "effect": "workspace:^",
+    "vite": "^8.3.1",
+    "vitest": "^5.0.2"
+  }
+}

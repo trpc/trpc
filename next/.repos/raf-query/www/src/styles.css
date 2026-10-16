@@ -1,0 +1,360 @@
+@import "@examples/ui/globals.css";
+@import "@shikijs/twoslash/style-rich.css";
+@plugin "@tailwindcss/typography";
+
+@source "./";
+
+html {
+	/* Site header (3.5rem) + homepage framework mode bar (~2.75rem). */
+	scroll-padding-top: 6.5rem;
+}
+
+html[data-announcement-dismissed] .announcement-bar {
+	display: none;
+}
+
+/*
+ * Homepage framework panels: every mode ships in the static HTML; a blocking
+ * script sets data-framework-mode from ?mode= before paint so the other modes
+ * never flash the prerendered TanStack Start content.
+ */
+[data-framework-panel] {
+	display: none;
+}
+
+:root:not([data-framework-mode]) [data-framework-panel="tanstack-start"],
+[data-framework-mode="tanstack-start"] [data-framework-panel="tanstack-start"],
+[data-framework-mode="nextjs"] [data-framework-panel="nextjs"],
+[data-framework-mode="react-router"] [data-framework-panel="react-router"] {
+	display: contents;
+}
+
+:root:not([data-framework-mode])
+	[data-framework-mode-link="tanstack-start"].framework-mode-link,
+[data-framework-mode="tanstack-start"]
+	[data-framework-mode-link="tanstack-start"].framework-mode-link,
+[data-framework-mode="nextjs"]
+	[data-framework-mode-link="nextjs"].framework-mode-link,
+[data-framework-mode="react-router"]
+	[data-framework-mode-link="react-router"].framework-mode-link {
+	background-color: var(--foreground);
+	color: var(--background);
+	font-weight: 500;
+}
+
+.prose {
+	--tw-prose-body: var(--foreground);
+	--tw-prose-headings: var(--foreground);
+	--tw-prose-links: var(--foreground);
+	--tw-prose-bold: var(--foreground);
+	--tw-prose-code: var(--foreground);
+	--tw-prose-quotes: var(--muted-foreground);
+	--tw-prose-quote-borders: var(--border);
+	--tw-prose-hr: var(--border);
+	--tw-prose-th-borders: var(--border);
+	--tw-prose-td-borders: var(--border);
+	--tw-prose-bullets: var(--muted-foreground);
+	--tw-prose-counters: var(--muted-foreground);
+	--tw-prose-invert-body: var(--foreground);
+	--tw-prose-invert-headings: var(--foreground);
+	--tw-prose-invert-links: var(--foreground);
+	--tw-prose-invert-bold: var(--foreground);
+	--tw-prose-invert-code: var(--foreground);
+	--tw-prose-invert-quotes: var(--muted-foreground);
+	--tw-prose-invert-quote-borders: var(--border);
+	--tw-prose-invert-hr: var(--border);
+	--tw-prose-invert-th-borders: var(--border);
+	--tw-prose-invert-td-borders: var(--border);
+	--tw-prose-invert-bullets: var(--muted-foreground);
+	--tw-prose-invert-counters: var(--muted-foreground);
+	line-height: 1.7;
+}
+
+.prose a {
+	text-underline-offset: 3px;
+	text-decoration-color: color-mix(in oklch, currentColor 35%, transparent);
+}
+
+.prose a:hover {
+	text-decoration-color: currentColor;
+}
+
+.prose :where(h2, h3) {
+	scroll-margin-top: 5rem;
+	letter-spacing: -0.01em;
+}
+
+.heading-anchor {
+	color: inherit;
+	text-decoration: none;
+}
+
+.heading-anchor::after {
+	content: "#";
+	margin-left: 0.4em;
+	color: var(--muted-foreground);
+	opacity: 0;
+	transition: opacity 120ms;
+}
+
+:where(h2, h3):hover .heading-anchor::after,
+.heading-anchor:focus-visible::after {
+	opacity: 1;
+}
+
+/* Inline code */
+.prose :where(:not(pre) > code) {
+	border-radius: 0.375rem;
+	background: var(--muted);
+	padding: 0.15em 0.4em;
+	font-size: 0.875em;
+	font-weight: 500;
+}
+
+.prose :where(:not(pre) > code)::before,
+.prose :where(:not(pre) > code)::after {
+	content: none;
+}
+
+/* Code blocks, highlighted at build time in both themes */
+.code-block {
+	position: relative;
+	margin-block: 1.5em;
+	overflow: hidden;
+	border: 1px solid var(--border);
+	border-radius: var(--radius-lg);
+	background: var(--shiki-light-bg, var(--card));
+}
+
+.dark .code-block {
+	background: var(--shiki-dark-bg, var(--card));
+}
+
+.code-block pre {
+	margin: 0;
+	overflow-x: auto;
+	border-radius: 0;
+	background: transparent !important;
+	padding: 1rem 1.125rem;
+	font-size: 0.8125rem;
+	line-height: 1.65;
+	tab-size: 2;
+}
+
+.code-block pre:focus-visible {
+	outline: 2px solid var(--ring);
+	outline-offset: -2px;
+}
+
+.code-block .shiki,
+.code-block .shiki span {
+	color: var(--shiki-light);
+}
+
+.dark .code-block .shiki,
+.dark .code-block .shiki span {
+	color: var(--shiki-dark);
+}
+
+.code-title {
+	border-bottom: 1px solid var(--border);
+	padding: 0.5rem 1.125rem;
+	color: var(--muted-foreground);
+	font-family: var(--font-mono);
+	font-size: 0.75rem;
+}
+
+.code-copy {
+	position: absolute;
+	top: 0.375rem;
+	right: 0.375rem;
+	border: 1px solid var(--border);
+	border-radius: 0.375rem;
+	background: var(--background);
+	padding: 0.125rem 0.5rem;
+	color: var(--muted-foreground);
+	font-size: 0.75rem;
+	opacity: 0;
+	transition: opacity 120ms;
+}
+
+.code-block:hover .code-copy,
+.code-copy:focus-visible {
+	opacity: 1;
+}
+
+/* Folded lines: “N collapsed lines”, opened from `DocBody`. A tab in the
+   indent is two columns, the same as `tab-size` on `pre` above. */
+.code-collapse {
+	display: block;
+}
+
+.code-collapse-toggle {
+	display: flex;
+	align-items: center;
+	gap: 0.45em;
+	width: 100%;
+	margin: 0;
+	border: 0;
+	border-radius: 0.25rem;
+	background: color-mix(in oklch, var(--foreground) 7%, transparent);
+	padding: 0 0.45em;
+	padding-inline-start: calc(var(--collapse-indent, 0) * 1ch + 0.45em);
+	color: var(--muted-foreground);
+	font: inherit;
+	line-height: inherit;
+	text-align: start;
+	cursor: pointer;
+	user-select: none;
+}
+
+.code-collapse-toggle:hover {
+	background: color-mix(in oklch, var(--foreground) 12%, transparent);
+	color: var(--foreground);
+}
+
+.code-collapse-toggle:focus-visible {
+	outline: 2px solid var(--ring);
+	outline-offset: 1px;
+}
+
+.code-collapse-chevron {
+	flex: none;
+	width: 0.4em;
+	height: 0.4em;
+	border-right: 1.5px solid currentColor;
+	border-bottom: 1.5px solid currentColor;
+	transform: translateY(-0.05em) rotate(-45deg);
+}
+
+.code-collapse-toggle[aria-expanded="true"] .code-collapse-chevron {
+	transform: translateY(0.05em) rotate(45deg);
+}
+
+.code-collapse-body {
+	display: block;
+}
+
+@media (hover: none) {
+	.code-copy {
+		opacity: 1;
+	}
+}
+
+/* Twoslash: types on hover, and `^?` types pinned under their line */
+:root {
+	--twoslash-popup-bg: var(--popover);
+	--twoslash-popup-color: var(--popover-foreground);
+	--twoslash-border-color: var(--border);
+	--twoslash-docs-color: var(--muted-foreground);
+	--twoslash-docs-font: var(--font-sans);
+	--twoslash-code-font: var(--font-mono);
+	--twoslash-popup-shadow: 0 4px 16px rgb(0 0 0 / 0.12);
+}
+
+.twoslash .twoslash-popup-container {
+	border-radius: var(--radius-md);
+	font-size: 0.75rem;
+	white-space: pre-wrap;
+}
+
+/* `DocBody` places hover popups on screen, so the code block's scrolling
+   doesn't clip them */
+.twoslash
+	.twoslash-hover:not(.twoslash-query-persisted)
+	.twoslash-popup-container {
+	position: fixed;
+	max-width: min(40rem, calc(100vw - 1rem));
+	transform: none;
+}
+
+.twoslash .twoslash-hover:not(.twoslash-query-persisted) .twoslash-popup-arrow {
+	display: none;
+}
+
+.twoslash .twoslash-popup-docs {
+	max-width: 36rem;
+	white-space: normal;
+}
+
+.twoslash .twoslash-error-line {
+	white-space: pre-wrap;
+}
+
+/* Tables scroll instead of overflowing the page */
+.prose table:not(:where(.not-prose *)) {
+	display: block;
+	overflow-x: auto;
+	font-size: 0.875em;
+}
+
+.prose :where(thead th):not(:where(.not-prose *)) {
+	white-space: nowrap;
+}
+
+/* GitHub-style alerts: > [!NOTE] */
+.callout {
+	--callout: var(--muted-foreground);
+	margin-block: 1.5em;
+	border: 1px solid color-mix(in oklch, var(--callout) 30%, var(--border));
+	border-left: 3px solid var(--callout);
+	border-radius: var(--radius-md);
+	background: color-mix(in oklch, var(--callout) 6%, transparent);
+	padding: 0.75rem 1rem;
+}
+
+.callout > :first-child {
+	margin-top: 0;
+}
+
+.callout > :last-child {
+	margin-bottom: 0;
+}
+
+.callout .callout-title {
+	margin-bottom: 0.25rem;
+	color: var(--callout);
+	font-size: 0.875em;
+	font-weight: 600;
+}
+
+.callout-note {
+	--callout: oklch(0.6 0.15 250);
+}
+
+.callout-tip {
+	--callout: oklch(0.6 0.15 155);
+}
+
+.callout-important {
+	--callout: oklch(0.6 0.18 300);
+}
+
+.callout-warning {
+	--callout: oklch(0.7 0.15 75);
+}
+
+.callout-caution {
+	--callout: oklch(0.6 0.2 25);
+}
+
+.prose details {
+	margin-block: 1.5em;
+	border: 1px solid var(--border);
+	border-radius: var(--radius-lg);
+	padding: 0.75rem 1rem;
+}
+
+.prose summary {
+	cursor: pointer;
+	font-weight: 600;
+}
+
+@keyframes indeterminate {
+	from {
+		transform: translateX(-100%);
+	}
+	to {
+		transform: translateX(300%);
+	}
+}

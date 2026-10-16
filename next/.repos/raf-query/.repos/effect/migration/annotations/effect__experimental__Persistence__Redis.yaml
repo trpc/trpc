@@ -1,0 +1,15 @@
+"@effect/experimental/Persistence/Redis#layer":
+  replacement: effect/persistence/Persistence#layerBackingRedis
+  note: The Redis backing adapter was merged into Persistence and now requires the generic Redis.Redis service.
+"@effect/experimental/Persistence/Redis#layerConfig":
+  replacement: none
+  note: Compose Persistence.layerBackingRedis with a config-driven provider such as NodeRedis.layerConfig.
+"@effect/experimental/Persistence/Redis#layerResult":
+  replacement: effect/persistence/Persistence#layerRedis
+  note: The combined Redis persistence layer was merged into Persistence and now requires Redis.Redis.
+"@effect/experimental/Persistence/Redis#layerResultConfig":
+  replacement: none
+  note: Compose Persistence.layerRedis with a config-driven provider such as NodeRedis.layerConfig.
+"@effect/experimental/Persistence/Redis#make":
+  replacement: none
+  note: V4 exposes Redis-backed layers over the Redis.Redis service, not a constructor that creates an ioredis client directly.

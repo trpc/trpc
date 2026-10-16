@@ -1,0 +1,36 @@
+effect/RequestResolver#aroundRequests:
+  replacement: "RequestResolver.around"
+  note: "around now receives Request.Entry batches; map entries to entry.request in before and after when hooks need raw request values."
+effect/RequestResolver#contextFromEffect:
+  replacement: "Request.Request<A, E, R>"
+  note: "Resolvers no longer carry an environment parameter; declare R on each Request and use entry.context inside the resolver callback."
+effect/RequestResolver#contextFromServices:
+  replacement: "Request.Request<A, E, R>"
+  note: "Declare the selected services in the Request R parameter and read them from each entry.context; resolver-level context capture was removed."
+effect/RequestResolver#eitherWith:
+  replacement: "RequestResolver.fromEffectTagged"
+  note: "Define one resolver for the combined tagged request union, or use RequestResolver.make to partition entries manually; resolver routing combinators were removed."
+effect/RequestResolver#locally:
+  replacement: "Effect.provideService"
+  note: "FiberRef-based resolver localization was removed; migrate the FiberRef to Context.Reference and provide its value around the request effect or resolver work."
+effect/RequestResolver#makeBatched:
+  replacement: "RequestResolver.make"
+  note: "make now receives a non-empty batch of Request.Entry values; read entry.request and complete every entry with completeUnsafe or Request completion helpers."
+effect/RequestResolver#makeWithEntry:
+  replacement: "RequestResolver.make"
+  note: "Use make for entry-level handling; v4 supplies one non-empty batch and key instead of nested sequential and parallel entry arrays."
+effect/RequestResolver#mapInputContext:
+  replacement: "Request.Request<A, E, R>"
+  note: "Resolver environments were removed; put required services on the Request R parameter and transform or provide each entry.context explicitly when needed."
+effect/RequestResolver#provideContext:
+  replacement: "Effect.provideService"
+  note: "Provide services to Effect.request so they are captured in entry.context; RequestResolver itself no longer has an environment parameter."
+effect/RequestResolver#RequestResolver:
+  replacement: "RequestResolver.RequestResolver"
+  note: "The interface remains as RequestResolver<A extends Request.Any>; remove its R parameter and move service requirements to Request<A, E, R>."
+effect/RequestResolver#RequestResolver.Variance:
+  replacement: "RequestResolver.RequestResolver.Variance"
+  note: "The variance marker remains but tracks only the accepted Request type; resolver environment variance was removed."
+effect/RequestResolver#RequestResolverTypeId:
+  replacement: "none"
+  note: "The resolver type id is internal in v4; use RequestResolver constructors and isRequestResolver rather than depending on its brand."

@@ -1,0 +1,15 @@
+"@effect/sql-drizzle/Pg#layer":
+  replacement: "Layer.effect(AppDb, PgDrizzle.makeWithDefaults())"
+  note: "The package was removed; import PgDrizzle from drizzle-orm/effect-postgres, define an application service tag, and compose with PgClient.layer."
+"@effect/sql-drizzle/Pg#layerWithConfig":
+  replacement: "Layer.effect(AppDb, PgDrizzle.makeWithDefaults(config))"
+  note: "The package was removed; use drizzle-orm/effect-postgres, port config to EffectDrizzlePgConfig, and define an application service tag."
+"@effect/sql-drizzle/Pg#make":
+  replacement: "drizzle-orm/effect-postgres#makeWithDefaults"
+  note: "Use Drizzle's Effect 4 integration; it returns EffectPgDatabase and requires PgClient."
+"@effect/sql-drizzle/Pg#makeWithConfig":
+  replacement: "drizzle-orm/effect-postgres#makeWithDefaults"
+  note: "The constructor split was removed; use makeWithDefaults(config), or make(config) when explicitly providing logger and cache services."
+"@effect/sql-drizzle/Pg#PgDrizzle":
+  replacement: "drizzle-orm/effect-postgres#EffectPgDatabase"
+  note: "The service tag was removed; use the database type and define an application Context.Tag if service access is required."

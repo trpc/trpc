@@ -1,0 +1,12 @@
+"@effect/cluster/HttpRunner#layerClient":
+  replacement: "effect/cluster/HttpRunner#layerClient"
+  note: "Moved into core Effect with the same client-side Sharding and Runners layer composition."
+"@effect/cluster/HttpRunner#layerHttp":
+  replacement: "effect/cluster/HttpRunner#layerHttp"
+  note: "Moved into core Effect with the same HTTP runner composition."
+"@effect/cluster/HttpRunner#toHttpEffect":
+  replacement: "effect/cluster/HttpRunner#toHttpEffect"
+  note: "Moved into core Effect with the same nested HTTP server effect and service requirements."
+"@effect/cluster/HttpRunner#toHttpEffectWebsocket":
+  replacement: "effect/cluster/HttpRunner#toHttpEffectWebsocket"
+  note: "Moved into core Effect with the same WebSocket HTTP effect shape and requirements."

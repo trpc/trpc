@@ -1,0 +1,146 @@
+{
+  "name": "@tanstack/react-start-rsc",
+  "version": "0.1.60",
+  "description": "React Server Components support for TanStack Start",
+  "author": "Tanner Linsley",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TanStack/router.git",
+    "directory": "packages/react-start-rsc"
+  },
+  "homepage": "https://tanstack.com/start",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/tannerlinsley"
+  },
+  "keywords": [
+    "react",
+    "rsc",
+    "server components",
+    "router",
+    "routing",
+    "typescript"
+  ],
+  "scripts": {
+    "clean": "rimraf ./dist && rimraf ./coverage",
+    "test": "pnpm test:eslint && pnpm test:types && pnpm test:build && pnpm test:unit",
+    "test:unit": "vitest",
+    "test:unit:dev": "vitest --watch",
+    "test:eslint": "eslint ./src",
+    "test:types": "pnpm run \"/^test:types:ts[0-9]{2}$/\"",
+    "test:types:ts56": "node ../../node_modules/typescript56/lib/tsc.js",
+    "test:types:ts57": "node ../../node_modules/typescript57/lib/tsc.js",
+    "test:types:ts58": "node ../../node_modules/typescript58/lib/tsc.js",
+    "test:types:ts59": "node ../../node_modules/typescript59/lib/tsc.js",
+    "test:types:ts60": "tsc6",
+    "test:types:ts70": "tsc",
+    "test:build": "publint --strict && attw --ignore-rules no-resolution --pack .",
+    "build": "vite build"
+  },
+  "type": "module",
+  "types": "dist/esm/src/index.d.ts",
+  "exports": {
+    ".": {
+      "react-server": {
+        "types": "./dist/esm/src/index.rsc.d.ts",
+        "default": "./dist/esm/index.rsc.js"
+      },
+      "import": {
+        "types": "./dist/esm/src/index.d.ts",
+        "default": "./dist/esm/index.js"
+      }
+    },
+    "./serialization.client": {
+      "import": {
+        "types": "./dist/esm/src/serialization.client.d.ts",
+        "default": "./dist/esm/serialization.client.js"
+      }
+    },
+    "./serialization.server": {
+      "import": {
+        "types": "./dist/esm/src/serialization.server.d.ts",
+        "default": "./dist/esm/serialization.server.js"
+      }
+    },
+    "./plugin/vite": {
+      "import": {
+        "types": "./dist/esm/src/plugin/vite.d.ts",
+        "default": "./dist/esm/plugin/vite.js"
+      }
+    },
+    "./plugin/rscCssTransform": {
+      "import": {
+        "types": "./dist/esm/src/plugin/rscCssTransform.d.ts",
+        "default": "./dist/esm/plugin/rscCssTransform.js"
+      }
+    },
+    "./rsbuild/ssr-decode": {
+      "import": {
+        "types": "./dist/esm/src/rsbuild/ssr-decode.d.ts",
+        "default": "./dist/esm/rsbuild/ssr-decode.js"
+      }
+    },
+    "./rsbuild/browser-decode": {
+      "import": {
+        "types": "./dist/esm/src/rsbuild/browser-decode.d.ts",
+        "default": "./dist/esm/rsbuild/browser-decode.js"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "dependencies": {
+    "@tanstack/react-router": "workspace:*",
+    "@tanstack/router-core": "workspace:*",
+    "@tanstack/router-utils": "workspace:*",
+    "@tanstack/start-client-core": "workspace:*",
+    "@tanstack/start-fn-stubs": "workspace:*",
+    "@tanstack/start-plugin-core": "workspace:*",
+    "@tanstack/start-storage-context": "workspace:*",
+    "pathe": "catalog:"
+  },
+  "devDependencies": {
+    "@rspack/core": "2.2.7",
+    "@testing-library/react": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "@vitejs/plugin-rsc": "^0.5.30",
+    "react-server-dom-rspack": "^0.0.2",
+    "@tanstack/vite-config": "catalog:",
+    "vitest": "catalog:",
+    "jsdom": "catalog:",
+    "@eslint-react/eslint-plugin": "catalog:",
+    "eslint-plugin-react-hooks": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@arethetypeswrong/cli": "catalog:",
+    "publint": "catalog:",
+    "rimraf": "catalog:"
+  },
+  "peerDependencies": {
+    "@rspack/core": ">=2.0.0-0",
+    "@vitejs/plugin-rsc": ">=0.5.30",
+    "react": ">=18.0.0 || >=19.0.0",
+    "react-dom": ">=18.0.0 || >=19.0.0",
+    "react-server-dom-rspack": ">=0.0.2"
+  },
+  "peerDependenciesMeta": {
+    "@rspack/core": {
+      "optional": true
+    },
+    "@vitejs/plugin-rsc": {
+      "optional": true
+    },
+    "react-server-dom-rspack": {
+      "optional": true
+    }
+  }
+}

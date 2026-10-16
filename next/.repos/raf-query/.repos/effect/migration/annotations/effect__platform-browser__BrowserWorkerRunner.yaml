@@ -1,0 +1,3 @@
+"@effect/platform-browser/BrowserWorkerRunner#launch":
+  replacement: "Layer.launch + RpcServer.layerProtocolWorkerRunner"
+  note: "The close-latch launcher was removed. Compose BrowserWorkerRunner.layer with the worker RPC server protocol layer and launch the resulting handler layer."

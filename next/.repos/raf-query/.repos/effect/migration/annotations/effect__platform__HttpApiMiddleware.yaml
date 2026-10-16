@@ -1,0 +1,60 @@
+"@effect/platform/HttpApiMiddleware#HttpApiMiddleware":
+  replacement: "effect/http-api/HttpApiMiddleware#HttpApiMiddleware"
+  note: "The model remains but now wraps the response effect and carries provided services, an error schema, and required services."
+"@effect/platform/HttpApiMiddleware#HttpApiMiddleware.Any":
+  replacement: "effect/http-api/HttpApiMiddleware#AnyService"
+  note: "Renamed widened middleware service-key shape."
+"@effect/platform/HttpApiMiddleware#HttpApiMiddleware.AnyId":
+  replacement: "effect/http-api/HttpApiMiddleware#AnyId"
+  note: "Same name; metadata now includes provided and required services, error schema, client error, and client requirement."
+"@effect/platform/HttpApiMiddleware#HttpApiMiddleware.Error":
+  replacement: "effect/http-api/HttpApiMiddleware#Error"
+  note: "Same name and now derives the decoded type from the configured error schema."
+"@effect/platform/HttpApiMiddleware#HttpApiMiddleware.ErrorContext":
+  replacement: "effect/http-api/HttpApiMiddleware#ErrorServicesEncode / ErrorServicesDecode"
+  note: "The single schema context split into server encoding and client decoding services."
+"@effect/platform/HttpApiMiddleware#HttpApiMiddleware.Only":
+  replacement: "Extract<R, HttpApiMiddleware.AnyId>"
+  note: "The helper was removed because middleware IDs are explicit; use Extract when the direct filter is still needed."
+"@effect/platform/HttpApiMiddleware#HttpApiMiddleware.Provides":
+  replacement: "effect/http-api/HttpApiMiddleware#Provides"
+  note: "Same name and reads the expanded v4 middleware ID metadata."
+"@effect/platform/HttpApiMiddleware#SecurityTypeId":
+  replacement: "none"
+  note: "The marker is private; use HttpApiMiddleware.isSecurity."
+"@effect/platform/HttpApiMiddleware#Tag":
+  replacement: "effect/http-api/HttpApiMiddleware#Service"
+  note: "Renamed and redesigned; use error, requires, provides, clientError, and requiredForClient configuration."
+"@effect/platform/HttpApiMiddleware#TagClass":
+  replacement: "effect/http-api/HttpApiMiddleware#ServiceClass"
+  note: "Renamed class type with the new two-stage type configuration and wrapping service shape."
+"@effect/platform/HttpApiMiddleware#TagClass.BaseSecurity":
+  replacement: "effect/http-api/HttpApiMiddleware#ServiceClass"
+  note: "Security is conditional metadata on ServiceClass; there is no separate public base interface."
+"@effect/platform/HttpApiMiddleware#TagClass.Failure":
+  replacement: "effect/http-api/HttpApiMiddleware#Error"
+  note: "failure terminology became error; apply the extractor to the middleware ID."
+"@effect/platform/HttpApiMiddleware#TagClass.FailureContext":
+  replacement: "effect/http-api/HttpApiMiddleware#ErrorServicesEncode / ErrorServicesDecode"
+  note: "Failure schema services split by server encoding and client decoding direction."
+"@effect/platform/HttpApiMiddleware#TagClass.FailureSchema":
+  replacement: "effect/http-api/HttpApiMiddleware#ErrorSchema"
+  note: "Renamed and applied to the middleware ID rather than constructor options."
+"@effect/platform/HttpApiMiddleware#TagClass.FailureService":
+  replacement: "effect/http-api/HttpApiMiddleware#Error"
+  note: "Use the decoded error extractor; optional middleware fallback was removed."
+"@effect/platform/HttpApiMiddleware#TagClass.Optional":
+  replacement: "none"
+  note: "Optional declaration and fallback-on-failure behavior were removed; model fallback in the wrapping middleware."
+"@effect/platform/HttpApiMiddleware#TagClass.Provides":
+  replacement: "effect/http-api/HttpApiMiddleware#Provides"
+  note: "Moved to the module level and applied to the middleware ID."
+"@effect/platform/HttpApiMiddleware#TagClassAny":
+  replacement: "effect/http-api/HttpApiMiddleware#AnyService"
+  note: "Renamed widened service-key type."
+"@effect/platform/HttpApiMiddleware#TagClassSecurityAny":
+  replacement: "effect/http-api/HttpApiMiddleware#AnyServiceSecurity"
+  note: "Renamed widened security service-key type."
+"@effect/platform/HttpApiMiddleware#TypeId":
+  replacement: "none"
+  note: "The marker is private; use public guards and type extractors."

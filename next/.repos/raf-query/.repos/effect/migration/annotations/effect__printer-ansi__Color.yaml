@@ -1,0 +1,3 @@
+"@effect/printer-ansi/Color":
+  replacement: none
+  note: The @effect/printer-ansi package was removed in v4, and Effect no longer provides a public ANSI color ADT. Use a maintained ANSI library or local escape-string helpers.

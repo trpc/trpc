@@ -1,0 +1,61 @@
+{
+  "name": "@effect/jsdocs",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "description": "JSDoc extraction tools for Effect",
+  "homepage": "https://effect.website",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Effect-TS/effect.git",
+    "directory": "packages/tools/jsdocs"
+  },
+  "sideEffects": [],
+  "bin": {
+    "effect-jsdocs": "./src/bin.ts"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/Jsdocs.ts",
+    "./*": "./src/*.ts",
+    "./bin": null
+  },
+  "files": [
+    "src/**/*.ts",
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "dist/**/*.d.ts",
+    "dist/**/*.d.ts.map"
+  ],
+  "publishConfig": {
+    "provenance": true,
+    "bin": {
+      "effect-jsdocs": "./dist/bin.js"
+    },
+    "exports": {
+      "./package.json": "./package.json",
+      ".": "./dist/Jsdocs.js",
+      "./*": "./dist/*.js",
+      "./bin": null
+    }
+  },
+  "scripts": {
+    "build": "tsc -b tsconfig.json && pnpm babel",
+    "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+    "check": "tsc -b tsconfig.json"
+  },
+  "dependencies": {
+    "effect": "workspace:^",
+    "glob": "^13.0.6"
+  },
+  "peerDependencies": {
+    "typescript": ">=5.0.0 <7.0.0"
+  },
+  "devDependencies": {
+    "@effect/vitest": "workspace:^",
+    "@types/node": "^26.6.3",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.2"
+  }
+}

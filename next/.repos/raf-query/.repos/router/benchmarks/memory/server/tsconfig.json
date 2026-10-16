@@ -1,0 +1,12 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "vite/client", "vitest/globals"]
+  },
+  "include": [
+    "bench-utils.ts",
+    "scenarios/*/shared.ts",
+    "../runtime.ts",
+    "vitest.setup.ts"
+  ]
+}

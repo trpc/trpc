@@ -1,0 +1,30 @@
+"@effect/workflow/DurableDeferred#Any":
+  replacement: "effect/workflow/DurableDeferred#Any"
+  note: "Moved into core Effect. V4 Any is minimal; use AnyWithProps when success, error, or exit schemas are required."
+"@effect/workflow/DurableDeferred#await":
+  replacement: "effect/workflow/DurableDeferred#await"
+  note: "Moved into core Effect with the same persisted-result and workflow-suspension behavior."
+"@effect/workflow/DurableDeferred#done":
+  replacement: "effect/workflow/DurableDeferred#done"
+  note: "Moved into core Effect; schema requirements now use explicit directional encoding services."
+"@effect/workflow/DurableDeferred#fail":
+  replacement: "effect/workflow/DurableDeferred#fail"
+  note: "Moved into core Effect and now requires the error schema encoding services."
+"@effect/workflow/DurableDeferred#failCause":
+  replacement: "effect/workflow/DurableDeferred#failCause"
+  note: "Moved into core Effect and now requires the error schema encoding services."
+"@effect/workflow/DurableDeferred#into":
+  replacement: "effect/workflow/DurableDeferred#into"
+  note: "Moved into core Effect with the same exit recording and suspension propagation behavior. Provide both decoding and encoding services for the success and error schemas; recording the exit requires encoding services."
+"@effect/workflow/DurableDeferred#make":
+  replacement: "effect/workflow/DurableDeferred#make"
+  note: "Moved into core Effect with the same name and optional schemas, expressed through v4 Schema.Constraint."
+"@effect/workflow/DurableDeferred#raceAll":
+  replacement: "effect/workflow/DurableDeferred#raceAll"
+  note: "Moved into core Effect with the same persisted-winner behavior."
+"@effect/workflow/DurableDeferred#succeed":
+  replacement: "effect/workflow/DurableDeferred#succeed"
+  note: "Moved into core Effect and now requires the success schema encoding services."
+"@effect/workflow/DurableDeferred#TypeId":
+  replacement: "none"
+  note: "The durable-deferred marker is private in v4. Use DurableDeferred, Any, or AnyWithProps constraints."

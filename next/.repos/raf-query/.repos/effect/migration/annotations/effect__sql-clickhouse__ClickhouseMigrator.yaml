@@ -1,0 +1,3 @@
+"@effect/sql-clickhouse/ClickhouseMigrator#MigrationError":
+  replacement: "@effect/sql-clickhouse/ClickhouseMigrator#MigrationError"
+  note: "Retained via effect/sql/Migrator; migrate reason and its lowercase values to kind with PascalCase values."

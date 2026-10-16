@@ -1,0 +1,9 @@
+"@effect/ai-openai/OpenAiTelemetry#addGenAIAnnotations":
+  replacement: "OpenAiTelemetry.addGenAIAnnotations"
+  note: "Still exported in v4; update imports and adapt to the revised v4 service and schema types."
+"@effect/ai-openai/OpenAiTelemetry#AllAttributes":
+  replacement: "OpenAiTelemetry.AllAttributes"
+  note: "Still exported in v4; update imports and adapt to the revised v4 service and schema types."
+"@effect/ai-openai/OpenAiTelemetry#OpenAiTelemetryAttributeOptions":
+  replacement: "OpenAiTelemetry.OpenAiTelemetryAttributeOptions"
+  note: "Still exported in v4; update imports and adapt to the revised v4 service and schema types."

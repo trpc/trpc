@@ -1,0 +1,6 @@
+.styledBox {
+  --solid-code-split-style-marker: present;
+  background-color: #3b82f6;
+  color: white;
+  padding: 24px;
+}

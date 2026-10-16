@@ -1,0 +1,69 @@
+"@effect/ai/Prompt#FilePart":
+  replacement: "Prompt.FilePart"
+  note: "Moved to effect/ai/Prompt with the same file-part model and schema; update the module import."
+"@effect/ai/Prompt#FilePartEncoded":
+  replacement: "Prompt.FilePartEncoded"
+  note: "Moved to effect/ai/Prompt with the same encoded file-part shape; update the module import."
+"@effect/ai/Prompt#FromJson":
+  replacement: "Schema.fromJsonString(Prompt.Prompt)"
+  note: "The module-specific JSON schema was removed. Compose the general v4 JSON-string codec with the public Prompt codec."
+"@effect/ai/Prompt#isPart":
+  replacement: "Prompt.isPart"
+  note: "Moved to effect/ai/Prompt and remains the public runtime guard for prompt parts."
+"@effect/ai/Prompt#isPrompt":
+  replacement: "Prompt.isPrompt"
+  note: "Moved to effect/ai/Prompt and remains the public runtime guard for Prompt values."
+"@effect/ai/Prompt#makePart":
+  replacement: "Prompt.makePart"
+  note: "Moved to effect/ai/Prompt. The generic constructor also supports the new tool-approval request and response part variants."
+"@effect/ai/Prompt#merge":
+  replacement: "Prompt.concat"
+  note: "Renamed in v4. concat preserves the old dual API and concatenates the messages from a Prompt with additional raw input."
+"@effect/ai/Prompt#MessageContentFromString":
+  replacement: "Prompt.ContentFromString"
+  note: "Renamed in effect/ai/Prompt. It still decodes a string to a non-empty array containing one TextPart and encodes the first part's text."
+"@effect/ai/Prompt#MessageTypeId":
+  replacement: "Prompt.isMessage"
+  note: "The message type id is private in v4. Use the public isMessage guard for runtime refinement instead of importing or inspecting the marker."
+"@effect/ai/Prompt#Part":
+  replacement: "Prompt.Part"
+  note: "Moved to effect/ai/Prompt. The union now also includes tool-approval request and response parts."
+"@effect/ai/Prompt#PartEncoded":
+  replacement: "Prompt.PartEncoded"
+  note: "Moved to effect/ai/Prompt. The encoded union now also includes tool-approval request and response parts."
+"@effect/ai/Prompt#PartTypeId":
+  replacement: "Prompt.isPart"
+  note: "The part type id is private in v4. Use the public isPart guard for runtime refinement instead of importing or inspecting the marker."
+"@effect/ai/Prompt#PromptFromSelf":
+  replacement: "Prompt.Prompt"
+  note: "The standalone declared from-self schema was removed. Use the public Prompt codec for prompt validation and encoding, or Prompt.isPrompt when only runtime refinement is needed."
+"@effect/ai/Prompt#ReasoningPart":
+  replacement: "Prompt.ReasoningPart"
+  note: "Moved to effect/ai/Prompt with the same reasoning-part model and schema; update the module import."
+"@effect/ai/Prompt#ReasoningPartEncoded":
+  replacement: "Prompt.ReasoningPartEncoded"
+  note: "Moved to effect/ai/Prompt with the same encoded reasoning payload; update the module import."
+"@effect/ai/Prompt#TextPart":
+  replacement: "Prompt.TextPart"
+  note: "Moved to effect/ai/Prompt with the same text-part model and schema; update the module import."
+"@effect/ai/Prompt#TextPartEncoded":
+  replacement: "Prompt.TextPartEncoded"
+  note: "Moved to effect/ai/Prompt with the same encoded text payload; update the module import."
+"@effect/ai/Prompt#toolCallPart":
+  replacement: "Prompt.toolCallPart"
+  note: "Moved to effect/ai/Prompt and remains the typed convenience constructor over makePart(\"tool-call\", params)."
+"@effect/ai/Prompt#ToolCallPart":
+  replacement: "Prompt.ToolCallPart"
+  note: "Moved to effect/ai/Prompt with the same tool-call model and schema; update the module import."
+"@effect/ai/Prompt#ToolCallPartEncoded":
+  replacement: "Prompt.ToolCallPartEncoded"
+  note: "Moved to effect/ai/Prompt with the same encoded tool-call shape; update the module import."
+"@effect/ai/Prompt#toolResultPart":
+  replacement: "Prompt.toolResultPart"
+  note: "Moved to effect/ai/Prompt. V4 removes providerExecuted from prompt tool-result parts; provider-executed response results are handled when converting Response parts."
+"@effect/ai/Prompt#ToolResultPartEncoded":
+  replacement: "Prompt.ToolResultPartEncoded"
+  note: "Moved to effect/ai/Prompt, but providerExecuted was removed from the encoded prompt tool-result shape."
+"@effect/ai/Prompt#TypeId":
+  replacement: "Prompt.isPrompt"
+  note: "The Prompt type id is private in v4 and its internal literal changed. Use the public isPrompt guard instead of importing or inspecting the marker."

@@ -1,0 +1,84 @@
+{
+	"git": {
+		"commitMessage": "chore: release v${version}",
+		"commitsPath": "packages/*",
+		"pushArgs": ["--follow-tags", "--atomic"],
+		"requireCommits": true
+	},
+	"github": {
+		"release": true,
+		"releaseName": "v${version}"
+	},
+	"hooks": {
+		"after:bump": "pnpm -r --filter \"./packages/*\" exec npm pkg set version=${version}",
+		"before:git:release": "pnpm build && git fetch -q origin main && { test \"$(git rev-parse FETCH_HEAD)\" = \"$(git rev-parse HEAD)\" || { echo 'main moved during this release; the newer run releases it.'; exit 1; }; } && pnpm --filter @raf-query/core run publish:npm && pnpm --filter @raf-query/react run publish:npm"
+	},
+	"npm": false,
+	"plugins": {
+		"@release-it/conventional-changelog": {
+			"infile": "CHANGELOG.md",
+			"commitsOpts": {
+				"path": "packages/*"
+			},
+			"gitRawCommitsOpts": {
+				"path": "packages/*"
+			},
+			"preset": {
+				"name": "conventionalcommits",
+				"preMajor": true,
+				"types": [
+					{
+						"effect": "bump",
+						"section": "Features",
+						"type": "feat"
+					},
+					{
+						"effect": "bump",
+						"section": "Bug Fixes",
+						"type": "fix"
+					},
+					{
+						"effect": "bump",
+						"section": "Performance Improvements",
+						"type": "perf"
+					},
+					{
+						"effect": "changelog",
+						"section": "Code Refactoring",
+						"type": "refactor"
+					},
+					{
+						"effect": "changelog",
+						"section": "Documentation",
+						"type": "docs"
+					},
+					{
+						"effect": "changelog",
+						"section": "Tests",
+						"type": "test"
+					},
+					{
+						"effect": "changelog",
+						"section": "Build System",
+						"type": "build"
+					},
+					{
+						"effect": "changelog",
+						"section": "Continuous Integration",
+						"type": "ci"
+					},
+					{
+						"effect": "changelog",
+						"section": "Styles",
+						"type": "style"
+					},
+					{
+						"effect": "changelog",
+						"section": "Miscellaneous Chores",
+						"type": "chore"
+					}
+				]
+			}
+		}
+	}
+}

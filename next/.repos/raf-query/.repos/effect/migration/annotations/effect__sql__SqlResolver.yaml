@@ -1,0 +1,6 @@
+"@effect/sql/SqlResolver#SqlResolver":
+  replacement: "RequestResolver.RequestResolver<SqlResolver.SqlRequest<...>>"
+  note: "The wrapper interface was removed; constructors return RequestResolvers. Execute them with effect/sql/SqlResolver#request."
+"@effect/sql/SqlResolver#void":
+  replacement: "effect/sql/SqlResolver#void"
+  note: "Moved, but remove the leading tag and withContext arguments; it now returns a RequestResolver synchronously and runs through SqlResolver.request."

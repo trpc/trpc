@@ -1,0 +1,3 @@
+"@effect/workflow/DurableRateLimiter":
+  replacement: none
+  note: "Not ported. Build an Activity whose execute uses persistence RateLimiter.consume with onExceeded: delay, then sleeps for the returned delay with DurableClock."

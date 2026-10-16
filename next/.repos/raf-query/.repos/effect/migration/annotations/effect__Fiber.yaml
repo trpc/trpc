@@ -1,0 +1,144 @@
+effect/Fiber#all:
+  replacement: "Fiber.joinAll"
+  note: "Composite fibers were removed; join the iterable directly to obtain an Effect of all results."
+effect/Fiber#await:
+  replacement: "Fiber.await"
+  note: "Unchanged; it returns an Effect containing the fiber Exit."
+effect/Fiber#children:
+  replacement: "none"
+  note: "V4 fibers do not expose child-fiber enumeration; keep explicit handles in FiberSet or FiberMap when tracking is required."
+effect/Fiber#done:
+  replacement: "Effect.runFork"
+  note: "Exit is an Effect in v4, so pass the Exit to Effect.runFork when a completed Fiber handle is required."
+effect/Fiber#dumpAll:
+  replacement: "none"
+  note: "Fiber dump and global diagnostic APIs were removed; retain explicit fibers and inspect id and pollUnsafe where needed."
+effect/Fiber#fail:
+  replacement: "Effect.runFork(Effect.fail(error))"
+  note: "Synthetic Fiber constructors were removed; run the corresponding Effect when a Fiber handle is required."
+effect/Fiber#failCause:
+  replacement: "Effect.runFork(Effect.failCause(cause))"
+  note: "Synthetic Fiber constructors were removed; run the corresponding Effect when a Fiber handle is required."
+effect/Fiber#Fiber:
+  replacement: "Fiber.Fiber"
+  note: "The v4 Fiber is the concrete runtime handle and is no longer itself an Effect; use Fiber.join or Fiber.await."
+effect/Fiber#Fiber.Descriptor:
+  replacement: "none"
+  note: "Descriptors were removed; use Effect.withFiber for the current Fiber and read its id or runtime fields directly."
+effect/Fiber#Fiber.Dump:
+  replacement: "none"
+  note: "Fiber dumps were removed; retain explicit Fiber handles and inspect their public runtime fields."
+effect/Fiber#Fiber.Runtime:
+  replacement: "Fiber.Fiber"
+  note: "RuntimeFiber and the Fiber.Runtime alias were collapsed into the single v4 Fiber type."
+effect/Fiber#Fiber.RuntimeVariance:
+  replacement: "Fiber.Variance"
+  note: "RuntimeFiber was collapsed into Fiber, leaving one variance encoding."
+effect/Fiber#Fiber.Variance:
+  replacement: "Fiber.Variance"
+  note: "Retained as the variance encoding on the v4 Fiber interface."
+effect/Fiber#FiberTypeId:
+  replacement: "Fiber.isFiber"
+  note: "The type-id symbol is private in v4; use the public Fiber.isFiber guard."
+effect/Fiber#FiberUnify:
+  replacement: "none"
+  note: "Fiber no longer extends Effect, so its Effect unification helper was removed."
+effect/Fiber#FiberUnifyIgnore:
+  replacement: "none"
+  note: "Fiber no longer extends Effect, so its Effect unification helper was removed."
+effect/Fiber#fromEffect:
+  replacement: "Effect.runFork"
+  note: "V4 uses concrete runtime fibers; run the Effect directly, or keep using the Effect when no handle is needed."
+effect/Fiber#getCurrentFiber:
+  replacement: "Fiber.getCurrent"
+  note: "Renamed and now returns Fiber | undefined synchronously instead of Option."
+effect/Fiber#id:
+  replacement: "fiber.id"
+  note: "Fiber IDs are numbers exposed by the readonly id field."
+effect/Fiber#inheritAll:
+  replacement: "none"
+  note: "FiberRef inheritance was removed with FiberRef; Context.Reference values are inherited through fiber context automatically."
+effect/Fiber#interruptAsFork:
+  replacement: "fiber.interruptUnsafe(fiberId)"
+  note: "For fire-and-forget interruption use the immediate runtime hook; use Fiber.interruptAs when cleanup must be awaited."
+effect/Fiber#interrupted:
+  replacement: "Effect.runFork(Exit.interrupt(fiberId))"
+  note: "Synthetic Fiber constructors were removed; Exit is an Effect and can be run to obtain an interrupted Fiber."
+effect/Fiber#interruptFork:
+  replacement: "fiber.interruptUnsafe()"
+  note: "Use the immediate runtime hook for fire-and-forget interruption; Fiber.interrupt waits for cleanup."
+effect/Fiber#isRuntimeFiber:
+  replacement: "Fiber.isFiber"
+  note: "All v4 Fiber values are concrete runtime fibers, so only the general guard remains."
+effect/Fiber#map:
+  replacement: "Effect.runFork(Effect.map(Fiber.join(fiber), f))"
+  note: "Fiber transformation combinators were removed; transform its joined Effect and fork only if another handle is required."
+effect/Fiber#mapEffect:
+  replacement: "Effect.runFork(Effect.flatMap(Fiber.join(fiber), f))"
+  note: "Fiber transformation combinators were removed; transform its joined Effect and fork only if another handle is required."
+effect/Fiber#mapFiber:
+  replacement: "Effect.flatMap(Fiber.join(fiber), (a) => Fiber.join(f(a)))"
+  note: "Flatten through Fiber.join; fork the resulting Effect if another Fiber handle is required."
+effect/Fiber#match:
+  replacement: "none"
+  note: "The virtual Fiber versus RuntimeFiber distinction no longer exists, so branch-specific matching is unnecessary."
+effect/Fiber#never:
+  replacement: "Effect.runFork(Effect.never)"
+  note: "Synthetic Fiber constants were removed; run Effect.never when a never-completing Fiber is required."
+effect/Fiber#Order:
+  replacement: "Order.mapInput(Order.Number, (fiber) => fiber.id)"
+  note: "The built-in Fiber order was removed; derive an order from the numeric id when ordering is actually required."
+effect/Fiber#orElse:
+  replacement: "Effect.runFork(Effect.catchCause(Fiber.join(self), () => Fiber.join(that)))"
+  note: "Compose joined Effects and fork the result only if another Fiber handle is required."
+effect/Fiber#orElseEither:
+  replacement: "Effect.catchCause"
+  note: "Compose Fiber.join Effects explicitly and map each successful branch to your own tagged union; Either was also removed in v4."
+effect/Fiber#poll:
+  replacement: "fiber.pollUnsafe()"
+  note: "Polling is now synchronous and returns Exit | undefined; wrap in Effect.sync and Option.fromUndefinedOr if the old shape is required."
+effect/Fiber#pretty:
+  replacement: "none"
+  note: "Runtime fiber pretty-printing was removed; format the public id and polled Exit explicitly."
+effect/Fiber#roots:
+  replacement: "none"
+  note: "The runtime no longer exposes a global root-fiber registry; track application fibers explicitly."
+effect/Fiber#RuntimeFiber:
+  replacement: "Fiber.Fiber"
+  note: "RuntimeFiber and Fiber were collapsed into the single v4 Fiber interface."
+effect/Fiber#RuntimeFiberTypeId:
+  replacement: "Fiber.isFiber"
+  note: "The separate RuntimeFiber marker was removed; use the public Fiber guard."
+effect/Fiber#RuntimeFiberUnify:
+  replacement: "none"
+  note: "RuntimeFiber was collapsed into Fiber, which no longer participates in Effect unification."
+effect/Fiber#RuntimeFiberUnifyIgnore:
+  replacement: "none"
+  note: "RuntimeFiber was collapsed into Fiber, which no longer participates in Effect unification."
+effect/Fiber#scoped:
+  replacement: "Fiber.runIn"
+  note: "Register the Fiber in an explicit Scope with Fiber.runIn; acquire the current Scope when migrating the old effectful form."
+effect/Fiber#status:
+  replacement: "fiber.pollUnsafe()"
+  note: "FiberStatus was removed; undefined means not completed and an Exit means completed, with no public running/suspended distinction."
+effect/Fiber#succeed:
+  replacement: "Effect.runFork(Effect.succeed(value))"
+  note: "Synthetic Fiber constructors were removed; run the corresponding Effect when a Fiber handle is required."
+effect/Fiber#unsafeRoots:
+  replacement: "none"
+  note: "The runtime no longer exposes a global root-fiber registry; track application fibers explicitly."
+effect/Fiber#void:
+  replacement: "Effect.runFork(Effect.void)"
+  note: "Synthetic Fiber constants were removed; run Effect.void when a completed Fiber<void> is required."
+effect/Fiber#zip:
+  replacement: "Effect.runFork(Effect.zip(Fiber.join(self), Fiber.join(that)))"
+  note: "Compose joined Effects and fork the result only if another Fiber handle is required."
+effect/Fiber#zipLeft:
+  replacement: "Effect.runFork(Effect.map(Effect.zip(Fiber.join(self), Fiber.join(that)), ([left]) => left))"
+  note: "V4 has no Effect.zipLeft; zip joined Effects, project the left value, and fork only if another handle is required."
+effect/Fiber#zipRight:
+  replacement: "Effect.runFork(Effect.map(Effect.zip(Fiber.join(self), Fiber.join(that)), ([, right]) => right))"
+  note: "V4 has no Effect.zipRight; zip joined Effects, project the right value, and fork only if another handle is required."
+effect/Fiber#zipWith:
+  replacement: "Effect.runFork(Effect.zipWith(Fiber.join(self), Fiber.join(that), f))"
+  note: "Compose joined Effects and fork the result only if another Fiber handle is required."

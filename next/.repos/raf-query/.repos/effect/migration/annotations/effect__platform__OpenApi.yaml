@@ -1,0 +1,18 @@
+"@effect/platform/OpenApi#AdditionalPropertiesStrategy":
+  replacement: "none"
+  note: "OpenApi.fromApi no longer accepts generation options; standalone JSON Schema generation has a separate additionalProperties option."
+"@effect/platform/OpenApi#annotations":
+  replacement: "effect/http-api/OpenApi#annotations"
+  note: "Same annotation-context helper after the module move."
+"@effect/platform/OpenApi#Exclude":
+  replacement: "effect/http-api/OpenApi#Exclude"
+  note: "Same annotation key and default; it is now a Context.Reference value."
+"@effect/platform/OpenApi#fromApi":
+  replacement: "effect/http-api/OpenApi#fromApi"
+  note: "The operation remains and returns OpenAPI 3.1, but the signature is now only fromApi(api)."
+"@effect/platform/OpenApi#OpenApiSpecContentType":
+  replacement: "string"
+  note: "The closed media-type union was removed so custom and streaming media types are supported."
+"@effect/platform/OpenApi#Title":
+  replacement: "effect/http-api/OpenApi#Title"
+  note: "Same annotation role, now implemented as a v4 Context.Service."

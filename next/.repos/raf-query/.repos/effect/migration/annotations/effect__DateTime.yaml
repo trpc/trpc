@@ -1,0 +1,84 @@
+"effect/DateTime#DateTime":
+  replacement: "DateTime.DateTime"
+  note: "The Utc | Zoned model remains; epochMillis fields are now epochMilliseconds and unit/part names use millisecond terminology."
+"effect/DateTime#DateTime.Input":
+  replacement: "DateTime.DateTime.Input"
+  note: "The input type remains and additionally accepts Instant and InstantWithZone objects."
+"effect/DateTime#DateTime.Parts":
+  replacement: "DateTime.DateTime.Parts"
+  note: "Rename millis, seconds, minutes, and hours fields to millisecond, second, minute, and hour."
+"effect/DateTime#DateTime.PartsForMath":
+  replacement: "DateTime.DateTime.PartsForMath"
+  note: "Rename the millis field to milliseconds; the other plural arithmetic fields remain."
+"effect/DateTime#DateTime.PartsWithWeekday":
+  replacement: "DateTime.DateTime.PartsWithWeekday"
+  note: "Rename millis, seconds, minutes, and hours fields to millisecond, second, minute, and hour."
+"effect/DateTime#DateTime.Proto":
+  replacement: "DateTime.DateTime.Proto"
+  note: "The protocol remains, but its marker uses the private v4 TypeId value."
+"effect/DateTime#DateTime.UnitPlural":
+  replacement: "DateTime.DateTime.UnitPlural"
+  note: "Use milliseconds instead of millis; the other plural unit strings remain."
+"effect/DateTime#DateTime.UnitSingular":
+  replacement: "DateTime.DateTime.UnitSingular"
+  note: "Use millisecond instead of milli; the other singular unit strings remain."
+"effect/DateTime#distanceDuration":
+  replacement: "Duration.millis(Math.abs(DateTime.distance(self, other)))"
+  note: "DateTime.distance returns signed milliseconds in v4; take the absolute value and construct a Duration to preserve v3 behavior."
+"effect/DateTime#distanceDurationEither":
+  replacement: "DateTime.distance + Result"
+  note: "Compute the signed millisecond distance, wrap its absolute Duration as Result.succeed when positive and Result.fail when non-positive; v4 uses Result instead of Either."
+"effect/DateTime#greaterThan":
+  replacement: "DateTime.isGreaterThan"
+  note: "The comparison was renamed with the is prefix."
+"effect/DateTime#greaterThanOrEqualTo":
+  replacement: "DateTime.isGreaterThanOrEqualTo"
+  note: "The comparison was renamed with the is prefix."
+"effect/DateTime#lessThan":
+  replacement: "DateTime.isLessThan"
+  note: "The comparison was renamed with the is prefix."
+"effect/DateTime#lessThanOrEqualTo":
+  replacement: "DateTime.isLessThanOrEqualTo"
+  note: "The comparison was renamed with the is prefix."
+"effect/DateTime#TimeZone":
+  replacement: "DateTime.TimeZone"
+  note: "The Offset | Named model remains; its public type-id marker type was removed."
+"effect/DateTime#TimeZone.Proto":
+  replacement: "DateTime.TimeZone.Proto"
+  note: "The protocol remains, but its marker uses the private v4 TimeZoneTypeId value."
+"effect/DateTime#TimeZoneTypeId":
+  replacement: "none"
+  note: "The time-zone type id is private in v4. Use DateTime.isTimeZone, isTimeZoneOffset, or isTimeZoneNamed."
+"effect/DateTime#TypeId":
+  replacement: "none"
+  note: "The DateTime type id is private in v4. Use DateTime.isDateTime, isUtc, or isZoned."
+"effect/DateTime#unsafeFromDate":
+  replacement: "DateTime.fromDateUnsafe"
+  note: "The unsafe suffix moved to the end of the constructor name."
+"effect/DateTime#unsafeIsFuture":
+  replacement: "DateTime.isFutureUnsafe"
+  note: "The unsafe suffix moved to the end of the predicate name."
+"effect/DateTime#unsafeIsPast":
+  replacement: "DateTime.isPastUnsafe"
+  note: "The unsafe suffix moved to the end of the predicate name."
+"effect/DateTime#unsafeMake":
+  replacement: "DateTime.makeUnsafe"
+  note: "The unsafe suffix moved to the end of the constructor name."
+"effect/DateTime#unsafeMakeZoned":
+  replacement: "DateTime.makeZonedUnsafe"
+  note: "The unsafe suffix moved to the end of the constructor name."
+"effect/DateTime#unsafeNow":
+  replacement: "DateTime.nowUnsafe"
+  note: "The unsafe suffix moved to the end of the accessor name."
+"effect/DateTime#unsafeSetZoneNamed":
+  replacement: "DateTime.setZoneNamedUnsafe"
+  note: "The unsafe suffix moved to the end of the zone setter name."
+"effect/DateTime#Utc":
+  replacement: "DateTime.Utc"
+  note: "The model remains; rename epochMillis to epochMilliseconds."
+"effect/DateTime#Zoned":
+  replacement: "DateTime.Zoned"
+  note: "The model remains; rename epochMillis and adjustedEpochMillis to epochMilliseconds and adjustedEpochMilliseconds."
+"effect/DateTime#zoneUnsafeMakeNamed":
+  replacement: "DateTime.zoneMakeNamedUnsafe"
+  note: "The unsafe suffix moved to the end of the named-zone constructor."

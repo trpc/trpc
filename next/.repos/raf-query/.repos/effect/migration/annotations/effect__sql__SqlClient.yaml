@@ -1,0 +1,12 @@
+"@effect/sql/SqlClient#make":
+  replacement: "effect/sql/SqlClient#make"
+  note: "Moved; custom clients rename MakeOptions.reactiveMailbox to reactiveQueue and may supply transactionService."
+"@effect/sql/SqlClient#SafeIntegers":
+  replacement: "effect/sql/SqlClient#SafeIntegers"
+  note: "Moved and changed from a Reference subclass to a Context.Reference value; provide it as a service."
+"@effect/sql/SqlClient#TransactionConnection":
+  replacement: "effect/sql/SqlClient#TransactionConnection"
+  note: "Now a factory keyed by client id, not a singleton tag. Prefer the client's transactionService; the payload type is TransactionConnection.Service."
+"@effect/sql/SqlClient#TypeId":
+  replacement: "none"
+  note: "The brand is private in v4; do not inspect or attach it, and obtain clients through SqlClient or SqlClient.make."

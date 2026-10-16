@@ -1,0 +1,6 @@
+"@effect/cluster/RunnerStorage#layerMemory":
+  replacement: "effect/cluster/RunnerStorage#layerMemory"
+  note: "Moved into core Effect with the same in-memory registration and shard-lock implementation for tests and local use."
+"@effect/cluster/RunnerStorage#makeMemory":
+  replacement: "effect/cluster/RunnerStorage#makeMemory"
+  note: "Moved into core Effect; it still constructs the in-memory RunnerStorage service implementation."

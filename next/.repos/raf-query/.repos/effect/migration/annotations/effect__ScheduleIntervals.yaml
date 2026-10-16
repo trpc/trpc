@@ -1,0 +1,3 @@
+effect/ScheduleIntervals:
+  replacement: none
+  note: The public ScheduleIntervals module was removed in v4 along with absolute interval-set decisions. Use relative Duration values in Schedule.fromStep and Schedule.max or Schedule.min for standard policy composition.

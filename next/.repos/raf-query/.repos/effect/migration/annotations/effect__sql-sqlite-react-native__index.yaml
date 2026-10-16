@@ -1,0 +1,3 @@
+"@effect/sql-sqlite-react-native/index":
+  replacement: "@effect/sql-sqlite-react-native"
+  note: "The explicit /index entrypoint was removed; import the same namespaces from the @effect/sql-sqlite-react-native package root or import specific modules directly."

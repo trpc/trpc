@@ -1,0 +1,7 @@
+@import './css-import-base.css';
+
+.css-import-order {
+  background-color: #111827;
+  color: #ffffff;
+  padding: 24px;
+}

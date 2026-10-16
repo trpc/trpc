@@ -1,0 +1,3 @@
+"@effect/ai-google/GoogleClient":
+  replacement: none
+  note: The @effect/ai-google provider package was removed from v4 and has no direct replacement. Use a supported v4 provider integration for Gemini models or integrate Google's current SDK directly.

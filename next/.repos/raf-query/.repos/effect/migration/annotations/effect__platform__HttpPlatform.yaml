@@ -1,0 +1,12 @@
+"@effect/platform/HttpPlatform#HttpPlatform":
+  replacement: "HttpPlatform.HttpPlatform"
+  note: "The service is now a Context.Service class; use its Service member for the implementation type. Path-backed offset and bytesToRead accept ByteSize.Input, while chunkSize and all Web File range options use number."
+"@effect/platform/HttpPlatform#layer":
+  replacement: "HttpPlatform.layer"
+  note: "Retained as the default file-response layer."
+"@effect/platform/HttpPlatform#make":
+  replacement: "HttpPlatform.make"
+  note: "Retained; v4 returns the service implementation. The fileResponse callback receives contentLength as bigint, while start and end remain numbers. Web File range options use number."
+"@effect/platform/HttpPlatform#TypeId":
+  replacement: "none"
+  note: "The public type id was removed; use the HttpPlatform Context.Service class."

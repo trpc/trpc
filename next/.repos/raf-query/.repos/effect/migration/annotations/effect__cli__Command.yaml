@@ -1,0 +1,60 @@
+"@effect/cli/Command#Command.Context":
+  replacement: "Command.CommandContext"
+  note: "Renamed to CommandContext."
+"@effect/cli/Command#Command.ParseConfig":
+  replacement: "Command.Command.Config.Infer"
+  note: "Use the v4 command-config inference helper."
+"@effect/cli/Command#Command.ParseConfigValue":
+  replacement: "Command.Command.Config.InferValue"
+  note: "Use the v4 command-config value inference helper."
+"@effect/cli/Command#Command.ParsedConfig":
+  replacement: "none"
+  note: "The parsed config representation is internal in v4."
+"@effect/cli/Command#Command.ParsedConfigNode":
+  replacement: "none"
+  note: "The parsed config node representation is internal in v4."
+"@effect/cli/Command#Command.ParsedConfigTree":
+  replacement: "none"
+  note: "The parsed config tree representation is internal in v4."
+"@effect/cli/Command#Command.Transform":
+  replacement: "none"
+  note: "The handler transformation type and machinery are internal in v4."
+"@effect/cli/Command#fromDescriptor":
+  replacement: "Command.make"
+  note: "The descriptor layer was folded into Command; define config and handler directly on Command.make."
+"@effect/cli/Command#getBashCompletions":
+  replacement: "Completions.generate"
+  note: "Generation now returns one script string; normally use GlobalFlag.Completions through the runner."
+"@effect/cli/Command#getFishCompletions":
+  replacement: "Completions.generate"
+  note: "Generation now returns one script string; normally use GlobalFlag.Completions through the runner."
+"@effect/cli/Command#getHelp":
+  replacement: "none"
+  note: "Help generation for a command path is internal; use GlobalFlag.Help through Command.run or runWith."
+"@effect/cli/Command#getNames":
+  replacement: "Command.Command.name / Command.Command.alias"
+  note: "Read the public name and optional alias fields; no HashSet accessor remains."
+"@effect/cli/Command#getSubcommands":
+  replacement: "Command.Command.subcommands"
+  note: "Read the public grouped subcommands field; its shape is no longer a name map."
+"@effect/cli/Command#getUsage":
+  replacement: "none"
+  note: "Usage is generated internally as part of structured HelpDoc."
+"@effect/cli/Command#getZshCompletions":
+  replacement: "Completions.generate"
+  note: "Generation now returns one script string; normally use GlobalFlag.Completions through the runner."
+"@effect/cli/Command#make":
+  replacement: "Command.make"
+  note: "Use the redesigned constructor with one nested config object of Argument and Flag values."
+"@effect/cli/Command#run":
+  replacement: "Command.runWith"
+  note: "Use runWith for the v3-style function that accepts an argv array; use run to read arguments from Stdio."
+"@effect/cli/Command#transformHandler":
+  replacement: "none"
+  note: "Transform in the handler or use the specific provide combinators; the generic handler transform is internal."
+"@effect/cli/Command#TypeId":
+  replacement: "Command.isCommand"
+  note: "The type id is internal in v4; use the public runtime guard."
+"@effect/cli/Command#withDescription":
+  replacement: "Command.withDescription"
+  note: "Use the retained combinator; v4 descriptions are strings rather than the old HelpDoc ADT."

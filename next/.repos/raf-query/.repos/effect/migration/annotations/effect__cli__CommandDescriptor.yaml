@@ -1,0 +1,57 @@
+"@effect/cli/CommandDescriptor#Command.ComputeParsedType":
+  replacement: "Types.Simplify"
+  note: "Use the general simplification utility, or Command.Command.Config.Infer for command config."
+"@effect/cli/CommandDescriptor#Command.GetParsedType":
+  replacement: "none"
+  note: "No public parsed-input extractor remains; v4 handlers receive inferred config directly."
+"@effect/cli/CommandDescriptor#Command.ParsedStandardCommand":
+  replacement: "none"
+  note: "The name/options/args parsed wrapper was removed; handlers receive inferred config directly."
+"@effect/cli/CommandDescriptor#Command.ParsedUserInputCommand":
+  replacement: "none"
+  note: "The descriptor-level prompt command was removed; use Prompt APIs or Command.wizard."
+"@effect/cli/CommandDescriptor#Command.Subcommands":
+  replacement: "none"
+  note: "Compose independently handled commands with Command.withSubcommands instead of parsing a tuple union."
+"@effect/cli/CommandDescriptor#Command.Variance":
+  replacement: "Command.Command.Variance"
+  note: "The command variance helper remains conceptually, now tracking input, error, and requirements."
+"@effect/cli/CommandDescriptor#getBashCompletions":
+  replacement: "Completions.generate"
+  note: "Completion generation moved to one shell-parameterized function; command conversion is internal."
+"@effect/cli/CommandDescriptor#getFishCompletions":
+  replacement: "Completions.generate"
+  note: "Completion generation moved to one shell-parameterized function; command conversion is internal."
+"@effect/cli/CommandDescriptor#getHelp":
+  replacement: "none"
+  note: "Help generation is internal to the Command runner."
+"@effect/cli/CommandDescriptor#getNames":
+  replacement: "Command.Command.name / Command.Command.alias"
+  note: "Read the public fields; no HashSet accessor remains."
+"@effect/cli/CommandDescriptor#getSubcommands":
+  replacement: "Command.Command.subcommands"
+  note: "Read the public grouped subcommands field."
+"@effect/cli/CommandDescriptor#getUsage":
+  replacement: "none"
+  note: "Usage generation is internal to Command help generation."
+"@effect/cli/CommandDescriptor#getZshCompletions":
+  replacement: "Completions.generate"
+  note: "Completion generation moved to one shell-parameterized function; command conversion is internal."
+"@effect/cli/CommandDescriptor#make":
+  replacement: "Command.make"
+  note: "The descriptor and executable command layers were merged into one constructor."
+"@effect/cli/CommandDescriptor#map":
+  replacement: "none"
+  note: "Map individual Argument or Flag values, or transform inside the command handler."
+"@effect/cli/CommandDescriptor#mapEffect":
+  replacement: "none"
+  note: "Use parameter mapEffect where the transformation belongs to an input, or perform the Effect in the handler."
+"@effect/cli/CommandDescriptor#parse":
+  replacement: "Command.runWith"
+  note: "Parsing was folded into execution and no intermediate CommandDirective is returned."
+"@effect/cli/CommandDescriptor#TypeId":
+  replacement: "Command.isCommand"
+  note: "The type id is internal in v4; use the public runtime guard."
+"@effect/cli/CommandDescriptor#withDescription":
+  replacement: "Command.withDescription"
+  note: "Use the retained behavior; v4 descriptions are strings."

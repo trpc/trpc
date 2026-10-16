@@ -1,0 +1,9 @@
+"@effect/platform/HttpIncomingMessage#MaxBodySize":
+  replacement: "HttpIncomingMessage.MaxBodySize"
+  note: "Changed from a Reference subclass holding Option<Size> to Context.Reference<ByteSize.ByteSize | undefined>."
+"@effect/platform/HttpIncomingMessage#TypeId":
+  replacement: "typeof HttpIncomingMessage.TypeId"
+  note: "TypeId remains public but is now a string constant; use typeof in type position."
+"@effect/platform/HttpIncomingMessage#withMaxBodySize":
+  replacement: "Effect.provideService(HttpIncomingMessage.MaxBodySize, size)"
+  note: "The helper was removed; provide a ByteSize value or undefined directly."

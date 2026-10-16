@@ -1,0 +1,3 @@
+"@effect/ai-openai/index":
+  replacement: "@effect/ai-openai"
+  note: "The explicit /index entrypoint was removed; import the same namespaces from the @effect/ai-openai package root or import specific modules directly."

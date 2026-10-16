@@ -1,0 +1,43 @@
+{
+  "name": "tanstack-start-example-next-migration",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev --port 3101",
+    "dev:next": "next dev next-app --port 3100",
+    "build": "vite build && tsc --noEmit",
+    "build:next": "next build next-app",
+    "start": "node .output/server/index.mjs",
+    "start:next": "next start next-app --port 3100",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@tanstack/react-router": "^1.170.42",
+    "@tanstack/react-start": "^1.168.61",
+    "iron-session": "^9.0.0",
+    "next": "16.3.4",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.0",
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.2.8",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "nitro": "^3.0.260903-beta",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "vite": "^8.0.14"
+  },
+  "nx": {
+    "targets": {
+      "test:e2e": {
+        "outputs": [
+          "...",
+          "{projectRoot}/next-app/.next",
+          "{projectRoot}/next-app/next-env.d.ts"
+        ]
+      }
+    }
+  }
+}

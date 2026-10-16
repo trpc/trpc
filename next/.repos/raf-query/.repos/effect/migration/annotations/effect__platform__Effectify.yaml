@@ -1,0 +1,3 @@
+"@effect/platform/Effectify":
+  replacement: "effect/Effect"
+  note: "effectify moved into the Effect module as Effect.effectify; the Effectify and EffectifyError type helpers live in the Effect namespace as well."

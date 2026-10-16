@@ -1,0 +1,3 @@
+"@effect/platform/HttpMultiplex":
+  replacement: none
+  note: The HttpMultiplex module, value, constructor, and nominal type id were removed with no v4 counterpart. Replace them with a custom first-match Effect dispatcher requiring HttpServerRequest; initialize an empty dispatcher, then add or fold predicate/app pairs into it. Recreate header helpers with predicates over lower-cased request header values using exact equality, String.startsWith, String.endsWith, or RegExp.test; recreate host helpers with the same comparisons over request.headers.host.

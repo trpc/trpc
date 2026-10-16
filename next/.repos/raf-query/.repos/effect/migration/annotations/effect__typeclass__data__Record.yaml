@@ -1,0 +1,39 @@
+"@effect/typeclass/data/Record#Covariant":
+  replacement: "effect/Record"
+  note: "The @effect/typeclass package and its Record instance dictionaries were removed in v4. Use the concrete effect/Record operations directly."
+"@effect/typeclass/data/Record#Filterable":
+  replacement: "effect/Record"
+  note: "The @effect/typeclass package and its Record instance dictionaries were removed in v4. Use the concrete effect/Record operations directly."
+"@effect/typeclass/data/Record#getCovariant":
+  replacement: "effect/Record"
+  note: "The @effect/typeclass package and its Record instance dictionaries were removed in v4. Use the concrete effect/Record operations directly."
+"@effect/typeclass/data/Record#getFilterable":
+  replacement: "effect/Record"
+  note: "The @effect/typeclass package and its Record instance dictionaries were removed in v4. Use the concrete effect/Record operations directly."
+"@effect/typeclass/data/Record#getInvariant":
+  replacement: "effect/Record"
+  note: "The @effect/typeclass package and its Record instance dictionaries were removed in v4. Use the concrete effect/Record operations directly."
+"@effect/typeclass/data/Record#getMonoidUnion":
+  replacement: "Record.makeReducerUnion"
+  note: "Pass the replacement value Combiner; the v4 Reducer uses an empty record as initialValue."
+"@effect/typeclass/data/Record#getSemigroupIntersection":
+  replacement: "Record.makeReducerIntersection"
+  note: "Pass the replacement value Combiner and use the returned Reducer's combine operation for pairwise intersection."
+"@effect/typeclass/data/Record#getSemigroupUnion":
+  replacement: "Record.makeReducerUnion"
+  note: "The v4 Reducer is also a Combiner and preserves pairwise union semantics."
+"@effect/typeclass/data/Record#getTraversable":
+  replacement: "effect/Record"
+  note: "The @effect/typeclass package and its Record instance dictionaries were removed in v4. Use the concrete effect/Record operations directly."
+"@effect/typeclass/data/Record#getTraversableFilterable":
+  replacement: "effect/Record"
+  note: "The @effect/typeclass package and its Record instance dictionaries were removed in v4. Use the concrete effect/Record operations directly."
+"@effect/typeclass/data/Record#Invariant":
+  replacement: "effect/Record"
+  note: "The @effect/typeclass package and its Record instance dictionaries were removed in v4. Use the concrete effect/Record operations directly."
+"@effect/typeclass/data/Record#Traversable":
+  replacement: "effect/Record"
+  note: "The @effect/typeclass package and its Record instance dictionaries were removed in v4. Use the concrete effect/Record operations directly."
+"@effect/typeclass/data/Record#TraversableFilterable":
+  replacement: "effect/Record"
+  note: "The @effect/typeclass package and its Record instance dictionaries were removed in v4. Use the concrete effect/Record operations directly."

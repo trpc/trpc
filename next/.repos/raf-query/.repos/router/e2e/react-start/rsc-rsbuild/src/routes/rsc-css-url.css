@@ -1,0 +1,30 @@
+.rsc-css-url-card {
+  display: grid;
+  gap: 12px;
+  max-width: 480px;
+  padding: 18px;
+  background-color: #ecfdf5;
+  border: 2px solid #10b981;
+  border-radius: 8px;
+  color: #064e3b;
+}
+
+.rsc-css-url-badge {
+  width: max-content;
+  padding: 3px 8px;
+  background-color: #047857;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.rsc-css-url-title {
+  margin: 0;
+  font-size: 18px;
+}
+
+.rsc-css-url-text {
+  margin: 0;
+  line-height: 1.5;
+}

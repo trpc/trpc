@@ -1,0 +1,144 @@
+effect/FiberRef#currentConcurrency:
+  replacement: "none"
+  note: "Inherited concurrency was removed; pass concurrency explicitly to each v4 combinator that supports it."
+effect/FiberRef#currentContext:
+  replacement: "Effect.context"
+  note: "Fiber services are stored directly in Context; use Effect.context to read them and Effect.provideContext to override them."
+effect/FiberRef#currentLogAnnotations:
+  replacement: "References.CurrentLogAnnotations"
+  note: "Built-in FiberRefs are now Context.Reference values; yield the reference or provide it with Effect.provideService."
+effect/FiberRef#currentLoggers:
+  replacement: "References.CurrentLoggers"
+  note: "Built-in FiberRefs are now Context.Reference values; yield the reference or provide it with Effect.provideService."
+effect/FiberRef#currentLogLevel:
+  replacement: "References.CurrentLogLevel"
+  note: "Built-in FiberRefs are now Context.Reference values; yield the reference or provide it with Effect.provideService."
+effect/FiberRef#currentLogSpan:
+  replacement: "References.CurrentLogSpans"
+  note: "Renamed and represented as a Context.Reference containing a readonly span array."
+effect/FiberRef#currentMaxOpsBeforeYield:
+  replacement: "Scheduler.MaxOpsBeforeYield"
+  note: "The scheduler setting is now a Context.Reference; yield it or provide it with Effect.provideService."
+effect/FiberRef#currentMetricLabels:
+  replacement: "Metric.CurrentMetricAttributes"
+  note: "Metric labels became metric attributes stored in a Context.Reference."
+effect/FiberRef#currentMinimumLogLevel:
+  replacement: "References.MinimumLogLevel"
+  note: "Built-in FiberRefs are now Context.Reference values; yield the reference or provide it with Effect.provideService."
+effect/FiberRef#currentRequestBatchingEnabled:
+  replacement: "none"
+  note: "The request batching FiberRef was removed; batching is defined by the v4 RequestResolver runAll implementation."
+effect/FiberRef#currentRequestCache:
+  replacement: "RequestResolver.withCache"
+  note: "The ambient request cache was removed; wrap a RequestResolver with an explicit bounded cache."
+effect/FiberRef#currentRequestCacheEnabled:
+  replacement: "RequestResolver.withCache"
+  note: "There is no ambient cache toggle; choose an explicitly cached or uncached RequestResolver."
+effect/FiberRef#currentRuntimeFlags:
+  replacement: "none"
+  note: "RuntimeFlags and their FiberRef were removed; use specific v4 runtime options such as interruptibility and scheduler settings."
+effect/FiberRef#currentScheduler:
+  replacement: "Scheduler.Scheduler"
+  note: "The scheduler is now a Context.Reference; yield it or provide it with Effect.provideService."
+effect/FiberRef#currentSchedulingPriority:
+  replacement: "none"
+  note: "The ambient scheduling-priority FiberRef was removed; use explicit scheduler operations where priority is needed."
+effect/FiberRef#currentSupervisor:
+  replacement: "none"
+  note: "The Supervisor and ambient supervisor FiberRef APIs were removed; track fibers explicitly with FiberSet or FiberMap."
+effect/FiberRef#currentTracerEnabled:
+  replacement: "References.TracerEnabled"
+  note: "Built-in FiberRefs are now Context.Reference values; yield the reference or provide it with Effect.provideService."
+effect/FiberRef#currentTracerSpanAnnotations:
+  replacement: "References.TracerSpanAnnotations"
+  note: "Built-in FiberRefs are now Context.Reference values; yield the reference or provide it with Effect.provideService."
+effect/FiberRef#currentTracerSpanLinks:
+  replacement: "References.TracerSpanLinks"
+  note: "Built-in FiberRefs are now Context.Reference values; yield the reference or provide it with Effect.provideService."
+effect/FiberRef#currentTracerTimingEnabled:
+  replacement: "References.TracerTimingEnabled"
+  note: "Built-in FiberRefs are now Context.Reference values; yield the reference or provide it with Effect.provideService."
+effect/FiberRef#delete:
+  replacement: "Effect.provideService"
+  note: "Context.Reference has no in-place delete; scope the default or desired value around the target Effect."
+effect/FiberRef#FiberRef:
+  replacement: "Context.Reference"
+  note: "Fiber-local values and services share Context.Reference in v4; references have a defaultValue and no fork/join patching."
+effect/FiberRef#FiberRefTypeId:
+  replacement: "Context.isReference"
+  note: "Use the public Context.Reference guard instead of a FiberRef type-id symbol."
+effect/FiberRef#FiberRefUnify:
+  replacement: "none"
+  note: "Context.Reference is a service key and does not require the old FiberRef Effect-unification helper."
+effect/FiberRef#FiberRefUnifyIgnore:
+  replacement: "none"
+  note: "Context.Reference is a service key and does not require the old FiberRef Effect-unification helper."
+effect/FiberRef#get:
+  replacement: "reference"
+  note: "Context.Reference is yieldable as a service; yield it directly to read the current value."
+effect/FiberRef#getAndUpdateSome:
+  replacement: "Ref.getAndUpdateSome"
+  note: "Use Ref for mutable state; for fiber-local configuration compute the value first and scope it with Effect.provideService."
+effect/FiberRef#getWith:
+  replacement: "Effect.flatMap(reference, f)"
+  note: "Yield or flatMap the Context.Reference directly."
+effect/FiberRef#interruptedCause:
+  replacement: "none"
+  note: "The pending interruption cause is no longer exposed as public fiber-local state; inspect completed failure Causes from Fiber.await."
+effect/FiberRef#make:
+  replacement: "Context.Reference"
+  note: "Define a stable Context.Reference key with defaultValue; custom fork and join behavior is not supported."
+effect/FiberRef#makeContext:
+  replacement: "Context.Reference"
+  note: "Define a Context.Reference whose defaultValue returns the Context; custom context diffing is no longer required."
+effect/FiberRef#makeRuntimeFlags:
+  replacement: "none"
+  note: "RuntimeFlags and specialized FiberRef constructors were removed; migrate each flag to its explicit v4 runtime option."
+effect/FiberRef#makeWith:
+  replacement: "Context.Reference"
+  note: "Use the lazy defaultValue option on a stable Context.Reference key."
+effect/FiberRef#modify:
+  replacement: "Ref.modify"
+  note: "Use Ref for mutable state; Context.Reference updates are scoped with Effect.provideService rather than mutated in place."
+effect/FiberRef#modifySome:
+  replacement: "Ref.modifySome"
+  note: "Use Ref for mutable state; Context.Reference updates are scoped with Effect.provideService rather than mutated in place."
+effect/FiberRef#reset:
+  replacement: "Effect.provideService"
+  note: "Context.Reference has no in-place reset; scope its default value around the target Effect."
+effect/FiberRef#set:
+  replacement: "Effect.provideService"
+  note: "Context.Reference values are overridden for an Effect scope instead of mutating the current fiber."
+effect/FiberRef#unhandledErrorLogLevel:
+  replacement: "References.UnhandledLogLevel"
+  note: "Renamed and represented as a Context.Reference using Severity | undefined instead of Option<LogLevel>."
+effect/FiberRef#unsafeMake:
+  replacement: "Context.Reference"
+  note: "Context.Reference construction is synchronous; provide a stable identifier and defaultValue."
+effect/FiberRef#unsafeMakeContext:
+  replacement: "Context.Reference"
+  note: "Define a Context.Reference whose defaultValue returns the Context; there is no specialized unsafe constructor."
+effect/FiberRef#unsafeMakeHashSet:
+  replacement: "Context.Reference"
+  note: "Define a normal Context.Reference with a readonly set default; specialized differ constructors were removed."
+effect/FiberRef#unsafeMakePatch:
+  replacement: "Context.Reference"
+  note: "Define a normal Context.Reference; custom Differ, fork patches, and join behavior are not supported in v4."
+effect/FiberRef#unsafeMakeSupervisor:
+  replacement: "none"
+  note: "Supervisor and FiberRef were removed; track managed fibers explicitly with FiberSet or FiberMap."
+effect/FiberRef#update:
+  replacement: "Ref.update"
+  note: "Use Ref for mutable state; for fiber-local configuration compute a value and scope it with Effect.provideService."
+effect/FiberRef#updateSome:
+  replacement: "Ref.updateSome"
+  note: "Use Ref for mutable state; for fiber-local configuration compute a value and scope it with Effect.provideService."
+effect/FiberRef#updateSomeAndGet:
+  replacement: "Ref.updateSomeAndGet"
+  note: "Use Ref for mutable state; for fiber-local configuration compute a value and scope it with Effect.provideService."
+effect/FiberRef#Variance:
+  replacement: "Context.Reference"
+  note: "The FiberRef-specific variance interface was removed with FiberRef."
+effect/FiberRef#versionMismatchErrorLogLevel:
+  replacement: "none"
+  note: "The version-mismatch logging FiberRef was removed and no public v4 Context.Reference replaces it."

@@ -1,0 +1,3 @@
+effect/UpstreamPullStrategy:
+  replacement: none
+  note: Removed with Channel.concatMapWithCustom. Select flattening and scheduling through Channel.flatMap, Channel.switchMap, or Channel.mergeAll; v4 has no upstream-pull strategy ADT.

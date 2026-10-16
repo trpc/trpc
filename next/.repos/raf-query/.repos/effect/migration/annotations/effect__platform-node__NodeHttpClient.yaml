@@ -1,0 +1,33 @@
+"@effect/platform-node/NodeHttpClient#agentLayer":
+  replacement: "NodeHttpClient.layerAgent"
+  note: "Direct rename; it provides the default scoped Node HTTP and HTTPS agents."
+"@effect/platform-node/NodeHttpClient#Dispatcher":
+  replacement: "NodeHttpClient.Dispatcher"
+  note: "The identifier remains but is now a Context.Service class; use Dispatcher[\"Service\"] for the concrete Undici dispatcher type."
+"@effect/platform-node/NodeHttpClient#dispatcherLayer":
+  replacement: "NodeHttpClient.layerDispatcher"
+  note: "Direct rename; the layer owns and finalizes a scoped Undici Agent."
+"@effect/platform-node/NodeHttpClient#HttpAgent":
+  replacement: "NodeHttpClient.HttpAgent"
+  note: "The identifier remains but is now a Context.Service class; use HttpAgent[\"Service\"] for the concrete http/https agent pair."
+"@effect/platform-node/NodeHttpClient#HttpAgentTypeId":
+  replacement: "none"
+  note: "The public marker was removed; the HttpAgent Context.Service class supplies service identity."
+"@effect/platform-node/NodeHttpClient#layer":
+  replacement: "NodeHttpClient.layerNodeHttp"
+  note: "Use the renamed node:http/node:https backend layer; choose layerUndici only when intentionally changing backends."
+"@effect/platform-node/NodeHttpClient#layerUndiciWithoutDispatcher":
+  replacement: "NodeHttpClient.layerUndiciNoDispatcher"
+  note: "Direct rename; the layer still requires NodeHttpClient.Dispatcher."
+"@effect/platform-node/NodeHttpClient#layerWithoutAgent":
+  replacement: "NodeHttpClient.layerNodeHttpNoAgent"
+  note: "Direct rename; the node:http client layer still requires NodeHttpClient.HttpAgent."
+"@effect/platform-node/NodeHttpClient#make":
+  replacement: "NodeHttpClient.makeNodeHttp"
+  note: "Direct rename of the node:http/node:https client constructor."
+"@effect/platform-node/NodeHttpClient#makeAgentLayer":
+  replacement: "NodeHttpClient.layerAgentOptions"
+  note: "Direct rename; it accepts Https.AgentOptions and scopes both agents."
+"@effect/platform-node/NodeHttpClient#UndiciRequestOptions":
+  replacement: "NodeHttpClient.UndiciOptions"
+  note: "The required Context.Tag became a defaulted Context.Reference<Partial<Dispatcher.RequestOptions>>; override it with Effect.provideService."

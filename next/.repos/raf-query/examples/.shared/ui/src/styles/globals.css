@@ -1,0 +1,126 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* Scan the shared components, wherever the app's Tailwind entry lives. */
+@source "../components";
+
+/*
+ * A `dark` or `light` class on <html> picks the theme. Without either, the
+ * page follows the system setting.
+ */
+@custom-variant dark {
+	&:where(.dark, .dark *) {
+		@slot;
+	}
+	@media (prefers-color-scheme: dark) {
+		&:where(:root:not(.light), :root:not(.light) *) {
+			@slot;
+		}
+	}
+}
+
+@theme inline {
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+	--color-popover: var(--popover);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-destructive: var(--destructive);
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
+	--color-chart-1: var(--chart-1);
+	--color-chart-2: var(--chart-2);
+	--color-chart-3: var(--chart-3);
+	--color-chart-4: var(--chart-4);
+	--color-chart-5: var(--chart-5);
+	--color-sidebar: var(--sidebar);
+	--color-sidebar-foreground: var(--sidebar-foreground);
+	--color-sidebar-primary: var(--sidebar-primary);
+	--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+	--color-sidebar-accent: var(--sidebar-accent);
+	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+	--color-sidebar-border: var(--sidebar-border);
+	--color-sidebar-ring: var(--sidebar-ring);
+	--radius-sm: calc(var(--radius) * 0.6);
+	--radius-md: calc(var(--radius) * 0.8);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) * 1.4);
+	--radius-2xl: calc(var(--radius) * 1.8);
+	--radius-3xl: calc(var(--radius) * 2.2);
+	--radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/*
+ * Neutral grays with a trace of the brand's violet (hue 286). Violet itself,
+ * the middle of the logo's blue-to-coral gradient, is only the primary and
+ * the focus ring.
+ */
+:root {
+	color-scheme: light dark;
+	--radius: 0.625rem;
+	--background: light-dark(oklch(1 0 0), oklch(0.145 0.006 286));
+	--foreground: light-dark(oklch(0.18 0.012 286), oklch(0.97 0.002 286));
+	--card: light-dark(oklch(1 0 0), oklch(0.185 0.008 286));
+	--card-foreground: var(--foreground);
+	--popover: var(--card);
+	--popover-foreground: var(--foreground);
+	--primary: light-dark(oklch(0.54 0.23 286), oklch(0.7 0.16 286));
+	--primary-foreground: light-dark(oklch(0.99 0 0), oklch(0.15 0.02 286));
+	--secondary: light-dark(oklch(0.965 0.003 286), oklch(0.26 0.008 286));
+	--secondary-foreground: var(--foreground);
+	--muted: var(--secondary);
+	--muted-foreground: light-dark(oklch(0.52 0.012 286), oklch(0.71 0.012 286));
+	--accent: var(--secondary);
+	--accent-foreground: var(--foreground);
+	--destructive: light-dark(
+		oklch(0.577 0.245 27.325),
+		oklch(0.704 0.191 22.216)
+	);
+	--border: light-dark(oklch(0.92 0.004 286), oklch(1 0 0 / 10%));
+	--input: light-dark(oklch(0.92 0.004 286), oklch(1 0 0 / 15%));
+	--ring: light-dark(oklch(0.6 0.2 286), oklch(0.62 0.16 286));
+	--chart-1: light-dark(oklch(0.54 0.23 286), oklch(0.7 0.16 286));
+	--chart-2: light-dark(oklch(0.6 0.118 184.704), oklch(0.696 0.17 162.48));
+	--chart-3: light-dark(oklch(0.398 0.07 227.392), oklch(0.769 0.188 70.08));
+	--chart-4: light-dark(oklch(0.828 0.189 84.429), oklch(0.627 0.265 303.9));
+	--chart-5: light-dark(oklch(0.769 0.188 70.08), oklch(0.645 0.246 16.439));
+	--sidebar: light-dark(oklch(0.985 0 0), oklch(0.185 0.008 286));
+	--sidebar-foreground: var(--foreground);
+	--sidebar-primary: var(--primary);
+	--sidebar-primary-foreground: var(--primary-foreground);
+	--sidebar-accent: var(--secondary);
+	--sidebar-accent-foreground: var(--foreground);
+	--sidebar-border: var(--border);
+	--sidebar-ring: var(--ring);
+}
+
+:root.light {
+	color-scheme: light;
+}
+
+:root.dark {
+	color-scheme: dark;
+}
+
+@layer base {
+	* {
+		@apply border-border outline-ring/50;
+	}
+	body {
+		@apply bg-background text-foreground;
+	}
+	::selection {
+		@apply bg-primary/25;
+	}
+}

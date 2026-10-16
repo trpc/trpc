@@ -1,0 +1,75 @@
+"@effect/rpc/Rpc#AddError":
+  replacement: "effect/rpc/Rpc#AddError"
+  note: "Retained; the added error must now be a Schema.Top and the resulting RPC also preserves its explicit service requirements."
+"@effect/rpc/Rpc#AddMiddleware":
+  replacement: "effect/rpc/Rpc#AddMiddleware"
+  note: "Retained; middleware is now an RpcMiddleware.AnyService and its provides/requires metadata updates the RPC service requirements."
+"@effect/rpc/Rpc#Any":
+  replacement: "effect/rpc/Rpc#Any"
+  note: "Retained as the erased RPC shape; use AnyWithProps when schema and middleware fields are required."
+"@effect/rpc/Rpc#AnySchema":
+  replacement: "Schema.Top"
+  note: "The RPC-specific erased schema alias was removed; use the v4 top schema constraint."
+"@effect/rpc/Rpc#AnyTaggedRequestSchema":
+  replacement: "none"
+  note: "RpcGroup no longer converts Schema.TaggedRequest classes into RPCs; declare the contract explicitly with Rpc.make."
+"@effect/rpc/Rpc#Context":
+  replacement: "effect/rpc/Rpc#Services"
+  note: "Schema Context became decoding and encoding services; use Services, or ServicesClient / ServicesServer at the corresponding boundary."
+"@effect/rpc/Rpc#Error":
+  replacement: "effect/rpc/Rpc#Error"
+  note: "Retained; it includes decoded errors contributed by attached middleware."
+"@effect/rpc/Rpc#ErrorEncoded":
+  replacement: "Rpc.ErrorSchema<R>[\"Encoded\"]"
+  note: "The alias was removed; index the v4 error schema's Encoded member directly."
+"@effect/rpc/Rpc#ErrorExitEncoded":
+  replacement: "Rpc.ErrorExitSchema<R>[\"Encoded\"]"
+  note: "Use the new exit error schema, which includes stream and middleware errors, then select its Encoded member."
+"@effect/rpc/Rpc#ErrorSchema":
+  replacement: "effect/rpc/Rpc#ErrorSchema"
+  note: "Retained; middleware errors now come from each service's error metadata."
+"@effect/rpc/Rpc#fromTaggedRequest":
+  replacement: "Rpc.make"
+  note: "Automatic TaggedRequest conversion was removed; pass the tag, payload, success, and error schemas explicitly to Rpc.make."
+"@effect/rpc/Rpc#Handler":
+  replacement: "effect/rpc/Rpc#Handler"
+  note: "Retained; handler metadata now supplies ServerClient, RequestId, headers, and the concrete RPC."
+"@effect/rpc/Rpc#make":
+  replacement: "effect/rpc/Rpc#make"
+  note: "Retained; schemas use v4 Schema.Top constraints and the defect option accepts Rpc.DefectSchema."
+"@effect/rpc/Rpc#Middleware":
+  replacement: "effect/rpc/Rpc#Middleware"
+  note: "Retained and extracts Context.Service identifiers from the attached middleware services."
+"@effect/rpc/Rpc#MiddlewareClient":
+  replacement: "effect/rpc/Rpc#MiddlewareClient"
+  note: "Retained; required client middleware is derived from services configured with requiredForClient."
+"@effect/rpc/Rpc#Payload":
+  replacement: "effect/rpc/Rpc#Payload"
+  note: "Retained as the decoded payload type; use PayloadConstructor for the input accepted by generated clients."
+"@effect/rpc/Rpc#Success":
+  replacement: "effect/rpc/Rpc#Success"
+  note: "Retained as the decoded success type."
+"@effect/rpc/Rpc#SuccessChunkEncoded":
+  replacement: "Rpc.SuccessExitSchema<R>[\"Encoded\"]"
+  note: "The alias was removed; for a streaming RPC the exit success schema is the stream element schema."
+"@effect/rpc/Rpc#SuccessExitEncoded":
+  replacement: "Rpc.SuccessExitSchema<R>[\"Encoded\"]"
+  note: "Use the new exit success schema and select its Encoded member; streaming RPC exits use the element schema separately from the terminal void exit."
+"@effect/rpc/Rpc#SuccessSchema":
+  replacement: "effect/rpc/Rpc#SuccessSchema"
+  note: "Retained and uses the v4 Schema.Top constraint."
+"@effect/rpc/Rpc#Tag":
+  replacement: "effect/rpc/Rpc#Tag"
+  note: "Retained and also accounts for the v4 RPC service-requirement parameter."
+"@effect/rpc/Rpc#TypeId":
+  replacement: "none"
+  note: "The RPC marker is private in v4; use Rpc.isRpc for runtime checks and Rpc.Any for type constraints."
+"@effect/rpc/Rpc#WrapperTypeId":
+  replacement: "none"
+  note: "The wrapper marker is private in v4; use Rpc.isWrapper and the public Wrapper type."
+"@effect/rpc/Rpc#wrap":
+  replacement: "effect/rpc/Rpc#wrap"
+  note: "Retained after the module move; it still applies fork and uninterruptible handler options, while the return type is now uniformly Rpc.Wrapper."
+"@effect/rpc/Rpc#SuccessEncoded":
+  replacement: "effect/rpc/Rpc#SuccessEncoded"
+  note: "Retained after the module move and now accounts for the RPC's explicit service-requirement parameter."

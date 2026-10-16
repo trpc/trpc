@@ -1,0 +1,6 @@
+"@effect/opentelemetry/OtlpLogger#layer":
+  replacement: "OtlpLogger.layer"
+  note: "Moved to effect/observability/OtlpLogger; use mergeWithExisting instead of passing replaceLogger."
+"@effect/opentelemetry/OtlpLogger#make":
+  replacement: "OtlpLogger.make"
+  note: "The constructor remains in the module moved to effect/observability/OtlpLogger."

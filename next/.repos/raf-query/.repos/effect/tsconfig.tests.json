@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "./tsconfig.base.json",
+  "references": [{ "path": "tsconfig.packages.json" }],
+  "include": [
+    "**/vitest.*.ts", // All vitest config files across all packages
+    "./bundle/**/*.ts", // Bundle size test files
+    "./packages/*/test/**/*.ts",
+    "./packages/*/test/**/*.json",
+    "./packages/*/typetest/**/*.ts",
+    "./packages/*/benchmark/**/*.ts",
+    "./packages/**/test/**/*.ts",
+    "./packages/**/test/**/*.json",
+    "./packages/**/typetest/**/*.ts",
+    "./packages/**/benchmark/**/*.ts"
+  ],
+  "exclude": ["**/node_modules/**", "**/dist/**", "./packages/platform/deno/**"],
+  "compilerOptions": {
+    "rootDir": ".",
+    "noEmit": true,
+    "erasableSyntaxOnly": false,
+    "resolveJsonModule": true,
+    "types": ["node"],
+    "paths": {
+      // These path aliases allow us to load internal modules in tests and to use other workspace packages in tests
+      // that would otherwise be considered cyclic dependencies (e.g. loading `@effect/sql-sqlite-node` in the test
+      // suite of `@effect/platform-node` which itself depends on `@effect/platform-node`).
+      "effect": ["./packages/effect/src/index.ts"],
+      "effect/schema": ["./packages/effect/src/schema/index.ts"],
+      "effect/*": ["./packages/effect/src/*.ts"],
+      "@effect/ai-anthropic": ["./packages/ai/anthropic/src/index.ts"],
+      "@effect/ai-anthropic/*": ["./packages/ai/anthropic/src/*.ts"],
+      "@effect/ai-cloudflare": ["./packages/ai/cloudflare/src/index.ts"],
+      "@effect/ai-cloudflare/*": ["./packages/ai/cloudflare/src/*.ts"],
+      "@effect/ai-openai-compat": ["./packages/ai/openai-compat/src/index.ts"],
+      "@effect/ai-openai-compat/*": ["./packages/ai/openai-compat/src/*.ts"],
+      "@effect/ai-openai": ["./packages/ai/openai/src/index.ts"],
+      "@effect/ai-openai/*": ["./packages/ai/openai/src/*.ts"],
+      "@effect/ai-typesafe": ["./packages/ai/typesafe/src/index.ts"],
+      "@effect/ai-typesafe/*": ["./packages/ai/typesafe/src/*.ts"],
+      "@effect/ai-openrouter": ["./packages/ai/openrouter/src/index.ts"],
+      "@effect/ai-openrouter/*": ["./packages/ai/openrouter/src/*.ts"],
+      "@effect/atom-react": ["./packages/atom/react/src/index.ts"],
+      "@effect/atom-react/*": ["./packages/atom/react/src/*.ts"],
+      "@effect/atom-vue": ["./packages/atom/vue/src/index.ts"],
+      "@effect/atom-vue/*": ["./packages/atom/vue/src/*.ts"],
+      "@effect/atom-solid": ["./packages/atom/solid/src/index.ts"],
+      "@effect/atom-solid/*": ["./packages/atom/solid/src/*.ts"],
+      "@effect/opentelemetry": ["./packages/opentelemetry/src/index.ts"],
+      "@effect/opentelemetry/*": ["./packages/opentelemetry/src/*.ts"],
+      "@effect/platform-browser": ["./packages/platform/browser/src/index.ts"],
+      "@effect/platform-browser/*": ["./packages/platform/browser/src/*.ts"],
+      "@effect/platform-bun": ["./packages/platform/bun/src/index.ts"],
+      "@effect/platform-bun/*": ["./packages/platform/bun/src/*.ts"],
+      "@effect/platform-node": ["./packages/platform/node/src/index.ts"],
+      "@effect/platform-node/*": ["./packages/platform/node/src/*.ts"],
+      "@effect/platform-node-shared": ["./packages/platform/node-shared/src/index.ts"],
+      "@effect/platform-node-shared/*": ["./packages/platform/node-shared/src/*.ts"],
+      "@effect/sql-clickhouse": ["./packages/sql/clickhouse/src/index.ts"],
+      "@effect/sql-clickhouse/*": ["./packages/sql/clickhouse/src/*.ts"],
+      "@effect/sql-d1": ["./packages/sql/d1/src/index.ts"],
+      "@effect/sql-d1/*": ["./packages/sql/d1/src/*.ts"],
+      "@effect/sql-libsql": ["./packages/sql/libsql/src/index.ts"],
+      "@effect/sql-libsql/*": ["./packages/sql/libsql/src/*.ts"],
+      "@effect/sql-mssql": ["./packages/sql/mssql/src/index.ts"],
+      "@effect/sql-mssql/*": ["./packages/sql/mssql/src/*.ts"],
+      "@effect/sql-mysql2": ["./packages/sql/mysql2/src/index.ts"],
+      "@effect/sql-mysql2/*": ["./packages/sql/mysql2/src/*.ts"],
+      "@effect/sql-pg": ["./packages/sql/pg/src/index.ts"],
+      "@effect/sql-pg/*": ["./packages/sql/pg/src/*.ts"],
+      "@effect/sql-pglite": ["./packages/sql/pglite/src/index.ts"],
+      "@effect/sql-pglite/*": ["./packages/sql/pglite/src/*.ts"],
+      "@effect/sql-sqlite-bun": ["./packages/sql/sqlite-bun/src/index.ts"],
+      "@effect/sql-sqlite-bun/*": ["./packages/sql/sqlite-bun/src/*.ts"],
+      "@effect/sql-sqlite-do": ["./packages/sql/sqlite-do/src/index.ts"],
+      "@effect/sql-sqlite-do/*": ["./packages/sql/sqlite-do/src/*.ts"],
+      "@effect/sql-sqlite-node": ["./packages/sql/sqlite-node/src/index.ts"],
+      "@effect/sql-sqlite-node/*": ["./packages/sql/sqlite-node/src/*.ts"],
+      "@effect/sql-sqlite-react-native": ["./packages/sql/sqlite-react-native/src/index.ts"],
+      "@effect/sql-sqlite-react-native/*": ["./packages/sql/sqlite-react-native/src/*.ts"],
+      "@effect/sql-sqlite-wasm": ["./packages/sql/sqlite-wasm/src/index.ts"],
+      "@effect/sql-sqlite-wasm/*": ["./packages/sql/sqlite-wasm/src/*.ts"],
+      "@effect/ai-codegen": ["./packages/tools/ai-codegen/src/index.ts"],
+      "@effect/ai-codegen/*": ["./packages/tools/ai-codegen/src/*.ts"],
+      "@effect/api-diff": ["./packages/tools/api-diff/src/Cli.ts"],
+      "@effect/api-diff/*": ["./packages/tools/api-diff/src/*.ts"],
+      "@effect/ai-docgen": ["./packages/tools/ai-docgen/src/index.ts"],
+      "@effect/ai-docgen/*": ["./packages/tools/ai-docgen/src/*.ts"],
+      "@effect/bundle/*": ["./packages/tools/bundle/src/*.ts"],
+      "@effect/docgen": ["./packages/tools/docgen/src/index.ts"],
+      "@effect/docgen/*": ["./packages/tools/docgen/src/*.ts"],
+      "@effect/openapi-generator": ["./packages/tools/openapi-generator/src/index.ts"],
+      "@effect/openapi-generator/*": ["./packages/tools/openapi-generator/src/*.ts"],
+      "@effect/oxc": ["./packages/tools/oxc/src/index.ts"],
+      "@effect/oxc/*": ["./packages/tools/oxc/src/*.ts"],
+      "@effect/tools-utils": ["./packages/tools/utils/src/index.ts"],
+      "@effect/tools-utils/*": ["./packages/tools/utils/src/*.ts"],
+      "@effect/vitest": ["./packages/vitest/src/index.ts"],
+      "@effect/vitest/*": ["./packages/vitest/src/*.ts"],
+      // TODO: This is a special alias used by some tests. We should try to get rid of it.
+      "effect-test/*": ["./packages/effect/test/*.ts"]
+    },
+    "plugins": [{
+      "name": "@effect/language-service",
+      "namespaceImportPackages": [],
+      "includeSuggestionsInTsc": false,
+      "ignoreEffectWarningsInTscExitCode": true,
+      "ignoreEffectErrorsInTscExitCode": true,
+      "overrides": [
+        {
+          "include": ["**/typetest/**/*.ts"],
+          "options": {
+            "diagnosticSeverity": {
+              "floatingEffect": "off"
+            }
+          }
+        }
+      ],
+      "diagnosticSeverity": {
+        "unknownInEffectCatch": "off",
+        "multipleEffectProvide": "off"
+      }
+    }]
+  }
+}

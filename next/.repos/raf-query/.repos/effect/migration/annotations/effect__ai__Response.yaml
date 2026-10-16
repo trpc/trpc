@@ -1,0 +1,72 @@
+"@effect/ai/Response#documentSourcePart":
+  replacement: "Response.makePart(\"source\", { ...params, sourceType: \"document\" })"
+  note: "The lowercase convenience constructor was removed. The DocumentSourcePart model remains, and the generic constructor now requires the document source discriminator."
+"@effect/ai/Response#errorPart":
+  replacement: "Response.makePart(\"error\", params)"
+  note: "The lowercase convenience constructor was removed; construct the retained error part through Response.makePart."
+"@effect/ai/Response#FilePartEncoded":
+  replacement: "Response.FilePartEncoded"
+  note: "Moved to effect/ai/Response; file data remains a base64 string in the encoded representation."
+"@effect/ai/Response#finishPart":
+  replacement: "Response.makePart(\"finish\", params)"
+  note: "The lowercase convenience constructor was removed. V4 Usage has nested inputTokens and outputTokens objects, and FinishPart adds optional HTTP response details."
+"@effect/ai/Response#Part":
+  replacement: "Response.Part"
+  note: "Moved to effect/ai/Response. The non-streaming union now also includes ToolApprovalRequestPart."
+"@effect/ai/Response#PartTypeId":
+  replacement: "Response.isPart"
+  note: "The public PartTypeId was removed and the marker is internal in v4. Use Response.isPart for runtime refinement."
+"@effect/ai/Response#reasoningDeltaPart":
+  replacement: "Response.makePart(\"reasoning-delta\", params)"
+  note: "The lowercase convenience constructor was removed; construct the retained ReasoningDeltaPart through Response.makePart."
+"@effect/ai/Response#reasoningEndPart":
+  replacement: "Response.makePart(\"reasoning-end\", params)"
+  note: "The lowercase convenience constructor was removed; construct the retained ReasoningEndPart through Response.makePart."
+"@effect/ai/Response#ReasoningPartEncoded":
+  replacement: "Response.ReasoningPartEncoded"
+  note: "Moved to effect/ai/Response; the encoded reasoning payload remains text: string."
+"@effect/ai/Response#reasoningStartPart":
+  replacement: "Response.makePart(\"reasoning-start\", params)"
+  note: "The lowercase convenience constructor was removed; construct the retained ReasoningStartPart through Response.makePart."
+"@effect/ai/Response#responseMetadataPart":
+  replacement: "Response.makePart(\"response-metadata\", params)"
+  note: "The lowercase convenience constructor was removed. V4 id, modelId, and timestamp are optional raw values rather than Option values, and optional HTTP request details were added."
+"@effect/ai/Response#textDeltaPart":
+  replacement: "Response.makePart(\"text-delta\", params)"
+  note: "The lowercase convenience constructor was removed; construct the retained TextDeltaPart through Response.makePart."
+"@effect/ai/Response#textEndPart":
+  replacement: "Response.makePart(\"text-end\", params)"
+  note: "The lowercase convenience constructor was removed; construct the retained TextEndPart through Response.makePart."
+"@effect/ai/Response#TextPartEncoded":
+  replacement: "Response.TextPartEncoded"
+  note: "Moved to effect/ai/Response; the encoded text payload remains text: string."
+"@effect/ai/Response#textStartPart":
+  replacement: "Response.makePart(\"text-start\", params)"
+  note: "The lowercase convenience constructor was removed; construct the retained TextStartPart through Response.makePart."
+"@effect/ai/Response#toolCallPart":
+  replacement: "Response.toolCallPart"
+  note: "Moved to effect/ai/Response. The constructor remains, but providerName was removed from tool-call parts."
+"@effect/ai/Response#ToolCallPartEncoded":
+  replacement: "Response.ToolCallPartEncoded"
+  note: "Moved to effect/ai/Response; providerName was removed while providerExecuted remains optional when encoded."
+"@effect/ai/Response#toolParamsDeltaPart":
+  replacement: "Response.makePart(\"tool-params-delta\", params)"
+  note: "The lowercase convenience constructor was removed; construct the retained ToolParamsDeltaPart through Response.makePart."
+"@effect/ai/Response#toolParamsEndPart":
+  replacement: "Response.makePart(\"tool-params-end\", params)"
+  note: "The lowercase convenience constructor was removed; construct the retained ToolParamsEndPart through Response.makePart."
+"@effect/ai/Response#toolParamsStartPart":
+  replacement: "Response.makePart(\"tool-params-start\", params)"
+  note: "The lowercase convenience constructor was removed; providerName was also removed from ToolParamsStartPart in v4."
+"@effect/ai/Response#toolResultPart":
+  replacement: "Response.toolResultPart"
+  note: "Moved to effect/ai/Response; providerName was removed and decoded tool results now require preliminary, normally false."
+"@effect/ai/Response#ToolResultPartEncoded":
+  replacement: "Response.ToolResultPartEncoded"
+  note: "Moved to effect/ai/Response; providerName was removed and optional preliminary was added to the encoded shape."
+"@effect/ai/Response#urlSourcePart":
+  replacement: "Response.makePart(\"source\", { ...params, sourceType: \"url\" })"
+  note: "The lowercase convenience constructor was removed. The UrlSourcePart model remains, and the generic constructor now requires the URL source discriminator."
+"@effect/ai/Response#ToolResultPart":
+  replacement: "Response.ToolResultPart"
+  note: "The schema selects success or failure using isFailure rather than trying both result schemas. It returns Schema.Codec; supply decoding services when decoding and encoding services when encoding."

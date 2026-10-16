@@ -1,0 +1,91 @@
+"effect/FastCheck":
+  replacement: "fast-check"
+  note: "Effect no longer re-exports fast-check. Depend on the fast-check package and import it directly. For Schema-derived generation, use Arbitrary.schema from effect/Arbitrary."
+"effect/FastCheck#ascii":
+  replacement: "FastCheck.string"
+  note: "Depend on fast-check and import it directly. fast-check v4 replaced character arbitraries with string units."
+  example: "FastCheck.string({ unit: \"binary-ascii\", minLength: 1, maxLength: 1 })"
+"effect/FastCheck#asciiString":
+  replacement: "FastCheck.string"
+  note: "Depend on fast-check and import it directly. Use the binary-ascii string unit."
+  example: "FastCheck.string({ ...constraints, unit: \"binary-ascii\" })"
+"effect/FastCheck#base64":
+  replacement: "FastCheck.constantFrom"
+  note: "Depend on fast-check and import it directly. Generate one base64 alphabet character; base64String remains for complete encoded strings."
+  example: "FastCheck.constantFrom(...\"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/\")"
+"effect/FastCheck#bigIntN":
+  replacement: "FastCheck.bigInt"
+  note: "Depend on fast-check and import it directly. Express the signed bit range with min and max constraints."
+"effect/FastCheck#bigUint":
+  replacement: "FastCheck.bigInt"
+  note: "Depend on fast-check and import it directly. Use a minimum of 0n and the previous maximum."
+  example: "FastCheck.bigInt({ min: 0n, max })"
+"effect/FastCheck#BigUintConstraints":
+  replacement: "FastCheck.BigIntConstraints"
+  note: "Depend on fast-check and import it directly. Unsigned bigint constraints were consolidated into BigIntConstraints with min: 0n."
+"effect/FastCheck#bigUintN":
+  replacement: "FastCheck.bigInt"
+  note: "Depend on fast-check and import it directly. Express the unsigned bit range with min and max constraints."
+  example: "FastCheck.bigInt({ min: 0n, max: (1n << BigInt(n)) - 1n })"
+"effect/FastCheck#char":
+  replacement: "FastCheck.string"
+  note: "Depend on fast-check and import it directly. Use a one-unit printable ASCII string."
+  example: "FastCheck.string({ unit: \"grapheme-ascii\", minLength: 1, maxLength: 1 })"
+"effect/FastCheck#char16bits":
+  replacement: "FastCheck.nat"
+  note: "Depend on fast-check and import it directly. Map a 16-bit natural number through String.fromCharCode."
+  example: "FastCheck.nat({ max: 0xffff }).map(String.fromCharCode)"
+"effect/FastCheck#check":
+  replacement: "FastCheck.check"
+  note: "Depend on fast-check and import it directly. The runner remains, but RunDetails.error was replaced by errorInstance in fast-check v4."
+"effect/FastCheck#constant":
+  replacement: "FastCheck.constant"
+  note: "Depend on fast-check and import it directly. The API remains; v4 infers literal types by default."
+"effect/FastCheck#context":
+  replacement: "FastCheck.context"
+  note: "Depend on fast-check and import it directly. The API is otherwise unchanged."
+"effect/FastCheck#fullUnicode":
+  replacement: "FastCheck.string"
+  note: "Depend on fast-check and import it directly. Use a one-unit binary Unicode string."
+  example: "FastCheck.string({ unit: \"binary\", minLength: 1, maxLength: 1 })"
+"effect/FastCheck#fullUnicodeString":
+  replacement: "FastCheck.string"
+  note: "Depend on fast-check and import it directly. Use the binary string unit."
+  example: "FastCheck.string({ ...constraints, unit: \"binary\" })"
+"effect/FastCheck#hexa":
+  replacement: "FastCheck.integer"
+  note: "Depend on fast-check and import it directly. Map an integer from 0 through 15 to a hexadecimal character."
+"effect/FastCheck#hexaString":
+  replacement: "FastCheck.string"
+  note: "Depend on fast-check and import it directly. Pass a hexadecimal-character arbitrary as the string unit."
+"effect/FastCheck#stream":
+  replacement: "FastCheck.stream"
+  note: "Depend on fast-check and import it directly. The API remains; update custom generator and Random implementations for fast-check v4 typings."
+"effect/FastCheck#string16bits":
+  replacement: "FastCheck.string"
+  note: "Depend on fast-check and import it directly. Pass a char16bits-compatible arbitrary as the string unit."
+"effect/FastCheck#stringOf":
+  replacement: "FastCheck.string"
+  note: "Depend on fast-check and import it directly. Pass the former character arbitrary as the unit constraint."
+  example: "FastCheck.string({ ...constraints, unit: arbitrary })"
+"effect/FastCheck#unicode":
+  replacement: "FastCheck.integer"
+  note: "Depend on fast-check and import it directly. Map BMP code points while excluding surrogate code points; prefer the binary string unit for full Unicode."
+"effect/FastCheck#unicodeJson":
+  replacement: "FastCheck.json"
+  note: "Depend on fast-check and import it directly. Select binary or grapheme strings with stringUnit."
+  example: "FastCheck.json({ stringUnit: \"binary\" })"
+"effect/FastCheck#UnicodeJsonSharedConstraints":
+  replacement: "FastCheck.JsonSharedConstraints"
+  note: "Depend on fast-check and import it directly. Unicode JSON generation was consolidated into JsonSharedConstraints.stringUnit."
+"effect/FastCheck#unicodeJsonValue":
+  replacement: "FastCheck.jsonValue"
+  note: "Depend on fast-check and import it directly. Select binary or grapheme strings with stringUnit."
+  example: "FastCheck.jsonValue({ stringUnit: \"binary\" })"
+"effect/FastCheck#unicodeString":
+  replacement: "FastCheck.string"
+  note: "Depend on fast-check and import it directly. Pass a BMP-code-point arbitrary as the unit constraint; prefer unit: binary for full Unicode."
+"effect/FastCheck#uuidV":
+  replacement: "FastCheck.uuid"
+  note: "Depend on fast-check and import it directly. Specify the UUID version through constraints."
+  example: "FastCheck.uuid({ version: 4 })"

@@ -1,0 +1,10 @@
+{
+  "extends": "../../../../../tsconfig.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js",
+    "allowImportingTsExtensions": true,
+    "types": ["node", "vite/client", "vitest/globals"]
+  },
+  "include": ["./*.ts", "./src/**/*"]
+}

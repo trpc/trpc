@@ -1,0 +1,36 @@
+"@effect/sql/Model#Any":
+  replacement: "effect/schema/Model#Any"
+  note: "Moved; v4 schemas track DecodingServices and EncodingServices separately instead of one Context type."
+"@effect/sql/Model#AnyNoContext":
+  replacement: "effect/schema/Model#Any"
+  note: "The distinct no-context alias was removed; Model.Any propagates decoding and encoding services. Constrain both service types to never when required."
+"@effect/sql/Model#BooleanFromNumber":
+  replacement: "effect/Schema#BooleanFromBit"
+  note: "Use the core 0 | 1 to boolean schema; Model.BooleanSqlite is the ready-made model field."
+"@effect/sql/Model#Class":
+  replacement: "effect/schema/Model#Class"
+  note: "Moved; model variants remain select, insert, update, json, jsonCreate, and jsonUpdate."
+"@effect/sql/Model#Date":
+  replacement: "effect/schema/Model#Date"
+  note: "Moved; still serializes DateTime.Utc as a YYYY-MM-DD string."
+"@effect/sql/Model#DateTimeFromDate":
+  replacement: "effect/Schema#DateTimeUtcFromDate"
+  note: "Moved to core Schema and retains Date to DateTime.Utc conversion."
+"@effect/sql/Model#extract":
+  replacement: "effect/schema/Model#extract"
+  note: "Retained after moving the model variant helpers into core Effect's unstable schema package."
+"@effect/sql/Model#fieldFromKey":
+  replacement: "effect/Schema#encodeKeys"
+  note: "The field helper was removed; apply encodeKeys to each concrete struct or model-variant schema that crosses the naming boundary."
+"@effect/sql/Model#Generated":
+  replacement: "effect/schema/Model#GeneratedByDb"
+  note: "Renamed and now read-only, with select and json variants only. Use Model.Field with select, update, and json to preserve writable v3 behavior."
+"@effect/sql/Model#makeDataLoaders":
+  replacement: "effect/sql/SqlModel#makeResolvers"
+  note: "Returns RequestResolvers instead of callable loaders; execute with SqlResolver.request and use RequestResolver delay/batch combinators for batching controls. The insert resolver requires model decoding services as well as insert-schema encoding services."
+"@effect/sql/Model#Override":
+  replacement: "effect/schema/Model#Override"
+  note: "Moved with the same explicit-default override purpose."
+"@effect/sql/Model#fields":
+  replacement: "effect/schema/Model#fields"
+  note: "Moved with the variant-model helpers into core Effect's unstable schema package."

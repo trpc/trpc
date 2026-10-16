@@ -1,0 +1,39 @@
+effect/FiberRefs#delete:
+  replacement: "Context.omit"
+  note: "FiberRefs became fiber Context; omit a Reference key when constructing the replacement Context."
+effect/FiberRefs#empty:
+  replacement: "Context.empty"
+  note: "Use an empty Context as the starting collection of services and reference overrides."
+effect/FiberRefs#fiberRefs:
+  replacement: "none"
+  note: "Context does not expose public enumeration of its Reference keys; retain the keys explicitly if enumeration is required."
+effect/FiberRefs#FiberRefs:
+  replacement: "Context.Context"
+  note: "Fiber-local services and reference overrides are stored directly in the Fiber context in v4."
+effect/FiberRefs#FiberRefsSym:
+  replacement: "none"
+  note: "FiberRefs and its marker symbol were removed."
+effect/FiberRefs#forkAs:
+  replacement: "none"
+  note: "Context is inherited automatically when a v4 child fiber is forked; custom per-reference fork patches were removed."
+effect/FiberRefs#get:
+  replacement: "Context.getOption"
+  note: "Read the service as an Option. Context.Reference defaults also produce Some; use Context.getOrUndefined when only stored overrides should count."
+effect/FiberRefs#getOrDefault:
+  replacement: "Context.get"
+  note: "Reads an override or the Context.Reference default value."
+effect/FiberRefs#joinAs:
+  replacement: "none"
+  note: "Child-to-parent FiberRef joining was removed; pass results explicitly or merge ordinary Context values where appropriate."
+effect/FiberRefs#setAll:
+  replacement: "Effect.provideContext"
+  note: "Provide the replacement Context around the Effect that should observe its services and reference overrides."
+effect/FiberRefs#unsafeMake:
+  replacement: "Context.empty().pipe(Context.add(...))"
+  note: "Build a Context from explicit Reference keys and values; FiberId histories and unsafe local maps no longer exist."
+effect/FiberRefs#updateAs:
+  replacement: "Context.add"
+  note: "Add or replace a Reference value in Context; the FiberId parameter and history are removed."
+effect/FiberRefs#updateManyAs:
+  replacement: "Context.add"
+  note: "Apply explicit Context.add calls for each Reference value; FiberId histories and forkAs are removed."

@@ -1,0 +1,150 @@
+"@effect/cli/Options#all":
+  replacement: "Command.make(name, config)"
+  note: "Collect flags in the config record passed to Command.make; there is no standalone Flag.all."
+"@effect/cli/Options#All.OptionsAny":
+  replacement: "Param.AnyFlag"
+  note: "Use the shared any-flag-parameter type."
+"@effect/cli/Options#All.Return":
+  replacement: "Command.Command.Config.Infer"
+  note: "Infer the output of a command config record; standalone flag collections were removed."
+"@effect/cli/Options#atLeast":
+  replacement: "Flag.atLeast"
+  note: "Use the moved combinator; v4 returns ReadonlyArray rather than NonEmptyArray."
+"@effect/cli/Options#atMost":
+  replacement: "Flag.atMost"
+  note: "Use the moved combinator."
+"@effect/cli/Options#between":
+  replacement: "Flag.between"
+  note: "Use the moved combinator; v4 validates bounds when constructing the parameter."
+"@effect/cli/Options#boolean":
+  replacement: "Flag.Boolean + Flag.withDefault"
+  note: "Use Flag.Boolean(name).pipe(Flag.withDefault(false)) to preserve v3's omitted-flag default; bare Flag.Boolean is now required. --no-name is automatic and aliases are added with Flag.withAlias."
+"@effect/cli/Options#choice":
+  replacement: "Flag.Literals"
+  note: "Use the moved constructor."
+"@effect/cli/Options#choiceWithValue":
+  replacement: "Flag.ChoiceWithValue"
+  note: "Use the moved constructor."
+"@effect/cli/Options#date":
+  replacement: "Flag.Date"
+  note: "Use the moved constructor."
+"@effect/cli/Options#directory":
+  replacement: "Flag.Directory"
+  note: "Use mustExist=true for exists=yes and omit it for either; exists=no has no exact replacement."
+"@effect/cli/Options#file":
+  replacement: "Flag.File"
+  note: "Use mustExist=true for exists=yes and omit it for either; exists=no has no exact replacement."
+"@effect/cli/Options#fileContent":
+  replacement: "Flag.File + Flag.mapEffect"
+  note: "Parse a path and read it with FileSystem.readFile; no binary-content flag constructor remains."
+"@effect/cli/Options#fileParse":
+  replacement: "Flag.FileParse"
+  note: "Pass the old format as an options field; v4 returns parsed content rather than a path/content tuple."
+"@effect/cli/Options#fileSchema":
+  replacement: "Flag.FileSchema"
+  note: "Pass the old format as an options field and use a v4 Schema constraint decoder."
+"@effect/cli/Options#fileText":
+  replacement: "Flag.File + Flag.mapEffect"
+  note: "Flag.FileText returns content only; read after Flag.File when the path/content tuple must be preserved."
+"@effect/cli/Options#filterMap":
+  replacement: "Flag.filterMap"
+  note: "Use the moved combinator and replace the fixed message with an onNone function."
+"@effect/cli/Options#float":
+  replacement: "Flag.Finite"
+  note: "Use the moved constructor."
+"@effect/cli/Options#getHelp":
+  replacement: "none"
+  note: "Per-flag help introspection was removed; Command generates help internally."
+"@effect/cli/Options#getIdentifier":
+  replacement: "none"
+  note: "Public flag identifier introspection was removed."
+"@effect/cli/Options#getUsage":
+  replacement: "none"
+  note: "The public Usage tree was removed; Command generates a usage string internally."
+"@effect/cli/Options#integer":
+  replacement: "Flag.Int"
+  note: "Use the moved constructor."
+"@effect/cli/Options#isBool":
+  replacement: "none"
+  note: "No public flag-shape predicate remains; boolean-shape inspection is internal."
+"@effect/cli/Options#isOptions":
+  replacement: "Param.isParam(value) && value.kind === Param.flagKind"
+  note: "Flags now use the shared Param representation and an explicit kind discriminator."
+"@effect/cli/Options#keyValueMap":
+  replacement: "Flag.KeyValuePair"
+  note: "Renamed and now returns Record<string, string> rather than HashMap."
+"@effect/cli/Options#map":
+  replacement: "Flag.map"
+  note: "Use the moved combinator."
+"@effect/cli/Options#mapEffect":
+  replacement: "Flag.mapEffect"
+  note: "Use the moved combinator; mapping failures are CliError."
+"@effect/cli/Options#mapTryCatch":
+  replacement: "Flag.mapTryCatch"
+  note: "Use the moved combinator; onError now returns a string rather than HelpDoc."
+"@effect/cli/Options#none":
+  replacement: "omit the config entry"
+  note: "V4 Flag.Never is an always-failing sentinel, not v3's empty successful option set."
+"@effect/cli/Options#optional":
+  replacement: "Flag.optional"
+  note: "Use the moved combinator; it still returns Option."
+"@effect/cli/Options#Options":
+  replacement: "Flag.Flag"
+  note: "Options was renamed to Flag in effect/cli."
+"@effect/cli/Options#Options.BooleanOptionsConfig":
+  replacement: "Flag.Boolean + Flag.withAlias + Flag.map"
+  note: "The config object was removed; aliases and value inversion are combinators, while custom negation names need application logic."
+"@effect/cli/Options#Options.PathOptionsConfig":
+  replacement: "{ readonly mustExist?: boolean }"
+  note: "Path options are inline; true replaces exists=yes and omission replaces either. exists=no has no exact replacement."
+"@effect/cli/Options#Options.Variance":
+  replacement: "Flag.Flag"
+  note: "The separate variance artifact was removed; Flag inherits the shared Param variance."
+"@effect/cli/Options#OptionsTypeId":
+  replacement: "Param.isParam(value) && value.kind === Param.flagKind"
+  note: "The public Options type id was removed; use the Param guard and flag kind discriminator."
+"@effect/cli/Options#orElse":
+  replacement: "Flag.orElse(() => fallback)"
+  note: "The fallback is now lazy; add explicit exclusivity validation if both flags must be rejected."
+"@effect/cli/Options#orElseEither":
+  replacement: "Flag.orElseResult(() => fallback)"
+  note: "Either became Result and the fallback is lazy; v4 no longer rejects both flags being present."
+"@effect/cli/Options#parse":
+  replacement: "flag.parse({ flags, arguments: [] })"
+  note: "Parsing is now a Param method over a Record and returns leftover arguments with the value; errors are CliError."
+"@effect/cli/Options#processCommandLine":
+  replacement: "Command.runWith"
+  note: "Raw argv processing is now whole-command execution; no public standalone flag tokenizer remains."
+"@effect/cli/Options#redacted":
+  replacement: "Flag.Redacted"
+  note: "Use the moved constructor."
+"@effect/cli/Options#repeated":
+  replacement: "Flag.variadic"
+  note: "Renamed to variadic; pass optional min and max bounds."
+"@effect/cli/Options#secret":
+  replacement: "Flag.Redacted"
+  note: "The deprecated Secret constructor was removed; use Redacted-backed input."
+"@effect/cli/Options#text":
+  replacement: "Flag.String"
+  note: "Renamed from text to String."
+"@effect/cli/Options#withAlias":
+  replacement: "Flag.withAlias"
+  note: "Use the moved combinator."
+"@effect/cli/Options#withDefault":
+  replacement: "Flag.withDefault"
+  note: "Use the moved combinator; v4 also accepts an Effect fallback."
+"@effect/cli/Options#withDescription":
+  replacement: "Flag.withDescription"
+  note: "Use the moved combinator."
+"@effect/cli/Options#withFallbackConfig":
+  replacement: "Flag.withFallbackConfig"
+  note: "Use the moved combinator; invalid configuration becomes CliError.InvalidValue."
+"@effect/cli/Options#withFallbackPrompt":
+  replacement: "Flag.withFallbackPrompt"
+  note: "Use the moved combinator; v4 can construct the Prompt lazily in Effect."
+"@effect/cli/Options#withPseudoName":
+  replacement: "Flag.withMetavar"
+  note: "Renamed to withMetavar."
+"@effect/cli/Options#withSchema":
+  replacement: "Flag.withSchema"
+  note: "Use the moved combinator with a v4 Schema constraint decoder."

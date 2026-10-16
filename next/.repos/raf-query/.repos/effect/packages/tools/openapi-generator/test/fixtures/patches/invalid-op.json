@@ -1,0 +1,7 @@
+[
+  {
+    "op": "copy",
+    "from": "/info/title",
+    "path": "/info/x-title"
+  }
+]

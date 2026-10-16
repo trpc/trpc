@@ -1,0 +1,14 @@
+{
+	"compilerOptions": {
+		"lib": ["ES2024"],
+		"module": "preserve",
+		"moduleResolution": "bundler",
+		"allowImportingTsExtensions": true,
+		"noEmit": true,
+		"skipLibCheck": true,
+		"strict": true,
+		"target": "ES2024",
+		"types": ["node"]
+	},
+	"include": ["src"]
+}

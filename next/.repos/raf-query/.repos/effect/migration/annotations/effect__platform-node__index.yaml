@@ -1,0 +1,3 @@
+"@effect/platform-node/index":
+  replacement: "@effect/platform-node"
+  note: "The explicit /index entrypoint was removed; import Node-prefixed namespaces from the @effect/platform-node package root or import specific modules directly. Undici is no longer in the root barrel; import it from @effect/platform-node/Undici or directly from undici."

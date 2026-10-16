@@ -1,0 +1,36 @@
+"@effect/typeclass/data/Micro#Chainable":
+  replacement: "effect/Micro"
+  note: "The @effect/typeclass package and its Micro instance dictionaries were removed in v4. Use the concrete effect/Micro operations directly."
+"@effect/typeclass/data/Micro#ConcurrencyOptions":
+  replacement: "effect/Micro"
+  note: "The @effect/typeclass package and its Micro instance dictionaries were removed in v4. Use the concrete effect/Micro operations directly."
+"@effect/typeclass/data/Micro#Covariant":
+  replacement: "effect/Micro"
+  note: "The @effect/typeclass package and its Micro instance dictionaries were removed in v4. Use the concrete effect/Micro operations directly."
+"@effect/typeclass/data/Micro#FlatMap":
+  replacement: "effect/Micro"
+  note: "The @effect/typeclass package and its Micro instance dictionaries were removed in v4. Use the concrete effect/Micro operations directly."
+"@effect/typeclass/data/Micro#getApplicative":
+  replacement: "effect/Micro"
+  note: "The @effect/typeclass package and its Micro instance dictionaries were removed in v4. Use the concrete effect/Micro operations directly."
+"@effect/typeclass/data/Micro#getProduct":
+  replacement: "effect/Micro"
+  note: "The @effect/typeclass package and its Micro instance dictionaries were removed in v4. Use the concrete effect/Micro operations directly."
+"@effect/typeclass/data/Micro#getSemiApplicative":
+  replacement: "effect/Micro"
+  note: "The @effect/typeclass package and its Micro instance dictionaries were removed in v4. Use the concrete effect/Micro operations directly."
+"@effect/typeclass/data/Micro#getSemiProduct":
+  replacement: "effect/Micro"
+  note: "The @effect/typeclass package and its Micro instance dictionaries were removed in v4. Use the concrete effect/Micro operations directly."
+"@effect/typeclass/data/Micro#Invariant":
+  replacement: "effect/Micro"
+  note: "The @effect/typeclass package and its Micro instance dictionaries were removed in v4. Use the concrete effect/Micro operations directly."
+"@effect/typeclass/data/Micro#Monad":
+  replacement: "effect/Micro"
+  note: "The @effect/typeclass package and its Micro instance dictionaries were removed in v4. Use the concrete effect/Micro operations directly."
+"@effect/typeclass/data/Micro#Of":
+  replacement: "effect/Micro"
+  note: "The @effect/typeclass package and its Micro instance dictionaries were removed in v4. Use the concrete effect/Micro operations directly."
+"@effect/typeclass/data/Micro#Pointed":
+  replacement: "effect/Micro"
+  note: "The @effect/typeclass package and its Micro instance dictionaries were removed in v4. Use the concrete effect/Micro operations directly."

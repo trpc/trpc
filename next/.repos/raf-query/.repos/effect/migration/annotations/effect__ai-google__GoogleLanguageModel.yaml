@@ -1,0 +1,3 @@
+"@effect/ai-google/GoogleLanguageModel":
+  replacement: none
+  note: The @effect/ai-google language-model integration was removed from v4. Use a supported v4 provider integration for Gemini models or implement LanguageModel.LanguageModel against Google's current SDK.

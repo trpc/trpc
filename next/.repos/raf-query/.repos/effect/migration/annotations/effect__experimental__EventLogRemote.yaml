@@ -1,0 +1,57 @@
+"@effect/experimental/EventLogRemote#Ack":
+  replacement: none
+  note: A write acknowledgement is now the void success of EventLogMessage.WriteSingleRpc or WriteChunkedRpc.
+"@effect/experimental/EventLogRemote#Changes":
+  replacement: effect/eventlog/EventLogMessage#ChangesRpc
+  note: ChangesRpc replaces the separate request and response models with one streaming RPC.
+"@effect/experimental/EventLogRemote#decodeRequest":
+  replacement: effect/eventlog/EventLogMessage#EventLogRemoteRpcs
+  note: Generic RPC framing and RpcSerialization.layerSchemaBinary replace the module-specific request decoder.
+"@effect/experimental/EventLogRemote#decodeResponse":
+  replacement: effect/eventlog/EventLogMessage#EventLogRemoteRpcs
+  note: Generic RPC framing and RpcSerialization.layerSchemaBinary replace the module-specific response decoder.
+"@effect/experimental/EventLogRemote#encodeRequest":
+  replacement: effect/eventlog/EventLogMessage#EventLogRemoteRpcs
+  note: Generic RPC framing and RpcSerialization.layerSchemaBinary replace the module-specific request encoder.
+"@effect/experimental/EventLogRemote#encodeResponse":
+  replacement: effect/eventlog/EventLogMessage#EventLogRemoteRpcs
+  note: Generic RPC framing and RpcSerialization.layerSchemaBinary replace the module-specific response encoder.
+"@effect/experimental/EventLogRemote#EventLogRemote":
+  replacement: effect/eventlog/EventLogRemote#EventLogRemote
+  note: Use the v4 Context.Service; methods now take storeId-aware options.
+"@effect/experimental/EventLogRemote#fromSocket":
+  replacement: effect/eventlog/EventLogRemote#makeEncrypted + effect/rpc/RpcClient#makeProtocolSocket
+  note: Construct the encrypted remote separately from its generic RPC socket protocol.
+"@effect/experimental/EventLogRemote#Hello":
+  replacement: effect/eventlog/EventLogMessage#HelloResponse
+  note: HelloResponse replaces Hello and includes the v4 authentication challenge; HelloRpc defines the endpoint.
+"@effect/experimental/EventLogRemote#layerWebSocket":
+  replacement: effect/eventlog/EventLogRemote#layerEncrypted + effect/rpc/RpcClient#layerProtocolSocket
+  note: Compose the encrypted remote with the generic socket protocol, SchemaBinary serialization, and a Socket provider.
+"@effect/experimental/EventLogRemote#layerWebSocketBrowser":
+  replacement: effect/eventlog/EventLogRemote#layerEncrypted + effect/rpc/RpcClient#layerProtocolSocket + @effect/platform-browser/BrowserSocket#layerWebSocket
+  note: Compose the encrypted remote and generic RPC socket protocol with the browser WebSocket layer.
+"@effect/experimental/EventLogRemote#Pong":
+  replacement: none
+  note: The event-log Pong model was removed; heartbeats belong to the generic RPC socket protocol.
+"@effect/experimental/EventLogRemote#ProtocolRequest":
+  replacement: effect/eventlog/EventLogMessage#EventLogRemoteRpcs
+  note: EventLogRemoteRpcs and generic RPC serialization replace the old protocol request union.
+"@effect/experimental/EventLogRemote#ProtocolRequestMsgPack":
+  replacement: effect/rpc/RpcSerialization#layerSchemaBinary
+  note: Use the generic SchemaBinary RPC serialization layer instead of a request-specific schema.
+"@effect/experimental/EventLogRemote#ProtocolResponse":
+  replacement: effect/eventlog/EventLogMessage#EventLogRemoteRpcs
+  note: EventLogRemoteRpcs and generic RPC serialization replace the old protocol response union.
+"@effect/experimental/EventLogRemote#ProtocolResponseMsgPack":
+  replacement: effect/rpc/RpcSerialization#layerSchemaBinary
+  note: Use the generic SchemaBinary RPC serialization layer instead of a response-specific schema.
+"@effect/experimental/EventLogRemote#RemoteAdditions":
+  replacement: none
+  note: This unused protocol model has no v4 counterpart.
+"@effect/experimental/EventLogRemote#RequestChanges":
+  replacement: effect/eventlog/EventLogMessage#ChangesRpc
+  note: ChangesRpc replaces the separate request model with one streaming RPC.
+"@effect/experimental/EventLogRemote#StopChanges":
+  replacement: none
+  note: Interrupt the ChangesRpc stream instead of sending a StopChanges message.

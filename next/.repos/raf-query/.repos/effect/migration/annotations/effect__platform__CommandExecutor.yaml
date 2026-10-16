@@ -1,0 +1,18 @@
+"@effect/platform/CommandExecutor#CommandExecutor":
+  replacement: "ChildProcessSpawner.ChildProcessSpawner"
+  note: "The executor service moved to effect/process/ChildProcessSpawner and was renamed."
+"@effect/platform/CommandExecutor#makeExecutor":
+  replacement: "ChildProcessSpawner.make"
+  note: "Use the renamed constructor; it derives output helpers from a spawn implementation."
+"@effect/platform/CommandExecutor#Process":
+  replacement: "ChildProcessSpawner.ChildProcessHandle"
+  note: "Running-process handles were renamed and moved to ChildProcessSpawner."
+"@effect/platform/CommandExecutor#Process.Id":
+  replacement: "ChildProcessSpawner.ProcessId"
+  note: "The process-id brand is now exported directly."
+"@effect/platform/CommandExecutor#ProcessTypeId":
+  replacement: "none"
+  note: "The ChildProcessHandle marker is internal in v4; use the ChildProcessHandle interface."
+"@effect/platform/CommandExecutor#TypeId":
+  replacement: "none"
+  note: "The Context.Service class replaces the public executor type-id alias."

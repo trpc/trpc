@@ -1,0 +1,3 @@
+"@effect/rpc":
+  replacement: "effect/rpc"
+  note: "The @effect/rpc package was merged into the effect package; import the effect/rpc barrel or import specific modules directly (e.g. effect/rpc/<Module>)."

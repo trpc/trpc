@@ -1,0 +1,15 @@
+effect/Pool#Pool:
+  replacement: "Pool.Pool"
+  note: "The model remains but is now Pipeable rather than an Effect subtype; borrow resources explicitly with Pool.get."
+effect/Pool#Pool.Variance:
+  replacement: "none"
+  note: "The public Pool variance marker was removed; use Pool.Pool directly."
+effect/Pool#PoolTypeId:
+  replacement: "none"
+  note: "The Pool type id is internal in v4; use Pool.isPool for runtime refinement."
+effect/Pool#PoolUnify:
+  replacement: "none"
+  note: "Pool is no longer an Effect subtype, so its Effect unification helper was removed; call Pool.get explicitly."
+effect/Pool#PoolUnifyIgnore:
+  replacement: "none"
+  note: "Pool is no longer an Effect subtype, so its Effect unification ignore marker was removed."

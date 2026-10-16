@@ -1,0 +1,48 @@
+"@effect/platform/HttpClientRequest#bodyFileWeb":
+  replacement: "HttpClientRequest.setBody + HttpBody.stream + Stream.fromReadableStream"
+  note: "No one-call replacement remains; stream file.stream() and pass file.type and file.size to HttpBody.stream."
+"@effect/platform/HttpClientRequest#bodyUnsafeJson":
+  replacement: "HttpClientRequest.bodyJsonUnsafe"
+  note: "Renamed to put Unsafe last; serialization remains synchronous and throwing."
+"@effect/platform/HttpClientRequest#get":
+  replacement: "HttpClientRequest.get"
+  note: "Retained; options now use Options.NoUrl and no longer exclude body."
+"@effect/platform/HttpClientRequest#head":
+  replacement: "HttpClientRequest.head"
+  note: "Retained; options now use Options.NoUrl and no longer exclude body."
+"@effect/platform/HttpClientRequest#make":
+  replacement: "HttpClientRequest.make"
+  note: "Retained; all methods now accept Options.NoUrl without the GET/HEAD body restriction."
+"@effect/platform/HttpClientRequest#modify":
+  replacement: "HttpClientRequest.modify"
+  note: "Retained with data-first and data-last overloads."
+"@effect/platform/HttpClientRequest#options":
+  replacement: "HttpClientRequest.options"
+  note: "Retained with Options.NoUrl."
+"@effect/platform/HttpClientRequest#Options.NoBody":
+  replacement: "HttpClientRequest.Options.NoUrl"
+  note: "NoBody was removed; v4 method helpers uniformly omit only url."
+"@effect/platform/HttpClientRequest#patch":
+  replacement: "HttpClientRequest.patch"
+  note: "Retained with Options.NoUrl."
+"@effect/platform/HttpClientRequest#post":
+  replacement: "HttpClientRequest.post"
+  note: "Retained with Options.NoUrl."
+"@effect/platform/HttpClientRequest#put":
+  replacement: "HttpClientRequest.put"
+  note: "Retained with Options.NoUrl."
+"@effect/platform/HttpClientRequest#setBody":
+  replacement: "HttpClientRequest.setBody"
+  note: "Retained and still synchronizes body content metadata into headers."
+"@effect/platform/HttpClientRequest#setHeader":
+  replacement: "HttpClientRequest.setHeader"
+  note: "Retained with data-first and data-last overloads."
+"@effect/platform/HttpClientRequest#setHeaders":
+  replacement: "HttpClientRequest.setHeaders"
+  note: "Retained with data-first and data-last overloads."
+"@effect/platform/HttpClientRequest#toUrl":
+  replacement: "HttpClientRequest.toUrl"
+  note: "Retained and still returns Option<URL>."
+"@effect/platform/HttpClientRequest#TypeId":
+  replacement: "HttpClientRequest.isHttpClientRequest"
+  note: "The request brand is private in v4; use the public runtime refinement."

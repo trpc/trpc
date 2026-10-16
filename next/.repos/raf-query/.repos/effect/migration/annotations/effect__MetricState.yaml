@@ -1,0 +1,60 @@
+effect/MetricState#counter:
+  replacement: "Metric.CounterState"
+  note: "There is no state constructor. Obtain the structural state with Metric.value(Metric.counter(...))."
+effect/MetricState#frequency:
+  replacement: "Metric.FrequencyState"
+  note: "There is no state constructor. Obtain the structural state with Metric.value(Metric.frequency(...))."
+effect/MetricState#gauge:
+  replacement: "Metric.GaugeState"
+  note: "There is no state constructor. Obtain the structural state with Metric.value(Metric.gauge(...))."
+effect/MetricState#histogram:
+  replacement: "Metric.HistogramState"
+  note: "There is no state constructor. Obtain the structural state with Metric.value(Metric.histogram(...))."
+effect/MetricState#summary:
+  replacement: "Metric.SummaryState"
+  note: "There is no state constructor. Obtain the structural state with Metric.value(Metric.summary(...))."
+effect/MetricState#MetricState:
+  replacement: "Metric.Metric.State"
+  note: "The common branded state model was removed; extract a complete metric's state with Metric.Metric.State<M> or use a concrete state interface."
+effect/MetricState#MetricState.Untyped:
+  replacement: "Metric.Metric.Snapshot['state']"
+  note: "Use the state union from Metric.Metric.Snapshot, or explicitly union the five structural state interfaces."
+effect/MetricState#MetricState.Variance:
+  replacement: "none"
+  note: "States are structural objects and no longer carry a variance brand."
+effect/MetricState#isMetricState:
+  replacement: "none"
+  note: "Standalone state guards were removed. Retain the enclosing snapshot and switch on snapshot.type for runtime discrimination."
+effect/MetricState#isCounterState:
+  replacement: "none"
+  note: "Standalone state guards were removed. Retain the enclosing snapshot and switch on snapshot.type for runtime discrimination."
+effect/MetricState#isFrequencyState:
+  replacement: "none"
+  note: "Standalone state guards were removed. Retain the enclosing snapshot and switch on snapshot.type for runtime discrimination."
+effect/MetricState#isGaugeState:
+  replacement: "none"
+  note: "Standalone state guards were removed. Retain the enclosing snapshot and switch on snapshot.type for runtime discrimination."
+effect/MetricState#isHistogramState:
+  replacement: "none"
+  note: "Standalone state guards were removed. Retain the enclosing snapshot and switch on snapshot.type for runtime discrimination."
+effect/MetricState#isSummaryState:
+  replacement: "none"
+  note: "Standalone state guards were removed. Retain the enclosing snapshot and switch on snapshot.type for runtime discrimination."
+effect/MetricState#MetricStateTypeId:
+  replacement: "none"
+  note: "All state brand symbols were removed; v4 state interfaces are structural."
+effect/MetricState#CounterStateTypeId:
+  replacement: "none"
+  note: "All state brand symbols were removed; v4 state interfaces are structural."
+effect/MetricState#FrequencyStateTypeId:
+  replacement: "none"
+  note: "All state brand symbols were removed; v4 state interfaces are structural."
+effect/MetricState#GaugeStateTypeId:
+  replacement: "none"
+  note: "All state brand symbols were removed; v4 state interfaces are structural."
+effect/MetricState#HistogramStateTypeId:
+  replacement: "none"
+  note: "All state brand symbols were removed; v4 state interfaces are structural."
+effect/MetricState#SummaryStateTypeId:
+  replacement: "none"
+  note: "All state brand symbols were removed; v4 state interfaces are structural."

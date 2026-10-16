@@ -1,0 +1,83 @@
+{
+  "name": "@benchmarks/bundle-size",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node ../../scripts/benchmarks/bundle-size/measure.mjs --skip-package-builds --measurements-only",
+    "test:unit": "node --test ../../scripts/benchmarks/bundle-size/pr-report.test.mjs ../../scripts/benchmarks/bundle-size/run.test.mjs ../../scripts/benchmarks/bundle-size/report.test.mjs ../../scripts/benchmarks/bundle-size/build.test.mjs ../../scripts/benchmarks/bundle-size/compress.test.mjs ../../scripts/benchmarks/bundle-size/timings.test.mjs"
+  },
+  "nx": {
+    "targets": {
+      "build": {
+        "inputs": [
+          "buildProduction",
+          "^buildProduction",
+          "dependentTaskOutputs",
+          "{workspaceRoot}/scripts/benchmarks/bundle-size/measure.mjs",
+          "{workspaceRoot}/scripts/benchmarks/bundle-size/compress.mjs",
+          "{workspaceRoot}/scripts/benchmarks/bundle-size/timings.mjs",
+          "{workspaceRoot}/scripts/benchmarks/bundle-size/report.mjs",
+          {
+            "runtime": "node --version"
+          }
+        ],
+        "outputs": [
+          "{projectRoot}/dist",
+          "{projectRoot}/results/measurements.json",
+          "{projectRoot}/results/benchmark-action.json"
+        ],
+        "dependsOn": [
+          {
+            "projects": [
+              "@tanstack/react-router",
+              "@tanstack/react-router-ssr-query",
+              "@tanstack/react-start",
+              "@tanstack/router-plugin",
+              "@tanstack/solid-router",
+              "@tanstack/solid-start",
+              "@tanstack/vue-router",
+              "@tanstack/vue-start"
+            ],
+            "target": "build"
+          }
+        ]
+      },
+      "test:unit": {
+        "dependsOn": [],
+        "inputs": [
+          "default",
+          "^production",
+          "{workspaceRoot}/scripts/benchmarks/bundle-size/*.mjs"
+        ]
+      }
+    }
+  },
+  "dependencies": {
+    "@tanstack/react-router": "workspace:^",
+    "@tanstack/react-router-ssr-query": "workspace:^",
+    "@tanstack/solid-router": "workspace:^",
+    "@tanstack/vue-router": "workspace:^",
+    "@tanstack/react-start": "workspace:^",
+    "@tanstack/solid-start": "workspace:^",
+    "@tanstack/vue-start": "workspace:^",
+    "@tanstack/react-query": "catalog:",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "solid-js": "^1.9.10",
+    "vue": "^3.5.16"
+  },
+  "devDependencies": {
+    "@rsbuild/core": "^2.1.0",
+    "@rsbuild/plugin-react": "^2.0.0",
+    "@tanstack/router-plugin": "workspace:^",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "@vitejs/plugin-vue": "^6.0.5",
+    "@vitejs/plugin-vue-jsx": "^5.1.5",
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "vite": "^8.0.14",
+    "vite-plugin-solid": "^2.11.11"
+  }
+}

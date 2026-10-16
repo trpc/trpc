@@ -1,0 +1,213 @@
+effect/Cause#andThen:
+  replacement: "Cause.fromReasons(self.reasons.flatMap(...))"
+  note: "No direct v4 combinator. For each Fail reason, splice either f(reason.error).reasons or the constant cause's reasons; retain Die and Interrupt reasons, then rebuild with Cause.fromReasons."
+effect/Cause#as:
+  replacement: "Cause.map(self, () => error)"
+  note: "Use Cause.map with a constant function; only Fail errors change and Die/Interrupt reasons remain."
+effect/Cause#Cause:
+  replacement: "Cause.Cause"
+  note: "The name remains, but v4 Cause<E> is a wrapper with readonly reasons: ReadonlyArray<Cause.Reason<E>>, not the v3 Empty/Fail/Die/Interrupt/Sequential/Parallel tree."
+effect/Cause#Cause.Variance:
+  replacement: "none"
+  note: "The public variance helper was removed. Cause.Cause is directly branded by Cause.TypeId; application code should not reproduce the old variance member."
+effect/Cause#CauseReducer:
+  replacement: "cause.reasons.reduce"
+  note: "The six-case tree reducer type was removed with Empty, Sequential, and Parallel. Reduce the flat Reason array and switch on Fail, Die, or Interrupt instead."
+effect/Cause#CauseTypeId:
+  replacement: "Cause.TypeId"
+  note: "The brand export is Cause.TypeId, a literal-string const. Use typeof Cause.TypeId in type positions; the v3 unique-symbol CauseTypeId alias is gone."
+effect/Cause#contains:
+  replacement: "Equal.equals(Cause.combine(self, that), self)"
+  note: "There are no subtrees in v4. This tests whether all reasons from that are already present in self under v4 reason equality; use Equal.equals(self, that) when only whole-cause equality is intended."
+effect/Cause#defects:
+  replacement: "self.reasons.filter(Cause.isDieReason).map((reason) => reason.defect)"
+  note: "Collect defect values from the flat Reason array. The result is a standard array rather than v3 Chunk."
+effect/Cause#Die:
+  replacement: "Cause.Die"
+  note: "The name remains, but Cause.Die is now a Reason stored in cause.reasons, not a Cause variant. Construct a standalone reason with Cause.makeDieReason or a cause with Cause.die."
+effect/Cause#dieOption:
+  replacement: "Cause.findDefect"
+  note: "Cause.findDefect returns Result.Result<unknown, Cause.Cause<E>>, not Option. Match the Result or convert it to Option when the old return shape is required."
+effect/Cause#Empty:
+  replacement: "Cause.empty"
+  note: "The Empty subtype and _tag were removed. Empty is Cause.empty, represented by cause.reasons.length === 0."
+effect/Cause#ExceededCapacityException:
+  replacement: "Cause.ExceededCapacityError"
+  note: "Rename the class/type and update the discriminant from ExceededCapacityException to ExceededCapacityError."
+effect/Cause#ExceededCapacityExceptionTypeId:
+  replacement: "Cause.ExceededCapacityErrorTypeId"
+  note: "Rename the brand; v4 exports a literal-string const, so use typeof Cause.ExceededCapacityErrorTypeId in type positions."
+effect/Cause#Fail:
+  replacement: "Cause.Fail"
+  note: "The name remains, but Cause.Fail<E> is now a Reason stored in cause.reasons, not a Cause variant. Construct a standalone reason with Cause.makeFailReason or a cause with Cause.fail."
+effect/Cause#failureOption:
+  replacement: "Cause.findErrorOption"
+  note: "Direct Option-based replacement for extracting the first typed Fail error value."
+effect/Cause#failureOrCause:
+  replacement: "Cause.findError"
+  note: "Use the v4 Result-based split: success is the first E and failure is the original Cause<never> when no Fail reason exists."
+effect/Cause#failures:
+  replacement: "self.reasons.filter(Cause.isFailReason).map((reason) => reason.error)"
+  note: "Collect typed error values from the flat Reason array. The result is a standard array rather than v3 Chunk."
+effect/Cause#filter:
+  replacement: "Cause.fromReasons(self.reasons.filter(...))"
+  note: "No exact tree-level equivalent: v3 predicates selected recursive child causes. Rewrite the predicate for Cause.Reason values, filter cause.reasons, and rebuild with Cause.fromReasons."
+effect/Cause#find:
+  replacement: "Option.firstSomeOf(self.reasons.map(...))"
+  note: "No recursive nodes remain. Apply the partial function to Reason values and take the first Some, or use Cause.findFail/findError/findDie/findDefect/findInterrupt for standard searches."
+effect/Cause#flatMap:
+  replacement: "Cause.fromReasons(self.reasons.flatMap((reason) => Cause.isFailReason(reason) ? f(reason.error).reasons : [reason]))"
+  note: "No direct v4 export. Flat-map only Fail reasons into replacement causes, preserve Die/Interrupt reasons, and rebuild from the resulting Reason array."
+effect/Cause#flatten:
+  replacement: "Cause.fromReasons(self.reasons.flatMap((reason) => Cause.isFailReason(reason) ? reason.error.reasons : [reason]))"
+  note: "No direct v4 export. For Cause<Cause<E>>, splice each Fail reason's nested cause.reasons and retain Die/Interrupt reasons."
+effect/Cause#flipCauseOption:
+  replacement: "Cause.fromReasons + Option"
+  note: "Rewrite over reasons: drop Fail(None), replace Fail(Some(e)) with Cause.makeFailReason(e), retain Die/Interrupt, then return None only when a non-empty input loses every reason; preserve Some(Cause.empty) for an empty input."
+effect/Cause#IllegalArgumentException:
+  replacement: "Cause.IllegalArgumentError"
+  note: "Rename the class/type and update the discriminant from IllegalArgumentException to IllegalArgumentError."
+effect/Cause#IllegalArgumentExceptionTypeId:
+  replacement: "Cause.IllegalArgumentErrorTypeId"
+  note: "Rename the brand; v4 exports a literal-string const, so use typeof Cause.IllegalArgumentErrorTypeId in type positions."
+effect/Cause#Interrupt:
+  replacement: "Cause.Interrupt"
+  note: "The name remains, but it is now a Reason in cause.reasons rather than a Cause variant, and fiberId changed from FiberId.FiberId to number | undefined. Use Cause.makeInterruptReason or Cause.interrupt."
+effect/Cause#InterruptedException:
+  replacement: "none"
+  note: "The public exception class was removed. Represent cancellation with Cause.interrupt; Cause.prettyErrors creates an ordinary Error named InterruptError for interrupt-only rendering, but no class is exported."
+effect/Cause#InterruptedExceptionTypeId:
+  replacement: "none"
+  note: "Removed with InterruptedException; v4 exports no interruption-error brand. Inspect the Cause with Cause.hasInterrupts or Cause.hasInterruptsOnly instead."
+effect/Cause#interruptOption:
+  replacement: "Cause.findInterrupt"
+  note: "The replacement returns Result.Result<Cause.Interrupt, Cause.Cause<E>> rather than Option<FiberId>; on success read reason.fiberId, now number | undefined."
+effect/Cause#InvalidPubSubCapacityException:
+  replacement: "Error"
+  note: "The dedicated public type was removed. Current v4 PubSub capacity validation throws a standard global Error with the capacity message."
+effect/Cause#InvalidPubSubCapacityExceptionTypeId:
+  replacement: "none"
+  note: "Removed with InvalidPubSubCapacityException; the standard Error now thrown by PubSub has no Effect-specific brand."
+effect/Cause#isDie:
+  replacement: "Cause.hasDies"
+  note: "Use the v4 cause-level predicate for the presence of at least one Die reason."
+effect/Cause#isDieType:
+  replacement: "Cause.isDieReason"
+  note: "Apply this guard to an entry of cause.reasons; Cause itself is no longer a Die union variant."
+effect/Cause#isEmpty:
+  replacement: "self.reasons.length === 0"
+  note: "V4 represents an empty cause with an empty reasons array and exports no isEmpty function."
+effect/Cause#isEmptyType:
+  replacement: "self.reasons.length === 0"
+  note: "The check remains possible, but there is no Empty subtype to narrow to because v4 Cause is not a variant union."
+effect/Cause#isExceededCapacityException:
+  replacement: "Cause.isExceededCapacityError"
+  note: "Rename the guard along with ExceededCapacityError."
+effect/Cause#isFailType:
+  replacement: "Cause.isFailReason"
+  note: "Apply this guard to an entry of cause.reasons; Cause itself is no longer a Fail union variant."
+effect/Cause#isFailure:
+  replacement: "Cause.hasFails"
+  note: "Use the v4 cause-level predicate for the presence of at least one Fail reason."
+effect/Cause#isIllegalArgumentException:
+  replacement: "Cause.isIllegalArgumentError"
+  note: "Rename the guard along with IllegalArgumentError."
+effect/Cause#isInterrupted:
+  replacement: "Cause.hasInterrupts"
+  note: "Use the v4 cause-level predicate for the presence of at least one Interrupt reason."
+effect/Cause#isInterruptedException:
+  replacement: "none"
+  note: "No v4 InterruptError class or unknown-value guard is exported. When the Cause is available, test Cause.hasInterruptsOnly before squashing or rendering it."
+effect/Cause#isInterruptedOnly:
+  replacement: "Cause.hasInterruptsOnly"
+  note: "Direct cause-level rename; it is false for Cause.empty and true only when at least one reason exists and every reason is Interrupt."
+effect/Cause#isInterruptType:
+  replacement: "Cause.isInterruptReason"
+  note: "Apply this guard to an entry of cause.reasons; Cause itself is no longer an Interrupt union variant."
+effect/Cause#isNoSuchElementException:
+  replacement: "Cause.isNoSuchElementError"
+  note: "Rename the guard along with NoSuchElementError."
+effect/Cause#isParallelType:
+  replacement: "none"
+  note: "Parallel cause nodes were removed; v4 stores all reasons in one flat array and does not retain composition kind."
+effect/Cause#isRuntimeException:
+  replacement: "none"
+  note: "RuntimeException and its brand were removed. Use instanceof Error for generic errors or define a Data.Error/Data.TaggedError class with its own guard when nominal recognition is required."
+effect/Cause#isSequentialType:
+  replacement: "none"
+  note: "Sequential cause nodes were removed; v4 stores all reasons in one flat array and does not retain composition kind."
+effect/Cause#isTimeoutException:
+  replacement: "Cause.isTimeoutError"
+  note: "Rename the guard along with TimeoutError."
+effect/Cause#isUnknownException:
+  replacement: "Cause.isUnknownError"
+  note: "Rename the guard along with UnknownError."
+effect/Cause#keepDefects:
+  replacement: "Cause.fromReasons(self.reasons.filter(Cause.isDieReason))"
+  note: "Keep every Die reason, not merely the first defect. Return Option.none when the filtered array is empty and Option.some of the rebuilt cause otherwise; Cause.findDefect alone is not behaviorally equivalent."
+effect/Cause#linearize:
+  replacement: "self.reasons"
+  note: "No direct replacement: v4 discarded sequential/parallel structure, so there are no parallel branches to linearize. Rewrite the consumer to process the flat Reason array."
+effect/Cause#NoSuchElementException:
+  replacement: "Cause.NoSuchElementError"
+  note: "Rename the class/type and update the discriminant from NoSuchElementException to NoSuchElementError."
+effect/Cause#NoSuchElementExceptionTypeId:
+  replacement: "Cause.NoSuchElementErrorTypeId"
+  note: "Rename the brand; v4 exports a literal-string const, so use typeof Cause.NoSuchElementErrorTypeId in type positions."
+effect/Cause#originalError:
+  replacement: "Function.identity"
+  note: "V3 used this to unwrap span-capture proxies. V4 stores tracing data on Reason.annotations and no longer proxies errors, so the input is already the original value."
+effect/Cause#parallel:
+  replacement: "Cause.combine"
+  note: "Combine the two flat reason arrays; v4 intentionally no longer records whether composition was parallel or sequential."
+effect/Cause#Parallel:
+  replacement: "none"
+  note: "Parallel cause nodes were removed; v4 stores all reasons in one flat array and does not retain composition kind."
+effect/Cause#PrettyError:
+  replacement: "Error"
+  note: "Cause.prettyErrors now returns Array<globalThis.Error>. The dedicated span field is gone; tracing information is incorporated from Reason annotations into rendered stacks."
+effect/Cause#reduce:
+  replacement: "self.reasons.reduce"
+  note: "Reduce the flat Reason array directly. The callback now sees only Fail, Die, and Interrupt reasons, never Empty or composition nodes."
+effect/Cause#reduceWithContext:
+  replacement: "self.reasons.reduce"
+  note: "Capture the context in the reducer closure and reduce the flat Reason array; sequentialCase and parallelCase have no v4 analogue."
+effect/Cause#RuntimeException:
+  replacement: "Error"
+  note: "The dedicated class was removed and v4 uses global Error for generic defects. Use Data.Error or Data.TaggedError instead when a yieldable typed error is required."
+effect/Cause#RuntimeExceptionTypeId:
+  replacement: "none"
+  note: "Removed with RuntimeException. Define and guard a custom Data.Error/Data.TaggedError type if nominal branding is required."
+effect/Cause#sequential:
+  replacement: "Cause.combine"
+  note: "Combine the two flat reason arrays; v4 intentionally no longer records whether composition was parallel or sequential."
+effect/Cause#Sequential:
+  replacement: "none"
+  note: "Sequential cause nodes were removed; v4 stores all reasons in one flat array and does not retain composition kind."
+effect/Cause#size:
+  replacement: "self.reasons.length"
+  note: "The v3 node count becomes the number of flat reasons in v4."
+effect/Cause#squashWith:
+  replacement: "Result.match(Cause.findError(self), { onSuccess: f, onFailure: Cause.squash })"
+  note: "Apply f only to the first typed Fail error; if no Fail exists, squash the returned Cause<never>. This preserves v3's priority and avoids evaluating f for later Fail reasons."
+effect/Cause#stripFailures:
+  replacement: "Cause.fromReasons(self.reasons.filter((reason) => !Cause.isFailReason(reason)))"
+  note: "Remove Fail reasons and retain Die plus Interrupt reasons, then rebuild the cause. The v3 prose saying interrupts were removed did not match its implementation."
+effect/Cause#stripSomeDefects:
+  replacement: "Cause.fromReasons + Option"
+  note: "Filter out each Die reason for which pf(reason.defect) is Some, retain all other reasons, and rebuild. Return None only when a non-empty input loses every reason; preserve Some(Cause.empty) for empty input."
+effect/Cause#TimeoutException:
+  replacement: "Cause.TimeoutError"
+  note: "Rename the class/type and update the discriminant from TimeoutException to TimeoutError."
+effect/Cause#TimeoutExceptionTypeId:
+  replacement: "Cause.TimeoutErrorTypeId"
+  note: "Rename the brand; v4 exports a literal-string const, so use typeof Cause.TimeoutErrorTypeId in type positions."
+effect/Cause#UnknownException:
+  replacement: "Cause.UnknownError"
+  note: "Rename the class/type and discriminant. The original unknown value is now exposed through the standard Error.cause property, not v3's .error field."
+effect/Cause#UnknownExceptionTypeId:
+  replacement: "Cause.UnknownErrorTypeId"
+  note: "Rename the brand; v4 exports a literal-string const, so use typeof Cause.UnknownErrorTypeId in type positions."
+effect/Cause#YieldableError:
+  replacement: "Cause.YieldableError / Data.Error"
+  note: "Cause.YieldableError remains as the interface/type, but its public constructor value was removed. Extend Data.Error for an untagged yieldable error or Data.TaggedError for a tagged one."

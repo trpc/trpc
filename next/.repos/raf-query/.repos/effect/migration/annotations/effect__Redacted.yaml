@@ -1,0 +1,15 @@
+"effect/Redacted#getEquivalence":
+  replacement: "Redacted.makeEquivalence"
+  note: "Renamed to the v4 make-prefix convention."
+"effect/Redacted#Redacted":
+  replacement: "Redacted.Redacted"
+  note: "The sensitive-value wrapper remains and now optionally carries a label."
+"effect/Redacted#Redacted.Variance":
+  replacement: "Redacted.Redacted.Variance"
+  note: "The type-level variance member remains."
+"effect/Redacted#RedactedTypeId":
+  replacement: "Redacted.isRedacted"
+  note: "The marker is private in v4; use the public guard for runtime narrowing."
+"effect/Redacted#unsafeWipe":
+  replacement: "Redacted.wipeUnsafe"
+  note: "Renamed to use the v4 Unsafe suffix convention."

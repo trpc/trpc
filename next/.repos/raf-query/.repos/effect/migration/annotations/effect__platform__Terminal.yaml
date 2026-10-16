@@ -1,0 +1,6 @@
+"@effect/platform/Terminal#isQuitException":
+  replacement: "Terminal.isQuitError"
+  note: "The quit sentinel was renamed from QuitException to QuitError."
+"@effect/platform/Terminal#QuitException":
+  replacement: "Terminal.QuitError"
+  note: "The quit sentinel was renamed and moved to effect/Terminal."

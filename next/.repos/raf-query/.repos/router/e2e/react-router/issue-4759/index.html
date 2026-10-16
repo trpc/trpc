@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Issue 4759</title>
+    <style>
+      html,
+      body,
+      #app,
+      [data-state] {
+        height: 100%;
+        margin: 0;
+      }
+
+      [data-state='html'] {
+        background: blue;
+      }
+
+      [data-state='shell'] {
+        background: red;
+      }
+
+      [data-state='pending'] {
+        background: yellow;
+      }
+
+      [data-state='loaded'] {
+        background: green;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div data-state="html">HTML fallback</div>
+    </div>
+    <script>
+      globalThis.__paintStates = []
+
+      function recordPaintState() {
+        const app = document.getElementById('app')
+        const state = app.querySelector('[data-state="loaded"]')
+          ? 'loaded'
+          : app.querySelector('[data-state="pending"]')
+            ? 'pending'
+            : app.querySelector('[data-state="shell"]')
+              ? 'shell'
+              : app.querySelector('[data-state="html"]')
+                ? 'html'
+                : 'empty'
+
+        globalThis.__paintStates.push(state)
+        if (state !== 'loaded') {
+          requestAnimationFrame(recordPaintState)
+        }
+      }
+
+      requestAnimationFrame(recordPaintState)
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

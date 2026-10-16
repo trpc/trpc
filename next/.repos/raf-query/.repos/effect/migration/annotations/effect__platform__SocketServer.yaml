@@ -1,0 +1,12 @@
+"@effect/platform/SocketServer#Address":
+  replacement: "effect/net/NetAddress#SocketAddress"
+  note: "Replaced by the shared concrete internet-or-Unix socket address union."
+"@effect/platform/SocketServer#ErrorTypeId":
+  replacement: "SocketServer.ErrorTypeId"
+  note: "The API moved to effect/socket/SocketServer and retains this name."
+"@effect/platform/SocketServer#TcpAddress":
+  replacement: "effect/net/NetAddress#InetAddress"
+  note: "Replaced by the shared resolved internet-address model; use address and port instead of hostname and port."
+"@effect/platform/SocketServer#UnixAddress":
+  replacement: "effect/net/NetAddress#UnixPathAddress"
+  note: "Replaced by the shared Unix filesystem-path address model."

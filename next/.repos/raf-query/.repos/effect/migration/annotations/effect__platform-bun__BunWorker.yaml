@@ -1,0 +1,6 @@
+"@effect/platform-bun/BunWorker#layerManager":
+  replacement: "BunWorker.layerPlatform"
+  note: "WorkerManager was removed. Provide WorkerPlatform directly, or use BunWorker.layer(spawn) when a Worker.Spawner is also required."
+"@effect/platform-bun/BunWorker#layerWorker":
+  replacement: "BunWorker.layerPlatform"
+  note: "PlatformWorker became Worker.WorkerPlatform; BunWorker.layer(spawn) combines the platform and spawner layers."

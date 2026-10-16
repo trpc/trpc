@@ -1,0 +1,66 @@
+"effect/ConfigError#And":
+  replacement: "SchemaIssue.Composite"
+  note: "The ConfigError boolean ADT was removed; combined schema failures are represented inside Config.ConfigError.cause as SchemaIssue.Composite."
+"effect/ConfigError#ConfigError":
+  replacement: "Config.ConfigError"
+  note: "Config errors are now a class in effect/Config wrapping either ConfigProvider.SourceError or Schema.SchemaError."
+"effect/ConfigError#ConfigError.Proto":
+  replacement: "Config.ConfigError"
+  note: "The public prototype interface was removed; use the Config.ConfigError class."
+"effect/ConfigError#ConfigError.Reducer":
+  replacement: "none"
+  note: "The ConfigError-specific reducer API was removed; inspect ConfigError.cause and recurse over SchemaError.issue when structured handling is required."
+"effect/ConfigError#ConfigErrorReducer":
+  replacement: "none"
+  note: "The ConfigError-specific reducer API was removed; inspect ConfigError.cause and recurse over SchemaError.issue when structured handling is required."
+"effect/ConfigError#ConfigErrorTypeId":
+  replacement: "error instanceof Config.ConfigError"
+  note: "The marker is gone because ConfigError is a class in v4."
+"effect/ConfigError#InvalidData":
+  replacement: "new Config.ConfigError(new Schema.SchemaError(issue))"
+  note: "Invalid configuration is now expressed as a SchemaIssue wrapped by SchemaError and Config.ConfigError."
+"effect/ConfigError#isAnd":
+  replacement: "error.cause.issue._tag === \"Composite\""
+  note: "After narrowing cause with Schema.isSchemaError, inspect the SchemaIssue tag; the old And node no longer exists."
+"effect/ConfigError#isConfigError":
+  replacement: "error instanceof Config.ConfigError"
+  note: "ConfigError is a class in v4."
+"effect/ConfigError#isInvalidData":
+  replacement: "Schema.isSchemaError(error.cause)"
+  note: "Parsing and validation failures are SchemaError causes; inspect the contained SchemaIssue for finer classification."
+"effect/ConfigError#isMissingData":
+  replacement: "none"
+  note: "Do not infer semantic absence from a SchemaIssue. Use Config.withDefault or Config.option; they recover missing data, including Config.all groups with missing children, while preserving successful undefined and propagating validation and source errors."
+"effect/ConfigError#isMissingDataOnly":
+  replacement: "Config.withDefault / Config.option"
+  note: "The public classifier was removed. These combinators handle absence without recursively classifying SchemaIssue values; invalid input and source errors still propagate."
+"effect/ConfigError#isOr":
+  replacement: "error.cause.issue._tag === \"AnyOf\""
+  note: "After narrowing cause with Schema.isSchemaError, AnyOf identifies schema union failures. Config.orElse does not combine failed attempts; it propagates only the fallback's error."
+"effect/ConfigError#isSourceUnavailable":
+  replacement: "error.cause instanceof ConfigProvider.SourceError"
+  note: "Provider source failures now use the ConfigProvider.SourceError class."
+"effect/ConfigError#isUnsupported":
+  replacement: "none"
+  note: "The Unsupported variant was removed; report unsupported custom decoding through a SchemaError or source failures through ConfigProvider.SourceError."
+"effect/ConfigError#MissingData":
+  replacement: "none"
+  note: "There is no public missing-data error variant. A required absent config ultimately fails with a SchemaError, while Config.withDefault and Config.option handle semantic absence before it enters the public Effect error channel."
+"effect/ConfigError#Options":
+  replacement: "none"
+  note: "The shared constructor options type was removed; ConfigProvider.SourceError accepts message and optional cause, while Schema issues have issue-specific constructors."
+"effect/ConfigError#Or":
+  replacement: "SchemaIssue.AnyOf"
+  note: "The ConfigError boolean ADT was removed. Schema union failures can use SchemaIssue.AnyOf inside Config.ConfigError.cause; Config.orElse adopts the fallback's result instead of combining failed attempts."
+"effect/ConfigError#prefixed":
+  replacement: "SchemaIssue.Pointer"
+  note: "Represent path context by wrapping the underlying SchemaIssue in a Pointer before constructing SchemaError."
+"effect/ConfigError#reduceWithContext":
+  replacement: "none"
+  note: "The specialized fold was removed; branch on ConfigError.cause, then recurse over the public SchemaIssue union if a fold is needed."
+"effect/ConfigError#SourceUnavailable":
+  replacement: "new ConfigProvider.SourceError({ message, cause })"
+  note: "Source failures moved to effect/ConfigProvider and are wrapped by Config.ConfigError when a Config is parsed."
+"effect/ConfigError#Unsupported":
+  replacement: "none"
+  note: "The variant was removed; use a SchemaError for unsupported input or ConfigProvider.SourceError for source capability failures."

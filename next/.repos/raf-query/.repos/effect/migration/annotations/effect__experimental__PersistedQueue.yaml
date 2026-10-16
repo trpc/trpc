@@ -1,0 +1,15 @@
+"@effect/experimental/PersistedQueue#layer":
+  replacement: effect/persistence/PersistedQueue#layer
+  note: Import layer from the v4 unstable PersistedQueue module.
+"@effect/experimental/PersistedQueue#layerStoreMemory":
+  replacement: effect/persistence/PersistedQueue#layerStoreMemory
+  note: Import layerStoreMemory from the v4 unstable PersistedQueue module.
+"@effect/experimental/PersistedQueue#make":
+  replacement: effect/persistence/PersistedQueue#make
+  note: Import make from the v4 unstable PersistedQueue module.
+"@effect/experimental/PersistedQueue#ErrorTypeId":
+  replacement: effect/persistence/PersistedQueue#ErrorTypeId
+  note: Retained as a string brand; the runtime marker now uses the persistence module path.
+"@effect/experimental/PersistedQueue#TypeId":
+  replacement: effect/persistence/PersistedQueue#TypeId
+  note: Import TypeId from the v4 unstable PersistedQueue module; it is now a string brand.

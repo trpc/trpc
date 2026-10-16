@@ -1,0 +1,12 @@
+"@effect/platform/HttpApiClient#Client.Method":
+  replacement: "effect/http-api/HttpApiClient#Client.Method"
+  note: "The type remains without GroupError. Requests use params/query and responseMode instead of path/urlParams and withResponse."
+"@effect/platform/HttpApiClient#endpoint":
+  replacement: "effect/http-api/HttpApiClient#endpoint"
+  note: "The endpoint client remains, selected by group and endpoint identifiers and using v4 request and responseMode fields."
+"@effect/platform/HttpApiClient#make":
+  replacement: "effect/http-api/HttpApiClient#make"
+  note: "The generated client remains; errors and services are now derived per endpoint and middleware."
+"@effect/platform/HttpApiClient#makeWith":
+  replacement: "effect/http-api/HttpApiClient#makeWith"
+  note: "The supplied-HttpClient constructor remains and now requires endpoint client-middleware services."

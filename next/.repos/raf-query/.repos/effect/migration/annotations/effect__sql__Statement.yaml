@@ -1,0 +1,39 @@
+"@effect/sql/Statement#currentTransformer":
+  replacement: "effect/sql/Statement#CurrentTransformer"
+  note: "Capitalized and changed from FiberRef<Option<Transformer>> to Context.Reference<Transformer | undefined>."
+"@effect/sql/Statement#custom":
+  replacement: "effect/sql/Statement#custom"
+  note: "Retained, but returns a Custom segment and uses paramA/paramB/paramC; wrap it with Statement.fragment when a Fragment is required."
+"@effect/sql/Statement#defaultEscape":
+  replacement: "effect/sql/Statement#defaultEscape"
+  note: "Moved with the same signature."
+"@effect/sql/Statement#FragmentId":
+  replacement: "none"
+  note: "The v4 fragment brand is private; use Fragment, fragment, and isFragment instead of direct type-id access."
+"@effect/sql/Statement#join":
+  replacement: "effect/sql/Statement#join"
+  note: "Moved with the same empty, single, and multiple-clause behavior."
+"@effect/sql/Statement#make":
+  replacement: "effect/sql/Statement#make"
+  note: "Moved with the same constructor inputs."
+"@effect/sql/Statement#or":
+  replacement: "effect/sql/Statement#or"
+  note: "Moved unchanged."
+"@effect/sql/Statement#setTransformer":
+  replacement: "Layer.succeed(Statement.CurrentTransformer, transformer)"
+  note: "The helper was removed; provide the CurrentTransformer reference as a layer."
+"@effect/sql/Statement#Statement":
+  replacement: "effect/sql/Statement#Statement"
+  note: "Moved; the nested Transformer type is now top-level and its callback receives Fiber.Fiber rather than FiberRefs.FiberRefs."
+"@effect/sql/Statement#unsafeFragment":
+  replacement: "Statement.fragment([Statement.literal(sql, params)])"
+  note: "The helper was removed; construct the low-level fragment explicitly, or use the active constructor's sql.unsafe for an executable statement."
+"@effect/sql/Statement#withTransformer":
+  replacement: "Effect.provideService(Statement.CurrentTransformer, transformer)"
+  note: "The helper was removed; locally provide the transformer reference around the effect."
+"@effect/sql/Statement#withTransformerDisabled":
+  replacement: "Effect.provideService(Statement.CurrentTransformer, undefined)"
+  note: "The helper was removed; locally provide undefined for the transformer reference."
+"@effect/sql/Statement#makeCompiler":
+  replacement: "effect/sql/Statement#makeCompiler"
+  note: "Moved to core Effect; the constructor options are exposed as Statement.CompilerOptions and retain the dialect-specific callbacks."

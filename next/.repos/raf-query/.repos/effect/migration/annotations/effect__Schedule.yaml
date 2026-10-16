@@ -1,0 +1,264 @@
+"effect/Schedule#addDelayEffect":
+  replacement: "Schedule.addDelay"
+  note: "The v4 function is effectful by default and its callback receives full Schedule.Metadata; read metadata.output when only the prior output is needed."
+"effect/Schedule#andThen":
+  replacement: "Schedule.concat"
+  note: "The sequencing combinator was renamed to Schedule.concat."
+"effect/Schedule#andThenEither":
+  replacement: "Schedule.concatResult"
+  note: "Sequential phase tagging now uses Result: self outputs are Result.fail and the following schedule outputs are Result.succeed."
+"effect/Schedule#as":
+  replacement: "Schedule.map"
+  note: "Map the metadata to the constant output; Schedule.map accepts either a plain value or an Effect."
+"effect/Schedule#asVoid":
+  replacement: "Schedule.map"
+  note: "Map every output to undefined."
+"effect/Schedule#bothInOut":
+  replacement: "none"
+  note: "There is no direct v4 combinator preserving this output shape. Rebuild it with Schedule.fromStep and Schedule.toStep; schedule steps now return [output, Duration] and terminate with Cause.done."
+"effect/Schedule#check":
+  replacement: "Schedule.while"
+  note: "Continue while a predicate over metadata.input and metadata.output returns true."
+"effect/Schedule#checkEffect":
+  replacement: "Schedule.while"
+  note: "Schedule.while accepts an effectful metadata predicate in v4."
+"effect/Schedule#collectAllInputs":
+  replacement: "none"
+  note: "This stateful collection combinator was removed during the v4 Schedule simplification. Rebuild it with Schedule.fromStep and Schedule.toStep, keeping accumulation state inside the acquired step closure."
+"effect/Schedule#collectAllOutputs":
+  replacement: "none"
+  note: "This stateful collection combinator was removed during the v4 Schedule simplification. Rebuild it with Schedule.fromStep and Schedule.toStep, keeping accumulation state inside the acquired step closure."
+"effect/Schedule#collectUntil":
+  replacement: "none"
+  note: "This stateful collection combinator was removed during the v4 Schedule simplification. Rebuild it with Schedule.fromStep and Schedule.toStep, keeping accumulation state inside the acquired step closure."
+"effect/Schedule#collectUntilEffect":
+  replacement: "none"
+  note: "This stateful collection combinator was removed during the v4 Schedule simplification. Rebuild it with Schedule.fromStep and Schedule.toStep, keeping accumulation state inside the acquired step closure."
+"effect/Schedule#collectWhile":
+  replacement: "none"
+  note: "This stateful collection combinator was removed during the v4 Schedule simplification. Rebuild it with Schedule.fromStep and Schedule.toStep, keeping accumulation state inside the acquired step closure."
+"effect/Schedule#collectWhileEffect":
+  replacement: "none"
+  note: "This stateful collection combinator was removed during the v4 Schedule simplification. Rebuild it with Schedule.fromStep and Schedule.toStep, keeping accumulation state inside the acquired step closure."
+"effect/Schedule#compose":
+  replacement: "none"
+  note: "There is no direct v4 combinator preserving this output shape. Rebuild it with Schedule.fromStep and Schedule.toStep; schedule steps now return [output, Duration] and terminate with Cause.done."
+"effect/Schedule#count":
+  replacement: "Schedule.forever"
+  note: "The forever schedule outputs the zero-based recurrence count."
+"effect/Schedule#CurrentIterationMetadata":
+  replacement: "Schedule.CurrentMetadata"
+  note: "The Context.Reference was renamed and now provides Schedule.Metadata with input, output, attempt, duration, and elapsed timing fields."
+"effect/Schedule#dayOfMonth":
+  replacement: "Schedule.cron"
+  note: "Express the calendar constraint as a cron expression, for example `0 0 <day> * *`, and map its Duration output if a numeric output is required."
+"effect/Schedule#dayOfWeek":
+  replacement: "Schedule.cron"
+  note: "Express the weekday constraint as a cron expression, for example `0 0 * * <day>`, and map its Duration output if a numeric output is required."
+"effect/Schedule#delayed":
+  replacement: "Schedule.modifyDelay"
+  note: "Return Effect.succeed(f(metadata.duration)); delay transformations are effectful and receive full metadata in v4."
+"effect/Schedule#delayedEffect":
+  replacement: "Schedule.modifyDelay"
+  note: "The v4 delay modifier is effectful by default and receives full Schedule.Metadata."
+"effect/Schedule#delayedSchedule":
+  replacement: "Schedule.modifyDelay"
+  note: "Replace each delay with metadata.output, converting that Duration output through Effect.succeed."
+"effect/Schedule#delays":
+  replacement: "Schedule.map"
+  note: "Map each decision to metadata.duration to expose the selected recurrence delay."
+"effect/Schedule#driver":
+  replacement: "Schedule.toStepWithSleep"
+  note: "Acquire the sleeping step function and call it for each input; use Schedule.toStep when delay handling must remain manual."
+"effect/Schedule#either":
+  replacement: "Schedule.min"
+  note: "Use Schedule.min for fastest-delay composition. It outputs the selected Duration rather than a tuple of both outputs."
+"effect/Schedule#eitherWith":
+  replacement: "Schedule.min"
+  note: "Schedule.min implements the standard fastest-delay composition; custom interval merging requires a Schedule.fromStep implementation."
+"effect/Schedule#elapsed":
+  replacement: "Schedule.map"
+  note: "Map metadata.elapsed through Duration.millis."
+"effect/Schedule#ensuring":
+  replacement: "Schedule.during"
+  note: "Use the duration-bounded v4 schedule constructor."
+"effect/Schedule#fromDelay":
+  replacement: "Schedule.duration"
+  note: "The duration constructor recurs once after the supplied delay."
+"effect/Schedule#fromDelays":
+  replacement: "Schedule.duration + Schedule.concat"
+  note: "Build one Schedule.duration per delay and sequence them with Schedule.concat."
+"effect/Schedule#fromFunction":
+  replacement: "Schedule.identity + Schedule.map"
+  note: "Start with Schedule.identity<A>() and map metadata.input through the function."
+"effect/Schedule#hourOfDay":
+  replacement: "Schedule.cron"
+  note: "Express the hour constraint as a cron expression such as `0 <hour> * * *`."
+"effect/Schedule#intersect":
+  replacement: "Schedule.max"
+  note: "Use Schedule.max for slowest-delay composition. It outputs the selected Duration rather than a tuple of both outputs."
+"effect/Schedule#intersectWith":
+  replacement: "Schedule.max"
+  note: "Schedule.max implements the standard slowest-delay composition; custom interval merging requires a Schedule.fromStep implementation."
+"effect/Schedule#IterationMetadata":
+  replacement: "Schedule.Metadata"
+  note: "The metadata model now includes duration and uses attempt instead of recurrence; elapsed fields are millisecond numbers."
+"effect/Schedule#jitteredWith":
+  replacement: "Schedule.modifyDelay"
+  note: "For custom bounds, scale metadata.duration using Random.next inside the effectful delay callback; Schedule.jittered supplies the fixed v4 0.8-1.2 range."
+"effect/Schedule#linear":
+  replacement: "Schedule.forever + Schedule.map + Schedule.modifyDelay"
+  note: "Map the recurrence attempt to the linearly increasing Duration, then use that output as the recurrence delay."
+"effect/Schedule#makeWithState":
+  replacement: "Schedule.fromStep"
+  note: "Move mutable state into the acquired step closure; return [output, Duration] for recurrence and Cause.done(output) for termination."
+"effect/Schedule#mapBoth":
+  replacement: "Schedule.fromStep + Schedule.toStep"
+  note: "Input transformation is no longer a standalone combinator. Wrap Schedule.toStep(self) with Schedule.fromStep and transform the input before invoking the underlying step."
+"effect/Schedule#mapBothEffect":
+  replacement: "Schedule.fromStep + Schedule.toStep"
+  note: "Input transformation is no longer a standalone combinator. Wrap Schedule.toStep(self) with Schedule.fromStep and transform the input before invoking the underlying step. Apply the effectful output mapping to the returned tuple."
+"effect/Schedule#mapEffect":
+  replacement: "Schedule.map"
+  note: "Schedule.map accepts an Effect result and receives full Schedule.Metadata."
+"effect/Schedule#mapInput":
+  replacement: "Schedule.fromStep + Schedule.toStep"
+  note: "Input transformation is no longer a standalone combinator. Wrap Schedule.toStep(self) with Schedule.fromStep and transform the input before invoking the underlying step."
+"effect/Schedule#mapInputContext":
+  replacement: "Schedule.fromStep + Effect.provide"
+  note: "Provide the transformed service context to both Schedule.toStep acquisition and each returned step Effect."
+"effect/Schedule#mapInputEffect":
+  replacement: "Schedule.fromStep + Schedule.toStep"
+  note: "Input transformation is no longer a standalone combinator. Wrap Schedule.toStep(self) with Schedule.fromStep and transform the input before invoking the underlying step. Evaluate the input mapping Effect before the underlying step."
+"effect/Schedule#minuteOfHour":
+  replacement: "Schedule.cron"
+  note: "Express the minute constraint as a cron expression such as `<minute> * * * *`."
+"effect/Schedule#modifyDelayEffect":
+  replacement: "Schedule.modifyDelay"
+  note: "The v4 delay modifier is effectful by default and receives full Schedule.Metadata."
+"effect/Schedule#onDecision":
+  replacement: "Schedule.tap"
+  note: "Use Schedule.tap for effects on recurrence metadata. To also observe final completion, wrap Schedule.toStep with Pull.matchEffect in Schedule.fromStep."
+"effect/Schedule#provideContext":
+  replacement: "Schedule.fromStep + Effect.provide"
+  note: "Provide the Context to both Schedule.toStep acquisition and each Effect returned by the acquired step."
+"effect/Schedule#provideService":
+  replacement: "Schedule.fromStep + Effect.provideService"
+  note: "Provide the service to both Schedule.toStep acquisition and each Effect returned by the acquired step."
+"effect/Schedule#recurUntil":
+  replacement: "Schedule.identity + Schedule.while"
+  note: "Continue while the predicate over metadata.input is false."
+"effect/Schedule#recurUntilEffect":
+  replacement: "Schedule.identity + Schedule.while"
+  note: "Continue while the effectful predicate over metadata.input is false."
+"effect/Schedule#recurUntilOption":
+  replacement: "Schedule.fromStep"
+  note: "Use a custom step to evaluate the Option-producing function, emit Option.none while recurring, and terminate with the first Option.some result."
+"effect/Schedule#recurUpTo":
+  replacement: "Schedule.during"
+  note: "Use the duration-bounded schedule constructor."
+"effect/Schedule#recurWhile":
+  replacement: "Schedule.identity + Schedule.while"
+  note: "Continue while the predicate over metadata.input is true."
+"effect/Schedule#recurWhileEffect":
+  replacement: "Schedule.identity + Schedule.while"
+  note: "Continue while the effectful predicate over metadata.input is true."
+"effect/Schedule#reduce":
+  replacement: "none"
+  note: "This stateful collection combinator was removed during the v4 Schedule simplification. Rebuild it with Schedule.fromStep and Schedule.toStep, keeping accumulation state inside the acquired step closure."
+"effect/Schedule#reduceEffect":
+  replacement: "none"
+  note: "This stateful collection combinator was removed during the v4 Schedule simplification. Rebuild it with Schedule.fromStep and Schedule.toStep, keeping accumulation state inside the acquired step closure."
+"effect/Schedule#repeatForever":
+  replacement: "Schedule.forever"
+  note: "The infinite zero-delay counter schedule was renamed."
+"effect/Schedule#repetitions":
+  replacement: "Schedule.map"
+  note: "Map metadata.attempt to the required recurrence count, adjusting by one where the v3 zero-based value is expected."
+"effect/Schedule#resetAfter":
+  replacement: "none"
+  note: "Automatic schedule reset was removed. Wrap Schedule.toStep(self) with Schedule.fromStep and reacquire the inner step when the reset condition is met."
+"effect/Schedule#resetWhen":
+  replacement: "none"
+  note: "Automatic schedule reset was removed. Wrap Schedule.toStep(self) with Schedule.fromStep and reacquire the inner step when the reset condition is met."
+"effect/Schedule#run":
+  replacement: "Schedule.toStep"
+  note: "Acquire the step and traverse inputs manually, supplying each timestamp and collecting successful outputs until Cause.done."
+"effect/Schedule#Schedule":
+  replacement: "Schedule.Schedule"
+  note: "The model remains but now has Schedule<Output, Input, Error, Env>; its public initial/step fields were replaced by Schedule.toStep and fromStep."
+"effect/Schedule#Schedule.DriverVariance":
+  replacement: "none"
+  note: "ScheduleDriver was removed in v4, so its variance marker has no replacement. Use the Schedule type parameters or the function returned by Schedule.toStepWithSleep."
+"effect/Schedule#Schedule.Variance":
+  replacement: "Schedule.Schedule.Variance"
+  note: "The variance marker remains and now tracks Output, Input, Error, and Env through the private Schedule TypeId."
+"effect/Schedule#ScheduleDriver":
+  replacement: "Schedule.toStepWithSleep"
+  note: "ScheduleDriver was removed. The acquired step function provides manual next calls with automatic sleeping; Schedule.toStep exposes raw delays."
+"effect/Schedule#ScheduleDriverTypeId":
+  replacement: "none"
+  note: "ScheduleDriver and its public type id were removed. Use the step function returned by Schedule.toStepWithSleep."
+"effect/Schedule#ScheduleTypeId":
+  replacement: "none"
+  note: "The Schedule type id is private in v4. Use Schedule.isSchedule to narrow unknown values."
+"effect/Schedule#secondOfMinute":
+  replacement: "Schedule.cron"
+  note: "Use the six-field cron form to express a seconds constraint, for example `<second> * * * * *`."
+"effect/Schedule#stop":
+  replacement: "Schedule.fromStep"
+  note: "Create a step that immediately returns Cause.done(undefined)."
+"effect/Schedule#succeed":
+  replacement: "Schedule.forever + Schedule.map"
+  note: "Map every recurrence to the constant value."
+"effect/Schedule#sync":
+  replacement: "Schedule.forever + Schedule.map"
+  note: "Map every recurrence by lazily evaluating the thunk."
+"effect/Schedule#tapInput":
+  replacement: "Schedule.tap"
+  note: "Use the unified tap callback and read metadata.input."
+"effect/Schedule#tapOutput":
+  replacement: "Schedule.tap"
+  note: "Use the unified tap callback and read metadata.output."
+"effect/Schedule#unfold":
+  replacement: "Schedule.fromStep"
+  note: "Keep the evolving value inside the acquired step closure and emit each value with the desired Duration."
+"effect/Schedule#union":
+  replacement: "Schedule.min"
+  note: "Use Schedule.min for fastest-delay composition. It outputs the selected Duration rather than both schedule outputs."
+"effect/Schedule#unionWith":
+  replacement: "Schedule.min"
+  note: "Schedule.min covers the standard union behavior; a custom interval merge requires Schedule.fromStep."
+"effect/Schedule#untilInput":
+  replacement: "Schedule.while"
+  note: "Continue while the predicate over metadata.input is false."
+"effect/Schedule#untilInputEffect":
+  replacement: "Schedule.while"
+  note: "Continue while the effectful predicate over metadata.input is false."
+"effect/Schedule#untilOutput":
+  replacement: "Schedule.while"
+  note: "Continue while the predicate over metadata.output is false."
+"effect/Schedule#untilOutputEffect":
+  replacement: "Schedule.while"
+  note: "Continue while the effectful predicate over metadata.output is false."
+"effect/Schedule#whileInput":
+  replacement: "Schedule.while"
+  note: "Continue while the predicate over metadata.input is true."
+"effect/Schedule#whileInputEffect":
+  replacement: "Schedule.while"
+  note: "Continue while the effectful predicate over metadata.input is true."
+"effect/Schedule#whileOutput":
+  replacement: "Schedule.while"
+  note: "Continue while the predicate over metadata.output is true."
+"effect/Schedule#whileOutputEffect":
+  replacement: "Schedule.while"
+  note: "Continue while the effectful predicate over metadata.output is true."
+"effect/Schedule#zipLeft":
+  replacement: "none"
+  note: "There is no direct v4 combinator preserving this output shape. Rebuild it with Schedule.fromStep and Schedule.toStep; schedule steps now return [output, Duration] and terminate with Cause.done."
+"effect/Schedule#zipRight":
+  replacement: "none"
+  note: "There is no direct v4 combinator preserving this output shape. Rebuild it with Schedule.fromStep and Schedule.toStep; schedule steps now return [output, Duration] and terminate with Cause.done."
+"effect/Schedule#zipWith":
+  replacement: "none"
+  note: "There is no direct v4 combinator preserving this output shape. Rebuild it with Schedule.fromStep and Schedule.toStep; schedule steps now return [output, Duration] and terminate with Cause.done."

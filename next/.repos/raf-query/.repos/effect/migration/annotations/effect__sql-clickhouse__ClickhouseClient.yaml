@@ -1,0 +1,12 @@
+"@effect/sql-clickhouse/ClickhouseClient#ClickhouseClient":
+  replacement: "@effect/sql-clickhouse/ClickhouseClient#ClickhouseClient"
+  note: "Retained; the service value is now a Context.Service rather than a GenericTag."
+"@effect/sql-clickhouse/ClickhouseClient#currentClickhouseSettings":
+  replacement: "@effect/sql-clickhouse/ClickhouseClient#ClickhouseSettings"
+  note: "Renamed and changed from FiberRef to Context.Reference; prefer client.withClickhouseSettings or provide the reference as a service."
+"@effect/sql-clickhouse/ClickhouseClient#currentClientMethod":
+  replacement: "@effect/sql-clickhouse/ClickhouseClient#ClientMethod"
+  note: "Renamed and changed from FiberRef to Context.Reference; prefer client.asCommand or provide the reference as a service."
+"@effect/sql-clickhouse/ClickhouseClient#currentQueryId":
+  replacement: "@effect/sql-clickhouse/ClickhouseClient#QueryId"
+  note: "Renamed and changed from FiberRef to Context.Reference; prefer client.withQueryId or provide the reference as a service."

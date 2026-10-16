@@ -1,0 +1,27 @@
+"@effect/platform/KeyValueStore#KeyValueStore":
+  replacement: "KeyValueStore.KeyValueStore"
+  note: "The service moved to effect/persistence/KeyValueStore; missing values now use undefined and operations fail with KeyValueStoreError."
+"@effect/platform/KeyValueStore#KeyValueStore.AnyStore":
+  replacement: "KeyValueStore.KeyValueStore | KeyValueStore.SchemaStore<Schema.Constraint>"
+  note: "The convenience namespace alias was removed; write the store union explicitly when needed."
+"@effect/platform/KeyValueStore#layerMemory":
+  replacement: "KeyValueStore.layerMemory"
+  note: "The in-memory layer remains in the moved module."
+"@effect/platform/KeyValueStore#layerSchema":
+  replacement: "KeyValueStore.toSchemaStore"
+  note: "Schema stores are now derived with toSchemaStore; define the desired Context.Service and layer explicitly."
+"@effect/platform/KeyValueStore#layerStorage":
+  replacement: "KeyValueStore.layerStorage"
+  note: "The Web Storage layer remains in the moved module."
+"@effect/platform/KeyValueStore#make":
+  replacement: "KeyValueStore.make"
+  note: "The constructor remains in the moved module with v4 MakeOptions."
+"@effect/platform/KeyValueStore#prefix":
+  replacement: "KeyValueStore.prefix"
+  note: "The prefixed-store combinator remains in the moved module."
+"@effect/platform/KeyValueStore#SchemaStoreTypeId":
+  replacement: "none"
+  note: "The v4 SchemaStore has no public type-id alias; use the SchemaStore interface."
+"@effect/platform/KeyValueStore#TypeId":
+  replacement: "none"
+  note: "The KeyValueStore runtime marker is internal in v4; use the service and interface."

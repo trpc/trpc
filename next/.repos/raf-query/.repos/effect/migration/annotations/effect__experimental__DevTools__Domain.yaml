@@ -1,0 +1,18 @@
+"@effect/experimental/DevTools/Domain#ExternalSpanFrom":
+  replacement: effect/Schema#Codec.Encoded<typeof effect/devtools/DevToolsSchema#ExternalSpan>
+  note: The named encoded alias was removed; derive it with Schema.Codec.Encoded from ExternalSpan.
+"@effect/experimental/DevTools/Domain#metric":
+  replacement: none
+  note: The metric schema helper is private in v4; use the exported Counter, Frequency, Gauge, Histogram, Summary, or Metric schemas, or build a Schema.Struct.
+"@effect/experimental/DevTools/Domain#MetricFrom":
+  replacement: effect/Schema#Codec.Encoded<typeof effect/devtools/DevToolsSchema#Metric>
+  note: The named encoded alias was removed; derive it with Schema.Codec.Encoded from Metric.
+"@effect/experimental/DevTools/Domain#MetricsSnapshotFrom":
+  replacement: effect/Schema#Codec.Encoded<typeof effect/devtools/DevToolsSchema#MetricsSnapshot>
+  note: The named encoded alias was removed; derive it with Schema.Codec.Encoded from MetricsSnapshot.
+"@effect/experimental/DevTools/Domain#ParentSpanFrom":
+  replacement: effect/Schema#Codec.Encoded<typeof effect/devtools/DevToolsSchema#ParentSpan>
+  note: The named encoded alias was removed; derive it with Schema.Codec.Encoded from ParentSpan.
+"@effect/experimental/DevTools/Domain#SpanFrom":
+  replacement: effect/Schema#Codec.Encoded<typeof effect/devtools/DevToolsSchema#Span>
+  note: The named encoded alias was removed; derive it with Schema.Codec.Encoded from Span.

@@ -1,0 +1,54 @@
+{
+  "name": "@effect/bundle",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "description": "Bundle size testing infrastructure for Effect packages",
+  "homepage": "https://effect.website",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Effect-TS/effect.git",
+    "directory": "packages/tools/bundle"
+  },
+  "sideEffects": [],
+  "bin": {
+    "effect-bundle": "./src/bin.ts"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    "./*": "./src/*.ts"
+  },
+  "files": [
+    "src/**/*.ts",
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "dist/**/*.d.ts",
+    "dist/**/*.d.ts.map"
+  ],
+  "scripts": {
+    "build": "tsc -b tsconfig.src.json && pnpm babel",
+    "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+    "check": "tsc -b tsconfig.json",
+    "compare": "node src/bin.ts compare",
+    "report": "node src/bin.ts report",
+    "visualize": "node src/bin.ts visualize"
+  },
+  "dependencies": {
+    "@effect/platform-node": "workspace:^",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@rollup/plugin-replace": "^6.0.3",
+    "@rollup/plugin-terser": "^1.0.0",
+    "effect": "workspace:^",
+    "glob": "^13.0.6",
+    "rollup": "^4.63.5",
+    "rollup-plugin-esbuild": "^6.2.1",
+    "rollup-plugin-visualizer": "^7.1.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^8.0.6",
+    "@types/node": "^26.6.3",
+    "babel-plugin-annotate-pure-calls": "^0.5.0",
+    "esbuild": "^0.28.2"
+  }
+}

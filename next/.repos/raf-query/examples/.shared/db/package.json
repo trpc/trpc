@@ -1,0 +1,21 @@
+{
+	"name": "@examples/db",
+	"version": "0.0.0",
+	"private": true,
+	"description": "In-memory issue tracker data with artificial latency, shared by the example apps",
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts",
+		"./types": "./src/types.ts"
+	},
+	"scripts": {
+		"typecheck": "tsc"
+	},
+	"devDependencies": {
+		"@types/node": "26.6.4",
+		"typescript": "7.0.2"
+	},
+	"dependencies": {
+		"zod": "4.6.5"
+	}
+}

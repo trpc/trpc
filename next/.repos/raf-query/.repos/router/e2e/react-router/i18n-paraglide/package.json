@@ -1,0 +1,51 @@
+{
+  "name": "tanstack-router-e2e-react-i18n-paraglide",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 3000",
+    "dev:e2e": "vite",
+    "build": "vite build && tsc --noEmit",
+    "preview": "vite preview",
+    "start": "vite",
+    "test:e2e": "playwright test --project=chromium"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.2.2",
+    "@tanstack/react-router": "workspace:^",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwindcss": "^4.2.2"
+  },
+  "devDependencies": {
+    "@inlang/paraglide-js": "^2.4.0",
+    "@playwright/test": "^1.61.0",
+    "@tanstack/router-e2e-utils": "workspace:^",
+    "@tanstack/router-plugin": "workspace:^",
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "vite": "^8.0.14"
+  },
+  "nx": {
+    "targets": {
+      "build": {
+        "outputs": [
+          "...",
+          "{projectRoot}/src/paraglide",
+          "{projectRoot}/project.inlang/cache"
+        ]
+      },
+      "test:e2e": {
+        "outputs": [
+          "...",
+          "{projectRoot}/src/paraglide",
+          "{projectRoot}/project.inlang/cache"
+        ]
+      }
+    }
+  }
+}

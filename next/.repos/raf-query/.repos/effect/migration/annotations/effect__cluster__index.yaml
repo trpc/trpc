@@ -1,0 +1,3 @@
+"@effect/cluster/index":
+  replacement: "effect/cluster"
+  note: "The package barrel was removed; import the same namespaces from the effect/cluster barrel or import specific modules directly."

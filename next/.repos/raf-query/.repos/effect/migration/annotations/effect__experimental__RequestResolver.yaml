@@ -1,0 +1,12 @@
+"@effect/experimental/RequestResolver#dataLoader":
+  replacement: effect/RequestResolver#setDelay + effect/RequestResolver#batchN
+  note: Pipe the resolver through setDelay(options.window) and batchN(options.maxBatchSize ?? Infinity); the transformation is now pure.
+"@effect/experimental/RequestResolver#PersistedRequest":
+  replacement: effect/Request#Request & effect/persistence/Persistable#Persistable
+  note: Intersect a Request with Persistable or define it with Persistable.Class; there is no combined named export.
+"@effect/experimental/RequestResolver#PersistedRequest.Any":
+  replacement: effect/Request#Any & effect/persistence/Persistable#Any
+  note: Intersect the Request and Persistable helper types for an arbitrary persisted request.
+"@effect/experimental/RequestResolver#persisted":
+  replacement: effect/RequestResolver#persisted
+  note: Retained after moving to core RequestResolver; requests now implement Persistable and use Persistence.Persistence, timeToLive is optional, and staleWhileRevalidate is supported.

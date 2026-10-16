@@ -1,0 +1,28 @@
+{
+	"name": "@tooling/rsc-frameworks",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Builds small React Server Components apps with frameworks the docs don't cover, to check @raf-query/react's single import works there too",
+	"type": "module",
+	"scripts": {
+		"test": "vp test",
+		"typecheck": "tsc"
+	},
+	"dependencies": {
+		"@raf-query/react": "workspace:*",
+		"react": "19.3.0",
+		"react-dom": "19.3.0"
+	},
+	"devDependencies": {
+		"@effect/platform-node": "catalog:",
+		"@effect/vitest": "catalog:",
+		"@types/node": "26.6.4",
+		"@types/react": "19.3.0",
+		"@types/react-dom": "19.3.0",
+		"@vitejs/plugin-rsc": "0.5.36",
+		"effect": "catalog:",
+		"typescript": "7.0.2",
+		"vite": "8.3.4",
+		"vite-plus": "1.0.0"
+	}
+}

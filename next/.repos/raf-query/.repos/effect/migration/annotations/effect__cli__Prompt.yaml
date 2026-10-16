@@ -1,0 +1,69 @@
+"@effect/cli/Prompt#All.PromptAny":
+  replacement: "Prompt.Any"
+  note: "The any-prompt alias moved out of the All namespace."
+"@effect/cli/Prompt#All.Return":
+  replacement: "Prompt.All.Return"
+  note: "The collection result helper remains under Prompt.All."
+"@effect/cli/Prompt#confirm":
+  replacement: "Prompt.Confirm"
+  note: "Use the renamed constructor."
+"@effect/cli/Prompt#custom":
+  replacement: "Prompt.Custom"
+  note: "Use the renamed constructor; both overloads are preserved."
+"@effect/cli/Prompt#date":
+  replacement: "Prompt.Date"
+  note: "Use the moved constructor."
+"@effect/cli/Prompt#file":
+  replacement: "Prompt.File"
+  note: "Use the moved constructor; v4 also supports a default selected path."
+"@effect/cli/Prompt#flatMap":
+  replacement: "Prompt.flatMap"
+  note: "Use the moved combinator."
+"@effect/cli/Prompt#float":
+  replacement: "Prompt.Number"
+  note: "Use the moved constructor; v4 also supports a default value."
+"@effect/cli/Prompt#hidden":
+  replacement: "Prompt.Hidden"
+  note: "Use the renamed constructor."
+"@effect/cli/Prompt#integer":
+  replacement: "Prompt.Int"
+  note: "Use the moved constructor; v4 also supports a default value."
+"@effect/cli/Prompt#list":
+  replacement: "Prompt.List"
+  note: "Use the renamed constructor."
+"@effect/cli/Prompt#map":
+  replacement: "Prompt.map"
+  note: "Use the moved combinator."
+"@effect/cli/Prompt#multiSelect":
+  replacement: "Prompt.MultiSelect"
+  note: "Use the renamed constructor."
+"@effect/cli/Prompt#password":
+  replacement: "Prompt.Password"
+  note: "Use the renamed constructor."
+"@effect/cli/Prompt#Prompt":
+  replacement: "Prompt.Prompt"
+  note: "The model moved to effect/cli; quitting now fails with Terminal.QuitError."
+"@effect/cli/Prompt#Prompt.Variance":
+  replacement: "Prompt.Prompt"
+  note: "The named variance artifact was removed; use Prompt<Output>."
+"@effect/cli/Prompt#Prompt.VarianceStruct":
+  replacement: "Prompt.Prompt"
+  note: "The named variance structure was removed; use Prompt<Output>."
+"@effect/cli/Prompt#PromptTypeId":
+  replacement: "Prompt.isPrompt"
+  note: "The public type-id symbol was removed; use the runtime guard."
+"@effect/cli/Prompt#select":
+  replacement: "Prompt.Select"
+  note: "Use the renamed constructor."
+"@effect/cli/Prompt#text":
+  replacement: "Prompt.String"
+  note: "Use the moved constructor."
+"@effect/cli/Prompt#toggle":
+  replacement: "Prompt.Toggle"
+  note: "Use the renamed constructor."
+"@effect/cli/Prompt#Prompt.IntegerOptions":
+  replacement: "Prompt.IntOptions"
+  note: "Use the renamed public options type for Prompt.Int; option fields are preserved."
+"@effect/cli/Prompt#Prompt.FloatOptions":
+  replacement: "Prompt.NumberOptions"
+  note: "Use the renamed public options type for Prompt.Number; it still extends the integer options type, now IntOptions."

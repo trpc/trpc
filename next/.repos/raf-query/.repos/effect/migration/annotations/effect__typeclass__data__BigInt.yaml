@@ -1,0 +1,18 @@
+"@effect/typeclass/data/BigInt#MonoidMultiply":
+  replacement: "BigInt.ReducerMultiply"
+  note: "Renamed and moved to the concrete v4 BigInt module."
+"@effect/typeclass/data/BigInt#MonoidSum":
+  replacement: "BigInt.ReducerSum"
+  note: "Renamed and moved to the concrete v4 BigInt module."
+"@effect/typeclass/data/BigInt#SemigroupMax":
+  replacement: "BigInt.CombinerMax"
+  note: "Renamed and moved to the concrete v4 BigInt module."
+"@effect/typeclass/data/BigInt#SemigroupMin":
+  replacement: "BigInt.CombinerMin"
+  note: "Renamed and moved to the concrete v4 BigInt module."
+"@effect/typeclass/data/BigInt#SemigroupMultiply":
+  replacement: "BigInt.ReducerMultiply"
+  note: "The v4 Reducer is also a Combiner and preserves multiplication combine semantics."
+"@effect/typeclass/data/BigInt#SemigroupSum":
+  replacement: "BigInt.ReducerSum"
+  note: "The v4 Reducer is also a Combiner and preserves addition combine semantics."

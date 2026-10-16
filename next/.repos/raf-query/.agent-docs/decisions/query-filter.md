@@ -1,0 +1,3 @@
+# `QueryCache.Filter` (agent)
+
+- **`QueryCache.Filter` is `{ queryKey?, exact?, predicate? }`** (parent agent, 2026-10-12), evaluated only in `match` (`cache.ts`): key first, then `predicate(query)`, as in TanStack's `matchQuery`. No `type` / `stale` / `fetchStatus` fields: `predicate` covers them with the `Query` functions (`observerCountUnsafe`, `isStaleUnsafe`, `getUnsafe(query).isFetching`). `queryKey` is optional and `{}` matches everything, like TanStack's `invalidateQueries()`; the filter argument itself stays required, so selecting the whole cache is explicit. `handle.input` is `undefined` on hydrated-only entries (hydration has keys, not inputs).

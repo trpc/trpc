@@ -1,0 +1,36 @@
+"@effect/platform/Socket#CloseEventTypeId":
+  replacement: "Socket.CloseEvent"
+  note: "The close-event marker is internal in v4; use the CloseEvent class or Socket.isCloseEvent."
+"@effect/platform/Socket#currentSendQueueCapacity":
+  replacement: none
+  note: "The send queue was removed. The v4 Socket is pull-based: acquire socket.reader in a scope and pull frame batches; writes apply the transport's native backpressure."
+"@effect/platform/Socket#layerWebSocket":
+  replacement: "Socket.layerWebSocket"
+  note: "The constructor remains in effect/socket/Socket; its URL may now also be an Effect."
+"@effect/platform/Socket#SocketError":
+  replacement: "Socket.SocketError"
+  note: "The old union became a tagged wrapper around SocketReadError, SocketWriteError, SocketOpenError, or SocketCloseError."
+"@effect/platform/Socket#SocketErrorTypeId":
+  replacement: "Socket.SocketErrorTypeId"
+  note: "The error marker remains in effect/socket/Socket."
+"@effect/platform/Socket#SocketGenericError":
+  replacement: "Socket.SocketReadError | Socket.SocketWriteError | Socket.SocketOpenError"
+  note: "The generic reason discriminator was replaced by dedicated read, write, and open error classes."
+"@effect/platform/Socket#TypeId":
+  replacement: "typeof Socket.TypeId"
+  note: "The socket marker remains exported, but the separate type alias was removed."
+"@effect/platform/Socket#WebSocket":
+  replacement: "Socket.WebSocket"
+  note: "The opaque service moved to effect/socket/Socket and is now a Context.Service class for globalThis.WebSocket."
+"@effect/platform/Socket#WebSocketConstructor":
+  replacement: "Socket.WebSocketConstructor"
+  note: "The service moved to effect/socket/Socket and is now a Context.Service class."
+"@effect/platform/Socket#defaultCloseCodeIsError":
+  replacement: none
+  note: "Sockets no longer classify close codes; every close fails the reader's pull with a SocketError wrapping SocketCloseError. Consumers that treat a close as normal catch the error."
+"@effect/platform/Socket#fromTransformStream":
+  replacement: "Socket.fromTransformStream"
+  note: "The constructor remains in effect/socket/Socket but drops closeCodeIsError; every close fails the reader's pull with a SocketError wrapping SocketCloseError."
+"@effect/platform/Socket#toChannelMap":
+  replacement: none
+  note: "The v4 Socket read side is an Effect that never completes via Cause.Done; map frames by acquiring Socket.readerBytes or Socket.readerString, or Effect.map the reader from socket.reader, and use Socket.toChannel or Socket.toChannelString for duplex channels."

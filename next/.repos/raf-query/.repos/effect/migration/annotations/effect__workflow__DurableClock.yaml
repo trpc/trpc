@@ -1,0 +1,6 @@
+"@effect/workflow/DurableClock#make":
+  replacement: "effect/workflow/DurableClock#make"
+  note: "Moved into core Effect; Duration.DurationInput is now Duration.Input."
+"@effect/workflow/DurableClock#TypeId":
+  replacement: "none"
+  note: "The durable-clock marker is private in v4. Use DurableClock values structurally."

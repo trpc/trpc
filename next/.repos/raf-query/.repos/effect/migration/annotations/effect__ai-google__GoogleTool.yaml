@@ -1,0 +1,3 @@
+"@effect/ai-google/GoogleTool":
+  replacement: none
+  note: The @effect/ai-google package and its provider-defined tools were removed from v4. Model this capability in the provider integration you adopt, or define an application Tool when the replacement provider supports it.

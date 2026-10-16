@@ -1,0 +1,9 @@
+"@effect/experimental/RateLimiter/Redis#layerStore":
+  replacement: effect/persistence/RateLimiter#layerStoreRedis
+  note: The Redis adapter was merged into RateLimiter and now requires the generic Redis.Redis service.
+"@effect/experimental/RateLimiter/Redis#layerStoreConfig":
+  replacement: effect/persistence/RateLimiter#layerStoreRedisConfig
+  note: Use the merged Redis store config layer; connection configuration belongs to a separate Redis provider.
+"@effect/experimental/RateLimiter/Redis#make":
+  replacement: effect/persistence/RateLimiter#makeStoreRedis
+  note: The Redis adapter was merged into RateLimiter and now requires the generic Redis.Redis service.

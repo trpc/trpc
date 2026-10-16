@@ -1,0 +1,6 @@
+"@effect/sql-sqlite-node/SqliteClient#SqliteClient":
+  replacement: "@effect/sql-sqlite-node/SqliteClient#SqliteClient"
+  note: "Retained on node:sqlite, but the byte-export member was removed; use backup(destination) for file backup."
+"@effect/sql-sqlite-node/SqliteClient#SqliteClientConfig":
+  replacement: "@effect/sql-sqlite-node/SqliteClient#SqliteClientConfig"
+  note: "Retained; prepareCacheTTL now uses Duration.Input."

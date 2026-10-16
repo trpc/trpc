@@ -1,0 +1,3 @@
+"@effect/cluster/ClusterError#TypeId":
+  replacement: "none"
+  note: "The shared marker is private in v4. Use the exported tagged error classes, their _tag fields, or class-specific is guards."

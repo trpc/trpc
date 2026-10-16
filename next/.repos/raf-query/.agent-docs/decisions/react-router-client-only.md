@@ -1,0 +1,9 @@
+# The React Router guide covers client-only apps on their own (human asked)
+
+Human: "A lot of people using react router are doing client only so make it clearer and earlier, might be two full sections where they're explained independently"; "Do it all on one pr, don't stack".
+
+- **`www/content/react-router.md` opens with a choice between two sections, each readable on its own**: "Client-only apps" (SPA Mode `ssr: false` with `clientLoader`, or Data Mode's `createBrowserRouter`) first, then "Server rendering" (Framework Mode `loader`, per-request client, `dehydrate`, `HydrationBoundary`). Pending UI, search params, mutations and the example stay shared below them. Heading ids are unique (`#client-loaders`, `#server-loaders`) so other pages can link either.
+- **Client-only keeps the tab's `QueryClient` in a module** (`app/query-client.ts`), imported by `clientLoader`s and the root's `QueryClientProvider`. Safe only without server rendering; the guide and the sample's comment say so. Lost: router context through `HydratedRouter`'s `getContext`, which only matters for `clientLoader`s inside a server-rendered app and adds a concept; not documented yet.
+- **Its own sample app, `www/samples/react-router-spa`** (`@samples/react-router-spa`), because it needs a different root and `ssr: false`. Type-checked only, like `react-router`; `queries.ts`, `api.ts` and `components/comments.tsx` are copies of that app's.
+- Checked against a running copy of the sample (React Router 8.4 dev server): the first visit waits for `ensure`, a fresh revisit makes no request, a stale revisit renders the cache and refetches behind it, hovering a `prefetch="intent"` link doesn't run `clientLoader`, and after a `clientAction` the rerun `clientLoader` shows old fresh data unless the action awaited `invalidate`.
+- The example app (`examples/react-router`) stays server-rendered.

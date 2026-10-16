@@ -1,0 +1,24 @@
+{
+	"name": "@tooling/codesandbox",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Generates the standalone example apps on the codesandbox branch",
+	"type": "module",
+	"sideEffects": false,
+	"scripts": {
+		"generate": "node src/bin/generate.ts",
+		"sync": "node src/bin/sync.ts",
+		"test": "vp test",
+		"typecheck": "tsc"
+	},
+	"dependencies": {
+		"@effect/platform-node": "catalog:",
+		"effect": "catalog:"
+	},
+	"devDependencies": {
+		"@effect/vitest": "catalog:",
+		"@types/node": "26.6.4",
+		"typescript": "7.0.2",
+		"vite-plus": "1.0.0"
+	}
+}

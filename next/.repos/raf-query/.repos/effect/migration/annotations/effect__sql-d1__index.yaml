@@ -1,0 +1,3 @@
+"@effect/sql-d1/index":
+  replacement: "@effect/sql-d1"
+  note: "The explicit /index entrypoint was removed; import the same namespaces from the @effect/sql-d1 package root or import specific modules directly."

@@ -1,0 +1,24 @@
+"@effect/ai/AiError#AiError":
+  replacement: "AiError.AiError"
+  note: "Moved to effect/ai/AiError and redesigned from a union of separately tagged errors into one AiError wrapper with a semantic reason. Construct it with AiError.make({ module, method, reason }) and match error.reason rather than the old top-level tags."
+"@effect/ai/AiError#HttpRequestError":
+  replacement: "AiError.make + AiError.NetworkError"
+  note: "Replace the old top-level request error with an AiError whose reason is NetworkError. NetworkError.fromRequestError converts a v4 HttpClientError.RequestError."
+"@effect/ai/AiError#HttpResponseError":
+  replacement: "AiError.make + AiError.reasonFromHttpStatus / AiError.InvalidOutputError"
+  note: "There is no single v4 response-error class. Wrap a semantic reason with AiError.make: use reasonFromHttpStatus for status failures and InvalidOutputError for decode or empty-body failures."
+"@effect/ai/AiError#MalformedInput":
+  replacement: "AiError.make + AiError.InvalidUserInputError"
+  note: "Replace the old top-level input error with an AiError whose reason is InvalidUserInputError. Use InvalidRequestError when the provider request parameters themselves are malformed."
+"@effect/ai/AiError#MalformedOutput":
+  replacement: "AiError.make + AiError.InvalidOutputError"
+  note: "Replace the old top-level output error with an AiError whose reason is InvalidOutputError. The old fromParseError helper becomes InvalidOutputError.fromSchemaError."
+"@effect/ai/AiError#TypeId":
+  replacement: "AiError.isAiError"
+  note: "The AiError brand is private in v4. Use isAiError for runtime narrowing, or isAiErrorReason for a reason, instead of inspecting or constructing the type id."
+"@effect/ai/AiError#UnknownError":
+  replacement: "AiError.make + AiError.UnknownError"
+  note: "UnknownError is now a semantic reason rather than a top-level error. Put module and method on AiError.make and inspect reason._tag when handling the outer AiError."
+"@effect/ai/AiError#HttpRequestDetails":
+  replacement: "AiError.HttpRequestDetails"
+  note: "Retained in effect/ai/AiError and also re-exported as Response.HttpRequestDetails. Hash is an optional string instead of Option, headers may contain Redacted strings, and method includes TRACE."

@@ -1,0 +1,12 @@
+"effect/index#Context":
+  replacement: "Context"
+  note: "Keep importing Context from effect; v4 removes declaration merges that made tags and references STM subtypes."
+"effect/index#Effect":
+  replacement: "Effect"
+  note: "Keep importing Effect from effect; v4 removes declaration merges that made Effects structural Sink, Stream, and Channel subtypes."
+"effect/index#Either":
+  replacement: "Result"
+  note: "Either was renamed to Result; Right and Left became Success and Failure, with Result.succeed and Result.fail constructors."
+"effect/index#Option":
+  replacement: "Option"
+  note: "Keep importing Option from effect; Option is no longer an Effect or STM subtype, so use Effect.fromOption when needed."

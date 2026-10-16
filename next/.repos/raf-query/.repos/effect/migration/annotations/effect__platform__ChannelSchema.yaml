@@ -1,0 +1,9 @@
+"@effect/platform/ChannelSchema#decode":
+  replacement: "ChannelSchema.decode"
+  note: "The API moved to effect/ChannelSchema; update the import and adapt the schema to the v4 Schema.Constraint model."
+"@effect/platform/ChannelSchema#duplex":
+  replacement: "ChannelSchema.duplex"
+  note: "The API moved to effect/ChannelSchema; update the import and adapt the schema to the v4 Schema.Constraint model."
+"@effect/platform/ChannelSchema#encode":
+  replacement: "ChannelSchema.encode"
+  note: "The API moved to effect/ChannelSchema; update the import and adapt the schema to the v4 Schema.Constraint model."

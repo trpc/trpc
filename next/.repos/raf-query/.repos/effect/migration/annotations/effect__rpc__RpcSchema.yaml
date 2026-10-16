@@ -1,0 +1,15 @@
+"@effect/rpc/RpcSchema#getStreamSchemas":
+  replacement: "effect/rpc/RpcSchema#getStreamSchemas"
+  note: "Retained for internal-style schema inspection; pass the schema itself rather than its AST."
+"@effect/rpc/RpcSchema#isStreamSchema":
+  replacement: "effect/rpc/RpcSchema#isStreamSchema"
+  note: "Retained; it accepts a v4 Schema.Constraint."
+"@effect/rpc/RpcSchema#isStreamSerializable":
+  replacement: "RpcSchema.isStreamSchema(schema)"
+  note: "The separate WithResult serializability predicate was removed; v4 RPC streaming is identified by its explicit Stream schema."
+"@effect/rpc/RpcSchema#Stream":
+  replacement: "effect/rpc/RpcSchema#Stream"
+  note: "Retained as both the stream schema interface and constructor; error is the second argument and schema services are split by direction."
+"@effect/rpc/RpcSchema#StreamSchemaId":
+  replacement: "none"
+  note: "The stream marker is private in v4; use RpcSchema.isStreamSchema and getStreamSchemas."

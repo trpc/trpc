@@ -1,0 +1,9 @@
+"@effect/platform/Template#Interpolated.Context":
+  replacement: "Template.Interpolated.Context"
+  note: "The API moved to effect/http/Template; v4 interpolation types also account for Effect values."
+"@effect/platform/Template#Interpolated.Error":
+  replacement: "Template.Interpolated.Error"
+  note: "The API moved to effect/http/Template; v4 interpolation types also account for Effect values."
+"@effect/platform/Template#make":
+  replacement: "Template.make"
+  note: "The API moved to effect/http/Template; v4 interpolation types also account for Effect values."
