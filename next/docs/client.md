@@ -152,6 +152,21 @@ const client = createEffectClient({
 const post = yield * client.post.byId.query({ id });
 ```
 
+## Tracing
+
+Every call runs in an Effect span named `trpc.<path>` (kind `client`), with `rpc.method`, `trpc.type` and `trpc.error.code` on failure. When an Effect tracer is installed, `httpLink` sends the span as `traceparent` and `b3` headers, and the server's `trpc.<path>` span joins the same trace:
+
+```ts
+import { NodeSdk } from '@effect/opentelemetry';
+
+const program = client.post.byId
+  .query({ id })
+  .pipe(Effect.withSpan('page.load'));
+await Effect.runPromise(program.pipe(Effect.provide(NodeSdk.layer(otel))));
+```
+
+With no tracer (the Promise client, or Effect's default), no headers are sent, so simple requests stay free of CORS preflights. `Effect.provideService(Tracer.DisablePropagation, true)` keeps the spans and drops the headers.
+
 ## Integrations
 
-`trpcdev/extend` has what integrations build on: `createUntypedClient` (its options keep link fields in a `context` bag, beside `type`, `path` and `input`), `runLinks`, `callProcedure`, the wire format and JSON Schema helpers.
+`trpcdev/extend` has what integrations build on: `createUntypedClient` (its options keep link fields in a `context` bag, beside `type`, `path` and `input`), `runLinks`, `runOperation` (`runLinks` in a client span, with trace propagation), `callProcedure`, the wire format and JSON Schema helpers.

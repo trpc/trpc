@@ -1,4 +1,5 @@
-import { Cause, Effect, Option, Stream } from 'effect';
+import { Cause, Effect, Option, Stream, Tracer } from 'effect';
+import { HttpTraceContext } from 'effect/http';
 import {
   isTrpcError,
   TrpcError,
@@ -73,6 +74,11 @@ export interface Operation<TContext extends object = {}> {
   readonly signal: AbortSignal | undefined;
   /** Subscriptions: resume after this event id. */
   readonly lastEventId?: string | undefined;
+  /**
+   * The call span's trace context (`traceparent`, `b3`) for links to send.
+   * Set only when a tracer is installed and propagation isn't disabled.
+   */
+  readonly trace?: Readonly<Record<string, string>> | undefined;
 }
 
 /**
@@ -356,6 +362,46 @@ export function chainSwitchNames(links: ReadonlyArray<AnyLink>): Set<string> {
     }
   }
   return names;
+}
+
+/**
+ * Runs `op` through `links` in a `trpc.<path>` client span, with the span's
+ * trace context on `op.trace` when a tracer is installed. Without one,
+ * requests get no extra headers, so simple cross-origin requests stay
+ * simple (no CORS preflight).
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export function runOperation(
+  links: ReadonlyArray<AnyLink>,
+  op: Operation,
+): OperationStream {
+  return Stream.unwrap(
+    Effect.gen(function* () {
+      const tracer = yield* Effect.tracer;
+      const disabled = yield* Tracer.DisablePropagation;
+      const span = yield* Effect.option(Effect.currentSpan);
+      if (tracer === Tracer.nativeTracer || disabled || Option.isNone(span)) {
+        return runLinks(links, op);
+      }
+      const trace = Object.fromEntries(
+        Object.entries(HttpTraceContext.toHeaders(span.value)),
+      ) as Record<string, string>;
+      return runLinks(links, { ...op, trace });
+    }),
+  ).pipe(
+    Stream.tapError((err) =>
+      Effect.annotateCurrentSpan('trpc.error.code', err.code),
+    ),
+    Stream.withSpan(`trpc.${op.path}`, {
+      kind: 'client',
+      attributes: {
+        'rpc.system': 'trpc',
+        'rpc.method': op.path,
+        'trpc.type': op.type,
+      },
+    }),
+  );
 }
 
 /**

@@ -211,6 +211,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
     );
     set(call?.headers);
     for (const op of ops) set(op.context.headers);
+    set(ops[0]?.trace);
     headers.set(HEADER.version, PROTOCOL_VERSION);
     for (const [k, v] of Object.entries(extra)) headers.set(k, v);
     const next =

@@ -3,15 +3,18 @@ import {
   Context,
   Effect,
   Exit,
+  Option,
   Queue,
   Stream,
   type Layer,
+  type Tracer,
 } from 'effect';
 import {
   Cookies,
   HttpEffect,
   HttpServerRequest,
   HttpServerResponse,
+  HttpTraceContext,
   type HttpMiddleware,
 } from 'effect/http';
 import {
@@ -392,6 +395,25 @@ const consumedError = () =>
   });
 
 /**
+ * The span an HTTP call's span is a child of: the request's span (Effect's
+ * HTTP tracer middleware makes one from `traceparent`), else the trace
+ * context in the request's headers.
+ */
+const parentSpan = (
+  request: HttpServerRequest.HttpServerRequest,
+): Effect.Effect<Tracer.AnySpan | undefined> =>
+  Effect.currentParentSpan.pipe(
+    Effect.option,
+    Effect.map((span) =>
+      Option.getOrUndefined(
+        Option.orElse(span, () =>
+          HttpTraceContext.fromHeaders(request.headers),
+        ),
+      ),
+    ),
+  );
+
+/**
  * Serves a router over the web-standard `fetch` interface (12 P-A). Works on
  * any runtime with `Request`/`Response`; `trpcdev/http` serves it with
  * Effect's `HttpServer` on Node, Bun and the rest. Underneath it's an
@@ -652,6 +674,7 @@ export function createFetchHandler<
       const type = procedure['~trpc'].type;
       const response = createResponseHandle();
       const { headers } = response;
+      const parent = yield* parentSpan(request);
       const exit = yield* Effect.promise(() =>
         base.run({
           procedure,
@@ -661,6 +684,7 @@ export function createFetchHandler<
           signal,
           response,
           allowResponse: single,
+          parent,
         }),
       );
       if (Exit.isFailure(exit)) {
@@ -875,6 +899,7 @@ export function createFetchHandler<
     Effect.gen(function* () {
       const lastEventId = request.headers[HEADER.lastEventId];
       const response = createResponseHandle();
+      const parent = yield* parentSpan(request);
       const exit = yield* Effect.promise(() =>
         base.run({
           procedure,
@@ -884,6 +909,7 @@ export function createFetchHandler<
           signal: controller.signal,
           response,
           lastEventId,
+          parent,
         }),
       );
       if (Exit.isFailure(exit)) {

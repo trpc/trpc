@@ -29,7 +29,7 @@ import {
   chainSwitchNames,
   firstValue,
   link,
-  runLinks,
+  runOperation,
   type TrpcLink,
 } from '../client/link.ts';
 import type {
@@ -195,7 +195,7 @@ export function createEffectClient(opts: TrpcClientOptions): unknown {
       input,
       splitCallOptions(callOpts),
     );
-    const stream = Stream.suspend(() => runLinks(opts.links, op));
+    const stream = Stream.suspend(() => runOperation(opts.links, op));
     return type === 'subscription' ? stream : firstValue(stream);
   });
 }

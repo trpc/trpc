@@ -74,7 +74,7 @@ What the packages ship today, each row covered by integration tests with real cl
 | Nest.js integration                                              | 🛑     | Not built; contracts are the base it would use                                                                                                                                                   |
 | Leading-middleware dedupe                                        | 🟡     | Client-side `dedupeLink`; no server middleware dedupe                                                                                                                                            |
 | Request/response validation on the client                        | 🛑     | Not built                                                                                                                                                                                        |
-| OpenTelemetry, logging integrations                              | 🛑     | Not built                                                                                                                                                                                        |
+| OpenTelemetry, logging integrations                              | ✅     | Effect's `Tracer`/`Logger` layers; client and server `trpc.<path>` spans share a trace via `traceparent`                                                                                         |
 | Rate limit helpers                                               | 🛑     | Not built                                                                                                                                                                                        |
 
 ## The decisions that matter most for parity
@@ -90,27 +90,27 @@ These are the bold rows above. Get them right and every other row is incremental
 
 oRPC ships these beyond the comparison rows. They are not parity requirements, but each one should be considered:
 
-| Feature                                                         | oRPC location                                              | Suggested priority           | Proposal |
-| --------------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------- | -------- |
-| Typed client context per call (`ClientContext`)                 | `client/rpc-link.md`                                       | v1                           | 16, 17   |
-| `DynamicLink` (choose a link per call)                          | `client/dynamic-link.md`                                   | v1 (≈ `splitLink`)           | 17       |
-| `createSafeClient`, `isDefinedError`                            | `client/error-handling.md`                                 | v1                           | 07, 16   |
-| Middleware with typed input / `mapInput`, output short-circuit  | `middleware.md`                                            | v1                           | 06       |
-| Built-in `onStart/onSuccess/onError/onFinish` middleware        | `middleware.md`                                            | v1                           | 06       |
-| Leading-middleware dedupe                                       | `best-practices/dedupe-middleware.md`                      | maybe                        | 06       |
-| `eventIterator(schema)` validation, `withEventMeta`             | `event-iterator.md`                                        | v1                           | 14       |
-| Publisher helpers (memory, Redis, durable objects, with resume) | `helpers/publisher.md`, `integrations/durable-iterator.md` | later                        | 14       |
-| Streamed and live TanStack queries                              | `integrations/tanstack-query.md`                           | v1                           | 19       |
-| OpenTelemetry, Pino, Sentry integrations                        | `integrations/*`                                           | later (Effect tracing helps) | 02, 13   |
-| Rate limit helpers                                              | `helpers/ratelimit.md`                                     | later                        | 13       |
-| Cookie, signing, encryption helpers                             | `helpers/*`                                                | no (out of scope)            | —        |
-| Smart coercion for OpenAPI inputs                               | `openapi/plugins/smart-coercion.md`                        | v1 with OpenAPI              | 18       |
-| OpenAPI reference UI (Scalar/Swagger)                           | `openapi/plugins/openapi-reference.md`                     | v1 with OpenAPI              | 18       |
-| OpenAPI → contract (Hey API plugin)                             | `openapi/openapi-to-contract.md`                           | later                        | 09, 18   |
-| Request/response validation on the client (with contract)       | `plugins/request-validation.md`, `response-validation.md`  | later                        | 13, 17   |
-| `.callable()` procedures, `call()` helper                       | `client/server-side.md`                                    | v1                           | 15       |
-| `createFormAction`, `useServerAction`, optimistic actions       | `server-action.md`                                         | v1 / later                   | 15, 20   |
-| AI SDK and Better Auth integrations                             | `integrations/*`                                           | later (docs/recipes)         | —        |
+| Feature                                                         | oRPC location                                              | Suggested priority     | Proposal |
+| --------------------------------------------------------------- | ---------------------------------------------------------- | ---------------------- | -------- |
+| Typed client context per call (`ClientContext`)                 | `client/rpc-link.md`                                       | v1                     | 16, 17   |
+| `DynamicLink` (choose a link per call)                          | `client/dynamic-link.md`                                   | v1 (≈ `splitLink`)     | 17       |
+| `createSafeClient`, `isDefinedError`                            | `client/error-handling.md`                                 | v1                     | 07, 16   |
+| Middleware with typed input / `mapInput`, output short-circuit  | `middleware.md`                                            | v1                     | 06       |
+| Built-in `onStart/onSuccess/onError/onFinish` middleware        | `middleware.md`                                            | v1                     | 06       |
+| Leading-middleware dedupe                                       | `best-practices/dedupe-middleware.md`                      | maybe                  | 06       |
+| `eventIterator(schema)` validation, `withEventMeta`             | `event-iterator.md`                                        | v1                     | 14       |
+| Publisher helpers (memory, Redis, durable objects, with resume) | `helpers/publisher.md`, `integrations/durable-iterator.md` | later                  | 14       |
+| Streamed and live TanStack queries                              | `integrations/tanstack-query.md`                           | v1                     | 19       |
+| OpenTelemetry, Pino, Sentry integrations                        | `integrations/*`                                           | done via Effect layers | 02, 13   |
+| Rate limit helpers                                              | `helpers/ratelimit.md`                                     | later                  | 13       |
+| Cookie, signing, encryption helpers                             | `helpers/*`                                                | no (out of scope)      | —        |
+| Smart coercion for OpenAPI inputs                               | `openapi/plugins/smart-coercion.md`                        | v1 with OpenAPI        | 18       |
+| OpenAPI reference UI (Scalar/Swagger)                           | `openapi/plugins/openapi-reference.md`                     | v1 with OpenAPI        | 18       |
+| OpenAPI → contract (Hey API plugin)                             | `openapi/openapi-to-contract.md`                           | later                  | 09, 18   |
+| Request/response validation on the client (with contract)       | `plugins/request-validation.md`, `response-validation.md`  | later                  | 13, 17   |
+| `.callable()` procedures, `call()` helper                       | `client/server-side.md`                                    | v1                     | 15       |
+| `createFormAction`, `useServerAction`, optimistic actions       | `server-action.md`                                         | v1 / later             | 15, 20   |
+| AI SDK and Better Auth integrations                             | `integrations/*`                                           | later (docs/recipes)   | —        |
 
 ## Maintenance
 

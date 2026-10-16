@@ -1,4 +1,11 @@
-import { Context, Effect, ManagedRuntime, type Exit, type Layer } from 'effect';
+import {
+  Context,
+  Effect,
+  ManagedRuntime,
+  type Exit,
+  type Layer,
+  type Tracer,
+} from 'effect';
 import type { HttpServerRequest } from 'effect/http';
 import { TrpcError, type AnyTrpcError } from '../internal/error.ts';
 import type { MaybePromise, ProcedureType } from '../internal/types.ts';
@@ -27,6 +34,8 @@ export interface RunOpts {
   lastEventId?: string | undefined;
   /** Added to the layer's services for this call. */
   services?: Context.Context<never> | undefined;
+  /** The span the call's `trpc.<path>` span is a child of. */
+  parent?: Tracer.AnySpan | undefined;
   /** An unbatched HTTP call, which may return an `HttpServerResponse`. */
   allowResponse?: boolean | undefined;
 }
@@ -77,7 +86,10 @@ export function createHandlerCore(opts: CoreOptions): HandlerCore {
     run: async (o) => {
       const base = await getServices();
       const context = o.services ? Context.merge(base, o.services) : base;
-      return Effect.runPromiseExitWith(context)(callProcedure(o), {
+      const call = o.parent
+        ? Effect.withParentSpan(callProcedure(o), o.parent)
+        : callProcedure(o);
+      return Effect.runPromiseExitWith(context)(call, {
         signal: o.signal,
       });
     },

@@ -20,7 +20,12 @@ export {
   type TrpcUntypedClient,
   type UntypedCallOptions,
 } from '../client/client.ts';
-export { clientErrorFromCause, firstValue, runLinks } from '../client/link.ts';
+export {
+  clientErrorFromCause,
+  firstValue,
+  runLinks,
+  runOperation,
+} from '../client/link.ts';
 export {
   callProcedure,
   normalizeCause,

@@ -7,7 +7,7 @@ import {
   chainSwitchNames,
   clientErrorFromCause,
   firstValue,
-  runLinks,
+  runOperation,
   type Operation,
   type AnyLink,
   type OperationStream,
@@ -181,7 +181,7 @@ export function createUntypedClient(
     async request(o) {
       const op = makeOperation(o.type, o.path, o.input, o);
       const exit = await Effect.runPromiseExit(
-        firstValue(runLinks(links, op)),
+        firstValue(runOperation(links, op)),
         {
           signal: op.signal,
         },
@@ -195,7 +195,7 @@ export function createUntypedClient(
         [Symbol.asyncIterator]() {
           const op = makeOperation('subscription', o.path, o.input, o);
           return Stream.toAsyncIterable(
-            untilAborted(runLinks(links, op), op.signal),
+            untilAborted(runOperation(links, op), op.signal),
           )[Symbol.asyncIterator]();
         },
       };
