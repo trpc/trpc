@@ -30,7 +30,10 @@ export type ErrorMap = Readonly<Record<string, ErrorSpec>>;
  * @stability stable
  */
 export type MetaMerge<TMeta> = {
-  readonly [K in keyof TMeta]?: (before: TMeta[K], next: TMeta[K]) => TMeta[K];
+  readonly [K in keyof TMeta]?: (
+    before: Exclude<TMeta[K], undefined>,
+    next: Exclude<TMeta[K], undefined>,
+  ) => TMeta[K];
 };
 
 /**
