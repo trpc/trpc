@@ -51,7 +51,7 @@ const {
   useTrpc,
   useTrpcClient,
   context: TrpcContext,
-} = createTrpcContext<AppRouter, {}, Links>();
+} = createTrpcContext<AppClient>();
 
 function mount(ui: ReactNode, client: AppClient) {
   const queryClient = new QueryClient({
@@ -412,4 +412,34 @@ test("a context typed with the links' types takes a client whose links declare e
   expectTypeOf(client).toExtend<
     Parameters<typeof typed.TrpcProvider>[0]['client']
   >();
+});
+
+test("a context typed from a client type takes its router, its links' context and their types", () => {
+  class Offline extends TrpcError.Tagged('OFFLINE') {}
+  const links = [
+    link<{ context: { priority?: 'high' }; errors: Offline }>(({ op, next }) =>
+      next(op),
+    ),
+    httpLink({ url: 'http://localhost', serializer }),
+  ] as const;
+  const makeClient = () =>
+    createTrpcClient({ router: routerType<AppRouter>(), links });
+  const fromClient = createTrpcContext<ReturnType<typeof makeClient>>();
+  const spelled = createTrpcContext<
+    AppRouter,
+    LinksContext<typeof links>,
+    LinksTypes<typeof links>
+  >();
+  expectTypeOf(fromClient.useTrpc).toEqualTypeOf(spelled.useTrpc);
+  expectTypeOf(fromClient.useTrpcClient).toEqualTypeOf(spelled.useTrpcClient);
+  expectTypeOf(fromClient.useTrpc).not.toEqualTypeOf(
+    createTrpcContext<AppRouter>().useTrpc,
+  );
+  expectTypeOf(makeClient()).toExtend<
+    Parameters<typeof fromClient.TrpcProvider>[0]['client']
+  >();
+  // A router type still works as before.
+  expectTypeOf(createTrpcContext<AppRouter>().useTrpc).toEqualTypeOf(
+    createTrpcContext<AppRouter, {}, {}>().useTrpc,
+  );
 });

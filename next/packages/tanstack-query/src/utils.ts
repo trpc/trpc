@@ -15,7 +15,12 @@ import {
   type SkipToken,
 } from '@tanstack/query-core';
 import { structuralSharing } from './sharing.ts';
-import type { ChainTypes, RouterOf, TrpcClient } from 'trpcdev/client';
+import type {
+  ChainTypes,
+  ClientTypes,
+  RouterOf,
+  TrpcClient,
+} from 'trpcdev/client';
 import {
   pathKey,
   procedureKey,
@@ -566,6 +571,44 @@ export type TrpcContextOptions = Omit<
   CreateTrpcQueryUtilsOptions<unknown>,
   'client'
 >;
+
+type KnownClient<T> = [ClientTypes<T>] extends [never]
+  ? undefined
+  : ClientTypes<T>;
+
+/**
+ * The router a framework's `createTrpcContext<T>()` types: a client type's
+ * router, else `T` itself (a router type, a `routerType()` value's type or
+ * a contract).
+ *
+ * @example
+ * ```ts
+ * type AppClient = ReturnType<typeof makeClient>;
+ * export const { TrpcProvider, useTrpc } = createTrpcContext<AppClient>();
+ * ```
+ * @since 12.0.0-alpha.0
+ * @stability stable
+ */
+export type SourceRouter<T> =
+  KnownClient<T> extends { router: infer R } ? R : T;
+
+/**
+ * The context a client type's links declare, for `createTrpcContext<T>()`;
+ * `{}` when `T` isn't a client type.
+ * @since 12.0.0-alpha.0
+ * @stability stable
+ */
+export type SourceContext<T> =
+  KnownClient<T> extends { context: infer C extends object } ? C : {};
+
+/**
+ * A client type's link types (errors, unsupported operations, result form),
+ * for `createTrpcContext<T>()`; `{}` when `T` isn't a client type.
+ * @since 12.0.0-alpha.0
+ * @stability stable
+ */
+export type SourceLinks<T> =
+  KnownClient<T> extends { links: infer L extends ChainTypes } ? L : {};
 
 function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
   return (

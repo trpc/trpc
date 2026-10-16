@@ -31,6 +31,9 @@ import {
   type SubscriptionResult,
   type TrpcQueryUtilsFor,
   type TrpcSubscriptionOptions,
+  type SourceContext,
+  type SourceLinks,
+  type SourceRouter,
   type TrpcContextOptions,
 } from '@trpcdev/tanstack-query';
 
@@ -81,8 +84,10 @@ export interface TrpcPreactContext<
 }
 
 /**
- * Creates a Preact context for a client and its helpers. `TContext` is what
- * the client's links declare.
+ * Creates a Preact context for a client and its helpers.
+ * `TSource` is the client's type (`ReturnType<typeof makeClient>`), which
+ * brings its links' context and types too, or a router type with
+ * `TContext` and `TLinks` spelled out.
  *
  * @example
  * ```tsx
@@ -98,10 +103,13 @@ export interface TrpcPreactContext<
  * @stability stable
  */
 export function createTrpcContext<
-  TRouter,
-  TContext extends object = {},
-  TLinks extends ChainTypes = {},
->(opts: TrpcContextOptions = {}): TrpcPreactContext<TRouter, TContext, TLinks> {
+  TSource,
+  TContext extends object = SourceContext<TSource>,
+  TLinks extends ChainTypes = SourceLinks<TSource>,
+>(
+  opts: TrpcContextOptions = {},
+): TrpcPreactContext<SourceRouter<TSource>, TContext, TLinks> {
+  type TRouter = SourceRouter<TSource>;
   type Value = {
     client: TrpcClient<RouterOf<TRouter>, TContext, undefined, TLinks>;
     utils: TrpcQueryUtilsFor<TRouter, TContext, TLinks>;

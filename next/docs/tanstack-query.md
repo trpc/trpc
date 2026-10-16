@@ -30,10 +30,16 @@ A refetch that returns equal data keeps the old reference, `Date`s, `Map`s and `
 
 Pass what links read in `context`, kept apart from TanStack's own options: `trpc.post.byId.queryOptions({ input, context: { dedupe: false } })`.
 
-With React, a client made per request or per test goes through context:
+With React, a client made per request or per test goes through context. Typed from the client's type, the helpers get what its links declare (call-option context, errors, the serializer's form); a router type works too, `createTrpcContext<AppRouter>()`:
 
 ```tsx
-export const { TrpcProvider, useTrpc } = createTrpcContext<AppRouter>();
+const makeClient = () =>
+  createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [httpLink({ url })],
+  });
+export const { TrpcProvider, useTrpc } =
+  createTrpcContext<ReturnType<typeof makeClient>>();
 
 <QueryClientProvider client={queryClient}>
   <TrpcProvider client={client}>

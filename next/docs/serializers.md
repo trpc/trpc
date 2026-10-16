@@ -86,15 +86,18 @@ export const serializer = createSerializer({ types: { Decimal: decimal } });
 
 ## Hydration
 
-`hydrationOptions({ client })` serializes TanStack Query data with the client's serializer (the first link that has one), so server-rendered data hydrates with the same types the client sees. The query contexts take the links' form as their third type argument:
+`hydrationOptions({ client })` serializes TanStack Query data with the client's serializer (the first link that has one), so server-rendered data hydrates with the same types the client sees. Type the query context from the client, and it takes the links' form too:
 
 ```ts
-type Links = { form: FormOfSerializer<typeof serializer> };
-export const { TrpcProvider, useTrpc } = createTrpcContext<
-  AppRouter,
-  {},
-  Links
->();
+const makeClient = () =>
+  createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [httpLink({ url, serializer })],
+  });
+export const { TrpcProvider, useTrpc } =
+  createTrpcContext<ReturnType<typeof makeClient>>();
 ```
+
+Without a client type, pass the form as the third type argument: `createTrpcContext<AppRouter, {}, { form: FormOfSerializer<typeof serializer> }>()`.
 
 See [TanStack Query](./tanstack-query.md#hydration).

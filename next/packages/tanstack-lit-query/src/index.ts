@@ -49,6 +49,9 @@ import {
   type SubscriptionResult,
   type TrpcQueryUtilsFor,
   type TrpcSubscriptionOptions,
+  type SourceContext,
+  type SourceLinks,
+  type SourceRouter,
   type TrpcContextOptions,
 } from '@trpcdev/tanstack-query';
 
@@ -115,7 +118,10 @@ function lazy<T extends object>(resolve: () => T): T {
 
 /**
  * Creates a `@lit/context` key, a provider element and consumers for a
- * client and its helpers. `TContext` is what the client's links declare.
+ * client and its helpers.
+ * `TSource` is the client's type (`ReturnType<typeof makeClient>`), which
+ * brings its links' context and types too, or a router type with
+ * `TContext` and `TLinks` spelled out.
  *
  * @example
  * ```ts
@@ -130,10 +136,13 @@ function lazy<T extends object>(resolve: () => T): T {
  * @stability stable
  */
 export function createTrpcContext<
-  TRouter,
-  TContext extends object = {},
-  TLinks extends ChainTypes = {},
->(opts: TrpcContextOptions = {}): TrpcLitContext<TRouter, TContext, TLinks> {
+  TSource,
+  TContext extends object = SourceContext<TSource>,
+  TLinks extends ChainTypes = SourceLinks<TSource>,
+>(
+  opts: TrpcContextOptions = {},
+): TrpcLitContext<SourceRouter<TSource>, TContext, TLinks> {
+  type TRouter = SourceRouter<TSource>;
   type Client = TrpcClient<RouterOf<TRouter>, TContext, undefined, TLinks>;
   type Value = {
     client: Client;

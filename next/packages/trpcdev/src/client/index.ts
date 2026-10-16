@@ -80,6 +80,7 @@ export {
   routerType,
   type CallOptions,
   type ClientError,
+  type ClientTypes,
   type DecorateProcedure,
   type DefinedError,
   type ErrorData,

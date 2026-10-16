@@ -250,10 +250,12 @@ type DecorateCarried<
         >;
       };
 
+declare const clientTypes: unique symbol;
+
 /**
- * The typed client for a router. Outputs follow the serializer the router
- * declares; `TForm` overrides it, as in-process callers do (values by
- * reference keep their types).
+ * The typed client for a router. Outputs follow the form the links declare
+ * (their serializer's); `TForm` overrides it, as in-process callers do
+ * (values by reference keep their types).
  * @since 12.0.0-alpha.0
  * @stability stable
  */
@@ -262,11 +264,50 @@ export type TrpcClient<
   TContext extends object = {},
   TForm extends OutputForm | undefined = undefined,
   TLinks extends ChainTypes = {},
+> = ClientRouter<TRouter, TContext, TForm, TLinks> & {
+  /**
+   * Types only, never set: what {@link ClientTypes} reads. A method, so
+   * its parameter doesn't change which clients are assignable to which.
+   */
+  [clientTypes]?(types: {
+    router: TRouter;
+    context: TContext;
+    links: TForm extends OutputForm
+      ? Omit<TLinks, 'form'> & { form: TForm }
+      : TLinks;
+  }): void;
+};
+
+type ClientRouter<
+  TRouter,
+  TContext extends object,
+  TForm extends OutputForm | undefined,
+  TLinks extends ChainTypes,
 > = {
   [K in keyof TRouter]: TRouter[K] extends AnyProcedure
     ? DecorateProcedure<TRouter[K], TContext, TForm, TLinks>
-    : TrpcClient<Unlazy<TRouter[K]>, TContext, TForm, TLinks>;
+    : ClientRouter<Unlazy<TRouter[K]>, TContext, TForm, TLinks>;
 };
+
+/**
+ * A client type's router, link context and link types (with the form
+ * results arrive in), or `never` for a type that isn't a {@link TrpcClient}.
+ *
+ * @example
+ * ```ts
+ * type AppClient = ReturnType<typeof makeClient>;
+ * type Context = ClientTypes<AppClient>['context'];
+ * ```
+ * @since 12.0.0-alpha.0
+ * @stability stable
+ */
+export type ClientTypes<T> = T extends {
+  [clientTypes]?(types: infer X): void;
+}
+  ? unknown extends X
+    ? never
+    : X
+  : never;
 
 declare const routerTypeBrand: unique symbol;
 

@@ -28,6 +28,9 @@ import type { ChainTypes, RouterOf, TrpcClient } from 'trpcdev/client';
 import {
   createTrpcQueryUtils,
   type TrpcQueryUtilsFor,
+  type SourceContext,
+  type SourceLinks,
+  type SourceRouter,
   type TrpcContextOptions,
 } from '@trpcdev/tanstack-query';
 
@@ -69,7 +72,10 @@ export interface TrpcSvelteContext<
 
 /**
  * Creates a context key and helpers for a client and its helpers.
- * `TContext` is what the client's links declare.
+ *
+ * `TSource` is the client's type (`ReturnType<typeof makeClient>`), which
+ * brings its links' context and types too, or a router type with
+ * `TContext` and `TLinks` spelled out.
  *
  * @example
  * ```svelte
@@ -88,10 +94,13 @@ export interface TrpcSvelteContext<
  * @stability stable
  */
 export function createTrpcContext<
-  TRouter,
-  TContext extends object = {},
-  TLinks extends ChainTypes = {},
->(opts: TrpcContextOptions = {}): TrpcSvelteContext<TRouter, TContext, TLinks> {
+  TSource,
+  TContext extends object = SourceContext<TSource>,
+  TLinks extends ChainTypes = SourceLinks<TSource>,
+>(
+  opts: TrpcContextOptions = {},
+): TrpcSvelteContext<SourceRouter<TSource>, TContext, TLinks> {
+  type TRouter = SourceRouter<TSource>;
   type Value = {
     client: TrpcClient<RouterOf<TRouter>, TContext, undefined, TLinks>;
     utils: TrpcQueryUtilsFor<TRouter, TContext, TLinks>;

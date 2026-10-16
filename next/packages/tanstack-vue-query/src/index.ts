@@ -39,6 +39,9 @@ import {
   type SubscriptionStatus,
   type TrpcQueryUtilsFor,
   type TrpcSubscriptionOptions,
+  type SourceContext,
+  type SourceLinks,
+  type SourceRouter,
   type TrpcContextOptions,
 } from '@trpcdev/tanstack-query';
 
@@ -86,7 +89,10 @@ export interface TrpcVueContext<
 
 /**
  * Creates an injection key and helpers for a client and its helpers.
- * `TContext` is what the client's links declare.
+ *
+ * `TSource` is the client's type (`ReturnType<typeof makeClient>`), which
+ * brings its links' context and types too, or a router type with
+ * `TContext` and `TLinks` spelled out.
  *
  * @example
  * ```ts
@@ -97,10 +103,13 @@ export interface TrpcVueContext<
  * @stability stable
  */
 export function createTrpcContext<
-  TRouter,
-  TContext extends object = {},
-  TLinks extends ChainTypes = {},
->(opts: TrpcContextOptions = {}): TrpcVueContext<TRouter, TContext, TLinks> {
+  TSource,
+  TContext extends object = SourceContext<TSource>,
+  TLinks extends ChainTypes = SourceLinks<TSource>,
+>(
+  opts: TrpcContextOptions = {},
+): TrpcVueContext<SourceRouter<TSource>, TContext, TLinks> {
+  type TRouter = SourceRouter<TSource>;
   type Client = TrpcClient<RouterOf<TRouter>, TContext, undefined, TLinks>;
   type Value = {
     client: Client;

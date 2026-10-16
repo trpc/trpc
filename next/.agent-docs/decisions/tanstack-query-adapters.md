@@ -14,6 +14,7 @@
   | `@trpcdev/tanstack-lit-query`     | `TrpcProvider` element class, `useTrpc(host)`, `useTrpcClient(host)`, `context` | `createSubscriptionController(host, options)` |
 
 - `createTrpcContext<TRouter, TContext>()` takes a router type, a `routerType()` value's type or a contract, plus the context the client's links declare. Names follow each adapter: `use*` (React, Preact, Vue, Solid), `create*` (Svelte), `inject*`/`provide*` (Angular), controllers (Lit).
+- (agent) It also takes a client type, `createTrpcContext<ReturnType<typeof makeClient>>()`, and reads the router, link context and link types from it ([`replaceable-serializers.md`](./replaceable-serializers.md)).
 - Providers take only `client`; the app renders TanStack's own `QueryClientProvider` (or plugin) next to them, so TanStack's provider and devtools stay the source of truth. Lost: v11's `trpcClient` and `queryClient` props.
 - Human, 2026-10-16 (Q19.4, decision round): "A". `createTrpcQueryUtils({ client })`. v11's `createTRPCOptionsProxy` describes the implementation, not what it gives you.
 - Tests (`test/tanstack-query/`, one file per adapter plus `core.test.ts`) use a real `createTestServer`, `httpLink` and components in happy-dom with the same-origin policy off. React also covers `renderToString` with `HydrationBoundary` and `hydrateRoot`. Solid and Svelte are separate Vitest projects with browser conditions and inlined dependencies (Node conditions resolve their server builds). Svelte components are `.svelte` files; Angular is JIT with zoneless `TestBed`.

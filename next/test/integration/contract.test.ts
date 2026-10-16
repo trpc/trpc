@@ -274,12 +274,16 @@ test('a contract procedure without an implementation answers NOT_IMPLEMENTED', a
 
 test('inferContract strips server types; clients from it match', () => {
   type FromRouter = inferContract<typeof appRouter>;
-  expectTypeOf<TrpcClient<FromRouter>>().toEqualTypeOf<
-    TrpcClient<AppContract>
+  // The clients differ only in the router type they record (`ClientTypes`).
+  type Calls<T> = { [K in keyof T as K extends string ? K : never]: T[K] };
+  expectTypeOf<Calls<TrpcClient<FromRouter>>>().toEqualTypeOf<
+    Calls<TrpcClient<AppContract>>
   >();
-  expectTypeOf<TrpcClient<FromRouter>>().toEqualTypeOf<
-    TrpcClient<typeof appRouter>
+  expectTypeOf<Calls<TrpcClient<FromRouter>>>().toEqualTypeOf<
+    Calls<TrpcClient<typeof appRouter>>
   >();
+  expectTypeOf<TrpcClient<FromRouter>>().toExtend<TrpcClient<AppContract>>();
+  expectTypeOf<TrpcClient<AppContract>>().toExtend<TrpcClient<FromRouter>>();
 });
 
 test('toContract() emits a JSON contract that types clients (Q9.4)', async () => {
