@@ -282,8 +282,11 @@ export function loggerLink(
 export interface RetryLinkOptions {
   /** @default 3 */
   retries?: number;
-  /** Delay before each retry. @default attempt => 2 ** attempt * 100 */
-  delayMs?: (attempt: number) => number;
+  /**
+   * Delay before each retry, given the error it retries (a `RateLimited`
+   * error's `data.retryAfter`, for one). @default attempt => 2 ** attempt * 100
+   */
+  delayMs?: (attempt: number, error: AnyTrpcError) => number;
   /**
    * Whether to retry. By default: queries only, and only errors outside the
    * typed union (network failures, 5xx), never aborts.
@@ -322,7 +325,9 @@ export function retryLink(opts: RetryLinkOptions = {}): TrpcLink {
       Stream.catch(next(op), (error) =>
         n < retries && shouldRetry({ op, error, attempt: n + 1 })
           ? Stream.unwrap(
-              Effect.sleep(delayMs(n + 1)).pipe(Effect.as(attempt(n + 1))),
+              Effect.sleep(delayMs(n + 1, error)).pipe(
+                Effect.as(attempt(n + 1)),
+              ),
             )
           : Stream.fail(error),
       );

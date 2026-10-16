@@ -152,12 +152,13 @@ test('concat checks the ctx a plugin requires', () => {
 
 test('concat runs the leading middleware an app and a plugin share once', async () => {
   const calls: string[] = [];
-  const session = middleware<{ ctx: { user: string | null } }>()(
-    ({ ctx, next }) => {
-      calls.push('session');
-      return next({ ctx: { session: ctx.user ?? 'anon' } });
-    },
-  );
+  const session = middleware<{ ctx: { user: string | null } }>()(({
+    ctx,
+    next,
+  }) => {
+    calls.push('session');
+    return next({ ctx: { session: ctx.user ?? 'anon' } });
+  });
   const pluginT = initTrpc<{ ctx: { user: string | null } }>();
   const tagged = pluginT.procedure.use(session).use(({ ctx, next }) => {
     calls.push('plugin');

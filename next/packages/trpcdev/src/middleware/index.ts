@@ -14,3 +14,8 @@
  * @module
  */
 export { onError, onFinish, onStart, onSuccess } from '../server/middleware.ts';
+export {
+  RateLimited,
+  rateLimit,
+  type RateLimitOptions,
+} from '../server/ratelimit.ts';
