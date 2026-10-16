@@ -7,6 +7,10 @@ packages:
 
 minimumReleaseAgeExclude:
   - vendor-src@0.15.4
+  - '@orpc/client@2.0.0-beta.44'
+  - '@orpc/contract@2.0.0-beta.44'
+  - '@orpc/server@2.0.0-beta.44'
+  - '@orpc/shared@2.0.0-beta.44'
 
 overrides:
   vite@*: npm:@voidzero-dev/vite-plus-core@1.1.0

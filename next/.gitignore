@@ -6,3 +6,4 @@ coverage
 .next
 next-env.d.ts
 .wrangler
+.generated

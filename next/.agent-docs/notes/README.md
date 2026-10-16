@@ -28,3 +28,4 @@ Agent-written working notes: research, spike results, benchmarks and anything wo
 | [Declared invalidation plugin](./invalidation-plugin.md)                  | 19         | `invalidation/`             |
 | [Nested deferred values over SSE](./sse-nested-deferred.md)               | 19         | `sse-deferred/`             |
 | [Durable mid-stream resume](./durable-mid-stream-resume.md)               | 19         | `durable-resume/`           |
+| [Benchmarks against v11 and oRPC](./benchmarks.md)                        | all        | `tooling/bench/`            |
