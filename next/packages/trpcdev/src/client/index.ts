@@ -35,7 +35,6 @@ export {
   type ReservedCallOptions,
   type Operation,
   type OperationStream,
-  type PromiseLinkOpts,
   type BuiltinCallOptions,
   type TrpcRequestInit,
   type TrpcLink,

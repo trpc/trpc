@@ -19,7 +19,12 @@ import { Effect, Exit, Layer, Scope, Stream } from 'effect';
 import superjson from 'superjson';
 import { EventSource } from 'undici';
 import { serve } from 'trpcdev/http';
-import { createV11Handler, type V11HandlerOptions } from 'trpcdev/interop';
+import { createTrpcClient, routerType } from 'trpcdev/client';
+import {
+  createV11Handler,
+  fromV11Link,
+  type V11HandlerOptions,
+} from 'trpcdev/interop';
 import { error, initTrpc, tracked } from 'trpcdev/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
@@ -487,6 +492,37 @@ test('old apps keep their v11 AppRouter type', async () => {
     id: 1,
     title: 'T',
   });
+});
+
+test('a v12 client sends through a v11 terminating link', async () => {
+  await using app = await start();
+  const client = createTrpcClient({
+    router: routerType<typeof router>(),
+    links: [
+      fromV11Link(
+        splitLink({
+          condition: (op) => op.type === 'subscription',
+          true: httpSubscriptionLink({
+            url: app.url,
+            EventSource: EventSource as never,
+          }),
+          false: httpBatchLink({ url: app.url, headers: { 'x-user': 'kim' } }),
+        }),
+      ),
+    ],
+  });
+  expect(await client.greet.query({ name: 'v12' })).toBe('hello v12');
+  expect(await client.whoami.query()).toEqual({
+    user: 'kim',
+    transport: 'http',
+  });
+  await expect(client.post.byId.query({ id: '2' })).rejects.toMatchObject({
+    code: 'NOT_FOUND',
+    message: 'No post 2',
+  });
+  const ticks: number[] = [];
+  for await (const n of client.ticks.subscribe()) ticks.push(n);
+  expect(ticks).toEqual([1, 2, 3]);
 });
 
 test('the response handle sets status and cookies, batched or not', async () => {

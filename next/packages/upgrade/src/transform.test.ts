@@ -189,6 +189,18 @@ export const isTrpcError = (e: unknown) => e instanceof TRPCClientError;
     `);
   });
 
+  test('custom v11 links are reported', () => {
+    expect(
+      messages(`import type { TRPCLink } from '@trpc/client';
+export const authLink: TRPCLink<AppRouter> = () => ({ op, next }) => next(op);
+`),
+    ).toMatchInlineSnapshot(`
+      [
+        "1:15 TRPCLink: keep the link with fromV11Link(link) from trpcdev/interop, or rewrite it with link() as an Effect Stream function",
+      ]
+    `);
+  });
+
   test('a client with options from a variable', () => {
     expect(
       upgrade(`import { createTRPCProxyClient } from '@trpc/client';

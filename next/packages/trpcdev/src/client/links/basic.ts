@@ -117,7 +117,7 @@ export function splitLink<
 ): TrpcLink<BranchesDecl<{ true: TTrue; false: TFalse }>, TRouter> {
   const yes = asArray(opts.true);
   const no = asArray(opts.false);
-  const split = link.effect(({ op }) =>
+  const split = link(({ op }) =>
     runLinks(opts.condition(op as never) ? yes : no, op),
   );
   setSwitchNames(split, [...chainSwitchNames(yes), ...chainSwitchNames(no)]);
@@ -179,7 +179,7 @@ export function dedupeLink(
       refs: number;
     }
   >();
-  return link.effect<{ context: DedupeContext }>(({ op, next }) => {
+  return link<{ context: DedupeContext }>(({ op, next }) => {
     if (op.type !== 'query' || op.context.dedupe === false) return next(op);
     const key = keyOf(op);
     return Stream.fromEffect(
@@ -259,7 +259,7 @@ export function loggerLink(
       else
         console.log(label, event.direction === 'up' ? op.input : event.result);
     });
-  return link.effect(({ op, next }) => {
+  return link(({ op, next }) => {
     if (opts.enabled && !opts.enabled(op)) return next(op);
     const start = Date.now();
     log({ direction: 'up', op });
@@ -325,7 +325,7 @@ export function retryLink(opts: RetryLinkOptions = {}): TrpcLink {
   const retries = opts.retries ?? 3;
   const delayMs = opts.delayMs ?? ((attempt: number) => 2 ** attempt * 100);
   const shouldRetry = opts.retry ?? defaultRetry;
-  return link.effect(({ op, next }) => {
+  return link(({ op, next }) => {
     const attempt = (n: number): OperationStream =>
       Stream.catch(next(op), (error) =>
         n < retries && shouldRetry({ op, error, attempt: n + 1 })
@@ -394,7 +394,7 @@ export function durableLink(
 ): TrpcLink<{ context: DurableContext }> {
   const retries = opts.retries ?? 3;
   const delayMs = opts.delayMs ?? ((attempt: number) => 2 ** attempt * 100);
-  return link.effect<{ context: DurableContext }>(({ op, next }) => {
+  return link<{ context: DurableContext }>(({ op, next }) => {
     const { durable = op.type === 'mutation' } = op.context;
     if (op.type === 'subscription' || !durable) return next(op);
     const callId = op.context.callId ?? crypto.randomUUID();

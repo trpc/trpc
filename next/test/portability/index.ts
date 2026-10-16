@@ -156,7 +156,7 @@ export const handler = createFetchHandler({
 
 export const client = createTrpcClient({
   router: routerType<AppRouter>(),
-  links: [link(async ({ op, next }) => next(op)), httpLink({ url: '/trpc' })],
+  links: [link(({ op, next }) => next(op)), httpLink({ url: '/trpc' })],
 });
 
 export const localClient = createTrpcClient({
@@ -170,7 +170,7 @@ export const effectClient = createEffectClient({
 });
 
 export const traceLink = link<{ context: { traceId?: string } }>(
-  async ({ op, next }) => next(op),
+  ({ op, next }) => next(op),
 );
 
 export const socket = wsLink({ url: 'ws://localhost/trpc' });

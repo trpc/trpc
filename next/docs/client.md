@@ -28,12 +28,10 @@ await client.post.byId.query(
 `headers`, `init` and `batch: false` (send this call alone) are read by `httpLink`, and `dedupe` by `dedupeLink`. A link of your own declares what it reads:
 
 ```ts
-const traceLink = link<{ context: { traceId?: string } }>(
-  async ({ op, next }) => {
-    span(op.context.traceId);
-    return next(op);
-  },
-);
+const traceLink = link<{ context: { traceId?: string } }>(({ op, next }) => {
+  span(op.context.traceId);
+  return next(op);
+});
 // client.post.byId.query(input, { traceId: 'abc' })
 ```
 
@@ -46,7 +44,7 @@ class RateLimited extends TrpcError.Tagged('RATE_LIMITED', {
   data: Schema.Struct({ retryAfter: Schema.Number }),
 }) {}
 
-const rateLimit = link.effect<{ errors: RateLimited }>(({ op, next }) =>
+const rateLimit = link<{ errors: RateLimited }>(({ op, next }) =>
   budget.take() ? next(op) : Stream.fail(new RateLimited({ retryAfter: 5 })),
 );
 const restOnly = link<{ unsupported: 'subscription' }>(…);
@@ -104,13 +102,13 @@ await client.report.query(input, { transport: 'http' });
 
 A branch can be a chain (an array of links), including another `switchLink`. The name can't be `signal`, `lastEventId`, `init`, `headers` or `reconnect`, and two switch links on one chain can't share a name; both are type errors and throw when the link is made.
 
-`link(async ({ op, next }) => …)` writes a Promise link and `link.effect(({ op, next }) => stream)` an Effect one.
+`link(({ op, next }) => stream)` writes a link: it gets the operation and the rest of the chain, and returns an Effect `Stream` (a query or mutation is a one-element stream). Links written for v11 run unchanged through [`fromV11Link`](./migrating-from-v11.md#links) from `trpcdev/interop`.
 
 A link can change the operation it passes on. That lets one client cover routers served by different backends, even ones with different contexts:
 
 ```ts
 const unprefix = (prefix: string) =>
-  link.effect(({ op, next }) =>
+  link(({ op, next }) =>
     next({ ...op, path: op.path.slice(prefix.length + 1) }),
   );
 

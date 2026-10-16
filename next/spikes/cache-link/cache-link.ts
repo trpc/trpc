@@ -110,7 +110,7 @@ export function cacheLink(
 ): TrpcLink<{ context: CacheContext }> {
   const { cache } = opts;
   const invalidates = opts.invalidates ?? (() => undefined);
-  return link.effect<{ context: CacheContext }>(({ op, next }) => {
+  return link<{ context: CacheContext }>(({ op, next }) => {
     if (op.type === 'mutation') {
       return next(op).pipe(
         Stream.tap(() => Effect.sync(() => cache.invalidate(invalidates(op)))),

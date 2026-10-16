@@ -102,6 +102,11 @@ const MODULE_NOTES: Readonly<Record<string, string>> = {
     '@trpc/next has no v12 version: use createFetchHandler in a route handler',
 };
 
+const NAME_NOTES: Readonly<Record<string, string>> = {
+  TRPCLink:
+    'TRPCLink: keep the link with fromV11Link(link) from trpcdev/interop, or rewrite it with link() as an Effect Stream function',
+};
+
 const ROOT_OPTION_NOTES: Readonly<Record<string, string>> = {
   transformer:
     'transformer: drop it here; pass the same createSyncSerializer(transformer) to the handler and every link',
@@ -274,6 +279,8 @@ export function upgradeSource(source: string, filename: string): UpgradeResult {
         ? spec['local'].name
         : spec['exported'].name;
       const next = own(map.names, name) ?? name;
+      const nameNote = own(NAME_NOTES, name);
+      if (nameNote) note(spec.start, nameNote);
       const kind =
         spec['importKind'] === 'type' || spec['exportKind'] === 'type'
           ? 'type '

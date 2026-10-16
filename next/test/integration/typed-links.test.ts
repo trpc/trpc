@@ -100,13 +100,11 @@ test('a shared query is aborted only when every caller aborts', async () => {
 test('links declare the call option fields calls may pass (17 D-C, F-B)', async () => {
   await using server = await createTestServer({ router });
   const seen: (string | undefined)[] = [];
-  const traceLink = link<{ context: { traceId?: string } }>(
-    async ({ op, next }) => {
-      expectTypeOf(op.context.traceId).toEqualTypeOf<string | undefined>();
-      seen.push(op.context.traceId);
-      return next(op);
-    },
-  );
+  const traceLink = link<{ context: { traceId?: string } }>(({ op, next }) => {
+    expectTypeOf(op.context.traceId).toEqualTypeOf<string | undefined>();
+    seen.push(op.context.traceId);
+    return next(op);
+  });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [traceLink, dedupeLink(), httpLink({ url: server.url })],
@@ -180,26 +178,24 @@ test('routerType works for the Effect client too', async () => {
 });
 
 test('custom links get an Operation typed with their declared context', () => {
-  const declared = link.effect<{ context: { tenant?: string } }>(
-    ({ op, next }) => {
-      expectTypeOf(op).toExtend<Operation>();
-      expectTypeOf(op.context.tenant).toEqualTypeOf<string | undefined>();
-      return next(op);
-    },
-  );
+  const declared = link<{ context: { tenant?: string } }>(({ op, next }) => {
+    expectTypeOf(op).toExtend<Operation>();
+    expectTypeOf(op.context.tenant).toEqualTypeOf<string | undefined>();
+    return next(op);
+  });
   expectTypeOf(declared).not.toBeAny();
 
   // @ts-expect-error -- the client reads `signal` itself
   link<{ context: { signal?: string } }>(({ op, next }) => next(op));
   // @ts-expect-error -- the client reads `lastEventId` itself
-  link.effect<{ context: { lastEventId: number } }>(({ op, next }) => next(op));
+  link<{ context: { lastEventId: number } }>(({ op, next }) => next(op));
 });
 
 test('switchLink picks a branch, and a typed call option forces one', async () => {
   await using server = await createTestServer({ router, batch: true });
   const picked: string[] = [];
   const tag = (name: string) =>
-    link(async ({ op, next }) => {
+    link(({ op, next }) => {
       picked.push(name);
       return next(op);
     });
@@ -295,7 +291,7 @@ class RateLimited extends TrpcError.Tagged('RATE_LIMITED', {
 test("a link's own declared errors join every call's typed union", async () => {
   await using server = await createTestServer({ router });
   let allowed = 1;
-  const rateLimit = link.effect<{ errors: RateLimited }>(({ op, next }) =>
+  const rateLimit = link<{ errors: RateLimited }>(({ op, next }) =>
     allowed-- > 0 ? next(op) : Stream.fail(new RateLimited({ retryAfter: 5 })),
   );
   const client = createTrpcClient({

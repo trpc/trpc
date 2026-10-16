@@ -92,17 +92,6 @@ export interface EffectLinkOpts<TContext extends object = {}> {
 }
 
 /**
- * What a Promise link receives. For a subscription, `next()` resolves to an
- * `AsyncIterable` of events.
- * @since 12.0.0-alpha.0
- * @stability experimental
- */
-export interface PromiseLinkOpts<TContext extends object = {}> {
-  readonly op: Operation<TContext>;
-  readonly next: (op: Operation) => Promise<unknown>;
-}
-
-/**
  * Call option names links can't declare: the client reads them itself.
  * @since 12.0.0-alpha.0
  * @stability experimental
@@ -231,89 +220,30 @@ export const firstValue = (
   );
 
 /**
- * {@link link}: an async-function link, plus `link.effect` for Effect ones.
- * @since 12.0.0-alpha.0
- * @stability experimental
- */
-export interface LinkFactory {
-  /**
-   * Creates a link from an async function (17 L-B). Call `next(op)` to
-   * continue the chain, and return its result (or a replacement).
-   *
-   * @example
-   * ```ts
-   * const authLink = link(async ({ op, next }) =>
-   *   next({
-   *     ...op,
-   *     context: { ...op.context, headers: { authorization: await getToken() } },
-   *   }),
-   * );
-   * ```
-   */
-  <TDecl extends LinkDecl = {}>(
-    fn: (opts: PromiseLinkOpts<DeclContext<TDecl>>) => Promise<unknown>,
-  ): TrpcLink<TDecl>;
-  /**
-   * Creates a link from a function returning an Effect `Stream` (17 L-B).
-   *
-   * @example
-   * ```ts
-   * const timingLink = link.effect(({ op, next }) =>
-   *   next(op).pipe(Stream.tap(() => Effect.log(op.path))),
-   * );
-   * ```
-   */
-  effect: <TDecl extends LinkDecl = {}>(
-    fn: (opts: EffectLinkOpts<DeclContext<TDecl>>) => OperationStream,
-  ) => TrpcLink<TDecl>;
-}
-
-function promiseLink<TDecl extends LinkDecl = {}>(
-  fn: (opts: PromiseLinkOpts<DeclContext<TDecl>>) => Promise<unknown>,
-): TrpcLink<TDecl> {
-  return ({ op, next }: EffectLinkOpts) => {
-    const promiseNext = (o: Operation): Promise<unknown> =>
-      o.type === 'subscription'
-        ? Promise.resolve(Stream.toAsyncIterable(next(o)))
-        : Effect.runPromise(firstValue(next(o)));
-    const result = Effect.tryPromise({
-      try: () =>
-        fn({ op: op as Operation<DeclContext<TDecl>>, next: promiseNext }),
-      catch: toClientError,
-    });
-    if (op.type !== 'subscription') return Stream.fromEffect(result);
-    return Stream.unwrap(
-      Effect.map(result, (events) =>
-        Stream.fromAsyncIterable(
-          events as AsyncIterable<unknown>,
-          toClientError,
-        ),
-      ),
-    );
-  };
-}
-
-/**
- * Creates a link from an async function, or with `link.effect`, from a
- * function returning an Effect `Stream` (17 L-B).
+ * Creates a link from a function returning an Effect `Stream` (17 L-A):
+ * call `next(op)` for the rest of the chain and return its stream, or a
+ * replacement. A query or mutation is a one-element stream. v11 links
+ * convert with `fromV11Link` from `trpcdev/interop`.
  *
  * @example
  * ```ts
- * const authLink = link(async ({ op, next }) =>
- *   next({ ...op, context: { ...op.context, headers: { authorization: await getToken() } } }),
+ * const authLink = link(({ op, next }) =>
+ *   Stream.unwrap(
+ *     Effect.map(getToken, (token) =>
+ *       next({ ...op, context: { ...op.context, headers: { authorization: token } } }),
+ *     ),
+ *   ),
  * );
- * const timingLink = link.effect(({ op, next }) =>
+ * const timingLink = link(({ op, next }) =>
  *   next(op).pipe(Stream.tap(() => Effect.log(op.path))),
  * );
  * ```
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export const link: LinkFactory = Object.assign(promiseLink, {
-  effect: <TDecl extends LinkDecl = {}>(
-    fn: (opts: EffectLinkOpts<DeclContext<TDecl>>) => OperationStream,
-  ): TrpcLink<TDecl> => fn as TrpcLink<TDecl>,
-});
+export const link = <TDecl extends LinkDecl = {}>(
+  fn: (opts: EffectLinkOpts<DeclContext<TDecl>>) => OperationStream,
+): TrpcLink<TDecl> => fn as TrpcLink<TDecl>;
 
 const serializers = new WeakMap<AnyLink, AnySerializer>();
 

@@ -140,7 +140,7 @@ export function switchLink<
   if (names.has(name)) {
     throw new TypeError(`Two switchLinks on one chain are named "${name}"`);
   }
-  const switched = link.effect(({ op }) => {
+  const switched = link(({ op }) => {
     const forced = (op.context as Record<string, unknown>)[name];
     const key = typeof forced === 'string' ? forced : opts.pick(op as never);
     const chain = branches.get(key);

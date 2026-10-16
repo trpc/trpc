@@ -80,6 +80,37 @@ src/server/trpc.ts:4:3 transformer: drop it here; pass the same createSyncSerial
 src/server/index.ts:1:1 observable() subscriptions: return an async generator or an Effect Stream
 ```
 
+## Links
+
+Your own v11 links (`TRPCLink`s) run in a v12 chain through `fromV11Link`, so you can move them over one at a time:
+
+```ts
+import { fromV11Link } from 'trpcdev/interop';
+
+createTrpcClient({
+  router: routerType<AppRouter>(),
+  links: [fromV11Link(authLink), httpLink({ url })],
+});
+```
+
+The v11 link gets v11 operations and observables, so `observable()`, `tap()` and `share()` from `@trpc/server/observable` work as before. What it gets from `next` differs in two ways:
+
+- Errors are v12 `TrpcError`s, with the code on `error.code`. Errors the link fails with keep their `data.code`.
+- Subscription results are `{ type: 'started' }`, then `{ type: 'data', data }` for each event; there is no `stopped` result.
+
+A v11 terminating link (one that sends the request itself, such as v11's `httpBatchLink`) works too.
+
+Rewritten for v12, a link returns an Effect `Stream`:
+
+```ts
+const authLink = link(({ op, next }) =>
+  next({
+    ...op,
+    context: { ...op.context, headers: { authorization: token() } },
+  }),
+);
+```
+
 ## API changes
 
 | v11                                                                | v12                                                                                                                               |

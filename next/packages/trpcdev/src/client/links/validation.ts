@@ -107,7 +107,7 @@ export function validationLink(
 export function validationLink(opts: ValidationLinkOptions): TrpcLink;
 export function validationLink(opts: ValidationLinkOptions): TrpcLink<any> {
   const json = opts.output === 'json';
-  return link.effect(({ op, next }) => {
+  return link(({ op, next }) => {
     const def = definitionAt(opts.contract, op.path);
     if (!def) return next(op);
     const checkInput =

@@ -400,7 +400,7 @@ test('createTrpcContext({ keyPrefix }) prefixes the provided helpers', () => {
 test("a context typed with the links' types takes a client whose links declare errors", () => {
   class Offline extends TrpcError.Tagged('OFFLINE') {}
   const links = [
-    link.effect<{ errors: Offline }>(({ op, next }) => next(op)),
+    link<{ errors: Offline }>(({ op, next }) => next(op)),
     httpLink({ url: 'http://localhost' }),
   ] as const;
   const client = createTrpcClient({ router: routerType<AppRouter>(), links });

@@ -72,7 +72,7 @@ const serve = () =>
 
 test('a link can add headers through the operation context', async () => {
   await using server = await serve();
-  const authLink = link(async ({ op, next }) =>
+  const authLink = link(({ op, next }) =>
     next({
       ...op,
       context: {
@@ -109,15 +109,12 @@ test('httpLink headers can be computed per request', async () => {
   expect(await client.whoami.query()).toBe('token-2');
 });
 
-test('a Promise link can replace a result or a subscription', async () => {
+test('a link can replace a result or a subscription', async () => {
   await using server = await serve();
-  const cacheLink = link(async ({ op, next }) => {
-    if (op.path === 'whoami') return 'cached';
+  const cacheLink = link(({ op, next }) => {
+    if (op.path === 'whoami') return Stream.make('cached');
     if (op.type === 'subscription') {
-      const events = (await next(op)) as AsyncIterable<number>;
-      return (async function* () {
-        for await (const n of events) yield n * 10;
-      })();
+      return next(op).pipe(Stream.map((n) => (n as number) * 10));
     }
     return next(op);
   });
@@ -134,7 +131,7 @@ test('a Promise link can replace a result or a subscription', async () => {
 test('an Effect link wraps the result stream', async () => {
   await using server = await serve();
   const seen: unknown[] = [];
-  const tapLink = link.effect(({ op, next }) =>
+  const tapLink = link(({ op, next }) =>
     next(op).pipe(
       Stream.tap((value) => Effect.sync(() => seen.push([op.path, value]))),
     ),
@@ -323,7 +320,7 @@ test('one client for routers on two servers with different contexts (docs/client
   });
 
   const unprefix = (prefix: string) =>
-    link.effect(({ op, next }) =>
+    link(({ op, next }) =>
       next({ ...op, path: op.path.slice(prefix.length + 1) }),
     );
   const client = createTrpcClient({

@@ -86,7 +86,7 @@ export function localLink<TRouter extends AnyRouter>(
   };
 
   return withSerializer(
-    link.effect(({ op }) =>
+    link(({ op }) =>
       Stream.unwrap(
         Effect.gen(function* () {
           const procedure = yield* Effect.promise(async () =>
