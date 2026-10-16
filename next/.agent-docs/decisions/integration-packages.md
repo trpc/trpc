@@ -15,6 +15,7 @@
   | `@trpcdev/tanstack-angular-query` | `@tanstack/angular-query-experimental`, `@angular/core` |
   | `@trpcdev/tanstack-lit-query`     | `@tanstack/lit-query`, `lit`, `@lit/context`            |
 
+- (agent) This answers Q19.1 (proposal 19): per-framework packages, not one agnostic package with `./react`.
 - (agent) Each framework package depends on `@trpcdev/tanstack-query` and re-exports it, so an app imports from one package.
 - Why: optional peers on subpaths still show up in every install. Package managers warn about or auto-install them, and a user of one framework sees the other six in `peerDependencies`. Separate packages give each framework accurate, required peers.
 - Lost: one package with optional peers per subpath (the first TanStack build's layout). Seven more packages to version and publish.

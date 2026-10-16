@@ -36,6 +36,7 @@ Many changes land in parallel, so each decision is its own file and two changes 
   - `--who human|asked|agent` filters by who decided.
   - `--open` prints what each one leaves open.
   - `--agent-bullets` also lists the agent's calls inside `(human)` files.
+  - `--questions` lists every proposal question (`Q7.2`) with the decisions that cite it and who made them. A test fails when a question has none, so every answered question is findable by its number.
 
   `rg -n "<topic>" .agent-docs/decisions/` works too. `tooling/decisions/decisions.test.ts` checks every file has a title marker and a `Lives in` bullet, and that its links resolve.
 

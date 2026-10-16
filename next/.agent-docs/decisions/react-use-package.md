@@ -10,4 +10,5 @@
 - Why: TanStack covers v1; a second cache is a maintenance cost until a spike shows it pays off.
 - Open: Q20.2 (link or React store), for Alex, now that the spikes exist.
 - (agent) Spikes built ([note](../notes/react-use-spikes.md)). C needs a core hook for promise identity, plus a React store for invalidation. D works on `effect/reactivity` as is, except for hydration (no result `Schema`).
+- (agent) Lean on Q20.2, the Effect-native way, if a package comes: an Effect Atom store (the `spikes/atom-trpc/` shape over `createEffectClient`), not a link cache. Atoms give React `use()`-friendly reads, Effect's interruption and typed errors; hydration needs an Effect `Schema` that encodes with the router's serializer. Nothing is built past the spikes, per the v1 decision above.
 - Lives in: `next/.agent-docs/notes/react-use-spikes.md`, `next/spikes/cache-link/`, `next/spikes/atom-trpc/`.

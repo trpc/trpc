@@ -1,9 +1,10 @@
 # Links are callable functions on an Effect `Stream` core (agent)
 
 - A link is a callable `TrpcLink<TDecl, TRouter>`: `({ op, next }) => Stream`. `link(async fn)` and `link.effect(fn)` build one. The client takes them as an array ([`client.md`](./client.md), Q16.6).
-- `TDecl` declares the call options a link reads (F-B); declarations typed `any` are ignored when merging. It is an invariant phantom, so a link that declares nothing doesn't absorb the others' declarations in an array.
+- `TDecl` declares the call options a link reads; they sit top-level on the call (Q17.5 F-A, from Alex's Q16.2 in [`client.md`](./client.md)); declarations typed `any` are ignored when merging. It is an invariant phantom, so a link that declares nothing doesn't absorb the others' declarations in an array.
 - Why callable: TypeScript only infers an inline generic link's type parameters from return-type context when the type is callable. That is what lets `splitLink({ condition: (op) => … })` see `op.path` as the router's paths.
-- L-B / OR-A: every operation is a `Stream` on an Effect core.
+- Q17.1 L-B: links are authored with promises (`link(async fn)`) or Effect (`link.effect(fn)`). Q17.2 OR-A: every operation is a `Stream` on an Effect core.
+- Q17.3 D-C: `createTrpcClient({ router: routerType<AppRouter>(), links })` infers what links declare; the plain `createTrpcClient<AppRouter>({ links })` form stays, with link options from the augmentable `TrpcClientContext` interface.
 - Built-in links:
   - `httpLink`: `batch`, streaming and SSE by negotiation; `longQuery: 'post' | 'query'` ([`wire-protocol.md`](./wire-protocol.md)).
   - `splitLink`, typed with the router's paths; `loggerLink`, `retryLink`, `localLink`.

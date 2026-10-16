@@ -7,4 +7,5 @@
 - Why: Effect already ships CORS, logging and tracing middleware; a second middleware system would duplicate both layers. Follows [`http-core-on-effect-http.md`](./http-core-on-effect-http.md).
 - Lost: an oRPC-style `{ onRequest, onCall }` plugin interface and switch-off-able protocol features.
 - (agent) `trpcdev/http` exports `cors(options)`, Effect's `HttpMiddleware.cors` that also answers `403` to WebSocket upgrades from origins it doesn't allow (browsers don't preflight upgrades). `serve({ allowOrigin })` is gone; pass `middleware: [cors({ allowedOrigins })]`.
+- (agent) Q13.2 follows from "C": there are no plugins to switch on. What 13 proposed on by default is built in and always on: the body limit (`maxBodySize`), strict methods (queries `GET`/`QUERY`, mutations `POST`) and the CSRF rule (JSON-only `POST` bodies). The proposed opt-ins are Effect middleware or links: `cors()`, `rateLimit()`, `durable()`, `retryLink`, `dedupeLink`.
 - Lives in: `packages/trpcdev/src/server/fetch.ts` (`middleware` option), `src/http/index.ts` (`cors`, `toHttpEffect`); tests in `test/integration/http-core.test.ts`, `test/integration/websockets.test.ts`.
