@@ -1,5 +1,5 @@
-import type { Context, Layer } from 'effect';
-import { Effect } from 'effect';
+import type { Layer } from 'effect';
+import { Context, Effect } from 'effect';
 import { HttpRouter, HttpServerRequest, HttpServerResponse } from 'effect/http';
 import type { WebSocketLike } from './socket.ts';
 import { isUpgrade, upgradeTo } from './upgrade.ts';
@@ -42,19 +42,24 @@ export function httpParts(opts: {
   const { webSocket, endpoint } = opts;
   const route = wrap(
     webSocket
-      ? Effect.gen(function* () {
-          const request = yield* HttpServerRequest.HttpServerRequest;
-          if (!isUpgrade(request)) return yield* opts.app;
+      ? Effect.withFiber((fiber) => {
+          const request = Context.get(
+            fiber.context as Context.Context<HttpServerRequest.HttpServerRequest>,
+            HttpServerRequest.HttpServerRequest,
+          );
+          if (!isUpgrade(request)) return opts.app;
           const { pathname } = new URL(request.url, 'http://localhost');
           if (
             endpoint !== undefined &&
             pathname !== endpoint &&
             pathname !== `${endpoint}/`
           ) {
-            return HttpServerResponse.empty({ status: 404 });
+            return Effect.succeed(HttpServerResponse.empty({ status: 404 }));
           }
-          yield* upgradeTo(request, (ws) => webSocket(ws, request));
-          return HttpServerResponse.empty();
+          return Effect.as(
+            upgradeTo(request, (ws) => webSocket(ws, request)),
+            HttpServerResponse.empty(),
+          );
         })
       : opts.app,
   );
