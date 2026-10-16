@@ -327,6 +327,16 @@ test('?input= cannot reach prototype keys, and malformed JSON is a PARSE_ERROR',
   });
 });
 
+test('?input= reads as URLSearchParams does: the first one, `+` as space, encoded keys, lenient escapes', async () => {
+  await using server = await createTestServer({ router });
+  const read = async (search: string) =>
+    (await (await fetch(`${server.url}/raw?${search}`)).json()) as unknown;
+  expect(await read('x=1&&input=%22a+b%22&input=2')).toEqual({ json: 'a b' });
+  expect(await read('inp%75t=%22k%22')).toEqual({ json: 'k' });
+  // `%E0%A4` isn't UTF-8 here; URLSearchParams decodes it to U+FFFD.
+  expect(await read('input=%22%E0%A4%22')).toEqual({ json: '\uFFFD' });
+});
+
 test('serialized output is plain objects, with `__proto__` kept as an own key', () => {
   const value = JSON.parse('{"post":{"__proto__":{"x":1},"at":"y"}}');
   for (const serializer of [jsonSerializer, danson]) {

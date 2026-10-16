@@ -36,13 +36,55 @@ export function toInputSearch(value: {
   return params.toString();
 }
 
+/**
+ * `URLSearchParams`' first `input` and `refs`, without building it. `undefined`
+ * when a key is encoded or a value doesn't decode strictly, where its lenient
+ * rules apply.
+ */
+const readSearch = (
+  search: string,
+): { input: string | null; refs: string | null } | undefined => {
+  let input: string | null = null;
+  let refs: string | null = null;
+  let start = search.charCodeAt(0) === 63 /* ? */ ? 1 : 0;
+  while (start < search.length) {
+    let end = search.indexOf('&', start);
+    if (end === -1) end = search.length;
+    const eq = search.indexOf('=', start);
+    const keyEnd = eq === -1 || eq > end ? end : eq;
+    const key = search.slice(start, keyEnd);
+    if (key.includes('%') || key.includes('+')) return undefined;
+    if (
+      (key === 'input' && input === null) ||
+      (key === 'refs' && refs === null)
+    ) {
+      const raw = keyEnd === end ? '' : search.slice(keyEnd + 1, end);
+      let value: string;
+      try {
+        value = decodeURIComponent(
+          raw.includes('+') ? raw.replaceAll('+', ' ') : raw,
+        );
+      } catch {
+        return undefined;
+      }
+      if (key === 'input') input = value;
+      else refs = value;
+    }
+    start = end + 1;
+  }
+  return { input, refs };
+};
+
+const readParams = (search: string) => {
+  const params = new URLSearchParams(search);
+  return { input: params.get('input'), refs: params.get('refs') };
+};
+
 /** Reads what {@link toInputSearch} wrote; `undefined` without an input. @internal */
 export function fromInputSearch(
   search: string,
 ): { json?: never; refs?: never } | undefined {
-  const params = new URLSearchParams(search);
-  const input = params.get('input');
-  const refs = params.get('refs');
+  const { input, refs } = readSearch(search) ?? readParams(search);
   if (input === null && refs === null) return undefined;
   return {
     ...(input === null ? {} : { json: JSON.parse(input) as never }),
