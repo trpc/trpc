@@ -597,6 +597,9 @@ importers:
       '@effect/atom-react':
         specifier: 4.0.2
         version: 4.0.2(effect@4.0.2)(react@19.3.0)(scheduler@0.27.0)
+      '@effect/platform-node':
+        specifier: 4.0.2
+        version: 4.0.2(effect@4.0.2)(redis@6.3.0)
       '@tanstack/query-core':
         specifier: 5.90.20
         version: 5.90.20

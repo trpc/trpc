@@ -8,8 +8,8 @@
  * - `declared` (02 S2): services are declared in `initTrpc.create()`; each
  *   resolver is checked against them and the handler only reads the declared set.
  */
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { writeFixture, type Files } from '../kit.ts';
 
 export const variants = ['inferred', 'declared'] as const;
 export type Variant = (typeof variants)[number];
@@ -41,13 +41,16 @@ function procedure(i: number): string {
   }
 }
 
-export function generate(variant: Variant, n: number, outRoot: string): string {
-  const dir = join(outRoot, `${variant}-${n}`);
-  rmSync(dir, { recursive: true, force: true });
-  mkdirSync(dir, { recursive: true });
+/** The fixture's files, by path in its directory. */
+export function fixture(variant: Variant, n: number): Files {
+  const out: Array<readonly [string, string]> = [];
+  const write = (file: string, contents: string) => {
+    out.push([file, contents]);
+  };
+  const dir = '';
 
   const names = Array.from({ length: SERVICES }, (_, i) => `S${i}`);
-  writeFileSync(
+  write(
     join(dir, 'services.ts'),
     `import * as Context from 'effect/Context';
 import * as Effect from 'effect/Effect';
@@ -65,7 +68,7 @@ export const layer = Layer.mergeAll(${names.map((s) => `${s}Live`).join(', ')});
 `,
   );
 
-  writeFileSync(
+  write(
     join(dir, 'base.ts'),
     `import * as Effect from 'effect/Effect';
 import { initTrpc } from '../../core.ts';
@@ -86,7 +89,7 @@ void [${names.join(', ')}];
     for (let p = 0; p < PER_FILE && f * PER_FILE + p < n; p++) {
       procs.push(`  p${p}: ${procedure(f * PER_FILE + p)},`);
     }
-    writeFileSync(
+    write(
       join(dir, `router${f}.ts`),
       `import * as Effect from 'effect/Effect';
 import { auth, t } from './base.ts';
@@ -99,7 +102,7 @@ ${procs.join('\n')}
     );
   }
 
-  writeFileSync(
+  write(
     join(dir, 'handler.ts'),
     `import { createHandler } from '../../core.ts';
 import { t } from './base.ts';
@@ -112,7 +115,7 @@ export const handler = createHandler({ root: t, router: appRouter, layer });
 `,
   );
 
-  writeFileSync(
+  write(
     join(dir, 'tsconfig.json'),
     JSON.stringify(
       {
@@ -125,5 +128,9 @@ export const handler = createHandler({ root: t, router: appRouter, layer });
       2,
     ),
   );
-  return dir;
+  return out;
 }
+
+/** Writes `<outRoot>/<variant>-<n>/` and returns its path. */
+export const generate = (variant: Variant, n: number, outRoot: string) =>
+  writeFixture(join(outRoot, `${variant}-${n}`), fixture(variant, n));

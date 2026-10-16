@@ -8,8 +8,8 @@
  * - `contract`: a contract tree, `t.implement()` per file and a top-level
  *   `impl.router()` completeness check; the client takes `typeof appContract`.
  */
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { writeFixture, type Files } from '../kit.ts';
 
 export const variants = ['impl-first', 'contract'] as const;
 export type Variant = (typeof variants)[number];
@@ -33,10 +33,13 @@ function implProc(i: number, variant: Variant, file: number): string {
       : `${base}.input(schema<{ title: string }>()).mutation(async () => ({ ok${i}: true }))`;
 }
 
-export function generate(variant: Variant, n: number, outRoot: string): string {
-  const dir = join(outRoot, `${variant}-${n}`);
-  rmSync(dir, { recursive: true, force: true });
-  mkdirSync(dir, { recursive: true });
+/** The fixture's files, by path in its directory. */
+export function fixture(variant: Variant, n: number): Files {
+  const out: Array<readonly [string, string]> = [];
+  const write = (file: string, contents: string) => {
+    out.push([file, contents]);
+  };
+  const dir = '';
   const files = Math.ceil(n / PER_FILE);
   const each = (fn: (f: number) => string, sep = '\n') =>
     Array.from({ length: files }, (_, f) => fn(f)).join(sep);
@@ -46,7 +49,7 @@ export function generate(variant: Variant, n: number, outRoot: string): string {
       (_, p) => f * PER_FILE + p,
     );
 
-  writeFileSync(
+  write(
     join(dir, 'base.ts'),
     `import { initTrpc } from '../../core.ts';
 export const t = initTrpc<{ user?: { id: string } }>();
@@ -55,7 +58,7 @@ export const t = initTrpc<{ user?: { id: string } }>();
 
   if (variant === 'contract') {
     for (let f = 0; f < files; f++) {
-      writeFileSync(
+      write(
         join(dir, `contract${f}.ts`),
         `import { contract, schema } from '../../core.ts';
 const c = contract.create();
@@ -67,7 +70,7 @@ ${procsIn(f)
 `,
       );
     }
-    writeFileSync(
+    write(
       join(dir, 'contract.ts'),
       `${each((f) => `import { contract${f} } from './contract${f}.ts';`)}
 export const appContract = {
@@ -78,7 +81,7 @@ ${each((f) => `  r${f}: contract${f},`)}
   }
 
   for (let f = 0; f < files; f++) {
-    writeFileSync(
+    write(
       join(dir, `router${f}.ts`),
       variant === 'contract'
         ? `import { t } from './base.ts';
@@ -101,7 +104,7 @@ ${procsIn(f)
     );
   }
 
-  writeFileSync(
+  write(
     join(dir, 'router.ts'),
     `${each((f) => `import { router${f} } from './router${f}.ts';`)}
 ${
@@ -118,7 +121,7 @@ ${each((f) => `  r${f}: router${f},`)}
 `,
   );
 
-  writeFileSync(
+  write(
     join(dir, 'client.ts'),
     `import { createClient } from '../../core.ts';
 ${variant === 'contract' ? `import type { appContract } from './contract.ts';\nconst client = createClient<typeof appContract>();` : `import type { appRouter } from './router.ts';\nconst client = createClient<typeof appRouter>();`}
@@ -131,7 +134,7 @@ ${Array.from({ length: n }, (_, i) => {
 `,
   );
 
-  writeFileSync(
+  write(
     join(dir, 'tsconfig.json'),
     JSON.stringify(
       {
@@ -144,5 +147,9 @@ ${Array.from({ length: n }, (_, i) => {
       2,
     ),
   );
-  return dir;
+  return out;
 }
+
+/** Writes `<outRoot>/<variant>-<n>/` and returns its path. */
+export const generate = (variant: Variant, n: number, outRoot: string) =>
+  writeFixture(join(outRoot, `${variant}-${n}`), fixture(variant, n));

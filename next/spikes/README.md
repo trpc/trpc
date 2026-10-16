@@ -4,6 +4,8 @@ Throwaway experiments that feed proposals in `../.agent-docs/proposals/`. Nothin
 
 Generated fixtures and build output (`generated/`, `dist/`) are gitignored; the source and scripts that produce them are committed.
 
+Scripts are Effect programs on `kit.ts`: `writeFixture` writes a generated fixture, `tscDiagnostics` and `medianDiagnostics` run `tsc --extendedDiagnostics`, `variantBench` is the shared per-variant typecheck bench, and `runScript` runs an `effect/cli` command (each script takes `--help`).
+
 | Directory              | Run (from here)                                                | Note                                                                                 |
 | ---------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
 | `builder-generics/`    | `pnpm typeperf [n] [runs]`                                     | [builder-generics-typeperf](../.agent-docs/notes/builder-generics-typeperf.md)       |

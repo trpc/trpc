@@ -6,21 +6,10 @@
  * - `plain`: `createClient<AppRouter>()` with no link-declared options;
  * - `d-a` / `d-c`: link-informed clients with 5 links, passing call options on every call.
  */
-import { execFileSync } from 'node:child_process';
-import { writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { Console, Effect, FileSystem, Path } from 'effect';
+import { Command } from 'effect/cli';
 import { generate } from '../builder-generics/generate.ts';
-
-const here = dirname(fileURLToPath(import.meta.url));
-const tsc = join(here, '../node_modules/.bin/tsc');
-const n = Number(process.argv[2] ?? 1000);
-const runs = Number(process.argv[3] ?? 5);
-const dir = generate(
-  'positional',
-  n,
-  join(here, '../builder-generics/generated'),
-);
+import { intArg, median, runScript, tscDiagnostics } from '../kit.ts';
 
 const links = `[cacheLink(), retryLink(), loggerLink(), httpLink({ url: '/trpc' }), splitLink({ condition: (op) => op.path === 'r0.p0', true: loggerLink(), false: loggerLink() })]`;
 const setup = {
@@ -54,42 +43,46 @@ function call(i: number, withOpts: boolean): string {
   }
 }
 
-const median = (xs: number[]) =>
-  [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)]!;
-
-console.log('| client | instantiations | check (median) |');
-console.log('| --- | ---: | ---: |');
-for (const [name, head] of Object.entries(setup)) {
-  writeFileSync(
-    join(dir, `links-${name}.ts`),
-    `import type { AppRouter } from './router.ts';
+const bench = Command.make(
+  'bench',
+  { n: intArg('n', 1000), runs: intArg('runs', 5) },
+  ({ n, runs }) =>
+    Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      const path = yield* Path.Path;
+      const dir = yield* generate(
+        'positional',
+        n,
+        path.join(import.meta.dirname, '../builder-generics/generated'),
+      );
+      yield* Console.log('| client | instantiations | check (median) |');
+      yield* Console.log('| --- | ---: | ---: |');
+      for (const [name, head] of Object.entries(setup)) {
+        yield* fs.writeFileString(
+          path.join(dir, `links-${name}.ts`),
+          `import type { AppRouter } from './router.ts';
 ${head}
 ${Array.from({ length: n }, (_, i) => call(i, name !== 'plain')).join('\n')}
 `,
-  );
-  const tsconfig = join(dir, `tsconfig.links-${name}.json`);
-  writeFileSync(
-    tsconfig,
-    JSON.stringify({
-      extends: '../../../../tsconfig.json',
-      compilerOptions: { allowImportingTsExtensions: true },
-      files: [`links-${name}.ts`],
+        );
+        const tsconfig = path.join(dir, `tsconfig.links-${name}.json`);
+        yield* fs.writeFileString(
+          tsconfig,
+          JSON.stringify({
+            extends: '../../../../tsconfig.json',
+            compilerOptions: { allowImportingTsExtensions: true },
+            files: [`links-${name}.ts`],
+          }),
+        );
+        const samples = yield* Effect.replicateEffect(
+          tscDiagnostics(tsconfig),
+          runs,
+        );
+        yield* Console.log(
+          `| ${name} | ${samples[0]!['Instantiations']} | ${median(samples.map((s) => s['Check time']!))}s |`,
+        );
+      }
     }),
-  );
-  const samples = Array.from({ length: runs }, () => {
-    const out = execFileSync(
-      tsc,
-      ['-p', tsconfig, '--extendedDiagnostics', '--singleThreaded'],
-      {
-        encoding: 'utf8',
-      },
-    );
-    return {
-      inst: Number(/Instantiations:\s+(\d+)/.exec(out)![1]),
-      check: Number(/Check time:\s+([\d.]+)/.exec(out)![1]),
-    };
-  });
-  console.log(
-    `| ${name} | ${samples[0]!.inst} | ${median(samples.map((s) => s.check))}s |`,
-  );
-}
+);
+
+runScript(import.meta, bench);

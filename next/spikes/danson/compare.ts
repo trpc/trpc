@@ -3,6 +3,9 @@
  * URL lengths for QP-A / QP-B / QP-C, and rough encode/decode throughput.
  */
 import * as original from 'danson';
+import { Console, Effect } from 'effect';
+import { Command } from 'effect/cli';
+import { runScript } from '../kit.ts';
 import { fromSearch, toQueryEntries, toSearch } from './query.ts';
 import { deserializers, serializers } from './std.ts';
 import { parseSync, serializeSync, stringifySync } from './sync.ts';
@@ -48,46 +51,64 @@ const qpB = (v: unknown) => {
 const qpCStd = (v: unknown) =>
   new URLSearchParams(toQueryEntries(v, ser)).toString();
 
-console.log('## URL query length (bytes)\n');
-console.log(
-  '| input | QP-A | QP-B | QP-C (URLSearchParams) | QP-C (legible) |',
+/** Ops per second of `fn`, run for about `ms` after a warm-up. */
+const throughput = (fn: () => unknown, ms = 400) =>
+  Effect.sync(() => {
+    for (let i = 0; i < 2000; i++) fn();
+    let n = 0;
+    const start = performance.now();
+    while (performance.now() - start < ms) {
+      for (let i = 0; i < 200; i++) fn();
+      n += 200;
+    }
+    return Math.round((n / (performance.now() - start)) * 1000);
+  });
+
+const compare = Command.make('compare', {}, () =>
+  Effect.gen(function* () {
+    yield* Console.log('## URL query length (bytes)\n');
+    yield* Console.log(
+      '| input | QP-A | QP-B | QP-C (URLSearchParams) | QP-C (legible) |',
+    );
+    yield* Console.log('| --- | ---: | ---: | ---: | ---: |');
+    for (const [name, v] of Object.entries(inputs)) {
+      yield* Console.log(
+        `| ${name} | ${qpA(v).length} | ${qpB(v).length} | ${qpCStd(v).length} | ${toSearch(v, ser).length} |`,
+      );
+    }
+    yield* Console.log('\n## Legible QP-C strings\n');
+    for (const [name, v] of Object.entries(inputs)) {
+      yield* Console.log(`- ${name}: \`?${toSearch(v, ser)}\``);
+    }
+
+    const v = inputs['search w/ arrays'];
+    const search = toSearch(v, ser);
+    const a = qpA(v);
+    const text = stringifySync(v, ser);
+    yield* Console.log(
+      '\n## Throughput, "search w/ arrays" input (ops/s, single run)\n',
+    );
+    yield* Console.log('| operation | ops/s |');
+    yield* Console.log('| --- | ---: |');
+    const cases: ReadonlyArray<readonly [string, () => unknown]> = [
+      ['JSON.stringify (no rich types)', () => JSON.stringify(v)],
+      ['port stringifySync', () => stringifySync(v, ser)],
+      ['danson stringifySync', () => original.stringifySync(v, ser)],
+      ['port parseSync', () => parseSync(text, de)],
+      ['danson parseSync', () => original.parseSync(text, de)],
+      ['QP-A encode', () => qpA(v)],
+      ['QP-C encode (legible)', () => toSearch(v, ser)],
+      [
+        'QP-A decode',
+        () => parseSync(new URLSearchParams(a).get('input')!, de),
+      ],
+      ['QP-C decode', () => fromSearch(search, de)],
+    ];
+    for (const [label, fn] of cases) {
+      const ops = yield* throughput(fn);
+      yield* Console.log(`| ${label} | ${ops.toLocaleString('en-US')} |`);
+    }
+  }),
 );
-console.log('| --- | ---: | ---: | ---: | ---: |');
-for (const [name, v] of Object.entries(inputs)) {
-  console.log(
-    `| ${name} | ${qpA(v).length} | ${qpB(v).length} | ${qpCStd(v).length} | ${toSearch(v, ser).length} |`,
-  );
-}
-console.log('\n## Legible QP-C strings\n');
-for (const [name, v] of Object.entries(inputs)) {
-  console.log(`- ${name}: \`?${toSearch(v, ser)}\``);
-}
 
-function bench(label: string, fn: () => unknown, ms = 400) {
-  for (let i = 0; i < 2000; i++) fn();
-  let n = 0;
-  const start = performance.now();
-  while (performance.now() - start < ms) {
-    for (let i = 0; i < 200; i++) fn();
-    n += 200;
-  }
-  const opsPerSec = Math.round((n / (performance.now() - start)) * 1000);
-  console.log(`| ${label} | ${opsPerSec.toLocaleString('en-US')} |`);
-}
-
-const v = inputs['search w/ arrays'];
-const search = toSearch(v, ser);
-const a = qpA(v);
-const text = stringifySync(v, ser);
-console.log('\n## Throughput, "search w/ arrays" input (ops/s, single run)\n');
-console.log('| operation | ops/s |');
-console.log('| --- | ---: |');
-bench('JSON.stringify (no rich types)', () => JSON.stringify(v));
-bench('port stringifySync', () => stringifySync(v, ser));
-bench('danson stringifySync', () => original.stringifySync(v, ser));
-bench('port parseSync', () => parseSync(text, de));
-bench('danson parseSync', () => original.parseSync(text, de));
-bench('QP-A encode', () => qpA(v));
-bench('QP-C encode (legible)', () => toSearch(v, ser));
-bench('QP-A decode', () => parseSync(new URLSearchParams(a).get('input')!, de));
-bench('QP-C decode', () => fromSearch(search, de));
+runScript(import.meta, compare);

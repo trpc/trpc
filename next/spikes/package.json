@@ -12,6 +12,7 @@
   },
   "devDependencies": {
     "@effect/atom-react": "4.0.2",
+    "@effect/platform-node": "4.0.2",
     "@tanstack/query-core": "5.90.20",
     "@trpc/client": "11.19.0",
     "@trpc/server": "11.19.0",

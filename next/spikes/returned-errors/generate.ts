@@ -8,8 +8,8 @@
  * - `whole`: middleware via `use` (infer the whole return, then split).
  * - `split`: middleware via `useSplit` (separate ctx and error parameters).
  */
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { writeFixture, type Files } from '../kit.ts';
 
 export const variants = ['thrown', 'whole', 'split'] as const;
 export type Variant = (typeof variants)[number];
@@ -84,12 +84,15 @@ function clientCall(i: number): string {
 }`;
 }
 
-export function generate(variant: Variant, n: number, outRoot: string): string {
-  const dir = join(outRoot, `${variant}-${n}`);
-  rmSync(dir, { recursive: true, force: true });
-  mkdirSync(dir, { recursive: true });
+/** The fixture's files, by path in its directory. */
+export function fixture(variant: Variant, n: number): Files {
+  const out: Array<readonly [string, string]> = [];
+  const write = (file: string, contents: string) => {
+    out.push([file, contents]);
+  };
+  const dir = '';
 
-  writeFileSync(
+  write(
     join(dir, 'base.ts'),
     `import { error, initTrpc } from '../../core.ts';
 interface Context { user?: { id: string; name: string } }
@@ -115,7 +118,7 @@ export const authedThrown = t.procedure.use(async ({ ctx, next }) => {
     for (let p = 0; p < PER_FILE && f * PER_FILE + p < n; p++) {
       procs.push(`  p${p}: ${procedure(f * PER_FILE + p, variant)},`);
     }
-    writeFileSync(
+    write(
       join(dir, `router${f}.ts`),
       `import { error, schema } from '../../core.ts';
 import { authed, authedSplit, authedThrown, t } from './base.ts';
@@ -127,7 +130,7 @@ ${procs.join('\n')}
     );
   }
 
-  writeFileSync(
+  write(
     join(dir, 'router.ts'),
     `${Array.from({ length: files }, (_, f) => `import { router${f} } from './router${f}.ts';`).join('\n')}
 export const appRouter = {
@@ -137,7 +140,7 @@ export type AppRouter = typeof appRouter;
 `,
   );
 
-  writeFileSync(
+  write(
     join(dir, 'client.ts'),
     `import { createClient, safe } from '../../core.ts';
 import type { AppRouter } from './router.ts';
@@ -146,7 +149,7 @@ ${Array.from({ length: n }, (_, i) => clientCall(i)).join('\n')}
 `,
   );
 
-  writeFileSync(
+  write(
     join(dir, 'tsconfig.json'),
     JSON.stringify(
       {
@@ -159,5 +162,9 @@ ${Array.from({ length: n }, (_, i) => clientCall(i)).join('\n')}
       2,
     ),
   );
-  return dir;
+  return out;
 }
+
+/** Writes `<outRoot>/<variant>-<n>/` and returns its path. */
+export const generate = (variant: Variant, n: number, outRoot: string) =>
+  writeFixture(join(outRoot, `${variant}-${n}`), fixture(variant, n));
