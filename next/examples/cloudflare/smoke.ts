@@ -42,6 +42,47 @@ try {
 
   console.log('room:', await client.room.query());
 
+  // Two rooms are two objects; the seat's lock is shared by both.
+  const other = createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [
+      httpLink({ url: url.replace(`/rooms/${room}/`, `/rooms/${room}-2/`) }),
+    ],
+  });
+  if (!deployed) {
+    await fetch(
+      new URL('/cdn-cgi/local/explorer/api/local/observability/clear', base),
+      {
+        method: 'POST',
+      },
+    );
+  }
+  const seat = `a1-${Date.now()}`;
+  const claims = await Promise.all([
+    client.claim.mutate({ seat, by: 'ada' }),
+    new Promise((r) => setTimeout(r, 20)).then(() =>
+      other.claim.mutate({ seat, by: 'grace' }),
+    ),
+  ]);
+  console.log('claim:', claims);
+  if (claims[0].waited || !claims[1].waited) {
+    throw new Error('expected the second claim to wait for the first');
+  }
+  if (!deployed) {
+    // Local Explorer keeps Workers Traces in SQL: the lock's subrequest to
+    // the `Locks` object is a child of tRPC's `trpc.claim` span.
+    const parents = await waitForRows(
+      base,
+      `select parent.name from spans child join spans parent
+         on parent.span_id = child.parent_id and parent.trace_id = child.trace_id
+       where child.name = 'durable_object_subrequest' and parent.name like 'trpc.%'`,
+    );
+    console.log('traces: lock subrequest under', parents);
+    if (!parents.includes('trpc.claim')) {
+      throw new Error('expected the lock subrequest under trpc.claim');
+    }
+  }
+
   const seen: string[] = [];
   const done = (async () => {
     for await (const event of client.onMessage.subscribe()) {
@@ -89,6 +130,28 @@ try {
   }
 } finally {
   await worker?.dispose();
+}
+
+/** Polls Local Explorer's trace store until `sql` returns rows. */
+async function waitForRows(
+  base: string | URL,
+  sql: string,
+): Promise<unknown[]> {
+  const url = new URL(
+    '/cdn-cgi/local/explorer/api/local/observability/query',
+    base,
+  );
+  for (let i = 0; i < 30; i++) {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ sql }),
+    });
+    const { result } = (await res.json()) as { result: { rows: unknown[][] } };
+    if (result.rows.length > 0) return result.rows.map((row) => row[0]);
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  return [];
 }
 
 /** `res` with its JSONL body cut, like a dropped connection, after `lines` lines. */

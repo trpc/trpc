@@ -2,11 +2,17 @@
  * A Worker that routes `/rooms/:name/trpc` to one Durable Object per room.
  * Each object serves tRPC over hibernating WebSockets: idle connections and
  * open subscriptions don't keep it in memory. Durable calls keep their
- * results, streamed ones too, in the object's storage.
+ * results, streamed ones too, in the object's storage. `claim` locks a seat
+ * through a `Locks` object per seat, and every call's spans are recorded in
+ * Workers Traces.
  */
-import { DurableObject } from 'cloudflare:workers';
+import { AsyncLocalStorage } from 'node:async_hooks';
+import { DurableObject, tracing } from 'cloudflare:workers';
 import {
   experimental_createHibernatingWebSockets,
+  experimental_durableLocker,
+  experimental_durableLockObject,
+  experimental_workersTracer,
   hibernatingPublisher,
 } from '@trpc12/trpc/cloudflare';
 import { Layer } from 'effect';
@@ -16,6 +22,7 @@ import { durableObjectPersistence } from './storage.ts';
 
 export interface Env {
   ROOMS: DurableObjectNamespace<Room>;
+  LOCKS: DurableObjectNamespace<Locks>;
   GREETING?: string;
 }
 
@@ -25,6 +32,11 @@ export class Room extends DurableObject<Env> {
     layer: Layer.mergeAll(
       hibernatingPublisher(Messages, { state: this.ctx, buffer: 100 }),
       durableObjectPersistence(this.ctx.storage),
+      experimental_durableLocker(this.env.LOCKS),
+      experimental_workersTracer({
+        tracing,
+        snapshot: () => AsyncLocalStorage.snapshot(),
+      }),
     ),
     createContext: ({ request, platform }) => ({
       room: request.headers['x-room'] ?? 'unknown',
@@ -52,6 +64,21 @@ export class Room extends DurableObject<Env> {
   }
   override webSocketError(ws: WebSocket) {
     this.sockets.close(ws);
+  }
+}
+
+/** One lock per name. Holders and waiters keep a hibernatable socket open. */
+export class Locks extends DurableObject<Env> {
+  locks = experimental_durableLockObject(this.ctx);
+
+  override fetch(request: Request): Response {
+    return this.locks.fetch(request);
+  }
+  override webSocketClose(ws: WebSocket) {
+    this.locks.close(ws);
+  }
+  override webSocketError(ws: WebSocket) {
+    this.locks.close(ws);
   }
 }
 

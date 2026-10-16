@@ -1,5 +1,8 @@
 import { Effect } from 'effect';
-import { experimental_durable } from '@trpc12/trpc/middleware';
+import {
+  experimental_durable,
+  experimental_lock,
+} from '@trpc12/trpc/middleware';
 import { initTrpc, Publisher } from '@trpc12/trpc/server';
 import { z } from 'zod';
 
@@ -28,6 +31,19 @@ export const appRouter = {
   onMessage: t.procedure.subscription(({ lastEventId }) =>
     Messages.subscribe('message', { lastEventId }),
   ),
+  // One claim per seat at a time, across every room and Worker instance: the
+  // lock is a `Locks` Durable Object per seat.
+  claim: t.procedure
+    .input(z.object({ seat: z.string(), by: z.string() }))
+    .use(
+      experimental_lock<{ input: { seat: string } }>({
+        key: ({ input }) => `seat:${input.seat}`,
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      await sleep(100);
+      return { by: input.by, waited: ctx.lock.waited };
+    }),
   // The streamed output is kept in the object's storage as it's sent, so a
   // client whose connection drops picks up where it stopped.
   digest: t.procedure

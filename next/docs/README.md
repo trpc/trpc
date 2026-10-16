@@ -18,22 +18,22 @@ User docs for vNext, kept in step with the code. Design notes and decisions live
 
 Entry points of `@trpc12/trpc`:
 
-| Entry                     | For                                                        |
-| ------------------------- | ---------------------------------------------------------- |
-| `@trpc12/trpc/server`     | `initTrpc`, routers, handlers, callers, `Publisher`        |
-| `@trpc12/trpc/client`     | `createTrpcClient`, links, `safe`                          |
-| `@trpc12/trpc/middleware` | `onStart`, `onSuccess`, `onError`, `onFinish`              |
-| `@trpc12/trpc/actions`    | `experimental_createAction`, `experimental_createCallable` |
-| `@trpc12/trpc/effect`     | `createEffectClient`                                       |
-| `@trpc12/trpc/http`       | `serve`, `toHttpEffect` on Effect's `HttpServer`           |
-| `@trpc12/trpc/cloudflare` | hibernating WebSockets and publisher on Durable Objects    |
-| `@trpc12/trpc/aws-lambda` | `toLambdaHandler` for API Gateway, ALB and Lambda@Edge     |
-| `@trpc12/trpc/socket`     | `serveSocket` on Effect's `SocketServer` (TCP, TLS)        |
-| `@trpc12/trpc/openapi`    | `createOpenApiHandler`, `generateOpenApi`, `openApiLink`   |
-| `@trpc12/trpc/interop`    | `createV11Handler`, `fromV11Link` for v11 code             |
-| `@trpc12/trpc/contract`   | contract-first routers, `toContract`                       |
-| `@trpc12/trpc/serializer` | `jsonSerializer`, danSON, `createSyncSerializer`           |
-| `@trpc12/trpc/extend`     | building blocks for integrations                           |
+| Entry                     | For                                                                             |
+| ------------------------- | ------------------------------------------------------------------------------- |
+| `@trpc12/trpc/server`     | `initTrpc`, routers, handlers, callers, `Publisher`                             |
+| `@trpc12/trpc/client`     | `createTrpcClient`, links, `safe`                                               |
+| `@trpc12/trpc/middleware` | `onStart`, `onSuccess`, `onError`, `onFinish`, `rateLimit`, `experimental_lock` |
+| `@trpc12/trpc/actions`    | `experimental_createAction`, `experimental_createCallable`                      |
+| `@trpc12/trpc/effect`     | `createEffectClient`                                                            |
+| `@trpc12/trpc/http`       | `serve`, `toHttpEffect` on Effect's `HttpServer`                                |
+| `@trpc12/trpc/cloudflare` | hibernating WebSockets, publisher and locks on Durable Objects; Workers Traces  |
+| `@trpc12/trpc/aws-lambda` | `toLambdaHandler` for API Gateway, ALB and Lambda@Edge                          |
+| `@trpc12/trpc/socket`     | `serveSocket` on Effect's `SocketServer` (TCP, TLS)                             |
+| `@trpc12/trpc/openapi`    | `createOpenApiHandler`, `generateOpenApi`, `openApiLink`                        |
+| `@trpc12/trpc/interop`    | `createV11Handler`, `fromV11Link` for v11 code                                  |
+| `@trpc12/trpc/contract`   | contract-first routers, `toContract`                                            |
+| `@trpc12/trpc/serializer` | `jsonSerializer`, danSON, `createSyncSerializer`                                |
+| `@trpc12/trpc/extend`     | building blocks for integrations                                                |
 
 An export whose name starts with `experimental_` (such as `experimental_durableLink`) may still change in a minor release, and so may every export of a package whose name starts with `experimental-` (such as `@trpc12/experimental-react`), whose exports have no prefix. When one becomes stable, it gets its name without the prefix, and the `experimental_` name stays as a deprecated alias until the next major. `npx @trpc12/upgrade` rewrites those imports. Every export's JSDoc carries `@stability` (`stable` or `experimental`) and `@since`. Until 12.0.0, prereleases promise nothing; `@stability` says how the export is planned to ship.
 

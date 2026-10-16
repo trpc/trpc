@@ -301,6 +301,49 @@ layer: Layer.mergeAll(
 ),
 ```
 
+### Locks in Durable Objects
+
+`experimental_durableLocker(env.LOCKS)` is an [`experimental_lock()`](./procedures.md) locker every Worker instance shares: one object per key. Each caller keeps a hibernatable WebSocket to the object while it holds or waits for the lock, so the object isn't billed meanwhile, waiters are told when it's their turn (nothing polls), and a crashed holder's lock goes when its socket drops. The object delegates to `experimental_durableLockObject(this.ctx)`:
+
+```ts
+import {
+  experimental_durableLocker,
+  experimental_durableLockObject,
+} from '@trpc12/trpc/cloudflare';
+
+export class Locks extends DurableObject<Env> {
+  locks = experimental_durableLockObject(this.ctx);
+  override fetch(request: Request) {
+    return this.locks.fetch(request);
+  }
+  override webSocketClose(ws: WebSocket) {
+    this.locks.close(ws);
+  }
+  override webSocketError(ws: WebSocket) {
+    this.locks.close(ws);
+  }
+}
+
+// wherever the handler is made
+layer: experimental_durableLocker(env.LOCKS),
+```
+
+Bind `LOCKS` to `Locks` in `wrangler.jsonc` (a `new_sqlite_classes` migration). [`examples/cloudflare`](../examples/cloudflare/src/index.ts) locks a seat across two room objects.
+
+### Workers Traces
+
+`experimental_workersTracer({ tracing })` is an Effect `Tracer` that records spans with Workers Traces' custom spans API, with no OpenTelemetry SDK: tRPC's server and client spans and any `Effect.withSpan`, with their attributes and an error status on failure. Turn on `observability.traces` in the Wrangler config. Workers nests spans by async context, so pass `snapshot: () => AsyncLocalStorage.snapshot()` (`nodejs_compat`) too: then spans nest as Effect nests them, and the spans Workers adds itself (subrequests, storage, other objects) sit under the call that made them. Without it, every span is a child of the request's.
+
+```ts
+import { tracing } from 'cloudflare:workers';
+import { AsyncLocalStorage } from 'node:async_hooks';
+import { experimental_workersTracer } from '@trpc12/trpc/cloudflare';
+
+layer: experimental_workersTracer({ tracing, snapshot: () => AsyncLocalStorage.snapshot() }),
+```
+
+Workers spans have no events, so Effect's span events are dropped, and a `traceparent` from another service doesn't parent the call: its spans join the Worker's own trace. Locally, Wrangler's Local Explorer (`e` in `wrangler dev`) shows the spans; the example's smoke test reads them from its trace store.
+
 ### Signed connection tokens
 
 The Worker in front of the object usually authenticates the user already. `connectionToken(schema, { secret })` lets it hand that over: a procedure on the Worker signs claims, the client sends the token as a connection param, and the object's `createContext` verifies it (HMAC-SHA256 with WebCrypto) instead of looking up the session again:

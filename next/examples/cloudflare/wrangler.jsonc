@@ -5,7 +5,14 @@
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
   "durable_objects": {
-    "bindings": [{ "name": "ROOMS", "class_name": "Room" }],
+    "bindings": [
+      { "name": "ROOMS", "class_name": "Room" },
+      { "name": "LOCKS", "class_name": "Locks" },
+    ],
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["Room"] },
+    { "tag": "v2", "new_sqlite_classes": ["Locks"] },
+  ],
+  "observability": { "traces": { "enabled": true } },
 }
