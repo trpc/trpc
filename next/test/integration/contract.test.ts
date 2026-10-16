@@ -54,7 +54,7 @@ async function setup() {
   const server = await createTestServer({
     router: appRouter,
     createContext: ({ request }) => ({
-      user: request.headers.get('x-user'),
+      user: request.headers['x-user'] ?? null,
     }),
   });
   const client = createTrpcClient({

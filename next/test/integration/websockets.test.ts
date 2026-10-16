@@ -1,5 +1,6 @@
 import { request as httpRequest } from 'node:http';
 import { Stream } from 'effect';
+import { cors } from 'trpcdev/http';
 import {
   createTrpcClient,
   httpLink,
@@ -363,11 +364,11 @@ test('the Node upgrade handles large messages and enforces maxPayload', async ()
   });
 });
 
-test('the upgrade checks the path and allowOrigin', async () => {
+test('the upgrade checks the path, and cors() checks its origin (13 C)', async () => {
   await using server = await createTestServer({
     router,
     createContext: () => ({ user: null, transport: 'x' }),
-    allowOrigin: (origin) => origin === 'https://app.example.com',
+    middleware: [cors({ allowedOrigins: ['https://app.example.com'] })],
   });
   const { port } = new URL(server.url);
   const upgrade = (path: string, origin: string) =>

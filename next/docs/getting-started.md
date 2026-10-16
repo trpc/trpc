@@ -28,10 +28,12 @@ export type AppRouter = typeof appRouter;
 export const handler = createFetchHandler({
   router: appRouter,
   createContext: ({ request }) => ({
-    user: request.headers.get('authorization'),
+    user: request.headers['authorization'] ?? null,
   }),
 });
 ```
+
+`request` is Effect's `HttpServerRequest`: `headers` is a record of lowercase names, and on fetch runtimes `request.source` is the web `Request`.
 
 `handler.fetch(request)` is a web-standard handler: see [Platforms](./platforms.md) to serve it. On Node:
 

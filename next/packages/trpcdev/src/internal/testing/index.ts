@@ -25,16 +25,15 @@
  * @stability internal
  */
 import { Context, Effect, Layer, type Scope } from 'effect';
-import { HttpServer } from 'effect/http';
+import { HttpServer, HttpServerRequest } from 'effect/http';
 import { NetAddress } from 'effect/net';
-import { serve, type HttpOptions } from '../../http/index.ts';
+import { toHttpEffect } from '../../http/index.ts';
 import {
   createFetchHandler,
   type FetchHandler,
   type FetchHandlerOptions,
 } from '../../server/fetch.ts';
 import type { AnyRouter } from '../../server/router.ts';
-import type { WebSocketLike } from '../../server/socket.ts';
 
 /**
  * Options for {@link TestServer.layer}.
@@ -42,7 +41,7 @@ import type { WebSocketLike } from '../../server/socket.ts';
  * @stability internal
  */
 export type TestServerOptions<TRouter extends AnyRouter> =
-  FetchHandlerOptions<TRouter> & Pick<HttpOptions, 'allowOrigin'>;
+  FetchHandlerOptions<TRouter>;
 
 /**
  * A request the test server received.
@@ -79,24 +78,6 @@ const make = <TRouter extends AnyRouter>(
       (h) => Effect.promise(() => h.dispose()),
     );
     const requests: RecordedRequest[] = [];
-    const recording = {
-      fetch(request: Request) {
-        requests.push({
-          method: request.method,
-          url: request.url,
-          headers: request.headers,
-        });
-        return handler.fetch(request);
-      },
-      websocket: (socket: WebSocketLike, o: { request: Request }) =>
-        handler.websocket(socket, o),
-    };
-    yield* Layer.build(
-      serve(recording, {
-        endpoint: opts.endpoint,
-        allowOrigin: opts.allowOrigin,
-      }),
-    );
     const { address } = yield* HttpServer.HttpServer;
     if (NetAddress.isUnixPathAddress(address)) {
       return yield* Effect.die(new Error('TestServer needs a TCP address'));
@@ -107,6 +88,21 @@ const make = <TRouter extends AnyRouter>(
     if (NetAddress.isUnspecified(address.address)) {
       origin.hostname = NetAddress.formatIp(NetAddress.ipv4Loopback);
     }
+    const app = toHttpEffect(handler, { endpoint: opts.endpoint });
+    yield* Layer.build(
+      HttpServer.serve(
+        Effect.flatMap(HttpServerRequest.HttpServerRequest, (request) => {
+          if (request.headers['upgrade']?.toLowerCase() !== 'websocket') {
+            requests.push({
+              method: request.method,
+              url: `${origin.origin}${request.url}`,
+              headers: new Headers(request.headers),
+            });
+          }
+          return app;
+        }),
+      ),
+    );
     const endpoint = (opts.endpoint ?? '/trpc').replace(/^\/+|\/+$/g, '');
     return {
       url: `${origin.origin}/${endpoint}`,

@@ -54,7 +54,7 @@ const handler = createFetchHandler({
   router: appRouter,
   batch: true,
   createContext: ({ request }) => ({
-    user: request.headers.get('authorization'),
+    user: request.headers['authorization'] ?? null,
   }),
 });
 const runtime = ManagedRuntime.make(

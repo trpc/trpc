@@ -71,6 +71,11 @@ type Leaf =
   | ((...args: any[]) => unknown);
 
 /** Data without thenables or iterables, which arrives as it is sent. */
+/** What a procedure returns to send its own response: `HttpServerResponse` or a web `Response`. */
+type ProcedureResponse =
+  | { readonly '~effect/http/HttpServerResponse': unknown }
+  | globalThis.Response;
+
 type Plain =
   | Exclude<Leaf, (...args: any[]) => unknown>
   | readonly Plain[]
@@ -87,17 +92,19 @@ export type Deserialized<T> =
     ? any
     : [T] extends [Plain]
       ? T
-      : T extends Leaf
-        ? T
-        : T extends AsyncIterable<infer U, infer R>
-          ? IsAny<R> extends true
-            ? AsyncIterable<Deserialized<U>>
-            : [R] extends [void]
+      : T extends ProcedureResponse
+        ? globalThis.Response
+        : T extends Leaf
+          ? T
+          : T extends AsyncIterable<infer U, infer R>
+            ? IsAny<R> extends true
               ? AsyncIterable<Deserialized<U>>
-              : AsyncIterable<Deserialized<U>, Deserialized<R>>
-          : T extends PromiseLike<infer U>
-            ? Promise<Deserialized<U>>
-            : { [K in keyof T]: Deserialized<T[K]> };
+              : [R] extends [void]
+                ? AsyncIterable<Deserialized<U>>
+                : AsyncIterable<Deserialized<U>, Deserialized<R>>
+            : T extends PromiseLike<infer U>
+              ? Promise<Deserialized<U>>
+              : { [K in keyof T]: Deserialized<T[K]> };
 
 /**
  * `query`, `mutation` or `subscription`.

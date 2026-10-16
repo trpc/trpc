@@ -21,6 +21,8 @@ export const HEADER = {
    * URI-encoded JSON `{ type, name?, lastModified? }` the client rebuilds it from.
    */
   blob: 'trpc-blob',
+  /** On a response a procedure returned itself: the client hands it over as is. */
+  response: 'trpc-response',
 } as const;
 
 /**

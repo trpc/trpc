@@ -26,17 +26,28 @@ serve(handler).pipe(
 );
 ```
 
-`serve` takes `endpoint` and `allowOrigin`. Browsers send cookies with cross-site WebSocket upgrades, so check `origin` when you authenticate with cookies. Any Effect `HttpServer` layer works in place of Node's.
+`serve` takes `endpoint`, the path WebSocket upgrades must use. Any Effect `HttpServer` layer works in place of Node's.
 
-To compose with your own Effect HTTP app, `toHttpEffect(handler)` is the app itself:
+The handler is an `effect/http` app underneath: `createContext` gets Effect's `HttpServerRequest`, and on Node the request is never converted to a web `Request`. To compose with your own Effect HTTP app, `toHttpEffect(handler)` is the app itself.
+
+### Middleware and CORS
+
+Request-level concerns are Effect `HttpMiddleware` in the handler's `middleware` option, outermost first. They wrap `handler.fetch` and, under `serve()`/`toHttpEffect`, WebSocket upgrades too. Call-level concerns are root `t.use()` middleware.
 
 ```ts
-import { toHttpEffect } from 'trpcdev/http';
+import { HttpMiddleware } from 'effect/http';
+import { cors } from 'trpcdev/http';
 
-const app = toHttpEffect(handler, {
-  allowOrigin: (o) => o === 'https://app.example.com',
+const handler = createFetchHandler({
+  router,
+  middleware: [
+    cors({ allowedOrigins: ['https://app.example.com'], credentials: true }),
+    HttpMiddleware.logger,
+  ],
 });
 ```
+
+`cors()` is Effect's `HttpMiddleware.cors` plus an origin check on WebSocket upgrades (403 for other origins). Browsers send cookies with cross-site upgrades and CORS doesn't cover them, so use it when you authenticate with cookies.
 
 ## Express, Fastify and `node:http`
 

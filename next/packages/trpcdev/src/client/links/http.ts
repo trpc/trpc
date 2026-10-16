@@ -286,6 +286,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink {
   }
 
   async function readResult(res: Response): Promise<unknown> {
+    if (res.headers.get(HEADER.response) === '1') return res;
     if (!res.ok) throw await readError(res);
     const blob = res.headers.get(HEADER.blob);
     if (blob !== null) return readBlob(res, blob);

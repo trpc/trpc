@@ -1,4 +1,5 @@
 import { Context, Effect, ManagedRuntime, type Exit, type Layer } from 'effect';
+import type { HttpServerRequest } from 'effect/http';
 import { TrpcError, type AnyTrpcError } from '../internal/error.ts';
 import type { MaybePromise, ProcedureType } from '../internal/types.ts';
 import { callProcedure, isUnexpectedError } from './execute.ts';
@@ -26,13 +27,16 @@ export interface RunOpts {
   lastEventId?: string | undefined;
   /** Added to the layer's services for this call. */
   services?: Context.Context<never> | undefined;
+  /** An unbatched HTTP call, which may return an `HttpServerResponse`. */
+  allowResponse?: boolean | undefined;
 }
 
 /** @internal */
 export interface MakeContextOpts {
-  request: Request;
+  request: HttpServerRequest.HttpServerRequest;
+  platform?: unknown;
   calls: ReadonlyArray<{ path: string; type: ProcedureType }>;
-  signal?: AbortSignal;
+  signal: AbortSignal;
   transport?: Transport;
   connectionParams?: Record<string, unknown> | undefined;
 }
@@ -41,13 +45,11 @@ export interface MakeContextOpts {
 export interface HandlerCore {
   readonly run: (opts: RunOpts) => Promise<Exit.Exit<unknown, AnyTrpcError>>;
   readonly makeContext: (opts: MakeContextOpts) => Promise<object>;
-  /** Records the platform value `createContext` gets for `request`. */
-  readonly setPlatform: (request: Request, platform: unknown) => void;
   /** Masks unexpected errors unless `exposeUnexpectedErrors`. */
   readonly publicError: (err: AnyTrpcError) => AnyTrpcError;
   readonly report: (
     err: AnyTrpcError,
-    request: Request,
+    request: HttpServerRequest.HttpServerRequest,
     path?: string,
     type?: ProcedureType,
   ) => void;
@@ -71,7 +73,6 @@ export function createHandlerCore(opts: CoreOptions): HandlerCore {
       ? runtime.context()
       : Promise.resolve(Context.empty() as Context.Context<any>));
 
-  const platforms = new WeakMap<Request, unknown>();
   return {
     run: async (o) => {
       const base = await getServices();
@@ -84,17 +85,14 @@ export function createHandlerCore(opts: CoreOptions): HandlerCore {
       if (!opts.createContext) return {};
       return await opts.createContext({
         request: o.request,
-        platform: platforms.get(o.request),
+        platform: o.platform,
         info: {
           calls: o.calls,
-          signal: o.signal ?? o.request.signal,
+          signal: o.signal,
           transport: o.transport ?? 'http',
           connectionParams: o.connectionParams,
         },
       });
-    },
-    setPlatform: (request, platform) => {
-      if (platform !== undefined) platforms.set(request, platform);
     },
     publicError: (err) =>
       isUnexpectedError(err) && !expose

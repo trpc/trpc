@@ -72,6 +72,7 @@ export {
   type OkResult,
   type ResponseHandle,
 } from './middleware.ts';
+export { Response, type ResponseService } from './response.ts';
 export {
   isProcedure,
   type AnyProcedure,

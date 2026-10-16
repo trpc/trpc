@@ -44,8 +44,8 @@ const handler = createFetchHandler<typeof router, { env: Env }>({
   router,
   createContext: ({ request, info, platform }) => ({
     token: info.connectionParams?.['token'] as string | undefined,
-    cookie: request.headers.get('cookie'),
-    other: request.headers.get('x-other'),
+    cookie: request.headers['cookie'] ?? null,
+    other: request.headers['x-other'] ?? null,
     region: platform?.env.region,
   }),
 });

@@ -1,4 +1,5 @@
 import { Cause, Context, Effect, Exit, Stream } from 'effect';
+import { HttpServerResponse } from 'effect/http';
 import {
   isTrpcError,
   taggedSpec,
@@ -8,6 +9,7 @@ import {
 } from '../internal/error.ts';
 import { errorConstructors, isDeclaredError } from './declared.ts';
 import type { ResponseHandle } from './middleware.ts';
+import { Response as ResponseKey } from './response.ts';
 import type { AnyProcedure, ProcedureInternals } from './procedure.ts';
 import {
   inputError,
@@ -119,7 +121,17 @@ export interface CallOpts {
   readonly signal: AbortSignal;
   readonly lastEventId?: string | undefined;
   readonly response?: ResponseHandle | undefined;
+  /** An unbatched HTTP call: the procedure may return an `HttpServerResponse`. */
+  readonly allowResponse?: boolean | undefined;
 }
+
+/** A resolver's `HttpServerResponse` or web `Response`. @internal */
+export const isResponseValue = (
+  value: unknown,
+): value is HttpServerResponse.HttpServerResponse | globalThis.Response =>
+  HttpServerResponse.isHttpServerResponse(value) ||
+  (typeof globalThis.Response === 'function' &&
+    value instanceof globalThis.Response);
 
 /** @internal */
 export const createResponseHandle = (): ResponseHandle => ({
@@ -408,6 +420,19 @@ export function callProcedure(
     const value = isResolved(result)
       ? result[RESOLVED]
       : finish(result, services);
+    if (isResponseValue(value)) {
+      if (!opts.allowResponse) {
+        return yield* Effect.fail(
+          new TrpcError({
+            code: 'BAD_REQUEST',
+            message: `"${path}" returns a Response, which only an unbatched HTTP call can carry`,
+          }),
+        );
+      }
+      return HttpServerResponse.isHttpServerResponse(value)
+        ? value
+        : HttpServerResponse.fromWeb(value);
+    }
     const output = validated(def);
     if (type !== 'subscription' && output) {
       if (!isStreamSchema(output)) {
@@ -424,6 +449,7 @@ export function callProcedure(
     }
     return value;
   }).pipe(
+    Effect.provideService(ResponseKey, response),
     Effect.catchCause((cause) => {
       for (const reason of cause.reasons) {
         if (Cause.isFailReason(reason) && isTrpcError(reason.error)) {

@@ -1,4 +1,5 @@
 import { Effect, Exit, Stream, type Layer } from 'effect';
+import { HttpServerRequest, HttpServerResponse } from 'effect/http';
 import type { ContractJson } from '../contract/index.ts';
 import {
   flattenRoutes,
@@ -208,6 +209,17 @@ export function createOpenApiHandler<
       layer?: Layer.Layer<any, any, never>;
     },
   );
+  const platforms = new WeakMap<Request, unknown>();
+  const httpRequests = new WeakMap<
+    Request,
+    HttpServerRequest.HttpServerRequest
+  >();
+  const httpOf = (request: Request) => {
+    let http = httpRequests.get(request);
+    if (!http)
+      httpRequests.set(request, (http = HttpServerRequest.fromWeb(request)));
+    return http;
+  };
   const prefix = normalizePrefix(opts.prefix);
   const maxBodySize = opts.maxBodySize ?? 1_048_576;
   const ssePingMs = opts.sse?.pingMs ?? 15_000;
@@ -460,7 +472,7 @@ export function createOpenApiHandler<
         if (controller.signal.aborted) return;
         if (Exit.isFailure(exit)) {
           const err = normalizeCause(exit.cause);
-          base.report(err, request, entry.path, 'subscription');
+          base.report(err, httpOf(request), entry.path, 'subscription');
           write(
             `event: error\ndata: ${JSON.stringify(toOpenApiError(base.publicError(err)))}\n\n`,
           );
@@ -491,13 +503,15 @@ export function createOpenApiHandler<
       });
     }
     const input = await readInput(request, url, entry, params);
-    const ctx = await base.makeContext({
-      request,
-      calls: [{ path: entry.path, type }],
-    });
     const controller = new AbortController();
     request.signal.addEventListener('abort', () => controller.abort(), {
       once: true,
+    });
+    const ctx = await base.makeContext({
+      request: httpOf(request),
+      platform: platforms.get(request),
+      calls: [{ path: entry.path, type }],
+      signal: controller.signal,
     });
     const response = createResponseHandle();
     const exit = await base.run({
@@ -508,10 +522,11 @@ export function createOpenApiHandler<
       signal: controller.signal,
       response,
       lastEventId: request.headers.get('last-event-id') ?? undefined,
+      allowResponse: type !== 'subscription',
     });
     if (Exit.isFailure(exit)) {
       const err = normalizeCause(exit.cause);
-      base.report(err, request, entry.path, type);
+      base.report(err, httpOf(request), entry.path, type);
       return fail(err, response.headers);
     }
     if (type === 'subscription') {
@@ -523,6 +538,14 @@ export function createOpenApiHandler<
         response.headers,
       );
     }
+    if (HttpServerResponse.isHttpServerResponse(exit.value)) {
+      const web = HttpServerResponse.toWeb(exit.value);
+      for (const [key, value] of response.headers) {
+        if (key === 'set-cookie') web.headers.append(key, value);
+        else if (!web.headers.has(key)) web.headers.set(key, value);
+      }
+      return web;
+    }
     return output(
       entry,
       exit.value,
@@ -533,7 +556,7 @@ export function createOpenApiHandler<
 
   const handler: OpenApiHandler<unknown> = {
     async fetch(request, platform) {
-      base.setPlatform(request, platform);
+      if (platform !== undefined) platforms.set(request, platform);
       const url = new URL(request.url);
       try {
         if (startup) {
@@ -560,7 +583,7 @@ export function createOpenApiHandler<
             return await serve(request, url, entry, params);
           } catch (cause) {
             const err = isTrpcError(cause) ? cause : unexpectedError(cause);
-            base.report(err, request, entry.path, entry.type);
+            base.report(err, httpOf(request), entry.path, entry.type);
             return fail(err);
           }
         }
@@ -574,7 +597,7 @@ export function createOpenApiHandler<
         );
       } catch (cause) {
         const err = isTrpcError(cause) ? cause : unexpectedError(cause);
-        base.report(err, request);
+        base.report(err, httpOf(request));
         return fail(err);
       }
     },

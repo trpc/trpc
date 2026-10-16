@@ -6,4 +6,5 @@
 - In a batch, headers merge (`set-cookie` appends) and each call's status stays in its own line.
 - Why: Effect code reads its dependencies from services, matching [`internals-use-effect.md`](./internals-use-effect.md) and the `effect/http` core ([`http-core-on-effect-http.md`](./http-core-on-effect-http.md)); Promise code keeps the simple handle.
 - Lost: a return-value wrapper (`withResponse(value, …)`), which tests more easily but stops middleware from adding headers.
-- Lives in: `packages/trpcdev/src/server/execute.ts`, `src/server/middleware.ts` (service not built yet).
+- (agent) The root provides the service, so procedures using it don't add a layer requirement.
+- Lives in: `packages/trpcdev/src/server/response.ts`, `src/server/execute.ts`, `src/server/middleware.ts`; tests in `test/integration/http-core.test.ts`.

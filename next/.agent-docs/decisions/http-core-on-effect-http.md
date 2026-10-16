@@ -7,4 +7,6 @@
 - Why: Effect end to end, matching [`internals-use-effect.md`](./internals-use-effect.md) and [`platforms-through-effect-layers.md`](./platforms-through-effect-layers.md); Effect's request already wraps both Node's `IncomingMessage` and web `Request`.
 - Lost: a web-standard `Request` in `createContext`; independence from `effect/http`'s API churn; a few allocations per call on fetch runtimes for the wrapper.
 - Open: whether in-process callers (`localLink`, `createCaller`, actions) build an `HttpServerRequest` or pass none; WebSocket and MessagePort connections' request (today a web `Request`).
-- Lives in: `packages/trpcdev/src/server/fetch.ts`, `src/http/index.ts` (not built yet).
+- (agent) WebSocket and MessagePort connections get `HttpServerRequest.fromWeb` of their upgrade request; Node upgrades in `toHttpEffect` keep Effect's request. The platform value (`fetch(request, env)`) reaches `createContext` through the `CurrentPlatform` reference.
+- (agent) The OpenAPI handler still reads a web `Request` internally and wraps it for `createContext`; moving it onto the app is left for the OpenAPI generator work.
+- Lives in: `packages/trpcdev/src/server/fetch.ts`, `src/server/core.ts`, `src/server/socket.ts`, `src/http/index.ts`; tests in `test/integration/http-core.test.ts`.

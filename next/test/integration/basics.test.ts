@@ -74,7 +74,7 @@ test('query with a Standard Schema (zod) input, sent as legible GET params', asy
   expect(await ctx.client.greet.query({ name: 'world' })).toBe('hello world');
   const request = ctx.server.requests.at(-1)!;
   expect(request.method).toBe('GET');
-  expect(new URL(request.url).search).toBe('?name=world');
+  expect(new URL(request.url, 'http://x').search).toBe('?name=world');
 });
 
 test('query with an Effect Schema input', async () => {

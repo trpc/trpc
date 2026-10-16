@@ -162,7 +162,7 @@ export async function createApp(opts: { posts?: number } = {}) {
         TestServer.layer({
           router: appRouter,
           createContext: ({ request }) => ({
-            locale: request.headers.get('x-locale'),
+            locale: request.headers['x-locale'] ?? null,
           }),
         }).pipe(
           Layer.provide(

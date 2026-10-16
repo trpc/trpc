@@ -144,8 +144,12 @@ const router = {
 const layer = Layer.succeed(Clock, { now: () => 42 });
 
 async function serve(opts: { expose?: boolean } = {}) {
-  const createContext = ({ request }: { request: Request }) => ({
-    user: request.headers.get('x-user'),
+  const createContext = ({
+    request,
+  }: {
+    request: { headers: Record<string, string | undefined> };
+  }) => ({
+    user: request.headers['x-user'] ?? null,
   });
   const rpc = createFetchHandler({ router, createContext, layer });
   const openapi = createOpenApiHandler({

@@ -1,4 +1,5 @@
 import { Context, Effect, Exit, Stream } from 'effect';
+import type { HttpServerRequest } from 'effect/http';
 import {
   HibernationSlot,
   type ParkedSubscription,
@@ -77,21 +78,25 @@ export interface SocketCore {
     services?: Context.Context<never> | undefined;
   }): Promise<Exit.Exit<unknown, AnyTrpcError>>;
   makeContext(opts: {
-    request: Request;
+    request: HttpServerRequest.HttpServerRequest;
+    platform: unknown;
     calls: ReadonlyArray<{ path: string; type: ProcedureType }>;
     signal: AbortSignal;
     transport: Transport;
     connectionParams: Record<string, unknown> | undefined;
   }): Promise<object>;
   deserializeInput(value: unknown): unknown;
-  /** Makes `platform` what `createContext` sees for calls on `request`. */
-  setPlatform(request: Request, platform: unknown): void;
   publicError(err: AnyTrpcError): AnyTrpcError;
   report(
     err: AnyTrpcError,
-    request: Request,
+    request: HttpServerRequest.HttpServerRequest,
     path?: string,
     type?: ProcedureType,
+  ): void;
+  /** Serves an upgraded socket, for `trpcdev/http`. */
+  serveWebSocket(
+    socket: WebSocketLike,
+    request: HttpServerRequest.HttpServerRequest,
   ): void;
 }
 
@@ -194,7 +199,8 @@ export function serveConnection(
   core: SocketCore,
   conn: Connection,
   opts: {
-    request: Request;
+    request: HttpServerRequest.HttpServerRequest;
+    platform?: unknown;
     transport: Transport;
     /** Close the connection after this long without a message. */
     idleTimeoutMs?: number | false | undefined;
@@ -238,7 +244,9 @@ export function connectionReceiver(
   core: SocketCore,
   conn: Pick<Connection, 'send' | 'close'>,
   opts: {
-    request: Request;
+    request: HttpServerRequest.HttpServerRequest;
+    /** What `createContext` gets as `platform`. */
+    platform?: unknown;
     transport: Transport;
     /** Params from an earlier `init`, for a connection served before. */
     connectionParams?: Record<string, unknown> | undefined;
@@ -364,6 +372,7 @@ export function connectionReceiver(
       const input = core.deserializeInput(message.input);
       const ctx = await core.makeContext({
         request,
+        platform: opts.platform,
         calls: [{ path, type }],
         signal,
         transport,

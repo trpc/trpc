@@ -6,4 +6,5 @@
 - Protocol rules stay fixed handler options: `maxBodySize`, batching opt-in, mutations over `POST`, JSON-only `POST` bodies (CSRF). They can't be turned off by a plugin.
 - Why: Effect already ships CORS, logging and tracing middleware; a second middleware system would duplicate both layers. Follows [`http-core-on-effect-http.md`](./http-core-on-effect-http.md).
 - Lost: an oRPC-style `{ onRequest, onCall }` plugin interface and switch-off-able protocol features.
-- Lives in: `packages/trpcdev/src/server/fetch.ts`, `src/http/index.ts` (`middleware` option not built yet).
+- (agent) `trpcdev/http` exports `cors(options)`, Effect's `HttpMiddleware.cors` that also answers `403` to WebSocket upgrades from origins it doesn't allow (browsers don't preflight upgrades). `serve({ allowOrigin })` is gone; pass `middleware: [cors({ allowedOrigins })]`.
+- Lives in: `packages/trpcdev/src/server/fetch.ts` (`middleware` option), `src/http/index.ts` (`cors`, `toHttpEffect`); tests in `test/integration/http-core.test.ts`, `test/integration/websockets.test.ts`.

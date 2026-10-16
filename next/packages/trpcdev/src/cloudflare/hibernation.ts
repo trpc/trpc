@@ -1,4 +1,5 @@
 import { Effect, Exit, Stream } from 'effect';
+import { HttpServerRequest } from 'effect/http';
 import {
   isTrpcError,
   toWireError,
@@ -163,7 +164,9 @@ type Deliver = (
 export const deliveries: WeakMap<HibernationState, Deliver> = new WeakMap();
 
 const requestOf = (attachment: Attachment) =>
-  new Request(attachment.url, { headers: attachment.headers });
+  HttpServerRequest.fromWeb(
+    new Request(attachment.url, { headers: attachment.headers }),
+  );
 
 /**
  * Serves `handler`'s router over WebSockets that a Cloudflare Durable Object
@@ -263,6 +266,7 @@ export function createHibernatingWebSockets<TPlatform>(
         },
         {
           request,
+          platform,
           transport: 'websocket',
           connectionParams: attachment.connectionParams,
           onInit(connectionParams) {
@@ -296,7 +300,6 @@ export function createHibernatingWebSockets<TPlatform>(
         },
       );
       receivers.set(socket, receiver);
-      core.setPlatform(request, platform);
     }
     return receiver;
   };

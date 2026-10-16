@@ -58,7 +58,7 @@ const serve = () =>
     router,
     batch: true,
     createContext: ({ request }) => ({
-      token: request.headers.get('authorization'),
+      token: request.headers['authorization'] ?? null,
     }),
   });
 

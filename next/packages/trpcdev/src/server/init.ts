@@ -3,6 +3,7 @@ import type { AnyTrpcError } from '../internal/error.ts';
 import type { Unset } from '../internal/types.ts';
 import { createBuilder, type ProcedureBuilder } from './builder.ts';
 import { implement, type ImplementResult } from './implement.ts';
+import type { Response } from './response.ts';
 import { router } from './router.ts';
 import {
   makeEffectMiddleware,
@@ -48,7 +49,7 @@ export interface RootDef<TCtx extends object, TMeta extends object> {
   errors: never;
   declared: {};
   shorts: never;
-  provided: never;
+  provided: Response;
   requires: never;
 }
 

@@ -1,4 +1,19 @@
-import { Effect, Exit, Stream, type Layer } from 'effect';
+import {
+  Cause,
+  Context,
+  Effect,
+  Exit,
+  Queue,
+  Stream,
+  type Layer,
+} from 'effect';
+import {
+  Cookies,
+  HttpEffect,
+  HttpServerRequest,
+  HttpServerResponse,
+  type HttpMiddleware,
+} from 'effect/http';
 import {
   isTrpcError,
   toWireError,
@@ -12,7 +27,6 @@ import {
   isJsonContentType,
   isMultipartContentType,
   PROTOCOL_VERSION,
-  readFormData,
   SSE_EVENT,
   type BatchCall,
   type BatchLine,
@@ -27,7 +41,6 @@ import {
   unexpectedError,
 } from './execute.ts';
 import { emitEvents } from './events.ts';
-import type { ResponseHandle } from './middleware.ts';
 import type { AnyProcedure } from './procedure.ts';
 import {
   resolveProcedure,
@@ -53,11 +66,13 @@ import {
  */
 export interface CreateContextOpts<TPlatform = undefined> {
   /**
-   * The HTTP request, or the upgrade request of a WebSocket. For a
-   * MessagePort, the `request` passed to `handler.messagePort()`, or a
-   * placeholder `http://localhost/` request.
+   * The HTTP request, or the upgrade request of a WebSocket, as Effect's
+   * `HttpServerRequest`: `request.headers` is a record of lowercase names
+   * (`request.headers.cookie`), and on fetch runtimes `request.source` is
+   * the web `Request`. For a MessagePort, the `request` passed to
+   * `handler.messagePort()`, or a placeholder `http://localhost/` request.
    */
-  readonly request: Request;
+  readonly request: HttpServerRequest.HttpServerRequest;
   /**
    * What the runtime passed `handler.fetch(request, platform)` or
    * `handler.websocket(socket, { request, platform })`: Workers' `env` and
@@ -83,7 +98,7 @@ export interface OnErrorOpts {
   readonly error: AnyTrpcError;
   readonly path: string | undefined;
   readonly type: ProcedureType | undefined;
-  readonly request: Request;
+  readonly request: HttpServerRequest.HttpServerRequest;
 }
 
 /**
@@ -168,6 +183,20 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter> {
   exposeUnexpectedErrors?: boolean;
   /** Called for every error, with the original cause. */
   onError?: (opts: OnErrorOpts) => void;
+  /**
+   * Effect HTTP middleware around the handler, outermost first: CORS,
+   * logging, rate limits (13 C). `trpcdev/http`'s `cors()` also checks the
+   * origin of WebSocket upgrades.
+   *
+   * @example
+   * ```ts
+   * createFetchHandler({
+   *   router,
+   *   middleware: [cors({ allowedOrigins: ['https://app.example.com'] }), HttpMiddleware.logger],
+   * });
+   * ```
+   */
+  middleware?: ReadonlyArray<HttpMiddleware.HttpMiddleware>;
   sse?: {
     /**
      * Send a comment line this often while a subscription is quiet, so
@@ -259,9 +288,29 @@ export interface FetchHandler<TPlatform = undefined> {
 }
 
 const encoder = new TextEncoder();
+const decoder = new TextDecoder();
 
 const protocolError = (code: string, message: string) =>
   new TrpcError({ code, message });
+
+/** The `platform` of the request being handled. @internal */
+export const CurrentPlatform: Context.Reference<unknown> =
+  Context.Reference<unknown>('trpcdev/CurrentPlatform', {
+    defaultValue: () => undefined,
+  });
+
+/** The `effect/http` app behind each fetch handler, for `trpcdev/http`. @internal */
+export const httpApps: WeakMap<
+  object,
+  {
+    readonly app: Effect.Effect<
+      HttpServerResponse.HttpServerResponse,
+      never,
+      HttpServerRequest.HttpServerRequest
+    >;
+    readonly middleware: ReadonlyArray<HttpMiddleware.HttpMiddleware>;
+  }
+> = new WeakMap();
 
 interface CallResult {
   status: number;
@@ -270,18 +319,63 @@ interface CallResult {
   headers?: Headers | undefined;
   /** A root `File` or `Blob` output, sent as the body of an unbatched call. */
   blob?: Blob | undefined;
+  /** What the procedure returned instead of a value, sent as is. */
+  response?: HttpServerResponse.HttpServerResponse | undefined;
 }
+
+/** `Headers` from a response handle, as `HttpServerResponse` options. */
+const responseOptions = (
+  set: Headers | undefined,
+): { headers?: Record<string, string>; cookies?: Cookies.Cookies } => {
+  if (!set) return {};
+  const headers: Record<string, string> = {};
+  for (const [key, value] of set) {
+    if (key !== 'set-cookie') headers[key] = value;
+  }
+  const setCookie = set.getSetCookie();
+  return {
+    headers,
+    ...(setCookie.length ? { cookies: Cookies.fromSetCookie(setCookie) } : {}),
+  };
+};
+
+/** A request body a Node framework middleware already read (`express.json()`). */
+const parsedBody = (
+  request: HttpServerRequest.HttpServerRequest,
+): Uint8Array | 'consumed' | undefined => {
+  const node = request.source as { readableEnded?: unknown; body?: unknown };
+  if (node.readableEnded !== true) return undefined;
+  const { body } = node;
+  if (typeof body === 'string') return encoder.encode(body);
+  if (body instanceof Uint8Array) return body;
+  if (
+    body !== undefined &&
+    isJsonContentType(request.headers['content-type'] ?? null)
+  ) {
+    return encoder.encode(JSON.stringify(body));
+  }
+  return 'consumed';
+};
+
+const consumedError = () =>
+  new TrpcError({
+    code: 'INTERNAL_SERVER_ERROR',
+    message:
+      'The request body was already read by another middleware. Mount tRPC before body parsers, or use one that sets req.body.',
+  });
 
 /**
  * Serves a router over the web-standard `fetch` interface (12 P-A). Works on
  * any runtime with `Request`/`Response`; `trpcdev/http` serves it with
- * Effect's `HttpServer` on Node, Bun and the rest.
+ * Effect's `HttpServer` on Node, Bun and the rest. Underneath it's an
+ * `effect/http` app: `middleware` wraps it, and `createContext` gets the
+ * `HttpServerRequest`.
  *
  * @example
  * ```ts
  * const handler = createFetchHandler({
  *   router: appRouter,
- *   createContext: ({ request }) => ({ user: getUser(request) }),
+ *   createContext: ({ request }) => ({ user: getUser(request.headers.cookie) }),
  *   layer: PostRepo.Live, // Effect services, when procedures need any
  * });
  * export default { fetch: handler.fetch };
@@ -314,49 +408,121 @@ export function createFetchHandler<
 
   const wire = (err: AnyTrpcError) =>
     serializer.serialize(toWireError(publicError(err)));
+  const coerceError =
+    (
+      request: HttpServerRequest.HttpServerRequest,
+      path: string,
+      type?: ProcedureType,
+    ) =>
+    (cause: unknown) => {
+      const err = isTrpcError(cause) ? cause : unexpectedError(cause);
+      report(err, request, path, type);
+      return toWireError(publicError(err));
+    };
 
   const respond = (
     status: number,
-    body: BodyInit | null,
+    body: string | Blob | Stream.Stream<Uint8Array>,
     contentType: string,
     extra?: Record<string, string>,
     set?: Headers,
-  ) => {
-    const headers = new Headers(set);
-    headers.set('content-type', contentType);
-    headers.set(HEADER.version, PROTOCOL_VERSION);
-    for (const [key, value] of Object.entries(extra ?? {})) {
-      headers.set(key, value);
-    }
-    return new Response(body, { status, headers });
-  };
-
-  async function readBody(request: Request): Promise<unknown> {
-    if (!isJsonContentType(request.headers.get('content-type'))) {
-      throw protocolError(
-        'UNSUPPORTED_MEDIA_TYPE',
-        'POST requests must have content-type: application/json',
+  ): HttpServerResponse.HttpServerResponse => {
+    const { headers: fromHandle, cookies } = responseOptions(set);
+    const options = {
+      status,
+      contentType,
+      headers: { ...fromHandle, [HEADER.version]: PROTOCOL_VERSION, ...extra },
+      cookies,
+    };
+    if (typeof body === 'string') return HttpServerResponse.text(body, options);
+    if (body instanceof Blob) {
+      return HttpServerResponse.stream(
+        Stream.fromReadableStream({
+          evaluate: () => body.stream(),
+          onError: (cause) => cause,
+        }) as Stream.Stream<Uint8Array>,
+        { ...options, contentLength: body.size },
       );
     }
-    const length = Number(request.headers.get('content-length') ?? 0);
-    if (length > maxBodySize) {
-      throw protocolError('PAYLOAD_TOO_LARGE', 'Request body is too large');
-    }
-    const text = await request.text();
-    if (encoder.encode(text).byteLength > maxBodySize) {
-      throw protocolError('PAYLOAD_TOO_LARGE', 'Request body is too large');
-    }
-    if (text === '') return undefined;
-    try {
-      return JSON.parse(text);
-    } catch (cause) {
-      throw new TrpcError({
-        code: 'PARSE_ERROR',
-        message: 'Invalid JSON',
-        cause,
-      });
-    }
-  }
+    return HttpServerResponse.stream(body, options);
+  };
+
+  const errorResponse = (err: AnyTrpcError) =>
+    respond(err.status, JSON.stringify(wire(err)), CONTENT_TYPE.json);
+
+  /** The body, at most `maxBodySize` bytes. Past it, the rest is drained, not cancelled. */
+  const readBytes = (
+    request: HttpServerRequest.HttpServerRequest,
+  ): Effect.Effect<Uint8Array, AnyTrpcError> =>
+    Effect.gen(function* () {
+      const tooLarge = protocolError(
+        'PAYLOAD_TOO_LARGE',
+        'Request body is too large',
+      );
+      if (Number(request.headers['content-length'] ?? 0) > maxBodySize) {
+        return yield* Effect.fail(tooLarge);
+      }
+      const replayed = parsedBody(request);
+      if (replayed === 'consumed') return yield* Effect.fail(consumedError());
+      const chunks: Uint8Array[] = [];
+      let size = 0;
+      const { source } = request;
+      if (source instanceof Request && source.body === null) {
+        // No body: nothing to read.
+      } else if (replayed) {
+        chunks.push(replayed);
+        size = replayed.byteLength;
+      } else {
+        yield* Stream.runForEach(request.stream, (chunk) =>
+          Effect.sync(() => {
+            size += chunk.byteLength;
+            if (size <= maxBodySize) chunks.push(chunk);
+          }),
+        ).pipe(
+          Effect.mapError(
+            (cause) =>
+              new TrpcError({
+                code: 'BAD_REQUEST',
+                message: 'Could not read the request body',
+                cause,
+              }),
+          ),
+        );
+      }
+      if (size > maxBodySize) return yield* Effect.fail(tooLarge);
+      if (chunks.length === 1) return chunks[0]!;
+      const bytes = new Uint8Array(size);
+      let offset = 0;
+      for (const chunk of chunks) {
+        bytes.set(chunk, offset);
+        offset += chunk.byteLength;
+      }
+      return bytes;
+    });
+
+  const parseJson = (text: string) =>
+    Effect.try({
+      try: () => (text === '' ? undefined : (JSON.parse(text) as unknown)),
+      catch: (cause) =>
+        new TrpcError({ code: 'PARSE_ERROR', message: 'Invalid JSON', cause }),
+    });
+
+  const readBody = (request: HttpServerRequest.HttpServerRequest) =>
+    Effect.gen(function* () {
+      if (parsedBody(request) === 'consumed') {
+        return yield* Effect.fail(consumedError());
+      }
+      if (!isJsonContentType(request.headers['content-type'] ?? null)) {
+        return yield* Effect.fail(
+          protocolError(
+            'UNSUPPORTED_MEDIA_TYPE',
+            'POST requests must have content-type: application/json',
+          ),
+        );
+      }
+      const bytes = yield* readBytes(request);
+      return yield* parseJson(decoder.decode(bytes));
+    });
 
   const deserializeInput = (value: unknown, parts?: ReadonlyArray<Blob>) => {
     if (value === undefined) return undefined;
@@ -370,437 +536,565 @@ export function createFetchHandler<
       });
     }
   };
-
-  async function readInput(request: Request, url: URL): Promise<unknown> {
-    if (request.method === 'GET') {
-      if (url.search.length <= 1) return undefined;
-      try {
-        return serializer.fromSearch(url.search, { input: true });
-      } catch (cause) {
-        throw new TrpcError({
-          code: 'PARSE_ERROR',
-          message: cause instanceof Error ? cause.message : 'Invalid input',
-          cause,
-        });
-      }
-    }
-    if (isMultipartContentType(request.headers.get('content-type'))) {
-      return readMultipart(request);
-    }
-    return deserializeInput(await readBody(request));
-  }
+  const deserialize = (value: unknown, parts?: ReadonlyArray<Blob>) =>
+    Effect.try({
+      try: () => deserializeInput(value, parts),
+      catch: (cause) => cause as AnyTrpcError,
+    });
 
   /** An `input` field with the serialized JSON, and parts `0`, `1`, … for its blobs. */
-  async function readMultipart(request: Request): Promise<unknown> {
-    const form = await readFormData(request, maxBodySize, () =>
-      protocolError('PAYLOAD_TOO_LARGE', 'Request body is too large'),
-    ).catch((cause: unknown) => {
-      if (isTrpcError(cause)) throw cause;
-      throw new TrpcError({
-        code: 'PARSE_ERROR',
-        message: 'Invalid multipart body',
-        cause,
+  const readMultipart = (request: HttpServerRequest.HttpServerRequest) =>
+    Effect.gen(function* () {
+      const bytes = yield* readBytes(request);
+      const form = yield* Effect.tryPromise({
+        try: () =>
+          new globalThis.Response(bytes as BodyInit, {
+            headers: { 'content-type': request.headers['content-type'] ?? '' },
+          }).formData(),
+        catch: (cause) =>
+          new TrpcError({
+            code: 'PARSE_ERROR',
+            message: 'Invalid multipart body',
+            cause,
+          }),
       });
+      const field = form.get('input');
+      if (typeof field !== 'string') {
+        return yield* Effect.fail(
+          protocolError(
+            'BAD_REQUEST',
+            'A multipart body needs an "input" field',
+          ),
+        );
+      }
+      const value = yield* parseJson(field);
+      const parts: Blob[] = [];
+      for (;;) {
+        const part = form.get(String(parts.length));
+        if (!(part instanceof Blob)) break;
+        parts.push(part);
+      }
+      return yield* deserialize(value, parts);
     });
-    const field = form.get('input');
-    if (typeof field !== 'string') {
-      throw protocolError(
-        'BAD_REQUEST',
-        'A multipart body needs an "input" field',
-      );
-    }
-    let value: unknown;
-    try {
-      value = JSON.parse(field);
-    } catch (cause) {
-      throw new TrpcError({
-        code: 'PARSE_ERROR',
-        message: 'Invalid JSON',
-        cause,
-      });
-    }
-    const parts: Blob[] = [];
-    for (;;) {
-      const part = form.get(String(parts.length));
-      if (!(part instanceof Blob)) break;
-      parts.push(part);
-    }
-    return deserializeInput(value, parts);
-  }
+
+  const readInput = (request: HttpServerRequest.HttpServerRequest, url: URL) =>
+    Effect.suspend((): Effect.Effect<unknown, AnyTrpcError> => {
+      if (request.method === 'GET') {
+        if (url.search.length <= 1) return Effect.succeed(undefined);
+        return Effect.try({
+          try: () => serializer.fromSearch(url.search, { input: true }),
+          catch: (cause) =>
+            new TrpcError({
+              code: 'PARSE_ERROR',
+              message: cause instanceof Error ? cause.message : 'Invalid input',
+              cause,
+            }),
+        });
+      }
+      if (isMultipartContentType(request.headers['content-type'] ?? null)) {
+        return readMultipart(request);
+      }
+      return Effect.flatMap(readBody(request), (body) => deserialize(body));
+    });
 
   const makeContext = (
-    request: Request,
+    request: HttpServerRequest.HttpServerRequest,
     calls: CreateContextOpts['info']['calls'],
-  ) => base.makeContext({ request, calls });
-
-  const run = (
-    procedure: AnyProcedure,
-    path: string,
-    ctx: object,
-    input: unknown,
     signal: AbortSignal,
-    response: ResponseHandle,
-    lastEventId?: string,
-  ) => base.run({ procedure, path, ctx, input, signal, response, lastEventId });
+  ) =>
+    Effect.gen(function* () {
+      const platform = yield* CurrentPlatform;
+      return yield* Effect.tryPromise({
+        try: () => base.makeContext({ request, platform, calls, signal }),
+        catch: (cause) => (isTrpcError(cause) ? cause : unexpectedError(cause)),
+      });
+    });
 
   /** Runs a query or mutation and serializes the outcome. */
-  async function execute(
-    request: Request,
+  const execute = (
+    request: HttpServerRequest.HttpServerRequest,
     procedure: AnyProcedure,
     path: string,
     ctx: object,
     input: unknown,
     signal: AbortSignal,
-    rawBlob = false,
-  ): Promise<CallResult> {
-    const type = procedure['~trpc'].type;
-    const response = createResponseHandle();
-    const { headers } = response;
-    const exit = await run(procedure, path, ctx, input, signal, response);
-    if (Exit.isFailure(exit)) {
-      const err = normalizeCause(exit.cause);
-      report(err, request, path, type);
-      return { status: err.status, body: wire(err), headers };
-    }
-    if (rawBlob && exit.value instanceof Blob) {
-      return {
-        status: response.status ?? 200,
-        body: undefined,
-        blob: exit.value,
-        headers,
-      };
-    }
-    try {
-      const { head, chunks } = serializer.serializeDeferred(exit.value, {
-        coerceError: (cause) => {
-          const err = isTrpcError(cause) ? cause : unexpectedError(cause);
-          report(err, request, path, type);
-          return toWireError(publicError(err));
-        },
-      });
-      return { status: response.status ?? 200, body: head, chunks, headers };
-    } catch (cause) {
-      const err = unexpectedError(cause);
-      report(err, request, path, type);
-      return { status: err.status, body: wire(err), headers };
-    }
-  }
+    single = false,
+  ): Effect.Effect<CallResult> =>
+    Effect.gen(function* () {
+      const type = procedure['~trpc'].type;
+      const response = createResponseHandle();
+      const { headers } = response;
+      const exit = yield* Effect.promise(() =>
+        base.run({
+          procedure,
+          path,
+          ctx,
+          input,
+          signal,
+          response,
+          allowResponse: single,
+        }),
+      );
+      if (Exit.isFailure(exit)) {
+        const err = normalizeCause(exit.cause);
+        report(err, request, path, type);
+        return { status: err.status, body: wire(err), headers };
+      }
+      const value = exit.value;
+      if (HttpServerResponse.isHttpServerResponse(value)) {
+        return {
+          status: value.status,
+          body: undefined,
+          response: value,
+          headers,
+        };
+      }
+      if (single && value instanceof Blob) {
+        return {
+          status: response.status ?? 200,
+          body: undefined,
+          blob: value,
+          headers,
+        };
+      }
+      try {
+        const { head, chunks } = serializer.serializeDeferred(value, {
+          coerceError: coerceError(request, path, type),
+        });
+        return { status: response.status ?? 200, body: head, chunks, headers };
+      } catch (cause) {
+        const err = unexpectedError(cause);
+        report(err, request, path, type);
+        return { status: err.status, body: wire(err), headers };
+      }
+    });
 
-  function linesResponse(
-    produce: (write: (line: unknown) => void) => Promise<void>,
-    signal: AbortSignal,
-    abort: () => void,
+  /** A streamed body of `produce`'s lines; the call's signal aborts if the client leaves. */
+  const linesResponse = (
+    produce: (write: (line: unknown) => void) => Effect.Effect<void>,
+    controller: AbortController,
     contentType: string = CONTENT_TYPE.jsonl,
     headers?: Headers,
-  ): Response {
-    const body = new ReadableStream<Uint8Array>({
-      async start(controller) {
-        let open = true;
-        const write = (line: unknown) => {
-          if (!open || signal.aborted) return;
-          try {
-            controller.enqueue(
-              encoder.encode(
-                typeof line === 'string' ? line : `${JSON.stringify(line)}\n`,
-              ),
-            );
-          } catch {
-            open = false;
-          }
-        };
-        try {
-          await produce(write);
-        } finally {
-          if (open && !signal.aborted) {
-            open = false;
-            controller.close();
-          }
-        }
-      },
-      cancel: abort,
-    });
+  ): HttpServerResponse.HttpServerResponse => {
+    const lines = Stream.callback<string>((queue) =>
+      Effect.andThen(
+        produce((line) => {
+          Queue.offerUnsafe(
+            queue,
+            typeof line === 'string' ? line : `${JSON.stringify(line)}\n`,
+          );
+        }),
+        Queue.end(queue),
+      ),
+    ).pipe(
+      Stream.onExit((exit) =>
+        Exit.hasInterrupts(exit)
+          ? Effect.sync(() => controller.abort())
+          : Effect.void,
+      ),
+    );
     return respond(
       200,
-      body,
+      Stream.encodeText(lines),
       contentType,
       { 'cache-control': 'no-cache' },
       headers,
     );
-  }
+  };
 
   const runChunks = (
     chunks: Stream.Stream<Chunk, unknown>,
     onChunk: (chunk: Chunk) => void,
-    signal: AbortSignal,
   ) =>
-    Effect.runPromiseExit(
-      Stream.runForEach(chunks, (chunk) => Effect.sync(() => onChunk(chunk))),
-      { signal },
-    );
+    Stream.runForEach(chunks, (chunk) =>
+      Effect.sync(() => onChunk(chunk)),
+    ).pipe(Effect.ignore);
 
-  async function single(
-    request: Request,
+  /** Aborted when the fiber handling the request is interrupted (the client left). */
+  const callSignal = Effect.acquireRelease(
+    Effect.sync(() => new AbortController()),
+    (controller, exit) =>
+      Exit.hasInterrupts(exit)
+        ? Effect.sync(() => controller.abort())
+        : Effect.void,
+  );
+
+  const single = (
+    request: HttpServerRequest.HttpServerRequest,
     url: URL,
     path: string,
-  ): Promise<Response> {
-    const procedure = await resolveProcedure(router, path);
-    if (!procedure) {
-      throw protocolError('NOT_FOUND', `No procedure at path "${path}"`);
-    }
-    const type = procedure['~trpc'].type;
-    if (type === 'mutation' && request.method !== 'POST') {
-      throw new TrpcError({
-        code: 'METHOD_NOT_SUPPORTED',
-        message: 'Mutations must use POST',
-      });
-    }
-    if (
-      request.method !== 'GET' &&
-      request.method !== 'POST' &&
-      !(request.method === 'QUERY' && type !== 'mutation')
-    ) {
-      throw protocolError(
-        'METHOD_NOT_SUPPORTED',
-        `${request.method} is not supported`,
+  ): Effect.Effect<HttpServerResponse.HttpServerResponse, AnyTrpcError> =>
+    Effect.gen(function* () {
+      const procedure = yield* Effect.promise(async () =>
+        resolveProcedure(router, path),
       );
-    }
-    try {
-      const input = await readInput(request, url);
-      const ctx = await makeContext(request, [{ path, type }]);
-      if (type === 'subscription') {
-        return await subscription(request, procedure, path, ctx, input);
-      }
-      const controller = new AbortController();
-      const onAbort = () => controller.abort();
-      request.signal.addEventListener('abort', onAbort, { once: true });
-      const result = await execute(
-        request,
-        procedure,
-        path,
-        ctx,
-        input,
-        controller.signal,
-        true,
-      );
-      if (result.blob) {
-        return respond(
-          result.status,
-          result.blob,
-          result.blob.type || 'application/octet-stream',
-          blobHeaders(result.blob),
-          result.headers,
+      if (!procedure) {
+        return yield* Effect.fail(
+          protocolError('NOT_FOUND', `No procedure at path "${path}"`),
         );
       }
-      if (!result.chunks) {
-        return respond(
-          result.status,
-          JSON.stringify(result.body),
-          CONTENT_TYPE.json,
-          undefined,
-          result.headers,
+      const type = procedure['~trpc'].type;
+      if (type === 'mutation' && request.method !== 'POST') {
+        return yield* Effect.fail(
+          protocolError('METHOD_NOT_SUPPORTED', 'Mutations must use POST'),
         );
       }
-      const chunks = result.chunks;
-      return linesResponse(
-        async (write) => {
-          write(result.body);
-          await runChunks(chunks, write, controller.signal);
-        },
-        controller.signal,
-        onAbort,
-        CONTENT_TYPE.jsonl,
-        result.headers,
+      if (
+        request.method !== 'GET' &&
+        request.method !== 'POST' &&
+        !((request.method as string) === 'QUERY' && type !== 'mutation')
+      ) {
+        return yield* Effect.fail(
+          protocolError(
+            'METHOD_NOT_SUPPORTED',
+            `${request.method} is not supported`,
+          ),
+        );
+      }
+      return yield* Effect.scoped(
+        Effect.gen(function* () {
+          const controller = yield* callSignal;
+          const input = yield* readInput(request, url);
+          const ctx = yield* makeContext(
+            request,
+            [{ path, type }],
+            controller.signal,
+          );
+          if (type === 'subscription') {
+            return yield* subscription(
+              request,
+              procedure,
+              path,
+              ctx,
+              input,
+              controller,
+            );
+          }
+          const result = yield* execute(
+            request,
+            procedure,
+            path,
+            ctx,
+            input,
+            controller.signal,
+            true,
+          );
+          if (result.response) {
+            return rawResponse(result.response, result.headers);
+          }
+          if (result.blob) {
+            return respond(
+              result.status,
+              result.blob,
+              result.blob.type || 'application/octet-stream',
+              blobHeaders(result.blob),
+              result.headers,
+            );
+          }
+          if (!result.chunks) {
+            return respond(
+              result.status,
+              JSON.stringify(result.body),
+              CONTENT_TYPE.json,
+              undefined,
+              result.headers,
+            );
+          }
+          const chunks = result.chunks;
+          return linesResponse(
+            (write) =>
+              Effect.suspend(() => {
+                write(result.body);
+                return runChunks(chunks, write);
+              }),
+            controller,
+            CONTENT_TYPE.jsonl,
+            result.headers,
+          );
+        }),
+      ).pipe(
+        Effect.catch((err) => {
+          report(err, request, path, type);
+          return Effect.succeed(errorResponse(err));
+        }),
       );
-    } catch (cause) {
-      const err = isTrpcError(cause) ? cause : unexpectedError(cause);
-      report(err, request, path, type);
-      return respond(err.status, JSON.stringify(wire(err)), CONTENT_TYPE.json);
-    }
-  }
+    });
 
-  async function subscription(
-    request: Request,
+  /** A procedure's own response, with the handle's headers and the raw marker. */
+  const rawResponse = (
+    response: HttpServerResponse.HttpServerResponse,
+    set: Headers | undefined,
+  ) => {
+    const { headers, cookies } = responseOptions(set);
+    let out = HttpServerResponse.setHeaders(response, {
+      ...headers,
+      ...response.headers,
+      [HEADER.version]: PROTOCOL_VERSION,
+      [HEADER.response]: '1',
+    });
+    if (cookies) out = HttpServerResponse.mergeCookies(out, cookies);
+    return out;
+  };
+
+  const subscription = (
+    request: HttpServerRequest.HttpServerRequest,
     procedure: AnyProcedure,
     path: string,
     ctx: object,
     input: unknown,
-  ): Promise<Response> {
-    const controller = new AbortController();
-    const onAbort = () => controller.abort();
-    request.signal.addEventListener('abort', onAbort, { once: true });
-    const lastEventId = request.headers.get(HEADER.lastEventId) ?? undefined;
-    const response = createResponseHandle();
-    const exit = await run(
-      procedure,
-      path,
-      ctx,
-      input,
-      controller.signal,
-      response,
-      lastEventId,
-    );
-    if (Exit.isFailure(exit)) {
-      const err = normalizeCause(exit.cause);
-      report(err, request, path, 'subscription');
-      return respond(
-        err.status,
-        JSON.stringify(wire(err)),
-        CONTENT_TYPE.json,
-        undefined,
+    controller: AbortController,
+  ) =>
+    Effect.gen(function* () {
+      const lastEventId = request.headers[HEADER.lastEventId];
+      const response = createResponseHandle();
+      const exit = yield* Effect.promise(() =>
+        base.run({
+          procedure,
+          path,
+          ctx,
+          input,
+          signal: controller.signal,
+          response,
+          lastEventId,
+        }),
+      );
+      if (Exit.isFailure(exit)) {
+        const err = normalizeCause(exit.cause);
+        report(err, request, path, 'subscription');
+        return respond(
+          err.status,
+          JSON.stringify(wire(err)),
+          CONTENT_TYPE.json,
+          undefined,
+          response.headers,
+        );
+      }
+      const events = exit.value as Stream.Stream<unknown, AnyTrpcError>;
+      return linesResponse(
+        (write) =>
+          Effect.gen(function* () {
+            // Servers that buffer headers until the first body chunk (Node) would
+            // otherwise hold them back until the first event.
+            write(': open\n\n');
+            if (ssePingMs !== false) {
+              yield* Effect.sync(() => write(': ping\n\n')).pipe(
+                Effect.delay(ssePingMs),
+                Effect.forever,
+                Effect.forkScoped,
+              );
+            }
+            const done = yield* Effect.exit(
+              emitEvents(
+                events,
+                serializer,
+                coerceError(request, path, 'subscription'),
+                (frame) => {
+                  if (frame.kind === 'event') {
+                    const id =
+                      frame.eventId === undefined
+                        ? ''
+                        : `id: ${frame.eventId}\n`;
+                    write(
+                      frame.deferred === undefined
+                        ? `${id}data: ${JSON.stringify(frame.body)}\n\n`
+                        : `${id}event: ${SSE_EVENT.deferred}\ndata: ${JSON.stringify({ e: frame.deferred, body: frame.body })}\n\n`,
+                    );
+                  } else {
+                    write(
+                      `event: ${SSE_EVENT.chunk}\ndata: ${JSON.stringify(
+                        frame.kind === 'chunk'
+                          ? { e: frame.event, chunk: frame.chunk }
+                          : { e: frame.event },
+                      )}\n\n`,
+                    );
+                  }
+                },
+              ),
+            );
+            if (Exit.isFailure(done)) {
+              if (Cause.hasInterruptsOnly(done.cause)) return;
+              const err = normalizeCause(done.cause);
+              report(err, request, path, 'subscription');
+              write(`event: error\ndata: ${JSON.stringify(wire(err))}\n\n`);
+              return;
+            }
+            write('event: done\ndata: \n\n');
+          }).pipe(Effect.scoped),
+        controller,
+        CONTENT_TYPE.sse,
         response.headers,
       );
-    }
-    const events = exit.value as Stream.Stream<unknown, AnyTrpcError>;
-    const coerceError = (cause: unknown) => {
-      const err = isTrpcError(cause) ? cause : unexpectedError(cause);
-      report(err, request, path, 'subscription');
-      return toWireError(publicError(err));
-    };
-    return linesResponse(
-      async (write) => {
-        // Servers that buffer headers until the first body chunk (Node) would
-        // otherwise hold them back until the first event.
-        write(': open\n\n');
-        const ping =
-          ssePingMs === false
-            ? undefined
-            : setInterval(() => write(': ping\n\n'), ssePingMs);
-        const done = await Effect.runPromiseExit(
-          emitEvents(events, serializer, coerceError, (frame) => {
-            if (frame.kind === 'event') {
-              const id =
-                frame.eventId === undefined ? '' : `id: ${frame.eventId}\n`;
-              write(
-                frame.deferred === undefined
-                  ? `${id}data: ${JSON.stringify(frame.body)}\n\n`
-                  : `${id}event: ${SSE_EVENT.deferred}\ndata: ${JSON.stringify({ e: frame.deferred, body: frame.body })}\n\n`,
-              );
-            } else {
-              write(
-                `event: ${SSE_EVENT.chunk}\ndata: ${JSON.stringify(
-                  frame.kind === 'chunk'
-                    ? { e: frame.event, chunk: frame.chunk }
-                    : { e: frame.event },
-                )}\n\n`,
-              );
-            }
-          }),
-          { signal: controller.signal },
-        ).finally(() => clearInterval(ping));
-        if (controller.signal.aborted) return;
-        if (Exit.isFailure(done)) {
-          const err = normalizeCause(done.cause);
-          report(err, request, path, 'subscription');
-          write(`event: error\ndata: ${JSON.stringify(wire(err))}\n\n`);
-          return;
-        }
-        write('event: done\ndata: \n\n');
-      },
-      controller.signal,
-      onAbort,
-      CONTENT_TYPE.sse,
-      response.headers,
-    );
-  }
+    });
 
-  async function batched(request: Request): Promise<Response> {
-    if (!batch) {
-      throw protocolError('BAD_REQUEST', 'Batching is not enabled');
-    }
-    if (request.method !== 'POST') {
-      throw protocolError('METHOD_NOT_SUPPORTED', 'Batches must use POST');
-    }
-    const body = await readBody(request);
-    if (!Array.isArray(body)) {
-      throw protocolError('BAD_REQUEST', 'A batch body must be an array');
-    }
-    if (body.length > batch.maxItems) {
-      throw protocolError(
-        'PAYLOAD_TOO_LARGE',
-        `A batch can have at most ${batch.maxItems} calls`,
-      );
-    }
-    const calls = await Promise.all(
-      (body as BatchCall[]).map(async (call) => {
-        const path = typeof call?.path === 'string' ? call.path : '';
-        return {
-          path,
-          input: call?.input,
-          procedure: await resolveProcedure(router, path),
-        };
-      }),
-    );
-    const ctx = await makeContext(
-      request,
-      calls.flatMap((c) =>
-        c.procedure ? [{ path: c.path, type: c.procedure['~trpc'].type }] : [],
-      ),
-    );
-    const controller = new AbortController();
-    const onAbort = () => controller.abort();
-    request.signal.addEventListener('abort', onAbort, { once: true });
-
-    const one = async (call: (typeof calls)[number]): Promise<CallResult> => {
-      try {
-        if (!call.procedure) {
-          throw protocolError(
-            'NOT_FOUND',
-            `No procedure at path "${call.path}"`,
-          );
-        }
-        if (call.procedure['~trpc'].type === 'subscription') {
-          throw protocolError('BAD_REQUEST', 'Subscriptions cannot be batched');
-        }
-        return await execute(
-          request,
-          call.procedure,
-          call.path,
-          ctx,
-          deserializeInput(call.input),
-          controller.signal,
+  const batched = (
+    request: HttpServerRequest.HttpServerRequest,
+  ): Effect.Effect<HttpServerResponse.HttpServerResponse, AnyTrpcError> =>
+    Effect.gen(function* () {
+      if (!batch) {
+        return yield* Effect.fail(
+          protocolError('BAD_REQUEST', 'Batching is not enabled'),
         );
-      } catch (cause) {
-        const err = isTrpcError(cause) ? cause : unexpectedError(cause);
-        report(err, request, call.path);
-        return { status: err.status, body: wire(err) };
       }
-    };
-
-    // Headers are sent first, so the response waits for every call's head
-    // to merge their headers (04 (d)). Deferred values still stream.
-    const results = await Promise.all(calls.map(one));
-    const headers = new Headers();
-    for (const result of results) {
-      for (const [key, value] of result.headers ?? []) {
-        if (key === 'set-cookie') headers.append(key, value);
-        else headers.set(key, value);
+      if (request.method !== 'POST') {
+        return yield* Effect.fail(
+          protocolError('METHOD_NOT_SUPPORTED', 'Batches must use POST'),
+        );
       }
-    }
-    return linesResponse(
-      async (write) => {
-        await Promise.all(
-          results.map(async (result, i) => {
-            write({
-              i,
-              status: result.status,
-              body: result.body,
-            } satisfies BatchLine);
-            if (result.chunks) {
-              await runChunks(
-                result.chunks,
-                (chunk) => write({ i, chunk } satisfies BatchLine),
+      const body = yield* readBody(request);
+      if (!Array.isArray(body)) {
+        return yield* Effect.fail(
+          protocolError('BAD_REQUEST', 'A batch body must be an array'),
+        );
+      }
+      if (body.length > batch.maxItems) {
+        return yield* Effect.fail(
+          protocolError(
+            'PAYLOAD_TOO_LARGE',
+            `A batch can have at most ${batch.maxItems} calls`,
+          ),
+        );
+      }
+      const calls = yield* Effect.promise(() =>
+        Promise.all(
+          (body as BatchCall[]).map(async (call) => {
+            const path = typeof call?.path === 'string' ? call.path : '';
+            return {
+              path,
+              input: call?.input,
+              procedure: await resolveProcedure(router, path),
+            };
+          }),
+        ),
+      );
+      return yield* Effect.scoped(
+        Effect.gen(function* () {
+          const controller = yield* callSignal;
+          const ctx = yield* makeContext(
+            request,
+            calls.flatMap((c) =>
+              c.procedure
+                ? [{ path: c.path, type: c.procedure['~trpc'].type }]
+                : [],
+            ),
+            controller.signal,
+          );
+          const one = (
+            call: (typeof calls)[number],
+          ): Effect.Effect<CallResult> =>
+            Effect.gen(function* () {
+              if (!call.procedure) {
+                return yield* Effect.fail(
+                  protocolError(
+                    'NOT_FOUND',
+                    `No procedure at path "${call.path}"`,
+                  ),
+                );
+              }
+              if (call.procedure['~trpc'].type === 'subscription') {
+                return yield* Effect.fail(
+                  protocolError(
+                    'BAD_REQUEST',
+                    'Subscriptions cannot be batched',
+                  ),
+                );
+              }
+              const input = yield* deserialize(call.input);
+              return yield* execute(
+                request,
+                call.procedure,
+                call.path,
+                ctx,
+                input,
                 controller.signal,
               );
+            }).pipe(
+              Effect.catch((err: AnyTrpcError) => {
+                report(err, request, call.path);
+                return Effect.succeed({ status: err.status, body: wire(err) });
+              }),
+            );
+
+          // Headers are sent first, so the response waits for every call's head
+          // to merge their headers (04 (d)). Deferred values still stream.
+          const results = yield* Effect.all(calls.map(one), {
+            concurrency: 'unbounded',
+          });
+          const headers = new Headers();
+          for (const result of results) {
+            for (const [key, value] of result.headers ?? []) {
+              if (key === 'set-cookie') headers.append(key, value);
+              else headers.set(key, value);
             }
-          }),
-        );
-      },
-      controller.signal,
-      onAbort,
-      CONTENT_TYPE.jsonl,
-      headers,
-    );
-  }
+          }
+          return linesResponse(
+            (write) =>
+              Effect.forEach(
+                results,
+                (result, i) =>
+                  Effect.suspend(() => {
+                    write({
+                      i,
+                      status: result.status,
+                      body: result.body,
+                    } satisfies BatchLine);
+                    return result.chunks
+                      ? runChunks(result.chunks, (chunk) =>
+                          write({ i, chunk } satisfies BatchLine),
+                        )
+                      : Effect.void;
+                  }),
+                { concurrency: 'unbounded', discard: true },
+              ),
+            controller,
+            CONTENT_TYPE.jsonl,
+            headers,
+          );
+        }),
+      );
+    });
+
+  const app: Effect.Effect<
+    HttpServerResponse.HttpServerResponse,
+    never,
+    HttpServerRequest.HttpServerRequest
+  > = Effect.gen(function* () {
+    const request = yield* HttpServerRequest.HttpServerRequest;
+    const url = new URL(request.url, 'http://localhost');
+    const version = request.headers[HEADER.version];
+    if (version !== undefined && version !== PROTOCOL_VERSION) {
+      return yield* Effect.fail(
+        protocolError(
+          'UNSUPPORTED_PROTOCOL',
+          `Unsupported protocol version "${version}", expected "${PROTOCOL_VERSION}"`,
+        ),
+      );
+    }
+    if (url.pathname !== endpoint && !url.pathname.startsWith(`${endpoint}/`)) {
+      return yield* Effect.fail(
+        protocolError('NOT_FOUND', `Not found: ${url.pathname}`),
+      );
+    }
+    const rest = url.pathname.slice(endpoint.length + 1);
+    if (rest === '' && request.headers[HEADER.batch] === '1') {
+      return yield* batched(request);
+    }
+    return yield* single(request, url, decodeURIComponent(rest));
+  }).pipe(
+    Effect.catchCause((cause) =>
+      Effect.flatMap(HttpServerRequest.HttpServerRequest, (request) => {
+        if (Cause.hasInterruptsOnly(cause)) return Effect.failCause(cause);
+        const err = normalizeCause(cause);
+        report(err, request);
+        return Effect.succeed(errorResponse(err));
+      }),
+    ),
+  ) as never;
+
+  const middleware = opts.middleware ?? [];
+  const served = middleware.reduceRight<
+    Effect.Effect<HttpServerResponse.HttpServerResponse, any, any>
+  >((inner, m) => m(inner), app) as typeof app;
+  const webHandler = HttpEffect.toWebHandler(served as never);
 
   const core: SocketCore = {
     router,
@@ -808,62 +1102,44 @@ export function createFetchHandler<
     run: base.run,
     makeContext: base.makeContext,
     deserializeInput,
-    setPlatform: base.setPlatform,
     publicError,
     report,
+    serveWebSocket: (socket, request) =>
+      serveConnection(core, webSocketConnection(socket), {
+        request,
+        transport: 'websocket',
+        idleTimeoutMs: opts.websocket?.idleTimeoutMs ?? 60_000,
+      }),
   };
 
   const handler: FetchHandler<unknown> = {
     websocket(socket, o) {
-      base.setPlatform(o.request, o.platform);
       serveConnection(core, webSocketConnection(socket), {
-        request: o.request,
+        request: HttpServerRequest.fromWeb(o.request),
+        platform: o.platform,
         transport: 'websocket',
         idleTimeoutMs: opts.websocket?.idleTimeoutMs ?? 60_000,
       });
     },
     messagePort(port, o) {
-      const request = o?.request ?? new Request('http://localhost/');
-      base.setPlatform(request, o?.platform);
       serveConnection(core, messagePortConnection(port), {
-        request,
+        request: HttpServerRequest.fromWeb(
+          o?.request ?? new Request('http://localhost/'),
+        ),
+        platform: o?.platform,
         transport: 'messagePort',
       });
     },
-    async fetch(request, platform) {
-      base.setPlatform(request, platform);
-      const url = new URL(request.url);
-      try {
-        const version = request.headers.get(HEADER.version);
-        if (version !== null && version !== PROTOCOL_VERSION) {
-          throw protocolError(
-            'UNSUPPORTED_PROTOCOL',
-            `Unsupported protocol version "${version}", expected "${PROTOCOL_VERSION}"`,
-          );
-        }
-        if (
-          url.pathname !== endpoint &&
-          !url.pathname.startsWith(`${endpoint}/`)
-        ) {
-          throw protocolError('NOT_FOUND', `Not found: ${url.pathname}`);
-        }
-        const rest = url.pathname.slice(endpoint.length + 1);
-        if (rest === '' && request.headers.get(HEADER.batch) === '1') {
-          return await batched(request);
-        }
-        return await single(request, url, decodeURIComponent(rest));
-      } catch (cause) {
-        const err = isTrpcError(cause) ? cause : unexpectedError(cause);
-        report(err, request);
-        return respond(
-          err.status,
-          JSON.stringify(wire(err)),
-          CONTENT_TYPE.json,
-        );
-      }
-    },
+    fetch: (request, platform) =>
+      webHandler(
+        request,
+        platform === undefined
+          ? undefined
+          : (Context.make(CurrentPlatform, platform) as Context.Context<never>),
+      ),
     dispose: base.dispose,
   };
   socketCores.set(handler, core);
+  httpApps.set(handler, { app, middleware });
   return handler as FetchHandler<TPlatform>;
 }

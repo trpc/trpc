@@ -24,6 +24,7 @@
 import { Effect, Layer, Queue } from 'effect';
 import {
   HttpEffect,
+  HttpMiddleware,
   HttpServer,
   HttpServerError,
   HttpServerRequest,
@@ -35,7 +36,8 @@ import {
   isJsonContentType,
   PROTOCOL_VERSION,
 } from '../internal/protocol.ts';
-import type { WebSocketLike } from '../server/socket.ts';
+import { httpApps } from '../server/fetch.ts';
+import { socketCores, type WebSocketLike } from '../server/socket.ts';
 
 /**
  * Anything with a web-standard `fetch` method, like `createFetchHandler()`.
@@ -66,24 +68,66 @@ export interface HttpOptions {
    * @default '/trpc'
    */
   endpoint?: string;
-  /**
-   * Accept a WebSocket upgrade only when this returns true. Browsers send
-   * cookies with cross-site WebSocket requests, so check `origin` when you
-   * authenticate with cookies.
-   */
-  allowOrigin?: (origin: string | undefined) => boolean;
 }
 
 /**
- * Adapts a fetch handler to an Effect HTTP app. When the handler serves
- * WebSockets, upgrade requests to the endpoint become WebSocket connections
- * (10).
+ * Options for {@link cors}: Effect's `HttpMiddleware.cors` options.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export type CorsOptions = NonNullable<
+  Parameters<typeof HttpMiddleware.cors>[0]
+>;
+
+const isUpgrade = (request: HttpServerRequest.HttpServerRequest) =>
+  request.headers['upgrade']?.toLowerCase() === 'websocket';
+
+/**
+ * Effect's CORS middleware, for the handler's `middleware` option, that
+ * also refuses WebSocket upgrades from origins it doesn't allow (403).
+ * Browsers send cookies with cross-site WebSocket upgrades and CORS
+ * doesn't cover them, so check the origin when you authenticate with
+ * cookies. Upgrades without an `origin` (non-browser clients) pass.
  *
  * @example
  * ```ts
- * const app = toHttpEffect(handler, {
- *   allowOrigin: (origin) => origin === 'https://app.example.com',
+ * createFetchHandler({
+ *   router,
+ *   middleware: [cors({ allowedOrigins: ['https://app.example.com'], credentials: true })],
  * });
+ * ```
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export function cors(options: CorsOptions = {}): HttpMiddleware.HttpMiddleware {
+  const origins = options.allowedOrigins ?? [];
+  const allowed =
+    typeof origins === 'function'
+      ? origins
+      : (origin: string) => origins.length === 0 || origins.includes(origin);
+  const middleware = HttpMiddleware.cors(options);
+  return ((
+    app: Effect.Effect<HttpServerResponse.HttpServerResponse, unknown, unknown>,
+  ) => {
+    const withCors = middleware(app as never);
+    return Effect.flatMap(HttpServerRequest.HttpServerRequest, (request) => {
+      const origin = request.headers['origin'];
+      return isUpgrade(request) && origin !== undefined && !allowed(origin)
+        ? Effect.succeed(HttpServerResponse.empty({ status: 403 }))
+        : withCors;
+    });
+  }) as HttpMiddleware.HttpMiddleware;
+}
+
+/**
+ * Adapts a fetch handler to an Effect HTTP app. A `createFetchHandler()`
+ * handler runs as its own `effect/http` app, so requests aren't converted
+ * to web `Request`s, and its `middleware` wraps WebSocket upgrades too.
+ * Upgrade requests to the endpoint become WebSocket connections (10).
+ *
+ * @example
+ * ```ts
+ * const app = toHttpEffect(handler);
  * ```
  * @since 12.0.0-alpha.0
  * @stability experimental
@@ -97,51 +141,72 @@ export function toHttpEffect(
   HttpServerRequest.HttpServerRequest
 > {
   const endpoint = `/${(opts.endpoint ?? '/trpc').replace(/^\/+|\/+$/g, '')}`;
-  const fetch = Effect.flatMap(HttpServerRequest.HttpServerRequest, (request) =>
-    HttpEffect.fromWebHandler((web) => {
-      const replayed = replayParsedBody(web, request.source);
-      return replayed instanceof Response
-        ? Promise.resolve(replayed)
-        : handler.fetch(replayed);
-    }),
-  );
-  // HttpServer runs apps uninterruptibly; a client disconnect must abort the call.
-  if (!('websocket' in handler)) return Effect.interruptible(fetch);
-  return Effect.interruptible(
+  const own = httpApps.get(handler);
+  const core = socketCores.get(handler);
+  const fetch =
+    own?.app ??
+    Effect.flatMap(HttpServerRequest.HttpServerRequest, (request) =>
+      HttpEffect.fromWebHandler((web) => {
+        const replayed = replayParsedBody(web, request.source);
+        return replayed instanceof Response
+          ? Promise.resolve(replayed)
+          : handler.fetch(replayed);
+      }),
+    );
+  const upgrade = (
+    request: HttpServerRequest.HttpServerRequest,
+    onSocket: (ws: WebSocketLike) => void,
+  ) =>
+    Effect.flatMap(request.upgrade, (socket) =>
+      serveSocket(socket, onSocket).pipe(
+        Effect.catchTag('SocketError', () => Effect.void),
+      ),
+    );
+  /** A handler other than `createFetchHandler()`'s gets a web `Request`. */
+  const viaWeb = (request: HttpServerRequest.HttpServerRequest) =>
     Effect.gen(function* () {
-      const request = yield* HttpServerRequest.HttpServerRequest;
-      if (request.headers['upgrade']?.toLowerCase() !== 'websocket') {
-        return yield* fetch;
-      }
-      const { pathname } = new URL(request.url, 'http://localhost');
-      if (pathname !== endpoint && pathname !== `${endpoint}/`) {
-        return HttpServerResponse.empty({ status: 404 });
-      }
-      if (opts.allowOrigin && !opts.allowOrigin(request.headers['origin'])) {
-        return HttpServerResponse.empty({ status: 403 });
-      }
-      const socket = yield* request.upgrade;
-      yield* Effect.scoped(
-        Effect.gen(function* () {
-          const controller = yield* Effect.acquireRelease(
-            Effect.sync(() => new AbortController()),
-            (controller) => Effect.sync(() => controller.abort()),
-          );
-          const webRequest = yield* HttpServerRequest.toWeb(request, {
-            signal: controller.signal,
-          }).pipe(
-            Effect.mapError(
-              (reason) => new HttpServerError.HttpServerError({ reason }),
-            ),
-          );
-          yield* serveSocket(socket, (ws) =>
-            handler.websocket(ws, { request: webRequest }),
-          ).pipe(Effect.catchTag('SocketError', () => Effect.void));
+      const controller = yield* Effect.acquireRelease(
+        Effect.sync(() => new AbortController()),
+        (controller) => Effect.sync(() => controller.abort()),
+      );
+      const webRequest = yield* HttpServerRequest.toWeb(request, {
+        signal: controller.signal,
+      }).pipe(
+        Effect.mapError(
+          (reason) => new HttpServerError.HttpServerError({ reason }),
+        ),
+      );
+      yield* upgrade(request, (ws) =>
+        (handler as WebSocketHandlerLike).websocket(ws, {
+          request: webRequest,
         }),
       );
-      return HttpServerResponse.empty();
-    }),
-  );
+    });
+  const inner = !('websocket' in handler)
+    ? fetch
+    : Effect.gen(function* () {
+        const request = yield* HttpServerRequest.HttpServerRequest;
+        if (!isUpgrade(request)) return yield* fetch;
+        const { pathname } = new URL(request.url, 'http://localhost');
+        if (pathname !== endpoint && pathname !== `${endpoint}/`) {
+          return HttpServerResponse.empty({ status: 404 });
+        }
+        yield* Effect.scoped(
+          core
+            ? upgrade(request, (ws) => core.serveWebSocket(ws, request))
+            : viaWeb(request),
+        );
+        return HttpServerResponse.empty();
+      });
+  const wrapped = (own?.middleware ?? []).reduceRight<
+    Effect.Effect<HttpServerResponse.HttpServerResponse, any, any>
+  >((app, m) => m(app), inner);
+  // HttpServer runs apps uninterruptibly; a client disconnect must abort the call.
+  return Effect.interruptible(wrapped) as Effect.Effect<
+    HttpServerResponse.HttpServerResponse,
+    HttpServerError.HttpServerError,
+    HttpServerRequest.HttpServerRequest
+  >;
 }
 
 /**

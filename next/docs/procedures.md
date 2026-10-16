@@ -139,6 +139,39 @@ const observed = t.procedure
   .use(onError((err, { path }) => log.warn(path, err.code)));
 ```
 
+## Responses
+
+`response` sets the call's headers and status; Effect code uses the `Response` service over the same handle:
+
+```ts
+import { Response } from 'trpcdev/server';
+
+t.procedure.mutation(({ response }) => {
+  response.headers.append('set-cookie', 'session=…; HttpOnly');
+  response.status = 201;
+});
+
+t.procedure.query(() =>
+  Effect.gen(function* () {
+    yield* Response.setHeader('cache-control', 'max-age=60');
+    return yield* loadPosts;
+  }),
+);
+```
+
+In a batch, headers merge (`set-cookie` appends) and each call keeps its own status.
+
+A procedure can also return its own response, an `HttpServerResponse` from `effect/http` or a web `Response`, for redirects, proxied upstreams or downloads. It's sent as is, with the handle's headers added, and the client's output is the web `Response`:
+
+```ts
+const report = t.procedure.query(() =>
+  HttpServerResponse.text(toCsv(rows), { contentType: 'text/csv' }),
+);
+const res = await client.report.query(); // Response
+```
+
+Only an unbatched HTTP call can carry one: in a batch, over WebSockets or in-process, the call fails with `BAD_REQUEST`. With `httpLink({ batch: true })`, send such procedures through a `splitLink` to an unbatched link.
+
 ## Effect
 
 A resolver can return an `Effect` or a `Stream`. Its failures become errors, and the services it needs become the handler's required `layer`:
