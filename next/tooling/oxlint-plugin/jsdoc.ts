@@ -42,7 +42,14 @@ const rule: CreateRule = {
         if (name === undefined || !reachable.has(name) || checked.has(name))
           return;
         checked.add(name);
-        const comments = context.sourceCode.getCommentsBefore(node);
+        // A decorated class's JSDoc sits above its first decorator.
+        const first =
+          declaration.type === 'ClassDeclaration' &&
+          declaration.decorators[0] !== undefined &&
+          declaration.decorators[0].range[0] < node.range[0]
+            ? declaration.decorators[0]
+            : node;
+        const comments = context.sourceCode.getCommentsBefore(first);
         const doc = comments
           .filter((c) => c.type === 'Block' && c.value.startsWith('*'))
           .at(-1);
