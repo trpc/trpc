@@ -426,17 +426,3 @@ export function deserializeSync<T = unknown>(
 
   return fromJson(obj.json, 0, rootRef) as T;
 }
-
-export function stringifySync(
-  value: unknown,
-  options?: SerializeOptions,
-): string {
-  return JSON.stringify(serializeSync(value, options));
-}
-
-export function parseSync<T = unknown>(
-  text: string,
-  options?: DeserializeOptions,
-): T {
-  return deserializeSync<T>(JSON.parse(text) as SerializeReturn, options);
-}

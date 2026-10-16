@@ -340,21 +340,6 @@ export function deferredChunks(
   );
 }
 
-/** The head frame followed by every chunk. Single-use. */
-export function serializeStream(
-  value: unknown,
-  options: SerializeStreamOptions = {},
-): Stream.Stream<Frame, DansonError> {
-  let serialized: SerializedDeferred;
-  try {
-    serialized = serializeDeferred(value, options);
-  } catch (cause) {
-    return Stream.fail(toDansonError(cause));
-  }
-  const head: Stream.Stream<Frame> = Stream.make(serialized.head);
-  return serialized.chunks ? Stream.concat(head, serialized.chunks) : head;
-}
-
 /** An async iterable whose `return` value is the stream's RETURN chunk. */
 export function iterateWithReturn(
   source: Stream.Stream<[Status, unknown], unknown>,
@@ -617,53 +602,4 @@ export function deserializeStream<T, E>(
     );
     return yield* Deferred.await(head);
   });
-}
-
-// --- JSONL framing + Promise surface ------------------------------------------
-
-export function stringifyStream(
-  value: unknown,
-  options?: SerializeStreamOptions,
-): Stream.Stream<string, DansonError> {
-  return serializeStream(value, options).pipe(
-    Stream.map((frame) => `${JSON.stringify(frame)}\n`),
-  );
-}
-
-export function parseStream<T, E>(
-  lines: Stream.Stream<string, E>,
-  options?: DeserializeStreamOptions,
-): Effect.Effect<T, E | DansonError> {
-  return deserializeStream<T, E>(
-    lines.pipe(
-      Stream.splitLines,
-      Stream.filter((line) => line.length > 0),
-      Stream.map((line) => JSON.parse(line) as Frame),
-    ),
-    options,
-  );
-}
-
-/** Promise surface: same shape as danSON's `stringifyAsync`. */
-export function stringifyAsync(
-  value: unknown,
-  options?: SerializeStreamOptions,
-): AsyncIterable<string> {
-  return toAsyncIterable(stringifyStream(value, options));
-}
-
-/** Promise surface: same shape as danSON's `parseAsync`. */
-export function parseAsync<T>(
-  iterable: AsyncIterable<string>,
-  options?: DeserializeStreamOptions,
-): Promise<T> {
-  return Effect.runPromise(
-    parseStream<T, DansonError>(
-      Stream.fromAsyncIterable(
-        iterable,
-        (cause) => new DansonError('source failed', { cause }),
-      ),
-      options,
-    ),
-  );
 }
