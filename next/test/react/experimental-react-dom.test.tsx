@@ -112,6 +112,9 @@ test('refetchOnWindowFocusLink refetches what is on screen when the page is visi
     </>,
   );
   await waitFor(() => expect(h1(view.el)).toBe('Hello'));
+  await waitFor(() =>
+    expect([...trpc.store.entries()][0]?.observers).toBeGreaterThan(0),
+  );
   db.posts.get('1')!.title = 'Refocused';
   document.dispatchEvent(new Event('visibilitychange'));
   await waitFor(() => expect(h1(view.el)).toBe('Refocused'));
