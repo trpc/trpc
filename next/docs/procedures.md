@@ -158,6 +158,14 @@ createFetchHandler({
 
 `.concat(plugin)` stays strict: a plugin builder's ctx must already be there.
 
+When the plugin starts with the same middleware as the builder (the same function, in the same order), `.concat()` runs it once; `t.with()` goes through `.concat()` too. Elsewhere, middleware applied twice runs twice. For work that should happen once per request, an Effect service in the handler's `layer` is built once, and a middleware can reuse what ctx already has, so nested `call(other, input, { ctx })`s skip it:
+
+```ts
+const withDb = middleware<{ ctx: { db?: Db } }>()(async ({ ctx, next }) =>
+  next({ ctx: { db: ctx.db ?? (await connect()) } }),
+);
+```
+
 `trpcdev/middleware` has lifecycle helpers, each an ordinary middleware:
 
 ```ts

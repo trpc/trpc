@@ -150,6 +150,45 @@ test('concat checks the ctx a plugin requires', () => {
   withDb.concat(audited);
 });
 
+test('concat runs the leading middleware an app and a plugin share once', async () => {
+  const calls: string[] = [];
+  const session = middleware<{ ctx: { user: string | null } }>()(
+    ({ ctx, next }) => {
+      calls.push('session');
+      return next({ ctx: { session: ctx.user ?? 'anon' } });
+    },
+  );
+  const pluginT = initTrpc<{ ctx: { user: string | null } }>();
+  const tagged = pluginT.procedure.use(session).use(({ ctx, next }) => {
+    calls.push('plugin');
+    return next({ ctx: { tag: ctx.session } });
+  });
+  const r = {
+    shared: t.procedure
+      .use(session)
+      .concat(tagged)
+      .query(({ ctx }) => ctx.tag),
+    reordered: t.procedure
+      .use(({ next }) => {
+        calls.push('log');
+        return next();
+      })
+      .use(session)
+      .concat(tagged)
+      .query(({ ctx }) => ctx.tag),
+  };
+  const caller = createRouterClient(r, {
+    ctx: { db: { log: [] }, user: 'alex', plan: 'free' },
+  });
+
+  expect(await caller.shared.query()).toBe('alex');
+  expect(calls).toEqual(['session', 'plugin']);
+
+  calls.length = 0;
+  expect(await caller.reordered.query()).toBe('alex');
+  expect(calls).toEqual(['log', 'session', 'session', 'plugin']);
+});
+
 test('a context-aware input validates against the caller', async () => {
   await using free = await setup({ plan: 'free' });
   expect(await free.client.search.query({ q: 'x' })).toEqual({

@@ -834,6 +834,34 @@ export type InputDef<TDef extends BuilderDef, $S extends AnySchema> = With<
  */
 export type AnyProcedureBuilder = ProcedureBuilder<any>;
 
+const sameStep = (a: Step, b: Step): boolean =>
+  a.kind === 'use'
+    ? b.kind === 'use' && a.fn === b.fn
+    : a.kind === 'input'
+      ? b.kind === 'input' && a.arg === b.arg
+      : b.kind === 'provide' && a.key === b.key && a.make === b.make;
+
+/**
+ * `before` then `after`, minus the leading steps of `after` that `before`
+ * also starts with: a plugin built on the same middleware as the app runs
+ * that middleware once.
+ * @internal
+ */
+export function appendSteps(
+  before: ReadonlyArray<Step>,
+  after: ReadonlyArray<Step>,
+): ReadonlyArray<Step> {
+  let shared = 0;
+  while (
+    shared < before.length &&
+    shared < after.length &&
+    sameStep(before[shared]!, after[shared]!)
+  ) {
+    shared++;
+  }
+  return [...before, ...after.slice(shared)];
+}
+
 /** @internal */
 export function createBuilder(
   internals: BuilderInternals,
@@ -880,7 +908,7 @@ export function createBuilder(
       const other = plugin['~trpc'];
       return createBuilder({
         ...internals,
-        steps: [...internals.steps, ...other.steps],
+        steps: appendSteps(internals.steps, other.steps),
         errors: { ...internals.errors, ...other.errors },
         route: other.route
           ? { ...internals.route, ...other.route }
