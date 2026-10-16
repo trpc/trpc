@@ -17,7 +17,7 @@ It contains:
 
 Tick boxes in a proposal's **Decision** block, or reply in chat, for example `07: Q7.1 combined, Q7.3 [data, error]`. Partial answers are fine; anything unanswered stays open. The agent records each decision in `decisions/` and ripples it through dependent proposals. Full process in [`approach.md`](./approach.md#1-process-proposals--decisions--code).
 
-Or say "decision round": the agent asks open items one at a time with a progress count. Answer with a letter or your own words, `skip` leaves it to the agent's best call, `done` stops and implements everything so far. See [`.cursor/skills/decision-round/SKILL.md`](../../.cursor/skills/decision-round/SKILL.md).
+Or say "decision round": the agent asks open items one at a time with a progress count. Answer with a letter or your own words, `skip` leaves it to the agent's best call, `done` stops and implements everything so far. See [`.agents/skills/decision-round/SKILL.md`](../../.agents/skills/decision-round/SKILL.md).
 
 ## Decisions
 

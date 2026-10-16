@@ -20,6 +20,8 @@ Start here (paths relative to `next/`):
 
 Search `.agent-docs/` before designing or implementing. Do not silently diverge from a recorded decision, and don't reverse a `(human)` one without asking. A new decision is a new `decisions/<topic>.md`, not an addition to an existing file or an index; the format is in `.agent-docs/README.md#decisions`. Do not fill Decision blocks in proposals; Alex records decisions.
 
+Agent skills live in the repo-root `.agents/skills/<name>/SKILL.md` (for example `decision-round`). Never use `.cursor/`.
+
 ## Running
 
 `next/` is its own pnpm workspace. Node is pinned in `.nvmrc` (same version as the repo-root `.nvmrc`). From `next/`:
