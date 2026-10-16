@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import * as http from 'http';
-import { expect } from 'vitest';
+import { expect, vi } from 'vitest';
 import { incomingMessageToRequest } from './incomingMessageToRequest';
 
 function createServer(opts: Parameters<typeof incomingMessageToRequest>[2]) {
@@ -308,4 +308,43 @@ test('aborts request when response closes', async () => {
   mockRes.emit('close');
 
   expect(request.signal.aborted).toBe(true);
+});
+
+test('does not abort request when response closes after it was ended', async () => {
+  const mockReq = createMockReq({
+    method: 'POST',
+  });
+  const mockRes = createMockRes();
+
+  const request = incomingMessageToRequest(mockReq, mockRes, {
+    maxBodySize: null,
+  });
+
+  Object.assign(mockRes, { writableEnded: true });
+  mockRes.emit('close');
+
+  expect(request.signal.aborted).toBe(false);
+});
+
+test('does not abort request after a response that finished normally', async () => {
+  let request: Request | null = null;
+  let abortedOnClose: boolean | null = null;
+  const server = http.createServer((req, res) => {
+    request = incomingMessageToRequest(req, res, { maxBodySize: null });
+    res.once('close', () => {
+      abortedOnClose = request!.signal.aborted;
+    });
+    res.end('ok');
+  });
+  server.listen(0);
+  const port = (server.address() as any).port as number;
+
+  const response = await fetch(`http://localhost:${port}`);
+  expect(await response.text()).toBe('ok');
+  await vi.waitFor(() => expect(abortedOnClose).not.toBeNull());
+
+  expect(abortedOnClose).toBe(false);
+  expect(request!.signal.aborted).toBe(false);
+
+  await new Promise((resolve) => server.close(resolve));
 });
