@@ -11,6 +11,9 @@
   - `trpc/jsdoc` enforces both directions. An `experimental` value must be named `experimental_*`, and an `experimental_*` value must be `experimental` or `@deprecated`. A `@deprecated` export must say `Use <name>`.
   - The codemod reads `PROMOTED` (`packages/upgrade/src/promoted.ts`, empty for now) and rewrites imports of promoted `experimental_*` names from `@trpc12/trpc` and `@trpc12/*`.
   - Renamed without deprecated aliases: no release has shipped the old names.
+- Human, 2026-10-16 (decision round, the Effect Atom React package): "In first version but with the name in c where the whole package is prefixed with experimental" ([`react-use-package.md`](./react-use-package.md)). A whole package can be experimental: `@trpc12/experimental-react` and `@trpc12/experimental-react-atom`.
+  - (agent) In an `@trpc12/experimental-*` package, every export is `@stability experimental` and none carries the `experimental_` prefix, since the package name already says it. `trpc/jsdoc` enforces both.
+  - (agent, tentative) Promoting such a package publishes it without the prefix (`@trpc12/react-atom`), and the last `experimental-` release re-exports it, marked deprecated on npm.
 - (agent) No separate experimental entry points. `@trpc12/trpc/internal` and `@trpc12/trpc/internal/testing` are the no-guarantee entry points ([`entry-points.md`](./entry-points.md), [`testing-helpers-internal.md`](./testing-helpers-internal.md)).
 - Why: stability is visible at the import site; the deprecated alias keeps promotion non-breaking, which v11's `unstable_httpBatchStreamLink` rename wasn't.
 - Lost: names that never change; promotion leaves an alias behind until the next major.

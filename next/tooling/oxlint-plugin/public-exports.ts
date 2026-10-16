@@ -57,6 +57,14 @@ const packageRoot = (file: string): string | undefined => {
   return undefined;
 };
 
+/** The `name` in the `package.json` of `file`'s package. */
+export const packageName = (file: string): string | undefined => {
+  const root = packageRoot(file);
+  return root === undefined
+    ? undefined
+    : (JSON.parse(read(join(root, 'package.json'))).name as string);
+};
+
 const cache = new Map<string, Map<string, Set<string>>>();
 
 /** Names each file of `file`'s package contributes to its versioned entry points. */

@@ -1,6 +1,6 @@
 import type { CreateRule, ESTree } from '@oxlint/plugins';
 
-import { publicNames } from './public-exports.ts';
+import { packageName, publicNames } from './public-exports.ts';
 
 const REQUIRED = ['@since', '@stability'] as const;
 
@@ -35,11 +35,15 @@ const rule: CreateRule = {
     type: 'suggestion',
     docs: {
       description:
-        "Exports reachable from a package's versioned entry points carry `@since` and `@stability`; experimental values are named `experimental_*`, and deprecated aliases name their replacement (proposal 21)",
+        "Exports reachable from a package's versioned entry points carry `@since` and `@stability`; experimental values are named `experimental_*` (in an `experimental-*` package, every export is experimental and unprefixed), and deprecated aliases name their replacement (proposal 21)",
     },
   },
   create(context) {
     const reachable = publicNames(context.filename);
+    // The package name already says it: every export is experimental, unprefixed.
+    const experimentalPackage = /^@[\w-]+\/experimental-/.test(
+      packageName(context.filename) ?? '',
+    );
     // Overloads share one JSDoc, on the first signature.
     const checked = new Set<string>();
     return {
@@ -77,9 +81,23 @@ const rule: CreateRule = {
             message: `\`${name}\` is deprecated: say what replaces it, \`@deprecated Use <name>\`.`,
           });
         }
-        if (!VALUES.has(declaration.type)) return;
         const experimental = /^\s*\*?\s*@stability experimental\b/m.test(text);
         const prefixed = name.startsWith('experimental_');
+        if (experimentalPackage) {
+          if (!experimental) {
+            context.report({
+              node: declaration,
+              message: `\`${name}\` is in an \`experimental-\` package, so it is \`@stability experimental\`.`,
+            });
+          } else if (prefixed) {
+            context.report({
+              node: declaration,
+              message: `\`${name}\` is in an \`experimental-\` package, which says it already: export it as \`${name.slice('experimental_'.length)}\`.`,
+            });
+          }
+          return;
+        }
+        if (!VALUES.has(declaration.type)) return;
         if (experimental && !prefixed) {
           context.report({
             node: declaration,
