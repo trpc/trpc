@@ -126,6 +126,8 @@ export type ClientMessage =
       connectionParams?: Record<string, unknown> | undefined;
       /** The client reads binary messages: file bytes may come as frame records. */
       binary?: true | undefined;
+      /** The client's serializer's `name`; on another one, the server runs no calls. */
+      serializer?: string | undefined;
     }
   | {
       id: number;
@@ -158,6 +160,8 @@ export type ServerMessage =
   | { id: number; type: 'chunkEnd'; event: number }
   | { id: number; type: 'done' }
   | { id: number | null; type: 'error'; status: number; body: unknown }
+  /** The answer to the client's `init`: the server's serializer's `name`, in plain JSON. */
+  | { type: 'init'; serializer: string }
   | { type: 'pong' };
 
 interface BlobMeta {

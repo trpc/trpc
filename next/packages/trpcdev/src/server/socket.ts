@@ -295,6 +295,8 @@ export function connectionReceiver(
   const calls = new Map<number, AbortController>();
   let connectionParams = opts.connectionParams;
   let closed = false;
+  /** The client named another serializer, so its calls would decode wrong. */
+  let refused = false;
 
   const wire = (err: AnyTrpcError) =>
     core.serializer.serialize(toWireError(core.publicError(err)));
@@ -340,6 +342,11 @@ export function connectionReceiver(
           ? message.connectionParams
           : undefined;
         if (message.binary === true) conn.acceptBinary?.();
+        refused =
+          typeof message.serializer === 'string' &&
+          message.serializer !== core.serializer.name;
+        conn.send({ type: 'init', serializer: core.serializer.name });
+        if (refused) return;
         opts.onInit?.(connectionParams);
         return;
       }
@@ -353,6 +360,7 @@ export function connectionReceiver(
         return;
       }
       case 'request': {
+        if (refused) return;
         if (typeof message.id !== 'number' || calls.has(message.id)) {
           sendError(
             null,

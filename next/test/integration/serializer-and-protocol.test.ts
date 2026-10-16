@@ -1,5 +1,13 @@
-import { createTrpcClient, httpLink, safe, routerType } from 'trpcdev/client';
-import { initTrpc } from 'trpcdev/server';
+import { MessageChannel } from 'node:worker_threads';
+import {
+  createTrpcClient,
+  httpLink,
+  messagePortLink,
+  safe,
+  routerType,
+  wsLink,
+} from 'trpcdev/client';
+import { createFetchHandler, initTrpc } from 'trpcdev/server';
 import {
   createSerializer,
   jsonSerializer,
@@ -176,6 +184,48 @@ test("a link whose serializer isn't the server's fails with UNSUPPORTED_PROTOCOL
   expect(err).toMatchObject({ code: 'UNSUPPORTED_PROTOCOL', defined: false });
   expect(err?.message).toContain("'json' serializer");
   expect(err?.message).toContain("uses 'danson'");
+});
+
+test("a socket link whose serializer isn't the server's fails with UNSUPPORTED_PROTOCOL, and the server runs nothing", async () => {
+  const t = initTrpc();
+  let runs = 0;
+  const counter = {
+    bump: t.procedure.mutation(() => ++runs),
+  };
+  await using server = await createTestServer({ router: counter });
+  await using ws = wsLink({ url: server.wsUrl, serializer: danson });
+  const client = createTrpcClient({
+    router: routerType<typeof counter>(),
+    links: [ws],
+  });
+  for (let i = 0; i < 2; i++) {
+    const [, err] = await safe(client.bump.mutate());
+    expect(err).toMatchObject({ code: 'UNSUPPORTED_PROTOCOL' });
+    expect(err?.message).toBe(
+      "The server uses the 'json' serializer, but this wsLink uses 'danson'. Pass the same serializer to the handler and wsLink.",
+    );
+  }
+
+  const { port1, port2 } = new MessageChannel();
+  createFetchHandler({ router: counter, serializer: danson }).messagePort(
+    port1,
+  );
+  const port = messagePortLink({ port: port2 });
+  const portClient = createTrpcClient({
+    router: routerType<typeof counter>(),
+    links: [port],
+  });
+  try {
+    const [, err] = await safe(portClient.bump.mutate());
+    expect(err?.message).toContain(
+      "The server uses the 'danson' serializer, but this messagePortLink uses 'json'",
+    );
+  } finally {
+    await port.close();
+    port1.close();
+    port2.close();
+  }
+  expect(runs).toBe(0);
 });
 
 test('query URLs are canonical: ?input= is JSON with object keys sorted, array order kept', async () => {

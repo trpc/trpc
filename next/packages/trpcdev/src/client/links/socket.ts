@@ -49,7 +49,7 @@ type Signal =
   | { readonly _tag: 'lost' }
   | { readonly _tag: 'fail'; readonly error: AnyTrpcError };
 
-type CallMessage = Exclude<ServerMessage, { type: 'pong' }>;
+type CallMessage = Exclude<ServerMessage, { type: 'pong' } | { type: 'init' }>;
 
 const LOST: Signal = { _tag: 'lost' };
 
@@ -60,6 +60,8 @@ interface Connection {
   /** Messages received, so a keep-alive check can tell if it heard back. */
   received: number;
   lost: boolean;
+  /** The server named another serializer: calls on this connection fail with it. */
+  refused?: AnyTrpcError;
 }
 
 interface Call {
@@ -81,7 +83,11 @@ interface Call {
  * @stability stable
  */
 export interface SocketLinkOptions {
-  /** Must match the server's; client types follow it. @default jsonSerializer */
+  /**
+   * Must match the server's; on another one, calls fail with
+   * `UNSUPPORTED_PROTOCOL`. Client types follow it.
+   * @default jsonSerializer
+   */
   serializer?: AnySerializer;
   /**
    * Sent once per connection, before any call; `createContext` receives
@@ -108,6 +114,8 @@ export interface SocketLink<TDecl extends LinkDecl = {}>
 }
 
 interface SocketTransport {
+  /** The link's name, for errors. */
+  name: string;
   connect(): Promise<SocketConnection>;
   reconnect:
     | { attempts: number; delayMs: (attempt: number) => number }
@@ -149,6 +157,18 @@ function makeSocketLink(
     const message = raw as ServerMessage;
     conn.received++;
     if (message.type === 'pong') return;
+    if (message.type === 'init') {
+      if (message.serializer === serializer.name) return;
+      const error = new TrpcError({
+        code: 'UNSUPPORTED_PROTOCOL',
+        message: `The server uses the '${message.serializer}' serializer, but this ${transport.name} uses '${serializer.name}'. Pass the same serializer to the handler and ${transport.name}.`,
+      });
+      conn.refused = error;
+      for (const inbox of conn.calls.values())
+        Queue.offerUnsafe(inbox, { _tag: 'fail', error });
+      conn.calls.clear();
+      return;
+    }
     if (message.id === null) {
       if (message.type !== 'error') return;
       const signal: Signal = { _tag: 'fail', error: revive(message) };
@@ -219,6 +239,7 @@ function makeSocketLink(
       version: PROTOCOL_VERSION,
       ...(params ? { connectionParams: params } : {}),
       ...(transport.binary ? { binary: true } : {}),
+      serializer: serializer.name,
     });
     if (transport.keepAlive) {
       yield* Effect.forkScoped(keepAlive(conn, transport.keepAlive));
@@ -266,6 +287,7 @@ function makeSocketLink(
       });
       const conn = yield* connected;
       if (!conn) return 'silent';
+      if (conn.refused) return yield* Effect.fail(conn.refused);
       const { id } = call.op;
       let complete = false;
       yield* Effect.addFinalizer(() =>
@@ -515,7 +537,7 @@ export interface ConnectionLinkOptions {
 
 const connectionOptions = (
   opts: ConnectionLinkOptions,
-): Omit<SocketTransport, 'connect'> => ({
+): Omit<SocketTransport, 'connect' | 'name'> => ({
   reconnect: {
     attempts: opts.reconnect?.attempts ?? 5,
     delayMs:
@@ -577,6 +599,7 @@ export function wsLink(opts: WebSocketLinkOptions): SocketLink<any> {
   const Impl = opts.WebSocket ?? globalThis.WebSocket;
   return makeSocketLink(
     {
+      name: 'wsLink',
       ...connectionOptions(opts),
       binary: opts.binary === true,
       connect: () =>
@@ -688,6 +711,7 @@ export function messagePortLink(opts: MessagePortLinkOptions): SocketLink<any> {
   };
   return makeSocketLink(
     {
+      name: 'messagePortLink',
       reconnect: undefined,
       idleMs: undefined,
       keepAlive: undefined,
@@ -782,6 +806,7 @@ export function socketLink(opts: RawSocketLinkOptions): SocketLink {
   });
   return makeSocketLink(
     {
+      name: 'socketLink',
       ...connectionOptions(opts),
       connect: () => Effect.runPromise(connect),
     },
