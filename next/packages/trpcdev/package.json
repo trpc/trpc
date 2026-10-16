@@ -55,6 +55,10 @@
       "types": "./src/cloudflare/index.ts",
       "default": "./src/cloudflare/index.ts"
     },
+    "./aws-lambda": {
+      "types": "./src/aws-lambda/index.ts",
+      "default": "./src/aws-lambda/index.ts"
+    },
     "./extend": {
       "types": "./src/extend/index.ts",
       "default": "./src/extend/index.ts"
@@ -117,6 +121,10 @@
       "./cloudflare": {
         "types": "./dist/cloudflare/index.d.ts",
         "default": "./dist/cloudflare/index.js"
+      },
+      "./aws-lambda": {
+        "types": "./dist/aws-lambda/index.d.ts",
+        "default": "./dist/aws-lambda/index.js"
       },
       "./extend": {
         "types": "./dist/extend/index.d.ts",

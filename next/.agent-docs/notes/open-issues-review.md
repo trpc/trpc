@@ -65,14 +65,14 @@ Alex answered the "Worth considering" list; each answer is a `decisions/` file.
 - `fetch` sees the operations (#4184): no third `fetch` argument. An `init` call option merged onto `httpLink({ init })`, which can be a callback of `{ ops }`; calls with different inits batch apart (`link-init.md`). Plus a named `switchLink` whose name is a call option that forces a branch (`switch-link.md`).
 - Publisher backends (#5618): no packages; recipes on Effect's `Redis` and `@effect/sql-pg`, and a Durable Object one, in `docs/subscriptions.md` (`publisher-backends.md`).
 - Cloudflare hibernation: `createHibernatingWebSockets()` (`cloudflare-hibernation.md`).
-- Streamed mutations (#5846): `streamedMutationOptions()`; interrupting them is a spike, not built ([note](./interruptible-streamed-mutations.md), `streamed-mutations.md`).
+- Streamed mutations (#5846): `streamedMutationOptions()`, interruptible with `abortWhenUnobserved` or a per-call `signal` ([note](./interruptible-streamed-mutations.md), `interruptible-streamed-mutations.md`).
 - File outputs (Q11.6): raw body for an unbatched root `File`, streamed chunks elsewhere (`files.md`).
 - Typed platform argument on `handler.fetch` (`handler-platform.md`).
 
 ## Still worth considering
 
 1. **TanStack DB** (#6891). `queryOptions()` should plug into `queryCollectionOptions` as it is; worth a test and a docs example.
-2. **Adapters, recorded as later**: Lambda API Gateway and Lambda@Edge (#4978), Firebase callable (#6388), WebTransport (#6971), raw TCP (#5995). The socket core is generic over connections, so the last two are a transport each.
+2. **Adapters, recorded as later**: Lambda API Gateway and Lambda@Edge (#4978, built since: `trpcdev/aws-lambda`, `aws-lambda-adapter.md`), Firebase callable (#6388), WebTransport (#6971), raw TCP (#5995). The socket core is generic over connections, so the last two are a transport each.
 
 ## Not pursuing
 
