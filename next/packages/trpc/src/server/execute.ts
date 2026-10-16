@@ -19,6 +19,7 @@ import {
   isSchema,
   outputError,
   validate,
+  validateThen,
   type AnySchema,
 } from './schema.ts';
 import {
@@ -30,11 +31,14 @@ import { isTracked, tracked } from './tracked.ts';
 
 const unexpectedErrors = new WeakSet<AnyTrpcError>();
 
+const isThenable = (value: unknown): value is PromiseLike<unknown> =>
+  typeof (value as PromiseLike<unknown> | null)?.then === 'function';
+
 /** Runs user code; only a returned promise makes the call asynchronous. */
 const attempt = <A>(fn: () => A | PromiseLike<A>): Effect.Effect<A> =>
   Effect.suspend(() => {
     const ret = fn();
-    return typeof (ret as PromiseLike<A> | null)?.then === 'function'
+    return isThenable(ret)
       ? Effect.promise(async () => ret)
       : Effect.succeed(ret as A);
   });
@@ -283,65 +287,96 @@ export function callProcedure(
   };
 
   type NextOpts = { ctx?: object; input?: unknown };
+  type Out = Resolved | Effect.Effect<unknown, AnyTrpcError, any>;
+  const lift = (out: Out): Effect.Effect<unknown, AnyTrpcError, any> =>
+    Effect.isEffect(out) ? out : Effect.succeed(out);
+
+  /**
+   * Runs the steps from `i`: synchronously while they are, so a call with
+   * no async work makes no fiber steps; an Effect from the first one that
+   * isn't. `services` is the fiber's context at this step.
+   */
   const run = (
     i: number,
     ctx: object,
     input: unknown,
-  ): Effect.Effect<unknown, AnyTrpcError, any> =>
-    Effect.suspend(() => {
-      const step = def.steps[i];
-      if (!step) return resolve(ctx, input);
-      switch (step.kind) {
-        case 'input':
-          return Effect.gen(function* () {
-            const schema = isSchema(step.arg)
-              ? step.arg
-              : yield* Effect.try({
-                  try: () =>
-                    (step.arg as (o: unknown) => unknown)({
-                      ctx,
-                      meta,
-                      path,
-                      type,
-                    }),
-                  catch: (cause) => cause,
-                }).pipe(Effect.orDie);
-            const parsed = yield* validate(
-              schema as never,
-              opts.input,
-              inputError,
-            );
-            return yield* run(
-              i + 1,
+    services: Context.Context<never>,
+  ): Out => {
+    const step = def.steps[i];
+    if (!step) return resolve(ctx, input, services);
+    switch (step.kind) {
+      case 'input': {
+        let schema = step.arg;
+        if (!isSchema(schema)) {
+          try {
+            schema = (step.arg as (o: unknown) => AnySchema)({
               ctx,
-              isPlainObject(input) && isPlainObject(parsed)
-                ? { ...input, ...parsed }
-                : parsed,
-            );
-          });
-        case 'provide':
-          return Effect.gen(function* () {
-            const made = yield* attempt(() =>
-              step.make({ ctx, input, meta, path }),
-            );
-            const value = Effect.isEffect(made)
-              ? yield* refail(made as Effect.Effect<unknown, unknown, any>)
-              : made;
-            return yield* run(i + 1, ctx, input).pipe(
-              Effect.provideService(step.key, value),
-            );
-          });
-        case 'use':
-          if (step.effect) {
-            const next = (o?: NextOpts) =>
-              Effect.exit(
-                run(
-                  i + 1,
-                  o?.ctx ? { ...ctx, ...o.ctx } : ctx,
-                  o && 'input' in o ? o.input : input,
-                ),
-              ).pipe(Effect.map(toResult));
-            return Effect.suspend(() =>
+              meta,
+              path,
+              type,
+            });
+          } catch (cause) {
+            return Effect.die(cause);
+          }
+        }
+        return validateThen(schema, opts.input, inputError, (parsed) =>
+          run(
+            i + 1,
+            ctx,
+            isPlainObject(input) && isPlainObject(parsed)
+              ? { ...input, ...parsed }
+              : parsed,
+            services,
+          ),
+        ) as Out;
+      }
+      case 'provide': {
+        const withValue = (value: unknown) =>
+          Effect.provideService(
+            lift(
+              run(i + 1, ctx, input, Context.add(services, step.key, value)),
+            ),
+            step.key,
+            value,
+          );
+        const provide = (made: unknown) =>
+          Effect.isEffect(made)
+            ? Effect.flatMap(
+                refail(made as Effect.Effect<unknown, unknown, any>),
+                withValue,
+              )
+            : withValue(made);
+        let made: unknown;
+        try {
+          made = step.make({ ctx, input, meta, path });
+        } catch (cause) {
+          return Effect.die(cause);
+        }
+        return isThenable(made)
+          ? Effect.flatMap(
+              Effect.promise(async () => made),
+              provide,
+            )
+          : provide(made);
+      }
+      case 'use': {
+        // Middleware may provide services to next(); read them there.
+        const rest = (o?: NextOpts) =>
+          Effect.withFiber((fiber) =>
+            lift(
+              run(
+                i + 1,
+                o?.ctx ? { ...ctx, ...o.ctx } : ctx,
+                o && 'input' in o ? o.input : input,
+                fiber.context as Context.Context<never>,
+              ),
+            ),
+          );
+        if (step.effect) {
+          const next = (o?: NextOpts) =>
+            Effect.map(Effect.exit(rest(o)), toResult);
+          return Effect.flatMap(
+            Effect.suspend(() =>
               refail(
                 step.fn({ ...base, ctx, input, next }) as Effect.Effect<
                   unknown,
@@ -349,58 +384,80 @@ export function callProcedure(
                   any
                 >,
               ),
-            ).pipe(Effect.flatMap(fromResult));
-          }
-          return Effect.gen(function* () {
-            const services = yield* Effect.context<never>();
-            const runNext = Effect.runPromiseExitWith(services);
-            const next = async (o?: NextOpts) =>
-              toResult(
-                await runNext(
-                  run(
-                    i + 1,
-                    o?.ctx ? { ...ctx, ...o.ctx } : ctx,
-                    o && 'input' in o ? o.input : input,
-                  ) as Effect.Effect<unknown, AnyTrpcError>,
-                  { signal },
-                ),
-              );
-            const ret: unknown = yield* attempt(() =>
-              step.fn({ ...base, ctx, input, next }),
-            );
-            return yield* fromResult(ret);
-          });
-      }
-    });
-
-  const resolve = (ctx: object, input: unknown) =>
-    Effect.gen(function* () {
-      const resolver = def.resolver;
-      if (!resolver) {
-        return yield* Effect.fail(
-          new TrpcError({
-            code: 'NOT_IMPLEMENTED',
-            message: `"${path}" is a contract procedure without an implementation`,
-          }),
+            ),
+            fromResult,
+          );
+        }
+        const runNext = Effect.runPromiseExitWith(services);
+        const next = async (o?: NextOpts) =>
+          toResult(
+            await runNext(rest(o) as Effect.Effect<unknown, AnyTrpcError>, {
+              signal,
+            }),
+          );
+        return Effect.flatMap(
+          attempt(() => step.fn({ ...base, ctx, input, next })),
+          fromResult,
         );
       }
-      let ret: unknown = yield* attempt(() =>
-        resolver({
-          ...base,
-          ctx,
-          input,
-          errors: errorConstructors(def.errors),
-          ...(type === 'subscription' ? { lastEventId: opts.lastEventId } : {}),
+    }
+  };
+
+  const resolved = (
+    value: unknown,
+    services: Context.Context<never>,
+  ): Resolved => ({ [RESOLVED]: finish(value, services) });
+
+  const afterResolve = (
+    ret: unknown,
+    services: Context.Context<never>,
+  ): Out => {
+    if (isTrpcError(ret)) return fail(ret);
+    if (Effect.isEffect(ret)) {
+      return Effect.flatMap(
+        refail(ret as Effect.Effect<unknown, unknown, any>),
+        (value) =>
+          isTrpcError(value)
+            ? fail(value)
+            : Effect.succeed(resolved(value, services)),
+      );
+    }
+    return resolved(ret, services);
+  };
+
+  const resolve = (
+    ctx: object,
+    input: unknown,
+    services: Context.Context<never>,
+  ): Out => {
+    const resolver = def.resolver;
+    if (!resolver) {
+      return Effect.fail(
+        new TrpcError({
+          code: 'NOT_IMPLEMENTED',
+          message: `"${path}" is a contract procedure without an implementation`,
         }),
       );
-      if (isTrpcError(ret)) return yield* fail(ret);
-      if (Effect.isEffect(ret)) {
-        ret = yield* refail(ret as Effect.Effect<unknown, unknown, any>);
-        if (isTrpcError(ret)) return yield* fail(ret);
-      }
-      const services = yield* Effect.context<never>();
-      return { [RESOLVED]: finish(ret, services) } satisfies Resolved;
-    });
+    }
+    let ret: unknown;
+    try {
+      ret = resolver({
+        ...base,
+        ctx,
+        input,
+        errors: errorConstructors(def.errors),
+        ...(type === 'subscription' ? { lastEventId: opts.lastEventId } : {}),
+      });
+    } catch (cause) {
+      return Effect.die(cause);
+    }
+    return isThenable(ret)
+      ? Effect.flatMap(
+          Effect.promise(async () => ret),
+          (value) => lift(afterResolve(value, services)),
+        )
+      : afterResolve(ret, services);
+  };
 
   /** Turns a resolver's (or an `ok()`'s) value into the call's result. */
   const finish = (
@@ -419,42 +476,57 @@ export function callProcedure(
     return value;
   };
 
-  return Effect.gen(function* () {
-    const result = yield* run(0, opts.ctx, undefined);
-    const services = yield* Effect.context<never>();
+  const complete = (
+    result: unknown,
+    services: Context.Context<never>,
+  ): Effect.Effect<unknown, AnyTrpcError, any> => {
     const value = isResolved(result)
       ? result[RESOLVED]
       : finish(result, services);
     if (isResponseValue(value)) {
       if (!opts.allowResponse) {
-        return yield* Effect.fail(
+        return Effect.fail(
           new TrpcError({
             code: 'BAD_REQUEST',
             message: `"${path}" returns a Response, which only an unbatched HTTP call can carry`,
           }),
         );
       }
-      return HttpServerResponse.isHttpServerResponse(value)
-        ? value
-        : HttpServerResponse.fromWeb(value);
+      return Effect.succeed(
+        HttpServerResponse.isHttpServerResponse(value)
+          ? value
+          : HttpServerResponse.fromWeb(value),
+      );
     }
     // Kept frames were validated when the first call streamed them.
-    if (frameSinks.get(response)?.replay) return value;
+    if (frameSinks.get(response)?.replay) return Effect.succeed(value);
     const output = validated(def);
     if (type !== 'subscription' && output) {
       if (!isStreamSchema(output)) {
-        return yield* validate(output, value, outputError);
+        return lift(
+          validateThen(output, value, outputError, (v) =>
+            Effect.succeed(v),
+          ) as Out,
+        );
       }
       if (!isAsyncIterable(value)) {
-        return yield* Effect.fail(
+        return Effect.fail(
           outputError([
             { message: 'Expected an AsyncIterable or a Stream (stream())' },
           ]),
         );
       }
-      return validateItems(value, output, services);
+      return Effect.succeed(validateItems(value, output, services));
     }
-    return value;
+    return Effect.succeed(value);
+  };
+
+  const call = Effect.withFiber((fiber) => {
+    const services = fiber.context as Context.Context<never>;
+    const out = run(0, opts.ctx, undefined, services);
+    return Effect.isEffect(out)
+      ? Effect.flatMap(out, (result) => complete(result, services))
+      : complete(out, services);
   }).pipe(
     Effect.provideService(ResponseKey, response),
     Effect.catchCause((cause) => {
@@ -475,15 +547,18 @@ export function callProcedure(
     Effect.tapError((err) =>
       Effect.annotateCurrentSpan('trpc.error.code', err.code),
     ),
-    Effect.withSpan(`trpc.${path}`, {
-      kind: 'server',
-      attributes: {
-        'rpc.system': 'trpc',
-        'rpc.method': path,
-        'trpc.type': type,
-      },
-    }),
   );
+  // Data-first: the pipeable form ignores `captureStackTrace` (effect 4.0.2).
+  return Effect.withSpan(call, `trpc.${path}`, {
+    kind: 'server',
+    // It would point here, the same line for every procedure.
+    captureStackTrace: false,
+    attributes: {
+      'rpc.system': 'trpc',
+      'rpc.method': path,
+      'trpc.type': type,
+    },
+  });
 }
 
 /**

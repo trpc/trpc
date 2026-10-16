@@ -140,6 +140,48 @@ export function validate(
   );
 }
 
+const lift = <A>(
+  out: A | Effect.Effect<any, any, any>,
+): Effect.Effect<any, any, any> =>
+  Effect.isEffect(out) ? out : Effect.succeed(out);
+
+/**
+ * `validate`, then `then` with the value: synchronously when the schema
+ * validates synchronously, so a call with no async work stays out of the
+ * fiber's run loop. `then` must not return its value as an Effect unless it
+ * means one to run. @internal
+ */
+export function validateThen<A>(
+  schema: AnySchema,
+  value: unknown,
+  onIssues: (issues: InputValidationErrorData['issues']) => TrpcError,
+  then: (value: unknown) => A | Effect.Effect<any, any, any>,
+): A | Effect.Effect<any, any, any> {
+  if (Schema.isSchema(schema)) {
+    return Effect.flatMap(validate(schema, value, onIssues), (v) =>
+      lift(then(v)),
+    );
+  }
+  let result: StandardResult<unknown> | Promise<StandardResult<unknown>>;
+  try {
+    result = schema['~standard'].validate(value);
+  } catch (cause) {
+    return Effect.die(cause);
+  }
+  if (result instanceof Promise) {
+    return Effect.flatMap(
+      Effect.promise(() => result),
+      (r): Effect.Effect<any, any, any> =>
+        r.issues
+          ? Effect.fail(onIssues(normalizeIssues(r.issues)))
+          : lift(then(r.value)),
+    );
+  }
+  return result.issues
+    ? Effect.fail(onIssues(normalizeIssues(result.issues)))
+    : then(result.value);
+}
+
 /** @internal */
 export const inputError = (
   issues: InputValidationErrorData['issues'],

@@ -6,8 +6,8 @@ import {
   Option,
   Queue,
   Stream,
+  Tracer,
   type Layer,
-  type Tracer,
 } from 'effect';
 import {
   HttpServerRequest,
@@ -373,6 +373,29 @@ interface CallResult {
 }
 
 /**
+ * A request URL's pathname and search, as `new URL(url, base)` gives them.
+ * Node's `/path?query` form is split by hand; anything that `URL` would
+ * resolve differently (dot segments, `//`, backslashes, absolute URLs) goes
+ * through `URL`.
+ */
+const splitUrl = (url: string): { pathname: string; search: string } => {
+  if (
+    url.charCodeAt(0) === 47 &&
+    url.charCodeAt(1) !== 47 &&
+    !url.includes('/.') &&
+    !url.includes('\\') &&
+    !url.includes('#')
+  ) {
+    const q = url.indexOf('?');
+    return q === -1
+      ? { pathname: url, search: '' }
+      : { pathname: url.slice(0, q), search: url.slice(q) };
+  }
+  const parsed = new URL(url, 'http://localhost');
+  return { pathname: parsed.pathname, search: parsed.search };
+};
+
+/**
  * The span an HTTP call's span is a child of: the request's span (Effect's
  * HTTP tracer middleware makes one from `traceparent`), else the trace
  * context in the request's headers.
@@ -381,14 +404,10 @@ interface CallResult {
 export const parentSpan = (
   request: HttpServerRequest.HttpServerRequest,
 ): Effect.Effect<Tracer.AnySpan | undefined> =>
-  Effect.currentParentSpan.pipe(
-    Effect.option,
-    Effect.map((span) =>
-      Option.getOrUndefined(
-        Option.orElse(span, () =>
-          HttpTraceContext.fromHeaders(request.headers),
-        ),
-      ),
+  Effect.withFiber((fiber) =>
+    Effect.succeed(
+      Context.getOrUndefined(fiber.context, Tracer.ParentSpan) ??
+        Option.getOrUndefined(HttpTraceContext.fromHeaders(request.headers)),
     ),
   );
 
@@ -563,52 +582,59 @@ export function createFetchHandler<
       return yield* deserialize(value, parts);
     });
 
-  const readInput = (request: HttpServerRequest.HttpServerRequest, url: URL) =>
-    Effect.suspend((): Effect.Effect<unknown, AnyTrpcError> => {
-      if (request.method === 'GET') {
-        if (url.search.length <= 1) return Effect.succeed(undefined);
-        return Effect.try({
-          try: () => {
-            const value = fromInputSearch(url.search);
-            return value === undefined
-              ? undefined
-              : serializer.deserialize(value, { input: true });
-          },
-          catch: (cause) =>
-            new TrpcError({
-              code: 'PARSE_ERROR',
-              message: cause instanceof Error ? cause.message : 'Invalid input',
-              cause,
-            }),
-        });
+  const noInput = Effect.succeed(undefined);
+  const readInput = (
+    request: HttpServerRequest.HttpServerRequest,
+    search: string,
+  ): Effect.Effect<unknown, AnyTrpcError> => {
+    if (request.method === 'GET') {
+      if (search.length <= 1) return noInput;
+      try {
+        const value = fromInputSearch(search);
+        return value === undefined
+          ? noInput
+          : Effect.succeed(serializer.deserialize(value, { input: true }));
+      } catch (cause) {
+        return Effect.fail(
+          new TrpcError({
+            code: 'PARSE_ERROR',
+            message: cause instanceof Error ? cause.message : 'Invalid input',
+            cause,
+          }),
+        );
       }
-      if (isMultipartContentType(request.headers['content-type'] ?? null)) {
-        // A cross-site form can send multipart without a preflight; it can't add a header.
-        if (request.headers[HEADER.version] === undefined) {
-          return Effect.fail(
-            protocolError(
-              'UNSUPPORTED_MEDIA_TYPE',
-              `multipart/form-data requests need the ${HEADER.version} header`,
-            ),
-          );
-        }
-        return readMultipart(request);
+    }
+    if (isMultipartContentType(request.headers['content-type'] ?? null)) {
+      // A cross-site form can send multipart without a preflight; it can't add a header.
+      if (request.headers[HEADER.version] === undefined) {
+        return Effect.fail(
+          protocolError(
+            'UNSUPPORTED_MEDIA_TYPE',
+            `multipart/form-data requests need the ${HEADER.version} header`,
+          ),
+        );
       }
-      return Effect.flatMap(readBody(request), (body) => deserialize(body));
-    });
+      return readMultipart(request);
+    }
+    return Effect.flatMap(readBody(request), (body) => deserialize(body));
+  };
 
+  const noContext = Effect.succeed({});
   const makeContext = (
     request: HttpServerRequest.HttpServerRequest,
     calls: CreateContextOpts['info']['calls'],
     signal: AbortSignal,
-  ) =>
-    Effect.gen(function* () {
-      const platform = yield* CurrentPlatform;
-      return yield* Effect.tryPromise({
-        try: () => base.makeContext({ request, platform, calls, signal }),
-        catch: (cause) => (isTrpcError(cause) ? cause : unexpectedError(cause)),
-      });
-    });
+  ): Effect.Effect<object, AnyTrpcError> =>
+    opts.createContext
+      ? Effect.withFiber((fiber) => {
+          const platform = Context.get(fiber.context, CurrentPlatform);
+          return Effect.tryPromise({
+            try: () => base.makeContext({ request, platform, calls, signal }),
+            catch: (cause) =>
+              isTrpcError(cause) ? cause : unexpectedError(cause),
+          });
+        })
+      : noContext;
 
   /** Runs a query or mutation and serializes the outcome. */
   const execute = (
@@ -619,27 +645,13 @@ export function createFetchHandler<
     input: unknown,
     signal: AbortSignal,
     single = false,
-  ): Effect.Effect<CallResult> =>
-    Effect.gen(function* () {
-      const type = procedure['~trpc'].type;
-      const response = createResponseHandle();
-      const { headers } = response;
-      const sink: FrameSink = {};
-      if (single) frameSinks.set(response, sink);
-      const parent = yield* parentSpan(request);
-      const exit = yield* Effect.promise((_interrupted) =>
-        base.run({
-          request,
-          procedure,
-          path,
-          ctx,
-          input,
-          signal,
-          response,
-          allowResponse: single,
-          parent,
-        }),
-      );
+  ): Effect.Effect<CallResult> => {
+    const type = procedure['~trpc'].type;
+    const response = createResponseHandle();
+    const { headers } = response;
+    const sink: FrameSink = {};
+    if (single) frameSinks.set(response, sink);
+    const toResult = (exit: Exit.Exit<unknown, AnyTrpcError>): CallResult => {
       if (Exit.isFailure(exit)) {
         const err = normalizeCause(exit.cause);
         report(err, request, path, type);
@@ -692,7 +704,24 @@ export function createFetchHandler<
           headers,
         };
       }
-    });
+    };
+    return Effect.flatMap(parentSpan(request), (parent) =>
+      Effect.map(
+        base.runEffect({
+          request,
+          procedure,
+          path,
+          ctx,
+          input,
+          signal,
+          response,
+          allowResponse: single,
+          parent,
+        }),
+        toResult,
+      ),
+    );
+  };
 
   /** Frames when the client asks for them, JSONL otherwise. */
   const streamType = (request: HttpServerRequest.HttpServerRequest) =>
@@ -748,127 +777,134 @@ export function createFetchHandler<
       Effect.sync(() => onChunk(chunk)),
     ).pipe(Effect.ignore);
 
-  /** Aborted when the fiber handling the request is interrupted (the client left). */
-  const callSignal = Effect.acquireRelease(
-    Effect.sync(() => new AbortController()),
-    (controller, exit) =>
+  /** Aborts `controller` if `effect` is interrupted (the client left). */
+  const abortOnInterrupt = <A, E, R>(
+    effect: Effect.Effect<A, E, R>,
+    controller: AbortController,
+  ): Effect.Effect<A, E, R> =>
+    Effect.onExit(effect, (exit) =>
       Exit.hasInterrupts(exit)
         ? Effect.sync(() => controller.abort())
         : Effect.void,
-  );
+    );
 
   const single = (
     request: HttpServerRequest.HttpServerRequest,
-    url: URL,
+    search: string,
     path: string,
-  ): Effect.Effect<HttpServerResponse.HttpServerResponse, AnyTrpcError> =>
-    Effect.gen(function* () {
-      const procedure = yield* Effect.promise(async () =>
-        resolveProcedure(router, path),
+  ): Effect.Effect<HttpServerResponse.HttpServerResponse, AnyTrpcError> => {
+    const found = resolveProcedure(router, path);
+    return found instanceof Promise
+      ? Effect.flatMap(
+          Effect.promise(() => found),
+          (procedure) => singleCall(request, search, path, procedure),
+        )
+      : singleCall(request, search, path, found);
+  };
+
+  const singleCall = (
+    request: HttpServerRequest.HttpServerRequest,
+    search: string,
+    path: string,
+    procedure: AnyProcedure | undefined,
+  ): Effect.Effect<HttpServerResponse.HttpServerResponse, AnyTrpcError> => {
+    if (!procedure) {
+      return Effect.fail(
+        protocolError('NOT_FOUND', `No procedure at path "${path}"`),
       );
-      if (!procedure) {
-        return yield* Effect.fail(
-          protocolError('NOT_FOUND', `No procedure at path "${path}"`),
+    }
+    const type = procedure['~trpc'].type;
+    if (type === 'mutation' && request.method !== 'POST') {
+      return Effect.fail(
+        protocolError('METHOD_NOT_SUPPORTED', 'Mutations must use POST'),
+      );
+    }
+    if (
+      request.method !== 'GET' &&
+      request.method !== 'POST' &&
+      !((request.method as string) === 'QUERY' && type !== 'mutation')
+    ) {
+      return Effect.fail(
+        protocolError(
+          'METHOD_NOT_SUPPORTED',
+          `${request.method} is not supported`,
+        ),
+      );
+    }
+    const controller = new AbortController();
+    const toResponse = (
+      result: CallResult,
+    ): HttpServerResponse.HttpServerResponse => {
+      if (result.response) {
+        return rawResponse(result.response, result.headers);
+      }
+      if (result.blob) {
+        return respond(
+          result.status,
+          result.blob,
+          result.blob.type || 'application/octet-stream',
+          blobHeaders(result.blob),
+          result.headers,
         );
       }
-      const type = procedure['~trpc'].type;
-      if (type === 'mutation' && request.method !== 'POST') {
-        return yield* Effect.fail(
-          protocolError('METHOD_NOT_SUPPORTED', 'Mutations must use POST'),
+      if (result.frames) {
+        const frames = result.frames;
+        return linesResponse(
+          (write) =>
+            Stream.runForEach(frames, (frame) =>
+              Effect.sync(() => write(frame)),
+            ),
+          controller,
+          streamType(request),
+          result.headers,
         );
       }
-      if (
-        request.method !== 'GET' &&
-        request.method !== 'POST' &&
-        !((request.method as string) === 'QUERY' && type !== 'mutation')
-      ) {
-        return yield* Effect.fail(
-          protocolError(
-            'METHOD_NOT_SUPPORTED',
-            `${request.method} is not supported`,
-          ),
+      if (!result.chunks) {
+        return respond(
+          result.status,
+          JSON.stringify(result.body),
+          CONTENT_TYPE.json,
+          undefined,
+          result.headers,
         );
       }
-      return yield* Effect.scoped(
-        Effect.gen(function* () {
-          const controller = yield* callSignal;
-          const input = yield* readInput(request, url);
-          const ctx = yield* makeContext(
-            request,
-            [{ path, type }],
-            controller.signal,
-          );
-          if (type === 'subscription') {
-            return yield* subscription(
-              request,
-              procedure,
-              path,
-              ctx,
-              input,
-              controller,
-            );
-          }
-          const result = yield* execute(
-            request,
-            procedure,
-            path,
-            ctx,
-            input,
-            controller.signal,
-            true,
-          );
-          if (result.response) {
-            return rawResponse(result.response, result.headers);
-          }
-          if (result.blob) {
-            return respond(
-              result.status,
-              result.blob,
-              result.blob.type || 'application/octet-stream',
-              blobHeaders(result.blob),
-              result.headers,
-            );
-          }
-          if (result.frames) {
-            const frames = result.frames;
-            return linesResponse(
-              (write) =>
-                Stream.runForEach(frames, (frame) =>
-                  Effect.sync(() => write(frame)),
+      const chunks = result.chunks;
+      return linesResponse(
+        (write) =>
+          Effect.suspend(() => {
+            write(result.body);
+            return runChunks(chunks, write);
+          }),
+        controller,
+        streamType(request),
+        result.headers,
+      );
+    };
+    const call = Effect.flatMap(readInput(request, search), (input) =>
+      Effect.flatMap(
+        makeContext(request, [{ path, type }], controller.signal),
+        (ctx) =>
+          type === 'subscription'
+            ? subscription(request, procedure, path, ctx, input, controller)
+            : Effect.map(
+                execute(
+                  request,
+                  procedure,
+                  path,
+                  ctx,
+                  input,
+                  controller.signal,
+                  true,
                 ),
-              controller,
-              streamType(request),
-              result.headers,
-            );
-          }
-          if (!result.chunks) {
-            return respond(
-              result.status,
-              JSON.stringify(result.body),
-              CONTENT_TYPE.json,
-              undefined,
-              result.headers,
-            );
-          }
-          const chunks = result.chunks;
-          return linesResponse(
-            (write) =>
-              Effect.suspend(() => {
-                write(result.body);
-                return runChunks(chunks, write);
-              }),
-            controller,
-            streamType(request),
-            result.headers,
-          );
-        }),
-      ).pipe(
-        Effect.catch((err) => {
-          report(err, request, path, type);
-          return Effect.succeed(errorResponse(err));
-        }),
-      );
+                toResponse,
+              ),
+      ),
+    );
+    return Effect.catch(abortOnInterrupt(call, controller), (err) => {
+      report(err, request, path, type);
+      return Effect.succeed(errorResponse(err));
     });
+  };
 
   /** A procedure's own response, with the handle's headers and the raw marker. */
   const rawResponse = (
@@ -898,19 +934,17 @@ export function createFetchHandler<
       const lastEventId = request.headers[HEADER.lastEventId];
       const response = createResponseHandle();
       const parent = yield* parentSpan(request);
-      const exit = yield* Effect.promise((_interrupted) =>
-        base.run({
-          request,
-          procedure,
-          path,
-          ctx,
-          input,
-          signal: controller.signal,
-          response,
-          lastEventId,
-          parent,
-        }),
-      );
+      const exit = yield* base.runEffect({
+        request,
+        procedure,
+        path,
+        ctx,
+        input,
+        signal: controller.signal,
+        response,
+        lastEventId,
+        parent,
+      });
       if (Exit.isFailure(exit)) {
         const err = normalizeCause(exit.cause);
         report(err, request, path, 'subscription');
@@ -1019,9 +1053,9 @@ export function createFetchHandler<
           }),
         ),
       );
-      return yield* Effect.scoped(
+      const controller = new AbortController();
+      return yield* abortOnInterrupt(
         Effect.gen(function* () {
-          const controller = yield* callSignal;
           const ctx = yield* makeContext(
             request,
             calls.flatMap((c) =>
@@ -1106,6 +1140,7 @@ export function createFetchHandler<
             headers,
           );
         }),
+        controller,
       );
     });
 
@@ -1113,28 +1148,29 @@ export function createFetchHandler<
     HttpServerResponse.HttpServerResponse,
     never,
     HttpServerRequest.HttpServerRequest
-  > = Effect.gen(function* () {
-    const request = yield* HttpServerRequest.HttpServerRequest;
-    const url = new URL(request.url, 'http://localhost');
+  > = Effect.withFiber((fiber) => {
+    const request = Context.get(
+      fiber.context as Context.Context<HttpServerRequest.HttpServerRequest>,
+      HttpServerRequest.HttpServerRequest,
+    );
+    const { pathname, search } = splitUrl(request.url);
     const version = request.headers[HEADER.version];
     if (version !== undefined && version !== PROTOCOL_VERSION) {
-      return yield* Effect.fail(
+      return Effect.fail(
         protocolError(
           'UNSUPPORTED_PROTOCOL',
           `Unsupported protocol version "${version}", expected "${PROTOCOL_VERSION}"`,
         ),
       );
     }
-    if (url.pathname !== endpoint && !url.pathname.startsWith(`${endpoint}/`)) {
-      return yield* Effect.fail(
-        protocolError('NOT_FOUND', `Not found: ${url.pathname}`),
-      );
+    if (pathname !== endpoint && !pathname.startsWith(`${endpoint}/`)) {
+      return Effect.fail(protocolError('NOT_FOUND', `Not found: ${pathname}`));
     }
-    const rest = url.pathname.slice(endpoint.length + 1);
+    const rest = pathname.slice(endpoint.length + 1);
     if (rest === '' && request.headers[HEADER.batch] === '1') {
-      return yield* batched(request);
+      return batched(request);
     }
-    return yield* single(request, url, decodeURIComponent(rest));
+    return single(request, search, decodeURIComponent(rest));
   }).pipe(
     Effect.catchCause((cause) =>
       Effect.flatMap(HttpServerRequest.HttpServerRequest, (request) => {

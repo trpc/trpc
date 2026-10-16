@@ -58,6 +58,10 @@ export interface MakeContextOpts {
 /** What every handler shares: ctx, services, masking and `onError`. @internal */
 export interface HandlerCore {
   readonly run: (opts: RunOpts) => Promise<Exit.Exit<unknown, AnyTrpcError>>;
+  /** `run` in the calling fiber; interrupting it interrupts the call. */
+  readonly runEffect: (
+    opts: RunOpts,
+  ) => Effect.Effect<Exit.Exit<unknown, AnyTrpcError>>;
   readonly makeContext: (opts: MakeContextOpts) => Promise<object>;
   /** Masks unexpected errors unless `exposeUnexpectedErrors`. */
   readonly publicError: (err: AnyTrpcError) => AnyTrpcError;
@@ -82,28 +86,45 @@ export function createHandlerCore(opts: CoreOptions): HandlerCore {
   const expose = opts.exposeUnexpectedErrors ?? isDev();
   const runtime = opts.layer ? ManagedRuntime.make(opts.layer) : undefined;
   let services: Promise<Context.Context<any>> | undefined;
+  let ready: Context.Context<any> | undefined = runtime
+    ? undefined
+    : (Context.empty() as Context.Context<any>);
   const getServices = () =>
-    (services ??= runtime
-      ? runtime.context()
-      : Promise.resolve(Context.empty() as Context.Context<any>));
+    (services ??= ready
+      ? Promise.resolve(ready)
+      : runtime!.context().then((context) => (ready = context)));
+
+  const prepare = (o: RunOpts, layer: Context.Context<any>) => {
+    let context = layer;
+    if (o.request) {
+      context = Context.add(
+        context,
+        HttpServerRequest.HttpServerRequest,
+        o.request,
+      );
+    }
+    if (o.services) context = Context.merge(context, o.services);
+    const call = o.parent
+      ? Effect.withParentSpan(callProcedure(o), o.parent)
+      : callProcedure(o);
+    return { call, context };
+  };
 
   return {
     run: async (o) => {
-      let context = await getServices();
-      if (o.request) {
-        context = Context.add(
-          context,
-          HttpServerRequest.HttpServerRequest,
-          o.request,
-        );
-      }
-      if (o.services) context = Context.merge(context, o.services);
-      const call = o.parent
-        ? Effect.withParentSpan(callProcedure(o), o.parent)
-        : callProcedure(o);
+      const { call, context } = prepare(o, ready ?? (await getServices()));
       return Effect.runPromiseExitWith(context)(call, {
         signal: o.signal,
       });
+    },
+    runEffect: (o) => {
+      const inline = (layer: Context.Context<any>) => {
+        const { call, context } = prepare(o, layer);
+        return Effect.exit(Effect.provideContext(call, context));
+      };
+      return ready
+        ? inline(ready)
+        : Effect.flatMap(Effect.promise(getServices), inline);
     },
     makeContext: async (o) => {
       if (!opts.createContext) return {};
