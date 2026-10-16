@@ -20,3 +20,5 @@ Generated fixtures and build output (`generated/`, `dist/`) are gitignored; the 
 | `cache-link/`          | `pnpm test` (root)                                             | [react-use-spikes](../.agent-docs/notes/react-use-spikes.md)                         |
 | `atom-trpc/`           | `pnpm test` (root)                                             | [react-use-spikes](../.agent-docs/notes/react-use-spikes.md)                         |
 | `invalidation/`        | `pnpm test` (root)                                             | [invalidation-plugin](../.agent-docs/notes/invalidation-plugin.md)                   |
+| `sse-deferred/`        | `pnpm test` (root), `node sse-deferred/measure.ts [items]`     | [sse-nested-deferred](../.agent-docs/notes/sse-nested-deferred.md)                   |
+| `durable-resume/`      | `pnpm test` (root)                                             | [durable-mid-stream-resume](../.agent-docs/notes/durable-mid-stream-resume.md)       |
