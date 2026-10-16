@@ -36,14 +36,15 @@ pnpm test
 pnpm example
 ```
 
-| Command          | What it does                                                  |
-| ---------------- | ------------------------------------------------------------- |
-| `pnpm install`   | Installs deps; `prepare` installs the git hook dispatcher     |
-| `pnpm typecheck` | `tsc` (TypeScript 7) in every workspace package               |
-| `pnpm check`     | `vp check`: format check, lint and type-aware lint/type check |
-| `pnpm fix`       | `vp check --fix`: format and autofix                          |
-| `pnpm test`      | `vp test run`: Vitest, including `*.test-d.ts` type tests     |
-| `pnpm example`   | Runs `examples/minimal` on Node (workspace-linked `trpcdev`)  |
+| Command          | What it does                                                                                                                  |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm install`   | Installs deps; `prepare` installs the git hook dispatcher                                                                     |
+| `pnpm typecheck` | `tsc` (TypeScript 7) in every workspace package                                                                               |
+| `pnpm check`     | `vp check`: format check, lint and type-aware lint/type check                                                                 |
+| `pnpm fix`       | `vp check --fix`: format and autofix                                                                                          |
+| `pnpm test`      | `vp test run`: Vitest, including `*.test-d.ts` type tests                                                                     |
+| `pnpm example`   | Runs every example's `smoke` script (`examples/*`; `realtime` needs Redis at `REDIS_URL`)                                     |
+| `pnpm build`     | `vp pack` per package (`tooling/pack/`): unbundled ESM and declarations in `dist/`, published through `publishConfig.exports` |
 
 `trpcdev` entry points: `/server` (builder, routers, `t.implement`, the fetch handler with `.websocket()` and `.messagePort()`, callers), `/client` (typed client and links, including `wsLink`, `messagePortLink` and `dedupeLink`), `/contract` (`contract.create`, `toContract`), `/openapi` (REST handler, `generateOpenApi`, reference UI, `openApiLink`), `/effect` (Effect client), `/serializer` (danSON), `/http` (`serve`/`toHttpEffect`: the handler and WebSocket upgrades on Effect's `HttpServer`), `/middleware` (`onStart`, `onSuccess`, `onError`, `onFinish`), `/actions` (`createAction`, `createCallable`: procedures as plain functions for React Server Actions, taking `FormData` too), `/testing` (`createTestServer({ http })`), `/extend` (building blocks for integrations: `createUntypedClient`, `runLinks`, `callProcedure`, the wire format) and `/internal` (types declaration emit refers to; no semver). `trpcdev` imports no `node:*`: Node comes from `NodeHttpServer.layer` in `@effect/platform-node` ([decision](./.agent-docs/decisions/platforms-through-effect-layers.md)). Run one test file with `pnpm vp test run test/integration/<name>`.
 

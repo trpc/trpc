@@ -2,6 +2,9 @@
   "name": "trpcdev",
   "version": "0.0.0",
   "private": true,
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "exports": {
     "./server": {
@@ -61,9 +64,69 @@
       "default": "./src/internal/testing/index.ts"
     }
   },
+  "publishConfig": {
+    "exports": {
+      "./server": {
+        "types": "./dist/server/index.d.ts",
+        "default": "./dist/server/index.js"
+      },
+      "./middleware": {
+        "types": "./dist/middleware/index.d.ts",
+        "default": "./dist/middleware/index.js"
+      },
+      "./client": {
+        "types": "./dist/client/index.d.ts",
+        "default": "./dist/client/index.js"
+      },
+      "./actions": {
+        "types": "./dist/actions/index.d.ts",
+        "default": "./dist/actions/index.js"
+      },
+      "./contract": {
+        "types": "./dist/contract/index.d.ts",
+        "default": "./dist/contract/index.js"
+      },
+      "./serializer": {
+        "types": "./dist/serializer/index.d.ts",
+        "default": "./dist/serializer/index.js"
+      },
+      "./openapi": {
+        "types": "./dist/openapi/index.d.ts",
+        "default": "./dist/openapi/index.js"
+      },
+      "./openapi/typescript": {
+        "types": "./dist/openapi/typescript.d.ts",
+        "default": "./dist/openapi/typescript.js"
+      },
+      "./effect": {
+        "types": "./dist/effect/index.d.ts",
+        "default": "./dist/effect/index.js"
+      },
+      "./http": {
+        "types": "./dist/http/index.d.ts",
+        "default": "./dist/http/index.js"
+      },
+      "./cloudflare": {
+        "types": "./dist/cloudflare/index.d.ts",
+        "default": "./dist/cloudflare/index.js"
+      },
+      "./extend": {
+        "types": "./dist/extend/index.d.ts",
+        "default": "./dist/extend/index.js"
+      },
+      "./internal": {
+        "types": "./dist/internal/index.d.ts",
+        "default": "./dist/internal/index.js"
+      },
+      "./internal/testing": {
+        "types": "./dist/internal/testing/index.d.ts",
+        "default": "./dist/internal/testing/index.js"
+      }
+    }
+  },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "build": "echo \"build not wired yet\""
+    "build": "node ../../tooling/pack/pack.ts"
   },
   "dependencies": {
     "effect": "^4.0.0"

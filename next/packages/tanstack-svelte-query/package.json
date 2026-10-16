@@ -2,6 +2,9 @@
   "name": "@trpcdev/tanstack-svelte-query",
   "version": "0.0.0",
   "private": true,
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "exports": {
     ".": {
@@ -10,9 +13,18 @@
       "default": "./src/index.ts"
     }
   },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "svelte": "./dist/index.js",
+        "default": "./dist/index.js"
+      }
+    }
+  },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "build": "echo \"build not wired yet\""
+    "build": "node ../../tooling/pack/pack.ts"
   },
   "dependencies": {
     "@trpcdev/tanstack-query": "workspace:*"

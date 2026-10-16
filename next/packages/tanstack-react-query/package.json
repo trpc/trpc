@@ -2,6 +2,9 @@
   "name": "@trpcdev/tanstack-react-query",
   "version": "0.0.0",
   "private": true,
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "exports": {
     ".": {
@@ -13,9 +16,21 @@
       "default": "./src/rsc.ts"
     }
   },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./rsc": {
+        "types": "./dist/rsc.d.ts",
+        "default": "./dist/rsc.js"
+      }
+    }
+  },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "build": "echo \"build not wired yet\""
+    "build": "node ../../tooling/pack/pack.ts"
   },
   "dependencies": {
     "@trpcdev/tanstack-query": "workspace:*"
