@@ -258,8 +258,9 @@ type JsonValueOf<T, K, D extends boolean> = T extends { toJSON(): infer J }
             ? JsonObject<T, K, D>
             : never;
 
-type Framed<T, K> =
-  IsAny<T> extends true
+type Framed<T, K> = [T] extends [JsonSafe]
+  ? T
+  : IsAny<T> extends true
     ? any
     : T extends ProcedureResponse
       ? globalThis.Response
