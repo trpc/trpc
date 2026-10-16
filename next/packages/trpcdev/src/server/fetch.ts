@@ -10,7 +10,6 @@ import {
   type Tracer,
 } from 'effect';
 import {
-  Cookies,
   HttpEffect,
   HttpServerRequest,
   HttpServerResponse,
@@ -46,6 +45,12 @@ import {
   type Serializer,
 } from '../serializer/index.ts';
 import type { Chunk } from '../serializer/stream.ts';
+import {
+  consumedError,
+  parsedBody,
+  readBytes as readRequestBytes,
+  responseOptions,
+} from './body.ts';
 import { createHandlerCore } from './core.ts';
 import {
   createResponseHandle,
@@ -317,7 +322,6 @@ export interface FetchHandler<TPlatform = undefined> {
   dispose(): Promise<void>;
 }
 
-const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
 const protocolError = (code: string, message: string) =>
@@ -353,53 +357,13 @@ interface CallResult {
   response?: HttpServerResponse.HttpServerResponse | undefined;
 }
 
-/** `Headers` from a response handle, as `HttpServerResponse` options. */
-const responseOptions = (
-  set: Headers | undefined,
-): { headers?: Record<string, string>; cookies?: Cookies.Cookies } => {
-  if (!set) return {};
-  const headers: Record<string, string> = {};
-  for (const [key, value] of set) {
-    if (key !== 'set-cookie') headers[key] = value;
-  }
-  const setCookie = set.getSetCookie();
-  return {
-    headers,
-    ...(setCookie.length ? { cookies: Cookies.fromSetCookie(setCookie) } : {}),
-  };
-};
-
-/** A request body a Node framework middleware already read (`express.json()`). */
-const parsedBody = (
-  request: HttpServerRequest.HttpServerRequest,
-): Uint8Array | 'consumed' | undefined => {
-  const node = request.source as { readableEnded?: unknown; body?: unknown };
-  if (node.readableEnded !== true) return undefined;
-  const { body } = node;
-  if (typeof body === 'string') return encoder.encode(body);
-  if (body instanceof Uint8Array) return body;
-  if (
-    body !== undefined &&
-    isJsonContentType(request.headers['content-type'] ?? null)
-  ) {
-    return encoder.encode(JSON.stringify(body));
-  }
-  return 'consumed';
-};
-
-const consumedError = () =>
-  new TrpcError({
-    code: 'INTERNAL_SERVER_ERROR',
-    message:
-      'The request body was already read by another middleware. Mount tRPC before body parsers, or use one that sets req.body.',
-  });
-
 /**
  * The span an HTTP call's span is a child of: the request's span (Effect's
  * HTTP tracer middleware makes one from `traceparent`), else the trace
  * context in the request's headers.
+ * @internal
  */
-const parentSpan = (
+export const parentSpan = (
   request: HttpServerRequest.HttpServerRequest,
 ): Effect.Effect<Tracer.AnySpan | undefined> =>
   Effect.currentParentSpan.pipe(
@@ -500,55 +464,8 @@ export function createFetchHandler<
   const errorResponse = (err: AnyTrpcError) =>
     respond(err.status, JSON.stringify(wire(err)), CONTENT_TYPE.json);
 
-  /** The body, at most `maxBodySize` bytes. Past it, the rest is drained, not cancelled. */
-  const readBytes = (
-    request: HttpServerRequest.HttpServerRequest,
-  ): Effect.Effect<Uint8Array, AnyTrpcError> =>
-    Effect.gen(function* () {
-      const tooLarge = protocolError(
-        'PAYLOAD_TOO_LARGE',
-        'Request body is too large',
-      );
-      if (Number(request.headers['content-length'] ?? 0) > maxBodySize) {
-        return yield* Effect.fail(tooLarge);
-      }
-      const replayed = parsedBody(request);
-      if (replayed === 'consumed') return yield* Effect.fail(consumedError());
-      const chunks: Uint8Array[] = [];
-      let size = 0;
-      const { source } = request;
-      if (source instanceof Request && source.body === null) {
-        // No body: nothing to read.
-      } else if (replayed) {
-        chunks.push(replayed);
-        size = replayed.byteLength;
-      } else {
-        yield* Stream.runForEach(request.stream, (chunk) =>
-          Effect.sync(() => {
-            size += chunk.byteLength;
-            if (size <= maxBodySize) chunks.push(chunk);
-          }),
-        ).pipe(
-          Effect.mapError(
-            (cause) =>
-              new TrpcError({
-                code: 'BAD_REQUEST',
-                message: 'Could not read the request body',
-                cause,
-              }),
-          ),
-        );
-      }
-      if (size > maxBodySize) return yield* Effect.fail(tooLarge);
-      if (chunks.length === 1) return chunks[0]!;
-      const bytes = new Uint8Array(size);
-      let offset = 0;
-      for (const chunk of chunks) {
-        bytes.set(chunk, offset);
-        offset += chunk.byteLength;
-      }
-      return bytes;
-    });
+  const readBytes = (request: HttpServerRequest.HttpServerRequest) =>
+    readRequestBytes(request, maxBodySize);
 
   const parseJson = (text: string) =>
     Effect.try({

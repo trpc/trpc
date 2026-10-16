@@ -12,6 +12,7 @@ User docs for vNext, kept in step with the code. Design notes and decisions live
 - [TanStack Query](./tanstack-query.md): query helpers and hydration.
 - [OpenAPI](./openapi.md): the REST handler, the document.
 - [Platforms](./platforms.md): Node, Bun, Deno, Express, Fastify, fetch runtimes.
+- [Migrating from v11](./migrating-from-v11.md): serving old clients with `createV11Handler`, API changes.
 
 Entry points of `trpcdev`:
 
@@ -25,6 +26,7 @@ Entry points of `trpcdev`:
 | `trpcdev/http`       | `serve`, `toHttpEffect` on Effect's `HttpServer`         |
 | `trpcdev/cloudflare` | hibernating WebSockets and publisher on Durable Objects  |
 | `trpcdev/openapi`    | `createOpenApiHandler`, `generateOpenApi`, `openApiLink` |
+| `trpcdev/interop`    | `createV11Handler` for `@trpc/client` 11 apps            |
 | `trpcdev/contract`   | contract-first routers, `toContract`                     |
 | `trpcdev/serializer` | danSON, `createSyncSerializer`, `jsonSerializer`         |
 | `trpcdev/extend`     | building blocks for integrations                         |

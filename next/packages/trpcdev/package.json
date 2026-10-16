@@ -39,6 +39,10 @@
       "types": "./src/openapi/typescript.ts",
       "default": "./src/openapi/typescript.ts"
     },
+    "./interop": {
+      "types": "./src/interop/index.ts",
+      "default": "./src/interop/index.ts"
+    },
     "./effect": {
       "types": "./src/effect/index.ts",
       "default": "./src/effect/index.ts"
@@ -97,6 +101,10 @@
       "./openapi/typescript": {
         "types": "./dist/openapi/typescript.d.ts",
         "default": "./dist/openapi/typescript.js"
+      },
+      "./interop": {
+        "types": "./dist/interop/index.d.ts",
+        "default": "./dist/interop/index.js"
       },
       "./effect": {
         "types": "./dist/effect/index.d.ts",

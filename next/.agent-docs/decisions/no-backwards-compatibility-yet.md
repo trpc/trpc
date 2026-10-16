@@ -5,5 +5,6 @@
 - Moving from v11 is a tooling job: codemods, migration guides, and interop request handlers that serve old (v11) clients from a v12 router, so servers can deploy before every client updates.
 - Why: designing for compatibility now would freeze choices before they're right.
 - Lost: nothing for users yet; prerelease adopters may need to update both ends together.
-- Open: the interop handlers' scope (v11's HTTP batch links, `wsLink`, SSE), codemod tooling.
-- Lives in: nothing yet; no interop handlers or codemods are built.
+- (agent) Interop handler: `createV11Handler` serves every v11 link from a v12 router ([`v11-interop-handler.md`](./v11-interop-handler.md)); the migration guide is `docs/migrating-from-v11.md`.
+- Open: codemod tooling.
+- Lives in: `packages/trpcdev/src/interop/`, `docs/migrating-from-v11.md`.
