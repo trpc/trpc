@@ -42,7 +42,7 @@ import {
   type ReactiveElement,
   type TemplateResult,
 } from 'lit';
-import type { RouterOf, TrpcClient } from 'trpcdev/client';
+import type { ChainTypes, RouterOf, TrpcClient } from 'trpcdev/client';
 import {
   createTrpcQueryUtils,
   SubscriptionObserver,
@@ -63,8 +63,9 @@ export * from '@trpcdev/tanstack-query';
 export interface TrpcProviderElement<
   TRouter,
   TContext extends object = {},
+  TLinks extends ChainTypes = {},
 > extends LitElement {
-  client: TrpcClient<RouterOf<TRouter>, TContext>;
+  client: TrpcClient<RouterOf<TRouter>, TContext, undefined, TLinks>;
 }
 
 /**
@@ -72,28 +73,34 @@ export interface TrpcProviderElement<
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface TrpcLitContext<TRouter, TContext extends object = {}> {
+export interface TrpcLitContext<
+  TRouter,
+  TContext extends object = {},
+  TLinks extends ChainTypes = {},
+> {
   /**
    * Provides the client to descendants. Not registered: pass it to
    * `customElements.define` under a tag of your choice.
    */
-  TrpcProvider: new () => TrpcProviderElement<TRouter, TContext>;
+  TrpcProvider: new () => TrpcProviderElement<TRouter, TContext, TLinks>;
   /**
    * The helpers for the provided client, resolved on first use. Call in a
    * field initializer and use them once the host is connected (in render or
    * in controller option functions).
    */
-  useTrpc: (host: ReactiveElement) => TrpcQueryUtilsFor<TRouter, TContext>;
+  useTrpc: (
+    host: ReactiveElement,
+  ) => TrpcQueryUtilsFor<TRouter, TContext, TLinks>;
   /** The provided client, resolved on first use. */
   useTrpcClient: (
     host: ReactiveElement,
-  ) => TrpcClient<RouterOf<TRouter>, TContext>;
+  ) => TrpcClient<RouterOf<TRouter>, TContext, undefined, TLinks>;
   /** The `@lit/context` key, for `@consume` or a custom provider. */
   context: Context<
     unknown,
     | {
-        client: TrpcClient<RouterOf<TRouter>, TContext>;
-        utils: TrpcQueryUtilsFor<TRouter, TContext>;
+        client: TrpcClient<RouterOf<TRouter>, TContext, undefined, TLinks>;
+        utils: TrpcQueryUtilsFor<TRouter, TContext, TLinks>;
       }
     | undefined
   >;
@@ -122,11 +129,16 @@ function lazy<T extends object>(resolve: () => T): T {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function createTrpcContext<TRouter, TContext extends object = {}>(
-  opts: TrpcContextOptions = {},
-): TrpcLitContext<TRouter, TContext> {
-  type Client = TrpcClient<RouterOf<TRouter>, TContext>;
-  type Value = { client: Client; utils: TrpcQueryUtilsFor<TRouter, TContext> };
+export function createTrpcContext<
+  TRouter,
+  TContext extends object = {},
+  TLinks extends ChainTypes = {},
+>(opts: TrpcContextOptions = {}): TrpcLitContext<TRouter, TContext, TLinks> {
+  type Client = TrpcClient<RouterOf<TRouter>, TContext, undefined, TLinks>;
+  type Value = {
+    client: Client;
+    utils: TrpcQueryUtilsFor<TRouter, TContext, TLinks>;
+  };
   const context = createContext<Value | undefined>(Symbol('trpc'));
 
   class TrpcProvider extends LitElement {

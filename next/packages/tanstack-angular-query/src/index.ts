@@ -36,7 +36,7 @@ import {
   type Provider,
   type Signal,
 } from '@angular/core';
-import type { RouterOf, TrpcClient } from 'trpcdev/client';
+import type { ChainTypes, RouterOf, TrpcClient } from 'trpcdev/client';
 import {
   createTrpcQueryUtils,
   SubscriptionObserver,
@@ -53,13 +53,24 @@ export * from '@trpcdev/tanstack-query';
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface TrpcAngularContext<TRouter, TContext extends object = {}> {
+export interface TrpcAngularContext<
+  TRouter,
+  TContext extends object = {},
+  TLinks extends ChainTypes = {},
+> {
   /** Provides the client, next to `provideTanStackQuery`. */
-  provideTrpc: (client: TrpcClient<RouterOf<TRouter>, TContext>) => Provider;
+  provideTrpc: (
+    client: TrpcClient<RouterOf<TRouter>, TContext, undefined, TLinks>,
+  ) => Provider;
   /** The helpers for the provided client. Call in an injection context. */
-  injectTrpc: () => TrpcQueryUtilsFor<TRouter, TContext>;
+  injectTrpc: () => TrpcQueryUtilsFor<TRouter, TContext, TLinks>;
   /** The provided client, for calls outside TanStack Query. */
-  injectTrpcClient: () => TrpcClient<RouterOf<TRouter>, TContext>;
+  injectTrpcClient: () => TrpcClient<
+    RouterOf<TRouter>,
+    TContext,
+    undefined,
+    TLinks
+  >;
 }
 
 /**
@@ -74,12 +85,16 @@ export interface TrpcAngularContext<TRouter, TContext extends object = {}> {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function createTrpcContext<TRouter, TContext extends object = {}>(
+export function createTrpcContext<
+  TRouter,
+  TContext extends object = {},
+  TLinks extends ChainTypes = {},
+>(
   opts: TrpcContextOptions = {},
-): TrpcAngularContext<TRouter, TContext> {
+): TrpcAngularContext<TRouter, TContext, TLinks> {
   type Value = {
-    client: TrpcClient<RouterOf<TRouter>, TContext>;
-    utils: TrpcQueryUtilsFor<TRouter, TContext>;
+    client: TrpcClient<RouterOf<TRouter>, TContext, undefined, TLinks>;
+    utils: TrpcQueryUtilsFor<TRouter, TContext, TLinks>;
   };
   const token = new InjectionToken<Value>('trpc');
   return {

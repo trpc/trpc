@@ -1,12 +1,14 @@
-import { Effect } from 'effect';
+import { Effect, Schema, Stream } from 'effect';
 import {
   createTrpcClient,
   dedupeLink,
   httpLink,
   link,
   routerType,
+  safe,
   splitLink,
   switchLink,
+  TrpcError,
   type Operation,
 } from 'trpcdev/client';
 import { createEffectClient } from 'trpcdev/effect';
@@ -288,4 +290,94 @@ test('switchLink names are checked', () => {
       ],
     }),
   ).toThrow('Two switchLinks on one chain are named "region"');
+});
+
+class RateLimited extends TrpcError.Tagged('RATE_LIMITED', {
+  status: 429,
+  data: Schema.Struct({ retryAfter: Schema.Number }),
+}) {}
+
+test("a link's own declared errors join every call's typed union", async () => {
+  await using server = await createTestServer({ router });
+  let allowed = 1;
+  const rateLimit = link.effect<{ errors: RateLimited }>(({ op, next }) =>
+    allowed-- > 0 ? next(op) : Stream.fail(new RateLimited({ retryAfter: 5 })),
+  );
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [rateLimit, httpLink({ url: server.url })],
+  });
+  expect((await client.post.byId.query({ id: '1' })).id).toBe('1');
+  const [, err] = await safe(client.post.create.mutate({ title: 'x' }));
+  expect(err).toMatchObject({ code: 'RATE_LIMITED', defined: true });
+  if (err?.defined && err.code === 'RATE_LIMITED') {
+    expectTypeOf(err.data).toEqualTypeOf<{ readonly retryAfter: number }>();
+    expect(err.data.retryAfter).toBe(5);
+  }
+
+  const effectClient = createEffectClient({
+    router: routerType<AppRouter>(),
+    links: [rateLimit, httpLink({ url: server.url })],
+  });
+  const retryAfter = await Effect.runPromise(
+    effectClient.post.byId.query({ id: '1' }).pipe(
+      Effect.map(() => 0),
+      Effect.catchIf(
+        (e) => e.defined && e.code === 'RATE_LIMITED',
+        (e) => Effect.succeed(e.data.retryAfter),
+      ),
+    ),
+  );
+  expect(retryAfter).toBe(5);
+});
+
+const liveRouter = {
+  latest: t.procedure.query(() => 1),
+  feed: t.procedure.subscription(async function* () {
+    yield 1;
+  }),
+};
+
+test('methods a chain cannot carry are missing from the client', () => {
+  const http = httpLink({ url: 'http://localhost' });
+  const queriesOnly = link<{ unsupported: 'subscription' }>(({ op, next }) =>
+    next(op),
+  );
+  const limited = createTrpcClient({
+    router: routerType<typeof liveRouter>(),
+    links: [queriesOnly, http],
+  });
+  expectTypeOf(limited.latest).toHaveProperty('query');
+  expectTypeOf(limited.feed).not.toHaveProperty('subscribe');
+
+  const split = createTrpcClient({
+    router: routerType<typeof liveRouter>(),
+    links: [
+      splitLink({
+        condition: (op) => op.type === 'subscription',
+        true: http,
+        false: [queriesOnly, http],
+      }),
+    ],
+  });
+  expectTypeOf(split.feed).toHaveProperty('subscribe');
+
+  const neither = createTrpcClient({
+    router: routerType<typeof liveRouter>(),
+    links: [
+      switchLink({
+        name: 'via',
+        links: { a: [queriesOnly, http], b: queriesOnly },
+        pick: () => 'a',
+      }),
+    ],
+  });
+  expectTypeOf(neither.feed).not.toHaveProperty('subscribe');
+  expectTypeOf(neither.latest).toHaveProperty('query');
+
+  const effectClient = createEffectClient({
+    router: routerType<typeof liveRouter>(),
+    links: [queriesOnly, http],
+  });
+  expectTypeOf(effectClient.feed).not.toHaveProperty('subscribe');
 });

@@ -17,6 +17,7 @@ import {
 import type {
   DuplicateSwitchCheck,
   LinksContext,
+  LinksTypes,
   RouterOf,
   SubscribeOptions,
   TrpcClient,
@@ -226,7 +227,12 @@ export function createTrpcClient<
   const TLinks extends ReadonlyArray<TrpcLink<any, RouterOf<TSource>>>,
 >(
   opts: TypedClientOptions<TSource, TLinks> & DuplicateSwitchCheck<TLinks>,
-): TrpcClient<RouterOf<TSource>, LinksContext<TLinks>>;
+): TrpcClient<
+  RouterOf<TSource>,
+  LinksContext<TLinks>,
+  undefined,
+  LinksTypes<TLinks>
+>;
 /**
  * Creates a typed client from an explicit router type. Link fields on the
  * call options come from the open {@link TrpcClientContext} interface.

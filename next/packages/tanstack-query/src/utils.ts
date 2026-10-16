@@ -14,7 +14,7 @@ import {
   type SkipToken,
 } from '@tanstack/query-core';
 import { structuralSharing } from './sharing.ts';
-import type { RouterOf, TrpcClient } from 'trpcdev/client';
+import type { ChainTypes, RouterOf, TrpcClient } from 'trpcdev/client';
 import {
   pathKey,
   procedureKey,
@@ -506,7 +506,8 @@ export type TrpcQueryUtils<TClient> = PathUtils & {
 export type TrpcQueryUtilsFor<
   TRouter,
   TContext extends object = {},
-> = TrpcQueryUtils<TrpcClient<RouterOf<TRouter>, TContext>>;
+  TLinks extends ChainTypes = {},
+> = TrpcQueryUtils<TrpcClient<RouterOf<TRouter>, TContext, undefined, TLinks>>;
 
 /**
  * Options for {@link createTrpcQueryUtils}.

@@ -12,7 +12,12 @@ import {
   type TrpcLink,
 } from '../link.ts';
 import type { RouterPaths } from '../types.ts';
-import { asArray, type Chain, type ChainDecl } from './basic.ts';
+import {
+  asArray,
+  type BranchesDecl,
+  type Chain,
+  type ChainDecl,
+} from './basic.ts';
 
 /**
  * Names a `switchLink` can't take: the client or the built-in links read
@@ -90,7 +95,7 @@ export type SwitchLinkDecl<
       context: { [K in TName]?: keyof TLinks & string };
       switches: TName;
     }
-  | ChainDecl<TLinks[keyof TLinks]>;
+  | BranchesDecl<TLinks>;
 
 /**
  * Routes each operation to one of several named chains. `pick` chooses one

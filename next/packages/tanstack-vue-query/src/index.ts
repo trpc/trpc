@@ -32,7 +32,7 @@ import {
   type MaybeRefOrGetter,
   type Plugin,
 } from 'vue';
-import type { RouterOf, TrpcClient } from 'trpcdev/client';
+import type { ChainTypes, RouterOf, TrpcClient } from 'trpcdev/client';
 import {
   createTrpcQueryUtils,
   SubscriptionObserver,
@@ -49,8 +49,12 @@ export * from '@trpcdev/tanstack-query';
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface TrpcPluginOptions<TRouter, TContext extends object = {}> {
-  client: TrpcClient<RouterOf<TRouter>, TContext>;
+export interface TrpcPluginOptions<
+  TRouter,
+  TContext extends object = {},
+  TLinks extends ChainTypes = {},
+> {
+  client: TrpcClient<RouterOf<TRouter>, TContext, undefined, TLinks>;
 }
 
 /**
@@ -58,15 +62,26 @@ export interface TrpcPluginOptions<TRouter, TContext extends object = {}> {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface TrpcVueContext<TRouter, TContext extends object = {}> {
+export interface TrpcVueContext<
+  TRouter,
+  TContext extends object = {},
+  TLinks extends ChainTypes = {},
+> {
   /** Provides the client to the whole app: `app.use(TrpcPlugin, { client })`. */
-  TrpcPlugin: Plugin<[TrpcPluginOptions<TRouter, TContext>]>;
+  TrpcPlugin: Plugin<[TrpcPluginOptions<TRouter, TContext, TLinks>]>;
   /** Provides the client to the current component's descendants. */
-  provideTrpc: (client: TrpcClient<RouterOf<TRouter>, TContext>) => void;
+  provideTrpc: (
+    client: TrpcClient<RouterOf<TRouter>, TContext, undefined, TLinks>,
+  ) => void;
   /** The helpers for the provided client. */
-  useTrpc: () => TrpcQueryUtilsFor<TRouter, TContext>;
+  useTrpc: () => TrpcQueryUtilsFor<TRouter, TContext, TLinks>;
   /** The provided client, for calls outside TanStack Query. */
-  useTrpcClient: () => TrpcClient<RouterOf<TRouter>, TContext>;
+  useTrpcClient: () => TrpcClient<
+    RouterOf<TRouter>,
+    TContext,
+    undefined,
+    TLinks
+  >;
 }
 
 /**
@@ -81,11 +96,16 @@ export interface TrpcVueContext<TRouter, TContext extends object = {}> {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function createTrpcContext<TRouter, TContext extends object = {}>(
-  opts: TrpcContextOptions = {},
-): TrpcVueContext<TRouter, TContext> {
-  type Client = TrpcClient<RouterOf<TRouter>, TContext>;
-  type Value = { client: Client; utils: TrpcQueryUtilsFor<TRouter, TContext> };
+export function createTrpcContext<
+  TRouter,
+  TContext extends object = {},
+  TLinks extends ChainTypes = {},
+>(opts: TrpcContextOptions = {}): TrpcVueContext<TRouter, TContext, TLinks> {
+  type Client = TrpcClient<RouterOf<TRouter>, TContext, undefined, TLinks>;
+  type Value = {
+    client: Client;
+    utils: TrpcQueryUtilsFor<TRouter, TContext, TLinks>;
+  };
   const key: InjectionKey<Value> = Symbol('trpc');
   const value = (client: Client): Value => ({
     client,

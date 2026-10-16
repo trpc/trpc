@@ -21,7 +21,16 @@ import {
 import { Suspense, useContext, useState, type ReactNode } from 'react';
 import { createRoot, hydrateRoot } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
-import type { TrpcClient } from 'trpcdev/client';
+import {
+  createTrpcClient,
+  httpLink,
+  link,
+  routerType,
+  TrpcError,
+  type LinksContext,
+  type LinksTypes,
+  type TrpcClient,
+} from 'trpcdev/client';
 import { createRouterClient } from 'trpcdev/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import {
@@ -312,4 +321,21 @@ test('createTrpcContext({ keyPrefix }) prefixes the provided helpers', () => {
     </billing.TrpcProvider>,
   );
   expect(html).toBe('<p>[[&quot;billing&quot;,&quot;post&quot;]]</p>');
+});
+
+test("a context typed with the links' types takes a client whose links declare errors", () => {
+  class Offline extends TrpcError.Tagged('OFFLINE') {}
+  const links = [
+    link.effect<{ errors: Offline }>(({ op, next }) => next(op)),
+    httpLink({ url: 'http://localhost' }),
+  ] as const;
+  const client = createTrpcClient({ router: routerType<AppRouter>(), links });
+  const typed = createTrpcContext<
+    AppRouter,
+    LinksContext<typeof links>,
+    LinksTypes<typeof links>
+  >();
+  expectTypeOf(client).toExtend<
+    Parameters<typeof typed.TrpcProvider>[0]['client']
+  >();
 });

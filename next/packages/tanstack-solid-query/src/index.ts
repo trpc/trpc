@@ -30,7 +30,7 @@ import {
   type Accessor,
   type JSX,
 } from 'solid-js';
-import type { RouterOf, TrpcClient } from 'trpcdev/client';
+import type { ChainTypes, RouterOf, TrpcClient } from 'trpcdev/client';
 import {
   createTrpcQueryUtils,
   SubscriptionObserver,
@@ -47,8 +47,12 @@ export * from '@trpcdev/tanstack-query';
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface TrpcProviderProps<TRouter, TContext extends object = {}> {
-  client: TrpcClient<RouterOf<TRouter>, TContext>;
+export interface TrpcProviderProps<
+  TRouter,
+  TContext extends object = {},
+  TLinks extends ChainTypes = {},
+> {
+  client: TrpcClient<RouterOf<TRouter>, TContext, undefined, TLinks>;
   children?: JSX.Element;
 }
 
@@ -57,13 +61,24 @@ export interface TrpcProviderProps<TRouter, TContext extends object = {}> {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface TrpcSolidContext<TRouter, TContext extends object = {}> {
+export interface TrpcSolidContext<
+  TRouter,
+  TContext extends object = {},
+  TLinks extends ChainTypes = {},
+> {
   /** Provides the client. Render it inside `QueryClientProvider`. */
-  TrpcProvider: (props: TrpcProviderProps<TRouter, TContext>) => JSX.Element;
+  TrpcProvider: (
+    props: TrpcProviderProps<TRouter, TContext, TLinks>,
+  ) => JSX.Element;
   /** The helpers for the provided client. */
-  useTrpc: () => TrpcQueryUtilsFor<TRouter, TContext>;
+  useTrpc: () => TrpcQueryUtilsFor<TRouter, TContext, TLinks>;
   /** The provided client, for calls outside TanStack Query. */
-  useTrpcClient: () => TrpcClient<RouterOf<TRouter>, TContext>;
+  useTrpcClient: () => TrpcClient<
+    RouterOf<TRouter>,
+    TContext,
+    undefined,
+    TLinks
+  >;
 }
 
 /**
@@ -83,12 +98,14 @@ export interface TrpcSolidContext<TRouter, TContext extends object = {}> {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function createTrpcContext<TRouter, TContext extends object = {}>(
-  opts: TrpcContextOptions = {},
-): TrpcSolidContext<TRouter, TContext> {
+export function createTrpcContext<
+  TRouter,
+  TContext extends object = {},
+  TLinks extends ChainTypes = {},
+>(opts: TrpcContextOptions = {}): TrpcSolidContext<TRouter, TContext, TLinks> {
   type Value = {
-    client: TrpcClient<RouterOf<TRouter>, TContext>;
-    utils: TrpcQueryUtilsFor<TRouter, TContext>;
+    client: TrpcClient<RouterOf<TRouter>, TContext, undefined, TLinks>;
+    utils: TrpcQueryUtilsFor<TRouter, TContext, TLinks>;
   };
   const Context = createContext<Value | null>(null);
   const use = (): Value => {

@@ -4,8 +4,13 @@ import type {
   FormOf,
   IsAny,
   OutputForm,
+  ProcedureType,
 } from '../internal/types.ts';
-import type { AnyProcedure, Procedure } from '../server/procedure.ts';
+import type {
+  AnyProcedure,
+  Procedure,
+  ProcedureDef,
+} from '../server/procedure.ts';
 import type { Unlazy } from '../server/router.ts';
 import type {
   AnyLink,
@@ -94,6 +99,30 @@ export type CallArgs<TInput, TOpts> = undefined extends TInput
   : [input: TInput, opts?: TOpts];
 
 /**
+ * What a client's links declare besides call options: their own errors,
+ * and the operation types none of them carries.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export interface ChainTypes {
+  readonly errors?: unknown;
+  readonly unsupported?: ProcedureType;
+}
+
+type ChainErrors<T extends ChainTypes> = T extends { errors: infer E }
+  ? E
+  : never;
+
+/** Whether the links can carry procedures of type `T`. @internal */
+export type Carries<T, TLinks extends ChainTypes> = TLinks extends {
+  unsupported: infer U;
+}
+  ? [T] extends [U]
+    ? false
+    : true
+  : true;
+
+/**
  * The client methods for one procedure.
  * @since 12.0.0-alpha.0
  * @stability experimental
@@ -102,44 +131,51 @@ export type DecorateProcedure<
   P,
   TContext extends object = {},
   TForm extends OutputForm | undefined = undefined,
+  TLinks extends ChainTypes = {},
 > =
   P extends Procedure<infer D>
-    ? D['type'] extends 'query'
-      ? {
-          query(
-            ...args: CallArgs<D['input'], CallOptions<TContext>>
-          ): TrpcPromise<
-            ClientValue<
-              D['output'],
-              TForm extends OutputForm ? TForm : FormOf<D>
-            >,
-            ClientError<D['errors']>
-          >;
-        }
-      : D['type'] extends 'mutation'
-        ? {
-            mutate(
-              ...args: CallArgs<D['input'], CallOptions<TContext>>
-            ): TrpcPromise<
-              ClientValue<
-                D['output'],
-                TForm extends OutputForm ? TForm : FormOf<D>
-              >,
-              ClientError<D['errors']>
-            >;
-          }
-        : {
-            subscribe(
-              ...args: CallArgs<D['input'], SubscribeOptions<TContext>>
-            ): TrpcSubscription<
-              ClientValue<
-                D['output'],
-                TForm extends OutputForm ? TForm : FormOf<D>
-              >,
-              ClientError<D['errors']>
-            >;
-          }
+    ? Carries<D['type'], TLinks> extends false
+      ? {}
+      : DecorateCarried<D, TContext, TForm, ChainErrors<TLinks>>
     : never;
+
+type DecorateCarried<
+  D extends ProcedureDef,
+  TContext extends object,
+  TForm extends OutputForm | undefined,
+  TLinkErrors,
+> = D['type'] extends 'query'
+  ? {
+      query(
+        ...args: CallArgs<D['input'], CallOptions<TContext>>
+      ): TrpcPromise<
+        ClientValue<D['output'], TForm extends OutputForm ? TForm : FormOf<D>>,
+        ClientError<D['errors'] | TLinkErrors>
+      >;
+    }
+  : D['type'] extends 'mutation'
+    ? {
+        mutate(
+          ...args: CallArgs<D['input'], CallOptions<TContext>>
+        ): TrpcPromise<
+          ClientValue<
+            D['output'],
+            TForm extends OutputForm ? TForm : FormOf<D>
+          >,
+          ClientError<D['errors'] | TLinkErrors>
+        >;
+      }
+    : {
+        subscribe(
+          ...args: CallArgs<D['input'], SubscribeOptions<TContext>>
+        ): TrpcSubscription<
+          ClientValue<
+            D['output'],
+            TForm extends OutputForm ? TForm : FormOf<D>
+          >,
+          ClientError<D['errors'] | TLinkErrors>
+        >;
+      };
 
 /**
  * The typed client for a router. Outputs follow the serializer the router
@@ -152,10 +188,11 @@ export type TrpcClient<
   TRouter,
   TContext extends object = {},
   TForm extends OutputForm | undefined = undefined,
+  TLinks extends ChainTypes = {},
 > = {
   [K in keyof TRouter]: TRouter[K] extends AnyProcedure
-    ? DecorateProcedure<TRouter[K], TContext, TForm>
-    : TrpcClient<Unlazy<TRouter[K]>, TContext, TForm>;
+    ? DecorateProcedure<TRouter[K], TContext, TForm, TLinks>
+    : TrpcClient<Unlazy<TRouter[K]>, TContext, TForm, TLinks>;
 };
 
 declare const routerTypeBrand: unique symbol;
@@ -226,6 +263,24 @@ export type LinksContext<TLinks extends ReadonlyArray<AnyLink>> = [
         K in keyof UnionToIntersection<DeclContext<DeclOf<TLinks[number]>>>
       ]: UnionToIntersection<DeclContext<DeclOf<TLinks[number]>>>[K];
     };
+
+/**
+ * The errors and unsupported operation types the links in `TLinks` declare.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export type LinksTypes<TLinks extends ReadonlyArray<AnyLink>> = {
+  errors: DeclOf<TLinks[number]> extends infer D
+    ? D extends { errors: infer E }
+      ? E
+      : never
+    : never;
+  unsupported: DeclOf<TLinks[number]> extends infer D
+    ? D extends { unsupported: infer U }
+      ? U
+      : never
+    : never;
+};
 
 type SwitchesOf<TLink> =
   DeclOf<TLink> extends infer D

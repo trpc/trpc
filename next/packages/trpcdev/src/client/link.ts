@@ -121,6 +121,16 @@ export interface LinkDecl {
   context?: object & ReservedCallOptions;
   /** The `switchLink` names in this link, so a name can't be used twice on one path. */
   switches?: string;
+  /**
+   * Errors the link itself fails calls with, such as a `TrpcError.Tagged`
+   * class instance. They join every call's typed union (`defined: true`).
+   */
+  errors?: AnyTrpcError;
+  /**
+   * Operation types the link can't carry. The client has no method for
+   * them: with `'subscription'`, procedures have no `.subscribe()`.
+   */
+  unsupported?: ProcedureType;
 }
 
 /**

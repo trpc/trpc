@@ -35,14 +35,21 @@ import {
 import type {
   CallArgs,
   CallOptions,
+  Carries,
+  ChainTypes,
   ClientError,
   DuplicateSwitchCheck,
   LinksContext,
+  LinksTypes,
   RouterOf,
   SubscribeOptions,
 } from '../client/types.ts';
 import type { ClientValue, FormOf } from '../internal/types.ts';
-import type { AnyProcedure, Procedure } from '../server/procedure.ts';
+import type {
+  AnyProcedure,
+  Procedure,
+  ProcedureDef,
+} from '../server/procedure.ts';
 import type { Unlazy } from '../server/router.ts';
 
 export { link };
@@ -52,45 +59,65 @@ export { link };
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type DecorateEffectProcedure<P, TContext extends object = {}> =
+export type DecorateEffectProcedure<
+  P,
+  TContext extends object = {},
+  TLinks extends ChainTypes = {},
+> =
   P extends Procedure<infer D>
-    ? D['type'] extends 'query'
-      ? {
-          query(
-            ...args: CallArgs<D['input'], CallOptions<TContext>>
-          ): Effect.Effect<
-            ClientValue<D['output'], FormOf<D>>,
-            ClientError<D['errors']>
-          >;
-        }
-      : D['type'] extends 'mutation'
-        ? {
-            mutate(
-              ...args: CallArgs<D['input'], CallOptions<TContext>>
-            ): Effect.Effect<
-              ClientValue<D['output'], FormOf<D>>,
-              ClientError<D['errors']>
-            >;
-          }
-        : {
-            subscribe(
-              ...args: CallArgs<D['input'], SubscribeOptions<TContext>>
-            ): Stream.Stream<
-              ClientValue<D['output'], FormOf<D>>,
-              ClientError<D['errors']>
-            >;
-          }
+    ? Carries<D['type'], TLinks> extends false
+      ? {}
+      : DecorateEffectCarried<
+          D,
+          TContext,
+          TLinks extends { errors: infer E } ? E : never
+        >
     : never;
+
+type DecorateEffectCarried<
+  D extends ProcedureDef,
+  TContext extends object,
+  TLinkErrors,
+> = D['type'] extends 'query'
+  ? {
+      query(
+        ...args: CallArgs<D['input'], CallOptions<TContext>>
+      ): Effect.Effect<
+        ClientValue<D['output'], FormOf<D>>,
+        ClientError<D['errors'] | TLinkErrors>
+      >;
+    }
+  : D['type'] extends 'mutation'
+    ? {
+        mutate(
+          ...args: CallArgs<D['input'], CallOptions<TContext>>
+        ): Effect.Effect<
+          ClientValue<D['output'], FormOf<D>>,
+          ClientError<D['errors'] | TLinkErrors>
+        >;
+      }
+    : {
+        subscribe(
+          ...args: CallArgs<D['input'], SubscribeOptions<TContext>>
+        ): Stream.Stream<
+          ClientValue<D['output'], FormOf<D>>,
+          ClientError<D['errors'] | TLinkErrors>
+        >;
+      };
 
 /**
  * The Effect client for a router.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type EffectClient<TRouter, TContext extends object = {}> = {
+export type EffectClient<
+  TRouter,
+  TContext extends object = {},
+  TLinks extends ChainTypes = {},
+> = {
   [K in keyof TRouter]: TRouter[K] extends AnyProcedure
-    ? DecorateEffectProcedure<TRouter[K], TContext>
-    : EffectClient<Unlazy<TRouter[K]>, TContext>;
+    ? DecorateEffectProcedure<TRouter[K], TContext, TLinks>
+    : EffectClient<Unlazy<TRouter[K]>, TContext, TLinks>;
 };
 
 const METHODS = {
@@ -121,7 +148,7 @@ export function createEffectClient<
   const TLinks extends ReadonlyArray<TrpcLink<any, RouterOf<TSource>>>,
 >(
   opts: TypedClientOptions<TSource, TLinks> & DuplicateSwitchCheck<TLinks>,
-): EffectClient<RouterOf<TSource>, LinksContext<TLinks>>;
+): EffectClient<RouterOf<TSource>, LinksContext<TLinks>, LinksTypes<TLinks>>;
 /**
  * Creates an Effect client from an explicit router type.
  *

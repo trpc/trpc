@@ -39,6 +39,26 @@ const traceLink = link<{ context: { traceId?: string } }>(
 
 Links receive the fields in `op.context`. `signal` and `lastEventId` are reserved: a link declaring either is a type error. With `createTrpcClient<AppRouter>({ links })` (no `router:`), the fields come from the `TrpcClientContext` interface, which you can augment.
 
+A link can also declare the errors it fails calls with, and the operation types it can't carry. Declared errors join every call's typed union (`defined: true`). Procedures of an unsupported type lose their method:
+
+```ts
+class RateLimited extends TrpcError.Tagged('RATE_LIMITED', {
+  data: Schema.Struct({ retryAfter: Schema.Number }),
+}) {}
+
+const rateLimit = link.effect<{ errors: RateLimited }>(({ op, next }) =>
+  budget.take() ? next(op) : Stream.fail(new RateLimited({ retryAfter: 5 })),
+);
+const restOnly = link<{ unsupported: 'subscription' }>(…);
+
+const client = createTrpcClient({ router: routerType<AppRouter>(), links: [rateLimit, restOnly, httpLink({ url })] });
+const [, err] = await safe(client.post.create.mutate(input));
+if (err?.defined && err.code === 'RATE_LIMITED') retryIn(err.data.retryAfter);
+client.onPost.subscribe; // type error: no link carries subscriptions
+```
+
+`splitLink` and `switchLink` lack an operation type only when every branch does. Built-in links carry every type, and their failures (`NETWORK_ERROR`, `CLIENT_CLOSED_REQUEST`) stay in the untyped part of the union. TanStack context helpers take the link types as their third type argument: `createTrpcContext<AppRouter, LinksContext<typeof links>, LinksTypes<typeof links>>()`.
+
 ## Links
 
 - `httpLink({ url, batch?, headers?, init?, fetch?, maxUrlLength?, longQuery?, reconnect? })` sends queries as `GET`, mutations as `POST` and subscriptions as SSE. Outputs with nested promises, async iterables or files stream as JSONL; an unbatched call whose output is a `File` or `Blob` gets it as the raw response body. Inputs holding a `File` or `Blob` go alone as `multipart/form-data`.

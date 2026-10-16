@@ -1,5 +1,6 @@
 import { Effect, Exit, Stream } from 'effect';
 import type { AnyTrpcError } from '../../internal/error.ts';
+import type { ProcedureType } from '../../internal/types.ts';
 import { defaultSerializer } from '../../serializer/index.ts';
 import {
   firstValue,
@@ -32,6 +33,41 @@ export type ChainDecl<T> =
     : T extends TrpcLink<infer D, any>
       ? D
       : never;
+
+type ChainUnsupported<T> =
+  ChainDecl<T> extends infer D
+    ? D extends { unsupported: infer U }
+      ? U
+      : never
+    : never;
+
+type OmitUnsupported<D> = D extends unknown ? Omit<D, 'unsupported'> : never;
+
+type Intersect<U> = (U extends unknown ? (x: U) => void : never) extends (
+  x: infer I,
+) => void
+  ? I
+  : never;
+
+type CommonUnsupported<TBranches extends Record<string, Chain>> =
+  Intersect<
+    {
+      [K in keyof TBranches]: { u: ChainUnsupported<TBranches[K]> };
+    }[keyof TBranches]
+  > extends { u: infer U extends ProcedureType }
+    ? U
+    : never;
+
+/**
+ * What a link that routes to one of several chains declares: what its
+ * chains declare, except that it can't carry only what none of them can.
+ * @internal
+ */
+export type BranchesDecl<TBranches extends Record<string, Chain>> =
+  | OmitUnsupported<ChainDecl<TBranches[keyof TBranches]>>
+  | ([CommonUnsupported<TBranches>] extends [never]
+      ? never
+      : { unsupported: CommonUnsupported<TBranches> });
 
 /**
  * Options for {@link splitLink}.
@@ -74,7 +110,7 @@ export function splitLink<
   TFalse extends Chain = Chain,
 >(
   opts: SplitLinkOptions<TRouter, TTrue, TFalse>,
-): TrpcLink<ChainDecl<TTrue> | ChainDecl<TFalse>, TRouter> {
+): TrpcLink<BranchesDecl<{ true: TTrue; false: TFalse }>, TRouter> {
   const yes = asArray(opts.true);
   const no = asArray(opts.false);
   const split = link.effect(({ op }) =>
