@@ -144,10 +144,11 @@ export class TrpcError<
   static Tagged<
     const TCode extends string,
     TSchema extends AnySchema | undefined = undefined,
+    const TStatus extends number | undefined = undefined,
   >(
     code: TCode,
-    spec: TaggedErrorSpec<TSchema> = {},
-  ): TaggedErrorClass<TCode, TSchema> {
+    spec: TaggedErrorSpec<TSchema, TStatus> = {},
+  ): TaggedErrorClass<TCode, TSchema, TStatus> {
     const hasData = spec.data !== undefined;
     class Tagged extends TrpcError<TCode, unknown> {
       static readonly [TAGGED] = true;
@@ -169,7 +170,7 @@ export class TrpcError<
         });
       }
     }
-    return Tagged as unknown as TaggedErrorClass<TCode, TSchema>;
+    return Tagged as unknown as TaggedErrorClass<TCode, TSchema, TStatus>;
   }
 }
 
@@ -180,11 +181,14 @@ const TAGGED: unique symbol = Symbol.for('trpcdev/TaggedError');
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface TaggedErrorSpec<TSchema> {
+export interface TaggedErrorSpec<
+  TSchema,
+  TStatus extends number | undefined = number | undefined,
+> {
   /** Validates the error's `data`, and documents it in OpenAPI. */
   readonly data?: TSchema;
-  /** @default 400 */
-  readonly status?: number | undefined;
+  /** Kept as a literal type, so the TypeScript OpenAPI generator sees it. @default 400 */
+  readonly status?: TStatus;
   readonly message?: string | undefined;
 }
 
@@ -214,15 +218,21 @@ export type TaggedData<TSchema> = [TSchema] extends [AnySchema]
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface TaggedErrorClass<TCode extends string, TSchema> {
+export interface TaggedErrorClass<
+  TCode extends string,
+  TSchema,
+  TStatus extends number | undefined = number | undefined,
+> {
   new (
     ...args: [TSchema] extends [AnySchema]
       ? [data: OutOf<TSchema>, opts?: TaggedErrorOptions]
       : [opts?: TaggedErrorOptions]
-  ): TrpcError<TCode, TaggedData<TSchema>>;
+  ): TrpcError<TCode, TaggedData<TSchema>> & {
+    readonly status: TStatus extends number ? TStatus : number;
+  };
   readonly code: TCode;
   readonly data: TSchema;
-  readonly status: number | undefined;
+  readonly status: TStatus;
   readonly message: string | undefined;
 }
 

@@ -1,5 +1,10 @@
-import { Effect, Exit, Stream, type Layer } from 'effect';
-import { HttpServerRequest, HttpServerResponse } from 'effect/http';
+import { Context, Effect, Exit, Stream, type Layer } from 'effect';
+import {
+  HttpEffect,
+  HttpServerRequest,
+  HttpServerResponse,
+  type HttpMiddleware,
+} from 'effect/http';
 import type { ContractJson } from '../contract/index.ts';
 import {
   flattenRoutes,
@@ -25,12 +30,13 @@ import {
   normalizeCause,
   unexpectedError,
 } from '../server/execute.ts';
-import type {
-  ContextOption,
-  CreateContextOpts,
-  LayerOption,
-  OnErrorOpts,
-  PlatformArgs,
+import {
+  CurrentPlatform,
+  type ContextOption,
+  type CreateContextOpts,
+  type LayerOption,
+  type OnErrorOpts,
+  type PlatformArgs,
 } from '../server/fetch.ts';
 import type { AnyProcedure, Route } from '../server/procedure.ts';
 import {
@@ -50,30 +56,6 @@ import {
   usesQuery,
   type ResolvedRoute,
 } from './routes.ts';
-
-/**
- * What an {@link OpenApiPlugin} receives.
- * @since 12.0.0-alpha.0
- * @stability experimental
- */
-export interface OpenApiPluginContext {
-  readonly router: AnyRouter;
-  /** The handler's normalized prefix: `''` or `/api`. */
-  readonly prefix: string;
-}
-
-/**
- * Extends the OpenAPI handler, e.g. {@link openApiReference}. A plugin sees
- * each request first and may answer it.
- * @since 12.0.0-alpha.0
- * @stability experimental
- */
-export interface OpenApiPlugin {
-  fetch?(
-    request: Request,
-    ctx: OpenApiPluginContext,
-  ): MaybePromise<Response | undefined>;
-}
 
 /**
  * Options shared by every OpenAPI handler.
@@ -99,7 +81,15 @@ export interface BaseOpenApiHandlerOptions<TRouter extends AnyRouter> {
   exposeUnexpectedErrors?: boolean;
   /** Called for every error, with the original cause. */
   onError?: (opts: OnErrorOpts) => void;
-  plugins?: ReadonlyArray<OpenApiPlugin>;
+  /**
+   * Effect HTTP middleware around the handler, outermost first, e.g.
+   * {@link openApiReference} or `cors()`.
+   * @example
+   * ```ts
+   * middleware: [cors(), openApiReference({ router: appRouter, specGenerateOptions })],
+   * ```
+   */
+  middleware?: ReadonlyArray<HttpMiddleware.HttpMiddleware>;
   sse?: {
     /**
      * Send a comment line this often while a subscription is quiet, so
@@ -192,7 +182,7 @@ const specificity = (route: ResolvedRoute) =>
  * const openapi = createOpenApiHandler({
  *   router: appRouter,
  *   createContext,
- *   plugins: [openApiReference({ specGenerateOptions: { info: { title: 'API', version: '1.0.0' } } })],
+ *   middleware: [openApiReference({ router: appRouter, specGenerateOptions: { info: { title: 'API', version: '1.0.0' } } })],
  * });
  * // GET /api/posts/1, GET /api/docs, GET /api/openapi.json
  * ```
@@ -223,7 +213,6 @@ export function createOpenApiHandler<
   const prefix = normalizePrefix(opts.prefix);
   const maxBodySize = opts.maxBodySize ?? 1_048_576;
   const ssePingMs = opts.sse?.pingMs ?? 15_000;
-  const plugins = opts.plugins ?? [];
 
   const makeEntry = (
     path: string,
@@ -554,53 +543,71 @@ export function createOpenApiHandler<
     );
   }
 
-  const handler: OpenApiHandler<unknown> = {
-    async fetch(request, platform) {
-      if (platform !== undefined) platforms.set(request, platform);
-      const url = new URL(request.url);
-      try {
-        if (startup) {
-          await startup;
-          startup = undefined;
-        }
-        await loadFor(url.pathname);
-        for (const plugin of plugins) {
-          const answer = await plugin.fetch?.(request, {
-            router: opts.router,
-            prefix,
-          });
-          if (answer) return answer;
-        }
-        let allowed = false;
-        for (const entry of entries) {
-          const params = entry.match(url.pathname);
-          if (!params) continue;
-          if (entry.route.method !== request.method) {
-            allowed = true;
-            continue;
-          }
-          try {
-            return await serve(request, url, entry, params);
-          } catch (cause) {
-            const err = isTrpcError(cause) ? cause : unexpectedError(cause);
-            base.report(err, httpOf(request), entry.path, entry.type);
-            return fail(err);
-          }
-        }
-        throw new TrpcError(
-          allowed
-            ? {
-                code: 'METHOD_NOT_SUPPORTED',
-                message: `${request.method} is not supported for ${url.pathname}`,
-              }
-            : { code: 'NOT_FOUND', message: `Not found: ${url.pathname}` },
-        );
-      } catch (cause) {
-        const err = isTrpcError(cause) ? cause : unexpectedError(cause);
-        base.report(err, httpOf(request));
-        return fail(err);
+  async function serveWeb(request: Request): Promise<Response> {
+    const url = new URL(request.url);
+    try {
+      if (startup) {
+        await startup;
+        startup = undefined;
       }
-    },
+      await loadFor(url.pathname);
+      let allowed = false;
+      for (const entry of entries) {
+        const params = entry.match(url.pathname);
+        if (!params) continue;
+        if (entry.route.method !== request.method) {
+          allowed = true;
+          continue;
+        }
+        try {
+          return await serve(request, url, entry, params);
+        } catch (cause) {
+          const err = isTrpcError(cause) ? cause : unexpectedError(cause);
+          base.report(err, httpOf(request), entry.path, entry.type);
+          return fail(err);
+        }
+      }
+      throw new TrpcError(
+        allowed
+          ? {
+              code: 'METHOD_NOT_SUPPORTED',
+              message: `${request.method} is not supported for ${url.pathname}`,
+            }
+          : { code: 'NOT_FOUND', message: `Not found: ${url.pathname}` },
+      );
+    } catch (cause) {
+      const err = isTrpcError(cause) ? cause : unexpectedError(cause);
+      base.report(err, httpOf(request));
+      return fail(err);
+    }
+  }
+
+  const app = Effect.gen(function* () {
+    const http = yield* HttpServerRequest.HttpServerRequest;
+    const platform = yield* CurrentPlatform;
+    const request =
+      http.source instanceof Request
+        ? http.source
+        : yield* HttpServerRequest.toWeb(http);
+    httpRequests.set(request, http);
+    if (platform !== undefined) platforms.set(request, platform);
+    return HttpServerResponse.fromWeb(
+      yield* Effect.promise(() => serveWeb(request)),
+    );
+  });
+  const served = (opts.middleware ?? []).reduceRight<
+    Effect.Effect<HttpServerResponse.HttpServerResponse, any, any>
+  >((inner, m) => m(inner), app);
+  const webHandler = HttpEffect.toWebHandler(served as never);
+
+  const handler: OpenApiHandler<unknown> = {
+    fetch: (request, platform) =>
+      webHandler(
+        request,
+        platform === undefined
+          ? undefined
+          : (Context.make(CurrentPlatform, platform) as Context.Context<never>),
+      ),
     dispose: base.dispose,
   };
   return handler as OpenApiHandler<TPlatform>;

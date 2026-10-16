@@ -24,14 +24,17 @@ const create = t.procedure
 ## The handler
 
 ```ts
+import { cors } from 'trpcdev/http';
 import { createOpenApiHandler, openApiReference } from 'trpcdev/openapi';
 
 const openapi = createOpenApiHandler({
   router: appRouter,
   createContext,
   layer,
-  plugins: [
+  middleware: [
+    cors(),
     openApiReference({
+      router: appRouter,
       specGenerateOptions: { info: { title: 'API', version: '1.0.0' } },
     }),
   ],
@@ -39,7 +42,13 @@ const openapi = createOpenApiHandler({
 // GET /api/posts/1, GET /api/docs (Scalar), GET /api/openapi.json
 ```
 
-`prefix` defaults to `/api`. `openApiReference({ docsProvider: 'swagger' })` serves Swagger UI instead; `path` and `specPath` move the two pages. Like the RPC handler, it has `fetch(request)` and `dispose()`.
+`prefix` defaults to `/api`. Like the RPC handler, it has `fetch(request)` and `dispose()`, and `middleware` takes Effect HTTP middleware, outermost first.
+
+`openApiReference()` is middleware too, so it also works on `createFetchHandler` or any `effect/http` app. It answers `GET /api/docs` and `GET /api/openapi.json` and passes other requests through:
+
+- `docsProvider: 'swagger'` serves Swagger UI instead of Scalar; `path` and `specPath` move the two pages.
+- `{ router, specGenerateOptions }` generates the document on the first request. `{ document }` serves one you built, e.g. with the TypeScript generator below; it can be a function.
+- Without `servers`, the document lists the request's origin.
 
 ## Input
 
@@ -97,6 +106,40 @@ const doc = generateOpenApi(await loadRouter(appRouter), {
 ```
 
 The document has schemas for input, output and each declared error. `filter({ path, procedure })` drops operations. `target: 'rpc'` describes the RPC endpoint instead of the REST routes. `generateOpenApi` throws on a lazy subtree that hasn't loaded, so pass the result of `loadRouter()`.
+
+### From the types
+
+`generateOpenApi` only sees runtime schemas. `generateOpenApiFromTypes` from `trpcdev/openapi/typescript` also reads the router's types with the TypeScript 7 compiler, so it documents:
+
+- errors that are only inferred (returned with `error()`, failed or yielded in an Effect), never declared, with their status: a `TrpcError.Tagged` class's literal `status`, the built-in code's status, or `400`;
+- the input and output of procedures without static schemas (no `.output()`, or a ctx-callback input).
+
+```ts
+// scripts/openapi.ts, run at build time
+import { generateOpenApiFromTypes } from 'trpcdev/openapi/typescript';
+import { appRouter } from '../src/router.ts';
+
+const doc = await generateOpenApiFromTypes(appRouter, {
+  file: new URL('../src/router.ts', import.meta.url),
+  exportName: 'appRouter', // the default
+  info: { title: 'API', version: '1.0.0' },
+});
+await fs.writeFile('openapi.json', JSON.stringify(doc, null, 2));
+
+// server
+import doc from './openapi.json' with { type: 'json' };
+openApiReference({ document: doc as OpenApiDocument });
+```
+
+Where a procedure has a runtime schema, that schema wins, so the two generators agree. Types become JSON Schema the way `JSON.stringify` sends them:
+
+- `Date` is a `date-time` string, and `toJSON()` is followed.
+- Functions, symbols, `bigint` and `undefined` are left out; optional properties aren't `required`.
+- Branded primitives (`string & { __brand }`) are their primitive.
+- Recursive types become `components.schemas`.
+- JSDoc comments become `description`s.
+
+`typescript` (7.x) is an optional peer dependency, needed only where this runs. `tsconfig` picks the project; it defaults to the nearest one that includes `file`.
 
 An output declared with `.output(schema, { validate: false })` isn't validated. The document then describes the schema's input side, which is what the resolver returns.
 

@@ -205,20 +205,52 @@ const rpcWrap = (schema: JsonSchema | undefined): Schema => ({
   required: ['json'],
 });
 
+/**
+ * What the TypeScript-based generator read from a procedure's types. The
+ * runtime schemas win; these fill the gaps.
+ * @internal
+ */
+export interface InferredTypes {
+  readonly input?: JsonSchema | undefined;
+  readonly output?: JsonSchema | undefined;
+  readonly errors: ReadonlyArray<{
+    readonly code: string;
+    readonly status: number;
+    readonly data?: JsonSchema | undefined;
+  }>;
+}
+
 function errorResponses(
   def: ProcedureInternals,
   scope: string,
   components: Record<string, JsonSchema>,
   hasInput: boolean,
   target: 'openapi' | 'rpc',
+  inferred: InferredTypes['errors'],
 ): Record<string, Record<string, unknown>> {
   const byStatus = new Map<number, Schema[]>();
   const add = (status: number, schema: Schema) =>
     byStatus.set(status, [...(byStatus.get(status) ?? []), schema]);
-  if (hasInput) add(400, errorSchema('BAD_REQUEST', 400, VALIDATION_DATA));
+  const codes = new Set(Object.keys(def.errors));
+  if (hasInput) {
+    codes.add('BAD_REQUEST');
+    add(400, errorSchema('BAD_REQUEST', 400, VALIDATION_DATA));
+  }
+  for (const e of inferred) {
+    if (codes.has(e.code)) continue;
+    codes.add(e.code);
+    add(
+      e.status,
+      errorSchema(
+        e.code,
+        e.status,
+        hoist(e.data, `${scope}.${e.code}`, components),
+      ),
+    );
+  }
   for (const [code, spec] of Object.entries(def.errors)) {
     const status =
-      spec.status ?? (ERROR_STATUS as Record<string, number>)[code] ?? 500;
+      spec.status ?? (ERROR_STATUS as Record<string, number>)[code] ?? 400;
     const data = spec.data
       ? hoist(toJsonSchema(spec.data, 'output'), `${scope}.${code}`, components)
       : undefined;
@@ -287,6 +319,15 @@ export function generateOpenApi(
   router: object,
   opts: GenerateOpenApiOptions,
 ): OpenApiDocument {
+  return generateDocument(router, opts);
+}
+
+/** {@link generateOpenApi}, with types read by `trpcdev/openapi/typescript`. @internal */
+export function generateDocument(
+  router: object,
+  opts: GenerateOpenApiOptions,
+  infer?: (path: string) => InferredTypes | undefined,
+): OpenApiDocument {
   const target = opts.target ?? 'openapi';
   const prefix =
     target === 'rpc'
@@ -316,8 +357,13 @@ export function generateOpenApi(
       target === 'rpc'
         ? resolveRoute(path, def.type, { path: `/${path}` }, prefix)
         : resolveRoute(path, def.type, scoped, prefix);
-    const input = hoist(inputJsonSchema(def), `${path}.input`, components);
-    const rawOutput = outputJsonSchema(def);
+    const types = infer?.(path);
+    const input = hoist(
+      inputJsonSchema(def) ?? types?.input,
+      `${path}.input`,
+      components,
+    );
+    const rawOutput = outputJsonSchema(def) ?? types?.output;
     const detailedIn =
       target === 'openapi' && route.inputStructure === 'detailed';
     const detailedOut =
@@ -440,7 +486,14 @@ export function generateOpenApi(
       ...(requestBody ? { requestBody } : {}),
       responses: {
         [String(target === 'rpc' ? 200 : route.successStatus)]: success,
-        ...errorResponses(def, path, components, input !== undefined, target),
+        ...errorResponses(
+          def,
+          path,
+          components,
+          input !== undefined,
+          target,
+          types?.errors ?? [],
+        ),
       },
     };
     const methods = (paths[route.path] ??= {});

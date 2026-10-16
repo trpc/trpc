@@ -157,15 +157,19 @@ async function serve(opts: { expose?: boolean } = {}) {
     createContext,
     layer,
     exposeUnexpectedErrors: opts.expose ?? true,
-    plugins: [
+    middleware: [
       openApiReference({
+        router,
         specGenerateOptions: { info: { title: 'Posts API', version: '1.0.0' } },
       }),
       openApiReference({
-        path: '/swagger',
-        specPath: '/swagger.json',
+        path: '/api/swagger',
+        specPath: '/api/swagger.json',
         docsProvider: 'swagger',
-        specGenerateOptions: { info: { title: 'Posts API', version: '1.0.0' } },
+        document: () =>
+          generateOpenApi(router, {
+            info: { title: 'Posts API', version: '1.0.0' },
+          }),
       }),
     ],
   });
@@ -598,7 +602,7 @@ test('a contract alone is enough to document an API', () => {
   );
 });
 
-test('openApiReference serves Scalar or Swagger UI and the document (18 (e))', async () => {
+test('openApiReference middleware serves Scalar or Swagger UI and the document (18 (e), 21)', async () => {
   await using s = await serve();
   const html = await (await s.api('/docs')).text();
   expect(html).toContain('data-url="/api/openapi.json"');

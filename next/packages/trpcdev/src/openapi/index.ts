@@ -15,7 +15,7 @@
  *
  * export const openapi = createOpenApiHandler({
  *   router: appRouter,
- *   plugins: [openApiReference({ specGenerateOptions: { info: { title: 'API', version: '1.0.0' } } })],
+ *   middleware: [openApiReference({ router: appRouter, specGenerateOptions: { info: { title: 'API', version: '1.0.0' } } })],
  * });
  * // GET /api/posts/1 → 200 { id, title } or 404 { defined, code: 'NOT_FOUND', data: { id } }
  * ```
@@ -38,8 +38,6 @@ export {
   type BaseOpenApiHandlerOptions,
   type OpenApiHandler,
   type OpenApiHandlerOptions,
-  type OpenApiPlugin,
-  type OpenApiPluginContext,
 } from './handler.ts';
 export { openApiLink, type OpenApiLinkOptions } from './link.ts';
 export { openApiReference, type OpenApiReferenceOptions } from './reference.ts';

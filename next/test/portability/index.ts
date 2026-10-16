@@ -231,8 +231,9 @@ export const contractClient = createTrpcClient({
 export const openapi = createOpenApiHandler({
   router: userRouter,
   createContext: () => ({ user: null }),
-  plugins: [
+  middleware: [
     openApiReference({
+      router: userRouter,
       specGenerateOptions: { info: { title: 'Users', version: '1.0.0' } },
     }),
   ],

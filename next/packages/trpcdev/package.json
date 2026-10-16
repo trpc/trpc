@@ -32,6 +32,10 @@
       "types": "./src/openapi/index.ts",
       "default": "./src/openapi/index.ts"
     },
+    "./openapi/typescript": {
+      "types": "./src/openapi/typescript.ts",
+      "default": "./src/openapi/typescript.ts"
+    },
     "./effect": {
       "types": "./src/effect/index.ts",
       "default": "./src/effect/index.ts"
@@ -67,5 +71,13 @@
   "devDependencies": {
     "typescript": "^7.0.2",
     "vite-plus": "1.1.0"
+  },
+  "peerDependencies": {
+    "typescript": "^7.0.2"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
   }
 }

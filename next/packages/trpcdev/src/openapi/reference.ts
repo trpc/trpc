@@ -1,35 +1,56 @@
+import { Effect, Option } from 'effect';
+import {
+  HttpServerRequest,
+  HttpServerResponse,
+  type HttpMiddleware,
+} from 'effect/http';
+import type { MaybePromise } from '../internal/types.ts';
+import { loadRouter } from '../server/router.ts';
 import {
   generateOpenApi,
   type GenerateOpenApiOptions,
   type OpenApiDocument,
 } from './generate.ts';
-import type { OpenApiPlugin } from './handler.ts';
-import { loadRouter } from '../server/router.ts';
 
 /**
- * The options of {@link openApiReference}.
+ * The options of {@link openApiReference}: the document comes from a router
+ * (generated on the first request) or is given, e.g. from
+ * `generateOpenApiFromTypes()` at build time.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface OpenApiReferenceOptions {
+export type OpenApiReferenceOptions = {
   /**
-   * Where the docs UI is served, under the handler's prefix.
-   * @default '/docs'
+   * Where the docs UI is served.
+   * @default '/api/docs'
    */
   path?: `/${string}`;
   /**
-   * Where the document is served, under the handler's prefix.
-   * @default '/openapi.json'
+   * Where the document is served.
+   * @default '/api/openapi.json'
    */
   specPath?: `/${string}`;
   /** @default 'scalar' */
   docsProvider?: 'scalar' | 'swagger';
   /**
-   * Options for {@link generateOpenApi}. `servers` defaults to the request's
-   * origin; `prefix` to the handler's.
+   * The page title.
+   * @default the document's `info.title`
    */
-  specGenerateOptions: GenerateOpenApiOptions;
-}
+  title?: string;
+} & (
+  | {
+      router: object;
+      /** `servers` defaults to the request's origin. */
+      specGenerateOptions: GenerateOpenApiOptions;
+      document?: never;
+    }
+  | {
+      /** Without `servers`, the request's origin is used. */
+      document: OpenApiDocument | (() => MaybePromise<OpenApiDocument>);
+      router?: never;
+      specGenerateOptions?: never;
+    }
+);
 
 const escapeHtml = (s: string) =>
   s.replace(
@@ -52,17 +73,26 @@ function page(
   return `${head}</head><body><script id="api-reference" data-url="${escapeHtml(specUrl)}"></script><script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script></body></html>`;
 }
 
+const urlOf = (request: HttpServerRequest.HttpServerRequest) =>
+  request.source instanceof Request
+    ? new URL(request.source.url)
+    : Option.getOrUndefined(HttpServerRequest.toURL(request));
+
 /**
  * Serves an API reference UI (Scalar by default, or Swagger UI, from a CDN)
- * and the OpenAPI document, as a plugin of {@link createOpenApiHandler}
- * (18 (e)). The document is generated once, on the first request.
+ * and the OpenAPI document, as Effect HTTP middleware for
+ * `createOpenApiHandler`, `createFetchHandler` or any `effect/http` app.
+ * Other requests pass through.
  *
  * @example
  * ```ts
  * createOpenApiHandler({
  *   router: appRouter,
- *   plugins: [
- *     openApiReference({ specGenerateOptions: { info: { title: 'API', version: '1.0.0' } } }),
+ *   middleware: [
+ *     openApiReference({
+ *       router: appRouter,
+ *       specGenerateOptions: { info: { title: 'API', version: '1.0.0' } },
+ *     }),
  *   ],
  * });
  * // GET /api/docs (UI), GET /api/openapi.json (document)
@@ -70,38 +100,56 @@ function page(
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export function openApiReference(opts: OpenApiReferenceOptions): OpenApiPlugin {
-  const docsPath = opts.path ?? '/docs';
-  const specPath = opts.specPath ?? '/openapi.json';
-  let spec: Omit<OpenApiDocument, 'servers'> | undefined;
-  return {
-    async fetch(request, { router, prefix }) {
-      if (request.method !== 'GET') return undefined;
-      const url = new URL(request.url);
-      if (url.pathname === `${prefix}${specPath}`) {
-        spec ??= generateOpenApi(await loadRouter(router), {
-          prefix,
-          ...opts.specGenerateOptions,
-        });
-        const document = {
-          ...spec,
-          servers: opts.specGenerateOptions.servers ?? [{ url: url.origin }],
-        };
-        return new Response(JSON.stringify(document), {
-          headers: { 'content-type': 'application/json' },
-        });
+export function openApiReference(
+  opts: OpenApiReferenceOptions,
+): HttpMiddleware.HttpMiddleware {
+  const docsPath = opts.path ?? '/api/docs';
+  const specPath = opts.specPath ?? '/api/openapi.json';
+  let cached: Promise<OpenApiDocument> | undefined;
+  const load = (): Promise<OpenApiDocument> => {
+    cached ??= (async () => {
+      if (opts.document) {
+        return typeof opts.document === 'function'
+          ? opts.document()
+          : opts.document;
       }
-      if (url.pathname === `${prefix}${docsPath}`) {
-        return new Response(
-          page(
-            opts.docsProvider ?? 'scalar',
-            opts.specGenerateOptions.info.title,
-            `${prefix}${specPath}`,
-          ),
-          { headers: { 'content-type': 'text/html; charset=utf-8' } },
+      return generateOpenApi(
+        await loadRouter(opts.router as never),
+        opts.specGenerateOptions!,
+      );
+    })();
+    cached.catch(() => (cached = undefined));
+    return cached;
+  };
+  const title = (): Effect.Effect<string> => {
+    const known = opts.title ?? opts.specGenerateOptions?.info.title;
+    return known === undefined
+      ? Effect.map(Effect.promise(load), (doc) => doc.info.title)
+      : Effect.succeed(known);
+  };
+
+  return ((
+    app: Effect.Effect<HttpServerResponse.HttpServerResponse, unknown, unknown>,
+  ) =>
+    Effect.flatMap(HttpServerRequest.HttpServerRequest, (request) => {
+      if (request.method !== 'GET') return app;
+      const url = urlOf(request);
+      if (url?.pathname === specPath) {
+        return Effect.map(Effect.promise(load), (doc) =>
+          HttpServerResponse.jsonUnsafe({
+            ...doc,
+            servers: doc.servers ?? [{ url: url.origin }],
+          }),
         );
       }
-      return undefined;
-    },
-  };
+      if (url?.pathname === docsPath) {
+        return Effect.map(title(), (resolved) =>
+          HttpServerResponse.text(
+            page(opts.docsProvider ?? 'scalar', resolved, specPath),
+            { contentType: 'text/html; charset=utf-8' },
+          ),
+        );
+      }
+      return app;
+    })) as HttpMiddleware.HttpMiddleware;
 }
