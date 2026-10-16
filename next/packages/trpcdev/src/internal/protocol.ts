@@ -85,6 +85,8 @@ export type ClientMessage =
       path: string;
       input?: unknown;
       lastEventId?: string | undefined;
+      /** The client span's trace context (`traceparent`, `b3`), when it propagates one. */
+      trace?: Record<string, string> | undefined;
     }
   | { id: number; type: 'abort' }
   | { type: 'ping' };

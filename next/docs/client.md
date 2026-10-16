@@ -167,7 +167,7 @@ const post = yield * client.post.byId.query({ id });
 
 ## Tracing
 
-Every call runs in an Effect span named `trpc.<path>` (kind `client`), with `rpc.method`, `trpc.type` and `trpc.error.code` on failure. When an Effect tracer is installed, `httpLink` sends the span as `traceparent` and `b3` headers, and the server's `trpc.<path>` span joins the same trace:
+Every call runs in an Effect span named `trpc.<path>` (kind `client`), with `rpc.method`, `trpc.type` and `trpc.error.code` on failure. When an Effect tracer is installed, `httpLink` sends the span as `traceparent` and `b3` headers (`wsLink` and `messagePortLink` put them in each request message's `trace` field), and the server's `trpc.<path>` span joins the same trace:
 
 ```ts
 import { NodeSdk } from '@effect/opentelemetry';
@@ -178,7 +178,7 @@ const program = client.post.byId
 await Effect.runPromise(program.pipe(Effect.provide(NodeSdk.layer(otel))));
 ```
 
-With no tracer (the Promise client, or Effect's default), no headers are sent, so simple requests stay free of CORS preflights. `Effect.provideService(Tracer.DisablePropagation, true)` keeps the spans and drops the headers.
+With no tracer (the Promise client, or Effect's default), no headers or `trace` fields are sent, so simple requests stay free of CORS preflights. `Effect.provideService(Tracer.DisablePropagation, true)` keeps the spans and drops the headers.
 
 ## Integrations
 

@@ -334,6 +334,7 @@ function socketLink(
       ? {}
       : { input: serializeInput(serializer, op.input) }),
     ...(lastEventId === undefined ? {} : { lastEventId }),
+    ...(op.trace === undefined ? {} : { trace: { ...op.trace } }),
   });
 
   /**

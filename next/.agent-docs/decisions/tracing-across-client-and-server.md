@@ -6,6 +6,7 @@
 - (agent) Promise clients run on the native tracer, so they open spans but don't propagate. Exporting needs the Effect client (`trpcdev/effect`) run with a tracer layer, or an Effect program that provides one.
 - (agent) Server: calls are parented to the request's `http.server` span (Effect's `HttpEffect` creates it from `traceparent`), or, on a bare `handler.fetch`, to the incoming `traceparent`/`b3` header. Calls run in the handler's runtime, so the parent is passed explicitly (`RunOpts.parent`).
 - (agent) WebSocket calls aren't parented: one connection carries many calls and there is no per-message header. Later: a `trace` field on WS messages if someone needs it.
+- (agent) That `trace` field is built ([`socket-trace-field.md`](./socket-trace-field.md)).
 - Why: one trace from browser to resolver with Effect's own APIs; the only trpcdev code is span naming and header plumbing.
 - Lost: always-on propagation like Effect's `HttpClient` default, and tracing on the Promise client without Effect.
-- Lives in: `packages/trpcdev/src/client/link.ts` (`runOperation`), `src/client/links/http.ts`, `src/server/core.ts`, `src/server/fetch.ts` (`parentSpan`), `test/integration/tracing.test.ts`, `docs/procedures.md` (Tracing), `docs/client.md` (Tracing).
+- Lives in: `packages/trpcdev/src/client/link.ts` (`runOperation`), `src/client/links/http.ts`, `src/server/core.ts`, `src/server/fetch.ts` (`parentSpan`), `src/server/socket.ts` (`traceParent`), `src/client/links/socket.ts`, `test/integration/tracing.test.ts`, `docs/procedures.md` (Tracing), `docs/client.md` (Tracing).

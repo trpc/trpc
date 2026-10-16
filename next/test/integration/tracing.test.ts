@@ -1,5 +1,5 @@
 import { Effect, Layer, Option, Tracer } from 'effect';
-import { createTrpcClient, httpLink } from 'trpcdev/client';
+import { createTrpcClient, httpLink, wsLink } from 'trpcdev/client';
 import { createEffectClient } from 'trpcdev/effect';
 import { createFetchHandler, error, initTrpc } from 'trpcdev/server';
 import { expect, test } from 'vite-plus/test';
@@ -60,6 +60,33 @@ test('client and server spans share a trace through traceparent', async () => {
 
   const handled = server.named('trpc.post', 'server')!;
   expect(handled.traceId).toBe(call.traceId);
+});
+
+test('a WebSocket call carries its trace context, so the server span joins the trace', async () => {
+  const server = recorder();
+  await using http = await createTestServer({
+    router,
+    layer: Layer.succeed(Tracer.Tracer, server.tracer),
+  });
+  await using ws = wsLink({ url: http.wsUrl });
+  const client = recorder();
+  const trpc = createEffectClient({ router, links: [ws] });
+
+  await Effect.runPromise(
+    Effect.gen(function* () {
+      yield* trpc.post.query({ id: '1' });
+      yield* trpc.post.query({ id: '2' });
+    }).pipe(Effect.withTracer(client.tracer)),
+  );
+
+  const calls = client.spans.filter((s) => s.name === 'trpc.post');
+  const handled = server.spans.filter((s) => s.name === 'trpc.post');
+  expect(handled).toHaveLength(2);
+  for (const [i, span] of handled.entries()) {
+    expect(span.traceId).toBe(calls[i]!.traceId);
+    expect(Option.getOrUndefined(span.parent)?.spanId).toBe(calls[i]!.spanId);
+  }
+  expect(calls[0]!.traceId).not.toBe(calls[1]!.traceId);
 });
 
 test('a failed call records the error code on the client span', async () => {

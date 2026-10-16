@@ -1,5 +1,5 @@
-import { Context, Effect, Exit, Stream } from 'effect';
-import type { HttpServerRequest } from 'effect/http';
+import { Context, Effect, Exit, Option, Stream, type Tracer } from 'effect';
+import { Headers, HttpTraceContext, type HttpServerRequest } from 'effect/http';
 import {
   HibernationSlot,
   type ParkedSubscription,
@@ -26,6 +26,21 @@ import {
 import type { ResponseHandle } from './middleware.ts';
 import type { AnyProcedure } from './procedure.ts';
 import { resolveProcedure, type AnyRouter } from './router.ts';
+
+/** The span a socket call is a child of: the trace context in its message. */
+const traceParent = (trace: unknown): Tracer.AnySpan | undefined =>
+  typeof trace === 'object' && trace !== null
+    ? Option.getOrUndefined(
+        HttpTraceContext.fromHeaders(
+          Headers.fromInput(
+            Object.entries(trace).filter(
+              (entry): entry is [string, string] =>
+                typeof entry[1] === 'string',
+            ),
+          ),
+        ),
+      )
+    : undefined;
 
 /**
  * The parts of a standard `WebSocket` the handler uses: the server-side
@@ -77,6 +92,7 @@ export interface SocketCore {
     lastEventId?: string | undefined;
     services?: Context.Context<never> | undefined;
     request?: HttpServerRequest.HttpServerRequest | undefined;
+    parent?: Tracer.AnySpan | undefined;
   }): Promise<Exit.Exit<unknown, AnyTrpcError>>;
   makeContext(opts: {
     request: HttpServerRequest.HttpServerRequest;
@@ -396,6 +412,7 @@ export function connectionReceiver(
         response: createResponseHandle(),
         lastEventId: message.lastEventId,
         services,
+        parent: traceParent(message.trace),
       });
       if (!live()) return;
       if (Exit.isFailure(exit)) {

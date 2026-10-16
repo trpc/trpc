@@ -339,7 +339,7 @@ const withUser = t.middleware.effect<{ provides: CurrentUser }>()(
 );
 ```
 
-Every call runs in an Effect span named `trpc.<path>`, with `rpc.system`, `rpc.method` and `trpc.type` attributes, plus `trpc.error.code` when it fails. Spans opened in resolvers nest under it. Put an OpenTelemetry tracer in the handler's `layer` (`@effect/opentelemetry`) to export them. The span continues the request's trace: the `http.server` span on Effect HTTP servers, or the incoming `traceparent` header on `handler.fetch`, so a traced client and the server share one trace ([Client](./client.md#tracing)). WebSocket calls start their own trace.
+Every call runs in an Effect span named `trpc.<path>`, with `rpc.system`, `rpc.method` and `trpc.type` attributes, plus `trpc.error.code` when it fails. Spans opened in resolvers nest under it. Put an OpenTelemetry tracer in the handler's `layer` (`@effect/opentelemetry`) to export them. The span continues the request's trace: the `http.server` span on Effect HTTP servers, or the incoming `traceparent` header on `handler.fetch`, so a traced client and the server share one trace ([Client](./client.md#tracing)). A WebSocket or MessagePort call continues the trace in its message's `trace` field, and starts its own trace without one.
 
 ### Work after the response
 
