@@ -182,7 +182,7 @@ const client = createTRPCClient<AppRouter>({
 });
 ```
 
-> **Build (2026-10-11):** `@trpc12/trpc` no longer imports `node:*`. `@trpc12/trpc/http` serves the fetch handler (and WebSocket upgrades) on Effect's `HttpServer`, and the app provides the platform layer, e.g. `NodeHttpServer.layer` from `@effect/platform-node`: [platforms-through-effect-layers](../decisions/platforms-through-effect-layers.md). Q12.1 is still for a human to answer.
+> **Build (2026-10-11):** `@trpc12/trpc` no longer imports `node:*`. `@trpc12/trpc/http` serves the fetch handler (and WebSocket upgrades) on Effect's `HttpServer`, and the app provides the platform layer, e.g. `NodeHttpServer.layer` from `@effect/platform-node`: [platforms-through-effect-layers](../decisions/platforms-through-effect-layers.md). A human answered Q12.1 on 2026-10-15: [http-core-on-effect-http](../decisions/http-core-on-effect-http.md).
 
 ## Recommendation
 
