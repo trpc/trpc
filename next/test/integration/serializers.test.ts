@@ -5,6 +5,7 @@ import {
   getClientSerializer,
   httpLink,
   routerType,
+  safe,
   wsLink,
 } from 'trpcdev/client';
 import {
@@ -185,6 +186,41 @@ test('no serializer: plain JSON, JSON-form client types, ?input= GET params', as
     { n: 1, at: at.toJSON() },
     { n: 2, at: at.toJSON() },
   ]);
+});
+
+test('error data follows the serializer like outputs', async () => {
+  const expired = <F extends OutputForm>(t: TrpcRoot<{}, {}, F>) => ({
+    expired: t.procedure.query(
+      () => new TrpcError({ code: 'EXPIRED', status: 410, data: { at } }),
+    ),
+  });
+  const plain = expired(initTrpc<{ serializer: typeof jsonSerializer }>());
+  await using server = await createTestServer({
+    router: plain,
+    serializer: jsonSerializer,
+  });
+  const client = createTrpcClient({
+    router: routerType<typeof plain>(),
+    links: [httpLink({ url: server.url, serializer: jsonSerializer })],
+  });
+  const [, err] = await safe(client.expired.query());
+  if (err?.defined && err.code === 'EXPIRED') {
+    expectTypeOf(err.data).toEqualTypeOf<{ at: string }>();
+  }
+  expect(err).toMatchObject({ code: 'EXPIRED', data: { at: at.toJSON() } });
+
+  const native = expired(initTrpc());
+  await using danson = await createTestServer({ router: native });
+  const nativeClient = createTrpcClient({
+    router: routerType<typeof native>(),
+    links: [httpLink({ url: danson.url })],
+  });
+  const [, nativeErr] = await safe(nativeClient.expired.query());
+  if (nativeErr?.defined && nativeErr.code === 'EXPIRED') {
+    expectTypeOf(nativeErr.data).toEqualTypeOf<{ at: Date }>();
+    expect(nativeErr.data.at).toBeInstanceOf(Date);
+  }
+  expect(nativeErr?.defined).toBe(true);
 });
 
 const superjsonSerializer = createSyncSerializer<

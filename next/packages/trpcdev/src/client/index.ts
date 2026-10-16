@@ -79,6 +79,7 @@ export {
   type ClientError,
   type DecorateProcedure,
   type DefinedError,
+  type ErrorData,
   type ChainTypes,
   type LinksContext,
   type LinksTypes,

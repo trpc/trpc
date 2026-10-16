@@ -15,5 +15,5 @@
   - Calls are `{ id, type: 'request', method, path, input?, lastEventId? }` and `{ id, type: 'abort' }`.
   - The server answers with `result` (`deferred: true` when chunks follow), `event` (`eventId?`, `deferred?`), `chunk`, `chunkEnd`, `done`, and `error { id | null, status, body }`.
   - A version mismatch is an `id: null` error and close code 1002. Bodies use the endpoint's serializer.
-- Open: drop the `{ json }` wrapper.
+- (agent) The Open here (drop the `{ json }` wrapper) is answered: keep it. Every serializer's `serialize` returns `{ json?, refs? }`, so one envelope tells an `undefined` result (`{}`) from `null` and carries danSON's refs; a bare body would need a header to say which. REST clients that want plain JSON have the OpenAPI handler.
 - Lives in: `packages/trpcdev/src/internal/protocol.ts`, `src/server/fetch.ts`, `src/server/socket.ts`, `src/client/links/http.ts`, `src/client/links/socket.ts`.

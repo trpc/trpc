@@ -59,6 +59,8 @@ const post = await client.getPost.query();
 
 `Date` (and anything with `toJSON`) becomes what `toJSON` returns, `Map`, `Set` and other objects without own keys become `{}`, `undefined` keys are dropped and `undefined` array items become `null`. `JsonOf<T, Keeps>` is that transform, for your own types.
 
+A typed error's `data` goes through the same serializer, so it follows the same rule: `new TrpcError({ code: 'EXPIRED', data: { at: new Date() } })` reaches a `jsonSerializer` client as `data: { at: string }`.
+
 In-process callers (`createRouterClient`, `createTrpcRsc`) pass values by reference, so they keep native types whatever the serializer.
 
 ## What a sync serializer can't carry

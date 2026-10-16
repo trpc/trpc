@@ -1,8 +1,10 @@
 import type { BuiltinErrorCode, TrpcError } from '../internal/error.ts';
 import type {
   ClientValue,
+  DansonForm,
   FormOf,
   IsAny,
+  JsonOf,
   OutputForm,
   ProcedureResponse,
   ProcedureType,
@@ -21,13 +23,29 @@ import type {
 } from './link.ts';
 
 /**
- * A typed (`defined`) error from a procedure's union.
+ * An error's `data` as it arrives under a serializer's form, like outputs:
+ * its JSON form unless the serializer keeps the types.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type DefinedError<E> =
+export type ErrorData<
+  D,
+  F extends OutputForm = DansonForm,
+> = F['streaming'] extends true
+  ? D
+  : unknown extends D
+    ? D
+    : JsonOf<Exclude<D, undefined>, F['keeps']> | Extract<D, undefined>;
+
+/**
+ * A typed (`defined`) error from a procedure's union, its `data` in the
+ * serializer's form `F`.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export type DefinedError<E, F extends OutputForm = DansonForm> =
   E extends TrpcError<infer C, infer D>
-    ? TrpcError<C, D> & { readonly defined: true }
+    ? TrpcError<C, ErrorData<D, F>> & { readonly defined: true }
     : never;
 
 /**
@@ -46,7 +64,14 @@ export type UnexpectedError = TrpcError<
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type ClientError<E> = DefinedError<E> | UnexpectedError;
+export type ClientError<E, F extends OutputForm = DansonForm> =
+  | DefinedError<E, F>
+  | UnexpectedError;
+
+/** A call's errors: the procedure's in the result form, the links' as made. */
+type CallError<D extends ProcedureDef, F extends OutputForm, TLinkErrors> =
+  | ClientError<D['errors'], F>
+  | DefinedError<TLinkErrors>;
 
 /**
  * A call's `Promise`, carrying its error type for `safe()`.
@@ -191,7 +216,7 @@ type DecorateCarried<
         >
       ): TrpcPromise<
         ClientValue<D['output'], ResultForm<D, TForm, TLinks>>,
-        ClientError<D['errors'] | TLinkErrors>
+        CallError<D, ResultForm<D, TForm, TLinks>, TLinkErrors>
       >;
     }
   : D['type'] extends 'mutation'
@@ -205,7 +230,7 @@ type DecorateCarried<
           >
         ): TrpcPromise<
           ClientValue<D['output'], ResultForm<D, TForm, TLinks>>,
-          ClientError<D['errors'] | TLinkErrors>
+          CallError<D, ResultForm<D, TForm, TLinks>, TLinkErrors>
         >;
       }
     : {
@@ -213,7 +238,7 @@ type DecorateCarried<
           ...args: CallArgs<D['input'], SubscribeOptions<TContext>>
         ): TrpcSubscription<
           ClientValue<D['output'], ResultForm<D, TForm, TLinks>>,
-          ClientError<D['errors'] | TLinkErrors>
+          CallError<D, ResultForm<D, TForm, TLinks>, TLinkErrors>
         >;
       };
 
