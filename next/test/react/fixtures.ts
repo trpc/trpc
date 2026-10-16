@@ -1,0 +1,78 @@
+import { error, initTrpc } from '@trpc12/trpc/server';
+import { z } from 'zod';
+
+const t = initTrpc();
+
+export interface Post {
+  id: string;
+  title: string;
+  tags: string[];
+  at: Date;
+}
+
+export const db = {
+  posts: new Map<string, Post>(),
+  calls: [] as string[],
+  reset() {
+    db.calls = [];
+    db.posts = new Map([
+      ['1', { id: '1', title: 'Hello', tags: ['a'], at: new Date(0) }],
+      ['2', { id: '2', title: 'World', tags: ['b'], at: new Date(1) }],
+    ]);
+  },
+};
+
+export const router = {
+  post: {
+    byId: t.procedure.input(z.object({ id: z.string() })).query(({ input }) => {
+      db.calls.push(`byId:${input.id}`);
+      const post = db.posts.get(input.id);
+      return post
+        ? structuredClone(post)
+        : error({ code: 'NOT_FOUND', data: { id: input.id } });
+    }),
+    list: t.procedure
+      .input(z.object({ limit: z.number(), order: z.enum(['asc', 'desc']) }))
+      .query(({ input }) => {
+        db.calls.push('list');
+        const posts = [...db.posts.values()].map((post) =>
+          structuredClone(post),
+        );
+        if (input.order === 'desc') posts.reverse();
+        return posts.slice(0, input.limit);
+      }),
+    rename: t.procedure
+      .input(z.object({ id: z.string(), title: z.string() }))
+      .mutation(({ input }) => {
+        db.calls.push(`rename:${input.id}`);
+        const post = db.posts.get(input.id)!;
+        db.posts.set(input.id, { ...post, title: input.title });
+        return input.title;
+      }),
+    onRename: t.procedure.subscription(async function* () {
+      yield 'first';
+      yield 'latest';
+    }),
+  },
+};
+
+export type AppRouter = typeof router;
+
+/** Retries `assertion` until it passes or `timeout` ms pass. */
+export async function waitFor<T>(
+  assertion: () => T,
+  { timeout = 2000 } = {},
+): Promise<T> {
+  const start = Date.now();
+  for (;;) {
+    try {
+      return assertion();
+    } catch (cause) {
+      if (Date.now() - start > timeout) throw cause;
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    }
+  }
+}
+
+export const tick = (ms = 0): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));

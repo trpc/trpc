@@ -1,0 +1,37 @@
+{
+  "name": "@trpc12/experimental-react-atom",
+  "version": "0.1.0",
+  "private": true,
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "access": "public"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build": "node ../../tooling/pack/pack.ts"
+  },
+  "devDependencies": {
+    "@trpc12/trpc": "workspace:*",
+    "effect": "4.0.2",
+    "typescript": "^7.0.2"
+  },
+  "peerDependencies": {
+    "@trpc12/trpc": "workspace:*",
+    "effect": "^4.0.0"
+  }
+}
