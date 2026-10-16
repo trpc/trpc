@@ -26,6 +26,7 @@ Entry points of `trpcdev`:
 | `trpcdev/http`       | `serve`, `toHttpEffect` on Effect's `HttpServer`         |
 | `trpcdev/cloudflare` | hibernating WebSockets and publisher on Durable Objects  |
 | `trpcdev/aws-lambda` | `toLambdaHandler` for API Gateway, ALB and Lambda@Edge   |
+| `trpcdev/socket`     | `serveSocket` on Effect's `SocketServer` (TCP, TLS)      |
 | `trpcdev/openapi`    | `createOpenApiHandler`, `generateOpenApi`, `openApiLink` |
 | `trpcdev/interop`    | `createV11Handler` for `@trpc/client` 11 apps            |
 | `trpcdev/contract`   | contract-first routers, `toContract`                     |

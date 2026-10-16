@@ -76,7 +76,7 @@ export interface MessagePortLike {
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export type Transport = 'http' | 'websocket' | 'messagePort';
+export type Transport = 'http' | 'websocket' | 'messagePort' | 'socket';
 
 /** What the fetch handler shares with socket connections. @internal */
 export interface SocketCore {

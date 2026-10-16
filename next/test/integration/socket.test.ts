@@ -1,0 +1,173 @@
+import { connect } from 'node:net';
+import { NodeSocket, NodeSocketServer } from '@effect/platform-node';
+import { Context, Effect, Exit, Layer, Scope } from 'effect';
+import { SocketServer } from 'effect/socket';
+import { createTrpcClient, safe, socketLink } from 'trpcdev/client';
+import {
+  createFetchHandler,
+  error,
+  initTrpc,
+  tracked,
+  type CreateContextOpts,
+} from 'trpcdev/server';
+import { serveSocket } from 'trpcdev/socket';
+import { expect, test, vi } from 'vite-plus/test';
+import { z } from 'zod';
+
+const t = initTrpc<{ ctx: { user: string | null; transport: string } }>();
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const state = { aborted: 0, infos: [] as CreateContextOpts['info'][] };
+
+const router = {
+  hello: t.procedure
+    .input(z.object({ name: z.string() }))
+    .query(({ input, ctx }) => `hello ${input.name} over ${ctx.transport}`),
+  whoami: t.procedure.query(({ ctx }) => ctx.user),
+  find: t.procedure
+    .input(z.object({ id: z.string() }))
+    .query(({ input }) =>
+      input.id === '1'
+        ? { id: '1', at: new Date(0) }
+        : error({ code: 'NOT_FOUND', data: { id: input.id } }),
+    ),
+  report: t.procedure.query(() => ({
+    title: 'Report',
+    total: (async () => {
+      await sleep(10);
+      return 42;
+    })(),
+  })),
+  slow: t.procedure.query(
+    ({ signal }) =>
+      new Promise<string>((resolve) => {
+        const timer = setTimeout(() => resolve('late'), 5000);
+        signal.addEventListener('abort', () => {
+          clearTimeout(timer);
+          state.aborted++;
+          resolve('aborted');
+        });
+      }),
+  ),
+  ticks: t.procedure
+    .input(z.object({ lastEventId: z.string().optional() }).optional())
+    .subscription(async function* ({ input }) {
+      for (let n = Number(input?.lastEventId ?? -1) + 1; n < 3; n++) {
+        yield tracked(String(n), n);
+      }
+    }),
+};
+
+async function serve(opts: { idleTimeoutMs?: number | false } = {}) {
+  const scope = Scope.makeUnsafe();
+  const handler = createFetchHandler({
+    router,
+    createContext: ({ info }) => {
+      state.infos.push(info);
+      return {
+        user: (info.connectionParams?.['user'] as string | undefined) ?? null,
+        transport: info.transport,
+      };
+    },
+  });
+  const server = Context.get(
+    await Effect.runPromise(
+      Layer.buildWithScope(
+        serveSocket(handler, opts).pipe(
+          Layer.provideMerge(
+            NodeSocketServer.layer({ port: 0, host: '127.0.0.1' }),
+          ),
+        ),
+        scope,
+      ),
+    ),
+    SocketServer.SocketServer,
+  );
+  const port = (server.address as { port: number }).port;
+  return {
+    port,
+    socket: NodeSocket.makeNet({ host: '127.0.0.1', port }),
+    [Symbol.asyncDispose]: () =>
+      Effect.runPromise(Scope.close(scope, Exit.void)),
+  };
+}
+
+test('queries, rich types, deferred values and errors over TCP', async () => {
+  await using server = await serve();
+  await using link = socketLink({
+    socket: server.socket,
+    connectionParams: { user: 'ada' },
+  });
+  const client = createTrpcClient<typeof router>({ links: [link] });
+
+  expect(await client.hello.query({ name: 'tcp' })).toBe(
+    'hello tcp over socket',
+  );
+  expect(await client.whoami.query()).toBe('ada');
+  expect(await client.find.query({ id: '1' })).toEqual({
+    id: '1',
+    at: new Date(0),
+  });
+  const [, err] = await safe(client.find.query({ id: '2' }));
+  expect(err).toMatchObject({ code: 'NOT_FOUND', data: { id: '2' } });
+  const report = await client.report.query();
+  expect(report.title).toBe('Report');
+  expect(await report.total).toBe(42);
+  expect(state.infos.at(-1)?.transport).toBe('socket');
+});
+
+test('aborting a call aborts it on the server', async () => {
+  await using server = await serve();
+  await using link = socketLink({ socket: server.socket });
+  const client = createTrpcClient<typeof router>({ links: [link] });
+  const before = state.aborted;
+  const controller = new AbortController();
+  const pending = safe(
+    client.slow.query(undefined, { signal: controller.signal }),
+  );
+  await sleep(30);
+  controller.abort();
+  const [, err] = await pending;
+  expect(err).toMatchObject({ code: 'CLIENT_CLOSED_REQUEST' });
+  await vi.waitFor(() => expect(state.aborted).toBe(before + 1));
+});
+
+test('subscriptions stream tracked events', async () => {
+  await using server = await serve();
+  await using link = socketLink({ socket: server.socket });
+  const client = createTrpcClient<typeof router>({ links: [link] });
+  const events: number[] = [];
+  for await (const event of client.ticks.subscribe()) {
+    events.push(event.data);
+  }
+  expect(events).toEqual([0, 1, 2]);
+});
+
+test('a dropped connection reconnects for the next call', async () => {
+  await using server = await serve({ idleTimeoutMs: 50 });
+  await using link = socketLink({
+    socket: server.socket,
+    keepAlive: false,
+    reconnect: { attempts: 3, delayMs: () => 10 },
+  });
+  const client = createTrpcClient<typeof router>({ links: [link] });
+  expect(await client.whoami.query()).toBe(null);
+  await sleep(120);
+  expect(await client.hello.query({ name: 'again' })).toBe(
+    'hello again over socket',
+  );
+});
+
+test('a line that is not JSON gets a PARSE_ERROR message', async () => {
+  await using server = await serve();
+  const reply = await new Promise<string>((resolve, reject) => {
+    const raw = connect(server.port, '127.0.0.1', () => raw.write('nope\n'));
+    raw.setEncoding('utf8');
+    raw.once('data', (data: string) => {
+      raw.destroy();
+      resolve(data);
+    });
+    raw.once('error', reject);
+  });
+  const message = JSON.parse(reply.split('\n')[0]!);
+  expect(message).toMatchObject({ id: null, type: 'error', status: 400 });
+});

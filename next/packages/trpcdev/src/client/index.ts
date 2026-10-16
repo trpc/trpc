@@ -67,8 +67,11 @@ export {
 } from './links/validation.ts';
 export {
   messagePortLink,
+  socketLink,
   wsLink,
+  type ConnectionLinkOptions,
   type MessagePortLinkOptions,
+  type RawSocketLinkOptions,
   type SocketLink,
   type SocketLinkOptions,
   type WebSocketLinkOptions,

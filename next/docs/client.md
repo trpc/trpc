@@ -81,6 +81,7 @@ client.onPost.subscribe; // type error: no link carries subscriptions
 - `dedupeLink()` shares identical queries in flight.
 - `localLink({ router })` calls a router in-process.
 - `messagePortLink({ port })` talks to a worker.
+- `socketLink({ socket })` runs everything over a raw TCP, TLS or Unix socket, with `wsLink`'s options ([Raw sockets](./platforms.md#raw-sockets-tcp)).
 
 `switchLink`'s `name` becomes a typed call option, so one call can override `pick`:
 

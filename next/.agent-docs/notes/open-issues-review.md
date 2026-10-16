@@ -72,7 +72,7 @@ Alex answered the "Worth considering" list; each answer is a `decisions/` file.
 ## Still worth considering
 
 1. **TanStack DB** (#6891). `queryOptions()` should plug into `queryCollectionOptions` as it is; worth a test and a docs example. Built since: `test/tanstack-query/db.test.ts`, `docs/tanstack-query.md` (TanStack DB), `tanstack-db-collections.md`.
-2. **Adapters, recorded as later**: Lambda API Gateway and Lambda@Edge (#4978, built since: `trpcdev/aws-lambda`, `aws-lambda-adapter.md`), Firebase callable (#6388), WebTransport (#6971), raw TCP (#5995). The socket core is generic over connections, so the last two are a transport each.
+2. **Adapters, recorded as later**: Lambda API Gateway and Lambda@Edge (#4978, built since: `trpcdev/aws-lambda`, `aws-lambda-adapter.md`), Firebase callable (#6388), WebTransport (#6971, not built: `webtransport-not-yet.md`), raw TCP (#5995, built since: `trpcdev/socket`, `socketLink`, `raw-socket-transport.md`). The socket core is generic over connections, so the last two are a transport each.
 
 ## Not pursuing
 

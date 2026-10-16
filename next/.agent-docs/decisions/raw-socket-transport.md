@@ -1,0 +1,11 @@
+# Raw TCP through Effect's `Socket` and `SocketServer` (agent)
+
+- (agent) For issue #5995 and the "later" adapters in `notes/open-issues-review.md`. The server is `serveSocket(handler, { idleTimeoutMs? })` in a new `trpcdev/socket` subpath: a `Layer` that needs Effect's `SocketServer`, the same shape as `serve()` needing `HttpServer` ([`platforms-through-effect-layers.md`](./platforms-through-effect-layers.md)). The platform layer decides TCP, TLS or Unix socket (`NodeSocketServer.layer`, `layerTls`), so trpcdev imports no `node:net`.
+- (agent) The client is `socketLink({ socket })` in `trpcdev/client`, taking an `Effect<Socket.Socket>` (`NodeSocket.makeNet({ host, port })`) that runs again on every reconnect. An Effect value rather than a host/port pair, so the app picks the platform and TLS.
+- (agent) The protocol is the WebSocket one unchanged ([`wire-protocol.md`](./wire-protocol.md)), framed as one JSON message per line. `JSON.stringify` never emits a raw newline, so no length prefix is needed and the stream is readable with `nc`. Both ends share the framing in `internal/lines.ts`.
+- (agent) It reuses the socket core: `serveSocket` builds a `Connection` and calls `serveConnection`, and `socketLink` is the same `makeSocketLink` as `wsLink`, so reconnects, keep-alive pings, resumed subscriptions, deferred values and aborts behave the same. The reconnect, idle and keep-alive options moved into a shared `ConnectionLinkOptions`.
+- (agent) `info.transport` gains `'socket'`. `createContext` gets a placeholder request (`http://localhost/`, no headers), as with MessagePort, since raw sockets have none.
+- (agent) Its own subpath, not `trpcdev/http`: it serves a different Effect service (`effect/socket`), and HTTP-only apps don't load it ([`flat-entry-points.md`](./flat-entry-points.md): one subpath per concern).
+- Why: Effect already abstracts sockets per platform; the only trpcdev code is framing and a connection adapter.
+- Lost: a dedicated binary framing (msgpack, length-prefixed). JSON lines keep one protocol across transports.
+- Lives in: `packages/trpcdev/src/socket/index.ts` (`trpcdev/socket`), `src/client/links/socket.ts` (`socketLink`, `ConnectionLinkOptions`), `src/internal/lines.ts`, `src/server/socket.ts` (`Transport`), `test/integration/socket.test.ts`, `docs/platforms.md` (Raw sockets), `docs/client.md`.

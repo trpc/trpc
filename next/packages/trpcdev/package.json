@@ -59,6 +59,10 @@
       "types": "./src/aws-lambda/index.ts",
       "default": "./src/aws-lambda/index.ts"
     },
+    "./socket": {
+      "types": "./src/socket/index.ts",
+      "default": "./src/socket/index.ts"
+    },
     "./extend": {
       "types": "./src/extend/index.ts",
       "default": "./src/extend/index.ts"
@@ -125,6 +129,10 @@
       "./aws-lambda": {
         "types": "./dist/aws-lambda/index.d.ts",
         "default": "./dist/aws-lambda/index.js"
+      },
+      "./socket": {
+        "types": "./dist/socket/index.d.ts",
+        "default": "./dist/socket/index.js"
       },
       "./extend": {
         "types": "./dist/extend/index.d.ts",

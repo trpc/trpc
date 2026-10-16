@@ -2,12 +2,14 @@ import {
   Deferred,
   Duration,
   Effect,
+  Exit,
   Fiber,
   Queue,
   RcRef,
   Scope,
   Stream,
 } from 'effect';
+import { Socket } from 'effect/socket';
 import {
   fromWireError,
   TrpcError,
@@ -18,6 +20,7 @@ import {
   type ClientMessage,
   type ServerMessage,
 } from '../../internal/protocol.ts';
+import { decodeLines, encodeLine } from '../../internal/lines.ts';
 import type { MaybePromise } from '../../internal/types.ts';
 import {
   defaultSerializer,
@@ -119,7 +122,7 @@ const lostError = () =>
     message: 'The connection was lost',
   });
 
-function socketLink(
+function makeSocketLink(
   transport: SocketTransport,
   opts: SocketLinkOptions,
 ): SocketLink {
@@ -474,15 +477,12 @@ function socketLink(
 }
 
 /**
- * Options for {@link wsLink}.
+ * Reconnect, idle and keep-alive options of {@link wsLink} and
+ * {@link socketLink}.
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface WebSocketLinkOptions extends SocketLinkOptions {
-  /** The endpoint, e.g. `ws://localhost:3000/trpc`. */
-  url: string | URL;
-  /** A `WebSocket` implementation. @default globalThis.WebSocket */
-  WebSocket?: new (url: string | URL) => WebSocket;
+export interface ConnectionLinkOptions {
   /**
    * Reconnects after a dropped connection. Subscriptions resume from their
    * last `tracked()` event id; queries and mutations in flight fail with
@@ -510,6 +510,38 @@ export interface WebSocketLinkOptions extends SocketLinkOptions {
   keepAlive?: false | { intervalMs?: number; timeoutMs?: number };
 }
 
+const connectionOptions = (
+  opts: ConnectionLinkOptions,
+): Omit<SocketTransport, 'connect'> => ({
+  reconnect: {
+    attempts: opts.reconnect?.attempts ?? 5,
+    delayMs:
+      opts.reconnect?.delayMs ??
+      ((attempt) => Math.min(1000 * 2 ** (attempt - 1), 30_000)),
+  },
+  idleMs: opts.idleMs,
+  keepAlive:
+    opts.keepAlive === false
+      ? undefined
+      : {
+          intervalMs: opts.keepAlive?.intervalMs ?? 30_000,
+          timeoutMs: opts.keepAlive?.timeoutMs ?? 10_000,
+        },
+});
+
+/**
+ * Options for {@link wsLink}.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export interface WebSocketLinkOptions
+  extends SocketLinkOptions, ConnectionLinkOptions {
+  /** The endpoint, e.g. `ws://localhost:3000/trpc`. */
+  url: string | URL;
+  /** A `WebSocket` implementation. @default globalThis.WebSocket */
+  WebSocket?: new (url: string | URL) => WebSocket;
+}
+
 /**
  * Sends every call over one WebSocket (10). The connection opens on the
  * first call. Outputs with deferred values stream, like over HTTP.
@@ -529,22 +561,9 @@ export interface WebSocketLinkOptions extends SocketLinkOptions {
  */
 export function wsLink(opts: WebSocketLinkOptions): SocketLink {
   const Impl = opts.WebSocket ?? globalThis.WebSocket;
-  return socketLink(
+  return makeSocketLink(
     {
-      reconnect: {
-        attempts: opts.reconnect?.attempts ?? 5,
-        delayMs:
-          opts.reconnect?.delayMs ??
-          ((attempt) => Math.min(1000 * 2 ** (attempt - 1), 30_000)),
-      },
-      idleMs: opts.idleMs,
-      keepAlive:
-        opts.keepAlive === false
-          ? undefined
-          : {
-              intervalMs: opts.keepAlive?.intervalMs ?? 30_000,
-              timeoutMs: opts.keepAlive?.timeoutMs ?? 10_000,
-            },
+      ...connectionOptions(opts),
       connect: () =>
         new Promise((resolve, reject) => {
           const ws = new Impl(opts.url);
@@ -643,7 +662,7 @@ export function messagePortLink(opts: MessagePortLinkOptions): SocketLink {
     },
     onClose: (listener) => closeListeners.push(listener),
   };
-  return socketLink(
+  return makeSocketLink(
     {
       reconnect: undefined,
       idleMs: undefined,
@@ -652,6 +671,94 @@ export function messagePortLink(opts: MessagePortLinkOptions): SocketLink {
         listeners.length = 0;
         return connection;
       },
+    },
+    opts,
+  );
+}
+
+/**
+ * Options for {@link socketLink}.
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export interface RawSocketLinkOptions
+  extends SocketLinkOptions, ConnectionLinkOptions {
+  /**
+   * Opens a connection: an Effect `Socket`, like
+   * `NodeSocket.makeNet({ host, port })` from `@effect/platform-node`. It
+   * runs again for each reconnect.
+   */
+  socket: Effect.Effect<Socket.Socket, unknown>;
+}
+
+/**
+ * Sends every call over a raw socket (TCP, TLS, a Unix socket), to a
+ * server run with `serveSocket()` from `trpcdev/socket`. Messages are the
+ * WebSocket ones, one JSON value per line; reconnects, keep-alive pings
+ * and resumed subscriptions work as on {@link wsLink}.
+ *
+ * @example
+ * ```ts
+ * import { NodeSocket } from '@effect/platform-node';
+ *
+ * createTrpcClient<AppRouter>({
+ *   links: [socketLink({ socket: NodeSocket.makeNet({ host: 'localhost', port: 4000 }) })],
+ * });
+ * ```
+ * @since 12.0.0-alpha.0
+ * @stability experimental
+ */
+export function socketLink(opts: RawSocketLinkOptions): SocketLink {
+  const connect = Effect.gen(function* () {
+    const scope = yield* Scope.make();
+    const socket = yield* opts.socket;
+    const writer = yield* Scope.provide(socket.writer, scope);
+    const outbox = yield* Queue.unbounded<string | Socket.CloseEvent>();
+    const listeners: Array<(message: unknown) => void> = [];
+    const closers: Array<() => void> = [];
+    yield* Effect.gen(function* () {
+      for (;;) {
+        const chunk = yield* Queue.take(outbox);
+        yield* writer.write(chunk);
+        if (Socket.isCloseEvent(chunk)) return;
+      }
+    }).pipe(Effect.ignore, Effect.forkIn(scope));
+    yield* decodeLines(Socket.toStream(socket)).pipe(
+      Stream.runForEach((line) =>
+        Effect.sync(() => {
+          let message: unknown;
+          try {
+            message = JSON.parse(line);
+          } catch {
+            return;
+          }
+          for (const listener of listeners) listener(message);
+        }),
+      ),
+      Effect.ignore,
+      Effect.ensuring(
+        Effect.sync(() => {
+          for (const close of closers.splice(0)) close();
+        }),
+      ),
+      Effect.andThen(Scope.close(scope, Exit.void)),
+      Effect.forkIn(scope),
+    );
+    return {
+      send: (message) => {
+        Queue.offerUnsafe(outbox, encodeLine(message));
+      },
+      close: () => {
+        Queue.offerUnsafe(outbox, new Socket.CloseEvent(1000));
+      },
+      onMessage: (listener) => listeners.push(listener),
+      onClose: (listener) => closers.push(listener),
+    } satisfies SocketConnection;
+  });
+  return makeSocketLink(
+    {
+      ...connectionOptions(opts),
+      connect: () => Effect.runPromise(connect),
     },
     opts,
   );
