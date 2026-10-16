@@ -1,6 +1,10 @@
 import { createTrpcClient, httpLink, safe } from 'trpcdev/client';
 import { initTrpc } from 'trpcdev/server';
-import { createSerializer, type CustomType } from 'trpcdev/serializer';
+import {
+  createSerializer,
+  defaultSerializer,
+  type CustomType,
+} from 'trpcdev/serializer';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
@@ -224,6 +228,17 @@ test('query params cannot reach inherited or prototype keys', async () => {
     expect(res.status).toBe(400);
   }
   expect(({} as Record<string, unknown>)['x']).toBeUndefined();
+});
+
+test('serialized output is plain objects, with `__proto__` kept as an own key', () => {
+  const value = JSON.parse('{"post":{"__proto__":{"x":1},"at":"y"}}');
+  const serialized = defaultSerializer.serialize(value);
+  const json = serialized.json as { post: Record<string, unknown> };
+  expect(Object.getPrototypeOf(json)).toBe(Object.prototype);
+  expect(Object.getPrototypeOf(json.post)).toBe(Object.prototype);
+  expect(Object.hasOwn(json.post, '__proto__')).toBe(true);
+  expect(({} as Record<string, unknown>)['x']).toBeUndefined();
+  expect(() => defaultSerializer.deserialize(serialized)).toThrow();
 });
 
 test('malformed JSON is a PARSE_ERROR', async () => {

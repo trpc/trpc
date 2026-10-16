@@ -86,6 +86,28 @@ function isSubPath(path: Path, sub: Path): boolean {
 
 const placeholderOf = (v: number | string) => `${PREFIX}${v}`;
 
+/**
+ * The output is plain objects, so it passes anywhere JSON does (React Server
+ * Components refuse null-prototype objects); a `__proto__` key stays an own
+ * property instead of setting the prototype.
+ */
+function setOwn(
+  target: Record<string | number, JsonValue>,
+  key: string | number,
+  value: JsonValue,
+): void {
+  if (key === '__proto__') {
+    Object.defineProperty(target, key, {
+      value,
+      writable: true,
+      enumerable: true,
+      configurable: true,
+    });
+  } else {
+    target[key] = value;
+  }
+}
+
 export function serializeSync(
   value: unknown,
   options: SerializeOptions = {},
@@ -97,7 +119,7 @@ export function serializeSync(
     refCounter: counter(),
   };
   const seen = new Map<unknown, [index: number, Location, Path]>();
-  const refs = createObject<JsonValue>();
+  const refs: Record<string, JsonValue> = {};
   const replace = new Map<string, Location>();
   const indexToRef = new Map<number, string>();
 
@@ -158,9 +180,9 @@ export function serializeSync(
       return thing;
     }
     if (isPlainObject(thing)) {
-      const result = createObject<JsonValue>();
+      const result: JsonObject = {};
       for (const key in thing) {
-        result[key] = toJson(thing[key], [result, key], [...path, key]);
+        setOwn(result, key, toJson(thing[key], [result, key], [...path, key]));
       }
       return result;
     }
@@ -181,7 +203,7 @@ export function serializeSync(
     if (!location) continue;
     const [parent, key] = location;
     const original = (parent as Record<string | number, JsonValue>)[key]!;
-    (parent as Record<string | number, JsonValue>)[key] = ref;
+    setOwn(parent as Record<string | number, JsonValue>, key, ref);
     refs[ref] = original;
   }
   const result: SerializeReturn = { json };
