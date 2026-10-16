@@ -437,3 +437,33 @@ test('wsLink replaces a connection that stops answering pings', async () => {
   expect(await client.hello.query({ name: 'b' })).toBe('hello b over ws');
   expect(sockets).toHaveLength(2);
 });
+
+test('the server closes a socket that sends nothing for idleTimeoutMs, and pings keep it open', async () => {
+  await using server = await createTestServer({
+    router,
+    createContext: () => ({ user: null, transport: 'websocket' }),
+    websocket: { idleTimeoutMs: 80 },
+  });
+  const open = async () => {
+    const socket = new WebSocket(server.wsUrl);
+    await new Promise((resolve) => socket.addEventListener('open', resolve));
+    const closed = new Promise<CloseEvent>((resolve) =>
+      socket.addEventListener('close', resolve),
+    );
+    socket.send(JSON.stringify({ type: 'init', version: '12' }));
+    return { socket, closed };
+  };
+
+  const silent = await open();
+  expect((await silent.closed).code).toBe(1001);
+
+  const pinging = await open();
+  let isClosed = false;
+  void pinging.closed.then(() => (isClosed = true));
+  for (let i = 0; i < 6; i++) {
+    await sleep(40);
+    pinging.socket.send(JSON.stringify({ type: 'ping' }));
+  }
+  expect(isClosed).toBe(false);
+  pinging.socket.close();
+});

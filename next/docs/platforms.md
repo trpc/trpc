@@ -176,7 +176,7 @@ export class Room extends DurableObject<Env> {
 ```
 
 - When the object wakes, each socket's request URL, its `cookie` and `authorization` headers (`keepHeaders` to choose others) and its `connectionParams` are rebuilt from the socket's attachment, so `createContext` sees the same connection. They must fit Cloudflare's 2 KB attachment limit.
-- `wsLink`'s keep-alive pings are answered by the runtime (`setWebSocketAutoResponse`) without waking the object.
+- `wsLink`'s keep-alive pings are answered by the runtime (`setWebSocketAutoResponse`) without waking the object. The handler's `websocket.idleTimeoutMs` doesn't apply here: a timer would wake it.
 - A running subscription keeps the object awake until it ends; hibernation saves idle connections, not open streams. Pair it with a [publisher](./subscriptions.md#cloudflare-durable-objects) inside the object so subscribers resume with `lastEventId` after a reconnect.
 - Already created the `WebSocketPair` yourself? `sockets.accept(server, request, platform)` instead of `upgrade()`.
 

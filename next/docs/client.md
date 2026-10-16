@@ -55,7 +55,7 @@ Links receive the fields in `op.context`. `signal` and `lastEventId` are reserve
   });
   ```
 
-- `wsLink({ url, connectionParams?, reconnect?, idleMs?, keepAlive? })` runs everything over one WebSocket. It pings every 30 s and reconnects when a ping goes unanswered for 10 s.
+- `wsLink({ url, connectionParams?, reconnect?, idleMs?, keepAlive? })` runs everything over one WebSocket. It pings every 30 s and reconnects when a ping goes unanswered for 10 s. The server closes a socket that sends nothing for 60 s (code 1001) and stops its subscriptions; set `createFetchHandler({ websocket: { idleTimeoutMs } })`, or `false` to keep silent sockets open.
 - `splitLink({ condition, true, false })` picks a chain per call; its `condition` sees typed paths.
 - `switchLink({ name, links, pick })` picks one of several named chains, and a call can force one (below).
 - `dedupeLink()` shares identical queries in flight.

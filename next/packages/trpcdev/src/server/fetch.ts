@@ -176,6 +176,15 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter> {
      */
     pingMs?: number | false;
   };
+  websocket?: {
+    /**
+     * Close a WebSocket that sends nothing, `wsLink`'s pings included, for
+     * this long, and stop its subscriptions. The close code is 1001, so a
+     * live client reconnects. `false` keeps silent sockets open.
+     * @default 60_000
+     */
+    idleTimeoutMs?: number | false;
+  };
 }
 
 /**
@@ -810,6 +819,7 @@ export function createFetchHandler<
       serveConnection(core, webSocketConnection(socket), {
         request: o.request,
         transport: 'websocket',
+        idleTimeoutMs: opts.websocket?.idleTimeoutMs ?? 60_000,
       });
     },
     messagePort(port, o) {

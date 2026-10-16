@@ -170,11 +170,33 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 export function serveConnection(
   core: SocketCore,
   conn: Connection,
-  opts: { request: Request; transport: Transport },
+  opts: {
+    request: Request;
+    transport: Transport;
+    /** Close the connection after this long without a message. */
+    idleTimeoutMs?: number | false | undefined;
+  },
 ): void {
   const receiver = connectionReceiver(core, conn, opts);
-  conn.onClose(receiver.close);
-  conn.onMessage(receiver.receive);
+  const idleMs = opts.idleTimeoutMs;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const arm = () => {
+    if (!idleMs) return;
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      receiver.close();
+      conn.close(1001, 'Idle timeout');
+    }, idleMs);
+  };
+  conn.onClose(() => {
+    clearTimeout(timer);
+    receiver.close();
+  });
+  conn.onMessage((message) => {
+    arm();
+    receiver.receive(message);
+  });
+  arm();
 }
 
 /** What `connectionReceiver()` returns. @internal */
