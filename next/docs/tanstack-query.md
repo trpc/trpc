@@ -62,7 +62,49 @@ send.mutate({ text });
 // chunks: [] → ['ok'] → ['ok', 'hi'], then send.data is ['ok', 'hi']
 ```
 
-`chunksOptions()` never fetches; it reads what the mutation writes to `streamedMutationKey()`. Each `mutate` starts the chunks over. Pass `onChunk(chunk, chunks)` to act on each one. Resetting or unmounting doesn't stop the stream on the server; to stop it, call `client.chat.send.mutate(input, { signal })` yourself and abort the signal, which rejects the stream with `CLIENT_CLOSED_REQUEST`.
+`chunksOptions()` never fetches; it reads what the mutation writes to `streamedMutationKey()`. Each `mutate` starts the chunks over. Pass `onChunk(chunk, chunks)` to act on each one.
+
+Resetting the mutation doesn't stop the stream on the server. Two options do, and in both `data` is the chunks so far:
+
+```ts
+// stop when the last chunksOptions() reader unmounts
+trpc.chat.send.streamedMutationOptions({ abortWhenUnobserved: true });
+
+// stop on demand: a function gives each mutate() its own signal
+const stop = useRef<AbortController>();
+trpc.chat.send.streamedMutationOptions({
+  signal: () => (stop.current = new AbortController()).signal,
+});
+stop.current?.abort();
+```
+
+### Long jobs
+
+A stream tied to one screen fits a streamed mutation. A job that should outlive the screen, be resumed after a reload, or be watched from several tabs fits a mutation that starts it, a `tracked()` subscription for its progress, and a mutation that cancels it:
+
+```ts
+const job = {
+  start: t.procedure.input(Params).mutation(({ input }) => jobs.start(input)), // { id }
+  progress: t.procedure
+    .input(z.object({ id: z.string() }))
+    .subscription(async function* ({ input, lastEventId }) {
+      for await (const step of jobs.watch(input.id, { after: lastEventId }))
+        yield tracked(step.id, step);
+    }),
+  cancel: t.procedure
+    .input(z.object({ id: z.string() }))
+    .mutation(({ input }) => jobs.cancel(input.id)),
+};
+
+const start = useMutation(trpc.job.start.mutationOptions());
+const progress = useSubscription(
+  trpc.job.progress.subscriptionOptions(
+    start.data ? { id: start.data.id } : skipToken,
+  ),
+);
+```
+
+Unsubscribing stops watching, not the job. Keep jobs in a [Publisher](./subscriptions.md#publisher) so any instance can stream them.
 
 ## Offline mutations
 

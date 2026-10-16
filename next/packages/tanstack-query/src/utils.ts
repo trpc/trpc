@@ -1,5 +1,6 @@
 import {
   experimental_streamedQuery as streamedQuery,
+  matchQuery,
   skipToken,
   type DataTag,
   type InfiniteData,
@@ -202,9 +203,24 @@ type ChunkOf<TOutput> =
  * @since 12.0.0-alpha.0
  * @stability experimental
  */
-export interface StreamedMutationOptions<TChunk> {
+export interface StreamedMutationOptions<TChunk, TInput = unknown> {
   /** Called with each chunk and every chunk so far. */
   onChunk?: ((chunk: TChunk, chunks: TChunk[]) => void) | undefined;
+  /**
+   * Stop the server stream once nothing reads the chunks: when the last
+   * `chunksOptions()` query observer goes away (the screen unmounts).
+   * `data` is the chunks so far.
+   * @default false
+   */
+  abortWhenUnobserved?: boolean | undefined;
+  /**
+   * Stops a call's stream when aborted; `data` is the chunks so far. A
+   * function is called for each `mutate`, so each call can get its own.
+   */
+  signal?:
+    | AbortSignal
+    | ((variables: TInput) => AbortSignal | undefined)
+    | undefined;
 }
 
 /**
@@ -367,7 +383,7 @@ export interface MutationProcedureUtils<
    */
   streamedMutationOptions<TOnMutateResult = unknown>(
     opts?: ContextBag<TContext> &
-      StreamedMutationOptions<ChunkOf<TOutput>> &
+      StreamedMutationOptions<ChunkOf<TOutput>, TInput> &
       MutationOptionsIn<TInput, ChunkOf<TOutput>[], TError, TOnMutateResult>,
   ): MutationOptionsOut<TInput, ChunkOf<TOutput>[], TError, TOnMutateResult>;
   /** Where `streamedMutationOptions()` keeps the chunks so far. */
@@ -661,8 +677,8 @@ export function createTrpcQueryUtils<TClient extends object>(
           queryFn: skipToken,
         };
       case 'streamedMutationOptions': {
-        const { onChunk, ...mutationOpts } = rest as Bag &
-          StreamedMutationOptions<unknown>;
+        const { onChunk, abortWhenUnobserved, signal, ...mutationOpts } =
+          rest as Bag & StreamedMutationOptions<unknown>;
         const mutate = method(callPath, 'mutate');
         const queryKey = procedureKey(path, undefined, 'mutation');
         return {
@@ -673,17 +689,44 @@ export function createTrpcQueryUtils<TClient extends object>(
             fnContext: MutationFunctionContext,
           ) => {
             const chunks: unknown[] = [];
+            const controller = new AbortController();
+            const callSignal =
+              typeof signal === 'function' ? signal(variables) : signal;
+            const stop = () => controller.abort(callSignal?.reason);
+            if (callSignal?.aborted) stop();
+            callSignal?.addEventListener('abort', stop, { once: true });
+            const unsubscribe = abortWhenUnobserved
+              ? fnContext.client.getQueryCache().subscribe((event) => {
+                  if (
+                    event.type === 'observerRemoved' &&
+                    matchQuery({ queryKey, exact: true }, event.query) &&
+                    event.query.getObserversCount() === 0
+                  ) {
+                    stop();
+                  }
+                })
+              : undefined;
             fnContext.client.setQueryData(queryKey, []);
-            const output: unknown = await mutate(variables, context ?? {});
-            if (!isAsyncIterable(output)) {
-              throw new TypeError(
-                `${callPath.join('.')} did not return an AsyncIterable`,
-              );
-            }
-            for await (const chunk of output) {
-              chunks.push(chunk);
-              fnContext.client.setQueryData(queryKey, [...chunks]);
-              onChunk?.(chunk, chunks);
+            try {
+              const output: unknown = await mutate(variables, {
+                ...(context as object),
+                signal: controller.signal,
+              });
+              if (!isAsyncIterable(output)) {
+                throw new TypeError(
+                  `${callPath.join('.')} did not return an AsyncIterable`,
+                );
+              }
+              for await (const chunk of output) {
+                chunks.push(chunk);
+                fnContext.client.setQueryData(queryKey, [...chunks]);
+                onChunk?.(chunk, chunks);
+              }
+            } catch (cause) {
+              if (!controller.signal.aborted) throw cause;
+            } finally {
+              unsubscribe?.();
+              callSignal?.removeEventListener('abort', stop);
             }
             return chunks;
           },

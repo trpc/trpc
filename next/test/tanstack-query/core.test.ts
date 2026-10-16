@@ -20,7 +20,7 @@ import {
   type InputValidationErrorData,
   type TrpcError,
 } from 'trpcdev/server';
-import { expect, expectTypeOf, test } from 'vite-plus/test';
+import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { appRouter, createApp, db, sleep, type Post } from './fixtures/app.ts';
 
 type Observable<T> = { subscribe(listener: (result: T) => void): () => void };
@@ -393,6 +393,56 @@ test('streamedMutationOptions collect chunks into data, and into a query as they
     ['chat', 'send'],
     { type: 'mutation' },
   ]);
+});
+
+test('abortWhenUnobserved stops the server stream once nothing reads the chunks', async () => {
+  await using app = await createApp();
+  const queryClient = new QueryClient();
+  const chunks = new QueryObserver(
+    queryClient,
+    app.trpc.chat.forever.chunksOptions(),
+  );
+  const unsubscribe = chunks.subscribe(() => {});
+  const mutation = new MutationObserver(
+    queryClient,
+    app.trpc.chat.forever.streamedMutationOptions({
+      abortWhenUnobserved: true,
+    }),
+  );
+  const pending = mutation.mutate();
+  await vi.waitFor(() =>
+    expect(
+      queryClient.getQueryData(app.trpc.chat.forever.streamedMutationKey())
+        ?.length,
+    ).toBeGreaterThanOrEqual(2),
+  );
+  expect(db.openChats).toBe(1);
+  unsubscribe();
+  const data = await pending;
+  expect(data.length).toBeGreaterThanOrEqual(2);
+  expect(data.slice(0, 2)).toEqual([0, 1]);
+  await vi.waitFor(() => expect(db.openChats).toBe(0));
+});
+
+test('a per-call signal stops a streamed mutation; data is the chunks so far', async () => {
+  await using app = await createApp();
+  const queryClient = new QueryClient();
+  let controller: AbortController | undefined;
+  const mutation = new MutationObserver(
+    queryClient,
+    app.trpc.chat.forever.streamedMutationOptions({
+      signal: () => (controller = new AbortController()).signal,
+      onChunk: (_chunk, all) => {
+        if (all.length === 3) controller!.abort();
+      },
+    }),
+  );
+  const data = await mutation.mutate();
+  expect(data).toEqual([0, 1, 2]);
+  await vi.waitFor(() => expect(db.openChats).toBe(0));
+
+  const again = await mutation.mutate();
+  expect(again).toEqual([0, 1, 2]);
 });
 
 test('streamedOptions collect subscription events; liveOptions keep the latest', async () => {

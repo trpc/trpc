@@ -26,6 +26,8 @@ export const db = {
   listeners: new Set<(post: Post) => void>(),
   calls: [] as string[],
   openTickers: 0,
+  /** Open `chat.forever` streams. */
+  openChats: 0,
   /** Values of `ctx.locale` the server saw. */
   locales: [] as (string | null)[],
 };
@@ -97,6 +99,17 @@ export const appRouter = {
           yield word;
         }
       }),
+    forever: t.procedure.mutation(async function* ({ signal }) {
+      db.openChats++;
+      try {
+        for (let n = 0; !signal.aborted; n++) {
+          await sleep(5);
+          yield n;
+        }
+      } finally {
+        db.openChats--;
+      }
+    }),
     send: t.procedure
       .input(z.object({ text: z.string() }))
       .mutation(async function* ({ input }) {
