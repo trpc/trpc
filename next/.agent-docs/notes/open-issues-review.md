@@ -94,3 +94,73 @@ A human answered the "Worth considering" list; each answer is a `decisions/` fil
 - Worth considering:
   - #4829: there are no Next data-cache tags. With `'use cache'`, `cacheTag(...trpc.post.pathKey())` style tags (path prefixes, then path and input) would match TanStack's key hierarchy. Worth a docs recipe once `'use cache'` is stable. Built since: `cacheTags`/`revalidationTag`, `next-cache-tags.md`.
   - #6996: the `TextDecoderStream` dependency is gone, but streaming hasn't been tried on a React Native device.
+
+## Third round (2026-10-17): open PRs and newer issues
+
+`gh pr list --repo trpc/trpc --state open --limit 200` returned 89 PRs. Each one that changes behaviour was checked against vNext: by reading the code, with a probe test, or with a type check. The same pass covered the issues the first round had not, plus the ones opened since.
+
+### Fixed in vNext
+
+- Slow clients (#7661, which only cancels on disconnect): a streamed query, deferred value, batch or subscription over HTTP read its generator into memory as fast as it could. A probe paused the client: the server had pulled all 200,000 1 KB items. Every internal queue on that path is bounded now, OpenAPI's SSE body is pulled, and the v11 interop's JSONL batch waits too. The same probe stops at about 5,000 items (socket buffers), and the generator's `finally` runs when the client leaves (`streamed-responses-backpressure.md`). WebSockets still buffer; that's an open question in the same file.
+- #7555: a path parameter with a malformed escape (`/things/%E0%A4%A`) was a 500 in the OpenAPI handler; now it's a 400 `BAD_REQUEST`. The RPC handler already answered 404.
+- #7614: content types are matched by media type, case and parameters ignored. Case already worked, but `application/json-seq` was read as JSON (`hasMediaType` in `internal/protocol.ts`).
+- #7612: the TanStack and React integration packages are marked `sideEffects: false`, like `@trpc12/trpc`.
+- #4448, #7398, #7611 (`abortOnUnmount`): queries always pass TanStack's `signal`, so an unobserved query cancels. Documented in `docs/tanstack-query.md` and the migration guide; a per-query opt-out is an open question (`tanstack-query-signal.md`).
+- #6740: the RSC docs read an unawaited `prefetch()` with `useQuery`, which can render loading on the server and data in the browser. They now say `useSuspenseQuery`, or to await the query.
+- #7388: `useSuspenseInfiniteQuery({ ...infiniteOptions(…), select })` types the selected data. It already worked, since vNext hands TanStack its own options, and is now tested.
+
+### Already answered by vNext
+
+| PR or issue                       | Ask                                                       | vNext                                                                                             |
+| --------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| #7663, #7664, #7665               | the request signal aborts after a normal response         | the signal aborts only when the call is interrupted; a probe saw no aborts after normal responses |
+| #7666                             | SSE `maxDurationMs` timer left running                    | there is no such timer                                                                            |
+| #7628                             | untracked SSE events inherit the last id                  | the client parser resets `id` per event, and both links keep the last tracked one                 |
+| #7447                             | Express 5 leaves `req.body` undefined                     | `parsedBody` checks `readableEnded`, so an unread body is streamed                                |
+| #7668                             | a shared error instance formatted once                    | `withDefined` copies errors                                                                       |
+| #7667                             | lazy routes lost when composing routers                   | lazy routes are copied by reference                                                               |
+| #7435, #7406, #7480, #7654        | WebSocket ids and subscription bookkeeping                | ids are registered before any await, deleted only by their owner, and must be numbers             |
+| #7503, #7529                      | keep-alive registered twice                               | one keep-alive fiber per connection                                                               |
+| #7213, #7607                      | stray rejections and leaked subscriptions on retry        | Effect streams are structured, so retries clean up                                                |
+| #7413                             | batch stream not aborted on unsubscribe                   | a batch aborts once every call in it has aborted or settled                                       |
+| #7606                             | abort listeners kept after a request                      | `AbortSignal.any`                                                                                 |
+| #7623                             | falsy inputs dropped from query keys                      | keys drop only `undefined`                                                                        |
+| #7374, #7594                      | `skipToken`                                               | handled in `queryOptions`, `infiniteOptions` and `subscriptionOptions`                            |
+| #7655                             | link `context` for subscriptions                          | `context` reaches the links                                                                       |
+| #7620, #6962                      | `onStopped`, idle after the server ends                   | answered in the first round                                                                       |
+| #7660, #7656, #7428               | `Serialize` of records, branded tuples, `AnyRouter` proxy | checked with tsc                                                                                  |
+| #7662                             | portable inferred types                                   | the `tooling/portability` fixture                                                                 |
+| #7377, #4306                      | routers with incompatible contexts                        | a type error (first round)                                                                        |
+| #7361, #6862                      | `cursor` in infinite inputs                               | `input: (pageParam) => …`                                                                         |
+| #7345, #7258, #7384, #6819        | the batch stream's content type                           | `application/jsonl`, or frames when asked for                                                     |
+| #7627, #7626                      | sync validation first                                     | sync schemas run without a promise (first round)                                                  |
+| #7461, #6868                      | `iterate()` on subscriptions                              | subscriptions are `AsyncIterable`                                                                 |
+| #7182, #6849, #6742               | `FormData`, typed errors, Solid                           | files in inputs and outputs, `.errors()`, `@trpc12/tanstack-solid-query`                          |
+| #7318, #7388, #7616, #7621, #7428 | v11 React Query hook types                                | vNext has no hooks of its own; TanStack's types apply                                             |
+| #6681                             | type-instantiation benchmarks                             | `tooling/bench` measures tsc instantiations                                                       |
+| #7362                             | the automatic JSX runtime                                 | `"jsx": "react-jsx"` everywhere                                                                   |
+| #3708, #4876                      | forwarding headers; typed link context                    | `headers` and `context` call options; `createRouterClient({ ctx })`                               |
+| #4317                             | cancelling a mutation                                     | a `signal` call option, which interrupts the server                                               |
+| #4924, #4956                      | `setMutationDefaults`; TanStack options                   | `mutationOptions()` carries `mutationKey` and `mutationFn`; options are TanStack's own            |
+| #5959                             | a type for each procedure's function, for mocks           | `TrpcClient<AppRouter>['post']['byId']['query']`                                                  |
+| #6153, #6977                      | masking unexpected errors; `error.cause`                  | `mask-unexpected-errors.md`; `cause` stays on the server                                          |
+| #6203                             | plugins that add meta keys                                | root extensions (`t.concat(ext)`) add meta keys, and builders require them                        |
+| #6308                             | generic types for passing utils around                    | `QueryProcedureUtils`, `MutationProcedureUtils` and `SubscriptionProcedureUtils` are exported     |
+| #6772                             | the response handle and a typed platform                  | `response` and `handler.fetch(request, platform)`                                                 |
+
+### Open questions, recorded in decisions
+
+- #5787, extending outputs: a later `.output()` replaces an earlier one, a plugin's included. Merge them like inputs, make the second one a type error, or keep last-wins? (`builder-and-procedures.md`)
+- #7608 and #4734, a reconnect message before shutdown: there is none; subscriptions resume on a new connection, but in-flight queries fail. Add a graceful drain? (`subscriptions.md`)
+- WebSocket backpressure, found while fixing HTTP's (`streamed-responses-backpressure.md`).
+
+### Worth considering
+
+- #6260, a link on Angular's `HttpClient`, for its interceptors and SSR transfer cache. `httpLink({ fetch })` takes a `fetch`, and `HttpClient` isn't one; an adapter (`HttpClient` as a `fetch`) would be a recipe, not a link.
+
+### Not pursuing
+
+- #7339: optimistic updates showing stale data after invalidation; unconfirmed, and TanStack's cache does the invalidating in vNext.
+- #7175, #7176, #7429: Observables (`AsyncIterable` and Effect `Stream` instead). #7121 and #7494 are empty or unrelated.
+- #7609, #7610, #6703, #6984: v11 examples. #7162, #7320, #7321, #7399, #7418, #7565, #7589, #7605, #7613, #7615, #7619, #6827, #7672: v11 docs and the website. #7364, #7417, #7602: v11 skill reviews.
+- #7227, #7454, #7625, #7629, #7634, #7635, #7637, #7639, #7648, #7649, #7650, #7652, #7653, #7674, #7675: v11 repo chores and dependency bumps.
