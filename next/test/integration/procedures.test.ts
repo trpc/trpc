@@ -12,6 +12,7 @@ import {
   initTrpc,
   middleware,
   ok,
+  stream,
   tracked,
   TrpcError,
   type InputValidationErrorData,
@@ -509,4 +510,152 @@ test('next({ input }) replaces the input for later steps, typed like ctx (#6892)
       return input;
     });
   expect(await call(doubled, 4, { ctx: { user: null } })).toBe('8');
+});
+
+test('calls that go wrong in unusual ways fail with one clear error', async () => {
+  const u = initTrpc();
+  const declared = u.procedure.errors({ CONFLICT: { data: z.string() } });
+  const procedures = {
+    thrownString: u.procedure.query(() => {
+      throw 'boom';
+    }),
+    failedWithString: u.procedure.query(
+      () => Effect.fail('plain') as unknown as Effect.Effect<never>,
+    ),
+    interrupted: u.procedure.query(() => Effect.interrupt),
+    succeededWithError: u.procedure.query(() =>
+      Effect.succeed(error({ code: 'CONFLICT', message: 'as a value' })),
+    ),
+    stringData: declared.query(({ errors }) =>
+      errors.CONFLICT({ data: 'same string' }),
+    ),
+    badMiddleware: u.procedure
+      .use((() => 'nope') as unknown as Parameters<typeof u.procedure.use>[0])
+      .query(() => 1),
+    handBuiltFailure: u.procedure
+      .use((() => ({
+        ok: false,
+        error: new TrpcError({ code: 'FORBIDDEN', message: 'by hand' }),
+      })) as unknown as Parameters<typeof u.procedure.use>[0])
+      .query(() => 1),
+    schemaFactoryThrows: u.procedure
+      .input((() => {
+        throw new Error('no schema');
+      }) as unknown as z.ZodNumber)
+      .query(() => 1),
+    provideThrows: u.procedure
+      .provide(CurrentUser, () => {
+        throw new Error('no user');
+      })
+      .query(() => 1),
+    notAStream: u.procedure.subscription(
+      () => 5 as unknown as AsyncIterable<number>,
+    ),
+  };
+  const failure = async (procedure: keyof typeof procedures) => {
+    const [, err] = await safe(
+      call(procedures[procedure] as never, undefined, { ctx: {} } as never),
+    );
+    return err && { code: err.code, message: err.message };
+  };
+  expect(await failure('thrownString')).toEqual({
+    code: 'INTERNAL_SERVER_ERROR',
+    message: 'Internal server error',
+  });
+  expect(await failure('failedWithString')).toMatchObject({
+    code: 'INTERNAL_SERVER_ERROR',
+  });
+  expect(await failure('interrupted')).toEqual({
+    code: 'CLIENT_CLOSED_REQUEST',
+    message: 'The request was aborted',
+  });
+  expect(await failure('succeededWithError')).toEqual({
+    code: 'CONFLICT',
+    message: 'as a value',
+  });
+  const [, conflict] = await safe(
+    call(procedures.stringData, undefined, { ctx: {} }),
+  );
+  expect(conflict).toMatchObject({ code: 'CONFLICT', data: 'same string' });
+  expect(await failure('badMiddleware')).toEqual({
+    code: 'INTERNAL_SERVER_ERROR',
+    message: 'Middleware on "" must return next(), ok() or a TrpcError',
+  });
+  expect(await failure('handBuiltFailure')).toEqual({
+    code: 'FORBIDDEN',
+    message: 'by hand',
+  });
+  expect(await failure('schemaFactoryThrows')).toEqual({
+    code: 'INTERNAL_SERVER_ERROR',
+    message: 'no schema',
+  });
+  expect(await failure('provideThrows')).toEqual({
+    code: 'INTERNAL_SERVER_ERROR',
+    message: 'no user',
+  });
+  const [stream] = await safe(
+    call(procedures.notAStream, undefined, { ctx: {} }) as Promise<unknown>,
+  );
+  expect(stream).toBeDefined();
+
+  // A layer that can't be built fails the call as unexpected.
+  const [, down] = await safe(
+    call(router.timed, undefined, {
+      ctx: { user: null },
+      layer: Layer.effect(Clock, Effect.fail('clock down')),
+    }),
+  );
+  expect(down).toMatchObject({ code: 'INTERNAL_SERVER_ERROR' });
+});
+
+test('chained inputs merge only plain objects; a subscription takes a stream() output', async () => {
+  const u = initTrpc();
+  const dates = u.procedure
+    .input(z.date())
+    .input(z.date())
+    .query(({ input }) => input.getTime());
+  expect(await call(dates, new Date(5), { ctx: {} })).toBe(5);
+  const nulls = u.procedure
+    .input(z.null())
+    .input(z.null())
+    .query(({ input }) => input);
+  expect(await call(nulls, null, { ctx: {} })).toBe(null);
+
+  const ticks = u.procedure
+    .output(stream(z.number().transform((n) => n * 10)))
+    .subscription(async function* () {
+      yield 1;
+      yield 2;
+    });
+  const tickRouter = { ticks };
+  await using server = await createTestServer({
+    router: tickRouter,
+    createContext: () => ({}),
+  });
+  const client = createTrpcClient({
+    router: routerType<typeof tickRouter>(),
+    links: [httpLink({ url: server.url })],
+  });
+  expect(await collect(client.ticks.subscribe())).toEqual([10, 20]);
+});
+
+test('.provide() takes a promise; ok() deep in the chain reaches the middleware before it', async () => {
+  const u = initTrpc<{ ctx: { short: boolean } }>();
+  const seen: unknown[] = [];
+  const named = u.procedure
+    .provide(CurrentUser, async () => ({ name: 'ada' }))
+    .use(async ({ next }) => {
+      const result = await next();
+      seen.push(result.ok && result.data);
+      return result;
+    })
+    .use(({ ctx, next }) => (ctx.short ? ok('short') : next()))
+    .query(() =>
+      Effect.gen(function* () {
+        return (yield* CurrentUser).name;
+      }),
+    );
+  expect(await call(named, undefined, { ctx: { short: false } })).toBe('ada');
+  expect(await call(named, undefined, { ctx: { short: true } })).toBe('short');
+  expect(seen).toEqual(['ada', 'short']);
 });
