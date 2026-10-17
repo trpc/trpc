@@ -19,7 +19,9 @@ import {
   createRouterClient,
   error,
   initTrpc,
+  TrpcError,
 } from '@trpc12/trpc/server';
+import { createSerializer } from '@trpc12/trpc/serializer';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
@@ -265,6 +267,49 @@ test('localLink runs the router in-process, through the serializer', async () =>
   expect(today).toBe('2026-10-10T00:00:00.000Z');
   const [, err] = await safe(client.find.query({ id: 'x' }));
   expect(err).toMatchObject({ code: 'NOT_FOUND', defined: true });
+});
+
+test('localLink fails unknown paths and wrong methods; deferred failures arrive as errors', async () => {
+  const untyped = createUntypedClient({
+    links: [localLink({ router, createContext: () => ({ token: null }) })],
+  });
+  const [, missing] = await safe(
+    untyped.request({ type: 'query', path: 'nowhere', input: undefined }),
+  );
+  expect(missing).toMatchObject({ code: 'NOT_FOUND' });
+  const [, wrong] = await safe(
+    untyped.request({ type: 'mutation', path: 'whoami', input: undefined }),
+  );
+  expect(wrong).toMatchObject({ code: 'METHOD_NOT_SUPPORTED' });
+
+  const deferred = {
+    later: t.procedure.query(() => ({
+      ok: Promise.resolve('fine'),
+      bad: Promise.reject(new Error('went wrong')),
+      denied: Promise.reject(
+        new TrpcError({ code: 'FORBIDDEN', message: 'not yours' }),
+      ),
+    })),
+  };
+  const client = createTrpcClient({
+    router: routerType<typeof deferred>(),
+    links: [
+      localLink({
+        router: deferred,
+        serializer: createSerializer(),
+        createContext: () => ({ token: null }),
+      }),
+    ],
+  });
+  const result = await client.later.query();
+  expect(await result.ok).toBe('fine');
+  await expect(result.bad).rejects.toMatchObject({
+    code: 'INTERNAL_SERVER_ERROR',
+  });
+  await expect(result.denied).rejects.toMatchObject({
+    code: 'FORBIDDEN',
+    message: 'not yours',
+  });
 });
 
 test('createRouterClient and call() skip the network and the serializer', async () => {
