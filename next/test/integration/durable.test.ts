@@ -8,6 +8,7 @@ import {
 } from '@trpc12/trpc/client';
 import { experimental_durable } from '@trpc12/trpc/middleware';
 import { createOpenApiHandler } from '@trpc12/trpc/openapi';
+import { createSerializer } from '@trpc12/trpc/serializer';
 import {
   call,
   createFetchHandler,
@@ -515,4 +516,100 @@ test('a streamed call joined without a frame log is a BAD_REQUEST, while it runs
   expect(await lines(await b)).toEqual(await lines(await a));
   expect(runs).toBe(3);
   await handler.dispose();
+});
+
+test('a call that fails while another waits on it gives the waiter the typed error', async () => {
+  const slowGone = t.procedure
+    .use(experimental_durable())
+    .mutation(async () => {
+      await sleep(30);
+      return new OutOfStock({ sku: 'x' });
+    });
+  const handler = createFetchHandler({
+    router: { slowGone },
+    layer: Persistence.layerBackingMemory,
+  });
+  const first = post(handler, 'slowGone', undefined, 'g1');
+  await sleep(10);
+  const second = await post(handler, 'slowGone', undefined, 'g1');
+  expect(second.status).toBe(409);
+  expect((await first).status).toBe(409);
+  await handler.dispose();
+});
+
+test('frames that expired from the store end the replay where they stop', async () => {
+  const { router } = makeFeed();
+  const { shared, layer } = await sharedMemory();
+  const handler = createFetchHandler({ router, layer });
+  const all = await lines(await post(handler, 'feed', undefined, 'f1'));
+  const resume = async (from: string) =>
+    lines(
+      await handler.fetch(
+        new Request('http://localhost/trpc/feed', {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            'trpc-call-id': 'f1',
+            'trpc-resume-from': from,
+          },
+          body: '',
+        }),
+      ),
+    );
+  expect(await resume(String(all.length + 5))).toEqual([]);
+
+  const frames = await Effect.runPromise(
+    Effect.scoped(shared.make('@trpc12/trpc/durable-frames')),
+  );
+  await Effect.runPromise(frames.remove('feed:f1:2'));
+  expect(await resume('0')).toEqual(all.slice(0, 2));
+  await Effect.runPromise(frames.remove('feed:f1:meta'));
+  expect(await resume('0')).toEqual([]);
+  await handler.dispose();
+});
+
+test('inputs with files are kept without a fingerprint; an error that cannot be sent ends the kept stream', async () => {
+  let runs = 0;
+  const router = {
+    upload: t.procedure
+      .input(Schema.Struct({ file: Schema.instanceOf(File) }))
+      .use(experimental_durable())
+      .mutation(async ({ input }) => {
+        runs++;
+        return input.file.text();
+      }),
+    odd: t.procedure.use(experimental_durable()).mutation(async function* () {
+      yield 1;
+      throw new TrpcError({ code: 'CONFLICT', data: { fn: () => 1 } });
+    }),
+  };
+  const danson = createSerializer();
+  await using server = await createTestServer({
+    router,
+    serializer: danson,
+    layer: Persistence.layerBackingMemory,
+  });
+  const client = createTrpcClient({
+    router,
+    links: [
+      experimental_durableLink(),
+      httpLink({ url: server.url, serializer: danson }),
+    ],
+  });
+  const file = new File(['bytes'], 'a.txt');
+  expect(await client.upload.mutate({ file }, { callId: 'u1' })).toBe('bytes');
+  expect(await client.upload.mutate({ file }, { callId: 'u1' })).toBe('bytes');
+  expect(runs).toBe(1);
+
+  const items: unknown[] = [];
+  const [, err] = await safe(
+    (async () => {
+      for await (const item of await client.odd.mutate(undefined, {
+        callId: 'o1',
+      }))
+        items.push(item);
+    })(),
+  );
+  expect(items).toEqual([1]);
+  expect(err).toMatchObject({ code: 'STREAM_INTERRUPTED' });
 });
