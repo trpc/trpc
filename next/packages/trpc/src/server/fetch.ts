@@ -568,7 +568,8 @@ export function createFetchHandler<
       const form = yield* Effect.tryPromise({
         try: () =>
           new globalThis.Response(bytes as BodyInit, {
-            headers: { 'content-type': request.headers['content-type'] ?? '' },
+            // Only multipart requests get here.
+            headers: { 'content-type': request.headers['content-type']! },
           }).formData(),
         catch: (cause) =>
           new TrpcError({
