@@ -1,4 +1,4 @@
-import { Effect, Schema } from 'effect';
+import { Effect, Redacted, Schema } from 'effect';
 import { TestClock } from 'effect/testing';
 import {
   connectionToken,
@@ -513,6 +513,58 @@ test('a signed token picks the channel a hibernated subscription gets events for
   expect(texts(bob)).toEqual(['hi bob']);
 });
 
+test('nothing is sent to a socket that is closing: not results, not events', async () => {
+  const state = fakeState();
+  state.getWebSockets = function () {
+    return this.accepted;
+  };
+  const sockets = notesRoom(state);
+  const ada = await join(sockets, 'ada');
+  const bob = await join(sockets, 'bob');
+  say(sockets, ada, {
+    id: 1,
+    type: 'request',
+    method: 'subscription',
+    path: 'inbox',
+  });
+  await vi.waitFor(() =>
+    expect(ada.deserializeAttachment()).toMatchObject({
+      subs: [{ c: 1, ch: 'inbox:ada' }],
+    }),
+  );
+  const before = ada.sent.length;
+  ada.readyState = 2;
+  say(sockets, ada, {
+    id: 2,
+    type: 'request',
+    method: 'mutation',
+    path: 'send',
+    input: jsonSerializer.serialize({ to: 'bob', text: 'unsent' }),
+  });
+  say(sockets, bob, {
+    id: 1,
+    type: 'request',
+    method: 'mutation',
+    path: 'send',
+    input: jsonSerializer.serialize({ to: 'ada', text: 'unseen' }),
+  });
+  await vi.waitFor(() =>
+    expect(bob.sent).toContainEqual(
+      expect.objectContaining({ id: 1, type: 'result' }),
+    ),
+  );
+  await new Promise((r) => setTimeout(r, 20));
+  expect(ada.sent).toHaveLength(before);
+});
+
+test('an init with a protocol version the server does not speak closes the socket', () => {
+  const socket = new FakeSocket();
+  const sockets = notesRoom(fakeState());
+  sockets.accept(socket, request);
+  say(sockets, socket, { type: 'init', version: '11' });
+  expect(socket.closed).toEqual([1002, 'Unsupported protocol version']);
+});
+
 test('connection tokens fail with UNAUTHORIZED when missing, tampered with or expired', async () => {
   const token = await Effect.runPromise(RoomToken.sign({ user: 'ada' }));
   expect(await Effect.runPromise(RoomToken.verify(token))).toEqual({
@@ -524,6 +576,7 @@ test('connection tokens fail with UNAUTHORIZED when missing, tampered with or ex
   for (const [bad, message] of [
     [undefined, 'Missing connection token'],
     ['nope', 'Malformed connection token'],
+    [`.${mac}`, 'Malformed connection token'],
     [forged, 'Invalid connection token'],
     [`${body}.${mac}x`, 'Invalid connection token'],
   ] as const) {
@@ -566,6 +619,35 @@ test('connection tokens fail with UNAUTHORIZED when missing, tampered with or ex
       expect.objectContaining({ id: 1, type: 'error' }),
     ]),
   );
+});
+
+test('a Redacted secret, the default ttl of an hour, and claims an older schema signed', async () => {
+  const secret = Redacted.make('test-secret');
+  const V2 = connectionToken(Schema.Struct({ user: Schema.Number }), {
+    secret,
+  });
+  const [verified, expired, oldClaims, malformed] = await Effect.runPromise(
+    Effect.gen(function* () {
+      const minted = yield* V2.sign({ user: 1 });
+      yield* TestClock.adjust('59 minutes');
+      const verified = yield* V2.verify(minted);
+      yield* TestClock.adjust('2 minutes');
+      const expired = yield* Effect.flip(V2.verify(minted));
+      const old = yield* RoomToken.sign({ user: 'ada' });
+      const oldClaims = yield* Effect.flip(V2.verify(old));
+      const malformed = yield* Effect.flip(
+        V2.verify(`!!!.${old.split('.')[1]}`),
+      );
+      return [verified, expired, oldClaims, malformed] as const;
+    }).pipe(Effect.provide(TestClock.layer())),
+  );
+  expect(verified).toEqual({ user: 1 });
+  expect(expired).toMatchObject({ message: 'Expired connection token' });
+  expect(oldClaims).toMatchObject({
+    code: 'UNAUTHORIZED',
+    message: 'Invalid connection token claims',
+  });
+  expect(malformed).toMatchObject({ message: 'Malformed connection token' });
 });
 
 test('a handler not from createFetchHandler, and upgrade() outside Workers, are refused', () => {

@@ -114,8 +114,10 @@ export function connectionToken<S extends Schema.Codec<any, any>>(
       }
       const [body, mac, ...rest] = token.split('.');
       const signature = mac === undefined ? undefined : Base64Url.decode(mac);
+      const decoded = body ? Base64Url.decodeString(body) : undefined;
       if (
-        !body ||
+        decoded === undefined ||
+        decoded._tag === 'Failure' ||
         rest.length > 0 ||
         signature === undefined ||
         signature._tag === 'Failure'
@@ -134,11 +136,10 @@ export function connectionToken<S extends Schema.Codec<any, any>>(
       if (!valid) {
         return yield* Effect.fail(unauthorized('Invalid connection token'));
       }
-      const decoded = Base64Url.decodeString(body);
-      const payload =
-        decoded._tag === 'Success'
-          ? (JSON.parse(decoded.success) as { c?: unknown; exp?: unknown })
-          : {};
+      const payload = JSON.parse(decoded.success) as {
+        c?: unknown;
+        exp?: unknown;
+      };
       const now = yield* Clock.currentTimeMillis;
       if (typeof payload.exp !== 'number' || payload.exp <= now) {
         return yield* Effect.fail(unauthorized('Expired connection token'));
