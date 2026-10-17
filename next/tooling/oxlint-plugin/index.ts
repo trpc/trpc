@@ -5,6 +5,7 @@ import { inferCallbackParams } from './infer-callback-params.ts';
 import { jsdoc } from './jsdoc.ts';
 import { noCustomTestTimeout } from './no-custom-test-timeout.ts';
 import { noMock } from './no-mock.ts';
+import { noOverzealousDestructuring } from './no-overzealous-destructuring.ts';
 import { typedObjects } from './typed-objects.ts';
 
 const plugin = eslintCompatPlugin({
@@ -15,6 +16,7 @@ const plugin = eslintCompatPlugin({
     jsdoc,
     'no-custom-test-timeout': noCustomTestTimeout,
     'no-mock': noMock,
+    'no-overzealous-destructuring': noOverzealousDestructuring,
     'typed-objects': typedObjects,
   },
 });
