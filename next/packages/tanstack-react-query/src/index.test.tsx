@@ -10,6 +10,7 @@ import {
   useQueries,
   useQuery,
   useQueryClient,
+  useSuspenseInfiniteQuery,
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { createTrpcQueryUtils, hydrationOptions } from '@trpc12/tanstack-query';
@@ -195,6 +196,30 @@ test('useInfiniteQuery loads pages on demand', async () => {
   expect(view.el.querySelector('button')).toBeNull();
 });
 
+test('useSuspenseInfiniteQuery takes select, typed by what it returns', async () => {
+  await using app = await createApp({ posts: 3 });
+  function PageSizes() {
+    const trpc = useTrpc();
+    const sizes = useSuspenseInfiniteQuery({
+      ...trpc.post.list.infiniteOptions({
+        input: (cursor: number | undefined) => ({ limit: 2, cursor }),
+        initialPageParam: undefined,
+        getNextPageParam: (page) => page.nextCursor,
+      }),
+      select: (data) => data.pages.flatMap((page) => page.items.length),
+    });
+    expectTypeOf(sizes.data).toEqualTypeOf<number[]>();
+    return <p className="count">{sizes.data.join(',')}</p>;
+  }
+  using view = mount(
+    <Suspense fallback={<p>suspended</p>}>
+      <PageSizes />
+    </Suspense>,
+    app.client,
+  );
+  await waitFor(() => expect(text(view.el, '.count')).toBe('2'));
+});
+
 test('useSubscription, live and streamed queries update the UI', async () => {
   await using app = await createApp();
   const toasts: string[] = [];
@@ -239,7 +264,7 @@ test('useSubscription, live and streamed queries update the UI', async () => {
 
 test('useQueries takes queryOptions; combine sees the typed results', async () => {
   await using app = await createApp();
-  function Titles() {
+  function PageSizes() {
     const trpc = useTrpc();
     const titles = useQueries({
       queries: ['1', '2', 'nope'].map((id) =>
@@ -254,7 +279,7 @@ test('useQueries takes queryOptions; combine sees the typed results', async () =
     });
     return <p>{titles.join(',')}</p>;
   }
-  using view = mount(<Titles />, app.client);
+  using view = mount(<PageSizes />, app.client);
   await waitFor(() =>
     expect(text(view.el, 'p')).toBe('Post 1,Post 2,NOT_FOUND'),
   );
