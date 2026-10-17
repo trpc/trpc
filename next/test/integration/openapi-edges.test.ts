@@ -8,7 +8,7 @@ import {
   openApiLink,
 } from '@trpc12/trpc/openapi';
 import { error, initTrpc, lazy, tracked } from '@trpc12/trpc/server';
-import { expect, test } from 'vite-plus/test';
+import { expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 
 const t = initTrpc<{ ctx: { user: string } }>().concat(openapi());
@@ -16,6 +16,7 @@ const t = initTrpc<{ ctx: { user: string } }>().concat(openapi());
 const raw = (body: BodyInit | null, init?: ResponseInit) =>
   HttpServerResponse.fromWeb(new Response(body, init));
 
+let slowAborts = 0;
 const router = {
   echo: t.procedure
     .meta({ route: { method: 'POST', path: '/echo' } })
@@ -114,7 +115,10 @@ const router = {
     .meta({ route: { method: 'GET', path: '/slow' } })
     .query(({ signal }) =>
       Effect.callback<string>((resume) => {
-        signal.addEventListener('abort', () => resume(Effect.succeed('gone')));
+        signal.addEventListener('abort', () => {
+          slowAborts++;
+          resume(Effect.succeed('gone'));
+        });
       }),
     ),
   who: t.procedure
@@ -261,10 +265,12 @@ test('cancelling a stream, or aborting a request, interrupts the procedure', asy
   );
   await reader.cancel();
 
+  const before = slowAborts;
   const controller = new AbortController();
   const pending = api(handler, '/slow', { signal: controller.signal });
   setTimeout(() => controller.abort(), 10);
-  expect(await (await pending).json()).toBe('gone');
+  await pending.catch(() => undefined);
+  await vi.waitFor(() => expect(slowAborts).toBe(before + 1));
   await handler.dispose();
 });
 
