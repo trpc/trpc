@@ -151,14 +151,17 @@
     "access": "public"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit -p tsconfig.lib.json && tsc --noEmit -p tsconfig.json",
-    "build": "node ../../tooling/pack/pack.ts"
+    "typecheck": "tsc --noEmit -p tsconfig.lib.json && tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.bun.json",
+    "build": "node ../../tooling/pack/pack.ts",
+    "test:bun": "bun test ./src/http/serve.bun.test.ts"
   },
   "dependencies": {
     "effect": "^4.0.0"
   },
   "devDependencies": {
+    "@effect/platform-bun": "4.0.2",
     "@tooling/tsconfig": "workspace:*",
+    "@types/bun": "1.4.3",
     "@types/node": "^24.0.0",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",

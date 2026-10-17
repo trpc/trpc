@@ -1,7 +1,0 @@
-{
-  "extends": "@tooling/tsconfig/base.json",
-  "compilerOptions": {
-    "types": ["bun"]
-  },
-  "include": ["**/*.ts"]
-}

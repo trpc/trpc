@@ -2,5 +2,6 @@
   "extends": "@tooling/tsconfig/src.json",
   "compilerOptions": {
     "jsx": "react-jsx"
-  }
+  },
+  "exclude": ["src/**/*.bun.test.ts"]
 }

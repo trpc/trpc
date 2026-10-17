@@ -12,7 +12,7 @@
     "test": "vp test run",
     "coverage": "vp test run --coverage",
     "test:watch": "vp test watch",
-    "test:bun": "pnpm --filter @test/bun run test:bun",
+    "test:bun": "pnpm --filter @trpc12/trpc run test:bun",
     "example": "pnpm -r --workspace-concurrency=1 --filter './examples/*' run smoke",
     "decisions": "node tooling/decisions/decisions.ts",
     "build": "pnpm -r run build",

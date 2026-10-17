@@ -97,7 +97,7 @@ export default defineConfig({
           ],
           exclude: [
             '**/node_modules/**',
-            'test/bun/**',
+            '**/*.bun.test.ts',
             'packages/tanstack-solid-query/src/index.test.ts',
             'packages/tanstack-svelte-query/src/index.test.ts',
             'packages/tanstack-svelte-query/src/ssr.test.ts',

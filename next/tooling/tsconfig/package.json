@@ -1,5 +1,5 @@
 {
   "name": "@tooling/tsconfig",
   "private": true,
-  "description": "Shared tsconfigs: base.json (strictest), lib.json (a package's published files), src.json (a package's src with its tests), node.json (Node scripts and suites)"
+  "description": "Shared tsconfigs: base.json (strictest), lib.json (a package's published files), src.json (a package's src with its tests), node.json (Node scripts and suites), bun.json (Bun suites)"
 }

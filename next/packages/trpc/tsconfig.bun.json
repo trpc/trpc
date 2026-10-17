@@ -1,0 +1,4 @@
+{
+  "extends": "@tooling/tsconfig/bun.json",
+  "include": ["src/**/*.bun.test.ts"]
+}
