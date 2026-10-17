@@ -52,7 +52,9 @@ export type Serialize<T> =
 
 /** JSON serialize [tuples](https://www.typescriptlang.org/docs/handbook/2/objects.html#tuple-types) */
 type SerializeTuple<T extends [unknown, ...unknown[]]> = {
-  [K in keyof T]: T[K] extends NonJsonPrimitive ? null : Serialize<T[K]>;
+  [K in keyof T as K extends symbol ? never : K]: T[K] extends NonJsonPrimitive
+    ? null
+    : Serialize<T[K]>;
 };
 
 // prettier-ignore

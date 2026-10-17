@@ -337,3 +337,17 @@ test('tuple types are not inferred as Records', () => {
     endsAt?: [string | null, string | null] | undefined;
   }>();
 });
+
+test('Symbol keys in branded tuples are stripped during serialization', () => {
+  // Regression test for https://github.com/trpc/trpc/issues/6500
+  // Zod's z.tuple().brand() injects a unique symbol key into the tuple type.
+  // Without filtering symbols in SerializeTuple (as SerializeObjectKey already does),
+  // keyof T includes the brand symbol and corrupts the tuple length/shape.
+  const brandedTuple = z.tuple([z.number(), z.number()]).brand<'Point'>();
+
+  type Source = z.infer<typeof brandedTuple>;
+  type Transformed = Serialize<Source>;
+
+  // Should serialize to a plain 2-element tuple — symbol brand key stripped
+  expectTypeOf<Transformed>().toEqualTypeOf<[number, number]>();
+});
