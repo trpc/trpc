@@ -1,4 +1,4 @@
-import { connect } from 'node:net';
+import { connect, createServer, type AddressInfo } from 'node:net';
 import { NodeSocket, NodeSocketServer } from '@effect/platform-node';
 import { Context, Effect, Exit, Layer, Scope } from 'effect';
 import { SocketServer } from 'effect/socket';
@@ -187,4 +187,44 @@ test('a line that is not JSON gets a PARSE_ERROR message', async () => {
   });
   const message = JSON.parse(reply.split('\n')[0]!);
   expect(message).toMatchObject({ id: null, type: 'error' });
+});
+
+test('the link skips lines from the server that are not JSON', async () => {
+  const server = createServer((raw) => {
+    raw.setEncoding('utf8');
+    let buffered = '';
+    raw.on('data', (data: string) => {
+      buffered += data;
+      for (
+        let end = buffered.indexOf('\n');
+        end !== -1;
+        end = buffered.indexOf('\n')
+      ) {
+        const message = JSON.parse(buffered.slice(0, end));
+        buffered = buffered.slice(end + 1);
+        if (message.type !== 'request') continue;
+        const result = {
+          id: message.id,
+          type: 'result',
+          body: { json: 'scripted' },
+        };
+        raw.write(`nope\n${JSON.stringify(result)}\n`);
+      }
+    });
+  });
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const { port } = server.address() as AddressInfo;
+  try {
+    await using link = experimental_socketLink({
+      socket: NodeSocket.makeNet({ host: '127.0.0.1', port }),
+      keepAlive: false,
+    });
+    const client = createTrpcClient({
+      router: routerType<typeof router>(),
+      links: [link],
+    });
+    expect(await client.whoami.query()).toBe('scripted');
+  } finally {
+    server.close();
+  }
 });

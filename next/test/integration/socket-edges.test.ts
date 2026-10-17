@@ -217,6 +217,10 @@ test('the client ignores stray messages and fails calls on connection errors', a
       }
     }
     expect(events).toEqual([0, 1, 2]);
+
+    // After close(), the next call opens the port again.
+    await link.close();
+    expect(await client.hello.query()).toBe('hello ada');
   } finally {
     await link.close();
     port1.close();
