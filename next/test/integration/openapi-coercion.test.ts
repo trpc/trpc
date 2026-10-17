@@ -150,8 +150,9 @@ test('openApiLink sends nulls, dates and lists of objects in bracket notation', 
         url: 'http://localhost',
         contract: toContract(r),
         fetch: (url, init) => {
-          urls.push(decodeURIComponent(String(url)));
-          return h.fetch(new Request(url, init));
+          const request = new Request(url, init);
+          urls.push(decodeURIComponent(request.url));
+          return h.fetch(request);
         },
       }),
     ],

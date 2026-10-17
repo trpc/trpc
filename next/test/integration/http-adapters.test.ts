@@ -12,7 +12,7 @@ import {
 } from '@trpc12/trpc/client';
 import { cors, serve, toHttpEffect } from '@trpc12/trpc/http';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
-import { expect, test, vi } from 'vite-plus/test';
+import { expect, test } from 'vite-plus/test';
 import { z } from 'zod';
 
 const t = initTrpc();

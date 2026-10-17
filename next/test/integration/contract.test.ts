@@ -193,7 +193,7 @@ test('impl.router() checks completeness at the type level and at runtime', () =>
     }),
   ).toThrow(/"post\.byId" must be a query, not a mutation/);
 
-  const untyped = impl.router as (routes: unknown) => unknown;
+  const untyped = (routes: unknown) => impl.router(routes as never);
   expect(() => untyped({ health })).toThrow(/"post" is missing/);
   expect(() => untyped({ health, post: byId })).toThrow(
     /"post" must be a router/,
