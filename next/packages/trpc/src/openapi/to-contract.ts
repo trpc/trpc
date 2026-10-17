@@ -1,4 +1,4 @@
-import { JsonSchema, SchemaRepresentation } from 'effect';
+import { JsonSchema, Predicate, SchemaRepresentation } from 'effect';
 
 /**
  * An OpenAPI 3.0 or 3.1 document, as {@link generateContractFromOpenApi}
@@ -340,10 +340,11 @@ export function generateContractFromOpenApi(
       ),
     );
     for (const artifact of code.artifacts) {
-      if (artifact._tag === 'Import') lines.push(artifact.importDeclaration);
+      if (Predicate.isTagged(artifact, 'Import'))
+        lines.push(artifact.importDeclaration);
     }
     for (const artifact of code.artifacts) {
-      if (artifact._tag !== 'Import') {
+      if (!Predicate.isTagged(artifact, 'Import')) {
         lines.push(`const ${artifact.identifier} = ${artifact.code.runtime}`);
       }
     }

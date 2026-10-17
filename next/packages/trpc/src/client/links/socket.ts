@@ -1,10 +1,12 @@
 import { decodeMessage } from '../../internal/frames.ts';
 import {
+  Data,
   Deferred,
   Duration,
   Effect,
   Exit,
   Fiber,
+  Option,
   Queue,
   RcRef,
   Scope,
@@ -43,15 +45,20 @@ interface SocketConnection {
 }
 
 /** What a call's inbox receives. */
-type Signal =
-  | { readonly _tag: 'message'; readonly message: CallMessage }
+type Signal = Data.TaggedEnum<{
+  Message: { readonly message: CallMessage };
   /** The connection dropped; the call may be sent again on a new one. */
-  | { readonly _tag: 'lost' }
-  | { readonly _tag: 'fail'; readonly error: AnyTrpcError };
+  Lost: {};
+  Fail: { readonly error: AnyTrpcError };
+}>;
+const Signal = Data.taggedEnum<Signal>();
 
 type CallMessage = Exclude<ServerMessage, { type: 'pong' } | { type: 'init' }>;
 
-const LOST: Signal = { _tag: 'lost' };
+const LOST = Signal.Lost();
+
+/** How a call's time on one connection ended. */
+type Outcome = 'complete' | 'heard' | 'silent';
 
 interface Connection {
   readonly socket: SocketConnection;
@@ -160,19 +167,19 @@ function makeSocketLink(
       });
       conn.refused = error;
       for (const inbox of conn.calls.values())
-        Queue.offerUnsafe(inbox, { _tag: 'fail', error });
+        Queue.offerUnsafe(inbox, Signal.Fail({ error }));
       conn.calls.clear();
       return;
     }
     if (message.id === null) {
       if (message.type !== 'error') return;
-      const signal: Signal = { _tag: 'fail', error: revive(message) };
+      const signal = Signal.Fail({ error: revive(message) });
       for (const inbox of conn.calls.values()) Queue.offerUnsafe(inbox, signal);
       conn.calls.clear();
       return;
     }
     const inbox = conn.calls.get(message.id);
-    if (inbox) Queue.offerUnsafe(inbox, { _tag: 'message', message });
+    if (inbox) Queue.offerUnsafe(inbox, Signal.Message({ message }));
   }
 
   function lose(conn: Connection) {
@@ -260,7 +267,7 @@ function makeSocketLink(
     Effect.gen(function* () {
       for (;;) {
         const conn = yield* Effect.option(RcRef.get(connection));
-        if (conn._tag === 'None') return undefined;
+        if (Option.isNone(conn)) return undefined;
         if (!conn.value.lost) return conn.value;
         yield* RcRef.invalidate(connection);
       }
@@ -274,7 +281,7 @@ function makeSocketLink(
   const attach = (
     call: Call,
     inbox: Queue.Queue<Signal>,
-  ): Effect.Effect<'complete' | 'heard' | 'silent', AnyTrpcError> =>
+  ): Effect.Effect<Outcome, AnyTrpcError> =>
     Effect.gen(function* () {
       const request = yield* Effect.try({
         try: call.request,
@@ -296,21 +303,26 @@ function makeSocketLink(
       conn.socket.send(request);
       for (;;) {
         const signal = yield* Queue.take(inbox);
-        switch (signal._tag) {
-          case 'lost':
-            return conn.received > 0 ? 'heard' : 'silent';
-          case 'fail':
+        const outcome = yield* Signal.$match(signal, {
+          Lost: () =>
+            Effect.succeed<Outcome>(conn.received > 0 ? 'heard' : 'silent'),
+          Fail: (fail) => {
             complete = true;
-            return yield* Effect.fail(signal.error);
-          case 'message': {
-            const { type } = signal.message;
+            return Effect.fail(fail.error);
+          },
+          Message: ({ message }) => {
+            const { type } = message;
             complete =
               type === 'done' ||
               type === 'error' ||
-              (type === 'result' && !signal.message.deferred);
-            if (yield* call.onMessage(signal.message)) return 'complete';
-          }
-        }
+              (type === 'result' && !message.deferred);
+            return Effect.map(
+              call.onMessage(message),
+              (done): Outcome | undefined => (done ? 'complete' : undefined),
+            );
+          },
+        });
+        if (outcome) return outcome;
       }
     }).pipe(Effect.scoped);
 
@@ -342,7 +354,7 @@ function makeSocketLink(
         const signal = yield* Queue.take(inbox).pipe(
           Effect.timeoutOption(reconnect.delayMs(attempt)),
         );
-        if (signal._tag === 'Some' && signal.value._tag === 'fail') {
+        if (Option.isSome(signal) && Signal.$is('Fail')(signal.value)) {
           return yield* Effect.fail(signal.value.error);
         }
       }
@@ -469,13 +481,12 @@ function makeSocketLink(
   const close = () =>
     Effect.runPromise(
       Effect.gen(function* () {
-        const signal: Signal = {
-          _tag: 'fail',
+        const signal = Signal.Fail({
           error: new TrpcError({
             code: 'CLIENT_CLOSED_REQUEST',
             message: 'The link was closed',
           }),
-        };
+        });
         for (const inbox of live) Queue.offerUnsafe(inbox, signal);
         const conn = current;
         yield* RcRef.invalidate(connection);

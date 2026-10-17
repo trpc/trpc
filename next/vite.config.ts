@@ -39,7 +39,10 @@ export default defineConfig({
       typeCheck: true,
     },
     plugins: ['typescript', 'unicorn', 'oxc', 'vitest'],
-    jsPlugins: ['./tooling/oxlint-plugin/index.ts'],
+    jsPlugins: [
+      './tooling/oxlint-plugin/index.ts',
+      './tooling/oxlint-plugin/anti-slop/effect/index.ts',
+    ],
     rules: {
       'trpc/acronym-case': 'error',
       'trpc/no-custom-test-timeout': 'error',
@@ -68,6 +71,21 @@ export default defineConfig({
       'vitest/no-standalone-expect': 'off',
     },
     overrides: [
+      {
+        // Code built on Effect. Opt-in, because these rules push Effect idioms
+        // into code that doesn't use it.
+        files: [
+          'packages/*/src/**',
+          'tooling/**',
+          'test/**',
+          'examples/effect/**',
+        ],
+        rules: {
+          'anti-slop-effect/no-manual-tag-comparison': 'error',
+          'anti-slop-effect/no-manual-tagged-construction': 'error',
+          'anti-slop-effect/prefer-effect-match': 'error',
+        },
+      },
       {
         files: ['examples/**'],
         rules: {

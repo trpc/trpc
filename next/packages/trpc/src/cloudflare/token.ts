@@ -1,4 +1,4 @@
-import { Clock, Effect, Redacted, Schema } from 'effect';
+import { Clock, Effect, Redacted, Result, Schema } from 'effect';
 import { Base64Url } from 'effect/encoding';
 import { TrpcError } from '../internal/error.ts';
 
@@ -117,10 +117,10 @@ export function connectionToken<S extends Schema.Codec<any, any>>(
       const decoded = body ? Base64Url.decodeString(body) : undefined;
       if (
         decoded === undefined ||
-        decoded._tag === 'Failure' ||
+        Result.isFailure(decoded) ||
         rest.length > 0 ||
         signature === undefined ||
-        signature._tag === 'Failure'
+        Result.isFailure(signature)
       ) {
         return yield* Effect.fail(unauthorized('Malformed connection token'));
       }

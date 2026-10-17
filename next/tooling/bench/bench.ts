@@ -142,6 +142,9 @@ const runtime = Command.make(
 // --- typecheck ------------------------------------------------------------
 
 type Framework = 'trpc12' | 'trpc11' | 'orpc';
+
+const byFramework = <A>(fw: Framework, cases: Record<Framework, () => A>): A =>
+  cases[fw]();
 const names: Record<Framework, string> = {
   trpc12: 'tRPC v12',
   trpc11: 'tRPC v11',
@@ -175,30 +178,27 @@ const fixture = (fw: Framework, routers: number): Array<[string, string]> => {
       : (id: string, p: string, kind: 'query' | 'mutate') =>
           `client.${id}.${p}.${kind}`;
   for (const id of ids) {
-    const body =
-      fw === 'trpc12'
-        ? nest(
-            `procedure${P1('query')}`,
-            `procedure${P2('mutation')}`,
-            (b) => `{${b}}`,
-          )
-        : fw === 'trpc11'
-          ? nest(
-              `procedure${P1('query')}`,
-              `procedure${P2('mutation')}`,
-              (b) => `router({${b}})`,
-            )
-          : nest(
-              `base${P1('handler')}`,
-              `base${P2('handler')}`,
-              (b) => `{${b}}`,
-            );
-    const imports =
-      fw === 'orpc'
-        ? `import { base, type Schema } from '../base';`
-        : fw === 'trpc11'
-          ? `import { procedure, router, type Schema } from '../base';`
-          : `import { procedure, type Schema } from '../base';`;
+    const body = byFramework(fw, {
+      trpc12: () =>
+        nest(
+          `procedure${P1('query')}`,
+          `procedure${P2('mutation')}`,
+          (b) => `{${b}}`,
+        ),
+      trpc11: () =>
+        nest(
+          `procedure${P1('query')}`,
+          `procedure${P2('mutation')}`,
+          (b) => `router({${b}})`,
+        ),
+      orpc: () =>
+        nest(`base${P1('handler')}`, `base${P2('handler')}`, (b) => `{${b}}`),
+    });
+    const imports = byFramework(fw, {
+      trpc12: () => `import { procedure, type Schema } from '../base';`,
+      trpc11: () => `import { procedure, router, type Schema } from '../base';`,
+      orpc: () => `import { base, type Schema } from '../base';`,
+    });
     files.push([
       `router/${id}.ts`,
       `${imports}\n\nexport const ${id} = ${body};\n`,
@@ -232,19 +232,24 @@ const fixture = (fw: Framework, routers: number): Array<[string, string]> => {
   const schema = `export type { StandardSchemaV1 as Schema } from '@standard-schema/spec';\n`;
   files.push([
     'base.ts',
-    fw === 'trpc12'
-      ? `import { initTrpc } from '@trpc12/trpc/server';\n\nexport const procedure = initTrpc().procedure;\n${schema}`
-      : fw === 'trpc11'
-        ? `import { initTRPC } from '@trpc/server';\n\nconst t = initTRPC.create();\nexport const router = t.router;\nexport const procedure = t.procedure;\n${schema}`
-        : `export { os as base, type Schema } from '@orpc/server';\n`,
+    byFramework(fw, {
+      trpc12: () =>
+        `import { initTrpc } from '@trpc12/trpc/server';\n\nexport const procedure = initTrpc().procedure;\n${schema}`,
+      trpc11: () =>
+        `import { initTRPC } from '@trpc/server';\n\nconst t = initTRPC.create();\nexport const router = t.router;\nexport const procedure = t.procedure;\n${schema}`,
+      orpc: () => `export { os as base, type Schema } from '@orpc/server';\n`,
+    }),
   ]);
   files.push([
     'client.ts',
-    fw === 'trpc12'
-      ? `import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';\nimport type { router } from './router';\n\nexport const client = createTrpcClient({\n  router: routerType<typeof router>(),\n  links: [httpLink({ url: 'http://localhost:3000/trpc' })],\n});\n`
-      : fw === 'trpc11'
-        ? `import { createTRPCClient, httpBatchLink } from '@trpc/client';\nimport type { router } from './router';\n\nexport const client = createTRPCClient<typeof router>({\n  links: [httpBatchLink({ url: 'http://localhost:3000/trpc' })],\n});\n`
-        : `import { createORPCClient } from '@orpc/client';\nimport { RPCLink } from '@orpc/client/fetch';\nimport type { RouterClient } from '@orpc/server';\nimport type { router } from './router';\n\nexport const client: RouterClient<typeof router> = createORPCClient(new RPCLink({}));\n`,
+    byFramework(fw, {
+      trpc12: () =>
+        `import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';\nimport type { router } from './router';\n\nexport const client = createTrpcClient({\n  router: routerType<typeof router>(),\n  links: [httpLink({ url: 'http://localhost:3000/trpc' })],\n});\n`,
+      trpc11: () =>
+        `import { createTRPCClient, httpBatchLink } from '@trpc/client';\nimport type { router } from './router';\n\nexport const client = createTRPCClient<typeof router>({\n  links: [httpBatchLink({ url: 'http://localhost:3000/trpc' })],\n});\n`,
+      orpc: () =>
+        `import { createORPCClient } from '@orpc/client';\nimport { RPCLink } from '@orpc/client/fetch';\nimport type { RouterClient } from '@orpc/server';\nimport type { router } from './router';\n\nexport const client: RouterClient<typeof router> = createORPCClient(new RPCLink({}));\n`,
+    }),
   ]);
   files.push([
     'tsconfig.json',

@@ -8,6 +8,7 @@ import {
   routerType,
   type BuiltinCallOptions,
 } from '@trpc12/trpc/client';
+import { Predicate } from 'effect';
 import { error, initTrpc } from '@trpc12/trpc/server';
 import { createTestServer } from '../../fixtures/server.ts';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
@@ -218,10 +219,8 @@ test('a stream that ends early rejects open values with STREAM_INTERRUPTED', asy
     (e: unknown) => e,
   );
   expect(err).toBeInstanceOf(TrpcError);
-  expect(err).toMatchObject({
-    code: 'STREAM_INTERRUPTED',
-    _tag: 'STREAM_INTERRUPTED',
-  });
+  expect(err).toMatchObject({ code: 'STREAM_INTERRUPTED' });
+  expect(err).toSatisfy(Predicate.isTagged('STREAM_INTERRUPTED'));
 });
 
 // --- responses -----------------------------------------------------------------

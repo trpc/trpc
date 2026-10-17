@@ -1,4 +1,4 @@
-import type { Context, Effect, Stream } from 'effect';
+import { Match, type Context, type Effect, type Stream } from 'effect';
 import type { AnyTrpcError, TrpcError } from '../internal/error.ts';
 import type {
   IsAny,
@@ -851,11 +851,16 @@ export type InputDef<TDef extends BuilderDef, $S extends AnySchema> = {
 export type AnyProcedureBuilder = ProcedureBuilder<any>;
 
 const sameStep = (a: Step, b: Step): boolean =>
-  a.kind === 'use'
-    ? b.kind === 'use' && a.fn === b.fn
-    : a.kind === 'input'
-      ? b.kind === 'input' && a.arg === b.arg
-      : b.kind === 'provide' && a.key === b.key && a.make === b.make;
+  Match.value(a).pipe(
+    Match.discriminatorsExhaustive('kind')({
+      use: (use) => b.kind === 'use' && use.fn === b.fn,
+      input: (input) => b.kind === 'input' && input.arg === b.arg,
+      provide: (provide) =>
+        b.kind === 'provide' &&
+        provide.key === b.key &&
+        provide.make === b.make,
+    }),
+  );
 
 /**
  * `before` then `after`, minus the leading steps of `after` that `before`

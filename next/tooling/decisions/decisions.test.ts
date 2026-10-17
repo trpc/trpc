@@ -3,6 +3,7 @@ import { Effect, FileSystem, Path } from 'effect';
 import { expect, test } from 'vite-plus/test';
 import {
   decisionsDir,
+  InvalidDecision,
   parseDecision,
   questionIndex,
   readDecisions,
@@ -78,7 +79,9 @@ test('parses who, questions, open items, tentative answers and agent bullets', (
     agentBullets: ['(agent) Declared errors stay optional.\n  More about it.'],
     livesIn: '`src/errors.ts`.',
   });
-  expect(
-    Effect.runSync(Effect.flip(parseDecision('bad.md', '# No marker\n'))),
-  ).toMatchObject({ _tag: 'InvalidDecision', message: /first line/ });
+  const invalid = Effect.runSync(
+    Effect.flip(parseDecision('bad.md', '# No marker\n')),
+  );
+  expect(invalid).toBeInstanceOf(InvalidDecision);
+  expect(invalid.message).toMatch(/first line/);
 });

@@ -1,4 +1,4 @@
-import { Effect, Queue } from 'effect';
+import { Effect, Predicate, Queue } from 'effect';
 import type { HttpServerError, HttpServerRequest } from 'effect/http';
 import { Socket } from 'effect/socket';
 import type { WebSocketLike } from './socket.ts';
@@ -71,7 +71,7 @@ const serveSocket = (
       Effect.catch((err) =>
         Effect.sync(() => {
           const { reason } = err;
-          if (reason._tag === 'SocketCloseError') {
+          if (Predicate.isTagged(reason, 'SocketCloseError')) {
             closed(reason.code, reason.closeReason ?? '');
           }
         }),

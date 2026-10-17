@@ -2,7 +2,7 @@ import { once } from 'node:events';
 import { createServer, request, type IncomingMessage } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { NodeHttpServer } from '@effect/platform-node';
-import { Context, Effect, Exit, Layer, Scope } from 'effect';
+import { Context, Effect, Exit, Layer, Match, Scope } from 'effect';
 import { HttpMiddleware, HttpServer } from 'effect/http';
 import {
   createTrpcClient,
@@ -53,12 +53,11 @@ async function parse(req: IncomingMessage & { body?: unknown }) {
   const parser = req.headers['x-parser'];
   if (!parser && !req.headers['content-type']?.startsWith('application/json'))
     return;
-  req.body =
-    parser === 'text'
-      ? String(raw)
-      : parser === 'raw'
-        ? new Uint8Array(raw)
-        : JSON.parse(String(raw));
+  req.body = Match.value(parser).pipe(
+    Match.when('text', () => String(raw)),
+    Match.when('raw', () => new Uint8Array(raw)),
+    Match.orElse((): unknown => JSON.parse(String(raw))),
+  );
 }
 
 /** Serves `app` behind a Node server whose requests `before` reads first, as Express middleware would. */

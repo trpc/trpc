@@ -583,7 +583,6 @@ test('connection tokens fail with UNAUTHORIZED when missing, tampered with or ex
   ] as const) {
     const exit = await Effect.runPromiseExit(RoomToken.verify(bad));
     expect(exit).toMatchObject({
-      _tag: 'Failure',
       cause: { reasons: [{ error: { code: 'UNAUTHORIZED', message } }] },
     });
   }

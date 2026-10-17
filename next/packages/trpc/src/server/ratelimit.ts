@@ -110,20 +110,24 @@ export function rateLimit<TReq extends MiddlewareRequirements = {}>(
           tokens: options.tokens,
         })
         .pipe(
-          Effect.catchTag('RateLimiterError', (err) => {
-            if (err.reason._tag !== 'RateLimitExceeded') return Effect.die(err);
-            const { retryAfter } = err.reason;
-            headers.set('ratelimit-limit', String(err.reason.limit));
-            headers.set('ratelimit-remaining', '0');
-            headers.set('ratelimit-reset', seconds(retryAfter));
-            headers.set('retry-after', seconds(retryAfter));
-            return Effect.fail(
-              new RateLimited({
-                limit: err.reason.limit,
-                retryAfter: Duration.toMillis(retryAfter),
-              }),
-            );
-          }),
+          Effect.catchReason(
+            'RateLimiterError',
+            'RateLimitExceeded',
+            (reason) => {
+              const { retryAfter } = reason;
+              headers.set('ratelimit-limit', String(reason.limit));
+              headers.set('ratelimit-remaining', '0');
+              headers.set('ratelimit-reset', seconds(retryAfter));
+              headers.set('retry-after', seconds(retryAfter));
+              return Effect.fail(
+                new RateLimited({
+                  limit: reason.limit,
+                  retryAfter: Duration.toMillis(retryAfter),
+                }),
+              );
+            },
+            (_reason, err) => Effect.die(err),
+          ),
         );
       headers.set('ratelimit-limit', String(result.limit));
       headers.set('ratelimit-remaining', String(Math.max(0, result.remaining)));

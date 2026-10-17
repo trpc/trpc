@@ -1,4 +1,4 @@
-import { Data, Effect, Schema } from 'effect';
+import { Data, Effect, Predicate, Schema } from 'effect';
 import {
   createTrpcClient,
   httpLink,
@@ -82,10 +82,10 @@ test('a yielded tagged error reaches the client typed, with its status and data'
   expect(err).toBeInstanceOf(TrpcError);
   expect(err).toMatchObject({
     code: 'POST_NOT_FOUND',
-    _tag: 'POST_NOT_FOUND',
     defined: true,
     data: { id: 'nope' },
   });
+  expect(err).toSatisfy(Predicate.isTagged('POST_NOT_FOUND'));
   const res = await fetch(
     `${ctx.url}/byId?input=${encodeURIComponent('{"id":"nope"}')}`,
   );
