@@ -438,6 +438,25 @@ test('openApiLink reads an untyped body as text', async () => {
   expect(await untyped('')).toBeUndefined();
 });
 
+test('openApiLink reads error bodies that are not OpenAPI errors by their status', async () => {
+  const failing = (body: string, status: number) =>
+    safe(
+      linked(async () => new Response(body, { status })).client.who.query(),
+    ).then(([, err]) => err);
+  expect(await failing('"oops"', 502)).toMatchObject({
+    code: 'BAD_GATEWAY',
+    message: 'BAD_GATEWAY',
+    defined: false,
+  });
+  expect(await failing('{"message":7}', 418)).toMatchObject({
+    code: 'INTERNAL_SERVER_ERROR',
+    message: 'INTERNAL_SERVER_ERROR',
+  });
+  expect(
+    await failing('{"code":"GONE","message":"left","defined":true}', 410),
+  ).toMatchObject({ code: 'GONE', message: 'left', defined: true });
+});
+
 test('openApiLink turns fetch failures into client errors', async () => {
   const failing = (cause: unknown) =>
     linked(() => Promise.reject(cause)).client.who.query();

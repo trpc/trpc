@@ -71,6 +71,27 @@ test('fetch failures and pages that are not tRPC errors', async () => {
   });
   const [, teapot] = await safe(page(418).echo.query(1));
   expect(teapot).toMatchObject({ code: 'PARSE_ERROR' });
+  const [, moved] = await safe(page(302).echo.query(1));
+  expect(moved).toMatchObject({
+    code: 'PARSE_ERROR',
+    message: 'Unexpected 302 response',
+  });
+
+  const body = (json: unknown, status: number) =>
+    clientWith(
+      async () => new Response(JSON.stringify({ json }), { status }),
+    ).echo.query(1);
+  expect((await safe(body('oops', 500)))[1]).toMatchObject({
+    code: 'INTERNAL_SERVER_ERROR',
+    message: 'INTERNAL_SERVER_ERROR',
+    defined: false,
+  });
+  expect(
+    (await safe(body({ error: { code: 7, message: null } }, 400)))[1],
+  ).toMatchObject({
+    code: 'INTERNAL_SERVER_ERROR',
+    message: 'INTERNAL_SERVER_ERROR',
+  });
 
   const empty = clientWith(async () => new Response(null, { status: 200 }));
   expect(await empty.echo.query(1)).toBeUndefined();
