@@ -325,6 +325,12 @@ html {
   padding: 0.75rem 1rem;
 }
 
+/* Linked images are badges, in a row (the v11 introduction's). */
+.prose a > img {
+  display: inline-block;
+  margin-block: 0;
+}
+
 .prose summary {
   cursor: pointer;
   font-weight: 600;
@@ -339,14 +345,25 @@ html {
   border-radius: var(--radius-lg);
 }
 
-.code-tabs .code-block {
+.code-tabs > .code-block,
+.code-tabs > [data-tab] > .code-block:only-child {
   margin: 0;
   border: 0;
   border-radius: 0;
 }
 
+/* A tab of prose and blocks, from the v11 docs' `<Tabs>`. */
+.code-tabs > div[data-tab]:not(.code-block) {
+  padding-inline: 1rem;
+}
+
+.code-tabs > div[data-tab]:not(.code-block):has(> .code-block:only-child) {
+  padding-inline: 0;
+}
+
 .code-tabs-list {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.25rem;
   border-bottom: 1px solid var(--border);
   padding: 0.375rem 0.5rem;
@@ -370,6 +387,6 @@ html {
   color: var(--foreground);
 }
 
-.code-tabs > .code-block:not([data-active]) {
+.code-tabs > [data-tab]:not([data-active]) {
   display: none;
 }

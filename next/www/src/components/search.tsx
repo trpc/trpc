@@ -10,7 +10,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { FileText, Hash, Search } from 'lucide-react';
 import { useState } from 'react';
 
-import { allDocs } from '~/content/docs.ts';
+import { type DocsVersion, useDocsVersion, versions } from '~/content/docs.ts';
 
 interface SearchEntry {
   readonly hash: string | undefined;
@@ -21,26 +21,38 @@ interface SearchEntry {
   readonly text: string;
 }
 
-const entries: ReadonlyArray<SearchEntry> = allDocs.flatMap((doc) => [
-  {
-    hash: undefined,
-    haystack: `${doc.title} ${doc.description} ${doc.section}`.toLowerCase(),
-    id: doc.slug,
-    page: doc.section,
-    slug: doc.slug,
-    text: doc.title,
-  },
-  ...doc.headings.map((heading) => ({
-    hash: heading.id,
-    haystack: `${heading.text} ${doc.title}`.toLowerCase(),
-    id: `${doc.slug}#${heading.id}`,
-    page: doc.title,
-    slug: doc.slug,
-    text: heading.text,
-  })),
-]);
+function entriesOf(version: DocsVersion): ReadonlyArray<SearchEntry> {
+  return version.allDocs.flatMap((doc) => [
+    {
+      hash: undefined,
+      haystack:
+        `${doc.title} ${doc.label ?? ''} ${doc.description} ${doc.section}`.toLowerCase(),
+      id: doc.slug,
+      page: doc.section,
+      slug: doc.slug,
+      text: doc.label ?? doc.title,
+    },
+    ...doc.headings.map((heading) => ({
+      hash: heading.id,
+      haystack: `${heading.text} ${doc.title}`.toLowerCase(),
+      id: `${doc.slug}#${heading.id}`,
+      page: doc.label ?? doc.title,
+      slug: doc.slug,
+      text: heading.text,
+    })),
+  ]);
+}
 
-function search(query: string): ReadonlyArray<SearchEntry> {
+/** Each version's pages and headings: search looks in the version being read. */
+const entriesByVersion = new Map(
+  versions.map((version) => [version.id, entriesOf(version)]),
+);
+
+function search(
+  version: DocsVersion,
+  query: string,
+): ReadonlyArray<SearchEntry> {
+  const entries = entriesByVersion.get(version.id) ?? [];
   const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
   if (terms.length === 0) {
     return entries.filter((entry) => entry.hash === undefined).slice(0, 8);
@@ -117,9 +129,10 @@ export function SearchButton() {
 
 function SearchPanel(props: { readonly onClose: () => void }) {
   const navigate = useNavigate();
+  const version = useDocsVersion();
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
-  const results = search(query);
+  const results = search(version, query);
   const selected = Math.min(active, Math.max(results.length - 1, 0));
 
   const go = (entry: SearchEntry) => {
@@ -127,7 +140,7 @@ function SearchPanel(props: { readonly onClose: () => void }) {
     void navigate({
       ...(entry.hash === undefined ? {} : { hash: entry.hash }),
       params: { _splat: entry.slug },
-      to: '/docs/$',
+      to: version.route,
     });
   };
 
@@ -162,7 +175,11 @@ function SearchPanel(props: { readonly onClose: () => void }) {
               go(results[selected]);
             }
           }}
-          placeholder="Search guides, APIs, options…"
+          placeholder={
+            version.id === 'v12'
+              ? 'Search guides, APIs, options…'
+              : 'Search the v11 docs…'
+          }
           role="combobox"
           value={query}
         />

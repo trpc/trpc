@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { NodeRuntime, NodeServices } from '@effect/platform-node';
 import { Data, Effect, FileSystem, Path } from 'effect';
 
-import { site } from '../src/site.ts';
+import { site, v11 } from '../src/site.ts';
 
 const contentTypes = new Map([
   ['.html', 'text/html; charset=utf-8'],
@@ -55,6 +55,11 @@ export const routes = (first: string) => [
   { headers: { Location: '/$1' }, src: '^/(.+)/$', status: 308 },
   { headers: { Location: '/$1' }, src: '^/(.+)\\.html$', status: 308 },
   { headers: { Location: `/docs/${first}` }, src: '^/docs$', status: 307 },
+  {
+    headers: { Location: `${v11.basePath}/${v11.firstDoc}` },
+    src: `^${v11.basePath}$`,
+    status: 307,
+  },
   {
     continue: true,
     headers: { 'Cache-Control': 'public, max-age=31536000, immutable' },

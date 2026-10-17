@@ -1,13 +1,25 @@
 import { Link } from '@tanstack/react-router';
 
-import { sections } from '~/content/docs.ts';
+import { cn } from '@shared/ui/lib/utils';
+
+import { useDocsVersion } from '~/content/docs.ts';
 
 export function DocsNav(props: { readonly onNavigate?: () => void }) {
+  const version = useDocsVersion();
   return (
-    <nav aria-label="Documentation" className="grid gap-6 text-sm">
-      {sections.map((section) => (
+    <nav
+      aria-label={`Documentation, ${version.id}`}
+      className="grid gap-6 text-sm"
+    >
+      {version.sections.map((section) => (
         <div key={section.title}>
-          <h2 className="mb-2 px-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+          {/* v11's sections are cased as trpc.io has them: "tRPC". */}
+          <h2
+            className={cn(
+              'mb-2 px-2 text-xs font-semibold text-muted-foreground',
+              version.id === 'v12' && 'tracking-wide uppercase',
+            )}
+          >
             {section.title}
           </h2>
           <ul className="grid gap-0.5">
@@ -26,9 +38,9 @@ export function DocsNav(props: { readonly onNavigate?: () => void }) {
                   }}
                   onClick={props.onNavigate}
                   params={{ _splat: doc.slug }}
-                  to="/docs/$"
+                  to={version.route}
                 >
-                  {doc.title}
+                  {doc.label ?? doc.title}
                 </Link>
               </li>
             ))}

@@ -14,9 +14,11 @@ interface JsonObject {
 }
 
 export interface PageSeo {
+  /** Where the page is maintained, if not here. */
+  readonly canonical?: string;
   readonly description: string;
   /** The page as markdown, for agents: `/docs/<slug>.md`. */
-  readonly markdownPath: string;
+  readonly markdownPath?: string;
   /** Path from the site root, starting with `/`. */
   readonly path: string;
   /** Schema.org JSON-LD objects for the page. */
@@ -35,16 +37,20 @@ export function pageHead(page: PageSeo) {
   const title = page.title
     ? `${page.title} | ${site.name}`
     : `${site.name} - ${site.tagline.join(' ')}`;
-  const url = absoluteUrl(page.path);
+  const url = page.canonical ?? absoluteUrl(page.path);
   return {
     links: [
       { href: url, rel: 'canonical' },
-      {
-        href: page.markdownPath,
-        rel: 'alternate',
-        title: 'Markdown',
-        type: 'text/markdown',
-      },
+      ...(page.markdownPath === undefined
+        ? []
+        : [
+            {
+              href: page.markdownPath,
+              rel: 'alternate',
+              title: 'Markdown',
+              type: 'text/markdown',
+            },
+          ]),
     ],
     meta: [
       { title },

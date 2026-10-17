@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 
 import { buttonVariants } from '@shared/ui/components/button';
-import { firstDoc } from '~/content/docs.ts';
+import { v12Docs } from '~/content/docs.ts';
 import { cn } from '@shared/ui/lib/utils';
 import { site } from '~/site.ts';
 
@@ -10,11 +10,12 @@ import { Logo } from './logo.tsx';
 import { MobileNav } from './mobile-nav.tsx';
 import { SearchButton } from './search.tsx';
 import { ThemeToggle } from './theme-toggle.tsx';
+import { VersionSwitcher } from './version-switcher.tsx';
 
 const navLink = buttonVariants({ size: 'sm', variant: 'ghost' });
 
 const links = [
-  { label: 'Docs', slug: firstDoc },
+  { label: 'Docs', slug: v12Docs.firstDoc },
   { label: 'Client', slug: 'client/overview' },
   { label: 'Adapters', slug: 'adapters/overview' },
   { label: 'Migrating from v11', slug: 'migrations/from-v11' },
@@ -30,18 +31,16 @@ export function SiteHeader() {
         <MobileNav />
         <Link
           aria-label={`${site.name} home`}
-          className="mr-2 flex items-center gap-2 font-bold tracking-tight sm:mr-4"
+          className="mr-1.5 flex items-center gap-2 font-bold tracking-tight"
           to="/"
         >
           <Logo />
           {site.name}
-          <span className="rounded-full border px-1.5 py-px font-mono text-[10px] font-medium text-muted-foreground">
-            v12
-          </span>
         </Link>
+        <VersionSwitcher />
         <nav
           aria-label="Main"
-          className="hidden items-center gap-1 text-sm md:flex"
+          className="ml-3 hidden items-center gap-1 text-sm md:flex"
         >
           {links.map((link) => (
             <Link

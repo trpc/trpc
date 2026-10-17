@@ -76,6 +76,11 @@ describe('writeVercelOutput', () => {
         src: '^/docs$',
         status: 307,
       });
+      expect(config.routes).toContainEqual({
+        headers: { Location: '/v11/docs/introduction' },
+        src: '^/v11/docs$',
+        status: 307,
+      });
 
       const markdownRewrite = config.routes.find(
         (route: { dest?: string }) => route.dest === '/docs/$1.md',
@@ -83,6 +88,8 @@ describe('writeVercelOutput', () => {
       const match = new RegExp(markdownRewrite.src).exec('/docs/client/links');
       expect(match?.[1]).toBe('client/links');
       expect(new RegExp(markdownRewrite.src).test('/docs/a.md')).toBe(false);
+      // The v11 copy has no markdown.
+      expect(new RegExp(markdownRewrite.src).test('/v11/docs/a')).toBe(false);
     }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
   );
 
