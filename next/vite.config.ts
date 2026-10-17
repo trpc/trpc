@@ -99,8 +99,8 @@ export default defineConfig({
             '**/node_modules/**',
             'test/bun/**',
             'packages/tanstack-solid-query/src/index.test.ts',
-            'test/tanstack-query/svelte.test.ts',
-            'test/tanstack-query/svelte-ssr.test.ts',
+            'packages/tanstack-svelte-query/src/index.test.ts',
+            'packages/tanstack-svelte-query/src/ssr.test.ts',
           ],
           typecheck: {
             enabled: true,
@@ -114,12 +114,16 @@ export default defineConfig({
         '@tanstack/solid-query',
       ]),
       {
-        ...browserBuild('svelte', 'test/tanstack-query/svelte.test.ts', [
+        ...browserBuild(
           'svelte',
-          '@tanstack/svelte-query',
-          '@trpc12/tanstack-query',
-          '@trpc12/tanstack-svelte-query',
-        ]),
+          'packages/tanstack-svelte-query/src/index.test.ts',
+          [
+            'svelte',
+            '@tanstack/svelte-query',
+            '@trpc12/tanstack-query',
+            '@trpc12/tanstack-svelte-query',
+          ],
+        ),
         plugins: [svelte({ configFile: false })],
       },
       {
@@ -127,7 +131,7 @@ export default defineConfig({
         plugins: [svelte({ configFile: false })],
         test: {
           name: 'svelte-ssr',
-          include: ['test/tanstack-query/svelte-ssr.test.ts'],
+          include: ['packages/tanstack-svelte-query/src/ssr.test.ts'],
           server: {
             deps: {
               inline: [

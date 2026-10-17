@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "types": [],
+    "declaration": true,
+    "isolatedDeclarations": true
+  },
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/**/fixtures"]
+}

@@ -10,19 +10,19 @@ import {
   createApp,
   db,
   type AppClient,
-} from '../../packages/tanstack-query/src/fixtures/app.ts';
+} from '../../tanstack-query/src/fixtures/app.ts';
 import {
   click,
   container,
   text,
   waitFor,
-} from '../../packages/trpc/src/fixtures/dom.ts';
-import Failing from './svelte/Failing.svelte';
-import Feed from './svelte/Feed.svelte';
-import Live from './svelte/Live.svelte';
-import Post from './svelte/Post.svelte';
-import Root from './svelte/Root.svelte';
-import { useTrpc } from './svelte/trpc.ts';
+} from '../../trpc/src/fixtures/dom.ts';
+import Failing from './fixtures/Failing.svelte';
+import Feed from './fixtures/Feed.svelte';
+import Live from './fixtures/Live.svelte';
+import Post from './fixtures/Post.svelte';
+import Root from './fixtures/Root.svelte';
+import { useTrpc } from './fixtures/trpc.ts';
 
 function render<TProps extends Record<string, unknown>>(
   app: Component<TProps>,

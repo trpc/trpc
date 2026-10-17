@@ -11,9 +11,9 @@ import {
   createApp,
   db,
   serializer,
-} from '../../packages/tanstack-query/src/fixtures/app.ts';
-import Root from './svelte/Root.svelte';
-import Ssr from './svelte/Ssr.svelte';
+} from '../../tanstack-query/src/fixtures/app.ts';
+import Root from './fixtures/Root.svelte';
+import Ssr from './fixtures/Ssr.svelte';
 
 test('server render with prefetched data and no subscription', async () => {
   await using _app = await createApp();
