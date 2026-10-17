@@ -3,6 +3,7 @@ title: Subscriptions
 description: Streams of events over SSE or WebSockets, with tracked() ids so reconnects resume.
 section: Subscriptions
 order: 1
+v11: server/subscriptions
 ---
 
 A subscription returns an async generator, an `AsyncIterable` or an Effect `Stream`. Clients iterate it with `for await`. Breaking out of the loop, or aborting `signal`, closes the connection.

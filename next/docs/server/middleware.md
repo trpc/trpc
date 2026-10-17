@@ -3,6 +3,7 @@ title: Middleware
 description: Base procedures that add to the context, replace the input or short-circuit a call.
 section: Server
 order: 3
+v11: server/middlewares
 ---
 
 Middleware runs before a procedure's resolver. `.use()` adds one to a procedure builder, and the builder becomes a base procedure to share:

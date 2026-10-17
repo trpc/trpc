@@ -3,6 +3,7 @@ title: The client
 description: createTrpcClient types every call from the router's type, and the call options from its links.
 section: Client
 order: 1
+v11: client
 ---
 
 `createTrpcClient` takes the router's type and a chain of [links](./links.md). It imports no server code:

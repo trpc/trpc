@@ -3,6 +3,7 @@ title: React Server Components
 description: Prefetch in server components, stream pending queries to the browser, and tag Next's data cache by query key.
 section: Integrations
 order: 3
+v11: client/tanstack-react-query/server-components
 ---
 
 `createTrpcRsc` from `@trpc12/tanstack-react-query/rsc` gives server components query helpers over the router itself, a per-request query client, and a server `HydrationBoundary`:

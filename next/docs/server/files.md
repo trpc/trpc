@@ -3,6 +3,7 @@ title: Files
 description: File and Blob values in inputs and outputs, sent as multipart, raw bodies or streamed chunks.
 section: Server
 order: 7
+v11: server/non-json-content-types
 ---
 
 `File` and `Blob` values can sit anywhere in an input. `httpLink` sends that call alone (outside a batch) as `multipart/form-data`, and the handler rebuilds them before validation. `maxBodySize` covers the whole body.

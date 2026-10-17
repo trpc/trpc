@@ -3,6 +3,7 @@ title: Fetch runtimes
 description: Cloudflare Workers, Next.js route handlers and other fetch runtimes take handler.fetch as it is.
 section: Adapters
 order: 5
+v11: server/adapters/fetch
 ---
 
 Cloudflare Workers, Next.js route handlers, Lambda function URLs and other fetch runtimes take `handler.fetch` as it is.

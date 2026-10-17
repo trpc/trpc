@@ -3,6 +3,7 @@ title: Serializers
 description: Plain JSON by default; danSON or superjson-style serializers keep Dates, Maps and files, and client types follow.
 section: Server
 order: 11
+v11: server/data-transformers
 ---
 
 The serializer turns inputs and outputs into JSON on the wire. The default is plain JSON. To keep more types, pass the same serializer to the handler and to every link:

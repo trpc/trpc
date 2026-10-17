@@ -3,6 +3,7 @@ title: Server Actions
 description: Turn procedures into React Server Actions that take typed input or FormData, with useActionState and optimistic updates.
 section: Integrations
 order: 2
+v11: client/nextjs/server-actions
 ---
 
 Nothing here is Next-specific: it works with any React Server Components setup.

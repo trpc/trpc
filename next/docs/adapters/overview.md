@@ -3,6 +3,7 @@ title: Adapters
 description: One handler serves HTTP, SSE and WebSockets on every runtime; pick the adapter for yours.
 section: Adapters
 order: 1
+v11: server/adapters
 ---
 
 `createFetchHandler()` returns a web-standard `fetch(request)`. Anything that speaks `Request` and `Response` can serve it directly. On Effect's `HttpServer`, `@trpc12/trpc/http` adds WebSockets, client-disconnect aborts, and Effect's platform layers.

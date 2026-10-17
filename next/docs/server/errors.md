@@ -3,6 +3,7 @@ title: Errors
 description: One error class, typed on the client from what resolvers return, with or without declarations.
 section: Server
 order: 4
+v11: server/error-handling
 ---
 
 There is one error class, `TrpcError`. Return `error({ code })` from a resolver or a middleware, or fail with it in Effect code (`Effect.fail(error(…))`, `yield* error(…)`). The procedure's error union is inferred from those, with no declaration:

@@ -3,6 +3,7 @@ title: AWS Lambda
 description: toLambdaHandler for API Gateway, ALB, function URLs and Lambda@Edge, with response streaming.
 section: Adapters
 order: 6
+v11: server/adapters/aws-lambda
 ---
 
 `@trpc12/trpc/aws-lambda` turns a fetch handler into a Lambda handler for API Gateway REST APIs (payload 1.0), HTTP APIs and function URLs (payload 2.0), Application Load Balancers and Lambda@Edge. The event becomes a web `Request` and the response becomes that event's result shape. `{ event, context }` is the platform argument:

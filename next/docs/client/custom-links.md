@@ -3,6 +3,7 @@ title: Custom links
 description: Write a link with link(), and declare the call options it reads, the errors it fails with and what it needs.
 section: Client
 order: 3
+v11: client/links
 ---
 
 `link(({ op, next }) => stream)` writes a link: it gets the operation and the rest of the chain, and returns an Effect `Stream` (a query or mutation is a one-element stream). Links written for v11 run unchanged through [`fromV11Link`](../migrations/from-v11.md#links) from `@trpc12/trpc/interop`.

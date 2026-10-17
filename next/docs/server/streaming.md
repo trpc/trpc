@@ -3,6 +3,7 @@ title: Streaming
 description: Return async generators, Effect streams and nested promises; validate each item with stream().
 section: Server
 order: 6
+v11: client/links/httpBatchStreamLink
 ---
 
 A query or mutation can return an async generator or an Effect `Stream`, and the client gets an `AsyncIterable`. Outputs can also hold promises and async iterables at any depth: the rest of the output arrives first, and each deferred value streams as it settles.

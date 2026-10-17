@@ -3,6 +3,7 @@ title: Getting started
 description: A router, a handler that serves it, and a client that calls it with the router's types.
 section: Getting started
 order: 1
+v11: quickstart
 ---
 
 A router is a plain object of procedures. A handler serves it; a client calls it with the router's type.

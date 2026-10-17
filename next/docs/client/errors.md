@@ -3,6 +3,7 @@ title: Errors without try/catch
 description: safe() and createSafeClient() return result tuples with typed, narrowable errors.
 section: Client
 order: 4
+v11: client/vanilla/error-handling
 ---
 
 `safe()` wraps a call and resolves to a result instead of rejecting. Destructure it as a tuple or as an object:

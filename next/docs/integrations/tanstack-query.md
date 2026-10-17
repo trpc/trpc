@@ -3,6 +3,7 @@ title: TanStack Query
 description: Query and mutation options for every TanStack Query framework, with streamed mutations, subscriptions and hydration.
 section: Integrations
 order: 1
+v11: client/tanstack-react-query
 ---
 
 `@trpc12/tanstack-query` makes plain TanStack options objects, so it works with every adapter. Each adapter package (`@trpc12/tanstack-react-query`, `-preact-`, `-vue-`, `-solid-`, `-svelte-`, `-angular-`, `-lit-query`) re-exports it and adds context helpers and `useSubscription`.
