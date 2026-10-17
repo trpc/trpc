@@ -36,7 +36,7 @@ Bundle size, minified / gzip (`pnpm bench bundle`):
 
 |               |            tRPC v12 |          tRPC v11 |           oRPC v2 | v12 first run       |
 | ------------- | ------------------: | ----------------: | ----------------: | ------------------- |
-| client        |   91.4 kB / 30.5 kB | 36.4 kB / 11.8 kB |  27.1 kB / 9.6 kB | 104.7 kB / 35.0 kB  |
+| client        |   86.1 kB / 28.9 kB | 36.4 kB / 11.8 kB |  27.1 kB / 9.6 kB | 104.7 kB / 35.0 kB  |
 | Node server   | 345.0 kB / 110.7 kB | 53.1 kB / 17.3 kB | 41.3 kB / 13.2 kB | 344.0 kB / 110.1 kB |
 | fetch handler |  216.4 kB / 70.7 kB | 50.6 kB / 16.4 kB | 39.5 kB / 12.6 kB | 215.5 kB / 70.2 kB  |
 
@@ -54,5 +54,23 @@ Bundle size, minified / gzip (`pnpm bench bundle`):
   - JSON-safe outputs skip the framing conditionals; link batching read once per chain.
   - **Split:** the client half (3,000 typed calls) checks faster than oRPC's (about 0.41s vs 0.45s). The router half is the gap: 498k instantiations vs 311k, about 166 per procedure vs 104. The resolver checks (unmapped Effect failures, output, `ok()` short-circuits) cost about 40 per procedure and the inferred `Procedure` type about 12; cheaper spellings tried so far (`NoInfer`, pre-filters, nested checks) were all slower.
   - **Memory:** a v12 project with no procedures already takes 100 MB vs oRPC's 35 MB: that's parsing Effect's declarations (188 files). Importing Effect by subpath would save about 12 MB.
-- **Bundle size:** the client went from 35.0 to 30.5 kB gzipped: `sideEffects: false`, base64 with `btoa`/`atob`, trace headers and the client span without `effect/http`, lean sequential `forEach` and stream-to-iterable helpers. It's still 3.2× oRPC's: the Effect APIs the client runs on are about 20 kB gzipped on their own (`Effect.runPromise` alone is 7.5 kB), tRPC's own code about 12 kB ([`effect-client-bundle-size.md`](./effect-client-bundle-size.md)). Server bundles aren't a goal.
+- **Bundle size:** the client went from 35.0 to 30.5 kB gzipped, then 28.9 kB once the Promise client stopped bundling the client span ([Budgets](#budgets)): `sideEffects: false`, base64 with `btoa`/`atob`, trace headers and the client span without `effect/http`, lean sequential `forEach` and stream-to-iterable helpers. It's still 3.2× oRPC's: the Effect APIs the client runs on are about 20 kB gzipped on their own (`Effect.runPromise` alone is 7.5 kB), tRPC's own code about 12 kB ([`effect-client-bundle-size.md`](./effect-client-bundle-size.md)). Server bundles aren't a goal.
 - Clinic profiles and the WebSocket and OpenAPI throughput rows of oRPC's table aren't measured yet.
+
+## Budgets
+
+2026-10-17. The human, on working on bundle size before v1: "A sure, I only care about tree shakability when using core features" ([`../decisions/orpc-v2-parity.md`](../decisions/orpc-v2-parity.md)). `pnpm bench budget` bundles two clients the same way as `bundle` and fails above each one's ceiling; CI runs it.
+
+| client                                      |    gzip | ceiling (CI) | target |
+| ------------------------------------------- | ------: | -----------: | -----: |
+| minimal JSON (`httpLink`)                   | 25.7 kB |      25.8 kB |  10 kB |
+| full (`retryLink`, `httpLink`, danSON, SSE) | 29.1 kB |      29.2 kB |  25 kB |
+
+- **Cut so far:** the Promise client runs its links with `runLinks`. `runOperation`'s tracer check and client span never ran there (Promise clients run on Effect's native tracer), but they were bundled: `Tracer`, `Scope` spans and `encoding/Hex`, 1.7 kB gzipped on each client.
+- **The floor of links on Effect**, same bundler and gzip:
+  - `Effect.runPromise(Effect.tryPromise(fetch))`: 8.5 kB.
+  - The same through a one-element `Stream` (`Stream.fromEffect`, `Stream.runHead`), which is what every link returns: 10.7 kB.
+  - Plus a `Queue`: 11.7 kB. Plus the client span: 14.1 kB. `Stream.callback` and `Stream.toAsyncIterable`: 16.4 kB.
+  - So the 10 kB target leaves no room for tRPC code while links return `Stream`s; meeting it needs a Promise-native core path or a higher target (Open, human).
+- **What's over the floor** in the minimal client, by rendered size before minifying: `Channel` (31 kB vs 4 kB in the floor), `Queue` (24 kB, from `Stream.callback` and batching), `Stream` operators (20 kB vs 3 kB), `Duration` (14 kB, kept by Effect's internals: swapping `Effect.sleep` for a `setTimeout` didn't drop it), then tRPC's `httpLink` (15 kB), streaming deserializers (`serializer/stream.ts` and `framed.ts`, 10 kB) and errors (5 kB).
+- **Not cuts:** `Queue` stays while `Stream.callback` does; binary frames and SSE sit behind runtime options of `httpLink`, so they'd need their own imports (an API change) to shake out.
