@@ -16,9 +16,14 @@ export function DocsNav(props: { readonly onNavigate?: () => void }) {
                 <Link
                   activeProps={{
                     'aria-current': 'page',
-                    className: 'bg-accent font-medium text-foreground',
+                    className:
+                      'bg-brand/10 font-semibold text-link hover:bg-brand/15 hover:text-link',
                   }}
-                  className="block rounded-md px-2 py-1.5 text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
+                  className="block rounded-md px-2 py-1.5 transition-colors"
+                  inactiveProps={{
+                    className:
+                      'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+                  }}
                   onClick={props.onNavigate}
                   params={{ _splat: doc.slug }}
                   to="/docs/$"

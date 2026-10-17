@@ -5,7 +5,11 @@ export const site = {
   name: 'tRPC',
   /** Where the files around the docs are browsable. */
   sourceUrl: 'https://github.com/trpc/trpc/blob/v12/next',
-  tagline: 'Move fast and break nothing',
+  /** trpc.io's tagline, in its words and casing. */
+  tagline: [
+    'Move Fast and Break Nothing.',
+    'End-to-end typesafe APIs made easy.',
+  ],
   url: 'https://v12.trpc.io',
 } as const;
 

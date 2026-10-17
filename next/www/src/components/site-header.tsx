@@ -11,10 +11,7 @@ import { MobileNav } from './mobile-nav.tsx';
 import { SearchButton } from './search.tsx';
 import { ThemeToggle } from './theme-toggle.tsx';
 
-const navLink = cn(
-  buttonVariants({ size: 'sm', variant: 'ghost' }),
-  'text-muted-foreground',
-);
+const navLink = buttonVariants({ size: 'sm', variant: 'ghost' });
 
 const links = [
   { label: 'Docs', slug: firstDoc },
@@ -30,7 +27,7 @@ export function SiteHeader() {
         <MobileNav />
         <Link
           aria-label={`${site.name} home`}
-          className="mr-4 flex items-center gap-2 font-semibold tracking-tight"
+          className="mr-4 flex items-center gap-2 font-bold tracking-tight"
           to="/"
         >
           <Logo />
@@ -48,6 +45,7 @@ export function SiteHeader() {
               activeOptions={{ exact: true }}
               activeProps={{ className: 'text-foreground' }}
               className={navLink}
+              inactiveProps={{ className: 'text-muted-foreground' }}
               key={link.label}
               params={{ _splat: link.slug }}
               to="/docs/$"

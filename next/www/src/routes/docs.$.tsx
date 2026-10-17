@@ -71,8 +71,8 @@ function DocPage() {
     <div className="grid min-w-0 gap-10 py-8 xl:grid-cols-[minmax(0,1fr)_13rem]">
       <article className="min-w-0">
         <header className="mb-8 grid gap-3 border-b pb-6">
-          <p className="text-sm font-medium text-primary">{doc.section}</p>
-          <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+          <p className="text-sm font-semibold text-link">{doc.section}</p>
+          <h1 className="text-3xl font-bold tracking-tight text-balance sm:text-4xl">
             {doc.title}
           </h1>
           <p className="text-lg text-pretty text-muted-foreground">

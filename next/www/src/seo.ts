@@ -34,7 +34,7 @@ export function absoluteUrl(path: string) {
 export function pageHead(page: PageSeo) {
   const title = page.title
     ? `${page.title} | ${site.name}`
-    : `${site.name}: ${site.tagline}`;
+    : `${site.name} - ${site.tagline.join(' ')}`;
   const url = absoluteUrl(page.path);
   return {
     links: [

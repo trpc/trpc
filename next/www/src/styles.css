@@ -9,7 +9,7 @@ html {
 .prose {
   --tw-prose-body: var(--foreground);
   --tw-prose-headings: var(--foreground);
-  --tw-prose-links: var(--foreground);
+  --tw-prose-links: var(--link);
   --tw-prose-bold: var(--foreground);
   --tw-prose-code: var(--foreground);
   --tw-prose-quotes: var(--muted-foreground);
@@ -21,7 +21,7 @@ html {
   --tw-prose-counters: var(--muted-foreground);
   --tw-prose-invert-body: var(--foreground);
   --tw-prose-invert-headings: var(--foreground);
-  --tw-prose-invert-links: var(--foreground);
+  --tw-prose-invert-links: var(--link);
   --tw-prose-invert-bold: var(--foreground);
   --tw-prose-invert-code: var(--foreground);
   --tw-prose-invert-quotes: var(--muted-foreground);
@@ -44,12 +44,12 @@ html {
 }
 
 .prose :where(h2, h3) {
-  scroll-margin-top: 5rem;
   letter-spacing: -0.01em;
 }
-
-.heading-anchor {
+/* Prose links are lighter than headings; a heading's own link isn't. */
+.prose .heading-anchor {
   color: inherit;
+  font-weight: inherit;
   text-decoration: none;
 }
 
@@ -70,9 +70,15 @@ html {
 .prose :where(:not(pre) > code) {
   border-radius: 0.375rem;
   background: var(--muted);
-  padding: 0.15em 0.4em;
+  padding: 0.125em 0.3em;
   font-size: 0.875em;
   font-weight: 500;
+  overflow-wrap: anywhere;
+  box-decoration-break: clone;
+}
+
+.prose a :where(code) {
+  color: inherit;
 }
 
 .prose :where(:not(pre) > code)::before,

@@ -17,31 +17,30 @@ export function TableOfContents(props: {
       aria-label="On this page"
       className="text-sm"
       ref={() => {
-        const visible = new Set<string>();
-        const observer = new IntersectionObserver(
-          (entries) => {
-            for (const entry of entries) {
-              if (entry.isIntersecting) {
-                visible.add(entry.target.id);
-              } else {
-                visible.delete(entry.target.id);
-              }
+        // The section being read is the last heading scrolled past. Linked
+        // headings stop at the 4.5rem `scroll-padding-top`, above this line.
+        const line = 96;
+        const update = () => {
+          const atEnd =
+            window.scrollY > 0 &&
+            window.innerHeight + window.scrollY >=
+              document.documentElement.scrollHeight - 2;
+          let current: string | undefined;
+          for (const heading of headings) {
+            const element = document.getElementById(heading.id);
+            if (
+              element &&
+              (atEnd || element.getBoundingClientRect().top <= line)
+            ) {
+              current = heading.id;
             }
-            const first = headings.find((heading) => visible.has(heading.id));
-            if (first) {
-              setActive(first.id);
-            }
-          },
-          { rootMargin: '-56px 0px -60% 0px' },
-        );
-        for (const heading of headings) {
-          const element = document.getElementById(heading.id);
-          if (element) {
-            observer.observe(element);
           }
-        }
+          setActive(current);
+        };
+        update();
+        window.addEventListener('scroll', update, { passive: true });
         return () => {
-          observer.disconnect();
+          window.removeEventListener('scroll', update);
         };
       }}
     >
@@ -56,7 +55,8 @@ export function TableOfContents(props: {
               className={cn(
                 '-ml-px block border-l border-transparent py-0.5 text-muted-foreground transition-colors hover:text-foreground',
                 heading.depth === 2 ? 'pl-3' : 'pl-6 text-[13px]',
-                active === heading.id && 'border-foreground text-foreground',
+                active === heading.id &&
+                  'border-brand text-link hover:text-link',
               )}
               href={`#${heading.id}`}
             >

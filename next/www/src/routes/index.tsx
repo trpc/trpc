@@ -111,7 +111,7 @@ const steps: ReadonlyArray<Step> = [
 ];
 
 interface Feature {
-  readonly body: string;
+  readonly body: ReactNode;
   readonly icon: ReactNode;
   readonly slug: string;
   readonly title: string;
@@ -131,7 +131,13 @@ const features: ReadonlyArray<Feature> = [
     title: 'Streams and files',
   },
   {
-    body: 'tracked() events resume after a reconnect, over SSE or WebSockets, fed by a Publisher backed by Redis, Postgres or Durable Objects.',
+    body: (
+      <>
+        <code>tracked()</code> events resume after a reconnect, over SSE or
+        WebSockets, fed by a <code>Publisher</code> backed by Redis, Postgres or
+        Durable Objects.
+      </>
+    ),
     icon: <Radio />,
     slug: 'subscriptions/overview',
     title: 'Subscriptions that resume',
@@ -161,7 +167,12 @@ const features: ReadonlyArray<Feature> = [
     title: 'Contract-first',
   },
   {
-    body: 'createV11Handler serves v11 clients from a v12 router while you migrate, and a codemod rewrites most of the code.',
+    body: (
+      <>
+        <code>createV11Handler</code> serves v11 clients from a v12 router while
+        you migrate, and a codemod rewrites most of the code.
+      </>
+    ),
     icon: <History />,
     slug: 'migrations/from-v11',
     title: 'Migrate one step at a time',
@@ -189,12 +200,13 @@ function HashLink(props: {
 }
 
 const docLink =
-  'inline-flex items-center gap-1 font-medium text-primary underline-offset-4 hover:underline';
+  'inline-flex items-center gap-1 font-medium text-link underline-offset-4 hover:underline';
 
 function HomePage() {
   return (
     <main>
-      <section className="relative border-b">
+      {/* `clip`, unlike `hidden`, keeps the sticky column sticky. */}
+      <section className="relative overflow-x-clip border-b">
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 overflow-hidden [background-image:radial-gradient(circle_at_1px_1px,var(--border)_1px,transparent_0)] [background-size:24px_24px] [mask-image:linear-gradient(to_bottom,black,transparent)]"
@@ -203,18 +215,27 @@ function HomePage() {
           aria-hidden="true"
           className="pointer-events-none absolute -top-40 left-1/2 h-80 w-[48rem] -translate-x-1/2 rounded-full bg-brand/20 blur-3xl"
         />
-        <div className="relative mx-auto grid max-w-7xl items-start gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:py-24">
+        <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-start gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:py-24">
           <div className="grid gap-6 lg:sticky lg:top-28">
             <Badge className="w-fit" variant="outline">
               <Sparkles /> v12 preview
             </Badge>
-            <h1 className="text-4xl font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl">
-              End-to-end typesafe APIs, on any runtime
+            <h1 className="grid gap-3 font-extrabold tracking-tight text-balance">
+              <span className="text-4xl sm:text-5xl lg:text-6xl">
+                {site.tagline[0]}
+              </span>
+              <span className="text-2xl text-brand sm:text-3xl">
+                {site.tagline[1]}
+              </span>
             </h1>
             <p className="max-w-xl text-lg text-pretty text-muted-foreground">
-              Write procedures on the server and call them from the client with
-              their types: inputs, outputs, errors and streams. No schemas to
-              generate, no code to sync. v12 is rebuilt on{' '}
+              Experience the full power of{' '}
+              <span className="text-foreground underline decoration-rose-500 decoration-wavy decoration-from-font underline-offset-2">
+                TypeScript
+              </span>{' '}
+              inference: write procedures on the server and call them from the
+              client with their types. No schemas to generate, no code to sync.
+              v12 is rebuilt on{' '}
               <a
                 className="font-medium text-foreground underline underline-offset-4"
                 href="https://effect.website"
@@ -225,7 +246,10 @@ function HomePage() {
             </p>
             <div className="flex flex-wrap gap-3">
               <Link
-                className={cn(buttonVariants({ size: 'lg' }))}
+                className={cn(
+                  buttonVariants({ size: 'lg' }),
+                  'font-bold shadow-lg shadow-brand/25',
+                )}
                 params={{ _splat: 'getting-started' }}
                 to="/docs/$"
               >
@@ -245,8 +269,11 @@ function HomePage() {
               <span className="select-none">$ </span>pnpm add @trpc12/trpc zod
             </p>
           </div>
-          <div className="grid min-w-0 gap-3">
-            <DocBody className="[&_.code-block]:my-0!" html={hero.html} />
+          <div className="grid min-w-0 grid-cols-1 gap-3">
+            <DocBody
+              className="min-w-0 [&_.code-block]:my-0! [&_.code-block]:shadow-[0_-24px_300px_0_rgb(57_140_203/0.15)]"
+              html={hero.html}
+            />
             <p className="text-sm text-muted-foreground">
               The client of the router{' '}
               <a className={docLink} href="#define">
@@ -263,7 +290,7 @@ function HomePage() {
         className="mx-auto max-w-7xl border-b px-4 py-16 sm:px-6"
       >
         <h2
-          className="mb-2 scroll-mt-24 text-2xl font-semibold tracking-tight"
+          className="mb-2 text-2xl font-bold tracking-tight sm:text-3xl"
           id="how-it-works"
         >
           <HashLink id="how-it-works">How it works</HashLink>
@@ -275,12 +302,12 @@ function HomePage() {
         <ol className="grid gap-16">
           {steps.map((step, index) => (
             <li
-              className="grid scroll-mt-24 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] lg:gap-12"
+              className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] lg:gap-12"
               id={step.id}
               key={step.id}
             >
               <div className="grid content-start gap-4 lg:sticky lg:top-24">
-                <h3 className="flex items-center gap-3 text-xl font-semibold tracking-tight">
+                <h3 className="flex items-center gap-3 text-xl font-bold tracking-tight">
                   <span
                     aria-hidden="true"
                     className="grid size-7 shrink-0 place-items-center rounded-full bg-primary text-sm text-primary-foreground"
@@ -314,7 +341,7 @@ function HomePage() {
         className="mx-auto max-w-7xl px-4 py-16 sm:px-6"
       >
         <h2
-          className="mb-2 scroll-mt-24 text-2xl font-semibold tracking-tight"
+          className="mb-2 text-2xl font-bold tracking-tight sm:text-3xl"
           id="features"
         >
           <HashLink id="features">What&apos;s in v12</HashLink>
@@ -334,7 +361,7 @@ function HomePage() {
               >
                 <span className="text-primary">{feature.icon}</span>
                 <span className="font-semibold">{feature.title}</span>
-                <span className="text-sm text-muted-foreground">
+                <span className="text-sm text-muted-foreground [&_code]:font-mono [&_code]:text-[0.9em] [&_code]:text-foreground">
                   {feature.body}
                 </span>
               </Link>
