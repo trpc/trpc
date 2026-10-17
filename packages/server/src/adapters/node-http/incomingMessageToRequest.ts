@@ -134,8 +134,13 @@ export function incomingMessageToRequest(
     res.off('close', onAbort);
     req.off('aborted', onAbort);
 
-    // abort the request
-    ac.abort();
+    // `close` fires after every response, including ones that completed
+    // normally. Only treat it as a client disconnect when the response
+    // was not finished: https://github.com/trpc/trpc/issues/7663
+    if (!res.writableFinished) {
+      // abort the request
+      ac.abort();
+    }
   };
 
   res.once('close', onAbort);
