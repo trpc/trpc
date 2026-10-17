@@ -51,7 +51,8 @@ jobs:
           VP_GIT_HOOKS: '0'
       - run: pnpm typecheck
       - run: pnpm check
-      - run: pnpm test
+      # The tests, failing under 90% coverage on any metric.
+      - run: pnpm coverage
         env:
           REDIS_URL: redis://127.0.0.1:6379
       - run: pnpm example

@@ -70,6 +70,7 @@ export default defineConfig({
       include: ['packages/*/src/**/*.{ts,tsx}'],
       exclude: ['**/*.test.ts', '**/*.test.tsx', '**/*.test-d.ts'],
       reporter: ['text-summary', 'json-summary', 'text'],
+      thresholds: { statements: 90, branches: 90, functions: 90, lines: 90 },
     },
     projects: [
       {
