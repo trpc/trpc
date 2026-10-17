@@ -4,7 +4,7 @@ import {
   routerType,
   safe,
 } from '@trpc12/trpc/client';
-import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
+import { createFetchHandler, error, initTrpc } from '@trpc12/trpc/server';
 import { createSerializer, DansonError } from '@trpc12/trpc/serializer';
 import { expect, test } from 'vite-plus/test';
 import { z } from 'zod';
@@ -48,6 +48,32 @@ const router = {
     return root;
   }),
   money: t.procedure.query(() => new Money(250)),
+  mixed: t.procedure.query(() => {
+    const file = new File(['file bytes'], 'a.txt', { type: 'text/plain' });
+    return {
+      missing: Promise.reject(error({ code: 'NOT_FOUND', message: 'gone' })),
+      crash: Promise.reject(new Error('internal detail')),
+      items: (async function* () {
+        yield 1;
+        yield { file };
+        throw error({ code: 'CONFLICT', message: 'stopped' });
+      })(),
+      done: (async function* () {
+        yield 'a';
+        return 'the end';
+      })(),
+      stream: new ReadableStream({
+        start(controller) {
+          controller.enqueue('s1');
+          controller.enqueue(new Money(5));
+          controller.close();
+        },
+      }),
+      file,
+      again: file,
+      blob: new Blob([new Uint8Array([1, 2, 3])], { type: 'x/y' }),
+    };
+  }),
   later: t.procedure.query(() => ({
     loop: Promise.resolve().then(() => {
       const node: Record<string, unknown> = { at: 'deferred' };
@@ -189,5 +215,52 @@ test('a GET query carries refs in the URL, and reads the query string strictly o
   expect(await get('?input')).toMatchObject({
     json: { error: { code: 'PARSE_ERROR' } },
   });
+  await handler.dispose();
+});
+
+test('deferred values: rejections, iterators that throw or return, streams, files and blobs', async () => {
+  const { client, handler } = setup();
+  const out = (await client.mixed.query()) as Record<string, any>;
+  await expect(out['missing']).rejects.toMatchObject({
+    code: 'NOT_FOUND',
+    message: 'gone',
+  });
+  await expect(out['crash']).rejects.toMatchObject({
+    code: 'INTERNAL_SERVER_ERROR',
+  });
+
+  const seen: unknown[] = [];
+  await expect(
+    (async () => {
+      for await (const item of out['items'] as AsyncIterable<unknown>) {
+        seen.push(item);
+      }
+    })(),
+  ).rejects.toMatchObject({ code: 'CONFLICT', message: 'stopped' });
+  expect(seen[0]).toBe(1);
+  const inner = (seen[1] as { file: File }).file;
+  expect([inner.name, await inner.text()]).toEqual(['a.txt', 'file bytes']);
+
+  const iterator = (out['done'] as AsyncIterable<unknown, unknown>)[
+    Symbol.asyncIterator
+  ]();
+  expect(await iterator.next()).toEqual({ value: 'a', done: false });
+  expect(await iterator.next()).toEqual({ value: 'the end', done: true });
+
+  const read: unknown[] = [];
+  for await (const chunk of out['stream'] as ReadableStream<unknown> &
+    AsyncIterable<unknown>) {
+    read.push(chunk);
+  }
+  expect(read).toEqual(['s1', new Money(5)]);
+
+  expect(out['file']).toBeInstanceOf(File);
+  expect(await (out['file'] as File).text()).toBe('file bytes');
+  expect(await (out['again'] as File).text()).toBe('file bytes');
+  const blob = out['blob'] as Blob;
+  expect([blob.type, [...new Uint8Array(await blob.arrayBuffer())]]).toEqual([
+    'x/y',
+    [1, 2, 3],
+  ]);
   await handler.dispose();
 });

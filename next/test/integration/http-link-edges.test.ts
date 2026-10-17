@@ -169,8 +169,9 @@ test('subscriptions: turned off, malformed events, unknown events', async () => 
     sse(
       [
         'event: unknown\ndata: ignored\n\n',
+        'event: unknown\ndata\nretry\n\n',
         'data: {"json":1}\n\n',
-        'event: done\ndata: \n\n',
+        'event: done\n\n',
       ].join(''),
     ),
   );
@@ -217,4 +218,23 @@ test('a subscription retries a failed connect, then reads the stream', async () 
     code: 'NETWORK_ERROR',
     message: 'refused',
   });
+});
+
+test('a stream that ends inside a UTF-8 character, after an event, is lost', async () => {
+  const bytes = new Uint8Array([
+    ...new TextEncoder().encode('data: {"json":1}\n\n'),
+    0xe2,
+  ]);
+  const cut = clientWith(
+    async () =>
+      new Response(bytes, { headers: { 'content-type': 'text/event-stream' } }),
+    { reconnect: { attempts: 0, delayMs: () => 1 } },
+  );
+  const seen: unknown[] = [];
+  await expect(
+    (async () => {
+      for await (const value of cut.ticks.subscribe()) seen.push(value);
+    })(),
+  ).rejects.toMatchObject({ message: 'The subscription connection was lost' });
+  expect(seen).toEqual([1]);
 });
