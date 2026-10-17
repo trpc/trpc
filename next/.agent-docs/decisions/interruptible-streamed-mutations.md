@@ -8,4 +8,4 @@
 - (agent) The signal option is `signal: AbortSignal | (variables) => AbortSignal | undefined`, since TanStack's `mutate()` can't carry one; a function gives each call its own.
 - Lost: a stop that follows TanStack's own `reset()`, which TanStack doesn't expose to `mutationFn`.
 - Spike: [`../notes/interruptible-streamed-mutations.md`](../notes/interruptible-streamed-mutations.md).
-- Lives in: `packages/tanstack-query/src/utils.ts`, `docs/tanstack-query.md` ("Streamed mutations", "Long jobs"); `test/tanstack-query/core.test.ts`.
+- Lives in: `packages/tanstack-query/src/utils.ts`, `docs/tanstack-query.md` ("Streamed mutations", "Long jobs"); `packages/tanstack-query/src/index.test.ts`.

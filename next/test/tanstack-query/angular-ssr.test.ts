@@ -27,7 +27,7 @@ import {
   db,
   type AppClient,
   serializer,
-} from './fixtures/app.ts';
+} from '../../packages/tanstack-query/src/fixtures/app.ts';
 
 const { provideTrpc, injectTrpc } = createTrpcContext<AppClient>();
 

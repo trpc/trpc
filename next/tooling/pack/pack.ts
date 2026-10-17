@@ -70,6 +70,9 @@ const pack = (extraArgs: ReadonlyArray<string>) =>
       yield* fs.readFileString('package.json'),
     ) as PackageJson;
     yield* checkExports(pkg);
+    const tsconfig = (yield* fs.exists('tsconfig.lib.json'))
+      ? ['--tsconfig', 'tsconfig.lib.json']
+      : [];
     const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
     const exitCode = yield* spawner.exitCode(
       ChildProcess.make(
@@ -79,6 +82,7 @@ const pack = (extraArgs: ReadonlyArray<string>) =>
           '--no-config',
           ...Object.values(pkg.exports).map((entry) => entry.default),
           '--dts',
+          ...tsconfig,
           '--unbundle',
           '--platform',
           'neutral',

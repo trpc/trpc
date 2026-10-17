@@ -6,7 +6,12 @@ import {
 import { render } from 'svelte/server';
 import { createRouterClient } from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
-import { appRouter, createApp, db, serializer } from './fixtures/app.ts';
+import {
+  appRouter,
+  createApp,
+  db,
+  serializer,
+} from '../../packages/tanstack-query/src/fixtures/app.ts';
 import Root from './svelte/Root.svelte';
 import Ssr from './svelte/Ssr.svelte';
 

@@ -27,8 +27,13 @@ import {
   injectSubscription,
 } from '@trpc12/tanstack-angular-query';
 import { afterEach, expect, expectTypeOf, test } from 'vite-plus/test';
-import { createApp, db, type Post, type AppClient } from './fixtures/app.ts';
-import { click, text, waitFor } from './fixtures/dom.ts';
+import {
+  createApp,
+  db,
+  type Post,
+  type AppClient,
+} from '../../packages/tanstack-query/src/fixtures/app.ts';
+import { click, text, waitFor } from '../../packages/trpc/src/fixtures/dom.ts';
 
 const { provideTrpc, injectTrpc, injectTrpcClient } =
   createTrpcContext<AppClient>();

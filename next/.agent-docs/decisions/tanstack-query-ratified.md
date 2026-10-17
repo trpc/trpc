@@ -6,4 +6,4 @@
 - (agent) The client's serializer is read from its links (`getClientSerializer(client)`, the first link that records one), so the call is `hydrationOptions({ client })`. Pending queries dehydrate with every kind: TanStack serializes their data when it settles.
 - Why: the adapters already exist, are tested against a real server and share one core; hydration must round-trip the same types the client sees.
 - Lost: nothing beyond the earlier files' "Lost" entries.
-- Lives in: `packages/tanstack-*/src/`, `packages/tanstack-query/src/hydration.ts`, `packages/trpc/src/client/client.ts` (`getClientSerializer`); tests in `test/tanstack-query/core.test.ts`.
+- Lives in: `packages/tanstack-*/src/`, `packages/tanstack-query/src/hydration.ts`, `packages/trpc/src/client/client.ts` (`getClientSerializer`); tests in `packages/tanstack-query/src/index.test.ts`.

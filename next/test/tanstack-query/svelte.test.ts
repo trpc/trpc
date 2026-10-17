@@ -6,8 +6,17 @@ import {
 } from '@trpc12/tanstack-svelte-query';
 import { flushSync, mount, unmount, type Component } from 'svelte';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
-import { createApp, db, type AppClient } from './fixtures/app.ts';
-import { click, container, text, waitFor } from './fixtures/dom.ts';
+import {
+  createApp,
+  db,
+  type AppClient,
+} from '../../packages/tanstack-query/src/fixtures/app.ts';
+import {
+  click,
+  container,
+  text,
+  waitFor,
+} from '../../packages/trpc/src/fixtures/dom.ts';
 import Failing from './svelte/Failing.svelte';
 import Feed from './svelte/Feed.svelte';
 import Live from './svelte/Live.svelte';

@@ -22,8 +22,13 @@ import {
   type AppRouter,
   type Post,
   type AppClient,
-} from './fixtures/app.ts';
-import { click, container, text, waitFor } from './fixtures/dom.ts';
+} from '../../packages/tanstack-query/src/fixtures/app.ts';
+import {
+  click,
+  container,
+  text,
+  waitFor,
+} from '../../packages/trpc/src/fixtures/dom.ts';
 
 const { TrpcProvider, useTrpc, useTrpcClient } = createTrpcContext<AppClient>();
 customElements.define('lit-query-provider', QueryClientProvider);

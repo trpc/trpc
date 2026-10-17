@@ -480,18 +480,39 @@ importers:
 
   packages/tanstack-query:
     devDependencies:
+      '@effect/platform-node':
+        specifier: 4.0.2
+        version: 4.0.2(effect@4.0.2)(redis@6.3.0)
+      '@tanstack/db':
+        specifier: 0.15.0
+        version: 0.15.0(typescript@7.0.2)
       '@tanstack/query-core':
         specifier: 5.104.1
         version: 5.104.1
+      '@tanstack/query-db-collection':
+        specifier: 1.4.5
+        version: 1.4.5(@tanstack/query-core@5.104.1)(typescript@7.0.2)
       '@trpc12/trpc':
         specifier: workspace:*
         version: link:../trpc
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.19.1
+      effect:
+        specifier: 4.0.2
+        version: 4.0.2
+      superjson:
+        specifier: 2.2.6
+        version: 2.2.6
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
       vite-plus:
         specifier: 1.1.0
         version: 1.1.0(@types/node@24.19.1)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(svelte@5.57.2)(typescript@7.0.2)
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
 
   packages/tanstack-react-query:
     dependencies:

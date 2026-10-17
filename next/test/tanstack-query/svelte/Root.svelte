@@ -1,7 +1,7 @@
 <script lang="ts">
   import { QueryClientProvider, type QueryClient } from '@tanstack/svelte-query';
   import type { Component } from 'svelte';
-  import type { AppClient } from '../fixtures/app.ts';
+  import type { AppClient } from '../../../packages/tanstack-query/src/fixtures/app.ts';
   import { setTrpcContext } from './trpc.ts';
 
   let {

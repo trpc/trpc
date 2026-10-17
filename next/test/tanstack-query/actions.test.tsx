@@ -5,7 +5,12 @@ import { experimental_createAction } from '@trpc12/trpc/actions';
 import { initTrpc } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
-import { click, container, text, waitFor } from './fixtures/dom.ts';
+import {
+  click,
+  container,
+  text,
+  waitFor,
+} from '../../packages/trpc/src/fixtures/dom.ts';
 
 const t = initTrpc<{ ctx: { user: string } }>();
 const titles: string[] = [];

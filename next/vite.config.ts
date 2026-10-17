@@ -45,7 +45,12 @@ export default defineConfig({
     overrides: [
       {
         files: ['packages/*/src/**'],
-        excludeFiles: ['**/*.test.ts', '**/*.test.tsx', '**/*.test-d.ts'],
+        excludeFiles: [
+          '**/*.test.ts',
+          '**/*.test.tsx',
+          '**/*.test-d.ts',
+          '**/fixtures/**',
+        ],
         rules: {
           'trpc/jsdoc': 'error',
         },
@@ -68,7 +73,12 @@ export default defineConfig({
       provider: 'v8',
       reportOnFailure: true,
       include: ['packages/*/src/**/*.{ts,tsx}'],
-      exclude: ['**/*.test.ts', '**/*.test.tsx', '**/*.test-d.ts'],
+      exclude: [
+        '**/*.test.ts',
+        '**/*.test.tsx',
+        '**/*.test-d.ts',
+        '**/fixtures/**',
+      ],
       reporter: ['text-summary', 'json-summary', 'text'],
       thresholds: { statements: 98, branches: 98, functions: 98, lines: 98 },
     },
@@ -79,6 +89,7 @@ export default defineConfig({
           name: 'node',
           include: [
             'packages/*/src/**/*.test.ts',
+            'packages/*/src/**/*.test.tsx',
             'test/**/*.test.ts',
             'test/**/*.test.tsx',
             'spikes/**/*.test.ts',
