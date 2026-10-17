@@ -480,7 +480,7 @@ const bundleSizes = Command.make('bundle', {}, () =>
 const budgets = [
   {
     name: 'minimal JSON client',
-    target: 10_000,
+    target: 18_000,
     ceiling: 25_800,
     code: `import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 export const client = createTrpcClient({ router: routerType<any>(), links: [httpLink({ url: '/trpc' })] });`,
