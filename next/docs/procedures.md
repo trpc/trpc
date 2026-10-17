@@ -41,6 +41,8 @@ const it = await client.chat.mutate(); // AsyncIterable<Token, Summary>
 
 A plain `.output(Item)` on a streaming resolver is a type error that points to `stream()`. An invalid item fails the stream with `INTERNAL_SERVER_ERROR` after the items before it have been delivered. Streams nested inside an object output aren't validated.
 
+Over HTTP the server reads a stream only as fast as the client reads the response: a generator waits at its `yield` while the client is behind, and its `finally` runs when the client leaves. WebSocket links don't wait yet; there, a slow client buffers on the server.
+
 ## Files
 
 `File` and `Blob` values can sit anywhere in an input. `httpLink` sends that call alone (outside a batch) as `multipart/form-data`, and the handler rebuilds them before validation. `maxBodySize` covers the whole body. The handler only takes a multipart body with the `trpc-version` header, which `httpLink` sends and a cross-site form can't, so a form on another site can't run your mutations (other `POST` bodies must be `application/json` for the same reason).
