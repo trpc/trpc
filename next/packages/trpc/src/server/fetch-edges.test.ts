@@ -286,3 +286,55 @@ test('batch: {} uses the default of 20 calls', async () => {
     await lines(await fetch(server.url, batchOf(calls.slice(1)))),
   ).toHaveLength(20);
 });
+
+type Big = () => AsyncGenerator<string>;
+
+test.each([
+  [
+    'a streamed query',
+    (big: Big) => t.procedure.query(big),
+    'application/jsonl',
+  ],
+  [
+    'a deferred value',
+    (big: Big) => t.procedure.query(() => ({ items: big() })),
+    'application/jsonl',
+  ],
+  [
+    'a subscription',
+    (big: Big) => t.procedure.subscription(big),
+    'text/event-stream',
+  ],
+] as const)(
+  '%s waits for a slow client instead of buffering, and stops when it leaves',
+  async (_name, procedure, accept) => {
+    const limit = 100_000;
+    let yielded = 0;
+    let close = () => {};
+    const closed = new Promise<void>((resolve) => (close = resolve));
+    async function* big() {
+      try {
+        while (yielded < limit) {
+          yielded++;
+          yield 'x'.repeat(1024);
+        }
+      } finally {
+        close();
+      }
+    }
+    await using server = await createTestServer({
+      router: { big: procedure(big) },
+      createContext,
+    });
+    const url = new URL(`${server.url}/big`);
+    const req = httpRequest(url, { headers: { accept } }, (res) => res.pause());
+    req.end();
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    const paused = yielded;
+    req.destroy();
+    await closed;
+    // Socket buffers hold a few MB; without backpressure it reads all of it.
+    expect(paused).toBeLessThan(limit / 4);
+    expect(yielded).toBeLessThan(limit / 4);
+  },
+);

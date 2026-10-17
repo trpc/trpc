@@ -16,6 +16,13 @@ import {
   Stream,
 } from 'effect';
 
+/**
+ * `Stream.callback` options for a producer that must keep pace with its
+ * reader (a slow client): `Queue.offer` waits once this many are unread.
+ * @internal
+ */
+export const backpressure = { bufferSize: 16, strategy: 'suspend' } as const;
+
 /** `Effect.forEach`, one item after another. @internal */
 export const forEachSeq = <A, B, E, R>(
   items: Iterable<A>,

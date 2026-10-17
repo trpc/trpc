@@ -27,7 +27,7 @@ export function emitEvents(
   events: Stream.Stream<unknown, AnyTrpcError>,
   serializer: AnySerializer,
   coerceError: (cause: unknown) => unknown,
-  emit: (frame: EventFrame) => void,
+  emit: (frame: EventFrame) => Effect.Effect<void>,
 ): Effect.Effect<void, AnyTrpcError> {
   return Effect.scoped(
     Effect.gen(function* () {
@@ -42,7 +42,7 @@ export function emitEvents(
           });
           const eventId = isTracked(event) ? event.id : undefined;
           if (!serialized.chunks) {
-            emit({
+            yield* emit({
               kind: 'event',
               body: serialized.head,
               eventId,
@@ -51,14 +51,19 @@ export function emitEvents(
             return;
           }
           const n = deferredCount++;
-          emit({ kind: 'event', body: serialized.head, eventId, deferred: n });
+          yield* emit({
+            kind: 'event',
+            body: serialized.head,
+            eventId,
+            deferred: n,
+          });
           const fiber = yield* Stream.runForEach(serialized.chunks, (chunk) =>
-            Effect.sync(() => emit({ kind: 'chunk', event: n, chunk })),
+            emit({ kind: 'chunk', event: n, chunk }),
           ).pipe(
             Effect.ignore,
-            Effect.ensuring(
-              Effect.sync(() => emit({ kind: 'chunkEnd', event: n })),
-            ),
+            // Not `ensuring`: `emit` may wait on a slow reader, and a finalizer
+            // can't be interrupted, so a reader that left would hang it.
+            Effect.andThen(emit({ kind: 'chunkEnd', event: n })),
             Effect.forkScoped,
           );
           fibers.push(fiber);

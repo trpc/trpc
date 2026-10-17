@@ -37,6 +37,7 @@ import {
 } from '../internal/protocol.ts';
 import type { MaybePromise, ProcedureType } from '../internal/types.ts';
 import { jsonSerializer, type AnySerializer } from '../serializer/index.ts';
+import { backpressure } from '../internal/effects.ts';
 import { accepts, encodeRecord } from '../internal/frames.ts';
 import type { Chunk, Frame } from '../serializer/stream.ts';
 import {
@@ -753,26 +754,34 @@ export function createFetchHandler<
 
   /** A streamed body of `produce`'s lines; the call's signal aborts if the client leaves. */
   const linesResponse = (
-    produce: (write: (line: unknown) => void) => Effect.Effect<void>,
+    produce: (
+      write: (line: unknown) => Effect.Effect<void>,
+    ) => Effect.Effect<void>,
     controller: AbortController,
     contentType: string = CONTENT_TYPE.jsonl,
     headers?: Headers,
   ): HttpServerResponse.HttpServerResponse => {
     const binary = contentType === CONTENT_TYPE.frames;
-    const lines = Stream.callback<Uint8Array>((queue) =>
-      Effect.andThen(
-        produce((line) => {
-          Queue.offerUnsafe(
-            queue,
-            binary
-              ? encodeRecord(line)
-              : encoder.encode(
-                  typeof line === 'string' ? line : `${JSON.stringify(line)}\n`,
-                ),
-          );
-        }),
-        Queue.end(queue),
-      ),
+    const lines = Stream.callback<Uint8Array>(
+      (queue) =>
+        Effect.andThen(
+          produce((line) =>
+            Effect.asVoid(
+              Queue.offer(
+                queue,
+                binary
+                  ? encodeRecord(line)
+                  : encoder.encode(
+                      typeof line === 'string'
+                        ? line
+                        : `${JSON.stringify(line)}\n`,
+                    ),
+              ),
+            ),
+          ),
+          Queue.end(queue),
+        ),
+      backpressure,
     ).pipe(
       Stream.onExit((exit) =>
         Exit.hasInterrupts(exit)
@@ -793,11 +802,8 @@ export function createFetchHandler<
 
   const runChunks = (
     chunks: Stream.Stream<Chunk, unknown>,
-    onChunk: (chunk: Chunk) => void,
-  ) =>
-    Stream.runForEach(chunks, (chunk) =>
-      Effect.sync(() => onChunk(chunk)),
-    ).pipe(Effect.ignore);
+    onChunk: (chunk: Chunk) => Effect.Effect<void>,
+  ) => Stream.runForEach(chunks, onChunk).pipe(Effect.ignore);
 
   /** Aborts `controller` if `effect` is interrupted (the client left). */
   const abortOnInterrupt = <A, E, R>(
@@ -874,10 +880,7 @@ export function createFetchHandler<
       if (result.frames) {
         const frames = result.frames;
         return linesResponse(
-          (write) =>
-            Stream.runForEach(frames, (frame) =>
-              Effect.sync(() => write(frame)),
-            ),
+          (write) => Stream.runForEach(frames, write),
           controller,
           streamType(request),
           result.headers,
@@ -894,11 +897,7 @@ export function createFetchHandler<
       }
       const chunks = result.chunks;
       return linesResponse(
-        (write) =>
-          Effect.suspend(() => {
-            write(result.body);
-            return runChunks(chunks, write);
-          }),
+        (write) => Effect.andThen(write(result.body), runChunks(chunks, write)),
         controller,
         streamType(request),
         result.headers,
@@ -995,9 +994,9 @@ export function createFetchHandler<
           Effect.gen(function* () {
             // Servers that buffer headers until the first body chunk (Node) would
             // otherwise hold them back until the first event.
-            write(': open\n\n');
+            yield* write(': open\n\n');
             if (ssePingMs !== false) {
-              yield* Effect.sync(() => write(': ping\n\n')).pipe(
+              yield* write(': ping\n\n').pipe(
                 Effect.delay(ssePingMs),
                 Effect.forever,
                 Effect.forkScoped,
@@ -1014,20 +1013,19 @@ export function createFetchHandler<
                       frame.eventId === undefined
                         ? ''
                         : `id: ${frame.eventId}\n`;
-                    write(
+                    return write(
                       frame.deferred === undefined
                         ? `${id}data: ${JSON.stringify(frame.body)}\n\n`
                         : `${id}event: ${SSE_EVENT.deferred}\ndata: ${JSON.stringify({ e: frame.deferred, body: frame.body })}\n\n`,
                     );
-                  } else {
-                    write(
-                      `event: ${SSE_EVENT.chunk}\ndata: ${JSON.stringify(
-                        frame.kind === 'chunk'
-                          ? { e: frame.event, chunk: frame.chunk }
-                          : { e: frame.event },
-                      )}\n\n`,
-                    );
                   }
+                  return write(
+                    `event: ${SSE_EVENT.chunk}\ndata: ${JSON.stringify(
+                      frame.kind === 'chunk'
+                        ? { e: frame.event, chunk: frame.chunk }
+                        : { e: frame.event },
+                    )}\n\n`,
+                  );
                 },
               ),
             );
@@ -1035,10 +1033,12 @@ export function createFetchHandler<
               if (Cause.hasInterruptsOnly(done.cause)) return;
               const err = normalizeCause(done.cause);
               report(err, request, path, 'subscription');
-              write(`event: error\ndata: ${JSON.stringify(wire(err))}\n\n`);
+              yield* write(
+                `event: error\ndata: ${JSON.stringify(wire(err))}\n\n`,
+              );
               return;
             }
-            write('event: done\ndata: \n\n');
+            yield* write('event: done\ndata: \n\n');
           }).pipe(Effect.scoped),
         controller,
         CONTENT_TYPE.sse,
@@ -1156,18 +1156,18 @@ export function createFetchHandler<
               Effect.forEach(
                 results,
                 (result, i) =>
-                  Effect.suspend(() => {
+                  Effect.andThen(
                     write({
                       i,
                       status: result.status,
                       body: result.body,
-                    } satisfies BatchLine);
-                    return result.chunks
+                    } satisfies BatchLine),
+                    result.chunks
                       ? runChunks(result.chunks, (chunk) =>
                           write({ i, chunk } satisfies BatchLine),
                         )
-                      : Effect.void;
-                  }),
+                      : Effect.void,
+                  ),
                 { concurrency: 'unbounded', discard: true },
               ),
             controller,

@@ -346,7 +346,7 @@ export function experimental_createHibernatingWebSockets<TPlatform>(
         procedureEvents(procedure, Stream.make(event)),
         core.serializer,
         (cause) => report(isTrpcError(cause) ? cause : unexpectedError(cause)),
-        (frame) => send(frameMessage(sub.c, frame)),
+        (frame) => Effect.sync(() => send(frameMessage(sub.c, frame))),
       ),
     );
     if (Exit.isFailure(exit)) {

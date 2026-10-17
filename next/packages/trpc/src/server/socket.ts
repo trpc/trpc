@@ -448,9 +448,10 @@ export function connectionReceiver(
             exit.value as Stream.Stream<unknown, AnyTrpcError>,
             core.serializer,
             coerceError(path, type),
-            (frame) => {
-              if (live()) conn.send(frameMessage(id, frame));
-            },
+            (frame) =>
+              Effect.sync(() => {
+                if (live()) conn.send(frameMessage(id, frame));
+              }),
           ),
           { signal },
         );

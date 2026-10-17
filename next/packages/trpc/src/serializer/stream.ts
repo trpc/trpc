@@ -20,6 +20,7 @@ import {
   type SerializeReturn,
 } from './sync.ts';
 import {
+  backpressure,
   forEachSeq,
   toAsyncIterable,
   toReadableStream,
@@ -64,31 +65,33 @@ export function sourceOf(
       value instanceof ReadableStream
         ? (value as ReadableStream<unknown> & AsyncIterable<unknown>)
         : value;
-    return Stream.callback<[Status, unknown]>((queue) =>
-      Effect.gen(function* () {
-        const iterator = iterable[Symbol.asyncIterator]();
-        yield* Effect.addFinalizer(() =>
-          Effect.promise(async () => {
-            await iterator.return?.();
-          }),
-        );
-        while (true) {
-          const next = yield* Effect.tryPromise({
-            try: () => iterator.next(),
-            catch: (cause) => cause,
-          }).pipe(Effect.exit);
-          if (Exit.isFailure(next)) {
-            Queue.offerUnsafe(queue, [ERROR, Cause.squash(next.cause)]);
-            break;
+    return Stream.callback<[Status, unknown]>(
+      (queue) =>
+        Effect.gen(function* () {
+          const iterator = iterable[Symbol.asyncIterator]();
+          yield* Effect.addFinalizer(() =>
+            Effect.promise(async () => {
+              await iterator.return?.();
+            }),
+          );
+          while (true) {
+            const next = yield* Effect.tryPromise({
+              try: () => iterator.next(),
+              catch: (cause) => cause,
+            }).pipe(Effect.exit);
+            if (Exit.isFailure(next)) {
+              yield* Queue.offer(queue, [ERROR, Cause.squash(next.cause)]);
+              break;
+            }
+            if (next.value.done) {
+              yield* Queue.offer(queue, [RETURN, next.value.value]);
+              break;
+            }
+            yield* Queue.offer(queue, [VALUE, next.value.value]);
           }
-          if (next.value.done) {
-            Queue.offerUnsafe(queue, [RETURN, next.value.value]);
-            break;
-          }
-          Queue.offerUnsafe(queue, [VALUE, next.value.value]);
-        }
-        Queue.endUnsafe(queue);
-      }),
+          yield* Queue.end(queue);
+        }),
+      backpressure,
     );
   }
   return Stream.fromEffect(
@@ -318,37 +321,41 @@ export function deferredChunks(
             coerceError ? failure(cause) : Effect.fail(cause),
           ),
         );
-  return Stream.callback<Chunk, DansonError>((queue) =>
-    Effect.gen(function* () {
-      let active = 0;
-      const finishOne = Effect.sync(() => {
-        active--;
-        if (active === 0 && pending.length === 0) Queue.endUnsafe(queue);
-      });
+  return Stream.callback<Chunk, DansonError>(
+    (queue) =>
+      Effect.gen(function* () {
+        let active = 0;
+        const finishOne = Effect.sync(() => {
+          active--;
+          if (active === 0 && pending.length === 0) Queue.endUnsafe(queue);
+        });
 
-      // Serializing a chunk may register more sources; start them too.
-      const startPending: Effect.Effect<unknown, never, Scope.Scope> =
-        Effect.suspend(() =>
-          forEachSeq(pending.splice(0), ([idx, source]) => {
-            active++;
-            return source.pipe(
-              Stream.mapEffect(([status, v]) => chunk(status, v)),
-              Stream.takeUntil(([status]) => status === ERROR),
-              Stream.runForEach(([status, json]) => {
-                Queue.offerUnsafe(queue, [idx, status, json]);
-                return startPending;
-              }),
-              Effect.catchCause((cause) =>
-                Effect.sync(() => Queue.failCauseUnsafe(queue, cause)),
-              ),
-              Effect.ensuring(finishOne),
-              Effect.forkScoped,
-            );
-          }),
-        );
+        // Serializing a chunk may register more sources; start them too.
+        const startPending: Effect.Effect<unknown, never, Scope.Scope> =
+          Effect.suspend(() =>
+            forEachSeq(pending.splice(0), ([idx, source]) => {
+              active++;
+              return source.pipe(
+                Stream.mapEffect(([status, v]) => chunk(status, v)),
+                Stream.takeUntil(([status]) => status === ERROR),
+                Stream.runForEach(([status, json]) =>
+                  Effect.andThen(
+                    Queue.offer(queue, [idx, status, json]),
+                    startPending,
+                  ),
+                ),
+                Effect.catchCause((cause) =>
+                  Effect.sync(() => Queue.failCauseUnsafe(queue, cause)),
+                ),
+                Effect.ensuring(finishOne),
+                Effect.forkScoped,
+              );
+            }),
+          );
 
-      yield* startPending;
-    }),
+        yield* startPending;
+      }),
+    backpressure,
   );
 }
 
