@@ -168,8 +168,7 @@ const keyName = (prop: Node): string | undefined =>
     : undefined;
 
 /** Whether an `Identifier` names a binding rather than a property. */
-const isReference = (parent: Node | undefined, key: string) => {
-  if (!parent) return true;
+const isReference = (parent: Node, key: string) => {
   switch (parent.type) {
     case 'MemberExpression':
       return key !== 'property' || parent.computed;
@@ -472,7 +471,7 @@ export function upgradeSource(
   const contextTuple = (pattern: Node) => {
     const slots: string[] = [];
     for (const prop of pattern['properties'] as Node[]) {
-      const name = prop.type === 'Property' ? keyName(prop) : undefined;
+      const name = keyName(prop);
       const at = name === undefined ? -1 : CONTEXT_TUPLE.indexOf(name);
       if (at === -1) {
         note(
@@ -628,7 +627,7 @@ export function upgradeSource(
     if (
       node.type === 'Identifier' &&
       renames.has(node.name) &&
-      isReference(parent, key)
+      isReference(parent!, key)
     ) {
       s.overwrite(node.start, node.end, renames.get(node.name)!);
     }
@@ -679,9 +678,9 @@ export function upgradeSource(
     const imports = (program['body'] as Node[]).filter(
       (n) => n.type === 'ImportDeclaration',
     );
-    if (imports.length)
-      s.appendRight(imports.at(-1)!.end, `\n${lines.trimEnd()}`);
-    else s.prepend(lines);
+    // Each added name replaces a call to an imported v11 name, so there is
+    // an import to follow.
+    s.appendRight(imports.at(-1)!.end, `\n${lines.trimEnd()}`);
   }
 
   const code = s.toString();

@@ -513,6 +513,46 @@ const app = <TRPCProvider {...props} trpcClient={client} />;
     `);
   });
 
+  test('shapes with nothing to rewrite are left as they are', () => {
+    const source = `import { initTRPC } from '@trpc/server';
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import { createTRPCContext } from '@trpc/tanstack-react-query';
+const t = initTRPC.create({ [key]: 1, custom: 2 });
+const bare = Object.create(null);
+const holes = [, t];
+const batch = httpBatchLink();
+const client = createTRPCClient<AppRouter>({ links });
+const spread = t.mergeRouters(...routers);
+const none = t.mergeRouters();
+const fromOptions = fetchRequestHandler(options);
+const noReq = fetchRequestHandler({ endpoint: '/trpc' });
+export const { TRPCProvider, 1: one, ...rest } = createTRPCContext<AppRouter>();
+`;
+    expect(upgrade(source).code).toMatchInlineSnapshot(`
+      "import { initTrpc } from '@trpc12/trpc/server';
+      import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+      import { createFetchHandler } from '@trpc12/trpc/server';
+      import { createTrpcContext } from '@trpc12/tanstack-react-query';
+      const t = initTrpc({ [key]: 1, custom: 2 });
+      const bare = Object.create(null);
+      const holes = [, t];
+      const batch = httpLink();
+      const client = createTrpcClient({ router: routerType<AppRouter>(), links });
+      const spread = t.mergeRouters(...routers);
+      const none = t.mergeRouters();
+      const fromOptions = createFetchHandler(options);
+      const noReq = createFetchHandler({ endpoint: '/trpc' });
+      export const { TrpcProvider, 1: one, ...rest } = createTrpcContext<AppRouter>();
+      "
+    `);
+    expect(messages(source)).toMatchInlineSnapshot(`
+      [
+        "14:30 createTrpcContext returns [TrpcProvider, useTrpc, useTrpcClient, context]: destructure it as a tuple",
+      ]
+    `);
+  });
+
   test('class members, interface keys and qualified names keep v11 names', () => {
     expect(
       upgrade(`import { TRPCError } from '@trpc/server';
@@ -611,6 +651,20 @@ describe('files and CLI', () => {
     expect(await readFile(join(root, 'src', 'trpc.ts'), 'utf8')).toContain(
       'initTRPC',
     );
+  });
+
+  test('the CLI takes a file and prints the steps left by hand', async () => {
+    const root = await project();
+    const file = join(root, 'src', 'trpc.ts');
+    await writeFile(
+      file,
+      `import { initTRPC } from '@trpc/server';\nexport const t = initTRPC.create({ isServer: true });\n`,
+    );
+    expect(await cli([file])).toEqual([
+      `would upgrade ${file}`,
+      `${file}:2:36 isServer is gone`,
+      '1 file(s) to upgrade, 1 step(s) by hand',
+    ]);
   });
 
   test('the CLI writes with --write', async () => {
