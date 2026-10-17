@@ -205,6 +205,20 @@ test('a route with path params merges them into an object body, and refuses othe
   await handler.dispose();
 });
 
+test('a path param with a malformed escape is a 400, not an internal error', async () => {
+  const handler = make();
+  const res = await api(handler, '/things/%E0%A4%A', { method: 'POST' });
+  expect(res.status).toBe(400);
+  expect(await res.json()).toMatchObject({
+    code: 'BAD_REQUEST',
+    message: 'Invalid URL encoding in path param "id"',
+  });
+
+  const encoded = await api(handler, '/things/a%20b', { method: 'POST' });
+  expect(await encoded.json()).toEqual({ id: 'a b' });
+  await handler.dispose();
+});
+
 test('detailed structures coerce form bodies and default missing parts', async () => {
   const handler = make();
   const form = await api(handler, '/detailed/3', {

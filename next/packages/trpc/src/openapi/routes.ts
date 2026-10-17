@@ -1,3 +1,4 @@
+import { TrpcError } from '../internal/error.ts';
 import type { ProcedureType } from '../internal/types.ts';
 
 /**
@@ -194,7 +195,16 @@ export function compileRoute(
     if (!match) return undefined;
     const params: Record<string, string> = {};
     names.forEach((name, i) => {
-      params[name] = decodeURIComponent(match[i + 1]!);
+      const raw = match[i + 1]!;
+      try {
+        params[name] = decodeURIComponent(raw);
+      } catch (cause) {
+        throw new TrpcError({
+          code: 'BAD_REQUEST',
+          message: `Invalid URL encoding in path param "${name}"`,
+          cause,
+        });
+      }
     });
     return params;
   };
