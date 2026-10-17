@@ -187,11 +187,9 @@ test('the client ignores stray messages and fails calls on connection errors', a
     links: [link],
   });
   const idOf = (path: string) =>
-    (
-      port.sent.findLast((m) => (m as { path?: string }).path === path) as {
-        id: number;
-      }
-    ).id;
+    (port.sent as Array<{ id: number; path?: string }>)
+      .filter((m) => m.path === path)
+      .at(-1)!.id;
   try {
     const slow = safe(client.slow.query());
     await sleep(5);
