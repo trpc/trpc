@@ -78,6 +78,10 @@ const router = {
   badOutput: t.procedure
     .output(z.object({ id: z.string() }))
     .query(() => ({ id: 1 }) as unknown as { id: string }),
+  ticks: t.procedure.subscription(async function* () {
+    yield 1;
+    yield 2;
+  }),
 };
 type AppRouter = typeof router;
 
@@ -272,6 +276,20 @@ test('createSafeClient wraps every call', async () => {
   expect(post?.title).toBe('Hello');
   const result = await safeClient.post.byId.query({ id: 'nope' });
   expect(result.error?.code).toBe('NOT_FOUND');
+
+  const ticks: number[] = [];
+  for await (const tick of safeClient.ticks.subscribe()) ticks.push(tick);
+  expect(ticks).toEqual([1, 2]);
+});
+
+test('calling a path instead of .query(), .mutate() or .subscribe() throws', async () => {
+  await using ctx = await setup();
+  const untyped = ctx.client as unknown as Record<string, any> &
+    (() => unknown);
+  expect(() => untyped['post'].byId()).toThrow(
+    'Call .query(), .mutate() or .subscribe() on a procedure, not post.byId()',
+  );
+  expect(() => untyped()).toThrow(TypeError);
 });
 
 test('calls reject with the TrpcError when not using safe()', async () => {
