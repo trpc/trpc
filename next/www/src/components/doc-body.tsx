@@ -1,6 +1,6 @@
 import { useRouter } from '@tanstack/react-router';
 
-import { cn } from '~/lib/utils.ts';
+import { cn } from '@shared/ui/lib/utils';
 
 const tabStorageKey = (group: string) => `trpc-docs:tab:${group}`;
 

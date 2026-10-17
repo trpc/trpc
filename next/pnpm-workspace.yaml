@@ -3,6 +3,7 @@ packages:
   - 'examples/*'
   - 'test/*'
   - 'spikes'
+  - 'shared/*'
   - 'tooling/*'
   - 'www'
   - 'www/samples/*'

@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '~/lib/utils.ts';
+import { cn } from '@shared/ui/lib/utils';
 import { Monitor, Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useSyncExternalStore } from 'react';

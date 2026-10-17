@@ -1,11 +1,11 @@
-import { Button } from '~/components/ui/button.tsx';
+import { Button } from '@shared/ui/components/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogTitle,
   DialogTrigger,
-} from '~/components/ui/dialog.tsx';
+} from '@shared/ui/components/dialog';
 import { Menu } from 'lucide-react';
 import { useState } from 'react';
 

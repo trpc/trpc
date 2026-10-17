@@ -1,4 +1,4 @@
-@import './styles/globals.css';
+@import '@shared/ui/globals.css';
 @import '@shikijs/twoslash/style-rich.css';
 @plugin '@tailwindcss/typography';
 

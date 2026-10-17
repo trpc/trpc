@@ -1,11 +1,11 @@
-import { Button } from '~/components/ui/button.tsx';
+import { Button } from '@shared/ui/components/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogTitle,
-} from '~/components/ui/dialog.tsx';
-import { cn } from '~/lib/utils.ts';
+} from '@shared/ui/components/dialog';
+import { cn } from '@shared/ui/lib/utils';
 import { useNavigate } from '@tanstack/react-router';
 import { FileText, Hash, Search } from 'lucide-react';
 import { useState } from 'react';

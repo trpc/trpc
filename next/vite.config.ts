@@ -30,6 +30,8 @@ export default defineConfig({
   },
   lint: {
     ignorePatterns: [
+      // shadcn's CLI writes these; reinstall them, don't edit them.
+      'shared/ui/src/**',
       '.repos/**',
       '**/dist/**',
       'spikes/**/generated/**',

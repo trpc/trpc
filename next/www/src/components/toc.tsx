@@ -1,4 +1,4 @@
-import { cn } from '~/lib/utils.ts';
+import { cn } from '@shared/ui/lib/utils';
 import { useState } from 'react';
 
 import type { DocHeading } from '~/content/types.ts';

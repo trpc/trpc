@@ -1,5 +1,5 @@
-import { Button, buttonVariants } from '~/components/ui/button.tsx';
-import { cn } from '~/lib/utils.ts';
+import { Button, buttonVariants } from '@shared/ui/components/button';
+import { cn } from '@shared/ui/lib/utils';
 import { Check, Copy, ExternalLink, FileText } from 'lucide-react';
 import { useState } from 'react';
 

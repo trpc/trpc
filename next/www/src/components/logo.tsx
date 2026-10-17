@@ -1,4 +1,4 @@
-import { cn } from '~/lib/utils.ts';
+import { cn } from '@shared/ui/lib/utils';
 
 /** The tRPC mark: the blue rounded square of `public/logo.svg`. */
 export function Logo(props: { readonly className?: string }) {

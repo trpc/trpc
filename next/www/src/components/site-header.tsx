@@ -1,8 +1,8 @@
 import { Link } from '@tanstack/react-router';
 
-import { buttonVariants } from '~/components/ui/button.tsx';
+import { buttonVariants } from '@shared/ui/components/button';
 import { firstDoc } from '~/content/docs.ts';
-import { cn } from '~/lib/utils.ts';
+import { cn } from '@shared/ui/lib/utils';
 import { site } from '~/site.ts';
 
 import { GitHubIcon } from './icons.tsx';

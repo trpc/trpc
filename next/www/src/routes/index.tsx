@@ -18,9 +18,9 @@ import procedure from 'sample:home/src/server.ts#procedure';
 import serve from 'sample:home/src/server.ts#serve';
 
 import { DocBody } from '~/components/doc-body.tsx';
-import { Badge } from '~/components/ui/badge.tsx';
-import { buttonVariants } from '~/components/ui/button.tsx';
-import { cn } from '~/lib/utils.ts';
+import { Badge } from '@shared/ui/components/badge';
+import { buttonVariants } from '@shared/ui/components/button';
+import { cn } from '@shared/ui/lib/utils';
 import { pageHead } from '~/seo.ts';
 import { site } from '~/site.ts';
 
